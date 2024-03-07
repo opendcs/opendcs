@@ -25,13 +25,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
-//import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
-
 import java.net.HttpURLConnection;
 import java.net.URL;
-//import org.sqlite.*;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
@@ -45,9 +41,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.websocket.Session;
-
 
 /**
  * Represents a Gateway.
@@ -91,7 +84,7 @@ public class Gateway extends HttpServlet {
      * @throws IOException
      */
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("GET");
+        LOGGER.debug("Gateway GET");
         this.doRequest("GET", request, response);
     }
 
@@ -104,7 +97,7 @@ public class Gateway extends HttpServlet {
      * @throws IOException
      */
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("POST");
+        LOGGER.debug("Gateway POST");
         this.doRequest("POST", request, response);
     }
 
@@ -117,7 +110,7 @@ public class Gateway extends HttpServlet {
      * @throws IOException
      */
     protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("DELETE");
+        LOGGER.debug("Gateway DELETE");
         this.doRequest("DELETE", request, response);
     }
 
@@ -146,7 +139,7 @@ public class Gateway extends HttpServlet {
         }
 
         //Gets the initialization details from the conf file.
-        System.out.println("API Config File Path: " + apiConfigFilePath);
+        LOGGER.debug("API Config File Path: {}", apiConfigFilePath);
         File cf = new File(apiConfigFilePath);
 
         String tempUrl = "";
@@ -158,7 +151,6 @@ public class Gateway extends HttpServlet {
             String line = br.readLine();
             while(line != null)
             {
-                System.out.println(line);
                 String nameValue[] = line.split("=");
                 if(nameValue.length > 1)
                 {
@@ -167,17 +159,14 @@ public class Gateway extends HttpServlet {
                     if("url".equalsIgnoreCase(name))
                     {
                         tempUrl = value;
-                        System.out.println("Setting Base Url to " + tempUrl);
                     }
                     else if("port".equalsIgnoreCase(name))
                     {
                         tempPort = ":" + value;
-                        System.out.println("Setting Port to " + tempPort);
                     }
                     else if("context".equalsIgnoreCase(name))
                     {
                         tempContext = value;
-                        System.out.println("Setting Context to " + tempContext);
                     }
                 }
                 // read next line
@@ -187,7 +176,7 @@ public class Gateway extends HttpServlet {
         //Sets the URL for the API
         this.baseUrl = tempUrl + tempPort;
         this.context = tempContext;
-        System.out.println(String.format("API base url: %s.", this.baseUrl));
+       LOGGER.debug("API base url: {}.", this.baseUrl);
 
     }
 
@@ -205,7 +194,7 @@ public class Gateway extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         response.setStatus(200);
         String inline = "";
-        System.out.println(String.format("Requested Method: %s.", method));
+        LOGGER.debug("Requested Method: {}.", method);
         try {
             Set<String> paramSet = request.getParameterMap().keySet();
             List<String> paramNames = new ArrayList<String>();
@@ -218,9 +207,7 @@ public class Gateway extends HttpServlet {
                 String paramString = "";
 
                 String authToken = request.getHeader("Authorization");
-                System.out.println("*************************");
-                System.out.println("Got the authToken: " + authToken);
-                System.out.println("*************************");
+                LOGGER.debug("Auth Token received.");
                 
                 for (String name : paramNames)
                 {
@@ -228,11 +215,11 @@ public class Gateway extends HttpServlet {
                     paramString += (paramString.length() == 0) ? "?" + name + "=" + value : "&" + name + "=" + value;
                 }
 
-                System.out.println(String.format("API Param String: %s", paramString));
+                LOGGER.debug("API Param String: {}", paramString);
 
                 //Passing token in HTTP Header - This is the only way the web client was designed to pass the token.
                 URL url = new URL(new URL(this.baseUrl), String.format("%s/", this.context) + apiCall + paramString);
-                System.out.println(String.format("URL Path: %s.", url.getPath()));
+                LOGGER.debug("URL Path: {}.", url.getPath());
 
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -240,13 +227,11 @@ public class Gateway extends HttpServlet {
                 conn.setRequestMethod(method);
                 if (authToken != null && !authToken.equals(""))
                 {
-                    System.out.println("Setting Authorization Bearer Token.");
                     conn.setRequestProperty("Authorization","Bearer " + authToken);
                 }
 
                 if (method.equalsIgnoreCase("get"))
                 {
-                    System.out.println("Method = GET");
                     BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
                     StringBuilder sb = new StringBuilder();
                     String line;
@@ -258,7 +243,6 @@ public class Gateway extends HttpServlet {
                 }
                 else
                 {
-                    System.out.println("Method != GET");
                     conn.setDoOutput(true);
                     try(OutputStream os = conn.getOutputStream()) 
                     {
@@ -268,19 +252,16 @@ public class Gateway extends HttpServlet {
                         osw.write(postBody);
                         osw.flush();
                         osw.close();
-                        os.close();
                     }
                 }
-                System.out.println("Connecting to the API.");
                 conn.connect();
-
 
                 //Getting the response code
                 int responsecode = conn.getResponseCode();
-                System.out.println(String.format("API Response Code: %s.", responsecode));
+                LOGGER.debug("Connecting to the API.  Response Code: {}.", responsecode);
                 if (responsecode != 200) 
                 {
-                    System.out.println(String.format("Error - response code != 200.  responsecode=%s.", responsecode));
+                    LOGGER.error("Error - responsecode = {}.", responsecode);
                     inline = "";
 
                     Scanner scanner = new Scanner(conn.getErrorStream());
@@ -312,7 +293,7 @@ public class Gateway extends HttpServlet {
             else
             {
                 inline = "{\"message\": \"error - you must pass the opendcs_api_call parameter.\"}";
-                System.out.println(String.format("Error: %s.", inline));
+                LOGGER.error(inline);
             }
         }
         catch (IOException ex)

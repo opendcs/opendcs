@@ -42,7 +42,6 @@ public class TraceLogger extends ilex.util.Logger
 	public void doLog(int priority, String msg)
 	{
 		String txt = standardMessage(priority, msg);
-		System.out.println(txt);
 		log.add(new ApiLogMessage(new Date(), priorityName[priority], txt));
 
 		// In addition to saving the message, write it to the API's log.

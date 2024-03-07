@@ -46,22 +46,26 @@ package org.opendcs.odcsapi.xml;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import java.io.PrintStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
 * Simple class that prints formatted error messages to a print stream.
 */
 public class PrintStreamErrorHandler implements ErrorHandler
 {
-	private PrintStream ps;
+	private Logger LOGGER = LoggerFactory.getLogger(PrintStreamErrorHandler.class);
+
 
 	/**
 	* Constructor
-	* @param ps the print stream
+	* @param lgr the logger
 	*/
-	public PrintStreamErrorHandler( PrintStream ps )
+	public PrintStreamErrorHandler( Logger lgr )
 	{
-		this.ps = ps;
+		this.LOGGER = lgr;
 	}
 
 	/**
@@ -71,8 +75,7 @@ public class PrintStreamErrorHandler implements ErrorHandler
 	*/
 	public void warning( SAXParseException e ) throws SAXException
 	{
-		ps.println("**WARNING** " + e.getSystemId() + ": " + e.getLineNumber()
-			+ " " + e.getMessage());
+		this.LOGGER.warn("**WARNING** {}: {} {}", e.getSystemId(), e.getLineNumber(), e.getMessage());
 		throw new SAXException("Warning encountered");
 	}
 
@@ -83,8 +86,7 @@ public class PrintStreamErrorHandler implements ErrorHandler
 	*/
 	public void error( SAXParseException e ) throws SAXException
 	{
-		ps.println("**ERROR** " + e.getSystemId() + ": " + e.getLineNumber()
-			+ " " + e.getMessage());
+		this.LOGGER.error("**WARNING** {}: {} {}", e.getSystemId(), e.getLineNumber(), e.getMessage());
 		throw new SAXException("Error encountered");
 	}
 

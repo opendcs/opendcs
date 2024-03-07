@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
+import org.opendcs.odcsapi.dao.DbException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -380,8 +381,7 @@ debug(module + ".sendAuthHello authenticator '" + authStr + "'");
 	}
 
 	public void sendSearchCrit(ApiSearchCrit sc, ApiPlatformDAO platformDAO)
-		throws IOException, DdsProtocolError, DdsServerError, SQLException
-	{
+			throws IOException, DdsProtocolError, DdsServerError, SQLException, DbException {
 		sendSearchCrit(SearchCritUtil.sc2String(sc,  platformDAO));
 	}
 

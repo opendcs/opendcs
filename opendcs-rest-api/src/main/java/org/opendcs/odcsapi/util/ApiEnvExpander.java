@@ -87,6 +87,9 @@ import java.util.TimeZone;
 import java.util.Properties;
 import java.text.SimpleDateFormat;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
 This class expands environment variables that were placed into system
 properties according to the following rules:
@@ -103,6 +106,7 @@ Java programs unless you use a -Dname=value on the command line.
 */
 public class ApiEnvExpander
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApiEnvExpander.class);
 	/**
 	Expands a string using System properties.
 	@param str the string
@@ -276,7 +280,8 @@ public class ApiEnvExpander
 	*/
 	public static void main( String[] args )
 	{
-		System.out.println("Expanded '" + args[0] + "' to '" 
-			+ expand(args[0]) + "'");
+		LOGGER.debug("Expanded '{}' to '{}'",
+				args[0],
+				expand(args[0]));
 	}
 }

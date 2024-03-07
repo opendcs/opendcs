@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.opendcs.odcsapi.beans.ApiPropSpec;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
@@ -33,6 +35,7 @@ import ilex.util.EnvExpander;
 
 public class PropSpecHelper
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(PropSpecHelper.class);
 	public static ApiPropSpec[] getPropSpecs(String className)
 		throws WebAppException
 	{
@@ -47,7 +50,8 @@ public class PropSpecHelper
 	public static PropertySpec[] getDecodesPropSpecs(String className)
 		throws WebAppException
 	{
-		Logger.getLogger(ApiConstants.loggerName).info("PropSpecHelper.getPropSpecs class='" + className + "'");
+		//className is user controlled, so it is logged at trace level.
+		LOGGER.trace("PropSpecHelper.getPropSpecs class='{}'", className);
 		if (className.equalsIgnoreCase("decodes.datasource.FtpDataSource"))
 		{
 			// Can't instantiate the class because it requires Apache FTP libs.
@@ -195,7 +199,7 @@ public class PropSpecHelper
 		}
 		catch (Exception ex)
 		{
-			System.out.println("Cannot get props DIRECTLY from '" + className + "': " + ex + "-- will try opendcs util.");
+			LOGGER.warn("Cannot get props DIRECTLY from '{}' -- will try opendcs util.", className);
 			
 			ArrayList<PropertySpec> psa = new ArrayList<PropertySpec>();
 			try

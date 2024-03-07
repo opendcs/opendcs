@@ -32,11 +32,15 @@ import org.opendcs.odcsapi.start.StartException;
 import java.security.spec.KeySpec;
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
 Encrypts a string using a passphrase.
 */
 public class DesEncrypter 
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(DesEncrypter.class);
 	private Cipher ecipher;
 	private Cipher dcipher;
 
@@ -172,7 +176,7 @@ public class DesEncrypter
 	{
 		if (args.length != 2)
 		{
-			System.out.println("Usage DesEncrypter string password");
+			LOGGER.debug("Usage DesEncrypter string password");
 			System.exit(1);
 		}
 
@@ -182,13 +186,11 @@ public class DesEncrypter
 		// Encrypt
 		String encrypted = encrypter.encrypt(args[0]);
 
-		System.out.println("Encrpyted '" + args[0] + "' with key '" + args[1]
-			+ "': ");
-		System.out.println(encrypted);
-	
+		LOGGER.debug("Encrpyted '{}' with key '{}': {}", args[0], args[1], encrypted);
+
 		// Decrypt
 		String decrypted = encrypter.decrypt(encrypted);
-		System.out.println(decrypted);
+		LOGGER.debug(decrypted);
 	}
 }
 
