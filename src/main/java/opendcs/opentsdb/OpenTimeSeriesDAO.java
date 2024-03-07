@@ -410,6 +410,11 @@ public class OpenTimeSeriesDAO
 			ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
 		}
 
+		if (ctsid == null)
+		{
+			throw new BadTimeSeriesException("Could not retrieve timeseries meta data. TimeSeriesIdentifier is not present.");
+		}
+
 		UnitConverter unitConverter = null;
 		if (ctsid.getStorageType() == 'N'
 		 && ts.getUnitsAbbr() != null
@@ -631,11 +636,36 @@ public class OpenTimeSeriesDAO
 	{
 		TimeSeriesIdentifier tsid = ts.getTimeSeriesIdentifier();
 		if (tsid == null)
+		{
 			throw new BadTimeSeriesException("Cannot save time series without TSID.");
-		
-		CwmsTsId ctsid = (CwmsTsId)tsid;
+		}
+
 		debug3("Saving " + tsid.getUniqueString() + ", from cp units="
 			+ ts.getUnitsAbbr() + ", required=" + tsid.getStorageUnits());
+
+		CwmsTsId ctsid = (CwmsTsId)tsid;
+		// If we don't already have the timeseries key, either find it, or make the time series.
+		if (ctsid.getKey().isNull())
+		{
+			try
+			{
+				final TimeSeriesIdentifier tmp = this.getTimeSeriesIdentifier(tsid.getUniqueString());
+				ctsid.setKey(tmp.getKey());
+			}
+			catch (NoSuchObjectException ex)
+			{
+				info("Creating Timeseries");
+				try
+				{
+					final DbKey tmp = this.createTimeSeries(ctsid);
+					ctsid.setKey(tmp);
+				}
+				catch (NoSuchObjectException ex2)
+				{
+					throw new BadTimeSeriesException("Unable to create timeseries.", ex2);
+				}
+			}
+		}
 		TSUtil.convertUnits(ts, tsid.getStorageUnits());
 		debug3("After TSUtil.convertUnits, cts units=" + ts.getUnitsAbbr());
 		
@@ -823,7 +853,7 @@ public class OpenTimeSeriesDAO
 				}
 				if (until != null)
 				{
-					q = q + " and sample_time  <= ?" + db.sqlDate(until);
+					q = q + " and sample_time  <= ?";
 					parameters.add(until);
 				}
 				doModify(q, parameters.toArray(new Object[0]));
