@@ -64,7 +64,7 @@ public class MigrateApp
                 });
             }
             mm.migrate();
-            String user = console.readLine("Please provided an admin user:");
+            String user = console.readLine("Please provide an admin user:");
             // TODO: lo
             boolean match = true;
             String password;
