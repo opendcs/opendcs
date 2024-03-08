@@ -64,8 +64,10 @@ public class MigrateApp
                 });
             }
             mm.migrate();
-            String user = console.readLine("Please provide an admin user:");
-            // TODO: lo
+            console.printf("An initial admin user that can import initial data and perform initial operations with the GUIs.%s",
+                           System.lineSeparator());
+            String user = console.readLine("username:");
+
             boolean match = true;
             String password;
             do
@@ -85,8 +87,11 @@ public class MigrateApp
             roles.add("OTSDB_MGR");
             roles.add("OTSDB_ADMIN");
             mp.createUser(mm.getJdbiHandle(), user, password, roles);
-            console.printf("Now loading baseline data.");
+            console.printf("Now loading baseline data.%s", System.lineSeparator());
             mp.loadBaselineData(profile, user, password);
+            console.printf("Base line data has been imported. You may not begin using the software.%s", System.lineSeparator());
+            console.printf("If you will be running background apps such as CompProc and the RoutingScheduler,%s", System.lineSeparator());
+            console.printf("you should create a separate user. This is not currently covered in this application.%s", System.lineSeparator());
         }
         else
         {
@@ -130,14 +135,13 @@ public class MigrateApp
 
     public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c) throws IOException, FileNotFoundException
     {
-        c.printf("username:");
-        
         DecodesSettings settings = DecodesSettings.fromProfile(p);
-        
+        c.printf("Please the schema owning username and password for database at %s,%s",
+                 settings.editDatabaseLocation,System.lineSeparator());
+        c.printf("username:");
         String username = c.readLine();
         char[] pw = c.readPassword("password:");
         String password = new String(pw);
-        c.printf("Using jdbc URL: %s%s",settings.editDatabaseLocation,System.lineSeparator());
         return new SimpleDataSource(settings.editDatabaseLocation,username,password);
     }
 }
