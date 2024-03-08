@@ -36,8 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import opendcs.util.functional.ThrowingConsumer;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 /**
  * Used for pooled connection system. Allows code
  * to otherwise write a normal try-with-resources
@@ -48,7 +46,7 @@ import static org.slf4j.helpers.Util.getCallingClass;
  */
 public class WrappedConnection implements Connection, WrappedConnectionMBean
 {
-    private static Logger log = LoggerFactory.getLogger(getCallingClass());
+    private static Logger log = LoggerFactory.getLogger(WrappedConnection.class);
 
     private Connection realConnection;
     private final ThrowingConsumer<WrappedConnection,SQLException> onClose;

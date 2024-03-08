@@ -1,7 +1,5 @@
 package decodes.dbimport;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,7 +46,7 @@ DECODES database.
 */
 public class DbImport
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(DbImport.class);
 
 	/**
 	This program imports XML files into the database.

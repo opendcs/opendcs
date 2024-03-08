@@ -5,8 +5,6 @@ import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +26,7 @@ import it into the TSDB.
 */
 public class ImportComp
 {
-    private final Logger log = LoggerFactory.getLogger(getCallingClass());
+    private final Logger log = LoggerFactory.getLogger(ImportComp.class);
     private SiteDAI siteDAO = null;
     final private boolean createTimeSeries;
     final private boolean noOverwrite;

@@ -1,8 +1,5 @@
 package decodes.sql;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,8 +21,6 @@ import decodes.db.Database;
 import decodes.db.ConfigSensor;
 import decodes.db.DatabaseException;
 import decodes.db.DecodesScript;
-import decodes.db.DecodesScriptException;
-import decodes.db.DecodesScriptReader;
 import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
 import decodes.db.PlatformConfigList;
@@ -47,7 +42,7 @@ import opendcs.dao.DaoBase;
 */
 public class ConfigListIO extends SqlDbObjIo
 {
-    private static final Logger log = LoggerFactory.getLogger(getCallingClass());
+    private static final Logger log = LoggerFactory.getLogger(ConfigListIO.class);
     /**
     * Transient reference to the PlatformConfigList that we're currently
     * operating on.

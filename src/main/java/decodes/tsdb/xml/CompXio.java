@@ -28,8 +28,6 @@
 */
 package decodes.tsdb.xml;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -45,7 +43,6 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Element;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -61,7 +58,6 @@ import ilex.xml.XmlObjectParser;
 import ilex.xml.XmlOutputStream;
 import decodes.sql.DbKey;
 import decodes.tsdb.*;
-import decodes.xml.XmlDbTags;
 import decodes.db.Constants;
 import decodes.db.SiteName;
 import decodes.db.DataType;
@@ -72,7 +68,7 @@ XML Input/Output for Computational Meta Data.
 public class CompXio
 	implements XmlObjectParser, TaggedStringOwner
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(CompXio.class);
 	private String module;
 	private String filename;
 	private TimeSeriesDb theDb = null;

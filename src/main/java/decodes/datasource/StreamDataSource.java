@@ -11,8 +11,6 @@ import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Date;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -71,7 +69,7 @@ import decodes.util.PropertySpec;
 */
 public abstract class StreamDataSource extends DataSourceExec
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
+    private static org.slf4j.Logger log = LoggerFactory.getLogger(StreamDataSource.class);
     /** Some file data sources can have quite long messages */
     public static final int MAX_MESSAGE_LENGTH = 200000;
 

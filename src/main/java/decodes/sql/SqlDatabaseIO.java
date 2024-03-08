@@ -63,8 +63,6 @@
  */
 package decodes.sql;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.*;
@@ -144,7 +142,7 @@ public class SqlDatabaseIO
     extends DatabaseIO
     implements DatabaseConnectionOwner
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
+    private static org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
     /**
      * The "location" of the SQL database, as passed into the constructor.
      * This is the full string from either the "DatabaseLocation" or the

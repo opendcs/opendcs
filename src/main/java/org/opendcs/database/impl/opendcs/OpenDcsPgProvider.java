@@ -1,10 +1,7 @@
 package org.opendcs.database.impl.opendcs;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +32,7 @@ import opendcs.opentsdb.OpenTsdb;
  */
 public class OpenDcsPgProvider implements MigrationProvider
 {
-    private static final Logger log = LoggerFactory.getLogger(getCallingClass());
+    private static final Logger log = LoggerFactory.getLogger(OpenDcsPgProvider.class);
     public static final String NAME = "OpenDCS-Postgres";
 
     private Map<String,String> placeholders = new HashMap<>();
