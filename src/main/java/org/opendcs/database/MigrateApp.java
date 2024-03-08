@@ -89,7 +89,7 @@ public class MigrateApp
             mp.createUser(mm.getJdbiHandle(), user, password, roles);
             console.printf("Now loading baseline data.%s", System.lineSeparator());
             mp.loadBaselineData(profile, user, password);
-            console.printf("Base line data has been imported. You may not begin using the software.%s", System.lineSeparator());
+            console.printf("Base line data has been imported. You may now begin using the software.%s", System.lineSeparator());
             console.printf("If you will be running background apps such as CompProc and the RoutingScheduler,%s", System.lineSeparator());
             console.printf("you should create a separate user. This is not currently covered in this application.%s", System.lineSeparator());
         }
