@@ -28,6 +28,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import api.Gateway;
 
 /**
@@ -39,7 +42,9 @@ import api.Gateway;
  *
  */
 
-public class PortalBase extends HttpServlet { 
+public class PortalBase extends HttpServlet {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PortalBase.class);
 
     /**
      * Represents the relative url path for the corresponding web page.
@@ -91,7 +96,6 @@ public class PortalBase extends HttpServlet {
      * @throws IOException  
      */
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("doGet has been called from PortalBase.java...");
 
         //This needs to be run from the "GET" and not the constructor.  It gets the servlet context this way,
         //Where it cannot from the constructor.
@@ -99,7 +103,7 @@ public class PortalBase extends HttpServlet {
         {
             Gateway g = new Gateway();
             g.setApiDetails(this.getServletContext());
-            System.out.println(String.format("setting the base url of the api to %s.", g.baseUrl));
+            LOGGER.debug("Setting the base url of the api to {}.", g.baseUrl);
             this.setApiBaseUrl(g.baseUrl);
         }
 
@@ -111,25 +115,6 @@ public class PortalBase extends HttpServlet {
         RequestDispatcher rd = getServletContext().getRequestDispatcher(destination);
         rd.forward(request, response);           
     }
-
-    /**
-     * Handles the POST calls from the front end for the corresponding web page (This is not used currently, but it is a placeholder if it ever needs to be used).
-     *
-     * @param request            The incoming request.
-     * @param response            The incoming response.
-     * @throws ServletException
-     * @throws IOException 
-     */
-    /*
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        System.out.println("doPost has been called from PortalBase.java...");
-
-        response.setContentType("text/plain");
-        response.setCharacterEncoding("UTF-8");
-        response.setStatus(200);
-        response.getWriter().write("NOT USED");   
-    }
-     */
 
     /**
      * Sets the destination parameter

@@ -386,7 +386,6 @@ public class ApiConfigDAO
 			String[] qMarks = new String[ucIdArgs.size()];
 			Arrays.fill(qMarks, "?");
 			String tempQueryStr = "delete from UNITCONVERTER uc where uc.ID in (" + String.join(",", placeHolders) + ")";
-			System.out.println("Query Str: " + tempQueryStr);
 			q = String.format(tempQueryStr, qMarks);
 			doModifyV(q, ucIdArgs.toArray());
 		}

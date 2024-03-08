@@ -19,8 +19,9 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -45,7 +46,6 @@ import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.sec.UserToken;
-import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiEnvExpander;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
@@ -58,6 +58,8 @@ import org.opendcs.odcsapi.util.ProcWaiterThread;
 @Path("/")
 public class AppResources
 {
+	private static final String NO_TOKEN_MSG = "Valid token is required for this operation.";
+	private static final Logger LOGGER = LoggerFactory.getLogger(AppResources.class);
 	@Context HttpHeaders httpHeaders;
 
 	@GET
@@ -67,13 +69,12 @@ public class AppResources
 		throws WebAppException, DbException
 	{
 		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
-		Logger.getLogger(ApiConstants.loggerName).fine("getAppRefs");
+		LOGGER.trace("Getting App Refs.");
 		try (DbInterface dbi = new DbInterface();
 			ApiAppDAO dao = new ApiAppDAO(dbi))
 		{
 			ArrayList<ApiAppRef> ret = dao.getAppRefs();
-			Logger.getLogger(ApiConstants.loggerName).fine("Returning " + ret.size() + " apps.");
+			LOGGER.trace("Returning {} apps.", ret.size());
 			return ApiHttpUtil.createResponse(ret);
 		}
 	}
@@ -92,8 +93,7 @@ public class AppResources
 		if (appId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, 
 				"Missing required appid parameter.");
-		
-		Logger.getLogger(ApiConstants.loggerName).fine("getApp id=" + appId);
+		LOGGER.debug("Getting app with id {}", appId);
 		try (DbInterface dbi = new DbInterface();
 			ApiAppDAO dao = new ApiAppDAO(dbi))
 		{
@@ -109,12 +109,10 @@ public class AppResources
 			ApiLoadingApp app)
 		throws WebAppException, DbException, SQLException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine("post app received app " + app.getAppName() 
-			+ " with ID=" + app.getAppId());
+		LOGGER.debug("Post app received app {} with id {}", app.getAppName(), app.getAppId());
 		
 		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, NO_TOKEN_MSG);
 		
 		try (DbInterface dbi = new DbInterface();
 			ApiAppDAO dao = new ApiAppDAO(dbi))
@@ -133,12 +131,10 @@ public class AppResources
 		@QueryParam("appid") Long appId)
 		throws WebAppException, DbException, SQLException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(
-			"DELETE app received appId=" + appId + ", token=" + token);
+		LOGGER.debug("Delete app received request to delete app with id {}", appId);
 		
 		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, NO_TOKEN_MSG);
 		
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();
@@ -158,8 +154,7 @@ public class AppResources
 		throws WebAppException, DbException
 	{
 		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
-		Logger.getLogger(ApiConstants.loggerName).fine("getAppStat");
+		LOGGER.debug("Getting app stats");
 		try (DbInterface dbi = new DbInterface();
 			ApiAppDAO dao = new ApiAppDAO(dbi))
 		{
@@ -175,12 +170,11 @@ public class AppResources
 		@QueryParam("token") String token, @QueryParam("appid") Long appId)
 		throws WebAppException, DbException, SQLException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine("getAppEvents appId=" + appId);
+		LOGGER.debug("Gettin app events for app with id {}", appId);
 		
 		UserToken userToken = DbInterface.getTokenManager().getToken(httpHeaders, token);
 		if (userToken == null)
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, NO_TOKEN_MSG);
 
 		ApiEventClient cli = userToken.getEventClient(appId);
 		ApiAppStatus appStat = null;
@@ -216,7 +210,7 @@ public class AppResources
 					return ApiHttpUtil.createResponse(new ArrayList<ApiAppEvent>());
 				cli = new ApiEventClient(appId, appStat.getHostname(), port, appStat.getAppName(), appStat.getPid());
 				cli.connect();
-System.out.println("Connected to " + appStat.getHostname() + ":" + port);
+				LOGGER.debug("Connected to {}:{}", appStat.getHostname(), port);
 				userToken.setEventClient(appId, cli);
 			}
 			else if (appStat.getPid() != null && appStat.getPid() != cli.getPid())
@@ -231,24 +225,23 @@ System.out.println("Connected to " + appStat.getHostname() + ":" + port);
 					return ApiHttpUtil.createResponse(new ArrayList<ApiAppEvent>()); // app not running
 				cli = new ApiEventClient(appId, appStat.getHostname(), port, appStat.getAppName(), appStat.getPid());
 				cli.connect();
-System.out.println("Connected to " + appStat.getHostname() + ":" + port);
+				LOGGER.debug("Connected to {}:{}", appStat.getHostname(), port);
 				userToken.setEventClient(appId, cli);
 			}
 			return ApiHttpUtil.createResponse(cli.getNewEvents());
 		}
 		catch(ConnectException ex)
 		{			
-			throw new WebAppException(ErrorCodes.IO_ERROR, "Cannot connect to " + appStat.getAppName() + ".");
+			throw new WebAppException(ErrorCodes.IO_ERROR,
+					String.format("Cannot connect to %s.", appStat.getAppName()), ex);
 			// NOTE: event client added to user token ONLY if connect succeeds.
 		}
 		catch(IOException ex)
 		{
-			System.out.print("Error in getAppEvents: " + ex);
-			ex.printStackTrace(System.out);
 			cli.disconnect();
 			userToken.setEventClient(appId, null);
-			
-			throw new WebAppException(ErrorCodes.IO_ERROR, "Event socket to " + appStat.getAppName() + " closed by app.");
+			throw new WebAppException(ErrorCodes.IO_ERROR,
+					String.format("Event socket to %s closed by app", appStat.getAppId()), ex);
 		}
 	}
 	
@@ -260,13 +253,12 @@ System.out.println("Connected to " + appStat.getHostname() + ":" + port);
 			@QueryParam("appid") Long appId)
 		throws WebAppException, DbException, SQLException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine("post appstart received appId=" + appId);
+		LOGGER.debug("Post for appstart received with appId={}", appId);
 		if (appId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, "appId parameter required for this operation.");
 		
 		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, NO_TOKEN_MSG);
 		
 		try (DbInterface dbi = new DbInterface();
 			ApiAppDAO dao = new ApiAppDAO(dbi))
@@ -288,18 +280,17 @@ System.out.println("Connected to " + appStat.getHostname() + ":" + port);
 					"App id=" + appId + " (" + loadingApp.getAppName() + ") has no 'startCmd' property.");
 
 			// ProcWaiterThread runBackground to execute command, use callback.
-			ProcWaiterCallback pwcb = 
+			ProcWaiterCallback pwcb =
 				new ProcWaiterCallback()
 				{
 					@Override
 					public void procFinished(String procName, Object obj, int exitStatus)
 					{
 						ApiLoadingApp loadingApp = (ApiLoadingApp)obj;
-						Logger.getLogger(ApiConstants.loggerName).info("appTermination: "
-							+ "App " + loadingApp.getAppName() + " terminated with exit status"
-							+ exitStatus);
+						LOGGER.info("App Termination: app {} was terminated with exit status {}",
+								loadingApp.getAppName(), exitStatus);
 					}
-				
+
 				};
 
 			ProcWaiterThread.runBackground(ApiEnvExpander.expand(startCmd), "App:" + loadingApp.getAppName(), 
@@ -322,13 +313,12 @@ System.out.println("Connected to " + appStat.getHostname() + ":" + port);
 		@QueryParam("appid") Long appId)
 		throws WebAppException, DbException, SQLException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine("post appstop received appId=" + appId);
+		LOGGER.debug("Post appstop received on app with id {}", appId);
 		if (appId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, "appId parameter required for this operation.");
 		
 		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, NO_TOKEN_MSG);
 		
 		try (DbInterface dbi = new DbInterface();
 			ApiAppDAO dao = new ApiAppDAO(dbi))

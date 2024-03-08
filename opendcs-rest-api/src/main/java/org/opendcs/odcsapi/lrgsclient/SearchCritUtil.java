@@ -23,9 +23,14 @@ import org.opendcs.odcsapi.beans.ApiSearchCrit;
 import org.opendcs.odcsapi.dao.ApiPlatformDAO;
 import org.opendcs.odcsapi.dao.DbException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SearchCritUtil
 {
+	public static String module = "SearchCritUtil";
+	private static final Logger LOGGER = LoggerFactory.getLogger(SearchCritUtil.class);
+
 	/**
 	 * Preprocess the sc by translating names to IDs, etc., then
 	 * convert to string and return. The passed searchcrit remains
@@ -34,8 +39,7 @@ public class SearchCritUtil
 	 * @return a string version suitable for transmit over DDS.
 	 * @throws SQLException 
 	 */
-	public static String sc2String(ApiSearchCrit sc, ApiPlatformDAO platformDAO) throws SQLException
-	{
+	public static String sc2String(ApiSearchCrit sc, ApiPlatformDAO platformDAO) throws SQLException, DbException {
 		StringBuffer ret = new StringBuffer("#\n# API Search Criteria\n#\n");
 		String lineSep = "\n";
 		
@@ -51,14 +55,14 @@ public class SearchCritUtil
 		}
 
 		// Attempt to convert names to addrs, leave as-is if conversion fails.
-System.out.println("sc2String there are " + sc.getPlatformNames().size() + " platform names.");
+		LOGGER.debug("sc2String there are {} platform names.", sc.getPlatformNames().size());
 		for(String platname : sc.getPlatformNames())
 		{
 			String tmid;
 			try
 			{
 				tmid = platformDAO.platformName2transportId(platname);
-System.out.println("translate name '" + platname + "' to ID=" + tmid);
+				LOGGER.debug("translate name '{}' to ID={}", platname, tmid);
 				if (tmid != null)
 					ret.append("DCP_ADDRESS: " + tmid + lineSep);
 				else
@@ -66,8 +70,8 @@ System.out.println("translate name '" + platname + "' to ID=" + tmid);
 			}
 			catch (DbException ex)
 			{
-				System.err.println("SearchCritUtil.sc2String cannot lookup platname '" 
-					+ platname + "': " + ex);
+				throw new DbException(module, ex,
+						String.format("SearchCritUtil.sc2String cannot lookup platname '%s'", platname));
 			}
 		}
 

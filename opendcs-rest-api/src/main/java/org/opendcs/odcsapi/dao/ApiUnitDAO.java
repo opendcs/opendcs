@@ -20,10 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-import org.opendcs.odcsapi.beans.ApiAlgorithm;
-import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
 import org.opendcs.odcsapi.beans.ApiDataType;
-import org.opendcs.odcsapi.beans.ApiSeason;
 import org.opendcs.odcsapi.beans.ApiUnit;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
@@ -185,9 +182,7 @@ public class ApiUnitDAO
 	public void writeEU(ApiUnit eu, String fromabbr)
 		throws DbException, WebAppException, SQLException
 	{
-	    System.out.println("Before get abbr");
 		String abbr = eu.getAbbr();
-		System.out.println("After get abbr.");
 		if (abbr == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, "Engingeering Unit Abbreviation cannot be null.");
 		//abbr = abbr.trim();
@@ -196,8 +191,7 @@ public class ApiUnitDAO
 		//	+ sqlString(abbr.toLowerCase());
 		String q = "select UNITABBR from ENGINEERINGUNIT where lower(UNITABBR) = ?";
 		String abbrLower = abbr.toLowerCase();
-		
-        System.out.println("Before Try");
+
         try
         {
             Connection conn = null;
@@ -209,24 +203,20 @@ public class ApiUnitDAO
             String theType = "update";
             if (fromabbr == null)
             {
-                System.out.println("In the from abbr is null");
                 theType = "new";
                 if (abbrExists)
                 {
-                    System.out.println("Error 1");
                     throw new WebAppException(ErrorCodes.IO_ERROR,
                             "You are trying to create an engineering unit, but that unit already exists.");
                 }
                 else
                 {
-                    System.out.println("Insert 1");
                     q = "insert into ENGINEERINGUNIT values (?,?,?,?)";
                     doModifyV(q, eu.getAbbr(), eu.getName(), eu.getFamily(), eu.getMeasures());
                 }
             }
             else
             {
-                System.out.println("from abbr not null");
                 q = "select UNITABBR from ENGINEERINGUNIT where lower(UNITABBR) = ?";
                 rs = doQueryPs(conn, q, fromabbr.toLowerCase());
                 boolean fromAbbrExists = true;
@@ -234,31 +224,26 @@ public class ApiUnitDAO
                     fromAbbrExists = false;
                 if (!fromAbbrExists)
                 {
-                    System.out.println("Error 2");
                     throw new WebAppException(ErrorCodes.IO_ERROR,
                             "You are trying to update an engineering unit, but the one you are updating from does not exist.");
                 }
                 else if (abbrExists && !fromabbr.toLowerCase().contentEquals(abbrLower))
                 {
-                    System.out.println("Error 3");
-                    System.out.println("ABBR Lower: " + abbrLower);
-                    System.out.println("From ABBR Lower: " + fromabbr.toLowerCase());
                     throw new WebAppException(ErrorCodes.IO_ERROR,
                             "You are trying to create an engineering unit, but that unit you are updating to already exists.");
                 }
                 else
                 {
-                    System.out.println("Update 1");
                     q = "update ENGINEERINGUNIT set UNITABBR = ?, NAME = ?, FAMILY = ?, MEASURES = ? "
                             + "where lower(UNITABBR) = ?";
                     doModifyV(q, eu.getAbbr(), eu.getName(), eu.getFamily(), eu.getMeasures(), fromabbr.toLowerCase());
                 }
             }
         }
-        finally
-        {
-            System.out.println("This is complete.");
-        }
+		catch (DbException | WebAppException | SQLException ex)
+		{
+			throw new WebAppException(ErrorCodes.DATABASE_ERROR, "There was an error writing the engineering unit", ex);
+		}
 	}
 	
 	public void deleteEU(String abbr)

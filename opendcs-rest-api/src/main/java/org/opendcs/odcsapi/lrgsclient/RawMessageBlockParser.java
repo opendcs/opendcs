@@ -17,7 +17,9 @@ package org.opendcs.odcsapi.lrgsclient;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -40,6 +42,7 @@ import org.xml.sax.XMLReader;
 public class RawMessageBlockParser
 	implements XmlObjectParser
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(RawMessageBlockParser.class);
 	private static final String module = "RawMessageParser";
 	
 	/** SAX parser object */
@@ -60,7 +63,7 @@ public class RawMessageBlockParser
 		parser = sp.getXMLReader();
 		parser.setFeature("http://xml.org/sax/features/namespaces", true);
 
-		ErrorHandler eh = new PrintStreamErrorHandler(System.out);
+		ErrorHandler eh = new PrintStreamErrorHandler(LOGGER);
 		xhp = new XmlHierarchyParser(eh);
 		parser.setErrorHandler(eh);
 		xhp.setErrorHandler(eh);
@@ -156,17 +159,17 @@ public class RawMessageBlockParser
 	
 	public void warning(String msg)
 	{
-		Logger.getLogger(ApiConstants.loggerName).warning(module + " " + msg);
+		LOGGER.warn("{} {}", module, msg);
 	}
 
 	public void info(String msg)
 	{
-		Logger.getLogger(ApiConstants.loggerName).info(module + " " + msg);
+		LOGGER.info("{} {}", module, msg);
 	}
 
 	public void debug(String msg)
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(module + " " + msg);
+		LOGGER.debug("{} {}", module, msg);
 	}
 	
 	public static String getAttrIgnoreCase( Attributes atts, String name )

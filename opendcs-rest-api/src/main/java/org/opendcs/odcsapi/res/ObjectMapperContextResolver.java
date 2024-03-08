@@ -41,11 +41,10 @@ public class ObjectMapperContextResolver implements ContextResolver<ObjectMapper
 
     private ObjectMapper createObjectMapper() 
     {
-    	System.out.println("createObjectMapper");
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper objMap = new ObjectMapper();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'[z]");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        mapper.setDateFormat(sdf);
-        return mapper;
+        objMap.setDateFormat(sdf);
+        return objMap;
     }
 }

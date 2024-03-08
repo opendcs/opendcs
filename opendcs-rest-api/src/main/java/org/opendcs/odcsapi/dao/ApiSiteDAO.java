@@ -324,15 +324,10 @@ public class ApiSiteDAO extends ApiDaoBase
             args.add(newSite.getPublicName());
         }
 		
-		q = q + " WHERE ID = ?"; // + id;
-		System.out.println("Q: " + q);
+		q = q + " WHERE ID = ?";
 		
 		args.add(id);
-		
-		for (int x = 0; x < args.size(); x++)
-		{
-		    System.out.println("Arg: " + args.get(x).toString());
-		}
+
 		doModifyV(q, args.toArray());
 	
 		updateAllSiteNames(newSite, oldSite);
@@ -412,10 +407,8 @@ public class ApiSiteDAO extends ApiDaoBase
 		for(Object k : oldSite.getProperties().keySet())
 		{
 			String propname = (String)k;
-			System.out.println("Old Site Props: " + propname);
 			if (newSite.getProperties().getProperty(propname) == null)
 			{
-				System.out.println("Found a null");
 				// An old prop exists that was removed in the new site
 				doModifyV("delete from SITE_PROPERTY where SITE_ID = ? and PROP_NAME = ?", newSite.getSiteId(), propname);
 			}

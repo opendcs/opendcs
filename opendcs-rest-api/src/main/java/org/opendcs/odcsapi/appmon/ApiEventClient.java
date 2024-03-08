@@ -29,9 +29,13 @@ import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiBasicClient;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ApiEventClient
 	extends ApiBasicClient
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApiEventClient.class);
 	private Long appId = null;
 	private long lastActivity = 0L;
 	private String appName = null;
@@ -39,14 +43,6 @@ public class ApiEventClient
 	private SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yy HH:mm:ss");
 	private long pid = 0L;
 
-	public void connect() 
-		throws UnknownHostException, IOException
-	{
-System.out.println("Connecting to " + this.host + ":" + this.port);
-		super.connect();
-		reader = new BufferedReader(new InputStreamReader(this.input));
-	}
-	
 	public ApiEventClient(Long appId, String hostname, int port, String appName, long pid)
 	{
 		super(hostname, port);
@@ -54,14 +50,21 @@ System.out.println("Connecting to " + this.host + ":" + this.port);
 		this.appName = appName;
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 		this.pid = pid;
-System.out.println("ApiEventClient appId=" + appId + ", host=" + hostname + ", port=" + port + ", name=" + appName);
-super.debug = System.out;
+		LOGGER.debug("ApiEventClient appId={}, host={}, port={}, name={}", appId, hostname, port, appName);
+	}
+
+	public void connect() 
+		throws UnknownHostException, IOException
+	{
+		LOGGER.debug("Connecting to {}:{}", this.host, this.port);
+		super.connect();
+		reader = new BufferedReader(new InputStreamReader(this.input));
 	}
 	
 	public ArrayList<ApiAppEvent> getNewEvents()
 		throws IOException, WebAppException
 	{
-System.out.println("ApiEventClient.getNewEvents(), socket.isClosed=" + socket.isClosed() + ", isConnected=" + socket.isConnected());
+		LOGGER.debug("ApiEventClient.getNewEvents(), socket.isClosed={}, isConnected={}", socket.isClosed(), socket.isConnected());
 		lastActivity = System.currentTimeMillis();
 		ArrayList<ApiAppEvent> ret = new ArrayList<ApiAppEvent>();
 		
@@ -73,12 +76,12 @@ System.out.println("ApiEventClient.getNewEvents(), socket.isClosed=" + socket.is
 		}
 		else
 		{
-System.out.println("reading events, reader.ready=" + reader.ready());
-int n = 0;
+			LOGGER.debug("reading events, reader.ready={}",  reader.ready());
+			int n = 0;
 			while (reader.ready())
 			{
 				String line = reader.readLine();
-n++;
+				n++;
 				String origLine = line;
 				if (line == null)
 				{
@@ -91,7 +94,7 @@ n++;
 				int sp = line.indexOf(' ');
 				if (sp < 0)
 				{
-					System.err.print("Read event line '" + origLine + "' from " + appName + " with no priority -- skipped.");
+					LOGGER.error("Read event line '{}' from {} with no priority -- skipped.", origLine, appName);
 					continue;
 				}
 				ApiAppEvent ev = new ApiAppEvent();
@@ -103,15 +106,16 @@ n++;
 				line = line.substring(sp).trim();
 				if (line.length() < 17)
 				{
-					System.err.print("Read event line '" + origLine + "' from " + appName 
-						+ " with missing or short date/time field -- skipped.");
+					LOGGER.error("Read event line '{}' from {} with missing or short date/time field -- skipped.", origLine, appName);
 					continue;
 				}
-				try { ev.setEventTime(sdf.parse(line)); }
+				try
+				{
+					ev.setEventTime(sdf.parse(line));
+				}
 				catch(ParseException ex)
 				{
-					System.err.print("Read event line '" + origLine + "' from " + appName 
-							+ " with improper date/time field -- skipped.");
+					LOGGER.error("Read event line '{}' from {} with improper date/time field -- skipped.", origLine, appName);
 					continue;
 				}
 				
@@ -120,7 +124,7 @@ n++;
 				
 				ret.add(ev);
 			}
-System.out.println("Read " + n + " lines from socket.");
+			LOGGER.debug("Read {} lines from socket.", n);
 		}
 
 		return ret;

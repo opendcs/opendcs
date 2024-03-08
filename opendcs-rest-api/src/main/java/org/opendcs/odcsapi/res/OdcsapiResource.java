@@ -116,7 +116,6 @@ public class OdcsapiResource
 	public Response postCredentials()
 		throws WebAppException, DbException
 	{
-		System.out.println("credentials with no args.");
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface())
 		{

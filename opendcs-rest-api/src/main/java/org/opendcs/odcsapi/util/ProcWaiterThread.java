@@ -59,7 +59,9 @@ package org.opendcs.odcsapi.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 You have to be careful when spawning processes from within Java to process
@@ -72,6 +74,7 @@ Any output from the process is converted to log messages.
 */
 public class ProcWaiterThread extends Thread
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ProcWaiterThread.class);
 	private static final String module = "ProcWaiterThread";
 	
 	/**
@@ -249,21 +252,20 @@ public class ProcWaiterThread extends Thread
 	*/
 	public static void main( String[] args ) throws Exception
 	{
-		System.out.println("Executing '" + args[0] + "' output: ");
-		System.out.println(runForeground(args[0], args[1]));
+		LOGGER.debug("Executing '{}' output: {}", args[0], runForeground(args[0], args[1]));
 	}
 	
 	public static void debug(String msg)
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(module + " " + msg);
+		LOGGER.debug("{} {}", module, msg);
 	}
 	public static void info(String msg)
 	{
-		Logger.getLogger(ApiConstants.loggerName).info(module + " " + msg);
+		LOGGER.info("{} {}", module, msg);
 	}
 	public static void warning(String msg)
 	{
-		Logger.getLogger(ApiConstants.loggerName).warning(module + " " + msg);
+		LOGGER.warn("{} {}", module, msg);
 	}
 
 }

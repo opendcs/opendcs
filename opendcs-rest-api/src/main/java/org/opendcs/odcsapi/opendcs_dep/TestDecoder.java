@@ -134,7 +134,6 @@ public class TestDecoder
 				PMParser pmParser = PMParser.getPMParser(mediumType);
 				if (pmParser == null)
 				{
-					System.out.println("Cannot get pmParser for mediumType '" + mediumType + "'");
 					throw new WebAppException(ErrorCodes.BAD_CONFIG, 
 						"Cannot get pmParser for mediumType '" + mediumType + "'");
 				}

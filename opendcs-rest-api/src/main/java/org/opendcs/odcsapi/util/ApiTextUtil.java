@@ -119,12 +119,13 @@
 */
 package org.opendcs.odcsapi.util;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.text.*;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
 * This class contains a set of static methods that supplement the methods
@@ -132,6 +133,7 @@ import java.text.*;
 */
 public class ApiTextUtil
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApiTextUtil.class);
 	/**
 	* Skip white space in the string starting at the specified parse
 	* position. Leave 'pp' updated to the first non-whitespace character.
@@ -742,135 +744,15 @@ public class ApiTextUtil
 	public static void test_Assign( )
 	{
 		String inp = "#// abcdeFOO=BAR\n";
-		System.out.println("ScanAssignment '" + inp + "' results in '" +
-			scanAssign(inp, "FOo", 1, true) + "'");
+		LOGGER.debug("ScanAssignment '{}' results in '{}'",
+				inp, scanAssign(inp, "FOo", 1, true));
 
 		inp = "#// abcdeFOO=\"string in doublequotes\"";
-		System.out.println("ScanAssignment '" + inp + "' results in '" +
-			scanAssign(inp, "FOo", 1, true) + "'");
+		LOGGER.debug("ScanAssignment '{}' results in '{}'",
+				inp, scanAssign(inp, "FOo", 1, true));
 
 		inp = "#// abcdeFOO = 'string in singlequotes'";
-		System.out.println("ScanAssignment '" + inp + "' results in '" +
-			scanAssign(inp, "FOo", 1, true) + "'");
-	}
-
-	public static void test_FixField( )
-	{
-		String orig = "AAAABBCCCDDDDDDDDEF";
-		String fields[] = getFixedFields(orig, new int[]{4, 2, 3, 8, 1, 2});
-		System.out.println("orig '" + orig + "'");
-		for(int i=0; i<fields.length; i++)
-			System.out.println("field[" + i + "] '" + fields[i] + "'");
-	}
-
-  /**
-	* Test the splitLine() function above.
-	*/
-	public static void test_splitLine( )
-    {
-        System.out.println("test_splitLine:\n");
-
-		String tests[] = { "This is a short line.",
-			"This is a much longer line but it can be easily broken along white space into much shorter lines for easy outputting.",
-			"Thisisamuchlongerlinebutwhichcan'tbeeasilybrokenalongwhitespaceintomuchshorterlinesforeasyoutputting.",
-			"Thisisamuchlongerlinebutwhichcan'tbeeasilybrokenalong whitespaceintomuchshorterlinesforeasyoutputting."
-		};
-
-		for(int i=0; i<tests.length; i++)
-		{
-			System.out.println("ORIGINAL: " + tests[i]);
-			String split[] = splitLine(tests[i], 40);
-			for(int j=0; j<split.length; j++)
-				System.out.println("  " + j + ": " + split[j]);
-		}
-	}
-
-  /**
-	* Test the split() function.
-	*/
-	public static void test_split( )
-    {
-        System.out.println("\n\ntest_split:");
-
-        String tests[] = {
-            "a:b:c", "a:b:", ":b:c", "a::c", ""
-        };
-        for (int i = 0; i < tests.length; ++i) {
-            String[] r = split(tests[i], ':');
-
-            System.out.print("\nResult of splitting '" + tests[i] + "' is ");
-            for (int j = 0; j < r.length; ++j) {
-                System.out.print("'" + r[j] + "' ");
-            }
-        }
-    }
-
-  /**
-	* Test the strEqual function.
-	*/
-	public static void test_strEqual( )
-    {
-        System.out.println("\n\ntest_strEqual:");
-
-        String[] s0s = { null, "a", "A" };
-        String[] s1s = { null, "a", "A" };
-        for (int i = 0; i < 3; ++i) {
-            for (int j = 0; j < 3; ++j) {
-                String s0 = s0s[i];
-                String s1 = s1s[j];
-                System.out.println("s0 == " + s0 + ", s1 == " + s1 + ", " +
-                    "result is " + strEqual(s0, s1));
-            }
-        }
-    }
-	
-	/** Return the first line of a string. Useful for displaying 'brief' descriptions
-	 * in a single column on a GUI.
-	 */
-	public static String getFirstLine(String tmp)
-	{
-		if (tmp == null)
-			return "";
-		int len = tmp.length();
-		int ci = len;
-		if (ci > 60)
-			ci = 60;
-		int i = tmp.indexOf('\r');
-		if (i > 0 && i < ci)
-			ci = i;
-		i = tmp.indexOf('\n');
-		if (i > 0 && i < ci)
-			ci = i;
-		i = tmp.indexOf('.');
-		if (i > 0 && i < ci)
-			ci = i;
-		if (ci < len)
-			return tmp.substring(0,ci);
-		else
-			return tmp;
-	}
-	
-	/**
-	 * Splits a string into words. Strings within double quotes are a single String
-	 * in the output.
-	 * @param text
-	 * @return
-	 */
-	public static String[] splitQuoted(String text)
-	{
-		ArrayList<String> results = new ArrayList<String>();
-	    String regex = "\"([^\"]*)\"|(\\S+)";
-
-	    Matcher m = Pattern.compile(regex).matcher(text);
-	    while (m.find())
-	    {
-	    	String s = (m.group(1) != null) ? m.group(1) : m.group(2);
-	    	results.add(s);
-	    }
-	    String ret[] = new String[results.size()];
-	    for(int idx = 0; idx < ret.length; idx++)
-	    	ret[idx] = results.get(idx);
-	    return ret;
+		LOGGER.debug("ScanAssignment '{}' results in '{}'",
+				inp, scanAssign(inp, "FOo", 1, true));
 	}
 }
-

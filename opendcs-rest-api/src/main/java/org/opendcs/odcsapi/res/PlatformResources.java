@@ -56,7 +56,6 @@ public class PlatformResources
 		)
 		throws WebAppException, DbException, SQLException
 	{
-		System.out.println("platformrefs");
 		DbInterface.getTokenManager().checkToken(httpHeaders, token);
 		
 		HashMap<String, ApiPlatformRef> ret = new HashMap<String, ApiPlatformRef>();

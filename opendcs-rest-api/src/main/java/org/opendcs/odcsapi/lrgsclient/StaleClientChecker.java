@@ -15,7 +15,11 @@
 
 package org.opendcs.odcsapi.lrgsclient;
 
+import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This runs a continuous thread to check periodically for stale LDDS client connections
@@ -24,6 +28,8 @@ import org.opendcs.odcsapi.hydrojson.DbInterface;
 public class StaleClientChecker
 	extends Thread
 {
+	public static String module = "StaleClientChecker";
+	private static final Logger LOGGER = LoggerFactory.getLogger(StaleClientChecker.class);
 
 	@Override
 	public void run()
@@ -35,16 +41,23 @@ public class StaleClientChecker
 				sleep(30000L);
 				checkClients();
 			}
-			catch (InterruptedException e)
+			catch (InterruptedException | DbException e)
 			{
+				LOGGER.error("There was an error checking for stale clients: {0}", e);
 			}
 		}
 
 	}
 	
-	private void checkClients()
+	private void checkClients() throws DbException
 	{
-		DbInterface.getTokenManager().checkStaleConnections();
-	}
+        try {
+            DbInterface.getTokenManager().checkStaleConnections();
+        }
+		catch (DbException e)
+		{
+            throw new DbException(module, e, "Error checking client connections.");
+        }
+    }
 
 }
