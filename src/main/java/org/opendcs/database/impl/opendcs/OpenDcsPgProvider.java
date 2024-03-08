@@ -180,8 +180,8 @@ public class OpenDcsPgProvider implements MigrationProvider
     public void loadBaselineData(Profile profile, String username, String password) throws IOException
     {
         /* Initializing database with default data */
-        System.setProperty("DCS_PASS", username);
-        System.setProperty("DCS_USER", password);
+        System.setProperty("DCS_USER", username);
+        System.setProperty("DCS_PASS", password);
         Properties creds = new Properties();
         creds.put("username", username);
         creds.put("password", password);

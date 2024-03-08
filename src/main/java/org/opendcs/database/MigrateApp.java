@@ -85,6 +85,7 @@ public class MigrateApp
             roles.add("OTSDB_MGR");
             roles.add("OTSDB_ADMIN");
             mp.createUser(mm.getJdbiHandle(), user, password, roles);
+            console.printf("Now loading baseline data.");
             mp.loadBaselineData(profile, user, password);
         }
         else

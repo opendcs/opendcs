@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -56,6 +58,14 @@ public class OpenDCSPGConfiguration implements Configuration
     private static AtomicBoolean started = new AtomicBoolean(false);
     private HashMap<Object,Object> environmentVars = new HashMap<>();
 
+    // FUTURE work: allow passing of override values to bypass the test container creation
+    // ... OR setup a separate testcontainer library like USACE did for CWMS.
+    private static final String DATABASE_NAME = "dcs";
+    private static final String SCHEMA_OWNING_USER = "dcs_owner";
+    private static final String SCHEMA_OWNING_USER_PASSWORD = "dcs_owner_password";
+    private static final String DCS_ADMIN_USER = "dcs_admin";
+    private static final String DCS_ADMIN_USER_PASSWORD = "dcs_admin_password";
+
     public OpenDCSPGConfiguration(File userDir) throws Exception
     {
         this.userDir = userDir;
@@ -105,9 +115,9 @@ public class OpenDCSPGConfiguration implements Configuration
         if(db == null)
         {
             db = new PostgreSQLContainer<>("postgres:15.3")
-                    .withUsername("dcs_owner")
-                    .withDatabaseName("dcs")
-                    .withPassword("dcs_owner");
+                    .withUsername(SCHEMA_OWNING_USER)
+                    .withDatabaseName(DATABASE_NAME)
+                    .withPassword(SCHEMA_OWNING_USER_PASSWORD);
         }
 
         db.start();
@@ -121,26 +131,31 @@ public class OpenDCSPGConfiguration implements Configuration
         mp.setPlaceholderValue("NUM_TEXT_TABLES","1");
         mm.migrate();
         Jdbi jdbi = mm.getJdbiHandle();
-        jdbi.useHandle(h -> {
-            log.info("Creating application user.");
-            h.execute("DO $do$ begin create user dcs_proc with password 'dcs_proc'; exception when duplicate_object then raise notice 'user exists'; end; $do$");
-            h.execute("GRANT \"OTSDB_ADMIN\" TO dcs_proc");
-            h.execute("GRANT \"OTSDB_MGR\" TO dcs_proc");
-            log.info("Setting authentication environment vars.");
-            environmentVars.put("DB_USERNAME","dcs_proc");
-            environmentVars.put("DB_PASSWORD","dcs_proc");
-
-            environment.set("DB_USERNAME","dcs_proc");
-            environment.set("DB_PASSWORD","dcs_proc");
-            ilex.util.Logger originalLog = ilex.util.Logger.instance();
-            ilex.util.FileLogger fl = new FileLogger("test", new File(userDir,"baseline-import.log").getAbsolutePath(), 200*1024*1024);
+        log.info("Creating application user.");
+        List<String> roles = new ArrayList<>();
+        roles.add("OTSDB_ADMIN");
+        roles.add("OTSDB_MGR");
+        mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
+        log.info("Setting authentication environment vars.");
+        environmentVars.put("DB_USERNAME",DCS_ADMIN_USER);
+        environmentVars.put("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
+        ilex.util.Logger originalLog = ilex.util.Logger.instance();
+        ilex.util.FileLogger fl = null;
+        try
+        {
+            fl = new FileLogger("test", new File(userDir,"baseline-import.log").getAbsolutePath(), 200*1024*1024);
             fl.setMinLogPriority(ilex.util.Logger.E_DEBUG3);
-            fl.rotateLogs();
             ilex.util.Logger.setLogger(fl);
-            mp.loadBaselineData(profile, "dcs_proc", "dcs_proc");
-            ilex.util.Logger.setLogger(originalLog);
-            fl.close();
-        });
+            mp.loadBaselineData(profile, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD);
+        }
+        finally
+        {
+            if (fl != null)
+            {
+                ilex.util.Logger.setLogger(originalLog);
+                fl.close();
+            }
+        }
         setStarted();
     }
 
@@ -193,8 +208,8 @@ public class OpenDCSPGConfiguration implements Configuration
     {
         OpenTsdb db = new OpenTsdb();
         Properties credentials = new Properties();
-        credentials.put("username","dcs_proc");
-        credentials.put("password","dcs_proc");
+        credentials.put("username",DCS_ADMIN_USER);
+        credentials.put("password",DCS_ADMIN_USER_PASSWORD);
         db.connect("utility",credentials);
         return db;
     }

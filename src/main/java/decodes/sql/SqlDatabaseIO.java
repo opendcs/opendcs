@@ -315,8 +315,8 @@ public class SqlDatabaseIO
         }
         catch (Exception ex)
         {
-            String msg = "Cannot load JDBC driver class '{}'";
-            log.atError().setCause(ex).log(msg, driverClass);
+            String msg = String.format("Cannot load JDBC driver class '%s'", driverClass);
+            log.atError().setCause(ex).log(msg);
             throw new DatabaseConnectException(msg, ex);
         }
 

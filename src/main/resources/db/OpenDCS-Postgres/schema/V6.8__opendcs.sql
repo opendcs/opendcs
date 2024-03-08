@@ -21,6 +21,7 @@ COMMENT ON ROLE "OTSDB_COMP_EXEC" IS 'Execute computations - write ts data, read
 CREATE ROLE "OTSDB_MGR"
   NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
 GRANT "OTSDB_COMP_EXEC" TO "OTSDB_MGR";
+GRANT "OTSDB_USER" TO "OTSDB_MGR";
 COMMENT ON ROLE "OTSDB_MGR" IS 'Manager - full R/W access to meta data';
 
 CREATE ROLE "OTSDB_ADMIN"
@@ -28,6 +29,7 @@ CREATE ROLE "OTSDB_ADMIN"
 GRANT "OTSDB_MGR" TO "OTSDB_ADMIN";
 COMMENT ON ROLE "OTSDB_ADMIN" IS 'Full access to all tables. Can create other roles for users.';
 
+--TODO: grant schema usage appropriately.
 /* Create Tables */
 
 CREATE TABLE CONFIGSENSOR
