@@ -16,6 +16,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.helpers.TestResources;
 
 import decodes.tsdb.BadTimeSeriesException;
@@ -43,6 +44,7 @@ public class TimeSeriesDaoIT extends AppTestBase
     @CsvSource({
         "timeseries/${impl}/regular_ts.tsimport"
     })
+    @EnableIfTsDb
     public void test_event_logger(String inputFile) throws Exception
     {
         TsImporter importer = new TsImporter(TimeZone.getTimeZone("UTC"), null, (tsIdStr) -> 
