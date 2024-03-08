@@ -45,7 +45,7 @@ public class TimeSeriesDaoIT extends AppTestBase
         "timeseries/${impl}/regular_ts.tsimport"
     })
     @EnableIfTsDb
-    public void test_event_logger(String inputFile) throws Exception
+    public void test_timeseries_opertions(String inputFile) throws Exception
     {
         TsImporter importer = new TsImporter(TimeZone.getTimeZone("UTC"), null, (tsIdStr) -> 
         {
