@@ -1209,7 +1209,6 @@ Logger.instance().info("LauncherFrame ctor");
             groupEditButton.setEnabled(dbSupportsTS);
             compeditButton.setEnabled(dbSupportsTS);
             runcompButton.setEnabled(dbSupportsTS);
-            algoeditButton.setEnabled(dbSupportsTS);
         }
         catch (IOException ex)
         {
@@ -1223,17 +1222,6 @@ Logger.instance().info("LauncherFrame ctor");
                                           JOptionPane.ERROR_MESSAGE);
             return;
         }
-<<<<<<< HEAD:core/src/main/java/decodes/launcher/LauncherFrame.java
-
-        ProfileSettings.loadFromProperties(props);
-
-        boolean dbSupportsTS = ProfileSettings.editDatabaseTypeCode != DecodesSettings.DB_XML;
-        tseditButton.setEnabled(dbSupportsTS);
-        groupEditButton.setEnabled(dbSupportsTS);
-        compeditButton.setEnabled(dbSupportsTS);
-        runcompButton.setEnabled(dbSupportsTS);
-=======
->>>>>>> 73a510fd (Bugfix/launcher default profile (#483)):src/main/java/decodes/launcher/LauncherFrame.java
     }
     // Time Series Button
     private void groupEditButtonPressed()
@@ -1617,7 +1605,11 @@ Logger.instance().info("LauncherFrame ctor");
             Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
         }
     }
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 660570cc (Add latest dependency changes.)
     private void platwizButtonPressed()
     {
         if( trySendToProfileLauncher("start platwiz") )
