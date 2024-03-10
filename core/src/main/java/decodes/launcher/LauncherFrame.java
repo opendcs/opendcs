@@ -1605,11 +1605,7 @@ Logger.instance().info("LauncherFrame ctor");
             Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
         }
     }
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> 660570cc (Add latest dependency changes.)
     private void platwizButtonPressed()
     {
         if( trySendToProfileLauncher("start platwiz") )
