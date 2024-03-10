@@ -81,16 +81,11 @@ dependencies {
     implementation(libs.io.javalin)
     implementation(libs.loboBrowser)
     implementation(libs.cobra)
-    testImplementation "org.junit.platform:junit-platform-launcher:1.8.2"
-    testImplementation "org.junit.platform:junit-platform-engine:1.8.2"
-    testImplementation "org.junit.platform:junit-platform-commons:1.8.2"
-    testImplementation "org.junit.jupiter:junit-jupiter-api:5.9.1"
-    testImplementation "org.junit.jupiter:junit-jupiter-engine:5.9.1"
-    testImplementation "org.junit.jupiter:junit-jupiter-params:5.9.1"
-    testImplementation "commons-io:commons-io:2.11.0"
-    testImplementation "org.apache.derby:derby:10.14.2.0"
-    testImplementation "uk.org.webcompere:system-stubs-jupiter:2.0.2"
-    testImplementation "com.fasterxml.jackson.core:jackson-databind:2.14.2"
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.commons.io)
+    testImplementation(libs.apache.derby)
+    testImplementation(libs.webcompere.system.stubs.jupiter)
+    testImplementation(libs.fasterxml.jackson.databind)
 
 
 /* to resolve later

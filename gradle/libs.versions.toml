@@ -30,6 +30,13 @@ monolith = { strictly = "2.0.2" }
 cwms-ratings = "1.1.0"
 nucleus = "1.1.1"
 
+#test deps
+junit = "5.10.2"
+commons-io = "2.11.0"
+derby = "10.14.2.0"
+webcompere = "2.0.2"
+jackson = "2.14.2"
+
 [libraries]
 oracle = { module = "com.oracle.ojdbc:ojdbc8", version.ref = "oracle" }
 postgresql = { module ="org.postgresql:postgresql", version.ref = "postgres"}
@@ -65,17 +72,17 @@ hec-db-jdbc = { module = "mil.army.usace.hec:hec-db-jdbc", version.ref = "cwms-d
 hec-monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "monolith" }
 hec-cwms-ratings-core = { module = "mil.army.usace.hec:hec-cwms-ratings-core", version.ref = "cwms-ratings" }
 hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata", version.ref = "nucleus" }
-    
 
-#    testImplementation "org.junit.platform:junit-platform-launcher:1.8.2"
-#    testImplementation "org.junit.platform:junit-platform-engine:1.8.2"
-#    testImplementation "org.junit.platform:junit-platform-commons:1.8.2"
-#    testImplementation "org.junit.jupiter:junit-jupiter-api:5.9.1"
-#    testImplementation "org.junit.jupiter:junit-jupiter-engine:5.9.1"
-#    testImplementation "org.junit.jupiter:junit-jupiter-params:5.9.1"
-#    testImplementation "commons-io:commons-io:2.11.0"
-#    testImplementation "org.apache.derby:derby:10.14.2.0"
-#    testImplementation "uk.org.webcompere:system-stubs-jupiter:2.0.2"
-#    testImplementation "com.fasterxml.jackson.core:jackson-databind:2.14.2"
+# test deps
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
+webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
+fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 
 [bundles]
+junit = [ "junit-api", "junit-engine", "junit-params" ]
