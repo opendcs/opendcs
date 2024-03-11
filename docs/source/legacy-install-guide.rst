@@ -973,7 +973,7 @@ To start the initial schema installation:
 
 .. code-block:: bash
 
-   migrateApp -I OpenDCS-Postgres -P full_path_to.properties
+   manageDatabase -I OpenDCS-Postgres -P full_path_to.properties
    # enter the Schema owner username and password when prompted.
    # You will be prompted for the number of numeric and text time series tables
    # enter appropriate values for you're expected data volume.
@@ -983,7 +983,7 @@ On a fresh installation you will be prompted to create an admin user.
 This user will be able to create new users and assign them appropriate roles, such as
 a user to run compproc or routesched processes (additional details in <./cp-userguide.rst> and <./routesched-guide.rst> ).
 
-To update to the latest schema run the migrateApp command again. A list of updates 
+To update to the latest schema run the `manageDatabase` command again. A list of updates
 will be provided and you will be prompted if you wish to continue.
 
 Instead of creating the properties file manually you can start the launcher to
@@ -1015,7 +1015,7 @@ remember it!
 Hit the DB Password button. Type in the administrative user name and
 password that you selected. 
 
-Use this username and password combination when prompted by the migrateApp for 
+Use this username and password combination when prompted by the `manageDatabase` for
 an admin user.
 
 You may want to peruse the other settable properties. You can hover the

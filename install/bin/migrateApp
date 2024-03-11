@@ -1,3 +1,0 @@
-#!/bin/bash
-
-%INSTALL_PATH/bin/decj  org.opendcs.database.MigrateApp $*

@@ -13,15 +13,10 @@ import org.opendcs.spi.database.MigrationProvider;
 import org.opendcs.spi.database.MigrationProvider.MigrationProperty;
 
 import java.io.Console;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
-import java.util.stream.Collectors;
 
 /**
  * Simple Terminal application to prompt user for required information
@@ -30,8 +25,9 @@ import java.util.stream.Collectors;
  * For simplicity and modernization this app forgoes previously implemented
  * helpers, such as extending from TsdbAppTemplate that would hinder it's
  * intended operation.
+ *
  */
-public class MigrateApp
+public class ManageDatabaseApp
 {
 
     public static void main(String args[]) throws Exception
