@@ -17,6 +17,8 @@ project(":install").projectDir=file("install")
 include ":docs"
 project(":docs").projectDir=file("docs")
 
+include ":testing:integration"
+
 dependencyResolutionManagement
 {
     repositories 

@@ -37,6 +37,12 @@ derby = "10.14.2.0"
 webcompere = "2.0.2"
 jackson = "2.14.2"
 
+# integration test deps
+testcontainers = "1.18.1"
+hec-testcontainers-cwms = "1.0.7"
+jdbi = "3.38.2"
+flywaydb = "9.8.1"
+
 [libraries]
 oracle = { module = "com.oracle.ojdbc:ojdbc8", version.ref = "oracle" }
 postgresql = { module ="org.postgresql:postgresql", version.ref = "postgres"}
@@ -75,14 +81,29 @@ hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata", ver
 
 # test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
-junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
-junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
-junit-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine" }
+junit-platform-commons = { module = "org.junit.platform:junit-platform-commons" }
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
+junit-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
 fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 
+#integration test deps
+
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref="testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref="testcontainers" }
+hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
+org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
+org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
+org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
+
 [bundles]
 junit = [ "junit-api", "junit-engine", "junit-params" ]
+junit-platform = [ "junit-platform-launcher", "junit-platform-engine", "junit-platform-commons" ]
+jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres" ]

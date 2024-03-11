@@ -1,0 +1,32 @@
+plugins
+{
+    id 'opendcs.java-conventions'
+    id 'java-library'
+}
+
+
+dependencies
+{
+    implementation(project(":opendcs"))
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.bundles.junit.platform)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.jdbi)
+    testImplementation(libs.org.flywaydb.flyway.core)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.hec.testcontainers.cwms)
+    testImplementation(libs.commons.io)
+    testImplementation(libs.webcompere.system.stubs.jupiter)
+}
+
+
+test {
+    useJUnitPlatform()
+    systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
+    def impl = project.properties.get("opendcs.test.engine")
+    jvmArgs += "-Dbuild.dir=$buildDir"
+    jvmArgs += "-Djava.io.tmpDir=$buildDir/${impl}/tmp"
+    jvmArgs += "-Dresource.test=test/resources" // TODO: make clearer
+    jvmArgs += "-DDCSTOOL_HOME=$buildDir/stage" // TODO: make stage dir?
+}
