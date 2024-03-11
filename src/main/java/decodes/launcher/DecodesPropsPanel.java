@@ -1,9 +1,6 @@
 package decodes.launcher;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import java.awt.*;
-import java.awt.event.*;
 import java.io.IOException;
 import java.util.*;
 import javax.swing.*;
@@ -27,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 public class DecodesPropsPanel extends JPanel
 {
-    private final Logger log = LoggerFactory.getLogger(getCallingClass());
+    private final Logger log = LoggerFactory.getLogger(DecodesPropsPanel.class);
     private final ResourceBundle labels;
     private final ResourceBundle genericLabels;
     String editDbTypes[] = { "XML", "SQL", "NWIS", "CWMS", "OPENTSDB", "HDB"};

@@ -170,6 +170,11 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <executable targetfile="$INSTALL_PATH/bin/markproduction.bat" stage="never" os="windows"/>
             <parsable   targetfile="$INSTALL_PATH/bin/markproduction.bat" os="windows"/>
 
+            <executable targetfile="$INSTALL_PATH/bin/manageDatabase" stage="never" os="unix"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/manageDatabase" type="shell" os="unix"/>
+            <executable targetfile="$INSTALL_PATH/bin/manageDatabase.bat" stage="never" os="windows"/>
+            <parsable   targetfile="$INSTALL_PATH/bin/manageDatabase.bat" os="windows"/>
+
             <executable targetfile="$INSTALL_PATH/bin/msgaccess" stage="never" os="unix"/>
             <parsable   targetfile="$INSTALL_PATH/bin/msgaccess" type="shell" os="unix"/>
             <executable targetfile="$INSTALL_PATH/bin/msgaccess.bat" stage="never" os="windows"/>
@@ -530,33 +535,6 @@ IMPORTANT: For a new installation, you should also select the Template Database.
 
         <pack name="Open Time Series Database Schema and Components" required="no" preselected="yes">
             <description>Scripts and DDL for building Open TSDB Database</description>
-
-
-		<!-- opendcs-pg -->
-            <file src="schema/opendcs-pg/createDb.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <executable targetfile="$INSTALL_PATH/schema/opendcs-pg/createDb.sh" stage="never" os="unix"/>
-            <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/createDb.sh" type="shell" os="unix"/>
-            <file src="schema/opendcs-pg/dcp_trans_expanded.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/dcp_trans_template.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/defines.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="false"/>
-            <file src="schema/opendcs-pg/expandTs.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <executable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandTs.sh" stage="never" os="unix"/>
-            <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandTs.sh" type="shell" os="unix"/>
-            <file src="schema/opendcs-pg/expandXmits.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <executable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandXmits.sh" stage="never" os="unix"/>
-            <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/expandXmits.sh" type="shell" os="unix"/>
-            <file src="schema/opendcs-pg/group_roles.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/makePerms.sh" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <executable targetfile="$INSTALL_PATH/schema/opendcs-pg/makePerms.sh" stage="never" os="unix"/>
-            <parsable targetfile="$INSTALL_PATH/schema/opendcs-pg/makePerms.sh" type="shell" os="unix"/>
-            <file src="schema/opendcs-pg/opendcs.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/sequences.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/triggers.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/ts_num_template.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/ts_string_template.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/alarm.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/comp_trigger.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
-            <file src="schema/opendcs-pg/data_trig_tmpl.sql" targetdir="$INSTALL_PATH/schema/opendcs-pg" override="true"/>
 
 		<!-- opendcs-oracle -->
             <file src="schema/opendcs-oracle/combined_hdr.sql" targetdir="$INSTALL_PATH/schema/opendcs-oracle" override="true"/>

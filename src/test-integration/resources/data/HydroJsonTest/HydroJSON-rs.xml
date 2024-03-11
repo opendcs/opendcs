@@ -4,7 +4,7 @@
     <IsProduction>false</IsProduction>
     <DataSource Name="MROI4-ROWI4" Type="file">
       <DataSourceArg>
-        filename=$INPUT_DATA/MROI4-ROWI4.data,
+        filename=${java.INPUT_DATA}/MROI4-ROWI4.data,
         MediumType=GOES,
         before=&#92;001, after=&#92;002&#92;n
       </DataSourceArg>

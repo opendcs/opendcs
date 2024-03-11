@@ -53,7 +53,7 @@ public class OpenDcsSLF4JProvider implements SLF4JServiceProvider
             {
                 if  (filter.canLog(arg))
                 {
-                    return new SLF4JLogger(arg,ilex.util.Logger.instance());
+                    return new SLF4JLogger(arg);
                 }
                 else
                 {

@@ -72,10 +72,13 @@
 */
 package decodes.tsdb;
 
+import static org.slf4j.helpers.Util.getCallingClass;
+
 import java.io.PrintStream;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.slf4j.LoggerFactory;
 
 import opendcs.dai.LoadingAppDAI;
 import ilex.cmdline.*;
@@ -113,6 +116,7 @@ execute method. Then consider overriding the following methods:
 public abstract class TsdbAppTemplate
 	implements PropertiesOwner
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(TsdbAppTemplate.class.getName());
 	// Static command line arguments and initialization for main method.
 	protected CmdLineArgs cmdLineArgs;
 
@@ -483,7 +487,14 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 	{
 		if (theDb != null)
 		{
-			Logger.instance().info("Closing database connection.");
+			if (log.isTraceEnabled())
+			{
+				log.info("Closing database connection.", new Exception());
+			}
+			else
+			{
+				log.info("Closing database connection.");
+			}
 			theDb.closeConnection();
 		}
 		theDb = null;

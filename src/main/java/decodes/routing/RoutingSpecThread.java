@@ -7,8 +7,6 @@ import java.util.*;
 
 import org.slf4j.LoggerFactory;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import java.io.*;
 import java.net.InetAddress;
 
@@ -51,7 +49,7 @@ Each routing spec is intended to run in its own thread.
 public class RoutingSpecThread
 	extends Thread
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecThread.class);
 	/** The routing spec record that this thread is executing. */
 	protected RoutingSpec rs;
 

@@ -1,7 +1,5 @@
 package decodes.sql;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,7 +30,7 @@ import opendcs.dao.DaoBase;
 
 public class RoutingSpecListIO extends SqlDbObjIo
 {
-    private final org.slf4j.Logger log = LoggerFactory.getLogger(getCallingClass());
+    private final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecListIO.class);
     /**
     * This is used to look up the ID numbers and names of PresentationGroups
     */

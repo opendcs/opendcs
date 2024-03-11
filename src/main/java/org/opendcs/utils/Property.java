@@ -1,7 +1,5 @@
 package org.opendcs.utils;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -11,12 +9,11 @@ import java.util.ServiceLoader;
 import org.opendcs.spi.properties.PropertyValueProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.spi.LoggingEventBuilder;
 
 public class Property
 {
     private static ServiceLoader<PropertyValueProvider> loader = ServiceLoader.load(PropertyValueProvider.class);
-    private static final Logger log = LoggerFactory.getLogger(getCallingClass());
+    private static final Logger log = LoggerFactory.getLogger(Property.class);
     /**
      * Retrieve the real value of a property from a location that may be the value itself
      * or perhaps the environment as determined by a given provider.
