@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.test.WriteTimeSeries %*%
+@"%~dp0\decj" decodes.tsdb.test.WriteTimeSeries %*%

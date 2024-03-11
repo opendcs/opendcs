@@ -1,3 +1,3 @@
 @echo off
-$INSTALL_PATH\bin\decj lrgs.gui.MessageBrowser %*%
+"%~dp0\decj" lrgs.gui.MessageBrowser %*%
 

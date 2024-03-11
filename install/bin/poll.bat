@@ -4,4 +4,4 @@ rem Poll a Modem or TCP Station
 rem
 rem  Usage: poll [-S sincetime] sitename
 rem 
-$INSTALL_PATH\bin\decj decodes.routing.Poll %*%
+"%~dp0\decj" decodes.routing.Poll %*%

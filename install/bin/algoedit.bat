@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.algoedit.AlgorithmWizard %*%
+@"%~dp0\decj" decodes.tsdb.algoedit.AlgorithmWizard %*%

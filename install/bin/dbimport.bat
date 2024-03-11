@@ -9,4 +9,4 @@ rem	               have been done if the files were imported.
 rem	-o             Keep OLD records in case of a clash (i.e. don't overwrite
 rem	               existing records with the contents of the XML files.
 rem
-$INSTALL_PATH\bin\decj decodes.dbimport.DbImport %*%
+"%~dp0\decj" decodes.dbimport.DbImport %*%

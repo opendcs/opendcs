@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.drgsinfogui.DrgsReceiversList %*%
+@"%~dp0\decj" decodes.drgsinfogui.DrgsReceiversList %*%

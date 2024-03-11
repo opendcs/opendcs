@@ -6,4 +6,4 @@ rem  usage: dbxport <options>
 rem  options:
 rem 		-i               Export from 'installed' database (default is edit dbrem 
 rem 
-$INSTALL_PATH\bin\decj decodes.dbimport.DbExport %*%
+"%~dp0\decj" decodes.dbimport.DbExport %*%

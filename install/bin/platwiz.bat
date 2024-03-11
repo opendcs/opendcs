@@ -2,4 +2,4 @@
 rem 
 rem  platwiz - Run the Platform Wizard
 rem 
-$INSTALL_PATH\bin\decj decodes.platwiz.PlatformWizard %*%
+"%~dp0\decj" decodes.platwiz.PlatformWizard %*%

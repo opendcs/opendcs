@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.groupedit.TsListMain %*%
+@"%~dp0\decj" decodes.tsdb.groupedit.TsListMain %*%

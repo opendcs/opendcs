@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.comprungui.RunComputationsFrameTester %*%
+@"%~dp0\decj" decodes.tsdb.comprungui.RunComputationsFrameTester %*%

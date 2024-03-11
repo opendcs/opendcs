@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj opendcs.dbupdate.DbUpdate %*%
+@"%~dp0\decj" opendcs.dbupdate.DbUpdate %*%

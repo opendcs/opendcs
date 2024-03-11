@@ -10,4 +10,4 @@ rem 		-a               Export all platforms
 rem 		-c <configname>  Export platforms using a specific configuration.
 rem 		-i               Export from 'installed' database (default is edit dbrem 
 rem 
-$INSTALL_PATH\bin\decj decodes.dbimport.PlatformExport %*%
+"%~dp0\decj" decodes.dbimport.PlatformExport %*%
