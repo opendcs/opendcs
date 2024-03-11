@@ -134,16 +134,17 @@ public class OpenDCSPGConfiguration implements Configuration
             log.info("Loading base data.");
             try
             {
+                final String dcstoolHome = System.getProperty("DCSTOOL_HOME");
                 environment.execute( () ->
                     properties.execute( () ->
                         Programs.DbImport(new File(this.getUserDir(),"/db-install.log"),
                                 propertiesFile,
                                 environment,exit,properties,
-                                "stage/edit-db/enum",
-                                "stage/edit-db/eu/EngineeringUnitList.xml",
-                                "stage/edit-db/datatype/DataTypeEquivalenceList.xml",
-                                "stage/edit-db/presentation",
-                                "stage/edit-db/loading-app")
+                                dcstoolHome + "/edit-db/enum",
+                                dcstoolHome + "/edit-db/eu/EngineeringUnitList.xml",
+                                dcstoolHome + "/edit-db/datatype/DataTypeEquivalenceList.xml",
+                                dcstoolHome + "/edit-db/presentation",
+                                dcstoolHome + "/edit-db/loading-app")
                     )
                 );
             }
@@ -159,12 +160,13 @@ public class OpenDCSPGConfiguration implements Configuration
     public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception
     {
         File editDb = new File(userDir,"edit-db");
+        File dcstoolHome = new File(System.getProperty("DCSTOOL_HOME"));
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
         // set username/pw (env)
-        FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
-        FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
+        FileUtils.copyDirectory(new File(dcstoolHome, "edit-db"),editDb);
+        FileUtils.copyDirectory(new File(dcstoolHome, "schema"),new File(userDir,"/schema/"));
         installDb(exit, environment, properties, configBuilder);
         createPropertiesFile(configBuilder, this.propertiesFile);
     }

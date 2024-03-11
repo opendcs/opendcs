@@ -58,6 +58,7 @@ public class XmlConfiguration implements Configuration
     @Override
     public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception {
         File editDb = new File(userDir,"edit-db");
+        File dcstoolHome = new File(System.getProperty("DCSTOOL_HOME"));
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
@@ -66,8 +67,8 @@ public class XmlConfiguration implements Configuration
         configBuilder.withSiteNameTypePreference("CWMS");
         try(OutputStream out = new FileOutputStream(propertiesFile);)
         {
-            FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
-            FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
+            FileUtils.copyDirectory(new File(dcstoolHome, "edit-db"),editDb);
+            FileUtils.copyDirectory(new File(dcstoolHome, "schema"),new File(userDir,"/schema/"));
             configBuilder.build(out);
             started = true;
         }

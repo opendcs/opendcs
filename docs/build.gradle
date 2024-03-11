@@ -29,13 +29,12 @@ task prepVenv(type: Exec) {
 task installReqs(type: Exec) {
     dependsOn prepVenv
 
-    executable pythonExe
+    executable "${venvPath}/pip"
     workingDir projectDir
-    args += "-m"
-    args += "pip"
     args += "install"
     args += "-r"
     args += "${docsDir}/requirements.txt"
+    environment "PATH", venvPath
     environment "VENV_PATH", venvPath
 }
 

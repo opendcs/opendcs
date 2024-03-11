@@ -27,9 +27,9 @@ dependencies {
 }
 
 task stage(type: Copy) {
-    //project.mkdir("$buildDir/assemble/izpack")
     from 'src/main/install'
     into "$buildDir/assemble/izpack"
+    ext.outDir = "${buildDir}/assemble/izpack"
 
     from 'src/main/izpack'
 
@@ -49,6 +49,8 @@ task stage(type: Copy) {
     from(configurations.opendcs) {
         into 'dep'
         exclude 'opendcs-*.jar'
+        // TODO: rename lobo and cobra to prefix with zzz.
+        // TODO: after everything generally working, get rid of those two deps.
     }
 
     from(configurations.docs) {
