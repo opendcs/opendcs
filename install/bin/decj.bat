@@ -7,13 +7,14 @@ pushd "%BIN_PATH%.."
 set "APP_PATH=%CD%"
 popd
 
+set "CLASSPATH=%BIN_PATH%opendcs.jar;%BIN_PATH%hibernate.cfg.xml;"
+
 if defined CP_SHARED_JAR_DIR (
  for /R "%CP_SHARED_JAR_DIR%" %%a in (*.jar) do (
    set "CLASSPATH=!CLASSPATH!;%%a"
  )
 )
 
-set "CLASSPATH=%BIN_PATH%opendcs.jar;%BIN_PATH%hibernate.cfg.xml;"
 for /R "%APP_PATH%/dep" %%a in (*.jar) do (
   set "CLASSPATH=!CLASSPATH!;%%a"
   )
