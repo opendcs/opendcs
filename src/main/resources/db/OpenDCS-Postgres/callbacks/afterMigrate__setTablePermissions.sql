@@ -32,3 +32,6 @@ begin
     end loop;
 
 END$$;
+-- This isn't need for a fresh install but if you're dropping the public database
+-- as part of testing it doesn't get automatically set.
+grant usage on schema public to "OTSDB_USER";

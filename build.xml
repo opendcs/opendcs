@@ -521,7 +521,6 @@ more information about each.
         <mkdir dir="stage/schema"/>
         <mkdir dir="stage/schema/cwms"/>
         <mkdir dir="stage/schema/hdb"/>
-        <mkdir dir="stage/schema/opendcs-pg"/>
         <mkdir dir="stage/schema/opendcs-oracle"/>
         <mkdir dir="stage/schema/noaa"/>
 
@@ -672,10 +671,6 @@ more information about each.
 
         <copy todir="stage/schema/hdb">
             <fileset dir="${project.dir}/schema/hdb"/>
-        </copy>
-
-        <copy todir="stage/schema/opendcs-pg">
-            <fileset dir="${project.dir}/schema/opendcs-pg"/>
         </copy>
 
         <copy todir="stage/schema/opendcs-oracle">

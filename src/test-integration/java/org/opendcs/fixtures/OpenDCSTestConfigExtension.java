@@ -37,6 +37,7 @@ import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
+import ilex.util.FileLogger;
 import lrgs.gui.DecodesInterface;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
@@ -357,6 +358,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 {
                     File tmp = Files.createTempDirectory("configs-"+configProvider.getImplementation()).toFile();
                     configuration = configProvider.getConfig(tmp);
+                    ilex.util.Logger.setLogger(new FileLogger("test", new File(tmp,"log.txt").getAbsolutePath(),200*1024*1024));
                 }
                 catch (Exception ex)
                 {

@@ -110,7 +110,7 @@
     <IsProduction>false</IsProduction>
     <DataSource Name="OKVI4" Type="file">
       <DataSourceArg>
-        filename=$INPUT_DATA/OKVI4.data,
+        filename=${java.INPUT_DATA}/OKVI4.data,
         MediumType=GOES, before=\001, after=\002\n
       </DataSourceArg>
     </DataSource>

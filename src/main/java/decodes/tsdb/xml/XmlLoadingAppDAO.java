@@ -55,29 +55,36 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	public ArrayList<CompAppInfo> listComputationApps(boolean usedOnly)
 		throws DbIoException
 	{
-//System.out.println("listComputationApps() loadingAppDir is '" + loadingAppDir.getPath() + "'");
 		ArrayList<CompAppInfo> ret = new ArrayList<CompAppInfo>();
 		File [] files = loadingAppDir.listFiles();
-		for(File f : files)
+		if (files != null)
 		{
-			if (!f.getName().toLowerCase().endsWith(".xml"))
-				continue;
-			try
+			for(File f : files)
 			{
-				ArrayList<CompMetaData> objs = compXio.readFile(f.getPath());
-				for(CompMetaData obj : objs)
-					if (obj instanceof CompAppInfo)
-						ret.add((CompAppInfo)obj);
-			}
-			catch (DbXmlException ex)
-			{
-				String msg = module + ": " + "Error parsing loading app file '"
-					+ f.getPath() + "': " + ex + " -- skipped.";
-				Logger.instance().warning(msg);
-				throw new DbIoException(msg);
+				if (!f.getName().toLowerCase().endsWith(".xml"))
+				{
+					continue;
+				}
+				try
+				{
+					ArrayList<CompMetaData> objs = compXio.readFile(f.getPath());
+					for(CompMetaData obj : objs)
+					{
+						if (obj instanceof CompAppInfo)
+						{
+							ret.add((CompAppInfo)obj);
+						}
+					}
+				}
+				catch (DbXmlException ex)
+				{
+					String msg = module + ": " + "Error parsing loading app file '"
+						+ f.getPath() + "': " + ex + " -- skipped.";
+					Logger.instance().warning(msg);
+					throw new DbIoException(msg, ex);
+				}
 			}
 		}
-//System.out.println("Returning " + ret.size() + " apps.");
 		return ret;
 	}
 

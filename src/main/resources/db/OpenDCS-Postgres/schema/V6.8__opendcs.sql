@@ -1,89 +1,35 @@
 
-/* Drop Indexes */
-
-DROP INDEX IF EXISTS EVT_PLATFORM_ID_IDX;
-DROP INDEX IF EXISTS EVT_PLAT_MSG_IDX;
-DROP INDEX IF EXISTS EVT_SCHED_IDX;
-DROP INDEX IF EXISTS EVT_TIME_IDX;
 
 
-
-/* Drop Tables */
-
-DROP TABLE IF EXISTS CONFIGSENSORPROPERTY;
-DROP TABLE IF EXISTS CONFIGSENSORDATATYPE;
-DROP TABLE IF EXISTS CONFIGSENSOR;
-DROP TABLE IF EXISTS CP_ALGO_PROPERTY;
-DROP TABLE IF EXISTS CP_COMP_PROPERTY;
-DROP TABLE IF EXISTS CP_COMP_DEPENDS_SCRATCHPAD;
-DROP TABLE IF EXISTS CP_COMP_TS_PARM;
-DROP TABLE IF EXISTS CP_COMP_DEPENDS;
-DROP TABLE IF EXISTS CP_COMPUTATION;
-DROP TABLE IF EXISTS CP_ALGO_SCRIPT;
-DROP TABLE IF EXISTS CP_ALGO_TS_PARM;
-DROP TABLE IF EXISTS CP_ALGORITHM;
-DROP TABLE IF EXISTS CP_COMP_PROC_LOCK;
-DROP TABLE IF EXISTS CP_COMP_TASKLIST;
-DROP TABLE IF EXISTS CP_DEPENDS_NOTIFY;
-DROP TABLE IF EXISTS DACQ_EVENT;
-DROP TABLE IF EXISTS ROUNDINGRULE;
-DROP TABLE IF EXISTS DATAPRESENTATION;
-DROP TABLE IF EXISTS PLATFORM_STATUS;
-DROP TABLE IF EXISTS SCHEDULE_ENTRY_STATUS;
-DROP TABLE IF EXISTS SCHEDULE_ENTRY;
-DROP TABLE IF EXISTS ROUTINGSPECPROPERTY;
-DROP TABLE IF EXISTS ROUTINGSPECNETWORKLIST;
-DROP TABLE IF EXISTS ROUTINGSPEC;
-DROP TABLE IF EXISTS DATASOURCEGROUPMEMBER;
-DROP TABLE IF EXISTS DATASOURCE;
-DROP TABLE IF EXISTS DATATYPEEQUIVALENCE;
-DROP TABLE IF EXISTS TS_NUM_0000;
-DROP TABLE IF EXISTS TS_ANNOTATION;
-DROP TABLE IF EXISTS TSDB_GROUP_MEMBER_TS;
-DROP TABLE IF EXISTS TS_STRING_0000;
-DROP TABLE IF EXISTS TS_PROPERTY;
-DROP TABLE IF EXISTS TS_SPEC;
-DROP TABLE IF EXISTS TSDB_GROUP_MEMBER_DT;
-DROP TABLE IF EXISTS DATATYPE;
-DROP TABLE IF EXISTS DCP_TRANS_DAY_MAP;
-DROP TABLE IF EXISTS DECODESDATABASEVERSION;
-DROP TABLE IF EXISTS SCRIPTSENSOR;
-DROP TABLE IF EXISTS FORMATSTATEMENT;
-DROP TABLE IF EXISTS DECODESSCRIPT;
-DROP TABLE IF EXISTS ENGINEERINGUNIT;
-DROP TABLE IF EXISTS ENUMVALUE;
-DROP TABLE IF EXISTS ENUM;
-DROP TABLE IF EXISTS EQUIPMENTPROPERTY;
-DROP TABLE IF EXISTS EQUIPMENTMODEL;
-DROP TABLE IF EXISTS REF_LOADING_APPLICATION_PROP;
-DROP TABLE IF EXISTS TSDB_DATA_SOURCE;
-DROP TABLE IF EXISTS HDB_LOADING_APPLICATION;
-DROP TABLE IF EXISTS INTERVAL_CODE;
-DROP TABLE IF EXISTS NETWORKLISTENTRY;
-DROP TABLE IF EXISTS NETWORKLIST;
-DROP TABLE IF EXISTS TRANSPORTMEDIUM;
-DROP TABLE IF EXISTS PLATFORMSENSORPROPERTY;
-DROP TABLE IF EXISTS PLATFORMSENSOR;
-DROP TABLE IF EXISTS PLATFORMPROPERTY;
-DROP TABLE IF EXISTS PLATFORM;
-DROP TABLE IF EXISTS PLATFORMCONFIG;
-DROP TABLE IF EXISTS PRESENTATIONGROUP;
-DROP TABLE IF EXISTS SERIAL_PORT_STATUS;
-DROP TABLE IF EXISTS SITE_PROPERTY;
-DROP TABLE IF EXISTS SITENAME;
-DROP TABLE IF EXISTS TSDB_GROUP_MEMBER_SITE;
-DROP TABLE IF EXISTS SITE;
-DROP TABLE IF EXISTS STORAGE_TABLE_LIST;
-DROP TABLE IF EXISTS TSDB_DATABASE_VERSION;
-DROP TABLE IF EXISTS TSDB_GROUP_MEMBER_GROUP;
-DROP TABLE IF EXISTS TSDB_GROUP_MEMBER_OTHER;
-DROP TABLE IF EXISTS TSDB_GROUP;
-DROP TABLE IF EXISTS TSDB_PROPERTY;
-DROP TABLE IF EXISTS UNITCONVERTER;
+CREATE ROLE "OTSDB_USER"
+  NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
+COMMENT ON ROLE "OTSDB_USER" IS 'Read access to all Open TSDB Tables';
 
 
+CREATE ROLE "OTSDB_DATA_ACQ" LOGIN
+  NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
+GRANT "OTSDB_USER" TO "OTSDB_DATA_ACQ";
+COMMENT ON ROLE "OTSDB_DATA_ACQ" IS 'Data Acquisition - write access to time series tables.';
 
 
+CREATE ROLE "OTSDB_COMP_EXEC" LOGIN
+  NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
+GRANT "OTSDB_DATA_ACQ" TO "OTSDB_COMP_EXEC";
+COMMENT ON ROLE "OTSDB_COMP_EXEC" IS 'Execute computations - write ts data, read/write tasklist';
+
+
+CREATE ROLE "OTSDB_MGR"
+  NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
+GRANT "OTSDB_COMP_EXEC" TO "OTSDB_MGR";
+GRANT "OTSDB_USER" TO "OTSDB_MGR";
+COMMENT ON ROLE "OTSDB_MGR" IS 'Manager - full R/W access to meta data';
+
+CREATE ROLE "OTSDB_ADMIN"
+  NOSUPERUSER INHERIT NOCREATEDB CREATEROLE NOREPLICATION;
+GRANT "OTSDB_MGR" TO "OTSDB_ADMIN";
+COMMENT ON ROLE "OTSDB_ADMIN" IS 'Full access to all tables. Can create other roles for users.';
+
+--TODO: grant schema usage appropriately.
 /* Create Tables */
 
 CREATE TABLE CONFIGSENSOR
@@ -364,16 +310,6 @@ CREATE TABLE DATATYPEEQUIVALENCE
 	ID1 INT NOT NULL,
 	PRIMARY KEY (ID0, ID1)
 ) WITHOUT OIDS;
-
-
-CREATE TABLE DCP_TRANS_DAY_MAP
-(
-	TABLE_SUFFIX VARCHAR(4) NOT NULL UNIQUE,
-	-- Day 0 = Jan 1, 1970. Null means this suffix not used.
-	DAY_NUMBER INT,
-	PRIMARY KEY (TABLE_SUFFIX)
-) WITHOUT OIDS;
-
 
 CREATE TABLE DECODESDATABASEVERSION
 (
@@ -962,29 +898,6 @@ CREATE TABLE TS_ANNOTATION
 	PRIMARY KEY (ANNOTATION_ID)
 ) WITHOUT OIDS;
 
-
-CREATE TABLE TS_NUM_0000
-(
-	TS_ID INT NOT NULL,
-	SAMPLE_TIME BIGINT NOT NULL,
-	TS_VALUE DOUBLE PRECISION NOT NULL,
-	-- Bitwise flags for each value
-	FLAGS BIGINT NOT NULL,
-	SOURCE_ID INT NOT NULL,
-	DATA_ENTRY_TIME BIGINT NOT NULL,
-	PRIMARY KEY (TS_ID, SAMPLE_TIME)
-) WITHOUT OIDS;
-
-
-CREATE TABLE TS_PROPERTY
-(
-	TS_ID INT NOT NULL,
-	PROP_NAME VARCHAR(24) NOT NULL,
-	PROP_VALUE VARCHAR(240) NOT NULL,
-	PRIMARY KEY (TS_ID, PROP_NAME)
-) WITHOUT OIDS;
-
-
 CREATE TABLE TS_SPEC
 (
 	TS_ID INT NOT NULL UNIQUE,
@@ -1014,8 +927,85 @@ CREATE TABLE TS_SPEC
 	CONSTRAINT time_series_identifier_unique UNIQUE (SITE_ID, DATATYPE_ID, STATISTICS_CODE, INTERVAL_ID, DURATION_ID, TS_VERSION)
 ) WITHOUT OIDS;
 
+/*
+Place holder definition. Trigger is properly defined in repeatable migration
+*/
+create or replace function comp_trigger () returns trigger
+AS $$
+DECLARE
+	l_is_delete CHAR;
+	l_ts_id INTEGER;
+	l_sample_time BIGINT;
+	l_ts_value DOUBLE PRECISION;
+	l_flags INTEGER;
+	l_source_id INTEGER;
+	l_app_id_rec RECORD;
+BEGIN
+	raise exception 'Comp Trigger Did not get created correctly';
+END;
+$$ LANGUAGE 'plpgsql';
 
-CREATE TABLE TS_STRING_0000
+do $$
+declare
+  i int;
+  tbl_name varchar(4);
+begin
+  
+  for i in 1..${NUM_TS_TABLES}
+  loop
+    tbl_name := to_char(i,'fm0000');
+    execute 'CREATE TABLE TS_NUM_' || tbl_name || '
+(
+	TS_ID INT NOT NULL,
+	SAMPLE_TIME BIGINT NOT NULL,
+	TS_VALUE DOUBLE PRECISION NOT NULL,	
+	FLAGS BIGINT NOT NULL,
+	SOURCE_ID INT NOT NULL,
+	DATA_ENTRY_TIME BIGINT NOT NULL,
+	PRIMARY KEY (TS_ID, SAMPLE_TIME)
+) WITHOUT OIDS';
+
+    insert into storage_table_list values(i, 'N', 0, 0);
+    execute 'ALTER TABLE TS_NUM_' || tbl_name || '
+	ADD FOREIGN KEY (SOURCE_ID)
+	REFERENCES TSDB_DATA_SOURCE (SOURCE_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+';
+
+    execute 'ALTER TABLE TS_NUM_' || tbl_name || '
+	ADD FOREIGN KEY (TS_ID)
+	REFERENCES TS_SPEC (TS_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+';
+
+    execute 'CREATE INDEX TS_NUM_' || tbl_name || '_ENTRY_IDX 
+	ON TS_NUM_' || tbl_name || '(DATA_ENTRY_TIME)';
+
+    execute 'create trigger TS_NUM_' || tbl_name || '_TRIG
+    before update or insert or delete
+    on TS_NUM_' || tbl_name || ' for each row execute procedure comp_trigger()';
+  end loop;
+end$$;
+
+CREATE TABLE TS_PROPERTY
+(
+	TS_ID INT NOT NULL,
+	PROP_NAME VARCHAR(24) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (TS_ID, PROP_NAME)
+) WITHOUT OIDS;
+
+do $$
+declare
+  i int;
+  tbl_name varchar(4);
+begin
+  for i in 1..${NUM_TEXT_TABLES}
+  loop
+    tbl_name := to_char(i,'fm0000');
+    execute 'CREATE TABLE TS_STRING_' || tbl_name || '
 (
 	TS_ID INT NOT NULL,
 	SAMPLE_TIME BIGINT NOT NULL,
@@ -1024,8 +1014,26 @@ CREATE TABLE TS_STRING_0000
 	SOURCE_ID INT NOT NULL,
 	DATA_ENTRY_TIME BIGINT NOT NULL,
 	PRIMARY KEY (TS_ID, SAMPLE_TIME)
-) WITHOUT OIDS;
+) WITHOUT OIDS';
 
+    insert into storage_table_list values(i, 'S', 0, 0);
+
+    execute 'ALTER TABLE TS_STRING_' || tbl_name || ' 
+	ADD FOREIGN KEY (SOURCE_ID)
+	REFERENCES TSDB_DATA_SOURCE (SOURCE_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT';
+
+    execute 'ALTER TABLE TS_STRING_' || tbl_name || '
+	ADD FOREIGN KEY (TS_ID)
+	REFERENCES TS_SPEC (TS_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT';
+
+    execute 'CREATE INDEX TS_STRING_' || tbl_name || '_ENTRY_IDX     
+    ON TS_STRING_' || tbl_name || '(DATA_ENTRY_TIME)';
+  end loop;
+end $$;
 
 CREATE TABLE UNITCONVERTER
 (
@@ -1528,12 +1536,6 @@ ALTER TABLE PLATFORMSENSOR
 ;
 
 
-ALTER TABLE TS_STRING_0000
-	ADD FOREIGN KEY (SOURCE_ID)
-	REFERENCES TSDB_DATA_SOURCE (SOURCE_ID)
-	ON UPDATE RESTRICT
-	ON DELETE RESTRICT
-;
 
 
 ALTER TABLE CP_COMP_TASKLIST
@@ -1544,12 +1546,7 @@ ALTER TABLE CP_COMP_TASKLIST
 ;
 
 
-ALTER TABLE TS_NUM_0000
-	ADD FOREIGN KEY (SOURCE_ID)
-	REFERENCES TSDB_DATA_SOURCE (SOURCE_ID)
-	ON UPDATE RESTRICT
-	ON DELETE RESTRICT
-;
+
 
 
 ALTER TABLE TSDB_GROUP_MEMBER_DT
@@ -1607,15 +1604,6 @@ ALTER TABLE TSDB_GROUP_MEMBER_TS
 	ON DELETE RESTRICT
 ;
 
-
-ALTER TABLE TS_NUM_0000
-	ADD FOREIGN KEY (TS_ID)
-	REFERENCES TS_SPEC (TS_ID)
-	ON UPDATE RESTRICT
-	ON DELETE RESTRICT
-;
-
-
 ALTER TABLE TS_ANNOTATION
 	ADD FOREIGN KEY (TS_ID)
 	REFERENCES TS_SPEC (TS_ID)
@@ -1638,15 +1626,6 @@ ALTER TABLE TSDB_GROUP_MEMBER_TS
 	ON UPDATE RESTRICT
 	ON DELETE RESTRICT
 ;
-
-
-ALTER TABLE TS_STRING_0000
-	ADD FOREIGN KEY (TS_ID)
-	REFERENCES TS_SPEC (TS_ID)
-	ON UPDATE RESTRICT
-	ON DELETE RESTRICT
-;
-
 
 ALTER TABLE CP_COMP_TASKLIST
 	ADD FOREIGN KEY (TS_ID)
@@ -1743,7 +1722,6 @@ COMMENT ON COLUMN DATASOURCE.DATASOURCEARG IS 'interpretation depends on the dat
 COMMENT ON COLUMN DATASOURCEGROUPMEMBER.SEQUENCENUM IS 'Determines order of data sources within the group';
 COMMENT ON COLUMN DATATYPE.DISPLAY_NAME IS 'Used for reports and GUIs.';
 COMMENT ON TABLE DATATYPEEQUIVALENCE IS 'An entry in this table expresses that two different data types are to be considered equivalent.';
-COMMENT ON COLUMN DCP_TRANS_DAY_MAP.DAY_NUMBER IS 'Day 0 = Jan 1, 1970. Null means this suffix not used.';
 COMMENT ON COLUMN DECODESDATABASEVERSION.VERSION_NUM IS 'Should be only one record representing the highest numbered version.
 For backward compat, sw will only look at max version number.';
 COMMENT ON COLUMN DECODESDATABASEVERSION.DB_OPTIONS IS 'Options expressed as comma-separated name=value pairs.';
@@ -1851,7 +1829,7 @@ COMMENT ON COLUMN TSDB_GROUP.GROUP_TYPE IS 'Must match a group_type enumeration 
 COMMENT ON COLUMN TSDB_GROUP_MEMBER_GROUP.INCLUDE_GROUP IS 'How to combine child with parent: A=Add, S=Subtract, I=Intersect';
 COMMENT ON COLUMN TSDB_GROUP_MEMBER_OTHER.MEMBER_TYPE IS 'Must match one of the database''s underlying TS ID Parts.';
 COMMENT ON TABLE TSDB_PROPERTY IS 'Global properties on the database components.';
-COMMENT ON COLUMN TS_NUM_0000.FLAGS IS 'Bitwise flags for each value';
+
 COMMENT ON COLUMN TS_SPEC.STORAGE_TABLE IS 'Number of data storage table where values for this TS are stored.';
 COMMENT ON COLUMN TS_SPEC.STORAGE_TYPE IS '''N'' for numeric, ''S'' for String.';
 COMMENT ON COLUMN TS_SPEC.MODIFY_TIME IS 'Last Modify Time for this record, stored as Java msec time value UTC.';
@@ -1864,3 +1842,497 @@ COMMENT ON COLUMN UNITCONVERTER.TOUNITSABBR IS 'Standard abbreviation for this u
 
 
 
+/* Create Tables */
+
+CREATE TABLE ALARM_CURRENT
+(
+	-- Surrogate key of time series that triggered the alarm.
+	-- There can only be one current alarm assertion for a time series per loading app
+	TS_ID int NOT NULL,
+	LIMIT_SET_ID int NOT NULL,
+	-- Date/Time that alarm was asserted.
+	-- May be different from the time stamp of the alarm value.
+	ASSERT_TIME bigint NOT NULL,
+	-- Value that caused alarm assertion.
+	-- May be null in the case of MISSING VALUE alarms.
+	DATA_VALUE double precision,
+	-- Time stamp of the data value that triggered the alarm.
+	-- May be null for missing value alarms.
+	DATA_TIME bigint,
+	-- Bit fields indicating the alarm conditions.
+	ALARM_FLAGS int NOT NULL,
+	-- Message constructed for this alarm assertion.
+	MESSAGE varchar(256),
+	-- Date/Time when the last email notification was sent for this alarm.
+	-- NULL means no notification was sent.
+	LAST_NOTIFICATION_SENT bigint,
+	LOADING_APPLICATION_ID int,
+	PRIMARY KEY (TS_ID, LOADING_APPLICATION_ID)
+) WITHOUT OIDS;
+
+
+CREATE TABLE ALARM_EVENT
+(
+	ALARM_EVENT_ID int NOT NULL UNIQUE,
+	ALARM_GROUP_ID int NOT NULL,
+	LOADING_APPLICATION_ID int NOT NULL,
+	PRIORITY int NOT NULL,
+	PATTERN varchar(256),
+	PRIMARY KEY (ALARM_EVENT_ID)
+) WITHOUT OIDS;
+
+
+CREATE TABLE ALARM_GROUP
+(
+	ALARM_GROUP_ID int NOT NULL UNIQUE,
+	ALARM_GROUP_NAME varchar(32) NOT NULL UNIQUE,
+	LAST_MODIFIED bigint NOT NULL,
+	PRIMARY KEY (ALARM_GROUP_ID)
+) WITHOUT OIDS;
+
+
+CREATE TABLE ALARM_HISTORY
+(
+	TS_ID int NOT NULL,
+	LIMIT_SET_ID int NOT NULL,
+	ASSERT_TIME bigint NOT NULL,
+	DATA_VALUE double precision,
+	DATA_TIME bigint,
+	ALARM_FLAGS int NOT NULL,
+	MESSAGE varchar(256),
+	-- Time alarm was de-asserted or cancelled.
+	END_TIME bigint NOT NULL,
+	-- If alarm was manually cancelled, this is the user name who cancelled it.
+	-- If it was de-asserted automatically (e.g. by an out of range value coming back into range). This will be null.
+	CANCELLED_BY varchar(32),
+	LOADING_APPLICATION_ID int,
+	PRIMARY KEY (TS_ID, LIMIT_SET_ID, ASSERT_TIME, LOADING_APPLICATION_ID)
+) WITHOUT OIDS;
+
+
+CREATE TABLE ALARM_LIMIT_SET
+(
+	LIMIT_SET_ID int NOT NULL UNIQUE,
+	-- Surrogate Key
+	SCREENING_ID int NOT NULL,
+	-- If null, then limit set is good all year.
+	-- If specified, name must match one of the season names defined in rledit.
+	season_name varchar(24),
+	-- If not null, values >= this are rejected.
+	reject_high double precision,
+	-- If not null, values >= this are considered in critical range.
+	critical_high double precision,
+	-- If not null, values >= are in warning range
+	warning_high double precision,
+	-- If not null, values <= this are in warning range
+	warning_low double precision,
+	-- If not null, values <= this are considered in critical range.
+	critical_low double precision,
+	-- if not null, values <= this are rejected.
+	reject_low double precision,
+	-- Duration over which to check for stuck sensor.
+	-- If null, then no stuck-sensor checks are done
+	stuck_duration varchar(32),
+	-- Value must change by more than this amount over duration in order
+	-- to be considered un-stuck.
+	-- If zero, then any change means unstuck.
+	stuck_tolerance double precision,
+	-- If not null, don't check values <= this value.
+	stuck_min_to_check double precision,
+	-- An optional interval. If more than this amount of time has elapsed
+	-- before the value being checked, don't do the stuck sensor check.
+	stuck_max_gap varchar(32),
+	-- Interval over which to do rate of change checks.
+	-- If null, no roc checks are defined.
+	roc_interval varchar(32),
+	reject_roc_high double precision,
+	critical_roc_high double precision,
+	warning_roc_high double precision,
+	warning_roc_low double precision,
+	critical_roc_low double precision,
+	reject_roc_low double precision,
+	-- Defines the period over which missing-value checks are done.
+	-- Null means no missing check performed.
+	missing_period varchar(32),
+	-- Valid storage interval in the underlying database.
+	-- Must be less than the period.
+	-- If period is defined, this may not be null.
+	missing_interval varchar(32),
+	-- Alarm is triggered if the number of missing values in the period
+	-- is > this threshold.
+	-- If period is defined, this may not be null.
+	missing_max_values int,
+	-- Optional text to be used in email notifications generated from these limits.
+	hint_text varchar(256),
+	PRIMARY KEY (LIMIT_SET_ID),
+	UNIQUE (SCREENING_ID, season_name)
+) WITHOUT OIDS;
+
+
+CREATE TABLE ALARM_SCREENING
+(
+	-- Surrogate Key
+	SCREENING_ID int NOT NULL UNIQUE,
+	SCREENING_NAME varchar(32) NOT NULL UNIQUE,
+	-- If NULL, then this is default screening for DataType
+	SITE_ID int,
+	-- Foreign Key to DataType table
+	DATATYPE_ID int NOT NULL,
+	-- Start of appicable time for this screening.
+	-- If null, this screening goes back to beginning of time.
+	START_DATE_TIME bigint,
+	-- Time that this record was last written/modified
+	LAST_MODIFIED bigint NOT NULL,
+	-- Only do this screening if enabled
+	ENABLED boolean DEFAULT 'true' NOT NULL,
+	-- If not null, then alarms from this screening will cause email to the group.
+	ALARM_GROUP_ID int,
+	-- Description
+	SCREENING_DESC varchar(1024),
+	LOADING_APPLICATION_ID int,
+	PRIMARY KEY (SCREENING_ID)
+) WITHOUT OIDS;
+
+
+CREATE TABLE EMAIL_ADDR
+(
+	ALARM_GROUP_ID int NOT NULL,
+	ADDR varchar(256) NOT NULL,
+	PRIMARY KEY (ALARM_GROUP_ID, ADDR)
+) WITHOUT OIDS;
+
+
+CREATE TABLE FILE_MONITOR
+(
+	ALARM_GROUP_ID int NOT NULL,
+	PATH varchar(256) NOT NULL,
+	PRIORITY int NOT NULL,
+	MAX_FILES int,
+	MAX_FILES_HINT varchar(128),
+	-- Maximum Last Modify Time
+	MAX_LMT varchar(32),
+	MAX_LMT_HINT varchar(128),
+	ALARM_ON_DELETE boolean,
+	ON_DELETE_HINT varchar(128),
+	MAX_SIZE bigint,
+	MAX_SIZE_HINT varchar(128),
+	ALARM_ON_EXISTS boolean,
+	ON_EXISTS_HINT varchar(128),
+	ENABLED boolean,
+	PRIMARY KEY (ALARM_GROUP_ID, PATH)
+) WITHOUT OIDS;
+
+
+CREATE TABLE PROCESS_MONITOR
+(
+	ALARM_GROUP_ID int NOT NULL,
+	LOADING_APPLICATION_ID int NOT NULL,
+	ENABLED boolean,
+	PRIMARY KEY (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
+) WITHOUT OIDS;
+
+
+
+/* Create Foreign Keys */
+
+ALTER TABLE FILE_MONITOR
+	ADD FOREIGN KEY (ALARM_GROUP_ID)
+	REFERENCES ALARM_GROUP (ALARM_GROUP_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+;
+
+
+ALTER TABLE PROCESS_MONITOR
+	ADD FOREIGN KEY (ALARM_GROUP_ID)
+	REFERENCES ALARM_GROUP (ALARM_GROUP_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+;
+
+
+ALTER TABLE EMAIL_ADDR
+	ADD FOREIGN KEY (ALARM_GROUP_ID)
+	REFERENCES ALARM_GROUP (ALARM_GROUP_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+;
+
+
+ALTER TABLE ALARM_SCREENING
+	ADD FOREIGN KEY (ALARM_GROUP_ID)
+	REFERENCES ALARM_GROUP (ALARM_GROUP_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+;
+
+ALTER TABLE ALARM_SCREENING 
+	ADD CONSTRAINT AS_APP_FK
+	FOREIGN KEY (LOADING_APPLICATION_ID)
+	REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID)
+;
+
+ALTER TABLE ALARM_SCREENING ADD CONSTRAINT AS_SDI_START_APP_UNIQUE
+	UNIQUE(SITE_ID, DATATYPE_ID, START_DATE_TIME, LOADING_APPLICATION_ID)
+;
+
+ALTER TABLE ALARM_HISTORY
+	ADD FOREIGN KEY (LIMIT_SET_ID)
+	REFERENCES ALARM_LIMIT_SET (LIMIT_SET_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+;
+
+ALTER TABLE ALARM_HISTORY
+    ADD FOREIGN KEY (LOADING_APPLICATION_ID)
+    REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID)
+    ON UPDATE RESTRICT
+    ON DELETE RESTRICT
+;
+
+
+ALTER TABLE ALARM_CURRENT
+	ADD FOREIGN KEY (LIMIT_SET_ID)
+	REFERENCES ALARM_LIMIT_SET (LIMIT_SET_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+;
+
+ALTER TABLE ALARM_CURRENT
+    ADD FOREIGN KEY (LOADING_APPLICATION_ID)
+    REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID)
+    ON UPDATE RESTRICT
+    ON DELETE RESTRICT
+;
+
+ALTER TABLE ALARM_LIMIT_SET
+	ADD FOREIGN KEY (SCREENING_ID)
+	REFERENCES ALARM_SCREENING (SCREENING_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+;
+
+
+ALTER TABLE ALARM_EVENT
+	ADD FOREIGN KEY (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
+	REFERENCES PROCESS_MONITOR (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+;
+
+
+
+/* Create Indexes */
+
+-- For compproc to quickly detect any changes.
+CREATE INDEX AS_LAST_MODIFIED ON ALARM_SCREENING USING BTREE (LAST_MODIFIED);
+
+
+
+/* Comments */
+
+COMMENT ON COLUMN ALARM_CURRENT.TS_ID IS 'Surrogate key of time series that triggered the alarm.
+There can only be one current alarm assertion for a time series.';
+COMMENT ON COLUMN ALARM_CURRENT.ASSERT_TIME IS 'Date/Time that alarm was asserted.
+May be different from the time stamp of the alarm value.';
+COMMENT ON COLUMN ALARM_CURRENT.DATA_VALUE IS 'Value that caused alarm assertion.
+May be null in the case of MISSING VALUE alarms.';
+COMMENT ON COLUMN ALARM_CURRENT.DATA_TIME IS 'Time stamp of the data value that triggered the alarm.
+May be null for missing value alarms.';
+COMMENT ON COLUMN ALARM_CURRENT.ALARM_FLAGS IS 'Bit fields indicating the alarm conditions.';
+COMMENT ON COLUMN ALARM_CURRENT.MESSAGE IS 'Message constructed for this alarm assertion.';
+COMMENT ON COLUMN ALARM_CURRENT.LAST_NOTIFICATION_SENT IS 'Date/Time when the last email notification was sent for this alarm.
+NULL means no notification was sent.';
+COMMENT ON COLUMN ALARM_HISTORY.END_TIME IS 'Time alarm was de-asserted or cancelled.';
+COMMENT ON COLUMN ALARM_HISTORY.CANCELLED_BY IS 'If alarm was manually cancelled, this is the user name who cancelled it.
+If it was de-asserted automatically (e.g. by an out of range value coming back into range). This will be null.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.SCREENING_ID IS 'Surrogate Key';
+COMMENT ON COLUMN ALARM_LIMIT_SET.season_name IS 'If null, then limit set is good all year.
+If specified, name must match one of the season names defined in rledit.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.reject_high IS 'If not null, values >= this are rejected.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.critical_high IS 'If not null, values >= this are considered in critical range.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.warning_high IS 'If not null, values >= are in warning range';
+COMMENT ON COLUMN ALARM_LIMIT_SET.warning_low IS 'If not null, values <= this are in warning range';
+COMMENT ON COLUMN ALARM_LIMIT_SET.critical_low IS 'If not null, values <= this are considered in critical range.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.reject_low IS 'if not null, values <= this are rejected.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.stuck_duration IS 'Duration over which to check for stuck sensor.
+If null, then no stuck-sensor checks are done';
+COMMENT ON COLUMN ALARM_LIMIT_SET.stuck_tolerance IS 'Value must change by more than this amount over duration in order
+to be considered un-stuck.
+If zero, then any change means unstuck.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.stuck_min_to_check IS 'If not null, don''t check values <= this value.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.stuck_max_gap IS 'An optional interval. If more than this amount of time has elapsed
+before the value being checked, don''t do the stuck sensor check.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.roc_interval IS 'Interval over which to do rate of change checks.
+If null, no roc checks are defined.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.missing_period IS 'Defines the period over which missing-value checks are done.
+Null means no missing check performed.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.missing_interval IS 'Valid storage interval in the underlying database.
+Must be less than the period.
+If period is defined, this may not be null.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.missing_max_values IS 'Alarm is triggered if the number of missing values in the period
+is > this threshold.
+If period is defined, this may not be null.';
+COMMENT ON COLUMN ALARM_LIMIT_SET.hint_text IS 'Optional text to be used in email notifications generated from these limits.';
+COMMENT ON COLUMN ALARM_SCREENING.SCREENING_ID IS 'Surrogate Key';
+COMMENT ON COLUMN ALARM_SCREENING.SITE_ID IS 'If NULL, then this is default screening for DataType';
+COMMENT ON COLUMN ALARM_SCREENING.DATATYPE_ID IS 'Foreign Key to DataType table';
+COMMENT ON COLUMN ALARM_SCREENING.START_DATE_TIME IS 'Start of appicable time for this screening.
+If null, this screening goes back to beginning of time.';
+COMMENT ON COLUMN ALARM_SCREENING.LAST_MODIFIED IS 'Time that this record was last written/modified';
+COMMENT ON COLUMN ALARM_SCREENING.ENABLED IS 'Only do this screening if enabled';
+COMMENT ON COLUMN ALARM_SCREENING.ALARM_GROUP_ID IS 'If not null, then alarms from this screening will cause email to the group.';
+COMMENT ON COLUMN ALARM_SCREENING.SCREENING_DESC IS 'Description';
+COMMENT ON COLUMN FILE_MONITOR.MAX_LMT IS 'Maximum Last Modify Time';
+
+-- Used to assign IDs for new sites:
+CREATE SEQUENCE SiteIdSeq ;
+
+-- Used to assign IDs to new EquipmentModel records:
+CREATE SEQUENCE EquipmentIdSeq ;
+
+-- Used to assign IDs to new Enum records:
+CREATE SEQUENCE EnumIdSeq ;
+
+-- Used to assign IDs to new DataType records:
+CREATE SEQUENCE DataTypeIdSeq ;
+
+-- Used to assign IDs to new Platform records:
+CREATE SEQUENCE PlatformIdSeq ;
+
+-- Used to assign IDs to new PlatformConfig records:
+CREATE SEQUENCE PlatformConfigIdSeq ;
+
+-- Used to assign IDs to new DecodesScript records:
+CREATE SEQUENCE DecodesScriptIdSeq ;
+
+-- Used to assign IDs to new RoutingSpec records:
+CREATE SEQUENCE RoutingSpecIdSeq ;
+
+-- Used to assign IDs to new DataSource records:
+CREATE SEQUENCE DataSourceIdSeq ;
+
+-- Used to assign IDs to new Network List records:
+CREATE SEQUENCE NetworkListIdSeq ;
+
+-- Used to assign IDs to new PresentationGroup records:
+CREATE SEQUENCE PresentationGroupIdSeq ;
+
+-- Used to assign IDs to new DataPresentation records:
+CREATE SEQUENCE DataPresentationIdSeq ;
+
+-- Used to assign IDs to new UnitConverter records:
+CREATE SEQUENCE UnitConverterIdSeq ;
+
+CREATE SEQUENCE CP_COMP_TASKLISTIdSeq ;
+CREATE SEQUENCE CP_ALGORITHMIdSeq;
+CREATE SEQUENCE CP_COMPUTATIONIdSeq;
+CREATE SEQUENCE HDB_LOADING_APPLICATIONIdSeq ;
+CREATE SEQUENCE tsdb_data_sourceIdSeq ;
+CREATE SEQUENCE tsdb_groupIdSeq;
+CREATE SEQUENCE interval_codeIdSeq;
+CREATE SEQUENCE SCHEDULE_ENTRYIdSeq;
+CREATE SEQUENCE SCHEDULE_ENTRY_STATUSIdSeq;
+CREATE SEQUENCE DACQ_EVENTIdSeq;
+
+CREATE SEQUENCE ALARM_GROUPIdSeq;
+CREATE SEQUENCE ALARM_EVENTIdSeq;
+CREATE SEQUENCE ALARM_SCREENINGIdSeq;
+CREATE SEQUENCE ALARM_LIMIT_SETIdSeq;
+
+CREATE SEQUENCE TS_SPECIdSeq;
+
+CREATE SEQUENCE CP_DEPENDS_NOTIFYIdSeq;
+
+create table dcp_trans_day_map
+(
+	table_suffix varchar(4) not null unique,
+	-- day 0 = jan 1, 1970. null means this suffix not used.
+	day_number int,
+	primary key (table_suffix)
+) without oids;
+
+COMMENT ON COLUMN DCP_TRANS_DAY_MAP.DAY_NUMBER IS 'Day 0 = Jan 1, 1970. Null means this suffix not used.';
+
+do $$
+declare
+	i int;
+	suffix varchar(2);
+begin
+    /* Create Tables */
+	for i in 1..31
+	loop
+		suffix := to_char(i,'fm00');
+		execute 'CREATE TABLE DCP_TRANS_DATA_' || suffix ||
+		'(
+			RECORD_ID BIGINT NOT NULL,
+			BLOCK_NUM INT NOT NULL,
+			MSG_DATA VARCHAR(4000) NOT NULL,
+			PRIMARY KEY (RECORD_ID, BLOCK_NUM)
+		) WITHOUT OIDS';
+
+		execute 'CREATE TABLE DCP_TRANS_' || suffix ||
+		'(
+			RECORD_ID BIGINT NOT NULL UNIQUE,
+			-- ''G'' = GOES, ''L'' = Data Logger, ''I'' = Iridium.
+			-- This field determines how the header should be parsed.
+			MEDIUM_TYPE VARCHAR(1) NOT NULL,
+			MEDIUM_ID VARCHAR(64) NOT NULL,
+			LOCAL_RECV_TIME BIGINT NOT NULL,
+			TRANSMIT_TIME BIGINT NOT NULL,
+			FAILURE_CODES VARCHAR(8) NOT NULL,
+			-- Second of day when the transmit window started
+			WINDOW_START_SOD INT,
+			-- Transmit window length in seconds
+			WINDOW_LENGTH INT,
+			XMIT_INTERVAL INT,
+			CARRIER_START BIGINT,
+			CARRIER_STOP BIGINT,
+			FLAGS INT NOT NULL,
+			CHANNEL INT NOT NULL,
+			BATTERY FLOAT,
+			-- Total message length, determines number of additional blocks
+			-- required to store message.
+			MSG_LENGTH INT NOT NULL,
+			-- First block of data. Very long messages will have additional blocks.
+			MSG_DATA VARCHAR(4000) NOT NULL,
+			PRIMARY KEY (RECORD_ID)
+		) WITHOUT OIDS';
+
+		/* Create Foreign Keys */
+		execute 'ALTER TABLE DCP_TRANS_DATA_' || suffix ||
+			' ADD FOREIGN KEY (RECORD_ID)
+			REFERENCES DCP_TRANS_' || suffix || '(RECORD_ID)
+			ON UPDATE RESTRICT
+			ON DELETE RESTRICT';
+
+		execute 'CREATE SEQUENCE DCP_TRANS_' || suffix || 'IDSEQ';
+
+		insert into dcp_trans_day_map(table_suffix,day_number) values(suffix, null);
+
+		/* Create Indexes */
+
+		execute 'CREATE INDEX DCP_TRANS_DATA_REC_IDX_' || suffix || ' ON DCP_TRANS_DATA_' || suffix || ' USING BTREE (RECORD_ID)';
+		execute 'CREATE INDEX DCP_TRANS_ADDR_IDX_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (MEDIUM_TYPE, MEDIUM_ID)';
+		-- Used for GOES channel expansion in DCP Monitor
+		execute 'CREATE INDEX DCP_TRANS_CHAN_IDX_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (CHANNEL)';
+		execute 'CREATE INDEX DCP_TRANS_MEDIUM_TYPE_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (MEDIUM_TYPE)';
+
+		/* Comments */
+
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MEDIUM_TYPE IS '' G = GOES, L = Data Logger, I = Iridium. ' ||
+				'This field determines how the header should be parsed.''';
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.WINDOW_START_SOD IS ''Second of day when the transmit window started''';
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.WINDOW_LENGTH IS ''Transmit window length in seconds''';
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MSG_LENGTH IS ''Total message length, determines number of additional blocks' ||
+				'required to store message.''';
+		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MSG_DATA IS ''First block of data. Very long messages will have additional blocks.''';
+	end loop;
+end$$;
+
+
+
+-- Long term these should go away in favor of the 
+-- built in flyway version table.
+insert into DecodesDatabaseVersion values(68, '');
+insert into tsdb_database_version values(68, '');

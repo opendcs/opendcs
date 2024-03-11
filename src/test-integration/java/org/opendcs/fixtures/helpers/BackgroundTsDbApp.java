@@ -118,6 +118,7 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
         this.name = name;
         Map<String,String> processEnv = pb.environment();
         processEnv.putAll(env.getVariables());
+        pb.inheritIO();
         app = pb.start();
         Runtime.getRuntime().addShutdownHook(
             new Thread(() -> 

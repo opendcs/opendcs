@@ -11,19 +11,17 @@ import org.slf4j.helpers.MessageFormatter;
 
 public class SLF4JLogger extends AbstractLogger
 {
-    private ilex.util.Logger realLogger;
     private String name;
 
-    public SLF4JLogger(String name, ilex.util.Logger realLogger)
+    public SLF4JLogger(String name)
     {
         this.name = name;
-        this.realLogger = realLogger;
     }
 
     @Override
     public boolean isDebugEnabled()
     {
-        return realLogger.getMinLogPriority() < ilex.util.Logger.E_INFORMATION;
+        return ilex.util.Logger.instance().getMinLogPriority() < ilex.util.Logger.E_INFORMATION;
     }
 
     @Override
@@ -35,7 +33,7 @@ public class SLF4JLogger extends AbstractLogger
     @Override
     public boolean isErrorEnabled()
     {
-        return realLogger.getMinLogPriority() < ilex.util.Logger.E_FAILURE;
+        return ilex.util.Logger.instance().getMinLogPriority() < ilex.util.Logger.E_FAILURE;
     }
 
     @Override
@@ -47,7 +45,7 @@ public class SLF4JLogger extends AbstractLogger
     @Override
     public boolean isInfoEnabled()
     {
-        return realLogger.getMinLogPriority() < ilex.util.Logger.E_WARNING;
+        return ilex.util.Logger.instance().getMinLogPriority() < ilex.util.Logger.E_WARNING;
     }
 
     @Override
@@ -59,7 +57,7 @@ public class SLF4JLogger extends AbstractLogger
     @Override
     public boolean isTraceEnabled()
     {
-        return realLogger.getMinLogPriority() <= ilex.util.Logger.E_DEBUG3;
+        return ilex.util.Logger.instance().getMinLogPriority() <= ilex.util.Logger.E_DEBUG3;
     }
 
     @Override
@@ -71,7 +69,7 @@ public class SLF4JLogger extends AbstractLogger
     @Override
     public boolean isWarnEnabled()
     {
-        return realLogger.getMinLogPriority() <= ilex.util.Logger.E_WARNING;
+        return ilex.util.Logger.instance().getMinLogPriority() <= ilex.util.Logger.E_WARNING;
     }
 
     @Override
@@ -90,16 +88,16 @@ public class SLF4JLogger extends AbstractLogger
     protected void handleNormalizedLoggingCall(Level level, Marker marker, String msg, Object[] args, Throwable ex)
     {
         int ilexLevel = slf4jToIlexLevel(level);
-        realLogger.log(ilexLevel,MessageFormatter.arrayFormat(msg, args).getMessage());
+        ilex.util.Logger.instance().log(ilexLevel,MessageFormatter.arrayFormat(msg, args).getMessage());
         PrintStream ps = null;
         OutputStream out = null;
-        if (realLogger.getMinLogPriority() <= ilexLevel
+        if (ilex.util.Logger.instance().getMinLogPriority() <= ilexLevel
             && ex != null)
         {
             out = new ByteArrayOutputStream(ex.getStackTrace().length*50); // assume about 50 characters per line
             ps = new PrintStream(out);
             ex.printStackTrace(ps);
-            realLogger.log(ilexLevel, out.toString());
+            ilex.util.Logger.instance().log(ilexLevel, out.toString());
         }
     }
 

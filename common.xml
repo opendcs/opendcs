@@ -237,9 +237,9 @@
         <mkdir dir="${coverage.dir}"/>
     </target>
 
-    <target name="report" depends="resolve,resolve.build" description="--> generates a report of dependencies">
+    <target name="report" depends="resolve.real,resolve.build.real" description="--> generates a report of dependencies">
         <mkdir dir="${build.dir}/reports/dependencies"/>
-        <ivy:report todir="${build.dir}/reports/dependencies" conf="runtime,test,test_platform,izpack,groovy,build,spotbugs,pmd"/>
+        <ivy:report todir="${build.dir}/reports/dependencies" conf="runtime,runtime_last,test,test_platform,izpack,groovy,build,spotbugs,pmd"/>
     </target>
 
 

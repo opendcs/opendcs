@@ -1,12 +1,9 @@
 package decodes.cwms;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
-import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -62,7 +59,7 @@ public class CwmsTimeSeriesDAO
     extends DaoBase
     implements TimeSeriesDAI
 {
-    private final Logger log = LoggerFactory.getLogger(getCallingClass());
+    private final Logger log = LoggerFactory.getLogger(CwmsTimeSeriesDAO.class);
     protected static final  DbObjectCache<TimeSeriesIdentifier> cache =
         new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
     protected SiteDAI siteDAO = null;

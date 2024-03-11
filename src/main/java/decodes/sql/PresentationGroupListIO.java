@@ -22,15 +22,13 @@ import decodes.db.DataPresentation;
 import decodes.db.PresentationGroup;
 import decodes.db.PresentationGroupList;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
 /**
 * This class handles reading and writing the PresentationGroupList from/to
 * the SQL database.
 */
 public class PresentationGroupListIO extends SqlDbObjIo
 {
-    private static final Logger log = LoggerFactory.getLogger(getCallingClass());
+    private static final Logger log = LoggerFactory.getLogger(PresentationGroupListIO.class);
     /**
     * Transient storage for PresentationGroupList being read or written.
     */

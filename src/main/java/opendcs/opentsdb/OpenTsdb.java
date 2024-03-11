@@ -142,9 +142,7 @@ public class OpenTsdb extends TimeSeriesDb
 				+ settings.jdbcDriverClass + "' to database at '"
 				+ settings.editDatabaseLocation
 				+ "' for user '" + username + "': " + ex.toString();
-			System.err.println(msg);
-			conn = null;
-			throw new BadConnectException(msg);
+			throw new BadConnectException(msg, ex);
 		}
 	}
 
