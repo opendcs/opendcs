@@ -1,80 +1,5 @@
-/*
-*  $Id: TsdbAppTemplate.java,v 1.18 2020/05/07 13:53:03 mmaloney Exp $
-*  
-*  Open Source Software 
-*  
-*  $Log: TsdbAppTemplate.java,v $
-*  Revision 1.18  2020/05/07 13:53:03  mmaloney
-*  app name defaults to "utility"
-*
-*  Revision 1.17  2019/12/11 14:32:44  mmaloney
-*  Allow for noInit to facilitate launcher.
-*
-*  Revision 1.16  2019/11/13 15:14:31  mmaloney
-*  Rm unneeded imports.
-*
-*  Revision 1.15  2019/09/12 12:56:05  mmaloney
-*  Added getCmdLineArgs
-*
-*  Revision 1.14  2018/03/30 14:13:32  mmaloney
-*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
-*
-*  Revision 1.13  2017/03/30 21:08:27  mmaloney
-*  Refactor CompEventServer to use PID if monitor==true.
-*
-*  Revision 1.12  2017/03/14 18:54:35  mmaloney
-*  CWMS-10402 Don't retry connect if failure is due to invalid app name.
-*
-*  Revision 1.11  2016/10/01 15:00:41  mmaloney
-*  CWMS-8979 Allow Database Process Record to override decodes.properties and
-*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
-*  name of a process record. Properties assigned to the app will override the file(s).
-*
-*  Revision 1.10  2016/09/29 18:54:37  mmaloney
-*  CWMS-8979 Allow Database Process Record to override decodes.properties and
-*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
-*  name of a process record. Properties assigned to the app will override the file(s).
-*
-*  Revision 1.9  2016/09/28 15:14:04  mmaloney
-*  Fail safe code for daemons to close before attempting to reconnect.
-*
-*  Revision 1.8  2015/05/14 13:52:18  mmaloney
-*  RC08 prep
-*
-*  Revision 1.7  2015/02/06 18:56:59  mmaloney
-*  Added appMinDebugLevel
-*
-*  Revision 1.6  2014/12/11 20:29:31  mmaloney
-*  Added DacqEventLogging capability.
-*
-*  Revision 1.5  2014/11/19 16:09:48  mmaloney
-*  Additions for dcpmon
-*
-*  Revision 1.4  2014/08/22 17:23:04  mmaloney
-*  6.1 Schema Mods and Initial DCP Monitor Implementation
-*
-*  Revision 1.3  2014/07/10 17:07:54  mmaloney
-*  Remove startup log from ComputationApp, and add to TsdbAppTemplate.
-*
-*  Revision 1.2  2014/07/03 12:44:38  mmaloney
-*  Don't call readDecodesProperties() this is done by CmdLineArgs.
-*  Also, better consistency for CWMS GUI Apps in retrieving DB Passwords.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.15  2013/03/28 17:29:09  mmaloney
-*  Refactoring for user-customizable decodes properties.
-*
-*  Revision 1.14  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
-*/
 package decodes.tsdb;
 
-import static org.slf4j.helpers.Util.getCallingClass;
-
-import java.io.PrintStream;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
@@ -232,12 +157,7 @@ public abstract class TsdbAppTemplate
 			}
 			catch(DecodesException ex)
 			{
-				warning("Cannot init Decodes: " + ex);
-				final PrintStream log = Logger.instance().getLogOutput();
-				if (log!=null)
-				{
-					ex.printStackTrace(log);
-				}
+				log.warn("Cannot init Decodes: ",ex);
 				databaseFailed = true;
 				continue;
 			}
@@ -267,7 +187,7 @@ public abstract class TsdbAppTemplate
 
 		if (!noExitAfterRunApp)
 		{
-			Logger.instance().info(appNameArg.getValue() + " exiting.");
+			log.info("{} exiting.",appNameArg.getValue() );
 			System.exit(0);
 		}
 	}
@@ -283,9 +203,8 @@ public abstract class TsdbAppTemplate
 
 	protected void startupLogMessage()
 	{
-		Logger.instance().info("===============================================");
-		Logger.instance().info(appNameArg.getValue() + " starting. "
-			+ DecodesVersion.startupTag() + ", pid=" + getPID());
+		log.info("===============================================");
+		log.info("{} starting. {}, pid={}", appNameArg.getValue(), DecodesVersion.startupTag(), getPID());
 	}
 
 	/**
@@ -313,17 +232,19 @@ public abstract class TsdbAppTemplate
 		throws Exception
 	{
 		if (!cmdLineArgs.isNoInit())
+		{
+			// eventually remove
 			Logger.setLogger(new StderrLogger(appNameArg.getValue()));
-
-		// Parse command line arguments.
-		try { cmdLineArgs.parseArgs(args); }
+		}
+		try
+		{
+			cmdLineArgs.parseArgs(args);
+		}
 		catch(IllegalArgumentException ex)
 		{
+			log.error("Error parsing command line arguments",ex);
 			System.exit(1);
 		}
-		
-		// Remember the application-level debug level set from arguments.
-		appDebugMinPriority = Logger.instance().getMinLogPriority();
 	}
 
 	/**
@@ -340,42 +261,40 @@ public abstract class TsdbAppTemplate
 		throws ClassNotFoundException,
 		InstantiationException, IllegalAccessException
 	{
-		if (theDb != null)
+		if (theDb != null) {
 			return;
+		}
 
-//		String className = DecodesSettings.instance().dbClassName;
 		String className = DecodesSettings.instance().getTsdbClassName();
+
+		if (className == null)
+		{
+			String dbType = DecodesSettings.instance().editDatabaseType;
+			String msg = String.format("Error: can't create time series database with editDatabaseType='%s'", dbType);
+			log.error(msg);
+			throw new InstantiationException(msg);
+		}
 
 		try
 		{
-			Logger.instance().info("Connecting to time series database with class '"
-				+ className + "'");
+			log.info("Connecting to time series database with class '{}'",className);
 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
 			Class dbClass = cl.loadClass(className);
 			theDb = (TimeSeriesDb)dbClass.newInstance();
 		}
 		catch(ClassNotFoundException ex)
 		{
-			String msg = "Check concrete database class name. Can't find '"
-				+ className + "': " + ex;
-			System.err.println(msg);
-			Logger.instance().fatal(msg);
+			log.error("Check concrete database class name. Can't find '{}",className,ex);
 			throw ex;
 		}
 		catch(InstantiationException ex)
 		{
-			String msg = "Can't instantiate object of type '"
-				+ className + "': " + ex;
-			System.err.println(msg);
-			Logger.instance().fatal(msg);
+			log.error("Can't instantiate object of type '{}'", className ,ex);
 			throw ex;
 		}
 		catch(IllegalAccessException ex)
 		{
-			String msg = "Not permitted to instantiate object of type '"
-				+ className + "': " + ex;
-			System.err.println(msg);
-			Logger.instance().fatal(msg);
+			log.error("Not permitted to instantiate object of type '{}'", className,ex);
 			throw ex;
 		}
 
@@ -388,7 +307,6 @@ public abstract class TsdbAppTemplate
 
 	/**
 	 * Attempt to connect to the database.
-	 * @return true if success, false if not.
 	 * @throws BadConnectException if failure to connect.
 	 */
 	public void tryConnect()
@@ -430,7 +348,7 @@ public abstract class TsdbAppTemplate
 			String settingsApp = cmdLineArgs.getCmdLineProps().getProperty("settings");
 			if (settingsApp != null)
 			{
-				info("Overriding Decodes Settings with properties in Process Record '" + settingsApp + "'");
+				log.info("Overriding Decodes Settings with properties in Process Record '{}'", settingsApp );
 				try
 				{
 					CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
@@ -438,11 +356,11 @@ public abstract class TsdbAppTemplate
 				}
 				catch (DbIoException ex)
 				{
-					warning("Cannot load settings from app '" + settingsApp + "': " + ex);
+					log.warn("Cannot load settings from app '{}'", settingsApp , ex);
 				}
 				catch (NoSuchObjectException ex)
 				{
-					warning("Cannot load settings from non-existent app '" + settingsApp + "': " + ex);
+					log.warn("Cannot load settings from non-existent app '{}'", settingsApp , ex);
 				}
 			}
 		}
@@ -453,22 +371,17 @@ public abstract class TsdbAppTemplate
 	}
 
 	/**
-	 * @param afn
-	 * @param ex
+	 * @param afn auth filename
+	 * @param ex exception
 	 */
 	protected void authFileEx(String afn, Exception ex)
 	{
-		String msg = "Cannot read DB auth from file '" + afn + "': " + ex;
-		System.err.println(msg);
-		Logger.instance().failure(msg);
-try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); }
+		log.atError().setCause(ex).log("Cannot read DB auth from file '{}'", afn ,ex);
 	}
 	
 	protected void badConnect(String appName, BadConnectException ex)
 	{
-		String msg = appName + " Cannot connect to DB: " + ex.getMessage();
-		System.err.println(msg);
-		Logger.instance().failure(msg);
+		log.error("Cannot read DB auth from file '{}'", appName ,ex);
 	}
 
 	public void initDecodes()
@@ -506,7 +419,7 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 	 */
 	public void info(String msg)
 	{
-		Logger.instance().info(appNameArg.getValue() + " " + msg);
+		log.info("{} {}",appNameArg.getValue() , msg);
 	}
 
 	/**
@@ -515,7 +428,7 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 	 */
 	public void warning(String msg)
 	{
-		Logger.instance().warning(appNameArg.getValue() + " " + msg);
+		log.warn("{} {}",appNameArg.getValue(), msg);
 	}
 
 	/**
@@ -524,7 +437,7 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 	 */
 	public void failure(String msg)
 	{
-		Logger.instance().failure(appNameArg.getValue() + " " + msg);
+		log.error("{} {}",appNameArg.getValue(), msg);
 	}
 
 	public void setSilent(boolean silent)
@@ -547,7 +460,10 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 			if (idx > 0)
 			{
 				try { return Integer.parseInt(pids.substring(0, idx)); }
-				catch(Exception ex) {}
+				catch(Exception ex)
+				{
+					log.info("could not parse process id from '{}'",pids);
+				}
 			}
 		}
 		return -1;
@@ -563,8 +479,7 @@ try { throw new Exception(""); } catch (Exception ex2) { ex2.printStackTrace(); 
 			try { evtPort = Integer.parseInt(evtPorts.trim()); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning("Bad EventPort property '" + evtPorts
-					+ "' must be integer -- will derive from PID");
+				log.warn("Bad EventPort property '{}' must be integer -- will derive from PID", evtPorts);
 			}
 		}
 		if (evtPort == -1)
