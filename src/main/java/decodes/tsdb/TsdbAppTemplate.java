@@ -261,7 +261,8 @@ public abstract class TsdbAppTemplate
 		throws ClassNotFoundException,
 		InstantiationException, IllegalAccessException
 	{
-		if (theDb != null) {
+		if (theDb != null)
+		{
 			return;
 		}
 
