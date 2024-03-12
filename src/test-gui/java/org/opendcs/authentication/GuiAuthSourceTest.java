@@ -38,11 +38,11 @@ public class GuiAuthSourceTest extends GuiTest
     public void setup() throws Exception
     {
         loginDialog = GuiActionRunner.execute(() -> (LoginDialog)AuthSourceService.getFromString("gui-auth-source:Login"));
-        dialog = new DialogFixture(loginDialog);
+        dialog = new DialogFixture(robot(), loginDialog);
     }
 
     @AfterEach
-    public void tearDown()
+    public void tearDownEach()
     {
         dialog.cleanUp();
     }
