@@ -27,7 +27,8 @@ test
     dependsOn ":install:stage"
     useJUnitPlatform()
     def stageDir = project(":install").stage.outDir
-    def classPath = project(":opendcs").configurations.runtimeClasspath.asPath
+    def classPath = (project(':opendcs').jar.outputs.files
+                  + project(":opendcs").configurations.runtimeClasspath).asPath
 
     systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
     def impl = project.properties.get("opendcs.test.engine")
