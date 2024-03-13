@@ -10,7 +10,8 @@ statements.
 A major bulk of the examples here are likely not typically
 full raw messages from sources.  The sample messages are 
 displayed for the purposes of providing examples of how 
-the format statements function and decoding information.
+the format statements DECODE when executed on certain 
+input messages.
 
 Further details and advanced topics on the DECODING can be 
 found in the DECODING manual :doc:`DECODES Guide <./legacy-decoding-guide>`
@@ -27,6 +28,31 @@ strategies - including:
 * Break down or edit the message to something shorter and more manageable
 * Use the TRACE button to debug scripts
 
+Overview of Operations
+======================
+
+This section contains tables for reference.  These commands or
+operations are essentially the building blocks or fundamentals
+of DECODING.  
+
+* Skipping Operations
+* Jump and Repeat Operations
+* CSV Parser Operation
+* Check Operation
+* Scan Operation
+* Field Operations
+
+Recall that each operation is in most cases, really doing one of
+two things:
+
+#. Instructing the pointer where to go OR
+#. Mapping the data in the message to a date/time or sensor.
+
+The commands and operations in the tables below are expanded upon 
+in the next sections with greater detail and include examples.  
+
+The following table includes the skip operations. These are commands 
+used to instruct the pointer where to go relative to where the pointer is.
 
 +----------------------+----------------------------------------------------------+
 | **Command**          | **Description**                                          |
@@ -44,7 +70,8 @@ strategies - including:
 
 Table 1-1: DECODES Format Operations - Skipping
 
-
+The following table includes very common operations including the jump to label
+command and also the repeat syntax.  
 
 +----------------------+----------------------------------------------------------+
 | **Command**          | **Description**                                          |
@@ -56,6 +83,10 @@ Table 1-1: DECODES Format Operations - Skipping
 
 Table 1-2: DECODES Format Operations - Jump to Label & Repeat
 
+The following table includes the csv parser operation.  This command is 
+useful for when data messages are in a comma deliminated format.  This command
+will instruct data in the csv to be mapped to either a sensor or date/time.
+
 +----------------------+----------------------------------------------------------+
 | **Command**          | **Description**                                          |
 +======================+==========================================================+
@@ -64,21 +95,29 @@ Table 1-2: DECODES Format Operations - Jump to Label & Repeat
 
 Table 1-3: DECODES Format Operations - CSV Parser
 
+The following table includes check operations.  Check operations or commands are
+used to instruct the pointer where to navigate to depending on whether certain 
+criteria are met, immediately after where the pointer currently is in the message.
 
-+----------------------+------------------------------------------------------------------------+
-| **Command**          | **Description**                                                        |
-+======================+========================================================================+
-| C(*n*\N,*label*\)    | **Check** if next n characters are N digit, decimal, or sign,          |
-|                      | if at least one is not switch to *label*  or proceed to next statement |
-+----------------------+------------------------------------------------------------------------+
-| C(S,*label*\)        | **Check** if next character is a + or -                                |
-|                      | if at least one is not switch to *label* or proceed to next statement  |
-+----------------------+------------------------------------------------------------------------+
-| C(*str*\,*label*\)   | **Check** if next n-length of string characters match 'str',           |
-|                      | if at least one is not switch to *label* or proceed to next statement  |
-+----------------------+------------------------------------------------------------------------+
++-------------------+------------------------------------------------------------------------+
+| **Command**       | **Description**                                                        |
++===================+========================================================================+
+| C(*n*\N,*label*\) | **Check** if next n characters are N digit, decimal, or sign,          |
+|                   | if at least one is not switch to *label*  or proceed to next statement |
++-------------------+------------------------------------------------------------------------+
+| C(S,*label*\)     | **Check** if next character is a + or -                                |
+|                   | if at least one is not switch to *label* or proceed to next statement  |
++-------------------+------------------------------------------------------------------------+
+| C(*str*\,*label*\)| **Check** if next n-length of string characters match 'str',           |
+|                   | if at least one is not switch to *label* or proceed to next statement  |
++-------------------+------------------------------------------------------------------------+
 
 Table 1-4: DECODES Format Operations - Check
+
+The following table includes scan operations.  Scan operations or commands are
+used to instruct the pointer where to navigate to depending on whether some criteria
+is met within the scan window.  The scan criteria is slightly different than the check
+command.  See their respective sections for further detail. 
 
 +---------------------------+------------------------------------------------------------+
 | **Command**               | **Description**                                            |
@@ -98,15 +137,44 @@ Table 1-4: DECODES Format Operations - Check
 
 Table 1-5: DECODES Format Operations - Scan
 
+The following table includes the simple field operations.  These statements
+will instruct certain data of a particular format to be mapped to a 
+sensor or date/time.  In some unique less common examples, other information
+is parsed out as well.
 
-+----------------------+----------------------------------------------------------+
-| **Command**          | **Description**                                          |
-+======================+==========================================================+
-| nF(FT,DT,L,S,E)      | **Skip** n data characters                               |
-+----------------------+----------------------------------------------------------+
++---------------------+----------------------------------------------------+
+| **Command**         | **Description**                                    |
++=====================+====================================================+
+| F(FT,DT,L,S,E)      | Generic **Field** Description                      |
++---------------------+----------------------------------------------------+
+| F(D,DT,L,fld-ID)    | Date **Field**                                     |
++---------------------+----------------------------------------------------+
+| F(T,DT,L)           | Time **Field**                                     |
++---------------------+----------------------------------------------------+
+| F(S,DT,L,sensor#)   | Sensor **Field**                                   |
++---------------------+----------------------------------------------------+
 
 Table 1-6: DECODES Format Operations - Fields
 
+In the examples in the sections below please make note a few items.
+
+The **header types** are assumed to be "other".  More details about the 
+various header types and assumptions about them will be expanded upon 
+in another section.  
+
+Sample messages can be copied and pasted or loaded into the Sample
+Message Box.  Depending on what header type is selected, the DECODING 
+will assume the first lines is the header.  If no header type is 
+defined, then the header type is assumed to be a GOES self-timed
+DCP header.  DECODES will by default skip the header and start 
+where the messages start.  In all the examples below (unless otherwise
+noted), the header type is "other".  If another header type
+is selected, the sample decoding scripts may not work because 
+the Sample Messages below do not include these various headers.
+
+.. image:: ./media/start/decoding/im-01-decoding-script-editor.JPG
+   :alt: decoding scripting editor
+   :width: 450
 
 Skip Operations - nX, nP, n/, n\\
 =================================
@@ -125,6 +193,20 @@ the information to a sensor.
 
 Skip Characters
 ---------------
+
++----------------+-------------------------------------------+
+| **Command**    | **Description**                           |
++================+===========================================+
+| nX             | **Skip** n data characters                |
++----------------+-------------------------------------------+
+
+Sample Messages where the sensor data is at 18 charachters
+from where the cursor is. Cursors or pointers, by default
+start at the top left of the message (excluding header).
+To test out the decoding, copy ONE of the lines below 
+into the Sample Message browser.  To navigate to the 
+18th position, the operations will tell the cursor to skip
+17 characters.
 
 ::
 
@@ -145,17 +227,21 @@ and DECODED, ignore the Date/Time since by default that
 will populate with the latest hour.  Also, in the example
 above the statement is only set to run once.  That is 
 why only the first level is displayed. Note that the > or 
-jump statement is used, see the next section for more details
-on this operation.
+jump statement is used, see later sections for more details
+on the field operation.
+
+.. image:: ./media/start/decoding/im-02-skip-characters.JPG
+   :alt: skip characters
+   :width: 550
 
 Recall that the skip characters will run from where the 
 operations is.  So in the following statement, first the 
 curser will skip 10 characters from the start of the first
 line, then proceed to the next label, which instructs
 the operation/curser to skip another 7 characters.  The 
-result is the same as the statement above, just divided 
+result is the same as the statements above, just divided 
 into two statements to convey how the skip characters operate
-from the position the operations is at.
+from the position the operation is at.
 
 +----------------------+-----------------------------+
 | skip_10char          | 10X,>skip_07char            |
@@ -165,8 +251,24 @@ from the position the operations is at.
 | field_sensor         | F(S,A,7D',',1)              |
 +----------------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-03-skip-characters.JPG
+   :alt: skip characters
+   :width: 550
+
 Skip to Position in Line
 ------------------------
+
++-------------+-----------------------------------------------------+
+| **Command** | **Description**                                     |
++=============+=====================================================+
+| nP          |**Position** to the nth character in the current line|
++-------------+-----------------------------------------------------+
+
+Sample Message where the data starts at position 18.  The
+skip to position in line operations moves the curser exactly
+to the 18th position in the line, regardless of where the 
+cursor is prior to this command.  That is how it differs from 
+the skip command.
 
 ::
 
@@ -175,8 +277,8 @@ Skip to Position in Line
 When the above lines are pasted into the Sample Message
 browser and DECODED,the position operation is used rather 
 than the skip characters operation.  The result will
-be the same as the top format.  This statement is ideal
-for when messages are in a fixed format.
+be the same as the skip character examples above.  This statement
+is ideal for when messages are in a fixed format.
 
 +----------------------+-----------------------------+
 | position_18          | 18P,>field_sensor           |
@@ -184,8 +286,20 @@ for when messages are in a fixed format.
 | field_sensor         | F(S,A,7D',',1)              |
 +----------------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-04-skip-position.JPG
+   :alt: skip characters
+   :width: 550
+
 Skip Lines
--------------------
+----------
+
++----------------+---------------------------------------+
+| **Command**    | **Description**                       |
++================+=======================================+
+| n/             | **Skip** n data lines                 |
++----------------+---------------------------------------+
+
+Sample Message where the first couple lines need to be skipped.
 
 ::
 
@@ -206,6 +320,13 @@ label.
 
 Skip Lines - Backwards
 ----------------------
+
++----------------+---------------------------------------+
+| **Command**    | **Description**                       |
++================+=======================================+
+| n\\            | **Skip backward** n data lines        |
++----------------+---------------------------------------+
+
 ::
 
    line 1 message, abc
@@ -229,6 +350,13 @@ proceed with the field_sensor label.
 
 Skip Whitespace
 ---------------
+
++----------------+---------------------------------------+
+| **Command**    | **Description**                       |
++================+=======================================+
+| W              | **Skip white space**                  |
++----------------+---------------------------------------+
+
 
 ::
 
@@ -847,8 +975,10 @@ Decoding Labels and Statements for above Sample Messages.
 +-----------------+-----------------------------+
 
 
-Field - ASCII
--------------
+Field - SENSOR Data Type
+------------------------
+
+F(**S**\,*,length,sensor #) 
 
 The field operation is what is used to extract the sensor values from
 the message.  Like the DATE/TIME field operations, they are of a similar 
@@ -856,9 +986,46 @@ format.  The field operation can be used with data types such as ASCII,
 Pseudo Binary, Pseudo Binary Signed Integer, amongst others. This section
 will go over how the Field operation can be used with ASCII data type.
 
-Raw Data
-~~~~~~~~
-F(S,A,length,sensor #) 
+Common data types include ASCII (A) and Pseudo-Binary (B or I).  OpenDCS
+can DECODE all of the following data types.
+
++----------------+----------------------------------------------------------------------------+
+| **data types** | **data type description**                                                  |
++================+============================================================================+
+| **A**          | * ASCII                                                                    |
++----------------+----------------------------------------------------------------------------+
+| **B**          | * Pseudo-Binary (unsigned)                                                 |
++----------------+----------------------------------------------------------------------------+
+| **I**          | * Pseudo-Binary Signed Integer (signed binary)                             |
++----------------+----------------------------------------------------------------------------+
+| **L**          | * Labarge pseudo-ASCII                                                     |
++----------------+----------------------------------------------------------------------------+
+| **X**          | * Hexadecimal                                                              |
++----------------+----------------------------------------------------------------------------+
+| **S**          | * String                                                                   |
++----------------+----------------------------------------------------------------------------+
+| **BC**         | * Campbell Scientific Binary Format                                        |
++----------------+----------------------------------------------------------------------------+
+| **C**          | * Campbell Scientific Binary Format (first byte defines sign and magnitude)|
++----------------+----------------------------------------------------------------------------+
+| **BD**         | * Design Analysis binary Format (Intger value made negative by sign bit)   |
++----------------+----------------------------------------------------------------------------+
+| **BT**         | * Telonics Binary Format (same as BD)                                      |
++----------------+----------------------------------------------------------------------------+
+| **BIN**        | * Pure Binary 2's compliment Signed Intger, MSB-first                      |
++----------------+----------------------------------------------------------------------------+
+| **UBIN**       | * Unsigned (always a positive) Pure Binary Integer, MSB-first              |
++----------------+----------------------------------------------------------------------------+
+| **BINL**       | * Pure Binary 2's compliment Signed Intger, LSB-first                      |
++----------------+----------------------------------------------------------------------------+
+| **UBINL**      | * Unsigned (always a positive) Pure Binary Integer, LSB-first              |
++----------------+----------------------------------------------------------------------------+
+
+
+Field - SENSOR - ASCII
+----------------------
+
+F(S,**A**\,length,sensor #) 
 
 The sensor number (denoted # in the table below) is the numeric sensor number specified in the configuration.
 
@@ -930,6 +1097,8 @@ In the examples below there are 2 sensors in the raw message.
 
 Sample Messages: Copy any one of the lines from the code block
 below and see how the fixed length decoding statements work.
+
+Sample Messages:  Example where the date is 2 characters long.
 
 ::
 
@@ -1039,10 +1208,156 @@ Decoding Labels and Statements for above Sample Messages.
 | get_sensor2     | F(S,A,4,2)                       |
 +-----------------+----------------------------------+
 
-Field - Pseudo-Binary
----------------------
+Field - SENSOR - Pseudo-Binary
+------------------------------
 
-...content coming soon ...
+B - Pseudo-Binary - unsigned
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Unlike messages that are sent in ASCII characters, messages that
+are sent in pseudo-binary are not discernible to the human eye.  
+Even if the date/time order of a ASCII messages type is not obvious,
+typically a human can tell which bits of a message are relating 
+to a certain sensor or parameters.  On the contrary, in pseudo-binary
+a numeric value is delivered in potentially all letter or non-numeric
+characters. 
+
+Encoding Steps (Going from a numeric number to pseudo-binary)
+
+* Start with decimal number
+* Turn decimal number into integer with multiplier
+* Encode the integer to binary
+* Tack on leading zeros if binary number is not multiple of 6
+* Divide (separate) the number into 6-bit chucks
+* Tack on high order bits 01 to each of the resulting 6 digit chunks
+* Result is 8-bit chunks
+* Encode each 8-bit chucks using ASCII characters.
+
+Decoding Steps (Going from pseudo-binary to a numeric number)
+
+* Decode ASCII characters to 8-bit binary
+* Result will be binary number of multiples of 8 (ie 8,16,24, etc)
+* Remove preceding 01 of each 8-bit chucks
+* Result is binary number of multiples of 6 (ie 6,12,18, etc)
+* Decode the binary number to integer
+* Use sensor defined translations (ie multipliers, linear shift, other).
+
+Examples 
+
+.. code-block:: bash
+
+   DECODING RECAP
+   @E} -> 381
+   
+   CONVERT @E} TO BINARY
+   @ = 01000000
+   E = 01000101
+   } = 01111101
+   
+   010000000100010101111101
+   **      **      **
+   
+   REMOVE LEADING 01 FROM EACH 8-BIT BINARY NUMBER
+   000000000101111101
+   
+   CONVERT 18-DIGIT BINARY NUMBER TO INTEGER
+   000000000101111101 = 381
+
+.. code-block:: bash
+
+   DECODING RECAP
+   DSe -> 17637
+   
+   CONVERT DSe TO BINARY
+   D = 01000100
+   S = 01010011
+   e = 01100101
+   
+   010001000101001101100101
+   **      **      **
+   
+   REMOVE LEADING 01 FROM EACH 8-BIT BINARY NUMBER
+   000100010011100101
+   
+   CONVERT 18-DIGIT BINARY NUMBER TO INTEGER
+   000100010011100101 = 17637
+
+.. code-block:: bash
+
+   DECODING RECAP
+   J^~ -> 42942
+   
+   CONVERT DSe TO BINARY
+   J = 01001010
+   ^ = 01011110	
+   ~ = 01111110
+   
+   010010100101111001111110
+   **      **      **
+   
+   REMOVE LEADING 01 FROM EACH 8-BIT BINARY NUMBER
+   001010011110111110
+   
+   CONVERT 18-DIGIT BINARY NUMBER TO INTEGER
+   001010011110111110 = 42942
+
+As an OpenDCS user it is not expected or assumed that one is familiar 
+with the intricate methodology behind pseudo-binary encoding/decoding.
+It is however pertinent that users know the proper spacing and order
+for such messages to ensure that the proper message or series of 
+characters gets decoded as pseudo-binary.
+
+For those who wish to better understand the steps behind pseudo-binary
+encoding and decoding, it is recommended that users refer to an ASCII 
+table that has the 7-bit (with a leading zero that makes it 8 characters)
+binary numbers with the corresponding ASCII symbols.  Additionally,
+a user might want to use an online binary to decimal converter (or vica 
+versa).
+
+Sample messages in pseduo-binary (3 character length)
+
+.. code-block:: bash
+
+   @E}
+   DSe
+   J^~
+
+DECODING format statement for messages above.
+
++-----------------+-------------------------+
+| get_sensor      | F(S,B,3,1)              |
++-----------------+-------------------------+
+
+Sample messages in pseduo-binary (5 character length)
+
+.. code-block:: bash
+
+   @E}DS
+   {^~qz
+   J^~qz
+
++-----------------+-------------------------+
+| get_sensor      | F(S,B,5,1)              |
++-----------------+-------------------------+
+
+Sample messages in pseduo-binary (1 character length)
+
+.. code-block:: bash
+
+   
+   }
+   Z
+   \
+   ]
+
++-----------------+-------------------------+
+| get_sensor      | F(S,B,1,1)              |
++-----------------+-------------------------+
+
+I - Pseudo-Binary - signed integer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 
 CSV Operations - (sens#,...)
 ============================
@@ -1108,14 +1423,289 @@ Check Operation - C(*,*label*\)
 |                    |                     | ih         |                                                         |
 +--------------------+---------------------+------------+---------------------------------------------------------+
 
+For the examplese below - copy one line and see how the 
+decoding works.  A date and time format statement are not
+included in the script, therefor by default the date/time
+will show the latest hour and top of hour.
+
+Sample Messages:  Examples where the check will pass and the 
+data will be decoded
+
+::
+
+   line001 20240229 176.54,
+   line-43 20240229 176.54,
+   line4.3 20240229 176.54,
+   line+43 20240229 176.54,
+
+Sample Messages:  Examples where the check will fail and the
+statement will jump to the next line.
+
+::
+   line  1 20240229 176.54,
+   line1,2 20240229 176.54,
+   line#23 20240229 176.54,
+   line23  20240229 176.54,
+
+
+Decoding Labels and Statements for above Sample Messages.
+
++-----------------+---------------------------------------+
+| check_for_num   | 4x,C(3N,jump_to_label),>get_sensor    |
++-----------------+---------------------------------------+
+| jump_to_label   | /                                     |
++-----------------+---------------------------------------+
+| get_sensor      | 18P,F(S,A,6,1)                        |
++-----------------+---------------------------------------+
+
+
+Sample Messages:  Examples where the check will pass and the 
+data will be decoded
+
+::
+
+   ln+01 20240229 176.54,
+   ln-43 20240229 176.54,
+   ln+.3 20240229 176.54,
+   ln-43 20240229 176.54,
+
+
+::
+
+Sample Messages:  Examples where the check will fail and the
+statement will jump to the next line.
+
+   ln0+1 20240229 176.54,
+   ln4-3 20240229 176.54,
+   ln33+ 20240229 176.54,
+   ln~1- 20240229 176.54,
+
+Decoding Labels and Statements for above Sample Messages.
+
++-----------------+---------------------------------------+
+| check_for_sign  | 2x,C(S,jump_to_label),>get_sensor     |
++-----------------+---------------------------------------+
+| jump_to_label   | /                                     |
++-----------------+---------------------------------------+
+| get_sensor      | 16P,F(S,A,6,1)                        |
++-----------------+---------------------------------------+
+
+Sample Messages:  Examples where the check will pass and the 
+data will be decoded
+
+::
+
+   prefMessage 20240229 176.54,
+   prefMessage 20240229 176.54,
+   prefMessage 20240229 176.54,
+   prefMessage 20240229 176.54,
+
+
+Sample Messages:  Examples where the check will fail and the
+statement will jump to the next line.
+
+::
+
+   prefMESSAGE 20240229 176.54,
+   prefmessage 20240229 176.54,
+   prefixMessage 20240229 176.54,
+   pref 20240229 176.54,
+
+Decoding Labels and Statements for above Sample Messages.
+
++------------------+----------------------------------------------+
+| check_for_string | 4x,C('Message',jump_to_label),>get_sensor    |
++------------------+----------------------------------------------+
+| jump_to_label    | /                                            |
++------------------+----------------------------------------------+
+| get_sensor       | 22P,F(S,A,6,1)                               |
++------------------+----------------------------------------------+
 
 
 Scan Operations - S(n,*,label)
 ==============================
 
+The scan operation is slightly different than the check operation.  
+The scan operation will scan the next N characters for a specified 
+type of character (ie number, sign, alphabetic letter, or a string).
+If the character or string is found, then the pointer will navigate
+to where the specific condition has occured.  The command is used
+to position to a particular location based upon a specified location.
 
 
+In all cases below the following will occur: Scan at most **n** data 
+bytes until either the target of the scan is found or an end-of-line
+is found.
 
+If the target of the scan is found, continue with the next operation
+in the current statement label.  Otherwise switch to the label 
+specified in the parentheses.  After the operation is completed
+the current data pointer points to where the scan halted, i.e. 
+if target character(s) is found, it points to that character.  
+Otherwise, it is moved 'n' characters from the previous position.
+
+A special case of the S operation results when n is 0.  In this case
+the current data pointer remains unchanged.  If the target of the 
+scan if found continue with the next operation.  Otherwise switch
+to specified format.  This feature allows multiple tests on the same
+data character.
+
+
++--------------------------+-----------------------+------------+---------------------------------------------------------+
+| **statement**            | **example**           | **data**   | **about**                                               |
++==========================+=======================+============+=========================================================+
+| S(*n*\,N, *label*\)      | S(3,N, **other**\)    | HG1        | * scan next *n*\ characters for number characters       |
+|                          |                       +------------+ * number characters are digits, decimal points or signs |
+|                          |                       | G.5        | * if at LEAST ONE number characters found               |
+|                          |                       +------------+ * then NAVIGATE to immediately before character         |
+|                          |                       | 176        | * and PROCEED with next statement                       |
+|                          |                       +------------+ * examples on left will NAVIGATE and PROCEED            |
+|                          |                       | HG.        |                                                         |
+|                          |                       +------------+---------------------------------------------------------+
+|                          |                       | abc        | * scan next *n*\ characters for number characters       |
+|                          |                       +------------+ * number characters are digits, decimal points or signs |
+|                          |                       | HG#        | * if NONE are found                                     |
+|                          |                       +------------+ * then JUMP to label **other**                          |
+|                          |                       | !~a        | * examples on left will JUMP                            |
+|                          |                       +------------+                                                         |
+|                          |                       | @DT        |                                                         |
++--------------------------+-----------------------+------------+---------------------------------------------------------+
+| S(*n*\,S, *label*\)      | S(3,S, **other**\)    | +\12       | * scan next *n*\ characters for sign character          |
+|                          |                       +------------+ * if a SIGN is found                                    |
+|                          |                       | 12-\       | * then NAVIGATE to immediately before sign              |
+|                          |                       +------------+ * and PROCEED with next statement                       |
+|                          |                       | 1+\2       | * examples on left will NAVIGATE and PROCEED            |
+|                          |                       +------------+                                                         |
+|                          |                       | -\12       |                                                         |
+|                          |                       +------------+---------------------------------------------------------+
+|                          |                       | 123        | * scan next *n*\ characters for sign character          |
+|                          |                       +------------+ * if NO SIGNS found                                     |
+|                          |                       | 123+\      | * then JUMP to label **other**                          |
+|                          |                       +------------+ * examples on left will JUMP                            |
+|                          |                       | #~!        |                                                         |
+|                          |                       +------------+                                                         |
+|                          |                       | {3*        |                                                         |
++--------------------------+-----------------------+------------+---------------------------------------------------------+
+| S(*n*\,A, *label*\)      | S(4,'h', **other**\)  | hi12       | * scan next *n*\ characters for letter character        |
+|                          |                       +------------+ * to match the letter exactly (case sensitive)          |
+|                          |                       | 1hi2       | * if EXACT match to letter in statement                 |
+|                          |                       +------------+ * then NAVIGATE to immediately before character         |
+|                          |                       | 12hi       | * and PROCEED with next statement                       |
+|                          |                       +------------+ * examples on left will NAVIGATE and PROCEED            |
+|                          |                       | +#hi       |                                                         |
+|                          |                       +------------+---------------------------------------------------------+
+|                          |                       | Hi12       | * scan next *n*\ characters for letter character        |
+|                          |                       +------------+ * to match the letter exactly (case sensitive)          |
+|                          |                       | i123       | * if EXACT LETTER found                                 |
+|                          |                       +------------+ * then JUMP to label **other**                          |
+|                          |                       | 12H3       | * examples on left will JUMP                            |
+|                          |                       +------------+                                                         |
+|                          |                       | ello       |                                                         |
++--------------------------+-----------------------+------------+---------------------------------------------------------+
+
+In all of the SCAN examples, only copy one line at a time into 
+the Message Browser.
+
+Sample Messages: The following messages will DECODE the data for sensor 1.
+In other words the scan was successful in finding a number within the 
+next 3 characters.  Since a number was found, the pointer will jump
+to immediately before the number found, then proceed with the next
+statement. 
+
+::
+
+   scanHG176.54
+   scanHG.54
+   scan175.54
+   scanG176.54
+
+Sample Messages: The following messages will jump to the label
+jump_to_label because the scan was unsuccessful in finding a 
+number in the next 3 characters.  
+
+::
+
+   scanabc#176.54
+   scanHG#H176.54
+   scan!~a#175.54
+   scan@DT#176.54
+
+Decoding Labels and Statements for above Sample Messages.
+
++-----------------+-------------------------------------------+
+| scan_for_num    | 4x,S(3,N,jump_to_label),>get_sensor       |
++-----------------+-------------------------------------------+
+| jump_to_label   | /                                         |
++-----------------+-------------------------------------------+
+| get_sensor      | F(S,A,6,1)                                |
++-----------------+-------------------------------------------+
+
+Sample Messages: The following messages will DECODE the data for sensor 1.
+In other words the scan was successful in finding the sign within the 
+next 3 characters.  Therefore the pointer will navigate to immediately
+before the sign, and then proceed to the next statment.  The next statement
+instructs the pointer to jump 1 character (the sign), then extract
+the sensor data.
+
+::
+
+   scan+176.54
+   scan54-176.54
+   scan1+176.54
+   scan-176.54
+
+Sample Messages: The folowing messages will jump to the label
+jump_to_label because the scan was unsucessful in finding a 
+sign in the next 3 characters.
+
+::
+
+   scan123176.54
+   scan123+176.54
+   scan#~!176.54
+   scan{3*176.54
+
++-----------------+-------------------------------------------+
+| scan_for_sign   | 4x,S(3,S,jump_to_label),>get_sensor       |
++-----------------+-------------------------------------------+
+| jump_to_label   | /                                         |
++-----------------+-------------------------------------------+
+| get_sensor      | 1x,F(S,A,6,1)                             |
++-----------------+-------------------------------------------+
+
+Sample Messages: The following messages will DECODE the data for sensor 1.
+In other words the scan was successful in finding a letter 'G' within the 
+next 4 characters.  Since a 'G' was found, the pointer will jump
+to immediately before the 'G' found, then proceed with the next
+statement. 
+
+::
+
+   scan12hG176.54
+   scan4HG176.54
+   scanHG176.54
+   scan12G176.54
+
+Sample Messages: The folowing 3 messages will jump to the label
+jump_to_label because the scan was unsucessful in finding a 
+letter in the next 3 characters.  The last line will navigate
+to the first 'G' found, but then try to get the sensor from 
+GG176. and therefore an error will occur.
+
+::
+
+   scan12hg176.54
+   scang176.54
+   scan1234g176.54
+   scanGGG176.54
+
++-----------------+-------------------------------------------+
+| scan_for_letter | 4x,S(4,'G',jump_to_label),>get_sensor     |
++-----------------+-------------------------------------------+
+| jump_to_label   | /                                         |
++-----------------+-------------------------------------------+
+| get_sensor      | 1x,F(S,A,6,1)                             |
++-----------------+-------------------------------------------+
 
 
 Putting Commands Together
