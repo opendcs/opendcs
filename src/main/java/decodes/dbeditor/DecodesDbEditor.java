@@ -123,11 +123,10 @@ public class DecodesDbEditor
         String dbloc = dbLocArg.getValue();
         if (dbloc.length() > 0)
         {
-            dbio = DatabaseIO.makeDatabaseIO(settings.DB_XML, dbloc);
+            dbio = DatabaseIO.makeDatabaseIO(settings, dbloc);
         }
         else
-            dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-                settings.editDatabaseLocation);
+            dbio = DatabaseIO.makeDatabaseIO(settings);
 
         Platform.configSoftLink = true;
 

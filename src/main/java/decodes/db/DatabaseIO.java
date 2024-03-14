@@ -3,7 +3,6 @@
 */
 package decodes.db;
 
-import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -12,15 +11,19 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
+import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.SimpleDataSource;
+import org.opendcs.spi.authentication.AuthSource;
 import org.xml.sax.SAXException;
 
-import ilex.util.Counter;
+
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 import decodes.xml.XmlDatabaseIO;
+import ilex.util.AuthException;
 
 /**
 This is the base class for both XmlDatabaseIO and SqlDatabaseIO.
@@ -29,6 +32,12 @@ of the IO methods for reading/writing the DECODES database.
 */
 public abstract class DatabaseIO
 {
+	protected final javax.sql.DataSource dataSource;
+
+	public DatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
+	{
+		this.dataSource = dataSource;
+	}
 	/**
 	  Creates a concrete IO class as specified by type and location
 	  arguments.
@@ -37,46 +46,45 @@ public abstract class DatabaseIO
 	  @return the DatabaseIO object
 	  @throws DatabaseException if type unrecognized or location is invalid.
 	*/
-	public static final DatabaseIO makeDatabaseIO(int type, String location)
-		throws DatabaseException
+	public static final DatabaseIO makeDatabaseIO(int type, String location) throws DatabaseException
+	{
+		return null;
+	}
+
+	public static final DatabaseIO makeDatabaseIO(DecodesSettings settings) throws DatabaseException
+	{
+		return makeDatabaseIO(settings, settings.editDatabaseLocation);
+	}
+
+	public static final DatabaseIO makeDatabaseIO(DecodesSettings settings, String locOverride) throws DatabaseException
 	{
 		ResourceFactory.instance().initDbResources();
 		
-		try 
+		try
 		{
-			if (type == DecodesSettings.DB_XML)
-				return new XmlDatabaseIO(location);
+			final String location = locOverride.startsWith("jdbc:xml:") ? locOverride : "jdbc:xml:" + locOverride;
+			final int type = settings.editDatabaseTypeCode;
+
+			AuthSource auth = AuthSourceService.getFromString(settings.DbAuthFile);
+			Properties credentials = auth.getCredentials();
+			SimpleDataSource dataSource = new SimpleDataSource(location, credentials);
+
+			switch (type)
+			{
+				case DecodesSettings.DB_XML:  		return new XmlDatabaseIO(dataSource);
+				case DecodesSettings.DB_SQL:  		return new SqlDatabaseIO(dataSource);
+				case DecodesSettings.DB_CWMS:     	return new decodes.cwms.CwmsSqlDatabaseIO(dataSource);
+				case DecodesSettings.DB_OPENTSDB:	return new opendcs.opentsdb.OpenTsdbSqlDbIO(dataSource);
+				case DecodesSettings.DB_HDB:		return new decodes.hdb.HdbSqlDatabaseIO(dataSource);
+				default: throw new DatabaseException("No database defined (fix properties file)");
+			}
 		}
-		catch (SAXException se) 
+		catch (AuthException ex)
 		{
-			throw new DatabaseException("Caught a SAXException while " +
-				"attempting to create an XmlDatabaseIO object");
+			throw new DatabaseException("Unable to authenticate against the database.");
 		}
-		catch (ParserConfigurationException pce) 
-		{
-			throw new DatabaseException("Caught a " +
-				"ParserConfigurationException while " +
-				"attempting to create an XmlDatabaseIO object");
-		}
-
-		if (type == DecodesSettings.DB_SQL)
-			return new SqlDatabaseIO(location);
-
-		if (type == DecodesSettings.DB_CWMS)
-			return new decodes.cwms.CwmsSqlDatabaseIO(location);
-
-		if (type == DecodesSettings.DB_OPENTSDB)
-			return new opendcs.opentsdb.OpenTsdbSqlDbIO(location);
 		
-		if (type == DecodesSettings.DB_HDB)
-			return new decodes.hdb.HdbSqlDatabaseIO(location);
-		
-		// Add other database interface types (URL) here...
-
-		throw new DatabaseException(
-			"No database defined (fix properties file)");
 	}
-
 
 	//========== Identification methods ==========================
 

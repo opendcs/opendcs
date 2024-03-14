@@ -18,6 +18,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.opentsdb.Interval;
 
+import org.opendcs.database.SimpleDataSource;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
@@ -280,13 +281,12 @@ public class DbImport
 			if (dbLoc != null)
 			{
 				log.info("\t'{}'", dbLoc);
-				theDbio = DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, dbLoc);
+				theDbio = DatabaseIO.makeDatabaseIO(settings, dbLoc);
 			}
 			else
 			{
 				log.info("\t'{}/{}'", settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-				theDbio = DatabaseIO.makeDatabaseIO(
-					settings.editDatabaseTypeCode, settings.editDatabaseLocation);
+				theDbio = DatabaseIO.makeDatabaseIO(settings);
 			}
 		}
 		catch (IOException ex)
@@ -467,12 +467,13 @@ public class DbImport
 	 * database. XML files will subsequently be read into the staging database.
 	 */
 	private void initStageDb()
-		throws SAXException, ParserConfigurationException
+		throws SAXException, ParserConfigurationException, DatabaseException
 	{
 		log.debug("Initializing the staging database.");
 		stageDb = new decodes.db.Database(false);
 		Database.setDb(stageDb);
-		stageDbio = new XmlDatabaseIO("");
+		javax.sql.DataSource ds = new SimpleDataSource("", "", "");
+		stageDbio = new XmlDatabaseIO(ds);
 		stageDb.setDbIo(stageDbio);
 		topParser = stageDbio.getParser();
 		newObjects = new Vector<IdDatabaseObject>();

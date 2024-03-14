@@ -63,8 +63,7 @@ public class DbExport
 		Database.setDb(db);
 		DatabaseIO dbio;
 
-		dbio = DatabaseIO.makeDatabaseIO(
-			settings.editDatabaseTypeCode, settings.editDatabaseLocation);
+		dbio = DatabaseIO.makeDatabaseIO(settings);
 		
 		// Standard Database Initialization for all Apps:
 		Site.explicitList = false; // YES Sites automatically added to SiteList
@@ -149,4 +148,3 @@ public class DbExport
 		TopLevelParser.write(System.out, db);
 	}
 }
-

@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import javax.xml.parsers.ParserConfigurationException;
+
+import org.opendcs.database.SimpleDataSource;
 import org.xml.sax.SAXException;
 
 import javax.swing.DefaultListModel;
@@ -299,13 +301,14 @@ public class ImportDialog extends GuiDialog
 	 * Initialize the staging database. XML files will be read into this. 
 	 */
 	private void initStageDb()
-		throws SAXException, ParserConfigurationException
+		throws SAXException, ParserConfigurationException, DatabaseException
 	{
 		Logger.instance().debug3(
 				dbeditLabels.getString("ImportDialog.InitStageDebug"));
 		stageDb = new decodes.db.Database();
 		Database.setDb(stageDb);
-		stageDbIo = new XmlDatabaseIO("");
+		javax.sql.DataSource ds = new SimpleDataSource("", "", "");
+		stageDbIo = new XmlDatabaseIO(ds);
 		stageDb.setDbIo(stageDbIo);
 		topParser = stageDbIo.getParser();
 
@@ -849,4 +852,3 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 		closeDlg();
 	}
 }
-

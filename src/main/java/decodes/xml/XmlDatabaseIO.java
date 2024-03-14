@@ -91,6 +91,7 @@ import decodes.db.UnitConverterSet;
 import decodes.sql.DbKey;
 import decodes.tsdb.xml.XmlLoadingAppDAO;
 import decodes.util.DecodesSettings;
+import decodes.xml.jdbc.XmlConnection;
 
 /**
  * This class allows you to read database information from a
@@ -156,41 +157,55 @@ public class XmlDatabaseIO extends DatabaseIO
 	 * @throws SAXException if can't initialize XML parsers
 	 * @throws ParserConfigurationException if can't configure XML parsers
 	 */
-	public XmlDatabaseIO( String xmldir ) 
-		throws SAXException, ParserConfigurationException
+	public XmlDatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
 	{
+		super(dataSource);
+		try(XmlConnection con = dataSource.getConnection().unwrap(XmlConnection.class))
+		{
+			this.xmldir = con.getDirectory();
+		}
+		catch (SQLException ex)
+		{
+			throw new DatabaseException("Unable to retrieve directory", ex);
+		}
 		Logger.instance().log(Logger.E_DEBUG1, 
 			"Creating XmlDatabaseIO for directory '" + xmldir + "'");
-		this.xmldir = xmldir;
-		myParser = new TopLevelParser();
-
-		errorHandler = new LoggerErrorHandler();
-		errorHandler.stopOnWarnings(false);
-		errorHandler.stopOnErrors(false);
-		myParser.setErrorHandler(errorHandler);
-		platformIdCounter = null;
-
-		dtdUri = null;
-
-		if (xmldir != null && xmldir.length() > 0)
+		try
 		{
-			File xmlTop = new File(xmldir);
-			if (!xmlTop.isDirectory())
+			myParser = new TopLevelParser();
+
+			errorHandler = new LoggerErrorHandler();
+			errorHandler.stopOnWarnings(false);
+			errorHandler.stopOnErrors(false);
+			myParser.setErrorHandler(errorHandler);
+			platformIdCounter = null;
+
+			dtdUri = null;
+
+			if (xmldir != null && xmldir.length() > 0)
 			{
-				if (!xmlTop.mkdirs())
+				File xmlTop = new File(xmldir);
+				if (!xmlTop.isDirectory())
 				{
-					Logger.instance().warning(module + " Top directory '" + xmldir 
-						+ "' does not exist and cannot be created. Check permissions and location.");
-					return;
+					if (!xmlTop.mkdirs())
+					{
+						Logger.instance().warning(module + " Top directory '" + xmldir 
+							+ "' does not exist and cannot be created. Check permissions and location.");
+						return;
+					}
+				}
+				for(String subdir : subdirs)
+				{
+					File entdir = new File(xmlTop, subdir);
+					if (!entdir.isDirectory() && !entdir.mkdir())
+						Logger.instance().warning(module + " Entity directory '" + entdir.getPath() 
+							+ "' does not exist and cannot be created. Check permissions and location.");
 				}
 			}
-			for(String subdir : subdirs)
-			{
-				File entdir = new File(xmlTop, subdir);
-				if (!entdir.isDirectory() && !entdir.mkdir())
-					Logger.instance().warning(module + " Entity directory '" + entdir.getPath() 
-						+ "' does not exist and cannot be created. Check permissions and location.");
-			}
+		}
+		catch (ParserConfigurationException | SAXException ex)
+		{
+			throw new DatabaseException("Unable to setup SAXParser.", ex);
 		}
 	}
 
