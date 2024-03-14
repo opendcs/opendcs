@@ -25,7 +25,6 @@ import org.opendcs.spi.authentication.AuthSource;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.SiteDAI;
-import opendcs.dao.DatabaseConnectionOwner;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
 import lrgs.gui.DecodesInterface;
@@ -49,9 +48,7 @@ import decodes.util.DecodesSettings;
  * USACE (U.S. Army Corps of Engineers) CWMS (Corps Water Management System)
  * database, which is hosted on an Oracle DBMS.<p>
  */
-public class CwmsSqlDatabaseIO
-	extends SqlDatabaseIO
-	implements DatabaseConnectionOwner
+public class CwmsSqlDatabaseIO extends SqlDatabaseIO
 {
 	public final static String module = "CwmsSqlDatabaseIO";
 	/** The office ID associated with this connection. This implicitely
@@ -70,20 +67,15 @@ public class CwmsSqlDatabaseIO
 	* where hostname and dbname specify the Oracle CWMS database.
 	* @param sqlDbLocation the location string from decodes.properties file
  	*/
-	public CwmsSqlDatabaseIO(String sqlDbLocation)
-		throws DatabaseException
+	public CwmsSqlDatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
 	{
 		// No-args base class ctor doesn't connect to DB.
-		super();
+		super(dataSource);
 		
         writeDateFmt = new SimpleDateFormat(
 			"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
 		DecodesSettings.instance().sqlTimeZone = "GMT";
         writeDateFmt.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone));
-		
-		this.sqlDbLocation = sqlDbLocation;
-
-		connectToDatabase(sqlDbLocation);
 
 		/* 
 		 * Oracle does not require a COMMIT after each block of nested SELECTs.

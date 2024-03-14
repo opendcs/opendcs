@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
+import java.util.Properties;
 
 import javax.sql.DataSource;
 
@@ -17,15 +18,21 @@ import javax.sql.DataSource;
 public class SimpleDataSource implements DataSource
 {
     final String url;
-    final String username;
-    final String password;
+    final Properties properties;
     PrintWriter pw = null;
 
     public SimpleDataSource(String jdbcUrl, String username, String password)
     {
         this.url = jdbcUrl;
-        this.username = username;
-        this.password = password;
+        this.properties = new Properties();
+        this.properties.setProperty("username", username);
+        this.properties.setProperty("password", password);
+    }
+
+    public SimpleDataSource(String jdbcUrl, Properties properties)
+    {
+        this.url = jdbcUrl;
+        this.properties = properties;
     }
 
     @Override
@@ -71,7 +78,7 @@ public class SimpleDataSource implements DataSource
     @Override
     public Connection getConnection() throws SQLException
     {
-        return DriverManager.getConnection(url, username, password);
+        return DriverManager.getConnection(url, properties);
     }
 
     @Override

@@ -39,7 +39,10 @@ final class XmlDatabaseTest {
         try {
             System.out.println(xmlDir.toString());
             String configName = "config-1";
-            XmlDatabaseIO dbio = (XmlDatabaseIO) DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, xmlDir.toString());
+            DecodesSettings settings = new DecodesSettings();
+            settings.editDatabaseTypeCode = DecodesSettings.DB_XML;
+            settings.editDatabaseLocation = xmlDir.toString();
+            XmlDatabaseIO dbio = (XmlDatabaseIO) DatabaseIO.makeDatabaseIO(settings);
 
             Database db = new Database();
             db.setDbIo(dbio);

@@ -103,8 +103,7 @@ public class RefListEditor
         
         Database.setDb(db);
         DatabaseIO dbio = 
-            DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-            settings.editDatabaseLocation);
+            DatabaseIO.makeDatabaseIO(settings);
         db.setDbIo(dbio);
         db.enumList.read();
         db.dataTypeSet.read();

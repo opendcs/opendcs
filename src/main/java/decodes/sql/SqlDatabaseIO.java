@@ -152,7 +152,7 @@ public class SqlDatabaseIO
     protected String _sqlDbLocation;
 
     /** Holds the object describing the connection to the database. */
-    private Connection _conn = null;
+    //private Connection _conn = null;
 
     /** This is used to read and write the EngineeringUnit table. */
     private EngineeringUnitIO _engineeringUnitIO;
@@ -250,8 +250,9 @@ public class SqlDatabaseIO
      * Default constructor -- all initialization that doesn't depend on
      * a database connection goes here.
      */
-    public SqlDatabaseIO()
+    public SqlDatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
     {
+        super(dataSource);
         // Initialize the child IO objects
         // Their are dependencies among them, which should be enforced
         // by their various constructors.  For example, the PlatformListIO
@@ -272,6 +273,7 @@ public class SqlDatabaseIO
         // Truncate lastLMT back to half-hour boundary
         lastLMT = (System.currentTimeMillis() / 1800000L) * 1800000L;
         commitAfterSelect = false;
+        postConnectInit();
     }
 
     /**
@@ -280,7 +282,7 @@ public class SqlDatabaseIO
      * the database, as used in the JDBC getConnection method.
     * @param sqlDbLocation the location string from decodes.properties file
      */
-    public SqlDatabaseIO(String sqlDbLocation)
+/*    public SqlDatabaseIO(String sqlDbLocation)
         throws DatabaseException
     {
         this();
@@ -289,13 +291,14 @@ public class SqlDatabaseIO
         keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
             DecodesSettings.instance().sqlKeyGenerator);
     }
+*/
 
     /**
      * Initialize the database connection using the username and password
      * provided in the hidden DECODES auth file.
      * @param sqlDbLocation URL (may vary for different DBs)
      */
-    public void connectToDatabase(String sqlDbLocation)
+ /*   public void connectToDatabase(String sqlDbLocation)
         throws DatabaseException
     {
         // Placeholder for connecting from web where connection is from a DataSource.
@@ -376,7 +379,8 @@ public class SqlDatabaseIO
 
         postConnectInit();
     }
-
+*/
+/*
     private void connectUserPassword(String user, String pw)
         throws DatabaseException
     {
@@ -413,7 +417,7 @@ public class SqlDatabaseIO
         }
 
     }
-
+*/
     /**
      * A subclass can override this method to perform initialization tasks after
      * a successful database connection.
@@ -588,19 +592,6 @@ public class SqlDatabaseIO
     */
     public void close( )
     {
-        try
-        {
-            log.info("Closing  database connection.");
-            if (_conn == null || _conn.isClosed())
-            {
-                return;
-            }
-            _conn.close();
-        }
-        catch (SQLException ex)
-        {
-            log.warn("Error closing database connection", ex);
-        }
     }
 
     /**
@@ -702,26 +693,22 @@ public class SqlDatabaseIO
     * @param euList the object to populate from the database.
     */
     @Override
-    public synchronized void readEngineeringUnitList(EngineeringUnitList euList)
-        throws DatabaseException
+    public synchronized void readEngineeringUnitList(EngineeringUnitList euList) throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _engineeringUnitIO.setConnection(conn);
             _engineeringUnitIO.read(euList);
 
             _unitConverterIO.setConnection(conn);
             _unitConverterIO.read(euList.getDatabase().unitConverterSet);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read engineering units list.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _engineeringUnitIO.setConnection(null);
             _unitConverterIO.setConnection(null);
         }
@@ -1367,24 +1354,20 @@ public class SqlDatabaseIO
       in the database.
     */
     @Override
-    public synchronized Date getPlatformLMT(Platform p)
-        throws DatabaseException
+    public synchronized Date getPlatformLMT(Platform p) throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             Date d = _platformListIO.getLMT(p);
             return d;
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read platform last modified time." , ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _platformListIO.setConnection(null);
         }
     }
@@ -1392,20 +1375,17 @@ public class SqlDatabaseIO
     @Override
     public synchronized Date getPlatformListLMT()
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             return _platformListIO.getListLMT();
         }
+        catch (SQLException ex)
+        {
+            throw new RuntimeException("Unable to read PlatformList last modified time.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _platformListIO.setConnection(null);
         }
     }
@@ -1431,8 +1411,7 @@ public class SqlDatabaseIO
       @param p the object to delete from the database.
     */
     @Override
-    public synchronized void deletePlatform( Platform p )
-        throws DatabaseException
+    public synchronized void deletePlatform( Platform p ) throws DatabaseException
     {
         Connection conn = null;
 
@@ -1616,14 +1595,10 @@ public class SqlDatabaseIO
       @param eqm the object to delete from the database.
     */
     @Override
-    public synchronized void deleteEquipmentModel(EquipmentModel eqm)
-        throws DatabaseException
+    public synchronized void deleteEquipmentModel(EquipmentModel eqm) throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _equipmentModelListIO.setConnection(conn);
             _equipmentModelListIO.delete(eqm);
         }
@@ -1633,10 +1608,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _equipmentModelListIO.setConnection(null);
         }
     }
@@ -1652,23 +1623,19 @@ public class SqlDatabaseIO
       @param pg the object to populate from the database.
     */
     @Override
-    public synchronized void readPresentationGroup(PresentationGroup pg)
-        throws DatabaseException
+    public synchronized void readPresentationGroup(PresentationGroup pg) throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _presentationGroupListIO.setConnection(conn);
             _presentationGroupListIO.readPresentationGroup(pg, true);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read Presentation group.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _presentationGroupListIO.setConnection(null);
         }
     }
@@ -1680,14 +1647,12 @@ public class SqlDatabaseIO
       @param pg the object to write to the database.
     */
     @Override
-    public synchronized void writePresentationGroup(PresentationGroup pg)
-        throws DatabaseException
+    public synchronized void writePresentationGroup(PresentationGroup pg) throws DatabaseException
     {
-        Connection conn = null;
+        
 
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _presentationGroupListIO.setConnection(conn);
             _presentationGroupListIO.write(pg);
         }
@@ -1697,10 +1662,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _presentationGroupListIO.setConnection(null);
         }
     }
@@ -1742,23 +1703,21 @@ public class SqlDatabaseIO
       longer exists in the database.
     */
     @Override
-    public Date getPresentationGroupLMT(PresentationGroup pg)
-        throws DatabaseException
+    public Date getPresentationGroupLMT(PresentationGroup pg) throws DatabaseException
     {
-        Connection conn = null;
+        
 
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _presentationGroupListIO.setConnection(conn);
             return _presentationGroupListIO.getLMT(pg);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to get LMT of presentation group.");
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _presentationGroupListIO.setConnection(null);
         }
     }
@@ -1773,23 +1732,21 @@ public class SqlDatabaseIO
       @param rs the object to populate from the database.
     */
     @Override
-    public synchronized void readRoutingSpec(RoutingSpec rs)
-        throws DatabaseException
+    public synchronized void readRoutingSpec(RoutingSpec rs) throws DatabaseException
     {
-        Connection conn = null;
+        
 
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _routingSpecListIO.setConnection(conn);
             _routingSpecListIO.readRoutingSpec(rs);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read routing spec.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _routingSpecListIO.setConnection(null);
         }
     }
@@ -1861,23 +1818,21 @@ public class SqlDatabaseIO
       exists in the database.
     */
     @Override
-    public synchronized Date getRoutingSpecLMT(RoutingSpec rs)
-        throws DatabaseException
+    public synchronized Date getRoutingSpecLMT(RoutingSpec rs) throws DatabaseException
     {
-        Connection conn = null;
+        
 
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _routingSpecListIO.setConnection(conn);
             return _routingSpecListIO.getLMT(rs);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read routing spec last modified time.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _routingSpecListIO.setConnection(null);
         }
     }
@@ -1885,13 +1840,10 @@ public class SqlDatabaseIO
 
     /** Does nothing. */
     @Override
-    public synchronized void readDataSource(DataSource ds)
-        throws DatabaseException
+    public synchronized void readDataSource(DataSource ds) throws DatabaseException
     {
-        Connection conn = null;
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _dataSourceListIO.setConnection(conn);
             DataSource tds = _dataSourceListIO.readDS(ds.getId());
             if (tds != null)
@@ -1903,12 +1855,12 @@ public class SqlDatabaseIO
                 Collections.copy(ds.groupMembers, tds.groupMembers);
             }
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read DataSource", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _dataSourceListIO.setConnection(null);
         }
 
@@ -2154,26 +2106,12 @@ public class SqlDatabaseIO
       Returns the JDBC Connection object.
     */
     @Override
-    public Connection getConnection()
+    public Connection getConnection() throws SQLException
     {
-        if (poolingDataSource != null)
-        {
-            try
-            {
-                return poolingDataSource.getConnection();
-            }
-            catch (SQLException ex)
-            {
-                log.warn("SqlDatabaseIO.getConnection() Cannot get pooled connection.", ex);
-            }
-        }
-        return new WrappedConnection(_conn, (c)-> {/* do nothing */});
+        return dataSource.getConnection();
     }
 
-    public void setConnection(Connection conn)
-    {
-        _conn = conn;
-    }
+    
 
     public boolean commitAfterSelectStatus()
     {

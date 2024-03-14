@@ -208,12 +208,13 @@ public class DecodesInterface
 		}
 		
 		DatabaseIO dbio;
-		dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-			settings.editDatabaseLocation);
+		dbio = DatabaseIO.makeDatabaseIO(settings);
 		db.setDbIo(dbio);
 
 		if (!silent)
-		{	System.out.print("EU, "); System.out.flush(); }
+		{
+			System.out.print("EU, "); System.out.flush();
+		}
 		
 		db.engineeringUnitList.read();
 	}

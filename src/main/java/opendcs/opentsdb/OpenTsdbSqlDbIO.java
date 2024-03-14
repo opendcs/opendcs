@@ -21,11 +21,12 @@ public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 		this(null);
 	}
 
-	public OpenTsdbSqlDbIO(String location)
+	public OpenTsdbSqlDbIO(javax.sql.DataSource dataSource)
 		throws DatabaseException
 	{
-		super(location);
+		super(dataSource);
 		Logger.instance().info("Constructing OpenTsdbSqlDbIO");
+		postConnectInit();
 	}
 
 	@Override

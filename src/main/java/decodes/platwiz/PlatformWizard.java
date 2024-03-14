@@ -224,9 +224,7 @@ public class PlatformWizard
         {
             Database db = new decodes.db.Database();
             Database.setDb(db);
-            DatabaseIO dbio = 
-                DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-                    settings.editDatabaseLocation);
+            DatabaseIO dbio = DatabaseIO.makeDatabaseIO(settings);
 
             Platform.configSoftLink = false;
             System.out.print("Reading DB: "); System.out.flush();

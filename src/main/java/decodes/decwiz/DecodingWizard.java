@@ -87,8 +87,7 @@ public class DecodingWizard
 			Database db = new decodes.db.Database();
 			Database.setDb(db);
 			DatabaseIO dbio = null; 
-			dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-				settings.editDatabaseLocation);
+			dbio = DatabaseIO.makeDatabaseIO(settings);
 
 			Platform.configSoftLink = false;
 			System.out.print("Reading DB: "); System.out.flush();

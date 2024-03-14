@@ -19,11 +19,10 @@ public class HdbSqlDatabaseIO extends SqlDatabaseIO
 		this(null);
 	}
 	
-	public HdbSqlDatabaseIO(String sqlDbLocation)
-		throws DatabaseException
+	public HdbSqlDatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
 	{
 		// No-args base class ctor doesn't connect to DB.
-		super(sqlDbLocation);
+		super(dataSource);
 		keyGenerator = new OracleSequenceHDBGenerator();
 	}
 	

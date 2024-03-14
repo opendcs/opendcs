@@ -83,7 +83,7 @@ public interface Configuration
     {
         DecodesSettings settings = DecodesSettings.instance();
         Database db = new Database(true);
-        DatabaseIO dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode, settings.editDatabaseLocation);
+        DatabaseIO dbio = DatabaseIO.makeDatabaseIO(settings);
         db.setDbIo(dbio);
         db.read();
         Database.setDb(db);
