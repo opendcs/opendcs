@@ -287,7 +287,7 @@ is ideal for when messages are in a fixed format.
 +----------------------+-----------------------------+
 
 .. image:: ./media/start/decoding/im-04-skip-position.JPG
-   :alt: skip characters
+   :alt: skip to position
    :width: 550
 
 Skip Lines
@@ -318,6 +318,10 @@ label.
 | field_sensor         | 18P,F(S,A,7D',',1)          |
 +----------------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-05-skip-lines.JPG
+   :alt: skip lines
+   :width: 550
+
 Skip Lines - Backwards
 ----------------------
 
@@ -326,6 +330,11 @@ Skip Lines - Backwards
 +================+=======================================+
 | n\\            | **Skip backward** n data lines        |
 +----------------+---------------------------------------+
+
+Sample Message where the first couple lines need to be skipped.
+In the example below instead of directly skipping 2 lines, the 
+decoding will skip too many lines and then jump backwards the
+appropriate number of lines.
 
 ::
 
@@ -347,6 +356,11 @@ proceed with the field_sensor label.
 +----------------------+-----------------------------+
 | field_sensor         | 18P,F(S,A,7D',',1)          |
 +----------------------+-----------------------------+
+
+
+.. image:: ./media/start/decoding/im-06-skip-lines-backwards.JPG
+   :alt: skip lines backwards
+   :width: 550
 
 Skip Whitespace
 ---------------
@@ -375,15 +389,27 @@ characters, then jump to the skip white space command and then
 skip the white space. Then the cursor should be right before
 the data for sensor one. 
 
+.. image:: ./media/start/decoding/im-07-skip-whitespace.JPG
+   :alt: skip whitespace
+   :width: 550
+
+
 Jump and Repeat Operations - >, n(operations...)
 ================================================
 
 Jump to Label
 -------------
 
++--------------+--------------------------------------------------+
+| **Command**  | **Description**                                  |
++==============+==================================================+
+| > *label*    | **Jump** to the format with the specified label  |
++--------------+--------------------------------------------------+
+
+
 Recall that DECODES format operations are separated by commas.
 So a number of format statments can be entered in one label
-so long as the commas are appropriately spaced.  When getting
+so long as the commas are appropriately positioned.  When getting
 started it can be helpful to separate the statements by labels.
 To jump from one label to another use the > **label** command.
 The jump label comes in handy when there are conditional
@@ -399,19 +425,47 @@ statements or search criteria.
 | get_sensor1     | F(S,A,7D',',1)              |
 +-----------------+-----------------------------+
 
-
 +-----------------+-----------------------------+
 | one_line        | 19P,F(S,A,7D',',1)          |
 +-----------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-08-jump-to-label.JPG
+   :alt: jump to label
+   :width: 550
 
 Repeating Statements
 --------------------
 
-... example coming soon... 
++----------------------+----------------------------------------------------------+
+| **Command**          | **Description**                                          |
++======================+==========================================================+
+| *n*\(*operations*...)| **Repeat operations** enclosed in parenthesis n times    |
++----------------------+----------------------------------------------------------+
+
+::
+
+   176.448176.449176.452
+
++-----------------+-----------------------------+
+| get_sensor1     | 3F(S,A,6,1)                 |
++-----------------+-----------------------------+
+
+.. image:: ./media/start/decoding/im-09-repeat-ascii.JPG
+   :alt: repeat ascii
+   :width: 550
 
 
+.. code-block:: bash
 
+   @a}@a]@a~
+
++-----------------+-----------------------------+
+| get_sensor1     | 3F(S,B,3,1)                 |
++-----------------+-----------------------------+
+
+.. image:: ./media/start/decoding/im-10-repeat-binary.JPG
+   :alt: repeat binary
+   :width: 550
 
 Field Operation - nF(FT,DT,L,S,E)
 =================================
@@ -554,6 +608,9 @@ Decoding Labels and Statements for above Sample Messages.
 | get_var         | 21P,F(S,A,7D',',1)          |
 +-----------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-11-date-fld-id-1.JPG
+   :alt: field date fld-id 1
+   :width: 550
 
 DATE - Fld-id 2
 ~~~~~~~~~~~~~~~
@@ -673,6 +730,9 @@ Decoding Labels and Statements for above Sample Messages.
 | get_var         | 13P,F(S,A,7D',',1)          |
 +-----------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-12-date-fld-id-2.JPG
+   :alt:  field date fld-id 2
+   :width: 550
 
 DATE - Fld-id 3
 ~~~~~~~~~~~~~~~
@@ -729,6 +789,9 @@ Decoding Labels and Statements for above Sample Messages.
 | get_var         | 15P,F(S,A,7D',',1)          |
 +-----------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-13-date-fld-id-3.JPG
+   :alt:  field date fld-id 3
+   :width: 550
 
 DATE - Fld-id 4
 ~~~~~~~~~~~~~~~
@@ -812,6 +875,9 @@ Decoding Labels and Statements for above Sample Messages.
 | get_var         | 21P,F(S,A,7D',',1)          |
 +-----------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-14-date-fld-id-4.JPG
+   :alt:  field date fld-id 4
+   :width: 550
 
 Field - TIME
 ------------
@@ -905,6 +971,10 @@ Decoding Labels and Statements for above Sample Messages.
 | get_var         | 19P,F(S,A,7D',',1)          |
 +-----------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-15-time.JPG
+   :alt:  field time
+   :width: 550
+
 Sample Messages:  Examples where the date is 5 characters long.
 
 ::
@@ -974,6 +1044,9 @@ Decoding Labels and Statements for above Sample Messages.
 | get_var         | 15P,F(S,A,7D',',1)          |
 +-----------------+-----------------------------+
 
+.. image:: ./media/start/decoding/im-16-time.JPG
+   :alt:  field time
+   :width: 550
 
 Field - SENSOR Data Type
 ------------------------
