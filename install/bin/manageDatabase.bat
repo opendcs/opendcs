@@ -1,2 +1,2 @@
 @echo off
-%INSTALL_PATH\bin\decj  org.opendcs.database.ManageDatabaseApp $*
+"%~dp0\decj"  org.opendcs.database.ManageDatabaseApp $*
