@@ -62,7 +62,7 @@ public abstract class DatabaseIO
 		
 		try
 		{
-			final String location = locOverride.startsWith("jdbc:xml:") ? locOverride : "jdbc:xml:" + locOverride;
+			final String location = locOverride.startsWith("jdbc:") ? locOverride : "jdbc:xml:" + locOverride;
 			final int type = settings.editDatabaseTypeCode;
 
 			AuthSource auth = AuthSourceService.getFromString(settings.DbAuthFile);
@@ -81,7 +81,7 @@ public abstract class DatabaseIO
 		}
 		catch (AuthException ex)
 		{
-			throw new DatabaseException("Unable to authenticate against the database.");
+			throw new DatabaseException("Unable to authenticate against the database.", ex);
 		}
 		
 	}

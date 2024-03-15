@@ -472,7 +472,7 @@ public class DbImport
 		log.debug("Initializing the staging database.");
 		stageDb = new decodes.db.Database(false);
 		Database.setDb(stageDb);
-		javax.sql.DataSource ds = new SimpleDataSource("", "", "");
+		javax.sql.DataSource ds = new SimpleDataSource("jdbc:xml:", "", "");
 		stageDbio = new XmlDatabaseIO(ds);
 		stageDb.setDbIo(stageDbio);
 		topParser = stageDbio.getParser();

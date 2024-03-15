@@ -61,9 +61,10 @@ public class XmlConfiguration implements Configuration
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
-        configBuilder.withDatabaseLocation("$DCSTOOL_USERDIR/edit-db");
+        configBuilder.withDatabaseLocation("jdbc:xml:$DCSTOOL_USERDIR/edit-db");
         configBuilder.withEditDatabaseType("XML");
         configBuilder.withSiteNameTypePreference("CWMS");
+        configBuilder.withDecodesAuth("noop:nothing");
         try(OutputStream out = new FileOutputStream(propertiesFile);)
         {
             FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
