@@ -15,12 +15,23 @@ public class XmlDriver implements Driver
 {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(XmlDriver.class);
     private static final Driver INSTANCE = new XmlDriver();
-    private static boolean registered;
+    private static boolean registered = false;
 
     @Override
     public Connection connect(String url, Properties info) throws SQLException
     {
-        return new XmlConnection(url);
+        if (url == null)
+        {
+            throw new SQLException("No url provided.");
+        }
+        else if (!url.startsWith("jdbc:xml:"))
+        {
+            throw new SQLException(String.format("URL provided, '%s', is not for this driver.", url));
+        }
+        else
+        {
+            return new XmlConnection(url);
+        }
     }
 
     @Override
@@ -30,7 +41,8 @@ public class XmlDriver implements Driver
     }
 
     @Override
-    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException
+    {
         return new DriverPropertyInfo[0];
     }
 
@@ -53,8 +65,8 @@ public class XmlDriver implements Driver
     }
 
     @Override
-    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        // TODO Auto-generated method stub
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException
+    {
         throw new UnsupportedOperationException("Unimplemented method 'getParentLogger'");
     }
     
