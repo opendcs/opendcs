@@ -473,7 +473,7 @@ public class OpenTsdb extends TimeSeriesDb
 	{
 		String pgname = OpenTsdbSettings.instance().storagePresentationGroup;
 
-		PresentationGroup pg = Database.getDb().presentationGroupList.find(pgname);
+		PresentationGroup pg = this.presentationGroupList.find(pgname);
 		if (pg == null)
 			return null;
 		DataPresentation dp = pg.findDataPresentation(dt);
@@ -534,5 +534,11 @@ public class OpenTsdb extends TimeSeriesDb
 	public void postConInit(Connection conn) throws SQLException
 	{
 		/* currently we don't need to do anything */
+	}
+
+	@Override
+	protected void initDecodesDatabaseIO() throws DatabaseException
+	{
+		setDbIo(new OpenTsdbSqlDbIO(dataSource, settings));
 	}
 }
