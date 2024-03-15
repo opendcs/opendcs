@@ -43,6 +43,7 @@ import decodes.db.*;
 import decodes.gui.TopFrame;
 import decodes.gui.GuiDialog;
 import decodes.util.DecodesException;
+import decodes.util.DecodesSettings;
 import decodes.xml.DatabaseParser;
 import decodes.xml.PlatformParser;
 import decodes.xml.XmlDbTags;
@@ -308,7 +309,7 @@ public class ImportDialog extends GuiDialog
 		stageDb = new decodes.db.Database();
 		Database.setDb(stageDb);
 		javax.sql.DataSource ds = new SimpleDataSource("", "", "");
-		stageDbIo = new XmlDatabaseIO(ds);
+		stageDbIo = new XmlDatabaseIO(ds, DecodesSettings.instance());
 		stageDb.setDbIo(stageDbIo);
 		topParser = stageDbIo.getParser();
 

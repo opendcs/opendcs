@@ -43,8 +43,7 @@ Sub classes must override all the abstract methods and provide
 a mechanism to persistently store time series and computational meta
 data.
 */
-public class CwmsTimeSeriesDb
-	extends TimeSeriesDb
+public class CwmsTimeSeriesDb extends TimeSeriesDb
 {
 	private CwmsConnectionPool pool = null;
 
@@ -825,6 +824,12 @@ public class CwmsTimeSeriesDb
 	public void postConInit(Connection conn) throws SQLException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("Unimplemented method 'postConInit'");
+	}
+
+	@Override
+	protected void initDecodesDatabaseIO() throws DatabaseException
+	{
+		setDbIo(new CwmsSqlDatabaseIO(dataSource, settings));
 	}
 	
 	

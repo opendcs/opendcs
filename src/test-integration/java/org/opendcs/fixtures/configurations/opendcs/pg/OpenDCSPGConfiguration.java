@@ -231,14 +231,7 @@ public class OpenDCSPGConfiguration implements Configuration
     @Override
     public Database getDecodesDatabase() throws Throwable
     {
-        if (decodesDb == null)
-        {
-            decodesDb = new Database(true);
-            DatabaseIO dbIo = DatabaseIO.makeDatabaseIO(DecodesSettings.fromProfile(profile));
-            decodesDb.setDbIo(dbIo);
-            decodesDb.read();
-        }
-        return decodesDb;
+        return (Database)getTsdb();
     }
 
     @Override

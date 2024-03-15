@@ -1298,4 +1298,10 @@ public class HdbTimeSeriesDb
 		return HdbFlags.flag2HdbDerivation(flags);
 	}
 
+	@Override
+	protected void initDecodesDatabaseIO() throws DatabaseException
+	{
+		setDbIo(new HdbSqlDatabaseIO(dataSource, settings));
+	}
+
 }

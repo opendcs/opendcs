@@ -425,6 +425,8 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import javax.sql.DataSource;
+
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -466,6 +468,7 @@ import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -582,8 +585,9 @@ public abstract class TimeSeriesDb extends Database
         logger = Logger.instance();
         tsdbVersion = 1;
         this.dataSource = dataSource;
-
+        initDecodesDatabaseIO();
         setupKeyGenerator();
+        this.read(); // initialize decodes
         try (Connection conn = dataSource.getConnection())
         {
             determineTsdbVersion(conn, this);
@@ -596,6 +600,8 @@ public abstract class TimeSeriesDb extends Database
         cpCompDepends_col1 = isHdb() ? "TS_ID" : "SITE_DATATYPE_ID";
         getLogDateFormat().setTimeZone(TimeZone.getTimeZone("UTC"));
     }
+
+    protected abstract void initDecodesDatabaseIO() throws DatabaseException;
 
     /** @return the JDBC connection in use by this object. */
     public Connection getConnection() throws SQLException
@@ -1777,7 +1783,7 @@ public abstract class TimeSeriesDb extends Database
              && tsid.getStorageUnits() != null
              && !cts.getUnitsAbbr().equalsIgnoreCase(tsid.getStorageUnits()))
             {
-                ret = Database.getDb().unitConverterSet.get(
+                ret = unitConverterSet.get(
                     EngineeringUnit.getEngineeringUnit(tsid.getStorageUnits()),
                     EngineeringUnit.getEngineeringUnit(cts.getUnitsAbbr()));
             }
