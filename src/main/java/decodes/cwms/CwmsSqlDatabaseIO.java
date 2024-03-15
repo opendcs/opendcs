@@ -67,10 +67,10 @@ public class CwmsSqlDatabaseIO extends SqlDatabaseIO
 	* where hostname and dbname specify the Oracle CWMS database.
 	* @param sqlDbLocation the location string from decodes.properties file
  	*/
-	public CwmsSqlDatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
+	public CwmsSqlDatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
 		// No-args base class ctor doesn't connect to DB.
-		super(dataSource);
+		super(dataSource, settings);
 		
         writeDateFmt = new SimpleDateFormat(
 			"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");

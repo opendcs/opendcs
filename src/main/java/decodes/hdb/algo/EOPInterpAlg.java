@@ -22,6 +22,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import decodes.hdb.HdbFlags;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import ilex.util.DatePair;
 import decodes.tsdb.ParmRef;
@@ -52,7 +53,6 @@ public class EOPInterpAlg
 	double value_out ;
 	boolean do_setoutput = true;
 	Date date_out;
-	Connection conn = null;
 	int total_count = 0;
 
 //AW:LOCALVARS_END
@@ -133,7 +133,8 @@ public class EOPInterpAlg
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
-	protected void afterTimeSlices()
+	@Override
+	protected void afterTimeSlices() throws DbCompException
 	{
 //AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
@@ -203,138 +204,145 @@ public class EOPInterpAlg
 		{ // block for getting BOP next period
 //
 		// now go get the first record of the next interval
-                GregorianCalendar cal2 = new GregorianCalendar();
-                int calIntervalRoll = 0;
+			GregorianCalendar cal2 = new GregorianCalendar();
+			int calIntervalRoll = 0;
 // set the calendar interval field to use to roll the calendar back and forward
-                if (intstr_out.equalsIgnoreCase("hour")) calIntervalRoll = Calendar.HOUR_OF_DAY;
-                if (intstr_out.equalsIgnoreCase("day"))  calIntervalRoll =  Calendar.DAY_OF_MONTH;
-                if (intstr_out.equalsIgnoreCase("year")) calIntervalRoll =  Calendar.YEAR;
-                if (intstr_out.equalsIgnoreCase("month")) calIntervalRoll =  Calendar.MONTH;
+			if (intstr_out.equalsIgnoreCase("hour")) calIntervalRoll = Calendar.HOUR_OF_DAY;
+			if (intstr_out.equalsIgnoreCase("day"))  calIntervalRoll =  Calendar.DAY_OF_MONTH;
+			if (intstr_out.equalsIgnoreCase("year")) calIntervalRoll =  Calendar.YEAR;
+			if (intstr_out.equalsIgnoreCase("month")) calIntervalRoll =  Calendar.MONTH;
 
-		cal2.setTime(_aggregatePeriodBegin);
-		//debug3("EOPINTERP- " + alg_ver + " window calendar before  forward roll: " + cal2.toString());
-		cal2.add(calIntervalRoll,1);
+			cal2.setTime(_aggregatePeriodBegin);
+			//debug3("EOPINTERP- " + alg_ver + " window calendar before  forward roll: " + cal2.toString());
+			cal2.add(calIntervalRoll,1);
 
-		//debug3("EOPINTERP- " + alg_ver + " next  window calendar: " + cal2.toString());
-		Date nextWindowSDT = cal2.getTime();
-		// line removed to allow other roll forwards besides just an hour MAB 10/29/10
-		//Date nextWindowSDT = new Date( _aggregatePeriodEnd.getTime() + MS_PER_HOUR);
-		Date nextWindowEDT = nextWindowSDT; 
-//   mod by M. Bogner for CP upgrade 3.0.  get SDI must have been changed to a long so
-//   I cast it to an int
-//   mod March 2013 by M. Bogner for CP upgrade 5.3.  get SDI must have been changed to an object so
-//   I cast it to an int after I get a long with the getValue method
-		Integer sdi = (int) getSDI("input").getValue();
-		conn = tsdb.getConnection();
-		String dt_fmt = "dd-MMM-yyyy HH:mm";
-		RBASEUtils rbu = new RBASEUtils(dbobj,conn);
-		debug2("EOPINTERP- " + alg_ver + "  Interval: " + intstr_out + " NWSDT: " + nextWindowSDT);
-		
-		rbu.getStandardDates(sdi,intstr_out,nextWindowSDT,nextWindowEDT,dt_fmt);
-		
-		
-		SimpleDateFormat sdf = new SimpleDateFormat(dt_fmt);
-		do_setoutput = true;
-		parmRef = getParmRef("input");
-		if (parmRef == null) warning("Unknown aggregate control output variable 'INPUT'");
-		String input_interval = parmRef.compParm.getInterval();
-                String table_selector = parmRef.compParm.getTableSelector();
-
-		String status = null;
-		DBAccess db = new DBAccess(conn);
-		// do the first record in next interval query to get the start_date_time and value 
-		String query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') nwsdt, value nwdv from " +
-			" ( select start_date_time,value,rank() " +
-			" over(order by start_date_time) rn from " + table_selector + input_interval.toLowerCase() +
-			" where site_datatype_id = " + getSDI("input") +
-		    " and start_date_time >= " +  "to_date('" +  (String) dbobj.get("SD_SDT") +
-			"','dd-mon-yyyy HH24:MI')" + 
-		    " and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
-		 "','dd-mon-yyyy HH24:MI')) where rn = 1";
-		status = db.performQuery(query,dbobj);
-		debug2("EOPINTERP- " + alg_ver + " SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
-		// now see if this next interval query worked if not then we can't continue!!!
-		if (((String)dbobj.get("NWDV")).length() == 0)
-		{
-		    do_setoutput = false;
-                    debug2("EOPINTERP- " + alg_ver + " : Cannot do Computation due to lack of EOP record: " + getSDI("input") + " " + _aggregatePeriodEnd );
-
-		}
-		if (status.startsWith("ERROR"))
-                {
-		   warning("EOPInterpAlg terminated due to following ORACLE ERROR");
-                   warning(status);
-		   return;
- 		}
-		} // end of block for BOP next period
-		//
-		//  now continue with calculation if do_setoutput is still true
-		if (do_setoutput) // we have a good record and a next record so do the calculation 
-		{  
-			debug2 ("EOPINTERP- " + alg_ver + "  " + dbobj.toString());
-			//
-			// now get the date, value of first record in next interval to see if it passes muster
-			new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
-			new_window_sdt   = new Date(dbobj.get("nwsdt").toString());
-			milly_diff = new_window_sdt.getTime() - _aggregatePeriodEnd.getTime(); 
-			milly_window = 0;
-			//  now check to see if next window  BOP record within required window
-			if (intstr_out.equalsIgnoreCase("hour"))
-		     		milly_window = req_window_period * (MS_PER_HOUR / 60L);
-		  	else if (intstr_out.equalsIgnoreCase("day"))
-		     		milly_window = req_window_period * MS_PER_HOUR;
-		  	else if (intstr_out.equalsIgnoreCase("month"))
-		     		milly_window = req_window_period * MS_PER_DAY;
-		  	else if (intstr_out.equalsIgnoreCase("year"))
-		     		milly_window = req_window_period * MS_PER_DAY * 31;
-		  	else if (intstr_out.equalsIgnoreCase("wy"))
-		     		milly_window = req_window_period * MS_PER_DAY * 31;
-			if ((milly_diff > milly_window) && (req_window_period != 0)) 
+			//debug3("EOPINTERP- " + alg_ver + " next  window calendar: " + cal2.toString());
+			Date nextWindowSDT = cal2.getTime();
+			// line removed to allow other roll forwards besides just an hour MAB 10/29/10
+			//Date nextWindowSDT = new Date( _aggregatePeriodEnd.getTime() + MS_PER_HOUR);
+			Date nextWindowEDT = nextWindowSDT; 
+	//   mod by M. Bogner for CP upgrade 3.0.  get SDI must have been changed to a long so
+	//   I cast it to an int
+	//   mod March 2013 by M. Bogner for CP upgrade 5.3.  get SDI must have been changed to an object so
+	//   I cast it to an int after I get a long with the getValue method
+			Integer sdi = (int) getSDI("input").getValue();
+			try (Connection conn = tsdb.getConnection())
 			{
-		 	   do_setoutput = false;
-			   debug1("EOPINTERP- " + alg_ver + " : OUTPUT FALSE DUE TO WINDOW EXCEEDED:  " + _aggregatePeriodBegin + "  SDI: " + getSDI("input"));
+				String dt_fmt = "dd-MMM-yyyy HH:mm";
+				RBASEUtils rbu = new RBASEUtils(dbobj,conn);
+				debug2("EOPINTERP- " + alg_ver + "  Interval: " + intstr_out + " NWSDT: " + nextWindowSDT);
+				
+				rbu.getStandardDates(sdi,intstr_out,nextWindowSDT,nextWindowEDT,dt_fmt);
+				
+				
+				SimpleDateFormat sdf = new SimpleDateFormat(dt_fmt);
+				do_setoutput = true;
+				parmRef = getParmRef("input");
+				if (parmRef == null) warning("Unknown aggregate control output variable 'INPUT'");
+				String input_interval = parmRef.compParm.getInterval();
+				String table_selector = parmRef.compParm.getTableSelector();
+
+				String status = null;
+				DBAccess db = new DBAccess(conn);
+				// do the first record in next interval query to get the start_date_time and value 
+				String query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') nwsdt, value nwdv from " +
+					" ( select start_date_time,value,rank() " +
+					" over(order by start_date_time) rn from " + table_selector + input_interval.toLowerCase() +
+					" where site_datatype_id = " + getSDI("input") +
+					" and start_date_time >= " +  "to_date('" +  (String) dbobj.get("SD_SDT") +
+					"','dd-mon-yyyy HH24:MI')" + 
+					" and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
+				"','dd-mon-yyyy HH24:MI')) where rn = 1";
+				status = db.performQuery(query,dbobj);
+				debug2("EOPINTERP- " + alg_ver + " SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+				// now see if this next interval query worked if not then we can't continue!!!
+				if (((String)dbobj.get("NWDV")).length() == 0)
+				{
+					do_setoutput = false;
+							debug2("EOPINTERP- " + alg_ver + " : Cannot do Computation due to lack of EOP record: " + getSDI("input") + " " + _aggregatePeriodEnd );
+
+				}
+				if (status.startsWith("ERROR"))
+				{
+					warning("EOPInterpAlg terminated due to following ORACLE ERROR");
+							warning(status);
+					return;
+				}
 			}
-			//  now check to see if the after EOP record within desired window
-			if (intstr_out.equalsIgnoreCase("hour"))
-		     		milly_window = desired_window_period * (MS_PER_HOUR / 60L);
-		  	else if (intstr_out.equalsIgnoreCase("day"))
-		     		milly_window = desired_window_period * MS_PER_HOUR;
-		  	else if (intstr_out.equalsIgnoreCase("month"))
-		     		milly_window = desired_window_period * MS_PER_DAY;
-		  	else if (intstr_out.equalsIgnoreCase("year"))
-		     		milly_window = desired_window_period * MS_PER_DAY * 31;
-		  	else if (intstr_out.equalsIgnoreCase("wy"))
-		     		milly_window = desired_window_period * MS_PER_DAY * 31;
-			if ((milly_diff > milly_window) && (desired_window_period != 0)) 
+			catch (SQLException ex)
 			{
-				//  set the data flags to w
-				setHdbDerivationFlag(output,"w");
+				throw new DbCompException("Unable to get sql connection.", ex);
 			}
-		}   // end of the block that we have a good record to compute from
-		 
-		//
-		if (do_setoutput)
-		{
-		        debug2("EOPINTERP- " + alg_ver + ": SETTING OUTPUT: DOING A SETOutput");
-			// now do the interpolation of the eop of this period to the BOP for next period
-			long milly_diff_total = new_window_sdt.getTime() - date_out.getTime();
-			long milly_diff_end = _aggregatePeriodEnd.getTime() - date_out.getTime();
-			double val_diff = new_window_value - value_out;
-			float	percent_diff =  (float) milly_diff_end / (float) milly_diff_total;
-			value_out = value_out + (val_diff * percent_diff);
-			debug2("EOPINTERP- " + alg_ver + " NWSDT: " + new_window_sdt + " NWVal: " + new_window_value  + " Val_diff: " + val_diff);
+		 // end of block for BOP next period
 			//
-                        /* added to allow users to automatically set the Validation column  */
-                        if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));
+			//  now continue with calculation if do_setoutput is still true
+			if (do_setoutput) // we have a good record and a next record so do the calculation 
+			{  
+				debug2 ("EOPINTERP- " + alg_ver + "  " + dbobj.toString());
+				//
+				// now get the date, value of first record in next interval to see if it passes muster
+				new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
+				new_window_sdt   = new Date(dbobj.get("nwsdt").toString());
+				milly_diff = new_window_sdt.getTime() - _aggregatePeriodEnd.getTime(); 
+				milly_window = 0;
+				//  now check to see if next window  BOP record within required window
+				if (intstr_out.equalsIgnoreCase("hour"))
+						milly_window = req_window_period * (MS_PER_HOUR / 60L);
+				else if (intstr_out.equalsIgnoreCase("day"))
+						milly_window = req_window_period * MS_PER_HOUR;
+				else if (intstr_out.equalsIgnoreCase("month"))
+						milly_window = req_window_period * MS_PER_DAY;
+				else if (intstr_out.equalsIgnoreCase("year"))
+						milly_window = req_window_period * MS_PER_DAY * 31;
+				else if (intstr_out.equalsIgnoreCase("wy"))
+						milly_window = req_window_period * MS_PER_DAY * 31;
+				if ((milly_diff > milly_window) && (req_window_period != 0)) 
+				{
+				do_setoutput = false;
+				debug1("EOPINTERP- " + alg_ver + " : OUTPUT FALSE DUE TO WINDOW EXCEEDED:  " + _aggregatePeriodBegin + "  SDI: " + getSDI("input"));
+				}
+				//  now check to see if the after EOP record within desired window
+				if (intstr_out.equalsIgnoreCase("hour"))
+						milly_window = desired_window_period * (MS_PER_HOUR / 60L);
+				else if (intstr_out.equalsIgnoreCase("day"))
+						milly_window = desired_window_period * MS_PER_HOUR;
+				else if (intstr_out.equalsIgnoreCase("month"))
+						milly_window = desired_window_period * MS_PER_DAY;
+				else if (intstr_out.equalsIgnoreCase("year"))
+						milly_window = desired_window_period * MS_PER_DAY * 31;
+				else if (intstr_out.equalsIgnoreCase("wy"))
+						milly_window = desired_window_period * MS_PER_DAY * 31;
+				if ((milly_diff > milly_window) && (desired_window_period != 0)) 
+				{
+					//  set the data flags to w
+					setHdbDerivationFlag(output,"w");
+				}
+			}   // end of the block that we have a good record to compute from
+			
 			//
-		    	// now the new value has been calculated so set it and we are done
-			setOutput(output,value_out);
-		}
-		//
-		//  now if there is no record to output then delete it if it exists
-		if (!do_setoutput)
-		{
-		    deleteOutput(output);
+			if (do_setoutput)
+			{
+					debug2("EOPINTERP- " + alg_ver + ": SETTING OUTPUT: DOING A SETOutput");
+				// now do the interpolation of the eop of this period to the BOP for next period
+				long milly_diff_total = new_window_sdt.getTime() - date_out.getTime();
+				long milly_diff_end = _aggregatePeriodEnd.getTime() - date_out.getTime();
+				double val_diff = new_window_value - value_out;
+				float	percent_diff =  (float) milly_diff_end / (float) milly_diff_total;
+				value_out = value_out + (val_diff * percent_diff);
+				debug2("EOPINTERP- " + alg_ver + " NWSDT: " + new_window_sdt + " NWVal: " + new_window_value  + " Val_diff: " + val_diff);
+				//
+							/* added to allow users to automatically set the Validation column  */
+							if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));
+				//
+					// now the new value has been calculated so set it and we are done
+				setOutput(output,value_out);
+			}
+			//
+			//  now if there is no record to output then delete it if it exists
+			if (!do_setoutput)
+			{
+				deleteOutput(output);
+			}
 		}
 //AW:AFTER_TIMESLICES_END
 	}

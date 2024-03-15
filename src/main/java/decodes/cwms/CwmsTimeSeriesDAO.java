@@ -309,8 +309,14 @@ public class CwmsTimeSeriesDAO
     @Override
     public void close()
     {
-        dataTypeDAO.close();
-        siteDAO.close();
+        if (dataTypeDAO != null)
+        {
+            dataTypeDAO.close();
+        }
+        if (siteDAO != null)
+        {
+            siteDAO.close();
+        }
         super.close();
     }
 

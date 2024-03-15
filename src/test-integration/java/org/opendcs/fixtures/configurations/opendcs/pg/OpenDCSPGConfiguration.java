@@ -17,7 +17,9 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.ThrowableAssert;
 import org.jdbi.v3.core.Jdbi;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
@@ -27,11 +29,16 @@ import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Database;
+import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
 import decodes.launcher.Profile;
+import decodes.sql.SequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.DecodesSettings;
 import ilex.util.FileLogger;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
@@ -57,6 +64,9 @@ public class OpenDCSPGConfiguration implements Configuration
     private File propertiesFile;
     private static AtomicBoolean started = new AtomicBoolean(false);
     private HashMap<Object,Object> environmentVars = new HashMap<>();
+    private Profile profile = null;
+    private TimeSeriesDb tsDb = null;
+    private Database decodesDb = null;
 
     // FUTURE work: allow passing of override values to bypass the test container creation
     // ... OR setup a separate testcontainer library like USACE did for CWMS.
@@ -112,7 +122,7 @@ public class OpenDCSPGConfiguration implements Configuration
         {
             return;
         }
-        if(db == null)
+        if (db == null)
         {
             db = new PostgreSQLContainer<>("postgres:15.3")
                     .withUsername(SCHEMA_OWNING_USER)
@@ -171,6 +181,7 @@ public class OpenDCSPGConfiguration implements Configuration
         FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
         installDb(exit, environment, properties, configBuilder);
         createPropertiesFile(configBuilder, this.propertiesFile);
+        profile = Profile.getProfile(propertiesFile);
     }
 
     private void createPropertiesFile(UserPropertiesBuilder configBuilder, File propertiesFile) throws Exception
@@ -181,6 +192,7 @@ public class OpenDCSPGConfiguration implements Configuration
             configBuilder.withEditDatabaseType("OPENTSDB");
             configBuilder.withDatabaseDriver("org.postgresql.Driver");
             configBuilder.withSiteNameTypePreference("CWMS");
+            configBuilder.withSqlKeyGenerator(SequenceKeyGenerator.class);
             configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
             configBuilder.build(out);
         }
@@ -206,12 +218,27 @@ public class OpenDCSPGConfiguration implements Configuration
     @Override
     public TimeSeriesDb getTsdb() throws Throwable
     {
-        OpenTsdb db = new OpenTsdb();
-        Properties credentials = new Properties();
-        credentials.put("username",DCS_ADMIN_USER);
-        credentials.put("password",DCS_ADMIN_USER_PASSWORD);
-        db.connect("utility",credentials);
-        return db;
+        if (tsDb == null)
+        {
+            Properties credentials = new Properties();
+            credentials.put("username",DCS_ADMIN_USER);
+            credentials.put("password",DCS_ADMIN_USER_PASSWORD);
+            tsDb = (OpenTsdb)DatabaseService.getDatabaseFor("utility", DecodesSettings.fromProfile(profile), credentials);
+        }
+        return tsDb;
+    }
+
+    @Override
+    public Database getDecodesDatabase() throws Throwable
+    {
+        if (decodesDb == null)
+        {
+            decodesDb = new Database(true);
+            DatabaseIO dbIo = DatabaseIO.makeDatabaseIO(DecodesSettings.fromProfile(profile));
+            decodesDb.setDbIo(dbIo);
+            decodesDb.read();
+        }
+        return decodesDb;
     }
 
     @Override

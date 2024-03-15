@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.DatabaseService;
 
 import opendcs.dai.TimeSeriesDAI;
 import decodes.consumer.DataConsumer;
@@ -46,6 +47,7 @@ import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.DataType;
+import decodes.db.DatabaseException;
 import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -186,29 +188,28 @@ public class OpenTsdbConsumer extends DataConsumer
 		// Get the Oracle Data Source & open a connection.
 		try
 		{
-			openTsdb = new OpenTsdb();
+			DecodesSettings settings = DecodesSettings.instance().asCopy();
+
 			String s = PropertiesUtil.getIgnoreCase(props, "databaseLocation");
 			if (s != null)
-				openTsdb.setDatabaseLocation(s);
-			else
-				openTsdb.setDatabaseLocation(DecodesSettings.instance().editDatabaseLocation);
-			s = PropertiesUtil.getIgnoreCase(props, "jdbcOracleDriver");
-			if (s != null)
-				openTsdb.setJdbcOracleDriver(s);
-			else
-				openTsdb.setJdbcOracleDriver(DecodesSettings.instance().jdbcDriverClass);
-			
+			{
+				settings.editDatabaseLocation = s;
+			}
+
 			s = PropertiesUtil.getIgnoreCase(props, "appName");
 			if (s != null)
+			{
 				appName = s; 
-			          
-			appId = openTsdb.connect(appName, credentials);
+			}
+
+			openTsdb = (OpenTsdb)DatabaseService.getDatabaseFor(appName, settings, credentials);
+			appId = openTsdb.getAppId();
 		}
-		catch (BadConnectException ex)
+		catch (DatabaseException ex)
 		{
 			String msg = module + " " + ex;
 			Logger.instance().fatal(msg);
-			throw new DataConsumerException(msg);
+			throw new DataConsumerException(msg, ex);
 		}
 
 		// Open and load the SHEF to CWMS Param properties file. This file
@@ -240,7 +241,6 @@ public class OpenTsdbConsumer extends DataConsumer
 	public void close()
 	{
 		Logger.instance().info(module + " closing database connection with appID=" + appId);
-		openTsdb.closeConnection();
 		openTsdb = null;
 	}
 

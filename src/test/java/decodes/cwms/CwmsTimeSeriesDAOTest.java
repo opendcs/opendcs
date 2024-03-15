@@ -1,5 +1,6 @@
 package decodes.cwms;
 
+import fixtures.NonPoolingConnectionOwner;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -13,7 +14,7 @@ final class CwmsTimeSeriesDAOTest
 	@Test
 	public void testExceedsMaxTimeGap()
 	{
-		try(CwmsTimeSeriesDAO cwmsTimeSeriesDAO = new CwmsTimeSeriesDAO(new CwmsTimeSeriesDb(), "SWT"))
+		try (CwmsTimeSeriesDAO cwmsTimeSeriesDAO = new CwmsTimeSeriesDAO(new NonPoolingConnectionOwner(), "SWT"))
 		{
 			Calendar first = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 			first.set(2015, Calendar.JANUARY, 1, 0, 0, 0);
@@ -28,7 +29,7 @@ final class CwmsTimeSeriesDAOTest
 	@Test
 	public void testWithinMaxTimeGap()
 	{
-		try(CwmsTimeSeriesDAO cwmsTimeSeriesDAO = new CwmsTimeSeriesDAO(new CwmsTimeSeriesDb(), "SWT"))
+		try (CwmsTimeSeriesDAO cwmsTimeSeriesDAO = new CwmsTimeSeriesDAO(new NonPoolingConnectionOwner(), "SWT"))
 		{
 			Calendar first = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 			first.set(2015, Calendar.JANUARY, 1, 0, 0, 0);

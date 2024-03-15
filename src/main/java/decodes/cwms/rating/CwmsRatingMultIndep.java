@@ -494,7 +494,8 @@ public class CwmsRatingMultIndep
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
-	protected void afterTimeSlices()
+	@Override
+	protected void afterTimeSlices() throws DbCompException
 	{
 //AW:AFTER_TIMESLICES
 		
@@ -508,9 +509,8 @@ public class CwmsRatingMultIndep
 		long valueTimes[] = new long[indepTimes.size()];
 		for(int valIdx = 0; valIdx < indepTimes.size(); valIdx++)
 			valueTimes[valIdx] = indepTimes.get(valIdx);
-		
-		Connection conn = tsdb.getConnection();
-		try
+
+		try (Connection conn = tsdb.getConnection())
 		{
 			debug1("Calling rate with " + valueSets.length + " inputs and " 
 				+ valueTimes.length + " values each.");
@@ -541,11 +541,6 @@ public class CwmsRatingMultIndep
 				cause.printStackTrace(out);
 			}
 		}
-		finally
-		{
-			tsdb.freeConnection(conn);
-		}
-
 //AW:AFTER_TIMESLICES_END
 	}
 

@@ -106,18 +106,36 @@
 */
 package decodes.hdb;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Properties;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.sql.DriverManager;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
+import decodes.db.Constants;
+import decodes.db.DataType;
+import decodes.db.DatabaseException;
+import decodes.db.Site;
+import decodes.db.SiteName;
+import decodes.sql.DbKey;
+import decodes.sql.OracleDateParser;
+import decodes.tsdb.BadTimeSeriesException;
+import decodes.tsdb.ConstraintException;
+import decodes.tsdb.DbCompException;
+import decodes.tsdb.DbCompParm;
+import decodes.tsdb.DbIoException;
+import decodes.tsdb.GroupHelper;
+import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.util.DecodesSettings;
+import ilex.util.Logger;
+import ilex.util.TextUtil;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
@@ -127,18 +145,6 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import oracle.jdbc.OraclePreparedStatement;
-import ilex.util.Logger;
-import ilex.util.TextUtil;
-import ilex.var.TimedVariable;
-import ilex.var.NoConversionException;
-import decodes.db.Constants;
-import decodes.db.Site;
-import decodes.db.SiteName;
-import decodes.db.DataType;
-import decodes.sql.DbKey;
-import decodes.sql.OracleDateParser;
-import decodes.tsdb.*;
-import decodes.util.DecodesSettings;
 
 /**
 This is the base class for the time-series database implementation.
@@ -165,9 +171,9 @@ public class HdbTimeSeriesDb
 	 * No args constructor required because this is instantiated from
 	 * the class name.
 	 */
-	public HdbTimeSeriesDb()
+	public HdbTimeSeriesDb(String appName, javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
-		super();
+		super(appName, dataSource, settings);
 		module = "hdb";
 		sdiIsUnique = false;
 
@@ -184,72 +190,23 @@ public class HdbTimeSeriesDb
 //		valueFmt.setMaximumFractionDigits(5);
 	}
 
-	/**
-	 * Connect this app to the database and return appID. 
-	 * The credentials property set contains username, password,
-	 * etc, for connecting to database.
-	 * @param appName must match an application in the database.
-	 * @param credentials must contain all needed login parameters.
-	 * @return application ID.
-	 * @throws BadConnectException if failure to connect.
-	 */
-	public DbKey connect( String appName, Properties credentials )
-		throws BadConnectException
+	@Override
+	public void postConInit(Connection conn) throws SQLException
 	{
-		String driverClass = DecodesSettings.instance().jdbcDriverClass;
-		String dbUri = DecodesSettings.instance().editDatabaseLocation;
-		String username = credentials.getProperty("username");
-		String password = credentials.getProperty("password");
-		try 
-		{
-			Class.forName(driverClass);
-			
-			if (DecodesSettings.instance().tryOsDatabaseAuth)
-			{
-				// 12/3/2019 Empty props will cause OS (IDENT) authentication
-				Properties emptyProps = new Properties();
-				try { conn = DriverManager.getConnection(dbUri, emptyProps); }
-				catch(SQLException ex)
-				{
-					Logger.instance().info(module + " Connection using OS authentication failed. "
-						+ "Will attempt username/password auth.");
-					conn = null;
-				}
-			}
-			
-			if (conn == null)
-				conn = DriverManager.getConnection(dbUri, username, password);
-		}
-		catch (Exception ex) 
-		{
-			conn = null;
-			throw new BadConnectException(
-				"Error getting JDBC connection using driver '"
-				+ driverClass + "' to database at '" + dbUri
-				+ "' for user '" + username + "': " + ex.toString());
-		}
-
 		keyGenerator = new OracleSequenceHDBGenerator();
 
 		String q = null;
-		Statement st = null;
-		try
+		try(Statement st = conn.createStatement())
 		{
-			st = conn.createStatement();
-			
 			q = "SELECT PARAM_VALUE FROM REF_DB_PARAMETER WHERE PARAM_NAME = 'TIME_ZONE'";
-			ResultSet rs = null;
-//			Logger.instance().info(q);
 
-			try
-			{ 
-				rs = st.executeQuery(q);
+			try (ResultSet rs = st.executeQuery(q))
+			{
 				if (rs != null && rs.next())
 				{
 					databaseTimezone = rs.getString(1);
 					DecodesSettings.instance().sqlTimeZone = databaseTimezone;
 				}
-//				Logger.instance().info("databaseTimezone is '" + databaseTimezone + "'");
 			}
 			catch(SQLException ex)
 			{
@@ -257,11 +214,6 @@ public class HdbTimeSeriesDb
 				Logger.instance().info(
 					" -- failed, using sqlTimeZone setting of '"
 					+ databaseTimezone + "'");
-			}
-			finally
-			{
-				try { rs.close(); } catch(Exception ex) {}
-				rs = null;
 			}
 			conn.unwrap(oracle.jdbc.OracleConnection.class).setSessionTimeZone(databaseTimezone);
 
@@ -283,14 +235,20 @@ public class HdbTimeSeriesDb
 			st.execute(q);
 			
 			// MJM 2018-2/21 Force autoCommit on.
-			try { conn.setAutoCommit(true);}
+			try
+			{
+				conn.setAutoCommit(true);
+			}
 			catch(SQLException ex)
 			{
 				Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
 			}
 
-			writeDateFmt = new SimpleDateFormat(
-				"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
+			if (writeDateFmt == null)
+			{
+				writeDateFmt = new SimpleDateFormat(
+					"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
+			}
 			writeDateFmt.setTimeZone(TimeZone.getTimeZone(databaseTimezone));
 			info("Set date fmt to time zone '" + databaseTimezone + "' current time="
 				+ writeDateFmt.format(new Date()));
@@ -301,15 +259,15 @@ public class HdbTimeSeriesDb
 				+ " -- will proceed anyway.";
 			failure(msg);
 		}
-		finally
+
+		if (readDateFmt == null)
 		{
-			try { st.close(); } catch(Exception ex) {}
+			readDateFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		}
 		
-		readDateFmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		readDateFmt.setTimeZone(TimeZone.getTimeZone(databaseTimezone));
 
-		this.postConnectInit(appName, conn);
+		//this.postConnectInit(appName, conn);
 		
 		try
 		{
@@ -328,8 +286,6 @@ public class HdbTimeSeriesDb
 		{
 			warning("Cannot prepare statement '" + q + "': " + ex);
 		}
-		
-		return appId;
 	}
 
 	public void setParmSDI(DbCompParm parm, DbKey siteId, String dtcode)

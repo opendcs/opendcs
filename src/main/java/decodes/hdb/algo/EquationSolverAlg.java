@@ -20,6 +20,7 @@ import decodes.hdb.HdbFlags;
 import decodes.hdb.HdbTsId;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 
 //AW:IMPORTS_END
@@ -48,7 +49,6 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
 //AW:LOCALVARS
     boolean do_setoutput = true;
-    Connection conn = null;
 
     private PropertySpec[] esaProps = 
     {
@@ -252,7 +252,8 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		// Then continue with evaluation the equation
 		{
 			// get the connection and a few other classes so we can do some sql
-			conn = tsdb.getConnection();
+			try (Connection conn = tsdb.getConnection())
+			{
 			DBAccess db = new DBAccess(conn);
 			DataObject dbobj = new DataObject();
 			String dt_fmt = "dd-MMM-yyyy HH:mm";
@@ -289,6 +290,11 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				if (validation_flag.length() > 0)
 					setHdbValidationFlag(output, validation_flag.charAt(1));
 				setOutput(output, result_value);
+			}
+			}
+			catch (SQLException ex)
+			{
+				throw new DbCompException("Unable to get sql connection.", ex);
 			}
 		}
 		//
