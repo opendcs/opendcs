@@ -10,6 +10,8 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
+import opendcs.util.sql.WrappedConnection;
+
 /**
  * This datasource is used for instances were high-performance
  * is not a concern such as the command line or GUI Database migration
@@ -20,12 +22,14 @@ public class SimpleDataSource implements DataSource
     final String url;
     final Properties properties;
     PrintWriter pw = null;
+    private Connection c = null;
 
     public SimpleDataSource(String jdbcUrl, String username, String password)
     {
         this.url = jdbcUrl;
         this.properties = new Properties();
         this.properties.setProperty("username", username);
+        this.properties.setProperty("user", username);
         this.properties.setProperty("password", password);
     }
 
@@ -33,6 +37,10 @@ public class SimpleDataSource implements DataSource
     {
         this.url = jdbcUrl;
         this.properties = properties;
+        if (properties.getProperty("username") != null)
+        {
+            this.properties.setProperty("user", properties.getProperty("username"));
+        }
     }
 
     @Override
@@ -78,7 +86,11 @@ public class SimpleDataSource implements DataSource
     @Override
     public Connection getConnection() throws SQLException
     {
-        return DriverManager.getConnection(url, properties);
+        if (c == null)
+        {
+            c = new WrappedConnection(DriverManager.getConnection(url, properties), c -> {}, true);
+        }
+        return c;
     }
 
     @Override

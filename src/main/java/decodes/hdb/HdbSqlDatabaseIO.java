@@ -9,6 +9,7 @@ import opendcs.dai.SiteDAI;
 import decodes.db.DatabaseException;
 import decodes.sql.OracleDateParser;
 import decodes.sql.SqlDatabaseIO;
+import decodes.util.DecodesSettings;
 import oracle.jdbc.OracleConnection;
 
 public class HdbSqlDatabaseIO extends SqlDatabaseIO
@@ -16,13 +17,13 @@ public class HdbSqlDatabaseIO extends SqlDatabaseIO
 	public HdbSqlDatabaseIO()
 		throws DatabaseException
 	{
-		this(null);
+		this(null, null);
 	}
 	
-	public HdbSqlDatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
+	public HdbSqlDatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
 		// No-args base class ctor doesn't connect to DB.
-		super(dataSource);
+		super(dataSource, settings);
 		keyGenerator = new OracleSequenceHDBGenerator();
 	}
 	

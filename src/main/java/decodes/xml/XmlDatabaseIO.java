@@ -157,9 +157,9 @@ public class XmlDatabaseIO extends DatabaseIO
 	 * @throws SAXException if can't initialize XML parsers
 	 * @throws ParserConfigurationException if can't configure XML parsers
 	 */
-	public XmlDatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
+	public XmlDatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
-		super(dataSource);
+		super(dataSource, settings);
 		try(XmlConnection con = dataSource.getConnection().unwrap(XmlConnection.class))
 		{
 			this.xmldir = con.getDirectory();

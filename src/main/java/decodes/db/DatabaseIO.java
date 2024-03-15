@@ -33,10 +33,12 @@ of the IO methods for reading/writing the DECODES database.
 public abstract class DatabaseIO
 {
 	protected final javax.sql.DataSource dataSource;
+	protected final DecodesSettings settings;
 
-	public DatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
+	public DatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
 		this.dataSource = dataSource;
+		this.settings = settings;
 	}
 	/**
 	  Creates a concrete IO class as specified by type and location
@@ -68,14 +70,13 @@ public abstract class DatabaseIO
 			AuthSource auth = AuthSourceService.getFromString(settings.DbAuthFile);
 			Properties credentials = auth.getCredentials();
 			SimpleDataSource dataSource = new SimpleDataSource(location, credentials);
-
 			switch (type)
 			{
-				case DecodesSettings.DB_XML:  		return new XmlDatabaseIO(dataSource);
-				case DecodesSettings.DB_SQL:  		return new SqlDatabaseIO(dataSource);
-				case DecodesSettings.DB_CWMS:     	return new decodes.cwms.CwmsSqlDatabaseIO(dataSource);
-				case DecodesSettings.DB_OPENTSDB:	return new opendcs.opentsdb.OpenTsdbSqlDbIO(dataSource);
-				case DecodesSettings.DB_HDB:		return new decodes.hdb.HdbSqlDatabaseIO(dataSource);
+				case DecodesSettings.DB_XML:  		return new XmlDatabaseIO(dataSource, settings);
+				case DecodesSettings.DB_SQL:  		return new SqlDatabaseIO(dataSource, settings);
+				case DecodesSettings.DB_CWMS:     	return new decodes.cwms.CwmsSqlDatabaseIO(dataSource, settings);
+				case DecodesSettings.DB_OPENTSDB:	return new opendcs.opentsdb.OpenTsdbSqlDbIO(dataSource, settings);
+				case DecodesSettings.DB_HDB:		return new decodes.hdb.HdbSqlDatabaseIO(dataSource, settings);
 				default: throw new DatabaseException("No database defined (fix properties file)");
 			}
 		}

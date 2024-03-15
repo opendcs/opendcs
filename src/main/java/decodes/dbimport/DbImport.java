@@ -473,7 +473,7 @@ public class DbImport
 		stageDb = new decodes.db.Database(false);
 		Database.setDb(stageDb);
 		javax.sql.DataSource ds = new SimpleDataSource("jdbc:xml:", "", "");
-		stageDbio = new XmlDatabaseIO(ds);
+		stageDbio = new XmlDatabaseIO(ds, null);
 		stageDb.setDbIo(stageDbio);
 		topParser = stageDbio.getParser();
 		newObjects = new Vector<IdDatabaseObject>();

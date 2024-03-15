@@ -77,6 +77,7 @@ import java.util.Iterator;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.spi.authentication.AuthSource;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -90,6 +91,7 @@ import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
 import decodes.db.Constants;
 import decodes.db.DataType;
+import decodes.db.DatabaseException;
 import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
@@ -145,36 +147,20 @@ public class HdbConsumer extends DataConsumer
 	public void open(String consumerArg, Properties props)
 		throws DataConsumerException
 	{
-		// Get username & password from Auth file
-		Properties credentials = null;
-		String authFileName = DecodesSettings.instance().DbAuthFile;		
-		try 
-		{
-			credentials = AuthSourceService.getFromString(authFileName)
-											 .getCredentials();
-		}
-		catch(AuthException ex)
-		{
-			String msg = "Cannot read DB auth from settings '" 
-				+ authFileName+ "': ";
-			throw new DataConsumerException(msg,ex);
-		}
-		
+		// TODO: this should probably allow an override based on the consumer properties
 		// Get the Oracle Data Source & open a connection.
 		try
 		{
-			hdbTsDb = new HdbTimeSeriesDb();
-			hdbTsDb.connect("decodes", credentials);
-			info("Connected to HDB Time Series Database as user " 
-				+ credentials.getProperty("username"));
+			hdbTsDb = (HdbTimeSeriesDb)DatabaseService.getDatabaseFor("decodes", DecodesSettings.instance());
+			info("Connected to HDB Time Series Database");
 			autoCreateTs = TextUtil.str2boolean(hdbTsDb.getProperty("autoCreateTs"));
 			timeSeriesDAO = hdbTsDb.makeTimeSeriesDAO();
 		}
-		catch (BadConnectException ex)
+		catch (DatabaseException ex)
 		{
 			String msg = "Cannot connect to HDB Time Series DB: " + ex;
 			failure(msg);
-			throw new DataConsumerException(msg);
+			throw new DataConsumerException(msg, ex);
 		}
 	}
 
@@ -184,7 +170,6 @@ public class HdbConsumer extends DataConsumer
 	 */
 	public void close()
 	{
-		hdbTsDb.closeConnection();
 		hdbTsDb = null;
 		if (timeSeriesDAO != null)
 			timeSeriesDAO.close();

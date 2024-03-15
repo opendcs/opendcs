@@ -29,6 +29,7 @@ import decodes.db.Constants;
 import decodes.db.DataPresentation;
 import decodes.db.DataType;
 import decodes.db.Database;
+import decodes.db.DatabaseException;
 import decodes.db.PresentationGroup;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
@@ -60,9 +61,9 @@ public class OpenTsdb extends TimeSeriesDb
 	String getMinStmtQuery = null, getTaskListStmtQuery = null;
 
 
-	public OpenTsdb()
+	public OpenTsdb(String appName, javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
-		super();
+		super(appName, dataSource, settings);
 		module = "OpenTsdb";
 	}
 
@@ -94,57 +95,7 @@ public class OpenTsdb extends TimeSeriesDb
 			return "NULL";
 		return "" + d.getTime();
 	}
-
-
-	@Override
-	public DbKey connect(String appName, Properties credentials)
-		throws BadConnectException
-	{
-		DecodesSettings settings = DecodesSettings.instance();
-
-		String driverClass = this.jdbcOracleDriver != null ? this.jdbcOracleDriver :
-			DecodesSettings.instance().jdbcDriverClass;
-		String dbUri = this.databaseLocation != null ? this.databaseLocation :
-			DecodesSettings.instance().editDatabaseLocation;
-
-
-		String username = credentials.getProperty("username");
-		String password = credentials.getProperty("password");
-
-		try
-		{
-			Class.forName(driverClass);
-
-			// setConnection will also get the TSDB Version Info and read tsdb_properties
-			setConnection(
-				DriverManager.getConnection(dbUri, username, password));
-
-			setupKeyGenerator();
-
-			// MJM 2018-2/21 Force autoCommit on.
-			try (Connection c = getConnection();)
-			{
-				c.setAutoCommit(true);
-			}
-			catch(SQLException ex)
-			{
-				Logger.instance().warning("Cannot set SQL AutoCommit to true: " + ex);
-			}
-
-			postConnectInit(appName, conn);
-			OpenTsdbSettings.instance().setFromProperties(props);
-
-			return appId;
-		}
-		catch (Exception ex)
-		{
-			String msg = "Error getting JDBC connection using driver '"
-				+ settings.jdbcDriverClass + "' to database at '"
-				+ settings.editDatabaseLocation
-				+ "' for user '" + username + "': " + ex.toString();
-			throw new BadConnectException(msg, ex);
-		}
-	}
+	
 
 	@Override
 	public void setParmSDI(DbCompParm parm, DbKey siteId, String dtcode)
@@ -579,5 +530,9 @@ public class OpenTsdb extends TimeSeriesDb
 		return ret;
 	}
 
-
+	@Override
+	public void postConInit(Connection conn) throws SQLException
+	{
+		/* currently we don't need to do anything */
+	}
 }

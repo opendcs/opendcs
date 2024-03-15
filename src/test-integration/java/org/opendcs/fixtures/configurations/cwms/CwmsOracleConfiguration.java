@@ -10,15 +10,18 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.spi.configuration.Configuration;
 
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.launcher.Profile;
 import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.DecodesSettings;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
@@ -134,11 +137,11 @@ public class CwmsOracleConfiguration implements Configuration
     @Override
     public TimeSeriesDb getTsdb() throws Throwable
     {
-        CwmsTimeSeriesDb db = new CwmsTimeSeriesDb();
+        Profile p = Profile.getProfile(propertiesFile);
         Properties credentials = new Properties();
         credentials.put("username",dcsUser);
         credentials.put("password",dcsUserPassword);
-        db.connect("utility",credentials);
+        CwmsTimeSeriesDb db = (CwmsTimeSeriesDb)DatabaseService.getDatabaseFor("utility", DecodesSettings.fromProfile(p), credentials);
         return db;
     }
 

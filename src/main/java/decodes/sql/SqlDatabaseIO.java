@@ -250,9 +250,9 @@ public class SqlDatabaseIO
      * Default constructor -- all initialization that doesn't depend on
      * a database connection goes here.
      */
-    public SqlDatabaseIO(javax.sql.DataSource dataSource) throws DatabaseException
+    public SqlDatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
     {
-        super(dataSource);
+        super(dataSource, settings);
         // Initialize the child IO objects
         // Their are dependencies among them, which should be enforced
         // by their various constructors.  For example, the PlatformListIO
@@ -273,6 +273,15 @@ public class SqlDatabaseIO
         // Truncate lastLMT back to half-hour boundary
         lastLMT = (System.currentTimeMillis() / 1800000L) * 1800000L;
         commitAfterSelect = false;
+        try (Connection conn = dataSource.getConnection())
+        {
+            determineVersion(conn);        
+            setDBDatetimeFormat(conn);
+        }
+        catch (SQLException ex)
+        {
+            log.warn("Unable to set DB Date/Time format", ex);
+        }
         postConnectInit();
     }
 
@@ -422,10 +431,10 @@ public class SqlDatabaseIO
      * A subclass can override this method to perform initialization tasks after
      * a successful database connection.
      */
-    protected void postConnectInit()
-        throws DatabaseException
+    protected void postConnectInit() throws DatabaseException
     {
         _isConnected = true;
+        setKeyGenerator(KeyGeneratorFactory.makeKeyGenerator(settings.sqlKeyGenerator));
     }
 
     protected void setDBDatetimeFormat(Connection conn)

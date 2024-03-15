@@ -10,6 +10,7 @@ import java.util.Iterator;
 
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
+import decodes.util.DecodesSettings;
 
 /**
  * The Database class provides a global means of accessing a 'current'
