@@ -1,1 +1,2 @@
 opendcs.opentsdb.OpenTsdbProvider
+decodes.xml.jdbc.XmlDatabaseProvider

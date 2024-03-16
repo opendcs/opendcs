@@ -5,14 +5,17 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
 
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
+import decodes.launcher.Profile;
 import decodes.util.DecodesSettings;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -27,9 +30,11 @@ public class XmlConfiguration implements Configuration
 
     public static final String NAME = "OpenDCS-XML";
 
-    File userDir;
-    File propertiesFile;
+    private File userDir;
+    private File propertiesFile;
     private boolean started = false;
+    private Database db = null;
+    private Profile profile;
 
     public XmlConfiguration(File userDir) throws Exception
     {
@@ -51,12 +56,18 @@ public class XmlConfiguration implements Configuration
     }
 
     @Override
-    public File getUserDir() {
+    public File getUserDir()
+    {
         return this.userDir;
     }
 
     @Override
-    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception {
+    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception
+    {
+        if (started == true)
+        {
+            return;
+        }
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
@@ -72,6 +83,7 @@ public class XmlConfiguration implements Configuration
             configBuilder.build(out);
             started = true;
         }
+        profile = Profile.getProfile(propertiesFile);
     }
 
     @Override
@@ -90,5 +102,16 @@ public class XmlConfiguration implements Configuration
     public String getName()
     {
         return NAME;
+    }
+
+    @Override
+    public Database getDecodesDatabase() throws Throwable
+    {
+        if (db == null)
+        {
+            final DecodesSettings settings = DecodesSettings.fromProfile(profile);
+            db = DatabaseService.getDatabaseFor("utility", settings, new Properties());
+        }
+        return db;
     }
 }

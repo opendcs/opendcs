@@ -4,6 +4,8 @@ import java.awt.*;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
+import org.opendcs.database.DatabaseService;
+
 import ilex.gui.WindowUtility;
 import lrgs.gui.DecodesInterface;
 
@@ -13,6 +15,7 @@ import ilex.util.StderrLogger;
 import ilex.cmdline.*;
 import decodes.util.*;
 import decodes.db.*;
+import decodes.launcher.Profile;
 
 /**
 The MAIN class for the DECODES Database Editor.
@@ -111,66 +114,24 @@ public class DecodesDbEditor
             "DecodesDbEditor Starting (" + DecodesVersion.startupTag()
             + ") =====================");
 
+        Profile profile = cmdLineArgs.getProfile();
         DecodesSettings settings = DecodesSettings.instance();
+        settings.loadFromProfile(profile);
         
         DecodesInterface.setGUI(true);
 
-        // Construct the database and the interface specified by properties.
-        Database db = new decodes.db.Database();
-        Database.setDb(db);
-        DatabaseIO dbio;
-
         String dbloc = dbLocArg.getValue();
+
         if (dbloc.length() > 0)
         {
-            dbio = DatabaseIO.makeDatabaseIO(settings, dbloc);
+            settings.editDatabaseLocation = dbloc;
         }
-        else
-            dbio = DatabaseIO.makeDatabaseIO(settings);
-
+        // Construct the database and the interface specified by properties.
+        
         Platform.configSoftLink = true;
+        Database db = DatabaseService.getDatabaseFor(dbloc, settings);
+        Database.setDb(db);
 
-        // Standard Database Initialization for all Apps:
-        System.out.print("Reading DB: "); System.out.flush();
-        db.setDbIo(dbio);
-        System.out.print("Enum, "); System.out.flush();
-        db.enumList.read();
-        System.out.print("DataType, "); System.out.flush();
-        db.dataTypeSet.read();
-        System.out.print("EU, "); System.out.flush();
-        db.engineeringUnitList.read();
-
-        // Initialization for DB editor - read all the collections:
-        Site.explicitList = true;
-        System.out.print("Site, "); System.out.flush();
-        db.siteList.read();
-        Site.explicitList = true;
-        System.out.print("Equip, "); System.out.flush();
-        db.equipmentModelList.read();
-        System.out.print("Config, "); System.out.flush();
-        db.platformConfigList.read();
-        System.out.print("Plat, "); System.out.flush();
-        db.platformList.read();
-        db.platformConfigList.countPlatformsUsing();
-
-        System.out.print("Equip, "); System.out.flush();
-        db.equipmentModelList.read();
-        //db.equationSpecList.read();
-        System.out.print("Pres, "); System.out.flush();
-        db.presentationGroupList.read();
-        System.out.print("Routing, "); System.out.flush();
-        db.routingSpecList.read();
-        System.out.print("DataSource, "); System.out.flush();
-        db.dataSourceList.read();
-        System.out.print("Netlist, "); System.out.flush();
-        db.networkListList.read();
-        //db.eqTableList.read();
-        System.out.println("Database initialized.");
-        
-        
-
-//        fixObjectReferences(db);
-//
         //This flag is used to turn on or off some of the pop ups - specially
         //the ones on the Decoding Scripts
         String onOffPopUps = turnOnOffPopUps.getValue();

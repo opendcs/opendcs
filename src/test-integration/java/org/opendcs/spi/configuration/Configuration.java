@@ -79,16 +79,7 @@ public interface Configuration
      * @return Instance of the Decodes Database for this run/test.
      * @throws Throwable
      */
-    default public Database getDecodesDatabase() throws Throwable
-    {
-        DecodesSettings settings = DecodesSettings.instance();
-        Database db = new Database(true);
-        DatabaseIO dbio = DatabaseIO.makeDatabaseIO(settings);
-        db.setDbIo(dbio);
-        db.read();
-        Database.setDb(db);
-        return db;
-    }
+    public Database getDecodesDatabase() throws Throwable;
 
     default public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
     {
