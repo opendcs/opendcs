@@ -1,5 +1,7 @@
 package opendcs.util.functional;
 
+import decodes.db.DatabaseException;
+
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -10,5 +12,5 @@ public interface StatementConsumer extends ThrowingConsumer<PreparedStatement,SQ
      * User provided function that operates on a valid PreparedStatement
      * 
      */
-    public void accept(PreparedStatement stmt) throws SQLException;
+    public void accept(PreparedStatement stmt) throws SQLException, DatabaseException;
 }
