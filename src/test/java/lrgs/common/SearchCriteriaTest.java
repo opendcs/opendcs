@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,9 @@ public class SearchCriteriaTest
         sc = new SearchCriteria();
         sc.parityErrors = SearchCriteria.EXCLUSIVE;
         sc.DapsStatus = SearchCriteria.YES;
-        sc.DcpNames = new ArrayList<>(List.of("TEST1", "TEST2"));
+        sc.DcpNames = new ArrayList<>();
+        sc.DcpNames.add("TEST1");
+        sc.DcpNames.add("TEST2");
         sc.spacecraft = SearchCriteria.SC_EAST;
     }
 
