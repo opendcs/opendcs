@@ -1,5 +1,7 @@
 package opendcs.util.functional;
 
+import decodes.db.DatabaseException;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -13,5 +15,5 @@ public interface ResultSetConsumer extends ThrowingConsumer<ResultSet,SQLExcepti
     /**
      * @param rs a valid resultset, user function should *NOT* call next
      */
-    public void accept(ResultSet rs) throws SQLException;
+    public void accept(ResultSet rs) throws SQLException, DatabaseException;
 }

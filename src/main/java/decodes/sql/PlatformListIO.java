@@ -90,6 +90,7 @@ import decodes.db.TransportMedium;
 import decodes.db.Site;
 import decodes.tsdb.DbIoException;
 import decodes.util.DecodesSettings;
+import opendcs.dao.DaoHelper;
 
 /**
  * This handles the I/O of the PlatformList object and some of its
@@ -152,7 +153,6 @@ public class PlatformListIO extends SqlDbObjIo
 	* @param dbio the SqlDatabaseIO to which this IO object belongs
 	* @param configListIO used to access platform configs
 	* @param emlIO used to access EquipmentModel records
-	* @param dsIO used to access Decodes Scripts
 	*/
 	public PlatformListIO(SqlDatabaseIO dbio,
 						  ConfigListIO configListIO,
@@ -164,6 +164,11 @@ public class PlatformListIO extends SqlDbObjIo
 		_equipmentModelListIO = emlIO;
 	}
 
+	private DaoHelper getDaoHelper()
+	{
+		DaoHelper h = new DaoHelper(_dbio,"sql.platformListIO",connection());
+		return h;
+	}
 	@Override
 	public void setConnection(Connection conn)
 	{
@@ -322,23 +327,14 @@ public class PlatformListIO extends SqlDbObjIo
 	* @param p the Platform
 	*/
 	private void readTransportMedia(Platform p)
-		throws SQLException, DatabaseException
+		throws SQLException
 	{
 		p.transportMedia.clear();
 
 		String q = "select " + getTmColumns() + " from TransportMedium "
-			+ "WHERE PlatformId = " + p.getId();
+			+ "WHERE PlatformId = ?";
+		getDaoHelper().doQuery(q,rs-> rs2tm(rs,p),p.getId());
 
-		try (Statement stmt = createStatement();)
-		{
-			try (ResultSet rs = stmt.executeQuery(q);)
-			{
-				while (rs != null && rs.next())
-				{
-					rs2tm(rs, p);
-				}
-			}
-		}
 	}
 
 	/**
@@ -1109,7 +1105,7 @@ public class PlatformListIO extends SqlDbObjIo
 	 * expiration date
 	 * @param mediumType
 	 * @param mediumId
-	 * @param stamp
+	 * @param timeStamp
 	 * @return
 	 */
 	public DbKey lookupPlatformId(String mediumType, String mediumId,
