@@ -417,129 +417,102 @@ public class PlatformListIO extends SqlDbObjIo
 	public void readPlatform(Platform p)
 		throws SQLException, DatabaseException
 	{
-		try (Statement stmt = createStatement();)
-		{
-			String q = "SELECT " + getColTpl() + " FROM Platform WHERE ID = " + p.getId();
-			debug3("readPlatform() Executing '" + q + "'");
-			try (ResultSet rs = stmt.executeQuery(q);)
-			{
+		String q = "SELECT " + getColTpl() + " FROM Platform WHERE ID = ?";
+		debug3("readPlatform() Executing '" + q + "'");
 
-				// Can only be 1 platform with a given ID.
-				if (rs != null && rs.next())
-				{
-					p.setAgency(rs.getString(2));
+		getDaoHelper().doQuery(q,rs-> readPlatform(p,rs),p.getId());
+		readPlatformSensors(p);
+	}
 
-					p.isProduction = TextUtil.str2boolean(rs.getString(3));
+	private void readPlatform(Platform p, ResultSet rs) throws SQLException, DatabaseException
+	{
+		// Can only be 1 platform with a given ID.
+		p.setAgency(rs.getString(2));
 
-					DbKey siteId = DbKey.createDbKey(rs, 4);
-					if (!rs.wasNull())
-					{
-						// If site was previously loaded, use it.
-						p.setSite(p.getDatabase().siteList.getSiteById(siteId));
+		p.isProduction = TextUtil.str2boolean(rs.getString(3));
 
-						SiteDAI siteDAO = _dbio.makeSiteDAO();
-						siteDAO.setManualConnection(connection);
-						try
-						{
-							if (p.getSite() == null)
-							{
-								if (!DbKey.isNull(siteId))
-								{
-									try
-									{
-										p.setSite(siteDAO.getSiteById(siteId));
-										p.getDatabase().siteList.addSite(p.getSite());
-									}
-									catch(Exception ex)
-									{
-										warning("Platform " + p.getDisplayName() + " id="
-											+ p.getKey() + " has invalid siteID " + siteId);
-										p.setSite(null);
-									}
-								}
-							}
-							else
-							{
-								try
-								{
-									siteDAO.readSite(p.getSite());
-								}
-								catch (Exception e)
-								{
-									// TODO Auto-generated catch block
-									e.printStackTrace();
-								}
-							}
-						}
-						finally
-						{
-							siteDAO.close();
+		DbKey siteId = DbKey.createDbKey(rs, 4);
+		if (!rs.wasNull()) {
+			// If site was previously loaded, use it.
+			p.setSite(p.getDatabase().siteList.getSiteById(siteId));
+
+			SiteDAI siteDAO = _dbio.makeSiteDAO();
+			siteDAO.setManualConnection(connection);
+			try {
+				if (p.getSite() == null) {
+					if (!DbKey.isNull(siteId)) {
+						try {
+							p.setSite(siteDAO.getSiteById(siteId));
+							p.getDatabase().siteList.addSite(p.getSite());
+						} catch (Exception ex) {
+							warning("Platform " + p.getDisplayName() + " id="
+									+ p.getKey() + " has invalid siteID " + siteId);
+							p.setSite(null);
 						}
 					}
-
-					DbKey configId = DbKey.createDbKey(rs, 5);
-					if (!rs.wasNull())
-					{
-						// Get config out of database's list.
-						PlatformConfig pc =
-							p.getDatabase().platformConfigList.getById(configId);
-						boolean commitAfterSelect = _dbio.commitAfterSelect;
-						try
-						{
-							// Caller will commit after THIS method returns, so don't
-							// have it commit after we read the site.
-							_dbio.commitAfterSelect = false;
-
-							if (pc == null)
-							{
-								// Not in database's list yet? Add it.
-								pc = _configListIO.readConfig(configId);
-								if (pc != null)
-									p.getDatabase().platformConfigList.add(pc);
-							}
-							// Already in list. Check to see if it's current.
-							else
-								_configListIO.readConfig(pc.getId());
-						}
-						finally
-						{
-							_dbio.commitAfterSelect = commitAfterSelect;
-						}
-
-						if (pc != null)
-						{
-							p.setConfigName(pc.configName);
-							p.setConfig(pc);
-						}
-					}
-
-					p.setDescription(rs.getString(6));
-					p.lastModifyTime = getTimeStamp(rs, 7, p.lastModifyTime);
-					p.expiration = getTimeStamp(rs, 8, p.expiration);
-					if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
-						p.setPlatformDesignator(rs.getString(9));
-
-					readTransportMedia(p);
-
-					if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
-					{
-						PropertiesDAI propsDao = _dbio.makePropertiesDAO();
-						propsDao.setManualConnection(connection);
-						try { propsDao.readProperties("PlatformProperty", "platformID", p.getId(),
-							p.getProperties()); }
-						catch (DbIoException e)
-						{
-							throw new DatabaseException(e.getMessage());
-						}
-						finally
-						{
-							propsDao.close();
-						}
+				} else {
+					try {
+						siteDAO.readSite(p.getSite());
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
 				}
+			} finally {
+				siteDAO.close();
 			}
 		}
-		readPlatformSensors(p);
+
+		DbKey configId = DbKey.createDbKey(rs, 5);
+		if (!rs.wasNull()) {
+			// Get config out of database's list.
+			PlatformConfig pc =
+					p.getDatabase().platformConfigList.getById(configId);
+			boolean commitAfterSelect = _dbio.commitAfterSelect;
+			try {
+				// Caller will commit after THIS method returns, so don't
+				// have it commit after we read the site.
+				_dbio.commitAfterSelect = false;
+
+				if (pc == null) {
+					// Not in database's list yet? Add it.
+					pc = _configListIO.readConfig(configId);
+					if (pc != null)
+						p.getDatabase().platformConfigList.add(pc);
+				}
+				// Already in list. Check to see if it's current.
+				else
+					_configListIO.readConfig(pc.getId());
+			} finally {
+				_dbio.commitAfterSelect = commitAfterSelect;
+			}
+
+			if (pc != null) {
+				p.setConfigName(pc.configName);
+				p.setConfig(pc);
+			}
+		}
+
+		p.setDescription(rs.getString(6));
+		p.lastModifyTime = getTimeStamp(rs, 7, p.lastModifyTime);
+		p.expiration = getTimeStamp(rs, 8, p.expiration);
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+			p.setPlatformDesignator(rs.getString(9));
+
+		readTransportMedia(p);
+
+		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6) {
+			PropertiesDAI propsDao = _dbio.makePropertiesDAO();
+			propsDao.setManualConnection(connection);
+			try {
+				propsDao.readProperties("PlatformProperty", "platformID", p.getId(),
+						p.getProperties());
+			} catch (DbIoException e) {
+				throw new DatabaseException(e.getMessage());
+			} finally {
+				propsDao.close();
+			}
+		}
 	}
 
 	/**
