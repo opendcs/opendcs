@@ -221,6 +221,7 @@ public class SearchCriteria implements Serializable
 		ascendingTimeOnly = rhs.ascendingTimeOnly;
 		realtimeSettlingDelay = rhs.realtimeSettlingDelay;
 		single = rhs.single;
+		parityErrors = rhs.parityErrors;
 	}
 
 
