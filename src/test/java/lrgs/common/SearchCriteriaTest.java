@@ -57,10 +57,14 @@ public class SearchCriteriaTest
         sc.setLrgsSince("now - 1 day");
         sc.setLrgsUntil("now");
         final Date since = sc.evaluateLrgsSinceTime();
-        final Date nowMinus1Day = new Date(System.currentTimeMillis()-86400*1000);
-        assertTrue(Math.abs(since.getTime() - nowMinus1Day.getTime()) < (3600*1000+2000), "since time not within reasonable deviation.");
+        int millisPerDay = 86400*1000;
+        int millisPerHour = 3600*1000;
+        int millisTolerance= 2000;
+        final Date nowMinus1Day = new Date(System.currentTimeMillis()-millisPerDay);
+        assertTrue(Math.abs(since.getTime() - nowMinus1Day.getTime()) < (millisPerHour+millisTolerance), "since time not within reasonable deviation.");
         final Date now = new Date();
         final Date evalNow = sc.evaluateLrgsUntilTime();
-        assertTrue(Math.abs(now.getTime() - evalNow.getTime())< 2000, "until time not within reasonable deviation.");
+        assertTrue(Math.abs(now.getTime() - evalNow.getTime())< millisTolerance, "until time not within reasonable deviation.");
+
     }
 }
