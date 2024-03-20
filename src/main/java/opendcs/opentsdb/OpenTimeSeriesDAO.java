@@ -466,7 +466,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		List<Object> parameters = new ArrayList<>();
 		StringBuilder q = new StringBuilder();
 		q.append("select " + ts_columns + " from " + tableName
-			+ " where ts_id = ?");// + ctsid.getKey();
+			+ " where ts_id = ?");
 		parameters.add(ctsid.getKey());
 		if (from != null)
 		{
