@@ -30,8 +30,10 @@ import ilex.util.ServerLockable;
 import ilex.util.NoOpServerLock;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
+import ilex.util.FileLogger;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
+import ilex.util.QueueLogger;
 import ilex.util.TextUtil;
 import ilex.jni.SignalHandler;
 import ilex.jni.SignalTrapper;
@@ -95,9 +97,6 @@ public class LrgsMain
     /** The DDS Server */
     private DdsServer ddsServer;
 
-    /** Object to parse command line arguments. */
-    protected static LrgsCmdLineArgs cmdLineArgs = new LrgsCmdLineArgs();
-
     /** Used by DDS to distributed status to clients. */
     protected JavaLrgsStatusProvider statusProvider;
 
@@ -135,10 +134,13 @@ public class LrgsMain
     /** To use is writeDacqEvents = true in configuration */
     private DacqEventLogger dacqEventLogger = null;
 
-
+    private final String lockFileName;
+    private final String configFileName;
+    private final QueueLogger queueLogger;
+    private final FileLogger fileLogger;
 
     /** Constructor. */
-    public LrgsMain()
+    public LrgsMain(QueueLogger qLogger, String lockFileName, String configFileName, FileLogger fileLogger)
     {
         msgArchive = null;
         myServerLock = null;
@@ -149,10 +151,14 @@ public class LrgsMain
         ddsRecv = null;
         drgsRecv = null;
         statusRptGen = new DetailReportGenerator("icons/satdish.jpg");
-        alarmHandler = new AlarmHandler(cmdLineArgs.qLogger);
+        alarmHandler = new AlarmHandler(qLogger);
         dbThread = null;
         noaaportRecv = null;
         ddsRecv2=null;
+        this.lockFileName = lockFileName;
+        this.configFileName = configFileName;
+        this.queueLogger = qLogger;
+        this.fileLogger = fileLogger;
     }
 
     public void run()
@@ -172,10 +178,10 @@ public class LrgsMain
 
         // Establish a server lock file & start the server lock monitor
 
-        String lockName = EnvExpander.expand(cmdLineArgs.getLockFile());
+        String lockName = EnvExpander.expand(lockFileName);
         Logger.instance().info("Lock File =" + lockName);
         if (lockName.equals("-"))
-        {
+        {        
             myServerLock = new NoOpServerLock();
         }
         else
@@ -277,7 +283,7 @@ public class LrgsMain
         cfg = LrgsConfig.instance();
 
         // Load configuration file.
-        String cfgName = EnvExpander.expand(cmdLineArgs.getConfigFile());
+        String cfgName = EnvExpander.expand(configFileName);
         cfg.setConfigFileName(cfgName);
         try { cfg.loadConfig();}
         catch(IOException ex)
@@ -667,7 +673,7 @@ public class LrgsMain
                 InetAddress.getByName(cfg.ddsBindAddr) : null;
 
             ddsServer = new DdsServer(cfg.ddsListenPort, ia, msgArchive,
-                    cmdLineArgs.qLogger, statusProvider);
+                    queueLogger, statusProvider);
             ddsServer.init();
         }
         catch(Exception ex)
@@ -699,6 +705,7 @@ public class LrgsMain
     public static void main(String args[])
         throws IOException
     {
+        final LrgsCmdLineArgs cmdLineArgs = new LrgsCmdLineArgs();
         cmdLineArgs.parseArgs(args);
 
         /**
@@ -709,7 +716,8 @@ public class LrgsMain
             FileServerLock.setWindowsService(true);
 
         Logger.instance().setTimeZone(TimeZone.getTimeZone("UTC"));
-        final LrgsMain lm = new LrgsMain();
+        final LrgsMain lm = new LrgsMain(cmdLineArgs.qLogger, cmdLineArgs.getLockFile(),
+                                         cmdLineArgs.getConfigFile(), cmdLineArgs.fLogger);
         if (cmdLineArgs.runInForGround() )
         {
             final Thread mainThread = Thread.currentThread();
@@ -836,7 +844,7 @@ public class LrgsMain
     public void handleSignal(int sig)
     {
         Logger.instance().info("SIGHUP received -- rotating logs.");
-        cmdLineArgs.fLogger.rotateLogs();
+        fileLogger.rotateLogs();
         if (ddsServer != null
          && DdsServer.statLoggerThread != null)
             DdsServer.statLoggerThread.rotateLogs();
