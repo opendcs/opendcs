@@ -47,6 +47,7 @@ import java.util.ResourceBundle;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -92,6 +93,7 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Week;
 import org.jfree.data.time.Year;
 import org.jfree.data.xy.XYDataset;
+import org.slf4j.LoggerFactory;
 
 import decodes.dbeditor.TraceDialog;
 import decodes.dbeditor.TraceLogger;
@@ -122,6 +124,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class CompRunGuiFrame extends TopFrame
 {
+	private static org.slf4j.Logger log = LoggerFactory.getLogger(CompRunGuiFrame.class);
 	static ResourceBundle labels = null;
 	private static ResourceBundle genericLabels = null;
 	public static String description;
@@ -166,6 +169,7 @@ public class CompRunGuiFrame extends TopFrame
 	private JProgressBar progressBar = new JProgressBar(0,100);
 	private SwingWorker<List<CTimeSeries>,CTimeSeries> worker = null;
 	private JButton cancelExecutionButton = null;
+	private JButton runButton = null;
 	JButton saveButton = null;
 
 	private TraceDialog traceDialog = null;
@@ -196,7 +200,8 @@ public class CompRunGuiFrame extends TopFrame
 
 		this.setTitle(labels.getString("RunComputationsFrame.frameTitle"));
 		this.trackChanges("runcomps");
-
+		traceDialog = new TraceDialog(this, false);
+		traceDialog.setTraceType("Computation Run");
 		mycontent.add(listPanel());
 		mycontent.add(timePanel());
 		mycontent.add(getChart());
@@ -320,14 +325,14 @@ public class CompRunGuiFrame extends TopFrame
 
 		JPanel runhalf = new JPanel();
 		runhalf.setLayout(new GridBagLayout());
-		JButton runButton = new JButton(runCompsButton);
+		runButton = new JButton(runCompsButton);
 		runButton.addActionListener(e -> runButtonPressed());
 
 		saveButton = new JButton(saveOutputButton);
 		saveButton.setEnabled(false);
 		saveButton.addActionListener(e -> saveButtonPressed());
 
-		traceButton.setEnabled(false);
+		traceButton.setEnabled(true);
 		traceButton.addActionListener(e -> traceButtonPressed());
 
 		Date tempDate = new Date();
@@ -738,10 +743,22 @@ public class CompRunGuiFrame extends TopFrame
 
 	private void runButtonPressed()
 	{
+		// Create a trace logger and put in the pipeline with tee logger.
+		Logger originalLogger = Logger.instance();
+		final TraceLogger traceLogger = new TraceLogger(originalLogger.getProcName());
+		final TeeLogger teeLogger = new TeeLogger(originalLogger.getProcName(), originalLogger, traceLogger);
+		traceLogger.setMinLogPriority(Logger.E_DEBUG3);
+		Logger.setLogger(teeLogger);
+
+		runButton.setEnabled(false);
+		traceDialog.clear();
+		traceLogger.setDialog(traceDialog);
 		AlarmManager.deleteInstance();
 		
 		if (fromDTCal.getDate() == null || toDTCal.getDate() == null)
+		{
 			return;
+		}
 		Vector<CTimeSeries> inputs = new Vector<CTimeSeries>();
 		Vector<DbComputation> compVector = new Vector<DbComputation>();
 
@@ -773,26 +790,47 @@ public class CompRunGuiFrame extends TopFrame
 			return;
 		}
 
-		if (!buildComputationList(compVector, inputs, compGroup))
+		new SwingWorker<Vector<DbComputation>,Void>()
 		{
-			return;
-		}
-		// Create a trace logger and put in the pipeline with tee logger.
-		Logger originalLogger = Logger.instance();
-		final TraceLogger traceLogger = new TraceLogger(originalLogger.getProcName());
-		final TeeLogger teeLogger = new TeeLogger(originalLogger.getProcName(), originalLogger, traceLogger);
-		traceLogger.setMinLogPriority(Logger.E_DEBUG3);
-		Logger.setLogger(teeLogger);
 
-		// Create the one-time trace dialog if not already done.
-		if (traceDialog == null)
-		{
-			traceDialog = new TraceDialog(this, false);
-			traceDialog.setTraceType("Computation Run");
-		}
-		traceDialog.clear();
-		traceLogger.setDialog(traceDialog);
-		run_selected_comps(compVector, originalLogger, traceLogger, inputs);
+			@Override
+			protected Vector<DbComputation> doInBackground() throws Exception
+			{
+				if (!buildComputationList(compVector, inputs, compGroup))
+				{
+					return null;
+				}
+				else
+				{
+					return compVector;
+				}
+			}
+
+			@Override
+			public void done()
+			{
+				try
+				{
+					Vector<DbComputation> theComps = this.get();
+					if (theComps != null)
+					{
+						run_selected_comps(theComps, originalLogger, traceLogger, inputs);
+					}
+					else
+					{
+						runButton.setEnabled(true);
+					}
+				}
+				catch (InterruptedException | ExecutionException ex)
+				{
+					runButton.setEnabled(true);
+					log.atError()
+					   .setCause(ex)
+					   .log("Unable to execute computations.");
+					showError(ex.getLocalizedMessage());
+				}
+			}
+		}.execute();
 	}
 
 	private TsGroup isSelectionValid(Collection<DbComputation> compVector)
@@ -975,6 +1013,7 @@ public class CompRunGuiFrame extends TopFrame
 			@Override
 			public List<CTimeSeries> doInBackground()
 			{
+				runButton.setEnabled(false);
 				Vector<CTimeSeries> outputs = new Vector<CTimeSeries>();
 				int compsRun = 0;
 				for (DbComputation comp : compVector)
@@ -1190,13 +1229,13 @@ public class CompRunGuiFrame extends TopFrame
 			@Override
 			protected void done()
 			{
+				runButton.setEnabled(true);
 				setProgress(100);
 				// Stop trace logger and remove from pipeline
 				traceLogger.setDialog(null);
 				Logger.setLogger(originalLogger);
 				cancelExecutionButton.setEnabled(false);
 				saveButton.setEnabled(true);
-
 				plotDataOnChart(both, inputs.size());
 				timeSeriesTable.setInOut(inputs, myoutputs);
 			}
@@ -1216,7 +1255,6 @@ public class CompRunGuiFrame extends TopFrame
 		progressBar.setStringPainted(true);
 		progressBar.setString("Running");
 		progressBar.setValue(0);
-		traceButton.setEnabled(true);
 		saveButton.setEnabled(false);
 		cancelExecutionButton.setEnabled(true);
 		worker.execute();
