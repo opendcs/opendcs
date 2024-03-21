@@ -38,6 +38,7 @@ import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -760,6 +761,42 @@ public class CompRunGuiFrame extends TopFrame
 			return;
 		}
 
+		TsGroup compGroup = isSelectionValid(compVector);
+
+		if (compGroup == null)
+		{
+			Logger.instance().debug3("None of the selected computations uses a group.");
+		}
+		else if (compGroup.getGroupName() == null)
+		{
+			/* invalid group setup error already sent */
+			return;
+		}
+
+		if (!buildComputationList(compVector, inputs, compGroup))
+		{
+			return;
+		}
+		// Create a trace logger and put in the pipeline with tee logger.
+		Logger originalLogger = Logger.instance();
+		final TraceLogger traceLogger = new TraceLogger(originalLogger.getProcName());
+		final TeeLogger teeLogger = new TeeLogger(originalLogger.getProcName(), originalLogger, traceLogger);
+		traceLogger.setMinLogPriority(Logger.E_DEBUG3);
+		Logger.setLogger(teeLogger);
+
+		// Create the one-time trace dialog if not already done.
+		if (traceDialog == null)
+		{
+			traceDialog = new TraceDialog(this, false);
+			traceDialog.setTraceType("Computation Run");
+		}
+		traceDialog.clear();
+		traceLogger.setDialog(traceDialog);
+		run_selected_comps(compVector, originalLogger, traceLogger, inputs);
+	}
+
+	private TsGroup isSelectionValid(Collection<DbComputation> compVector)
+	{
 		String groupCompName = null;
 		TsGroup compGroup = null;
 		for (DbComputation comp : compVector)
@@ -782,15 +819,22 @@ public class CompRunGuiFrame extends TopFrame
 						+ compGroup.getGroupName() + "', computation '" + comp.getName() + "' uses group '"
 						+ comp.getGroupName()
 						+ "'. -- Please de-select one of these computations to proceed.");
-					return;
+					compGroup = new TsGroup();
+					compGroup.clear();
+					return compGroup;
 				}
 				else
+				{
 					Logger.instance().debug3(
 						"comp " + comp.getName() + " also uses group id=" + comp.getGroupId());
+				}
 			}
 		}
-		if (groupCompName == null)
-			Logger.instance().debug3("None of the selected computations uses a group.");
+		return compGroup;
+	}
+
+	private boolean buildComputationList(Vector<DbComputation> compVector, Vector<CTimeSeries> inputs, TsGroup compGroup)
+	{
 		ArrayList<TimeSeriesIdentifier> groupTsIds = new ArrayList<TimeSeriesIdentifier>();
 		if (compGroup != null)
 		{
@@ -810,17 +854,18 @@ public class CompRunGuiFrame extends TopFrame
 				if (firstInput == null)
 				{
 					showError("The computation has no inputs!");
-					return;
+					return false;
 				}
 
 				// Read a fresh copy of the group from the DB
-				TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
-				try { compGroup = groupDAO.getTsGroupById(compGroup.getGroupId()); }
-				finally { groupDAO.close(); }
 				
+				try (TsGroupDAI groupDAO = theDb.makeTsGroupDAO())
+				{
+					compGroup = groupDAO.getTsGroupById(compGroup.getGroupId());
+				}
+
 				// Expand the group and then filter it by the 1st input parm.
 				ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(compGroup);
-				
 
 				// Collect the transformed tsids in a hash set to remove any
 				// duplicates
@@ -869,11 +914,15 @@ public class CompRunGuiFrame extends TopFrame
 				launchDialog(dlg);
 				TimeSeriesIdentifier[] tsidarray = dlg.getSelectedDataDescriptors();
 				for (TimeSeriesIdentifier tsid : tsidarray)
+				{
 					groupTsIds.add(tsid);
+				}
 
 				Logger.instance().debug3("Will execute with the following time-series: ");
 				for (TimeSeriesIdentifier tsid : groupTsIds)
+				{
 					Logger.instance().debug3("   " + tsid.getUniqueString());
+				}
 
 				ArrayList<DbComputation> concreteGroupComps = new ArrayList<DbComputation>();
 				StringBuilder errorMsgs = new StringBuilder();
@@ -881,7 +930,9 @@ public class CompRunGuiFrame extends TopFrame
 				{
 					comp = compit.next();
 					if (!comp.hasGroupInput())
+					{
 						continue;
+					}
 
 					// This is a group computation. Use resolver to make
 					// a concrete copy, and then add it to concreteGroupComps.
@@ -907,25 +958,15 @@ public class CompRunGuiFrame extends TopFrame
 			catch (DbIoException ex)
 			{
 				showError("Cannot expand group '" + compGroup.getGroupName() + "': " + ex);
-				return;
+				return false;
 			}
 		}
+		return true;
+	}
 
-		// Create a trace logger and put in the pipeline with tee logger.
-		Logger origLogger = Logger.instance();
-		final TraceLogger traceLogger = new TraceLogger(origLogger.getProcName());
-		final TeeLogger teeLogger = new TeeLogger(origLogger.getProcName(), origLogger, traceLogger);
-		traceLogger.setMinLogPriority(Logger.E_DEBUG3);
-		Logger.setLogger(teeLogger);
 
-		// Create the one-time trace dialog if not already done.
-		if (traceDialog == null)
-		{
-			traceDialog = new TraceDialog(this, false);
-			traceDialog.setTraceType("Computation Run");
-		}
-		traceDialog.clear();
-		traceLogger.setDialog(traceDialog);
+	private void run_selected_comps(Collection<DbComputation> compVector, Logger originalLogger, TraceLogger traceLogger, Vector<CTimeSeries> inputs)
+	{
 		final Vector<CTimeSeries> both = new Vector<CTimeSeries>();
 		// Flush the text area inside trace dialog
 		// Create the trace logger here and put in pipe with tee logger.
@@ -1152,14 +1193,12 @@ public class CompRunGuiFrame extends TopFrame
 				setProgress(100);
 				// Stop trace logger and remove from pipeline
 				traceLogger.setDialog(null);
-				Logger.setLogger(origLogger);
+				Logger.setLogger(originalLogger);
 				cancelExecutionButton.setEnabled(false);
 				saveButton.setEnabled(true);
 
-				//myoutputs = worker.get();
 				plotDataOnChart(both, inputs.size());
 				timeSeriesTable.setInOut(inputs, myoutputs);
-						System.out.println("Done");
 			}
 		};
 		worker.addPropertyChangeListener(event ->
