@@ -820,7 +820,7 @@ public class CompRunGuiFrame extends TopFrame
 					Vector<DbComputation> theComps = this.get();
 					if (theComps != null)
 					{
-						run_selected_comps(theComps, originalLogger, traceLogger, inputs);
+						runSelectedComps(theComps, originalLogger, traceLogger, inputs);
 					}
 					else
 					{
@@ -1014,7 +1014,7 @@ public class CompRunGuiFrame extends TopFrame
 	}
 
 
-	private void run_selected_comps(Collection<DbComputation> compVector, Logger originalLogger, TraceLogger traceLogger, Vector<CTimeSeries> inputs)
+	private void runSelectedComps(Collection<DbComputation> compVector, Logger originalLogger, TraceLogger traceLogger, Vector<CTimeSeries> inputs)
 	{
 		final Vector<CTimeSeries> both = new Vector<CTimeSeries>();
 		// Flush the text area inside trace dialog
