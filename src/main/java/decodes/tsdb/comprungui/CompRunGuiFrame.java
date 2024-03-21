@@ -33,6 +33,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -48,6 +49,7 @@ import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -790,13 +792,16 @@ public class CompRunGuiFrame extends TopFrame
 			return;
 		}
 
-		new SwingWorker<Vector<DbComputation>,Void>()
+		progressBar.setStringPainted(true);
+		progressBar.setValue(0);
+		SwingWorker<?,?> runCompWorker = new SwingWorker<Vector<DbComputation>,Void>()
 		{
 
 			@Override
 			protected Vector<DbComputation> doInBackground() throws Exception
 			{
-				if (!buildComputationList(compVector, inputs, compGroup))
+				progressBar.setString("Processing Timeseries List.");
+				if (!buildComputationList(compVector, inputs, compGroup, (progress) -> setProgress(progress) ))
 				{
 					return null;
 				}
@@ -811,6 +816,7 @@ public class CompRunGuiFrame extends TopFrame
 			{
 				try
 				{
+					setProgress(100);
 					Vector<DbComputation> theComps = this.get();
 					if (theComps != null)
 					{
@@ -830,7 +836,9 @@ public class CompRunGuiFrame extends TopFrame
 					showError(ex.getLocalizedMessage());
 				}
 			}
-		}.execute();
+		};
+		runCompWorker.addPropertyChangeListener(event -> updateProgress(event));
+		runCompWorker.execute();
 	}
 
 	private TsGroup isSelectionValid(Collection<DbComputation> compVector)
@@ -871,7 +879,7 @@ public class CompRunGuiFrame extends TopFrame
 		return compGroup;
 	}
 
-	private boolean buildComputationList(Vector<DbComputation> compVector, Vector<CTimeSeries> inputs, TsGroup compGroup)
+	private boolean buildComputationList(Vector<DbComputation> compVector, Vector<CTimeSeries> inputs, TsGroup compGroup, Consumer<Integer> setProgress)
 	{
 		ArrayList<TimeSeriesIdentifier> groupTsIds = new ArrayList<TimeSeriesIdentifier>();
 		if (compGroup != null)
@@ -904,11 +912,12 @@ public class CompRunGuiFrame extends TopFrame
 
 				// Expand the group and then filter it by the 1st input parm.
 				ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(compGroup);
-
+				final int originalSize = tsids.size();
 				// Collect the transformed tsids in a hash set to remove any
 				// duplicates
 				// that may result by transformation.
 				TreeSet<TimeSeriesIdentifier> transformedTsids = new TreeSet<TimeSeriesIdentifier>();
+				int tsIdsProcessed = 0;
 				for (Iterator<TimeSeriesIdentifier> tsidit = tsids.iterator(); tsidit.hasNext();)
 				{
 					TimeSeriesIdentifier tsid = tsidit.next();
@@ -916,6 +925,8 @@ public class CompRunGuiFrame extends TopFrame
 					// Transform the tsid by the parm. If the result is the same
 					// as the original, that means that the parm 'matches'.
 					TimeSeriesIdentifier transformed;
+					tsIdsProcessed++;
+					setProgress.accept(100*tsIdsProcessed/originalSize);
 					try
 					{
 						transformed = theDb.transformTsidByCompParm(tsid, firstInput, false, false, "");
@@ -1240,18 +1251,7 @@ public class CompRunGuiFrame extends TopFrame
 				timeSeriesTable.setInOut(inputs, myoutputs);
 			}
 		};
-		worker.addPropertyChangeListener(event ->
-		{
-			if ("progress".equals(event.getPropertyName()))
-			{
-				int value = (Integer)event.getNewValue();
-				progressBar.setValue(value);
-				if (value == 100)
-				{
-					progressBar.setString("done");
-				}
-			}
-		});
+		worker.addPropertyChangeListener(event -> updateProgress(event));
 		progressBar.setStringPainted(true);
 		progressBar.setString("Running");
 		progressBar.setValue(0);
@@ -1259,6 +1259,19 @@ public class CompRunGuiFrame extends TopFrame
 		cancelExecutionButton.setEnabled(true);
 		worker.execute();
 		needToSave = true;
+	}
+
+	private void updateProgress(PropertyChangeEvent event)
+	{
+		if ("progress".equals(event.getPropertyName()))
+		{
+			int value = (Integer)event.getNewValue();
+			progressBar.setValue(value);
+			if (value == 100)
+			{
+				progressBar.setString("done");
+			}
+		}
 	}
 
 	private JScrollPane getTable()
