@@ -64,7 +64,14 @@ public class ScalerAdder30
 	public double input28;	//AW:TYPECODE=i
 	public double input29;	//AW:TYPECODE=i
 	public double input30;	//AW:TYPECODE=i
-	String _inputNames[] = { "input1", "input2", "input3", "input4", "input5", "input6", "input7", "input8", "input9", "input10", "input11", "input12", "input13", "input14", "input15", "input16", "input17", "input18", "input19", "input20", "input21", "input22", "input23", "input24", "input25", "input26", "input27", "input28", "input29", "input30" };
+	String _inputNames[] = { 
+		"input1", "input2", "input3", "input4", "input5", 
+		"input6", "input7", "input8", "input9", "input10", 
+		"input11", "input12", "input13", "input14", "input15", 
+		"input16", "input17", "input18", "input19", "input20", 
+		"input21", "input22", "input23", "input24", "input25", 
+		"input26", "input27", "input28", "input29", "input30" 
+	};
 //AW:INPUTS_END
 
 //AW:LOCALVARS
@@ -78,6 +85,14 @@ public class ScalerAdder30
 
 //AW:PROPERTIES
 	public double coeff1 = 1.0;
+	public double coeff2 = 1.0;
+	public double coeff3 = 1.0;
+	public double coeff4 = 1.0;
+	public double coeff5 = 1.0;
+	public double coeff6 = 1.0;
+	public double coeff7 = 1.0;
+	public double coeff8 = 1.0;
+	public double coeff9 = 1.0;
 	public double coeff10 = 1.0;
 	public double coeff11 = 1.0;
 	public double coeff12 = 1.0;
@@ -88,7 +103,6 @@ public class ScalerAdder30
 	public double coeff17 = 1.0;
 	public double coeff18 = 1.0;
 	public double coeff19 = 1.0;
-	public double coeff2 = 1.0;
 	public double coeff20 = 1.0;
 	public double coeff21 = 1.0;
 	public double coeff22 = 1.0;
@@ -99,14 +113,16 @@ public class ScalerAdder30
 	public double coeff27 = 1.0;
 	public double coeff28 = 1.0;
 	public double coeff29 = 1.0;
-	public double coeff3 = 1.0;
 	public double coeff30 = 1.0;
-	public double coeff4 = 1.0;
-	public double coeff5 = 1.0;
-	public double coeff6 = 1.0;
-	public double coeff7 = 1.0;
-	public double coeff8 = 1.0;
-	public double coeff9 = 1.0;
+	public String input1_MISSING = "ignore";
+	public String input2_MISSING = "ignore";
+	public String input3_MISSING = "ignore";
+	public String input4_MISSING = "ignore";
+	public String input5_MISSING = "ignore";
+	public String input6_MISSING = "ignore";
+	public String input7_MISSING = "ignore";
+	public String input8_MISSING = "ignore";
+	public String input9_MISSING = "ignore";
 	public String input10_MISSING = "ignore";
 	public String input11_MISSING = "ignore";
 	public String input12_MISSING = "ignore";
@@ -117,7 +133,6 @@ public class ScalerAdder30
 	public String input17_MISSING = "ignore";
 	public String input18_MISSING = "ignore";
 	public String input19_MISSING = "ignore";
-	public String input1_MISSING = "ignore";
 	public String input20_MISSING = "ignore";
 	public String input21_MISSING = "ignore";
 	public String input22_MISSING = "ignore";
@@ -128,22 +143,22 @@ public class ScalerAdder30
 	public String input27_MISSING = "ignore";
 	public String input28_MISSING = "ignore";
 	public String input29_MISSING = "ignore";
-	public String input2_MISSING = "ignore";
-	public String input3_MISSING = "ignore";
     public String input30_MISSING = "ignore";
-	public String input4_MISSING = "ignore";
-	public String input5_MISSING = "ignore";
-	public String input6_MISSING = "ignore";
-	public String input7_MISSING = "ignore";
-	public String input8_MISSING = "ignore";
-	public String input9_MISSING = "ignore";
-	String _propertyNames[] = { "coeff1", 
-    "coeff10", "coeff11", "coeff12", "coeff13", "coeff14", "coeff15", "coeff16", "coeff17", "coeff18", "coeff19", "coeff2", 
-    "coeff20", "coeff20", "coeff21", "coeff22", "coeff23", "coeff24", "coeff25", "coeff26", "coeff27", "coeff28", "coeff29",
-    "coeff30","coeff3", "coeff4", "coeff5", "coeff6", "coeff7", "coeff8", "coeff9", 
-    "input10_MISSING", "input11_MISSING", "input12_MISSING", "input13_MISSING", "input14_MISSING", "input15_MISSING", "input16_MISSING", "input17_MISSING", "input18_MISSING", "input19_MISSING", "input1_MISSING", 
-    "input20_MISSING", "input21_MISSING", "input22_MISSING", "input23_MISSING", "input24_MISSING", "input25_MISSING", "input26_MISSING", "input27_MISSING", "input28_MISSING", "input29_MISSING",
-    "input2_MISSING", "input30_MISSING", "input3_MISSING", "input4_MISSING", "input5_MISSING", "input6_MISSING", "input7_MISSING", "input8_MISSING", "input9_MISSING" };
+
+	String _propertyNames[] = { 
+	"coeff1", "coeff2","coeff3", "coeff4", "coeff5", 
+	"coeff6", "coeff7", "coeff8", "coeff9", "coeff10",
+    	"coeff11", "coeff12", "coeff13", "coeff14", "coeff15", 
+	"coeff16", "coeff17", "coeff18", "coeff19", "coeff20", 
+	"coeff21", "coeff22", "coeff23", "coeff24", "coeff25", 
+	"coeff26", "coeff27", "coeff28", "coeff29", "coeff30",
+	"input1_MISSING", "input2_MISSING",  "input3_MISSING", "input4_MISSING", "input5_MISSING",
+	"input6_MISSING", "input7_MISSING", "input8_MISSING", "input9_MISSING", "input10_MISSING", 
+	"input11_MISSING", "input12_MISSING", "input13_MISSING", "input14_MISSING", "input15_MISSING", 
+	"input16_MISSING", "input17_MISSING", "input18_MISSING", "input19_MISSING", "input20_MISSING", 
+	"input21_MISSING", "input22_MISSING", "input23_MISSING", "input24_MISSING", "input25_MISSING", 
+	"input26_MISSING", "input27_MISSING", "input28_MISSING", "input29_MISSING", "input30_MISSING"
+	};
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
