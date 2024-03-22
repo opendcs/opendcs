@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 
 
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 
 import lrgs.archive.MsgArchive;
+import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 
 public class ArchiveOperationsTestIT
@@ -39,7 +41,10 @@ public class ArchiveOperationsTestIT
         
         assertNotNull(lrgs);
         final MsgArchive archive = lrgs.getArchive();
-        assertDoesNotThrow(() -> archive.archiveMsg(new DcpMsg(), null));
-        
+        final String msgData = "Test String.";
+        final DcpMsg msgIn = new DcpMsg(0,msgData.getBytes(Charset.forName("UTF8")),msgData.length(),0);
+        final DcpAddress addrIn = new DcpAddress("TEST");
+        msgIn.setDcpAddress(addrIn);
+        assertDoesNotThrow(() -> archive.archiveMsg(msgIn, null));
     }
 }
