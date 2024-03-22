@@ -4,6 +4,7 @@ import static org.opendcs.fixtures.helpers.BackgroundTsDbApp.waitForResult;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.util.concurrent.TimeUnit;
 
 import ilex.util.FileLogger;
@@ -32,6 +33,16 @@ public class LrgsTestInstance
         }
         System.setProperty("LRGSHOME", lrgsHome.getAbsolutePath());
         configFile = new File(lrgsHome,"lrgsconf");
+        try (FileWriter fw = new FileWriter(configFile))
+        {
+            fw.write("archiveDir=$LRGSHOME/archive"+System.lineSeparator());
+            fw.write("hritTimeoutSec=120"+System.lineSeparator());
+            fw.write("hritInputDir=$LRGSHOME/hritfiles"+System.lineSeparator());
+            fw.write("hritFileMaxAgeSec=7200"+System.lineSeparator());
+            fw.write("hritSourceCode=HR"+System.lineSeparator());
+            fw.write("hritFileEnabled=true"+System.lineSeparator());
+            fw.flush();
+        }
         configFile.createNewFile();
         queueLogger = new QueueLogger("");
         fileLogger = new FileLogger("lrgs", new File(lrgsHome,"lrgslog").getAbsolutePath(), 200*1024*1024);
@@ -51,7 +62,7 @@ public class LrgsTestInstance
                 // Future work should remove the need for this NPE catch.
                 return false;
             }
-        }, 1, TimeUnit.MINUTES, 15, TimeUnit.SECONDS);
+        }, 1, TimeUnit.MINUTES, 5, TimeUnit.SECONDS);
 
         this.archive = lrgs.msgArchive;
     }
