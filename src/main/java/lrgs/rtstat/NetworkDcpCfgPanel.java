@@ -166,12 +166,15 @@ public class NetworkDcpCfgPanel
 				"LrgsConfigDialog.selectConnEditErr"));
 			return;
 		}
+		int modelRow = conTable.convertRowIndexToModel(idx);
 		NetworkDcpDialog dlg = new NetworkDcpDialog(parent);
-		DrgsConnectCfg cfg = (DrgsConnectCfg)model.getRowObject(idx);
+		DrgsConnectCfg cfg = (DrgsConnectCfg)model.getRowObject(modelRow);
 		dlg.setInfo(cfg);
 		parent.launchDialog(dlg);
 		if (dlg.okPressed())
+		{
 			model.modified();
+		}
 	}
 
 	private void deletePressed()
@@ -183,8 +186,8 @@ public class NetworkDcpCfgPanel
 				"LrgsConfigDialog.selectDRGSConnDelErr"));
 			return;
 		}
-		
-		DrgsConnectCfg cfg = (DrgsConnectCfg)model.getRowObject(idx);
+		int modelRow = conTable.convertRowIndexToModel(idx);
+		DrgsConnectCfg cfg = (DrgsConnectCfg)model.getRowObject(modelRow);
 		if( JOptionPane.showConfirmDialog(this,
 			LoadResourceBundle.sprintf(
 				labels.getString("LrgsConfigDialog.DRGSConnDel"),cfg.name),
@@ -192,7 +195,7 @@ public class NetworkDcpCfgPanel
 					JOptionPane.YES_NO_OPTION)
 			== JOptionPane.YES_OPTION)
 		{
-			model.deleteAt(idx);
+			model.deleteAt(modelRow);
 		}
 
 	}
@@ -205,7 +208,8 @@ public class NetworkDcpCfgPanel
 				"LrgsConfigDialog.selectConnEditErr"));
 			return;
 		}
-		DrgsConnectCfg cfg = (DrgsConnectCfg)model.getRowObject(idx);
+		int modelRow = conTable.convertRowIndexToModel(idx);
+		DrgsConnectCfg cfg = (DrgsConnectCfg)model.getRowObject(modelRow);
 		
 		BasicClient myClient = new BasicClient(cfg.host,cfg.msgPort);
 		

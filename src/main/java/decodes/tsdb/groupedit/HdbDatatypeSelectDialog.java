@@ -157,9 +157,11 @@ public class HdbDatatypeSelectDialog
 		
 		int idx = paramTable.getSelectedRow();
 		if (idx < 0)
+		{
 			return null;
-		
-		HdbDataType hdt = (HdbDataType)model.getRowObject(idx);
+		}
+		int modelRow = paramTable.convertRowIndexToModel(idx);
+		HdbDataType hdt = (HdbDataType)model.getRowObject(modelRow);
 		
 		return new StringPair(hdt.getDataTypeId().toString(), hdt.getName());
 	}
@@ -270,4 +272,3 @@ class hdbDatatypeTabkeModel extends javax.swing.table.AbstractTableModel
 		return -1;
 	}
 }
-

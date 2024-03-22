@@ -82,8 +82,11 @@ public class RoutingSpecSelectPanel
 	{
 		int idx = rslTable.getSelectedRow();
 		if (idx == -1)
+		{
 			return null;
-		return tableModel.getObjectAt(idx);
+		}
+		int modelRow = rslTable.convertRowIndexToModel(idx);
+		return tableModel.getObjectAt(modelRow);
 	}
 	
 	public void clearSelection()
@@ -105,8 +108,11 @@ public class RoutingSpecSelectPanel
 	{
 		int r = rslTable.getSelectedRow();
 		if (r == -1)
+		{
 			return;
-		tableModel.deleteObjectAt(r);
+		}
+		int modelRow = rslTable.convertRowIndexToModel(r);
+		tableModel.deleteObjectAt(modelRow);
 	}
 
 	public void setSelection(String rsName)

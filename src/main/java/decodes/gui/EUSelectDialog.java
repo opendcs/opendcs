@@ -146,13 +146,15 @@ public class EUSelectDialog extends GuiDialog
 	{
     	int idx = euTable.getSelectedRow();
     	if (idx < 0)
+		{
     		selection = null;
+		}
     	else
 		{
 			//Get the correct row from the table model
-			int modelrow = euTable.convertRowIndexToModel(idx);
-			EUTableModel tablemodel = (EUTableModel)euTable.getModel();			
-			selection = (EngineeringUnit)tablemodel.getRowObject(modelrow);
+			int modelRow = euTable.convertRowIndexToModel(idx);
+			EUTableModel tableModel = (EUTableModel)euTable.getModel();
+			selection = (EngineeringUnit)tableModel.getRowObject(modelRow);
 		}
 		closeDlg();
     }

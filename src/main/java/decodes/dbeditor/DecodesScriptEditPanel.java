@@ -593,25 +593,23 @@ public class DecodesScriptEditPanel
 		headerRenderer.setHorizontalAlignment(JLabel.CENTER);
 		decodedDataTable.setCellSelectionEnabled(true);
 		decodedDataTable.getColumnModel().getSelectionModel().addListSelectionListener(
-			new ListSelectionListener()
+			e ->
 			{
-				@Override
-				public void valueChanged(ListSelectionEvent e)
-				{
-					selectDecodedDataCell(decodedDataTable.getSelectedRow(),
-						decodedDataTable.getSelectedColumn());
-				}
+				int r = decodedDataTable.getSelectedRow();
+				int modelRow = decodedDataTable.convertRowIndexToModel(r);
+				int c = decodedDataTable.getSelectedColumn();
+				int modelColumn = decodedDataTable.convertColumnIndexToModel(c);
+				selectDecodedDataCell(modelRow, modelColumn);
 			});
 
 		decodedDataTable.getSelectionModel().addListSelectionListener(
-			new ListSelectionListener()
+			e ->
 			{
-				@Override
-				public void valueChanged(ListSelectionEvent e)
-				{
-					selectDecodedDataCell(decodedDataTable.getSelectedRow(),
-						decodedDataTable.getSelectedColumn());
-				}
+				int r = decodedDataTable.getSelectedRow();
+				int modelRow = decodedDataTable.convertRowIndexToModel(r);
+				int c = decodedDataTable.getSelectedColumn();
+				int modelColumn = decodedDataTable.convertColumnIndexToModel(c);
+				selectDecodedDataCell(modelRow, modelColumn);
 			});
 
 		JScrollPane decodedDataScrollPane = new JScrollPane(
@@ -620,7 +618,6 @@ public class DecodesScriptEditPanel
 			JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		decodedDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		decodedDataTable.getColumnModel().getColumn(0).setPreferredWidth(160);
-//		decodedDataScrollPane.getViewport().add(decodedDataTable);
 
 		JPanel decodedDataPanel = new JPanel(new BorderLayout());
 		decodedDataPanel.setBorder(new TitledBorder(
@@ -767,7 +764,10 @@ public class DecodesScriptEditPanel
 		int[] rows = formatStatementTable.getSelectedRows();
 		FormatStatement fs[] = new FormatStatement[nrows];
 		for (int x = 0; x < nrows; x++)
-			fs[x] = formatStatementTableModel.getObjectAt(rows[x]);
+		{
+			int modelRow = formatStatementTable.convertRowIndexToModel(rows[x]);
+			fs[x] = formatStatementTableModel.getObjectAt(modelRow);
+		}
 
 
 		// New code added to skip this confirm delete check
@@ -1805,5 +1805,3 @@ class FmtStatementEditor
 		return super.stopCellEditing();
 	}
 }
-
-

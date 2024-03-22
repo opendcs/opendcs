@@ -136,7 +136,9 @@ public class PlatListPanel extends JPanel
 	{
 		int n = platListTable.getSelectedRowCount();
 		if (n == 0)
+		{
 			return;
+		}
 
 		String decHomePath = EnvExpander.expand("$DECODES_INSTALL_DIR");
 		DistrictDBSnap snapshot = platList.myDB;
@@ -157,13 +159,16 @@ public class PlatListPanel extends JPanel
 		String files[] = new String[n];
 		for(int i=0; i<n; i++)
 		{
-			PlatListEntry ple = model.getPlatListEntryAt(rows[i]);
+			int modelRow = platListTable.convertRowIndexToModel(rows[i]);
+			PlatListEntry ple = model.getPlatListEntryAt(modelRow);
 			files[i] = ple.makeFileName();
 		}
 		MultFileDownloadDialog dlg = new MultFileDownloadDialog(
 			SyncGuiFrame.instance(), "Downloading XML Files", true);
 		if (!dlg.downloadFiles(urldir, files, tmpPath))
+		{
 			return;
+		}
 
 		String cmdarray[] = new String[5 + files.length];
 		cmdarray[0] = "java";
@@ -172,7 +177,9 @@ public class PlatListPanel extends JPanel
 		cmdarray[3] = "-DDECODES_INSTALL_DIR=" + decHomePath;
 		cmdarray[4] = "decodes.dbimport.DbImport";
 		for(int i=0; i<files.length; i++)
+		{
 			cmdarray[5+i] = files[i];
+		}
 
 		try
 		{
@@ -180,9 +187,11 @@ public class PlatListPanel extends JPanel
 				= Runtime.getRuntime().exec(cmdarray,null,tmpDir);
 			int result = importProc.waitFor();
 			if (result != 0)
+			{
 				SyncGuiFrame.instance().showError(
 					"Import process failed! Check the file '"
 					+ decHomePath + "/tmp/util.log for details.");
+			}
 			else
 			{
 				JOptionPane.showMessageDialog(SyncGuiFrame.instance(),
@@ -209,7 +218,9 @@ public class PlatListPanel extends JPanel
 	{
 		int n = platListTable.getSelectedRowCount();
 		if (n == 0)
+		{
 			return;
+		}
 
 		String decHomePath = EnvExpander.expand("$DECODES_INSTALL_DIR");
 		DistrictDBSnap snapshot = platList.myDB;
@@ -230,7 +241,8 @@ public class PlatListPanel extends JPanel
 			String files[] = new String[n];
 			for(int i=0; i<n; i++)
 			{
-				PlatListEntry ple = model.getPlatListEntryAt(rows[i]);
+				int modelRow = platListTable.convertRowIndexToModel(rows[i]);
+				PlatListEntry ple = model.getPlatListEntryAt(modelRow);
 				files[i] = ple.makeFileName();
 			}
 			MultFileDownloadDialog dlg = new MultFileDownloadDialog(
@@ -243,20 +255,24 @@ public class PlatListPanel extends JPanel
 	{
 		int row = platListTable.getSelectedRow();
 		if (row == -1)
+		{
 			return;
+		}
 
 		String tmpDirPath = 
 			EnvExpander.expand("$DECODES_INSTALL_DIR/tmp");
 		File tmpDir = new File(tmpDirPath);
 		if (!tmpDir.isDirectory())
+		{
 			if (!tmpDir.mkdirs())
 			{
 				SyncGuiFrame.instance().showError(
 					"Cannot make temp directory '" + tmpDirPath	+ "'");
 				return;
 			}
-		
-		PlatListEntry ple = model.getPlatListEntryAt(row);
+		}
+		int modelRow = platListTable.convertRowIndexToModel(row);
+		PlatListEntry ple = model.getPlatListEntryAt(modelRow);
 		String fn = ple.makeFileName();
 		DistrictDBSnap snapshot = platList.myDB;
 		String urlstr = SyncConfig.instance().getHubHome() + "/"
@@ -278,10 +294,14 @@ public class PlatListPanel extends JPanel
 		}
 
 		if (showFileDialog == null)
+		{
 			showFileDialog = new ShowFileDialog(
 				SyncGuiFrame.instance(), "Platform at " + ple.siteNameValue, true);
+		}
 		else
+		{
 			showFileDialog.setTitle("Platform at " + ple.siteNameValue);
+		}
 		showFileDialog.setFile(localFile);
 		showFileDialog.setVisible(true);
 	}
@@ -406,6 +426,3 @@ class ColumnComparator implements Comparator
 			PlatListEntryColumnizer.getColumn(p2, col));
 	}
 }
-
-
-

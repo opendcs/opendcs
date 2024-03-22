@@ -187,9 +187,12 @@ class AlgoSelectPanel extends JPanel
 	{
 		int r = algoListTable.getSelectedRow();
 		if (r == -1)
+		{
 			return null;
+		}
+		int modelRow = algoListTable.convertRowIndexToModel(r);
 		AlgorithmsListPanel algorithmsListPanel = CAPEdit.instance().algorithmsListPanel;
-		return algorithmsListPanel.algoListTableModel.getRowAlgorithm(r);
+		return algorithmsListPanel.algoListTableModel.getRowAlgorithm(modelRow);
 	}
 
 	/**

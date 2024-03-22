@@ -398,7 +398,8 @@ public class SeasonCheckPanel extends JPanel
 			frame.showError("Select Dur/Mag in the table, then press Edit.");
 			return;
 		}
-		DurCheckPeriod dcp = durMagModel.checks.get(idx);
+		int modelRow = durMagTable.convertRowIndexToModel(idx);
+		DurCheckPeriod dcp = durMagModel.checks.get(modelRow);
 		if (dcp.getHigh() != Double.POSITIVE_INFINITY || dcp.getLow() != Double.NEGATIVE_INFINITY)
 		{
 			int res = JOptionPane.showConfirmDialog(frame, "Confirm delete of Dur/Mag check "
@@ -417,7 +418,8 @@ public class SeasonCheckPanel extends JPanel
 			frame.showError("Select Dur/Mag in the table, then press Edit.");
 			return;
 		}
-		DurCheckPeriod dcp = durMagModel.checks.get(idx);
+		int modelRow = durMagTable.convertRowIndexToModel(idx);
+		DurCheckPeriod dcp = durMagModel.checks.get(modelRow);
 		DurMagDialog dlg = new DurMagDialog(frame, durationArray, dcp);
 		frame.launchDialog(dlg);
 		if (dlg.isCancelled())

@@ -81,7 +81,10 @@ public class PdtSelectPanel extends JPanel
 		int idx[] = pdtTable.getSelectedRows();
 		PdtEntry ret[] = new PdtEntry[idx.length];
 		for(int i=0; i<idx.length; i++)
-			ret[i] = model.getEntryAt(idx[i]);
+		{
+			int modelRow = pdtTable.convertRowIndexToModel(idx[i]);
+			ret[i] = model.getEntryAt(modelRow);
+		}
 		return ret;
 	}
 

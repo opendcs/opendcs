@@ -765,10 +765,15 @@ public class SearchCriteriaEditPanel
 	{
 		int row = platSelectTable.getSelectedRow();
 		if (row == -1)
+		{
 			return;
-		StringPair sp = platSelectModel.getEntryAt(row);
+		}
+		int modelRow = platSelectTable.convertRowIndexToModel(row);
+		StringPair sp = platSelectModel.getEntryAt(modelRow);
 		if (sp == null)
+		{
 			return;
+		}
 		if (sp.first == PlatSelectModel.PlatformIdLabel)
 		{
 			DcpAddress addr = new DcpAddress(sp.second);
@@ -776,7 +781,9 @@ public class SearchCriteriaEditPanel
 			String s = JOptionPane.showInputDialog(this, 
 				"Enter Platform ID:", addr.toString());
 			if (s == null)
+			{
 				return;
+			}
 			s = s.trim();
 			if (s.length() == 0)
 			{
@@ -790,10 +797,12 @@ public class SearchCriteriaEditPanel
 			{
 				PdtEntry pdte = pdt.find(addr);
 				if (pdte != null && pdte.getDescription() != null)
+				{
 					sp.second = sp.second + " :" + pdte.getDescription();
+				}
 			}
 
-			platSelectModel.valueChanged(row);
+			platSelectModel.valueChanged(modelRow);
 		}
 		else if (sp.first == PlatSelectModel.DbNetlistLabel)
 		{
@@ -807,14 +816,16 @@ public class SearchCriteriaEditPanel
 			if (file == null || file.getPath().equals(sp.second))
 				return;
 			sp.second = file.getPath();
-			platSelectModel.valueChanged(row);
+			platSelectModel.valueChanged(modelRow);
 		}
 		else if (sp.first == PlatSelectModel.PlatformNameLabel)
 		{
 			String s = JOptionPane.showInputDialog(this, 
 				"Enter Platform Name:", sp.second);
 			if (s == null)
+			{
 				return;
+			}
 			s = s.trim();
 			if (s.length() == 0)
 			{
@@ -822,25 +833,32 @@ public class SearchCriteriaEditPanel
 				return;
 			}
 			sp.second = s;
-			platSelectModel.valueChanged(row);
+			platSelectModel.valueChanged(modelRow);
 		}
 		else if (sp.first == PlatSelectModel.GoesChannelLabel)
 		{
 			String s = JOptionPane.showInputDialog(this, 
 				"Enter GOES Channel:", sp.second);
-				if (s == null)
+			if (s == null)
+			{
 				return;
+			}
 			s = s.trim();
 			if (s.length() == 0)
+			{
 				return;
-			try { Integer.parseInt(s); }
+			}
+			try
+			{
+				Integer.parseInt(s);
+			}
 			catch(Exception ex)
 			{
 				showError("Invalid GOES Channel '" + s + "'. Enter integer channel number.");
 				return;
 			}
 			sp.second = s;
-			platSelectModel.valueChanged(row);
+			platSelectModel.valueChanged(modelRow);
 		}
 	}
 
@@ -848,11 +866,16 @@ public class SearchCriteriaEditPanel
 	{
 		int rows[] = platSelectTable.getSelectedRows();
 		if (rows == null)
+		{
 			return;
+		}
 		// Have to remove them top to bottom so that indexes aren't changed.
+		// TODO: need to actually write a test for this whole little mechanism here.
 		Arrays.sort(rows);
 		for(int idx = rows.length-1; idx >= 0; idx--)
+		{
 			platSelectModel.deleteEntryAt(rows[idx]);
+		}
 	}
 
 	protected void selectFromPdtButtonPressed()

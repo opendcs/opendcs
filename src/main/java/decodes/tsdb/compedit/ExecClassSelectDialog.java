@@ -144,9 +144,13 @@ public class ExecClassSelectDialog extends JDialog
 		_cancelled = false;
 		int idx = tab.getSelectedRow();
 		if (idx < 0)
+		{
 			_cancelled = true;
+		}
 		else
+		{
 			selection = model.classlist.get(idx).first;
+		}
 		
 		closeDlg();
 	}
@@ -294,5 +298,3 @@ class ExecClassTableModel extends AbstractTableModel
 
 	}
 }
-
-

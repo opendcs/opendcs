@@ -70,8 +70,11 @@ public class PresentationGroupSelectPanel extends JPanel
 	{
 		int r = pgTable.getSelectedRow();
 		if (r == -1)
+		{
 			return null;
-		return model.getObjectAt(r);
+		}
+		int modelRow = pgTable.convertRowIndexToModel(r);
+		return model.getObjectAt(modelRow);
 	}
 
 	public void refill()
@@ -90,8 +93,11 @@ public class PresentationGroupSelectPanel extends JPanel
 	{
 		int r = pgTable.getSelectedRow();
 		if (r == -1)
+		{
 			return;
-		model.deleteAt(r);
+		}
+		int modelRow = pgTable.convertRowIndexToModel(r);
+		model.deleteAt(modelRow);
 	}
 
 	public void replace(PresentationGroup oldPg, PresentationGroup newPg)

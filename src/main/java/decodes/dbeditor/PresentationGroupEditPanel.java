@@ -281,12 +281,15 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 				dbeditLabels.getString("PresentationGroupEditPanel.selectEdit"));
 			return;
 		}
-		DataPresentation pres = dataPresentationTableModel.getObjectAt(row);
+		int modelRow = dataPresentationTable.convertRowIndexToModel(row);
+		DataPresentation pres = dataPresentationTableModel.getObjectAt(modelRow);
 		EditPresentationDialog dlg = new EditPresentationDialog(pres, supportsMinMaxValue);
 		launchDialog(dlg);
 		if (dlg.isCancelled())
+		{
 			return;
-		dataPresentationTableModel.rowUpdated(row);
+		}
+		dataPresentationTableModel.rowUpdated(modelRow);
 	}
 
 	/**
@@ -323,13 +326,15 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 				dbeditLabels.getString("PresentationGroupEditPanel.selectDelete"));
 			return;
 		}
-
+		int modelRow = dataPresentationTable.convertRowIndexToModel(idx);
 		int rsp = JOptionPane.showConfirmDialog(this, 
 			dbeditLabels.getString("PresentationGroupEditPanel.confirmDelete"),
 			dbeditLabels.getString("PresentationGroupEditPanel.confirmDeleteTitle"),
 			JOptionPane.YES_NO_OPTION);
 		if (rsp == JOptionPane.YES_OPTION)
-			dataPresentationTableModel.removeAt(idx);
+		{
+			dataPresentationTableModel.removeAt(modelRow);
+		}
 	}
 
 	/**
@@ -379,8 +384,8 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 		dataPresentationTableModel.setObject(theObject);
 		if (idx >= 0 && idx < dataPresentationTable.getRowCount())
 		{
+			// This on the table, not the model so no conversions.
 			dataPresentationTable.setRowSelectionInterval(idx, idx);
-//			valueChanged(null);
 		}
 		return true;
 	}
@@ -431,74 +436,6 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 	public void help()
 	{
 	}
-
-//	/**
-//	 * Called when list selection made in dataPresentationTable. Populates the
-//	 * lower part of the screen with the rouding rules for the selected
-//	 * data-presentation.
-//	 * 
-//	 * @param e
-//	 *            ignored.
-//	 */
-//	public void valueChanged(ListSelectionEvent e)
-//	{
-//		int idx = dataPresentationTable.getSelectedRow();
-//		if (idx == dpIdx)
-//			return;
-//		dpIdx = idx;
-//		if (dpIdx == -1)
-//			setRoundingRulesView(null);
-//		else
-//			setRoundingRulesView(dataPresentationTableModel.getObjectAt(dpIdx));
-//	}
-
-//	/**
-//	 * Populates the lower part of the screen with the rouding rules for the
-//	 * selected data-presentation.
-//	 */
-//	private void setRoundingRulesView(DataPresentation dp)
-//	{
-//		roundingRulesTableModel.setObject(dp);
-//		if (dp != null)
-//			dataTypeField.setText(dp.getDataType().toString());
-//	}
-
-//	/**
-//	 * Called when the 'Select Equipment Model' button is pressed.
-//	 * 
-//	 * @param e
-//	 *            ignored.
-//	 */
-//	void equipmentModelButton_actionPerformed(ActionEvent e)
-//	{
-//		int idx = dataPresentationTable.getSelectedRow();
-//		DataPresentation dp = null;
-//		if (idx != -1)
-//			dp = dataPresentationTableModel.getObjectAt(idx);
-//		if (idx == -1 || dp == null)
-//		{
-//			DbEditorFrame.instance().showError(
-//				dbeditLabels
-//					.getString("PresentationGroupEditPanel.selectPresEq"));
-//			return;
-//		}
-//
-//		EquipmentModelSelectDialog dlg = new EquipmentModelSelectDialog();
-//		if (dp.getEquipmentModelName() != null && dp.getEquipmentModelName().length() > 0)
-//			dlg.setSelection(Database.getDb().equipmentModelList
-//				.get(dp.getEquipmentModelName()));
-//
-//		launchDialog(dlg);
-//		if (!dlg.cancelled())
-//		{
-//			EquipmentModel mod = dlg.getSelectedEquipmentModel();
-//			if (mod == null)
-//				dp.setEquipmentModelName("");
-//			else
-//				dp.setEquipmentModelName(mod.name);
-//			dataPresentationTable.repaint();
-//		}
-//	}
 }
 
 @SuppressWarnings("serial")

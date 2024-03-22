@@ -278,12 +278,14 @@ public class PropertiesEditPanel extends JPanel
 	 */
 	void editPressed()
 	{
-		int tablerow = propertiesTable.getSelectedRow();
-		if (tablerow == -1)
+		int tableRow = propertiesTable.getSelectedRow();
+		if (tableRow == -1)
+		{
 			return;
+		}
 		//Get the correct row from the table model
-		int modelrow = propertiesTable.convertRowIndexToModel(tablerow);
-		StringPair sp = ptm.propAt(modelrow);
+		int modelRow = propertiesTable.convertRowIndexToModel(tableRow);
+		StringPair sp = ptm.propAt(modelRow);
 		PropertySpec propSpec = null;
 		if (propHash != null)
 			propSpec = propHash.get(sp.first.toUpperCase());
@@ -293,18 +295,24 @@ public class PropertiesEditPanel extends JPanel
 		PropertyEditDialog dlg = null;
 		Logger.instance().debug3("Editing propspec=" + propSpec);
 		if (ownerDialog != null)
+		{
 			dlg = new PropertyEditDialog(ownerDialog, sp.first, sp.second, propSpec);
+		}
 		else if (ownerFrame != null)
+		{
 			dlg = new PropertyEditDialog(ownerFrame, sp.first, sp.second, propSpec);
+		}
 		else
+		{
 			dlg = new PropertyEditDialog(TopFrame.instance(), sp.first, sp.second, propSpec);
+		}
 		dlg.setLocation(50, 50);
 		dlg.setLocationRelativeTo(this);
 		dlg.setVisible(true);
 		StringPair res = dlg.getResult();
 		if (res != null)
 		{
-			ptm.setPropAt(modelrow, res);
+			ptm.setPropAt(modelRow, res);
 			changesMade = true;
 			saveChanges();
 		}
@@ -328,8 +336,11 @@ public class PropertiesEditPanel extends JPanel
 	{
 		int r = propertiesTable.getSelectedRow();
 		if (r == -1)
+		{
 			return;
-		StringPair sp = ptm.propAt(r);
+		}
+		int modelRow = propertiesTable.convertColumnIndexToView(r);
+		StringPair sp = ptm.propAt(modelRow);
 		PropertySpec propSpec = 
 			propHash == null ? null : propHash.get(sp.first.toUpperCase());
 		if (propSpec != null)
@@ -341,7 +352,7 @@ public class PropertiesEditPanel extends JPanel
 
 		}
 
-		ptm.deletePropAt(r);
+		ptm.deletePropAt(modelRow);
 		changesMade = true;
 	}
 

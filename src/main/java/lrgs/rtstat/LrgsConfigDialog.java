@@ -1690,7 +1690,8 @@ public class LrgsConfigDialog extends GuiDialog
                     "LrgsConfigDialog.selectConnEditErr"));
             return;
         }
-        DdsRecvConnectCfg cfg = (DdsRecvConnectCfg)ddsTableModel.getRowObject(idx);
+        int modelRow = ddsConTable.convertRowIndexToModel(idx);
+        DdsRecvConnectCfg cfg = (DdsRecvConnectCfg)ddsTableModel.getRowObject(modelRow);
 
         LddsClient myClient = new LddsClient(cfg.host,cfg.port);
 
@@ -1737,7 +1738,8 @@ public class LrgsConfigDialog extends GuiDialog
                         "LrgsConfigDialog.selectConnEditErr"));
                 return;
             }
-            cfg = (DdsRecvConnectCfg)ddsTableModel.getRowObject(idx);
+            int modelRow = ddsConTable.convertRowIndexToModel(idx);
+            cfg = (DdsRecvConnectCfg)ddsTableModel.getRowObject(modelRow);
         }
         else // add
         {
@@ -1748,9 +1750,13 @@ public class LrgsConfigDialog extends GuiDialog
         if (dlg.okPressed())
         {
             if (!edit)
+            {
                 ddsTableModel.add(cfg);
+            }
             else
+            {
                 ddsTableModel.modified();
+            }
         }
     }
 
@@ -1763,8 +1769,9 @@ public class LrgsConfigDialog extends GuiDialog
                     "LrgsConfigDialog.selectDDSConnDelErr"));
             return;
         }
+        int modelRow = ddsConTable.convertRowIndexToModel(idx);
         DdsRecvConnectCfg cfg = 
-            (DdsRecvConnectCfg)ddsTableModel.getRowObject(idx);
+            (DdsRecvConnectCfg)ddsTableModel.getRowObject(modelRow);
         if( JOptionPane.showConfirmDialog(this,
                 LoadResourceBundle.sprintf(labels.getString(
                 "LrgsConfigDialog.DDSConnDel"),cfg.name),
@@ -1772,7 +1779,7 @@ public class LrgsConfigDialog extends GuiDialog
             "LrgsConfigDialog.confirmDelete"), JOptionPane.YES_NO_OPTION)
             == JOptionPane.YES_OPTION)
         {
-            ddsTableModel.deleteAt(idx);
+            ddsTableModel.deleteAt(modelRow);
         }
     }
 
@@ -1786,7 +1793,9 @@ public class LrgsConfigDialog extends GuiDialog
             return;
         }
         if (ddsTableModel.moveUpAt(idx))
+        {
             ddsConTable.setRowSelectionInterval(idx-1, idx-1);
+        }
     }
 
     private void moveDdsConDown()
@@ -1799,7 +1808,9 @@ public class LrgsConfigDialog extends GuiDialog
             return;
         }
         if (ddsTableModel.moveDownAt(idx))
+        {
             ddsConTable.setRowSelectionInterval(idx+1, idx+1);
+        }
     }
 
     /**
@@ -2105,7 +2116,8 @@ public class LrgsConfigDialog extends GuiDialog
                     "LrgsConfigDialog.selectConnEditErr"));
             return;
         }
-        DrgsConnectCfg cfg = (DrgsConnectCfg)drgsTableModel.getRowObject(idx);
+        int modelRow = drgsConTable.convertRowIndexToModel(idx);
+        DrgsConnectCfg cfg = (DrgsConnectCfg)drgsTableModel.getRowObject(modelRow);
 
         BasicClient myClient = new BasicClient(cfg.host,cfg.msgPort);
 
@@ -2169,7 +2181,8 @@ public class LrgsConfigDialog extends GuiDialog
                         "LrgsConfigDialog.selectConnEditErr"));
                 return;
             }
-            cfg = (DrgsConnectCfg)drgsTableModel.getRowObject(idx);
+            int modelRow = drgsConTable.convertRowIndexToModel(idx);
+            cfg = (DrgsConnectCfg)drgsTableModel.getRowObject(modelRow);
             dlg.setInfo(cfg);
         }
         else // add
@@ -2181,9 +2194,13 @@ public class LrgsConfigDialog extends GuiDialog
         if (dlg.okPressed())
         {
             if (!edit)
+            {
                 drgsTableModel.add(cfg);
+            }
             else
+            {
                 drgsTableModel.modified();
+            }
         }
     }
 
@@ -2196,8 +2213,9 @@ public class LrgsConfigDialog extends GuiDialog
                     "LrgsConfigDialog.selectDRGSConnDelErr"));
             return;
         }
+        int modelRow = drgsConTable.convertRowIndexToModel(idx);
         DrgsConnectCfg cfg = 
-            (DrgsConnectCfg)drgsTableModel.getRowObject(idx);
+            (DrgsConnectCfg)drgsTableModel.getRowObject(modelRow);
         if( JOptionPane.showConfirmDialog(this,
                 LoadResourceBundle.sprintf(
                 labels.getString("LrgsConfigDialog.DRGSConnDel"),
@@ -2206,7 +2224,7 @@ public class LrgsConfigDialog extends GuiDialog
                     JOptionPane.YES_NO_OPTION)
             == JOptionPane.YES_OPTION)
         {
-            drgsTableModel.deleteAt(idx);
+            drgsTableModel.deleteAt(modelRow);
         }
     }
 

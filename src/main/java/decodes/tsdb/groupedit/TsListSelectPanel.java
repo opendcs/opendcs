@@ -181,8 +181,11 @@ public class TsListSelectPanel extends JPanel
 	{
 		int r = tsIdListTable.getSelectedRow();
 		if (r == -1)
+		{
 			return null;
-		return model.getTSIDAt(r);
+		}
+		int modelRow = tsIdListTable.convertRowIndexToModel(r);
+		return model.getTSIDAt(modelRow);
 	}
 
 	/**
@@ -193,8 +196,11 @@ public class TsListSelectPanel extends JPanel
 		int idx[] = tsIdListTable.getSelectedRows();
 		TimeSeriesIdentifier ret[] = new TimeSeriesIdentifier[idx.length];
 		for (int i = 0; i < idx.length; i++)
+		{
 			//Get the correct row from the table model
-			ret[i] = model.getTSIDAt(tsIdListTable.convertRowIndexToModel(idx[i]));
+			int modelRow = tsIdListTable.convertRowIndexToModel(idx[i]);
+			ret[i] = model.getTSIDAt(modelRow);
+		}
 		return ret;
 	}
 
@@ -289,6 +295,12 @@ public class TsListSelectPanel extends JPanel
 	public int getSelectedRowCount()
 	{
 		return tsIdListTable.getSelectedRowCount();
+	}
+
+	/* pass through until this entire panel model can be fixed */
+	public int convertRowIndexToModel(int row)
+	{
+		return tsIdListTable.convertRowIndexToModel(row);
 	}
 	
 	public void clearSelection()

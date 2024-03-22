@@ -122,9 +122,9 @@ public class AlgorithmsListPanel extends ListPanel
 			return;
 		}
 		//Get the correct row from the table model
-		int modelrow = algoListTable.convertRowIndexToModel(r);
-		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();			
-		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
+		int modelRow = algoListTable.convertRowIndexToModel(r);
+		AlgoListTableModel tableModel = (AlgoListTableModel)algoListTable.getModel();
+		DbCompAlgorithm dca = (DbCompAlgorithm)tableModel.getRowAlgorithm(modelRow);
 		openEditTab(dca);
 	}
 
@@ -177,9 +177,9 @@ public class AlgorithmsListPanel extends ListPanel
 			return;
 		}
 		//Get the correct row from the table model
-		int modelrow = algoListTable.convertRowIndexToModel(r);
-		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();
-		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
+		int modelRow = algoListTable.convertRowIndexToModel(r);
+		AlgoListTableModel tableModel = (AlgoListTableModel)algoListTable.getModel();
+		DbCompAlgorithm dca = (DbCompAlgorithm)tableModel.getRowAlgorithm(modelRow);
 
 	    String newName = JOptionPane.showInputDialog(cpyInput);
 		if (newName == null)
@@ -205,9 +205,9 @@ public class AlgorithmsListPanel extends ListPanel
 			return;
 		}
 		//Get the correct row from the table model
-		int modelrow = algoListTable.convertRowIndexToModel(r);
-		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();
-		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
+		int modelRow = algoListTable.convertRowIndexToModel(r);
+		AlgoListTableModel tableModel = (AlgoListTableModel)algoListTable.getModel();
+		DbCompAlgorithm dca = (DbCompAlgorithm)tableModel.getRowAlgorithm(modelRow);
 
 		AlgorithmDAI algorithmDao = CAPEdit.instance().theDb.makeAlgorithmDAO();
 		try

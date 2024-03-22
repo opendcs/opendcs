@@ -114,10 +114,12 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 	{
 		int idx = scheduleEntryTable.getSelectedRow();
 		if (idx == -1)
+		{
 			return null;
+		}
 		//Get the correct row from the table model
-		int modelrow = scheduleEntryTable.convertRowIndexToModel(idx);
-		return tableModel.getObjectAt(modelrow);
+		int modelRow = scheduleEntryTable.convertRowIndexToModel(idx);
+		return tableModel.getObjectAt(modelRow);
 	}
 
 	/** @return type of entity that this panel edits. */

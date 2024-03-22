@@ -731,14 +731,15 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 			showError("Select row, then press Edit.");
 			return;
 		}
-		DbAlgoParm dap = (DbAlgoParm)algoParmTableModel.getRowObject(r);
+		int modelRow = algoParmTable.convertRowIndexToModel(r);
+		DbAlgoParm dap = (DbAlgoParm)algoParmTableModel.getRowObject(modelRow);
 		DbAlgoParm dapcopy = new DbAlgoParm(dap);
 
 		AlgoParmDialog dlg = new AlgoParmDialog(nameText.getText(), dapcopy);
 		CAPEdit.instance().getFrame().launchDialog(dlg);
 		if (dlg.okPressed)
 		{
-			if (algoParmTableModel.getByName(dapcopy.getRoleName(), r) != null)
+			if (algoParmTableModel.getByName(dapcopy.getRoleName(), modelRow) != null)
 			{
 				showError("Parameter '" + dapcopy.getRoleName() + "' not found.");
 				return;
@@ -757,14 +758,15 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 			showError(deleteParamErr1);
 			return;
 		}
-		DbAlgoParm dap = (DbAlgoParm)algoParmTableModel.getRowObject(r);
+		int modelRow = algoParmTable.convertRowIndexToModel(r);
+		DbAlgoParm dap = (DbAlgoParm)algoParmTableModel.getRowObject(modelRow);
 		int ok = JOptionPane.showConfirmDialog(this,
 			deleteParamPrompt1 + 
 			dap.getRoleName()
 			+ "'?");
 		if (ok == JOptionPane.YES_OPTION)
 		{
-			algoParmTableModel.deleteAt(r);
+			algoParmTableModel.deleteAt(modelRow);
 		}
 	}
 

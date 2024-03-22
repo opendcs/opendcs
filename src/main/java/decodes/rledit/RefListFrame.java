@@ -582,7 +582,7 @@ public class RefListFrame extends JFrame
 		Season season = null;
 		int idx = this.seasonsTable.getSelectedRow();
 		if (idx == -1
-		 || (season = (Season)seasonListTableModel.getRowObject(idx)) == null)
+		 || (season = (Season)seasonListTableModel.getRowObject(seasonsTable.convertRowIndexToModel(idx))) == null)
 		{
 			showError(
 				labels.getString("SeasonsTab.noSelection") + " " + genericLabels.getString("delete"));
@@ -602,7 +602,7 @@ public class RefListFrame extends JFrame
 		Season season = null;
 		int idx = this.seasonsTable.getSelectedRow();
 		if (idx == -1
-		 || (season = (Season)seasonListTableModel.getRowObject(idx)) == null)
+		 || (season = (Season)seasonListTableModel.getRowObject(seasonsTable.convertRowIndexToModel(idx))) == null)
 		{
 			showError(
 				labels.getString("SeasonsTab.noSelection") + " " + genericLabels.getString("edit"));
@@ -722,11 +722,11 @@ public class RefListFrame extends JFrame
 			showError(labels.getString("RefListFrame.enumSelectInfo"));
 			return;
 		}
-
+		int modelRow = enumTable.convertRowIndexToModel(row);
 		String s = TextUtil.removeAllSpace(
 			(String)enumComboBox.getSelectedItem());
 		decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
-		EnumValue ev = enumTableModel.getEnumValueAt(row);
+		EnumValue ev = enumTableModel.getEnumValueAt(modelRow);
 		EnumValueDialog evd = new EnumValueDialog();
 		evd.fillValues(ev);
 		launchDialog(evd);
@@ -751,11 +751,11 @@ public class RefListFrame extends JFrame
 			showError(labels.getString("RefListFrame.enumDeleteInfo"));
 			return;
 		}
-
+		int modelRow = enumTable.convertRowIndexToModel(row);
 		String s = TextUtil.removeAllSpace(
 			(String)enumComboBox.getSelectedItem());
 		decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
-		deletedEnumValue = enumTableModel.getEnumValueAt(row);
+		deletedEnumValue = enumTableModel.getEnumValueAt(modelRow);
 		en.removeValue(deletedEnumValue.getValue());
 		enumTableModel.fireTableDataChanged();
 		undoDeleteEnumValButton.setEnabled(true);
@@ -796,11 +796,11 @@ public class RefListFrame extends JFrame
 			showError(labels.getString("RefListFrame.enumDefaultInfo"));
 			return;
 		}
-
+		int modelRow = enumTable.convertRowIndexToModel(row);
 		String s = TextUtil.removeAllSpace(
 			(String)enumComboBox.getSelectedItem());
 		decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
-		EnumValue ev = enumTableModel.getEnumValueAt(row);
+		EnumValue ev = enumTableModel.getEnumValueAt(modelRow);
 		enumTableModel.fireTableDataChanged();
 		en.setDefault(ev.getValue());
 		enumsChanged = true;
@@ -822,7 +822,9 @@ public class RefListFrame extends JFrame
 			return;
 		}
 		if (enumTableModel.moveUp(row))
+		{
 			enumTable.setRowSelectionInterval(row-1, row-1);
+		}
 		enumsChanged = true;
 	}
 
@@ -898,7 +900,8 @@ public class RefListFrame extends JFrame
 			showError(labels.getString("RefListFrame.engEditInfo"));
 			return;
 		}
-		EngineeringUnit eu = (EngineeringUnit)euTableModel.getRowObject(row);
+		int modelRow = euTable.convertColumnIndexToView(row);
+		EngineeringUnit eu = (EngineeringUnit)euTableModel.getRowObject(modelRow);
 		String oldAbbr = eu.abbr;
 		EUDialog dlg = new EUDialog();
 		dlg.fillValues(eu);
@@ -951,7 +954,8 @@ public class RefListFrame extends JFrame
 			showError(labels.getString("RefListFrame.engDeleteInfo"));
 			return;
 		}
-		deletedEU = (EngineeringUnit)euTableModel.getRowObject(row);
+		int modelRow = euTable.convertRowIndexToModel(row);
+		deletedEU = (EngineeringUnit)euTableModel.getRowObject(modelRow);
 		Database.getDb().engineeringUnitList.remove(deletedEU);
 		unitsChanged = true;
 		euTableModel.rebuild();
@@ -1011,8 +1015,8 @@ public class RefListFrame extends JFrame
 			showError(labels.getString("RefListFrame.unitConvEditInfo"));
 			return;
 		}
-
-		UnitConverterDb uc = (UnitConverterDb)ucTableModel.getRowObject(row);
+		int modelRow = ucTable.convertRowIndexToModel(row);
+		UnitConverterDb uc = (UnitConverterDb)ucTableModel.getRowObject(modelRow);
 		String oldFrom = uc.fromAbbr;
 		String oldTo = uc.toAbbr;
 		EUCnvEditDialog dlg = new EUCnvEditDialog();
@@ -1053,7 +1057,8 @@ public class RefListFrame extends JFrame
 			showError(labels.getString("RefListFrame.unitConvDeleteInfo"));
 			return;
 		}
-		deletedConverter = (UnitConverterDb)ucTableModel.getRowObject(row);
+		int modelRow = ucTable.convertRowIndexToModel(row);
+		deletedConverter = (UnitConverterDb)ucTableModel.getRowObject(modelRow);
 		Database.getDb().unitConverterSet.removeDbConverter(
 			deletedConverter.fromAbbr, deletedConverter.toAbbr);
 		convertersChanged = true;
@@ -1116,8 +1121,9 @@ public class RefListFrame extends JFrame
 			showError(labels.getString("RefListFrame.selectRowEditInfo"));
 			return;
 		}
+		int modelRow = dteTable.convertRowIndexToModel(row);
 		DTEDialog dlg = new DTEDialog(this);
-		dlg.fillValues(dteTableModel, row);
+		dlg.fillValues(dteTableModel, modelRow);
 		launchDialog(dlg);
 		if (dlg.wasChanged())
 		{
@@ -1170,7 +1176,8 @@ public class RefListFrame extends JFrame
 			showError(labels.getString("RefListFrame.selectRowDeleteInfo"));
 			return;
 		}
-		deletedDte = (String[])dteTableModel.getRowObject(row);
+		int modelRow = dteTable.convertRowIndexToModel(row);
+		deletedDte = (String[])dteTableModel.getRowObject(modelRow);
 		DataTypeSet dts = Database.getDb().dataTypeSet;
 		for(int i=0; i<dteTableModel.getColumnCount(); i++)
 		{

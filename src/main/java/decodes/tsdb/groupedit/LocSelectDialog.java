@@ -219,9 +219,9 @@ public class LocSelectDialog
 		if (r >= 0)
 		{
 			//Get the correct row from the table model
-			int modelrow = locationTable.convertRowIndexToModel(r);
-			LocTableModel tablemodel = (LocTableModel)locationTable.getModel();			
-			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tablemodel.getRowObject(modelrow);
+			int modelRow = locationTable.convertRowIndexToModel(r);
+			LocTableModel tableModel = (LocTableModel)locationTable.getModel();
+			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tableModel.getRowObject(modelRow);
 			if (spec != selectedRow)
 			{
 				selectedRow = spec;
@@ -333,7 +333,9 @@ public class LocSelectDialog
 		
 		int rows[] = locationTable.getSelectedRows();
 		if (rows == null || rows.length == 0)
+		{
 			return ret;
+		}
 		
 		TsGroupMemberType tgmt = fullRadio.isSelected() ? TsGroupMemberType.Location
 			: baseRadio.isSelected() ? TsGroupMemberType.BaseLocation 
@@ -341,17 +343,17 @@ public class LocSelectDialog
 		
 		for(int row : rows)
 		{
-			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)model.getRowObject(row);
+			int modelRow = locationTable.convertRowIndexToModel(row);
+			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)model.getRowObject(modelRow);
 			switch(tgmt)
 			{
-			case BaseLocation: ret.add(new StringPair(tgmt.toString(), spec.getBase())); break;
-			case SubLocation: ret.add(new StringPair(tgmt.toString(), spec.getSub())); break;
-			case Location:
-			default:
-				ret.add(new StringPair(tgmt.toString(), spec.getFull())); break;
+				case BaseLocation: ret.add(new StringPair(tgmt.toString(), spec.getBase())); break;
+				case SubLocation: ret.add(new StringPair(tgmt.toString(), spec.getSub())); break;
+				case Location:
+				default:
+					ret.add(new StringPair(tgmt.toString(), spec.getFull())); break;
 			}
 		}
-		
 		return ret;
 	}
 	
@@ -540,4 +542,3 @@ class LocTableModel extends javax.swing.table.AbstractTableModel
 		return theList.get(row);
 	}	
 }
-

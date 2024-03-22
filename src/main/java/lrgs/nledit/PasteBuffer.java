@@ -10,6 +10,10 @@ public class PasteBuffer
 	{
     }
 
+	/**
+	 * TODO: analyze behavior about row indexes and model vs table.
+	 * @param table
+	 */
 	public void cut(NetworkListTable table)
 	{
 		buf.clear();

@@ -1421,7 +1421,8 @@ class ComputationsTable extends JTable
 		int[] rows = this.getSelectedRows();
 		for (int pos = 0; pos < rows.length; pos++)
 		{
-			mymodel.remove(rows[pos]);
+			int modelRow = this.convertRowIndexToModel(rows[pos]);
+			mymodel.remove(modelRow);
 		}
 	}
 

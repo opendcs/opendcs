@@ -220,7 +220,8 @@ public class UserListDialog
 				"Error!", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		DdsUser ddsUserOrig = (DdsUser)tableModel.getRowObject(r);
+		int modelRow = userTable.convertColumnIndexToView(r);
+		DdsUser ddsUserOrig = (DdsUser)tableModel.getRowObject(modelRow);
 		DdsUser ddsUserCopy = new DdsUser(ddsUserOrig);
 //System.out.println("UserListDialog.editButtonPressed orig.goodOnly=" + ddsUserOrig.goodOnly + ", copy.goodOnly=" + ddsUserCopy.goodOnly);
 		editUserDialog.set(host, ddsUserCopy, false);
@@ -264,7 +265,8 @@ public class UserListDialog
 				"Error!", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		DdsUser ddsUser = (DdsUser)tableModel.getRowObject(r);
+		int modelRow = userTable.convertRowIndexToModel(r);
+		DdsUser ddsUser = (DdsUser)tableModel.getRowObject(modelRow);
 		try 
 		{
 			ddsClientIf.rmUser(ddsUser.userName);

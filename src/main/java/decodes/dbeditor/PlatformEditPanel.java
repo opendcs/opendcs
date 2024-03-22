@@ -678,7 +678,8 @@ ConfigSelectController
 					dbeditLabels.getString("PlatformEditPanel.selectSensorError"));
 			return;
 		}
-		PlatformSensor ps = sensorTableModel.getObjectAt(r);
+		int modelRow = platformSensorTable.convertRowIndexToModel(r);
+		PlatformSensor ps = sensorTableModel.getObjectAt(modelRow);
 		PlatformSensorEditDialog dlg = 
 			new PlatformSensorEditDialog(parent, 
 					dbeditLabels.getString("PlatformEditPanel.editPlatInfoDlgTitle"),
@@ -691,43 +692,6 @@ ConfigSelectController
 		launchDialog(dlg);
 		sensorTableModel.fireTableDataChanged();
 	}
-
-	//	/** Called when 'clear sensor site' button pressed. */
-	//	void clearSensorSiteButton_actionPerformed(ActionEvent e)
-	//	{
-	//		int r = platformSensorTable.getSelectedRow();
-	//		if (r == -1)
-	//		{
-	//			DbEditorFrame.instance().showError("Select sensor, then press Clear...");
-	//			return;
-	//		}
-	//		PlatformSensor ps = sensorTableModel.getObjectAt(r);
-	//		ps.site = null;
-	//		//ps.siteId = Constants.undefinedId;
-	//		sensorTableModel.fireTableDataChanged();
-	//	}
-	//
-	//	/** Called when 'select sensor site' button pressed. */
-	//	void selectSensorSiteButton_actionPerformed(ActionEvent e)
-	//	{
-	//		int r = platformSensorTable.getSelectedRow();
-	//		if (r == -1)
-	//		{
-	//			DbEditorFrame.instance().showError("Select sensor, then press Select Site...");
-	//			return;
-	//		}
-	//		PlatformSensor ps = sensorTableModel.getObjectAt(r);
-	//
-	//		SiteSelectDialog dlg = new SiteSelectDialog();
-	//		launchDialog(dlg);
-	//		Site site = dlg.getSelectedSite();
-	//		if (site != null) // selection was made?
-	//		{
-	//			ps.site = site;
-	//			//ps.siteId = site.siteId;
-	//		}
-	//		sensorTableModel.fireTableDataChanged();
-	//	}
 
 	/** Called when Transport Medium 'Add' button pressed. */
 	void addTransportMediaButton_actionPerformed(ActionEvent e)
@@ -744,8 +708,13 @@ ConfigSelectController
 	/** Called when Transport Medium 'Edit' button pressed. */
 	void editTransportMediaPressed()
 	{
-		TransportMedium tm = transportTableModel.getObjectAt(
-			transportMediaTable.getSelectedRow());
+		int r = transportMediaTable.getSelectedRow();
+		if ( r == -1)
+		{
+			return;
+		}
+		int modelRow = transportMediaTable.convertRowIndexToModel(r);
+		TransportMedium tm = transportTableModel.getObjectAt(modelRow);
 		if (tm == null)
 		{
 			parent.showError(
@@ -760,20 +729,27 @@ ConfigSelectController
 	/** Called when Transport Medium 'Delete' button pressed. */
 	void deleteTransportMediaButton_actionPerformed(ActionEvent e)
 	{
-		TransportMedium tm = transportTableModel.getObjectAt(
-				this.transportMediaTable.getSelectedRow());
+		int r = this.transportMediaTable.getSelectedRow();
+		if (r == -1)
+		{
+			return;
+		}
+		int modelRow = transportMediaTable.convertRowIndexToModel(r);
+		TransportMedium tm = transportTableModel.getObjectAt(modelRow);
 		if (tm == null)
 		{
 			parent.showError(
 					dbeditLabels.getString("PlatformEditPanel.selectTmDelete"));
 			return;
 		}
-		int r = JOptionPane.showConfirmDialog(this,
+		int result = JOptionPane.showConfirmDialog(this,
 				LoadResourceBundle.sprintf(
 						dbeditLabels.getString("PlatformEditPanel.confirmDelete"),
 						tm.getMediumId()));
-		if (r == JOptionPane.OK_OPTION)
+		if (result == JOptionPane.OK_OPTION)
+		{
 			transportTableModel.remove(tm);
+		}
 	}
 
 	/** Called when 'Is Production' checkbox is toggled. */

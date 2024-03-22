@@ -166,7 +166,8 @@ public class DrgsReceiversListFrame extends TopFrame
 					msg, "Error!", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		DrgsReceiverIdent dr = drgsTableModel.getDrgsReceiverIdentAt(r);
+		int modelRow = drgsListTable.convertRowIndexToModel(r);
+		DrgsReceiverIdent dr = drgsTableModel.getDrgsReceiverIdentAt(modelRow);
 		//Open Dialog
 		if (dr != null)
 		{
@@ -192,20 +193,19 @@ public class DrgsReceiversListFrame extends TopFrame
 					msg, "Error!", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		else
-		{
-			//Ask user if he is sure about deletion
-			int ok = JOptionPane.showConfirmDialog(this,
-					"Are you sure you want to delete this record?"
-					, "Choose an option",
-					JOptionPane.YES_NO_OPTION);	
 		
-			if (ok == JOptionPane.YES_OPTION)
-			{
-				//remove drgs record from table model list
-				drgsTableModel.deleteDrgsReceiverAt(r);
-				save();
-			}
+		int modelRow = drgsListTable.convertRowIndexToModel(r);
+		//Ask user if he is sure about deletion
+		int ok = JOptionPane.showConfirmDialog(this,
+				"Are you sure you want to delete this record?"
+				, "Choose an option",
+				JOptionPane.YES_NO_OPTION);
+
+		if (ok == JOptionPane.YES_OPTION)
+		{
+			//remove drgs record from table model list
+			drgsTableModel.deleteDrgsReceiverAt(modelRow);
+			save();
 		}
 	}
 	

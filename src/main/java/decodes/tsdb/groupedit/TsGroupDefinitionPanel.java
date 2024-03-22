@@ -1097,10 +1097,15 @@ public class TsGroupDefinitionPanel
 		int rows[] = tsListSelectPanel.getSelectedRows();
 		TimeSeriesIdentifier obs[] = new TimeSeriesIdentifier[nrows];
 		for (int i = 0; i < nrows; i++)
-			obs[i] = tsListSelectPanel.getTSIDAt(rows[i]);
+		{
+			int modelRow = tsListSelectPanel.convertRowIndexToModel(rows[i]);
+			obs[i] = tsListSelectPanel.getTSIDAt(modelRow);
+		}
 
 		for (int i = 0; i < nrows; i++)
+		{
 			tsListSelectPanel.deleteTSID(obs[i]);
+		}
 	}
 
 	/**
@@ -1201,11 +1206,16 @@ public class TsGroupDefinitionPanel
 		// Find out how many Data Descriptors were selected
 		int rows[] = this.subgroupTable.getSelectedRows();
 		if (rows == null || rows.length == 0)
+		{
 			return;
+		}
 		
 		Arrays.sort(rows);
 		for (int i = rows.length-1; i >= 0; i--)
-			this.subgroupModel.removeAt(rows[i]);
+		{
+			int modelRow = this.subgroupTable.convertRowIndexToModel(rows[i]);
+			this.subgroupModel.removeAt(modelRow);
+		}
 	}
 
 	/**
@@ -1533,9 +1543,14 @@ public class TsGroupDefinitionPanel
 	{
 		int rows[] = queryTable.getSelectedRows();
 		if (rows == null || rows.length == 0)
+		{
 			return;
+		}
 		for(int idx = rows.length-1; idx >= 0; idx--)
-			queryModel.deleteItemAt(rows[idx]);
+		{
+			int modelRow = queryTable.convertRowIndexToModel(rows[idx]);
+			queryModel.deleteItemAt(modelRow);
+		}
 	}
 
 	private void addQueryParam(String keyStr)
@@ -1672,10 +1687,15 @@ public class TsGroupDefinitionPanel
 	{
 		int r = queryTable.getSelectedRow();
 		if (r == -1)
+		{
 			return;
-		StringPair query = (StringPair)queryModel.getRowObject(r);
+		}
+		int modelRow = queryTable.convertRowIndexToModel(r);
+		StringPair query = (StringPair)queryModel.getRowObject(modelRow);
 		if (query == null)
+		{
 			return;
+		}
 		String keyStr = query.first;
 		if (keyStr.toLowerCase().contains("location"))
 		{
@@ -1689,7 +1709,9 @@ public class TsGroupDefinitionPanel
 			{
 				StringPair result = locSelectDialog.getResult();
 				if (result != null)
-					queryModel.setValueAt(r, result);
+				{
+					queryModel.setValueAt(modelRow, result);
+				}
 			}
 		}
 		else if (keyStr.toLowerCase().endsWith("param"))
@@ -1703,7 +1725,9 @@ public class TsGroupDefinitionPanel
 			{
 				StringPair result = paramSelectDialog.getResult();
 				if (result != null)
-					queryModel.setValueAt(r, result);
+				{
+					queryModel.setValueAt(modelRow, result);
+				}
 			}
 		}
 		else if (keyStr.toLowerCase().contains("version"))
@@ -1717,12 +1741,11 @@ public class TsGroupDefinitionPanel
 			{
 				StringPair result = versionSelectDialog.getResult();
 				if (result != null)
-					queryModel.setValueAt(r, result);
+				{
+					queryModel.setValueAt(modelRow, result);
+				}
 			}
 		}
-		else
-			return;
-		
 	}
 
 

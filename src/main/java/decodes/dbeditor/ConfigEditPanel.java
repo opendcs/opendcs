@@ -461,7 +461,7 @@ public class ConfigEditPanel extends DbEditorTab
         int r = configSensorTable.getSelectedRow();
         ConfigSensor cs;
         if (r == -1 ||
-            (cs = configSensorTableModel.getObjectAt(r)) == null)
+            (cs = configSensorTableModel.getObjectAt(configSensorTable.convertRowIndexToModel(r))) == null)
         {
             TopFrame.instance().showError(
                 dbeditLabels.getString("ConfigEditPanel.selectSensorEditMsg"));
@@ -491,7 +491,8 @@ public class ConfigEditPanel extends DbEditorTab
         ConfigSensor cs[] = new ConfigSensor[nrows];
         for (int x = 0; x < nrows; x++)
         {
-            cs[x] = configSensorTableModel.getObjectAt(rows[x]);
+            int modelRow = configSensorTable.convertRowIndexToModel(rows[x]);
+            cs[x] = configSensorTableModel.getObjectAt(modelRow);
         }
 
 
@@ -570,7 +571,7 @@ public class ConfigEditPanel extends DbEditorTab
 
         DecodesScript ds;
         if (r == -1 ||
-            (ds = decodingScriptTableModel.getObjectAt(r)) == null)
+            (ds = decodingScriptTableModel.getObjectAt(decodingScriptTable.convertRowIndexToModel(r))) == null)
         {
             TopFrame.instance().showError(
                 dbeditLabels.getString("ConfigEditPanel.selectScriptEditMsg"));
@@ -599,7 +600,7 @@ public class ConfigEditPanel extends DbEditorTab
         int r = decodingScriptTable.getSelectedRow();
         DecodesScript ds;
         if (r == -1 ||
-            (ds = decodingScriptTableModel.getObjectAt(r)) == null)
+            (ds = decodingScriptTableModel.getObjectAt(decodingScriptTable.convertRowIndexToModel(r))) == null)
         {
             TopFrame.instance().showError(
                 dbeditLabels.getString("ConfigEditPanel.selectScriptDelMsg"));

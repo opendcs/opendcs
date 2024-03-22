@@ -215,9 +215,9 @@ public class ParamSelectDialog
 		if (r >= 0)
 		{
 			//Get the correct row from the table model
-			int modelrow = paramTable.convertRowIndexToModel(r);
-			ParamTableModel tablemodel = (ParamTableModel)paramTable.getModel();			
-			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tablemodel.getRowObject(modelrow);
+			int modelRow = paramTable.convertRowIndexToModel(r);
+			ParamTableModel tableModel = (ParamTableModel)paramTable.getModel();
+			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tableModel.getRowObject(modelRow);
 			if (spec != selectedRow)
 			{
 				selectedRow = spec;
@@ -510,4 +510,3 @@ class ParamTableModel extends javax.swing.table.AbstractTableModel
 		return theList.get(row);
 	}	
 }
-

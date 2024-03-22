@@ -215,9 +215,9 @@ public class VersionSelectDialog
 		if (r >= 0)
 		{
 			//Get the correct row from the table model
-			int modelrow = versionTable.convertRowIndexToModel(r);
-			VersionTableModel tablemodel = (VersionTableModel)versionTable.getModel();			
-			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tablemodel.getRowObject(modelrow);
+			int modelRow = versionTable.convertRowIndexToModel(r);
+			VersionTableModel tableModel = (VersionTableModel)versionTable.getModel();
+			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tableModel.getRowObject(modelRow);
 			if (spec != selectedRow)
 			{
 				selectedRow = spec;
@@ -512,4 +512,3 @@ class VersionTableModel extends javax.swing.table.AbstractTableModel
 		return theList.get(row);
 	}	
 }
-

@@ -155,16 +155,15 @@ public class ComputationsListPanel extends ListPanel
 	protected void doOpen()
 	{
 		int r = compListTable.getSelectedRow();
-		int rowModel = compListTable.convertRowIndexToModel(r);
-		if (rowModel== -1)
+		if (r == -1)
 		{
 			parentFrame.showError(
 				compLabels.getString("ComputationsFilterPanel.OpenError"));
 			return;
 		}
+		int rowModel = compListTable.convertRowIndexToModel(r);
 		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(rowModel);
-		ComputationDAI computationDAO = tsdb.makeComputationDAO();
-		try
+		try (ComputationDAI computationDAO = tsdb.makeComputationDAO();)
 		{
 			DbComputation toOpen = computationDAO.getComputationById(dc.getComputationId());
 			openEditTab(toOpen);
@@ -175,10 +174,6 @@ public class ComputationsListPanel extends ListPanel
 			parentFrame.showError(
 				"Cannot read computation with id=" + dc.getComputationId() 
 				+ ": " + ex);
-		}
-		finally
-		{
-			computationDAO.close();
 		}
 	}
 
@@ -237,7 +232,9 @@ public class ComputationsListPanel extends ListPanel
 	    String newName = JOptionPane.showInputDialog(
 	    	compLabels.getString("ComputationsFilterPanel.NewInput"));
 		if (newName == null)
+		{
 			return;
+		}
 		if (compListTableModel.compExists(newName))
 		{
 			showError(
@@ -245,8 +242,7 @@ public class ComputationsListPanel extends ListPanel
 			return;
 		}
 
-		ComputationDAI computationDAO = tsdb.makeComputationDAO();
-		try
+		try (ComputationDAI computationDAO = tsdb.makeComputationDAO();)
 		{
 			DbComputation toCopy = computationDAO.getComputationById(dc.getComputationId());
 			DbComputation copydc = toCopy.copyNoId();
@@ -257,10 +253,6 @@ public class ComputationsListPanel extends ListPanel
 		{
 			showError("Cannot open copy of computation with id="
 				+ dc.getComputationId() + ": " + ex);
-		}
-		finally
-		{
-			computationDAO.close();
 		}
 	}
 
@@ -281,10 +273,11 @@ public class ComputationsListPanel extends ListPanel
 				compLabels.getString("ComputationListPanel.VerifyDelete"),
 				dc.getComputationName()));
 		if (ok != JOptionPane.YES_OPTION)
+		{
 			return;
+		}
 
-		ComputationDAI computationDAO = tsdb.makeComputationDAO();
-		try
+		try (ComputationDAI computationDAO = tsdb.makeComputationDAO();)
 		{
 			computationDAO.deleteComputation(dc.getComputationId());
 			doRefresh();
@@ -295,10 +288,6 @@ public class ComputationsListPanel extends ListPanel
 				compLabels.getString(
 					"ComputationsFilterPanel.DeleteError2") 
 					+ dc.getComputationName() + "': " + ex);
-		}
-		finally
-		{
-			computationDAO.close();
 		}
 	}
 
@@ -343,7 +332,6 @@ public class ComputationsListPanel extends ListPanel
 		{
 			int modelRow = compListTable.convertRowIndexToModel(x);
 			ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(modelRow);
-
 			try (ComputationDAI computationDAO = tsdb.makeComputationDAO();)
 			{
 				ret.add(computationDAO.getComputationById(dc.getComputationId()));

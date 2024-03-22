@@ -231,7 +231,8 @@ public class ProcessMonitorDialog
 				parentPanel.parentFrame.eventmonLabels.getString("selectADBeforeDelete"));
 			return;
 		}
-		model.delete(idx);
+		int modelRow = alarmDefTable.convertRowIndexToModel(idx);
+		model.delete(modelRow);
 		changed = true;
 		
 	}
@@ -245,7 +246,8 @@ public class ProcessMonitorDialog
 				parentPanel.parentFrame.eventmonLabels.getString("selectADBeforeDelete"));
 			return;
 		}
-		StringPair sp = (StringPair)model.getRowObject(idx);
+		int modelRow = alarmDefTable.convertRowIndexToModel(idx);
+		StringPair sp = (StringPair)model.getRowObject(modelRow);
 
 		AlarmDefDialog dlg = new AlarmDefDialog(parentPanel);
 		dlg.setData(sp);
@@ -497,4 +499,3 @@ class AlarmDefComparator implements Comparator<StringPair>
 			AlarmDefTableModel.getColumnValue(sp2, sc));
 	}
 }
-
