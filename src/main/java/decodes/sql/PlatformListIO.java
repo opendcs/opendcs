@@ -333,7 +333,15 @@ public class PlatformListIO extends SqlDbObjIo
 
 		String q = "select " + getTmColumns() + " from TransportMedium "
 			+ "WHERE PlatformId = ?";
-		getDaoHelper().doQuery(q,rs-> rs2tm(rs,p),p.getId());
+		getDaoHelper().doQuery(q,rs-> {
+			try
+			{
+				rs2tm(rs,p);
+			} catch (DatabaseException e)
+			{
+				throw new SQLException(e);
+			}
+		},p.getId());
 
 	}
 
@@ -415,13 +423,27 @@ public class PlatformListIO extends SqlDbObjIo
 	* @param p the Platform
 	*/
 	public void readPlatform(Platform p)
-		throws SQLException, DatabaseException
+		throws SQLException
 	{
 		String q = "SELECT " + getColTpl() + " FROM Platform WHERE ID = ?";
 		debug3("readPlatform() Executing '" + q + "'");
 
-		getDaoHelper().doQuery(q,rs-> readPlatform(p,rs),p.getId());
-		readPlatformSensors(p);
+		getDaoHelper().doQuery(q,rs-> {
+			try
+			{
+				readPlatform(p,rs);
+			} catch (DatabaseException e)
+			{
+				throw new SQLException(e);
+			}
+		},p.getId());
+		try
+		{
+			readPlatformSensors(p);
+		} catch (DatabaseException e)
+		{
+			throw new SQLException(e);
+		}
 	}
 
 	private void readPlatform(Platform p, ResultSet rs) throws SQLException, DatabaseException

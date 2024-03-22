@@ -15,5 +15,5 @@ public interface ResultSetConsumer extends ThrowingConsumer<ResultSet,SQLExcepti
     /**
      * @param rs a valid resultset, user function should *NOT* call next
      */
-    public void accept(ResultSet rs) throws SQLException, DatabaseException;
+    public void accept(ResultSet rs) throws SQLException;
 }

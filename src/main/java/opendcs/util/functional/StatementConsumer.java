@@ -12,5 +12,5 @@ public interface StatementConsumer extends ThrowingConsumer<PreparedStatement,SQ
      * User provided function that operates on a valid PreparedStatement
      * 
      */
-    public void accept(PreparedStatement stmt) throws SQLException, DatabaseException;
+    public void accept(PreparedStatement stmt) throws SQLException;
 }
