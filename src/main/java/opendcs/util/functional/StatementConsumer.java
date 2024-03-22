@@ -1,7 +1,5 @@
 package opendcs.util.functional;
 
-import decodes.db.DatabaseException;
-
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
