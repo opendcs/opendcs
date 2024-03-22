@@ -71,9 +71,12 @@
             </srcresources>
         </uptodate>
         <if>
-            <not>
-                <isset property="@{outputName}.test.current"/>
-            </not>
+            <or>
+                <not>
+                    <isset property="@{outputName}.test.current"/>
+                </not>
+                <isset property="tests"/>
+            </or>
             <then>
                 <jacoco:agent property="coverage.agent.param.@{outputName}" destfile="${coverage.dir}/jacoco.@{outputName}.exec"/>
                 <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="@{outputName}.failed">
@@ -87,7 +90,8 @@
                             <jvmargs/>
                         </fork>
                         <fileset dir="@{classesDir}">
-                            <testfiles/>
+                            <include name="**/${tests}*"/>
+                        <testfiles/>
                         </fileset>
                         <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
                         <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
