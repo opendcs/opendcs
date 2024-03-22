@@ -51,6 +51,7 @@ import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -63,7 +64,6 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
@@ -170,14 +170,15 @@ public class CompRunGuiFrame extends TopFrame
 	private ComputationsListDialog computationsListDialog = null;
 	private JButton traceButton = new JButton("Trace Execution");
 	private JProgressBar progressBar = new JProgressBar(0,100);
-	private SwingWorker<List<CTimeSeries>,CTimeSeries> worker = null;
+	private SwingWorker<List<CTimeSeries>,CTimeSeries> compExecutionWorker = null;
+	private SwingWorker<Vector<DbComputation>,Void> buildTimeSeriesListWorker = null;
 	private JButton cancelExecutionButton = null;
 	private JButton runButton = null;
 	JButton saveButton = null;
 
 	private TraceDialog traceDialog = null;
 	private String cancelComputationExecutionLabel;
-
+	private ProgressState progress;
 	/**
 	 * Constructor
 	 * 
@@ -385,12 +386,14 @@ public class CompRunGuiFrame extends TopFrame
 		runhalf.add(cancelExecutionButton, gbc_cancelExecutionButton);
 		cancelExecutionButton.addActionListener(e ->
 		{
-			if (this.worker != null && !this.worker.isDone())
+			if (this.compExecutionWorker != null && !this.compExecutionWorker.isDone())
 			{				
-				SwingUtilities.invokeLater(() ->
-				{
-					this.worker.cancel(true);
-				});
+				this.compExecutionWorker.cancel(true);
+				this.cancelExecutionButton.setEnabled(false);
+			}
+			else if (this.buildTimeSeriesListWorker != null && !this.buildTimeSeriesListWorker.isDone())
+			{
+				this.buildTimeSeriesListWorker.cancel(true);
 				this.cancelExecutionButton.setEnabled(false);
 			}
 		});
@@ -785,14 +788,13 @@ public class CompRunGuiFrame extends TopFrame
 			{
 			progressBar.setStringPainted(true);
 			progressBar.setValue(0);
-			SwingWorker<?,?> runCompWorker = new SwingWorker<Vector<DbComputation>,Void>()
+			buildTimeSeriesListWorker = new SwingWorker<Vector<DbComputation>,Void>()
 			{
 
 				@Override
 				protected Vector<DbComputation> doInBackground() throws Exception
 				{
-					progressBar.setString("Processing Timeseries List.");
-					if (!buildComputationList(compVector, compGroup, (progress) -> setProgress(progress)))
+					if (!buildComputationList(compVector, compGroup, (progress) -> setProgress(progress), () -> isCancelled()))
 					{
 						return null;
 					}
@@ -807,6 +809,11 @@ public class CompRunGuiFrame extends TopFrame
 				{
 					try
 					{
+						if (this.isCancelled())
+						{
+							runButton.setEnabled(true);
+							return;
+						}
 						setProgress(100);
 						Vector<DbComputation> theComps = this.get();
 						if (theComps != null)
@@ -828,8 +835,8 @@ public class CompRunGuiFrame extends TopFrame
 					}
 				}
 			};
-			runCompWorker.addPropertyChangeListener(event -> updateProgress(event));
-			runCompWorker.execute();
+			buildTimeSeriesListWorker.addPropertyChangeListener(event -> updateProgress(event));
+			buildTimeSeriesListWorker.execute();
 		});
 	}
 
@@ -891,13 +898,15 @@ public class CompRunGuiFrame extends TopFrame
 	 * @param setProgress Function that accepts the current progress of timeseries mutation
 	 * @return true if the expansion of the compVector was successful.
 	 */
-	private boolean buildComputationList(Vector<DbComputation> compVector, TsGroup compGroup, Consumer<Integer> setProgress)
+	private boolean buildComputationList(Vector<DbComputation> compVector, TsGroup compGroup,
+										 Consumer<Integer> setProgress, Supplier<Boolean> checkCancelled)
 	{
 		ArrayList<TimeSeriesIdentifier> groupTsIds = new ArrayList<TimeSeriesIdentifier>();
 		if (compGroup != null)
 		{
 			try
 			{
+				cancelExecutionButton.setEnabled(true);
 				DbComputation comp = compVector.get(0);
 				DbCompParm firstInput = null;
 				for (Iterator<DbCompParm> pit = comp.getParms(); pit.hasNext();)
@@ -924,21 +933,24 @@ public class CompRunGuiFrame extends TopFrame
 
 				// Expand the group and then filter it by the 1st input parm.
 				ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(compGroup);
-				final int originalSize = tsids.size();
+				progress = new ProgressState(tsids.size());
 				// Collect the transformed tsids in a hash set to remove any
 				// duplicates
 				// that may result by transformation.
 				TreeSet<TimeSeriesIdentifier> transformedTsids = new TreeSet<TimeSeriesIdentifier>();
-				int tsIdsProcessed = 0;
 				for (Iterator<TimeSeriesIdentifier> tsidit = tsids.iterator(); tsidit.hasNext();)
 				{
+					if (checkCancelled.get() == true)
+					{
+						return false;
+					}
 					TimeSeriesIdentifier tsid = tsidit.next();
 
 					// Transform the tsid by the parm. If the result is the same
 					// as the original, that means that the parm 'matches'.
 					TimeSeriesIdentifier transformed;
-					tsIdsProcessed++;
-					setProgress.accept(100*tsIdsProcessed/originalSize);
+					progress.incDone();
+					setProgress.accept(progress.getPercentDone());
 					try
 					{
 						transformed = theDb.transformTsidByCompParm(tsid, firstInput, false, false, "");
@@ -1038,13 +1050,13 @@ public class CompRunGuiFrame extends TopFrame
 		// Flush the text area inside trace dialog
 		// Create the trace logger here and put in pipe with tee logger.
 		// Put trace dialog reference in trace logger.
-		worker = new SwingWorker<List<CTimeSeries>,CTimeSeries>() {
+		compExecutionWorker = new SwingWorker<List<CTimeSeries>,CTimeSeries>() {
 			@Override
 			public List<CTimeSeries> doInBackground()
 			{
 				runButton.setEnabled(false);
 				Vector<CTimeSeries> outputs = new Vector<CTimeSeries>();
-				int compsRun = 0;
+				progress = new ProgressState(compVector.size());
 				for (DbComputation comp : compVector)
 				{
 					if(this.isCancelled())
@@ -1159,7 +1171,7 @@ public class CompRunGuiFrame extends TopFrame
 					}
 					catch (DbIoException e)
 					{
-						if (!worker.isCancelled())
+						if (!compExecutionWorker.isCancelled())
 						{
 							showError(module + " DbIOException in " + "runButtonPressed() " + e.getMessage());
 						}
@@ -1167,14 +1179,14 @@ public class CompRunGuiFrame extends TopFrame
 					}
 					catch (NoSuchObjectException e)
 					{
-						if (!worker.isCancelled())
+						if (!compExecutionWorker.isCancelled())
 						{
 							showError(module + " Cannot read Algorithm in " + "runButtonPressed() " + e.getMessage());
 						}
 						continue;
 					}
-					compsRun++;
-					setProgress(100*compsRun/compVector.size());
+					progress.incDone();
+					setProgress(progress.getPercentDone());
 					// Get all outputs & add outputs to total lists;
 					for (DbCompParm parm : outputParms)
 					{
@@ -1269,13 +1281,13 @@ public class CompRunGuiFrame extends TopFrame
 				timeSeriesTable.setInOut(inputs, myoutputs);
 			}
 		};
-		worker.addPropertyChangeListener(event -> updateProgress(event));
+		compExecutionWorker.addPropertyChangeListener(event -> updateProgress(event));
 		progressBar.setStringPainted(true);
 		progressBar.setString("Running");
 		progressBar.setValue(0);
 		saveButton.setEnabled(false);
 		cancelExecutionButton.setEnabled(true);
-		worker.execute();
+		compExecutionWorker.execute();
 		needToSave = true;
 	}
 
@@ -1288,6 +1300,10 @@ public class CompRunGuiFrame extends TopFrame
 			if (value == 100)
 			{
 				progressBar.setString("done");
+			}
+			else if (progress != null)
+			{
+				progressBar.setString(String.format("%d of %d", progress.getDone(), progress.getTotal()));
 			}
 		}
 	}
@@ -1325,7 +1341,7 @@ public class CompRunGuiFrame extends TopFrame
 
 	private boolean doClose()
 	{
-		if (worker != null && !worker.isDone())
+		if (compExecutionWorker != null && !compExecutionWorker.isDone())
 		{
 			int r = JOptionPane.showConfirmDialog(this, cancelComputationExecution);
 			if (r == JOptionPane.CANCEL_OPTION || r == JOptionPane.NO_OPTION)
@@ -1334,7 +1350,7 @@ public class CompRunGuiFrame extends TopFrame
 			}
 			else
 			{
-				worker.cancel(true);
+				compExecutionWorker.cancel(true);
 				needToSave = false;
 			}
 		}
@@ -1491,6 +1507,38 @@ public class CompRunGuiFrame extends TopFrame
 	{
 		this.runCompFrametester = runCompFrametester;
 
+	}
+
+	private static class ProgressState
+	{
+		private int total;
+		private int done;
+
+		public ProgressState(int total)
+		{
+			this.total = total;
+			this.done = 0;
+		}
+
+		public void incDone()
+		{
+			done++;
+		}
+
+		public int getTotal()
+		{
+			return total;
+		}
+
+		public int getDone()
+		{
+			return done;
+		}
+
+		public int getPercentDone()
+		{
+			return (100*done)/total;
+		}
 	}
 }
 
