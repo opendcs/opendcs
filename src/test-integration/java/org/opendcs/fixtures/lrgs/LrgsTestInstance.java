@@ -30,6 +30,7 @@ public class LrgsTestInstance
                 String.format("Directory '%s' doesn't exist or can't be read.", lrgsHome.getAbsolutePath())
             );
         }
+        System.setProperty("LRGSHOME", lrgsHome.getAbsolutePath());
         configFile = new File(lrgsHome,"lrgsconf");
         configFile.createNewFile();
         queueLogger = new QueueLogger("");
