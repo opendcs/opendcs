@@ -49,6 +49,7 @@ import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import javax.swing.BorderFactory;
@@ -761,8 +762,8 @@ public class CompRunGuiFrame extends TopFrame
 		{
 			return;
 		}
-		Vector<CTimeSeries> inputs = new Vector<CTimeSeries>();
-		Vector<DbComputation> compVector = new Vector<DbComputation>();
+		final Vector<CTimeSeries> inputs = new Vector<CTimeSeries>();
+		final Vector<DbComputation> compVector = new Vector<DbComputation>();
 
 		if (!standAloneMode)
 		{ // Get computation Obj from ComputationsEditPanel
@@ -780,68 +781,64 @@ public class CompRunGuiFrame extends TopFrame
 			return;
 		}
 
-		TsGroup compGroup = isSelectionValid(compVector);
-
-		if (compGroup == null)
-		{
-			Logger.instance().debug3("None of the selected computations uses a group.");
-		}
-		else if (compGroup.getGroupName() == null)
-		{
-			/* invalid group setup error already sent */
-			return;
-		}
-
-		progressBar.setStringPainted(true);
-		progressBar.setValue(0);
-		SwingWorker<?,?> runCompWorker = new SwingWorker<Vector<DbComputation>,Void>()
-		{
-
-			@Override
-			protected Vector<DbComputation> doInBackground() throws Exception
+		ifSelectionValid(compVector, (comps,compGroup) ->
 			{
-				progressBar.setString("Processing Timeseries List.");
-				if (!buildComputationList(compVector, inputs, compGroup, (progress) -> setProgress(progress) ))
-				{
-					return null;
-				}
-				else
-				{
-					return compVector;
-				}
-			}
-
-			@Override
-			public void done()
+			progressBar.setStringPainted(true);
+			progressBar.setValue(0);
+			SwingWorker<?,?> runCompWorker = new SwingWorker<Vector<DbComputation>,Void>()
 			{
-				try
+
+				@Override
+				protected Vector<DbComputation> doInBackground() throws Exception
 				{
-					setProgress(100);
-					Vector<DbComputation> theComps = this.get();
-					if (theComps != null)
+					progressBar.setString("Processing Timeseries List.");
+					if (!buildComputationList(compVector, compGroup, (progress) -> setProgress(progress)))
 					{
-						runSelectedComps(theComps, originalLogger, traceLogger, inputs);
+						return null;
 					}
 					else
 					{
-						runButton.setEnabled(true);
+						return compVector;
 					}
 				}
-				catch (InterruptedException | ExecutionException ex)
+
+				@Override
+				public void done()
 				{
-					runButton.setEnabled(true);
-					log.atError()
-					   .setCause(ex)
-					   .log("Unable to execute computations.");
-					showError(ex.getLocalizedMessage());
+					try
+					{
+						setProgress(100);
+						Vector<DbComputation> theComps = this.get();
+						if (theComps != null)
+						{
+							runSelectedComps(theComps, originalLogger, traceLogger, inputs);
+						}
+						else
+						{
+							runButton.setEnabled(true);
+						}
+					}
+					catch (InterruptedException | ExecutionException ex)
+					{
+						runButton.setEnabled(true);
+						log.atError()
+						.setCause(ex)
+						.log("Unable to execute computations.");
+						showError(ex.getLocalizedMessage());
+					}
 				}
-			}
-		};
-		runCompWorker.addPropertyChangeListener(event -> updateProgress(event));
-		runCompWorker.execute();
+			};
+			runCompWorker.addPropertyChangeListener(event -> updateProgress(event));
+			runCompWorker.execute();
+		});
 	}
 
-	private TsGroup isSelectionValid(Collection<DbComputation> compVector)
+	/**
+	 * Determines if the user selection is valid, if so pass on to next step, otherwise just return.
+	 * @param compVector
+	 * @param actionIfValid contains the code to run if the selection is valid.
+	 */
+	private void ifSelectionValid(Collection<DbComputation> compVector, BiConsumer<Collection<DbComputation>,TsGroup> actionIfValid)
 	{
 		String groupCompName = null;
 		TsGroup compGroup = null;
@@ -867,7 +864,7 @@ public class CompRunGuiFrame extends TopFrame
 						+ "'. -- Please de-select one of these computations to proceed.");
 					compGroup = new TsGroup();
 					compGroup.clear();
-					return compGroup;
+					break;
 				}
 				else
 				{
@@ -876,10 +873,25 @@ public class CompRunGuiFrame extends TopFrame
 				}
 			}
 		}
-		return compGroup;
+		if (compGroup == null || (compGroup.getGroupName() != null))
+		{
+			actionIfValid.accept(compVector, compGroup);
+		}
+		else
+		{
+			log.trace("Requested computations use a different group. Unable to process.");
+		}
 	}
 
-	private boolean buildComputationList(Vector<DbComputation> compVector, Vector<CTimeSeries> inputs, TsGroup compGroup, Consumer<Integer> setProgress)
+	/**
+	 * Generates a list of fully concrete (algorithm + all inputs/outputs fully expands)
+	 * @param compVector vector instance that will hold the generated computations.
+	 * @param compGroup The Timeseries Group getting used for this computation. Maybe null to indicate a group comp
+	 *                  isn't being run and inputs and outputs are already defined.
+	 * @param setProgress Function that accepts the current progress of timeseries mutation
+	 * @return true if the expansion of the compVector was successful.
+	 */
+	private boolean buildComputationList(Vector<DbComputation> compVector, TsGroup compGroup, Consumer<Integer> setProgress)
 	{
 		ArrayList<TimeSeriesIdentifier> groupTsIds = new ArrayList<TimeSeriesIdentifier>();
 		if (compGroup != null)
@@ -1013,7 +1025,13 @@ public class CompRunGuiFrame extends TopFrame
 		return true;
 	}
 
-
+	/**
+	 * Actually run the selected computation with the given inputs.
+	 * @param compVector list of computations that are fully defined. E.g. it is explicit *what* timeseries to use for input and output.
+	 * @param originalLogger
+	 * @param traceLogger
+	 * @param inputs valid vector that is used to add input timeseries for computations that are actually run.
+	 */
 	private void runSelectedComps(Collection<DbComputation> compVector, Logger originalLogger, TraceLogger traceLogger, Vector<CTimeSeries> inputs)
 	{
 		final Vector<CTimeSeries> both = new Vector<CTimeSeries>();
