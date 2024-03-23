@@ -183,7 +183,7 @@ public class LrgsMain
         String lockName = EnvExpander.expand(lockFileName);
         Logger.instance().info("Lock File =" + lockName);
         if (lockName.equals("-"))
-        {        
+        {
             myServerLock = new NoOpServerLock();
         }
         else
