@@ -14,6 +14,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
     >
     <description>Open DCS</description>
     <include file="common.xml"/>
+    <include file="build-macros.xml"/>
     <include file="docs/build.xml"/>
 <!-- depends="clean" -->
     <target name="prepare"  description="Makes build environment.">
@@ -41,55 +42,22 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <antcall target="docs.clean"/>
     </target>
     <target name="check.src">
-        <uptodate property="src.build.current" targetfile="${status.dir}/src.build.date">
+       <!-- <uptodate property="src.build.current" targetfile="${status.dir}/src.build.date">
             <srcfiles dir="${src.main.dir}" includes="**/*"/>
-        </uptodate>
+        </uptodate>-->
     </target>
-    <target name="compile" depends="check.src,prepare,common.resolve" unless="src.build.current"
-        description="Compiles all source code.">
-        <!-- create build date -->
-        <tstamp>
-            <format property="buildDate" pattern="MMM dd, yyyy"/>
-        </tstamp>
-        <copy todir="${build.classes}/lrgs/nledit">
-            <fileset dir="${src.dir}/lrgs/nledit">
-                <include name="*.gif"/>
-            </fileset>
-        </copy>
-        <sync todir="${build.resources}">
-            <fileset dir="${resources.dir}"/>
-        </sync>
-        <delete file="${build.classes}/lrgs/gui/LrgsBuild.class"/>
-        <copy file="${src.dir}/lrgs/gui/LrgsBuild.java"
-              tofile="${build.classes}/lrgs/gui/LrgsBuild.java"
-              overwrite="true">
-            <filterset>
-                <filter token="VERSION" value="${version}"/>
-                <filter token="DATE" value="${buildDate}" />
-                <filter token="RCNUM" value="${RCNUM}" />
-            </filterset>
-        </copy>
-        <javac debug="true" destdir="${build.classes}"
-            target="1.8" source="1.8"
-            includeantruntime="true"
-            encoding="UTF-8"
-            includes="lrgs/gui/LrgsBuild.java">
-            <src path="${build.classes}"/>
-            <classpath refid="runtime.classpath"/>
-            <compilerarg value="-parameters"/>
-        </javac>
-        <javac debug="true" destdir="${build.classes}"
-            target="1.8" source="1.8"
-            includeantruntime="true"
-            encoding="UTF-8"
-            includes="**"
-            excludes="lrgs/gui/LrgsBuild.java">
-            <src path="${src.dir}"/>
-            <classpath refid="runtime.classpath"/>
-            <compilerarg value="-parameters"/>
-        </javac>
+    <target name="compile" depends="prepare,common.resolve,common.resolve.build" description="Compiles all source code.">
+        <compile outputDir="${build.dir}/main"
+                 srcDir="${src.main.dir}"
+                 outputName="opendcs"
+                 >
+            <classpaths>
+                <path refid="runtime.classpath"/>
+            </classpaths>
+        </compile>
         <touch file="${status.dir}/src.build.date"/>
     </target>
+
     <target name="check.test.src" depends="check.src">
          <uptodate property="test.src.build.current.local" targetfile="${status.dir}/test.src.build.date">
             <srcfiles dir="src/test" includes="**/*"/>
@@ -102,60 +70,44 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </condition>
     </target>
     <target name="compile-test" depends="check.test.src,compile,common.resolve" unless="test.src.build.current">
-        <mkdir dir="${build.test.classes}"/>
-        <javac debug="true" destdir="${build.test.classes}"
-            target="1.8" source="1.8" includeantruntime="false"
-            encoding="UTF-8"
-        >
-            <src path="${src.test.dir}"/>
-            <classpath>
-                <pathelement location="${build.classes}"/>
+        <echo>${opendcs.classes}</echo>
+        <compile outputDir="${build.dir}/test"
+                 srcDir="${src.test.dir}"
+                 outputName="test"
+                 >
+            <classpaths>
+                <pathelement location="${opendcs.classes}"/>
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
-            </classpath>
-        </javac>
-        <sync todir="${build.test.resources}">
-            <fileset dir="${resources.test.dir}"/>
-        </sync>
+            </classpaths>
+        </compile>
         <touch file="${status.dir}/test.src.build.date"/>
     </target>
     <target name="compile-test-integration" depends="stage,test,common.resolve,common.resolve.build">
-        <mkdir dir="${build.test-integration.classes}"/>
-        <javac debug="true" destdir="${build.test-integration.classes}"
-            target="1.8" source="1.8" includeantruntime="false"
-            encoding="UTF-8"
-        >
-            <src path="${src.test-integration.dir}"/>
-            <classpath>
+        <compile outputDir="${build.dir}/test-integration"
+                 srcDir="${src.test-integration.main.dir}"
+                 outputName="test-integration"
+                >
+            <classpaths>
                 <pathelement location="${stage.dir}/bin/opendcs.jar"/>
                 <!--<pathelement location="${build.classes}"/>-->
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
                 <path refid="junit.platform.libs.classpath"/>
-            </classpath>
-        </javac>
-        <sync todir="${build.test-integration.resources}">
-            <fileset dir="${resources.test-integration.dir}"/>
-        </sync>
+            </classpaths>
+        </compile>
         <touch file="${status.dir}/src.integration.build.date"/>
     </target>
     <target name="compile-test-gui" depends="jar,test,common.resolve,common.resolve.build">
-        <mkdir dir="${build.test-gui.classes}"/>
-        <javac debug="true" destdir="${build.test-gui.classes}"
-            target="1.8" source="1.8" includeantruntime="false"
-            encoding="UTF-8"
-        >
-            <src path="${src.test-gui.dir}"/>
-            <classpath>
-                <pathelement location="${build.classes}"/>
-                <!--<pathelement location="${build.classes}"/>-->
+        <compile outputDir="${build.dir}/test-gui"
+                 srcDir="${src.test-gui.main.dir}"
+                 outputName="test-gui">
+            <classpaths>
+                <pathelement location="${opendcs.classes}"/>
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
-            </classpath>
-        </javac>
-       <sync todir="${build.test-gui.resources}">
-            <fileset dir="${resources.test-gui.dir}"/>
-        </sync>
+            </classpaths>
+        </compile>
         <touch file="${status.dir}/src.gui-test.build.date"/>
     </target>
     <target name="check.run-tests" depends="check.test.src">
@@ -178,10 +130,10 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
             <classpath>
-                <pathelement location="${build.resources}"/>
-                <pathelement location="${build.test.resources}"/>
-                <pathelement location="${build.test.classes}"/>
-                <pathelement location="${build.classes}"/>
+                <pathelement location="${opendcs.resources}"/>
+                <pathelement location="${test.resources}"/>
+                <pathelement location="${test.classes}"/>
+                <pathelement location="${opendcs.classes}"/>
             </classpath>
             <testclasses outputdir="${build.dir}/test-results">
                 <fork>
@@ -190,7 +142,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-tmp"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
                 </fork>
-                <fileset dir="${build.test.classes}"/>
+                <fileset dir="${test.classes}"/>
                 <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
                 <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
             </testclasses>
@@ -268,15 +220,15 @@ more information about each.
             <classpath refid="junit.platform.libs.classpath"/>
             <classpath>
                 <pathelement location="${stage.dir}/bin/opendcs.jar"/>
-                <pathelement location="${build.test-integration.resources}"/>
-                <pathelement location="${build.test-integration.classes}"/>
+                <pathelement location="${test-integration.resources}"/>
+                <pathelement location="${test-integration.classes}"/>
             </classpath>
             <testclasses outputdir="${build.dir}/test-integration/${opendcs.test.engine}/results">
                 <fork>
                     <jvmarg value="${coverage.agent.param.it}"/>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
-                    <jvmarg value="-Dresource.dir=${build.test-integration.resources}"/>
+                    <jvmarg value="-Dresource.dir=${test-integration.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
                     <jvmarg value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
                     <jvmarg value="-Dopendcs.test.classpath=${opendcs.test.classpath}"/>
@@ -337,17 +289,17 @@ more information about each.
             <classpath refid="runtime.classpath"/>
             <classpath refid="junit.platform.libs.classpath"/>
             <classpath>
-                <pathelement location="${build.classes}"/>
-                <pathelement location="${build.resources}"/>
-                <pathelement location="${build.test-gui.resources}"/>
-                <pathelement location="${build.test-gui.classes}"/>
+                <pathelement location="${opendcs.classes}"/>
+                <pathelement location="${opendcs.resources}"/>
+                <pathelement location="${test-gui.resources}"/>
+                <pathelement location="${test-gui.classes}"/>
             </classpath>
             <testclasses outputdir="${build.dir}/test-gui/results">
                 <fork>
                     <jvmarg value="${coverage.agent.param.gui}"/>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-gui/tmp"/>
-                    <jvmarg value="-Dresource.dir=${build.test-gui.resources}"/>
+                    <jvmarg value="-Dresource.dir=${test-gui.resources}"/>
                     <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
                     <jvmarg value="-DDECODES_INSTALL_DIR=${stage.dir}"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>

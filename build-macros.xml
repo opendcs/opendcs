@@ -1,0 +1,49 @@
+<project name="macros" xmlns:ivy="antlib:org.apache.ivy.ant"
+    xmlns:if="ant:if" xmlns:unless="ant:unless">
+
+<macrodef name="compile">
+    <attribute name="outputDir"/>    
+    <attribute name="srcDir"/>
+    <attribute name="outputName"/>
+    <attribute name="javaSrcTarget" default="1.8"/>
+    <attribute name="javaCompileTarget" default="1.8"/>
+    <element name="classpaths"/>
+
+    <sequential>
+        <uptodate property="@{outputName}.current" targetfile="${status.dir}/src.@{outputName}.build.date">
+            <srcfiles dir="@{srcDir}" includes="**/*"/>
+        </uptodate>
+    <!-- create build date -->
+        <mkdir dir="@{outputDir}/classes"/>
+        <mkdir dir="@{outputDir}/resources"/>
+        <tstamp>
+            <format property="buildDate" pattern="MMM dd, yyyy"/>
+        </tstamp>
+        <if>
+            <not>
+                <isset property="@{outputName.current}"/>
+            </not>
+            <then>
+                <sync todir="@{outputDir}/resources">
+                    <fileset dir="@{srcDir}/resources"/>
+                </sync>
+
+                <javac debug="true" destdir="@{outputDir}/classes"
+                    target="@{javaCompileTarget}" source="@{javaSrcTarget}"
+                    includeantruntime="true"
+                    encoding="UTF-8" includes="**">
+                    <src path="@{srcDir}/java"/>
+                    <compilerarg value="-parameters"/>
+                    <classpath>
+                        <classpaths/>
+                    </classpath>
+                </javac>
+            </then>
+        </if>
+        <property name="@{outputName}.classes" value="@{outputDir}/classes"/>
+        <property name="@{outputName}.resources" value="@{outputDir}/resources"/>
+        <echo>"@{outputName}.classes=${@{outputName}.classes}"</echo>
+    </sequential>
+</macrodef>
+
+</project>
