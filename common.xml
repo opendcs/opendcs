@@ -23,8 +23,7 @@
     <property name="src.main.dir" value="src/main"/>
     <property name="src.dir" value="src/main/java"/>
     <property name="resources.dir" value="src/main/resources"/>
-    <property name="src.test.dir" value="src/test/java"/>
-    <property name="resources.test.dir" value="src/test/resources"/>
+    <property name="src.test.dir" value="src/test"/>
     <property name="src.test-integration.dir" value="src/test-integration/java"/>
     <property name="src.test-integration.main.dir" value="src/test-integration"/>
     <property name="resources.test-integration.dir" value="src/test-integration/resources"/>
@@ -44,7 +43,7 @@
     <property name="build.test.lib" value="${build.dir}/test-libs"/>
     <property name="build.test-integration.classes" value="${build.dir}/test-integration/classes"/>
     <property name="build.test-integration.resources" value="${build.dir}/test-integration/resources"/>
-    <property name="build.test-gui.classes" value="${build.dir}/test-gui/classes"/>
+    <property name="build.test-gui.classes" value="${build.dir}/test-gui"/>
     <property name="build.test-gui.resources" value="${build.dir}/test-gui/resources"/>
     <property name="build.test.lib" value="${build.dir}/test-integration/libs"/>
     <property name="dist.jar" value="${build.lib}/opendcs.jar"/>
