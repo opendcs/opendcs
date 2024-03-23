@@ -1,15 +1,19 @@
 package org.opendcs.regression_tests.lrgs;
 
+import static org.opendcs.fixtures.helpers.BackgroundTsDbApp.waitForResult;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -21,10 +25,13 @@ import lrgs.archive.MsgFilter;
 import lrgs.archive.SearchHandle;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
+import lrgs.common.DcpMsgFlag;
 import lrgs.common.DcpMsgIndex;
 import lrgs.common.DcpNameMapper;
+import lrgs.common.EndOfArchiveException;
 import lrgs.common.SearchCriteria;
 import lrgs.ddsserver.MessageArchiveRetriever;
+import lrgs.lrgsmain.LrgsInputInterface;
 
 public class ArchiveOperationsTestIT
 {
@@ -50,15 +57,17 @@ public class ArchiveOperationsTestIT
         assertNotNull(lrgs);
         final MsgArchive archive = lrgs.getArchive();
         final String msgData = "Test String.";
-        final DcpMsg msgIn = new DcpMsg(0,msgData.getBytes(Charset.forName("UTF8")),msgData.length(),0);
+        final DcpMsg msgIn = new DcpMsg(DcpMsgFlag.MSG_TYPE_OTHER, msgData.getBytes(Charset.forName("UTF8")),msgData.length(),0);
+        msgIn.setXmitTime(new Date());
         final DcpAddress addrIn = new DcpAddress("TEST");
+        final LrgsInputInterface dataSource = lrgs.getLrgsInputs().get(0);
         msgIn.setDcpAddress(addrIn);
-        assertDoesNotThrow(() -> archive.archiveMsg(msgIn, null));
+        assertDoesNotThrow(() -> archive.archiveMsg(msgIn, dataSource));
         assertEquals(1, archive.getTotalMessageCount());
         archive.checkpoint();
         // Attempt to read back message.
         AttachedProcess ap = new AttachedProcess(1, "test", "test", "tester", 0, 0, 0, "running", (short)0);
-        MessageArchiveRetriever mar = new MessageArchiveRetriever(archive, ap);
+        final MessageArchiveRetriever mar = new MessageArchiveRetriever(archive, ap);
         SearchCriteria sc = new SearchCriteria();
         sc.addDcpName("TEST");
         sc.setLrgsSince("now - 1 day");
@@ -72,11 +81,32 @@ public class ArchiveOperationsTestIT
             }
         });
         mar.setSearchCriteria(sc);
-        DcpMsgIndex dmi = new DcpMsgIndex();
-        int idx = mar.getNextPassingIndex(dmi, System.currentTimeMillis() + 30000);
-        assertNotEquals(-1, idx);
-        final DcpMsg msgOut = dmi.getDcpMsg();
-        assertNotNull(msgOut, "We got a valid msg index but could not get an actual message.");
-        assertEquals(msgData.getBytes(Charset.forName("UTF8")), msgOut.getData(), "Saved message data was not returned.");
+        final DcpMsgIndex dmi = new DcpMsgIndex();
+        waitForResult(value ->
+        {
+            try
+            {
+                int idx = mar.getNextPassingIndex(dmi, System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+                if (idx == -1)
+                {
+                    return false;
+                }
+                final DcpMsg msgOut = dmi.getDcpMsg();
+                if (msgOut != null)
+                {
+                    return msgData.equals(msgOut.getDataStr());
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (EndOfArchiveException ex)
+            {
+                return false;
+            }
+           //assertNotNull(msgOut, "We got a valid msg index but could not get an actual message.");
+            //assertArrayEquals(msgData.getBytes(Charset.forName("UTF8")), msgOut.getData(), "Saved message data was not returned.");
+        }, 3, TimeUnit.MINUTES, 5, TimeUnit.SECONDS);
     }
 }

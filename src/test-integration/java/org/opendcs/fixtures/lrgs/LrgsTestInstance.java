@@ -5,11 +5,13 @@ import static org.opendcs.fixtures.helpers.BackgroundTsDbApp.waitForResult;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import ilex.util.FileLogger;
 import ilex.util.QueueLogger;
 import lrgs.archive.MsgArchive;
+import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
 
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -70,5 +72,11 @@ public class LrgsTestInstance
     public MsgArchive getArchive()
     {
         return archive;
+    }
+
+
+    public List<LrgsInputInterface> getLrgsInputs()
+    {
+        return lrgs.getInputs();
     }
 }

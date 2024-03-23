@@ -15,8 +15,10 @@ package lrgs.lrgsmain;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -886,5 +888,15 @@ public class LrgsMain
             + "' finished with exit status " + exitStatus);
         if (procName.equalsIgnoreCase("onStartupCmd"))
             onStartupCmdFinished = true;
+    }
+
+    public List<LrgsInputInterface> getInputs()
+    {
+        List<LrgsInputInterface> list = new ArrayList<>();
+        for(LrgsInputInterface lrgsInput: lrgsInputs)
+        {
+            list.add(lrgsInput);
+        }
+        return list;
     }
 }
