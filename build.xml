@@ -73,7 +73,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <echo>${opendcs.classes}</echo>
         <compile outputDir="${build.dir}/test"
                  srcDir="${src.test.dir}"
-                 outputName="test"
+                 outputName="test-compile"
                  >
             <classpaths>
                 <pathelement location="${opendcs.classes}"/>
@@ -119,53 +119,20 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </condition>
     </target>
     <target name="test" depends="check.run-tests,compile-test,jar,common.resolve.build" unless="test.run">
-        <mkdir dir="${junit.html.output.dir}"/>
-        <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
-        <echo message="platform path: ${platform_path}"/>
-        <mkdir dir="${build.dir}/test-results"/>
-        <mkdir dir="${build.dir}/test-tmp"/>
-        <jacoco:agent property="coverage.agent.param.test" destfile="${coverage.dir}/jacoco.test.exec"/>
-        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="test.failed">
-            <classpath refid="test.classpath"/>
-            <classpath refid="runtime.classpath"/>
-            <classpath refid="junit.platform.libs.classpath"/>
-            <classpath>
-                <pathelement location="${opendcs.resources}"/>
-                <pathelement location="${test.resources}"/>
-                <pathelement location="${test.classes}"/>
-                <pathelement location="${opendcs.classes}"/>
-            </classpath>
-            <testclasses outputdir="${build.dir}/test-results">
-                <fork>
-                    <jvmarg value="${coverage.agent.param.test}"/>
-                    <jvmarg value="-Dbuild.dir=${build.dir}"/>
-                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-tmp"/>
-                    <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
-                </fork>
-                <fileset dir="${test.classes}"/>
-                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
-            </testclasses>
-        </junitlauncher>
-        <mkdir dir="${junit.html.output.dir}/test"/>
-        <junitreport todir="${junit.html.output.dir}">
-            <fileset dir="${build.dir}/test-results">
-                <include name="TEST-*.xml"/>
-                <exclude name="TEST-fixture*"/>
-                <exclude name="TEST-*$?.xml"/>
-            </fileset>
-            <report format="noframes" todir="${junit.html.output.dir}/test"/>
-        </junitreport>
-        <if>
-            <isset property="test.failed"/>
-            <then>
-                <delete file="${status.dir}/test.run" quiet="true"/>
-                <fail message="Tests have failures."/>
-            </then>
-            <else>
-                <touch file="${status.dir}/test.run"/>
-            </else>
-        </if>
+        <test outputName="test"
+              classesDir="${test-compile.classes}">
+            <classpaths>
+                <classpath refid="test.classpath"/>
+                <classpath refid="runtime.classpath"/>
+                <classpath refid="junit.platform.libs.classpath"/>
+                <classpath>
+                    <pathelement location="${opendcs.resources}"/>
+                    <pathelement location="${test-compile.resources}"/>
+                    <pathelement location="${test-compile.classes}"/>
+                    <pathelement location="${opendcs.classes}"/>
+                </classpath>
+            </classpaths>
+        </test>
     </target>
     <target name="check.it-run" depends="check.src">
         <condition property="integration.test.current">
