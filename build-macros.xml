@@ -28,7 +28,6 @@
                 <sync todir="@{outputDir}/resources">
                     <fileset dir="@{srcDir}/resources"/>
                 </sync>
-
                 <javac debug="true" destdir="@{outputDir}/classes"
                     target="@{javaCompileTarget}" source="@{javaSrcTarget}"
                     includeantruntime="true"
@@ -55,12 +54,12 @@
         <mkdir dir="${junit.html.output.dir}"/>    
         <mkdir dir="${build.dir}/test/@{outputName}/results"/>
         <mkdir dir="${build.dir}/test/@{outputName}/tmp"/>
-        <jacoco:agent property="coverage.agent.param.test" destfile="${coverage.dir}/jacoco.@{outputName}.exec"/>
+        <jacoco:agent property="coverage.agent.param.@{outputName}" destfile="${coverage.dir}/jacoco.@{outputName}.exec"/>
         <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="@{outputName}.failed">
             <classpaths/>
             <testclasses outputdir="${build.dir}/test/@{outputName}/results">
                 <fork>
-                    <jvmarg value="${coverage.agent.param.test}"/>
+                    <jvmarg value="${coverage.agent.param.@{outputName}}"/>
                     <jvmarg value="-Dbuild.dir=${build.dir}"/>
                     <jvmarg value="-Djava.io.tmpdir=${build.dir}/test/@{outputName}/tmp"/>
                     <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
