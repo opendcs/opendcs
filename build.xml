@@ -86,8 +86,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
     <target name="compile-test-integration" depends="stage,test,common.resolve,common.resolve.build">
         <compile outputDir="${build.dir}/test-integration"
                  srcDir="${src.test-integration.main.dir}"
-                 outputName="test-integration"
-                >
+                 outputName="test-integration">
             <classpaths>
                 <pathelement location="${stage.dir}/bin/opendcs.jar"/>
                 <!--<pathelement location="${build.classes}"/>-->
@@ -169,69 +168,39 @@ more information about each.
                 <fail message="See above message and set correct settings."/>
             </then>
         </if>
-        <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
-        <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/results"/>
-        <mkdir dir="${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
-        <jacoco:agent property="coverage.agent.param.it"
-                      destfile="${coverage.dir}/jacoco.test-it-${opendcs.test.engine}.exec"/>
         <!-- This path is used by the integration test extension when
             creating independent OpenDCS application processes-->
         <path id="opendcs.runtime">
             <pathelement location="${stage.dir}/bin/opendcs.jar"/>
             <fileset dir="${stage.dir}/dep"/>
         </path>
-        <pathconvert property="opendcs.test.classpath" refid="opendcs.runtime"/>
-        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="integration.failed">
+        <test outputName="test-integration"
+              classesDir="${test-integration.classes}">
+              <classpaths>
             <classpath refid="test.classpath"/>
-            <classpath refid="runtime.classpath"/>
-            <classpath refid="junit.platform.libs.classpath"/>
-            <classpath>
-                <pathelement location="${stage.dir}/bin/opendcs.jar"/>
-                <pathelement location="${test-integration.resources}"/>
-                <pathelement location="${test-integration.classes}"/>
-            </classpath>
-            <testclasses outputdir="${build.dir}/test-integration/${opendcs.test.engine}/results">
-                <fork>
-                    <jvmarg value="${coverage.agent.param.it}"/>
-                    <jvmarg value="-Dbuild.dir=${build.dir}"/>
-                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-integration/${opendcs.test.engine}/tmp"/>
-                    <jvmarg value="-Dresource.dir=${test-integration.resources}"/>
-                    <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
-                    <jvmarg value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
-                    <jvmarg value="-Dopendcs.test.classpath=${opendcs.test.classpath}"/>
-                    <jvmarg value="-Djava.util.logging.config.file=${build.dir}/../src/test-integration/test-config/logging.properties"/>
-                    <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
-                    <syspropertyset>
-                        <propertyref prefix="opendcs"/>
-                    </syspropertyset>
-                    <syspropertyset>
-                        <propertyref prefix="testcontainer"/>
-                    </syspropertyset>
-                </fork>
-                <fileset dir="${build.test-integration.classes}"/>
-                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
-            </testclasses>
-        </junitlauncher>
-        <mkdir dir="${junit.html.output.dir}/test-integration/${opendcs.test.engine}"/>
-        <junitreport todir="${junit.html.output.dir}">
-            <fileset dir="${build.dir}/test-integration/${opendcs.test.engine}/results">
-                <include name="TEST-*.xml"/>
-                <exclude name="TEST-org.opendcs.spi.configuration*"/>
-                <exclude name="TEST-org.opendcs.fixture*"/>
-            </fileset>
-            <report format="noframes" todir="${junit.html.output.dir}/test-integration/${opendcs.test.engine}"/>
-        </junitreport>
-        <if>
-            <isset property="integration.failed"/>
-            <then>
-                <delete file="${status.dir}/src.integration.run.${opendcs.test.engine}" quiet="true"/>
-                <fail message="Integration tests have failures."/>
-            </then>
-            <else>
-                <touch file="${status.dir}/src.integration.run.${opendcs.test.engine}"/>
-            </else>
-        </if>
+                <classpath refid="runtime.classpath"/>
+                <classpath refid="junit.platform.libs.classpath"/>
+                <classpath>
+                    <pathelement location="${stage.dir}/bin/opendcs.jar"/>
+                    <pathelement location="${test-integration.resources}"/>
+                    <pathelement location="${test-integration.classes}"/>
+                </classpath>
+            </classpaths>
+            <jvmargs>
+                <jvmarg value="-Dresource.dir=${test-integration.resources}"/>
+                <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
+                <jvmarg value="-Dopendcs.test.engine=${opendcs.test.engine}"/>
+                <jvmarg value="-Dopendcs.test.classpath=${opendcs.test.classpath}"/>
+                <jvmarg value="-Djava.util.logging.config.file=${build.dir}/../src/test-integration/test-config/logging.properties"/>
+                <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+                <syspropertyset>
+                    <propertyref prefix="opendcs"/>
+                </syspropertyset>
+                <syspropertyset>
+                    <propertyref prefix="testcontainer"/>
+                </syspropertyset>
+            </jvmargs>
+        </test>
     </target>
     <target name="check.gui-test" depends="check.src">
         <condition property="gui.test.current">
@@ -247,52 +216,25 @@ more information about each.
     <target name="gui-test" depends="check.gui-test,compile-test-gui,stage,common.resolve"
             description="Run available GUI element tests"
             unless="gui.test.current">
-        <pathconvert property="platform_path" refid="junit.platform.libs.classpath"/>
-        <mkdir dir="${build.dir}/test-gui/results"/>
-        <mkdir dir="${build.dir}/test-gui/tmp"/>
-        <jacoco:agent property="coverage.agent.param.gui" destfile="${coverage.dir}/jacoco.test-gui.exec"/>
-        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="gui.failed">
-            <classpath refid="test.classpath"/>
-            <classpath refid="runtime.classpath"/>
-            <classpath refid="junit.platform.libs.classpath"/>
-            <classpath>
-                <pathelement location="${opendcs.classes}"/>
-                <pathelement location="${opendcs.resources}"/>
-                <pathelement location="${test-gui.resources}"/>
-                <pathelement location="${test-gui.classes}"/>
-            </classpath>
-            <testclasses outputdir="${build.dir}/test-gui/results">
-                <fork>
-                    <jvmarg value="${coverage.agent.param.gui}"/>
-                    <jvmarg value="-Dbuild.dir=${build.dir}"/>
-                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test-gui/tmp"/>
-                    <jvmarg value="-Dresource.dir=${test-gui.resources}"/>
-                    <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
-                    <jvmarg value="-DDECODES_INSTALL_DIR=${stage.dir}"/>
-                    <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
-                </fork>
-                <fileset dir="${build.test-gui.classes}"/>
-                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
-            </testclasses>
-        </junitlauncher>
-        <mkdir dir="${junit.html.output.dir}/test-gui"/>
-        <junitreport todir="${junit.html.output.dir}">
-            <fileset dir="${build.dir}/test-gui/results">
-                <include name="TEST-*.xml"/>
-            </fileset>
-            <report format="noframes" todir="${junit.html.output.dir}/test-gui"/>
-        </junitreport>
-        <if>
-            <isset property="gui.failed"/>
-            <then>
-                <delete file="${status.dir}/src.gui-test.run" quiet="true"/>
-                <fail message="Gui tests have failures."/>
-            </then>
-            <else>
-                <touch file="${status.dir}/src.gui-test.run"/>
-            </else>
-        </if>
+        <test outputName="gui-test"
+              classesDir="${test-gui.classes}">
+            <classpaths>
+                <classpath refid="test.classpath"/>
+                <classpath refid="runtime.classpath"/>
+                <classpath refid="junit.platform.libs.classpath"/>
+                <classpath>
+                    <pathelement location="${opendcs.classes}"/>
+                    <pathelement location="${opendcs.resources}"/>
+                    <pathelement location="${test-gui.resources}"/>
+                    <pathelement location="${test-gui.classes}"/>
+                </classpath>
+            </classpaths>
+            <jvmargs>
+                <jvmarg value="-Dresource.dir=${test-gui.resources}"/>
+                <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
+                <jvmarg value="-DDECODES_INSTALL_DIR=${stage.dir}"/>
+            </jvmargs>
+        </test>
     </target>
     <target name="check.jar" depends="check.src">
         <uptodate property="jar.current" targetFile="${dist.jar}">
@@ -300,19 +242,15 @@ more information about each.
         </uptodate>
     </target>
     <target name="jar" depends="check.jar,compile" description="Generates opendcs.jar." unless="jar.current">
-        <!-- copy the resource files to the build directory. -->
-        <copy todir="${build.classes}">
-            <fileset dir="${resources.dir}"/>
-        </copy>
-        <!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
-        <copy todir="${build.classes}/decodes/tsdb/algo">
+        <jar jarfile="${dist.jar}"
+             update="true">
+            <fileset dir="${opendcs.resources}"/>
+            <fileset dir="${opendcs.classes}"/>
+            <!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
             <fileset dir="${src.dir}/decodes/tsdb/algo">
                 <include name="AW_AlgorithmTemplate.java"/>
             </fileset>
-        </copy>
-        <jar jarfile="${dist.jar}"
-             basedir="${build.classes}"
-             update="true"/>
+        </jar>
     </target>
     <target name="publish" depends="jar,common.init-ivy,common.resolve.build" description="--> publish ivy artifacts">
         <publish/>
