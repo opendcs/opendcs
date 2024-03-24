@@ -1,5 +1,6 @@
 <project name="macros" xmlns:ivy="antlib:org.apache.ivy.ant"
-    xmlns:if="ant:if" xmlns:unless="ant:unless">
+    xmlns:if="ant:if" xmlns:unless="ant:unless"
+    xmlns:jacoco="antlib:org.jacoco.ant">
 
 <macrodef name="compile">
     <attribute name="outputDir"/>    
@@ -42,8 +43,55 @@
         </if>
         <property name="@{outputName}.classes" value="@{outputDir}/classes"/>
         <property name="@{outputName}.resources" value="@{outputDir}/resources"/>
-        <echo>"@{outputName}.classes=${@{outputName}.classes}"</echo>
     </sequential>
 </macrodef>
-
+<macrodef name="test">
+    <attribute name="classesDir"/>
+    <attribute name="outputName"/>
+    <element name="classpaths"/>
+    <element name="testfiles" optional="true"/>
+    <element name="jvmargs" optional="true"/>
+    <sequential>
+        <mkdir dir="${junit.html.output.dir}"/>    
+        <mkdir dir="${build.dir}/test/@{outputName}/results"/>
+        <mkdir dir="${build.dir}/test/@{outputName}/tmp"/>
+        <jacoco:agent property="coverage.agent.param.test" destfile="${coverage.dir}/jacoco.@{outputName}.exec"/>
+        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="@{outputName}.failed">
+            <classpaths/>
+            <testclasses outputdir="${build.dir}/test/@{outputName}/results">
+                <fork>
+                    <jvmarg value="${coverage.agent.param.test}"/>
+                    <jvmarg value="-Dbuild.dir=${build.dir}"/>
+                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test/@{outputName}/tmp"/>
+                    <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+                    <jvmargs/>
+                </fork>
+                <fileset dir="@{classesDir}">
+                    <testfiles/>
+                </fileset>
+                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
+                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
+            </testclasses>
+        </junitlauncher>
+        <mkdir dir="${junit.html.output.dir}/@{outputName}"/>
+        <junitreport todir="${junit.html.output.dir}/">
+            <fileset dir="${build.dir}/test/@{outputName}/results">
+                <include name="TEST-*.xml"/>
+                <exclude name="TEST-fixture*"/>
+                <exclude name="TEST-*$?.xml"/>
+            </fileset>
+            <report format="noframes" todir="${junit.html.output.dir}/@{outputName}"/>
+        </junitreport>
+        <if>
+            <isset property="@{outputName}.failed"/>
+            <then>
+                <delete file="${status.dir}/@{outputName}.run" quiet="true"/>
+                <fail message="Tests have failures."/>
+            </then>
+            <else>
+                <touch file="${status.dir}/@{outputName}.run"/>
+            </else>
+        </if>
+    </sequential>
+</macrodef>
 </project>
