@@ -2,7 +2,7 @@
     xmlns:if="ant:if" xmlns:unless="ant:unless"
     xmlns:jacoco="antlib:org.jacoco.ant">
 
-<macrodef name="compile">
+<macrodef name="compile-java">
     <attribute name="outputDir"/>    
     <attribute name="srcDir"/>
     <attribute name="outputName"/>
@@ -14,6 +14,8 @@
     <sequential>
         <uptodate property="@{outputName}.compile.current" targetfile="${status.dir}/src.@{outputName}.build.date">
             <srcresources>
+                <!-- Always rebuild if baseline project files have changed -->
+                <fileset dir="${project.dir}" includes="ivy.xml,ivy-settings.xml,build.xml,build-macros.xml,common.xml"/>
                 <fileset dir="@{srcDir}" includes="**/*"/>
                 <fileset-for-update-to-date/>
             </srcresources>
@@ -62,6 +64,8 @@
         <mkdir dir="${build.dir}/test/@{outputName}/tmp"/>
         <uptodate property="@{outputName}.test.current" targetFile="${status.dir}/test.@{outputName}.run.date">
             <srcresources>
+                <!-- Always rebuild if baseline project files have changed -->
+                <fileset dir="${project.dir}" includes="ivy.xml,ivy-settings.xml,build.xml,build-macros.xml,common.xml"/>
                 <fileset dir="@{classesDir}" includes="**/*"/>
                 <fileset-for-update-to-date/>
             </srcresources>
