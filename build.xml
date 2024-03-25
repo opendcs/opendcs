@@ -19,7 +19,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
 <!-- depends="clean" -->
     <target name="prepare"  description="Makes build environment.">
         <mkdir dir="${build.dir}"/>
-        <mkdir dir="${build.classes}"/>
         <mkdir dir="${build.lib}"/>
         <mkdir dir="${status.dir}"/>
         <pathconvert property="junitlauncherPresent" setonempty="false" pathsep=" ">
@@ -42,21 +41,21 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <antcall target="docs.clean"/>
     </target>
     <target name="compile" depends="prepare,common.resolve,common.resolve.build" description="Compiles all source code.">
-        <compile outputDir="${build.dir}/main"
+        <compile-java outputDir="${build.dir}/main"
                  srcDir="${src.main.dir}"
                  outputName="opendcs"
                  >
             <classpaths>
                 <path refid="runtime.classpath"/>
             </classpaths>
-        </compile>
+        </compile-java>
         <touch file="${status.dir}/src.build.date"/>
     </target>
     
     <target name="compile-test" depends="compile,common.resolve">
-        <compile outputDir="${build.dir}/test"
-                 srcDir="${src.test.dir}"
-                 outputName="test-compile">
+        <compile-java outputDir="${build.dir}/test"
+                      srcDir="${src.test.dir}"
+                      outputName="test-compile">
             <classpaths>
                 <pathelement location="${opendcs.classes}"/>
                 <path refid="runtime.classpath"/>
@@ -66,16 +65,15 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
             </fileset-for-update-to-date>
-        </compile>
+        </compile-java>
         <touch file="${status.dir}/test.src.build.date"/>
     </target>
     <target name="compile-test-integration" depends="stage,test,common.resolve,common.resolve.build">
-        <compile outputDir="${build.dir}/test-integration"
-                 srcDir="${src.test-integration.main.dir}"
-                 outputName="test-integration">
+        <compile-java outputDir="${build.dir}/test-integration"
+                      srcDir="${src.test-integration.main.dir}"
+                      outputName="test-integration">
             <classpaths>
                 <pathelement location="${stage.dir}/bin/opendcs.jar"/>
-                <!--<pathelement location="${build.classes}"/>-->
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
                 <path refid="junit.platform.libs.classpath"/>
@@ -84,13 +82,13 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
             </fileset-for-update-to-date>
-        </compile>
+        </compile-java>
         <touch file="${status.dir}/src.integration.build.date"/>
     </target>
     <target name="compile-test-gui" depends="jar,test,common.resolve,common.resolve.build">
-        <compile outputDir="${build.dir}/test-gui"
-                 srcDir="${src.test-gui.main.dir}"
-                 outputName="test-gui">
+        <compile-java outputDir="${build.dir}/test-gui"
+                      srcDir="${src.test-gui.main.dir}"
+                      outputName="test-gui">
             <classpaths>
                 <pathelement location="${opendcs.classes}"/>
                 <path refid="runtime.classpath"/>
@@ -100,7 +98,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
             </fileset-for-update-to-date>
-        </compile>
+        </compile-java>
         <touch file="${status.dir}/src.gui-test.build.date"/>
     </target>
     <target name="test" depends="compile-test,jar,common.resolve.build">
@@ -669,7 +667,7 @@ more information about each.
     <target name="code-anaylsis" depends="spotbugs,cpd" description="Run all available code anaylsis"/>
     <!-- Still debating on if this should depend on all the tests, but it's perfectly valid to only want to see
          coverage for what's actually been generated. -->
-    <target name="coverage.report" depends="common.resolve.build">
+    <target name="coverage.report" depends="compile,common.resolve.build">
         <jacoco:merge destfile="${reports.dir}/coverage.exec">
             <fileset dir="${coverage.dir}" includes="*.exec"/>
         </jacoco:merge>
@@ -679,11 +677,11 @@ more information about each.
             </executiondata>
             <structure name="OpenDCS">
                 <classfiles>
-                    <fileset dir="${build.classes}"
+                    <fileset dir="${opendcs.classes}"
                              excludes="**/easy_install/**,**/python_packages,**/certifi/**,**/chardet/**,**/urllib3/**,**/requests/**,**/chardet/**,**/urllib3/**,**/idna/**,**/pkg_resources/**"/>
                 </classfiles>
                 <sourcefiles encoding="UTF-8">
-                    <fileset dir="${src.dir}"/>
+                    <fileset dir="${src.main.dir}/java"/>
                 </sourcefiles>
             </structure>
             <html destdir="${reports.dir}/coverage.html"/>
