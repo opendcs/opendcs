@@ -146,6 +146,7 @@ more information about each.
             <pathelement location="${stage.dir}/bin/opendcs.jar"/>
             <fileset dir="${stage.dir}/dep"/>
         </path>
+        <pathconvert property="opendcs.test.classpath" refid="opendcs.runtime"/>
         <test outputName="test-integration"
               classesDir="${test-integration.classes}">
               <classpaths>
