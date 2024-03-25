@@ -289,8 +289,7 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 		// determine what happens.
 		// If NULL is the method then the dep output wil be set to Const.UNDEFINED_DOUBLE
 
-		Connection conn = tsdb.getConnection();
-		try
+		try (Connection conn = tsdb.getConnection())
 		{
 			debug1("Calling rate with " + times.length + " times/values");
 			double depVals[] = ratingSet.rate(conn, times, vals);
@@ -320,34 +319,6 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 				cause.printStackTrace(out);
 			}
 		}
-		finally
-		{
-			tsdb.freeConnection(conn);
-		}
-		
-		
-		
-//		// The rate method will arrays will throw RatingException if ANY
-//		// values are out of range and produce no result. Therefore I must
-//		// rate each value individually.
-//		for(int i=0; i<times.length; i++)
-//		{
-//			Date d = new Date(times[i]);
-//			try
-//			{
-//				double ratedValue = ratingSet.rate(vals[i], times[i]);
-//debug3("RatingSet.rate: input=" + vals[i] + ", output=" + ratedValue + ", at time " + debugSdf.format(d));
-//				setOutput(dep, ratedValue, d);
-//			}
-//			catch(RatingException ex)
-//			{
-//				String msg = "RatingException for spec '" + specId + "' value " + vals[i]
-//					+ " at time " + debugSdf.format(d) + ": " + ex;
-//				warning(msg);
-//				if (Logger.instance().getLogOutput() != null)
-//					ex.printStackTrace(Logger.instance().getLogOutput());
-//			}
-//		}
 		
 //AW:AFTER_TIMESLICES_END
 	}

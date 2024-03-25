@@ -166,7 +166,14 @@ public class DaoBase
             this.queryStmt2 = null;
             this.queryResults1 = null;
             this.queryResults2 = null;
-            myCon = db.getConnection();
+            try
+            {
+                myCon = db.getConnection();
+            }
+            catch (SQLException ex)
+            {
+                throw new RuntimeException("Unable to get connection.", ex);
+            }
         }
 
 

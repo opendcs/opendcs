@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Call;
 import org.jdbi.v3.postgres.PostgresPlugin;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.spi.database.MigrationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -181,6 +182,7 @@ public class OpenDcsPgProvider implements MigrationProvider
         System.setProperty("DCS_PASS", password);
         Properties creds = new Properties();
         creds.put("username", username);
+        creds.put("user", username);
         creds.put("password", password);
         List<File> decodesFiles = getDecodesData();
         List<File> computationFiles = getComputationData();
@@ -211,9 +213,7 @@ public class OpenDcsPgProvider implements MigrationProvider
                                                      .map(f -> f.getAbsolutePath())
                                                      .collect(Collectors.toList());
                 log.info("Loading baseline computation data.");
-                TimeSeriesDb tsDb = new OpenTsdb();
-
-                tsDb.connect("utility", creds);
+                TimeSeriesDb tsDb = (TimeSeriesDb)DatabaseService.getDatabaseFor("utility", settings);
 
                 ImportComp compImport = new ImportComp(tsDb, false, false, fileNames);
                 compImport.runApp();

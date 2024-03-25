@@ -35,6 +35,7 @@ public class HDBRatingTable {
 	private Date effStartDate;
 	private Date effEndDate;
 	private TimeSeriesDb tsdb;
+	// TODO: don't hold connections.
     private Connection conn;
     private SimpleDateFormat rwdf;
 
@@ -48,7 +49,14 @@ public class HDBRatingTable {
 		exceedLowerBound = false;
 		exceedUpperBound = false;
 		this.tsdb=tsdb;
-		conn=tsdb.getConnection();
+		try
+		{
+			conn=tsdb.getConnection();
+		}
+		catch (SQLException ex)
+		{
+			throw new RuntimeException("Unable to get SQL Connection", ex);
+		}
 		String tz = DecodesSettings.instance().sqlTimeZone;
 		if (tz == null)
 			tz = "MST"; // default to mountain time

@@ -425,6 +425,8 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import javax.sql.DataSource;
+
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -465,6 +467,8 @@ import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
+import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -482,7 +486,7 @@ Sub classes must override all the abstract methods and provide
 a mechanism to persistently store time series and computational meta
 data.
 */
-public abstract class TimeSeriesDb
+public abstract class TimeSeriesDb extends Database
     implements HasProperties, DatabaseConnectionOwner
 {
     public static String module = "tsdb";
@@ -499,15 +503,8 @@ public abstract class TimeSeriesDb
      */
     protected boolean testMode;
 
-    /** The JDBC connection, must be provided by the connect method. */
-    protected Connection conn;
-
-    /** The default statement for queries */
-//    private Statement queryStmt;
-//    private ResultSet queryResults = null;
-//
-//    /** The default statement for modifies */
-//    private Statement modStmt;
+    /** The JDBC datasource */
+    protected final javax.sql.DataSource dataSource;
 
     /** The logger */
     protected Logger logger;
@@ -568,6 +565,7 @@ public abstract class TimeSeriesDb
 
     private boolean connected = false;
 
+    protected final DecodesSettings settings;
     /**
      * Lazy initialization, called at the first time a date or timestamp
      * is needing to be parsed or formatted. Can't do this in the constructor
@@ -576,42 +574,41 @@ public abstract class TimeSeriesDb
     /**
      * No args constructor required.
      */
-    public TimeSeriesDb()
+    public TimeSeriesDb(String appName, javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
     {
-//        DecodesSettings settings = DecodesSettings.instance();
+        this.settings = settings;
 
         writeModelRunId = Constants.undefinedIntKey;
         testMode = false;
-        conn = null;
 //        queryStmt = null;
 //        modStmt = null;
         logger = Logger.instance();
         tsdbVersion = 1;
-
-
-        keyGenerator = null;
-
+        this.dataSource = dataSource;
+        initDecodesDatabaseIO();
+        setupKeyGenerator();
+        this.read(); // initialize decodes
+        try (Connection conn = dataSource.getConnection())
+        {
+            determineTsdbVersion(conn, this);
+            postConnectInit(appName, conn);
+        }
+        catch (BadConnectException | SQLException ex)
+        {
+            throw new DatabaseException("Unable to initialize database.", ex);
+        }
         cpCompDepends_col1 = isHdb() ? "TS_ID" : "SITE_DATATYPE_ID";
         getLogDateFormat().setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    /** @return the JDBC connection in use by this object. */
-    public Connection getConnection()
-    {
-        return new WrappedConnection(conn, c -> {});
-    }
+    protected abstract void initDecodesDatabaseIO() throws DatabaseException;
 
-    /**
-     * Sets the JDBC connection in use by this object.
-     * @param conn the connection
-     */
-    public void setConnection(Connection conn)
+    /** @return the JDBC connection in use by this object. */
+    public Connection getConnection() throws SQLException
     {
-        this.conn = conn;
-        if (conn != null)
-        {
-            determineTsdbVersion(conn, this);
-        }
+        Connection conn = dataSource.getConnection();
+        postConInit(conn);
+        return conn;
     }
 
     public KeyGenerator getKeyGenerator() { return keyGenerator; }
@@ -620,10 +617,9 @@ public abstract class TimeSeriesDb
      * Uses the class in DecodesSettings to create a key generator.
      * @throws BadConnectException on any error.
      */
-    protected void setupKeyGenerator()
-        throws BadConnectException
+    protected void setupKeyGenerator() throws DatabaseException
     {
-        String keyGenClass = DecodesSettings.instance().sqlKeyGenerator;
+        String keyGenClass = settings.sqlKeyGenerator;
         try
         {
             keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
@@ -631,12 +627,12 @@ public abstract class TimeSeriesDb
         }
         catch (Exception ex)
         {
-            throw new BadConnectException(
-                "Cannot initialize key generator from class '" + keyGenClass
-                    + "' :" + ex.toString());
+            throw new DatabaseException(
+                "Cannot initialize key generator from class '" + keyGenClass + "'", ex);
         }
     }
 
+    public abstract void postConInit(Connection conn) throws SQLException;
 
     //==================================================================
     // The following helper-methods may be called or overloaded by the
@@ -714,21 +710,6 @@ public abstract class TimeSeriesDb
     //===================================================================
 
     /**
-     * Connect this app to the database and return appID.
-     * The credentials property set contains username, password,
-     * etc, for connecting to database.
-     * <p>
-     * Implementation: if the method fails, it MUST set conn = null.
-     * @param appName must match an application in the database.
-     * @param credentials must contain all needed login parameters.
-     * @return application ID.
-     * @throws BadConnectException if failure to connect.
-     */
-    public abstract DbKey connect( String appName, Properties credentials )
-        throws BadConnectException;
-
-
-    /**
      * Provides common post-connect initialization like loading the intervals
      * and setting the application ID.
      */
@@ -770,21 +751,6 @@ public abstract class TimeSeriesDb
         }
 
         connected = true;
-    }
-
-    /**
-     * Unconditionally close the connection.
-     */
-    public void closeConnection()
-    {
-        info("Closing database connection.");
-        try
-        {
-            if (conn != null)
-                conn.close();
-        }
-        catch(Exception ex) {}
-        conn = null;
     }
 
     /**
@@ -1009,8 +975,7 @@ public abstract class TimeSeriesDb
         // TODO: needs to be checked against Postgres
         final String curTimeSqlCommand = this.isOracle() ? "sysdate" : "current_timestamp" ;
         final String intervalSqlCommand = this.isOracle() ? " ?/24 )" : " ? * INTERVAL '1' hour )" ; // Oracle date math
-        Connection tcon = getConnection();
-        try(
+        try(Connection tcon = dataSource.getConnection();
             PreparedStatement deleteNormal = tcon.prepareStatement("delete from CP_COMP_TASKLIST where RECORD_NUM = ?");
             PreparedStatement deleteFailedAfterMaxRetries = tcon.prepareStatement(
                       "delete from CP_COMP_TASKLIST "
@@ -1106,11 +1071,6 @@ public abstract class TimeSeriesDb
                     warning("removing items from task list failed:");
                     warning(sw.toString());
                     throw new DbIoException(err.getLocalizedMessage());
-        }
-        finally
-        {
-            if (tcon != null)
-                freeConnection(tcon);
         }
     }
 
@@ -1823,7 +1783,7 @@ public abstract class TimeSeriesDb
              && tsid.getStorageUnits() != null
              && !cts.getUnitsAbbr().equalsIgnoreCase(tsid.getStorageUnits()))
             {
-                ret = Database.getDb().unitConverterSet.get(
+                ret = unitConverterSet.get(
                     EngineeringUnit.getEngineeringUnit(tsid.getStorageUnits()),
                     EngineeringUnit.getEngineeringUnit(cts.getUnitsAbbr()));
             }

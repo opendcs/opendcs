@@ -309,8 +309,14 @@ public class CwmsTimeSeriesDAO
     @Override
     public void close()
     {
-        dataTypeDAO.close();
-        siteDAO.close();
+        if (dataTypeDAO != null)
+        {
+            dataTypeDAO.close();
+        }
+        if (siteDAO != null)
+        {
+            siteDAO.close();
+        }
         super.close();
     }
 
@@ -1519,7 +1525,14 @@ public class CwmsTimeSeriesDAO
         // local getConnection() method that saves the connection locally
         if (myCon == null)
         {
-            myCon = db.getConnection();
+            try
+            {
+                myCon = db.getConnection();
+            }
+            catch (SQLException ex)
+            {
+                throw new RuntimeException("unable to get connection.", ex);
+            }
         }
         siteDAO.setManualConnection(myCon);
         dataTypeDAO.setManualConnection(myCon);

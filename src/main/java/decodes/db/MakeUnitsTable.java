@@ -70,9 +70,7 @@ public class MakeUnitsTable
           // Read the edit database into memory
           Database db = new decodes.db.Database();
           Database.setDb(db);
-          DatabaseIO editDbio = 
-              DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-                                        settings.editDatabaseLocation);
+          DatabaseIO editDbio = DatabaseIO.makeDatabaseIO(settings);
           db.setDbIo(editDbio);
           db.read();
 
