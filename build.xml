@@ -41,11 +41,6 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <delete dir="combined-src"/>
         <antcall target="docs.clean"/>
     </target>
-    <target name="check.src">
-       <!-- <uptodate property="src.build.current" targetfile="${status.dir}/src.build.date">
-            <srcfiles dir="${src.main.dir}" includes="**/*"/>
-        </uptodate>-->
-    </target>
     <target name="compile" depends="prepare,common.resolve,common.resolve.build" description="Compiles all source code.">
         <compile outputDir="${build.dir}/main"
                  srcDir="${src.main.dir}"
@@ -57,29 +52,20 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         </compile>
         <touch file="${status.dir}/src.build.date"/>
     </target>
-
-    <target name="check.test.src" depends="check.src">
-         <uptodate property="test.src.build.current.local" targetfile="${status.dir}/test.src.build.date">
-            <srcfiles dir="src/test" includes="**/*"/>
-        </uptodate>
-        <condition property="test.src.build.current">
-            <and>
-                <isset property="src.build.current"/>
-                <isset property="test.src.build.current.local"/>
-            </and>
-        </condition>
-    </target>
-    <target name="compile-test" depends="check.test.src,compile,common.resolve" unless="test.src.build.current">
-        <echo>${opendcs.classes}</echo>
+    
+    <target name="compile-test" depends="compile,common.resolve">
         <compile outputDir="${build.dir}/test"
                  srcDir="${src.test.dir}"
-                 outputName="test-compile"
-                 >
+                 outputName="test-compile">
             <classpaths>
                 <pathelement location="${opendcs.classes}"/>
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
             </classpaths>
+            <fileset-for-update-to-date>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+            </fileset-for-update-to-date>
         </compile>
         <touch file="${status.dir}/test.src.build.date"/>
     </target>
@@ -94,6 +80,10 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <path refid="test.classpath"/>
                 <path refid="junit.platform.libs.classpath"/>
             </classpaths>
+            <fileset-for-update-to-date>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+            </fileset-for-update-to-date>
         </compile>
         <touch file="${status.dir}/src.integration.build.date"/>
     </target>
@@ -106,18 +96,14 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <path refid="runtime.classpath"/>
                 <path refid="test.classpath"/>
             </classpaths>
+            <fileset-for-update-to-date>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+            </fileset-for-update-to-date>
         </compile>
         <touch file="${status.dir}/src.gui-test.build.date"/>
     </target>
-    <target name="check.run-tests" depends="check.test.src">
-        <condition property="test.run">
-            <and>
-                <available file="${status.dir}/test.run"/>
-                <isset property="test.src.build.current"/>
-            </and>
-        </condition>
-    </target>
-    <target name="test" depends="check.run-tests,compile-test,jar,common.resolve.build" unless="test.run">
+    <target name="test" depends="compile-test,jar,common.resolve.build">
         <test outputName="test"
               classesDir="${test-compile.classes}">
             <classpaths>
@@ -131,26 +117,14 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                     <pathelement location="${opendcs.classes}"/>
                 </classpath>
             </classpaths>
+            <fileset-for-update-to-date>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+            </fileset-for-update-to-date>
         </test>
     </target>
-    <target name="check.it-run" depends="check.src">
-        <condition property="integration.test.current">
-            <and>
-                <available file="${status.dir}/src.integration.run.${opendcs.test.engine}"/>
-                <isset property="src.build.current"/>
-                <uptodate property="integration.src.current" targetFile="${status.dir}/src.integration.build.date">
-                    <srcFiles dir="${src.test-integration.main.dir}" includes="**/*"/>
-                </uptodate>
-            </and>
-        </condition>
-        <condition property="test.engine.set">
-            <isset property="opendcs.test.engine"/>
-        </condition>
-    </target>
-    <target name="integration-test" depends="check.it-run,compile-test-integration,stage,common.resolve"
-            description="Run the integration test suite with available implementations."
-            unless="integration.test.current"
-            >
+    <target name="integration-test" depends="compile-test-integration,stage,common.resolve"
+            description="Run the integration test suite with available implementations.">
         <if>
             <not>
                 <isset property="opendcs.test.engine"/>
@@ -200,22 +174,14 @@ more information about each.
                     <propertyref prefix="testcontainer"/>
                 </syspropertyset>
             </jvmargs>
+            <fileset-for-update-to-date>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+            </fileset-for-update-to-date>
         </test>
     </target>
-    <target name="check.gui-test" depends="check.src">
-        <condition property="gui.test.current">
-            <and>
-                <available file="${status.dir}/src.gui-test.run"/>
-                <isset property="src.build.current"/>
-                <uptodate property="gui-test.src.current" targetFile="${status.dir}/src.gui-test.build.date">
-                    <srcFiles dir="${src.test-gui.main.dir}" includes="**/*"/>
-                </uptodate>
-            </and>
-        </condition>
-    </target>
-    <target name="gui-test" depends="check.gui-test,compile-test-gui,stage,common.resolve"
-            description="Run available GUI element tests"
-            unless="gui.test.current">
+    <target name="gui-test" depends="compile-test-gui,stage,common.resolve"
+            description="Run available GUI element tests">
         <test outputName="gui-test"
               classesDir="${test-gui.classes}">
             <classpaths>
@@ -234,9 +200,13 @@ more information about each.
                 <jvmarg value="-DDCSTOOL_HOME=${stage.dir}"/>
                 <jvmarg value="-DDECODES_INSTALL_DIR=${stage.dir}"/>
             </jvmargs>
+            <fileset-for-update-to-date>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+            </fileset-for-update-to-date>
         </test>
     </target>
-    <target name="check.jar" depends="check.src">
+    <target name="check.jar">
         <uptodate property="jar.current" targetFile="${dist.jar}">
             <srcfiles dir="${src.main.dir}" includes="**/*"/>
         </uptodate>
