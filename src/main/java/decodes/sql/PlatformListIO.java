@@ -679,8 +679,6 @@ public class PlatformListIO extends SqlDbObjIo
                                 log.info("Imported platform clashes with old platform ID={}"
                                      +" -- deleting old platform.",pid);
                                 pid = DbKey.createDbKey(rs, 1);
-                                rs.close();
-                                stmt.close();
                                 Platform oldPlat = new Platform(pid);
                                 delete(oldPlat);
                                 // Now recursively (but only 1 level) try again.
