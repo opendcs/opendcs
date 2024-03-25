@@ -9,10 +9,14 @@
     <attribute name="javaSrcTarget" default="1.8"/>
     <attribute name="javaCompileTarget" default="1.8"/>
     <element name="classpaths"/>
+    <element name="fileset-for-update-to-date" optional="true"/>
 
     <sequential>
-        <uptodate property="@{outputName}.current" targetfile="${status.dir}/src.@{outputName}.build.date">
-            <srcfiles dir="@{srcDir}" includes="**/*"/>
+        <uptodate property="@{outputName}.compile.current" targetfile="${status.dir}/src.@{outputName}.build.date">
+            <srcresources>
+                <fileset dir="@{srcDir}" includes="**/*"/>
+                <fileset-for-update-to-date/>
+            </srcresources>
         </uptodate>
     <!-- create build date -->
         <mkdir dir="@{outputDir}/classes"/>
@@ -22,7 +26,7 @@
         </tstamp>
         <if>
             <not>
-                <isset property="@{outputName.current}"/>
+                <isset property="@{outputName}.compile.current}"/>
             </not>
             <then>
                 <sync todir="@{outputDir}/resources">
@@ -38,6 +42,7 @@
                         <classpaths/>
                     </classpath>
                 </javac>
+                <touch file="${status.dir}/src.@{outputName}.build.date"/>
             </then>
         </if>
         <property name="@{outputName}.classes" value="@{outputDir}/classes"/>
@@ -50,46 +55,60 @@
     <element name="classpaths"/>
     <element name="testfiles" optional="true"/>
     <element name="jvmargs" optional="true"/>
+    <element name="fileset-for-update-to-date" optional="true"/>
     <sequential>
         <mkdir dir="${junit.html.output.dir}"/>    
         <mkdir dir="${build.dir}/test/@{outputName}/results"/>
         <mkdir dir="${build.dir}/test/@{outputName}/tmp"/>
-        <jacoco:agent property="coverage.agent.param.@{outputName}" destfile="${coverage.dir}/jacoco.@{outputName}.exec"/>
-        <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="@{outputName}.failed">
-            <classpaths/>
-            <testclasses outputdir="${build.dir}/test/@{outputName}/results">
-                <fork>
-                    <jvmarg value="${coverage.agent.param.@{outputName}}"/>
-                    <jvmarg value="-Dbuild.dir=${build.dir}"/>
-                    <jvmarg value="-Djava.io.tmpdir=${build.dir}/test/@{outputName}/tmp"/>
-                    <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
-                    <jvmargs/>
-                </fork>
-                <fileset dir="@{classesDir}">
-                    <testfiles/>
-                </fileset>
-                <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
-                <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
-            </testclasses>
-        </junitlauncher>
-        <mkdir dir="${junit.html.output.dir}/@{outputName}"/>
-        <junitreport todir="${junit.html.output.dir}/">
-            <fileset dir="${build.dir}/test/@{outputName}/results">
-                <include name="TEST-*.xml"/>
-                <exclude name="TEST-fixture*"/>
-                <exclude name="TEST-*$?.xml"/>
-            </fileset>
-            <report format="noframes" todir="${junit.html.output.dir}/@{outputName}"/>
-        </junitreport>
+        <uptodate property="@{outputName}.test.current" targetFile="${status.dir}/test.@{outputName}.run.date">
+            <srcresources>
+                <fileset dir="@{classesDir}" includes="**/*"/>
+                <fileset-for-update-to-date/>
+            </srcresources>
+        </uptodate>
         <if>
-            <isset property="@{outputName}.failed"/>
+            <not>
+                <isset property="@{outputName}.test.current"/>
+            </not>
             <then>
-                <delete file="${status.dir}/@{outputName}.run" quiet="true"/>
-                <fail message="Tests have failures."/>
+                <jacoco:agent property="coverage.agent.param.@{outputName}" destfile="${coverage.dir}/jacoco.@{outputName}.exec"/>
+                <junitlauncher haltOnFailure="false" printSummary="true" failureProperty="@{outputName}.failed">
+                    <classpaths/>
+                    <testclasses outputdir="${build.dir}/test/@{outputName}/results">
+                        <fork>
+                            <jvmarg value="${coverage.agent.param.@{outputName}}"/>
+                            <jvmarg value="-Dbuild.dir=${build.dir}"/>
+                            <jvmarg value="-Djava.io.tmpdir=${build.dir}/test/@{outputName}/tmp"/>
+                            <jvmarg if:set="debugPort" value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+                            <jvmargs/>
+                        </fork>
+                        <fileset dir="@{classesDir}">
+                            <testfiles/>
+                        </fileset>
+                        <listener type="legacy-brief" sendSysOut="true" useLegacyReportingName="false"/>
+                        <listener type="legacy-xml" sendSysErr="true" sendSysOut="true" useLegacyReportingName="false"/>
+                    </testclasses>
+                </junitlauncher>
+                <mkdir dir="${junit.html.output.dir}/@{outputName}"/>
+                <junitreport todir="${junit.html.output.dir}/">
+                    <fileset dir="${build.dir}/test/@{outputName}/results">
+                        <include name="TEST-*.xml"/>
+                        <exclude name="TEST-fixture*"/>
+                        <exclude name="TEST-*$?.xml"/>
+                    </fileset>
+                    <report format="noframes" todir="${junit.html.output.dir}/@{outputName}"/>
+                </junitreport>
+                <if>
+                    <isset property="@{outputName}.failed"/>
+                    <then>
+                        <delete file="${status.dir}/test.@{outputName}.run.date" quiet="true"/>
+                        <fail message="Tests have failures."/>
+                    </then>
+                    <else>
+                        <touch file="${status.dir}/test.@{outputName}.run.date"/>
+                    </else>
+                </if>                
             </then>
-            <else>
-                <touch file="${status.dir}/@{outputName}.run"/>
-            </else>
         </if>
     </sequential>
 </macrodef>
