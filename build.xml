@@ -204,6 +204,49 @@ more information about each.
             </fileset-for-update-to-date>
         </test>
     </target>
+
+    <target name="compile-test-lrgs" depends="jar,test,compile-test-integration,common.resolve,common.resolve.build">
+        <compile-java outputDir="${build.dir}/test-gui"
+                      srcDir="${src.test-lrgs.main.dir}"
+                      outputName="test-lrgs-compile">
+            <classpaths>
+                <pathelement location="${opendcs.classes}"/>
+                <path refid="runtime.classpath"/>
+                <path refid="test.classpath"/>
+                <pathelement location="${test-integration.resources}"/>
+                <pathelement location="${test-integration.classes}"/>
+            </classpaths>
+            <fileset-for-update-to-date>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+            </fileset-for-update-to-date>
+        </compile-java>
+        <touch file="${status.dir}/src.lrgs-test.build.date"/>
+    </target>
+    <target name="lrgs-test" depends="compile-test-lrgs,jar,compile-test-integration,common.resolve.build">
+        <test outputName="lrgs"
+              classesDir="${test-lrgs-compile.classes}">
+            <classpaths>
+                <classpath refid="test.classpath"/>
+                <classpath refid="runtime.classpath"/>
+                <classpath refid="junit.platform.libs.classpath"/>
+                <classpath>
+                    <pathelement location="${opendcs.resources}"/>
+                    <pathelement location="${test-lrgs-compile.resources}"/>
+                    <pathelement location="${test-lrgs-compile.classes}"/>
+                    <pathelement location="${opendcs.classes}"/>
+                    <pathelement location="${test-integration.resources}"/>
+                    <pathelement location="${test-integration.classes}"/>
+                </classpath>
+            </classpaths>
+            <fileset-for-update-to-date>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.classes}" includes="**/*"/>
+            </fileset-for-update-to-date>
+        </test>
+    </target>
+
+
     <target name="check.jar">
         <uptodate property="jar.current" targetFile="${dist.jar}">
             <srcfiles dir="${src.main.dir}" includes="**/*"/>
