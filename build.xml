@@ -143,7 +143,7 @@ more information about each.
             <fileset dir="${stage.dir}/dep"/>
         </path>
         <pathconvert property="opendcs.test.classpath" refid="opendcs.runtime"/>
-        <test outputName="test-integration"
+        <test outputName="test-integration-${opendcs.test.engine}"
               classesDir="${test-integration.classes}">
               <classpaths>
             <classpath refid="test.classpath"/>
