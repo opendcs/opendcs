@@ -254,8 +254,8 @@ more information about each.
             <fileset dir="${opendcs.resources}"/>
             <fileset dir="${opendcs.classes}"/>
             <!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
-            <fileset dir="${src.dir}/decodes/tsdb/algo">
-                <include name="AW_AlgorithmTemplate.java"/>
+            <fileset dir="${src.dir}" >
+                <include name="**/AW_AlgorithmTemplate.java"/>
             </fileset>
         </jar>
     </target>
