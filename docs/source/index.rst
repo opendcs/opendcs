@@ -4,8 +4,6 @@ Welcome to OpenDCS's documentation!
 **OpenDCS** suite of software for collecting, decodes, storing, and 
 manipulating time series data.
 
-Check out the :doc:`start-software` section for how to get started.
-
 .. note::
 
    This project is under active development.
@@ -17,7 +15,7 @@ OpenDCS documentation is currently divided into four sections:
 #. Getting Started: Intended for new users
 #. Resources: Intended for intermediate users
 #. Developer Documention: Intended for advanced users or developers
-#. Legacy Documentation and References: Indended for users familiar with the legacy PDF documentation
+#. Legacy Documentation and References: Indended for users familiar with the content in legacy PDF documentation
 
 The **Getting Started** part of this documentation is intended
 for new users.  Once reviewed one should be familiar with the 
@@ -54,14 +52,17 @@ as legacy documentation as it serves as a reference and
 contains lots of information at a deeper level than is 
 typically relevant to the GUI end-user.  
 
-* OPENDCSn-QuickStart.pdf
-* OPENDCSn-Installation-Guide.pdf
-* OPENDCSn-LRGS-UserGuide.pdf
-* OPENDCSn-CP-UserGuide.pdf
-* OPENDCSn-Platform-Decoding-Guide.pdf
-* OPENDCSn-OpenTSDB.pdf
-* OPENDCSn-Alarms.pdf
-* OPENDCSn-CWMS-Interface.pdf
+* :doc:`OPENDCSn-QuickStart <./legacy-quick-start>`
+* :doc:`OPENDCSn-Installation-Guide <./legacy-install-guide>`
+* :doc:`OPENDCSn-LRGS-UserGuide <./legacy-lrgs-userguide>`
+* :doc:`OPENDCSn-CP-UserGuide <./legacy-cp-userguide>`
+* :doc:`OPENDCSn-Platform-Decoding-Guide <./legacy-decoding-guide>`
+* :doc:`OPENDCSn-OpenTSDB <./legacy-tsdb>`
+* :doc:`OPENDCSn-Alarms <./legacy-alarms>`
+* :doc:`OPENDCSn-CWMS-Interface <./legacy-cwms-interface>`
+
+To access legacy PDFs see the https://github.com/opendcs/opendcs/wiki/Documentation page. 
+Reminder - legacy PDFs are no longer being updated.  
 
 .. image:: ./media/im-01-legacy-pdfs.JPG
    :alt: legacy PDF documentation
