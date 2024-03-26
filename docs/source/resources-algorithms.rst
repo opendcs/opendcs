@@ -12,14 +12,15 @@ with OpenDCS when it is installed.  These can be thought of as banked
 algorithms or functions that can be called upon when setting up a computation.
 These standard algorithms are generally basic arithmetic or time series
 manipulation or transformations.  For example, the average algorithm
-can be used to create a daily or monthly time series from an hourly or 
-daily time series, respectively.  In addition to simple arithmetic,
-or transformations, there are some set defined hydrologic specific
-algorithms that are commonly used in water management. For example
-there is an algorithm that can be called upon to calculate an incremental
-precipitation time series from a cumulative precipitation time series,
-and there are algorithms that can calculate flow based on various
-input time series.
+(AverageAlgorithm)can be used to create a daily or monthly time series 
+from an hourly or daily time series, respectively.  In addition to 
+simple arithmetic, or transformations, there are some set defined 
+hydrologic specific algorithms that are commonly used in water management.
+For example the incremental precipitation algorithm (IncrementalPrecip)
+can be called upon to calculate an incremental precipitation time series
+from a cumulative precipitation time series.  Additionally there are 
+also some algorithms that calculate flow based on various time series
+input.
 
 This page is intended to provide further details and examples of the 
 default algorithms.  Nearly all of these algorithms have properties
@@ -38,7 +39,7 @@ This page is divided into three sections:
 As a recap, below is a table of algorithms that come with OpenDCS installs.
 
 +--------------------+-------------------------+-------------------------------------------+
-|**Type**            |**Algorithm**            | **Exec Class**                            |
+|**Type**            |**Algorithm**            | **Exec Class **                           |
 +====================+=========================+===========================================+
 | * Arithmetic or    |AddToPrevious            | decodes.tsdb.algo.AddToPrevious           |
 | * Transformation   +-------------------------+-------------------------------------------+
@@ -78,23 +79,23 @@ As a recap, below is a table of algorithms that come with OpenDCS installs.
 |                    +-------------------------+-------------------------------------------+
 |                    |VirtualGage              | decodes.tsdb.algo.VirtualGage             |
 +--------------------+-------------------------+-------------------------------------------+
-| * Arithmetic or    |CentralRunningAverage    | CentralRunningAverageAlgorithm.xml        |
+| * Arithmetic or    |CentralRunningAverage    |                                           |
 | * Transformation   +-------------------------+-------------------------------------------+
-| * (Hidden)         |Division                 | Division.xml                              |
+| * (Hidden)         |Division                 |                                           |
 |                    +-------------------------+-------------------------------------------+
-|                    |GroupAdder               | GroupAdder.xml                            |
+|                    |GroupAdder               |                                           |
 |                    +-------------------------+-------------------------------------------+
-|                    |Multiplication           | Multiplication.xml                        |
+|                    |Multiplication           |                                           |
 |                    +-------------------------+-------------------------------------------+
-|                    |PeriodToDate             | PeriodToDate.xml                          |
+|                    |PeriodToDate             |                                           |
 |                    +-------------------------+-------------------------------------------+
-|                    |Stat                     | Stat.xml                                  |
+|                    |Stat                     |                                           |
 +--------------------+-------------------------+-------------------------------------------+
-| * Hydrologic       |ExpressionParserAlgorithm| ExpressionParserAlgorithm.xml             |
+| * Hydrologic       |ExpressionParserAlgorithm|                                           |
 | * (Hidden)         +-------------------------+-------------------------------------------+
-|                    |FlowResIn                | FlowResIn.xml                             |
+|                    |FlowResIn                |                                           |
 |                    +-------------------------+-------------------------------------------+
-|                    |WeightedWaterTemperature | WeightedWaterTemperature.xml              |
+|                    |WeightedWaterTemperature |                                           |
 +--------------------+-------------------------+-------------------------------------------+
 
 ***************************
@@ -178,7 +179,7 @@ AverageAlgorithm
 ----------------
 
 .. image:: ./media/resources/algorithms/im-04-excel-averagealgorithm.JPG
-   :alt:  algorithm add to previous
+   :alt:  algorithm average algorithm
    :width: 500
 
 The "Average" algorithm *AverageAlgorithm* aggregates and calculates
@@ -203,11 +204,11 @@ See the images above and below to better understand how the algorithm behaves.
 
 
 .. image:: ./media/resources/algorithms/im-05-comptest-averagealgorithm.JPG
-   :alt:  algorithm add to previous
+   :alt:  algorithm average algorithm
    :width: 600
 
 .. image:: ./media/resources/algorithms/im-06-comp-averagealgorithm.JPG
-   :alt:  algorithm add to previous
+   :alt:  algorithm average algorithm
    :width: 600
 
 
@@ -215,7 +216,7 @@ ChooseOne
 ---------
 
 .. image:: ./media/resources/algorithms/im-07-excel-chooseone.JPG
-   :alt:  algorithm add to previous
+   :alt:  algorithm choose one
    :width: 500
 
 The "Choose One" algorithm *ChooseOne* will choose one value 
@@ -244,11 +245,11 @@ See the images above and below to better understand how the algorithm behaves.
 
 
 .. image:: ./media/resources/algorithms/im-08-comptest-chooseone.JPG
-   :alt:  algorithm add to previous
+   :alt:  algorithm choose one
    :width: 600
 
 .. image:: ./media/resources/algorithms/im-09-comp-chooseone.JPG
-   :alt:  algorithm add to previous
+   :alt:  algorithm choose one
    :width: 600
    
 CopyAlgorithm
