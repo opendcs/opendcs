@@ -67,35 +67,6 @@ public class BackgroundTsDbApp<App extends TsdbAppTemplate> implements Closeable
         }
     }
 
-    public static boolean waitForResult(ThrowingFunction<Long, Boolean, Exception> task,
-                                        long waitFor, TimeUnit waitForUnit,
-                                        long checkEvery, TimeUnit checkEveryUnit) throws Exception
-    {
-        boolean ret = false;
-        long start = System.currentTimeMillis();
-        long now = System.currentTimeMillis();
-        long interval = checkEveryUnit.toMillis(checkEvery);
-        long waitLength = waitForUnit.toMillis(waitFor);
-        do
-        {
-            now = System.currentTimeMillis();
-            ret = task.accept(now);
-            if(!ret)
-            {
-                try
-                {
-                    Thread.sleep(interval);
-                }
-                catch (InterruptedException ex)
-                {
-                    /* do nothing, just begin loop again */
-                }
-            }
-        }
-        while(ret!=true && (now - start) < waitLength);
-        return ret;
-    }
-
     private BackgroundTsDbApp(Class<?> clazz, String name, File propertiesFile, File logFile, EnvironmentVariables env,
                            String ...args) throws Exception
     {

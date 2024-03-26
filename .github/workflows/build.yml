@@ -38,6 +38,7 @@ jobs:
         # at some point though.
         if: matrix.platform == 'ubuntu-latest'
         run: |
+          ant lrgs-test -D"no.docs=true"
           ant integration-test -D"no.docs=true" -D"opendcs.test.engine=OpenDCS-XML"
           ant integration-test -D"no.docs=true" -D"opendcs.test.engine=OpenDCS-Postgres"
       - name: Gui Tests

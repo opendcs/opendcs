@@ -22,6 +22,7 @@ import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
+import org.opendcs.fixtures.assertions.Waiting;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
@@ -131,14 +132,15 @@ public class CompProcTestIT extends AppTestBase
         try
         {
             final String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
-            BackgroundTsDbApp.waitForResult((t) ->
+            Waiting.assertResultWithinTimeFrame((t) ->
             {
                 final String output = Programs.OutputTs(new File(logDir,"/outputTs.log"), config.getPropertiesFile(),
                                           environment, exit,
                                           "01-Jan-2012/00:00", "03-Jan-2012/00:00", "UTC",
                                           "regtest", tsids);
                 return golden.equals(output);
-            }, 1, TimeUnit.MINUTES, 15, TimeUnit.SECONDS);
+            }, 1, TimeUnit.MINUTES, 15, TimeUnit.SECONDS
+            ,"Calculated results were not found within the expected time frame.");
         }
         catch(InterruptedException ex)
         {
