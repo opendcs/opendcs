@@ -53,7 +53,7 @@ public class LrgsTestInstance
 
         lrgsThread = new Thread(lrgs);
         exit.execute(() -> lrgsThread.start());
-        waitForResult(value ->
+        Waiting.assertResultWithinTimeFrame(value ->
         {
             try
             {
@@ -64,7 +64,8 @@ public class LrgsTestInstance
                 // Future work should remove the need for this NPE catch.
                 return false;
             }
-        }, 1, TimeUnit.MINUTES, 5, TimeUnit.SECONDS);
+        }, 1, TimeUnit.MINUTES, 5, TimeUnit.SECONDS,
+        "LRGS has not started within the expected time frame.");
 
         this.archive = lrgs.msgArchive;
     }

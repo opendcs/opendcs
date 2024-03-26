@@ -11,6 +11,7 @@ import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfDaoSupported;
+import org.opendcs.fixtures.assertions.Waiting;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 
 import decodes.db.Database;
@@ -79,15 +80,15 @@ public class CompDependsDaoTestIT extends AppTestBase
                                             environment);)
             {
                 assertTrue(app.isRunning(), "App did not start correctly.");
-                assertTrue(
-                    BackgroundTsDbApp.waitForResult(
+                Waiting.assertResultWithinTimeFrame(
                         timeMs -> !cd.getResults("select * from cp_comp_depends where computation_id=?",
                                                  rs -> rs.getLong(1),
                                                  compInDb.getKey()
                                                 )
                                      .isEmpty(),
                         2, TimeUnit.MINUTES,
-                        5, TimeUnit.SECONDS)
+                        5, TimeUnit.SECONDS,
+                        "Expected values were not found in the comp depends table."
                 );
             }
         }
