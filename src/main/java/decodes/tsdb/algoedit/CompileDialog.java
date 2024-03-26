@@ -7,20 +7,30 @@ import java.awt.event.*;
 import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.lang.reflect.Method;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
+
+import java.nio.charset.Charset;
 
 import ilex.util.FileUtil;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import decodes.gui.GuiDialog;
-import decodes.tsdb.algo.RoleTypes;
-import decodes.tsdb.BadTimeSeriesException;
 import decodes.util.DecodesSettings;
 
 import ilex.util.EnvExpander;
@@ -282,93 +292,61 @@ public class CompileDialog extends GuiDialog
 		compileButton.setEnabled(true);
 	}
 
+	/**
+	 * 
+	 */
 	public void doCompile()
 	{
 		File logFile = new File(algotmpdir, "compile.log");
-		PrintWriter logWriter = null;
-		int errorCode = 0;
-		try
+		saveClassButton.setEnabled(false);
+		addToJarButton.setEnabled(false);
+		try (PrintWriter logWriter = new PrintWriter(logFile))
 		{
-			logWriter = new PrintWriter(logFile);
-			ArrayList<String> args = new ArrayList<String>();
+			final List<String> args = new ArrayList<String>();
 			StringTokenizer st = new StringTokenizer(
 				compOptionsField.getText().trim());
 			while(st.hasMoreTokens())
+			{
 				args.add(st.nextToken());
+			}
 			String x = classPathField.getText().trim();
 			if (x.length() > 0)
 			{
-				args.add("-cp");
+				args.add("-classpath");
 				args.add(x);
 			}
-			args.add(tmpFile.getPath());
+			args.add("-source"); args.add("1.8");
+			args.add("-target"); args.add("1.8");
+			//args.add(tmpFile.getPath());
 			args.add("-d");
 			args.add(algotmpdir.getPath());
-			String arga[] = new String[args.size()];
-			try
-			{
-				errorCode = com.sun.tools.javac.Main.compile(
-					args.toArray(arga), new PrintWriter(logFile));
-			}
-			catch(NoClassDefFoundError ex)
-			{
-				String javaToolsUrl = findToolsJar();
-				if (javaToolsUrl == null)
-				{
-					resultsArea.append(
-						labels.getString("CompileDialog.cannotLoadCompilerErr"));
-					String exMsg = ex.toString();
-					resultsArea.append(exMsg);
-					System.err.println(exMsg);
-					ex.printStackTrace();
-					return;
-				}
-
-				Logger.instance().info("Looking for tools.jar at '"
-					+ javaToolsUrl + "'");
-				URL urls[] = new URL[1];
-				urls[0] = new URL(javaToolsUrl);
-				URLClassLoader ucl = new URLClassLoader(urls, 
-					ClassLoader.getSystemClassLoader());
-				Class cls = ucl.loadClass("com.sun.tools.javac.Main");
-				if (cls == null)
-				{
-					resultsArea.append(
-					labels.getString("CompileDialog.cannotFindCompilerErr"));
-					return;
-				}
-				Logger.instance().info("Have class '" + cls.getName() + "'");
-				try
-				{
-					// We have to manually load the class with an URLClassLoader
-					// and then invoke the compile method through the reflection
-					// mechanism.
-					Object javaco = cls.newInstance();
-					args.toArray(arga);
-					PrintWriter pw = new PrintWriter(logFile);
-					
-					Method method = cls.getMethod("compile", arga.getClass(), 
-						pw.getClass());
-					Object errorCodeObj = method.invoke(javaco, arga, pw);
-					errorCode = ((Integer)errorCodeObj).intValue();
-				}
-				catch(Throwable ex2)
-				{
-					resultsArea.append(
-					labels.getString("CompileDialog.cannotLoadCompilerErr"));
-					String exMsg = ex2.toString();
-					resultsArea.append(exMsg);
-					System.err.println(exMsg);
-					ex2.printStackTrace();
-					return;
-				}
-			}
-			if (errorCode != 0)
+			JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+			if (compiler == null)
 			{
 				resultsArea.append(
-					labels.getString("CompileDialog.javacFailedErr")
-					+ errorCode
-					+ "\n");
+					labels.getString("CompileDialog.cannotLoadCompilerErr"));
+				return;
+			}
+			StandardJavaFileManager fm = compiler.getStandardFileManager(null, getLocale(), Charset.forName("UTF-8"));
+			Iterable<? extends JavaFileObject> javaFileObjects = fm.getJavaFileObjects(tmpFile);
+			final DiagnosticListener<javax.tools.JavaFileObject> listener = new DiagnosticListener<javax.tools.JavaFileObject>()
+			{
+				@Override
+				public void report(Diagnostic<? extends JavaFileObject> diagnostic)
+				{
+					resultsArea.append(diagnostic.getMessage(getLocale()));
+				}
+			};
+			JavaCompiler.CompilationTask task = compiler.getTask(logWriter, fm, listener, args, null, javaFileObjects);
+			if (!task.call())
+			{
+				resultsArea.append("Compilation failed.");
+			}
+			else
+			{
+				resultsArea.append("Compilation succeeded.");
+				saveClassButton.setEnabled(true);
+				addToJarButton.setEnabled(true);
 			}
 		}
 		catch(Exception ex)
@@ -377,48 +355,6 @@ public class CompileDialog extends GuiDialog
 				labels.getString("CompileDialog.failedToCompileErr")
 				+ ex.getMessage());
 			return;
-		}
-		finally
-		{
-			if (logWriter != null)
-				try { logWriter.close(); } catch(Exception ex) {}
-		}
-		
-		resultsArea.append(
-			labels.getString("CompileDialog.compileLogLabel"));
-		BufferedReader br = null;
-		try
-		{
-			br = new BufferedReader(new FileReader(logFile));
-			String line = null;
-			while((line = br.readLine()) != null)
-				resultsArea.append(line + "\n");
-		}
-		catch(Exception ex)
-		{
-			resultsArea.append(
-					labels.getString("CompileDialog.cannotReadLogFileErr")
-					+ ex.getMessage());
-			return;
-		}
-		finally
-		{
-			if (br != null)
-				try { br.close(); } catch(Exception ex) {}
-		}
-		if (errorCode == 0)
-		{
-			resultsArea.append(
-					labels.getString("CompileDialog.compileSuccessfulInfo"));
-			resultsArea.append(
-					labels.getString("CompileDialog.saveResultingClassInfo"));
-			addToJarButton.setEnabled(true);
-			saveClassButton.setEnabled(true);
-		}
-		else
-		{
-			resultsArea.append(
-					labels.getString("CompileDialog.compileFailedErr"));
 		}
 	}
 
@@ -457,14 +393,39 @@ public class CompileDialog extends GuiDialog
 			return;
 		}
 
-		ArrayList<String> args = new ArrayList<String>();
+		List<JarEntryWithData> existingEntries = new ArrayList<>();
+		Manifest manifest = null;
 		if (jarFile.exists())
-			args.add("uvf");
-		else
-			args.add("cvf");
-		args.add(jarFile.getPath());
-		args.add("-C");
-		args.add(algotmpdir.getPath());
+		{
+			try (JarFile jf = new JarFile(jarFile))
+			{
+				manifest = jf.getManifest();
+				Enumeration<JarEntry> entries = jf.entries();
+				while(entries.hasMoreElements())
+				{
+					JarEntry entry = entries.nextElement();
+					if (!entry.getName().equals("META-INF/MANIFEST.MF"))
+					{
+						InputStream is = jf.getInputStream(entry);
+						byte[] data = new byte[(int)entry.getSize()];
+						is.read(data, 0, (int)entry.getSize());
+						existingEntries.add(new JarEntryWithData(entry, data));
+					}
+				}
+			}			
+			catch (IOException ex)
+			{
+				ex.printStackTrace();
+			}
+		}
+		if (manifest == null)
+		{
+			manifest = new Manifest();
+			Attributes attr = manifest.getMainAttributes();
+			attr.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+			String createdBy = String.format("AlgoEdit with %s",ToolProvider.getSystemJavaCompiler().getClass().getName());
+			attr.putValue("Created-By", createdBy);
+		}
 
 		String classFileName;
 		if (algotmpdir != pkgdir)
@@ -478,126 +439,45 @@ public class CompileDialog extends GuiDialog
 			classFileName = sb.toString();
 		}
 		else
+		{
 			classFileName = algoData.getJavaClassName() + ".class";
-
-		Logger.instance().info("Adding '" + classFileName + "' to jar file.");
-		args.add(classFileName);
-
-		File logFile = new File(algotmpdir, "jar.log");
-		PrintStream logStream = null;
-		try
-		{
-			logStream = new PrintStream(logFile);
-			String arga[] = new String[args.size()];
-			logStream = new PrintStream(logFile);
-			sun.tools.jar.Main jartool = 
-				new sun.tools.jar.Main(logStream, logStream, "jar");
-			if (!jartool.run(args.toArray(arga)))
-				resultsArea.append(
-						labels.getString("CompileDialog.jarFailedErr"));
-			else
-				resultsArea.append(
-					labels.getString("CompileDialog.jarSucceededInfo"));
-		}
-		catch(Exception ex)
-		{
-			resultsArea.append(
-					labels.getString("CompileDialog.jarFailedExErr")
-					+ ex.getMessage());
-			return;
-		}
-		finally
-		{
-			if (logStream != null)
-				try { logStream.close(); } catch(Exception ex) {}
 		}
 		
-		resultsArea.append(
-				labels.getString("CompileDialog.jarLogInfo"));
-		BufferedReader br = null;
 		try
 		{
-			br = new BufferedReader(new FileReader(logFile));
-			String line = null;
-			while((line = br.readLine()) != null)
-				resultsArea.append(line + "\n");
+			File tmpJarFile = File.createTempFile(jarFile.getName(), ".jar");
+			tmpJarFile.deleteOnExit();
+			try(
+				OutputStream os = new FileOutputStream(tmpJarFile); 
+				JarOutputStream jos = new JarOutputStream(os, manifest);)
+			{
+				for (JarEntryWithData entry: existingEntries)
+				{
+					if (!entry.entry.getName().equals(classFileName))
+					{
+						jos.putNextEntry(entry.entry);
+						jos.write(entry.data); // write bytes here.
+						jos.closeEntry();
+					}
+				}
+				File classFile = new File(algotmpdir, classFileName);
+				JarEntry algoEntry = new JarEntry(classFileName);
+				jos.putNextEntry(algoEntry);
+				byte data[] = FileUtil.getfileBytes(classFile);
+				jos.write(data);
+				jos.closeEntry();
+			}
+			FileUtil.copyFile(tmpJarFile, jarFile);
 		}
-		catch(Exception ex)
+		catch (IOException ex)
 		{
-			resultsArea.append(
-				labels.getString("CompileDialog.cannotReadLogFileErr")
-				+ ex.getMessage());
-			return;
+			ex.printStackTrace();
 		}
-		finally
-		{
-			if (br != null)
-				try { br.close(); } catch(Exception ex) {}
-		}
-		resultsArea.append(
-		labels.getString("CompileDialog.jarSuccessfulInfo"));
 	}
 
 	public void doDone()
 	{
 		setVisible(false);
-	}
-	
-	/**
-	 * If "tools.jar" is not in classpath, this method will be called to find
-	 * it. It will look for "jdk" directories at java.home and the parent to
-	 * java.home.
-	 */
-	private static String findToolsJar()
-	{
-		StringBuilder sb = new StringBuilder(System.getProperty("java.home"));
-		for(int i=0; i < sb.length(); i++)
-			if (sb.charAt(i) == '\\')
-				sb.setCharAt(i, '/');
-		int idx = sb.lastIndexOf("/");
-		if (idx != -1)
-			sb.setLength(idx);
-		String javaHomePath = sb.toString();
-
-		String testpath = javaHomePath + "/lib/tools.jar";
-		File toolsjar = new File(testpath);
-		if (toolsjar.exists())
-			return path2url(testpath);
-
-
-		File javaHomeFile = new File(System.getProperty("java.home"));
-		File jhParent = javaHomeFile.getParentFile();
-       	File listFile[] = jhParent.listFiles();
-		if (listFile == null)
-			return null;
-
-		// Find the JDK with latest version
-		String latestRevName = null;
-		File latestToolsJar = null;
-		for(int i=0; i < listFile.length; i++)
-		{
-			File f = listFile[i];
-			String jdkDirName = f.getName();
-			if(jdkDirName.startsWith("jdk")) 
-			{
-				File lib = new File(f, "lib");
-				toolsjar = new File(lib, "tools.jar");
-
-		   		if(toolsjar.exists())
-				{
-					if (latestRevName == null 
-					 || latestRevName.compareTo(jdkDirName) < 0)
-					{
-						latestRevName = jdkDirName;
-						latestToolsJar = toolsjar;
-					}
-				}
-		  	}
-		}
-
-		if (latestToolsJar == null)
-			return null;
-		return path2url(latestToolsJar.getPath());
 	}
 
 	public static String path2url(String path)
@@ -620,8 +500,15 @@ public class CompileDialog extends GuiDialog
 		return sb.toString();
 	}
 
-//	public static void main(String args[])
-//	{
-//		System.out.println(findToolsJar());
-//	}
+	private static class JarEntryWithData
+	{
+		public final JarEntry entry;
+		public final byte[] data;
+
+		public JarEntryWithData(JarEntry entry, byte[] data)
+		{
+			this.entry = entry;
+			this.data = data;
+		}
+	}
 }
