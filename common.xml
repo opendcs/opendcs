@@ -38,7 +38,13 @@
     <property name="junit.html.output.dir" value="${build.dir}/reports/junit"/>
     <property name="coverage.dir" value="${build.dir}/coverage/"/>
     <!-- Default includes for tests, user can override -->
-    <property name="tests" value="**/*Test*"/>
+    <property name="tests.default" value="**/*Test*"/>
+    <property name="tests" value="${tests.default}"/>
+    <condition property="user_set_tests" value="true">
+        <not>
+            <equals arg1="${tests}" arg2="${tests.default}"/>
+        </not>
+    </condition>
 
     <!-- VERSION NUMBERS -->
     <property name="MAJ_VER" value="7"/>

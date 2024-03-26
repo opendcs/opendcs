@@ -49,9 +49,8 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
                 <path refid="runtime.classpath"/>
             </classpaths>
         </compile-java>
-        <touch file="${status.dir}/src.build.date"/>
     </target>
-    
+
     <target name="compile-test" depends="compile,common.resolve">
         <compile-java outputDir="${build.dir}/test"
                       srcDir="${src.test.dir}"
@@ -63,10 +62,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </classpaths>
             <fileset-for-update-to-date>
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
-                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.resources}" includes="**/*"/>
             </fileset-for-update-to-date>
         </compile-java>
-        <touch file="${status.dir}/test.src.build.date"/>
     </target>
     <target name="compile-test-integration" depends="stage,test,common.resolve,common.resolve.build">
         <compile-java outputDir="${build.dir}/test-integration"
@@ -80,10 +78,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </classpaths>
             <fileset-for-update-to-date>
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
-                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.resources}" includes="**/*"/>
             </fileset-for-update-to-date>
         </compile-java>
-        <touch file="${status.dir}/src.integration.build.date"/>
     </target>
     <target name="compile-test-gui" depends="jar,test,common.resolve,common.resolve.build">
         <compile-java outputDir="${build.dir}/test-gui"
@@ -96,10 +93,9 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </classpaths>
             <fileset-for-update-to-date>
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
-                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.resources}" includes="**/*"/>
             </fileset-for-update-to-date>
         </compile-java>
-        <touch file="${status.dir}/src.gui-test.build.date"/>
     </target>
     <target name="test" depends="compile-test,jar,common.resolve.build">
         <test outputName="test"
@@ -117,7 +113,7 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
             </classpaths>
             <fileset-for-update-to-date>
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
-                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.resources}" includes="**/*"/>
             </fileset-for-update-to-date>
         </test>
     </target>
@@ -175,7 +171,7 @@ more information about each.
             </jvmargs>
             <fileset-for-update-to-date>
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
-                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.resources}" includes="**/*"/>
             </fileset-for-update-to-date>
         </test>
     </target>
@@ -201,13 +197,13 @@ more information about each.
             </jvmargs>
             <fileset-for-update-to-date>
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
-                <fileset dir="${opendcs.classes}" includes="**/*"/>
+                <fileset dir="${opendcs.resources}" includes="**/*"/>
             </fileset-for-update-to-date>
         </test>
     </target>
 
     <target name="compile-test-lrgs" depends="jar,test,compile-test-integration,common.resolve,common.resolve.build">
-        <compile-java outputDir="${build.dir}/test-gui"
+        <compile-java outputDir="${build.dir}/test-lrgs"
                       srcDir="${src.test-lrgs.main.dir}"
                       outputName="test-lrgs-compile">
             <classpaths>
@@ -222,7 +218,6 @@ more information about each.
                 <fileset dir="${opendcs.classes}" includes="**/*"/>
             </fileset-for-update-to-date>
         </compile-java>
-        <touch file="${status.dir}/src.lrgs-test.build.date"/>
     </target>
     <target name="lrgs-test" depends="compile-test-lrgs,jar,compile-test-integration,common.resolve.build">
         <test outputName="lrgs"

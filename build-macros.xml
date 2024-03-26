@@ -75,7 +75,7 @@
                 <not>
                     <isset property="@{outputName}.test.current"/>
                 </not>
-                <isset property="tests"/>
+                <isset property="user_set_tests"/>
             </or>
             <then>
                 <jacoco:agent property="coverage.agent.param.@{outputName}" destfile="${coverage.dir}/jacoco.@{outputName}.exec"/>
