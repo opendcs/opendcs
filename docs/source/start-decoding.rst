@@ -1518,7 +1518,7 @@ of specified columns. Therefore, if the messages has more than one
 line it is advised to add a / at the end of the statement and 
 repeat the statement over.
 
-The following images are examples of CSVs file types that can be 
+The following images are examples of CSV file types that can be 
 parsed using the csv operation.
 
 Recall that by default the message browser will 
@@ -1529,7 +1529,7 @@ of the message). Unless a header with date/time information
 is assumed and selected under the Header Type drop menu.  In 
 all of the examples below the Header Type is set to "other".
 
-The following two example show the CSV parser can be used when
+The following two examples show the CSV parser can be used when
 there are 2 sensors.  The first example has no date or time
 included in the message. 
 
@@ -1546,7 +1546,7 @@ included in the message.
 +------------------+------------------------------------+
 
 .. image:: ./media/start/decoding/im-30-csv-parser-2-sensors-no-date.JPG
-   :alt:  csv parser - 2 sensor no date
+   :alt:  csv parser - 2 sensors no date
    :width: 550
 
 ::
@@ -1563,11 +1563,11 @@ included in the message.
 
 
 .. image:: ./media/start/decoding/im-31-csv-parser-2-sensors.JPG
-   :alt:  csv parser - 2 sensor with date
+   :alt:  csv parser - 2 sensors with date
    :width: 550
 
 The following two examples show how the CSV parser can be used when
-there are 5 sensors.  The first example hss no date or time
+there are 5 sensors.  The first example has no date or time
 included in the message. 
 
 ::
@@ -1583,7 +1583,7 @@ included in the message.
 +------------------+------------------------------------+
 
 .. image:: ./media/start/decoding/im-32-csv-parser-5-sensors-no-date.JPG
-   :alt:  csv parser - 5 sensor no date
+   :alt:  csv parser - 5 sensors no date
    :width: 550
 
 ::
