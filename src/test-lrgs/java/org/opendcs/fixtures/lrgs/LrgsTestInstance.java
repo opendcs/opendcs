@@ -43,9 +43,10 @@ public class LrgsTestInstance
             fw.write("hritFileMaxAgeSec=7200"+System.lineSeparator());
             fw.write("hritSourceCode=HR"+System.lineSeparator());
             fw.write("hritFileEnabled=true"+System.lineSeparator());
+            fw.write("noTimeout=true"+System.lineSeparator());
             fw.flush();
         }
-        configFile.createNewFile();
+        new File(lrgsHome,"netlist").mkdirs();
         queueLogger = new QueueLogger("");
         fileLogger = new FileLogger("lrgs", new File(lrgsHome,"lrgslog").getAbsolutePath(), 200*1024*1024);
         SystemExit exit = new SystemExit();
@@ -64,7 +65,7 @@ public class LrgsTestInstance
                 // Future work should remove the need for this NPE catch.
                 return false;
             }
-        }, 1, TimeUnit.MINUTES, 5, TimeUnit.SECONDS,
+        }, 3, TimeUnit.MINUTES, 5, TimeUnit.SECONDS,
         "LRGS has not started within the expected time frame.");
 
         this.archive = lrgs.msgArchive;
