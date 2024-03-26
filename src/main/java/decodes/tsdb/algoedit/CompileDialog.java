@@ -6,6 +6,7 @@ package decodes.tsdb.algoedit;
 import java.awt.event.*;
 import java.awt.*;
 import java.io.*;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -25,6 +26,10 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
+import javax.tools.Diagnostic.Kind;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
 
@@ -293,7 +298,7 @@ public class CompileDialog extends GuiDialog
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public void doCompile()
 	{
@@ -334,7 +339,20 @@ public class CompileDialog extends GuiDialog
 				@Override
 				public void report(Diagnostic<? extends JavaFileObject> diagnostic)
 				{
-					resultsArea.append(diagnostic.getMessage(getLocale()));
+					String msg = diagnostic.getMessage(getLocale());
+					long line = diagnostic.getLineNumber();
+					long column = diagnostic.getColumnNumber();
+					Kind kind = diagnostic.getKind();
+					JavaFileObject jfo = diagnostic.getSource();
+					String fileName = "textarea";
+					if (jfo != null)
+					{
+						fileName = diagnostic.getSource().toUri().toString();
+					}
+					String userMsg = (jfo == null )
+								   ? String.format("%s %s%s", kind.toString(), msg, System.lineSeparator())
+								   : String.format("%s %s:%d%d: %s%s", kind.toString(), fileName, line, column, msg, System.lineSeparator());
+					resultsArea.append(userMsg);
 				}
 			};
 			JavaCompiler.CompilationTask task = compiler.getTask(logWriter, fm, listener, args, null, javaFileObjects);
@@ -354,6 +372,10 @@ public class CompileDialog extends GuiDialog
 			resultsArea.append(
 				labels.getString("CompileDialog.failedToCompileErr")
 				+ ex.getMessage());
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			resultsArea.append(sw.toString());
 			return;
 		}
 	}
@@ -412,10 +434,15 @@ public class CompileDialog extends GuiDialog
 						existingEntries.add(new JarEntryWithData(entry, data));
 					}
 				}
-			}			
+			}
 			catch (IOException ex)
 			{
-				ex.printStackTrace();
+				resultsArea.append("Unable to Read in existing Jar File contents: " + ex.getLocalizedMessage());
+				StringWriter sw = new StringWriter();
+				PrintWriter pw = new PrintWriter(sw);
+				ex.printStackTrace(pw);
+				resultsArea.append(sw.toString());
+				return;
 			}
 		}
 		if (manifest == null)
@@ -448,7 +475,7 @@ public class CompileDialog extends GuiDialog
 			File tmpJarFile = File.createTempFile(jarFile.getName(), ".jar");
 			tmpJarFile.deleteOnExit();
 			try(
-				OutputStream os = new FileOutputStream(tmpJarFile); 
+				OutputStream os = new FileOutputStream(tmpJarFile);
 				JarOutputStream jos = new JarOutputStream(os, manifest);)
 			{
 				for (JarEntryWithData entry: existingEntries)
@@ -471,7 +498,11 @@ public class CompileDialog extends GuiDialog
 		}
 		catch (IOException ex)
 		{
-			ex.printStackTrace();
+			resultsArea.append("Unable to add class file to jar:" + ex.getLocalizedMessage());
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			resultsArea.append(sw.toString());
 		}
 	}
 
