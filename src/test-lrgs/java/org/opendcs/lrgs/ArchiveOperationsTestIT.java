@@ -1,6 +1,6 @@
 package org.opendcs.regression_tests.lrgs;
 
-import static org.opendcs.fixtures.helpers.BackgroundTsDbApp.waitForResult;
+import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -82,7 +82,7 @@ public class ArchiveOperationsTestIT
         });
         mar.setSearchCriteria(sc);
         final DcpMsgIndex dmi = new DcpMsgIndex();
-        waitForResult(value ->
+        assertResultWithinTimeFrame(value ->
         {
             try
             {
@@ -105,8 +105,7 @@ public class ArchiveOperationsTestIT
             {
                 return false;
             }
-           //assertNotNull(msgOut, "We got a valid msg index but could not get an actual message.");
-            //assertArrayEquals(msgData.getBytes(Charset.forName("UTF8")), msgOut.getData(), "Saved message data was not returned.");
-        }, 3, TimeUnit.MINUTES, 5, TimeUnit.SECONDS);
+        }, 3, TimeUnit.MINUTES, 5, TimeUnit.SECONDS,
+        "Saved message was not found in the allotted time frame.");
     }
 }

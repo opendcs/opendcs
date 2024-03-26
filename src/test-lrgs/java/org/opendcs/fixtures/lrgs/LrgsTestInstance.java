@@ -1,6 +1,6 @@
 package org.opendcs.fixtures.lrgs;
 
-import static org.opendcs.fixtures.helpers.BackgroundTsDbApp.waitForResult;
+import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -53,7 +53,7 @@ public class LrgsTestInstance
 
         lrgsThread = new Thread(lrgs);
         exit.execute(() -> lrgsThread.start());
-        Waiting.assertResultWithinTimeFrame(value ->
+        assertResultWithinTimeFrame(value ->
         {
             try
             {
