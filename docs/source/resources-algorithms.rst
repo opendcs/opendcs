@@ -14,8 +14,8 @@ These standard algorithms are generally basic arithmetic or time series
 manipulation or transformations.  For example, the average algorithm
 (AverageAlgorithm)can be used to create a daily or monthly time series 
 from an hourly or daily time series, respectively.  In addition to 
-simple arithmetic, or transformations, there are some set defined 
-hydrologic specific algorithms that are commonly used in water management.
+simple arithmetic and transformations, there are some specific
+algorithms that are commonly used in water resources management.
 For example the incremental precipitation algorithm (IncrementalPrecip)
 can be called upon to calculate an incremental precipitation time series
 from a cumulative precipitation time series.  Additionally there are 
@@ -230,6 +230,14 @@ the following criteria are assumed or executed.
 * If two values are within the acceptable limits, use the higher value.
 * If two values are provided but only one is acceptable, use the acceptable value.
 * If two values are provided and neither is acceptable, use neither.
+* Values higher than the upper limit (but not including), will be considered unacceptable.
+* Values lower than the lower limit (but not including), will be considered unacceptable.
+
+In the example above, the limits are set to an upper limit of 176.905
+and a lower limit of 176.88.  This means that a value of 176.905 will be 
+considered valid, but 176.906 will be invalid.  Likewise, a value of 
+176.88 will be considered valid but anything lower will be considered 
+invalid.
 
 See the images above and below to better understand how the algorithm behaves.
 
@@ -243,7 +251,6 @@ See the images above and below to better understand how the algorithm behaves.
 |Outputs    |output           |
 +-----------+-----------------+
 
-
 .. image:: ./media/resources/algorithms/im-08-comptest-chooseone.JPG
    :alt:  algorithm choose one
    :width: 600
@@ -255,7 +262,14 @@ See the images above and below to better understand how the algorithm behaves.
 CopyAlgorithm
 -------------
 
-... more content coming soon ...
+.. image:: ./media/resources/algorithms/im-07-excel-chooseone.JPG
+   :alt:  algorithm choose one
+   :width: 500
+
+The "Copy" algorithm *CopyAlgorithm* will choose one value 
+(the best one) from two time series to output. Additionally, 
+some upper and lower critiera limits can be appled. By default,
+the following criteria are assumed or executed.
 
 CopyNoOverwrite
 ---------------
