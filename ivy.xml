@@ -52,6 +52,7 @@
             <exclude org="org.jooq.pro" module="jooq-meta"/>
             <exclude org="org.jooq.pro" module="jooq-codegen"/>
         </dependency>
+        <dependency org="mil.army.usace.hec" name="cwms-db-jooq-codegen" rev="7.0.0-OpenDCS"/>
         <dependency org="mil.army.usace.hec" name="cwms-db-aspects" rev="9.3.5"/>
         <dependency org="mil.army.usace.hec" name="cwms-db-dao" rev="9.3.5"/>
         <dependency org="mil.army.usace.hec" name="hec-db-jdbc" rev="9.3.5"/>
@@ -153,6 +154,6 @@
 
         <conflict org="org.slf4j" module="slf4j-api" rev="${slf4j.version}"/>
         <conflict org="org.slf4j" module="jcl-over-slf4j" rev="${slf4j.version}"/>
-
+        <conflict org="mil.army.usace.hec" module="cwms-db-jooq-codegen" rev="7.0.0-OpenDCS"/>
     </dependencies>
 </ivy-module>
