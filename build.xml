@@ -143,7 +143,7 @@ more information about each.
             <fileset dir="${stage.dir}/dep"/>
         </path>
         <pathconvert property="opendcs.test.classpath" refid="opendcs.runtime"/>
-        <test outputName="test-integration"
+        <test outputName="test-integration-${opendcs.test.engine}"
               classesDir="${test-integration.classes}">
               <classpaths>
             <classpath refid="test.classpath"/>
@@ -254,8 +254,8 @@ more information about each.
             <fileset dir="${opendcs.resources}"/>
             <fileset dir="${opendcs.classes}"/>
             <!-- AW_AlgorithmTemplate.java needed by Algorithm Editor. -->
-            <fileset dir="${src.dir}/decodes/tsdb/algo">
-                <include name="AW_AlgorithmTemplate.java"/>
+            <fileset dir="${src.dir}" >
+                <include name="**/AW_AlgorithmTemplate.java"/>
             </fileset>
         </jar>
     </target>
