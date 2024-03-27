@@ -53,8 +53,8 @@ can be scary we would like to encourage you to join us anyways.
 - Installing Ant and adding to your PATH
   - Follow the instructions listed [here](https://ant.apache.org/manual/install.html)
   - Ant version 1.10.12 or higher is required.
-- OpenDCS 7.x targets Java 8. A JDK 8 is recommended for build though 11 and 17 have worked correctly.
-- Our runtime target is primarily Java 8, however we expect to support 11 and are interested in issues with 17 and up.
+- OpenDCS 7.x targets Java 8. A JDK 8 is recommended for build though 11 and 17 will work, except for the generating the installer.
+- Our runtime target is Java 8, however we will support 11 and 17 at runtime (NOTE: the installer doesn't currently work with 17)
 
 
 To build the file opendcs.jar run the following
@@ -70,14 +70,22 @@ If you want to build the installer run
 To verify everything can work on your system run the following:
 
 ```
+# General tests
 ant test
 # NOTE: this will flash a few interfaces onto your display, let the task finish or the tests get stuck. 
 # However, you can just run through the GUIs to finish the tests. Though be aware if you don't follow the 
 # programmed script the task may return failure.
+
+# Test the GUI (NOTE: leave your hands off the keyboard and mouse or the runner gets confused.)
 ant gui-test -Dno.docs=true
+
+# Tests of a "live" system.
 ant integration-test -Dno.docs=true -Dopendcs.test.engine=OpenDCS-XML
 # and if you have docker
 ant integration-test -Dno.docs=true -Dopendcs.test.engine=OpenDCS-Postgres
+
+#To test the LRGS
+ant lrgs-test -Dno.docs=true
 ```
 
 This will run all of the various tests and let you know you have everything setup such that you can start development.
@@ -85,6 +93,14 @@ This will run all of the various tests and let you know you have everything setu
 For all test tasks you can add `-DdebugPort=<a port number>` and the JVMs started will wait for a debug connection.
 Beware that gui-test and integration-test depend on test running, so you will have to attach the remote debugger twice.
 This is a current limitation of the ant build.
+
+To run a specific test only use:
+
+```
+ant <test target> -Dtests=<Test class name>
+```
+
+It is possible a file glob will work in the tests parameter above but we have not tested this.
 
 See https://opendcs-env.readthedocs.io/en/latest/dev-docs.html for guidance on some of the newer components.
 
