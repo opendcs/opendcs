@@ -84,7 +84,7 @@ command and also the repeat syntax.
 Table 1-2: DECODES Format Operations - Jump to Label & Repeat
 
 The following table includes the csv parser operation.  This command is 
-useful for when data messages are in a comma deliminated format.  This command
+useful for when data messages are in a comma delimited format.  This command
 will instruct data in the csv to be mapped to either a sensor or date/time.
 
 +----------------------+----------------------------------------------------------+
@@ -155,6 +155,18 @@ is parsed out as well.
 +---------------------+----------------------------------------------------+
 
 Table 1-6: DECODES Format Operations - Fields
+
+The following table includes the shef decoding command.  This command is 
+useful for when data messages or file is of shef format.  
+
++----------------------+----------------------------------------------------------+
+| **Command**          | **Description**                                          |
++======================+==========================================================+
+| shefprocess()        | Parse a file that is of shef format                      |
++----------------------+----------------------------------------------------------+
+
+Table 1-7: DECODES Format Operations - shefprocess()
+
 
 In the examples in the sections below please make note a few items.
 
@@ -1117,41 +1129,41 @@ The sensor number (denoted # in the table below) is the numeric sensor number sp
 |                    +--------------+                                              |             |             |
 |                    |    123       |                                              |             |             |
 +--------------------+--------------+----------------------------------------------+-------------+-------------+
-| F(S,A,6D',',#)     | 123.45,      | * ideal for unfixed or fixed deliminated data| 6 or less   | ,           |
+| F(S,A,6D',',#)     | 123.45,      | * ideal for unfixed or fixed delimited data  | 6 or less   | ,           |
 |                    +--------------+ * character length equal to 6 or             |             |             |
-|                    | 123.4,       | * is less than 6 and deliminated by comma    |             |             |
+|                    | 123.4,       | * is less than 6 and delimited by comma      |             |             |
 |                    +--------------+                                              |             |             |
 |                    | 12.2,        |                                              |             |             |
 |                    +--------------+                                              |             |             |
 |                    | 1.2345,      |                                              |             |             |
 +--------------------+--------------+----------------------------------------------+-------------+-------------+
-| F(S,A,6D':',#)     | 123.45:      | * ideal for unfixed or fixed deliminated data| 6 or less   | :           |
+| F(S,A,6D':',#)     | 123.45:      | * ideal for unfixed or fixed delimited data  | 6 or less   | :           |
 |                    +--------------+ * character length equal to 6 or             |             |             |
-|                    | 123.4:       | * is less than 6 and deliminated by colon    |             |             |
+|                    | 123.4:       | * is less than 6 and delimited by colon      |             |             |
 |                    +--------------+                                              |             |             |
 |                    | 12.2:        |                                              |             |             |
 |                    +--------------+                                              |             |             |
 |                    | 1.2345:      |                                              |             |             |
 +--------------------+--------------+----------------------------------------------+-------------+-------------+
-| F(S,A,6D' ',#)     | 123.45` `    | * ideal for unfixed or fixed deliminated data| 6 or less   | ` `         |
+| F(S,A,6D' ',#)     | 123.45` `    | * ideal for unfixed or fixed delimited data  | 6 or less   | ` `         |
 |                    +--------------+ * character length equal to 6 or             |             |             |
-|                    | 123.4` `     | * is less than 6 and deliminated by a space  |             |             |
+|                    | 123.4` `     | * is less than 6 and delimited by a space    |             |             |
 |                    +--------------+                                              |             |             |
 |                    | 12.2` `      |                                              |             |             |
 |                    +--------------+                                              |             |             |
 |                    | 1.2345` `    |                                              |             |             |
 +--------------------+--------------+----------------------------------------------+-------------+-------------+
-| F(S,A,6D' :,',#)   | 123.45:      | * ideal for unfixed or fixed deliminated data| 6 or less   |` ` or : or ,|
+| F(S,A,6D' :,',#)   | 123.45:      | * ideal for unfixed or fixed delimited data  | 6 or less   |` ` or : or ,|
 |                    +--------------+ * character length equal to 6 or             |             |             |
-|                    | 123.45,      | * is less than 6 and deliminated by either   |             |             |
+|                    | 123.45,      | * is less than 6 and delimited by either     |             |             |
 |                    +--------------+ * space, colon or comma                      |             |             |
 |                    | 123.45` `    |                                              |             |             |
 |                    +--------------+                                              |             |             |
 |                    | 123.4:       |                                              |             |             |
 +--------------------+--------------+----------------------------------------------+-------------+-------------+
-| F(S,A,6DS,#)       | 123.45+      | * ideal for unfixed or fixed deliminated data| 6 or less   | +\ or -     |
+| F(S,A,6DS,#)       | 123.45+      | * ideal for unfixed or fixed delimited data  | 6 or less   | +\ or -     |
 |                    +--------------+ * character length equal to 6 or             |             |             |
-|                    | 123456-      | * is less than 6 and deliminated by a sign   |             |             |
+|                    | 123456-      | * is less than 6 and delimited by a sign     |             |             |
 |                    +--------------+ * sign can be + or -                         |             |             |
 |                    | 12.2+        |                                              |             |             |
 |                    +--------------+                                              |             |             |
@@ -1166,12 +1178,12 @@ parsing the field.
 If the delimiter is not found, the pointer is advanced by length
 characters. 
 
-In the examples below there are 2 sensors in the raw message. 
+For the examples below copy any one of the lines from the code block
+below and see how the decoding statements work.  In each example
+there are 2 sensors in the raw message.
 
-Sample Messages: Copy any one of the lines from the code block
-below and see how the fixed length decoding statements work.
-
-Sample Messages:  Example where the date is 2 characters long.
+Sample Messages:  Example where the sensors are of fixed formats.
+Sensor 1 is 6 characters and sensor 2 is 4 characters long.
 
 ::
 
@@ -1191,6 +1203,14 @@ Decoding Labels and Statements for above Sample Messages.
 | get_sensor2     | F(S,A,4,2)                       |
 +-----------------+----------------------------------+
 
+.. image:: ./media/start/decoding/im-17-field-ascii-fixed.JPG
+   :alt:  field ascii fixed
+   :width: 550
+
+Sample Messages:  Example where the first sensor is comma
+delimited up to 6 characters and where the second sensor
+is of fixed format of 4 characters.
+
 ::
 
    extra2,2024-02-29,176.54,1.2 ,
@@ -1208,6 +1228,14 @@ Decoding Labels and Statements for above Sample Messages.
 +-----------------+----------------------------------+
 | get_sensor2     | F(S,A,4,2)                       |
 +-----------------+----------------------------------+
+
+.. image:: ./media/start/decoding/im-18-field-ascii-delim-comma-fixed.JPG
+   :alt:  field ascii delimited comma and fixed
+   :width: 550
+
+Sample Messages:  Example where the first sensor is colon
+delimited up to 6 characters and where the second sensor
+is of fixed format of 4 characters.
 
 ::
 
@@ -1227,6 +1255,14 @@ Decoding Labels and Statements for above Sample Messages.
 | get_sensor2     | F(S,A,4,2)                       |
 +-----------------+----------------------------------+
 
+.. image:: ./media/start/decoding/im-19-field-ascii-delim-colon-fixed.JPG
+   :alt:  field ascii delimited colon and fixed
+   :width: 550
+
+Sample Messages:  Example where the first sensor is space
+delimited up to 6 characters and where the second sensor
+is of fixed format of 4 characters.
+
 ::
 
    extra4 2024-02-29+176.54 1.2 ,
@@ -1244,6 +1280,15 @@ Decoding Labels and Statements for above Sample Messages.
 +-----------------+----------------------------------+
 | get_sensor2     | F(S,A,4,2)                       |
 +-----------------+----------------------------------+
+
+.. image:: ./media/start/decoding/im-20-field-ascii-delim-space-fixed.JPG
+   :alt:  field ascii delimited space and fixed
+   :width: 550
+
+Sample Messages:  Example where the first sensor is either
+comma delimited or colon delimited or space delimited
+or up to 6 characters and where the second sensor
+is of fixed format of 4 characters.
 
 ::
 
@@ -1263,6 +1308,14 @@ Decoding Labels and Statements for above Sample Messages.
 | get_sensor2     | F(S,A,4,2)                       |
 +-----------------+----------------------------------+
 
+.. image:: ./media/start/decoding/im-21-field-ascii-delim-options-fixed.JPG
+   :alt:  field ascii delimited options and fixed
+   :width: 550
+
+Sample Messages:  Example where the first sensor is sign
+delimited up to 6 characters and where the second sensor
+is of fixed format of 4 characters.
+
 ::
 
    extra6 2024-02-29!176.54+1.2 ,
@@ -1280,6 +1333,10 @@ Decoding Labels and Statements for above Sample Messages.
 +-----------------+----------------------------------+
 | get_sensor2     | F(S,A,4,2)                       |
 +-----------------+----------------------------------+
+
+.. image:: ./media/start/decoding/im-22-field-ascii-delim-sign-fixed.JPG
+   :alt:  field ascii delimited sign and fixed
+   :width: 550
 
 Field - SENSOR - Pseudo-Binary
 ------------------------------
@@ -1401,6 +1458,11 @@ DECODING format statement for messages above.
 | get_sensor      | F(S,B,3,1)              |
 +-----------------+-------------------------+
 
+.. image:: ./media/start/decoding/im-23-field-pseudo-binary-3char.JPG
+   :alt:  field pseudo binary 3 characters
+   :width: 550
+
+
 Sample messages in pseduo-binary (5 character length)
 
 .. code-block:: bash
@@ -1413,11 +1475,14 @@ Sample messages in pseduo-binary (5 character length)
 | get_sensor      | F(S,B,5,1)              |
 +-----------------+-------------------------+
 
+.. image:: ./media/start/decoding/im-24-field-pseudo-binary-5char.JPG
+   :alt:  field pseudo binary 5 characters
+   :width: 550
+
 Sample messages in pseduo-binary (1 character length)
 
 .. code-block:: bash
 
-   
    }
    Z
    \
@@ -1427,10 +1492,16 @@ Sample messages in pseduo-binary (1 character length)
 | get_sensor      | F(S,B,1,1)              |
 +-----------------+-------------------------+
 
+.. image:: ./media/start/decoding/im-25-field-pseudo-binary-1char.JPG
+   :alt:  field pseudo binary 5 characters
+   :width: 550
+
+
 I - Pseudo-Binary - signed integer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+... more content coming soon ...
 
 CSV Operations - (sens#,...)
 ============================
@@ -1438,7 +1509,100 @@ CSV Operations - (sens#,...)
 Parse CSV
 ---------
 
+The csv function can be used to parse comma-separated values within
+a message.  The arguments to the function are a series of DECODES
+sensor numbers.  Use an 'x' if you want to skip a column.
 
+The function will stop when it reaches a newline or when it runs out
+of specified columns. Therefore, if the messages has more than one
+line it is advised to add a / at the end of the statement and 
+repeat the statement over.
+
+The following images are examples of CSV file types that can be 
+parsed using the csv operation.
+
+Recall that by default the message browser will 
+show date/time relative to current time, assuming the 
+message is in descending order (ie most recent data slice
+is at the top, and oldest data slice is at the bottom
+of the message). Unless a header with date/time information
+is assumed and selected under the Header Type drop menu.  In 
+all of the examples below the Header Type is set to "other".
+
+The following two examples show the CSV parser can be used when
+there are 2 sensors.  The first example has no date or time
+included in the message. 
+
+::
+
+    WL, 0.50 , 176.462
+    WL, 0.01 , 176.498
+    WL, 0.24 , 176.496
+    +, 0.32  , 176.484
+    P, 0.00  , 176.520
+
++------------------+------------------------------------+
+| csv_command      | csv(x,2,1),/>csv_command           |
++------------------+------------------------------------+
+
+.. image:: ./media/start/decoding/im-30-csv-parser-2-sensors-no-date.JPG
+   :alt:  csv parser - 2 sensors no date
+   :width: 550
+
+::
+
+   2024-03-21 12:00,  176.462 , WL, 13.5, 0.50, E, 95, 10.7
+   2024-03-21 13:00,  176.498 , WL, 13.5, 0.01, E, 93, 10.9
+   2024-03-21 14:00,  176.496 , WL, 13.4, 0.24, E, 101, 11.3
+   2024-03-21 15:00,  176.484 , +, 13.5, 0.32, E, 102, 11.2
+   2024-03-21 16:00,  176.520 , P, 13.5, 0.00, E, 98, 10.0
+
++------------------+----------------------------------------------------------------+
+| csv_command      | F(D,A,10,1),x,F(T,A,5),csv(x,1,x,x,2,x,x,x),/>csv_command      |
++------------------+----------------------------------------------------------------+
+
+
+.. image:: ./media/start/decoding/im-31-csv-parser-2-sensors.JPG
+   :alt:  csv parser - 2 sensors with date
+   :width: 550
+
+The following two examples show how the CSV parser can be used when
+there are 5 sensors.  The first example has no date or time
+included in the message. 
+
+::
+
+   176.462 , WL, 13.5, 0.50, E, 95, 10.7
+   176.498 , WL, 13.5, 0.01, E, 93, 10.9
+   176.496 , WL, 13.4, 0.24, E, 101, 11.3
+   176.484 , +, 13.5, 0.32, E, 102, 11.2
+   176.520 , P, 13.5, 0.00, E, 98, 10.0
+
++------------------+------------------------------------+
+| csv_command      | csv(1,x,5,2,x,3,4),/>csv_command   |
++------------------+------------------------------------+
+
+.. image:: ./media/start/decoding/im-32-csv-parser-5-sensors-no-date.JPG
+   :alt:  csv parser - 5 sensors no date
+   :width: 550
+
+::
+
+   2024-03-21 12:00,  176.462 , WL, 13.5, 0.50, E, 95, 10.7
+   2024-03-21 13:00,  176.498 , WL, 13.5, 0.01, E, 93, 10.9
+   2024-03-21 14:00,  176.496 , WL, 13.4, 0.24, E, 101, 11.3
+   2024-03-21 15:00,  176.484 , +, 13.5, 0.32, E, 102, 11.2
+   2024-03-21 16:00,  176.520 , P, 13.5, 0.00, E, 98, 10.0
+
+
++------------------+----------------------------------------------------------------+
+| csv_command      | F(D,A,10,1),x,F(T,A,5),csv(x,1,x,5,2,x,3,4),/>csv_command      |
++------------------+----------------------------------------------------------------+
+
+
+.. image:: ./media/start/decoding/im-33-csv-parser-5-sensors.JPG
+   :alt:  csv parser - 5 sensors
+   :width: 550
 
 Check Operation - C(*,*label*\)
 ===============================
@@ -1543,10 +1707,10 @@ data will be decoded
    ln-43 20240229 176.54,
 
 
-::
-
 Sample Messages:  Examples where the check will fail and the
 statement will jump to the next line.
+
+::
 
    ln0+1 20240229 176.54,
    ln4-3 20240229 176.54,
@@ -1781,6 +1945,33 @@ GG176. and therefore an error will occur.
 +-----------------+-------------------------------------------+
 
 
-Putting Commands Together
-=========================
+***************************
+DECODES Headers and Formats
+***************************
+
+GOES
+====
+
+... more content coming soon ...
+
+SHEF
+====
+
+... more content coming soon ...
+
+Iridium
+=======
+
+... more content coming soon ...
+
+Other
+=====
+
+... more content coming soon ...
+
+
+***************************************
+DECODES - Basics on new DECODING Script
+***************************************
+
 

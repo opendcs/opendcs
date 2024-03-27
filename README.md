@@ -10,7 +10,7 @@ OpenDCS is a tool for doing the following:
 OpenDCS is currently used by:
 
 - U.S. Army Corps of Engineers
-- U.S. Bureau of Reclimation
+- U.S. Bureau of Reclamation
 - U.S. National Oceanic and Atmospheric Administration
 
 And others.
