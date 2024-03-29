@@ -1,48 +1,11 @@
-/*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.6  2009/10/26 17:08:42  mjmaloney
-*  Log wrap issues
-*
-*  Revision 1.5  2009/09/09 14:19:52  mjmaloney
-*  dev
-*
-*  Revision 1.4  2009/09/09 14:05:44  mjmaloney
-*  dev
-*
-*  Revision 1.3  2009/09/09 14:00:05  mjmaloney
-*  dev
-*
-*  Revision 1.2  2009/08/27 20:26:55  mjmaloney
-*  dev
-*
-*  Revision 1.1  2008/04/04 18:21:10  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2005/08/29 15:02:39  mjmaloney
-*  Dev
-*
-*  Revision 1.3  2005/08/29 00:09:12  mjmaloney
-*  Added callback mechanism so caller will know when child is done.
-*
-*  Revision 1.2  2004/08/30 14:50:29  mjmaloney
-*  Javadocs
-*
-*  Revision 1.1  2004/07/07 14:26:22  mjmaloney
-*  Created.
-*
-*/
 package ilex.util;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 
-import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -56,6 +19,7 @@ Any output from the process is converted to log messages.
 */
 public class ProcWaiterThread extends Thread
 {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(ProcWaiterThread.class);
     /**
     * The Process I'm waiting for
     */
@@ -86,10 +50,9 @@ public class ProcWaiterThread extends Thread
     * @param name the name for log messages
     * @throws IOException if the command could not be executed.
     */
-    public static void runBackground( String cmd, String name )
-        throws IOException
+    public static void runBackground( String cmd, String name ) throws IOException
     {
-        Logger.instance().debug1("Executing '" + cmd + "' in background");
+        log.debug("Executing '{}' in background", cmd);
         Process proc = Runtime.getRuntime().exec(cmd);
         ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
         pwt.start();
@@ -102,10 +65,9 @@ public class ProcWaiterThread extends Thread
      * @return
      * @throws IOException
      */
-    public static String runForeground(String cmd, String name)
-        throws IOException
+    public static String runForeground(String cmd, String name) throws IOException
     {
-        Logger.instance().debug1("Executing '" + cmd + "' in foreground");
+        log.debug("Executing '{}' in foreground", cmd);
         Process proc = Runtime.getRuntime().exec(cmd);
         ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
         pwt.run();
@@ -121,14 +83,13 @@ public class ProcWaiterThread extends Thread
     * @param callbackObj opaque object to pass to the callback.
     * @throws IOException if the command could not be executed.
     */
-    public static void runBackground( String cmd, String name,
-        ProcWaiterCallback callback, Object callbackObj)
-        throws IOException
+    public static void runBackground( String cmd, String name, ProcWaiterCallback callback, Object callbackObj) throws IOException
     {
-        Logger.instance().debug1("Executing '" + cmd + "'");
+        log.debug("Executing '{}'", cmd);
         ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
         Map<String,String> env = pb.environment();
-        env.remove("DECJ_MAXHEAP"); // TODO: remove or expand; currently for debuging debug agent gets passed in when it shouldn't.
+        // TODO: remove or expand; currently for debuging debug agent gets passed in when it shouldn't.
+        env.remove("DECJ_MAXHEAP");
         Process proc = pb.start();
         ProcWaiterThread pwt = new ProcWaiterThread(proc, name);
         pwt.setCallback(callback, callbackObj);
@@ -140,7 +101,7 @@ public class ProcWaiterThread extends Thread
     * @param proc the process
     * @param name the name for log messages
     */
-    private ProcWaiterThread( Process proc, String name )
+    private ProcWaiterThread(Process proc, String name)
     {
         this.proc = proc;
         this.name = name;
@@ -160,13 +121,14 @@ public class ProcWaiterThread extends Thread
     /**
     * Public run method
     */
-    public void run( )
+    public void run()
     {
         // Start a separate thread to read the input stream.
         final InputStream is = proc.getInputStream();
         final org.slf4j.Logger processLogger = LoggerFactory.getLogger(ProcWaiterThread.class.getName()+"::cmd." + name);
         Thread isr =
-                new Thread(() -> {
+                new Thread(() ->
+                {
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(is)))
                     {
                         String line = null;
@@ -186,12 +148,13 @@ public class ProcWaiterThread extends Thread
         isr.setDaemon(true);
         isr.setPriority(MIN_PRIORITY);
         isr.start();
-        
+
 
         // Likewise for the stderr stream
-        final InputStream es = proc.getErrorStream();        
+        final InputStream es = proc.getErrorStream();
         Thread esr =
-                new Thread(() -> {
+                new Thread(() ->
+                {
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(es)))
                     {
                         String line = null;
@@ -210,7 +173,6 @@ public class ProcWaiterThread extends Thread
         esr.setDaemon(true);
         esr.setPriority(MIN_PRIORITY);
         esr.start();
-        
 
         // Finally, wait for process and catch its exit code.
         try
