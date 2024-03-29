@@ -158,8 +158,9 @@ to a variety of programs shown at the right.
 
 The core of the LRGS software was written by ILEX Engineering, Inc.,
 under contract to the federal government. As such it is freely
-available. Cove Software, LLC now maintains the software and provides
-support to the user community.
+available. The software is now hosted at https://github.com/opendcs/opendcs 
+and maintained by the current OpenDCS maintainers and anyone else who 
+wishes to contribute.
 
 Figure 2‑2: The Role of the LRGS.
 
@@ -1507,32 +1508,34 @@ is shown below:
 
 .. code-block:: xml
 
-   <?xml version="1.0"?>
-   <drgsconf>
-      <validate enable="true"
-         pdturl="http://dcs.noaa.gov/ftp_daily/pdts_compressed.txt"
-         cdturl="http://dcs.noaa.gov/ftp_daily/chans_by_baud.txt"/>
-      <connection number="0" host="drgs-e.mydomain.gov">
-         <name>EAST-DRGS</name>
-         <enabled>true</enabled>
-         <msgport>17010</msgport>
-         <evtport>17011</evtport>
-         <evtenabled>false</evtenabled>
-         <startpattern>534D0D0A</startpattern>
-         <cfgfile>$LRGSHOME/EAST-DRGS.cfg</cfgfile>
-         <sourceCode>DE</sourceCode>
-      </connection>
-      <connection number="1" host="drgs-w.mydomain.gov">
-         <name>WEST-DRGS</name>
-         <enabled>false</enabled>
-         <msgport>17010</msgport>
-         <evtport>17011</evtport>
-         <evtenabled>false</evtenabled>
-         <startpattern>534D0D0A</startpattern>
-         <cfgfile>$LRGSHOME/WEST-DRGS.cfg</cfgfile>
-         <sourceCode>DW</sourceCode>
-      </connection>
-   </drgsconf>
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <drgsconf>
+        <validate enable="true"
+            pdturl="http://dcs.noaa.gov/ftp_daily/pdts_compressed.txt"
+            cdturl="http://dcs.noaa.gov/ftp_daily/chans_by_baud.txt"/>
+        <connection number="0" host="drgs-e.mydomain.gov">
+            <name>EAST-DRGS</name>
+            <enabled>true</enabled>
+            <msgport>17010</msgport>
+            <evtport>17011</evtport>
+            <evtenabled>false</evtenabled>
+            <startpattern>534D0D0A</startpattern>
+            <cfgfile>$LRGSHOME/EAST-DRGS.cfg</cfgfile>
+            <sourceCode>DE</sourceCode>
+        </connection>    
+        <connection number="1" host="drgs-w.mydomain.gov">
+            <name>WEST-DRGS</name>
+            <enabled>false</enabled>
+            <msgport>17010</msgport>
+            <evtport>17011</evtport>
+            <evtenabled>false</evtenabled>
+            <startpattern>534D0D0A</startpattern>
+            <cfgfile>$LRGSHOME/WEST-DRGS.cfg</cfgfile>
+            <sourceCode>DW</sourceCode>
+        </connection>
+    </drgsconf>
+
+
 
 Figure 5‑10: DRGS Configuration File Example.
 
@@ -2187,13 +2190,13 @@ These values can also be set on the "Misc" tab of of the RtStat configuration di
 
 The following paths are provided:
 
-+---------+---------------------------------------------------------------+
-|Path     |Purpose                                                        |
-+=========+===============================================================+
-|/health  |Returns "200 OK" if the Lrgs thinks it's in a usable state.    |
-+---------+---------------------------------------------------------------+
-|/status  |Returns the default Lrgs Status page, same as lrgsstatus.html. |
-+---------+---------------------------------------------------------------+
++-------+--------------------------------------------------------------+
+| Path  | Purpose                                                      |
++=======+==============================================================+
+|/health|Returns "200 OK" if the Lrgs thinks it's in a usable state.   |
++-------+--------------------------------------------------------------+
+|/status|Returns the default Lrgs Status page, same as lrgsstatus.html.|
++-------+--------------------------------------------------------------+
 
 Future work will include authentication, authorization, and other DDS operations
 once that protocol is designed.
