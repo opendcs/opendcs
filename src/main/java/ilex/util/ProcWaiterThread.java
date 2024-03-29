@@ -35,11 +35,15 @@
 */
 package ilex.util;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
 
 import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
+import org.slf4j.LoggerFactory;
 
 /**
 You have to be careful when spawning processes from within Java to process
@@ -160,68 +164,53 @@ public class ProcWaiterThread extends Thread
     {
         // Start a separate thread to read the input stream.
         final InputStream is = proc.getInputStream();
+        final org.slf4j.Logger processLogger = LoggerFactory.getLogger(ProcWaiterThread.class.getName()+"::cmd." + name);
         Thread isr =
                 new Thread(() -> {
-                    try
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(is)))
                     {
-                        while(is.available() > 0)
+                        String line = null;
+                        while((line = reader.readLine()) != null)
                         {
-                            byte cmdOutBuf[] = new byte[4096];
-                            int cmdOutLen = 0;
-                            cmdOutLen = is.read(cmdOutBuf);
-                            if (cmdOutLen > 0)
-                            {
-                                cmdOutput = new String(cmdOutBuf, 0, cmdOutLen);
-                                Logger.instance().debug1(
-                                    "cmd(" + name + ") stdout returned("
-                                    + cmdOutLen + ") '" + cmdOutput + "'");
-                            }
-                            else
-                            {
-                                cmdOutput = null;
-                            }
+                            cmdOutput = line;
+                            processLogger.trace(line);
                         }
                     }
                     catch(IOException ex)
                     {
-                        Logger.instance().warning("cmd(" + name + ") error on output stream." + ex.getLocalizedMessage());
+                        processLogger.atError()
+                                     .setCause(ex)
+                                     .log("{} error on output stream.", name);
                     }
                 });
+        isr.setDaemon(true);
+        isr.setPriority(MIN_PRIORITY);
         isr.start();
+        
 
         // Likewise for the stderr stream
-        final InputStream es = proc.getErrorStream();
+        final InputStream es = proc.getErrorStream();        
         Thread esr =
                 new Thread(() -> {
-                    try
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(es)))
                     {
-                        while(true)
+                        String line = null;
+                        while((line = reader.readLine()) != null)
                         {
-                            while (es.available() > 0)
-                            {
-                                byte buf[] = new byte[1024];
-                                int n = es.read(buf);
-                                if (n > 0)
-                                    Logger.instance().warning(
-                                        "cmd(" + name + ") stderr returned(" + n + ") '"
-                                        + new String(buf, 0, n) + "'");
-                            }
-                            try
-                            {
-                                Thread.sleep(2000);
-                            }
-                            catch (InterruptedException ex)
-                            {
-                                /* do nothing */
-                            }
+                            processLogger.error(line);
                         }
                     }
                     catch(IOException ex)
                     {
-                        Logger.instance().warning("cmd(" + name + ") error on error stream." + ex.getLocalizedMessage());
+                        processLogger.atError()
+                                     .setCause(ex)
+                                     .log("Error on error stream.");
                     }
                 });
+        esr.setDaemon(true);
+        esr.setPriority(MIN_PRIORITY);
         esr.start();
+        
 
         // Finally, wait for process and catch its exit code.
         try
@@ -231,13 +220,19 @@ public class ProcWaiterThread extends Thread
             // reads in isr & esr above to finish.
             sleep(500L);
             if (exitStatus != 0)
-                Logger.instance().warning("cmd(" + name + ") exit status "
-                    + exitStatus);
+            {
+                processLogger.info("{} finished with exit code {}", name, exitStatus);
+            }
             if (callback != null)
+            {
                 callback.procFinished(name, callbackObj, exitStatus);
+            }
         }
         catch(InterruptedException ex)
         {
+            processLogger.atError()
+                         .setCause(ex)
+                         .log("Interrupted waiting for {} to finished.", name);
         }
     }
 
