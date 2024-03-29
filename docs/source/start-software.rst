@@ -2,8 +2,9 @@
 Software Set-Up
 ################################
 
+****************
 OpenDCS Overview
-================
+****************
 
 OpenDCS is a software built for the following purposes:
 
@@ -33,7 +34,7 @@ OpenDCS current and past contributors include:
 
 
 What is OpenDCS?
-----------------
+================
 
 OpenDCS is a software for retrieving and processing data from NOAA 
 GOES Satellite system.  OpenDCS is also used for retrieving data
@@ -62,24 +63,41 @@ to do the following (and more):
 * Create algorithms and computations
 * Create and manage time series in database
 
+.. image:: ./media/start/software/im-00-swiss-army-knife.JPG
+   :alt: opendcs swiss army knife
+   :width: 800
+
+OpenDCS is designed to operate with a database.  A fast majority 
+of the documentation here assumes that a database is already set 
+up an running.  Below is a high level schematic to conveys how
+a typical office has OpenDCS set up.  The set-up and install 
+directions below focus on a Windows PC set-up.  Further documatation
+about server set-up and how to set up an OpenHydro database can
+be found in the legacy documentation :doc:`Additional Content 
+on Installation <./legacy-install-guide>`
+
+.. image:: ./media/start/software/im-00-typical-office-high-level.JPG
+   :alt: typical office set-up
+   :width: 800
+
 Where can I find more information?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 Information about OpenDCS can be found on the github repository.
 
 Github: https://github.com/opendcs/opendcs 
 
 Where can I find this information in PDF format?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 Previous versions of OpenDCS (before 7.0.0), included a doc folder
-in the install directory (ie C:\\OPENDCS\doc), with PDFs, which were
-previously developer focused.  Versions 7.0.0 and after include 
-html code in the OPENDCS/docs folder.  The content of the older
-PDFs is now contained in the html files.
+in the install directory (ie C:\\OPENDCS\\doc), with PDFs, which were
+previously developer or advanced-user focused.  Versions 7.0.0 
+and after include html code in the OPENDCS\\doc folder.  The content of
+the older PDFs is now contained in the html files.
 
 What is the history of OpenDCS?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 * 1999 - Java-based LRGS developed for USGS
 * 2001 - Java-based DECODES developed for USGS and USACE (Database schem for XML and SQL)
@@ -93,18 +111,20 @@ What is the history of OpenDCS?
 * 2014 - OpenTSBD (Time Series Database) - implemented in PostgreSQL
 * 2015 and later - Improvements to all modules
 
-
+*************************
 How do I install OpenDCS?
-=========================
+*************************
 
-Installing OpenDCS requires a few steps outlined below.
+Installing OpenDCS requires a few steps outlined below.  The 
+content below is catered towards users who wish to install
+OpenDCS on personal workstations. 
 
 #. Download the software package (opendcs-installer-#.#.#.jar).
 #. Unzip the contents.
 #. Configure OpenDCS.
 
 What do I need installed before getting started with OpenDCS?
--------------------------------------------------------------
+=============================================================
 
 Prior to installing OpenDCS, java 1.8 or a later version must be
 installed.  
@@ -140,8 +160,8 @@ Proceed with installing OpenDCS.
 If nothing is returned or the version is older then 1.8, then install
 the 1.8 or up to java 17 from https://adoptium.net/temurin/releases/ .
 
-Where can I find releases of OpenDCS
-------------------------------------
+Where can I find releases of OpenDCS?
+=====================================
 
 The latest version releases of OpenDCS can be found online: https://github.com/opendcs/opendcs.
 From the main github site click on the header "Releases" in the image below.
@@ -162,7 +182,7 @@ Once the jar file is downloaded. Install it by launching it (double clicking).
 
 
 How do I install the jar?
--------------------------
+=========================
 
 Prior to double clicking or launching the install jar, decide where you
 want to install the program.  The default location will be "C:\\OPENDCS".
@@ -170,9 +190,9 @@ If you already have a previous version installed in this location, back it
 up per your own standards. 
 
 Ensure that your desired installation path exists.  Ie if you wish to use 
-the default installation path, create an empty folder C:\OPENDCS.
+the default installation path, create an empty folder C:\\OPENDCS.
 
-Double click the opendcs-installer-#.#.#.jar to begin the installation.
+Double click the **opendcs-installer-#.#.#.jar** to begin the installation.
 
 The first window to pop-up will be a welcome note.  Click next.
 
@@ -181,7 +201,7 @@ The first window to pop-up will be a welcome note.  Click next.
    :width: 400
 
 The next window will prompt a user to define an installation path.  If you 
-wish to use the default location (C:\OPENDCS) click "Next" (so long as
+wish to use the default location (C:\\OPENDCS) click "Next" (so long as
 the location exists). Or select the the location.  Then click "Next".
 You may get a warning "The directory already exists! Are you sure you
 want to install here and possibly overwrite existing files?".  Click "Yes".
@@ -248,7 +268,7 @@ where documentation can be accessed.  Open the index.html (ie drag the
 file into a browser).
 
 What do I need to edit/configure for my set-up?
------------------------------------------------
+===============================================
 
 Prior to launching the software, set up the **decodes.properties** file.
 
@@ -262,7 +282,7 @@ For more details about the decodes.properties see
 
 
 How do I launch the software?
------------------------------
+=============================
 
 Now that the software is installed.  On windows double click:
 **launcher_start.bat** (in the C:\\OPENDCS\bin directory). 
@@ -284,14 +304,15 @@ USACE users:
 
 * USERNAME: User H7
 * PASSWORD: Oracle
-   
+
+***************************************
 OpenDCS Main Menu Components - Overview
-=======================================
+***************************************
 
 The OpenDCS main menu is divided into two parts outlined below.
 
 DECODES Components
-------------------
+==================
 
 The top part of the menu consists of the DECODES Components
 
@@ -399,7 +420,7 @@ For more information about the Preferences and options, see
 :any:`leg-inst-start-configure`
 
 Time Series Database Components
--------------------------------
+===============================
 
 .. image:: ./media/start/software/im-11-timeseries-components.JPG
    :alt: main menu - time series components
