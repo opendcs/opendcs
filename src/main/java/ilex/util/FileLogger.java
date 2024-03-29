@@ -4,6 +4,11 @@
 package ilex.util;
 
 import java.util.Date;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.*;
 import java.nio.channels.FileChannel;
 
@@ -46,6 +51,8 @@ public class FileLogger extends Logger
 	*/
 	private int maxLength = defaultMaxLength;
 
+
+
 	/**
 	* Flag determining whether constructor overwrites or appends.
 	* By default, set to true, meaning that the constructor will append
@@ -55,6 +62,9 @@ public class FileLogger extends Logger
 	public static boolean appendFlag = true;
 
 	private FileChannel fileChan = null;
+	private AtomicBoolean closeOperations = new AtomicBoolean(false);	
+	private BlockingQueue<String> queue = new ArrayBlockingQueue<>(5000); // TODO: intentionally arbitrary number for now.;
+	private Thread writerThread;
 	
 	/**
 	* Construct with a process name and a filename.
@@ -96,10 +106,14 @@ public class FileLogger extends Logger
 	*/
 	public void close( )
 	{
+		closeOperations.set(true);
 		if (output != null)
+		{
 			output.close();
+		}
 		fileChan = null;
 		output = null;
+		
 	}
 
 	/**
@@ -111,28 +125,7 @@ public class FileLogger extends Logger
 	*/
 	public synchronized void doLog( int priority, String text )
 	{
-		output.println(standardMessage(priority, text));
-		
-		// MJM 2013/05/21: If multiple processes are writing to the same file,
-		// we can get in a situation where 'outputFile' refers to the current
-		// log but output (print stream) refers to the old renamed stream.
-		// The fix is to use the file channel position rather than
-		// File.length().
-		try 
-		{
-			long pos = fileChan.position();
-//System.out.println("pos=" + pos);
-//			if (outputFile.length() > maxLength)
-			if (pos > maxLength)
-			{
-				// MJM the close and opening of a new file are done inside rotate();
-				rotate();
-			}
-		}
-		catch(Exception ex)
-		{
-			System.err.println("Error rotating log: " + ex);
-		}
+		queue.add(standardMessage(priority, text));
 	}
 
 	/**
@@ -168,6 +161,26 @@ public class FileLogger extends Logger
 			FileOutputStream fos = new FileOutputStream(outputFile, appendFlag);
 			output = new PrintStream(fos, true);
 			fileChan = fos.getChannel();
+			writerThread = new Thread(() ->
+			{
+				while(closeOperations.get() == false)
+				{
+					try
+					{
+						String msg = queue.poll(1, TimeUnit.SECONDS);
+						if (msg != null && output != null && !output.checkError())
+						{
+							output.println(msg);
+						}
+					}
+					catch (InterruptedException ex)
+					{
+
+					}
+				}
+			},
+			"FileLogger-Writer");
+			writerThread.start();
 		}
 		catch(IOException ex)
 		{
@@ -212,4 +225,3 @@ public class FileLogger extends Logger
 		maxLength = len;
 	}
 }
-
