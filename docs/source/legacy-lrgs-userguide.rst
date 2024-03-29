@@ -160,7 +160,9 @@ The core of the LRGS software was written by ILEX Engineering, Inc.,
 under contract to the federal government. As such it is freely
 available. The software is now hosted at https://github.com/opendcs/opendcs 
 and maintained by the current OpenDCS maintainers and anyone else who 
-wishes to contribute.
+wishes to contribute.  If paid support is required or desired see
+https://github.com/opendcs/opendcs/wiki/Getting-Paid-Support for known 
+providers.
 
 Figure 2‑2: The Role of the LRGS.
 

@@ -70,13 +70,13 @@ to do the following (and more):
 OpenDCS is designed to operate with a database.  A fast majority 
 of the documentation here assumes that a database is already set 
 up an running.  Below is a high level schematic to conveys how
-a typical office has OpenDCS set up.  The set-up and install 
+a OpenDCS is typically set-up.  The set-up and install 
 directions below focus on a Windows PC set-up.  Further documatation
-about server set-up and how to set up an OpenHydro database can
+about server set-up and how to set up with OpenTSDB database can
 be found in the legacy documentation :doc:`Additional Content 
 on Installation <./legacy-install-guide>`
 
-.. image:: ./media/start/software/im-00-typical-office-high-level.JPG
+.. image:: ./media/start/software/im-00-typical-set-up.JPG
    :alt: typical office set-up
    :width: 800
 
@@ -302,8 +302,8 @@ and a Database Login should pop up prompting the user for credentials.
 
 USACE users:
 
-* USERNAME: User H7
-* PASSWORD: Oracle
+* USERNAME: Oracle User
+* PASSWORD: Oracle Password
 
 ***************************************
 OpenDCS Main Menu Components - Overview
