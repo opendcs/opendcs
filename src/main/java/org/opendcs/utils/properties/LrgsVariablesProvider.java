@@ -1,5 +1,7 @@
 package org.opendcs.utils.properties;
 
+
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
@@ -7,16 +9,17 @@ import java.util.Properties;
 import org.opendcs.spi.properties.PropertyValueProvider;
 
 /**
- * Handle baseline variables required by opendcs for various operations.
+ * Handle variables required by Current LRGS reports.
  */
-public class DcsVariablesProvider implements PropertyValueProvider
+public class LrgsVariablesProvider implements PropertyValueProvider
 {
-    private static String DCS_VARS[] = new String[] {"DCSTOOL_HOME",
-                                                     "DCSTOOL_USERDIR",
-                                                     "DCSTOOL_INSTALL_DIR",
-                                                     "DECODES_INSTALL_DIR",
-                                                     "LRGSHOME",
-                                                     "LRGSVERSION"};
+    private static String DCS_VARS[] = new String[] {"LRGSHOME",
+                                                     "LRGSVERSION",
+                                                     "SYSTEMSTAT",
+                                                     "STATSTYLE",
+                                                     "TZ",
+                                                     "IMAGEFILE",
+                                                     "HOSTNAME"};
 
     @Override
     public boolean canProcess(String value)
