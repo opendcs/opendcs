@@ -10,6 +10,8 @@ import org.opendcs.spi.properties.PropertyValueProvider;
 
 /**
  * Handle variables required by Current LRGS reports.
+ * See {@see DcsVariablesProvider} for justification as to way
+ * way they are handled this way.
  */
 public class LrgsVariablesProvider implements PropertyValueProvider
 {
@@ -38,5 +40,4 @@ public class LrgsVariablesProvider implements PropertyValueProvider
     {
         return properties.getProperty(varName, env.get(varName));
     }
-    
 }
