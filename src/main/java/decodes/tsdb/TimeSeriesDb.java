@@ -591,7 +591,7 @@ public abstract class TimeSeriesDb
 
         keyGenerator = null;
 
-        cpCompDepends_col1 = isHdb() ? "TS_ID" : "SITE_DATATYPE_ID";
+        cpCompDepends_col1 = isHdb() ? "SITE_DATATYPE_ID" : "TS_ID";
         getLogDateFormat().setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
