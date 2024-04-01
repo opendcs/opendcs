@@ -262,24 +262,118 @@ See the images above and below to better understand how the algorithm behaves.
 CopyAlgorithm
 -------------
 
-.. image:: ./media/resources/algorithms/im-07-excel-chooseone.JPG
+.. image:: ./media/resources/algorithms/im-10-excel-copyalgorithm.JPG
    :alt:  algorithm choose one
-   :width: 500
+   :width: 400
 
-The "Copy" algorithm *CopyAlgorithm* will choose one value 
-(the best one) from two time series to output. Additionally, 
-some upper and lower critiera limits can be appled. By default,
-the following criteria are assumed or executed.
+The "Copy" algorithm *CopyAlgorithm* will simply copy the 
+values from one time series to another time series.  By
+default the output will be at the exact same time slice
+as the input.  
+
+* If an input time series is missing and a value exists in the corresponding output time series, then the existing output value will remain (ie NOT be overwritten by a missing value)
+* Will copy and save all decimal places (i.e. Decimal places displayed in window below are not representative of what the true output is if more decimal places are present in input)
+
+See the images above and below to better understand how the algorithm behaves.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
+
+.. image:: ./media/resources/algorithms/im-11-comptest-copyalgorithm.JPG
+   :alt:  algorithm copy algorithm
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-12-comp-copyalgorithm.JPG
+   :alt:  algorithm copy algorithm
+   :width: 600
 
 CopyNoOverwrite
 ---------------
 
-... more content coming soon ...
+.. image:: ./media/resources/algorithms/im-13-excel-copynooverwrite.JPG
+   :alt:  algorithm copy no overwrite
+   :width: 500
+
+By default the following criteria are met or assumed in the algorithm.
+
+* If the output time series already has a value, it will NOT be overwritten by an input value or missing input (Computation Editor does not show what will be saved).
+* The property "input_MISSING" is set to ignore. 
+
+See the images above and below to better understand how the algorithm behaves.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
+
+.. image:: ./media/resources/algorithms/im-14-comptest-copynooverwrite.JPG
+   :alt:  algorithm copy no overwrite
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-15-comp-copynooverwrite.JPG
+   :alt:  algorithm copy no overwrite
+   :width: 600
 
 DisAggregate
 ------------
 
-... more content coming soon ...
+.. image:: ./media/resources/algorithms/im-16-excel-disaggregate.JPG
+   :alt:  algorithm disaggregate - fill and split
+   :width: 500
+
+.. image:: ./media/resources/algorithms/im-17-excel-disaggregate.JPG
+   :alt:  algorithm disaggregate - fill and split
+   :width: 500
+
+The "disaggregate" algorithm or *DisAggregate* will take an input
+time series and spread the values to an output time series.  This 
+algorithm requires that the interval of the input is equal to or 
+longer than the output.  For example, this algorithm is ideal for 
+converting a daily time series to an hourly time series, or a monthly
+to a daily time series.  There are two methods that this algorithm
+can be invoked.  It will either **fill** the new time series with the input 
+time value, or **split** the input over *x* time slices.
+
+By default the following criteria are met or assumed in the algorithm.
+
+* The lower bound of the disaggregated time window is equal to the input time slice.
+* By default the property "method" will be set to **fill**.
+* Only two options for computation method: **split** or **fill**.
+* If an input value is split over x intervals, at least 5 decimal places will save.
+
+See the images above and below to better understand how the algorithm behaves.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
+
+.. image:: ./media/resources/algorithms/im-18-comptest-disaggregate-fill.JPG
+   :alt:  algorithm disaggregate - fill
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-19-comptest-disaggregate-split.JPG
+   :alt:  algorithm disaggregate - split
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-20-comptest-disaggregate-fill.JPG
+   :alt:  algorithm disaggregate - fill
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-21-comptest-disaggregate-split.JPG
+   :alt:  algorithm disaggregate - split
+   :width: 600
 
 FillForward
 -----------
