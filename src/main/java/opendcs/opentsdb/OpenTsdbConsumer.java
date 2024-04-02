@@ -37,6 +37,7 @@ import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
+import org.slf4j.LoggerFactory;
 
 import opendcs.dai.TimeSeriesDAI;
 import decodes.consumer.DataConsumer;
@@ -99,6 +100,7 @@ import decodes.util.TSUtil;
 */
 public class OpenTsdbConsumer extends DataConsumer
 {
+	public static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTsdbConsumer.class);
 	private String module = "OpenTsdbConsumer";
 	
 	private String dbAuthFile = null;
@@ -321,12 +323,9 @@ public class OpenTsdbConsumer extends DataConsumer
 		catch(Exception ex)
 		{
 			String emsg = module + " Error storing TS data: " + ex;
-			Logger.instance().warning(emsg);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
-			else
-				ex.printStackTrace(System.err);
+			log.atError()
+			   .setCause(ex)
+			   .log(emsg);
 			// It might be a business rule exception, like improper units.
 			// So don't kill the whole routing spec, just go on.
 //			close();
@@ -354,14 +353,11 @@ public class OpenTsdbConsumer extends DataConsumer
 		throws DbIoException
 	{
 		TimeSeriesIdentifier tsid = null;
-
-		TimeSeriesDAI timeSeriesDAO = openTsdb.makeTimeSeriesDAO();
-		timeSeriesDAO.setAppModule(routingSpecThread.getRoutingSpec().getName());
-		TsDataSource ds = ((OpenTimeSeriesDAO)timeSeriesDAO).getTsDataSource();
-		DbKey sourceId = ds.getSourceId();
-		
-		try
+		try (TimeSeriesDAI timeSeriesDAO = openTsdb.makeTimeSeriesDAO();)
 		{
+			timeSeriesDAO.setAppModule(routingSpecThread.getRoutingSpec().getName());
+			TsDataSource ds = ((OpenTimeSeriesDAO)timeSeriesDAO).getTsDataSource();
+			DbKey sourceId = ds.getSourceId();
 			try
 			{
 				tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsidStr);
@@ -389,7 +385,10 @@ public class OpenTsdbConsumer extends DataConsumer
 						+ tsidStr + ": " + ex2);
 					return;
 				}
-				try { timeSeriesDAO.createTimeSeries(tsid); }
+				try
+				{
+					timeSeriesDAO.createTimeSeries(tsid);
+				}
 				catch(NoSuchObjectException ex2)
 				{
 					Logger.instance().warning(module + " Cannot create time series for path '"
@@ -398,8 +397,9 @@ public class OpenTsdbConsumer extends DataConsumer
 				}
 				catch(BadTimeSeriesException ex3)
 				{
-					Logger.instance().warning(module + " Cannot create time series for invalid path '"
-						+ tsidStr + ": " + ex3);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{} Cannot create time series for invalid path '{}'", module, tsidStr);
 					return;
 				}
 			}
@@ -424,18 +424,10 @@ public class OpenTsdbConsumer extends DataConsumer
 			}
 			catch (BadTimeSeriesException ex)
 			{
-				Logger.instance().failure(module + " Cannot save time series for '"
-					+ tsidStr + "': " + ex);
-				PrintStream ps = Logger.instance().getLogOutput();
-				if (ps != null)
-					ex.printStackTrace(ps);
-				else
-					ex.printStackTrace(System.err);
+				log.atError()
+				   .setCause(ex)
+				   .log("{} Cannot save time series for '{}'", module, tsidStr);
 			}
-		}
-		finally
-		{
-			timeSeriesDAO.close();
 		}
 	}
 	

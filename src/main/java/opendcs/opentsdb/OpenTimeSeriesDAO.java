@@ -730,13 +730,6 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			 && !checkSampleTime(tv, (CwmsTsId)tsid))               // settings say to ignore.
 				tv.setFlags(tv.getFlags() & ~(VarFlags.TO_DELETE|VarFlags.TO_WRITE));
 		}
-		
-		int numNew = 0;
-		int numUpdated = 0;
-		int numDeleted = 0;
-		int numProtected = 0;
-		int numNoOverwrite = 0;
-		int numErrors = 0;
 
 		// Get list of times that are marked for write or delete.
 		ArrayList<Date> times = new ArrayList<Date>();
@@ -773,99 +766,146 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		// Difference between CWMS and OpenTSDB: OpenTSDB stores flags exactly
 		// as they are defined in CwmsFlags.java. CWMS shifts them around on
 		// read and write.
-		for (int idx = 0; idx < ts.size(); idx++)
+		try
 		{
-			TimedVariable tv2write = ts.sampleAt(idx);
-			if (!(VarFlags.mustWrite(tv2write) || VarFlags.mustDelete(tv2write)))
-				continue;
-			
-			DbKey tvSourceId = tv2write.getSourceId();
-			if (DbKey.isNull(tvSourceId))
-				tvSourceId = daoSourceId;
-			
-			TimedVariable dbTv = alreadyInDb.findWithin(tv2write.getTime(), 5);
-
-			String q = "";
-			try
+			inTransaction(dao ->
 			{
-				if (dbTv == null)
+				int numNew = 0;
+				int numUpdated = 0;
+				int numDeleted = 0;
+				int numProtected = 0;
+				int numNoOverwrite = 0;
+				int numErrors = 0;
+				for (int idx = 0; idx < ts.size(); idx++)
+			{
+				TimedVariable tv2write = ts.sampleAt(idx);
+				if (!(VarFlags.mustWrite(tv2write) || VarFlags.mustDelete(tv2write)))
+					continue;
+				
+				DbKey tvSourceId = tv2write.getSourceId();
+				if (DbKey.isNull(tvSourceId))
+					tvSourceId = daoSourceId;
+				
+				TimedVariable dbTv = alreadyInDb.findWithin(tv2write.getTime(), 5);
+
+				String q = "";
+				try
 				{
-					if (VarFlags.mustWrite(tv2write))
+					if (dbTv == null)
 					{
-						// New value!
+						if (VarFlags.mustWrite(tv2write))
+						{
+							// New value!
+							int flags = tv2write.getFlags()
+								& ~(CwmsFlags.RESERVED_4_VAR | CwmsFlags.RESERVED_4_COMP);
+							q = "insert into " 
+								+ tableName + "(TS_ID, SAMPLE_TIME, TS_VALUE, FLAGS, SOURCE_ID, DATA_ENTRY_TIME) "
+								+ " values(         ?, ?          , ?       , ?    , ?        , ?)";							
+							try
+							{
+								dao.doModify(q, tsid.getKey(), tv2write.getTime(), 
+											(ctsid.getStorageType() == 'N' 
+											? tv2write.getDoubleValue()
+											: tv2write.getStringValue()),
+											flags,
+											tvSourceId,
+											now
+								);
+								numNew++;
+							}
+							catch (SQLException ex)
+							{
+								throw new DbIoException("Unable to insert value.",ex);
+							}
+						}
+						// else if mustDelete do nothing. There is no DB value.
+					}
+					// If existing value is protected, we may not change it!
+					else if ((dbTv.getFlags() & CwmsFlags.PROTECTED) != 0)
+					{
+						warning("DB Value for " + tsid.getUniqueString() + " at time " + 
+							db.getLogDateFormat().format(dbTv.getTime()) + " is protected. "
+							+ " Cannot modify!");
+						numProtected++;
+						continue;
+					}
+					else if (!VarFlags.isNoOverwrite(tv2write))
+						// There is a db value and it is unprotected
+						// Also, the NO_OVERWRITE bit means only write if it's new.
+					{
 						int flags = tv2write.getFlags()
 							& ~(CwmsFlags.RESERVED_4_VAR | CwmsFlags.RESERVED_4_COMP);
-						q = "insert into " 
-							+ tableName + "(TS_ID, SAMPLE_TIME, TS_VALUE, FLAGS, SOURCE_ID, DATA_ENTRY_TIME) "
-							+ " values("
-							+ tsid.getKey() 
-							+ ", " + db.sqlDate(tv2write.getTime())
-							+ ", " + (ctsid.getStorageType() == 'N' ? tv2write.getDoubleValue()
-							          : sqlString(tv2write.getStringValue()))
-							+ ", " + flags 
-							+ ", " + tvSourceId 
-							+ ", " + db.sqlDate(now) + ")";
-						doModify(q);
-						numNew++;
+						if (VarFlags.mustWrite(tv2write))
+						{
+							q = "update " + tableName + " set  ts_value = ?"
+								+ ", flags = ?"
+								+ ", source_id = ?"
+								+ ", data_entry_time = ?"
+								+ " where ts_id = ?"
+								+ " and sample_time = ?";
+							try
+							{
+								dao.doModify(q, (ctsid.getStorageType() == 'N'
+											? tv2write.getDoubleValue()
+											: tv2write.getStringValue()),
+											flags, tvSourceId, now, tsid.getKey(),
+											dbTv.getTime()
+								);
+								numUpdated++;
+							}
+							catch (SQLException ex)
+							{
+								throw new DbIoException("Update to update record.", ex);
+							}
+							
+						}
+						else if (VarFlags.mustDelete(tv2write))
+						{
+							q = "delete from " + tableName 
+								+ " where ts_id = ?"
+								+ " and sample_time = ?";
+							try
+							{
+								dao.doModify(q, tsid.getKey(), dbTv.getTime());
+								numDeleted++;
+							}
+							catch (SQLException ex)
+							{
+								throw new DbIoException("Unable to delete record.", ex);
+							}
+						}
 					}
-					// else if mustDelete do nothing. There is no DB value.
-				}
-				// If existing value is protected, we may not change it!
-				else if ((dbTv.getFlags() & CwmsFlags.PROTECTED) != 0)
-				{
-					warning("DB Value for " + tsid.getUniqueString() + " at time " + 
-						db.getLogDateFormat().format(dbTv.getTime()) + " is protected. "
-						+ " Cannot modify!");
-					numProtected++;
-					continue;
-				}
-				else if (!VarFlags.isNoOverwrite(tv2write))
-					// There is a db value and it is unprotected
-					// Also, the NO_OVERWRITE bit means only write if it's new.
-				{
-					int flags = tv2write.getFlags()
-						& ~(CwmsFlags.RESERVED_4_VAR | CwmsFlags.RESERVED_4_COMP);
-					if (VarFlags.mustWrite(tv2write))
+					else
 					{
-						q = "update " + tableName + " set  ts_value = "
-							+ (ctsid.getStorageType() == 'N' ? tv2write.getDoubleValue()
-								: sqlString(tv2write.getStringValue()))
-							+ ", flags = " + flags
-							+ ", source_id = " + tvSourceId
-							+ ", data_entry_time = " + db.sqlDate(now)
-							+ " where ts_id = " + tsid.getKey()
-							+ " and sample_time = " + db.sqlDate(dbTv.getTime());
-						doModify(q);
-						numUpdated++;
-					}
-					else if (VarFlags.mustDelete(tv2write))
-					{
-						q = "delete from " + tableName 
-							+ " where ts_id = " + tsid.getKey()
-							+ " and sample_time = " + db.sqlDate(dbTv.getTime());
-						doModify(q);
-						numDeleted++;
+						numNoOverwrite++;
 					}
 				}
-				else
-					numNoOverwrite++;
+				catch(NoConversionException ex)
+				{
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Cannot convert '{}' to number to store in database: ", tv2write);
+				}
+				catch(DbIoException ex)
+				{
+					log.atError()
+					   .setCause(ex)
+					   .log("Error in query '{}'", q);
+					numErrors++;
+				}
 			}
-			catch(NoConversionException ex)
-			{
-				warning("Cannot convert " + tv2write + " to number to store in database: "
-					+ ex);
-			}
-			catch(DbIoException ex)
-			{
-				warning("Error in query '" + q + "': " + ex);
-				numErrors++;
-			}
-		}
 
-		debug3("saveTimeSeries: New=" + numNew + ", updated=" + numUpdated
-			+ ", deleted=" + numDeleted + ", protected="
-				+ numProtected + ", noOverwrite=" + numNoOverwrite
-				+ ", errors=" + numErrors);
+			debug3("saveTimeSeries: New=" + numNew + ", updated=" + numUpdated
+				+ ", deleted=" + numDeleted + ", protected="
+					+ numProtected + ", noOverwrite=" + numNoOverwrite
+					+ ", errors=" + numErrors);
+				});
+		}
+		catch (Exception ex)
+		{
+			throw new DbIoException("error saving data.", ex);
+		}
+		
 	}
 
 	@Override
@@ -1463,7 +1503,14 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 			+ sqlBoolean(ctsid.isAllowDstOffsetVariation()) + ", "
 			+ sqlString(ctsid.getOffsetErrorAction().toString())
 			+ ")";
-		doModify(q);
+		try
+		{
+			doModify(q, new Object[0]);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to create timeseries", ex);
+		}
 		
 		try (CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
 		{
