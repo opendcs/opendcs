@@ -14,8 +14,11 @@
  */
 
 class OpenDcsDataTable {
-  constructor(domId, properties, inlineOptions, actions, initialize) {
+  constructor(domId, properties, inlineOptions, actions, initialize, tableProperties) {
 	  console.log("In super constructor for OpenDcsDataTable.");
+      var defaultTableProperties = {
+                                      cellBorders: true
+                                  };
 	  //Remove # if the passed id starts with one.
 	  if (domId.startsWith("#"))
 	  {
@@ -23,7 +26,7 @@ class OpenDcsDataTable {
 	  }
     this.domId = domId;
     this.jq = $(`#${domId}`);
-    
+    this.tableProperties = tableProperties != null ? tableProperties : defaultTableProperties;
     this.properties = properties;
     
     this.setInlineOptions(inlineOptions);
@@ -40,6 +43,15 @@ class OpenDcsDataTable {
   
   initDataTable() {
     this.dataTable = this.jq.DataTable(this.properties);
+
+    if (this.tableProperties != null)
+    {
+        if (this.tableProperties.cellBorders)
+        {
+            //Make the cells slightly bordered by adding this class to the table.
+            this.jq.addClass("opendcs-bordered-cells");
+        }
+    }
     this.jq.closest(".dataTables_wrapper").find("[function=addBlankRow]")
     	.on("click", {thisObject: this}, function(e) {
             e.data.thisObject.addBlankRowToDataTable(true);
@@ -658,7 +670,7 @@ class OpenDcsDataTable {
 
 
 class BasicTable extends OpenDcsDataTable {
-  constructor(domId, initialize) {
+  constructor(domId, initialize, tableProperties) {
 	  console.log("In constructor for Child Class Basic Table.");
 	  var defaultProps = {
 		        "searching": false,
@@ -688,12 +700,12 @@ class BasicTable extends OpenDcsDataTable {
           "onclick": null
       }];
 	  super(domId, defaultProps, defaultInlineOptions, 
-			  defaultActions, initialize);
+			  defaultActions, initialize, tableProperties);
   }
 }
 
 class PropertiesTable extends OpenDcsDataTable {
-  constructor(domId, propspecClasses, initialize) {
+  constructor(domId, propspecClasses, initialize, tableProperties) {
 	  console.log("In constructor for Child Class Properties Table.");
 	  var defaultProps = {
 	          "searching": false,
@@ -724,7 +736,8 @@ class PropertiesTable extends OpenDcsDataTable {
           "onclick": null
       }];
 	  super(domId, defaultProps, defaultInlineOptions, 
-			  defaultActions, initialize);
+			  defaultActions, initialize, tableProperties);
+
 	  this.propSpecMeta = {};
 	  if (propspecClasses != null)
 	  {
