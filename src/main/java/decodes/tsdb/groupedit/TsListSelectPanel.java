@@ -80,6 +80,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
+import org.slf4j.LoggerFactory;
+
 import opendcs.dai.TimeSeriesDAI;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -94,6 +96,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 @SuppressWarnings("serial")
 public class TsListSelectPanel extends JPanel
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(TsListSelectPanel.class);
 	//Panel
 	public String module = "TsListSelectPanel";
 	//Panel Owner
@@ -417,10 +420,11 @@ public class TsListSelectPanel extends JPanel
 			}
 			catch (DbIoException ex)
 			{
-				String msg = module + " Can not get the Time Series ID List "
-						+ ex.getMessage();
-				Logger.instance().failure(msg);
-				TopFrame.instance().showError(msg);
+				String msg = String.format("%s Can not get the Time Series ID List", module);
+				log.atError()
+				   .setCause(ex)
+				   .log();
+				TopFrame.instance().showError(msg + ex.getLocalizedMessage());
 			}
 			updateFilters();
 			reSort();

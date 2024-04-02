@@ -65,6 +65,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
 import org.slf4j.LoggerFactory;
 
 import decodes.cwms.CwmsFlags;
@@ -1544,37 +1545,49 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 			return null;
 		}
 		
-		String key = db.getAppId().toString();
-		if (appModule != null)
-			key = key + "-" + appModule;
+		final String key = db.getAppId().toString() 
+						 + (appModule != null ? "-" + appModule : "");
 		TsDataSource ret = key2ds.get(key);
 		if (ret == null)
 		{
-			String q = "select SOURCE_ID from TSDB_DATA_SOURCE where LOADING_APPLICATION_ID = " 
-				+ db.getAppId() 
-				+ " and MODULE " + (appModule == null ? "IS NULL" : ("= " + sqlString(appModule)));
-			ResultSet rs = doQuery2(q);
+			StringBuilder q = new StringBuilder("select SOURCE_ID from TSDB_DATA_SOURCE where LOADING_APPLICATION_ID = ?");
+			List<Object> parameters = new ArrayList<>();
+			if (appModule == null)
+			{
+				q.append(" and module is null");
+			}
+			else
+			{
+				q.append("module = ?");
+				parameters.add(appModule);
+			}
+			parameters.add(db.getAppId());
 			try
 			{
-				if (rs != null && rs.next())
+				ret = getSingleResultOr(q.toString(), rs -> 
 				{
 					DbKey sourceId = DbKey.createDbKey(rs, 1);
-					ret = new TsDataSource(sourceId, db.getAppId(), appModule);
-					key2ds.put(key, ret);
-				}
-				else
+					TsDataSource tmp = new TsDataSource(sourceId, db.getAppId(), appModule);
+					key2ds.put(key, tmp);
+					return tmp;
+				},
+				null,
+				parameters.toArray(new Object[0])
+				);
+				if (ret == null)
 				{
 					DbKey sourceId = this.getKey("TSDB_DATA_SOURCE");
 					ret = new TsDataSource(sourceId, db.getAppId(), appModule);
-					q = "insert into TSDB_DATA_SOURCE(SOURCE_ID, LOADING_APPLICATION_ID, MODULE) "
-						+ " values(" + sourceId + ", " + db.getAppId() + ", " + sqlString(appModule) + ")";
-					doModify(q);
+					q.setLength(0);
+					q.append("insert into TSDB_DATA_SOURCE(SOURCE_ID, LOADING_APPLICATION_ID, MODULE) "
+						+ " values(?,?,?)");
+					doModify(q.toString(),sourceId, db.getAppId(), appModule);
 					key2ds.put(key, ret);
 				}
 			}
 			catch(SQLException ex)
 			{
-				throw new DbIoException("Exception in query '" + q + "': " + ex);
+				throw new DbIoException("Exception in query '" + q.toString() + "'", ex);
 			}
 		}
 		return ret;
@@ -1587,8 +1600,6 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 	public ArrayList<TsDataSource> listDataSources()
 		throws DbIoException
 	{
-		ArrayList<TsDataSource> ret = new ArrayList<TsDataSource>();
-		
 		String q = "select a.SOURCE_ID, a.LOADING_APPLICATION_ID, a.MODULE, "
 			+ "b.LOADING_APPLICATION_NAME "
 			+ "from TSDB_DATA_SOURCE a, HDB_LOADING_APPLICATION b "
@@ -1596,21 +1607,18 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 		
 		try
 		{
-			ResultSet rs = doQuery(q);
-			while(rs != null && rs.next())
+			return new ArrayList<>(getResults(q, rs ->
 			{
 				TsDataSource tds = new TsDataSource(DbKey.createDbKey(rs, 1), 
 					DbKey.createDbKey(rs, 2), rs.getString(3));
 				tds.setAppName(rs.getString(4));
-				ret.add(tds);
-			}
+				return tds;
+			}));
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error listing TSDB_DATA_SOURCE: " + ex);
+			throw new DbIoException("Error listing TSDB_DATA_SOURCE: ", ex);
 		}
-		
-		return ret;
 	}
 	
 	public ArrayList<StorageTableSpec> getTableSpecs(char storageType)
