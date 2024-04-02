@@ -551,9 +551,8 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			if (!dit.hasNext() || ++numThisQuery >= MAX_IN_CLAUSE)
 			{
 				qb.append(")");
-				try
+				try (ResultSet rs = doQuery(qb.toString());)
 				{
-					ResultSet rs = doQuery(qb.toString());
 					while (rs != null && rs.next())
 					{
 						TimedVariable tv = rs2tv(rs, ctsid, unitConverter);
@@ -628,7 +627,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			String msg = "getPreviousValue() Error in query '"
 					+ q + "': " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -677,7 +676,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			String msg = "getPreviousValue() Error in query '"
 					+ q + "': " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -1552,16 +1551,16 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 		{
 			StringBuilder q = new StringBuilder("select SOURCE_ID from TSDB_DATA_SOURCE where LOADING_APPLICATION_ID = ?");
 			List<Object> parameters = new ArrayList<>();
+			parameters.add(db.getAppId());
 			if (appModule == null)
 			{
 				q.append(" and module is null");
 			}
 			else
 			{
-				q.append("module = ?");
+				q.append(" and module = ?");
 				parameters.add(appModule);
 			}
-			parameters.add(db.getAppId());
 			try
 			{
 				ret = getSingleResultOr(q.toString(), rs -> 
