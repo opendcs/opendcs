@@ -1291,7 +1291,7 @@ public abstract class TimeSeriesDb extends Database
         tsdb.info("Connected to TSDB Version " + tsdb.tsdbVersion + ", Description: " + tsdb.tsdbDescription);
         tsdb.readTsdbProperties(con);
         tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9
-            ? "TS_ID" : "SITE_DATATYPE_ID";
+            ? "SITE_DATATYPE_ID" : "TS_ID";
 
     }
 
@@ -1822,7 +1822,9 @@ public abstract class TimeSeriesDb extends Database
         }
         catch(Exception ex)
         {
-            warning("fillDependentCompIds: " + ex);
+            log.atWarn()
+               .setCause(ex)
+               .log("Unable to fill dependent comp IDs using Query '{}'", q);
         }
         return cts.getDependentCompIds().size();
     }
