@@ -427,6 +427,8 @@ import java.util.TimeZone;
 
 import javax.sql.DataSource;
 
+import org.slf4j.LoggerFactory;
+
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -489,6 +491,7 @@ data.
 public abstract class TimeSeriesDb extends Database
     implements HasProperties, DatabaseConnectionOwner
 {
+    public static final org.slf4j.Logger log = LoggerFactory.getLogger(TimeSeriesDb.class);
     public static String module = "tsdb";
 
     /** The application ID of the connected program */
@@ -2165,7 +2168,13 @@ public abstract class TimeSeriesDb extends Database
     @Override
     public void freeConnection(Connection conn)
     {
-
+        try
+        {
+            conn.close();
+        }
+        catch (SQLException ex)
+        {
+            log.atError().setCause(ex).log("unable to close connection.");
+        }
     }
-
 }

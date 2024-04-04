@@ -2467,16 +2467,13 @@ public class SqlDatabaseIO
     @Override
     public void freeConnection(Connection conn)
     {
-        // If we are pooling, close the connection which puts it back into the pool.
-        if (poolingDataSource != null)
+        try
         {
-            try
-            {
-                conn.close();
-            }
-            catch (Exception ex)
-            {
-            }
+            conn.close();
+        }
+        catch (Exception ex)
+        {
+            log.atError().setCause(ex).log("unable to close connection.");
         }
     }
 
