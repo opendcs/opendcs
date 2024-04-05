@@ -75,7 +75,7 @@ jobs:
           name: test-results-${{matrix.platform}}-jdk-${{matrix.jdk}}
           path: |
             build/reports/**
-            build/test-integration/tmp/configs**
+            build/test/test-integration*/tmp/configs**
             build/test-gui.webm
 #docker-images:
 #  runs-on: ubuntu-latest
