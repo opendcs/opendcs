@@ -600,7 +600,8 @@ public abstract class TimeSeriesDb extends Database
         {
             throw new DatabaseException("Unable to initialize database.", ex);
         }
-        cpCompDepends_col1 = isHdb() ? "SITE_DATATYPE_ID" : "TS_ID";
+        cpCompDepends_col1 = isHdb() || this.tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
+                           ? "TS_ID" : "SITE_DATATYPE_ID";
         getLogDateFormat().setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
