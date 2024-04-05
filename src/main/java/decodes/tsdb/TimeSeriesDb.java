@@ -1327,7 +1327,7 @@ public abstract class TimeSeriesDb
         readVersionInfo(tsdb, con);
         tsdb.info("Connected to TSDB Version " + tsdb.tsdbVersion + ", Description: " + tsdb.tsdbDescription);
         tsdb.readTsdbProperties(con);
-        tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion >= TsdbDatabaseVersion.VERSION_9
+        tsdb.cpCompDepends_col1 = tsdb.isHdb() || tsdb.tsdbVersion < TsdbDatabaseVersion.VERSION_9
             ? "SITE_DATATYPE_ID" : "TS_ID";
 
     }
