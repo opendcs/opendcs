@@ -2,7 +2,6 @@ package decodes.sql;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -10,7 +9,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Vector;
 
-import decodes.db.Database;
+import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
+
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
@@ -31,7 +32,6 @@ import decodes.util.DecodesSettings;
 
 import opendcs.dao.DaoHelper;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * PlatformListIO handles the I/O of the PlatformList object and some of its
@@ -554,15 +554,20 @@ public class PlatformListIO extends SqlDbObjIo
                                 log.warn("Platform Sensor with invalid site ID={}, site record left blank.", siteId);
                             }
                         }
-                    } else
+                    }
+                    else
                     {
                         try
                         {
                             ps.site.read();
                         }
-                        catch (DatabaseException e)
+                        catch (Exception ex)
                         {
-                            throw new SQLException(e);
+                            LoggingEventBuilder atWarn = log.atWarn();
+                            if (log.isTraceEnabled()){
+                                atWarn.setCause(ex);
+                            }
+                            atWarn.log("No Site for Code {}", ps.site.getId());
                         }
                     }
                 } finally

@@ -18,7 +18,9 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.opentsdb.Interval;
 
+import org.opendcs.database.DatabaseService;
 import org.opendcs.database.SimpleDataSource;
+import org.opendcs.spi.database.DatabaseProvider;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
@@ -267,9 +269,7 @@ public class DbImport
 		this.newDesignator = newDesignator;
 		this.defaultAgency = defaultAgency;
 		this.newPlatformOwner = newPlatformOwner;
-		// Construct the database and the interface specified by properties.
-		theDb = new decodes.db.Database(false);
-		Database.setDb(theDb);
+		
 
 		try
 		{
@@ -278,16 +278,8 @@ public class DbImport
 			// unfortunately we still need to use the global decodes settings here.
 			settings.loadFromProfile(profile);
 			log.info("Using Database...");
-			if (dbLoc != null)
-			{
-				log.info("\t'{}'", dbLoc);
-				theDbio = DatabaseIO.makeDatabaseIO(settings, dbLoc);
-			}
-			else
-			{
-				log.info("\t'{}/{}'", settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-				theDbio = DatabaseIO.makeDatabaseIO(settings);
-			}
+			theDb = DatabaseService.getDatabaseFor("utility", settings);				
+			Database.setDb(theDb);
 		}
 		catch (IOException ex)
 		{
@@ -296,7 +288,6 @@ public class DbImport
 
 		// Standard Database Initialization for all Apps:
 		Site.explicitList = false; // YES Sites automatically added to SiteList
-		theDb.setDbIo(theDbio);
 
 		if (pdtFilePath != null)
 		{

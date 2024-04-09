@@ -103,9 +103,9 @@ public class CwmsPlatformListIO extends PlatformListIO
 							configId);
 					if (pc == null)
 					{
-						Logger.instance().warning("Platform(" + platformId 
-							+ ") references config(" + configId + ")" +
-							", which is not in list, will attempt read...");
+						//Logger.instance().warning("Platform(" + platformId 
+						//	+ ") references config(" + configId + ")" +
+						//	", which is not in list, will attempt read...");
 						try { pc = _configListIO.getConfig(configId); }
 						catch(Exception ex)
 						{

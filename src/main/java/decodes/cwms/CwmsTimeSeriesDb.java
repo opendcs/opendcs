@@ -7,11 +7,13 @@ import java.util.GregorianCalendar;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.TimeZone;
 
 import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
+import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -23,6 +25,7 @@ import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.lang.Const;
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 import ilex.var.NamedVariable;
 import ilex.var.Variable;
 import decodes.cwms.rating.CwmsRatingDao;
@@ -34,6 +37,8 @@ import decodes.db.SiteName;
 import decodes.db.DataType;
 import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
+import decodes.sql.DecodesDatabaseVersion;
+import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.*;
 import decodes.util.DecodesSettings;
 
@@ -70,7 +75,6 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 	public CwmsTimeSeriesDb(String appName, javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
 		super(appName, dataSource, settings);
-
 		Site.explicitList = true;
 
 		// CWMS uses ts_code as a unique identifier of a time-series
@@ -789,15 +793,9 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 	@Override
 	public Connection getConnection()
 	{
-		// Called from DAOs to get a new connection from the pool.
-		if (conInfo == null || conInfo.getLoginInfo() == null || pool == null)
-		{
-			failure("CwmsTimeSeriesDb.getConnection -- loginInfo is null! DB not initialized?");
-			throw new RuntimeException("Invalid sequence of events. Attempt to retrieve DB connection before information initialized.");
-		}
 		try
 		{
-			return pool.getConnection();
+			return dataSource.getConnection();
 		}
 		catch(SQLException ex)
 		{
@@ -812,7 +810,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 	{
 		try
 		{
-			pool.returnConnection(con);
+			con.close();
 		}
 		catch(SQLException ex)
 		{
@@ -822,8 +820,71 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 
 	@Override
 	public void postConInit(Connection conn) throws SQLException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'postConInit'");
+		//Logger.instance().info(module +
+		//				" Connected to DECODES CWMS Database " + sqlDbLocation + " as user " + _dbUser
+		//				+ " with officeID=" + dbOfficeId);
+		readVersionInfo(this, conn);
+
+		// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
+		// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
+		int decodesDbVersion = getDecodesDatabaseVersion();
+		Logger.instance().info(module + " decodesDbVersion=" + decodesDbVersion);
+		keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
+				new OracleSequenceKeyGenerator() :
+				new CwmsSequenceKeyGenerator(decodesDbVersion);
+			TimeSeriesDb.readVersionInfo(this, conn);
+
+		String q = null;
+		try(Statement st = conn.createStatement();)
+		{
+			// Hard-code date & timestamp format for reads. Always use GMT.
+			q = "ALTER SESSION SET TIME_ZONE = 'GMT'";
+			Logger.instance().info(q);
+			st.execute(q);
+
+			q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
+			Logger.instance().info(q);
+			st.execute(q);
+
+			q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
+			Logger.instance().info(q);
+			st.execute(q);
+
+			q = "ALTER SESSION SET nls_timestamp_tz_format = 'yyyy-mm-dd hh24:mi:ss'";
+			Logger.instance().info(q);
+			st.execute(q);
+
+			Logger.instance().info("DECODES IF Connected to TSDB Version " + tsdbVersion);
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Error in '" + q + "': " + ex
+				+ " -- will proceed anyway.";
+			Logger.instance().failure(msg + " " + ex);
+		}
+
+		// CWMS-8979 Allow settings in the database to override values in user.properties.
+		String settingsApp = System.getProperty("SETTINGS");
+		if (settingsApp != null)
+		{
+			Logger.instance().info("SqlDatabaseIO Overriding Decodes Settings with properties in "
+				+ "Process Record '" + settingsApp + "'");
+			
+			try (LoadingAppDAI loadingAppDAO = makeLoadingAppDAO())
+			{
+				CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
+				PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
+			}
+			catch (DbIoException ex)
+			{
+				Logger.instance().warning("Cannot load settings from app '" + settingsApp + "': " + ex);
+			}
+			catch (NoSuchObjectException ex)
+			{
+				Logger.instance().warning("Cannot load settings from non-existent app '" 
+					+ settingsApp + "': " + ex);
+			}
+		}
 	}
 
 	@Override

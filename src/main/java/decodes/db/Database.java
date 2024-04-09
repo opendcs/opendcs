@@ -259,9 +259,10 @@ public class Database extends DatabaseObject
 		catch(DatabaseException ex)
 		{
 			String msg = "Cannot read enum: " + enumName + ": " + ex;
+			log.atError()
+			   .setCause(ex)
+			   .log(msg);
 			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
 			return null;
 		}
 	}

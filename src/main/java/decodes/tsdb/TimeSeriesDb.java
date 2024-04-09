@@ -406,6 +406,7 @@ import ilex.util.HasProperties;
 import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
+import lrgs.gui.DecodesInterface;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -465,6 +466,7 @@ import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
 import opendcs.util.sql.WrappedConnection;
 import decodes.util.DecodesSettings;
+import decodes.util.ResourceFactory;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -475,6 +477,7 @@ import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.UnitConverter;
+import decodes.decoder.DecodesFunction;
 import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
@@ -590,7 +593,7 @@ public abstract class TimeSeriesDb extends Database
         this.dataSource = dataSource;
         initDecodesDatabaseIO();
         setupKeyGenerator();
-        this.read(); // initialize decodes
+
         try (Connection conn = dataSource.getConnection())
         {
             determineTsdbVersion(conn, this);
@@ -603,6 +606,9 @@ public abstract class TimeSeriesDb extends Database
         cpCompDepends_col1 = isHdb() || this.tsdbVersion >= TsdbDatabaseVersion.VERSION_9 
                            ? "TS_ID" : "SITE_DATATYPE_ID";
         getLogDateFormat().setTimeZone(TimeZone.getTimeZone("UTC"));
+        ResourceFactory.instance().initializeFunctionList();
+        this.read(); // initialize decodes
+
     }
 
     protected abstract void initDecodesDatabaseIO() throws DatabaseException;

@@ -25,6 +25,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import opendcs.dai.EnumDAI;
 
 import decodes.db.DbEnum;
@@ -42,6 +45,7 @@ public class EnumSqlDao
 	extends DaoBase 
 	implements EnumDAI
 {
+	private static Logger log = LoggerFactory.getLogger(EnumSqlDao.class);
 	private static DbObjectCache<DbEnum> cache = new DbObjectCache<DbEnum>(3600000, false);
 	
 	public EnumSqlDao(DatabaseConnectionOwner tsdb)
@@ -122,7 +126,7 @@ public class EnumSqlDao
 		throws DbIoException
 	{
 		int dbVer = db.getDecodesDatabaseVersion();
-
+		String q = "<failed before it was set>";
 		try
 		{
 			synchronized(cache)
@@ -131,29 +135,37 @@ public class EnumSqlDao
 				 * This could also be a single query with a join.
 				 * though a little trickier with the different versions columns
 				 */
-				doQuery("SELECT " + getEnumColumns(dbVer) + " FROM Enum", 
-							  (rs) -> {
-								DbEnum en = rs2Enum(rs, dbVer);
-								cache.put(en);
-							});
+				q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
+				doQuery(q,
+						(rs) ->
+						{
+							DbEnum en = rs2Enum(rs, dbVer);
+							cache.put(en);
+						});
 				
-				String q = "SELECT enumId, enumValue, description, execClass, editClass";
+				q = "SELECT enumId, enumValue, description, execClass, editClass";
 				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
 					q = q + ", sortNumber";
 				q = q + " FROM EnumValue";
-				doQuery(q, (rs) -> {
-					DbKey key = DbKey.createDbKey(rs, 1);
-					DbEnum dbEnum = cache.getByKey(key);
-					if (dbEnum != null)
-						rs2EnumValue(rs, dbEnum);
+				doQuery(q,
+						(rs) ->
+						{
+							DbKey key = DbKey.createDbKey(rs, 1);
+							DbEnum dbEnum = cache.getByKey(key);
+							if (dbEnum != null)
+							{
+								rs2EnumValue(rs, dbEnum);
+							}
 				});				
 			}
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error in query: " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "Error in query: '" + q + "'";
+			log.atWarn()
+				.setCause(ex)
+				.log(msg);
+			throw new DbIoException(msg, ex);
 		}
 	}
 
