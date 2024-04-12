@@ -3,8 +3,6 @@
 */
 package ilex.util;
 
-import java.util.Date;
-import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -94,11 +92,7 @@ public class FileLogger extends Logger
 		super(procName);
 		this.filename = EnvExpander.expand(filename);
 		this.maxLength = maxLength;
-//		outputFile = new File(EnvExpander.expand(filename));
 		openNewLog();
-		
-//		FileOutputStream fos = new FileOutputStream(outputFile, appendFlag);
-//		output = new PrintStream(fos, true);
 	}
 
 	/**
