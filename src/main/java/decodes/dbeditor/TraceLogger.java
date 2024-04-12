@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import ilex.util.Logger;
 
 /**
-Used to grabe 'trace' log messages when Decode button is pressed.
+TraceLogger captures and display 'trace' log messages in a dialog, during interactive operation like decoding.
 */
 public class TraceLogger extends Logger
 {
