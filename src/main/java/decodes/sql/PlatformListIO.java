@@ -2,6 +2,7 @@ package decodes.sql;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -9,6 +10,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Vector;
 
+import decodes.db.Database;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
@@ -27,10 +29,12 @@ import decodes.db.Site;
 import decodes.tsdb.DbIoException;
 import decodes.util.DecodesSettings;
 
+import opendcs.dao.DaoHelper;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This handles the I/O of the PlatformList object and some of its
+ * PlatformListIO handles the I/O of the PlatformList object and some of its
  * kids to/from the SQL database.
  * When reading, this reads the Platform and TransportMedium tables.
  * Note, though, that only the MediumType and MediumId fields of the
@@ -38,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PlatformListIO extends SqlDbObjIo
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(PlatformListIO.class);
+    private final static Logger log = LoggerFactory.getLogger(PlatformListIO.class);
 
     /** Transient reference to the PlatformList that we're working on. */
     protected PlatformList _pList;
@@ -101,6 +105,12 @@ public class PlatformListIO extends SqlDbObjIo
 
         _configListIO = configListIO;
         _equipmentModelListIO = emlIO;
+    }
+
+    private DaoHelper getDaoHelper()
+    {
+        DaoHelper h = new DaoHelper(_dbio,"sql.platformListIO",connection());
+        return h;
     }
 
     @Override
@@ -167,7 +177,7 @@ public class PlatformListIO extends SqlDbObjIo
                     "LastModifyTime, Expiration " +
                     "FROM Platform");
 
-            log.debug("Executing query '" + q + "'");
+            log.debug("Executing query '{}'", q );
             try (ResultSet rs = stmt.executeQuery(q))
             {
                 if (rs != null)
@@ -227,26 +237,28 @@ public class PlatformListIO extends SqlDbObjIo
     protected void readAllTransportMedia(PlatformList platformList)
         throws SQLException, DatabaseException
     {
-        try (Statement stmt = createStatement();)
+        String q = "select " + getTmColumns() + " from TransportMedium ";
+        log.debug("Executing query '{}'", q);
+        getDaoHelper().doQuery(q, rs ->
         {
-            String q = "select " + getTmColumns() + " from TransportMedium ";
-            log.debug("Executing query '" + q + "'");
-            try (ResultSet rs = stmt.executeQuery(q))
+            DbKey platId = DbKey.createDbKey(rs, 1);
+            Platform p = platformList.getById(platId);
+            if (p == null)
             {
-                while (rs != null && rs.next())
+                log.debug("TM for non-existent platform id={} TM.type={}, TM.mediumId={}",
+                        platId, rs.getString(2), rs.getString(3));
+            }
+            else
+            {
+                try
                 {
-                    DbKey platId = DbKey.createDbKey(rs, 1);
-                    Platform p = platformList.getById(platId);
-                    if (p == null)
-                    {
-                        log.debug("TM for non-existent platform id={} TM.type={}, TM.mediumId={}",
-                                platId, rs.getString(2), rs.getString(3));
-                        continue;
-                    }
                     rs2tm(rs, p);
+                } catch (Exception e)
+                {
+                    log.error("Error reading TransportMedium", e);
                 }
             }
-        }
+        });
     }
 
     /**
@@ -260,26 +272,30 @@ public class PlatformListIO extends SqlDbObjIo
     * @param p the Platform
     */
     private void readTransportMedia(Platform p)
-        throws SQLException, DatabaseException
+        throws SQLException
     {
         p.transportMedia.clear();
 
         String q = "select " + getTmColumns() + " from TransportMedium "
-            + "WHERE PlatformId = " + p.getId();
+            + "WHERE PlatformId = ? ";
 
-        try (Statement stmt = createStatement();)
+        getDaoHelper().doQuery(q, rs ->
         {
-            try (ResultSet rs = stmt.executeQuery(q);)
+            try
             {
-                while (rs != null && rs.next())
-                {
-                    rs2tm(rs, p);
-                }
+                rs2tm(rs, p);
+            }catch(DatabaseException e)
+            {
+                throw new SQLException(e);
             }
-        }
+        },p.getId());
+
     }
 
     /**
+     * Builds a TransportMedium from a Platform and ResultSet
+     * The TransportMedium is added to the Platform
+     *
      * Passed a result set where next==true. Assume columns of tmColumns.
      * If passed platform != null, the tm is added to the platforms list of media.
      * @param rs the result set
@@ -359,15 +375,12 @@ public class PlatformListIO extends SqlDbObjIo
     public void readPlatform(Platform p)
         throws SQLException, DatabaseException
     {
-        try (Statement stmt = createStatement();)
-        {
-            String q = "SELECT " + getColTpl() + " FROM Platform WHERE ID = " + p.getId();
-            log.debug("readPlatform() Executing '{}'", q );
-            try (ResultSet rs = stmt.executeQuery(q);)
-            {
 
+            String q = "SELECT " + getColTpl() + " FROM Platform WHERE ID = ?";
+            log.debug("readPlatform() Executing '{}'", q );
+            getDaoHelper().doQuery(q, rs ->
+            {
                 // Can only be 1 platform with a given ID.
-                if (rs != null && rs.next())
                 {
                     p.setAgency(rs.getString(2));
 
@@ -379,10 +392,9 @@ public class PlatformListIO extends SqlDbObjIo
                         // If site was previously loaded, use it.
                         p.setSite(p.getDatabase().siteList.getSiteById(siteId));
 
-                        SiteDAI siteDAO = _dbio.makeSiteDAO();
-                        siteDAO.setManualConnection(connection);
-                        try
+                        try(SiteDAI siteDAO = _dbio.makeSiteDAO())
                         {
+                            siteDAO.setManualConnection(connection);
                             if (p.getSite() == null)
                             {
                                 if (!DbKey.isNull(siteId))
@@ -408,15 +420,10 @@ public class PlatformListIO extends SqlDbObjIo
                                 }
                                 catch (Exception e)
                                 {
-                                    // TODO Auto-generated catch block
                                     log.error("An error occurred reading site {}",
                                             p.getSite(),e);
                                 }
                             }
-                        }
-                        finally
-                        {
-                            siteDAO.close();
                         }
                     }
 
@@ -443,6 +450,9 @@ public class PlatformListIO extends SqlDbObjIo
                             // Already in list. Check to see if it's current.
                             else
                                 _configListIO.readConfig(pc.getId());
+                        }catch(DatabaseException e)
+                        {
+                            throw new SQLException(e);
                         }
                         finally
                         {
@@ -468,11 +478,13 @@ public class PlatformListIO extends SqlDbObjIo
                     {
                         PropertiesDAI propsDao = _dbio.makePropertiesDAO();
                         propsDao.setManualConnection(connection);
-                        try { propsDao.readProperties("PlatformProperty", "platformID", p.getId(),
-                            p.getProperties()); }
+                        try {
+                            propsDao.readProperties("PlatformProperty", "platformID", p.getId(),
+                            p.getProperties());
+                        }
                         catch (DbIoException e)
                         {
-                            throw new DatabaseException(e.getMessage());
+                            throw new SQLException(e);
                         }
                         finally
                         {
@@ -480,8 +492,8 @@ public class PlatformListIO extends SqlDbObjIo
                         }
                     }
                 }
-            }
-        }
+            },p.getId());
+
         readPlatformSensors(p);
     }
 
@@ -494,78 +506,88 @@ public class PlatformListIO extends SqlDbObjIo
     private void readPlatformSensors(Platform p)
         throws DatabaseException, SQLException
     {
-        try (Statement stmt = createStatement();)
+
+        StringBuilder q = new StringBuilder(120);
+        q.append("SELECT platformId, sensorNumber, siteId");
+        if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
         {
-            String q = "SELECT platformId, sensorNumber, siteId";
-            if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+            q.append(", dd_nu");
+        }
+        q.append(" FROM PlatformSensor WHERE PlatformId = ? ");
+        q.append(" ORDER BY sensorNumber");
+
+        getDaoHelper().doQuery(q.toString(), rs ->
+        {
+            if (rs == null)
             {
-                q = q + ", dd_nu";
+                return;
             }
-            q = q + " FROM PlatformSensor WHERE PlatformId = "
-            + p.getId() + " ORDER BY sensorNumber";
+            int sn = rs.getInt(2);
+            PlatformSensor ps = new PlatformSensor(p, sn);
+            p.addPlatformSensor(ps);
 
-            try (ResultSet rs = stmt.executeQuery(q);)
+            DbKey siteId = DbKey.createDbKey(rs, 3);
+            if (!rs.wasNull())
             {
+                // If site was previously loaded, use it.
+                ps.site = p.getDatabase().siteList.getSiteById(siteId);
 
-                if (rs != null)
+                boolean commitAfterSelect = _dbio.commitAfterSelect;
+                try
                 {
-                    while (rs.next())
+                    // Caller will commit after THIS method returns, so don't
+                    // have it commit after we read the site.
+                    _dbio.commitAfterSelect = false;
+
+                    // Else attempt to read site from database.
+                    if (ps.site == null)
                     {
-                        int sn = rs.getInt(2);
-                        PlatformSensor ps = new PlatformSensor(p, sn);
-                        p.addPlatformSensor(ps);
-
-                        DbKey siteId = DbKey.createDbKey(rs, 3);
-                        if (!rs.wasNull())
+                        if (siteId != Constants.undefinedId)
                         {
-                            // If site was previously loaded, use it.
-                            ps.site = p.getDatabase().siteList.getSiteById(siteId);
-
-                            boolean commitAfterSelect = _dbio.commitAfterSelect;
+                            Site site = new Site();
                             try
                             {
-                                // Caller will commit after THIS method returns, so don't
-                                // have it commit after we read the site.
-                                _dbio.commitAfterSelect = false;
-
-                                // Else attempt to read site from database.
-                                if (ps.site == null)
-                                {
-                                    if (siteId != Constants.undefinedId)
-                                    {
-                                        Site site = new Site();
-                                        site.setId(siteId);
-                                        try
-                                        {
-                                            site.read();
-                                            p.getDatabase().siteList.addSite(site);
-                                            ps.site = site;
-                                        }
-                                        catch(DatabaseException ex)
-                                        {
-                                            log.warn("Platform Sensor with invalid site ID={}, site record left blank.",siteId);
-                                        }
-                                    }
-                                }
-                                else
-                                    ps.site.read();
-                            }
-                            finally
+                                site.setId(siteId);
+                                site.read();
+                                p.getDatabase().siteList.addSite(site);
+                                ps.site = site;
+                            } catch (DatabaseException ex)
                             {
-                                _dbio.commitAfterSelect = commitAfterSelect;
+                                log.warn("Platform Sensor with invalid site ID={}, site record left blank.", siteId);
                             }
                         }
-                        if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+                    } else
+                    {
+                        try
                         {
-                            int dd_nu = rs.getInt(4);
-                            ps.setUsgsDdno( !rs.wasNull() ? dd_nu : 0 );
+                            ps.site.read();
+                        } catch (DatabaseException e)
+                        {
+                            throw new SQLException(e);
                         }
-
-                        readPSProps(ps, p.getId());
                     }
+                } finally
+                {
+                    _dbio.commitAfterSelect = commitAfterSelect;
                 }
             }
-        }
+            if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+            {
+                int dd_nu = rs.getInt(4);
+                ps.setUsgsDdno(!rs.wasNull() ? dd_nu : 0);
+            }
+
+            try
+            {
+                readPSProps(ps, p.getId());
+            } catch (DatabaseException e)
+            {
+                throw new SQLException(e);
+            }
+
+        }, p.getId());
+
+
     }
 
     /**
