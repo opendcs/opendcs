@@ -519,10 +519,6 @@ public class PlatformListIO extends SqlDbObjIo
 
         getDaoHelper().doQuery(q.toString(), rs ->
         {
-            if (rs == null)
-            {
-                return;
-            }
             int sn = rs.getInt(2);
             PlatformSensor ps = new PlatformSensor(p, sn);
             p.addPlatformSensor(ps);
