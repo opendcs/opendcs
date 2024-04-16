@@ -47,8 +47,6 @@ public class PlatformListIO extends SqlDbObjIo
     /** Transient reference to the PlatformList that we're working on. */
     protected PlatformList _pList;
 
-    /** Transient reference to the PlatformList that we're working on. */
-    protected PlatformList _platList;
     /**
     * This is a reference to the ConfigListIO object for this SQL database.
     * This is passed in from the SqlDatabaseIO object when this PlatformListIO
