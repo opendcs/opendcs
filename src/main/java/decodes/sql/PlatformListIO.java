@@ -744,8 +744,11 @@ public class PlatformListIO extends SqlDbObjIo
             PropertiesDAI propsDao = _dbio.makePropertiesDAO();
             propsDao.setManualConnection(connection);
 
-            try { propsDao.writeProperties("PlatformProperty", "platformId", p.getId(),
-                p.getProperties()); }
+            try
+            {
+                propsDao.writeProperties("PlatformProperty", "platformId", p.getId(),
+                p.getProperties());
+            }
             catch (DbIoException e)
             {
                 throw new DatabaseException(e.getMessage());
