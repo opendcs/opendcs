@@ -251,7 +251,8 @@ public class PlatformListIO extends SqlDbObjIo
                 try
                 {
                     rs2tm(rs, p);
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     log.error("Error reading TransportMedium", e);
                 }
@@ -282,7 +283,8 @@ public class PlatformListIO extends SqlDbObjIo
             try
             {
                 rs2tm(rs, p);
-            }catch(DatabaseException e)
+            }
+            catch(DatabaseException e)
             {
                 throw new SQLException(e);
             }
@@ -448,7 +450,8 @@ public class PlatformListIO extends SqlDbObjIo
                             // Already in list. Check to see if it's current.
                             else
                                 _configListIO.readConfig(pc.getId());
-                        }catch(DatabaseException e)
+                        }
+                        catch(DatabaseException e)
                         {
                             throw new SQLException(e);
                         }
@@ -549,7 +552,8 @@ public class PlatformListIO extends SqlDbObjIo
                                 site.read();
                                 p.getDatabase().siteList.addSite(site);
                                 ps.site = site;
-                            } catch (DatabaseException ex)
+                            }
+                            catch (DatabaseException ex)
                             {
                                 log.warn("Platform Sensor with invalid site ID={}, site record left blank.", siteId);
                             }
@@ -559,7 +563,8 @@ public class PlatformListIO extends SqlDbObjIo
                         try
                         {
                             ps.site.read();
-                        } catch (DatabaseException e)
+                        }
+                        catch (DatabaseException e)
                         {
                             throw new SQLException(e);
                         }
@@ -578,7 +583,8 @@ public class PlatformListIO extends SqlDbObjIo
             try
             {
                 readPSProps(ps, p.getId());
-            } catch (DatabaseException e)
+            }
+            catch (DatabaseException e)
             {
                 throw new SQLException(e);
             }
@@ -598,8 +604,10 @@ public class PlatformListIO extends SqlDbObjIo
     {
         PropertiesDAI propsDao = _dbio.makePropertiesDAO();
         propsDao.setManualConnection(connection);
-        try { propsDao.readProperties("PlatformSensorProperty", "platformID", "SensorNumber",
-            ps.platform.getId(), ps.sensorNumber, ps.getProperties()); }
+        try {
+            propsDao.readProperties("PlatformSensorProperty", "platformID", "SensorNumber",
+            ps.platform.getId(), ps.sensorNumber, ps.getProperties());
+        }
         catch (DbIoException e)
         {
             throw new DatabaseException(e.getMessage());
