@@ -14,8 +14,8 @@ OpenDCS documentation is currently divided into four sections:
 
 #. Getting Started: Intended for new users
 #. Resources: Intended for intermediate users
-#. Developer Documentation: Intended for advanced users or developers
-#. Legacy Documentation and References: Intended for users familiar with the content in legacy PDF documentation
+#. Developer Documention: Intended for advanced users or developers
+#. Legacy Documentation and References: Indended for users familiar with the content in legacy PDF documentation
 
 The **Getting Started** part of this documentation is intended
 for new users.  Once reviewed one should be familiar with the 
@@ -75,9 +75,9 @@ Reminder - legacy PDFs are no longer being updated.
    Software Set-Up <./start-software.rst>
    Time Series - Intro <./start-timeseries.rst>
    Routing Spec - Intro<./start-routingspec.rst>
-   DECODING - Intro<./start-decoding.rst>
+   - DECODING - Intro<./start-decoding.rst>
    Computations - Intro <./start-computations.rst>
-   Screening - Intro <./start-screening.rst>
+   - Screening - Intro <./start-screening.rst>
    
 .. toctree::
    :maxdepth: 1

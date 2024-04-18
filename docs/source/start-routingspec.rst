@@ -2,15 +2,15 @@
 OpenDCS Routing Spec - Introduction
 ###################################
 
-A **Routing Spec** is a process that retreives data, decodes it,
+A **Routing Spec** is a process that retrieves data, decodes it,
 formats it, and then puts it somewhere.
 
 In other words, a defined routing spec is a set of instructions that
 do the following steps:
 
-#. Identify a source to retreive information from
+#. Identify a source to retrieve  information from
 #. Transform information to a time series based on pre-described set of rules
-#. Match tranformed information to a time series or group of time series in relevant database
+#. Match transformed information to a time series or group of time series in relevant database
 #. Put information into database or alternative format
 #. Do step 1-4 for multiple locations, in one defined routing spec
 
@@ -42,7 +42,7 @@ but a recommended order is outlined below.  Variations of such
 order are necessary when variations and unique applications within
 a routing spec are employed.
 
-#. Ensure locations exist in database
+#. Ensure locations exist in database - review **Sites** tab
 #. Ensure connections to LRGS's are defined 
 #. Define a **source** or sources for the routing spec
 #. Define a **configuration** or configurations for the routing spec
@@ -58,27 +58,82 @@ spec.
 
 To get started, launch the DECODES Database Editor from the main menu.
 
-.. image:: ./media/start/routingspec/im-01-decodes-components.JPG
-   :alt: sources
+.. image:: ./media/start/routingspec/im-00-decodes-components.JPG
+   :alt: decodes components
    :width: 150
 
 A window will pop up prompted a user for log in information.
 
 USACE users:
 
-* USERNAME: User H7
+* USERNAME: Username
 * PASSWORD: Oracle
-
 
 1.Database Locations
 ====================
 
-... more content coming soon ...
+Recall that a routing spec ultimately outputs time series data.
+Typically the time series data will be stored in a database.  Depending 
+on the set-up, the time series will ultimately be stored into a database.
+For more information about time series pathname parts, see the 
+:doc:`Time Series Introduction <./start-timeseries>`.
+
+If the location name for the time series data does not exist 
+in the database yet, then the location name will need to be added.
+To add or edit locations, see a system administrator or someone
+who has permissions to edit the database.  OpenDCS can be used to 
+add (or remove) a location in the database.  To view the current
+locations in the database, navigate to the **Sites** tab.  Location names
+can be sorted alphabetically.
+
+.. image:: ./media/start/routingspec/im-01-sites.JPG
+   :alt: sites tab
+   :width: 150
+
+If a new location or site name needs to be added, click the "New" button.
+Verify all the locations exist for which the time series are expected
+to be mapped to in the routing spec below.  Note that the time series pathnames
+do not yet have to exist in the database, however there is no issue if they 
+do exist.
 
 2.LRGS Connections
 ====================
 
-... more content coming soon ...
+The LRGS used to be its own software.  It now comes packaged with 
+OpenDCS.  The LRGS is essentially a software/tool that is used for receiving
+data from satellite links or the internet.  When running and operational, the
+LRGS is a continuous process that runs on either windows or unix servers.  Typically
+the LRGS is set up and configured using the GUI **LRGS Status**, or for more
+experienced users, it is set up and configured by manually editing the configuration
+files.
+
+The routing spec guide and steps below assume that a user already has an LRGS
+connection set up and is operational.  In other words, that means that messages are 
+being retrieved and are available for routing specs or using the DCP message 
+browser.  For more information about getting started with the LRGS see the 
+legacy LRGS guide :doc:`LRGS Guide <./legacy-lrgs-userguide>`.
+
+A couple checks to see if the LRGS is running are outlined below.
+
+.. table:: Table of LRGS Checks
+
+   +-------------------------------+----------------------------------+-----------------------+
+   | **Check**                     | **Typical Location or Command**  | **What to Look For**  |
+   +===============================+==================================+=======================+
+   | Check **lock** file           | <path>/opendcs_user/lrgs/        | Existence             |
+   +-------------------------------+----------------------------------+-----------------------+
+   | Check **archive** folder      | <path>/opendcs_user/lrgs/archive/| Recently Files        |
+   +-------------------------------+----------------------------------+-----------------------+
+
+Additionally, Unix commands can be run the Unix serves to help to identify whether 
+the continuous LRGS process is running:
+
+::
+   pgrep -fl /opendcs/ | sed 's/.*\///' | sort | uniq -c
+
+The LRGS must be running for a routing spec to work with a source of type **lrgs**.
+In other words, if a different source is selected below, then this step is actually 
+not necessary to proceed with the following steps for setting up a routing step.
 
 3.Sources
 =========
@@ -101,7 +156,7 @@ for more information on using the reference list editor.
 * **web** - reads data files over a web connection specified by a URL
 * **abstractweb** - reads data files over a web connection specified by a URL with parameters
 * **socketstream** - opens a socket and reads a one-way stream of data containing raw DCP messages. Some DRGS and HRIT product provide such a stream
-* **hotbackupgroup** - an ordered group of LRGS data sources, where secondary and teriary servers are used with primary or secondary is unavailble, respectively
+* **hotbackupgroup** - an ordered group of LRGS data sources, where secondary and tertiary servers are used with primary or secondary is unavailable, respectively
 * **roundrobingroup** - contains a list of other data sources and is continually read in
 
 Note that the names of sources **cannot be renamed** after they are
@@ -160,10 +215,10 @@ the directory is called "decodes".  When setting up users should add
 in the whole path for the directory. Some other common parameters 
 to define include:
 
-* fileExt: If set, only process files with a matching extention. Other files ignored.
+* fileExt: If set, only process files with a matching extension. Other files ignored.
 * fileRestSeconds: Don't process until x seconds have lapsed, to present processing of a file while it's being written. 
 * doneProcessing: Decision about how processed file are handled. If False, files are deleted. If True, then files are renamed or moved.
-* doneExt: Extention to be added to files once processed (if doneProcessing set True). Do not use same extention as fileExt.
+* doneExt: Extension to be added to files once processed (if doneProcessing set True). Do not use same extension as fileExt.
 
 .. image:: ./media/start/routingspec/im-05-source-directory.JPG
    :alt: sources
@@ -175,7 +230,7 @@ For more information about the properties options see :any:`file and directory s
 web
 ---
 
-Users can also set up a source to retreive or fetch information 
+Users can also set up a source to retrieve or fetch information 
 from a web page.  In the example below the url points towards a web
 page (url) that is static.  The information on the web page is
 updated on a regular basis. For web sources, users must define
@@ -378,17 +433,17 @@ In the above image there are three parts boxed in red:
 * Sample Message: Box for pasting or loading retrieved messages to test DECODING
 * Decoded Data: Output of DECODING with color syntax
 
-In addition to the parts highligted above, there are three other parts that 
+In addition to the parts highlighted above, there are three other parts that 
 the user may use:
 
-* Sesnor Line Conversions: Table for specifying units of decoded message and any simple linear coefficient conversions
+* Sensor Line Conversions: Table for specifying units of decoded message and any simple linear coefficient conversions
 * Data order:  A drop down menu where Ascending or Descending can be selected (default is undefined)
-* Header Type:  A drop fown menu for selecting a header type such as a medium or source type (default is blank)
+* Header Type:  A drop down menu for selecting a header type such as a medium or source type (default is blank)
 
 In regards to using the sample message browser, note that messages
 can only be retrieved from an lrgs for which a connection has already
 been established.  For USACE users, this means that messages can only
-be retireved while logged onto the server.
+be retrieved while logged onto the server.
 
 To get started on writing DECODES statements, see :doc:`DECODES Guide<./start-decoding>`.
 DECODES statements use FORTRAN-like statements. Within a statement,
@@ -427,7 +482,7 @@ The script will start with the first format statement, so position
 is important.  This differs from previous versions of DECODES and EMIT.
 
 Each format statement has a label.  Several operations can cause
-decoding to jump to a new statement, indentified by its label. Labels
+decoding to jump to a new statement, identified by its label. Labels
 may only contain letters and digits.
 
 Note, that sometimes an entire format statement cannot fit into one 
@@ -440,8 +495,8 @@ message data from beginning to end.  There are operations for
 skipping characters and lines, and for positioning the data
 pointer within the message data.
 
-Below is one example of DECODING for a specific type of messags from a 
-csv.  Typically, DECODING that is operational and parases a raw mesage
+Below is one example of DECODING for a specific type of messages from a 
+csv.  Typically, DECODING that is operational and parses a raw message
 is often more involved and complicated.  Depending on how the platform is
 set up and what type of message is assumed, the header information
 may be interpreted, skipped or parsed differently.  In the example
@@ -503,7 +558,7 @@ Sample Raw Message:
 +---------------------------+---------------------+--------------------------------------------------------+
 
 DECODING EXAMPLES
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 Below is an example of when the message is formatted like a csv.  
 The second examples shows a simple GOES dcp message with one variable.
@@ -584,8 +639,8 @@ show an example of a DCP and the transmission information.
 The Transport Medium window may look different depending on which 
 Medium Type is selected.  For example, when the "Medium Type" is set 
 to "goes-self-timed", then the bottom of the window populates with 
-fields relevant to GOES, such as channel number, transmittion time,
-transmition duration, and transmit interval.  
+fields relevant to GOES, such as channel number, transmission time,
+transmission duration, and transmit interval.  
 
 **IMPORTANT NOTE**: Transport medium IDs can only be attributed to one
 platform. Therefore, if there is more than one message type or source 
@@ -639,7 +694,7 @@ platforms selected are saved.
 By this point, users should now be ready to create a routing spec. 
 Recall that the routing spec is essentially a command that specifies
 
-#. where messages should be retreived from
+#. where messages should be retrieved from
 #. what messages should be retrieved from what platforms
 #. what duration or look back time window
 #. how the messages should be decoded
@@ -662,22 +717,200 @@ so consider the name before saving.
 
 Once the new window comes up the user should address the following fields, at least.
 
-+-------------------------+---------------------------------------------------+
-|**Field**                |**Description**                                    |
-+=========================+===================================================+
-|Data Source              |Location in Database                               |
-+-------------------------+---------------------------------------------------+
-|Destination              |consumer (pipe, database, file, etc)               |
-+-------------------------+---------------------------------------------------+
-|Output Format            |set output format                                  |
-+-------------------------+---------------------------------------------------+
-|Date/Time - Since/Util   |define time window for message retreival           |
-+-------------------------+---------------------------------------------------+
-|Platform Selection       |Specify a platform or network list                 |
-+-------------------------+---------------------------------------------------+
++-------------------------+------------------------------------------------+
+|**Field**                |**Description**                                 |
++=========================+================================================+
+|Data Source              |Location in Database                            |
++-------------------------+------------------------------------------------+
+|Destination              |consumer (pipe, database, file, etc)            |
++-------------------------+------------------------------------------------+
+|Output Format            |set output format                               |
++-------------------------+------------------------------------------------+
+|Date/Time - Since/Util   |define time window for message retrieval        |
++-------------------------+------------------------------------------------+
+|Platform Selection       |Specify a platform or network list              |
++-------------------------+------------------------------------------------+
+
+The **Data Source** will populate with a drop down menu consisting of the
+ source or sources added in step 3.  The **Destination** will populate with 
+ some options including but not limited to the database, file and pipe.  
+ To set up a routing spec to go into the database, select the applicable 
+ database.  The **Date/Time** format is only applicable for sources
+ that are not static.  For example, sources of type lrgs or abstract web
+ will require a look back time window to be defined.  The longer the look 
+ back the longer the routing spec will take to run, because there will
+ presumably be more data.  It is good practice to take into consideration
+ how frequently the source is updated, the resolution of the data, 
+ how frequently you are planning to run the routing spec, and how many
+ platforms the routing spec will include.  The **Platform Selection** 
+ is where the user will need to either specify a platform or network list.
+ Recall that a network list is a group of platforms.  
 
 .. image:: ./media/start/routingspec/im-28-rs-source.JPG
    :alt: new list window
    :width: 500
 
+NOTE - there are some unique criteria that need to be selected given 
+certain types of sources.  For example, when the source type is a 
+directory, then the property "oneScanOnly" must be defined as True.
 
+TIP - It is good practice to define the **Destination** as pipe before
+putting a routing spec in operation.  This allows the user to test the 
+routing spec without potentially overwriting or accidentally populating
+another time series in the database.  
+
+Remember to save the changes.  Now you have set up a routing spec.  
+This means that assuming all the steps above have been completed
+or checked off, then a user can now run the routing spec. Routing
+specs can be run manually, irregardless of whether any continuous 
+OpenDCS process is running.  If the destination is a database, the
+database must be up and running.  
+
+
+How do I run or execute the Routing Spec?
+-----------------------------------------
+
+Thus far, we have used the OpenDCS GUI to set up the routing spec.  
+However, running the routing spec 'manually' requires running the
+OpenDCS command 'rs'.  In the following examples, imagine there is 
+a routing spec named 'mySpec'.
+
+:: 
+
+   rs <options> mySpec
+
++------------------------------+-----------------------------------------------------------------+
+|**Options**                   |**Description**                                                  |
++==============================+=================================================================+
+|rs -**C** *filename* mySpec   |Computation Config File                                          |
++------------------------------+-----------------------------------------------------------------+
+|rs -**D** *string* mySpec     |Env-Define                                                       |
++------------------------------+-----------------------------------------------------------------+
+|rs -**E** *dirname* mySpec    |Explicit Database Location                                       |
++------------------------------+-----------------------------------------------------------------+
+|rs -**F** mySpec              |Explicit directory-consumer folder-name                          |
++------------------------------+-----------------------------------------------------------------+
+|rs -**FL** mySpec             |Forward javax.logging logger to application log; Default: false  |
++------------------------------+-----------------------------------------------------------------+
+|rs -**L** *string* mySpec     |host:port:user[:password]                                        |
++------------------------------+-----------------------------------------------------------------+
+|rs -**M** *string* mySpec     |Optional Summary File                                            |
++------------------------------+-----------------------------------------------------------------+
+|rs -**O** *string* mySpec     |OfficeID                                                         |
++------------------------------+-----------------------------------------------------------------+
+|rs -**P** *string* mySpec     |Name (or path) of DECODES properties file                        |
++------------------------------+-----------------------------------------------------------------+
+|rs -**R** mySpec              |Remove Redundant DCP Message Data; Default: false                |
++------------------------------+-----------------------------------------------------------------+
+|rs -**S** *string* mySpec     |Since Time                                                       |
++------------------------------+-----------------------------------------------------------------+
+|rs -**U** *string* mySpec     |Until Time                                                       |
++------------------------------+-----------------------------------------------------------------+
+|rs -**Y** *string* mySpec     |The log file time-zones  Default: UTC                            |
++------------------------------+-----------------------------------------------------------------+
+|rs -**c** mySpec              |Enable computations; Default: false                              |
++------------------------------+-----------------------------------------------------------------+
+|rs -**d** *integer* mySpec    |debug-level; Default: 0 (0-)                                     |
++------------------------------+-----------------------------------------------------------------+
+|rs -**k** *filename* mySpec   |Optional Lock File                                               |
++------------------------------+-----------------------------------------------------------------+
+|rs -**l** *filename* mySpec   |log-file; Default: routing.log                                   |
++------------------------------+-----------------------------------------------------------------+
+|rs -**m** mySpec              |Do NOT apply Sensor min/max limits; Default: false               |
++------------------------------+-----------------------------------------------------------------+
+|rs -**n** *netlist* mySpec    |Netlist Name                                                     |
++------------------------------+-----------------------------------------------------------------+
+|rs -**o** *filename* mySpec   |Status Output File                                               |
++------------------------------+-----------------------------------------------------------------+
+|rs -**p** *propertyset* mySpec|name=value                                                       |
++------------------------------+-----------------------------------------------------------------+
+|rs -**s** *scriptname* mySpec |ScriptName                                                       |
++------------------------------+-----------------------------------------------------------------+
+|rs -**e** mySpec              |(deprecated -- does nothing)                                     |
++------------------------------+-----------------------------------------------------------------+
+
+Manual Routing Specs Common Options
+-----------------------------------
+
+Troubleshooting - Use Debugger
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+... more content coming soon ...
+
+Backfilling - Use Since and Until
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+... more content coming soon ...
+
+Lockfile Significance
+~~~~~~~~~~~~~~~~~~~~~
+
+... more content coming soon ...
+
+9.Routing Scheduler
+===================
+
+Now that you have set up a routing spec, you may wish to automate it.  
+This is so that a user does not have to manually run the routing spec
+as described above.  Depending on the system where the database is running,
+and where the continuous processes are going to run, the following methods 
+can be used to automate the scheduling of the routing specs.  The first
+method is using an appropriate system job scheduler. This is independent 
+of the OpenDCS software. A few options are outlined below.
+
+System Scheduler
+----------------
+
+For a Windows System the following job schedulers are options:
+* Windows Scheduler
+* Python Crond
+
+For a Unix System the following job schedulers are options:
+* cron
+
+Routing Scheduler Tool
+----------------------
+
+Alternative to the options specified above, the OpenDCS software
+includes a **Routing Scheduler**.  This can be used to schedule 
+routing specs. 
+
+To create a schedule, complete the following steps.
+
+#. Navigate to the Routing Tab
+#. Create a new schedule
+#. Select the routing spec from the drop down menu
+#. Define the schedule
+#. Save
+
+Doing the above steps will not automatically start the routing scheduler.
+To start the routing scheduler, requires starting up an OpenDCS 
+continuous process. The scheduler just created *must* be enabled
+for the continuous process to acknowledge it. 
+
+To start the routing scheduler, you will need to start 
+an OpenDCS continuous process. 
+
+::
+   
+   # start routing scheduler
+   nohup routsched routing-scheduler-goes
+   
+   # start routing scheduler - with debugging
+   nohup routsched -d3 routing-scheduler-goes
+
+   # start routing scheduler - with debugging and log
+   nohup routsched -d3 -l routing.log routing-scheduler-goes
+
+   # start routing scheduler - with debugging and log & not not pipe output (RECOMMENDED)
+   nohup routsched -d3 -l routing.log -a routing-scheduler-goes > nohup.routing 2>&1 &
+
+After reading the above section, a user should be familiar with 
+how to set upa routing spec using the GUI and how to run and
+schedule the routing spec.  
+
+Once a routing spec is operationally running via some scheduler, then 
+presumably time series are getting populated into a database.  If the user
+wishes to set up automated computations and create dependent time series,
+then turn to the OpenDCS Computation Processor.  For an introduction 
+on how to set up a Computation using this tool, see the 
