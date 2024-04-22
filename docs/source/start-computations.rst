@@ -2,7 +2,7 @@
 OpenDCS Computations - Introduction
 ###################################
 
-OpenDCS inudes a program called Computation Processor.  This tool is
+OpenDCS includes a program called Computation Processor.  This tool is
 used for creating computations on the data stored in the time-series
 database.  It is currently supported for the U.S. Bureau of Reclamation
 Hydrologic Database (HDB)and the U.S. Army Corps of Engineers Corps 
@@ -34,16 +34,16 @@ How to Set-Up a Computation in OpenDCS?
 
 In OpenDCS, a computation comprises of a few pieces:
 
-* Alogorithm (ie operations applied)
+* Algorithm (ie operations applied)
 * Input & Output Time Series or Pathname Parts
 * Process
 * Optional - Group
 
-A suggested guiding princinpal to building a new computation is
+A suggested guiding principal to building a new computation is
 to follow the steps outlined below:
 
 #. Ensure input time series exist
-#. Create group if computation is going to be applied to mulutple time series
+#. Create group if computation is going to be applied to multiple time series
 #. Ensure algorithm exists (create if necessary)
 #. Ensure process exists
 #. Create computation
@@ -134,7 +134,7 @@ or invoked.  Examples of default algorithms are listed below:
 4.Process Intro
 ===============
 
-Processes are a way of gouping computations together to help
+Processes are a way of grouping computations together to help
 spread the computational load of the system.  Once a computation
 is created, it can be attributed to a process.  
 
@@ -299,7 +299,7 @@ In the example below the process compproc-examples is selected.
    :width: 500
 
 As a final few steps - add in any comments about the computation for 
-documenation purposes.  Click "Commit" on the bottom of the screen so
+documentation purposes.  Click "Commit" on the bottom of the screen so
 that all the steps above are saved.
 
 To see how to test the computation, see the section ____ below. 
@@ -450,7 +450,7 @@ the incremental totals.
 
 Once a calculation is set up, like any of the examples above,
 users can test or run the computation to check and verify that 
-the computation is calcuting the desired output correctly.  
+the computation is calculating the desired output correctly.  
 
 To test or run a computation, simply open the computation from 
 the List. To open the computation from the List, select the desired
@@ -512,7 +512,7 @@ hourly values is demonstrated below.
 Run Calculation: Precipitation - Cumulative to Incremental
 ----------------------------------------------------------
 
-The example outlined above for calculating hourly icremental
+The example outlined above for calculating hourly incremental
 precipitation totals from cumulative hourly precipitation
 is demonstrated in the graphic below.
 
@@ -554,7 +554,7 @@ data.
 Users can opt to define an Effective start and end date. This can be beneficial
 to help users avoid accidentally triggering calculations for very long periods
 of record.  It is unlikely to occur, however, when such a que of calculations
-is triggerd, depending on the resolution and number of processes defined, the 
+is triggered, depending on the resolution and number of processes defined, the 
 run time can slow down calculations and in some cases take some time to backup.
 
 To enable a calculation, check the enabled box, and make sure the process defined

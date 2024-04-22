@@ -906,7 +906,7 @@ an OpenDCS continuous process.
    nohup routsched -d3 -l routing.log -a routing-scheduler-goes > nohup.routing 2>&1 &
 
 After reading the above section, a user should be familiar with 
-how to set upa routing spec using the GUI and how to run and
+how to set up a routing spec using the GUI and how to run and
 schedule the routing spec.  
 
 Once a routing spec is operationally running via some scheduler, then 

@@ -9,15 +9,15 @@ a database with meta-data "raw".  In other words, the output
 of the DECODING is meant to be the rawest data format from 
 the field.  When the screening tool and computation is run,
 a copy of the raw time series is created with the suffix
-"rev". Depending on the screening critiera, data will be a 
-direct copy of the raw, or flagged as questionabble or 
+"rev". Depending on the screening criteria, data will be a 
+direct copy of the raw, or flagged as questionable or 
 perhaps even rejected if the raw data is too extreme.
 
 Reasons that screening may be used include the following:
 
 * Prevent unrealistic or physically possible values from reporting
 * Help attribute flags to help monitor the state of the system where the gages are deployed
-* Minimize gage malfuntions from reporting
+* Minimize gage malfunctions from reporting
 
 
 How do I launch the Screening Editor?
@@ -37,12 +37,12 @@ For USACE:
 * USERNAME: H7
 * PASSWORD: Oracle
 
-Alterantively, if launching from the server, use the following
+Alternatively, if launching from the server, use the following
 command:
 
-::
+:: screeningEdit
 
-   screeningEdit
+   
 
 For USBR:
 
@@ -54,7 +54,7 @@ There are two tabs in the screening editor:
 * Screening IDs
 * TS Assignments
 
-The screening IDs tab is where critiria are defined.  Any IDs 
+The screening IDs tab is where criteria are defined.  Any IDs 
 defined here can be attributed to more than one time series.
 For example, if you have multiple gages on the same body of 
 water for which you would like to undergo the same screening 
@@ -154,7 +154,7 @@ For this example, recall that this means any pathname of the form:
 
 Location.**Stage**.**Ave**.Interval.**Hourly**.Version
 
-Select the time series for which the critiera is going to be applied.
+Select the time series for which the criteria is going to be applied.
 To select more than one record, click and hold **Shift** to select a 
 group of records, or use **ctrl**.  The list of time series can be 
 resorted by clicking on the headers.
@@ -193,12 +193,8 @@ Starting with DATCHK files
 Some users may be familiar with employing screening or validation
 using DATCHK files.  DATCHK files are files 
 
-
 Running the Screening
 =====================
-
-
-
 
 
 
