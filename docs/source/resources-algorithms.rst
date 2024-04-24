@@ -378,12 +378,36 @@ See the images above and below to better understand how the algorithm behaves.
 FillForward
 -----------
 
-... more content coming soon ...
+.. image:: ./media/resources/algorithms/im-23-excel-fillforward.JPG
+   :alt:  algorithm fill forward
+   :width: 500
+
+.. image:: ./media/resources/algorithms/im-24-comptest-fillforward.JPG
+   :alt:  algorithm fill forward
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-25-comp-fillforward.JPG
+   :alt:  algorithm fill forward
+   :width: 600
 
 Resample
 --------
 
-... more content coming soon ...
+.. image:: ./media/resources/algorithms/im-26-excel-resample.JPG
+   :alt:  algorithm resample
+   :width: 500
+
+.. image:: ./media/resources/algorithms/im-27-comptest-resample-interp.JPG
+   :alt:  algorithm resample - interp
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-28-comptest-resample-fill.JPG
+   :alt:  algorithm resample - fill
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-28-comptest-resample-fill.JPG
+   :alt:  algorithm resample
+   :width: 600
 
 RunningAverageAlgorithm
 -----------------------
