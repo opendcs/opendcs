@@ -125,8 +125,7 @@ A couple checks to see if the LRGS is running are outlined below.
    | Check **archive** folder      | <path>/opendcs_user/lrgs/archive/| Recently Files        |
    +-------------------------------+----------------------------------+-----------------------+
 
-Additionally, Unix commands can be run the Unix serves to help to identify whether 
-the continuous LRGS process is running:
+The following Unix command can be run to determine if the LRGS process is running: 
 
 ::
    pgrep -fl /opendcs/ | sed 's/.*\///' | sort | uniq -c
@@ -156,7 +155,7 @@ for more information on using the reference list editor.
 * **web** - reads data files over a web connection specified by a URL
 * **abstractweb** - reads data files over a web connection specified by a URL with parameters
 * **socketstream** - opens a socket and reads a one-way stream of data containing raw DCP messages. Some DRGS and HRIT product provide such a stream
-* **hotbackupgroup** - an ordered group of LRGS data sources, where secondary and tertiary servers are used with primary or secondary is unavailable, respectively
+* **hotbackupgroup** - an ordered group of LRGS data sources, where secondary and tertiary servers are used to automatically maintain availability
 * **roundrobingroup** - contains a list of other data sources and is continually read in
 
 Note that the names of sources **cannot be renamed** after they are
@@ -561,7 +560,7 @@ DECODING EXAMPLES
 ~~~~~~~~~~~~~~~~~
 
 Below is an example of when the message is formatted like a csv.  
-The second examples shows a simple GOES dcp message with one variable.
+The second examples shows a simple GOES DCP message with one variable.
 
 .. image:: ./media/start/routingspec/im-17-config-decoding-example-csv.JPG
    :alt: decoding example csv
@@ -732,19 +731,19 @@ Once the new window comes up the user should address the following fields, at le
 +-------------------------+------------------------------------------------+
 
 The **Data Source** will populate with a drop down menu consisting of the
- source or sources added in step 3.  The **Destination** will populate with 
- some options including but not limited to the database, file and pipe.  
- To set up a routing spec to go into the database, select the applicable 
- database.  The **Date/Time** format is only applicable for sources
- that are not static.  For example, sources of type lrgs or abstract web
- will require a look back time window to be defined.  The longer the look 
- back the longer the routing spec will take to run, because there will
- presumably be more data.  It is good practice to take into consideration
- how frequently the source is updated, the resolution of the data, 
- how frequently you are planning to run the routing spec, and how many
- platforms the routing spec will include.  The **Platform Selection** 
- is where the user will need to either specify a platform or network list.
- Recall that a network list is a group of platforms.  
+sources previously added in the 'Sources' tab.  The **Destination** will
+populate with  some options including but not limited to the database,
+file and pipe.  To set up a routing spec to go into the database, select
+the applicable database.  The **Date/Time** format is only applicable for
+sources that are not static.  For example, sources of type lrgs or 
+abstract web will require a look back time window to be defined.  The
+longer the look back the longer the routing spec will take to run, because
+there will presumably be more data.  It is good practice to take into 
+consideration how frequently the source is updated, the resolution of the
+data, how frequently you are planning to run the routing spec, and how many
+platforms the routing spec will include.  The **Platform Selection** 
+is where the user will need to either specify a platform or network list.
+Recall that a network list is a group of platforms.  
 
 .. image:: ./media/start/routingspec/im-28-rs-source.JPG
    :alt: new list window

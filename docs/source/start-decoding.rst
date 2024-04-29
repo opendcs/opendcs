@@ -898,7 +898,7 @@ In the examples below, DECODING field operations are displayed to
 convey how the time can be extracted from the message.  The following 
 example adds a time operations following a date operation.  
 
-There are some banked time formats for when the field type is 'T' and 
+There are some standard time formats for when the field type is 'T' and 
 when the data type is 'A' (ASCII). These formats are outlined in the 
 table below.  Alternatively, a user could decode the time components
 individually (ie hour, min, sec, AM/PM).  There are also two optional
