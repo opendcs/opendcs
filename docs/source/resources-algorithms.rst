@@ -26,7 +26,7 @@ This page is intended to provide further details and examples of the
 default algorithms.  Nearly all of these algorithms have properties
 that can be set to tweak the way the algorithm is executed. For example,
 the properties can address time shifts, missing values, change how default
-upper and lower bounds are handeled, etc.  It is recommended to 
+upper and lower bounds are handled, etc.  It is recommended to 
 understand how the basic default algorithm behaves before advancing 
 to editing the properties.  
 
@@ -139,7 +139,7 @@ these algorithms are for executing simple arithmetic.
 +-------------------------+----------------------------------------------------------+
 
 Recall, that when a computation is set up, the output is a 
-seperate time series.   Input time series are NOT being manipulated 
+separate time series.   Input time series are NOT being manipulated 
 or edited.
 
 AddToPrevious
@@ -221,7 +221,7 @@ ChooseOne
 
 The "Choose One" algorithm *ChooseOne* will choose one value 
 (the best one) from two time series to output. Additionally, 
-some upper and lower critiera limits can be appled. By default,
+some upper and lower criteria limits can be applied. By default,
 the following criteria are assumed or executed.
 
 
@@ -378,12 +378,36 @@ See the images above and below to better understand how the algorithm behaves.
 FillForward
 -----------
 
-... more content coming soon ...
+.. image:: ./media/resources/algorithms/im-23-excel-fillforward.JPG
+   :alt:  algorithm fill forward
+   :width: 500
+
+.. image:: ./media/resources/algorithms/im-24-comptest-fillforward.JPG
+   :alt:  algorithm fill forward
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-25-comp-fillforward.JPG
+   :alt:  algorithm fill forward
+   :width: 600
 
 Resample
 --------
 
-... more content coming soon ...
+.. image:: ./media/resources/algorithms/im-26-excel-resample.JPG
+   :alt:  algorithm resample
+   :width: 500
+
+.. image:: ./media/resources/algorithms/im-27-comptest-resample-interp.JPG
+   :alt:  algorithm resample - interp
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-28-comptest-resample-fill.JPG
+   :alt:  algorithm resample - fill
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-28-comptest-resample-fill.JPG
+   :alt:  algorithm resample
+   :width: 600
 
 RunningAverageAlgorithm
 -----------------------

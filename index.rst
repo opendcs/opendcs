@@ -14,8 +14,8 @@ OpenDCS documentation is currently divided into four sections:
 
 #. Getting Started: Intended for new users
 #. Resources: Intended for intermediate users
-#. Developer Documentation: Intended for advanced users or developers
-#. Legacy Documentation and References: Intended for users familiar with the content in legacy PDF documentation
+#. Developer Documention: Intended for advanced users or developers
+#. Legacy Documentation and References: Indended for users familiar with the content in legacy PDF documentation
 
 The **Getting Started** part of this documentation is intended
 for new users.  Once reviewed one should be familiar with the 
@@ -52,14 +52,14 @@ as legacy documentation as it serves as a reference and
 contains lots of information at a deeper level than is 
 typically relevant to the GUI end-user.  
 
-* :doc:`OPENDCS-QuickStart <./legacy-quick-start>`
-* :doc:`OPENDCS-Installation-Guide <./legacy-install-guide>`
-* :doc:`OPENDCS-LRGS-UserGuide <./legacy-lrgs-userguide>`
-* :doc:`OPENDCS-CP-UserGuide <./legacy-cp-userguide>`
-* :doc:`OPENDCS-Platform-Decoding-Guide <./legacy-decoding-guide>`
-* :doc:`OPENDCS-OpenTSDB <./legacy-tsdb>`
-* :doc:`OPENDCS-Alarms <./legacy-alarms>`
-* :doc:`OPENDCS-CWMS-Interface <./legacy-cwms-interface>`
+* :doc:`OPENDCSn-QuickStart <./legacy-quick-start>`
+* :doc:`OPENDCSn-Installation-Guide <./legacy-install-guide>`
+* :doc:`OPENDCSn-LRGS-UserGuide <./legacy-lrgs-userguide>`
+* :doc:`OPENDCSn-CP-UserGuide <./legacy-cp-userguide>`
+* :doc:`OPENDCSn-Platform-Decoding-Guide <./legacy-decoding-guide>`
+* :doc:`OPENDCSn-OpenTSDB <./legacy-tsdb>`
+* :doc:`OPENDCSn-Alarms <./legacy-alarms>`
+* :doc:`OPENDCSn-CWMS-Interface <./legacy-cwms-interface>`
 
 To access legacy PDFs see the https://github.com/opendcs/opendcs/wiki/Documentation page. 
 Reminder - legacy PDFs are no longer being updated.  
@@ -75,9 +75,9 @@ Reminder - legacy PDFs are no longer being updated.
    Software Set-Up <./start-software.rst>
    Time Series - Intro <./start-timeseries.rst>
    Routing Spec - Intro<./start-routingspec.rst>
-   DECODING - Intro<./start-decoding.rst>
+   - DECODING - Intro<./start-decoding.rst>
    Computations - Intro <./start-computations.rst>
-   Screening - Intro <./start-screening.rst>
+   - Screening - Intro <./start-screening.rst>
    
 .. toctree::
    :maxdepth: 1

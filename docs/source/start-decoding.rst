@@ -199,7 +199,7 @@ from the top left of the file (message pasted in the browser).  Recall
 that statements are separated by commas.  In the examples below, it is
 not necessary to delineate and have multiple labels, but this is done
 for the sake of keeping the statements as simple as possible. The
-field sesor label is the part that extracts the variable information
+field sensor label is the part that extracts the variable information
 once the curser is at the data location in the file, and attributes
 the information to a sensor. 
 
@@ -212,7 +212,7 @@ Skip Characters
 | nX             | **Skip** n data characters                |
 +----------------+-------------------------------------------+
 
-Sample Messages where the sensor data is at 18 charachters
+Sample Messages where the sensor data is at 18 characters
 from where the cursor is. Cursors or pointers, by default
 start at the top left of the message (excluding header).
 To test out the decoding, copy ONE of the lines below 
@@ -287,7 +287,7 @@ the skip command.
    2024-02-20 00:48,176.448,0.001,0,0,0,0,p
 
 When the above lines are pasted into the Sample Message
-browser and DECODED,the position operation is used rather 
+browser and DECODED, the position operation is used rather 
 than the skip characters operation.  The result will
 be the same as the skip character examples above.  This statement
 is ideal for when messages are in a fixed format.
@@ -420,7 +420,7 @@ Jump to Label
 
 
 Recall that DECODES format operations are separated by commas.
-So a number of format statments can be entered in one label
+So a number of format statements can be entered in one label
 so long as the commas are appropriately positioned.  When getting
 started it can be helpful to separate the statements by labels.
 To jump from one label to another use the > **label** command.
@@ -898,10 +898,10 @@ In the examples below, DECODING field operations are displayed to
 convey how the time can be extracted from the message.  The following 
 example adds a time operations following a date operation.  
 
-There are some banked time formats for when the field type is 'T' and 
+There are some standard time formats for when the field type is 'T' and 
 when the data type is 'A' (ASCII). These formats are outlined in the 
 table below.  Alternatively, a user could decode the time components
-individually ( ie hour, min, sec, AM/PM).  There are also two optional
+individually (ie hour, min, sec, AM/PM).  There are also two optional
 parameters for the field TIME.  The 'sensor #' and 'E' parameter 
 signify that the time recorded is an event.  When DECODES encounters
 a field description for a time and it has a sensor number and 'E' 
@@ -1500,7 +1500,6 @@ Sample messages in pseduo-binary (1 character length)
 I - Pseudo-Binary - signed integer
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 ... more content coming soon ...
 
 CSV Operations - (sens#,...)
@@ -1660,7 +1659,7 @@ Check Operation - C(*,*label*\)
 |                    |                     | ih         |                                                         |
 +--------------------+---------------------+------------+---------------------------------------------------------+
 
-For the examplese below - copy one line and see how the 
+For the examples below - copy one line and see how the 
 decoding works.  A date and time format statement are not
 included in the script, therefor by default the date/time
 will show the latest hour and top of hour.
@@ -1766,7 +1765,7 @@ The scan operation is slightly different than the check operation.
 The scan operation will scan the next N characters for a specified 
 type of character (ie number, sign, alphabetic letter, or a string).
 If the character or string is found, then the pointer will navigate
-to where the specific condition has occured.  The command is used
+to where the specific condition has occurred.  The command is used
 to position to a particular location based upon a specified location.
 
 
@@ -1880,7 +1879,7 @@ Decoding Labels and Statements for above Sample Messages.
 Sample Messages: The following messages will DECODE the data for sensor 1.
 In other words the scan was successful in finding the sign within the 
 next 3 characters.  Therefore the pointer will navigate to immediately
-before the sign, and then proceed to the next statment.  The next statement
+before the sign, and then proceed to the next statement.  The next statement
 instructs the pointer to jump 1 character (the sign), then extract
 the sensor data.
 
@@ -1891,8 +1890,8 @@ the sensor data.
    scan1+176.54
    scan-176.54
 
-Sample Messages: The folowing messages will jump to the label
-jump_to_label because the scan was unsucessful in finding a 
+Sample Messages: The following messages will jump to the label
+jump_to_label because the scan was unsuccessful in finding a 
 sign in the next 3 characters.
 
 ::
@@ -1923,8 +1922,8 @@ statement.
    scanHG176.54
    scan12G176.54
 
-Sample Messages: The folowing 3 messages will jump to the label
-jump_to_label because the scan was unsucessful in finding a 
+Sample Messages: The following 3 messages will jump to the label
+jump_to_label because the scan was unsuccessful in finding a 
 letter in the next 3 characters.  The last line will navigate
 to the first 'G' found, but then try to get the sensor from 
 GG176. and therefore an error will occur.
