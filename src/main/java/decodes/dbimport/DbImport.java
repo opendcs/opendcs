@@ -278,8 +278,9 @@ public class DbImport
 			// unfortunately we still need to use the global decodes settings here.
 			settings.loadFromProfile(profile);
 			log.info("Using Database...");
-			theDb = DatabaseService.getDatabaseFor("utility", settings);				
+			theDb = DatabaseService.getDatabaseFor(null, settings);				
 			Database.setDb(theDb);
+			theDbio = theDb.getDbIo();
 		}
 		catch (IOException ex)
 		{
