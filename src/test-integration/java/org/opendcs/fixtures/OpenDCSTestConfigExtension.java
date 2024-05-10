@@ -1,7 +1,9 @@
 package org.opendcs.fixtures;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -358,6 +360,11 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 {
                     File tmp = Files.createTempDirectory("configs-"+configProvider.getImplementation()).toFile();
                     configuration = configProvider.getConfig(tmp);
+                    File logFilter = new File(tmp,"logfilter.txt");
+                    try (OutputStream out = new FileOutputStream(logFilter))
+                    {
+                        out.write(("org.jooq" + System.lineSeparator()).getBytes());
+                    }
                     ilex.util.Logger.setLogger(new FileLogger("test", new File(tmp,"log.txt").getAbsolutePath(),200*1024*1024));
                 }
                 catch (Exception ex)

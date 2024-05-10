@@ -38,10 +38,6 @@ public class LogFilter {
         boolean retVal = true;
         if(!logPathsToFilter.isEmpty())
         {
-            retVal = false;
-        }
-        else
-        {
             for (String filterPath: logPathsToFilter)
             {
                 if (loggerName.startsWith(filterPath))
@@ -51,8 +47,6 @@ public class LogFilter {
                 }
             }
         }
-
-
         return retVal;
     }
 
