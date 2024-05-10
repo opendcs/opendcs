@@ -354,7 +354,11 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 		{
 			CompXio compXio = new CompXio("DecodesDbParser", null);
 			for(CompAppInfo cai : theDb.loadingAppList)
+			{
+				Properties p = cai.getProperties();
+				hideUsernameAndPassword(p);
 				compXio.writeApp(xos, cai);
+			}
 		}
 
 		for(ScheduleEntry se : theDb.schedEntryList)
@@ -381,10 +385,16 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 		xos.endElement(myName());
 	}
 
-	private void hideUsernameAndPassword(DataSource ds)
+	private static void hideUsernameAndPassword(DataSource ds)
 	{
 		String dsa = ds.getDataSourceArg();
 		Properties dsProps = PropertiesUtil.string2props(dsa);
+		hideUsernameAndPassword(dsProps);
+		ds.setDataSourceArg(PropertiesUtil.props2string(dsProps));
+	}
+
+	private static void hideUsernameAndPassword(Properties dsProps)
+	{
 		for (String key : dsProps.stringPropertyNames())
 		{
 			if (key.equalsIgnoreCase("username")
@@ -393,7 +403,6 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 				dsProps.setProperty(key, "your_"+key); // Set the value to an empty string
 			}
 		}
-		ds.setDataSourceArg(PropertiesUtil.props2string(dsProps));
 	}
 
 	public ElementFilter getElementFilter()
