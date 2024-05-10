@@ -10,6 +10,7 @@
 */
 package decodes.xml;
 
+import ilex.util.PropertiesUtil;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -23,6 +24,8 @@ import decodes.tsdb.xml.CompXioTags;
 import ilex.util.TextUtil;
 import ilex.util.Logger;
 import java.io.IOException;
+import java.util.Properties;
+
 import ilex.xml.*;
 
 /**
@@ -34,7 +37,7 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 	private Database theDb;
 	private Date fileLMT = new Date();
 	private ElementFilter elementFilter = null;
-
+	private boolean insecure = false;
 	/**
 	 * Constructor.
 	 * @param db The database to parse records into and out of.
@@ -43,8 +46,12 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 	{
 		super();
 		theDb = db;
+		this.insecure = false;
 	}
 
+	public void setInsecure(){
+		this.insecure = true;
+	}
 	/**
 	 * Sets the database to parse records into and out of.
 	 * @param db The database to parse records into and out of.
@@ -292,6 +299,10 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 			{
 				DataSource ds = it.next();
 				DataSourceParser dsp = new DataSourceParser(ds);
+				if( !insecure)
+				{
+					hideUsernameAndPassword(ds);
+				}
 				dsp.writeXml(xos);
 			}
 		}
@@ -369,7 +380,22 @@ public class DatabaseParser implements XmlObjectParser, XmlObjectWriter
 
 		xos.endElement(myName());
 	}
-	
+
+	private void hideUsernameAndPassword(DataSource ds)
+	{
+		String dsa = ds.getDataSourceArg();
+		Properties dsProps = PropertiesUtil.string2props(dsa);
+		for (String key : dsProps.stringPropertyNames())
+		{
+			if (key.equalsIgnoreCase("username")
+					|| key.equalsIgnoreCase("password"))
+			{
+				dsProps.setProperty(key, "your_"+key); // Set the value to an empty string
+			}
+		}
+		ds.setDataSourceArg(PropertiesUtil.props2string(dsProps));
+	}
+
 	public ElementFilter getElementFilter()
 	{
 		return elementFilter;

@@ -295,6 +295,10 @@ public class TopLevelParser implements XmlObjectParser
 		else if (topLevelObject instanceof Database)
 		{
 			DatabaseParser dp = new DatabaseParser((Database)topLevelObject);
+			if( insecure)
+			{
+				dp.setInsecure();
+			}
 			xow = dp;
 		}
 		else if (topLevelObject instanceof Site)
