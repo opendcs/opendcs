@@ -195,6 +195,7 @@ public class Database extends DatabaseObject
 		for(Iterator<Platform> it = platformList.iterator(); it.hasNext(); )
 		{
 			Platform p = (Platform)it.next();
+			p.setDatabase(this);
 			p.read();
 		}
 		log.info("Finished loading Decodes Database.");

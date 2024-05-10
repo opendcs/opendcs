@@ -5,6 +5,8 @@ package decodes.routing;
 
 import java.util.*;
 
+import org.opendcs.database.DatabaseService;
+import org.opendcs.spi.database.DatabaseProvider;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
@@ -1515,7 +1517,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 			System.exit(1);
 		}
 
-		DecodesSettings settings = DecodesSettings.instance();
+		DecodesSettings settings = DecodesSettings.fromProfile(cmdLineArgs.getProfile());
 
 		File routmonDir = new File(
 			EnvExpander.expand(settings.routingStatusDir));
@@ -1576,20 +1578,8 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		
 		// Construct the database and the interface specified by properties.
 		ResourceFactory.instance();
-		Database db = new decodes.db.Database();
+		Database db = DatabaseService.getDatabaseFor(null, settings);
 		Database.setDb(db);
-
-		DatabaseIO dbio;
-		String dbloc = dbLocArg.getValue();
-		if (dbloc.length() > 0)
-		{
-			dbio = DatabaseIO.makeDatabaseIO(settings, dbloc);
-		}
-		else
-		{
-			dbio = DatabaseIO.makeDatabaseIO(settings);
-		}
-		db.setDbIo(dbio);
 
 		// Initialize standard collections:
 		db.enumList.read();
@@ -1753,13 +1743,6 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 							+ " -- no events available to external clients.");
 					}
 				}
-//else
-//{
-//if (rsProcRecord == null) System.out.println("No proc record.");
-//else System.out.println("appType=" + rsProcRecord.getProperty("appType")
-//	+ ", monitor=" + rsProcRecord.getProperty("monitor"));
-//}
-					
 			}
 			catch (LockBusyException ex)
 			{

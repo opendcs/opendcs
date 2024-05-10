@@ -608,7 +608,6 @@ public abstract class TimeSeriesDb extends Database
         getLogDateFormat().setTimeZone(TimeZone.getTimeZone("UTC"));
         ResourceFactory.instance().initializeFunctionList();
         this.read(); // initialize decodes
-
     }
 
     protected abstract void initDecodesDatabaseIO() throws DatabaseException;

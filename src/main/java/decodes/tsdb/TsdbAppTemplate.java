@@ -158,21 +158,16 @@ public abstract class TsdbAppTemplate
 			databaseFailed = false;
 			try
 			{
-				initDecodes();
-			}
-			catch(DecodesException ex)
-			{
-				log.warn("Cannot init Decodes: ",ex);
-				databaseFailed = true;
-				continue;
-			}
-			try
-			{
 				tryConnect();
 			}
 			catch(BadConnectException ex)
 			{
-				warning("Cannot connect to TSDB: " + ex);
+				if (ex.getCause() instanceof NullPointerException)
+				{
+					// Just bail
+					throw (NullPointerException)ex.getCause();
+				}
+				log.atError().setCause(ex).log("Cannot connect to TSDB.");
 				// CWMS-10402 don't keep trying if the failure was because the
 				// app name is invalid.
 				databaseFailed = !ex.toString().contains("Cannot determine app ID");

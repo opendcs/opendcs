@@ -69,7 +69,7 @@ public class CwmsSqlDatabaseIO extends SqlDatabaseIO
 	{
 		// No-args base class ctor doesn't connect to DB.
 		super(dataSource, settings);
-		
+		this.dbOfficeId = settings.CwmsOfficeId;
         writeDateFmt = new SimpleDateFormat(
 			"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
 		DecodesSettings.instance().sqlTimeZone = "GMT";

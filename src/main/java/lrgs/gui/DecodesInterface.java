@@ -194,29 +194,6 @@ public class DecodesInterface
 			return;
 
 		ResourceFactory.instance();
-		DecodesSettings settings = DecodesSettings.instance();
-
-		if (!silent)
-		{	System.out.print("Init DECODES DB: "); System.out.flush(); }
-
-		// Construct database and the interface specified by properties.
-		Database db = Database.getDb();
-		if (db == null)
-		{
-			db = new Database();
-			Database.setDb(db);
-		}
-		
-		DatabaseIO dbio;
-		dbio = DatabaseIO.makeDatabaseIO(settings);
-		db.setDbIo(dbio);
-
-		if (!silent)
-		{
-			System.out.print("EU, "); System.out.flush();
-		}
-		
-		db.engineeringUnitList.read();
 	}
 
 	private static boolean siteListRead = false;
