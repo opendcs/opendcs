@@ -266,7 +266,7 @@ public class TsGroupDAO
 			String msg = "readTsGroupMembers: Cannot read group members: " + ex;
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg, ex);
 		}
 		finally
 		{

@@ -52,7 +52,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 {
 	private CwmsConnectionPool pool = null;
 
-	private String dbOfficeId = null;
+	private final String dbOfficeId;
 
 	private String[] currentlyUsedVersions = { "" };
 	GregorianCalendar saveTsCal = new GregorianCalendar(
@@ -80,7 +80,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 		// CWMS uses ts_code as a unique identifier of a time-series
 		// Internally our SDI (site datatype id) is equivalent to CWMS ts_code
 		sdiIsUnique = true;
-
+		this.dbOfficeId = settings.CwmsOfficeId;
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
 		module = "CwmsTimeSeriesDb";

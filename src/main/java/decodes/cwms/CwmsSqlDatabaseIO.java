@@ -54,7 +54,7 @@ public class CwmsSqlDatabaseIO extends SqlDatabaseIO
 	/** The office ID associated with this connection. This implicitely
 	 * filters the records that are visible.
 	 */
-	private String dbOfficeId = null;
+	private final String dbOfficeId;
 	private String sqlDbLocation = null;
 	
 	/**
