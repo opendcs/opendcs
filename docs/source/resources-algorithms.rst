@@ -98,6 +98,8 @@ As a recap, below is a table of algorithms that come with OpenDCS installs.
 |                    |WeightedWaterTemperature |                                           |
 +--------------------+-------------------------+-------------------------------------------+
 
+```This is a comment```
+
 ***************************
 OpenDCS Standard Algorithms
 ***************************
@@ -469,10 +471,12 @@ IncrementalPrecip
 RdbRating
 ---------
 
+address
 ... more content coming soon ...
 
 TabRating
 ---------
+
 
 ... more content coming soon ...
 
