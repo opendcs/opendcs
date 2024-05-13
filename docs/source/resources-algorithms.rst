@@ -98,8 +98,6 @@ As a recap, below is a table of algorithms that come with OpenDCS installs.
 |                    |WeightedWaterTemperature |                                           |
 +--------------------+-------------------------+-------------------------------------------+
 
-```This is a comment```
-
 ***************************
 OpenDCS Standard Algorithms
 ***************************
@@ -147,6 +145,8 @@ or edited.
 AddToPrevious
 -------------
 
+Exec Class: decodes.tsdb.algo.AddToPrevious 
+
 .. image:: ./media/resources/algorithms/im-01-excel-addtoprevious.JPG
    :alt:  algorithm add to previous
    :width: 500
@@ -179,6 +179,8 @@ See the image above to better understand how the algorithm behaves.
 
 AverageAlgorithm
 ----------------
+
+Exec Class: decodes.tsdb.algo.AverageAlgorithm
 
 .. image:: ./media/resources/algorithms/im-04-excel-averagealgorithm.JPG
    :alt:  algorithm average algorithm
@@ -216,6 +218,8 @@ See the images above and below to better understand how the algorithm behaves.
 
 ChooseOne
 ---------
+
+Exec Class: decodes.tsdb.algo.ChooseOne
 
 .. image:: ./media/resources/algorithms/im-07-excel-chooseone.JPG
    :alt:  algorithm choose one
@@ -264,6 +268,8 @@ See the images above and below to better understand how the algorithm behaves.
 CopyAlgorithm
 -------------
 
+Exec Class: decodes.tsdb.algo.CopyAlgorithm
+
 .. image:: ./media/resources/algorithms/im-10-excel-copyalgorithm.JPG
    :alt:  algorithm choose one
    :width: 400
@@ -297,6 +303,8 @@ See the images above and below to better understand how the algorithm behaves.
 CopyNoOverwrite
 ---------------
 
+Exec Class: decodes.tsdb.algo.CopyNoOverwrite
+
 .. image:: ./media/resources/algorithms/im-13-excel-copynooverwrite.JPG
    :alt:  algorithm copy no overwrite
    :width: 500
@@ -326,6 +334,8 @@ See the images above and below to better understand how the algorithm behaves.
 
 DisAggregate
 ------------
+
+Exec Class: decodes.tsdb.algo.DisAggregate
 
 .. image:: ./media/resources/algorithms/im-16-excel-disaggregate.JPG
    :alt:  algorithm disaggregate - fill and split
@@ -380,9 +390,31 @@ See the images above and below to better understand how the algorithm behaves.
 FillForward
 -----------
 
+Exec Class: decodes.tsdb.algo.FillForward
+
 .. image:: ./media/resources/algorithms/im-23-excel-fillforward.JPG
    :alt:  algorithm fill forward
    :width: 500
+
+The "fill forward" algorithm or *FillForward* will take an input
+time series slice and apply the value x number of time slices forwards,
+starting with the current time slice.  For example, if the property *NumIntervals*
+is set **4** then the values at time slice t will be copied to the same time slice 
+t in the output time series, and then copied to 3 time slices forward in time.
+
+By default the following criteria are met or assumed in the algorithm.
+
+* Default *NumIntervals* property is set to 4.
+
+See the images above and below to better understand how the algorithm behaves.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
 
 .. image:: ./media/resources/algorithms/im-24-comptest-fillforward.JPG
    :alt:  algorithm fill forward
@@ -395,40 +427,120 @@ FillForward
 Resample
 --------
 
+Exec Class: decodes.tsdb.algo.Resample
+
 .. image:: ./media/resources/algorithms/im-26-excel-resample.JPG
    :alt:  algorithm resample
    :width: 500
 
+The "resample" algorithm or *Resample* will take an input
+time series at some resolution and apply it to a higher time
+resolution. For example, an input may be a daily time series 
+while the output may be hourly. Or an input may be a monthly
+time series while the output may be daily.
+
+By default the following criteria are met or assumed in the algorithm.
+
+* Properties *method* options are **fill** and **interp**
+* Default Method is **interp**
+
+See the images above and below to better understand how the algorithm behaves.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
+
 .. image:: ./media/resources/algorithms/im-27-comptest-resample-interp.JPG
    :alt:  algorithm resample - interp
-   :width: 600
+   :width: 500
 
 .. image:: ./media/resources/algorithms/im-28-comptest-resample-fill.JPG
    :alt:  algorithm resample - fill
-   :width: 600
+   :width: 500
 
-.. image:: ./media/resources/algorithms/im-28-comptest-resample-fill.JPG
+.. image:: ./media/resources/algorithms/im-29-comp-resample.JPG
    :alt:  algorithm resample
-   :width: 600
+   :width: 450
 
 RunningAverageAlgorithm
 -----------------------
 
-... more content coming soon ...
+Exec Class: decodes.tsdb.algo.RunningAverageAlgorithm
 
+.. image:: ./media/resources/algorithms/im-30-excel-runningaverage.JPG
+   :alt:  algorithm running average
+   :width: 500
+
+The "running average" algorithm or *RunningAverageAlgorithm* 
+will take an input time series at some resolution and calculate
+an average based on the previous aggregate periodo interval. 
+For example, if the aggregate period interval is one week,
+then the running average for a daily time series will be calculated
+based on the previous 6 days and current day.  
+
+By default the following criteria are met or assumed in the algorithm.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Outputs    |average          |
++-----------+-----------------+
+
+See the images above and below to better understand how the algorithm behaves.
+
+.. image:: ./media/resources/algorithms/im-31-comptest-runningaverage.JPG
+   :alt:  algorithm running average
+   :width: 500
+
+.. image:: ./media/resources/algorithms/im-32-comp-runningaverage.JPG
+   :alt:  algorithm running average
+   :width: 500
 
 ScalarAdder
 -----------
 
-... more content coming soon ...
+Exec Class: decodes.tsdb.algo.ScalerAdder
+
+.. image:: ./media/resources/algorithms/im-33-excel-scaleradder.JPG
+   :alt:  scaler adder
+   :width: 500
+
+The "scaler adder" algorithm or *ScalarAdder* will calculate a
+sum over 
+will take an input time series at some resolution and calculate
+an average based on the previous aggregate periodo interval. 
+For example, if the aggregate period interval is one week,
+then the running average for a daily time series will be calculated
+based on the previous 6 days and current day.  
+
+By default the following criteria are met or assumed in the algorithm.
+
+.. image:: ./media/resources/algorithms/im-34-comptest-scaleradder.JPG
+   :alt:  scaler adder
+   :width: 500
+
+.. image:: ./media/resources/algorithms/im-35-comp-scaleradder.JPG
+   :alt:  scaler adder
+   :width: 500
+
 
 SubSample
 ---------
+
+Exec Class: decodes.tsdb.algo.SubSample
 
 ... more content coming soon ...
 
 SumOverTimeAlgorithm
 --------------------
+
+Exec Class: decodes.tsdb.algo.SumOverTimeAlgorithm
 
 ... more content coming soon ...
 
@@ -456,37 +568,49 @@ Standard - Hydrologic
 BridgeClearance
 ---------------
 
+Exec Class: decodes.tsdb.algo.BridgeClearance
+
 ... more content coming soon ...
 
 EstimatedInflow
 ---------------
+
+Exec Class: decodes.tsdb.algo.EstimatedInflow
 
 ... more content coming soon ...
 
 IncrementalPrecip
 -----------------
 
+Exec Class: decodes.tsdb.algo.IncrementalPrecip
+
 ... more content coming soon ...
 
 RdbRating
 ---------
 
-address
+Exec Class: decodes.tsdb.algo.RdbRating
+
 ... more content coming soon ...
 
 TabRating
 ---------
 
+Exec Class: decodes.tsdb.algo.TabRating
 
 ... more content coming soon ...
 
 UsgsEquation
 ------------
 
+Exec Class: decodes.tsdb.algo.UsgsEquation
+
 ... more content coming soon ...
 
 VirtualGage
 -----------
+
+Exec Class: decodes.tsdb.algo.VirtualGage
 
 ... more content coming soon ...
 
