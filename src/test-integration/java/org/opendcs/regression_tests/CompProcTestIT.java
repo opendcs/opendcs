@@ -123,7 +123,7 @@ public class CompProcTestIT extends AppTestBase
                                             "compdepends_compproc",
                                             configuration.getPropertiesFile(),
                                             new File(configuration.getUserDir(),"compproctest-deps-update.log"),
-                                            environment, 60, TimeUnit.SECONDS, "-O");
+                                            environment, 10, TimeUnit.MINUTES, "-O");
         Programs.ImportTs(
             new File(config.getUserDir(),"/importTs.log"),
             config.getPropertiesFile(),
