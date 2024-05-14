@@ -38,65 +38,123 @@ This page is divided into three sections:
 
 As a recap, below is a table of algorithms that come with OpenDCS installs.
 
-+--------------------+-------------------------+-------------------------------------------+
-|**Type**            |**Algorithm**            | **Exec Class **                           |
-+====================+=========================+===========================================+
-| * Arithmetic or    |AddToPrevious            | decodes.tsdb.algo.AddToPrevious           |
-| * Transformation   +-------------------------+-------------------------------------------+
-|                    |AverageAlgorithm         | decodes.tsdb.algo.AverageAlgorithm        |
-|                    +-------------------------+-------------------------------------------+
-|                    |ChooseOne                | decodes.tsdb.algo.ChooseOne               |
-|                    +-------------------------+-------------------------------------------+
-|                    |CopyAlgorithm            | decodes.tsdb.algo.CopyAlgorithm           |
-|                    +-------------------------+-------------------------------------------+
-|                    |CopyNoOverwrite          | decodes.tsdb.algo.CopyNoOverwrite         |
-|                    +-------------------------+-------------------------------------------+
-|                    |DisAggregate             | decodes.tsdb.algo.DisAggregate            |
-|                    +-------------------------+-------------------------------------------+
-|                    |FillForward              | decodes.tsdb.algo.FillForward             |
-|                    +-------------------------+-------------------------------------------+
-|                    |Resample                 | decodes.tsdb.algo.Resample                |
-|                    +-------------------------+-------------------------------------------+
-|                    |RunningAverageAlgorithm  | decodes.tsdb.algo.RunningAverageAlgorithm |
-|                    +-------------------------+-------------------------------------------+
-|                    |ScalarAdder              | decodes.tsdb.algo.ScalerAdder             |
-|                    +-------------------------+-------------------------------------------+
-|                    |SubSample                | decodes.tsdb.algo.SubSample               |
-|                    +-------------------------+-------------------------------------------+
-|                    |SumOverTimeAlgorithm     | decodes.tsdb.algo.SumOverTimeAlgorithm    |
-+--------------------+-------------------------+-------------------------------------------+
-| * Hydrologic       |BridgeClearance          | decodes.tsdb.algo.BridgeClearance         |
-|                    +-------------------------+-------------------------------------------+
-|                    |EstimatedInflow          | decodes.tsdb.algo.EstimatedInflow         |
-|                    +-------------------------+-------------------------------------------+
-|                    |IncrementalPrecip        | decodes.tsdb.algo.IncrementalPrecip       |
-|                    +-------------------------+-------------------------------------------+
-|                    |RdbRating                | decodes.tsdb.algo.RdbRating               |
-|                    +-------------------------+-------------------------------------------+
-|                    |TabRating                | decodes.tsdb.algo.TabRating               |
-|                    +-------------------------+-------------------------------------------+
-|                    |UsgsEquation             | decodes.tsdb.algo.UsgsEquation            |
-|                    +-------------------------+-------------------------------------------+
-|                    |VirtualGage              | decodes.tsdb.algo.VirtualGage             |
-+--------------------+-------------------------+-------------------------------------------+
-| * Arithmetic or    |CentralRunningAverage    |                                           |
-| * Transformation   +-------------------------+-------------------------------------------+
-| * (Hidden)         |Division                 |                                           |
-|                    +-------------------------+-------------------------------------------+
-|                    |GroupAdder               |                                           |
-|                    +-------------------------+-------------------------------------------+
-|                    |Multiplication           |                                           |
-|                    +-------------------------+-------------------------------------------+
-|                    |PeriodToDate             |                                           |
-|                    +-------------------------+-------------------------------------------+
-|                    |Stat                     |                                           |
-+--------------------+-------------------------+-------------------------------------------+
-| * Hydrologic       |ExpressionParserAlgorithm|                                           |
-| * (Hidden)         +-------------------------+-------------------------------------------+
-|                    |FlowResIn                |                                           |
-|                    +-------------------------+-------------------------------------------+
-|                    |WeightedWaterTemperature |                                           |
-+--------------------+-------------------------+-------------------------------------------+
++--------------------+-------------------------+--------------------------------------------------+
+|**Type**            |**Algorithm**            | **Exec Class**                                   |
++====================+=========================+==================================================+
+| * Arithmetic or    |AddToPrevious            | decodes.tsdb.algo.AddToPrevious                  |
+| * Transformation   +-------------------------+--------------------------------------------------+
+|                    |AverageAlgorithm         | decodes.tsdb.algo.AverageAlgorithm               |
+|                    +-------------------------+--------------------------------------------------+
+|                    |ChooseOne                | decodes.tsdb.algo.ChooseOne                      |
+|                    +-------------------------+--------------------------------------------------+
+|                    |CopyAlgorithm            | decodes.tsdb.algo.CopyAlgorithm                  |
+|                    +-------------------------+--------------------------------------------------+
+|                    |CopyNoOverwrite          | decodes.tsdb.algo.CopyNoOverwrite                |
+|                    +-------------------------+--------------------------------------------------+
+|                    |DisAggregate             | decodes.tsdb.algo.DisAggregate                   |
+|                    +-------------------------+--------------------------------------------------+
+|                    |FillForward              | decodes.tsdb.algo.FillForward                    |
+|                    +-------------------------+--------------------------------------------------+
+|                    |Resample                 | decodes.tsdb.algo.Resample                       |
+|                    +-------------------------+--------------------------------------------------+
+|                    |RunningAverageAlgorithm  | decodes.tsdb.algo.RunningAverageAlgorithm        |
+|                    +-------------------------+--------------------------------------------------+
+|                    |ScalarAdder              | decodes.tsdb.algo.ScalerAdder                    |
+|                    +-------------------------+--------------------------------------------------+
+|                    |SubSample                | decodes.tsdb.algo.SubSample                      |
+|                    +-------------------------+--------------------------------------------------+
+|                    |SumOverTimeAlgorithm     | decodes.tsdb.algo.SumOverTimeAlgorithm           |
++--------------------+-------------------------+--------------------------------------------------+
+| * Hydrologic       |BridgeClearance          | decodes.tsdb.algo.BridgeClearance                |
+|                    +-------------------------+--------------------------------------------------+
+|                    |EstimatedInflow          | decodes.tsdb.algo.EstimatedInflow                |
+|                    +-------------------------+--------------------------------------------------+
+|                    |IncrementalPrecip        | decodes.tsdb.algo.IncrementalPrecip              |
+|                    +-------------------------+--------------------------------------------------+
+|                    |RdbRating                | decodes.tsdb.algo.RdbRating                      |
+|                    +-------------------------+--------------------------------------------------+
+|                    |TabRating                | decodes.tsdb.algo.TabRating                      |
+|                    +-------------------------+--------------------------------------------------+
+|                    |UsgsEquation             | decodes.tsdb.algo.UsgsEquation                   |
+|                    +-------------------------+--------------------------------------------------+
+|                    |VirtualGage              | decodes.tsdb.algo.VirtualGage                    |
++--------------------+-------------------------+--------------------------------------------------+
+| * Arithmetic or    |CentralRunningAverage    |                                                  |
+| * Transformation   +-------------------------+--------------------------------------------------+
+| * (Hidden)         |Division                 |                                                  |
+|                    +-------------------------+--------------------------------------------------+
+|                    |GroupAdder               |                                                  |
+|                    +-------------------------+--------------------------------------------------+
+|                    |Multiplication           |                                                  |
+|                    +-------------------------+--------------------------------------------------+
+|                    |PeriodToDate             |                                                  |
+|                    +-------------------------+--------------------------------------------------+
+|                    |Stat                     |                                                  |
++--------------------+-------------------------+--------------------------------------------------+
+| * Hydrologic       |ExpressionParserAlgorithm|                                                  |
+| * (Hidden)         +-------------------------+--------------------------------------------------+
+|                    |FlowResIn                |                                                  |
+|                    +-------------------------+--------------------------------------------------+
+|                    |WeightedWaterTemperature |                                                  |
++--------------------+-------------------------+--------------------------------------------------+
+
+The following two tables are the algorithms specific to CWMS or HDB.
+
++--------------------+-------------------------+--------------------------------------------------+
+|**Type**            |**Algorithm**            | **Exec Class**                                   |
++====================+=========================+==================================================+
+| * CWMS             |CentralRunningAverage    | decodes.cwms.rating.CwmsRatingMultIndep          |
+|                    +-------------------------+--------------------------------------------------+
+|                    |Division                 | decodes.cwms.rating.CwmsRatingSingleIndep        |
+|                    +-------------------------+--------------------------------------------------+
+|                    |GroupAdder               | decodes.cwms.validation.CwmsScreeningAlgorithm   |
+|                    +-------------------------+--------------------------------------------------+
+|                    |Multiplication           | decodes.cwms.validation.DatchkScreeningAlgorithm |
++--------------------+-------------------------+--------------------------------------------------+
+| * HDB              |CallProcAlg              | decodes.hdb.algo.CallProcAlg                     |
+|                    +-------------------------+--------------------------------------------------+
+|                    |DynamicAggregateAlg      | decodes.hdb.algo.DynamicAggregateAlg             |
+|                    +-------------------------+--------------------------------------------------+
+|                    |EOPInterpAlg             | decodes.hdb.algo.EOPInterpAlg                    |
+|                    +-------------------------+--------------------------------------------------+
+|                    |EquationSolverAlg        | decodes.hdb.algo.EquationSolverAlg               |
+|                    +-------------------------+--------------------------------------------------+
+|                    |EstGLDAInflow            | decodes.hdb.algo.EstGLDAInflow                   |
+|                    +-------------------------+--------------------------------------------------+
+|                    |FLGUUnreg                | decodes.hdb.algo.FLGUUnreg                       |
+|                    +-------------------------+--------------------------------------------------+
+|                    |FlowToVolumeAlg          | decodes.hdb.algo.FlowToVolumeAlg                 |
+|                    +-------------------------+--------------------------------------------------+
+|                    |GLDAEvap                 | decodes.hdb.algo.GLDAEvap                        |
+|                    +-------------------------+--------------------------------------------------+
+|                    |GLDAUnreg                | decodes.hdb.algo.GLDAUnreg                       |
+|                    +-------------------------+--------------------------------------------------+
+|                    |GlenDeltaBSMBAlg         | decodes.hdb.algo.GlenDeltaBSMBAlg                |
+|                    +-------------------------+--------------------------------------------------+
+|                    |HdbLookupTimeShiftRating | decodes.hdb.algo.HdbLookupTimeShiftRating        |
+|                    +-------------------------+--------------------------------------------------+
+|                    |HdbShiftRating           | decodes.hdb.algo.HdbShiftRating                  |
+|                    +-------------------------+--------------------------------------------------+
+|                    |InflowAdvancedAlg        | decodes.hdb.algo.InflowAdvancedAlg               |
+|                    +-------------------------+--------------------------------------------------+
+|                    |InflowBasicAlg           | decodes.hdb.algo.InflowBasicAlg                  |
+|                    +-------------------------+--------------------------------------------------+
+|                    |MPRCUnreg                | decodes.hdb.algo.MPRCUnreg                       |
+|                    +-------------------------+--------------------------------------------------+
+|                    |NVRNUnreg                | decodes.hdb.algo.NVRNUnreg                       |
+|                    +-------------------------+--------------------------------------------------+
+|                    |ParshallFlume            | decodes.hdb.algo.ParshallFlume                   |
+|                    +-------------------------+--------------------------------------------------+
+|                    |PowerToEnergyAlg         | decodes.hdb.algo.PowerToEnergyAlg                |
+|                    +-------------------------+--------------------------------------------------+
+|                    |SideInflowAlg            | decodes.hdb.algo.SideInflowAlg                   |
+|                    +-------------------------+--------------------------------------------------+
+|                    |SimpleDisaggAlg          | decodes.hdb.algo.SimpleDisaggAlg                 |
+|                    +-------------------------+--------------------------------------------------+
+|                    |TimeWeightedAverageAlg   | decodes.hdb.algo.TimeWeightedAverageAlg          |
+|                    +-------------------------+--------------------------------------------------+
+|                    |VolumeToFlowAlg          | decodes.hdb.algo.VolumeToFlowAlg                 |
++--------------------+-------------------------+--------------------------------------------------+
 
 ***************************
 OpenDCS Standard Algorithms
@@ -147,7 +205,7 @@ AddToPrevious
 
 Exec Class: decodes.tsdb.algo.AddToPrevious 
 
-.. image:: ./media/resources/algorithms/im-01-excel-addtoprevious.JPG
+.. image:: ./media/resources/algorithms/im-001-excel-addtoprevious.JPG
    :alt:  algorithm add to previous
    :width: 500
 
@@ -169,11 +227,11 @@ See the image above to better understand how the algorithm behaves.
 |Outputs    |output           |
 +-----------+-----------------+
 
-.. image:: ./media/resources/algorithms/im-02-comptest-addtoprevious.JPG
+.. image:: ./media/resources/algorithms/im-002-comptest-addtoprevious.JPG
    :alt:  algorithm add to previous
    :width: 600
 
-.. image:: ./media/resources/algorithms/im-03-comp-addtoprevious.JPG
+.. image:: ./media/resources/algorithms/im-003-comp-addtoprevious.JPG
    :alt:  algorithm add to previous
    :width: 600
 
@@ -182,7 +240,7 @@ AverageAlgorithm
 
 Exec Class: decodes.tsdb.algo.AverageAlgorithm
 
-.. image:: ./media/resources/algorithms/im-04-excel-averagealgorithm.JPG
+.. image:: ./media/resources/algorithms/im-004-excel-averagealgorithm.JPG
    :alt:  algorithm average algorithm
    :width: 500
 
@@ -207,11 +265,11 @@ See the images above and below to better understand how the algorithm behaves.
 +-----------+-----------------+
 
 
-.. image:: ./media/resources/algorithms/im-05-comptest-averagealgorithm.JPG
+.. image:: ./media/resources/algorithms/im-005-comptest-averagealgorithm.JPG
    :alt:  algorithm average algorithm
    :width: 600
 
-.. image:: ./media/resources/algorithms/im-06-comp-averagealgorithm.JPG
+.. image:: ./media/resources/algorithms/im-006-comp-averagealgorithm.JPG
    :alt:  algorithm average algorithm
    :width: 600
 
@@ -221,7 +279,7 @@ ChooseOne
 
 Exec Class: decodes.tsdb.algo.ChooseOne
 
-.. image:: ./media/resources/algorithms/im-07-excel-chooseone.JPG
+.. image:: ./media/resources/algorithms/im-007-excel-chooseone.JPG
    :alt:  algorithm choose one
    :width: 500
 
@@ -257,11 +315,11 @@ See the images above and below to better understand how the algorithm behaves.
 |Outputs    |output           |
 +-----------+-----------------+
 
-.. image:: ./media/resources/algorithms/im-08-comptest-chooseone.JPG
+.. image:: ./media/resources/algorithms/im-008-comptest-chooseone.JPG
    :alt:  algorithm choose one
    :width: 600
 
-.. image:: ./media/resources/algorithms/im-09-comp-chooseone.JPG
+.. image:: ./media/resources/algorithms/im-009-comp-chooseone.JPG
    :alt:  algorithm choose one
    :width: 600
    
@@ -270,7 +328,7 @@ CopyAlgorithm
 
 Exec Class: decodes.tsdb.algo.CopyAlgorithm
 
-.. image:: ./media/resources/algorithms/im-10-excel-copyalgorithm.JPG
+.. image:: ./media/resources/algorithms/im-010-excel-copyalgorithm.JPG
    :alt:  algorithm choose one
    :width: 400
 
@@ -292,11 +350,11 @@ See the images above and below to better understand how the algorithm behaves.
 |Outputs    |output           |
 +-----------+-----------------+
 
-.. image:: ./media/resources/algorithms/im-11-comptest-copyalgorithm.JPG
+.. image:: ./media/resources/algorithms/im-011-comptest-copyalgorithm.JPG
    :alt:  algorithm copy algorithm
    :width: 600
 
-.. image:: ./media/resources/algorithms/im-12-comp-copyalgorithm.JPG
+.. image:: ./media/resources/algorithms/im-012-comp-copyalgorithm.JPG
    :alt:  algorithm copy algorithm
    :width: 600
 
@@ -324,11 +382,11 @@ See the images above and below to better understand how the algorithm behaves.
 |Outputs    |output           |
 +-----------+-----------------+
 
-.. image:: ./media/resources/algorithms/im-14-comptest-copynooverwrite.JPG
+.. image:: ./media/resources/algorithms/im-014-comptest-copynooverwrite.JPG
    :alt:  algorithm copy no overwrite
    :width: 600
 
-.. image:: ./media/resources/algorithms/im-15-comp-copynooverwrite.JPG
+.. image:: ./media/resources/algorithms/im-015-comp-copynooverwrite.JPG
    :alt:  algorithm copy no overwrite
    :width: 600
 
@@ -337,11 +395,11 @@ DisAggregate
 
 Exec Class: decodes.tsdb.algo.DisAggregate
 
-.. image:: ./media/resources/algorithms/im-16-excel-disaggregate.JPG
+.. image:: ./media/resources/algorithms/im-016-excel-disaggregate.JPG
    :alt:  algorithm disaggregate - fill and split
    :width: 500
 
-.. image:: ./media/resources/algorithms/im-17-excel-disaggregate.JPG
+.. image:: ./media/resources/algorithms/im-017-excel-disaggregate.JPG
    :alt:  algorithm disaggregate - fill and split
    :width: 500
 
@@ -371,19 +429,19 @@ See the images above and below to better understand how the algorithm behaves.
 |Outputs    |output           |
 +-----------+-----------------+
 
-.. image:: ./media/resources/algorithms/im-18-comptest-disaggregate-fill.JPG
+.. image:: ./media/resources/algorithms/im-018-comptest-disaggregate-fill.JPG
    :alt:  algorithm disaggregate - fill
    :width: 600
 
-.. image:: ./media/resources/algorithms/im-19-comptest-disaggregate-split.JPG
+.. image:: ./media/resources/algorithms/im-019-comptest-disaggregate-split.JPG
    :alt:  algorithm disaggregate - split
    :width: 600
 
-.. image:: ./media/resources/algorithms/im-20-comptest-disaggregate-fill.JPG
+.. image:: ./media/resources/algorithms/im-020-comptest-disaggregate-fill.JPG
    :alt:  algorithm disaggregate - fill
    :width: 600
 
-.. image:: ./media/resources/algorithms/im-21-comptest-disaggregate-split.JPG
+.. image:: ./media/resources/algorithms/im-021-comptest-disaggregate-split.JPG
    :alt:  algorithm disaggregate - split
    :width: 600
 
@@ -392,7 +450,7 @@ FillForward
 
 Exec Class: decodes.tsdb.algo.FillForward
 
-.. image:: ./media/resources/algorithms/im-23-excel-fillforward.JPG
+.. image:: ./media/resources/algorithms/im-023-excel-fillforward.JPG
    :alt:  algorithm fill forward
    :width: 500
 
@@ -416,11 +474,11 @@ See the images above and below to better understand how the algorithm behaves.
 |Outputs    |output           |
 +-----------+-----------------+
 
-.. image:: ./media/resources/algorithms/im-24-comptest-fillforward.JPG
+.. image:: ./media/resources/algorithms/im-024-comptest-fillforward.JPG
    :alt:  algorithm fill forward
    :width: 600
 
-.. image:: ./media/resources/algorithms/im-25-comp-fillforward.JPG
+.. image:: ./media/resources/algorithms/im-025-comp-fillforward.JPG
    :alt:  algorithm fill forward
    :width: 600
 
@@ -429,7 +487,7 @@ Resample
 
 Exec Class: decodes.tsdb.algo.Resample
 
-.. image:: ./media/resources/algorithms/im-26-excel-resample.JPG
+.. image:: ./media/resources/algorithms/im-026-excel-resample.JPG
    :alt:  algorithm resample
    :width: 500
 
@@ -454,15 +512,15 @@ See the images above and below to better understand how the algorithm behaves.
 |Outputs    |output           |
 +-----------+-----------------+
 
-.. image:: ./media/resources/algorithms/im-27-comptest-resample-interp.JPG
+.. image:: ./media/resources/algorithms/im-027-comptest-resample-interp.JPG
    :alt:  algorithm resample - interp
    :width: 500
 
-.. image:: ./media/resources/algorithms/im-28-comptest-resample-fill.JPG
+.. image:: ./media/resources/algorithms/im-028-comptest-resample-fill.JPG
    :alt:  algorithm resample - fill
    :width: 500
 
-.. image:: ./media/resources/algorithms/im-29-comp-resample.JPG
+.. image:: ./media/resources/algorithms/im-029-comp-resample.JPG
    :alt:  algorithm resample
    :width: 450
 
@@ -471,7 +529,7 @@ RunningAverageAlgorithm
 
 Exec Class: decodes.tsdb.algo.RunningAverageAlgorithm
 
-.. image:: ./media/resources/algorithms/im-30-excel-runningaverage.JPG
+.. image:: ./media/resources/algorithms/im-030-excel-runningaverage.JPG
    :alt:  algorithm running average
    :width: 500
 
@@ -494,40 +552,61 @@ By default the following criteria are met or assumed in the algorithm.
 
 See the images above and below to better understand how the algorithm behaves.
 
-.. image:: ./media/resources/algorithms/im-31-comptest-runningaverage.JPG
+.. image:: ./media/resources/algorithms/im-031-comptest-runningaverage.JPG
    :alt:  algorithm running average
-   :width: 500
+   :width: 600
 
-.. image:: ./media/resources/algorithms/im-32-comp-runningaverage.JPG
+.. image:: ./media/resources/algorithms/im-032-comp-runningaverage.JPG
    :alt:  algorithm running average
-   :width: 500
+   :width: 600
 
 ScalarAdder
 -----------
 
 Exec Class: decodes.tsdb.algo.ScalerAdder
 
-.. image:: ./media/resources/algorithms/im-33-excel-scaleradder.JPG
+.. image:: ./media/resources/algorithms/im-033-excel-scaleradder.JPG
    :alt:  scaler adder
-   :width: 500
+   :width: 600
 
 The "scaler adder" algorithm or *ScalarAdder* will calculate a
-sum over 
-will take an input time series at some resolution and calculate
-an average based on the previous aggregate periodo interval. 
-For example, if the aggregate period interval is one week,
-then the running average for a daily time series will be calculated
-based on the previous 6 days and current day.  
+sum over a specific time slice from multiple time series. There is 
+an option to include multipliers to each time series.  There are no
+restrictions for the multipliers. 
 
-By default the following criteria are met or assumed in the algorithm.
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input1           |
+|           +-----------------+
+|           |input2           |
+|           +-----------------+
+|           |input3           |
+|           +-----------------+
+|           |input4           |
+|           +-----------------+
+|           |input5           |
+|           +-----------------+
+|           |input6           |
+|           +-----------------+
+|           |input7           |
+|           +-----------------+
+|           |input8           |
+|           +-----------------+
+|           |input9           |
+|           +-----------------+
+|           |input10          |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
 
-.. image:: ./media/resources/algorithms/im-34-comptest-scaleradder.JPG
-   :alt:  scaler adder
-   :width: 500
+.. image:: ./media/resources/algorithms/im-034-comptest-scaleradder.JPG
+   :alt:  algorithm scaler adder
+   :width: 600
 
-.. image:: ./media/resources/algorithms/im-35-comp-scaleradder.JPG
-   :alt:  scaler adder
-   :width: 500
+.. image:: ./media/resources/algorithms/im-035-comp-scaleradder.JPG
+   :alt:  algorithm scaler adder
+   :width: 600
 
 
 SubSample
@@ -535,14 +614,67 @@ SubSample
 
 Exec Class: decodes.tsdb.algo.SubSample
 
-... more content coming soon ...
+.. image:: ./media/resources/algorithms/im-036-excel-subsample.JPG
+   :alt:  algorithm subsample
+   :width: 600
+
+The "sub sample" algorithm or *SubSample* will turn a time series 
+of a high resolution to a lower resolution.  For example, an hourly
+instantaneous time series might be converted into a daily instantaneous 
+time series by sampling the top of day hour.  Or a 15-minute time series
+may be turned into an hourly time series by sampling the top of hour
+values.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
+
+.. image:: ./media/resources/algorithms/im-037-comptest-subsample.JPG
+   :alt:  algorithm subsample
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-038-comp-subsample.JPG
+   :alt:  algorithm subsample
+   :width: 600
+
+
 
 SumOverTimeAlgorithm
 --------------------
 
 Exec Class: decodes.tsdb.algo.SumOverTimeAlgorithm
 
-... more content coming soon ...
+.. image:: ./media/resources/algorithms/im-39-excel-sumovertime.JPG
+   :alt:  algorithm sumovertime
+   :width: 600
+
+The "sum over time" algorithm or *SumOverTimeAlgorithm* will 
+calculate the sum over a given period of time.  For example
+hourly values can be added up over a day to calculate a daily
+time series.  Or a daily time series can be added up to calculate
+a weekly or monthly total.  By default the aggLowerBoundClosed
+property is False and the aggUpperBoundClosed property is True.
+The minSamplesNeeded by default is 1.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
+
+.. image:: ./media/resources/algorithms/im-040-comptest-sumovertime.JPG
+   :alt:  algorithm sumovertime
+   :width: 600
+
+.. image:: ./media/resources/algorithms/im-041-comp-sumovertime.JPG
+   :alt:  algorithm sumovertime
+   :width: 600
 
 Standard - Hydrologic
 =====================
@@ -570,21 +702,55 @@ BridgeClearance
 
 Exec Class: decodes.tsdb.algo.BridgeClearance
 
-... more content coming soon ...
+.. ./media/resources/algorithms/im-042-excel-bridgeclearance.JPG
+   algorithm bridge clearance
+   600
+
+.. ./media/resources/algorithms/im-043-comptest-bridgeclearance.JPG
+   algorithm bridge clearance
+   600
+
+.. ./media/resources/algorithms/im-044-comp-bridgeclearance.JPG
+   algorithm bridge clearance
+   600
 
 EstimatedInflow
 ---------------
 
 Exec Class: decodes.tsdb.algo.EstimatedInflow
 
-... more content coming soon ...
+
+.. ./media/resources/algorithms/im-045-excel-estimatedinflow.JPG
+   algorithm estimated inflow
+   600
+
+.. ./media/resources/algorithms/im-046-comptest-estimatedinflow.JPG
+   algorithm estimated inflow
+   :width: 600
+
+.. ./media/resources/algorithms/im-047-comp-estimatedinflow.JPG
+   :alt:  algorithm estimated inflow
+   :width: 600
+
 
 IncrementalPrecip
 -----------------
 
 Exec Class: decodes.tsdb.algo.IncrementalPrecip
 
-... more content coming soon ...
+
+.. ./media/resources/algorithms/im-048-excel-incrementalprecip.JPG
+   algorithm incremental precip
+   600
+
+.. ./media/resources/algorithms/im-049-comptest-incrementalprecip.JPG
+   algorithm incremental precip
+   600
+
+.. ./media/resources/algorithms/im-050-comp-incrementalprecip.JPG
+   algorithm incremental precip
+   600
+
 
 RdbRating
 ---------
@@ -615,6 +781,8 @@ Exec Class: decodes.tsdb.algo.VirtualGage
 ... more content coming soon ...
 
 
+
+
 Standard - Arithmetic - Hidden 
 ==============================
 
@@ -627,23 +795,113 @@ Standard - Hydrologic Specific - Hidden
 ... more content coming soon ...
 
 
-********************************
-OpenDCS Custom Python Algorithms
-********************************
+CWMS Only - Hydrologic
+======================
+
++-----------------------+-------------------------------------------------------+
+|**Algorithm**          |**Description**                                        |
++=======================+=======================================================+
+|CwmsRatingMultiIndep   |Implements CWMS Rating Computations                    |
++-----------------------+-------------------------------------------------------+
+|CwmsRatingSingleIndep  |Implements CWMS Rating Computations                    |
++-----------------------+-------------------------------------------------------+
+|CwmsScreening          |CWMS Validation with CWMS Screening Records            |
++-----------------------+-------------------------------------------------------+
+|DatchkScreening        |CWMS Validation with DATCHK files                      |
++-----------------------+-------------------------------------------------------+
+
+CwmsRatingMultiIndep
+--------------------
+
+Exec Class: decodes.cwms.rating.CwmsRatingMultIndep
+
+CwmsRatingSingleIndep
+---------------------
+
+Exec Class: decodes.cwms.rating.CwmsRatingSingleIndep
+
+CwmsScreening
+-------------
+
+Exec Class: decodes.cwms.validation.CwmsScreeningAlgorithm
+
+DatchkScreening
+---------------
+
+Exec Class: decodes.cwms.validation.DatchkScreeningAlgorithm
+
+HDB Only - Hydrologic
+=====================
+
++-------------------------+--------------------------------------------------+
+|**Algorithm**            |**Description**                                   |
++=========================+==================================================+
+|CallProcAlg              | decodes.hdb.algo.CallProcAlg                     |
++-------------------------+--------------------------------------------------+
+|DynamicAggregateAlg      | decodes.hdb.algo.DynamicAggregateAlg             |
++-------------------------+--------------------------------------------------+
+|EOPInterpAlg             | decodes.hdb.algo.EOPInterpAlg                    |
++-------------------------+--------------------------------------------------+
+|EquationSolverAlg        | decodes.hdb.algo.EquationSolverAlg               |
++-------------------------+--------------------------------------------------+
+|EstGLDAInflow            | decodes.hdb.algo.EstGLDAInflow                   |
++-------------------------+--------------------------------------------------+
+|FLGUUnreg                | decodes.hdb.algo.FLGUUnreg                       |
++-------------------------+--------------------------------------------------+
+|FlowToVolumeAlg          | decodes.hdb.algo.FlowToVolumeAlg                 |
++-------------------------+--------------------------------------------------+
+|GLDAEvap                 | decodes.hdb.algo.GLDAEvap                        |
++-------------------------+--------------------------------------------------+
+|GLDAUnreg                | decodes.hdb.algo.GLDAUnreg                       |
++-------------------------+--------------------------------------------------+
+|GlenDeltaBSMBAlg         | decodes.hdb.algo.GlenDeltaBSMBAlg                |
++-------------------------+--------------------------------------------------+
+|HdbLookupTimeShiftRating | decodes.hdb.algo.HdbLookupTimeShiftRating        |
++-------------------------+--------------------------------------------------+
+|HdbShiftRating           | decodes.hdb.algo.HdbShiftRating                  |
++-------------------------+--------------------------------------------------+
+|InflowAdvancedAlg        | decodes.hdb.algo.InflowAdvancedAlg               |
++-------------------------+--------------------------------------------------+
+|InflowBasicAlg           | decodes.hdb.algo.InflowBasicAlg                  |
++-------------------------+--------------------------------------------------+
+|MPRCUnreg                | decodes.hdb.algo.MPRCUnreg                       |
++-------------------------+--------------------------------------------------+
+|NVRNUnreg                | decodes.hdb.algo.NVRNUnreg                       |
++-------------------------+--------------------------------------------------+
+|ParshallFlume            | decodes.hdb.algo.ParshallFlume                   |
++-------------------------+--------------------------------------------------+
+|PowerToEnergyAlg         | decodes.hdb.algo.PowerToEnergyAlg                |
++-------------------------+--------------------------------------------------+
+|SideInflowAlg            | decodes.hdb.algo.SideInflowAlg                   |
++-------------------------+--------------------------------------------------+
+|SimpleDisaggAlg          | decodes.hdb.algo.SimpleDisaggAlg                 |
++-------------------------+--------------------------------------------------+
+|TimeWeightedAverageAlg   | decodes.hdb.algo.TimeWeightedAverageAlg          |
++-------------------------+--------------------------------------------------+
+|VolumeToFlowAlg          | decodes.hdb.algo.VolumeToFlowAlg                 |
++-------------------------+--------------------------------------------------+
 
 
-... more content coming soon ...
+
+*************************
+OpenDCS Custom Algorithms
+*************************
+
+In addition to the standard algorithms outlined above, users can 
+set up custom algorithms that can be called upon in calculations.
+There are two methods for creating custom algorithms: python and java.
+
+Python Algorithms
+=================
+
+Exec Class: decodes.tsdb.algo.PythonAlgorithm
+
+
+Java Algorithms
+===============
 
 ****************************
 OpenDCS Algorithm GUI Basics
 ****************************
-
-... more content coming soon ...
-
-Where are algorithms stored?
-============================
-
-Basics of properties
-====================
 
 ... more content coming soon ...
