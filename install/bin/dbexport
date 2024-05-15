@@ -6,4 +6,5 @@
 # options:
 #		-i               Export from 'installed' database (default is edit db)
 #
-%INSTALL_PATH/bin/decj decodes.dbimport.DbExport $*
+APP_PATH=$( dirname -- "${BASH_SOURCE[0]}")
+${APP_PATH}/decj decodes.dbimport.DbExport $*

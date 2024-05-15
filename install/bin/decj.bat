@@ -21,4 +21,18 @@ for /R "%APP_PATH%/dep" %%a in (*.jar) do (
 
 set "CLASSPATH=!CLASSPATH!"
 
-java -Xmx240m -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%APP_PATH%" %*%
+if not defined DCSTOOL_USERDIR (
+  set DCSTOOL_USERDIR="%APPDATA%\opendcs"
+)
+
+if not exist %DCSTOOL_USERDIR%\ (
+  echo "Creating Local User Directory and initial properties in %DCSTOOL_USERDIR%"
+  mkdir %DCSTOOL_USERDIR%
+  cp %APP_PATH%\decodes.properties %DCSTOOL_USERDIR%\user.properties
+)
+
+for /R "%DCSTOOL_USERDIR%/dep" %%a in (*.jar) do (
+  set "CLASSPATH=!CLASSPATH!;%%a"
+  )
+
+java -Xmx240m -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" %*%

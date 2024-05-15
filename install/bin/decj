@@ -6,7 +6,8 @@
 #
 
 # INSTALL_PATH will be replaced with actual DECODES install dir.
-DH=%INSTALL_PATH
+APP_PATH=$( dirname -- "${BASH_SOURCE[0]}")
+DH="${APP_PATH}/.."
 
 # Make sure DCSTOOL_HOME is set
 if [ -z "$DCSTOOL_HOME" ]

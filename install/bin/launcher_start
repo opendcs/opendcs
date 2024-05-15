@@ -1,2 +1,3 @@
 #!/bin/sh
-%INSTALL_PATH/bin/decj decodes.launcher.LauncherFrame $*
+APP_PATH=$( dirname -- "${BASH_SOURCE[0]}")
+${APP_PATH}/decj decodes.launcher.LauncherFrame $*
