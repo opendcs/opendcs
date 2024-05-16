@@ -302,11 +302,14 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			TopFrame.instance().showError(dbeditLabels.getString("NetlistEditPanel.EditError"));
 			return;
 		}
-		NetworkListEntry nle = tableModel.getObjectAt(row);
+		//Get the correct row from the table model
+		int modelrow = netlistContentsTable.convertRowIndexToModel(row);
+		NetlistContentsTableModel tablemodel = (NetlistContentsTableModel)netlistContentsTable.getModel();
+		NetworkListEntry nle = tableModel.getObjectAt(modelrow);
 		NetlistEntryDialog dlg = new NetlistEntryDialog(nle);
 		launchDialog(dlg);
 		if (dlg.wasOkPressed())
-			tableModel.replace(nle, row);
+			tableModel.replace(nle, modelrow);
 	}
 
 	protected void mediumTypeSelected()
