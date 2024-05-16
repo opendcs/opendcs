@@ -36,11 +36,14 @@ fi
 if [ -z "$DCSTOOL_USERDIR" ]
 then
   DCSTOOL_USERDIR=$HOME/.opendcs
-  echo "Creating Local User Directory and initial properties in ${DCSTOOL_USERDIR}"
-  mkdir -p $DCSTOOL_USERDIR
-  cp $DH/decodes.properties $DCSTOOL_USERDIR/user.properties
 fi
 export DCSTOOL_USERDIR
+
+if [ ! -d "$DCSTOOL_USERDIR" ]; then
+    echo "Creating Local User Directory and initial properties in ${DCSTOOL_USERDIR}"
+    mkdir -p $DCSTOOL_USERDIR
+    cp $DH/decodes.properties $DCSTOOL_USERDIR/user.properties
+fi
 
 # Build classpath
 CP=$DH/bin/opendcs.jar:
