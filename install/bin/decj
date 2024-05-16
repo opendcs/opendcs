@@ -5,16 +5,25 @@
 # Need to preserve the # grouping, so enclose every argument in quotes.
 #
 
-# INSTALL_PATH will be replaced with actual DECODES install dir.
-APP_PATH=$( dirname -- "${BASH_SOURCE[0]}")
-DH="${APP_PATH}/.."
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+# Get the directory above bin for DCSTOOL_HOME
+DH=$(realpath "${APP_PATH}/..")
 
 # Make sure DCSTOOL_HOME is set
 if [ -z "$DCSTOOL_HOME" ]
 then
   DCSTOOL_HOME=$DH
   export DCSTOOL_HOME
+elif [ "$DH" != "$DCSTOOL_HOME" ]
+then
+  echo "Environment has set a diffent DCSTOOL_HOME than the location of the application start script."
+  echo "Environment $DCSTOOL_HOME"
+  echo "Location    $DH"
+  echo "This may cause incorrect operation."
 fi
+
 
 # Make sure DECODES_INSTALL_DIR is set
 if [ -z "$DECODES_INSTALL_DIR" ]
@@ -26,16 +35,10 @@ fi
 # Make sure DCSTOOL_USERDIR is set
 if [ -z "$DCSTOOL_USERDIR" ]
 then
-  decj_owner=`ls -l "$0" | awk '{ print $3 }'`
-  if [ "$decj_owner" = "$USER" ]
-  then
-    DCSTOOL_USERDIR=$DCSTOOL_HOME
-  elif [ -d $HOME/opendcs_user ]
-  then
-    DCSTOOL_USERDIR=$HOME/opendcs_user
-  else
-    DCSTOOL_USERDIR=$HOME
-  fi
+  DCSTOOL_USERDIR=$HOME/.opendcs
+  echo "Creating Local User Directory and initial properties in ${DCSTOOL_USERDIR}"
+  mkdir -p $DCSTOOL_USERDIR
+  cp $DH/decodes.properties $DCSTOOL_USERDIR/user.properties
 fi
 export DCSTOOL_USERDIR
 

@@ -2,6 +2,10 @@
 
 # This is the IzPack cleanup script for OPENDCS installation
 # It removes old/unneeded file
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
 LOG=%INSTALL_PATH/clean.log
 OLDSTUFF=%INSTALL_PATH/old-stuff
 
@@ -17,7 +21,7 @@ then
 	mkdir $OLDSTUFF
 fi
 
-cd %INSTALL_PATH/dep
+cd ${APP_PATH}/../dep
 for f in $oldjars
 do
 	echo checking dep/$f >>$LOG

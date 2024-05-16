@@ -1,10 +1,11 @@
 #!/bin/bash
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
 
 # This script starts the LRGS background process as the lrgs user.
 
 # Modify these settings as appropriate for your installation:
 LRGSUSER=lrgs
-DCSTOOL_HOME=/home/$LRGSUSER/OPENDCS
-
 # This command starts LRGS:
-su - $LRGSUSER -c $DCSTOOL_HOME/bin/startLRGS
+su - $LRGSUSER -c ${APP_PATH}/startLRGS

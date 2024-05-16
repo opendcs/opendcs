@@ -2,4 +2,8 @@
 #
 # This script starts the LRGS Real Time Status GUI
 #
-%INSTALL_PATH/bin/decj lrgs.rtstat.RtStat $*
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj lrgs.rtstat.RtStat $*

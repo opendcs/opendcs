@@ -2,8 +2,5 @@
 
 # This script stops the LRGS background process as the lrgs user.
 
-LRGSUSER=lrgs
-DCSTOOL_HOME=/home/$LRGSUSER/OPENDCS
-
-rm -f $DCSTOOL_HOME/lrgs.lock
+rm -f $LRGS_HOME/lrgs.lock
 sleep 10
