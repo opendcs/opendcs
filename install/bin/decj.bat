@@ -22,7 +22,7 @@ for /R "%APP_PATH%/dep" %%a in (*.jar) do (
 set "CLASSPATH=!CLASSPATH!"
 
 if not defined DCSTOOL_USERDIR (
-  set DCSTOOL_USERDIR="%APPDATA%\opendcs"
+  set DCSTOOL_USERDIR="%APPDATA%\.opendcs"
 )
 
 if not exist %DCSTOOL_USERDIR%\ (
