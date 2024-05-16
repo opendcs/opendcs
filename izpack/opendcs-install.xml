@@ -282,12 +282,6 @@ IMPORTANT: For a new installation, you should also select the Template Database.
             <parsable   targetfile="$INSTALL_PATH/bin/procmon" type="shell" os="unix"/>
             <executable targetfile="$INSTALL_PATH/bin/procmon.bat" stage="never" os="windows"/>
             <parsable   targetfile="$INSTALL_PATH/bin/procmon.bat" os="windows"/>
-
-            <executable targetfile="$INSTALL_PATH/bin/postInstall" stage="postinstall" os="unix" keep="true"/>
-            <parsable   targetfile="$INSTALL_PATH/bin/postInstall" type="shell" os="unix"/>
-            <executable targetfile="$INSTALL_PATH/bin/postInstall.bat" stage="postinstall" os="windows" keep="true"/>
-            <parsable   targetfile="$INSTALL_PATH/bin/postInstall.bat" os="windows"/>
-
         </pack>
 
 		<pack name="XML Database Template" required="no">
