@@ -1,6 +1,10 @@
 #!/bin/bash
 
 # This script stops the LRGS background process as the lrgs user.
-
+if [ -z "$LRGSHOME" ]
+then
+  echo "the environment variable 'LRGSHOME' should be set to a path outside the installation directory."
+  exit 1
+fi
 rm -f $LRGS_HOME/lrgs.lock
 sleep 10
