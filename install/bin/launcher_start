@@ -1,3 +1,6 @@
 #!/bin/sh
-APP_PATH=$( dirname -- "${BASH_SOURCE[0]}")
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
 ${APP_PATH}/decj decodes.launcher.LauncherFrame $*

@@ -1,3 +1,6 @@
 #!/bin/bash
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
 
-%INSTALL_PATH/bin/decj  org.opendcs.database.ManageDatabaseApp $*
+${APP_PATH}/decj  org.opendcs.database.ManageDatabaseApp $*
