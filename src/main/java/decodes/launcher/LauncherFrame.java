@@ -1922,68 +1922,48 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
             List<Profile> profiles = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")));
             Logger.instance().debug3("There are " + profiles.size() + " profiles.");
-            if (profiles.size() > 1)
+            /**
+             * This current profile is used for the case of the profile manager adding or removing a profile and needing
+             * to rebuild the combobox entries.
+             */
+            Profile currentProfile = (Profile)profileCombo.getSelectedItem();
+            SwingUtilities.invokeLater(() ->
             {
-                /**
-                 * This current profile is used for the case of the profile manager adding or removing a profile and needing
-                 * to rebuild the combobox entries.
-                 */
-                Profile currentProfile = (Profile)profileCombo.getSelectedItem();
-                SwingUtilities.invokeLater(() ->
+                profileCombo.removeAllItems();
+                for(Profile item : profiles)
                 {
-                    profileCombo.removeAllItems();
-                    for(Profile item : profiles)
-                    {
-                        profileCombo.addItem(item);
-                    }
-                    if (!profilesShown)
-                    {
-                        fullPanel.add(profPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, .1,
-                            GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
-                        fullPanel.getIgnoreRepaint();
-                        profilesShown = true;
-                    }
+                    profileCombo.addItem(item);
+                }
+                if (!profilesShown)
+                {
+                    fullPanel.add(profPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, .1,
+                        GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
+                    fullPanel.getIgnoreRepaint();
+                    profilesShown = true;
+                }
 
-                    if (currentProfile != null)
-                    {
-                        for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
-                        {
-                            if (profileCombo.getItemAt(idx).getName().equalsIgnoreCase(currentProfile.getName()))
-                            {
-                                profileCombo.setSelectedIndex(idx);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        profileCombo.setSelectedIndex(0); // set to default
-                        for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
-                        {
-                            if (profileCombo.getItemAt(idx).equals(this.launchProfile))
-                            {
-                                profileCombo.setSelectedIndex(idx);
-                            }
-                        }
-                    }
-                });
-            }
-            else // only 1 "default" profile
-            {
-                // No harm done if profPanel is currently not displayed.
-                SwingUtilities.invokeLater(() ->
+                if (currentProfile != null)
                 {
-                    /**
-                     * Even though the combo isn't painted, setting the
-                     * compontent to the profile to provided launch profile
-                     * allows less conditional code later on during operations.
-                     */
-                    profileCombo.addItem(launchProfile);
-                    profileCombo.setSelectedIndex(0);
-                    fullPanel.remove(profPanel);
-                    fullPanel.repaint();
-                    profilesShown = false;
-                });
-            }
+                    for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
+                    {
+                        if (profileCombo.getItemAt(idx).getName().equalsIgnoreCase(currentProfile.getName()))
+                        {
+                            profileCombo.setSelectedIndex(idx);
+                        }
+                    }
+                }
+                else
+                {
+                    profileCombo.setSelectedIndex(0); // set to default
+                    for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
+                    {
+                        if (profileCombo.getItemAt(idx).equals(this.launchProfile))
+                        {
+                            profileCombo.setSelectedIndex(idx);
+                        }
+                    }
+                }
+            });
         }
         catch(InvocationTargetException | InterruptedException ex)
         {
