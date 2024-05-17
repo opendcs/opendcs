@@ -28,7 +28,7 @@ if not defined DCSTOOL_USERDIR (
 if not exist %DCSTOOL_USERDIR%\ (
   echo "Creating Local User Directory and initial properties in %DCSTOOL_USERDIR%"
   mkdir %DCSTOOL_USERDIR%
-  cp %APP_PATH%\decodes.properties %DCSTOOL_USERDIR%\user.properties
+  copy %APP_PATH%\decodes.properties %DCSTOOL_USERDIR%\user.properties
 )
 
 for /R "%DCSTOOL_USERDIR%/dep" %%a in (*.jar) do (
