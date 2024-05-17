@@ -33,7 +33,7 @@ to editing the properties.
 This page is divided into three sections:
 
 #. OpenDCS Standard Algorithms
-#. OpenDCS Custom Python Algorithms
+#. OpenDCS Custom Algorithms
 #. OpenDCS Algorithm GUI Basics
 
 As a recap, below is a table of algorithms that come with OpenDCS installs.
@@ -218,7 +218,6 @@ are assumed or executed.
 
 See the image above to better understand how the algorithm behaves.
 
-
 +-----------+-----------------+
 |**Role**   |**Role Name**    |
 +===========+=================+
@@ -264,7 +263,6 @@ See the images above and below to better understand how the algorithm behaves.
 |Outputs    |average          |
 +-----------+-----------------+
 
-
 .. image:: ./media/resources/algorithms/im-005-comptest-averagealgorithm.JPG
    :alt:  algorithm average algorithm
    :width: 600
@@ -272,7 +270,6 @@ See the images above and below to better understand how the algorithm behaves.
 .. image:: ./media/resources/algorithms/im-006-comp-averagealgorithm.JPG
    :alt:  algorithm average algorithm
    :width: 600
-
 
 ChooseOne
 ---------
@@ -363,7 +360,7 @@ CopyNoOverwrite
 
 Exec Class: decodes.tsdb.algo.CopyNoOverwrite
 
-.. image:: ./media/resources/algorithms/im-13-excel-copynooverwrite.JPG
+.. image:: ./media/resources/algorithms/im-013-excel-copynooverwrite.JPG
    :alt:  algorithm copy no overwrite
    :width: 500
 
@@ -641,14 +638,12 @@ values.
    :alt:  algorithm subsample
    :width: 600
 
-
-
 SumOverTimeAlgorithm
 --------------------
 
 Exec Class: decodes.tsdb.algo.SumOverTimeAlgorithm
 
-.. image:: ./media/resources/algorithms/im-39-excel-sumovertime.JPG
+.. image:: ./media/resources/algorithms/im-039-excel-sumovertime.JPG
    :alt:  algorithm sumovertime
    :width: 600
 
@@ -702,17 +697,17 @@ BridgeClearance
 
 Exec Class: decodes.tsdb.algo.BridgeClearance
 
-.. ./media/resources/algorithms/im-042-excel-bridgeclearance.JPG
-   algorithm bridge clearance
-   600
+.. image:: ./media/resources/algorithms/im-042-excel-bridgeclearance.JPG
+   :alt: algorithm bridge clearance
+   :width: 600
 
-.. ./media/resources/algorithms/im-043-comptest-bridgeclearance.JPG
-   algorithm bridge clearance
-   600
+.. image:: ./media/resources/algorithms/im-043-comptest-bridgeclearance.JPG
+   :alt: algorithm bridge clearance
+   :width: 600
 
-.. ./media/resources/algorithms/im-044-comp-bridgeclearance.JPG
-   algorithm bridge clearance
-   600
+.. image:: ./media/resources/algorithms/im-044-comp-bridgeclearance.JPG
+   :alt: algorithm bridge clearance
+   :width: 600
 
 EstimatedInflow
 ---------------
