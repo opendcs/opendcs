@@ -18,7 +18,7 @@ then
   export DCSTOOL_HOME
 elif [ "$DH" != "$DCSTOOL_HOME" ]
 then
-  echo "Environment has set a diffent DCSTOOL_HOME than the location of the application start script."
+  echo "Environment has set a different DCSTOOL_HOME than the location of the application start script."
   echo "Environment $DCSTOOL_HOME"
   echo "Location    $DH"
   echo "This may cause incorrect operation."
