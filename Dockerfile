@@ -22,7 +22,6 @@ COPY --from=builder /app/stage /opt/opendcs
 COPY docker_scripts/env.sh /opt/opendcs/
 WORKDIR /opt/opendcs/bin
 RUN rm *.bat && \
-    sed -i -e 's/%INSTALL_PATH/\/opt\/opendcs/' * && \
     chmod +x /opt/opendcs/bin/*
 
 ENV DCSTOOL_HOME=/opt/opendcs DECODES_INSTALL_DIR=${DCSTOOL_HOME}

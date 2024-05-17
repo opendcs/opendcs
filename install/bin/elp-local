@@ -4,7 +4,6 @@ SCRIPT=$(readlink -f "$0")
 # Absolute path this script is in, thus /home/user/bin
 APP_PATH=$(dirname "$SCRIPT")
 
-DH=%INSTALL_PATH
 
 if [ -z "$LRGSHOME" ] 
 then

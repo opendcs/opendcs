@@ -535,7 +535,6 @@ more information about each.
         <move file="stage/drgsconf.xml" tofile="stage/drgsconf.xml.sample"/>
         <move file="stage/edit-db" tofile="stage/edit-db.init"/>
         <move file="stage/users" tofile="stage/users.init"/>
-        <replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
         <tar destfile="opendcs-cwms-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz" compression="gzip">
             <tarfileset dir="stage">
                 <exclude name="bin/*"/>
