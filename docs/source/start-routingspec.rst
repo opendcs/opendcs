@@ -52,6 +52,10 @@ a routing spec are employed.
 #. Define the **routing spec**
 #. Schedule routing specs using **routing scheduler**
 
+.. image:: ./media/start/routingspec/im-00-build-rs-recap.JPG
+   :alt: steps to create a routing spec
+   :width: 700
+
 The steps below are intended to help guide a new user through the 
 GUI and DECODES Database Editor tabs used for setting up the routing 
 spec.
