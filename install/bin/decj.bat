@@ -30,7 +30,7 @@ if not exist %DCSTOOL_USERDIR%\ (
   echo "The default XML database has been copied to this directory."
   mkdir %DCSTOOL_USERDIR%
   copy %APP_PATH%\decodes.properties %DCSTOOL_USERDIR%\user.properties
-  copy /R %APP_PATH%\edit-db %DCSTOOL_USERDIR%\edit-db
+  xcopy %APP_PATH%\edit-db %DCSTOOL_USERDIR%\edit-db /E /I
 )
 
 for /R "%DCSTOOL_USERDIR%/dep" %%a in (*.jar) do (
