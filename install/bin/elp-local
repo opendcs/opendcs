@@ -7,7 +7,7 @@ APP_PATH=$(dirname "$SCRIPT")
 
 if [ -z "$LRGSHOME" ] 
 then
-  echo "the environment variable 'LRGSHOME' should be set to a path outside the installation directory."
+  echo "Error: The environment variable 'LRGSHOME' is not set.   Set to a path outside the installation directory."
   exit 1
 fi
 
