@@ -290,7 +290,7 @@ contents of `$DCSTOOL_USERDIR/edit-db` should be imported in, starting with the 
    
    We are currently in the process of improving how this required standard data is handled. We've provided this basic
    instruction to help users get started but would preferred not to write out detail documentation since we'll be changing it soon.
-   If you have further questions please use github.com/opendcs/opendcs/discourse for more clarity.
+   If you have further questions please use https://github.com/opendcs/opendcs/discussions for more clarity.
 
 USACE and USBR users:
 
