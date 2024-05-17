@@ -41,8 +41,10 @@ export DCSTOOL_USERDIR
 
 if [ ! -d "$DCSTOOL_USERDIR" ]; then
     echo "Creating Local User Directory and initial properties in ${DCSTOOL_USERDIR}"
+    echo "The default XML database has been copied to this directory."
     mkdir -p $DCSTOOL_USERDIR
     cp $DH/decodes.properties $DCSTOOL_USERDIR/user.properties
+    cp -r $DH/edit-db $DCSTOOL_USERDIR/edit-db
 fi
 
 # Build classpath

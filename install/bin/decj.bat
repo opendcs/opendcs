@@ -27,8 +27,10 @@ if not defined DCSTOOL_USERDIR (
 
 if not exist %DCSTOOL_USERDIR%\ (
   echo "Creating Local User Directory and initial properties in %DCSTOOL_USERDIR%"
+  echo "The default XML database has been copied to this directory."
   mkdir %DCSTOOL_USERDIR%
   copy %APP_PATH%\decodes.properties %DCSTOOL_USERDIR%\user.properties
+  copy /R %APP_PATH%\edit-db %DCSTOOL_USERDIR%\edit-db
 )
 
 for /R "%DCSTOOL_USERDIR%/dep" %%a in (*.jar) do (
