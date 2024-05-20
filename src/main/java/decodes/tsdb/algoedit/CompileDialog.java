@@ -334,7 +334,7 @@ public class CompileDialog extends GuiDialog
                     }
                     String userMsg = (jfo == null )
                                    ? String.format("%s %s%s", kind.toString(), msg, System.lineSeparator())
-                                   : String.format("%s %s:%d%d: %s%s", kind.toString(), fileName, line, column, msg, System.lineSeparator());
+                                   : String.format("%s %s:%d,%d: %s%s", kind.toString(), fileName, line, column, msg, System.lineSeparator());
                     resultsArea.append(userMsg);
                 }
             };
