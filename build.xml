@@ -764,11 +764,11 @@ more information about each.
                  key="DECJ_OPTS"
                  value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
         </exec>
-        <exec executable="${stage.dir}/bin/${opendcs.app}.bat" osfamily="windows">
+        <exec executable="${stage.absolute.dir}/bin/${opendcs.app}.bat" osfamily="windows" vmlauncher="false">
             <env key="DCSTOOL_HOME" value="${stage.absolute.dir}"/>
             <env key="DECODES_INSTALL_DIR" value="${stage.absolute.dir}"/>
             <arg value="-d3"/>
-            <arg value="-l"/><arg value="con:"/>
+            <arg value="-l"/><arg value="CON:"/>
             <arg if:set="opendcs.profile" value="-P"/>
             <arg if:set="opendcs.profile" value="${opendcs.profile}"/>
             <env if:set="debugPort"

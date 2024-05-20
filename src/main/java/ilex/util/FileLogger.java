@@ -152,9 +152,17 @@ public class FileLogger extends Logger
 		outputFile = new File(filename);
 		try
 		{
-			FileOutputStream fos = new FileOutputStream(outputFile, appendFlag);
-			output = new PrintStream(fos, true);
-			fileChan = fos.getChannel();
+			// NOTE: not ideal to have this special case, but it makes setting up the ant
+			// run task easier and makes sure in windows we have a way to send logs to stdout.
+			// I'm pretty sure just CON: worked on the terminal so it's probably some odd
+			// interaction with ant and how the command itself is run.
+			OutputStream os = null;
+			if (filename.equalsIgnoreCase("CON:")) {
+				os = System.out;
+			} else {
+				os = new FileOutputStream(outputFile, appendFlag);
+			}
+			output = new PrintStream(os, true);
 			writerThread = new Thread(() ->
 			{
 				while(closeOperations.get() == false)
