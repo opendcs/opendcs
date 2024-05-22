@@ -2,4 +2,8 @@
 #
 # This script starts the message browser GUI for the local LRGS machine.
 #
-%INSTALL_PATH/bin/decj lrgs.lddc.GetDcpMessages $*
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj lrgs.lddc.GetDcpMessages $*

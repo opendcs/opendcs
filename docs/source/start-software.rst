@@ -160,6 +160,8 @@ Proceed with installing OpenDCS.
 If nothing is returned or the version is older then 1.8, then install
 the 1.8 or up to java 17 from https://adoptium.net/temurin/releases/ .
 
+Other JREs should work but are not as tested by the project.
+
 Where can I find releases of OpenDCS?
 =====================================
 
@@ -270,12 +272,31 @@ file into a browser).
 What do I need to edit/configure for my set-up?
 ===============================================
 
-Prior to launching the software, set up the **decodes.properties** file.
+OpenDCS on the first start of any program will determine if you have an existing
+DCSTOOL_USERDIR environment variable set or Create the default directory for you.
+
+If you have not set the variable OpenDCS will use it's default `$HOME/.opendcs` on unix type machines
+and `%AppData%\.opendcs` on Windows machines.
+
+If that directory already exists, it is assumed valid. If it does not exist OpenDCS will copy the
+default decodes.properties to `$DCSTOOL_USERDIR\user.properties` and also copy the default XML database to 
+`$DCSTOOL_USERDIR/edit-db`.
+
+
+This allows new users to get started more quickly. Additionally if you are setting up a fresh SQL based database, the
+contents of `$DCSTOOL_USERDIR/edit-db` should be imported in, starting with the `loading-app` directory.
+
+.. NOTE::
+   
+   We are currently in the process of improving how this required standard data is handled. We've provided this basic
+   instruction to help users get started but would preferred not to write out detail documentation since we'll be changing it soon.
+   If you have further questions please use https://github.com/opendcs/opendcs/discussions for more clarity.
 
 USACE and USBR users:
 
-* Copy the user.properties file from server to the C:\\OPENDCS directory.
-* Rename the file to decodes.properties.
+* Copy the user.properties file from server to the $DCSTOOL_USERDIR directory. 
+* Should should only have to do this once or if the contents change.
+* IF you will be connecting to multiple systems (such as a backup system) we suggest renaming to `<Meaning to you name>.profile`
 
 For more details about the decodes.properties see
 :any:`leg-inst-start-configure`
@@ -305,11 +326,35 @@ USACE users:
 * USERNAME: Oracle User
 * PASSWORD: Oracle Password
 
+
 ***************************************
 OpenDCS Main Menu Components - Overview
 ***************************************
 
 The OpenDCS main menu is divided into two parts outlined below.
+
+Profiles
+========
+
+The Profile system of OpenDCS is now always on. The default profile is `$DCSTOOL_USERDIR\user.properties` *unless* 
+you've called `launcher_start -P <some property file>` from the command line.
+
+Profiles are normal decodes.properties files that use the `.profile` extension. The File name, without extension, is used as the profile name.
+This system allows users to connect to multiple OpenDCS database instances when their work requires it.
+
+.. image:: ./media/start/software/im-12-profiles.png
+   :alt: Profile ComboBox and Management button
+   :width: 640
+
+The management button, the `...`, allows to to see existing Profiles and create new ones. After copying an existing profile, you can select it
+in the ComboBox and click setup to edit the contents of that particular profile. Applications launched will use the selected profile.
+
+When the default profile is selected, applications are launched in the same JVM as the launcher. When a non-default profile is selected 
+the launcher will create a new JVM to run the applications.
+
+.. NOTE::
+   
+   This System has existed in OpenDCS for a while, we've now decided to make it visible by default.
 
 DECODES Components
 ==================
@@ -478,22 +523,18 @@ GUI application. The file on disk can be control in each application with the `-
 if run from a terminal.
 
 The logging system has recently (7.0.13, which is not released) be updated to make use of newer, standard, technologies and exposes more information
-from the 3rd party libraries we use to easy development.
+from the 3rd party libraries we use to ease development.
 
-You create a file named logfilter.txt in the directory $DCSTOOL_USERDIR, that will be picked up and used to filter out messages that aren't
+If something is overwhelming your logs, create a file named logfilter.txt in the directory $DCSTOOL_USERDIR, that will be picked up and used to filter out messages that aren't
 needed or wanted. For example most CWMS users will want to have a file of at least the following:
 
    org.jooq
 
 As not filtering that out can cause excessive messages in the log.
 
-.. warning::
-   
-   DCSTOOL_USERDIR is not fully utilized in windows yet. We are planning to correct that behavior with the release of 7.0.13.
-   As such users should currently only expect this mechanism to work in unix style environment
-
 .. note:: 
    This mechanism is intentionally limited. It is a goal of the project to switch the current custom logging backend
    to an available standard, such as logback or just java.util.logging which will provide the end-user with better
    options for log filtering and storage.
 
+   The mechanism only checks that a given "logger" starts with the text of the given line. No other matching is done.

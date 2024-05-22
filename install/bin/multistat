@@ -2,4 +2,8 @@
 #
 # dbhub - Access the DECODES Database Hub
 #
-%INSTALL_PATH/bin/decj lrgs.multistat.MultiStat $*
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj lrgs.multistat.MultiStat $*

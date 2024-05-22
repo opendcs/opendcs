@@ -349,7 +349,7 @@ more information about each.
             <tarfileset dir="stage" includes="icons/**">
             </tarfileset>
         </tar>
-        <copy todir="stage/bin">
+        <copy todir="stage/bin" preservelastmodified="true">
             <fileset dir="${project.dir}/install/bin"/>
             <fileset dir="build/lib">
                 <include name="opendcs.jar"/>
@@ -535,7 +535,6 @@ more information about each.
         <move file="stage/drgsconf.xml" tofile="stage/drgsconf.xml.sample"/>
         <move file="stage/edit-db" tofile="stage/edit-db.init"/>
         <move file="stage/users" tofile="stage/users.init"/>
-        <replace dir="stage/bin" token="%INSTALL_PATH" value="$DCSTOOL_HOME"/>
         <tar destfile="opendcs-cwms-${MAJ_VER}-${MIN_VER}-${RCNUM}.tgz" compression="gzip">
             <tarfileset dir="stage">
                 <exclude name="bin/*"/>
@@ -742,5 +741,39 @@ more information about each.
             </filterchain>
         </loadfile>
         <echo message="Total coverage = ${coverage.percentage}"/>
+    </target>
+
+    <target name="run" depends="jar,common.resolve.build,stage">
+        <property name="opendcs.app" value="launcher_start"/>
+        <property name="stage.absolute.dir" location="${stage.dir}"/>
+        <chmod perm="0755" >
+            <fileset dir="${stage.dir}/bin">
+                <exclude name="**/opendcs.jar"/>
+                <exclude name="**/*.bat"/>
+            </fileset>
+        </chmod>
+        <mkdir dir="${build.dir}/run"/>
+        <exec executable="${stage.dir}/bin/${opendcs.app}" osfamily="unix">
+            <env key="DCSTOOL_HOME" value="${stage.absolute.dir}"/>
+            <env key="DECODES_INSTALL_DIR" value="${stage.absolute.dir}"/>
+            <arg value="-d3"/>
+            <arg value="-l"/><arg value="/dev/stdout"/>
+            <arg if:set="opendcs.profile" value="-P"/>
+            <arg if:set="opendcs.profile" value="${opendcs.profile}"/>
+            <env if:set="debugPort"
+                 key="DECJ_OPTS"
+                 value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+        </exec>
+        <exec executable="${stage.absolute.dir}/bin/${opendcs.app}.bat" osfamily="windows" vmlauncher="false">
+            <env key="DCSTOOL_HOME" value="${stage.absolute.dir}"/>
+            <env key="DECODES_INSTALL_DIR" value="${stage.absolute.dir}"/>
+            <arg value="-d3"/>
+            <arg value="-l"/><arg value="CON:"/>
+            <arg if:set="opendcs.profile" value="-P"/>
+            <arg if:set="opendcs.profile" value="${opendcs.profile}"/>
+            <env if:set="debugPort"
+                 key="DECJ_OPTS"
+                 value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+        </exec>
     </target>
 </project>

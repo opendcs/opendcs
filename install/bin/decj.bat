@@ -21,4 +21,20 @@ for /R "%APP_PATH%/dep" %%a in (*.jar) do (
 
 set "CLASSPATH=!CLASSPATH!"
 
-java -Xmx240m -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%APP_PATH%" %*%
+if not defined DCSTOOL_USERDIR (
+  set DCSTOOL_USERDIR="%APPDATA%\.opendcs"
+)
+
+if not exist %DCSTOOL_USERDIR%\ (
+  echo "Creating Local User Directory and initial properties in %DCSTOOL_USERDIR%"
+  echo "The default XML database has been copied to this directory."
+  mkdir %DCSTOOL_USERDIR%
+  copy %APP_PATH%\decodes.properties %DCSTOOL_USERDIR%\user.properties
+  xcopy %APP_PATH%\edit-db %DCSTOOL_USERDIR%\edit-db /E /I
+)
+
+for /R "%DCSTOOL_USERDIR%/dep" %%a in (*.jar) do (
+  set "CLASSPATH=!CLASSPATH!;%%a"
+  )
+
+java -Xmx240m %DECJ_MAXHEAP% %DECJ_OPTS% -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" %*%

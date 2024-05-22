@@ -127,6 +127,40 @@ The following workflow can be used:
 
 And repeat as required. This works for the GUI and nogui applications.
 
+Debugging OpenDCS from the build
+--------------------------------
+
+There is a `run` target that will allow you to run an OpenDCS application from the build environment.
+the "stage" directory is used as DCSTOOL_HOME and DCSTOOL_USERDIR is the same default as an install.
+
+.. WARNING::
+
+    By using the default behavior you *MAY* be connecting to a live system. Consider that while
+    manipulating any data. 
+
+    If this is a major concern you should set the DCSTOOL_USERDIR for the session ant runs in
+    to point to a directory that only contains profiles that connect to test systems.
+
+.. code-block:: bash
+    # to just run the launcher
+    ant run
+
+    # to run a specific app
+    ant run -Dopendcs.app=compedit
+
+    # to run a specific app with a profile
+    ant run -Dopendcs.app=dbedit -Popendcs.profile="full path to a profile or .properties file"
+
+    # to run with the java remote debugger enabled
+    ant run -DdebugPort=5006
+
+The logs are set to the highest debug level and printed to stdout.
+
+.. NOTE::
+
+    On linux, ctrl-c of the run task will terminate the application. This does not appear to work correctly on Windows
+    and you will likely need to close the application windows manually.
+
 MBeans
 ======
 
