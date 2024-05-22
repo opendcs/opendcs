@@ -743,7 +743,7 @@ more information about each.
         <echo message="Total coverage = ${coverage.percentage}"/>
     </target>
 
-    <target name="run" depends="common.resolve.build,stage">
+    <target name="run" depends="jar,common.resolve.build,stage">
         <property name="opendcs.app" value="launcher_start"/>
         <property name="stage.absolute.dir" location="${stage.dir}"/>
         <chmod perm="0755" >
