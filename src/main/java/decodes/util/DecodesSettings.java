@@ -508,52 +508,52 @@ public class DecodesSettings
             "Name of the routing spec that PollGUI uses for TCP Platforms"),
         new PropertySpec("rememberScreenPosition", PropertySpec.BOOLEAN,
             "Remember position and size of GUI screens when they are moved."),
-        new PropertySpec("decodeScriptColor1", PropertySpec.STRING,
+        new PropertySpec("decodeScriptColor1", PropertySpec.COLOR,
             "Hex color representation for decoded-data color 1. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values. Default=0000FF "),
-        new PropertySpec("decodeScriptColor2", PropertySpec.STRING,
+        new PropertySpec("decodeScriptColor2", PropertySpec.COLOR,
             "Hex color representation for decoded-data color 2. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values. Default=00FFFF "),
-        new PropertySpec("decodeScriptColor3", PropertySpec.STRING,
+        new PropertySpec("decodeScriptColor3", PropertySpec.COLOR,
             "Hex color representation for decoded-data color 3. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values. Default=D2691E "),
-        new PropertySpec("decodeScriptColor4", PropertySpec.STRING,
+        new PropertySpec("decodeScriptColor4", PropertySpec.COLOR,
             "Hex color representation for decoded-data color 4. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values. Default=00D000 "),
-        new PropertySpec("decodeScriptColor5", PropertySpec.STRING,
+        new PropertySpec("decodeScriptColor5", PropertySpec.COLOR,
             "Hex color representation for decoded-data color 5. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values. Default=8B0000 "),
-        new PropertySpec("decodeScriptColor6", PropertySpec.STRING,
+        new PropertySpec("decodeScriptColor6", PropertySpec.COLOR,
             "Hex color representation for decoded-data color 6. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values. Default=4B0082 "),
-        new PropertySpec("decodeScriptColor7", PropertySpec.STRING,
+        new PropertySpec("decodeScriptColor7", PropertySpec.COLOR,
             "Hex color representation for decoded-data color 7. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values. Default=808000 "),
-        new PropertySpec("decodeScriptColor8", PropertySpec.STRING,
+        new PropertySpec("decodeScriptColor8", PropertySpec.COLOR,
             "Hex color representation for decoded-data color 8. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values. Default=8B4513 "),
-        new PropertySpec("pyNormalColor", PropertySpec.STRING,
+        new PropertySpec("pyNormalColor", PropertySpec.COLOR,
             "Hex color representation for normal text in a python script. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values."),
-        new PropertySpec("pyKeywordColor", PropertySpec.STRING,
+        new PropertySpec("pyKeywordColor", PropertySpec.COLOR,
             "Hex color representation for keywords in a python script. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values."),
-        new PropertySpec("pyBuiltinColor", PropertySpec.STRING,
+        new PropertySpec("pyBuiltinColor", PropertySpec.COLOR,
             "Hex color representation for built-in functions in a python script. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values."),
-        new PropertySpec("pyQuotedColor", PropertySpec.STRING,
+        new PropertySpec("pyQuotedColor", PropertySpec.COLOR,
             "Hex color representation for quoted strings in a python script. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values."),
-        new PropertySpec("pyTsRoleColor", PropertySpec.STRING,
+        new PropertySpec("pyTsRoleColor", PropertySpec.COLOR,
             "Hex color representation for time series roles in a python script. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values."),
-        new PropertySpec("pyPropColor", PropertySpec.STRING,
+        new PropertySpec("pyPropColor", PropertySpec.COLOR,
             "Hex color representation for comp-property names in a python script. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values."),
-        new PropertySpec("pyCommentColor", PropertySpec.STRING,
+        new PropertySpec("pyCommentColor", PropertySpec.COLOR,
             "Hex color representation for comments in a python script. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values."),
-        new PropertySpec("pyCpFuncColor", PropertySpec.STRING,
+        new PropertySpec("pyCpFuncColor", PropertySpec.COLOR,
             "Hex color representation for CP Function Names in a python script. Should be 6 digits."
             + " That is, 2 hex digits each for the RGB values."),
         new PropertySpec("screeningUnitSystem",

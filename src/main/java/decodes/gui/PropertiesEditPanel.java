@@ -9,6 +9,9 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.*;
 
+import org.cobraparser.html.style.TableCellRenderState;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -75,7 +78,6 @@ public class PropertiesEditPanel extends JPanel
 			ownerDialog = null;
 			ownerFrame = null;
 			ptm = new PropertiesTableModel(properties);
-//			propertiesTable = new JTable(ptm);
 			propertiesTable = new SortingListTable(ptm, new int[]{30, 70});
 			propertiesTable.getTableHeader().setReorderingAllowed(false);
 			jbInit(canAddAndDelete);
@@ -137,6 +139,7 @@ public class PropertiesEditPanel extends JPanel
 		{
 			JLabel cr = (JLabel) super.getTableCellRendererComponent(table, value, isSelected,
 				hasFocus, row, col);
+			cr.setOpaque(false);
 			if (propHash != null)
 			{
 				// property name is in column 0
@@ -144,11 +147,14 @@ public class PropertiesEditPanel extends JPanel
 				String pn = ((String) ptm.getValueAt(modelRow, 0)).toUpperCase();
 				PropertySpec ps = propHash.get(pn);
 				cr.setToolTipText(ps != null ? ps.getDescription() : "");
-//if (ps == null) System.out.println("No propHash entry for '" + pn + "'");
-//else System.out.println("propHash entry for '" + pn + "' has description: " 
-//+ ps.getDescription());
 			}
-
+			if (value instanceof Color)
+			{
+				Color c = (Color)value;
+				cr.setOpaque(true);
+				cr.setBackground(c);
+				cr.setText("0x" + Integer.toHexString(c.getRGB()).substring(2));
+			}
 			return cr;
 		}
 	}
@@ -161,7 +167,6 @@ public class PropertiesEditPanel extends JPanel
 			genericLabels.getString("properties"));
 		this.setLayout(gridBagLayout1);
 		this.setBorder(titledBorder1);
-//		this.setPreferredSize(new Dimension(400, 240));
 		JButton deleteButton = new JButton(genericLabels.getString("delete"));
 		deleteButton.addActionListener(new java.awt.event.ActionListener()
 		{
@@ -473,10 +478,8 @@ public class PropertiesEditPanel extends JPanel
 
 		// Set column renderer so that tooltip is property description
 		TableColumn col = propertiesTable.getColumnModel().getColumn(0);
-//			.getColumn(PropertiesTableModel.columnNames[0]);
 		col.setCellRenderer(new ttCellRenderer());
 		col = propertiesTable.getColumnModel().getColumn(1);
-//			.getColumn(PropertiesTableModel.columnNames[1]);
 		col.setCellRenderer(new ttCellRenderer());
 		ptm.setPropHash(propHash);
 	}
@@ -491,6 +494,7 @@ public class PropertiesEditPanel extends JPanel
 class PropertiesTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(PropertiesTableModel.class);
 	private static ResourceBundle genericLabels = PropertiesEditDialog.getGenericLabels();
 	/** The properties as a list of StringPair object. */
 	ArrayList<StringPair> props = new ArrayList<StringPair>();
@@ -620,7 +624,23 @@ class PropertiesTableModel extends AbstractTableModel
 		 && !sp.first.equalsIgnoreCase("passwordCheckerClass")
 		 && sp.second != null && sp.second.length() > 0)
 			return "****";
-		return sp.second;
+		PropertySpec ps = propHash.get(sp.first.toUpperCase());
+		if (ps != null && ps.getType().equals(PropertySpec.COLOR))
+		{
+			log.trace("Returning a Color object.");
+			if (sp.second.toLowerCase().startsWith("0x"))
+			{
+				return new Color(Integer.parseInt(sp.second.substring(2), 16));
+			}
+			else
+			{
+				return sp.second;
+			}
+		}
+		else
+		{
+			return sp.second;
+		}
 	}
 	
 	/**
