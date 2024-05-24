@@ -54,6 +54,8 @@ public class PropertySpec
 	
 	/** A long string property that should be displayed in a multi-line TextArea */
 	public static final String LONGSTRING = "l";
+
+	public static final String COLOR = "color";
 	
 	private boolean dynamic = false;
 	

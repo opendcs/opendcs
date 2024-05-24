@@ -244,6 +244,11 @@ public class PropertyEditDialog
 				ta.setWrapStyleWord(true);
 				valueField = ta;
 			}
+			else if (propSpec.getType().equals(PropertySpec.COLOR))
+			{
+				JColorChooser jc = new JColorChooser();
+				valueField = jc;
+			}
 		}
 
 		if (valueField instanceof JTextArea)
@@ -437,6 +442,12 @@ System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName
 		{
 			return ((JComboBox)valueField).getSelectedItem().toString();
 		}
+		else if (valueField instanceof JColorChooser)
+		{
+			final JColorChooser jc = (JColorChooser)this.valueField;
+			Color c = jc.getColor();
+			return "0x" + Integer.toHexString(c.getRGB()).substring(2) ;
+		}
 		else
 		{
 			return "";
@@ -476,6 +487,15 @@ System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName
 		else if (valueField instanceof JComboBox)
 		{
 			((JComboBox)valueField).setSelectedItem(value);
+		}
+		else if (valueField instanceof JColorChooser)
+		{
+			final JColorChooser jc = (JColorChooser)valueField;
+			if (value.toLowerCase().startsWith("0x"))
+			{
+				int colorValue = Integer.parseInt(value.substring(2), 16);
+				jc.setColor(Color.getColor("",colorValue));
+			}
 		}
 	}
 	
