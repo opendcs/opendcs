@@ -178,15 +178,7 @@ public class SearchCriteriaEditPanel
 		if (origSearchCrit == null)
 			return false;
 		SearchCriteria test = getCurrentCriteria();
-		if (!test.equals(origSearchCrit))
-		{
-			origSearchCrit = test;
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+		return !test.equals(origSearchCrit);
 	}
 
 	public SearchCriteria getCurrentCriteria()
