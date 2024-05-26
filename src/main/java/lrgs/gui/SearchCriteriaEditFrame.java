@@ -16,6 +16,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 
@@ -44,6 +45,7 @@ public class SearchCriteriaEditFrame
 	private File scFile = null;
 	private boolean autoSave = false;
 	private SearchCritEditorParent parent = null;
+	private SearchCriteria searchCriteria = null;
 
 	
 	public SearchCriteriaEditFrame()
@@ -64,7 +66,8 @@ public class SearchCriteriaEditFrame
 			return;
 		try
 		{
-			scePanel.setSearchCrit(new SearchCriteria(scFile));
+			searchCriteria = new SearchCriteria(scFile);
+			scePanel.setSearchCrit(searchCriteria);
 		}
 		catch(Exception ex)
 		{
@@ -139,12 +142,20 @@ public class SearchCriteriaEditFrame
 
 		filechooser.setCurrentDirectory(
 			new File(System.getProperty("user.dir")));
+
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosed(WindowEvent e) {
+				exitPressed();
+				super.windowClosed(e);
+			}
+		});
 	}
 	
 	
 	protected void exitPressed()
 	{
-		if (scePanel.hasChanged())
+		if (this.isChanged())
 		{
 			if (autoSave && scFile != null)
 				savePressed();
@@ -178,11 +189,11 @@ public class SearchCriteriaEditFrame
 			saveAsPressed();
 			return;
 		}
-		SearchCriteria sc = new SearchCriteria();
-		scePanel.fillSearchCrit(sc);
+		SearchCriteria sc = scePanel.getCurrentCriteria();
 		try
 		{
 			sc.saveFile(scFile);
+			searchCriteria = sc;
 		}
 		catch (IOException ex)
 		{
@@ -230,7 +241,7 @@ public class SearchCriteriaEditFrame
 	 */
 	private boolean checkDiscard()
 	{
-		if (!scePanel.hasChanged())
+		if (!this.isChanged())
 			return true;
 		return showConfirm("Confirm Search Criteria", 
 			"Search criteria have been modified. Discard changes?", 
@@ -299,7 +310,9 @@ public class SearchCriteriaEditFrame
 	@Override
 	public boolean isChanged()
 	{
-		return scePanel.hasChanged();
+		SearchCriteria fromEdit = scePanel.getCurrentCriteria();
+
+		return !searchCriteria.equals(fromEdit);
 	}
 
 	public void launch( int x, int y, int w, int h )
@@ -338,6 +351,12 @@ public class SearchCriteriaEditFrame
 //				}
 //			});
 
+	}
+
+	@Override
+	public SearchCriteria getCurrenCriteria()
+	{
+		return scePanel.getCurrentCriteria();
 	}
 
 }
