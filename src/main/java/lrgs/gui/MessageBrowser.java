@@ -909,17 +909,18 @@ public class MessageBrowser extends MenuFrame
         // anything has been changed in it.
         if (scedit != null)
         {
-            if (firstAfterConnect || scedit.isChanged())
+            if (firstAfterConnect)
             {
                 // They are different!
-                searchcrit = new SearchCriteria();
-                scedit.fillSearchCrit(searchcrit);
+                searchcrit = scedit.getCurrenCriteria();
                 needToSendSC = true;
             }
             // Else no changes have been made in the editor.
             else
             {
-                needToSendSC = false;
+                SearchCriteria fromEditor = scedit.getCurrenCriteria();
+                needToSendSC = !fromEditor.equals(searchcrit);
+                searchcrit = fromEditor;
             }
         }
         // Else no editor active, just go by the filename specified.
@@ -929,7 +930,7 @@ public class MessageBrowser extends MenuFrame
             File f = new File(curSCName);
             try
             {
-                searchcrit.parseFile(f);
+                searchcrit = new SearchCriteria(f);
             }
             catch(Exception ioe)
             {
@@ -941,7 +942,7 @@ public class MessageBrowser extends MenuFrame
                         f.createNewFile(); 
                         try 
                         {
-                            searchcrit.parseFile(f);
+                            searchcrit = new SearchCriteria(f);
                         }
                         catch(Exception ex) {}
                     }
