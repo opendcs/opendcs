@@ -57,7 +57,7 @@ public class ScreeningEditor extends TsdbAppTemplate
 	{
 		if (DecodesInterface.isInitialized())
 			return;
-		DecodesInterface.initDecodesMinimal(cmdLineArgs.getPropertiesFile());
+		DecodesInterface.initDecodesMinimal(cmdLineArgs.getProfile().getFile().getAbsolutePath());
 		DecodesInterface.readSiteList();
 		Database.getDb().dataTypeSet.read();
 	}
