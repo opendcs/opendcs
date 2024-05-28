@@ -259,8 +259,8 @@ public class ScreeningDAO
             List<ScreenCritType> oracleScreenCritArray = Arrays.asList(oracleScreenCrit);
 
             ScreeningControlT screenControlType = new ScreeningControlT(
-                screening.isRangeActive() ? "T" : "F",
                 screening.isRocActive() ? "T" : "F",
+                screening.isRangeActive() ? "T" : "F",
                 screening.isConstActive() ? "T" : "F",
                 screening.isDurMagActive() ? "T" : "F");
 
