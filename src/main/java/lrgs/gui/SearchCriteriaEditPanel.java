@@ -63,6 +63,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EtchedBorder;
 import javax.swing.table.AbstractTableModel;
 
+import decodes.cwms.validation.ScreeningCriteria;
 import decodes.db.Database;
 import decodes.db.NetworkList;
 import decodes.db.Platform;
@@ -176,9 +177,15 @@ public class SearchCriteriaEditPanel
 	{
 		if (origSearchCrit == null)
 			return false;
-		SearchCriteria test = new SearchCriteria();
-		fillSearchCrit(test);
+		SearchCriteria test = getCurrentCriteria();
 		return !test.equals(origSearchCrit);
+	}
+
+	public SearchCriteria getCurrentCriteria()
+	{
+		SearchCriteria ret = new SearchCriteria();
+		fillSearchCrit(ret);
+		return ret;
 	}
 	
 	/**
