@@ -1525,9 +1525,10 @@ public class CwmsTimeSeriesDb
 		// int nIndeps = indeps.length;
 		// NOTE: indeps is already an array of doubles. I can pass
 		// it directly to the rateOne function.
-		Connection tc = getConnection();
+		
 		String action = "reading rating";
-		try (CwmsRatingDao crd = new CwmsRatingDao(this))
+		try (Connection tc = getConnection();
+			CwmsRatingDao crd = new CwmsRatingDao(this))
 		{
 			crd.setManualConnection(tc);
 			RatingSet ratingSet = crd.getRatingSet(specId);
@@ -1538,7 +1539,9 @@ public class CwmsTimeSeriesDb
 			{
 				StringBuilder sb = new StringBuilder();
 				for(double x : indeps)
+				{
 					sb.append(x + ",");
+				}
 				sb.deleteCharAt(sb.length()-1);
 				String msg = "Input values (" + sb.toString() + ") outside rating range.";
 				warning(msg);
@@ -1548,15 +1551,12 @@ public class CwmsTimeSeriesDb
 		}
 		catch (RatingException ex)
 		{
-			String msg = "Error while " + action + ", specId=" + specId + ": " + ex;
-			warning(msg);
-			ex.printStackTrace(Logger.instance().getLogOutput() != null 
-				? Logger.instance().getLogOutput() : System.err);
-			throw new RangeException(msg);
+			String msg = "Error while " + action + ", specId=" + specId;
+			throw new RangeException(msg, ex);
 		}
-		finally
+		catch (SQLException ex)
 		{
-			freeConnection(tc);
+			throw new DbCompException("Error during database operations.", ex);
 		}
 	}
 

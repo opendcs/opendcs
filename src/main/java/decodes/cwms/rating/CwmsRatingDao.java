@@ -50,7 +50,6 @@
  */
 package decodes.cwms.rating;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.io.PrintStream;
@@ -65,6 +64,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import opendcs.dao.DaoBase;
 import decodes.cwms.BadRatingException;
 import decodes.cwms.CwmsTimeSeriesDb;
@@ -77,30 +79,23 @@ import hec.data.cwmsRating.RatingSet;
 
 public class CwmsRatingDao extends DaoBase
 {
+	private static final Logger log = LoggerFactory.getLogger(CwmsRatingDao.class);
 	public static final String module = "CwmsRatingDao";
 	public static final String cwms_v_rating_columns =
 		"RATING_CODE, RATING_ID, EFFECTIVE_DATE, CREATE_DATE, ACTIVE_FLAG";
-
-//	// Suggested by Mike Perryman as a quick way to detect change:
-//	public static final String ratCheckQ =
-//		"select greatest(max(effective_date), max(create_date)) "
-//		+ "from cwms_v_rating where upper(rating_id) = ";
 
 	private String officeId = null;
 
 	class RatingWrapper
 	{
 		Date timeLoaded = null;
-//		String check = null;
 		Date lastTimeUsed = null;
 		RatingSet ratingSet = null;
 		RatingWrapper(Date timeLoaded, RatingSet ratingSet, Date lastTimeUsed)
-//			String check)
 		{
 			this.timeLoaded = timeLoaded;
 			this.ratingSet = ratingSet;
 			this.lastTimeUsed = lastTimeUsed;
-//			this.check = check;
 		}
 	}
 	static HashMap<String, RatingWrapper> ratingCache = new HashMap<String, RatingWrapper>();
@@ -108,16 +103,6 @@ public class CwmsRatingDao extends DaoBase
 	// Ratings older than this in the cache are discarded.
 	private long MAX_AGE_MSEC = 9 * 3600000L;
 
-
-//	static
-//	{
-//		// Mike Perryman's email on March 1, 2017 - Rating API now has a reference mode
-//		// whereby the rating calculations are done on the database side and no (huge)
-//		// rating table have to be actually loaded. Thus use the reference mode and also
-//		// remove the 'check for update' operation.
-//		System.setProperty("hec.data.cwmsRating.RatingSet.databaseLoadMethod", "reference");
-//	}
-//
 	public CwmsRatingDao(CwmsTimeSeriesDb tsdb)
 	{
 		super(tsdb, "CwmsRatingDao");
@@ -157,86 +142,87 @@ public class CwmsRatingDao extends DaoBase
 		String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
 		String q = "select distinct " + cwms_v_rating_columns
 			+ " from CWMS_V_RATING"
-			+ " where upper(OFFICE_ID) = " + sqlString(officeId.toUpperCase());
+			+ " where upper(OFFICE_ID) = upper(?)";
+		ArrayList<Object> parameters = new ArrayList<>();
+		parameters.add(officeId);
+
 		if (locationId != null)
-			q = q + " and upper(LOCATION_ID) = " + sqlString(locationId.toUpperCase());
+		{
+			q = q + " and upper(LOCATION_ID) = upper(?)";
+			parameters.add(locationId);
+		}
 
-		ArrayList<CwmsRatingRef> ret = new ArrayList<CwmsRatingRef>();
-
-		ResultSet rs;
-		rs = doQuery(q);
 		try
 		{
-			while(rs != null && rs.next())
-			{
-				try
-				{
-					ret.add(rs2rr(rs));
-				}
-				catch(BadRatingException ex)
-				{
-					warning("Bad Rating: " + ex + " -- skipped.");
-				}
-			}
+			return getResultsIgnoringNull(
+						q,
+						rs -> 
+						{
+							try
+							{
+								return rs2rr(rs);
+							}
+							catch(BadRatingException ex)
+							{
+								log.atWarn()
+								   .setCause(ex)
+								   .log("Bad Rating was skipped.");
+							}
+							return null;
+						},
+						parameters.toArray(new Object[0])
+					);
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error reading ratings: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			throw new DbIoException(msg);
+			String msg = "Error reading ratings";
+			throw new DbIoException(msg, ex);
 		}
-
-		return ret;
 	}
 
 	public void deleteRating(CwmsRatingRef crr)
 		throws RatingException
 	{
-		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(),
-			((CwmsTimeSeriesDb)db).getDbOfficeId(),
-			crr.getRatingSpecId());
-
-//		RatingSet ratingSet = new RatingSet(RatingSet.DatabaseLoadMethod.REFERENCE,
-//			getConnection(),
-//			((CwmsTimeSeriesDb)db).getDbOfficeId(),
-//			crr.getRatingSpecId());
-
-		if(ratingSet.getRatingCount() <= 1)
+		try
 		{
-			deleteRatingSpec(crr);
-			return;
+			this.inTransaction(txDao ->
+			{
+				try (CwmsRatingDao dao = new CwmsRatingDao((CwmsTimeSeriesDb)this.db))
+				{
+					dao.inTransactionOf(txDao);
+					String q =
+							"{ call cwms_rating.delete_ratings(?," +
+							"to_date(?,'DD.MM.YYYY HH24:MI:SS')," +
+							"to_date(?,'DD.MM.YYYY HH24:MI:SS'),null, ?) }";
+					try (Connection c = dao.getConnection();
+						 CallableStatement cstmt = c.prepareCall(q);)
+					{
+						RatingSet ratingSet = RatingSet.fromDatabase(c,
+						((CwmsTimeSeriesDb)db).getDbOfficeId(),
+						crr.getRatingSpecId());
+
+						if(ratingSet.getRatingCount() <= 1)
+						{
+							dao.deleteRatingSpec(crr);
+							return;
+						}
+
+						SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+						sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+						cstmt.setString(1, crr.getRatingSpecId());
+						cstmt.setString(2, sdf.format(crr.getEffectiveDate()));
+						cstmt.setString(3, sdf.format(crr.getEffectiveDate()));
+						cstmt.setString(4, crr.getOfficeId());
+						cstmt.execute();
+					}
+				}
+			});
 		}
-
-		SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-		String q =
-			"{ call cwms_rating.delete_ratings(?," +
-			"to_date(?,'DD.MM.YYYY HH24:MI:SS')," +
-			"to_date(?,'DD.MM.YYYY HH24:MI:SS'),null, ?) }";
-
-		String doing = "prepare call";
-		try (Connection c = getConnection();
-			 CallableStatement cstmt = c.prepareCall(q);
-			)
+		catch (Exception ex)
 		{
-			doing = "set params for";
-			cstmt.setString(1, crr.getRatingSpecId());
-			cstmt.setString(2, sdf.format(crr.getEffectiveDate()));
-			cstmt.setString(3, sdf.format(crr.getEffectiveDate()));
-			cstmt.setString(4, crr.getOfficeId());
-			doing = "execute";
-			cstmt.execute();
-		}
-		catch (SQLException ex)
-		{
-			String msg = "Cannot " + doing + " '" + q + "' "
-				+ " for specId '" + crr.getRatingSpecId()
-				+ "' and office '" + crr.getOfficeId() + "': " + ex;
-
-			Logger.instance().warning(msg);
-		}
+			throw new RatingException("Unable to delete rating.", ex);
+		}		
 	}
 
 	/**
@@ -260,11 +246,11 @@ public class CwmsRatingDao extends DaoBase
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Cannot " + doing + " '" + q + "' "
-				+ " for specId '" + crr.getRatingSpecId()
-				+ "' and office '" + crr.getOfficeId() + "': " + ex;
+			String msg = "Cannot {} '{}' for specId '{}' and office '{}'";
 
-			Logger.instance().warning(msg);
+			log.atWarn()
+			   .setCause(ex)
+			   .log(msg, doing, q, crr.getRatingSpecId(), crr.getOfficeId());
 		}
 	}
 
@@ -278,7 +264,6 @@ public class CwmsRatingDao extends DaoBase
 	public String toXmlString(CwmsRatingRef crr, boolean allInSpec)
 		throws RatingException
 	{
-//		String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
 		String specId = crr.getRatingSpecId();
 		RatingSet ratingSet = getRatingSet(specId);
 		if (!allInSpec)
@@ -289,7 +274,9 @@ public class CwmsRatingDao extends DaoBase
 			for(AbstractRating rating : ratings)
 			{
 				if (rating.getEffectiveDate() != selectedTime)
+				{
 					ratingSet.removeRating(rating.getEffectiveDate());
+				}
 			}
 		}
 		return ratingSet.toXmlString("");
@@ -303,17 +290,17 @@ public class CwmsRatingDao extends DaoBase
 	public void importXmlToDatabase(String xml)
 		throws RatingException
 	{
-		Logger.instance().debug3("importXmlToDatabase: " + xml);
+		log.trace("importXmlToDatabase: {}");
 		RatingSet newSet = RatingSet.fromXml(xml);
 		String specId = newSet.getRatingSpec().getRatingSpecId();
-		Logger.instance().debug3("importXmlToDatabase fromXml success, specId='" + specId + "'");
+		log.trace("importXmlToDatabase fromXml success, specId='{}'", specId + "'");
 		try
 		{
-			Logger.instance().debug3("importXmlToDatabase trying to read existing specId='" + specId + "'");
+			log.trace("importXmlToDatabase trying to read existing specId='{}'", specId);
 			RatingSet dbSet = getRatingSet(specId);
 			if (dbSet != null)
 			{
-				Logger.instance().debug3("importXmlToDatabase spec exists");
+				log.trace("importXmlToDatabase spec exists");
 				for(AbstractRating newAr : newSet.getRatings())
 				{
 					boolean replaced = false;
@@ -321,8 +308,10 @@ public class CwmsRatingDao extends DaoBase
 					{
 						if (newAr.getEffectiveDate() == oldAr.getEffectiveDate())
 						{
-							Logger.instance().debug3("importXmlToDatabase replacing rating with same "
-								+ "spec and effectiveDate=" + new Date(newAr.getEffectiveDate()));
+							if (log.isTraceEnabled())
+							{
+								log.trace("importXmlToDatabase replacing rating with same spec and effectiveDate={}", new Date(newAr.getEffectiveDate()));
+							}
 							dbSet.replaceRating(newAr);
 							replaced = true;
 							break;
@@ -330,27 +319,38 @@ public class CwmsRatingDao extends DaoBase
 					}
 					if (!replaced)
 					{
-						Logger.instance().debug3("importXmlToDatabase adding rating with "
-							+ "effectiveDate=" + new Date(newAr.getEffectiveDate()));
+						if (log.isTraceEnabled())
+						{
+							log.trace("importXmlToDatabase adding rating with effectiveDate={}", new Date(newAr.getEffectiveDate()));
+						}
 						dbSet.addRating(newAr);
 					}
 				}
 				newSet = dbSet;
 			}
 			else
-				Logger.instance().debug3("importXmlToDatabase spec does not exist.");
+			{
+				log.trace("importXmlToDatabase spec does not exist.");
+			}
 		}
 		catch(RatingException ex)
 		{
-			Logger.instance().warning(module + " Cannot read rating for spec ID '"
-				+ specId + "': " + ex);
-			PrintStream ps = Logger.instance().getLogOutput();
-			ex.printStackTrace(ps != null ? ps : System.err);
-//			throw ex;
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot read rating for spec ID '{}'", specId);
 		}
 
-		Logger.instance().debug3(module + " calling storeToDatabase");
-		newSet.storeToDatabase(getConnection(), true);
+		log.trace("Calling storeToDatabase");
+		try (Connection c = getConnection())
+		{
+			newSet.storeToDatabase(c, true);
+		}
+		catch (SQLException ex)
+		{
+			log.atError()
+			   .setCause(ex)
+			   .log("Unable to store rating set to database.");
+		}
 	}
 
 	public RatingSet getRatingSet(String specId)
@@ -363,17 +363,12 @@ public class CwmsRatingDao extends DaoBase
 		RatingWrapper rw = ratingCache.get(ucSpecId);
 		if (rw != null)
 		{
-			// If # points has not changed and not too old in the cache, use it.
-//			String rcheck = getRatingCheck(ucSpecId);
-//			if (TextUtil.strEqual(rcheck, rw.check)
-
 			if (System.currentTimeMillis() - rw.timeLoaded.getTime() < MAX_AGE_MSEC)
 			{
 				rw.lastTimeUsed = new Date();
-				Logger.instance().debug3(module
-					+ " retrieving rating spec from cache with officeId="
-					+ officeId + " and spec '" + specId + "' -- was loaded into cache at "
-					+ rw.timeLoaded);
+				log.trace(
+					"Retrieving rating spec from cache with officeId={} and spec '{}' -- was loaded into cache at {}",
+					officeId, specId, rw.timeLoaded);
 				return rw.ratingSet;
 			}
 		}
@@ -394,22 +389,27 @@ public class CwmsRatingDao extends DaoBase
 			}
 			if (oldestSpec != null)
 			{
-				Logger.instance().debug3(module + " Removing '" + oldestSpec
-					+ "' from cache because cache is full.");
+				log.trace("Removing '{}' from cache because cache is full.", oldestSpec);
 				ratingCache.remove(oldestSpec);
 			}
 		}
 
-		Logger.instance().debug3(module + " constructing RatingSet with officeId="
-			+ officeId + " and spec '" + specId + "'");
+		log.trace("Constructing RatingSet with officeId={} and spec '{}'", officeId, specId);
 		Date timeLoaded = new Date();
-		RatingSet ratingSet = RatingSet.fromDatabase(getConnection(), officeId, specId);
-
-		ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
-
-		Logger.instance().debug3(module + " reading rating from database took "
-			+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
-
-		return ratingSet;
+		try (Connection c = getConnection())
+		{
+			RatingSet ratingSet = RatingSet.fromDatabase(c, officeId, specId);
+			ratingCache.put(ucSpecId, new RatingWrapper(timeLoaded, ratingSet, timeLoaded));
+			if (log.isTraceEnabled())
+			{
+				log.trace("Reading rating from database took "
+					+ (System.currentTimeMillis()/1000L - timeLoaded.getTime()/1000L) + " seconds.");
+			}
+			return ratingSet;
+		}
+		catch (SQLException ex)
+		{
+			throw new RatingException("Unable to load rating " + specId, ex);
+		}
 	}
 }
