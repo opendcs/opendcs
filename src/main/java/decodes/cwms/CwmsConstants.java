@@ -51,6 +51,7 @@ public class CwmsConstants
 	public static final String CWMS_PARAM_TYPE = "CwmsParamType";
 	/** The Constant to get Cwms duration from properties */
 	public static final String CWMS_DURATION = "CwmsDuration";
+	public static final String CWMS_INTERVAL = "cwmsInterval";
 	public static final String CWMS_VERSION = "CwmsVersion";
 	public static final String CWMS_STORE_RULE = "storerule";
 	public static final String CWMS_OVERRIDE_PROT = "overrideprot";
