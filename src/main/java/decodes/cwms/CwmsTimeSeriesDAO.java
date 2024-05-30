@@ -64,7 +64,7 @@ public class CwmsTimeSeriesDAO
         new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
     protected SiteDAI siteDAO = null;
     protected DataTypeDAI dataTypeDAO = null;
-    private String dbOfficeId = null;
+    private final String dbOfficeId;
     private static boolean noUnitConv = false;
     private static long lastCacheReload = 0L;
     private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
@@ -190,11 +190,6 @@ public class CwmsTimeSeriesDAO
 
         ret.setActive(TextUtil.str2boolean(rs.getString(10)));
 
-        if (decodes.db.Database.getDb().getDbIo().getDatabaseType().equalsIgnoreCase("XML"))
-        {
-            return ret;
-        }
-
         if (createDataType && dt.getId() == Constants.undefinedId)
         {
             DataType dbdt = null;
@@ -213,7 +208,7 @@ public class CwmsTimeSeriesDAO
             }
             else // The datatype already exists, add it to the cache.
             {
-                decodes.db.Database.getDb().dataTypeSet.add(dbdt);
+                ((Database)this.db).dataTypeSet.add(dbdt);
                 ret.setDataType(dbdt);
             }
         }
@@ -309,8 +304,14 @@ public class CwmsTimeSeriesDAO
     @Override
     public void close()
     {
-        dataTypeDAO.close();
-        siteDAO.close();
+        if (dataTypeDAO != null)
+        {
+            dataTypeDAO.close();
+        }
+        if (siteDAO != null)
+        {
+            siteDAO.close();
+        }
         super.close();
     }
 
@@ -1461,7 +1462,7 @@ public class CwmsTimeSeriesDAO
                 EngineeringUnit euOld = EngineeringUnit.getEngineeringUnit(recUnitsAbbr);
                 EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(ctsUnitsAbbr);
 
-                UnitConverter converter = Database.getDb().unitConverterSet.get(euOld, euNew);
+                UnitConverter converter = ((Database)this.db).unitConverterSet.get(euOld, euNew);
                 if (converter != null)
                 {
                     try
@@ -1519,7 +1520,14 @@ public class CwmsTimeSeriesDAO
         // local getConnection() method that saves the connection locally
         if (myCon == null)
         {
-            myCon = db.getConnection();
+            try
+            {
+                myCon = db.getConnection();
+            }
+            catch (SQLException ex)
+            {
+                throw new RuntimeException("unable to get connection.", ex);
+            }
         }
         siteDAO.setManualConnection(myCon);
         dataTypeDAO.setManualConnection(myCon);

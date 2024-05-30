@@ -8,8 +8,11 @@ import ilex.util.Logger;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.slf4j.LoggerFactory;
+
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
+import decodes.util.DecodesSettings;
 
 /**
  * The Database class provides a global means of accessing a 'current'
@@ -21,6 +24,7 @@ import decodes.tsdb.CompAppInfo;
 
 public class Database extends DatabaseObject
 {
+	public static final org.slf4j.Logger log = LoggerFactory.getLogger(Database.class);
 	private static Database _theDb = null;  // Static 'current' instance
 
 	// Collection classes that represent this database:
@@ -172,7 +176,7 @@ public class Database extends DatabaseObject
 	public void read()
 		throws DatabaseException
 	{
-		System.out.println("calling start");
+		log.info("Reading in Decodes database elements. This may take some time.");
 		enumList.read();
 		dataTypeSet.read();
 		engineeringUnitList.read();
@@ -188,11 +192,13 @@ public class Database extends DatabaseObject
 		// eqTableList.read();
 		// pMConfigList.read();
 
-		for(Iterator it = platformList.iterator(); it.hasNext(); )
+		for(Iterator<Platform> it = platformList.iterator(); it.hasNext(); )
 		{
 			Platform p = (Platform)it.next();
+			p.setDatabase(this);
 			p.read();
 		}
+		log.info("Finished loading Decodes Database.");
 	}
 
 	/**
@@ -254,9 +260,10 @@ public class Database extends DatabaseObject
 		catch(DatabaseException ex)
 		{
 			String msg = "Cannot read enum: " + enumName + ": " + ex;
+			log.atError()
+			   .setCause(ex)
+			   .log(msg);
 			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
 			return null;
 		}
 	}

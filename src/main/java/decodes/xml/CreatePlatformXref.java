@@ -53,8 +53,10 @@ public class CreatePlatformXref
 		tmpDb.engineeringUnitList = oldDb.engineeringUnitList;
 		tmpDb.dataTypeSet = oldDb.dataTypeSet;
 		tmpDb.unitConverterSet = oldDb.unitConverterSet;
-
-		XmlDatabaseIO dbio = new XmlDatabaseIO(dbRoot);
+		DecodesSettings settings = new DecodesSettings();
+		settings.editDatabaseTypeCode = DecodesSettings.DB_XML;
+		settings.editDatabaseLocation = dbRoot;
+		XmlDatabaseIO dbio = (XmlDatabaseIO)DatabaseIO.makeDatabaseIO(settings);
 		tmpDb.setDbIo(dbio);
 
 		Database.setDb(tmpDb);
@@ -144,8 +146,7 @@ public class CreatePlatformXref
 		Database db = new decodes.db.Database();
 		Database.setDb(db);
 
-		DatabaseIO dbio = DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, 
-			dbRoot);
+		DatabaseIO dbio = DatabaseIO.makeDatabaseIO(settings, dbRoot);
 
 		// Standard Database Initialization for all Apps:
 		Site.explicitList = false;

@@ -7,6 +7,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 
 import org.opendcs.spi.properties.PropertyValueProvider;
+import org.opendcs.utils.properties.PropertySettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,7 +109,7 @@ public class Property
             /*
              * We really only need this when debugging.
              */
-            if (log.isTraceEnabled())
+            if ( PropertySettings.TRACE_PROPERTY_PROVIDERS == true && log.isTraceEnabled())
             {
                 log.atTrace()
                    .setCause(new Exception("Unable to find variable processor."))

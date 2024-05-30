@@ -10,15 +10,19 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.spi.configuration.Configuration;
 
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.db.Database;
+import decodes.launcher.Profile;
 import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.DecodesSettings;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
@@ -46,6 +50,8 @@ public class CwmsOracleConfiguration implements Configuration
     private HashMap<Object,Object> environmentVars = new HashMap<>();
     private String dcsUser = null;
     private String dcsUserPassword = null;
+    private CwmsTimeSeriesDb db = null;
+    private Profile profile = null;
 
     public CwmsOracleConfiguration(File userDir)
     {
@@ -78,26 +84,30 @@ public class CwmsOracleConfiguration implements Configuration
     @Override
     public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception
     {        
-        File editDb = new File(userDir,"edit-db");
-        new File(userDir,"output").mkdir();
-        editDb.mkdirs();
-        installDb(exit,environment);
-        UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
-        configBuilder.withDatabaseLocation(dbUrl);
-        configBuilder.withEditDatabaseType("CWMS");
-        configBuilder.withDatabaseDriver("oracle.jdbc.driver.OracleDriver");
-        configBuilder.withSiteNameTypePreference("CWMS");
-        configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
-        configBuilder.withCwmsOffice(cwmsDb.getOfficeId());
-        configBuilder.withDbOffice(cwmsDb.getOfficeId());
-        configBuilder.withWriteCwmsLocations(true);
-        configBuilder.withSqlKeyGenerator(OracleSequenceKeyGenerator.class);
-        // set username/pw (env)
-        try (OutputStream out = new FileOutputStream(propertiesFile);)
+        if (!started)
         {
-            configBuilder.build(out);
-            FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
-            FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
+            File editDb = new File(userDir,"edit-db");
+            new File(userDir,"output").mkdir();
+            editDb.mkdirs();
+            installDb(exit,environment);
+            UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
+            configBuilder.withDatabaseLocation(dbUrl);
+            configBuilder.withEditDatabaseType("CWMS");
+            configBuilder.withDatabaseDriver("oracle.jdbc.driver.OracleDriver");
+            configBuilder.withSiteNameTypePreference("CWMS");
+            configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
+            configBuilder.withCwmsOffice(cwmsDb.getOfficeId());
+            configBuilder.withDbOffice(cwmsDb.getOfficeId());
+            configBuilder.withWriteCwmsLocations(true);
+            configBuilder.withSqlKeyGenerator(OracleSequenceKeyGenerator.class);
+            // set username/pw (env)
+            try (OutputStream out = new FileOutputStream(propertiesFile);)
+            {
+                configBuilder.build(out);
+                FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
+                FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
+            }
+            profile = Profile.getProfile(propertiesFile);
         }
     }
 
@@ -134,11 +144,17 @@ public class CwmsOracleConfiguration implements Configuration
     @Override
     public TimeSeriesDb getTsdb() throws Throwable
     {
-        CwmsTimeSeriesDb db = new CwmsTimeSeriesDb();
-        Properties credentials = new Properties();
-        credentials.put("username",dcsUser);
-        credentials.put("password",dcsUserPassword);
-        db.connect("utility",credentials);
+        if (db == null)
+        {
+            DecodesSettings settings = DecodesSettings.fromProfile(profile);
+            Properties credentials = new Properties();
+            credentials.put("username",dcsUser);
+            credentials.put("password",dcsUserPassword);
+
+            db =
+                (CwmsTimeSeriesDb)DatabaseService
+                    .getDatabaseFor("utility", settings, credentials);
+        }
         return db;
     }
 
@@ -190,5 +206,11 @@ public class CwmsOracleConfiguration implements Configuration
             return true;
         }
         return false;
+    }
+
+    @Override
+    public Database getDecodesDatabase() throws Throwable
+    {
+        return getTsdb();
     }
 }

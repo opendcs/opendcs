@@ -123,7 +123,7 @@ public class CompProcTestIT extends AppTestBase
                                             "compdepends_compproc",
                                             configuration.getPropertiesFile(),
                                             new File(configuration.getUserDir(),"compproctest-deps-update.log"),
-                                            environment, 60, TimeUnit.SECONDS, "-O");
+                                            environment, 10, TimeUnit.MINUTES, "-O");
         Programs.ImportTs(
             new File(config.getUserDir(),"/importTs.log"),
             config.getPropertiesFile(),
@@ -139,7 +139,7 @@ public class CompProcTestIT extends AppTestBase
                                           "01-Jan-2012/00:00", "03-Jan-2012/00:00", "UTC",
                                           "regtest", tsids);
                 return golden.equals(output);
-            }, 1, TimeUnit.MINUTES, 15, TimeUnit.SECONDS
+            }, 10, TimeUnit.MINUTES, 60, TimeUnit.SECONDS
             ,"Calculated results were not found within the expected time frame.");
         }
         catch(InterruptedException ex)

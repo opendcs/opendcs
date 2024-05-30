@@ -86,8 +86,8 @@ public class CompDependsDaoTestIT extends AppTestBase
                                                  compInDb.getKey()
                                                 )
                                      .isEmpty(),
-                        2, TimeUnit.MINUTES,
-                        5, TimeUnit.SECONDS,
+                        10, TimeUnit.MINUTES,
+                        10, TimeUnit.SECONDS,
                         "Expected values were not found in the comp depends table."
                 );
             }

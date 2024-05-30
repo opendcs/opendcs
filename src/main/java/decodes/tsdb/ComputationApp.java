@@ -645,16 +645,10 @@ public class ComputationApp
 		}
 	}
 	
+	@Override
 	public void initDecodes()
 		throws DecodesException
 	{
-		DecodesInterface.silent = true;
-		if (DecodesInterface.isInitialized())
-			return;
-		DecodesInterface.initDecodesMinimal(cmdLineArgs.getPropertiesFile());
-		decodes.db.Database.getDb().enumList.read();
-		decodes.db.Database.getDb().dataTypeSet.read();
-		decodes.db.Database.getDb().presentationGroupList.read();
 	}
 
 	/**

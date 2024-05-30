@@ -23,6 +23,7 @@ import java.util.GregorianCalendar;
 import decodes.hdb.HdbFlags;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 
 import ilex.util.DatePair;
@@ -79,7 +80,6 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	boolean do_setoutput = true;
 	boolean is_current_period;
 	String flags;
-	Connection conn = null;
 	Date date_out;
 	Double tally;
 	int total_count;
@@ -137,7 +137,6 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		total_count = 0;
 		do_setoutput = true;
 		flags = "";
-		conn = null;
 		date_out = null;
 		tally = 0.0;
 		// AW:BEFORE_TIMESLICES_END
@@ -167,7 +166,8 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
-	protected void afterTimeSlices()
+	@Override
+	protected void afterTimeSlices() throws DbCompException
 	{
 		// AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
@@ -291,127 +291,133 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 		//
 		// get the connection and a few other classes so we can do some sql
-		conn = tsdb.getConnection();
-		DBAccess db = new DBAccess(conn);
-		DataObject dbobj = new DataObject();
-		dbobj.put("ALG_VERSION", alg_ver);
-		// this SDI initialization was modified by M. Bogner Mar 2013 for the
-		// dbkey surrogate key i
-		// class for the 5.3 CP upgrade project
-		Integer sdi = (int) getSDI("input").getValue();
-		String dt_fmt = "dd-MMM-yyyy HH:mm";
-
-		RBASEUtils rbu = new RBASEUtils(dbobj, conn);
-		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm");
-		sdf.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().aggregateTimeZone));
-
-		String status = null;
-
-		rbu.getStandardDates(sdi, output_interval, _aggregatePeriodBegin, _aggregatePeriodEnd, dt_fmt);
-
-		double average_flow = tally / (double) total_count;
-		double daily_count = (double) total_count;
-		double hourly_count = (double) daily_count / 24.00;
-		debug3(" Total Count: " + total_count + "   daily_count: " + daily_count + "   hourly Count: "
-			+ hourly_count);
-		String day_multiplier = " ( to_date('" + (String) dbobj.get("SD_EDT") + "','dd-MM-yyyy HH24:MI') - "
-			+ "to_date('" + (String) dbobj.get("SD_SDT") + "','dd-MM-yyyy HH24:MI') )";
-
-		if (observations_calculation && input_interval.equalsIgnoreCase("day"))
-			day_multiplier = " " + daily_count;
-		if (observations_calculation && input_interval.equalsIgnoreCase("hour"))
-			day_multiplier = " " + hourly_count;
-
-		// see if we are in a current window and do the query to do the volume
-		// calculation
-		String query = "select round( hdb_utilities.get_sdi_unit_factor( " + getSDI("input")
-			+ ") * hdb_utilities.get_sdi_unit_factor( " + getSDI("output") + ") * " + flow_factor + " * "
-			+ day_multiplier + " * " + average_flow + ",5) volume , " + "hdb_utilities.date_in_window('"
-			+ output_interval.toLowerCase() + "',to_date('" + sdf.format(_aggregatePeriodBegin)
-			+ "','dd-MM-yyyy HH24:MI')) is_current_period from dual";
-		// if rounding not requested modify the query to not include rounding
-		// function
-		// no rounding capability added 2/2013 per request by LC
-		if (no_rounding)
+		try (Connection conn = tsdb.getConnection())
 		{
-			query = "select hdb_utilities.get_sdi_unit_factor( " + getSDI("input")
+			DBAccess db = new DBAccess(conn);
+			DataObject dbobj = new DataObject();
+			dbobj.put("ALG_VERSION", alg_ver);
+			// this SDI initialization was modified by M. Bogner Mar 2013 for the
+			// dbkey surrogate key i
+			// class for the 5.3 CP upgrade project
+			Integer sdi = (int) getSDI("input").getValue();
+			String dt_fmt = "dd-MMM-yyyy HH:mm";
+
+			RBASEUtils rbu = new RBASEUtils(dbobj, conn);
+			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm");
+			sdf.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().aggregateTimeZone));
+
+			String status = null;
+
+			rbu.getStandardDates(sdi, output_interval, _aggregatePeriodBegin, _aggregatePeriodEnd, dt_fmt);
+
+			double average_flow = tally / (double) total_count;
+			double daily_count = (double) total_count;
+			double hourly_count = (double) daily_count / 24.00;
+			debug3(" Total Count: " + total_count + "   daily_count: " + daily_count + "   hourly Count: "
+				+ hourly_count);
+			String day_multiplier = " ( to_date('" + (String) dbobj.get("SD_EDT") + "','dd-MM-yyyy HH24:MI') - "
+				+ "to_date('" + (String) dbobj.get("SD_SDT") + "','dd-MM-yyyy HH24:MI') )";
+
+			if (observations_calculation && input_interval.equalsIgnoreCase("day"))
+				day_multiplier = " " + daily_count;
+			if (observations_calculation && input_interval.equalsIgnoreCase("hour"))
+				day_multiplier = " " + hourly_count;
+
+			// see if we are in a current window and do the query to do the volume
+			// calculation
+			String query = "select round( hdb_utilities.get_sdi_unit_factor( " + getSDI("input")
 				+ ") * hdb_utilities.get_sdi_unit_factor( " + getSDI("output") + ") * " + flow_factor + " * "
-				+ day_multiplier + " * " + average_flow + " volume , " + "hdb_utilities.date_in_window('"
+				+ day_multiplier + " * " + average_flow + ",5) volume , " + "hdb_utilities.date_in_window('"
 				+ output_interval.toLowerCase() + "',to_date('" + sdf.format(_aggregatePeriodBegin)
 				+ "','dd-MM-yyyy HH24:MI')) is_current_period from dual";
-		}
-		// now do the query for all the needed data
-		status = db.performQuery(query, dbobj);
-		debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
-
-		// see if there was an error
-		if (status.startsWith("ERROR"))
-		{
-
-			warning(" FlowToVolumeAlg-" + alg_ver + ":  Failed due to following oracle error");
-			warning(" FlowToVolumeAlg-" + alg_ver + ": " + status);
-			return;
-		}
-		//
-		debug3("FlowToVolumeAlg-" + alg_ver + "  " + _aggregatePeriodEnd + " SDI: " + getSDI("input")
-			+ "  MVR: " + mvr_count + " RecordCount: " + total_count);
-		// now see how many records were found for this aggregate
-		// and see if this calc is in current period and if partial calc is set
-		is_current_period = ((String) dbobj.get("is_current_period")).equalsIgnoreCase("Y");
-		if (!is_current_period && total_count < mvr_count)
-		{
-			do_setoutput = false;
-			debug1("FlowToVolumeAlg-" + alg_ver + ":  Minimum required records not met for historic period: "
-				+ _aggregatePeriodEnd + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: "
-				+ total_count);
-		}
-		if (is_current_period && !partial_calculations && total_count < mvr_count)
-		{
-			do_setoutput = false;
-			debug1("FlowToVolumeAlg-" + alg_ver + ":  Minimum required records not met for current period: "
-				+ _aggregatePeriodEnd + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: "
-				+ total_count);
-		}
-		//
-		//
-		// do the volume calculation, set the output if all is successful and
-		// set the flags appropriately
-		if (do_setoutput)
-		{
-			// set the dataflags appropriately
-			if (total_count < mvd_count)
-				flags = flags + "n";
-			if (is_current_period && total_count < mvr_count)
-			// now we have a partial calculation, so do what needs to be done
-			// for partials
+			// if rounding not requested modify the query to not include rounding
+			// function
+			// no rounding capability added 2/2013 per request by LC
+			if (no_rounding)
 			{
-				setHdbValidationFlag(output, 'T');
-				// call the RBASEUtils merge method to add a "seed record" to
-				// cp_historic_computations table
-				// this call modified by M. Bogner Mar 2013 for the dbkey
-				// surrogate key class for the 5.3 CP upgrade project
-
-				rbu.merge_cp_hist_calc((int) comp.getAppId().getValue(), (int) getSDI("input").getValue(),
-					input_interval, _aggregatePeriodBegin, _aggregatePeriodEnd, "dd-MM-yyyy HH:mm",
-					tsdb.getWriteModelRunId(), table_selector);
-
+				query = "select hdb_utilities.get_sdi_unit_factor( " + getSDI("input")
+					+ ") * hdb_utilities.get_sdi_unit_factor( " + getSDI("output") + ") * " + flow_factor + " * "
+					+ day_multiplier + " * " + average_flow + " volume , " + "hdb_utilities.date_in_window('"
+					+ output_interval.toLowerCase() + "',to_date('" + sdf.format(_aggregatePeriodBegin)
+					+ "','dd-MM-yyyy HH24:MI')) is_current_period from dual";
 			}
+			// now do the query for all the needed data
+			status = db.performQuery(query, dbobj);
+			debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
 
-			debug3("FlowToVolumeAlg: Derivation FLAGS: " + flags);
-			if (flags != null)
-				setHdbDerivationFlag(output, flags);
-			Double volume = Double.valueOf(dbobj.get("volume").toString());
+			// see if there was an error
+			if (status.startsWith("ERROR"))
+			{
+
+				warning(" FlowToVolumeAlg-" + alg_ver + ":  Failed due to following oracle error");
+				warning(" FlowToVolumeAlg-" + alg_ver + ": " + status);
+				return;
+			}
 			//
-			/* added to allow users to automatically set the Validation column */
-			if (validation_flag.length() > 0)
-				setHdbValidationFlag(output, validation_flag.charAt(1));
-			setOutput(output, volume);
+			debug3("FlowToVolumeAlg-" + alg_ver + "  " + _aggregatePeriodEnd + " SDI: " + getSDI("input")
+				+ "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			// now see how many records were found for this aggregate
+			// and see if this calc is in current period and if partial calc is set
+			is_current_period = ((String) dbobj.get("is_current_period")).equalsIgnoreCase("Y");
+			if (!is_current_period && total_count < mvr_count)
+			{
+				do_setoutput = false;
+				debug1("FlowToVolumeAlg-" + alg_ver + ":  Minimum required records not met for historic period: "
+					+ _aggregatePeriodEnd + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: "
+					+ total_count);
+			}
+			if (is_current_period && !partial_calculations && total_count < mvr_count)
+			{
+				do_setoutput = false;
+				debug1("FlowToVolumeAlg-" + alg_ver + ":  Minimum required records not met for current period: "
+					+ _aggregatePeriodEnd + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: "
+					+ total_count);
+			}
+			//
+			//
+			// do the volume calculation, set the output if all is successful and
+			// set the flags appropriately
+			if (do_setoutput)
+			{
+				// set the dataflags appropriately
+				if (total_count < mvd_count)
+					flags = flags + "n";
+				if (is_current_period && total_count < mvr_count)
+				// now we have a partial calculation, so do what needs to be done
+				// for partials
+				{
+					setHdbValidationFlag(output, 'T');
+					// call the RBASEUtils merge method to add a "seed record" to
+					// cp_historic_computations table
+					// this call modified by M. Bogner Mar 2013 for the dbkey
+					// surrogate key class for the 5.3 CP upgrade project
+
+					rbu.merge_cp_hist_calc((int) comp.getAppId().getValue(), (int) getSDI("input").getValue(),
+						input_interval, _aggregatePeriodBegin, _aggregatePeriodEnd, "dd-MM-yyyy HH:mm",
+						tsdb.getWriteModelRunId(), table_selector);
+
+				}
+
+				debug3("FlowToVolumeAlg: Derivation FLAGS: " + flags);
+				if (flags != null)
+					setHdbDerivationFlag(output, flags);
+				Double volume = Double.valueOf(dbobj.get("volume").toString());
+				//
+				/* added to allow users to automatically set the Validation column */
+				if (validation_flag.length() > 0)
+					setHdbValidationFlag(output, validation_flag.charAt(1));
+				setOutput(output, volume);
+			}
+			//
+			// delete any existing value if this calculation failed
+			if (!do_setoutput)
+			{
+				deleteOutput(output);
+			}
 		}
-		//
-		// delete any existing value if this calculation failed
-		if (!do_setoutput)
+		catch (SQLException ex)
 		{
-			deleteOutput(output);
+			throw new DbCompException("Unable to get sql connection.", ex);
 		}
 		// AW:AFTER_TIMESLICES_END
 	}

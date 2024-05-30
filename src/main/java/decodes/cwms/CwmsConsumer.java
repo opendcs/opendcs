@@ -82,6 +82,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.DatabaseService;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -93,6 +94,7 @@ import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
+import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
 import decodes.db.Platform;
@@ -111,6 +113,7 @@ import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbCompLock;
+import decodes.util.DecodesSettings;
 import decodes.util.PropertySpec;
 import decodes.util.TSUtil;
 
@@ -241,15 +244,18 @@ public class CwmsConsumer extends DataConsumer
 		// Get the Oracle Data Source & open a connection.
 		try
 		{
-			cwmsTsdb = new CwmsTimeSeriesDb();
+			DecodesSettings settings = DecodesSettings.instance().asCopy();
+			settings.editDatabaseTypeCode = DecodesSettings.DB_CWMS;
+			settings.editDatabaseType = "CWMS";
+			settings.editDatabaseLocation = cwmsCfg.getDbAuthFile();
+			settings.DbAuthFile = cwmsCfg.DbAuthFile;
+			settings.CwmsOfficeId = cwmsCfg.cwmsOfficeId;
+			settings.editTimeZone = cwmsCfg.timeZone;
+			cwmsTsdb = (CwmsTimeSeriesDb)DatabaseService.getDatabaseFor("decodes", settings, credentials);
 			cwmsTsdb.requireCcpTables = false;
-			cwmsTsdb.setDbUri(cwmsCfg.getDbUri());
-			
-			DbKey appId = cwmsTsdb.connect("decodes", credentials);
-			Logger.instance().info(module + " Connected to CWMS database at "
-				+ cwmsCfg.getDbUri() + " as user " + credentials.getProperty("username"));
+			Logger.instance().info(module + " Connected to CWMS database");
 		}
-		catch (BadConnectException ex)
+		catch (DatabaseException ex)
 		{
 			String msg = module + " " + ex;
 			Logger.instance().fatal(msg);
@@ -287,11 +293,7 @@ public class CwmsConsumer extends DataConsumer
 			}
 		}
 
-		if (cwmsTsdb != null)
-		{
-			cwmsTsdb.closeConnection();
-			cwmsTsdb = null;
-		}
+		cwmsTsdb = null;
 	}
 
 	/**

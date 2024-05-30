@@ -1996,8 +1996,7 @@ public class EmitImport
 		DatabaseIO dbio = null;
 		try 
 		{ 
-			dbio = DatabaseIO.makeDatabaseIO(
-				settings.editDatabaseTypeCode, settings.editDatabaseLocation);
+			dbio = DatabaseIO.makeDatabaseIO(settings);
 		}
 		catch(Exception ex)
 		{
@@ -2226,4 +2225,3 @@ public class EmitImport
 
 
 }
-

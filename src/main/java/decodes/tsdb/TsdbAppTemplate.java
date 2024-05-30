@@ -1,8 +1,11 @@
 package decodes.tsdb;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.DatabaseService;
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.LoadingAppDAI;
@@ -15,6 +18,8 @@ import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesVersion;
 import decodes.util.PropertySpec;
+import decodes.db.DatabaseException;
+import decodes.launcher.Profile;
 import decodes.sql.DbKey;
 import decodes.util.DecodesException;
 import decodes.util.PropertiesOwner;
@@ -153,22 +158,16 @@ public abstract class TsdbAppTemplate
 			databaseFailed = false;
 			try
 			{
-				initDecodes();
-			}
-			catch(DecodesException ex)
-			{
-				log.warn("Cannot init Decodes: ",ex);
-				databaseFailed = true;
-				continue;
-			}
-			try
-			{
-				createDatabase();
 				tryConnect();
 			}
 			catch(BadConnectException ex)
 			{
-				warning("Cannot connect to TSDB: " + ex);
+				if (ex.getCause() instanceof NullPointerException)
+				{
+					// Just bail
+					throw (NullPointerException)ex.getCause();
+				}
+				log.atError().setCause(ex).log("Cannot connect to TSDB.");
 				// CWMS-10402 don't keep trying if the failure was because the
 				// app name is invalid.
 				databaseFailed = !ex.toString().contains("Cannot determine app ID");
@@ -297,13 +296,7 @@ public abstract class TsdbAppTemplate
 		{
 			log.error("Not permitted to instantiate object of type '{}'", className,ex);
 			throw ex;
-		}
-
-		// Set test-mode flag & model run ID in the database interface.
-		theDb.setTestMode(testModeArg.getValue());
-		int modelRunId = modelRunArg.getValue();
-		if (modelRunId != -1)
-			theDb.setWriteModelRunId(modelRunId);
+		}	
 	}
 
 	/**
@@ -313,61 +306,60 @@ public abstract class TsdbAppTemplate
 	public void tryConnect()
 		throws BadConnectException
 	{
-		if (theDb.isConnected())
-		{
-			warning("Closing connection before reconnect.");
-			theDb.closeConnection();
-		}
-		Properties credentials = null;
 		String nm = appNameArg.getValue();
-		if (!DecodesInterface.isGUI() || !theDb.isCwms())
-		{
-			// Get authorization parameters.
-			String afn = DecodesSettings.instance().DbAuthFile;
-			try
-			{
-				credentials = AuthSourceService.getFromString(afn)
-											   .getCredentials();
-			}
-			catch(AuthException ex)
-			{
-				authFileEx(afn, ex);
-				throw new BadConnectException("Cannot read auth file: " + ex);
-			}
-	
-			// Connect to the database!
-		}
-		// Else this is a CWMS GUI -- user will be prompted for credentials
-		// Leave the property set empty.
-		
-		setAppId(theDb.connect(nm, credentials));
-		
-		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
 		try
 		{
-			// CWMS-8979 Allow settings in the database to override values in user.properties.
-			String settingsApp = cmdLineArgs.getCmdLineProps().getProperty("settings");
-			if (settingsApp != null)
+			Profile profile = cmdLineArgs.getProfile();
+
+			DecodesSettings settings = DecodesSettings.instance();
+			settings.loadFromProfile(profile);
+			theDb = (TimeSeriesDb)DatabaseService.getDatabaseFor(nm, settings);
+
+			try (LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO())
 			{
-				log.info("Overriding Decodes Settings with properties in Process Record '{}'", settingsApp );
-				try
+				CompAppInfo thisApp = loadingAppDAO.getComputationApp(nm);
+				this.appId = thisApp.getAppId();
+				// CWMS-8979 Allow settings in the database to override values in user.properties.
+				String settingsApp = cmdLineArgs.getCmdLineProps().getProperty("settings");
+				if (settingsApp != null)
 				{
-					CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
-					PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
-				}
-				catch (DbIoException ex)
-				{
-					log.warn("Cannot load settings from app '{}'", settingsApp , ex);
-				}
-				catch (NoSuchObjectException ex)
-				{
-					log.warn("Cannot load settings from non-existent app '{}'", settingsApp , ex);
+					log.info("Overriding Decodes Settings with properties in Process Record '{}'", settingsApp );
+					try
+					{
+						CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
+						this.appId = cai.getAppId();
+						PropertiesUtil.loadFromProps(settings, cai.getProperties());
+					}
+					catch (DbIoException ex)
+					{
+						log.warn("Cannot load settings from app '{}'", settingsApp , ex);
+					}
+					catch (NoSuchObjectException ex)
+					{
+						log.warn("Cannot load settings from non-existent app '{}'", settingsApp , ex);
+					}
 				}
 			}
+			catch (DbIoException ex)
+			{
+				throw new BadConnectException("Unable to get AppId", ex);
+			}
+			catch (NoSuchObjectException ex)
+			{
+				throw new BadConnectException(("Now app for name " + nm));
+			}
+
+			// Set test-mode flag & model run ID in the database interface.
+			theDb.setTestMode(testModeArg.getValue());
+			int modelRunId = modelRunArg.getValue();
+			if (modelRunId != -1)
+			{
+				theDb.setWriteModelRunId(modelRunId);
+			}
 		}
-		finally
+		catch (IOException | DatabaseException ex)
 		{
-			loadingAppDAO.close();
+			throw new BadConnectException("unable to get database instance.", ex);
 		}
 	}
 
@@ -409,7 +401,6 @@ public abstract class TsdbAppTemplate
 			{
 				log.info("Closing database connection.");
 			}
-			theDb.closeConnection();
 		}
 		theDb = null;
 	}
