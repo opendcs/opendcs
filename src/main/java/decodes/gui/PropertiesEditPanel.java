@@ -140,7 +140,8 @@ public class PropertiesEditPanel extends JPanel
 			if (propHash != null)
 			{
 				// property name is in column 0
-				String pn = ((String) ptm.getValueAt(row, 0)).toUpperCase();
+				int modelRow = table.convertRowIndexToModel(row);
+				String pn = ((String) ptm.getValueAt(modelRow, 0)).toUpperCase();
 				PropertySpec ps = propHash.get(pn);
 				cr.setToolTipText(ps != null ? ps.getDescription() : "");
 //if (ps == null) System.out.println("No propHash entry for '" + pn + "'");
