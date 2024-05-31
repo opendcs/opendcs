@@ -224,7 +224,6 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
 		else
 		{
 			RoutingSpecEditPanel newTab = new RoutingSpecEditPanel(rs);
-//			RoutingSpecEditPanelOld newTab = new RoutingSpecEditPanelOld(rs);
 			Logger.instance().debug3("RoutingSpecListPanel.doOpen calling setParent("
 				+ (parent == null ? "NULL" : "") + ")");
 
