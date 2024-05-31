@@ -12,6 +12,7 @@ import java.awt.event.*;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 
+import ilex.gui.Help;
 import ilex.util.LoadResourceBundle;
 import ilex.util.TextUtil;
 import ilex.util.Logger;
@@ -676,9 +677,10 @@ public class SiteEditPanel extends DbEditorTab
        	publicNameField.setEnabled(true);
 	}
 
-	/** @see EntityOpsController */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 
 	public void redisplayModel()
