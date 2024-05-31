@@ -8,7 +8,7 @@ import java.net.URI;
 
 public class Help
 {
-    static final String HELP_URL = "https://opendcs-env.readthedocs.io/en/latest/index.html";
+    static final String HELP_URL = "https://opendcs-env.readthedocs.io/";
 
     public static void open(){
         try {
