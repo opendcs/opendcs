@@ -30,6 +30,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import decodes.cwms.CwmsFlags;
 import decodes.db.UnitConverter;
@@ -786,4 +787,64 @@ public class ScreeningCriteria
 		rocPerHourChecks.clear();
 		durCheckPeriods.clear();
 	}
+
+	protected boolean hasAbs()
+	{
+		Function<AbsCheck,Boolean> check = (AbsCheck c) ->
+		{
+			return c != null
+					&& (c.getHigh() != Double.NEGATIVE_INFINITY
+					|| c.getLow() != Double.NEGATIVE_INFINITY);
+		};
+		AbsCheck rejected = getAbsCheckFor('R');
+		AbsCheck question = getAbsCheckFor('Q');
+		return (check.apply(rejected) || check.apply(question));
+	}
+	protected boolean hasConst()
+	{
+		Function<ConstCheck,Boolean> check = (ConstCheck c) ->
+		{
+			return c != null
+					&& (c.getTolerance() != Double.NEGATIVE_INFINITY
+					|| c.getAllowedMissing() != Integer.MIN_VALUE
+					|| c.getMinToCheck() != Double.NEGATIVE_INFINITY);
+		};
+		ConstCheck reject = getConstCheckFor('R');
+		ConstCheck question = getConstCheckFor('Q');
+		return check.apply(reject) || check.apply(question);
+	}
+
+	protected boolean hasRoc()
+	{
+		Function<RocPerHourCheck,Boolean> check = (RocPerHourCheck c) ->
+		{
+			return c != null
+					&& (c.getFall() != Double.NEGATIVE_INFINITY
+					|| c.getRise() != Double.NEGATIVE_INFINITY);
+		};
+		RocPerHourCheck reject = getRocCheckFor('R');
+		RocPerHourCheck question = getRocCheckFor('Q');
+		return check.apply(reject) || check.apply(question);
+	}
+
+	protected boolean hasDurMag()
+	{
+		Function<DurCheckPeriod,Boolean> check = (DurCheckPeriod c) ->
+		{
+			return c != null
+					&& (c.getHigh() != Double.NEGATIVE_INFINITY
+					|| c.getLow() != Double.NEGATIVE_INFINITY);
+
+		};
+		boolean ret = false;
+		for	(DurCheckPeriod c: getDurCheckPeriods())
+		{
+			if (check.apply(c))
+			{
+				ret = true;
+			}
+		}
+		return ret;
+	}
+
 }

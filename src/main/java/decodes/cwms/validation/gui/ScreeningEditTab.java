@@ -32,7 +32,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -48,10 +47,6 @@ import javax.swing.SwingWorker;
 
 import opendcs.dai.IntervalDAI;
 import decodes.cwms.CwmsTimeSeriesDb;
-import decodes.cwms.validation.AbsCheck;
-import decodes.cwms.validation.ConstCheck;
-import decodes.cwms.validation.DurCheckPeriod;
-import decodes.cwms.validation.RocPerHourCheck;
 import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.ScreeningCriteria;
 import decodes.cwms.validation.dao.ScreeningDAI;
@@ -511,8 +506,8 @@ public class ScreeningEditTab extends JPanel
 			seasons.add(scp.getSeason());
 			
 		}
-		correctActiveFlags(screening, seasons);
-		
+		screening.updateActiveFlags(seasons);
+
 		screening.setParamId(paramField.getText().trim());
 		screening.setDurationId((String)durationCombo.getSelectedItem());
 		screening.setParamTypeId((String)paramTypeCombo.getSelectedItem());
@@ -549,98 +544,6 @@ public class ScreeningEditTab extends JPanel
 
 	}
 
-
-	private static void correctActiveFlags(Screening screening, ArrayList<ScreeningCriteria> season)
-	{
-		boolean rangeActive = false;
-		boolean constActive = false;
-		boolean rocActive = false;
-		boolean durMagActive = false;
-		for (ScreeningCriteria crit: season)
-		{
-			if (hasAbs(crit))
-			{
-				rangeActive = true;
-			}
-			if (hasConst(crit))
-			{
-				constActive = true;
-			}
-			if (hasRoc(crit))
-			{
-				rocActive = true;
-			}
-			if (hasDurMag(crit))
-			{
-				durMagActive = true;
-			}
-		}
-
-		screening.setRangeActive(rangeActive);
-		screening.setConstActive(constActive);
-		screening.setRocActive(rocActive);
-		screening.setDurMagActive(durMagActive);
-	}
-
-	private static boolean hasAbs(ScreeningCriteria crit)
-	{
-		Function<AbsCheck,Boolean> check = (AbsCheck c) ->
-		{
-			return c != null
-				&& (c.getHigh() != Double.NEGATIVE_INFINITY 
-				|| c.getLow() != Double.NEGATIVE_INFINITY);
-		};
-		AbsCheck rejected = crit.getAbsCheckFor('R');
-		AbsCheck question = crit.getAbsCheckFor('Q');
-		return (check.apply(rejected) || check.apply(question));
-	}
-
-	private static boolean hasConst(ScreeningCriteria crit)
-	{
-		Function<ConstCheck,Boolean> check = (ConstCheck c) ->
-		{
-			return c != null
-				&& (c.getTolerance() != Double.NEGATIVE_INFINITY
-				|| c.getAllowedMissing() != Integer.MIN_VALUE
-				|| c.getMinToCheck() != Double.NEGATIVE_INFINITY);
-		};
-		ConstCheck reject = crit.getConstCheckFor('R');
-		ConstCheck question = crit.getConstCheckFor('Q');
-		return check.apply(reject) || check.apply(question);
-	}
-
-	private static boolean hasRoc(ScreeningCriteria crit)
-	{
-		Function<RocPerHourCheck,Boolean> check = (RocPerHourCheck c) ->
-		{
-			return c != null
-				&& (c.getFall() != Double.NEGATIVE_INFINITY
-				|| c.getRise() != Double.NEGATIVE_INFINITY);
-		};
-		RocPerHourCheck reject = crit.getRocCheckFor('R');
-		RocPerHourCheck question = crit.getRocCheckFor('Q');
-		return check.apply(reject) || check.apply(question);
-	}
-
-	private static boolean hasDurMag(ScreeningCriteria crit)
-	{
-		Function<DurCheckPeriod,Boolean> check = (DurCheckPeriod c) ->
-		{
-			return c != null
-				&& (c.getHigh() != Double.NEGATIVE_INFINITY
-				|| c.getLow() != Double.NEGATIVE_INFINITY);
-
-		};
-		boolean ret = false;
-		for	(DurCheckPeriod c: crit.getDurCheckPeriods())
-		{
-			if (check.apply(c))
-			{
-				ret = true;
-			}
-		}
-		return ret;
-	}
 
 	protected void paramPressed()
 	{
