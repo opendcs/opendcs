@@ -59,6 +59,11 @@ public class SourceEditPanel extends DbEditorTab
 
 	ArrayList<DatabaseObject> affectedItems = null;
 
+
+	private Database getDb(){
+		return Database.getDb();
+	}
+
 	/**
 	  Construct new panel to edit specified object.
 	  @param ob the object to edit in this panel.
@@ -86,7 +91,7 @@ public class SourceEditPanel extends DbEditorTab
 		}
 	}
 
-	/** 
+	/**
 	  This method only called in dbedit.
 	  Associates this panel with enclosing frame.
 	  @param parent   Enclosing frame
@@ -200,7 +205,7 @@ public class SourceEditPanel extends DbEditorTab
 		enabling();
 		String dsType = (String)sourceTypeCombo.getSelectedItem();
 
-		DbEnum dsEnum = Database.getDb().enumList.getEnum(Constants.enum_DataSourceType);
+		DbEnum dsEnum = getDb().enumList.getEnum(Constants.enum_DataSourceType);
 		if (dsEnum != null)
 		{
 			EnumValue dsEv = dsEnum.findEnumValue(dsType);
@@ -357,12 +362,12 @@ public class SourceEditPanel extends DbEditorTab
 
 		// Replace the old datasource in the list.
 		// This also updates the SourceListPanel.
-		Database.getDb().dataSourceList.getList().remove(origObject);
-		Database.getDb().dataSourceList.add(theObject);
+		getDb().dataSourceList.getList().remove(origObject);
+		getDb().dataSourceList.add(theObject);
 		parent.getSourcesListPanel().resort();
 
 		// Replace DataSource in every Group using this data source
-		for(Iterator<DataSource> it = Database.getDb().dataSourceList.getList().iterator();
+		for(Iterator<DataSource> it = getDb().dataSourceList.getList().iterator();
 			it.hasNext(); )
 		{
 			DataSource ds = it.next();
@@ -398,7 +403,7 @@ public class SourceEditPanel extends DbEditorTab
 		// Replace data source in every RoutingSpec using this source or a
 		// group containing this data source.
 		DataSource newDataSource = null;
-		for(Iterator<RoutingSpec> it = Database.getDb().routingSpecList.iterator();
+		for(Iterator<RoutingSpec> it = getDb().routingSpecList.iterator();
 			it.hasNext(); )
 		{
 			RoutingSpec rs = it.next();
@@ -465,10 +470,10 @@ public class SourceEditPanel extends DbEditorTab
 					;
 		}
 		if ( theObject != null && theObject.getId() == Constants.undefinedId 
-		 && !Database.getDb().getDbIo().getDatabaseType().equals("XML"))
+		 && !getDb().getDbIo().getDatabaseType().equals("XML"))
 		{
-			DataSource stale = Database.getDb().dataSourceList.get(theObject.getName());
-			Database.getDb().dataSourceList.remove(stale);
+			DataSource stale = getDb().dataSourceList.get(theObject.getName());
+			getDb().dataSourceList.remove(stale);
 		}
 		DbEditorTabbedPane tp = parent.getSourcesTabbedPane();
 		tp.remove(this);
