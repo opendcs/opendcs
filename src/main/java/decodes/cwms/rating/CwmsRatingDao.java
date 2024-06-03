@@ -155,7 +155,7 @@ public class CwmsRatingDao extends DaoBase
                             "to_date(?,'DD.MM.YYYY HH24:MI:SS')," +
                             "to_date(?,'DD.MM.YYYY HH24:MI:SS'),null, ?) }";
                     try (Connection c = dao.getConnection();
-                         CallableStatement cstmt = c.prepareCall(q);)
+                         CallableStatement cstmt = c.prepareCall(q))
                     {
                         RatingSet ratingSet = RatingSet.fromDatabase(c,
                         ((CwmsTimeSeriesDb)db).getDbOfficeId(),
@@ -196,7 +196,7 @@ public class CwmsRatingDao extends DaoBase
 
         String doing = "prepare call";
         try (Connection c = getConnection();
-             CallableStatement cstmt = c.prepareCall(q);)
+             CallableStatement cstmt = c.prepareCall(q))
         {
             doing = "set params for";
             cstmt.setString(1, crr.getRatingSpecId());
@@ -244,13 +244,13 @@ public class CwmsRatingDao extends DaoBase
 
     /**
      * Import the passed XML into CWMS, merging with any existing ratings.
-     * @param xml
-     * @throws RatingException
+     * @param xml to be imported
+     * @throws RatingException thrown on error
      */
     public void importXmlToDatabase(String xml)
         throws RatingException
     {
-        log.trace("importXmlToDatabase: {}");
+        log.trace("importXmlToDatabase ");
         RatingSet newSet = RatingSet.fromXml(xml);
         String specId = newSet.getRatingSpec().getRatingSpecId();
         log.trace("importXmlToDatabase fromXml success, specId='{}'", specId );
@@ -336,22 +336,7 @@ public class CwmsRatingDao extends DaoBase
         // If cache is full, have to delete one.
         if (ratingCache.size() >= MAX_CACHED)
         {
-            Date oldestUsed = new Date();
-            String oldestSpec = null;
-            for(String tspecId : ratingCache.keySet())
-            {
-                RatingWrapper trw = ratingCache.get(tspecId);
-                if (trw.lastTimeUsed.before(oldestUsed))
-                {
-                    oldestSpec = tspecId;
-                    oldestUsed = trw.lastTimeUsed;
-                }
-            }
-            if (oldestSpec != null)
-            {
-                log.trace("Removing '{}' from cache because cache is full.", oldestSpec);
-                ratingCache.remove(oldestSpec);
-            }
+            deleteOldestRatingFromCache();
         }
 
         log.trace("Constructing RatingSet with officeId={} and spec '{}'", officeId, specId);
@@ -370,6 +355,26 @@ public class CwmsRatingDao extends DaoBase
         catch (SQLException ex)
         {
             throw new RatingException("Unable to load rating " + specId, ex);
+        }
+    }
+
+    private void deleteOldestRatingFromCache()
+    {
+        Date oldestUsed = new Date();
+        String oldestSpec = null;
+        for(String tspecId : ratingCache.keySet())
+        {
+            RatingWrapper trw = ratingCache.get(tspecId);
+            if (trw.lastTimeUsed.before(oldestUsed))
+            {
+                oldestSpec = tspecId;
+                oldestUsed = trw.lastTimeUsed;
+            }
+        }
+        if (oldestSpec != null)
+        {
+            log.trace("Removing '{}' from cache because cache is full.", oldestSpec);
+            ratingCache.remove(oldestSpec);
         }
     }
 }
