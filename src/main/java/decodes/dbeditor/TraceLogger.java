@@ -68,6 +68,15 @@ public class TraceLogger extends Logger
 
 	public synchronized void doLog(int priority, String text)
 	{
-		queue.add(text + "\n");
+		try
+		{
+			queue.put(text + "\n");
+		}
+		catch (InterruptedException ex)
+		{
+			// NOTE: use of STDERR is intentional here. This is an error with logging itself.
+			System.err.println("Unable to Write message to log queue.");
+			ex.printStackTrace();
+		}
 	}
 }

@@ -99,6 +99,10 @@ public class CwmsOracleConfiguration implements Configuration
             FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
             FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
         }
+        try (OutputStream out = new FileOutputStream(new File(userDir,"logfilter.txt")))
+        {
+            out.write("org.jooq\n".getBytes());
+        }
     }
 
     @Override

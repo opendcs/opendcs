@@ -140,7 +140,16 @@ public class FileLogger extends Logger
 	*/
 	public synchronized void doLog( int priority, String text )
 	{
-		queue.add(standardMessage(priority, text));
+		try
+		{
+			queue.put(standardMessage(priority, text));
+		}
+		catch (InterruptedException ex)
+		{
+			// NOTE: use of STDERR is intentional here. This is an error with logging itself.
+			System.err.println("Unable to put data in the log message queue.");
+			ex.printStackTrace();
+		}
 	}
 
 	/**

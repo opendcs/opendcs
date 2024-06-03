@@ -456,6 +456,28 @@ public class DaoBase
             {
                 stmt.setInt(index,(Integer)param);
             }
+            else if (param instanceof Boolean)
+            {
+                Boolean v = (Boolean)param;
+                String value = "";
+                // There is a db.sqlBoolean but it tries to
+                // be helpful and wraps the return in ' ' which
+                // we don't need or want here.
+                // A callback to the "TimeseriesDatabase" class
+                // is probably the best solution for the data that various
+                // so they can take responsibility. That's also roughly
+                // how JDBI will work. That'll be handled as part of
+                // a separate PR.
+                if (db.isOracle())
+                {
+                    value = v ? "Y" : "N";
+                }
+                else
+                {
+                    value = v ? "TRUE" : "FALSE";
+                }
+                stmt.setString(index, value);
+            }
             else if (param instanceof String)
             {
                 stmt.setString(index,(String)param);
