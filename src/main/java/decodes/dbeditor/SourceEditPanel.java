@@ -126,7 +126,12 @@ public class SourceEditPanel extends DbEditorTab
 		nameField.setText(theObject.getName());
 		sourceTypeCombo.setSelection(theObject.dataSourceType);
 		sourceTypeSelected();
-		boolean isGroup = theObject.isGroupType();
+		enabling();
+	}
+
+	private void enabling(){
+		String dsType = (String)sourceTypeCombo.getSelectedItem();
+		boolean isGroup = dsType.toLowerCase().endsWith("roup");
 		addMemberButton.setEnabled(isGroup);
 		deleteMemberButton.setEnabled(isGroup);
 		upMemberButton.setEnabled(isGroup);
@@ -265,14 +270,9 @@ public class SourceEditPanel extends DbEditorTab
 	*/
 	private void sourceTypeSelected()
 	{
+		enabling();
 		String dsType = (String)sourceTypeCombo.getSelectedItem();
-		boolean isGroup = dsType.toLowerCase().endsWith("roup");
-		addMemberButton.setEnabled(isGroup);
-		deleteMemberButton.setEnabled(isGroup);
-		upMemberButton.setEnabled(isGroup);
-		downMemberButton.setEnabled(isGroup);
-		groupMemberList.setEnabled(isGroup);
-		
+
 		DbEnum dsEnum = Database.getDb().enumList.getEnum(Constants.enum_DataSourceType);
 		if (dsEnum != null)
 		{
