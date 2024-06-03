@@ -53,7 +53,7 @@ public class SourceEditPanel extends DbEditorTab
 	GridBagLayout gridBagLayout1 = new GridBagLayout();
 
 	DbEditorFrame parent;
-	DataSource theObject, origObject;
+	DataSource dataSource, origDataSource;
 	Properties theProperties;
 	GroupMemberListModel groupMemberListModel;
 
@@ -72,16 +72,16 @@ public class SourceEditPanel extends DbEditorTab
 	{
 		try
 		{
- 			origObject = ob;
-			theObject = origObject.copy();
-			setTopObject(origObject);
-			if (theObject.getDataSourceArg() == null)
-				theObject.setDataSourceArg("");
-			theProperties = PropertiesUtil.string2props(theObject.getDataSourceArg());
+ 			origDataSource = ob;
+			dataSource = origDataSource.copy();
+			setTopObject(origDataSource);
+			if (dataSource.getDataSourceArg() == null)
+				dataSource.setDataSourceArg("");
+			theProperties = PropertiesUtil.string2props(dataSource.getDataSourceArg());
 			propertiesEditPanel = new PropertiesEditPanel(theProperties);
 			propertiesEditPanel.setOwnerFrame(getParentFrame());
 
-			groupMemberListModel = new GroupMemberListModel(theObject);
+			groupMemberListModel = new GroupMemberListModel(dataSource);
 			groupMemberList = new JList(groupMemberListModel);
 			jbInit();
 			fillFields();
@@ -104,8 +104,8 @@ public class SourceEditPanel extends DbEditorTab
 	/** Fills the GUI controls with values from the object. */
 	private void fillFields()
 	{
-		nameField.setText(theObject.getName());
-		sourceTypeCombo.setSelection(theObject.dataSourceType);
+		nameField.setText(dataSource.getName());
+		sourceTypeCombo.setSelection(dataSource.dataSourceType);
 		sourceTypeSelected();
 		enabling();
 	}
@@ -125,10 +125,10 @@ public class SourceEditPanel extends DbEditorTab
 	*/
 	private void getDataFromFields()
 	{
-		theObject.setName(nameField.getText());
-		theObject.dataSourceType = (String)sourceTypeCombo.getSelectedItem();
+		dataSource.setName(nameField.getText());
+		dataSource.dataSourceType = (String)sourceTypeCombo.getSelectedItem();
 		propertiesEditPanel.saveChanges();
-		theObject.setDataSourceArg(PropertiesUtil.props2string(theProperties));
+		dataSource.setDataSourceArg(PropertiesUtil.props2string(theProperties));
 	}
 
 	/** Initializes GUI components */
@@ -231,8 +231,8 @@ public class SourceEditPanel extends DbEditorTab
 	void addMemberButton_actionPerformed(ActionEvent e)
 	{
 		DataSourceSelectDialog dlg = new DataSourceSelectDialog();
-		dlg.exclude(theObject.getName());
-		for(Iterator it = theObject.groupMembers.iterator(); it.hasNext(); )
+		dlg.exclude(dataSource.getName());
+		for(Iterator it = dataSource.groupMembers.iterator(); it.hasNext(); )
 		{
 			DataSource ds = (DataSource)it.next();
 			dlg.exclude(ds.getName());
@@ -249,7 +249,7 @@ public class SourceEditPanel extends DbEditorTab
 			DataSource nds = dlg.getSelection();
 			if (nds != null)
 			{
-				theObject.groupMembers.add(nds);
+				dataSource.groupMembers.add(nds);
 				groupMemberListModel.fireChanged();
 			}
 		}
@@ -271,7 +271,7 @@ public class SourceEditPanel extends DbEditorTab
 			return;
 		}
 
-		theObject.groupMembers.remove(idx);
+		dataSource.groupMembers.remove(idx);
 		groupMemberListModel.fireChanged();
 	} 
 
@@ -334,7 +334,7 @@ public class SourceEditPanel extends DbEditorTab
 	public boolean hasChanged()
 	{
 		getDataFromFields();
-		return !theObject.equals(origObject);
+		return !dataSource.equals(origDataSource);
 	}
 
 	/**
@@ -347,7 +347,7 @@ public class SourceEditPanel extends DbEditorTab
 		getDataFromFields();
 		try
 		{
-			theObject.write();
+			dataSource.write();
 		}
 		catch(DatabaseException e)
 		{
@@ -358,12 +358,12 @@ public class SourceEditPanel extends DbEditorTab
 			return false;
 		}
 		affectedItems = new ArrayList<DatabaseObject>();
-		affectedItems.add(theObject);
+		affectedItems.add(dataSource);
 
 		// Replace the old datasource in the list.
 		// This also updates the SourceListPanel.
-		getDb().dataSourceList.getList().remove(origObject);
-		getDb().dataSourceList.add(theObject);
+		getDb().dataSourceList.getList().remove(origDataSource);
+		getDb().dataSourceList.add(dataSource);
 		parent.getSourcesListPanel().resort();
 
 		// Replace DataSource in every Group using this data source
@@ -371,7 +371,7 @@ public class SourceEditPanel extends DbEditorTab
 			it.hasNext(); )
 		{
 			DataSource ds = it.next();
-			if (ds.getName().equalsIgnoreCase(theObject.getName()))
+			if (ds.getName().equalsIgnoreCase(dataSource.getName()))
 				continue;
 			if (ds.dataSourceType.toLowerCase().endsWith("roup"))
 			{
@@ -379,9 +379,9 @@ public class SourceEditPanel extends DbEditorTab
 				for(int i = 0; i < ds.groupMembers.size(); i++)
 				{
 					DataSource ds2 = (DataSource)ds.groupMembers.elementAt(i);
-					if (ds2 != null && ds2.getName().equalsIgnoreCase(theObject.getName()))
+					if (ds2 != null && ds2.getName().equalsIgnoreCase(dataSource.getName()))
 					{
-						ds.groupMembers.setElementAt(theObject, i);
+						ds.groupMembers.setElementAt(dataSource, i);
 						changed = true;
 						break;
 					}
@@ -436,9 +436,9 @@ public class SourceEditPanel extends DbEditorTab
 		}
 
 		// Make a new copy in case user wants to keep editing.
-		origObject = theObject;
-		theObject = origObject.copy();
-		setTopObject(origObject);
+		origDataSource = dataSource;
+		dataSource = origDataSource.copy();
+		setTopObject(origDataSource);
 		return true;
 	}
 
@@ -469,10 +469,10 @@ public class SourceEditPanel extends DbEditorTab
 			else if (r == JOptionPane.NO_OPTION)
 					;
 		}
-		if ( theObject != null && theObject.getId() == Constants.undefinedId 
+		if ( dataSource != null && dataSource.getId() == Constants.undefinedId
 		 && !getDb().getDbIo().getDatabaseType().equals("XML"))
 		{
-			DataSource stale = getDb().dataSourceList.get(theObject.getName());
+			DataSource stale = getDb().dataSourceList.get(dataSource.getName());
 			getDb().dataSourceList.remove(stale);
 		}
 		DbEditorTabbedPane tp = parent.getSourcesTabbedPane();
