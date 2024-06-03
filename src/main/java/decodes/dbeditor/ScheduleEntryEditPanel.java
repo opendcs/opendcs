@@ -1,6 +1,7 @@
 package decodes.dbeditor;
 
 import ilex.gui.DateTimeCalendar;
+import ilex.gui.Help;
 import ilex.util.LoadResourceBundle;
 
 import java.awt.BorderLayout;
@@ -401,8 +402,7 @@ public class ScheduleEntryEditPanel
 	@Override
 	public void help()
 	{
-		// TODO Auto-generated method stub
-
+		Help.open();
 	}
 
 	@Override

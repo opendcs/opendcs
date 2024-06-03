@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
+import ilex.gui.Help;
 import ilex.util.LoadResourceBundle;
 import ilex.util.PropertiesUtil;
 import ilex.util.Logger;
@@ -555,9 +556,10 @@ public class SourceEditPanel extends DbEditorTab
 		tp.remove(this);
 	}
 
-	/** @see EntityOpsController */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 }
 

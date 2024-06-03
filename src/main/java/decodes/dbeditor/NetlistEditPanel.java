@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Collections;
 
+import ilex.gui.Help;
 import lrgs.gui.PdtSelectDialog;
 import ilex.util.EnvExpander;
 import ilex.util.TextUtil;
@@ -598,9 +599,10 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 		tp.remove(this);
 	}
 
-	/** Does nothing. */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 }
 

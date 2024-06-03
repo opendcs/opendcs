@@ -126,6 +126,9 @@ public class ConfigSensor
 			"Duration to use in Time Series ID in CWMS Consumer"),
 		new PropertySpec(CwmsConstants.CWMS_VERSION, PropertySpec.STRING,
 			"Version to use in Time Series ID in CWMS Consumer"),
+		new PropertySpec(CwmsConstants.CWMS_INTERVAL, PropertySpec.STRING,
+			"Interval to use instead of using the set interval. For example if you need ~15Minutes."
+			),
 		new PropertySpec("interval", PropertySpec.STRING,
 			"In HDB Consumer, use this for the INTERVAL part of Time Series ID."),
 		new PropertySpec("modeled", PropertySpec.BOOLEAN,
@@ -416,4 +419,3 @@ public class ConfigSensor
 		PropertiesUtil.rmIgnoreCase(getProperties(), name);
 	}
 }
-
