@@ -1,42 +1,20 @@
-/*
-*  $Id$
-*  
-*  $Log$
-*  Revision 1.4  2016/10/07 14:49:25  mmaloney
-*  Updates for Web Report for Gail Monds, LRD.
-*
-*  Revision 1.3  2014/10/02 14:26:58  mmaloney
-*  Use properties owner
-*
-*  Revision 1.2  2014/09/17 18:42:44  mmaloney
-*  Show PropSpecs
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.7  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.6  2011/09/27 22:53:23  mmaloney
-*  Fix bug in XML database where datasource records were disappearing.
-*
-*/
-
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 import javax.swing.border.*;
+import java.lang.reflect.Constructor;
 import java.util.Properties;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
+import org.slf4j.LoggerFactory;
+
 import ilex.gui.Help;
 import ilex.util.LoadResourceBundle;
 import ilex.util.PropertiesUtil;
-import ilex.util.Logger;
 
 import decodes.gui.*;
 import decodes.datasource.DataSourceExec;
@@ -47,10 +25,10 @@ import decodes.db.*;
 This panel edits a DataSource object.
 Opened from the SourceListPanel.
 */
-@SuppressWarnings("serial")
 public class SourceEditPanel extends DbEditorTab
 	implements ChangeTracker, EntityOpsController
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(SourceEditPanel.class);
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -77,11 +55,16 @@ public class SourceEditPanel extends DbEditorTab
 	GridBagLayout gridBagLayout1 = new GridBagLayout();
 
 	DbEditorFrame parent;
-	DataSource theObject, origObject;
+	DataSource dataSource, origDataSource;
 	Properties theProperties;
 	GroupMemberListModel groupMemberListModel;
 
 	ArrayList<DatabaseObject> affectedItems = null;
+
+
+	private Database getDb(){
+		return Database.getDb();
+	}
 
 	/**
 	  Construct new panel to edit specified object.
@@ -91,16 +74,16 @@ public class SourceEditPanel extends DbEditorTab
 	{
 		try
 		{
- 			origObject = ob;
-			theObject = origObject.copy();
-			setTopObject(origObject);
-			if (theObject.getDataSourceArg() == null)
-				theObject.setDataSourceArg("");
-			theProperties = PropertiesUtil.string2props(theObject.getDataSourceArg());
+ 			origDataSource = ob;
+			dataSource = origDataSource.copy();
+			setTopObject(origDataSource);
+			if (dataSource.getDataSourceArg() == null)
+				dataSource.setDataSourceArg("");
+			theProperties = PropertiesUtil.string2props(dataSource.getDataSourceArg());
 			propertiesEditPanel = new PropertiesEditPanel(theProperties);
 			propertiesEditPanel.setOwnerFrame(getParentFrame());
 
-			groupMemberListModel = new GroupMemberListModel(theObject);
+			groupMemberListModel = new GroupMemberListModel(dataSource);
 			groupMemberList = new JList(groupMemberListModel);
 			jbInit();
 			fillFields();
@@ -110,7 +93,7 @@ public class SourceEditPanel extends DbEditorTab
 		}
 	}
 
-	/** 
+	/**
 	  This method only called in dbedit.
 	  Associates this panel with enclosing frame.
 	  @param parent   Enclosing frame
@@ -123,10 +106,15 @@ public class SourceEditPanel extends DbEditorTab
 	/** Fills the GUI controls with values from the object. */
 	private void fillFields()
 	{
-		nameField.setText(theObject.getName());
-		sourceTypeCombo.setSelection(theObject.dataSourceType);
+		nameField.setText(dataSource.getName());
+		sourceTypeCombo.setSelection(dataSource.dataSourceType);
 		sourceTypeSelected();
-		boolean isGroup = theObject.isGroupType();
+		enabling();
+	}
+
+	private void enabling(){
+		String dsType = (String)sourceTypeCombo.getSelectedItem();
+		boolean isGroup = dsType.toLowerCase().endsWith("roup");
 		addMemberButton.setEnabled(isGroup);
 		deleteMemberButton.setEnabled(isGroup);
 		upMemberButton.setEnabled(isGroup);
@@ -139,10 +127,10 @@ public class SourceEditPanel extends DbEditorTab
 	*/
 	private void getDataFromFields()
 	{
-		theObject.setName(nameField.getText());
-		theObject.dataSourceType = (String)sourceTypeCombo.getSelectedItem();
+		dataSource.setName(nameField.getText());
+		dataSource.dataSourceType = (String)sourceTypeCombo.getSelectedItem();
 		propertiesEditPanel.saveChanges();
-		theObject.setDataSourceArg(PropertiesUtil.props2string(theProperties));
+		dataSource.setDataSourceArg(PropertiesUtil.props2string(theProperties));
 	}
 
 	/** Initializes GUI components */
@@ -161,78 +149,29 @@ public class SourceEditPanel extends DbEditorTab
 		jPanel2.setLayout(gridBagLayout1);
 		nameField.setEditable(false);
 		jLabel2.setText(genericLabels.getString("typeLabel"));
-		sourceTypeCombo.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				sourceTypeSelected();
-			}
-		});
+		sourceTypeCombo.addActionListener(e -> sourceTypeSelected());
 		jPanel3.setEnabled(false);
 		jPanel3.setBorder(titledBorder1);
 		jPanel3.setLayout(borderLayout2);
 		groupMemberList.setEnabled(false);
 		groupMemberList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		upMemberButton.setEnabled(false);
-		upMemberButton.setText(
-		// genericLabels.getString("up"));
-			"Up");
-		upMemberButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				upMemberButton_actionPerformed(e);
-			}
-		});
-
+		upMemberButton.setText(genericLabels.getString("upAbbr"));
+		upMemberButton.addActionListener(this::upMemberButton_actionPerformed);
 		downMemberButton.setEnabled(false);
-		downMemberButton.setText(
-		// genericLabels.getString("Down"));
-			"Down");
-		downMemberButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				downMemberButton_actionPerformed(e);
-			}
-		});
+		downMemberButton.setText(genericLabels.getString("down"));
+		downMemberButton.addActionListener(this::downMemberButton_actionPerformed);
 		deleteMemberButton.setEnabled(false);
 		deleteMemberButton.setText(genericLabels.getString("delete"));
-		deleteMemberButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				deleteMemberButton_actionPerformed(e);
-			}
-		});
+		deleteMemberButton.addActionListener(this::deleteMemberButton_actionPerformed);
 		addMemberButton.setEnabled(false);
 		addMemberButton.setText(genericLabels.getString("add"));
-		addMemberButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				addMemberButton_actionPerformed(e);
-			}
-		});
+		addMemberButton.addActionListener(this::addMemberButton_actionPerformed);
 		jPanel4.setLayout(flowLayout1);
 		flowLayout1.setHgap(15);
-		// gridLayout1.setColumns(2);
 		gridLayout1.setColumns(4);
 		gridLayout1.setHgap(5);
-		sourceTypeCombo.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				sourceTypeSelected();
-			}
-		});
-		sourceTypeCombo.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				sourceTypeSelected();
-			}
-		});
+		sourceTypeCombo.addActionListener(e -> sourceTypeSelected());
 		this.add(entityOpsPanel, BorderLayout.SOUTH);
 		this.add(jPanel1, BorderLayout.CENTER);
 		jPanel1.add(jPanel2, null);
@@ -265,28 +204,25 @@ public class SourceEditPanel extends DbEditorTab
 	*/
 	private void sourceTypeSelected()
 	{
+		enabling();
 		String dsType = (String)sourceTypeCombo.getSelectedItem();
-		boolean isGroup = dsType.toLowerCase().endsWith("roup");
-		addMemberButton.setEnabled(isGroup);
-		deleteMemberButton.setEnabled(isGroup);
-		upMemberButton.setEnabled(isGroup);
-		downMemberButton.setEnabled(isGroup);
-		groupMemberList.setEnabled(isGroup);
-		
-		DbEnum dsEnum = Database.getDb().enumList.getEnum(Constants.enum_DataSourceType);
+
+		DbEnum dsEnum = getDb().enumList.getEnum(Constants.enum_DataSourceType);
 		if (dsEnum != null)
 		{
 			EnumValue dsEv = dsEnum.findEnumValue(dsType);
 			if (dsEv != null)
 			{
-				Class dsClass = null;
 				try
 				{
-					dsClass = dsEv.getExecClass();
-					DataSourceExec exec = (DataSourceExec)dsClass.newInstance();
+					Class<?> dsClass = dsEv.getExecClass();
+					Constructor<?> constructor = dsClass.getConstructor(DataSource.class, Database.class);
+					DataSourceExec exec = (DataSourceExec)constructor.newInstance(dataSource,getDb());
 					propertiesEditPanel.setPropertiesOwner(exec);
 				}
-				catch(Exception ex) { }
+				catch(Exception ex) {
+					log.error("Error setting properties for '{}'",dsType,ex);
+				}
 			}
 		}
 	}
@@ -299,8 +235,8 @@ public class SourceEditPanel extends DbEditorTab
 	void addMemberButton_actionPerformed(ActionEvent e)
 	{
 		DataSourceSelectDialog dlg = new DataSourceSelectDialog();
-		dlg.exclude(theObject.getName());
-		for(Iterator it = theObject.groupMembers.iterator(); it.hasNext(); )
+		dlg.exclude(dataSource.getName());
+		for(Iterator it = dataSource.groupMembers.iterator(); it.hasNext(); )
 		{
 			DataSource ds = (DataSource)it.next();
 			dlg.exclude(ds.getName());
@@ -317,7 +253,7 @@ public class SourceEditPanel extends DbEditorTab
 			DataSource nds = dlg.getSelection();
 			if (nds != null)
 			{
-				theObject.groupMembers.add(nds);
+				dataSource.groupMembers.add(nds);
 				groupMemberListModel.fireChanged();
 			}
 		}
@@ -339,7 +275,7 @@ public class SourceEditPanel extends DbEditorTab
 			return;
 		}
 
-		theObject.groupMembers.remove(idx);
+		dataSource.groupMembers.remove(idx);
 		groupMemberListModel.fireChanged();
 	} 
 
@@ -402,7 +338,7 @@ public class SourceEditPanel extends DbEditorTab
 	public boolean hasChanged()
 	{
 		getDataFromFields();
-		return !theObject.equals(origObject);
+		return !dataSource.equals(origDataSource);
 	}
 
 	/**
@@ -415,7 +351,7 @@ public class SourceEditPanel extends DbEditorTab
 		getDataFromFields();
 		try
 		{
-			theObject.write();
+			dataSource.write();
 		}
 		catch(DatabaseException e)
 		{
@@ -426,20 +362,20 @@ public class SourceEditPanel extends DbEditorTab
 			return false;
 		}
 		affectedItems = new ArrayList<DatabaseObject>();
-		affectedItems.add(theObject);
+		affectedItems.add(dataSource);
 
 		// Replace the old datasource in the list.
 		// This also updates the SourceListPanel.
-		Database.getDb().dataSourceList.getList().remove(origObject);
-		Database.getDb().dataSourceList.add(theObject);
+		getDb().dataSourceList.getList().remove(origDataSource);
+		getDb().dataSourceList.add(dataSource);
 		parent.getSourcesListPanel().resort();
 
 		// Replace DataSource in every Group using this data source
-		for(Iterator<DataSource> it = Database.getDb().dataSourceList.getList().iterator();
+		for(Iterator<DataSource> it = getDb().dataSourceList.getList().iterator();
 			it.hasNext(); )
 		{
 			DataSource ds = it.next();
-			if (ds.getName().equalsIgnoreCase(theObject.getName()))
+			if (ds.getName().equalsIgnoreCase(dataSource.getName()))
 				continue;
 			if (ds.dataSourceType.toLowerCase().endsWith("roup"))
 			{
@@ -447,9 +383,9 @@ public class SourceEditPanel extends DbEditorTab
 				for(int i = 0; i < ds.groupMembers.size(); i++)
 				{
 					DataSource ds2 = (DataSource)ds.groupMembers.elementAt(i);
-					if (ds2 != null && ds2.getName().equalsIgnoreCase(theObject.getName()))
+					if (ds2 != null && ds2.getName().equalsIgnoreCase(dataSource.getName()))
 					{
-						ds.groupMembers.setElementAt(theObject, i);
+						ds.groupMembers.setElementAt(dataSource, i);
 						changed = true;
 						break;
 					}
@@ -460,9 +396,7 @@ public class SourceEditPanel extends DbEditorTab
 					try { ds.write(); }
 					catch (DatabaseException e)
 					{
-						Logger.instance().log(Logger.E_WARNING,
-							"Cannot write data source '" + ds.getName()
-							+ "': " + e.toString());
+						log.warn("Cannot write data source '{}'",ds.getName(),e.toString());
 					}
 				}
 			}
@@ -471,7 +405,7 @@ public class SourceEditPanel extends DbEditorTab
 		// Replace data source in every RoutingSpec using this source or a
 		// group containing this data source.
 		DataSource newDataSource = null;
-		for(Iterator<RoutingSpec> it = Database.getDb().routingSpecList.iterator();
+		for(Iterator<RoutingSpec> it = getDb().routingSpecList.iterator();
 			it.hasNext(); )
 		{
 			RoutingSpec rs = it.next();
@@ -496,17 +430,15 @@ public class SourceEditPanel extends DbEditorTab
 				try { rs.write(); }
 				catch (DatabaseException e)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Cannot write routing spec '" + rs.getName()
-								+ "': " + e.toString());
+					log.warn("Cannot write routing spec '{}'", rs.getName(),e);
 				}
 			}
 		}
 
 		// Make a new copy in case user wants to keep editing.
-		origObject = theObject;
-		theObject = origObject.copy();
-		setTopObject(origObject);
+		origDataSource = dataSource;
+		dataSource = origDataSource.copy();
+		setTopObject(origDataSource);
 		return true;
 	}
 
@@ -534,14 +466,13 @@ public class SourceEditPanel extends DbEditorTab
 				if (!saveChanges())
 					return;
 			}
-			else if (r == JOptionPane.NO_OPTION)
-					;
+
 		}
-		if ( theObject != null && theObject.getId() == Constants.undefinedId 
-		 && !Database.getDb().getDbIo().getDatabaseType().equals("XML"))
+		if ( dataSource != null && dataSource.getId() == Constants.undefinedId
+		 && !getDb().getDbIo().getDatabaseType().equals("XML"))
 		{
-			DataSource stale = Database.getDb().dataSourceList.get(theObject.getName());
-			Database.getDb().dataSourceList.remove(stale);
+			DataSource stale = getDb().dataSourceList.get(dataSource.getName());
+			getDb().dataSourceList.remove(stale);
 		}
 		DbEditorTabbedPane tp = parent.getSourcesTabbedPane();
 		tp.remove(this);
@@ -563,7 +494,6 @@ public class SourceEditPanel extends DbEditorTab
 	}
 }
 
-@SuppressWarnings("serial")
 class GroupMemberListModel extends AbstractListModel
 {
 	DataSource theDs;
@@ -580,12 +510,12 @@ class GroupMemberListModel extends AbstractListModel
 	}
 
 	public Object getObjectAt(int index) {
-		DataSource ds = (DataSource)theDs.groupMembers.elementAt(index);
+		DataSource ds = theDs.groupMembers.elementAt(index);
 		return(ds);
 	}
 	public Object getElementAt(int index)
 	{
-		DataSource ds = (DataSource)theDs.groupMembers.elementAt(index);
+		DataSource ds = theDs.groupMembers.elementAt(index);
 		return ds != null ? ds.getName() : "";
 	}
 	public void insertElementAt(DataSource ds, int index)
