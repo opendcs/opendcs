@@ -1155,6 +1155,21 @@ public class PlatformListIO extends SqlDbObjIo
         if (useDesignator && designator != null)
             q = q + " AND lower(platform.platformdesignator) = "
                 + sqlReqString(designator.toLowerCase());
+
+        Object[] parameters = {};
+
+        getDaoHelper().doQuery(q,rs-> {
+            try {
+                DbKey pid = Constants.undefinedId;
+                if (rs != null && rs.next())
+                    pid = DbKey.createDbKey(rs, 1);
+                return pid;
+            }catch( DatabaseException e){
+
+            }
+
+        },parameters);
+
         try (Statement stmt = createStatement();)
         {
             try (ResultSet rs = stmt.executeQuery(q);)
