@@ -4,15 +4,17 @@ import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 import javax.swing.border.*;
+import java.lang.reflect.Constructor;
 import java.util.Properties;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
+import org.slf4j.LoggerFactory;
+
 import ilex.gui.Help;
 import ilex.util.LoadResourceBundle;
 import ilex.util.PropertiesUtil;
-import ilex.util.Logger;
 
 import decodes.gui.*;
 import decodes.datasource.DataSourceExec;
@@ -23,10 +25,10 @@ import decodes.db.*;
 This panel edits a DataSource object.
 Opened from the SourceListPanel.
 */
-@SuppressWarnings("serial")
 public class SourceEditPanel extends DbEditorTab
 	implements ChangeTracker, EntityOpsController
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(SourceEditPanel.class);
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -211,14 +213,16 @@ public class SourceEditPanel extends DbEditorTab
 			EnumValue dsEv = dsEnum.findEnumValue(dsType);
 			if (dsEv != null)
 			{
-				Class dsClass = null;
 				try
 				{
-					dsClass = dsEv.getExecClass();
-					DataSourceExec exec = (DataSourceExec)dsClass.newInstance();
+					Class<?> dsClass = dsEv.getExecClass();
+					Constructor<?> constructor = dsClass.getConstructor(DataSource.class, Database.class);
+					DataSourceExec exec = (DataSourceExec)constructor.newInstance(dataSource,getDb());
 					propertiesEditPanel.setPropertiesOwner(exec);
 				}
-				catch(Exception ex) { }
+				catch(Exception ex) {
+					log.error("Error setting properties for '{}'",dsType,ex);
+				}
 			}
 		}
 	}
@@ -392,9 +396,7 @@ public class SourceEditPanel extends DbEditorTab
 					try { ds.write(); }
 					catch (DatabaseException e)
 					{
-						Logger.instance().log(Logger.E_WARNING,
-							"Cannot write data source '" + ds.getName()
-							+ "': " + e.toString());
+						log.warn("Cannot write data source '{}'",ds.getName(),e.toString());
 					}
 				}
 			}
@@ -428,9 +430,7 @@ public class SourceEditPanel extends DbEditorTab
 				try { rs.write(); }
 				catch (DatabaseException e)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Cannot write routing spec '" + rs.getName()
-								+ "': " + e.toString());
+					log.warn("Cannot write routing spec '{}'", rs.getName(),e);
 				}
 			}
 		}
@@ -466,8 +466,7 @@ public class SourceEditPanel extends DbEditorTab
 				if (!saveChanges())
 					return;
 			}
-			else if (r == JOptionPane.NO_OPTION)
-					;
+
 		}
 		if ( dataSource != null && dataSource.getId() == Constants.undefinedId
 		 && !getDb().getDbIo().getDatabaseType().equals("XML"))
@@ -495,7 +494,6 @@ public class SourceEditPanel extends DbEditorTab
 	}
 }
 
-@SuppressWarnings("serial")
 class GroupMemberListModel extends AbstractListModel
 {
 	DataSource theDs;
@@ -512,12 +510,12 @@ class GroupMemberListModel extends AbstractListModel
 	}
 
 	public Object getObjectAt(int index) {
-		DataSource ds = (DataSource)theDs.groupMembers.elementAt(index);
+		DataSource ds = theDs.groupMembers.elementAt(index);
 		return(ds);
 	}
 	public Object getElementAt(int index)
 	{
-		DataSource ds = (DataSource)theDs.groupMembers.elementAt(index);
+		DataSource ds = theDs.groupMembers.elementAt(index);
 		return ds != null ? ds.getName() : "";
 	}
 	public void insertElementAt(DataSource ds, int index)
