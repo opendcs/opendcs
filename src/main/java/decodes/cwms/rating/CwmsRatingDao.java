@@ -253,7 +253,7 @@ public class CwmsRatingDao extends DaoBase
         log.trace("importXmlToDatabase: {}");
         RatingSet newSet = RatingSet.fromXml(xml);
         String specId = newSet.getRatingSpec().getRatingSpecId();
-        log.trace("importXmlToDatabase fromXml success, specId='{}'", specId + "'");
+        log.trace("importXmlToDatabase fromXml success, specId='{}'", specId );
         try
         {
             log.trace("importXmlToDatabase trying to read existing specId='{}'", specId);
