@@ -166,78 +166,29 @@ public class SourceEditPanel extends DbEditorTab
 		jPanel2.setLayout(gridBagLayout1);
 		nameField.setEditable(false);
 		jLabel2.setText(genericLabels.getString("typeLabel"));
-		sourceTypeCombo.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				sourceTypeSelected();
-			}
-		});
+		sourceTypeCombo.addActionListener(e -> sourceTypeSelected());
 		jPanel3.setEnabled(false);
 		jPanel3.setBorder(titledBorder1);
 		jPanel3.setLayout(borderLayout2);
 		groupMemberList.setEnabled(false);
 		groupMemberList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		upMemberButton.setEnabled(false);
-		upMemberButton.setText(
-		// genericLabels.getString("up"));
-			"Up");
-		upMemberButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				upMemberButton_actionPerformed(e);
-			}
-		});
-
+		upMemberButton.setText(genericLabels.getString("upAbbr"));
+		upMemberButton.addActionListener(this::upMemberButton_actionPerformed);
 		downMemberButton.setEnabled(false);
-		downMemberButton.setText(
-		// genericLabels.getString("Down"));
-			"Down");
-		downMemberButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				downMemberButton_actionPerformed(e);
-			}
-		});
+		downMemberButton.setText(genericLabels.getString("down"));
+		downMemberButton.addActionListener(this::downMemberButton_actionPerformed);
 		deleteMemberButton.setEnabled(false);
 		deleteMemberButton.setText(genericLabels.getString("delete"));
-		deleteMemberButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				deleteMemberButton_actionPerformed(e);
-			}
-		});
+		deleteMemberButton.addActionListener(this::deleteMemberButton_actionPerformed);
 		addMemberButton.setEnabled(false);
 		addMemberButton.setText(genericLabels.getString("add"));
-		addMemberButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				addMemberButton_actionPerformed(e);
-			}
-		});
+		addMemberButton.addActionListener(this::addMemberButton_actionPerformed);
 		jPanel4.setLayout(flowLayout1);
 		flowLayout1.setHgap(15);
-		// gridLayout1.setColumns(2);
 		gridLayout1.setColumns(4);
 		gridLayout1.setHgap(5);
-		sourceTypeCombo.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				sourceTypeSelected();
-			}
-		});
-		sourceTypeCombo.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				sourceTypeSelected();
-			}
-		});
+		sourceTypeCombo.addActionListener(e -> sourceTypeSelected());
 		this.add(entityOpsPanel, BorderLayout.SOUTH);
 		this.add(jPanel1, BorderLayout.CENTER);
 		jPanel1.add(jPanel2, null);
