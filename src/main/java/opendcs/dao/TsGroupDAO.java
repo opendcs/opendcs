@@ -210,7 +210,7 @@ public class TsGroupDAO
 
 			// Now get the sub-groups.
 			q = "SELECT child_group_id, include_group from tsdb_group_member_group "
-				+ "where parent_group_id = ?" + group.getGroupId();
+				+ "where parent_group_id = ?";
 			
 			class ChildGroup 
 			{
