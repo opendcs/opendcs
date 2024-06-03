@@ -9,7 +9,6 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.*;
 
-import org.cobraparser.html.style.TableCellRenderState;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
