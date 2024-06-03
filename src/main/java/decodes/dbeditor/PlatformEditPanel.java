@@ -42,6 +42,7 @@ import java.util.Iterator;
 import java.util.Date;
 import java.util.ResourceBundle;
 
+import ilex.gui.Help;
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
 import ilex.util.PropertiesUtil;
@@ -1029,11 +1030,10 @@ ConfigSelectController
 		platformsTabbedPane.remove(this);
 	}
 
-	/**
-	 * (from EntityOpsController interface)
-	 */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 
 	/**

@@ -23,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import ilex.gui.Help;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.SearchCriteria;
@@ -671,9 +672,10 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		tp.remove(this);
 	}
 
-	/** @see EntityOpsController */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 
 	@Override
