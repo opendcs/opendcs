@@ -1,27 +1,3 @@
-/*
-*  $Id$
-*  
-*  $Log$
-*  Revision 1.4  2016/10/07 14:49:25  mmaloney
-*  Updates for Web Report for Gail Monds, LRD.
-*
-*  Revision 1.3  2014/10/02 14:26:58  mmaloney
-*  Use properties owner
-*
-*  Revision 1.2  2014/09/17 18:42:44  mmaloney
-*  Show PropSpecs
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.7  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.6  2011/09/27 22:53:23  mmaloney
-*  Fix bug in XML database where datasource records were disappearing.
-*
-*/
-
 package decodes.dbeditor;
 
 import java.awt.*;
