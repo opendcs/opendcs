@@ -76,6 +76,7 @@ public class TraceLogger extends Logger
 		{
 			// NOTE: use of STDERR is intentional here. This is an error with logging itself.
 			System.err.println("Unable to Write message to log queue.");
+			System.err.println("Message: '"+text+"'");
 			ex.printStackTrace();
 		}
 	}

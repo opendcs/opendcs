@@ -885,7 +885,7 @@ public class ComputationDAO
 	public void writeComputation( DbComputation comp )
 		throws DbIoException
 	{
-		Logger.instance().debug2("writeComputation name=" + comp.getName());
+		log.trace("writeComputation name= {}", comp.getName());
 		final boolean isNew = ((ThrowingSupplier<Boolean,DbIoException>) (() -> {
 			boolean tmpIsNew = comp.getId().isNull();
 			if (tmpIsNew)
