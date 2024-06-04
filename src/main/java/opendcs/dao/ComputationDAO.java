@@ -176,6 +176,9 @@ public class ComputationDAO
 
 		try
 		{
+			// clear the cache as we're rebuilding it. Though analyzing usage, this may never
+			// be required.
+			compCache.clear();
 			final int[] n = new int[1];
 			n[0] = 0;
 			doQuery(q, rs ->
