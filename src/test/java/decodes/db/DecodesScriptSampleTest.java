@@ -52,8 +52,7 @@ final class DecodesScriptSampleTest {
             }
             catch(Exception ex)
             {
-                ex.printStackTrace(System.err);
-                fail("exception thrown");
+                fail("exception thrown", ex);
             }
         });
     }

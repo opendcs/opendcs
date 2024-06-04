@@ -21,8 +21,6 @@ import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 @ExtendWith(SystemStubsExtension.class)
 public class EnvironmentAuthSourceTest
 {
-
-
     @Test
     public void test_environment_auth_source(EnvironmentVariables environment) throws Exception
     {
