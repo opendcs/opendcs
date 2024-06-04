@@ -1,0 +1,118 @@
+plugins {
+    id 'java'
+    id 'checkstyle'
+    id 'eclipse'
+    // NOTE: external plugin version is specified in implementation dependency artifact of the project's build file
+    id 'com.github.spotbugs'
+}
+
+repositories {
+    maven
+        {
+            url "https://www.hec.usace.army.mil/nexus/repository/maven-public"
+            content
+            {
+                includeGroupByRegex "mil.army.usace.hec.*"
+                includeGroupByRegex "org.jooq.pro"
+                excludeGroup "com.oracle"
+            }
+            metadataSources
+            {
+                mavenPom()
+                artifact()
+            }
+    }
+    mavenCentral() {
+            content
+            {
+                excludeGroupByRegex "mil.army.usace.hec.*"
+            }
+            metadataSources
+            {
+                mavenPom()
+                artifact()
+            }
+    }
+    ivy
+    {
+        url "https://github.com"
+        metadataSources
+        {
+            artifact()
+        }
+        patternLayout
+        {
+            artifact "[organisation]/[module]/releases/download/[revision]/[artifact].[ext]"
+        }
+        content
+        {
+            includeGroup "lobobrowser"
+        }
+    }
+}
+
+eclipse {
+    classpath {
+       downloadSources=true
+       downloadJavadoc = true
+    }
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+}
+
+configurations {
+    pmd
+}
+
+dependencies {
+    pmd 'net.sourceforge.pmd:pmd-core:6.55.0'
+    pmd 'net.sourceforge.pmd:pmd-doc:6.55.0'
+    pmd 'net.sourceforge.pmd:pmd-java:6.55.0'
+    pmd 'net.sourceforge.pmd:pmd-java8:6.55.0'
+}
+
+checkstyle {
+
+}
+
+spotbugs {
+    ignoreFailures = true
+    toolVersion = '4.7.3'
+    reportsDir = file("$buildDir/reports/spotbugs")
+    effort = 'max'
+    excludeFilter = file("${rootDir}/spotbugs-filter.xml")
+}
+
+spotbugsMain {
+    reports {
+        xml {
+            required = true
+            outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.xml")
+            //withMessages = true
+        }
+        html {
+            //withMessages = true
+            required = true
+            outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+            stylesheet = 'fancy-hist.xsl'
+        }
+    }
+}
+
+task cpd {
+    doLast {
+        project.mkdir("$buildDir/reports")
+        ant.taskdef(name: "cpd",
+                    classname: "net.sourceforge.pmd.cpd.CPDTask",
+                    classpath: configurations.pmd.asPath
+        )
+        ant.cpd(minimumTokenCount: 100, outputFile: "$buildDir/reports/cpd.xml",
+                format: "xml", encoding: "UTF-8", ignoreAnnotations: true) {
+            fileset(dir: "src", includes: "**/*.java")
+        }
+    }
+}

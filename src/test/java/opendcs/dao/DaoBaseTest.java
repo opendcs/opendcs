@@ -73,10 +73,6 @@ public class DaoBaseTest
             {
                 if (!statement.trim().isEmpty())
                 {
-                    System.out.println("Running: ");
-                    System.out.println("=============");
-                    System.out.println(statement);
-                    System.out.println("=====end=====");
                     dao.doModify(statement, new Object[0]); // have to force with one we're using
                 }
 
@@ -119,8 +115,6 @@ public class DaoBaseTest
             id = rs.getInt("id");
             name = rs.getString("name");
         }
-
-        
 
         public int getId()
         {
