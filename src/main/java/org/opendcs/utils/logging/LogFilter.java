@@ -33,14 +33,17 @@ public class LogFilter {
         }
     }
 
+    /**
+     * Search to list excluded paths to see if the provided log name 
+     * matches against a simple String::startsWith .
+     * 
+     * If a log names starts with one of the exclude string, we don't log 
+     * it's messages.
+     */
     boolean canLog(String loggerName)
     {
         boolean retVal = true;
         if(!logPathsToFilter.isEmpty())
-        {
-            retVal = false;
-        }
-        else
         {
             for (String filterPath: logPathsToFilter)
             {
@@ -51,8 +54,6 @@ public class LogFilter {
                 }
             }
         }
-
-
         return retVal;
     }
 

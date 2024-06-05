@@ -14,4 +14,14 @@ public class RangeException extends TsdbException
 	{
 		super(msg);
 	}
+
+	/**
+	 * Constructor with message and cause.
+	 * @param msg
+	 * @param cause
+	 */
+	public RangeException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
 }
