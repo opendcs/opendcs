@@ -1,5 +1,6 @@
 package decodes.sql;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLDataException;
@@ -1144,45 +1145,33 @@ public class PlatformListIO extends SqlDbObjIo
         String designator, boolean useDesignator)
         throws DatabaseException
     {
+        ArrayList<Object> parameters = new ArrayList<>();
+        parameters.add(sn.getNameType());
+        parameters.add(sn.getNameValue());
+
         String q = "SELECT platform.id FROM "
             + "platform, sitename "
             + "WHERE platform.siteid = sitename.siteid "
-            + "AND lower(sitename.nametype) = "
-                + sqlReqString(sn.getNameType().toLowerCase())
-            + " AND lower(sitename.sitename) = "
-                + sqlReqString(sn.getNameValue().toLowerCase())
+            + "AND lower(sitename.nametype) = lower(?)"
+            + " AND lower(sitename.sitename) = lower(?)"
             + " AND platform.expiration is null";
+
         if (useDesignator && designator != null)
-            q = q + " AND lower(platform.platformdesignator) = "
-                + sqlReqString(designator.toLowerCase());
-
-        Object[] parameters = {};
-
-        getDaoHelper().doQuery(q,rs-> {
-            try {
-                DbKey pid = Constants.undefinedId;
-                if (rs != null && rs.next())
-                    pid = DbKey.createDbKey(rs, 1);
-                return pid;
-            }catch( DatabaseException e){
-
-            }
-
-        },parameters);
-
-        try (Statement stmt = createStatement();)
         {
-            try (ResultSet rs = stmt.executeQuery(q);)
-            {
-                DbKey pid = Constants.undefinedId;
-                if (rs != null && rs.next())
-                    pid = DbKey.createDbKey(rs, 1);
-                return pid;
-            }
+            q = q + " AND lower(platform.platformdesignator) = lower(?)";
+            parameters.add(designator);
+        }
+
+        try
+        {
+            return getDaoHelper().getSingleResultOr(q, rs ->DbKey.createDbKey(rs, 1),
+                    Constants.undefinedId,
+                    parameters.toArray(new Object[0])
+            );
         }
         catch(SQLException ex)
         {
-            log.warn("SQL Execution on '{}'", q , ex);
+            log.warn("Error finding platformId, SQL Execution on '{}'", q , ex);
             return Constants.undefinedId;
         }
     }
@@ -1191,27 +1180,19 @@ public class PlatformListIO extends SqlDbObjIo
     /**
     * Returns the last-modify-time for this platform in the database.
     * When the editor modifies a config, equipment-model, or site, it also
-    * updatess the platform record.
+    * updates the platform record.
     * @param p the Platform
     */
     public Date getLMT(Platform p)
         throws DatabaseException
     {
-        try (Statement stmt = createStatement();)
-        {
-            String q = "SELECT lastModifyTime FROM Platform WHERE id = " + p.getId();
-            try (ResultSet rs = stmt.executeQuery(q);)
-            {
-                // Should be only 1 record returned.
-                if (rs == null || !rs.next())
-                {
-                    log.warn("Cannot get SQL LMT for platform ID {}" , p.getId());
-                    return null;
-                }
+        String q = "SELECT lastModifyTime FROM Platform WHERE id = ?";
 
-                Date ret = getTimeStamp(rs, 1, (Date)null);
-                return ret;
-            }
+        try
+        {
+            return getDaoHelper().getSingleResult(q,
+                    rs -> getTimeStamp(rs, 1, (Date) null),
+                    p.getId());
         }
         catch(SQLException ex)
         {
@@ -1221,52 +1202,22 @@ public class PlatformListIO extends SqlDbObjIo
         }
     }
 
+    /**
+     * @return timestamp of the most recently modified Platform
+     */
     public Date getListLMT()
     {
         String q = "SELECT MAX(lastModifyTime) from Platform";
-        try (Statement stmt = createStatement();)
+        try
         {
-            try (ResultSet rs = stmt.executeQuery(q);)
-            {
-                // Should be only 1 record returned.
-                if (rs == null || !rs.next())
-                {
-                    log.warn("Cannot get SQL LMT for platform list.");
-                    return new Date(0L);
-                }
-
-                Date ret = getTimeStamp(rs, 1, new Date(0L));
-                return ret;
-            }
+            return getDaoHelper().getSingleResultOr(q,
+                    rs -> getTimeStamp(rs, 1, new Date(0L)),
+                    new Date(0L));
         }
         catch(SQLException ex)
         {
             log.warn("SQL Error reading LMT for platform list: ", ex);
             return new Date(0L);
-        }
-    }
-
-
-    public ArrayList<String> readNetworKListName(String transportId)
-    {
-        ArrayList<String> networkListArray =new ArrayList<String>();
-        String q = "SELECT networklist.name FROM networklist, networklistentry WHERE networklistentry.transportid= '"+transportId+"' AND networklistentry.networklistid=networklist.id";
-        try (Statement stmt = createStatement();)
-        {
-            try (ResultSet rs = stmt.executeQuery(q);)
-            {
-                // Should be only 1 record returned.
-                while(rs.next())
-                {
-                    networkListArray.add(rs.getString(1));
-                }
-                return networkListArray;
-            }
-        }
-        catch(SQLException ex)
-        {
-            log.warn("SQL Error reading networkList: " + ex);
-            return null;
         }
     }
 }
