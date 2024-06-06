@@ -114,6 +114,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
@@ -1717,11 +1718,26 @@ ex.printStackTrace(System.err);
 	 */
 	protected PropertySpec[] getAlgoPropertySpecs()
 	{
-		org.opendcs.annotations.PropertySpec[] annos = this.getClass().getAnnotationsByType(org.opendcs.annotations.PropertySpec.class);
-		ArrayList<PropertySpec> ret = new ArrayList<>();
-		for (org.opendcs.annotations.PropertySpec a: annos)
+		final Class<?> clazz = this.getClass();
+		final List<Field> fields = new ArrayList<>();
+		for(Field f: clazz.getFields())
 		{
-			ret.add(new PropertySpec(a.name(), a.propertySpecType(), a.description()));
+			if (f.isAnnotationPresent(org.opendcs.annotations.PropertySpec.class))
+			{
+				fields.add(f);
+			}
+		}
+
+		ArrayList<PropertySpec> ret = new ArrayList<>();
+		for (Field f: fields)
+		{
+			final org.opendcs.annotations.PropertySpec propSpec = f.getAnnotation(org.opendcs.annotations.PropertySpec.class);
+			String name = propSpec.name();
+			if (name.isEmpty())
+			{
+				name = f.getName();
+			}
+			ret.add(new PropertySpec(name, propSpec.propertySpecType(), propSpec.description()));
 		}
 		return ret.toArray(new PropertySpec[0]);
 	}
