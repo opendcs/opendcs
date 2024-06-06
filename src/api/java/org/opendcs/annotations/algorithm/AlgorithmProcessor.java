@@ -83,10 +83,12 @@ final public class AlgorithmProcessor extends AbstractProcessor
         out.writeStartElement("ExecClass");
         out.writeCharacters(element.toString());
         out.writeEndElement();
-        out.writeEndElement();
+
         writeProperties(out, element);
         writeInputs(out, element);
         writeOutputs(out, element);
+
+        out.writeEndElement(); // Algorithm
     }
 
     private static void writeProperties(XMLStreamWriter out, Element element) throws XMLStreamException
