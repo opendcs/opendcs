@@ -25,7 +25,7 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.opendcs.annotations.PropertySpecAnno;
+import org.opendcs.annotations.PropertySpec;
 
 
 @javax.annotation.processing.SupportedAnnotationTypes("org.opendcs.annotations.algorithm.Algorithm")
@@ -94,11 +94,11 @@ final public class AlgorithmProcessor extends AbstractProcessor
         List<Element> props = element.getEnclosedElements()
                .stream()
                .filter(e -> e.getKind().isField())
-               .filter(e -> e.getAnnotation(PropertySpecAnno.class) != null)
+               .filter(e -> e.getAnnotation(PropertySpec.class) != null)
                .collect(Collectors.toList());
         for (Element e: props)
         {
-            final PropertySpecAnno propSpec = e.getAnnotation(PropertySpecAnno.class);
+            final PropertySpec propSpec = e.getAnnotation(PropertySpec.class);
             out.writeStartElement("AlgoProperty");
             String name = propSpec.name();
             if (name.isEmpty())
