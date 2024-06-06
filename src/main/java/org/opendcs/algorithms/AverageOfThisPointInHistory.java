@@ -2,6 +2,7 @@ package org.opendcs.algorithms;
 
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
+import decodes.util.PropertySpec;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.cwms.CwmsFlags;
@@ -16,6 +17,10 @@ import ilex.var.TimedVariable;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import org.opendcs.annotations.PropertySpecAnno;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -31,11 +36,15 @@ import opendcs.dai.TimeSeriesDAI;
  * @author L2EDDMAN
  */
 //AW:JAVADOC_END
+@Algorithm(name="Average of This Point in History",
+           description = "Intended primary for daily data, given a fixed day, go back in time to average that day over a period of time.\n" +
+                         " Algorithm was created to operate on generic intervals but has not been tested for them.")
 public class AverageOfThisPointInHistory extends AW_AlgorithmBase
 {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(AverageOfThisPointInHistory.class);
 //AW:INPUTS
         // input values, declare a variable, and add the string of the variable name to the _inputNames array
+        @Input(type = Double.class)
         public double input;   //AW:TYPECODE=i
     String _inputNames[] = { "input"};
 //AW:INPUTS_END
@@ -48,14 +57,17 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
 
 //AW:OUTPUTS
     // created a NameVariable with the name you want, and add the string of that name to the array
+        @Output(type = Double.class, typeCode = "o")
         public NamedVariable average = new NamedVariable("average",0);
     String _outputNames[] = { "average" };
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
+        @PropertySpecAnno(propertySpecType = PropertySpec.STRING, value = "years", description = "Interval on week we go back in time." )
         public String interval = "years";
-        public int    number_of_intervals = 10;
-    String _propertyNames[] = { "interval", "number_of_intervals" };
+        @PropertySpecAnno(propertySpecType = PropertySpec.INT, value = "10", description = "How many intervals we go back.")
+        public int    numberOfIntervals = 10;
+    String _propertyNames[] = { "interval", "numberOfIntervals" };
 //AW:PROPERTIES_END
 
     // Allow javac to generate a no-args constructor.
@@ -115,7 +127,7 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
         }
         CTimeSeries ts = this.getParmRef("input").timeSeries;
 
-        for (int i=1; i < number_of_intervals; i++)
+        for (int i=1; i < numberOfIntervals; i++)
         {
             cal.setTime(_timeSliceBaseTime);
             int current = cal.get(interval_cal_costant);
@@ -198,14 +210,4 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
     {
         return _outputNames;
     }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
-    }
-
 }

@@ -110,11 +110,14 @@
 package decodes.tsdb.algo;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
 import java.util.TreeSet;
+
+import org.opendcs.annotations.PropertySpecAnno;
 
 import ilex.util.Logger;
 import ilex.util.TextUtil;
@@ -1547,7 +1550,16 @@ ex.printStackTrace(System.err);
 	protected abstract void afterTimeSlices()
 		throws DbCompException;
 	
-	public abstract String[] getPropertyNames();
+	public String[] getPropertyNames()
+	{
+		PropertySpecAnno[] annos = this.getClass().getAnnotationsByType(PropertySpecAnno.class);
+		ArrayList<String> ret = new ArrayList<>();
+		for (PropertySpecAnno a: annos)
+		{
+			ret.add(a.name());
+		}
+		return ret.toArray(new String[0]);
+	}
 
  	/**
 	 * Finds a coefficient from the stat tables matching the sdi,
@@ -1707,7 +1719,13 @@ ex.printStackTrace(System.err);
 	 */
 	protected PropertySpec[] getAlgoPropertySpecs()
 	{
-		return null;
+		PropertySpecAnno[] annos = this.getClass().getAnnotationsByType(PropertySpecAnno.class);
+		ArrayList<PropertySpec> ret = new ArrayList<>();
+		for (PropertySpecAnno a: annos)
+		{
+			ret.add(new PropertySpec(a.name(), a.propertySpecType(), a.description()));
+		}
+		return ret.toArray(new PropertySpec[0]);
 	}
 	
 	@Override

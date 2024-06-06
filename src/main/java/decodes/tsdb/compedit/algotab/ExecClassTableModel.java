@@ -3,6 +3,7 @@ package decodes.tsdb.compedit.algotab;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.LineNumberReader;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -110,27 +111,27 @@ public final class ExecClassTableModel extends AbstractTableModel
         Function<Path,Stream<DbCompAlgorithm>> readAlgos = (Path path) ->
         {
             try
+            {
+                ArrayList<CompMetaData> data = reader.readFile(path.toFile().getAbsolutePath());
+                return data.stream()
+                        .filter(cmd -> cmd instanceof DbCompAlgorithm)
+                        .map(cmd ->
+                        {
+                            return (DbCompAlgorithm)cmd;
+                        });
+            }
+            catch (DbXmlException ex)
+            {
+                // We're looking at every XML, we only care about issues
+                // with files we actually want.
+                if (!ex.getMessage().contains("Root element is not 'CompMetaData'"))
                 {
-                    ArrayList<CompMetaData> data = reader.readFile(path.toFile().getAbsolutePath());
-                    return data.stream()
-                            .filter(cmd -> cmd instanceof DbCompAlgorithm)
-                            .map(cmd ->
-                            {
-                                    return (DbCompAlgorithm)cmd;
-                            });
+                    log.atWarn()
+                    .setCause(ex)
+                    .log("Unable to process file {}", path.toString());
                 }
-                catch (DbXmlException ex)
-                {
-                    // We're looking at every XML, we only care about issues
-                    // with files we actually want.
-                    if (!ex.getMessage().contains("Root element is not 'CompMetaData'"))
-                    {
-                        log.atWarn()
-                        .setCause(ex)
-                        .log("Unable to process file {}", path.toString());
-                    }
-                    return Stream.empty();
-                }
+                return Stream.empty();
+            }
         };
         try
         {
@@ -146,13 +147,26 @@ public final class ExecClassTableModel extends AbstractTableModel
                 
             };
             Stream.concat(Files.find(toolHome, 5, (path, attributes) -> matcher.matches(path)),
-                            Files.find(userDir, 5, (path, attributes) -> matcher.matches(path)))
+                          Files.find(userDir, 5, (path, attributes) -> matcher.matches(path)))
                     .flatMap(readAlgos)
                     .filter(districtByExec)
                     .peek(algo -> System.out.println(algo.getName()))
                     .collect(Collectors.toCollection(() -> this.classlist));
+
+            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("algorithms.xml"))
+            {
+                reader.readStream(in)
+                      .stream()
+                      .filter(cmd -> cmd instanceof DbCompAlgorithm)
+                      .map(cmd ->
+                      {
+                        return (DbCompAlgorithm)cmd;
+                      })
+                      .filter(districtByExec)
+                      .collect(Collectors.toCollection(() -> this.classlist));
+            }
         }
-        catch (IOException ex)
+        catch (DbXmlException | IOException ex)
         {
             log.atError()
                .setCause(ex)
