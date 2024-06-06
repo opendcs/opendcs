@@ -390,7 +390,10 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 			execSelectDialog.setSelection(cls);
 		CAPEdit.instance().getFrame().launchDialog(execSelectDialog);
 		if (!execSelectDialog.wasCancelled() && execSelectDialog.getSelection() != null)
-			execClassField.setText(execSelectDialog.getSelection());
+		{
+			final DbCompAlgorithm algo = execSelectDialog.getSelection();
+			execClassField.setText(algo.getExecClass());
+		}
 	}
 
 	/**
