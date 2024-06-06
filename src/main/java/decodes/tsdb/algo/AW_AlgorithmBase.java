@@ -117,8 +117,6 @@ import java.util.Iterator;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
-import org.opendcs.annotations.PropertySpecAnno;
-
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
@@ -1552,9 +1550,9 @@ ex.printStackTrace(System.err);
 	
 	public String[] getPropertyNames()
 	{
-		PropertySpecAnno[] annos = this.getClass().getAnnotationsByType(PropertySpecAnno.class);
+		org.opendcs.annotations.PropertySpec[] annos = this.getClass().getAnnotationsByType(org.opendcs.annotations.PropertySpec.class);
 		ArrayList<String> ret = new ArrayList<>();
-		for (PropertySpecAnno a: annos)
+		for (org.opendcs.annotations.PropertySpec a: annos)
 		{
 			ret.add(a.name());
 		}
@@ -1719,9 +1717,9 @@ ex.printStackTrace(System.err);
 	 */
 	protected PropertySpec[] getAlgoPropertySpecs()
 	{
-		PropertySpecAnno[] annos = this.getClass().getAnnotationsByType(PropertySpecAnno.class);
+		org.opendcs.annotations.PropertySpec[] annos = this.getClass().getAnnotationsByType(org.opendcs.annotations.PropertySpec.class);
 		ArrayList<PropertySpec> ret = new ArrayList<>();
-		for (PropertySpecAnno a: annos)
+		for (org.opendcs.annotations.PropertySpec a: annos)
 		{
 			ret.add(new PropertySpec(a.name(), a.propertySpecType(), a.description()));
 		}

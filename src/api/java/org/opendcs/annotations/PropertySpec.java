@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface PropertySpecAnno
+public @interface PropertySpec
 {
     /**
      * Leaving the name blank will use the name of the field.
