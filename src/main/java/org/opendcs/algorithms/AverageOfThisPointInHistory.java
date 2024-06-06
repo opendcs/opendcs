@@ -17,7 +17,6 @@ import ilex.var.TimedVariable;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-import org.opendcs.annotations.PropertySpecAnno;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
@@ -63,9 +62,9 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
-        @PropertySpecAnno(propertySpecType = PropertySpec.STRING, value = "years", description = "Interval on week we go back in time." )
+        @org.opendcs.annotations.PropertySpec(propertySpecType = PropertySpec.STRING, value = "years", description = "Interval on week we go back in time." )
         public String interval = "years";
-        @PropertySpecAnno(propertySpecType = PropertySpec.INT, value = "10", description = "How many intervals we go back.")
+        @org.opendcs.annotations.PropertySpec(propertySpecType = PropertySpec.INT, value = "10", description = "How many intervals we go back.")
         public int    numberOfIntervals = 10;
     String _propertyNames[] = { "interval", "numberOfIntervals" };
 //AW:PROPERTIES_END
