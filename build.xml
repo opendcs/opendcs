@@ -372,6 +372,9 @@ more information about each.
             </fileset>
         </copy>
         <copy todir="stage/dep">
+            <fileset dir="build/lib">
+                <include name="opendcs-api.jar"/>
+            </fileset>
             <mappedresources enablemultiplemappings="false">
                 <!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
                 <restrict>

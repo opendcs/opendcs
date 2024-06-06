@@ -392,7 +392,7 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 		if (!execSelectDialog.wasCancelled() && execSelectDialog.getSelection() != null)
 		{
 			final DbCompAlgorithm algo = execSelectDialog.getSelection();
-			execClassField.setText(algo.getExecClass());
+			this.setEditedObject(algo);
 		}
 	}
 
