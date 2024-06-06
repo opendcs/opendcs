@@ -28,8 +28,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 
 //AW:JAVADOC
 /**
-Divide one time series with another using : (a*input1+b)/(c*input2+d). 
-If the denominator is zero then output is not set 
+Multiple one time series with another using : (a*input1+b)*(c*input2+d).
  */
 //AW:JAVADOC_END
 public class Multiplication
