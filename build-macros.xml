@@ -10,6 +10,7 @@
     <attribute name="javaCompileTarget" default="1.8"/>
     <element name="classpaths"/>
     <element name="fileset-for-update-to-date" optional="true"/>
+    <element name="compilerargs" optional="true"/>
 
     <sequential>
         <uptodate property="@{outputName}.compile.current" targetfile="${status.dir}/src.@{outputName}.build.date">
@@ -40,6 +41,7 @@
                     encoding="UTF-8" includes="**">
                     <src path="@{srcDir}/java"/>
                     <compilerarg value="-parameters"/>
+                    <compilerargs/>
                     <classpath>
                         <classpaths/>
                     </classpath>
