@@ -1,11 +1,13 @@
 package org.opendcs.algorithms;
 
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.LoggerFactory;
 
 import ilex.var.NamedVariable;
-
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
+import decodes.util.PropertySpec;
 
 //AW:IMPORTS
 import java.util.ArrayList;
@@ -25,7 +27,9 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
 {
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(AverageWind.class);
 //AW:INPUTS
+    @Input
     public double speed;    //AW:TYPECODE=i
+    @Input
     public double dir;    //AW:TYPECODE=i
     String _inputNames[] = { "speed", "dir" };
 //AW:INPUTS_END
@@ -38,12 +42,17 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
+    @Output(type = Double.class)
     public NamedVariable average_speed = new NamedVariable("average_speed", 0);
+    @Output(type = Double.class)
     public NamedVariable average_dir = new NamedVariable("average_dir", 0);
     String _outputNames[] = { "average_speed", "average_dir" };
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
+    @org.opendcs.annotations.PropertySpec(propertySpecType = PropertySpec.INT,
+                                          value = "1",
+                                          description = "Minimum number of sample if which present an output will be calculated.")
     public long minSamplesNeeded = 1;
     String _propertyNames[] = { "minSamplesNeeded" };
 //AW:PROPERTIES_END
