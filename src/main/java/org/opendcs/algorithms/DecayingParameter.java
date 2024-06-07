@@ -6,6 +6,7 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
+import decodes.util.PropertySpec;
 
 //AW:IMPORTS
 // Place an import statements you need here.
@@ -19,30 +20,32 @@ import ilex.var.TimedVariable;
 import java.io.BufferedWriter;
 //AW:IMPORTS_END
 
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.LoggerFactory;
 
-//AW:JAVADOC
-/**
-Implements the equation: FCP[t] = BasinPrecip[t] + Decay*FCP[t-1]
-FCP = flood control parameter
-Decay = Constant provided by water control diagram.
-t = time ( daily time step )
-the FCP value may reset on a specific date
 
-DSSMATH Called this DECPAR, so we are spelling it out for our usage.
-
- */
-//AW:JAVADOC_END
+@Algorithm(name = "DecayingParameter",
+	description = 
+		"Implements the equation: FCP[t] = BasinPrecip[t] + Decay*FCP[t-1]\n"
+	  + "FCP = flood control parameter\n"
+	  +	"Decay = Constant provided by water control diagram.\n"
+	  +	"t = time ( daily time step )\n"
+	  +	"the FCP value may reset on a specific date\n"
+	  +	"\n"
+	  +	"DSSMATH Called this DECPAR, so we are spelling it out for our usage.\n"
+		)
 public class DecayingParameter extends AW_AlgorithmBase
 {
 	public static final org.slf4j.Logger log = LoggerFactory.getLogger(DecayingParameter.class);
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i	
-	String _inputNames[] = { "input" }; //, "PreviousFCP" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
-	// Enter any local class variables needed by the algorithm.
+	@Input
+	public double input;
+	String _inputNames[] = { "input" };
+
+
+
 	double previous_fcp; // fcp from the last time slice
 	double fcp;  // the fcp we just calculated
 	boolean first_run; // if this is the first execution of the algorithm, we must check for an existing FCP value
@@ -51,30 +54,30 @@ public class DecayingParameter extends AW_AlgorithmBase
 	GregorianCalendar cal = null;
 	GregorianCalendar tmp = null;
 	BufferedWriter extralog = null;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
 	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+
+	@org.opendcs.annotations.PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
+										 description = "Decay rate to apply to the previous value.")
 	public double Decay = 0.0;
+	@org.opendcs.annotations.PropertySpec(description = "Day of the year (ddMMM format) to reset 'previous' value to the reset value.")
 	public String ResetDate = "";
+	@org.opendcs.annotations.PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
+										  description = "Value to which 'previous' value should be reset if reset date is provided.")
 	public double ResetValue = 0.0;
 	String _propertyNames[] = { "Decay", "ResetDate", "ResetValue" };
-//AW:PROPERTIES_END
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
 	protected void initAWAlgorithm() throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
 
-//AW:USERINIT
 		// Code here will be run once, after the algorithm object is created.
 		if (Decay <= 0 || Decay >= 1)
 		{   /// the above condition will either cause no FCP or FCP to never decay
@@ -96,7 +99,6 @@ public class DecayingParameter extends AW_AlgorithmBase
 		{
 			throw new DbCompException("Could not parse reset date, please use format: ddMMMyyyy HHmm", e);
 		}
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -104,13 +106,7 @@ public class DecayingParameter extends AW_AlgorithmBase
 	 */
 	protected void beforeTimeSlices() throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
-		// This code will be executed once before each group of time slices.
-		// For TimeSlice algorithms this is done once before all slices.
-		// For Aggregating algorithms, this is done before each aggregate
-		// period.                
 		first_run = true;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -125,15 +121,13 @@ public class DecayingParameter extends AW_AlgorithmBase
 	 */
 	protected void doAWTimeSlice() throws DbCompException
 	{
-//AW:TIMESLICE
-		// Enter code to be executed at each time-slice.
 		/*
 		 * TODO: Consider changing this to always pull the previous value
 		 *  this is faster, just...feels iffy....It is assumed that all values exist.
 		 */
 		if (first_run)
 		{
-			log.trace("begining first run procedures");
+			log.trace("beginning first run procedures");
 			TimeSeriesIdentifier tsId = this.getParmTsId("input");
 			try
 			{
@@ -172,9 +166,7 @@ public class DecayingParameter extends AW_AlgorithmBase
 		else
 		{
 			deleteOutput( output );
-		}          
-
-//AW:TIMESLICE_END
+		}
 	}
 
 	/**
@@ -183,13 +175,6 @@ public class DecayingParameter extends AW_AlgorithmBase
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-		// This code will be executed once after each group of time slices.
-		// For TimeSlice algorithms this is done once after all slices.
-		// For Aggregating algorithms, this is done after each aggregate
-		// period.
-                
-//AW:AFTER_TIMESLICES_END
 	}
 
 	/**
