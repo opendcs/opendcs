@@ -40,30 +40,30 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <delete dir="combined-src"/>
         <antcall target="docs.clean"/>
     </target>
-    <target name="compile-api" depends="prepare,common.resolve,common.resolve.build" description="Annotations and Annotation processors">
-        <compile-java outputDir="${build.dir}/api"
-                      srcDir="${api.main.dir}"
-                      outputname="api"
+    <target name="compile-annotations" depends="prepare,common.resolve,common.resolve.build" description="Annotations and Annotation processors">
+        <compile-java outputDir="${build.dir}/annotations"
+                      srcDir="${annotations.main.dir}"
+                      outputname="annotations"
                     >
             <classpaths>
                 <path refid="build.classpath"/>
             </classpaths>
         </compile-java>
-        <property name="api.jar" value="${build.dir}/lib/opendcs-api.jar"/>
-        <jar jarfile="${api.jar}"
+        <property name="annotations.jar" value="${build.dir}/lib/opendcs-annotations.jar"/>
+        <jar jarfile="${annotations.jar}"
              update="true">
-            <fileset dir="${api.resources}"/>
-            <fileset dir="${api.classes}"/>
+            <fileset dir="${annotations.resources}"/>
+            <fileset dir="${annotations.classes}"/>
         </jar>
     </target>
-    <target name="compile" depends="prepare,common.resolve,common.resolve.build,compile-api" description="Compiles all source code.">
+    <target name="compile" depends="prepare,common.resolve,common.resolve.build,compile-annotations" description="Compiles all source code.">
         <compile-java outputDir="${build.dir}/main"
                  srcDir="${src.main.dir}"
                  outputName="opendcs"
                  >
             <classpaths>
                 <path refid="runtime.classpath"/>
-                <pathelement location="${api.jar}"/>
+                <pathelement location="${annotations.jar}"/>
             </classpaths>
         </compile-java>
     </target>
@@ -373,7 +373,7 @@ more information about each.
         </copy>
         <copy todir="stage/dep">
             <fileset dir="build/lib">
-                <include name="opendcs-api.jar"/>
+                <include name="opendcs-annotations.jar"/>
             </fileset>
             <mappedresources enablemultiplemappings="false">
                 <!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
@@ -624,8 +624,8 @@ more information about each.
             new File(".classpath").withWriter { writer ->
                 def xml = new MarkupBuilder(writer)
                 xml.classpath() {
-                    classpathentry(kind:"src",    path:"src/api/java", output: "bin/main")
-                    classpathentry(kind:"src",    path:"src/api/resources", output: "bin/main")
+                    classpathentry(kind:"src",    path:"src/annotations/java", output: "bin/annotations")
+                    classpathentry(kind:"src",    path:"src/annotations/resources", output: "bin/annotations")
                     classpathentry(kind:"src",    path:"src/main/java", output: "bin/main")
                     classpathentry(kind:"src",    path:"src/main/resources", output: "bin/main")
                     classpathentry(kind:"src",    path:"src/test/java", output: "bin/test") {
