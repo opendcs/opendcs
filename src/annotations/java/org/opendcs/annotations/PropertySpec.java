@@ -15,6 +15,10 @@ public @interface PropertySpec
      * @return
      */
     String name() default "";
+    /**
+     * Regardless of actual type the default value is presented as a string
+     * @return
+     */
     String value() default "";
     String propertySpecType() default "s";
     String description() default "";
