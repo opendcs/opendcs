@@ -20,6 +20,6 @@ public @interface PropertySpec
      * @return
      */
     String value() default "";
-    String propertySpecType() default "s";
+    String propertySpecType() default "";
     String description() default "";
 }

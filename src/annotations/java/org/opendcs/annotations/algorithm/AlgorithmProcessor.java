@@ -45,23 +45,16 @@ final public class AlgorithmProcessor extends AbstractProcessor
         Filer filer = processingEnv.getFiler();
         try
         {
-            final FileObject fo = filer.createResource(StandardLocation.SOURCE_OUTPUT, "", "algorithms.xml", (Element[])null);
-            final XMLStreamWriter out = xmlFactory.createXMLStreamWriter(fo.openOutputStream());
-            out.writeStartDocument();
-            out.writeCharacters("\n");
-                out.writeStartElement("CompMetaData");
-                for (TypeElement annotation: annotations)
+            for (TypeElement annotation: annotations)
+            {
+                Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
+                for(Element e: annotatedElements)
                 {
-                    Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotation);
-                    for(Element e: annotatedElements)
-                    {
-                        log.fine("Processing" + e.toString());
-                        writeAlgo(out, e);
-                    }
+                    log.fine("Processing" + e.toString());
+                    writeAlgo(xmlFactory, filer, e);
                 }
-                out.writeEndElement();
-            out.writeEndDocument();
-            out.close();
+            }
+            
         }
         catch (XMLStreamException | IOException ex)
         {
@@ -72,23 +65,31 @@ final public class AlgorithmProcessor extends AbstractProcessor
     }
 
 
-    private void writeAlgo(XMLStreamWriter out, Element element) throws XMLStreamException
+    private void writeAlgo(XMLOutputFactory xmlFactory, Filer filer, Element element) throws XMLStreamException, IOException
     {
-        final Algorithm algo = element.getAnnotation(Algorithm.class);
-        out.writeStartElement("Algorithm");
-        out.writeAttribute("name", algo.name());
-        out.writeStartElement("Comment");
-        out.writeCharacters(algo.description());
-        out.writeEndElement();
-        out.writeStartElement("ExecClass");
-        out.writeCharacters(element.toString());
-        out.writeEndElement();
+        final FileObject fo = filer.createResource(StandardLocation.SOURCE_OUTPUT, "algorithms", element.getSimpleName().toString()+".xml", (Element[])null);
+        final XMLStreamWriter out = xmlFactory.createXMLStreamWriter(fo.openOutputStream());
+        out.writeStartDocument();
+            out.writeCharacters("\n");
+            out.writeStartElement("CompMetaData");
+            final Algorithm algo = element.getAnnotation(Algorithm.class);
+            out.writeStartElement("Algorithm");
+            out.writeAttribute("name", algo.name());
+            out.writeStartElement("Comment");
+            out.writeCharacters(algo.description());
+            out.writeEndElement();
+            out.writeStartElement("ExecClass");
+            out.writeCharacters(element.toString());
+            out.writeEndElement();
 
-        writeProperties(out, element);
-        writeInputs(out, element);
-        writeOutputs(out, element);
+            writeProperties(out, element);
+            writeInputs(out, element);
+            writeOutputs(out, element);
 
-        out.writeEndElement(); // Algorithm
+            out.writeEndElement(); // Algorithm
+            out.writeEndElement();
+        out.writeEndDocument();
+        out.close();
     }
 
     private static void writeProperties(XMLStreamWriter out, Element element) throws XMLStreamException
