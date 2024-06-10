@@ -1,6 +1,11 @@
 package org.opendcs.algorithms;
 
 import ilex.var.NamedVariable;
+
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
@@ -16,29 +21,25 @@ import decodes.tsdb.algo.AW_AlgorithmBase;
  *
  */
 //AW:JAVADOC_END
+@Algorithm(description = "Calculates val = (a+b) % modulus\n"
+                       + "Where % is the modulus operator in the above equation")
 public class SumModulo extends AW_AlgorithmBase
 {
-//AW:INPUTS
-    // input values, declare a variable, and add the string of the variable name to the _inputNames array
+    @Input
     public double a;    //AW:TYPECODE=i
+    @Input
     public double b;    //AW:TYPECODE=i
     String _inputNames[] = { "a", "b" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
-    // Enter any local class variables needed by the algorithm.
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
-    public NamedVariable y = new NamedVariable("y", 0.0); // the ouput
+    @Output(type=Double.class)
+    public NamedVariable y = new NamedVariable("y", 0.0);
     String _outputNames[] = { "y" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
-        double modulus = 360.0;
+
+    @org.opendcs.annotations.PropertySpec(value="360.0", description = "modulus to wrap around.")
+    double modulus = 360.0;
     String _propertyNames[] = { "modulus"  };
-//AW:PROPERTIES_END
 
     // Allow javac to generate a no-args constructor.
 
@@ -47,13 +48,7 @@ public class SumModulo extends AW_AlgorithmBase
      */
     protected void initAWAlgorithm( ) throws DbCompException
     {
-//AW:INIT
         _awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-
-//AW:USERINIT_END
     }
 
     /**
@@ -62,12 +57,6 @@ public class SumModulo extends AW_AlgorithmBase
     protected void beforeTimeSlices()
         throws DbCompException
     {
-//AW:BEFORE_TIMESLICES
-        // This code will be executed once before each group of time slices.
-        // For TimeSlice algorithms this is done once before all slices.
-        // For Aggregating algorithms, this is done before each aggregate
-        // period.
-//AW:BEFORE_TIMESLICES_END
     }
 
     /**
@@ -83,10 +72,7 @@ public class SumModulo extends AW_AlgorithmBase
     protected void doAWTimeSlice()
         throws DbCompException
     {
-//AW:TIMESLICE
         setOutput(y, (a+b)%modulus );
-
-//AW:TIMESLICE_END
     }
 
     /**
@@ -95,12 +81,6 @@ public class SumModulo extends AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-//AW:AFTER_TIMESLICES
-        // This code will be executed once after each group of time slices.
-        // For TimeSlice algorithms this is done once after all slices.
-        // For Aggregating algorithms, this is done after each aggregate
-        // period.
-//AW:AFTER_TIMESLICES_END
     }
 
     /**

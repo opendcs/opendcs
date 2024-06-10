@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.LineNumberReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -110,11 +111,15 @@ public final class ExecClassTableModel extends AbstractTableModel
         Path userDir = Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR"));
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:**/*.xml");
         final CompXio reader = new CompXio("algoreader", null);
-        Function<Path,Stream<DbCompAlgorithm>> readAlgos = (Path path) ->
+        Function<URL,Stream<DbCompAlgorithm>> readAlgos = (URL url) ->
         {
-            try
+            if (url == null)
             {
-                ArrayList<CompMetaData> data = reader.readFile(path.toFile().getAbsolutePath());
+                return Stream.empty();
+            }
+            try (InputStream stream = url.openStream())
+            {
+                ArrayList<CompMetaData> data = reader.readStream(stream);
                 return data.stream()
                         .filter(cmd -> cmd instanceof DbCompAlgorithm)
                         .map(cmd ->
@@ -122,7 +127,7 @@ public final class ExecClassTableModel extends AbstractTableModel
                             return (DbCompAlgorithm)cmd;
                         });
             }
-            catch (DbXmlException ex)
+            catch (DbXmlException | IOException ex)
             {
                 // We're looking at every XML, we only care about issues
                 // with files we actually want.
@@ -130,7 +135,7 @@ public final class ExecClassTableModel extends AbstractTableModel
                 {
                     log.atWarn()
                     .setCause(ex)
-                    .log("Unable to process file {}", path.toString());
+                    .log("Unable to process file {}", url.toString());
                 }
                 return Stream.empty();
             }
@@ -150,34 +155,31 @@ public final class ExecClassTableModel extends AbstractTableModel
             };
             Stream.concat(Files.find(toolHome, 5, (path, attributes) -> matcher.matches(path)),
                           Files.find(userDir, 5, (path, attributes) -> matcher.matches(path)))
+                    .map(path ->
+                    {
+                        try
+                        {
+                            return path.toUri().toURL();
+                        }
+                        catch (MalformedURLException ex)
+                        {
+                            return null;
+                        }
+                    })
                     .flatMap(readAlgos)
                     .filter(districtByExec)
                     .peek(algo -> System.out.println(algo.getName()))
                     .collect(Collectors.toCollection(() -> this.classlist));
 
-            for (URL algo : ClasspathIO.getAllResourcesIn("algorithms", this.getClass().getClassLoader()))
-            {
-                if (!algo.toExternalForm().endsWith(".xml"))
-                {
-                    continue;
-                }
-                log.trace("Reading in {}", algo);
-
-                try (InputStream in = algo.openStream())
-                {
-                    reader.readStream(in)
-                        .stream()
-                        .filter(cmd -> cmd instanceof DbCompAlgorithm)
-                        .map(cmd ->
-                        {
-                            return (DbCompAlgorithm)cmd;
-                        })
-                        .filter(districtByExec)
-                        .collect(Collectors.toCollection(() -> this.classlist));
-                }
-            }
+            ClasspathIO.getAllResourcesIn("algorithms", this.getClass().getClassLoader())
+                       .stream()
+                       .filter(u -> u.toExternalForm().endsWith(".xml"))
+                       .flatMap(readAlgos)
+                       .filter(districtByExec)
+                       .peek(algo -> System.out.println(algo.getName()))
+                       .collect(Collectors.toCollection(() -> this.classlist));
         }
-        catch (DbXmlException | IOException ex)
+        catch (IOException ex)
         {
             log.atError()
                .setCause(ex)

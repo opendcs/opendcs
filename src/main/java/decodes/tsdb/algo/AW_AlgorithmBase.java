@@ -117,6 +117,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import org.opendcs.annotations.util.AnnotationHelpers;
 
 import ilex.util.Logger;
 import ilex.util.TextUtil;
@@ -1719,28 +1722,21 @@ ex.printStackTrace(System.err);
 	protected PropertySpec[] getAlgoPropertySpecs()
 	{
 		final Class<?> clazz = this.getClass();
-		final List<Field> fields = new ArrayList<>();
-		for(Field f: clazz.getFields())
-		{
-			if (f.isAnnotationPresent(org.opendcs.annotations.PropertySpec.class))
-			{
-				fields.add(f);
-			}
-		}
-
-		ArrayList<PropertySpec> ret = new ArrayList<>();
-		for (Field f: fields)
-		{
-			final org.opendcs.annotations.PropertySpec propSpec = f.getAnnotation(org.opendcs.annotations.PropertySpec.class);
-			String name = propSpec.name();
-			if (name.isEmpty())
-			{
-				name = f.getName();
-			}
-			String specType = PropertySpec.getSpecTypeFromAnnotation(propSpec, f);
-			ret.add(new PropertySpec(name, specType, propSpec.description()));
-		}
-		return ret.toArray(new PropertySpec[0]);
+		return AnnotationHelpers.getFieldsWithAnnotation(clazz, org.opendcs.annotations.PropertySpec.class)
+							   .stream()
+							   .map(f ->
+								{
+									final org.opendcs.annotations.PropertySpec propSpec = f.getAnnotation(org.opendcs.annotations.PropertySpec.class);
+									String name = propSpec.name();
+									if (name.isEmpty())
+									{
+										name = f.getName();
+									}
+									String specType = PropertySpec.getSpecTypeFromAnnotation(propSpec, f);
+									return new PropertySpec(name, specType, propSpec.description());
+								})
+								.collect(Collectors.toList())
+								.toArray(new PropertySpec[0]);
 	}
 	
 	@Override

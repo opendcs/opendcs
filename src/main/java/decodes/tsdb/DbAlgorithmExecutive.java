@@ -86,6 +86,12 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.util.AnnotationHelpers;
+
 import java.util.HashMap;
 import java.util.GregorianCalendar;
 import java.util.Calendar;
@@ -587,18 +593,49 @@ debug3("DbAlgorithmExec.apply()");
 	}
 
 	/**
-	 * Should be overloaded by subclass to return an array of all input
-	 * parameter names.
-	 * If no input params, return an empty array.
+	 * Can be overridden by downstream classes. Default implementation use the annotations.
+	 * @return
 	 */
-	abstract public String[] getInputNames( );
+	public String[] getInputNames()
+	{
+		return AnnotationHelpers.getFieldsWithAnnotation(this.getClass(), Input.class)
+						 .stream()
+						 .map(f ->
+						 {
+							final Input inputAnno = f.getAnnotation(Input.class);
+							String name = inputAnno.name();
+							if (name.isEmpty())
+							{
+								name = f.getName();
+							}
+							return name;
+						 })
+						 .collect(Collectors.toList())
+						 .toArray(new String[0]);
+	}
 	
 	/**
 	 * Should be overloaded by subclass to return an array of all output
 	 * parameter names.
 	 * If no output params, return an empty array.
 	 */
-	abstract public String[] getOutputNames( );
+	public String[] getOutputNames()
+	{
+		return AnnotationHelpers.getFieldsWithAnnotation(this.getClass(), Output.class)
+						 .stream()
+						 .map(f ->
+						 {
+							final Output outputAnno = f.getAnnotation(Output.class);
+							String name = outputAnno.name();
+							if (name.isEmpty())
+							{
+								name = f.getName();
+							}
+							return name;
+						 })
+						 .collect(Collectors.toList())
+						 .toArray(new String[0]);
+	}
 
 	/**
 	 * Find widest time range for all input params that are flagged
