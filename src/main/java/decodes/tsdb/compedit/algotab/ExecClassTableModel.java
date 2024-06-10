@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.LineNumberReader;
+import java.net.URL;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
 
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.ClasspathIO;
 import org.slf4j.LoggerFactory;
 
 import decodes.tsdb.CompMetaData;
@@ -153,17 +155,26 @@ public final class ExecClassTableModel extends AbstractTableModel
                     .peek(algo -> System.out.println(algo.getName()))
                     .collect(Collectors.toCollection(() -> this.classlist));
 
-            try (InputStream in = this.getClass().getClassLoader().getResourceAsStream("algorithms.xml"))
+            for (URL algo : ClasspathIO.getAllResourcesIn("algorithms", this.getClass().getClassLoader()))
             {
-                reader.readStream(in)
-                      .stream()
-                      .filter(cmd -> cmd instanceof DbCompAlgorithm)
-                      .map(cmd ->
-                      {
-                        return (DbCompAlgorithm)cmd;
-                      })
-                      .filter(districtByExec)
-                      .collect(Collectors.toCollection(() -> this.classlist));
+                if (!algo.toExternalForm().endsWith(".xml"))
+                {
+                    continue;
+                }
+                log.trace("Reading in {}", algo);
+
+                try (InputStream in = algo.openStream())
+                {
+                    reader.readStream(in)
+                        .stream()
+                        .filter(cmd -> cmd instanceof DbCompAlgorithm)
+                        .map(cmd ->
+                        {
+                            return (DbCompAlgorithm)cmd;
+                        })
+                        .filter(districtByExec)
+                        .collect(Collectors.toCollection(() -> this.classlist));
+                }
             }
         }
         catch (DbXmlException | IOException ex)

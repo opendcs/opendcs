@@ -1,6 +1,8 @@
 package org.opendcs.algorithms;
 
 import decodes.util.DecodesException;
+import decodes.util.PropertySpec;
+
 import java.util.Date;
 
 import ilex.var.NamedVariable;
@@ -15,53 +17,56 @@ import java.util.GregorianCalendar;
 import java.util.Calendar;
 //AW:IMPORTS_END
 
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.LoggerFactory;
 
-//AW:JAVADOC
-/**
- * <pre>
-Computes the Penmann Monteith evap calculation. Based on the document "The ASCE STANDARDIZED REFERENCE EVAPOTRANSPIRATION EQUATION" December 21, 2001   revised july 9, 2002
-The equation expects the following units:
-    param          |   units
-  -----------------+----------
-   Solar Radiation |  Watts per M^2   ( enter w/m2 in CCP ) ( NOTE: short wave radiation value expected )
-   WindSpeed       |  meters per second
-   Humidity        |  %
-   AirTemp         |  degrees Celsius
-   BaroPressure    |  kPa
+@Algorithm(name="Evap PennmanMonteith",
+           description = 
+    "Computes the Penmann Monteith evap calculation. Based on the document \"The ASCE STANDARDIZED REFERENCE EVAPOTRANSPIRATION EQUATION\" December 21, 2001   revised july 9, 2002\n" + //
+    "The equation expects the following units:\n" + //
+    "    param          |   units\n" + //
+    "  -----------------+----------\n" + //
+    "   Solar Radiation |  Watts per M^2   ( enter w/m2 in CCP ) ( NOTE: short wave radiation value expected )\n" + //
+    "   WindSpeed       |  meters per second\n" + //
+    "   Humidity        |  %\n" + //
+    "   AirTemp         |  degrees Celsius\n" + //
+    "   BaroPressure    |  kPa\n" + //
+    "\n" + //
+    "   Evap            |  millimeter (you may specify different units now. it will affect only the display in compedit )\n" + //
+    "\n" + //
+    " the algorithm assumes 15 minute data\n" + //
+    " output should be daily\n" + //
+    "\n" + //
+    "  value e_a ( actual saturation vapor pressure ) will be calculated using equation 41 from the reference\n" + //
+    "\n" + //
+    "  If not every set of data is present data will be marked Quesitionable\n" + //
+    "  E.G. if an Rel Humdity value was missing, but the Temp wasn't, the average temp will include all Temp values\n" + //
+    "  but e_a will not include that period.\n" + //
+    "  e_a is calculated with the e_naught equation for every timeslice instead of using the min and max Humidity values\n" + //
+    "\n" + //
+    "  For Net Long Wave radiation the algorithm uses the entire comp from the reference above. The sutron calculation uses an arbitrary 64 langleys/min\n" + //
+    "  in it's Net Radiation equation then converts to Megajoules.\n" + //
+    " * </pre>\n" + //
+    "")
 
-   Evap            |  millimeter (you may specify different units now. it will affect only the display in compedit )
-
- the algorithm assumes 15 minute data
- output should be daily
-
-  value e_a ( actual saturation vapor pressure ) will be calculated using equation 41 from the reference
-
-  If not every set of data is present data will be marked Quesitionable
-  E.G. if an Rel Humdity value was missing, but the Temp wasn't, the average temp will include all Temp values
-  but e_a will not include that period.
-  e_a is calculated with the e_naught equation for every timeslice instead of using the min and max Humidity values
-
-  For Net Long Wave radiation the algorithm uses the entire comp from the reference above. The sutron calculation uses an arbitrary 64 langleys/min
-  in it's Net Radiation equation then converts to Megajoules.
- * </pre>
- * @author l2eddman
- */
-//AW:JAVADOC_END
 public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
 {
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(EvapPennmanMonteith.class);
-//AW:INPUTS
-    // input values, declare a variable, and add the string of the variable name to the _inputNames array
-    public double SolarRadiation; //AW:TYPECODE=i
-    public double RelativeHumidity; //AW:TYPECODE=i
-    public double WindSpeed; //AW:TYPECODE=i
-    public double AirTemp; //AW:TYPECODE=i
-    public double BaroPressure; //AW:TYPECODE=i
-    String _inputNames[] = { "AirTemp", "WindSpeed", "SolarRadiation", "RelativeHumidity", "BaroPressure"};
-//AW:INPUTS_END
 
-//AW:LOCALVARS
+    @Input
+    public double SolarRadiation;
+    @Input
+    public double RelativeHumidity;
+    @Input
+    public double WindSpeed;
+    @Input
+    public double AirTemp;
+    @Input
+    public double BaroPressure;
+    String _inputNames[] = { "AirTemp", "WindSpeed", "SolarRadiation", "RelativeHumidity", "BaroPressure"};
+
     // Enter any local class variables needed by the algorithm.
         /**
          * the initial evap calculation
@@ -143,24 +148,29 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
         *
         */
     decodes.db.UnitConverter uc = null;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
     // created a NameVariable with the name you want, and add the string of that name to the array
+    @Output(type = Double.class)
     public NamedVariable Evap = new NamedVariable( "Evap", 0 );
     String _outputNames[] = { "Evap" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+    @org.opendcs.annotations.PropertySpec(description = "True if the provided Solar Radiation value is Net radiation.")
     public boolean UsingNetRadiation = false;
+    @org.opendcs.annotations.PropertySpec(description = "Elevation above MSL of the station. Roughly the elevation of the sensors.")
     public double  Elevation = 0.0;
+    @org.opendcs.annotations.PropertySpec(description = "Elevation of the wind speed sensor.")
     public double  WindSpeedHeight = 0.0;
+    @org.opendcs.annotations.PropertySpec(description = "Site dependent, use to determine adjustment to solar radiation.")
     public double  Albedo = 0.06;
+    @org.opendcs.annotations.PropertySpec(description = "Minimum number of samples before we can consider a calculated evap reasoanble.")
     public double  MinSamples = 72; // assume okay if we have more than 75% of the values
+    @org.opendcs.annotations.PropertySpec(description = "Latitude of the site. Used to determine various solar radiation adjustments."
+                                                      + "NOTE: in the furture the system will be able to look this up, for now please manually enter it.")
     public double  latitude = 0.0;
+    @org.opendcs.annotations.PropertySpec(description = "Require value to adjust things. TODO: better explanation.")
     public double  latitude_center_tz = 120.0;
     String _propertyNames[] = { "UsingNetRadiation", "Elevation", "WindSpeedHeight", "Albedo", "latitude", "MinSamples", "latitude_center_tz" };
-//AW:PROPERTIES_END
+
 
     // Allow javac to generate a no-args constructor.
 
@@ -170,16 +180,11 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void initAWAlgorithm( )
         throws DbCompException
     {
-//AW:INIT
-    _awAlgoType = AWAlgoType.AGGREGATING;
-    // create an output variable and give it's name here
-    // this variable will determine the output interval
-    _aggPeriodVarRoleName = "Evap";
-//AW:INIT_END
+        _awAlgoType = AWAlgoType.AGGREGATING;
+        // create an output variable and give it's name here
+        // this variable will determine the output interval
+        _aggPeriodVarRoleName = "Evap";
 
-//AW:USERINIT
-
-//AW:USERINIT_END
     }
 
     /**
@@ -187,7 +192,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
      */
     protected void beforeTimeSlices() throws DbCompException
     {
-//AW:BEFORE_TIMESLICES
         // This code will be executed once before each group of time slices.
         // For TimeSlice algorithms this is done once before all slices.
         // For Aggregating algorithms, this is done before each aggregate
@@ -223,7 +227,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
             C_n = 37;
         }
 
-//AW:BEFORE_TIMESLICES_END
     }
 
     /**
@@ -238,7 +241,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
      */
     protected void doAWTimeSlice() throws DbCompException
     {
-//AW:TIMESLICE
         // Enter code to be executed at each time-slice.
         if (isMissing(AirTemp) && isMissing(RelativeHumidity)
          && isMissing(WindSpeed) && isMissing(SolarRadiation) && isMissing(BaroPressure))
@@ -311,7 +313,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
         }
 
         count += 1;
-//AW:TIMESLICE_END
     }
 
     /**
@@ -320,7 +321,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-//AW:AFTER_TIMESLICES
         // This code will be executed once after each group of time slices.
         // For TimeSlice algorithms this is done once after all slices.
         // For Aggregating algorithms, this is done after each aggregate
@@ -444,7 +444,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
         {
             log.warn("There where not enough values present, assuming the evap number calculated is junk, sorry");
         }
-//AW:AFTER_TIMESLICES_END
     }
 
     /**
