@@ -1,35 +1,14 @@
-/**
- * $Id$
- * 
- * Copyright 2017 United States Government.
- * This software was written by Cove Software, LLC (COVE) under contract to the U.S. Government.
- * No warranty is provided except for the specific contract terms between COVE and the Government.
- * 
- * $Log$
- */
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
-import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.ParmRef;
-import ilex.var.TimedVariable;
-import decodes.tsdb.TimeSeriesIdentifier;
+import ilex.var.NamedVariable;
 
 //AW:IMPORTS
 //AW:IMPORTS_END
 
 //AW:JAVADOC
 /**
-Divide one time series with another using : (a*input1+b)/(c*input2+d). 
-If the denominator is zero then output is not set 
+Multiple one time series with another using : (a*input1+b)*(c*input2+d).
  */
 //AW:JAVADOC_END
 public class Multiplication
