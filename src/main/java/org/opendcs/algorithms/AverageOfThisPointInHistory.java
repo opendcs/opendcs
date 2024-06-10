@@ -41,33 +41,30 @@ import opendcs.dai.TimeSeriesDAI;
 public class AverageOfThisPointInHistory extends AW_AlgorithmBase
 {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(AverageOfThisPointInHistory.class);
-//AW:INPUTS
+
         // input values, declare a variable, and add the string of the variable name to the _inputNames array
-        @Input(type = Double.class)
-        public double input;   //AW:TYPECODE=i
+    @Input(type = Double.class)
+    public double input;   //AW:TYPECODE=i
     String _inputNames[] = { "input"};
-//AW:INPUTS_END
 
-//AW:LOCALVARS
-    // Enter any local class variables needed by the algorithm.
-        private int interval_cal_costant= -1;
-        private GregorianCalendar cal = null;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
-    // created a NameVariable with the name you want, and add the string of that name to the array
-        @Output(type = Double.class, typeCode = "o")
-        public NamedVariable average = new NamedVariable("average",0);
+
+
+    private int intervalCalConstant= -1;
+    private GregorianCalendar cal = null;
+
+
+
+    @Output(type = Double.class, typeCode = "o")
+    public NamedVariable average = new NamedVariable("average",0);
     String _outputNames[] = { "average" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
-        @org.opendcs.annotations.PropertySpec(propertySpecType = PropertySpec.STRING, value = "years", description = "Interval on week we go back in time." )
-        public String interval = "years";
-        @org.opendcs.annotations.PropertySpec(propertySpecType = PropertySpec.INT, value = "10", description = "How many intervals we go back.")
-        public int    numberOfIntervals = 10;
+
+    @org.opendcs.annotations.PropertySpec(value = "years", description = "Interval on week we go back in time." )
+    public String interval = "years";
+    @org.opendcs.annotations.PropertySpec(value = "10", description = "How many intervals we go back.")
+    public int    numberOfIntervals = 10;
     String _propertyNames[] = { "interval", "numberOfIntervals" };
-//AW:PROPERTIES_END
 
     // Allow javac to generate a no-args constructor.
 
@@ -77,14 +74,8 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
     protected void initAWAlgorithm( )
         throws DbCompException
     {
-//AW:INIT
         _awAlgoType = AWAlgoType.TIME_SLICE;
-        interval_cal_costant = IntervalCodes.getInterval(interval).getCalConstant();
-//AW:INIT_END
-
-//AW:USERINIT
-
-//AW:USERINIT_END
+        intervalCalConstant = IntervalCodes.getInterval(interval).getCalConstant();
     }
 
     /**
@@ -93,13 +84,7 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
     protected void beforeTimeSlices()
         throws DbCompException
     {
-//AW:BEFORE_TIMESLICES
-        // This code will be executed once before each group of time slices.
-        // For TimeSlice algorithms this is done once before all slices.
-        // For Aggregating algorithms, this is done before each aggregate
-        // period.
         cal = new GregorianCalendar( this.aggTZ );
-//AW:BEFORE_TIMESLICES_END
     }
 
     /**
@@ -115,8 +100,6 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
     protected void doAWTimeSlice()
         throws DbCompException
     {
-//AW:TIMESLICE
-        // Enter code to be executed at each time-slice.
         int num = 0;
         double storage =0.0;
         if( !isMissing( input ))
@@ -129,8 +112,8 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
         for (int i=1; i < numberOfIntervals; i++)
         {
             cal.setTime(_timeSliceBaseTime);
-            int current = cal.get(interval_cal_costant);
-            cal.set(interval_cal_costant, current-i);
+            int current = cal.get(intervalCalConstant);
+            cal.set(intervalCalConstant, current-i);
             Date time = cal.getTime();
             TimedVariable tv = null;
 
@@ -176,7 +159,6 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
         double ave = storage/num;
         log.trace("Average ={} based on {} value(s)", ave, num);
         setOutput(average, ave);
-//AW:TIMESLICE_END
     }
 
     /**
@@ -185,13 +167,6 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-//AW:AFTER_TIMESLICES
-        // This code will be executed once after each group of time slices.
-        // For TimeSlice algorithms this is done once after all slices.
-        // For Aggregating algorithms, this is done after each aggregate
-        // period.
-
-//AW:AFTER_TIMESLICES_END
     }
 
     /**

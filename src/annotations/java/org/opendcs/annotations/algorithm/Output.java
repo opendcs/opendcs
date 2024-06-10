@@ -16,4 +16,5 @@ public @interface Output
     String name() default "";
     Class<?> type() default Double.class;
     String typeCode() default "o";
+    String description() default "";
 }

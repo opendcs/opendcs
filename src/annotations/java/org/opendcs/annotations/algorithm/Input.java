@@ -16,4 +16,5 @@ public @interface Input
     String name() default "";
     Class<?> type() default Double.class;
     String typeCode() default "i";
+    String description() default "";
 }

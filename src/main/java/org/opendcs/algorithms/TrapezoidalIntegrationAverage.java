@@ -2,6 +2,9 @@ package org.opendcs.algorithms;
 
 import java.util.Date;
 
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.LoggerFactory;
 
 import ilex.var.NamedVariable;
@@ -25,15 +28,19 @@ import decodes.tsdb.algo.AWAlgoType;
  *
  */
 //AW:JAVADOC_END
+@Algorithm(description = "TrapezoidalIntegrationAverage implements the trapezoidal integration method\n"
+                       + "of average current used in DSS for instantaneous data. It makes sense but\n"
+                       + "the only reference I've found is a statement in a USGS manual that it will\n"
+                       + "be used.\n"
+                       + "\n"
+                       + "See any calculus text section on trapezoidal integration for more detail.")
 public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_AlgorithmBase
 {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(TrapezoidalIntegrationAverage.class);
-//AW:INPUTS
-    public double input;    //AW:TYPECODE=i
+    @Input
+    public double input;
     String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
     int count;
     Date previous_time;
     Date first_time;
@@ -41,17 +48,16 @@ public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_Algorith
     double tally;
     long start_t;
     long end_t;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+    @Output
     public NamedVariable average = new NamedVariable("average", 0);
     String _outputNames[] = { "average" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+
+    @org.opendcs.annotations.PropertySpec(value="2", description = "Minimum samples needs for a given output average to be valid.")
     public long minSamplesNeeded = 2;
     String _propertyNames[] = { "minSamplesNeeded" };
-//AW:PROPERTIES_END
+
 
     // Allow javac to generate a no-args constructor.
 
@@ -60,13 +66,8 @@ public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_Algorith
      */
     protected void initAWAlgorithm() throws DbCompException
     {
-//AW:INIT
         _awAlgoType = AWAlgoType.AGGREGATING;
         _aggPeriodVarRoleName = "average";
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
     }
 
     /**
@@ -75,7 +76,6 @@ public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_Algorith
     protected void beforeTimeSlices()
         throws DbCompException
     {
-//AW:BEFORE_TIMESLICES
         // Zero out the tally & count for this agg period.
         count = 0;
         tally = 0.0;
@@ -86,7 +86,6 @@ public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_Algorith
             setOutputUnitsAbbr("average", inUnits);
         }
         start_t = java.lang.System.nanoTime();
-//AW:BEFORE_TIMESLICES_END
     }
 
     /**
@@ -101,7 +100,6 @@ public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_Algorith
      */
     protected void doAWTimeSlice() throws DbCompException
     {
-//AW:TIMESLICE
         double average_height;
         double time_diff;
         double volume;
@@ -131,7 +129,6 @@ public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_Algorith
             }
             count++;
         }
-//AW:TIMESLICE_END
     }
 
     /**
@@ -140,10 +137,8 @@ public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_Algorith
     protected void afterTimeSlices()
         throws DbCompException
     {
-//AW:AFTER_TIMESLICES
+
         log.debug("AverageAlgorithm:afterTimeSlices, count={}", count);
-        //debug1("AverageAlgorithm:afterTimeSlices, per begin="
-        //+ debugSdf.format(_aggregatePeriodBegin) + ", end=" + debugSdf.format(_aggregatePeriodEnd));
         if (count >= minSamplesNeeded)
         {
             double time_diff = (previous_time.getTime() - first_time.getTime())/1000.0;
@@ -164,31 +159,5 @@ public class TrapezoidalIntegrationAverage extends decodes.tsdb.algo.AW_Algorith
         double diff_ms = diff/1000000.0;
         log.trace(" Elapsed Time (ns) " + diff );
         log.trace("              (ms) " + diff_ms);
-//AW:AFTER_TIMESLICES_END
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
-    }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
     }
 }
