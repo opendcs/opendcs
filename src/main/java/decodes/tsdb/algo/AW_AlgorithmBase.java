@@ -1737,7 +1737,8 @@ ex.printStackTrace(System.err);
 			{
 				name = f.getName();
 			}
-			ret.add(new PropertySpec(name, propSpec.propertySpecType(), propSpec.description()));
+			String specType = PropertySpec.getSpecTypeFromAnnotation(propSpec, f);
+			ret.add(new PropertySpec(name, specType, propSpec.description()));
 		}
 		return ret.toArray(new PropertySpec[0]);
 	}
