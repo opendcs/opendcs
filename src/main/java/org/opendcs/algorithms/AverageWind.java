@@ -1,5 +1,6 @@
 package org.opendcs.algorithms;
 
+import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.LoggerFactory;
@@ -23,39 +24,41 @@ import java.util.ArrayList;
  *
  */
 //AW:JAVADOC_END
+@Algorithm(description = " Vector average of wind data.\n"
+                       + "\n"
+                       + "See any calculus text section on trapezoidal integration for more detail.\n")
 public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
 {
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(AverageWind.class);
-//AW:INPUTS
-    @Input
-    public double speed;    //AW:TYPECODE=i
-    @Input
-    public double dir;    //AW:TYPECODE=i
-    String _inputNames[] = { "speed", "dir" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
+    @Input
+    public double speed;
+    @Input
+    public double dir;
+    String _inputNames[] = { "speed", "dir" };
+
+
     long start_t;
     long end_t;
-    ArrayList<Double> u;
-    ArrayList<Double> v;
-//AW:LOCALVARS_END
+    final ArrayList<Double> u = new ArrayList<>();
+    final ArrayList<Double> v = new ArrayList<>();
 
-//AW:OUTPUTS
+
+
     @Output(type = Double.class)
     public NamedVariable average_speed = new NamedVariable("average_speed", 0);
     @Output(type = Double.class)
     public NamedVariable average_dir = new NamedVariable("average_dir", 0);
     String _outputNames[] = { "average_speed", "average_dir" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+
+
     @org.opendcs.annotations.PropertySpec(propertySpecType = PropertySpec.INT,
                                           value = "1",
                                           description = "Minimum number of sample if which present an output will be calculated.")
     public long minSamplesNeeded = 1;
     String _propertyNames[] = { "minSamplesNeeded" };
-//AW:PROPERTIES_END
+
 
     // Allow javac to generate a no-args constructor.
 
@@ -65,14 +68,8 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void initAWAlgorithm( )
         throws DbCompException
     {
-//AW:INIT
         _awAlgoType = AWAlgoType.AGGREGATING;
         _aggPeriodVarRoleName = "average_speed";
-//AW:INIT_END
-
-//AW:USERINIT
-        // No one-time init required.
-//AW:USERINIT_END
     }
 
     /**
@@ -81,26 +78,8 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void beforeTimeSlices()
         throws DbCompException
     {
-//AW:BEFORE_TIMESLICES
-        // Zero out the tally & count for this agg period.
-        if (u == null)
-        {
-            u = new ArrayList<Double>();
-        }
-        else
-        {
-            u.clear();
-        }
-
-        if (v == null)
-        {
-            v = new ArrayList<Double>();
-        }
-        else
-        {
-            v.clear();
-        }
-
+        u.clear();
+        v.clear();
 
         // Normally for average, output units will be the same as input.
         String inUnits = getInputUnitsAbbr("speed");
@@ -116,7 +95,6 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
         }
 
         start_t = java.lang.System.nanoTime();
-//AW:BEFORE_TIMESLICES_END
     }
 
     /**
@@ -132,7 +110,6 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void doAWTimeSlice()
         throws DbCompException
     {
-//AW:TIMESLICE
         double _u,_v;
         if (!isMissing(speed) && !isMissing(dir))
         {
@@ -143,7 +120,6 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
             u.add(_u);
             v.add(_v);
         }
-//AW:TIMESLICE_END
     }
 
     /**
@@ -152,8 +128,7 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-//AW:AFTER_TIMESLICES
-                int count = u.size();
+        int count = u.size();
         log.debug("Have count={}", count);
         //debug1("AverageAlgorithm:afterTimeSlices, per begin="
         //+ debugSdf.format(_aggregatePeriodBegin) + ", end=" + debugSdf.format(_aggregatePeriodEnd));
@@ -195,7 +170,6 @@ public class AverageWind extends decodes.tsdb.algo.AW_AlgorithmBase
         double diff_ms = diff/1000000.0;
         log.info(" Elapsed Time (ns) {}", diff );
         log.info("              (ms) {}", diff_ms);
-//AW:AFTER_TIMESLICES_END
     }
 
     /**

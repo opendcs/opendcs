@@ -2,6 +2,9 @@ package org.opendcs.algorithms;
 
 import java.util.Date;
 
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,30 +23,29 @@ import decodes.tsdb.algo.AWAlgoType;
  * @author L2EDDMAN
  */
 //AW:JAVADOC_END
+@Algorithm(name = "Max To Date", description = "Over the desired interval, pick the current maximum.\n"
+                                             + "Previous maximum within the interval should be deleted")
 public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
 {
     private static final Logger log = LoggerFactory.getLogger(MaxToDate.class);
-//AW:INPUTS
-    public double input; //AW:TYPECODE=i
-    String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
+    @Input
+    public double input;
+    String _inputNames[] = { "input" };
+
+
     private Date   max_date;
     private double current_max;
     private int    numSamples;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+    @Output(type = Double.class)
     public NamedVariable max = new NamedVariable("max", 0);
     String _outputNames[] = { "max" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
-    public double minSamples = 0;
+    @org.opendcs.annotations.PropertySpec(value="0.0", description = "Minimum number of samples required before we consider this result valid.")
+    public double minSamples = 0.0;
 
     String _propertyNames[] = { "minSamples"  };
-//AW:PROPERTIES_END
 
     // Allow javac to generate a no-args constructor.
 
@@ -53,13 +55,9 @@ public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void initAWAlgorithm( )
         throws DbCompException
     {
-//AW:INIT
         _awAlgoType = AWAlgoType.AGGREGATING;
         _aggPeriodVarRoleName = "max";
-//AW:INIT_END
 
-//AW:USERINIT
-//AW:USERINIT_END
     }
 
     /**
@@ -68,12 +66,10 @@ public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void beforeTimeSlices()
         throws DbCompException
     {
-//AW:BEFORE_TIMESLICES
         // This will allow the first value to be initially selected
         current_max = -Double.MAX_VALUE;
         max_date = new Date(); // just need a starting value, it isn't compared in any way.
         numSamples = 0;
-//AW:BEFORE_TIMESLICES_END
     }
 
     /**
@@ -89,8 +85,7 @@ public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void doAWTimeSlice()
         throws DbCompException
     {
-//AW:TIMESLICE
-        if (isMissing(input ))
+        if (isMissing(input))
         {
             log.trace("Skipping missing value.");
             return;
@@ -110,7 +105,6 @@ public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
                 max_date = _timeSliceBaseTime;
             }
         }
-//AW:TIMESLICE_END
     }
 
     /**
@@ -119,7 +113,6 @@ public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-//AW:AFTER_TIMESLICES
         log.trace("Selected Max is: {}", current_max);
         log.trace("Selected Max Date is: {}", max_date);
         if (numSamples >= minSamples)
@@ -131,7 +124,6 @@ public class MaxToDate extends decodes.tsdb.algo.AW_AlgorithmBase
             log.trace("Only {} samples found, minium number specified is {}", numSamples, minSamples );
             log.trace("selected min/max will not be saved");
         }
-//AW:AFTER_TIMESLICES_END
     }
 
     /**

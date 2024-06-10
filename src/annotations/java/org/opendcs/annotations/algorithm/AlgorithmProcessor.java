@@ -36,7 +36,6 @@ final public class AlgorithmProcessor extends AbstractProcessor
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
     {
-        log.info("Hello processor!");
         if (annotations.isEmpty())
         {
             return true;
@@ -74,7 +73,12 @@ final public class AlgorithmProcessor extends AbstractProcessor
             out.writeStartElement("CompMetaData");
             final Algorithm algo = element.getAnnotation(Algorithm.class);
             out.writeStartElement("Algorithm");
-            out.writeAttribute("name", algo.name());
+            String name = algo.name();
+            if (name.isEmpty())
+            {
+                name = element.getSimpleName().toString();
+            }
+            out.writeAttribute("name", name);
             out.writeStartElement("Comment");
             out.writeCharacters(algo.description());
             out.writeEndElement();

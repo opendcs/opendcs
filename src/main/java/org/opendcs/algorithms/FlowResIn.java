@@ -14,6 +14,8 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 //AW:IMPORTS_END
 
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,34 +36,34 @@ import org.slf4j.LoggerFactory;
  * @author L2EDDMAN
  *
  */
-//AW:JAVADOC_END
+
 public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
 {
     private static final Logger log = LoggerFactory.getLogger(FlowResIn.class);
-//AW:INPUTS
-    public double ResOut;    //AW:TYPECODE=i
-    public double Evap;    //AW:TYPECODE=i
-    public double Dstor;    //AW:TYPECODE=id
-    String _inputNames[] = { "ResOut", "Evap", "Dstor" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
+    @Input
+    public double ResOut;
+    @Input
+    public double Evap;
+    @Input(typeCode = "id", description = "Change in storage between this and the previous time slice")
+    public double deltaStorage;
+    String _inputNames[] = { "ResOut", "Evap", "deltaStorage" };
+
+
+
     // Enter any local class variables needed by the algorithm.
     UnitConverter storConv;
     UnitConverter evapConv;
     UnitConverter flowConv;
     UnitConverter outputConv;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+    @Output(type = Double.class)
     public NamedVariable ResIn = new NamedVariable("ResIn", 0);
     String _outputNames[] = { "ResIn" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+    @org.opendcs.annotations.PropertySpec(description = "Should an evaporation volume be included in the calculation.")
     public boolean UseEvap = false;
     String _propertyNames[] = { "UseEvap" };
-//AW:PROPERTIES_END
 
     // Allow javac to generate a no-args constructor.
 
@@ -70,17 +72,13 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
      */
     protected void initAWAlgorithm( ) throws DbCompException
     {
-//AW:INIT
         _awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
 
-//AW:USERINIT
         // Code here will be run once, after the algorithm object is created.
         evapConv = null;
         storConv = null;
         flowConv = null;
         outputConv = null;
-//AW:USERINIT_END
     }
 
     /**
@@ -89,11 +87,6 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void beforeTimeSlices()
         throws DbCompException
     {
-//AW:BEFORE_TIMESLICES
-        // This code will be executed once before each group of time slices.
-        // For TimeSlice algorithms this is done once before all slices.
-        // For Aggregating algorithms, this is done before each aggregate
-        // period.
         EngineeringUnit storUnits = EngineeringUnit.getEngineeringUnit(getParmUnitsAbbr("Dstor"));
         EngineeringUnit flowUnits = EngineeringUnit.getEngineeringUnit(getParmUnitsAbbr("ResOut"));
         EngineeringUnit outputUnits = EngineeringUnit.getEngineeringUnit(getParmUnitsAbbr("ResIn"));
@@ -118,7 +111,6 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
         {
             outputConv = decodes.db.CompositeConverter.build(EngineeringUnit.getEngineeringUnit("cfs"), outputUnits );
         }
-//AW:BEFORE_TIMESLICES_END
     }
 
     /**
@@ -134,8 +126,6 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void doAWTimeSlice()
         throws DbCompException
     {
-//AW:TIMESLICE
-        // Enter code to be executed at each time-slice.
         double in = 0;
         double conversion = 1.0;
         String interval = this.getInterval("ResOut").toLowerCase();
@@ -196,7 +186,7 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
         try
         {
             log.trace("Convert the units");
-            Dstor = storConv.convert(Dstor);
+            deltaStorage = storConv.convert(deltaStorage);
             ResOut = flowConv.convert(ResOut);
 
             if (UseEvap)
@@ -210,19 +200,19 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
                 // M. Neilson. 2011Nov16.
                 Evap = evapConv.convert(Evap);
 
-                double flow = (Dstor+Evap)*conversion;
+                double flow = (deltaStorage+Evap)*conversion;
                 log.trace("performing calculation with evap");
-                log.trace("Dstor = {}, Evap = {}, Outflow = {}", Dstor, Evap, ResOut);
-                log.trace("Dstor + Evap = {} -(cfs)-> {}", (Dstor+Evap), flow);
+                log.trace("Dstor = {}, Evap = {}, Outflow = {}", deltaStorage, Evap, ResOut);
+                log.trace("Dstor + Evap = {} -(cfs)-> {}", (deltaStorage+Evap), flow);
                 in = flow + ResOut;
             }
             else
             {
                 log.trace("performing calculation without evap");
-                log.trace("Dstor = {}, Outflow = {}", Dstor, ResOut);
-                log.trace("Dstor  in cfs = {}" + (Dstor*conversion));
+                log.trace("Dstor = {}, Outflow = {}", deltaStorage, ResOut);
+                log.trace("Dstor  in cfs = {}" + (deltaStorage*conversion));
                 // The 15 minute and hourly calculation do not use evap
-                in = Dstor*conversion + ResOut;
+                in = deltaStorage*conversion + ResOut;
             }
 
             in = outputConv.convert(in);
@@ -233,7 +223,6 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
         {
             throw new DbCompException("There are no conversion from the units you provided to the needed units", ex);
         }
-//AW:TIMESLICE_END
     }
 
     /**
@@ -242,14 +231,6 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-//AW:AFTER_TIMESLICES
-        // This code will be executed once after each group of time slices.
-        // For TimeSlice algorithms this is done once after all slices.
-        // For Aggregating algorithms, this is done after each aggregate
-        // period.
-
-
-//AW:AFTER_TIMESLICES_END
     }
 
     /**
