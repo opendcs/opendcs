@@ -7,7 +7,6 @@
 package decodes.tsdb.groupedit;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import opendcs.opentsdb.OpenTsdbSettings;
 
 import java.awt.BorderLayout;
@@ -22,8 +21,6 @@ import java.util.ResourceBundle;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
-import javax.swing.WindowConstants;
 
 import decodes.gui.PropertiesEditDialog;
 import decodes.gui.TopFrame;

@@ -215,7 +215,13 @@ public class TsListPanel
 	{
 		tsListSelectPanel.refreshTSIDList();
 	}
-	
+
+	@Override
+	public void plot()
+	{
+
+	}
+
 	public Collection<String> getDistinctPart(String part)
 	{
 		return tsListSelectPanel.getDistinctPart(part);
