@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,17 +28,28 @@ import org.slf4j.LoggerFactory;
 
 import decodes.tsdb.CompMetaData;
 import decodes.tsdb.DbCompAlgorithm;
+import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.xml.CompXio;
 import decodes.tsdb.xml.DbXmlException;
 import ilex.util.EnvExpander;
+import ilex.util.Pair;
+import opendcs.dai.AlgorithmDAI;
 
 public final class ExecClassTableModel extends AbstractTableModel
 {
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(ExecClassTableModel.class);
-    private String colNames[] = {"Name", "Exec Class", "Description"};
+    private String colNames[] = {"Already Imported", "Name", "Exec Class", "Description"};
 
-    private final ArrayList<DbCompAlgorithm> classlist = new ArrayList<>();
+    private final ArrayList<Pair<Boolean,DbCompAlgorithm>> classlist = new ArrayList<>();
+    private final TimeSeriesDb tsDb;
+
+
+    public ExecClassTableModel(TimeSeriesDb tsDb)
+    {
+        this.tsDb = tsDb;
+    }
 
     @Override
     public int getColumnCount()
@@ -51,9 +63,11 @@ public final class ExecClassTableModel extends AbstractTableModel
     {
         switch(index)
         {
-            case 0: return String.class;
+            
+            case 0: return Boolean.class;
             case 1: return String.class;
             case 2: return String.class;
+            case 3: return String.class;
             default: return Object.class;
         }
     }
@@ -61,7 +75,7 @@ public final class ExecClassTableModel extends AbstractTableModel
     public int indexOf(String selection)
     {
         for(int i=0; i<classlist.size(); i++)
-            if (selection.equals(classlist.get(i).getName()))
+            if (selection.equals(classlist.get(i).second.getName()))
                 return i;
         return -1;
     }
@@ -83,12 +97,13 @@ public final class ExecClassTableModel extends AbstractTableModel
     {
         if (rowIndex < 0 || rowIndex >= classlist.size())
             return null;
-        DbCompAlgorithm algo = classlist.get(rowIndex);
+        DbCompAlgorithm algo = classlist.get(rowIndex).second;
         switch (columnIndex)
         {
-            case 0: return algo.getName();
-            case 1: return algo.getExecClass();
-            case 2: return algo.getComment();
+            case 0: return classlist.get(rowIndex).first;
+            case 1: return algo.getName();
+            case 2: return algo.getExecClass();
+            case 3: return algo.getComment();
             default: return null;
         }
     }
@@ -101,7 +116,7 @@ public final class ExecClassTableModel extends AbstractTableModel
         }
         else
         {
-            return classlist.get(rowIndex);
+            return classlist.get(rowIndex).second;
         }
     }
 
@@ -153,6 +168,41 @@ public final class ExecClassTableModel extends AbstractTableModel
                 }
                 
             };
+            
+            final Function<DbCompAlgorithm,Boolean> presentInDb = new Function<DbCompAlgorithm,Boolean>()
+            {
+                Set<String> execNames = new HashSet<>();
+
+                @Override
+                public Boolean apply(DbCompAlgorithm algo)
+                {
+                    if (execNames.contains(algo.getExecClass()))
+                    {
+                        return true;
+                    }
+                    try(AlgorithmDAI dai = tsDb.makeAlgorithmDAO())
+                    {
+                        boolean found = false;
+                        ArrayList<DbCompAlgorithm> algos = dai.listAlgorithms();
+                        for (DbCompAlgorithm a: algos)
+                        {
+                            if (execNames.add(a.getExecClass()))
+                            {
+                                found = true;
+                            }
+                        }
+                        return found;
+                    }
+                    catch (DbIoException ex)
+                    {
+                        log.atError()
+                           .setCause(ex)
+                           .log("Unable to search database for current algorithms.");
+                    }
+
+                    return false;
+                }
+            };
             Stream.concat(Files.find(toolHome, 5, (path, attributes) -> matcher.matches(path)),
                           Files.find(userDir, 5, (path, attributes) -> matcher.matches(path)))
                     .map(path ->
@@ -169,6 +219,7 @@ public final class ExecClassTableModel extends AbstractTableModel
                     .flatMap(readAlgos)
                     .filter(districtByExec)
                     .peek(algo -> System.out.println(algo.getName()))
+                    .map(a -> new Pair<>(presentInDb.apply(a),a))
                     .collect(Collectors.toCollection(() -> this.classlist));
 
             ClasspathIO.getAllResourcesIn("algorithms", this.getClass().getClassLoader())
@@ -177,6 +228,7 @@ public final class ExecClassTableModel extends AbstractTableModel
                        .flatMap(readAlgos)
                        .filter(districtByExec)
                        .peek(algo -> System.out.println(algo.getName()))
+                       .map(a -> new Pair<>(presentInDb.apply(a),a))
                        .collect(Collectors.toCollection(() -> this.classlist));
         }
         catch (IOException ex)

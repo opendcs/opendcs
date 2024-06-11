@@ -38,6 +38,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingWorker;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
@@ -56,6 +57,7 @@ import decodes.gui.SortingListTableModel;
 import decodes.tsdb.CompMetaData;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.compedit.algotab.ExecClassTableModel;
 import decodes.tsdb.xml.CompXio;
 import decodes.tsdb.xml.DbXmlException;
@@ -66,18 +68,21 @@ import decodes.tsdb.xml.DbXmlException;
 @SuppressWarnings("serial")
 public class ExecClassSelectDialog extends JDialog
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ExecClassSelectDialog.class);
 	private JButton selectButton = new JButton("Select");
 	private JButton cancelButton = new JButton("Cancel");
 	private DbCompAlgorithm selection;
 	private boolean _cancelled;
-	private final ExecClassTableModel model = new ExecClassTableModel();
-	private final JTable tab = new JTable(model);
+	private final ExecClassTableModel model;
+	private final JTable tab;//b = new JTable(model);
 
 	/** No args constructor for JBuilder */
-	public ExecClassSelectDialog(JFrame theFrame)
+	public ExecClassSelectDialog(JFrame theFrame, TimeSeriesDb tsDb)
 	{
 		super(theFrame, "Select Executable Class", true);
 		_cancelled = false;
+		model = new ExecClassTableModel(tsDb);
+		tab = new JTable(model);
 		try
 		{
 			guiInit();
@@ -86,7 +91,9 @@ public class ExecClassSelectDialog extends JDialog
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			log.atError()
+			   .setCause(ex)
+			   .log("Unable to initialize algorithm executive selection dialog.");
 		}
 	}
 
@@ -126,7 +133,16 @@ public class ExecClassSelectDialog extends JDialog
 	public void load()
 		throws NoSuchObjectException
 	{
-		model.load();
+		new SwingWorker<Void,Void>()
+		{
+			@Override
+			protected Void doInBackground() throws Exception
+			{
+				model.load();
+				return null;
+			}
+			
+		}.execute();
 	}
 
 	public void setSelection(String selection)
