@@ -155,7 +155,7 @@ public class AlgorithmsEditPanel
 		
 		editedObject = null;
 		setTopFrame(CAPEdit.instance().getFrame());
-		execSelectDialog = new ExecClassSelectDialog(CAPEdit.instance().getFrame());
+		execSelectDialog = new ExecClassSelectDialog(CAPEdit.instance().getFrame(), CAPEdit.instance().theDb);
 		try
 		{
 			execSelectDialog.load();
