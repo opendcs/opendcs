@@ -125,15 +125,9 @@ public class TsListFrame extends TopFrame
 		
 		JButton tsdbPropsButton = 
 			new JButton(groupResources.getString("TsdbListPanel.TsdbProperties"));
-		tsdbPropsButton.addActionListener(
-			new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					tsdbPropsPressed();
-				}
-			});
+		tsdbPropsButton.addActionListener(e ->tsdbPropsPressed());
+
+
 		JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
 		p.add(tsdbPropsButton);
 		tsTab.add(p, BorderLayout.NORTH);

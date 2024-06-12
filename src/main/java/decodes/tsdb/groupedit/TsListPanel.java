@@ -1,5 +1,10 @@
 package decodes.tsdb.groupedit;
 
+import decodes.gui.TimeSeriesChart;
+import decodes.gui.TimeSeriesLine;
+import decodes.sql.DbKey;
+import decodes.sql.PlatformListIO;
+import decodes.tsdb.CTimeSeries;
 import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
 import ilex.util.Logger;
@@ -7,6 +12,12 @@ import ilex.util.Logger;
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Date;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAmount;
+import java.util.Calendar;
 import java.util.Collection;
 
 import javax.swing.JLabel;
@@ -20,6 +31,7 @@ import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
+import org.slf4j.LoggerFactory;
 
 /**
  * Displays a sorting-list of TimeSeries Data Descriptor objects in the
@@ -29,6 +41,8 @@ import decodes.tsdb.TimeSeriesIdentifier;
 public class TsListPanel 
 	extends JPanel implements TsListControllers
 {
+	private final static org.slf4j.Logger log = LoggerFactory.getLogger(TsListPanel.class);
+
 	private String listTitle = "Time Series List";
 	
 	private BorderLayout borderLayout = new BorderLayout();
@@ -219,6 +233,28 @@ public class TsListPanel
 	@Override
 	public void plot()
 	{
+		Calendar calendar = Calendar.getInstance();
+		java.util.Date t2 = calendar.getTime();
+		calendar.add(Calendar.DAY_OF_YEAR, -7);
+		java.util.Date t1 = calendar.getTime();
+
+		TimeSeriesChart chart = new TimeSeriesChart("","time","");
+		try
+		{
+			TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+			final TimeSeriesIdentifier[] tsids = tsListSelectPanel.getSelectedTSIDs();
+			for (TimeSeriesIdentifier tsid : tsids)
+			{
+				CTimeSeries series = new CTimeSeries(tsid);
+				timeSeriesDAO.fillTimeSeries(series, t1,t2);
+				chart.addLine(new TimeSeriesLine(series));
+				log.trace("reading '{}'",tsid.getUniqueString());
+			}
+
+		}catch (Exception e)
+		{
+			log.error("Error reading time-series data",e);
+		}
 
 	}
 
