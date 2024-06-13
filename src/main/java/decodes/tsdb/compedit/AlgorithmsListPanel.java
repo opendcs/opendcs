@@ -24,6 +24,9 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import opendcs.dai.AlgorithmDAI;
 
 import decodes.db.Constants;
@@ -31,9 +34,11 @@ import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 
 import decodes.tsdb.*;
+import decodes.tsdb.compedit.algotab.LoadNewDialog;
 
 public class AlgorithmsListPanel extends ListPanel 
 {
+	private static final Logger log = LoggerFactory.getLogger(AlgorithmsListPanel.class);
 	JPanel getFieldPanel() {
 		return getJContentPane();
 	}
@@ -82,12 +87,24 @@ public class AlgorithmsListPanel extends ListPanel
 		{
 			jContentPane = new JPanel();
 			jContentPane.setLayout(new BorderLayout());
-			jContentPane.add(getButtonPanel(), java.awt.BorderLayout.SOUTH);
+			JPanel buttonPanel = getButtonPanel();
+			JButton checkForNew = new JButton(ResourceBundle.getBundle("ilex/resources/gui").getString("EditorMenuSet.checkForNew"));
+			checkForNew.addActionListener(e -> checkForNew());
+			buttonPanel.add(checkForNew);
+			jContentPane.add(buttonPanel, java.awt.BorderLayout.SOUTH);
 			JScrollPane scrollPane = new JScrollPane(getAlgoListTable());
 
 			jContentPane.add(scrollPane, java.awt.BorderLayout.CENTER);
 		}
 		return jContentPane;
+	}
+
+	private void checkForNew()
+	{
+		
+		LoadNewDialog loadNew = new LoadNewDialog(CAPEdit.instance().getFrame(), CAPEdit.theDb);
+		log.info("Starting Load new dialog");
+		loadNew.setVisible(true);
 	}
 
 	protected JTable getAlgoListTable() 

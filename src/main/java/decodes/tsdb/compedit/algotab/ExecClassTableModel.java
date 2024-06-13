@@ -120,7 +120,24 @@ public final class ExecClassTableModel extends AbstractTableModel
         }
     }
 
+    public Boolean getLoaded(int rowIndex)
+    {
+        if (rowIndex < 0 || rowIndex >= classlist.size())
+        {
+            return null;
+        }
+        else
+        {
+            return classlist.get(rowIndex).first;
+        }
+    }
+
     public void load() throws NoSuchObjectException
+    {
+        load(false);
+    }
+
+    public void load(boolean newOnly) throws NoSuchObjectException
     {
         Path toolHome = Paths.get(EnvExpander.expand("$DCSTOOL_HOME"));
         Path userDir = Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR"));
@@ -227,9 +244,10 @@ public final class ExecClassTableModel extends AbstractTableModel
                        .filter(u -> u.toExternalForm().endsWith(".xml"))
                        .flatMap(readAlgos)
                        .filter(districtByExec)
-                       .peek(algo -> System.out.println(algo.getName()))
+                       .peek(algo -> System.out.println("From Jars:" + algo.getName()))
                        .map(a -> new Pair<>(presentInDb.apply(a),a))
                        .collect(Collectors.toCollection(() -> this.classlist));
+            this.fireTableDataChanged();
         }
         catch (IOException ex)
         {
