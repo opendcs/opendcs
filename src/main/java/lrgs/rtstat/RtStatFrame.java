@@ -1,6 +1,3 @@
-/*
-* $Id$
-*/
 package lrgs.rtstat;
 
 import java.awt.*;
@@ -25,6 +22,7 @@ import java.util.Properties;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
 import decodes.gui.AboutBox;
@@ -60,6 +58,7 @@ public class RtStatFrame
 	extends TopFrame
 	implements DdsClientIf, HyperlinkListener
 {
+	private final static org.slf4j.Logger log = LoggerFactory.getLogger(RtStatFrame.class);
 	private static ResourceBundle labels = 
 		RtStat.getLabels();
 	private static ResourceBundle genericLabels = 
@@ -91,7 +90,6 @@ public class RtStatFrame
 	private EventsPanel eventsPanel = new EventsPanel(false);
 	private JCheckBox passwordCheck = new JCheckBox();
 	
-
 	/** True if the display is currently paused. */
 	boolean isPaused = false;
 
@@ -139,7 +137,7 @@ public class RtStatFrame
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			log.error("RtStatFrame: ",e);
 		}
 		isPaused = false;
 		client = null;
@@ -460,11 +458,7 @@ public class RtStatFrame
 
 	private void doConnect()
 	{
-		if (client != null)
-		{
-			try { client.sendGoodbye(); } catch(Exception ex) {}
-			client.disconnect();
-		}
+		closeConnection();
 		client = null;
 		final LddsClient tclient = new LddsClient(host, port);
 		final JobDialog dlg = new JobDialog(
@@ -478,7 +472,8 @@ public class RtStatFrame
 			{
 				public void run()
 				{
-					try { sleep(1000L); } catch(InterruptedException ex) {}
+					pause(1000L);
+
 					while(host != null && !dlg.wasCancelled()
 						&& dlg.isVisible())
 					{
@@ -492,8 +487,7 @@ public class RtStatFrame
 							labels.getString("RtStatFrame.cannotConnectErr")
 							+ ex);
 							tclient.disconnect();
-							try { sleep(5000L); } 
-							catch(InterruptedException ex2) {}
+							pause(5000L);
 							continue;
 						}
 						try
@@ -516,8 +510,7 @@ public class RtStatFrame
 							}
 							dlg.addToProgress(labels.getString(
 									"RtStatFrame.connectionSuccessInfo"));
-							try { sleep(2000L); } 
-							catch(InterruptedException ex) {}
+							pause(2000L);
 							dlg.allDone();
 							return;
 						}
@@ -541,10 +534,11 @@ public class RtStatFrame
 							tclient.disconnect();
 						}
 						// Pause 5 seconds and try again.
-						try { sleep(5000L); } 
-						catch(InterruptedException ex) {}
+						pause(5000L);
 					}
 				}
+
+
 			};
 		backgroundJob.start();
 		launch(dlg);
@@ -556,6 +550,30 @@ public class RtStatFrame
 			loadConnectionsField(hostCombo, connectionList, connectedHostName);
 			displayEvent("Connected to " + host + ":"
 				+ port + " as user '" + user + "'");
+		}
+	}
+	private static void pause(long millis)
+	{
+		try
+		{
+			Thread.sleep(millis);
+		} catch(InterruptedException ex)
+		{
+			log.error("Error during pause({})",millis,ex);
+		}
+	}
+	private void closeConnection()
+	{
+		if (client != null)
+		{
+			try
+			{
+			  client.sendGoodbye();
+			} catch(Exception ex)
+			{
+				log.error("Error closing connection",ex);
+			}
+			client.disconnect();
 		}
 	}
 
@@ -577,16 +595,13 @@ public class RtStatFrame
 		}
 		catch(final Exception ex)
 		{
+			log.error("Error getting status",ex);
 			client.disconnect();
 			client = null;
-			SwingUtilities.invokeLater(
-				new Runnable()
-				{
-					public void run()
-					{
-						doConnect();
-					}
-				});
+			String msg = "An error occurred in client.getStatus(). The LDSS message header may be to long.";
+			log.error(msg);
+			rtStatPanel.updateStatus("<h1>"+msg+"</h1>");
+			rtStatPanel.invalidate();
 			return null;
 		}
 	}
@@ -995,7 +1010,7 @@ public class RtStatFrame
 		}
 		catch(IOException ioe)
 		{
-			System.out.println("No previously recorded connections");
+			log.error("No previously recorded connections");
 		}
 		
 		class ht implements Comparable<ht>
