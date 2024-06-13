@@ -14,6 +14,8 @@ import java.util.TimeZone;
 import java.util.Vector;
 import java.util.zip.GZIPInputStream;
 
+import javax.net.SocketFactory;
+
 import ilex.util.*;
 import ilex.net.BasicClient;
 import lrgs.common.*;
@@ -92,7 +94,19 @@ public class LddsClient extends BasicClient
     */
     public LddsClient(String host, int port)
     {
-        super(host, port);
+        this(host,port,SocketFactory.getDefault());
+    }
+
+    /**
+      Constructs client for LDDS at specified port on specified host.
+      The connection is not made until the 'connect()' method is called.
+      @param host the remote host
+      @param port the remote port
+      @param socketFactory SocketFactory used to allow injecting SSL usage
+    */
+    public LddsClient(String host, int port, SocketFactory socketFactory)
+    {
+        super(host, port,socketFactory);
 
         goesDateFormat = new SimpleDateFormat("yyDDDHHmmss");
         TimeZone jtz = TimeZone.getTimeZone("UTC");
