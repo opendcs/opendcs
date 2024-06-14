@@ -35,32 +35,35 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
 {
     public static final org.slf4j.Logger log = LoggerFactory.getLogger(AlgorithmDAO.class);
 
+    private static final Integer COMMENT_LENGTH_DEFAULT = 1000;
     // While it *is* possible for this to change during runtime. The cost of
     // a database query is not trivial so we will have a default here, attempt
     // to determine it once per application instance, and except the result for
     // the length of that run.
     public static Integer COMMENT_LENGTH = null;
 
+
     public AlgorithmDAO(DatabaseConnectionOwner tsdb)
     {
         super(tsdb, "AlgorithmDao");
         if (COMMENT_LENGTH == null)
         {
-            COMMENT_LENGTH = 1000;
             try(DaoBase dao = new DaoBase(tsdb, module))
             {
-                dao.doQuery("select cmmnt from cp_algorithm", rs ->
+                COMMENT_LENGTH = dao.getFirstResultOr("select cmmnt from cp_algorithm", rs ->
                 {
                     ResultSetMetaData rsmd = rs.getMetaData();
-                    COMMENT_LENGTH = rsmd.getPrecision(1);
-                    log.info("Determined Algorithm comment length to be {}", COMMENT_LENGTH.intValue());
-                });
+                    int tmp = rsmd.getPrecision(1);
+                    log.info("Determined Algorithm comment length to be {}", tmp);
+                    return tmp;
+                }, COMMENT_LENGTH_DEFAULT);
             }
             catch (Exception ex)
             {
+                COMMENT_LENGTH=1000;
                 log.atError()
                    .setCause(ex)
-                   .log("Unable to query for column meta data.");
+                   .log("Unable to query for column meta data. Setting length to default value of {}", COMMENT_LENGTH_DEFAULT);
             }
         }
     }
