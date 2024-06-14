@@ -63,7 +63,7 @@ public final class ExecClassTableModel extends AbstractTableModel
     {
         switch(index)
         {
-            
+
             case 0: return Boolean.class;
             case 1: return String.class;
             case 2: return String.class;
@@ -183,9 +183,9 @@ public final class ExecClassTableModel extends AbstractTableModel
                 {
                     return execNames.add(t.getExecClass());
                 }
-                
+
             };
-            
+
             final Function<DbCompAlgorithm,Boolean> presentInDb = new Function<DbCompAlgorithm,Boolean>()
             {
                 Set<String> execNames = new HashSet<>();
@@ -254,6 +254,21 @@ public final class ExecClassTableModel extends AbstractTableModel
             log.atError()
                .setCause(ex)
                .log("Unable to process DCSTOOL_HOME or DCSTOOL_USER directory.");
+        }
+
+    }
+
+    public void removeAlgo(DbCompAlgorithm algoToRemove)
+    {
+        for (int i = 0; i < classlist.size(); i++)
+        {
+            Pair<Boolean,DbCompAlgorithm> pair = classlist.get(i);
+            if (algoToRemove.getExecClass().equalsIgnoreCase(pair.second.getExecClass()))
+            {
+                classlist.remove(i);
+                fireTableRowsDeleted(i, i);
+                return;
+            }
         }
 
     }
