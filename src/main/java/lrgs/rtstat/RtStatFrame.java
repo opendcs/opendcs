@@ -598,9 +598,9 @@ public class RtStatFrame
 			log.error("Error getting status",ex);
 			client.disconnect();
 			client = null;
-			String msg = "An error occurred in client.getStatus(). The LDSS message header may be to long.";
+			String msg = "An error occurred in client.getStatus(). ";
 			log.error(msg);
-			rtStatPanel.updateStatus("<h1>"+msg+"</h1>");
+			rtStatPanel.updateStatus("<h1>"+msg+" "+ex.getMessage()+"</h1>");
 			rtStatPanel.invalidate();
 			return null;
 		}
