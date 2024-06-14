@@ -250,6 +250,8 @@ public class TsListPanel
 				chart.addLine(new TimeSeriesLine(series));
 				log.trace("reading '{}'",tsid.getUniqueString());
 			}
+			JPanel p = chart.generateChart();
+			p.setVisible(true);
 
 		}catch (Exception e)
 		{
