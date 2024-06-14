@@ -1,5 +1,7 @@
 package decodes.tsdb.algo;
 
+import decodes.cwms.CwmsConstants;
+import decodes.cwms.CwmsTsId;
 import decodes.db.DataType;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
@@ -35,6 +37,7 @@ public class ToIrregularUsingPattern
 	// Enter any local class variables needed by the algorithm.
 	private CTimeSeries inputTS = null;
 	private CTimeSeries patternTS = null;
+	private String inUnits = null;
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -72,8 +75,20 @@ public class ToIrregularUsingPattern
 //AW:BEFORE_TIMESLICES
 		
 		// Validation
+		String outputIntvs = getParmRef("output").compParm.getInterval();
+		Interval outputIntv = IntervalCodes.getInterval(outputIntvs);
+		String patternIntvs = getParmRef("pattern").compParm.getInterval();
+		Interval patternIntv = IntervalCodes.getInterval(patternIntvs);
+
+		if(!outputIntv.equals(patternIntv)){
+			throw new DbCompException("Output interval does not match Pattern interval");
+		}
+
 		inputTS = getParmRef("input").timeSeries;
 		patternTS = getParmRef("pattern").timeSeries;
+
+		inUnits = getInputUnitsAbbr("input");
+		setOutputUnitsAbbr("output", inUnits);
 
 		Date firstInputT = baseTimes.first();
 		try {
@@ -102,8 +117,8 @@ public class ToIrregularUsingPattern
 	}
 
 	void interpolate(Date patternDate, TimedVariable prev, TimedVariable next){
-		DataType data = inputTS.getTimeSeriesIdentifier().getDataType();
-		if(data.isEquivalent(DataType.getDataType("INST_VAL", "INST_VAL"))){
+		CwmsTsId tsId = (CwmsTsId) inputTS.getTimeSeriesIdentifier();
+		if(CwmsConstants.PARAM_TYPE_INST.equalsIgnoreCase(tsId.getParamType())){
 			long diff =	patternDate.getTime() - prev.getTime().getTime();
 			try {
 				double rise = next.getDoubleValue() - prev.getDoubleValue();
@@ -116,7 +131,7 @@ public class ToIrregularUsingPattern
 				warning("Interpolation resulted in invalid var: " + ex);
 			}
 		}
-		else if(data.isEquivalent(DataType.getDataType("PER_AVER", "PER_AVER"))){
+		else if(CwmsConstants.PARAM_TYPE_AVE.equalsIgnoreCase(tsId.getParamType())){
 			try {
 				setOutput(output, next.getDoubleValue(), patternDate);
 			}
@@ -125,7 +140,7 @@ public class ToIrregularUsingPattern
 				warning("Interpolation resulted in invalid var: " + ex);
 			}
 		}
-		else if(data.isEquivalent(DataType.getDataType("PER_CUM", "PER_CUM"))){
+		else if(CwmsConstants.PARAM_TYPE_TOTAL.equalsIgnoreCase(tsId.getParamType())){
 			long diff = patternDate.getTime() - prev.getTime().getTime();
 			try {
 				double rise = next.getDoubleValue();
@@ -161,8 +176,8 @@ public class ToIrregularUsingPattern
 			setOutput(output, input);
 			return;
 		}
-		TimedVariable prevInput = inputTS.findNext(_timeSliceBaseTime);
-		TimedVariable nextInput = inputTS.findPrev(_timeSliceBaseTime);
+		TimedVariable prevInput = inputTS.findPrev(_timeSliceBaseTime);
+		TimedVariable nextInput = inputTS.findNext(_timeSliceBaseTime);
 
 		Date firstInputT = baseTimes.first();
 		if(prevInput == null){
