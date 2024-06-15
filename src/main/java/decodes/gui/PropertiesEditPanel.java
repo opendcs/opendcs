@@ -623,7 +623,7 @@ class PropertiesTableModel extends AbstractTableModel
 		 && !sp.first.equalsIgnoreCase("passwordCheckerClass")
 		 && sp.second != null && sp.second.length() > 0)
 			return "****";
-		PropertySpec ps = propHash.get(sp.first.toUpperCase());
+		PropertySpec ps = propHash != null ? propHash.get(sp.first.toUpperCase()) : null;
 		if (ps != null && ps.getType().equals(PropertySpec.COLOR))
 		{
 			log.trace("Returning a Color object.");
