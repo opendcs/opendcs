@@ -1189,12 +1189,13 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		throws DbIoException
 	{
 		// Reload the TSID cache every hour.
+		/* // Since DAO is recreated every compApp loop, avoid reloading cache every time
 		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
 		{
 			lastTsidCacheRead = System.currentTimeMillis();
 			reloadTsIdCache();
 		}
-
+*/
 		String q = "";
 		String attrList = "RECORD_NUM, SITE_DATATYPE_ID, INTERVAL, "
 			+ "TABLE_SELECTOR, VALUE, START_DATE_TIME, DELETE_FLAG, "
