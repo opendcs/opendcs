@@ -30,7 +30,7 @@ public class HdbSiteDAO extends SiteDAO
 	private static HashMap<String, DbKey> siteName2ExtSysId = new HashMap<String, DbKey>();
 	private static HashMap<String, DbKey> stateName2Id = new HashMap<String, DbKey>();
 	private static HashMap<String, DbKey> stateAbbr2Id = new HashMap<String, DbKey>();
-	private static String myDbSiteCode = null;
+	private static String myDbSiteCode = "ECO";
 	
 	public HdbSiteDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -104,7 +104,7 @@ public class HdbSiteDAO extends SiteDAO
 		
 		if (myDbSiteCode == null)
 		{
-			synchronized(stateName2Id)
+			synchronized(myDbSiteCode)
 			{
 				String q = "select db_site_code from ref_db_list where session_no = 1";
 				try
@@ -149,13 +149,43 @@ public class HdbSiteDAO extends SiteDAO
 			+ " where " + joinClause;
 		
 		if (!DbKey.isNull(siteId))
-			q = q + " and a.site_id = " + siteId;
+			q = q + " and a.site_id = ?";
 		else // querying all sites, must add filter to only get session_no = 1.
 			q = q + " and " + filterClause;
 			
 		return q;
 	}
-	
+
+	@Override
+	public void readSite(Site site) throws DbIoException, NoSuchObjectException
+	{
+		DbKey id = site.getId();
+		String q = buildSiteQuery(id);
+
+		try
+		{
+			Site ret = getSingleResult(q, rs->
+			{
+				resultSet2Site(site, rs);
+				return site;
+			}, site.getId());
+
+			if (ret == null)
+			{
+				throw new NoSuchObjectException("No site for location code =" + site.getId());
+			}
+			readNames(site);
+			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
+			{
+				propsDao.readProperties("site_property", "site_id", id, site.getProperties());
+			}
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Unable to retrieve site.",ex);
+		}
+	}
+
 	@Override
 	protected void readNames(Site site)
 		throws DbIoException, SQLException
@@ -171,7 +201,7 @@ public class HdbSiteDAO extends SiteDAO
 			site.addName(sn);
 		}
 	}
-	
+
 	@Override
 	public synchronized DbKey lookupSiteID( final SiteName siteName )
 		throws DbIoException
