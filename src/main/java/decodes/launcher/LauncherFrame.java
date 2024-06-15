@@ -1921,6 +1921,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             }
 
             List<Profile> profiles = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")));
+            if (!profiles.contains(launchProfile))
+            {
+                profiles.add(launchProfile);
+            }
             Logger.instance().debug3("There are " + profiles.size() + " profiles.");
             /**
              * This current profile is used for the case of the profile manager adding or removing a profile and needing
