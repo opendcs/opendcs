@@ -1,9 +1,11 @@
-package org.opendcs.annotations.util;
+package org.opendcs.utils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+
+import ilex.util.Pair;
 
 public class AnnotationHelpers {
     
@@ -12,15 +14,15 @@ public class AnnotationHelpers {
         // prevent instance of class
     }
 
-    public static List<Field> getFieldsWithAnnotation(Class<?> clazz, Class<? extends Annotation> annotationType)
+    public static <AnnotationType extends Annotation> List<Pair<Field,AnnotationType>> getFieldsWithAnnotation(Class<?> clazz, Class<AnnotationType> annotationType)
     {
-        ArrayList<Field> ret = new ArrayList<>();
+        ArrayList<Pair<Field,AnnotationType>> ret = new ArrayList<>();
         Field[] fields = clazz.getFields();
         for (Field f: fields)
         {
             if (f.isAnnotationPresent(annotationType))
             {
-                ret.add(f);
+                ret.add(new Pair<>(f, (AnnotationType)f.getAnnotation(annotationType)));
             }
         }
         return ret;

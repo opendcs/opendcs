@@ -182,4 +182,20 @@ public class PropertySpec
 		}
 		return specType;
 	}
+
+	/**
+	 * Determine appropriate name for this property. As defined or the field name if not.
+	 * @param field
+	 * @param spec
+	 * @return
+	 */
+	public static String getPropertyName(Field field, org.opendcs.annotations.PropertySpec spec)
+    {
+        String name = spec.name();
+        if (name.isEmpty())
+        {
+            name = field.getName();
+        }
+        return name;
+    }
 }
