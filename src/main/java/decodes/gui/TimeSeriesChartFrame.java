@@ -2,7 +2,6 @@ package decodes.gui;
 
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.groupedit.TsListPanel;
 import opendcs.dai.TimeSeriesDAI;
 import org.slf4j.LoggerFactory;
 

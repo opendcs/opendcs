@@ -5,12 +5,12 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.labels.XYToolTipGenerator;
+import org.jfree.chart.plot.CombinedDomainXYPlot;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.time.Second;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
-
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,10 +31,10 @@ import java.util.Map;
  */
 public class TimeSeriesChart
 {
-    protected XYPlot plot;
+
     protected final Map<String, XYLineAndShapeRenderer> rendererMap = new HashMap<>();
 
-    private final Map<String, List<TimeSeriesLine>> lineSpecMap = new HashMap<>();
+    private final Map<String, List<TimeSeriesLine>> lineMap = new HashMap<>();
     private final Map<String, TimeSeriesCollection> timeSeriesCollectionMap = new HashMap<>();
     String title,xAxisText, yAxisText;
     public TimeSeriesChart(String title,String xAxisText, String yAxisText)
@@ -64,15 +64,15 @@ public class TimeSeriesChart
         if (!timeSeriesCollectionMap.containsKey(line.getUnits()))
         {
             timeSeriesCollectionMap.put(line.getUnits(), new TimeSeriesCollection());
-            lineSpecMap.put(line.getUnits(), new ArrayList<>());
+            lineMap.put(line.getUnits(), new ArrayList<>());
         }
 
         timeSeriesCollectionMap.get(line.getUnits()).addSeries(newMember);
-        lineSpecMap.get(line.getUnits()).add(line);
+        lineMap.get(line.getUnits()).add(line);
     }
 
     public JPanel generateChart() {
-        plot = createTimeSeriesPlot();
+        CombinedDomainXYPlot plot = createTimeSeriesPlot();
         ChartPanel chart = new ChartPanel(new JFreeChart(title, plot));
         addChartFeatures(chart);
         return chart;
@@ -83,7 +83,7 @@ public class TimeSeriesChart
         chart.setDomainZoomable(true);
         chart.setRangeZoomable(true);
 
-        setChartToolTip(chart);
+        //setChartToolTip(chart);
     }
 
     private void setChartToolTip(ChartPanel chart) {
@@ -111,17 +111,20 @@ public class TimeSeriesChart
         chart.setDismissDelay(Integer.MAX_VALUE);
     }
 
-    private XYPlot createTimeSeriesPlot() {
-        XYPlot plot = new XYPlot();
 
-        plot.setDomainPannable(true);
-        plot.setRangePannable(true);
+    private CombinedDomainXYPlot createTimeSeriesPlot() {
+        CombinedDomainXYPlot combinedPlot = new CombinedDomainXYPlot(new DateAxis("Time"));
+
 
         int[] index ={0};
-        timeSeriesCollectionMap.forEach((k, v) -> {
-            rendererMap.put(k, new XYLineAndShapeRenderer(true, false));
-            XYLineAndShapeRenderer renderer = rendererMap.get(k);
-            plot.setDataset(index[0], timeSeriesCollectionMap.get(k));
+        
+        timeSeriesCollectionMap.forEach((units, tsCollection) -> {
+            XYPlot plot = new XYPlot();
+            plot.setDomainPannable(true);
+            plot.setRangePannable(true);
+            rendererMap.put(units, new XYLineAndShapeRenderer(true, false));
+            XYLineAndShapeRenderer renderer = rendererMap.get(units);
+            plot.setDataset(index[0], timeSeriesCollectionMap.get(units));
             plot.setRenderer(index[0], renderer);
 
             DateAxis domainAxis = new DateAxis(xAxisText);
@@ -135,7 +138,7 @@ public class TimeSeriesChart
             plot.mapDatasetToDomainAxis(index[0], 0);
             plot.mapDatasetToRangeAxis(index[0], 0);
 
-            List<TimeSeriesLine> linesForRange = lineSpecMap.get(k);
+            List<TimeSeriesLine> linesForRange = lineMap.get(units);
             for (int j = 0; j < linesForRange.size(); j++) {
                 TimeSeriesLine currentLine = linesForRange.get(j);
                 plot.getRenderer(index[0]).setSeriesStroke(j, new BasicStroke(1.0f));
@@ -144,10 +147,12 @@ public class TimeSeriesChart
                     plot.getRenderer(index[0]).setSeriesPaint(j, currentLine.getColor());
                 }
             }
+            combinedPlot.add(plot,1);
             index[0]++;
         });
 
-        return plot;
+
+        return combinedPlot;
     }
 
 
