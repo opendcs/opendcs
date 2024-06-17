@@ -119,7 +119,7 @@ import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.opendcs.annotations.util.AnnotationHelpers;
+import org.opendcs.utils.AnnotationHelpers;
 
 import ilex.util.Logger;
 import ilex.util.TextUtil;
@@ -1554,12 +1554,13 @@ ex.printStackTrace(System.err);
 	
 	public String[] getPropertyNames()
 	{
-		org.opendcs.annotations.PropertySpec[] annos = this.getClass().getAnnotationsByType(org.opendcs.annotations.PropertySpec.class);
-		ArrayList<String> ret = new ArrayList<>();
-		for (org.opendcs.annotations.PropertySpec a: annos)
-		{
-			ret.add(a.name());
-		}
+		List<String> ret = AnnotationHelpers.getFieldsWithAnnotation(this.getClass(), org.opendcs.annotations.PropertySpec.class)
+										    .stream()
+											.map(pair ->
+											{
+												return PropertySpec.getPropertyName(pair.first,pair.second);
+											})
+											.collect(Collectors.toList());
 		return ret.toArray(new String[0]);
 	}
 
@@ -1723,15 +1724,12 @@ ex.printStackTrace(System.err);
 	{
 		final Class<?> clazz = this.getClass();
 		return AnnotationHelpers.getFieldsWithAnnotation(clazz, org.opendcs.annotations.PropertySpec.class)
-							   .stream()
-							   .map(f ->
+							    .stream()
+							    .map(p ->
 								{
-									final org.opendcs.annotations.PropertySpec propSpec = f.getAnnotation(org.opendcs.annotations.PropertySpec.class);
-									String name = propSpec.name();
-									if (name.isEmpty())
-									{
-										name = f.getName();
-									}
+									final Field f = p.first;
+									final org.opendcs.annotations.PropertySpec propSpec = p.second;
+									final String name = PropertySpec.getPropertyName(f, propSpec);
 									String specType = PropertySpec.getSpecTypeFromAnnotation(propSpec, f);
 									return new PropertySpec(name, specType, propSpec.description());
 								})

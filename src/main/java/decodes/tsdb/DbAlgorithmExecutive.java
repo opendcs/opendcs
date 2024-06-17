@@ -79,6 +79,7 @@
 */
 package decodes.tsdb;
 
+import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -90,7 +91,7 @@ import java.util.stream.Collectors;
 
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.opendcs.annotations.util.AnnotationHelpers;
+import org.opendcs.utils.AnnotationHelpers;
 
 import java.util.HashMap;
 import java.util.GregorianCalendar;
@@ -600,9 +601,10 @@ debug3("DbAlgorithmExec.apply()");
 	{
 		return AnnotationHelpers.getFieldsWithAnnotation(this.getClass(), Input.class)
 						 .stream()
-						 .map(f ->
+						 .map(p ->
 						 {
-							final Input inputAnno = f.getAnnotation(Input.class);
+							final Field f = p.first;
+							final Input inputAnno = p.second;
 							String name = inputAnno.name();
 							if (name.isEmpty())
 							{
@@ -623,9 +625,10 @@ debug3("DbAlgorithmExec.apply()");
 	{
 		return AnnotationHelpers.getFieldsWithAnnotation(this.getClass(), Output.class)
 						 .stream()
-						 .map(f ->
+						 .map(p ->
 						 {
-							final Output outputAnno = f.getAnnotation(Output.class);
+							final Field f = p.first;
+							final Output outputAnno = p.second;
 							String name = outputAnno.name();
 							if (name.isEmpty())
 							{
