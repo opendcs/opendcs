@@ -621,13 +621,23 @@ public class DbImport
 
 			if (plat.getSite() != null)
 			{
-				SiteName sn = plat.getSite().getPreferredName();
-				Site oldSite = stageDb.siteList.getSite(sn);
-				if (oldSite != null)
+				try
 				{
-					stageDb.siteList.removeSite(oldSite);
+					SiteName sn = plat.getSite().getPreferredName();
+					Site oldSite = stageDb.siteList.getSite(sn);
+					if (oldSite != null)
+					{
+						stageDb.siteList.removeSite(oldSite);
+					}
+					stageDb.siteList.addSite(plat.getSite());
 				}
-				stageDb.siteList.addSite(plat.getSite());
+				catch (Exception ex)
+				{
+					log.atError()
+					   .setCause(ex)
+					   .log("Platform {} has an invalid site configuration. Platform will be imported without a site", plat.getDcpAddress());
+					plat.setSite(null);
+				}
 			}
 		}
 
