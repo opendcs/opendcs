@@ -785,13 +785,15 @@ public class ComputationApp
 			+ "(select cmp.computation_id, cmp.date_time_loaded "
 				+ "from cp_comp_property cprop, cp_computation cmp "
 				+ "where cprop.computation_id = cmp.computation_id "
-				+ "and lower(prop_name) = 'timedcompinterval'"
+				+ "and lower(prop_name) = 'timedcompinterval' "
+				+ "and cmp.enabled = 'Y' "
 				+ "and cmp.loading_application_id = " + getAppId() + ") q1"
 			+ " union "
 			+ "(select cmp.computation_id, cmp.date_time_loaded "
 				+ "from cp_computation cmp, cp_algorithm alg, cp_algo_property aprop "
 				+ "where cmp.algorithm_id = alg.algorithm_id and alg.algorithm_id = aprop.algorithm_id "
-				+ "and lower(aprop.prop_name) = 'timedcompinterval'"
+				+ "and lower(aprop.prop_name) = 'timedcompinterval' "
+				+ "and cmp.enabled = 'Y' "
 				+ "and cmp.loading_application_id = " + getAppId() + ")";
 		ResultSet rs = null;
 		HashMap<DbKey,Date> timedCompsLMT = new HashMap<DbKey,Date>();
