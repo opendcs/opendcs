@@ -57,7 +57,7 @@ public class TimeSeriesChart
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
         for (int i = 0; i < line.getSize(); i++)
         {
-            Date dt = dateFormat.parse(line.getTime(i).toString());
+            Date dt = line.getTime(i);
             newMember.add(new Second(dt), line.getValue(i));
         }
 

@@ -1,6 +1,7 @@
 package decodes.tsdb.groupedit;
 
 import decodes.gui.TimeSeriesChart;
+import decodes.gui.TimeSeriesChartFrame;
 import decodes.gui.TimeSeriesLine;
 import decodes.sql.DbKey;
 import decodes.sql.PlatformListIO;
@@ -233,26 +234,13 @@ public class TsListPanel
 	@Override
 	public void plot()
 	{
-		Calendar calendar = Calendar.getInstance();
-		java.util.Date t2 = calendar.getTime();
-		calendar.add(Calendar.DAY_OF_YEAR, -7);
-		java.util.Date t1 = calendar.getTime();
-
-		TimeSeriesChart chart = new TimeSeriesChart("","time","");
 		try
 		{
-			TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+			TimeSeriesDAI dao = theDb.makeTimeSeriesDAO();
 			final TimeSeriesIdentifier[] tsids = tsListSelectPanel.getSelectedTSIDs();
-			for (TimeSeriesIdentifier tsid : tsids)
-			{
-				CTimeSeries series = new CTimeSeries(tsid);
-				timeSeriesDAO.fillTimeSeries(series, t1,t2);
-				chart.addLine(new TimeSeriesLine(series));
-				log.trace("reading '{}'",tsid.getUniqueString());
-			}
-			JPanel p = chart.generateChart();
-			p.setVisible(true);
-
+			TimeSeriesChartFrame f = new TimeSeriesChartFrame(dao,tsids);
+			f.setVisible(true);
+			f.plot();
 		}catch (Exception e)
 		{
 			log.error("Error reading time-series data",e);

@@ -34,12 +34,13 @@ public class TimeSeriesLine
     }
     public TimeSeriesLine (CTimeSeries cTimeSeries)
     {
+        this.cTimeSeries = cTimeSeries;
         init();
         if( colorIndex >= friendlyColors.size())
         {
             colorIndex =0; // reset
         }
-        this.cTimeSeries = cTimeSeries;
+
         this.color = friendlyColors.get(colorIndex++);
 
     }
@@ -65,6 +66,8 @@ public class TimeSeriesLine
     }
     private void init()
     {
+        valueList = new ArrayList<>();
+        timeList = new ArrayList<>();
         createColors();
         for (int i = 0; i < cTimeSeries.size(); i++)
         {
