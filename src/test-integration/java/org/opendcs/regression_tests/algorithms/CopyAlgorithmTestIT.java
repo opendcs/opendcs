@@ -7,6 +7,7 @@ import java.util.GregorianCalendar;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.assertions.TimeSeries;
 import org.python.icu.util.TimeZone;
 
@@ -31,6 +32,7 @@ public class CopyAlgorithmTestIT extends AppTestBase
     TimeSeriesDb tsDb;
     
     @Test
+    @EnableIfTsDb
     void test_copy_algorithm() throws Exception
     {
         DbComputation comp = new DbComputation(DbKey.NullKey, "test");
