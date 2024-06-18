@@ -113,7 +113,7 @@ public class TsListControlsPanel extends JPanel
         */
     void openButton_actionPerformed(ActionEvent e)
     {
-                myController.openPressed();
+        myController.openPressed();
     }
 
         /**

@@ -236,9 +236,8 @@ public class TsListPanel
 	{
 		try
 		{
-			TimeSeriesDAI dao = theDb.makeTimeSeriesDAO();
 			final TimeSeriesIdentifier[] tsids = tsListSelectPanel.getSelectedTSIDs();
-			TimeSeriesChartFrame f = new TimeSeriesChartFrame(dao,tsids);
+			TimeSeriesChartFrame f = new TimeSeriesChartFrame(theDb,tsids);
 			f.setVisible(true);
 			f.plot();
 		}catch (Exception e)

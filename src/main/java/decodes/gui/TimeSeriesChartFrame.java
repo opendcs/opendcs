@@ -1,6 +1,7 @@
 package decodes.gui;
 
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import opendcs.dai.TimeSeriesDAI;
 import org.slf4j.LoggerFactory;
@@ -13,9 +14,9 @@ public class TimeSeriesChartFrame extends JFrame
     private final static org.slf4j.Logger log = LoggerFactory.getLogger(TimeSeriesChartFrame.class);
     private final TimeSeriesDAI timeSeriesDAO;
     private final TimeSeriesIdentifier[] tsids;
-    public TimeSeriesChartFrame(TimeSeriesDAI timeSeriesDAO, TimeSeriesIdentifier[] tsids )
+    public TimeSeriesChartFrame(TimeSeriesDb db, TimeSeriesIdentifier[] tsids )
     {
-        this.timeSeriesDAO = timeSeriesDAO;
+        this.timeSeriesDAO = db.makeTimeSeriesDAO();
         this.tsids = tsids;
     }
 
