@@ -57,13 +57,20 @@ can be scary we would like to encourage you to join us anyways.
 - Our runtime target is Java 8, however we will support 11 and 17 at runtime (NOTE: the installer doesn't currently work with 17)
 
 
-To build the file opendcs.jar run the following
+To build the file opendcs.jar run the following:
 
 `ant jar`
 
-If you want to build the installer run
+If you want to build the installer run:
 
 `ant opendcs`
+
+To get a simple baseline environment going:
+
+`ant run`
+
+This will start the "launcher_start" application and do an initial setup of an XML database suitable for DECODES operations
+going that you can use for manual and exploratory testing.
 
 # General Development
 
