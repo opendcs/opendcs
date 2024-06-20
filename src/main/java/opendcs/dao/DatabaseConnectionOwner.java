@@ -50,6 +50,7 @@ import opendcs.dai.CompDependsDAI;
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
+import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
@@ -63,6 +64,7 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
 import decodes.cwms.validation.dao.ScreeningDAI;
+import decodes.db.Site;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
@@ -349,5 +351,13 @@ public interface DatabaseConnectionOwner
 		throws DbIoException;
 	
 	public AlarmDAI makeAlarmDAO();
+
+	/**
+	 * Get appropriate object case from the connection owner.
+	 * @param <Type> datatype we need a cache for
+	 * @param dataType Specific data type needed
+	 * @return cache used by a given DAO
+	 */
+    public <Type extends CachableDbObject> org.opendcs.database.DbObjectCache<Type> getCache(Class<? extends CachableDbObject> dataType);
 
 }

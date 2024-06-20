@@ -17,6 +17,7 @@ import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.dao.DbObjectCache;
 import opendcs.dao.SiteDAO;
 
 public class HdbSiteDAO extends SiteDAO
@@ -624,7 +625,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 			cache.put(site);
 		int nProps = 0;
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
-			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
+			nProps = propsDao.readPropertiesIntoCache("site_property", (DbObjectCache<?>)cache);
 		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
 			+ " names, " + nProps + " properties.");
 		lastCacheFillMsec = System.currentTimeMillis();

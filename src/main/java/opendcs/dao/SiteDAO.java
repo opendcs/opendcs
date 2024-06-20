@@ -91,7 +91,7 @@ public class SiteDAO
 {
     // MJM Increased from 30 min to 3 hours for 6.4 RC08
     public static final long CACHE_MAX_AGE = 3 * 60 * 60 * 1000L;
-    protected static DbObjectCache<Site> cache = new DbObjectCache<Site>(CACHE_MAX_AGE, false);
+    protected final org.opendcs.database.DbObjectCache<Site> cache;
 
     public String siteAttributes =
         "id, latitude, longitude, nearestCity, state, "
@@ -106,6 +106,7 @@ public class SiteDAO
     public SiteDAO(DatabaseConnectionOwner tsdb)
     {
         super(tsdb, "SiteDao");
+        cache = tsdb.getCache(Site.class);
         propsDao = new PropertiesSqlDao(tsdb);
         siteNameAttributes =
             (tsdb.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7) ?
@@ -362,7 +363,7 @@ public class SiteDAO
             cache.put(site);
         int nProps = 0;
         if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
-            nProps = propsDao.readPropertiesIntoCache("site_property", cache);
+            nProps = propsDao.readPropertiesIntoCache("site_property", (opendcs.dao.DbObjectCache<?>) cache);
         debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames[0]
             + " names, " + nProps + " properties.");
         lastCacheFillMsec = System.currentTimeMillis();
@@ -373,7 +374,7 @@ public class SiteDAO
     {
         if (cache.size() == 0)
             fillCache();
-        for(DbObjectCache<Site>.CacheIterator cit = cache.iterator(); cit.hasNext(); )
+        for(Iterator<Site> cit = cache.iterator(); cit.hasNext(); )
             siteList.addSite(cit.next());
     }
 

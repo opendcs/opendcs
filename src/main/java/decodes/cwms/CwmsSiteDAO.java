@@ -83,6 +83,7 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.DecodesSettings;
 import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.dao.DbObjectCache;
 import opendcs.dao.SiteDAO;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -514,7 +515,7 @@ public class CwmsSiteDAO extends SiteDAO
 			int nProps = 0;
 			if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
 			{
-				nProps = propsDao.readPropertiesIntoCache("site_property", cache);
+				nProps = propsDao.readPropertiesIntoCache("site_property", (DbObjectCache<?>) cache);
 			}
 
 			debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames[0]

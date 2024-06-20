@@ -422,6 +422,8 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -444,6 +446,7 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dao.AlarmDAO;
 import opendcs.dao.AlgorithmDAO;
+import opendcs.dao.CachableDbObject;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.CompDependsNotifyDAO;
 import opendcs.dao.ComputationDAO;
@@ -489,6 +492,8 @@ public abstract class TimeSeriesDb
 
     /** The application ID of the connected program */
     protected DbKey appId = Constants.undefinedId;
+
+    private final Map<Class<? extends CachableDbObject>, org.opendcs.database.DbObjectCache<?>> cacheMap = new HashMap<>();
 
     /** The model run ID currently in use for writing data. */
     protected int writeModelRunId;
@@ -593,6 +598,7 @@ public abstract class TimeSeriesDb
 
         cpCompDepends_col1 = isHdb() ? "TS_ID" : "SITE_DATATYPE_ID";
         getLogDateFormat().setTimeZone(TimeZone.getTimeZone("UTC"));
+        cacheMap.put(Site.class, new opendcs.dao.DbObjectCache<Site>(SiteDAO.CACHE_MAX_AGE, false));
     }
 
     /** @return the JDBC connection in use by this object. */
@@ -2208,4 +2214,10 @@ public abstract class TimeSeriesDb
 
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public <Type extends CachableDbObject> org.opendcs.database.DbObjectCache<Type> getCache(Class<? extends CachableDbObject> dataType)
+    {
+        return (org.opendcs.database.DbObjectCache<Type>)cacheMap.get(dataType);
+    }
 }

@@ -78,6 +78,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -92,6 +94,7 @@ import opendcs.dai.CompDependsDAI;
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
+import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
@@ -106,10 +109,12 @@ import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
 import opendcs.dao.AlarmDAO;
 import opendcs.dao.AlgorithmDAO;
+import opendcs.dao.CachableDbObject;
 import opendcs.dao.ComputationDAO;
 import opendcs.dao.DacqEventDAO;
 import opendcs.dao.DataTypeDAO;
 import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.dao.DbObjectCache;
 import opendcs.dao.DeviceStatusDAO;
 import opendcs.dao.EnumSqlDao;
 import opendcs.dao.LoadingAppDao;
@@ -143,6 +148,8 @@ public class SqlDatabaseIO
     implements DatabaseConnectionOwner
 {
     private static org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
+
+    private final Map<Class<? extends CachableDbObject>, org.opendcs.database.DbObjectCache<?>> cacheMap = new HashMap<>();
     /**
      * The "location" of the SQL database, as passed into the constructor.
      * This is the full string from either the "DatabaseLocation" or the
@@ -272,6 +279,7 @@ public class SqlDatabaseIO
         // Truncate lastLMT back to half-hour boundary
         lastLMT = (System.currentTimeMillis() / 1800000L) * 1800000L;
         commitAfterSelect = false;
+        cacheMap.put(Site.class, new DbObjectCache<Site>(SiteDAO.CACHE_MAX_AGE, false));
     }
 
     /**
@@ -2551,5 +2559,12 @@ public class SqlDatabaseIO
     public void setKeyGenerator(KeyGenerator keyGenerator)
     {
         this.keyGenerator = keyGenerator;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <Type extends CachableDbObject> org.opendcs.database.DbObjectCache<Type> getCache(Class<? extends CachableDbObject> dataType)
+    {
+        return (org.opendcs.database.DbObjectCache<Type>)cacheMap.get(dataType);
     }
 }

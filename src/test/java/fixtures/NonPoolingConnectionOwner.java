@@ -23,6 +23,7 @@ import opendcs.dai.CompDependsDAI;
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.DacqEventDAI;
+import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.DeviceStatusDAI;
 import opendcs.dai.EnumDAI;
@@ -35,6 +36,8 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
+import opendcs.dao.CachableDbObject;
+import opendcs.dao.DbObjectCache;
 
 public class NonPoolingConnectionOwner implements TestConnectionOwner
 {
@@ -339,6 +342,12 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
     public CompDependsNotifyDAI makeCompDependsNotifyDAO() {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'makeCompDependsNotifyDAO'");
+    }
+
+    @Override
+    public <Type extends CachableDbObject> DbObjectCache<Type> getCache(Class<? extends CachableDbObject> dataType) {
+        // TODO Auto-generated method stub
+        return null;
     }
     
 }
