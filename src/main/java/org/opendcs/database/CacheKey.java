@@ -1,8 +1,31 @@
+/**
+ * Copyright 2024 The OpenDCS Consortium and contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.opendcs.database;
 
-import decodes.sql.DbKey;
 import java.util.Objects;
 
+import decodes.sql.DbKey;
+
+/**
+ * A composite key type that can be used by some cache implementations
+ * to allow storing by the full key,uniqueName set but searching by either.
+ * 
+ * NOTE: This does not work for HashMap as the hash function could never
+ * output the correctly value in both cases. (Well, not without some work anyways.)
+ */
 public class CacheKey<DBT> implements Comparable<CacheKey<DBT>>
 {
     final private DbKey key;
@@ -21,6 +44,9 @@ public class CacheKey<DBT> implements Comparable<CacheKey<DBT>>
         this.uniqueName = uniqueName;
     }
 
+    /**
+     * Loose equality. If only one set needs to match of the other set has a null value.
+     */
     @Override
     public boolean equals(Object rhs)
     {
@@ -42,10 +68,17 @@ public class CacheKey<DBT> implements Comparable<CacheKey<DBT>>
         }
     }
 
+    /**
+     * Get the hashCode of the complete data set.
+     * A CacheKey that contains only one of key or uniqueName
+     * will not map to the same hash.
+     * 
+     * ... Unless someone figures that out.
+     */
     @Override
     public int hashCode()
     {
-        return key.hashCode();
+        return Objects.hash(key, uniqueName);
     }
 
     @Override

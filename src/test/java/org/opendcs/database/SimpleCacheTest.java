@@ -159,6 +159,21 @@ public class SimpleCacheTest {
         public void setMaxAge(long maxAge)
         {
         }
+
+        private CacheKey<DBT> getKey(DbKey key, String uniqueName)
+        {
+            return new CacheKey<>(key, uniqueName);
+        }
+
+        private CacheKey<DBT> getKey(DbKey key)
+        {
+            return new CacheKey<>(key, null);
+        }
+
+        private CacheKey<DBT> getKey(String uniqueName)
+        {
+            return new CacheKey<>(null, uniqueName);
+        }
     }
 
 }

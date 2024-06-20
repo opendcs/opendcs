@@ -1,3 +1,18 @@
+/**
+ * Copyright 2024 The OpenDCS Consortium and contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.opendcs.database;
 
 import java.util.Iterator;
@@ -6,6 +21,12 @@ import decodes.sql.DbKey;
 import opendcs.dao.CachableDbObject;
 import opendcs.dao.DaoBase;
 
+/**
+ * Definition of a Cache Databases or DAOs can use to store objects.
+ * Provides common operations.
+ * 
+ * Cache invalidation and thread safety are determined by the implementations.
+ */
 public interface DbObjectCache<DBT extends CachableDbObject> {
 
     /**
@@ -44,22 +65,7 @@ public interface DbObjectCache<DBT extends CachableDbObject> {
      * @return the object
      */
     DBT getByUniqueName(String uniqueName);
-
-    public default CacheKey<DBT> getKey(DbKey key, String uniqueName)
-    {
-        return new CacheKey<>(key, uniqueName);
-    }
-
-    public default CacheKey<DBT> getKey(DbKey key)
-    {
-        return new CacheKey<>(key, null);
-    }
-
-    public default CacheKey<DBT> getKey(String uniqueName)
-    {
-        return new CacheKey<>(null, uniqueName);
-    }
-
+    
     /**
      * Used by caches like in ComputationDAO that must also check a last modify
      * time in the database to determine if a cached object needs to be reloaded.
@@ -70,6 +76,10 @@ public interface DbObjectCache<DBT extends CachableDbObject> {
      */
     DBT getByUniqueName(String uniqueName, DaoBase daoBase);
 
+    /**
+     * Retrieve the current cache size.
+     * @return
+     */
     int size();
 
     /**
@@ -91,6 +101,10 @@ public interface DbObjectCache<DBT extends CachableDbObject> {
      */
     void clear();
 
+    /**
+     * Set maxAge in milliseconds
+     * @param maxAge
+     */
     void setMaxAge(long maxAge);
-    
+
 }
