@@ -3,7 +3,7 @@ package org.opendcs.database;
 import decodes.sql.DbKey;
 import java.util.Objects;
 
-public class CacheKey<DBT>
+public class CacheKey<DBT> implements Comparable<CacheKey<DBT>>
 {
     final private DbKey key;
     final private String uniqueName;
@@ -45,6 +45,23 @@ public class CacheKey<DBT>
     @Override
     public int hashCode()
     {
-        return Objects.hash(key, uniqueName);
+        return key.hashCode();
+    }
+
+    @Override
+    public int compareTo(CacheKey<DBT> o)
+    {
+        if (!DbKey.isNull(key))
+        {
+            return key.compareTo(o.key);
+        }
+        else if (uniqueName != null)
+        {
+            return uniqueName.compareTo(o.uniqueName);
+        }
+        else
+        {
+            return -1;
+        }
     }
 }
