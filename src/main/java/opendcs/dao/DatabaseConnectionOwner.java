@@ -353,7 +353,7 @@ public interface DatabaseConnectionOwner
 	public AlarmDAI makeAlarmDAO();
 
 	/**
-	 * Get appropriate object case from the connection owner.
+	 * Get appropriate object cache from the connection owner.
 	 * @param <Type> datatype we need a cache for
 	 * @param dataType Specific data type needed
 	 * @return cache used by a given DAO
