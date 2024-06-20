@@ -33,7 +33,7 @@ import decodes.sql.DbKey;
  * @author mmaloney Mike Maloney, Cove Software LLC
  *
  */
-public class DbObjectCache<DBT extends CachableDbObject>
+public class DbObjectCache<DBT extends CachableDbObject> implements org.opendcs.database.DbObjectCache<DBT>
 {
 	private long maxAge = 3600000L; // # ms. If older than this, object is removed from cache.
 	private boolean nameIsCaseSensitive = false;
@@ -69,6 +69,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 * Place an object in the cache.
 	 * @param dbObj the object to cache
 	 */
+	@Override
 	public synchronized void put(DBT dbObj)
 	{
 		String un = dbObj.getUniqueName();
@@ -86,6 +87,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 *
 	 * @param key DbKey of the object to be removed.
 	 */
+	@Override
 	public synchronized void remove(DbKey key)
 	{
 		ObjWrapper ow = keyObjMap.get(key);
@@ -115,6 +117,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 * @param key the surrogate database key
 	 * @return the object
 	 */
+	@Override
 	public DBT getByKey(DbKey key)
 	{
 		ObjWrapper ow = keyObjMap.get(key);
@@ -140,6 +143,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 * @param daoBase the DAO
 	 * @return the object or null if cached object doesn't exist or is not OK.
 	 */
+	@Override
 	public DBT getByKey(DbKey key, DaoBase daoBase)
 	{
 		DBT ret = getByKey(key);
@@ -156,6 +160,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 * @param uniqueName the unique name
 	 * @return the object
 	 */
+	@Override
 	public DBT getByUniqueName(String uniqueName)
 	{
 		ObjWrapper ow = nameObjMap.get(
@@ -178,6 +183,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 * @param daoBase the DAO
 	 * @return the object or null if cached object doesn't exist or is not OK.
 	 */
+	@Override
 	public DBT getByUniqueName(String uniqueName, DaoBase daoBase)
 	{
 		DBT ret = getByUniqueName(uniqueName);
@@ -189,6 +195,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 		return ret;
 	}
 
+	@Override
 	public int size()
 	{
 		return keyObjMap.size();
@@ -201,6 +208,7 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	 * @param cmp The comparator
 	 * @return a matching object, or null if non is found.
 	 */
+	@Override
 	public DBT search(Comparable<DBT> cmp)
 	{
 		for(ObjWrapper ow : keyObjMap.values())
@@ -236,10 +244,11 @@ public class DbObjectCache<DBT extends CachableDbObject>
 			wrapperIterator.remove();
 		}
 	}
-	
+
 	/**
 	 * @return iterator into the list of cached values.
 	 */
+	@Override
 	public CacheIterator iterator()
 	{
 		return new CacheIterator(keyObjMap.values().iterator());
@@ -248,12 +257,14 @@ public class DbObjectCache<DBT extends CachableDbObject>
 	/**
 	 * Completely clear the cache.
 	 */
+	@Override
 	public void clear()
 	{
 		keyObjMap.clear();
 		nameObjMap.clear();
 	}
 
+	@Override
 	public void setMaxAge(long maxAge)
 	{
 		this.maxAge = maxAge;
