@@ -29,9 +29,14 @@
 package decodes.tsdb.xml;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -85,26 +90,18 @@ public class CompXio
 		this.theDb = theDb;
 	}
 
-	/**
-	 * Reads the specified file and returns a collection of the CompMetaData
-	 * objects found therein.
-	 * @param filename the file name
-	 */
-	public ArrayList<CompMetaData> readFile(String filename)
-		throws DbXmlException
+	public ArrayList<CompMetaData> readStream(InputStream stream) throws DbXmlException
 	{
-		Logger.instance().info("CompXio.readFile(" + filename + ")");
-		this.filename = filename;
+		this.filename = "Provided Stream";
 		Document doc;
 		try
 		{
-			doc = DomHelper.readFile(module, filename);
+			doc = DomHelper.readStream(module, stream);
 		}
 		catch(ilex.util.ErrorException ex)
 		{
 			throw new DbXmlException(ex.toString());
 		}
-
 		ArrayList<CompMetaData> metadata = new ArrayList<CompMetaData>();
 
 		Node rootel = doc.getDocumentElement();
@@ -147,6 +144,27 @@ public class CompXio
 			}
 		}
 		return metadata;
+	}
+
+	/**
+	 * Reads the specified file and returns a collection of the CompMetaData
+	 * objects found therein.
+	 * @param filename the file name
+	 * @throws DbXmlException
+	 */
+	public ArrayList<CompMetaData> readFile(String filename) throws DbXmlException
+	{
+		Logger.instance().info("CompXio.readFile(" + filename + ")");
+		this.filename = filename;
+		File file = new File(filename);
+		try (InputStream in = new FileInputStream(file))
+		{
+			return this.readStream(in);
+		}
+		catch(IOException ex)
+		{
+			throw new DbXmlException("Unable to process " + filename, ex);
+		}
 	}
 
 	private void addAlgorithm(ArrayList<CompMetaData> metadata, Node node)

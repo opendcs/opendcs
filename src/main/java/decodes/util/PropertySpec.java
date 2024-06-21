@@ -1,6 +1,13 @@
 package decodes.util;
 
+import java.awt.Color;
+import java.io.File;
 import java.io.Serializable;
+import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.nio.file.Path;
+import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * Used by the PropertiesOwner interface, a PropertySpec describes a property
@@ -111,4 +118,84 @@ public class PropertySpec
 	{
 		this.dynamic = dynamic;
 	}
+
+	/**
+	 * Helper function for processing new annotations to existing property spec until
+	 * full transition to annotation can be made
+	 * @param annotation Spec annotation
+	 * @param field Field to which the annotation was attached
+	 * @return The appropriate decodes.util.PropertySpec type for the annotation and field.
+	 */
+	public static String getSpecTypeFromAnnotation(org.opendcs.annotations.PropertySpec annotation, Field field)
+	{
+		String specType = annotation.propertySpecType();
+		
+		Class<?> fieldType = field.getType();
+		if (!specType.isEmpty())
+		{
+			return specType;
+		}
+		
+		if (fieldType == Boolean.class)
+		{
+			specType = PropertySpec.BOOLEAN;
+		}
+		else if (fieldType == Integer.class || fieldType == Long.class)
+		{
+			specType = PropertySpec.INT;
+		}
+		else if (fieldType == Float.class || fieldType == Double.class)
+		{
+			specType = PropertySpec.NUMBER;
+		}
+		else if (fieldType == Date.class)
+		{
+			specType = PropertySpec.STRING;
+		}
+		else if (fieldType == File.class)
+		{
+			specType = PropertySpec.FILENAME;
+		}
+		else if (fieldType == Path.class)
+		{
+			specType = PropertySpec.DIRECTORY;
+		}
+		else if (fieldType == Color.class)
+		{
+			specType = PropertySpec.COLOR;
+		}
+		else if (fieldType.isEnum())
+		{
+			specType = PropertySpec.JAVA_ENUM + fieldType.getName();
+		}
+		else if (fieldType == TimeZone.class)
+		{
+			specType = PropertySpec.TIMEZONE;
+		}
+		else if (fieldType == InetAddress.class || InetAddress.class.isAssignableFrom(fieldType))
+		{
+			specType = PropertySpec.HOSTNAME;
+		}
+		else
+		{
+			specType = PropertySpec.STRING;
+		}
+		return specType;
+	}
+
+	/**
+	 * Determine appropriate name for this property. As defined or the field name if not.
+	 * @param field
+	 * @param spec
+	 * @return
+	 */
+	public static String getPropertyName(Field field, org.opendcs.annotations.PropertySpec spec)
+    {
+        String name = spec.name();
+        if (name.isEmpty())
+        {
+            name = field.getName();
+        }
+        return name;
+    }
 }

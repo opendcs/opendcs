@@ -40,13 +40,30 @@ NOTE at this time jdk8 must be used as there is still a dependency on tools.jar
         <delete dir="combined-src"/>
         <antcall target="docs.clean"/>
     </target>
-    <target name="compile" depends="prepare,common.resolve,common.resolve.build" description="Compiles all source code.">
+    <target name="compile-annotations" depends="prepare,common.resolve,common.resolve.build" description="Annotations and Annotation processors">
+        <compile-java outputDir="${build.dir}/annotations"
+                      srcDir="${annotations.main.dir}"
+                      outputname="annotations"
+                    >
+            <classpaths>
+                <path refid="build.classpath"/>
+            </classpaths>
+        </compile-java>
+        <property name="annotations.jar" value="${build.dir}/lib/opendcs-annotations.jar"/>
+        <jar jarfile="${annotations.jar}"
+             update="true">
+            <fileset dir="${annotations.resources}"/>
+            <fileset dir="${annotations.classes}"/>
+        </jar>
+    </target>
+    <target name="compile" depends="prepare,common.resolve,common.resolve.build,compile-annotations" description="Compiles all source code.">
         <compile-java outputDir="${build.dir}/main"
                  srcDir="${src.main.dir}"
                  outputName="opendcs"
                  >
             <classpaths>
                 <path refid="runtime.classpath"/>
+                <pathelement location="${annotations.jar}"/>
             </classpaths>
         </compile-java>
     </target>
@@ -355,6 +372,9 @@ more information about each.
             </fileset>
         </copy>
         <copy todir="stage/dep">
+            <fileset dir="build/lib">
+                <include name="opendcs-annotations.jar"/>
+            </fileset>
             <mappedresources enablemultiplemappings="false">
                 <!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
                 <restrict>
@@ -555,14 +575,13 @@ more information about each.
 
     <!-- these intentionally depend on .real of the resolve tasks as if the user
          is asking for these file to be recreate something is likely wrong. -->
-    <target name="eclipse-ide-files" depends="prepare,common.resolve.real,common.resolve.build.real">
+    <target name="eclipse-ide-files" depends="prepare,common.resolve,common.resolve.build">
         <!--
             Derived Directly from Mark O'Connors stackoverflow answer. Thank you for
             coming up with this!
             https://stackoverflow.com/a/11617592
         -->
-        <!-- resolve -->
-        <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" classpathref="groovy.classpath"/>
+        
         <groovy>
             import groovy.xml.MarkupBuilder
             //
@@ -605,6 +624,8 @@ more information about each.
             new File(".classpath").withWriter { writer ->
                 def xml = new MarkupBuilder(writer)
                 xml.classpath() {
+                    classpathentry(kind:"src",    path:"src/annotations/java", output: "bin/annotations")
+                    classpathentry(kind:"src",    path:"src/annotations/resources", output: "bin/annotations")
                     classpathentry(kind:"src",    path:"src/main/java", output: "bin/main")
                     classpathentry(kind:"src",    path:"src/main/resources", output: "bin/main")
                     classpathentry(kind:"src",    path:"src/test/java", output: "bin/test") {

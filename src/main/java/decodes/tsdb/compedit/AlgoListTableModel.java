@@ -115,6 +115,7 @@ public class AlgoListTableModel
 			if (ai.getAlgorithmId().getValue() < minAlgoId)
 				ait.remove();
 		}
+		fireTableDataChanged();
 	}
 
 	public Object getRowObject(int idx) 

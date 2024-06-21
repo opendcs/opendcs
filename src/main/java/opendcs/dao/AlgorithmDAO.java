@@ -320,7 +320,7 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                     log.error("Algorithm DB Key is still null.");
                 }
                 String comment = algo.getComment();
-                if (comment.length() > COMMENT_LENGTH)
+                if (comment != null && comment.length() > COMMENT_LENGTH)
                 {
                     comment = comment.substring(0, COMMENT_LENGTH.intValue());
                 }

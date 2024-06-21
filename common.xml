@@ -26,6 +26,7 @@
     <property name="src.test-integration.main.dir" value="src/test-integration"/>
     <property name="src.test-gui.main.dir" value="src/test-gui"/>
     <property name="src.test-lrgs.main.dir" value="src/test-lrgs"/>
+    <property name="annotations.main.dir" value="src/annotations"/>
     <property name="build.dir" value="build"/>
     <property name="reports.dir" value="${build.dir}/reports"/>
     <property name="build.lib" value="${build.dir}/lib"/>
@@ -225,6 +226,9 @@
 
         <taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml"
                  classpathref="build.classpath"/>
+
+        <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" 
+                 classpathref="groovy.classpath"/>
 
         <mkdir dir="${coverage.dir}"/>
     </target>

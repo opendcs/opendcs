@@ -22,19 +22,19 @@ Similar to the pair template in the C++ STL.
 */
 package ilex.util;
 
-public class Pair
+public class Pair<FirstType,SecondType>
 {
 	/** first object in the pair. */
-	public Object first;
+	public FirstType first;
 	/** second object in the pair. */
-	public Object second;
+	public SecondType second;
 
     /**
 	* Constructor.
 	* @param f the first object
 	* @param s the second object
 	*/
-	public Pair( Object f, Object s )
+	public Pair(FirstType f, SecondType s)
 	{
 		first = f;
 		second = s;
@@ -56,8 +56,11 @@ public class Pair
 	*/
 	public boolean equals( Object obj )
 	{
-		Pair rhs = (Pair) obj;
-		return first.equals(rhs.first) && second.equals(rhs.second);
+		if ((obj instanceof Pair<?,?>))
+		{
+			Pair<?,?> rhs = (Pair<?,?>) obj;
+			return first.equals(rhs.first) && second.equals(rhs.second);
+		}
+		return false;
 	}
 }
-
