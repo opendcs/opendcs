@@ -35,7 +35,6 @@ import decodes.db.DataPresentation;
 import decodes.db.DataType;
 import decodes.db.Database;
 import decodes.db.PresentationGroup;
-import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
