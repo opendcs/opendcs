@@ -37,6 +37,9 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+
+import org.opendcs.database.DbObjectCache;
+
 import java.io.PrintStream;
 import java.math.BigDecimal;
 
@@ -56,7 +59,7 @@ import decodes.util.DecodesSettings;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.dao.DbObjectCache;
+import opendcs.dao.ScheduledReloadDbObjectCache;
 import usace.cwms.db.dao.ifc.vt.CwmsDbVt;
 import usace.cwms.db.dao.ifc.vt.ScreenAssignT;
 import usace.cwms.db.dao.ifc.vt.ScreenCritType;
@@ -68,14 +71,12 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
  * This DAO translates between normal Java types and the Oracle-specific types
  * used by the JPub-Generated CwmsScreeningDbIo module.
  */
-public class ScreeningDAO
-    extends DaoBase
-    implements ScreeningDAI
+public class ScreeningDAO extends DaoBase implements ScreeningDAI
 {
     public static final String module = "ScreeningDAO";
 
     // Screenings are allowed to stay in the cache for an hour
-    protected static DbObjectCache<Screening> cache = new DbObjectCache<Screening>(60 * 60 * 1000L, false);
+    private final DbObjectCache<Screening> cache;
 
     // Associates a time series with a screening
 //    private static HashMap<TimeSeriesIdentifier, Screening> ts2screening = new HashMap<TimeSeriesIdentifier, Screening>();
@@ -107,10 +108,10 @@ public class ScreeningDAO
 
     private CwmsDbVt csdbio = null;
 
-    public ScreeningDAO(DatabaseConnectionOwner tsdb)
-        throws DbIoException
+    public ScreeningDAO(DatabaseConnectionOwner tsdb) throws DbIoException
     {
         super(tsdb, module);
+        this.cache = tsdb.getCache(Screening.class);
         try(Connection conn = getConnection())
         {
             csdbio = CwmsDbServiceLookup.buildCwmsDb(CwmsDbVt.class, conn);
@@ -928,5 +929,12 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
             throw new DbIoException(module + ".renameScreening(" + screeningId + ", " + desc
                 + ": Error: " + ex,ex);
         }
+    }
+
+    @Override
+    public void reloadCache(DbObjectCache<Screening> cache) throws DbIoException
+    {
+        cache.clear();
+        this.getAllScreenings();
     }
 }

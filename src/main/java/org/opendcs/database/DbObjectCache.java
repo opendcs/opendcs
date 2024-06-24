@@ -106,5 +106,4 @@ public interface DbObjectCache<DBT extends CachableDbObject> {
      * @param maxAge
      */
     void setMaxAge(long maxAge);
-
 }

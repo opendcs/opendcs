@@ -72,6 +72,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 
+import org.opendcs.database.DbObjectCache;
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.AlgorithmDAI;
@@ -82,7 +83,7 @@ import opendcs.dai.DataTypeDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.TsGroupDAI;
-import opendcs.dao.DbObjectCache.CacheIterator;
+import opendcs.dao.ScheduledReloadDbObjectCache.CacheIterator;
 import opendcs.util.sql.WrappedConnection;
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -109,13 +110,10 @@ import opendcs.util.functional.ThrowingSupplier;
 /**
 Data Access Object for reading/writing computations.
 */
-public class ComputationDAO
-	extends DaoBase
-	implements ComputationDAI
+public class ComputationDAO extends DaoBase implements ComputationDAI
 {
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(ComputationDAO.class);
-	protected static DbObjectCache<DbComputation> compCache =
-		new DbObjectCache<DbComputation>(60 * 60 * 1000L, false);
+	private final DbObjectCache<DbComputation> compCache;
 
 	protected PropertiesDAI propsDao = null;
 	protected AlgorithmDAI algorithmDAO = null;
@@ -138,6 +136,7 @@ public class ComputationDAO
 	public ComputationDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "ComputationDao");
+		this.compCache = tsdb.getCache(DbComputation.class);
 		propsDao = db.makePropertiesDAO();
 		algorithmDAO = db.makeAlgorithmDAO();
 		dataTypeDAO = db.makeDataTypeDAO();
@@ -168,7 +167,12 @@ public class ComputationDAO
 		return new WrappedConnection(myCon, c -> {});
 	}
 
-	private void fillCache()
+	private void fillCache() throws DbIoException
+	{
+		fillCache(compCache);
+	}
+
+	public void fillCache(DbObjectCache<DbComputation> cache)
 	{
 		debug1("ComputationDAO.fillCache()");
 
@@ -178,26 +182,26 @@ public class ComputationDAO
 		{
 			// clear the cache as we're rebuilding it. Though analyzing usage, this may never
 			// be required.
-			compCache.clear();
+			cache.clear();
 			final int[] n = new int[1];
 			n[0] = 0;
 			doQuery(q, rs ->
 			{
-				compCache.put(rs2comp(rs));
+				cache.put(rs2comp(rs));
 				n[0]++;
 			});
 			log.debug("{} cp_computation recs read.", n[0]);
 
-			n[0] = propsDao.readPropertiesIntoCache("CP_COMP_PROPERTY", compCache);
+			n[0] = propsDao.readPropertiesIntoCache("CP_COMP_PROPERTY", cache);
 			log.debug("{} cp_comp_property recs read.", n[0]);
 
 			ArrayList<CompAppInfo> apps = loadingAppDAO.listComputationApps(true);
 			ArrayList<DbCompAlgorithm> algos = algorithmDAO.listAlgorithms();
 
 			// Associate comps with groups, apps & algorithms.
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
+			for(Iterator<DbComputation> it = cache.iterator(); it.hasNext(); )
 			{
-				DbComputation comp = (DbComputation)it.next();
+				DbComputation comp = it.next();
 				if (!DbKey.isNull(comp.getGroupId()))
 					comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
 
@@ -222,7 +226,7 @@ public class ComputationDAO
 			doQuery(q, rs ->
 			{
 				DbKey compId = DbKey.createDbKey(rs, 1);
-				DbComputation comp = compCache.getByKey(compId);
+				DbComputation comp = cache.getByKey(compId);
 				if (comp == null)
 				{
 					log.warn("CP_COMP_TS_PARM with comp id={} with no matching computation.", compId);
@@ -235,9 +239,9 @@ public class ComputationDAO
 			});
 			log.debug("{} cp_comp_ts_parm recs read.", n[0]);
 
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
+			for(Iterator<DbComputation> it = cache.iterator(); it.hasNext(); )
 			{
-				DbComputation comp = (DbComputation)it.next();
+				DbComputation comp = it.next();
 
 				// Make sure site IDs and datatype IDs are set in the parms
 				for(DbCompParm parm : comp.getParmList())
@@ -245,7 +249,7 @@ public class ComputationDAO
 						try { db.expandSDI(parm); }
 						catch (NoSuchObjectException e) {}
 			}
-			log.debug("fillCache finished, {} computations cached.", compCache.size());
+			log.debug("fillCache finished, {} computations cached.", cache.size());
 		}
 		catch(Exception ex)
 		{
@@ -561,12 +565,14 @@ public class ComputationDAO
 		debug1("listCompsForGUI " + filter);
 
 		if (compCache.size() == 0)
+		{
 			fillCache();
+		}
 
 		ArrayList<DbComputation> ret = new ArrayList<DbComputation>();
-		for(CacheIterator it = compCache.iterator(); it.hasNext(); )
+		for(Iterator<DbComputation> it = compCache.iterator(); it.hasNext(); )
 		{
-			DbComputation comp = (DbComputation)it.next();
+			DbComputation comp = it.next();
 			DbKey procId = filter.getProcessId();
 			if (!procId.isNull() && !procId.equals(comp.getAppId()))
 				continue;
@@ -747,9 +753,9 @@ public class ComputationDAO
 			Logger.instance().debug1("" + n + " cp_comp_property recs read.");
 
 			// Associate comps with groups, apps & algorithms.
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
+			for(Iterator<DbComputation> it = compCache.iterator(); it.hasNext(); )
 			{
-				DbComputation comp = (DbComputation)it.next();
+				DbComputation comp = it.next();
 				if (!DbKey.isNull(comp.getGroupId()))
 					comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
 
@@ -791,9 +797,9 @@ public class ComputationDAO
 			}
 			Logger.instance().debug1("" + n + " cp_comp_ts_parm recs read.");
 
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
+			for(Iterator<DbComputation> it = compCache.iterator(); it.hasNext(); )
 			{
-				DbComputation comp = (DbComputation)it.next();
+				DbComputation comp = it.next();
 
 				// Make sure site IDs and datatype IDs are set in the parms
 				for(DbCompParm parm : comp.getParmList())

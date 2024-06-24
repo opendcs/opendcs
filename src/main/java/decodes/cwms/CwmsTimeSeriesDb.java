@@ -701,7 +701,8 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.CachableDbObject;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DaoHelper;
-import opendcs.dao.DbObjectCache;
+import opendcs.dao.ScheduledReloadDbObjectCache;
+import opendcs.dao.SiteDAO;
 import opendcs.dao.LoadingAppDao;
 import opendcs.opentsdb.OpenTsdbSettings;
 import opendcs.util.sql.WrappedConnection;
@@ -723,6 +724,7 @@ import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
 import ilex.var.Variable;
 import decodes.cwms.rating.CwmsRatingDao;
+import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.ScreeningDAO;
 import decodes.db.Constants;
@@ -784,7 +786,20 @@ public class CwmsTimeSeriesDb
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
 		module = "CwmsTimeSeriesDb";
-		
+		cacheMap.put(Screening.class,
+        new ScheduledReloadDbObjectCache<Screening>(SiteDAO.CACHE_MAX_AGE, false, (cache) ->
+        {
+        try (ScreeningDAI dao = this.makeScreeningDAO())
+        {
+            dao.reloadCache(cache);
+        }
+        catch (DbIoException ex)
+        {
+            log.atError()
+            .setCause(ex)
+            .log("Unable to refresh Site Cache.");
+        }
+        }, cacheExecutor));
 	}
 
 	public static Connection getDbConnection(final CwmsConnectionInfo info) throws BadConnectException

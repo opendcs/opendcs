@@ -82,6 +82,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import ilex.util.EnvExpander;
 import org.opendcs.authentication.AuthSourceService;
@@ -114,7 +116,7 @@ import opendcs.dao.ComputationDAO;
 import opendcs.dao.DacqEventDAO;
 import opendcs.dao.DataTypeDAO;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.dao.DbObjectCache;
+import opendcs.dao.ScheduledReloadDbObjectCache;
 import opendcs.dao.DeviceStatusDAO;
 import opendcs.dao.EnumSqlDao;
 import opendcs.dao.LoadingAppDao;
@@ -136,6 +138,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.tsdb.alarm.AlarmScreening;
 import decodes.util.DecodesSettings;
 
 
@@ -149,6 +152,11 @@ public class SqlDatabaseIO
 {
     private static org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
 
+    public final ScheduledExecutorService cacheExecutor = Executors.newScheduledThreadPool(1, (r) -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        return thread;
+    });
     private final Map<Class<? extends CachableDbObject>, org.opendcs.database.DbObjectCache<?>> cacheMap = new HashMap<>();
     /**
      * The "location" of the SQL database, as passed into the constructor.
@@ -279,8 +287,62 @@ public class SqlDatabaseIO
         // Truncate lastLMT back to half-hour boundary
         lastLMT = (System.currentTimeMillis() / 1800000L) * 1800000L;
         commitAfterSelect = false;
-        cacheMap.put(Site.class, new DbObjectCache<Site>(SiteDAO.CACHE_MAX_AGE, false));
+        setupCaches();
     }
+
+    private void setupCaches()
+    {
+        cacheMap.put(Site.class, new ScheduledReloadDbObjectCache<Site>(SiteDAO.CACHE_MAX_AGE, false, (cache) ->
+        {
+            try (SiteDAI dao = this.makeSiteDAO())
+            {
+                dao.fillCache(cache);
+            }
+            catch (DbIoException ex)
+            {
+                log.atError()
+                   .setCause(ex)
+                   .log("Unable to refresh Site Cache.");
+            }
+        }, cacheExecutor));
+        cacheMap.put(TimeSeriesIdentifier.class,
+                     new ScheduledReloadDbObjectCache<TimeSeriesIdentifier>(SiteDAO.CACHE_MAX_AGE, false, (cache) ->
+                     {
+                        try (TimeSeriesDAI tsDai = this.makeTimeSeriesDAO())
+                        {
+                            tsDai.reloadTsIdCache(cache);
+                        }
+                        catch (DbIoException ex)
+                        {
+                            log.atError()
+                            .setCause(ex)
+                            .log("Unable to refresh Site Cache.");
+                        }
+                     }, cacheExecutor));
+
+        cacheMap.put(AlarmScreening.class,
+            new ScheduledReloadDbObjectCache<AlarmScreening>(AlarmDAO.CACHE_RELOAD_MSEC, false, (cache) ->
+            {
+                try (AlarmDAI dao = this.makeAlarmDAO())
+                {
+                    dao.reloadCache(cache);
+                }
+                catch (DbIoException ex)
+                {
+                    log.atError()
+                    .setCause(ex)
+                    .log("Unable to refresh Site Cache.");
+                }
+            }, cacheExecutor));
+        cacheMap.put(DbEnum.class,
+                     new ScheduledReloadDbObjectCache<DbEnum>(
+                                EnumSqlDao.ENUM_MAX_LIFE, 
+                                false,
+                                c -> {/* no op */},
+                                cacheExecutor)
+                        );
+    }
+
 
     /**
      * Constructor.  The argument, sqlDbName, is the "location" of the

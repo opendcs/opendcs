@@ -10,6 +10,8 @@ package opendcs.dai;
 
 import java.util.ArrayList;
 
+import org.opendcs.database.DbObjectCache;
+
 import decodes.db.Site;
 import decodes.db.SiteList;
 import decodes.db.SiteName;
@@ -99,4 +101,6 @@ public interface ComputationDAI
 	 * @throws DbIoException
 	 */
 	public ArrayList<ComputationInList> compEditList(CompFilter filter) throws DbIoException;
+
+	public void fillCache(DbObjectCache<DbComputation> cache) throws DbIoException;
 }

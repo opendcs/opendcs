@@ -127,7 +127,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.CachableDbObject;
 import opendcs.dao.DaoBase;
-import opendcs.dao.DbObjectCache;
+import opendcs.dao.ScheduledReloadDbObjectCache;
 import oracle.jdbc.OraclePreparedStatement;
 import ilex.util.Logger;
 import ilex.util.TextUtil;

@@ -432,7 +432,7 @@ public class CpCompDependsUpdater
                 + " computations in cache.");
 
             info("Refreshing Group Cache...");
-            tsGroupDAO.fillCache();
+            tsGroupDAO.fillCache(theDb.getCache(TsGroup.class));
 
             info("Expanding Groups in Cache...");
             groupHelper.evalAll();

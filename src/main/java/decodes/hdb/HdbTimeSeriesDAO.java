@@ -18,6 +18,9 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.TimeZone;
 
+import org.h2.engine.DbObject;
+import org.opendcs.database.DbObjectCache;
+
 import oracle.jdbc.OracleCallableStatement;
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -45,14 +48,13 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.dao.DbObjectCache;
-import opendcs.dao.DbObjectCache.CacheIterator;
+import opendcs.dao.ScheduledReloadDbObjectCache;
+import opendcs.dao.ScheduledReloadDbObjectCache.CacheIterator;
 
 public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 {
-	// TODO: Integrate the cache with the methods below.
-	protected static DbObjectCache<TimeSeriesIdentifier> cache =
-		new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
+	
+	private final DbObjectCache<TimeSeriesIdentifier> cache;
 	private SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	private static SimpleDateFormat rwdf = null;
@@ -75,12 +77,11 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		+ " and c.UNIT_ID = d.UNIT_ID"
         + " and b.SITE_ID = e.SITE_ID";
 
-	private long lastTsidCacheRead = 0L;
-
 
 	protected HdbTimeSeriesDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "HdbTimeSeriesDAO");
+		this.cache = tsdb.getCache(TimeSeriesIdentifier.class);
 		siteDAO = tsdb.makeSiteDAO();
 		dataTypeDAO = tsdb.makeDataTypeDAO();
 		if (rwdf == null)
@@ -139,7 +140,7 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 
 		// Unique name in cache may be from a different site name type, so
 		// now re-search the cache with the site datatype ID.
-		for(CacheIterator cit = cache.iterator(); cit.hasNext(); )
+		for(Iterator<TimeSeriesIdentifier> cit = cache.iterator(); cit.hasNext(); )
 		{
 			HdbTsId tsid = (HdbTsId)cit.next();
 			if (sdi.equals(tsid.getSdi())
@@ -1028,10 +1029,6 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries()
 		throws DbIoException
 	{
-		// MJM 20161025 don't reload more if already done within threshold.
-		if (System.currentTimeMillis() - lastCacheRefresh > cacheReloadMS)
-			reloadTsIdCache();
-
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
 		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
 			ret.add(tsidit.next());
@@ -1043,19 +1040,21 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		throws DbIoException
 	{
 		if (forceRefresh)
-			lastCacheRefresh = 0L;
+		{
+			this.reloadTsIdCache();
+		}
 		return listTimeSeries();
 	}
-
 
 	@Override
 	public synchronized void reloadTsIdCache() throws DbIoException
 	{
-		// Each TSID will need a site, so prefill the site cache to prevent
-		// it from doing individual reads for each site.
-		if (System.currentTimeMillis() - siteDAO.getLastCacheFillMsec() > 60000L * 10)
-			siteDAO.fillCache();
 
+	}
+
+	@Override
+	public synchronized void reloadTsIdCache(DbObjectCache<TimeSeriesIdentifier> cache) throws DbIoException
+	{
 		String q = tsidQuery + tsidJoinClause;
 
 		// MJM 2016/1/8 Added this block of code to minimize reloading the entire cache.
@@ -1420,5 +1419,4 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 			throw new DbIoException("Error in '" + q + "': " + ex);
 		}
 	}
-
 }

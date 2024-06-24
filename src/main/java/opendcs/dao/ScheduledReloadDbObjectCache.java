@@ -21,13 +21,14 @@
  */
 package opendcs.dao;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import decodes.sql.DbKey;
 
@@ -36,11 +37,12 @@ import decodes.sql.DbKey;
  * @author mmaloney Mike Maloney, Cove Software LLC
  *
  */
-public class DbObjectCache<DBT extends CachableDbObject> implements org.opendcs.database.DbObjectCache<DBT>
+public class ScheduledReloadDbObjectCache<DBT extends CachableDbObject> implements org.opendcs.database.DbObjectCache<DBT>
 {
 	private long maxAge = 3600000L; // # ms. If older than this, object is removed from cache.
 	private boolean nameIsCaseSensitive = false;
 	public boolean testMode = false;
+	private final Consumer<ScheduledReloadDbObjectCache<DBT>> reloadFunction;
 	
 	class ObjWrapper
 	{
@@ -57,15 +59,25 @@ public class DbObjectCache<DBT extends CachableDbObject> implements org.opendcs.
 	private Map<DbKey, ObjWrapper> keyObjMap = new ConcurrentHashMap<DbKey, ObjWrapper>();
 	private Map<String, ObjWrapper> nameObjMap = new ConcurrentHashMap<String, ObjWrapper>();
 	
+	
 	/**
-	 * Constructor.
-	 * @param maxAge number of milliseconds. Objects older than this are removed from cache on retrieval.
-	 * @param nameIsCaseSensitive set to false to ignore case on the unique names
+	 * Construct an cache to reloads on a schedule.
+	 * Schedule is currently hard coded to 1 hour.
+	 * @param maxAge max age of object to cause a refresh when accessed after this age.
+	 * @param nameIsCaseSensitive
+	 * @param reloadFunction callback used to reload the cache.
+	 * @param executor executor service to schedule the cache reload on.
 	 */
-	public DbObjectCache(long maxAge, boolean nameIsCaseSensitive)
+	public ScheduledReloadDbObjectCache(long maxAge, boolean nameIsCaseSensitive, Consumer<ScheduledReloadDbObjectCache<DBT>> reloadFunction, ScheduledExecutorService executor)
 	{
 		this.maxAge = maxAge;
 		this.nameIsCaseSensitive = nameIsCaseSensitive;
+		this.reloadFunction = Objects.requireNonNull(reloadFunction, "Cache Reload function must be provided.");
+		Objects.requireNonNull(executor, "An executor service must be provided to schedule the task.");
+		executor.scheduleAtFixedRate(() -> reloadFunction.accept(this),
+									 60 /* to give the database instances time to initialize and have a connection. */,
+									 TimeUnit.HOURS.toSeconds(1),
+									 TimeUnit.SECONDS);
 	}
 	
 	/**

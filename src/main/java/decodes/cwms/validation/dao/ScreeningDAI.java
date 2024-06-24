@@ -9,6 +9,8 @@ package decodes.cwms.validation.dao;
 
 import java.util.List;
 
+import org.opendcs.database.DbObjectCache;
+
 import decodes.cwms.validation.Screening;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
@@ -59,6 +61,8 @@ public interface ScreeningDAI extends AutoCloseable
 	 * Clear any cached screenings. Used by GUI when Refresh is pressed.
 	 */
 	public void clearCache();
+
+	public void reloadCache(DbObjectCache<Screening> cache) throws DbIoException;
 	
 	/**
 	 * Used by GUI to populate the list tab.

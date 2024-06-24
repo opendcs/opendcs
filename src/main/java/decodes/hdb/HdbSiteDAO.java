@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.opendcs.database.DbObjectCache;
+
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -17,7 +19,6 @@ import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.dao.DbObjectCache;
 import opendcs.dao.SiteDAO;
 
 public class HdbSiteDAO extends SiteDAO
@@ -554,13 +555,11 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 	}
 
 	@Override
-	public void fillCache()
-		throws DbIoException
+	public void fillCache(DbObjectCache<Site> cache) throws DbIoException
 	{
 		debug3("(Generic)SiteDAO.fillCache()");
 
 		HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
-//		ArrayList<Site> siteList = new ArrayList<Site>();
 		int nNames = 0;
 		String q = buildSiteQuery(Constants.undefinedId);
 		try
@@ -622,10 +621,12 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 			throw new DbIoException(msg);
 		}
 		for(Site site : siteHash.values())
+		{
 			cache.put(site);
+		}
 		int nProps = 0;
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
-			nProps = propsDao.readPropertiesIntoCache("site_property", (DbObjectCache<?>)cache);
+			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
 		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
 			+ " names, " + nProps + " properties.");
 		lastCacheFillMsec = System.currentTimeMillis();

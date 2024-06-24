@@ -37,7 +37,7 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
 import opendcs.dao.CachableDbObject;
-import opendcs.dao.DbObjectCache;
+import opendcs.dao.ScheduledReloadDbObjectCache;
 
 public class NonPoolingConnectionOwner implements TestConnectionOwner
 {
@@ -345,7 +345,7 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
     }
 
     @Override
-    public <Type extends CachableDbObject> DbObjectCache<Type> getCache(Class<? extends CachableDbObject> dataType) {
+    public <Type extends CachableDbObject> ScheduledReloadDbObjectCache<Type> getCache(Class<? extends CachableDbObject> dataType) {
         // TODO Auto-generated method stub
         return null;
     }

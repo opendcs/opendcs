@@ -292,8 +292,13 @@ public class SiteDAO
     }
 
     @Override
-    public void fillCache()
-        throws DbIoException
+    public void fillCache() throws DbIoException
+    {
+        this.fillCache(cache);
+    }
+
+    @Override
+    public void fillCache(org.opendcs.database.DbObjectCache<Site> cache) throws DbIoException
     {
         debug3("(Generic)SiteDAO.fillCache()");
 
@@ -363,7 +368,7 @@ public class SiteDAO
             cache.put(site);
         int nProps = 0;
         if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
-            nProps = propsDao.readPropertiesIntoCache("site_property", (opendcs.dao.DbObjectCache<?>) cache);
+            nProps = propsDao.readPropertiesIntoCache("site_property", cache);
         debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames[0]
             + " names, " + nProps + " properties.");
         lastCacheFillMsec = System.currentTimeMillis();

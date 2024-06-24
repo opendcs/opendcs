@@ -56,6 +56,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.opendcs.database.DbObjectCache;
+
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.BadScreeningException;
@@ -112,10 +114,9 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	private static boolean firstInstantiation = true;
 
 	// Objects in cache never expire (a million hours), but cache is reloaded periodically
-	protected static DbObjectCache<AlarmScreening> screeningCache = 
-			new DbObjectCache<AlarmScreening>(Long.MAX_VALUE, false);
+	protected final DbObjectCache<AlarmScreening> screeningCache;
 	private long lastCacheLoadMsec = 0L;
-	private static final long CACHE_RELOAD_MSEC = 1 * 60 * 60 * 1000L;
+	public static final long CACHE_RELOAD_MSEC = 1 * 60 * 60 * 1000L;
 	private boolean noTsAlarms = false;
 
 	/**
@@ -124,7 +125,7 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 	public AlarmDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "AlarmDAO");
-		
+		this.screeningCache = tsdb.getCache(AlarmScreening.class);
 		if (firstInstantiation)
 		{
 			firstInstantiation = false;
@@ -146,7 +147,6 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 				alarmCurrentColumns += ", loading_application_id";
 				alarmHistoryColumns += ", loading_application_id";
 			}
-			screeningCache.testMode = true;
 		}
 	}
 
@@ -481,8 +481,6 @@ public class AlarmDAO extends DaoBase implements AlarmDAI
 			return null;
 debug3("getScreenings(siteId=" + siteId + ", dtId=" + datatypeId + ", appId=" + appId);
 		
-		if (System.currentTimeMillis() - lastCacheLoadMsec >= CACHE_RELOAD_MSEC)
-			fillScreeningCache();
 		
 		// siteId may be null (for default screening at any site) but datatype may not be null.
 		if (DbKey.isNull(datatypeId))
@@ -511,9 +509,16 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 		}
 		return ret;
 	}
+
+
 	
-	private void fillScreeningCache()
-		throws DbIoException
+	private void fillScreeningCache() throws DbIoException
+	{
+		reloadCache(screeningCache);
+	}
+
+	@Override
+	public void reloadCache(DbObjectCache<AlarmScreening> cache) throws DbIoException
 	{
 		if (noTsAlarms)
 			return;
@@ -523,8 +528,8 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 		// Read all of the screening objects
 		String q = "select " + alarmScreeningColumns + " from alarm_screening";
 		ResultSet rs = doQuery(q);
-		LoadingAppDAI appDAO = db.makeLoadingAppDAO();
-		try
+
+		try (LoadingAppDAI appDAO = db.makeLoadingAppDAO();)
 		{
 			ArrayList<CompAppInfo> apps = appDAO.listComputationApps(false);
 
@@ -551,10 +556,6 @@ debug3("\tgetScreenings: screening siteId=" + as.getSiteId() + ", dtId=" + as.ge
 			DbIoException tt = new DbIoException("Error in query '" + q + "': " + ex);
 			tt.initCause(ex);
 			throw tt;
-		}
-		finally
-		{
-			appDAO.close();
 		}
 
 		// Read all of the limit sets and assign to screening objects
@@ -1521,7 +1522,4 @@ info("dbversion=" + db.getDecodesDatabaseVersion() + ", oldAppId=" + oldas.getAp
 			throw new DbIoException("Error in query '" + q + "'");
 		}
 	}
-
-
-
 }

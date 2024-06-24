@@ -25,6 +25,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.opendcs.database.DbObjectCache;
+
 import opendcs.dai.EnumDAI;
 
 import decodes.db.DbEnum;
@@ -38,15 +40,15 @@ import decodes.tsdb.DbIoException;
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class EnumSqlDao 
-	extends DaoBase 
-	implements EnumDAI
+public class EnumSqlDao extends DaoBase implements EnumDAI
 {
-	private static DbObjectCache<DbEnum> cache = new DbObjectCache<DbEnum>(3600000, false);
+	public static Long ENUM_MAX_LIFE = 60*60*1000L; // 1 Hour, in milliseconds
+	private final DbObjectCache<DbEnum> cache;
 	
 	public EnumSqlDao(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "EnumSqlDao");
+		this.cache = tsdb.getCache(DbEnum.class);
 	}
 	
 	private String getEnumColumns(int dbVer)
