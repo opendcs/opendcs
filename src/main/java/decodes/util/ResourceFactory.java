@@ -74,6 +74,7 @@ public class ResourceFactory
 		FunctionList.addFunction(new decodes.decoder.Nos6Min());
 		FunctionList.addFunction(new decodes.decoder.NosHourly());
 		FunctionList.addFunction(new decodes.decoder.ShefProcess());
+		FunctionList.addFunction(new decodes.decoder.MetarProcess());
 		FunctionList.addFunction(new decodes.decoder.SetMissingFunction());
 	}
 
