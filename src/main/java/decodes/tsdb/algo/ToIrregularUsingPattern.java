@@ -90,6 +90,7 @@ public class ToIrregularUsingPattern
 		inUnits = getInputUnitsAbbr("input");
 		setOutputUnitsAbbr("output", inUnits);
 
+		//Check for any uninterpolated  pattern dates in the past and interpolate with new inputs
 		Date firstInputT = baseTimes.first();
 		try {
 			TimedVariable prevInput = tsdb.getPreviousValue(inputTS, firstInputT);
@@ -116,8 +117,15 @@ public class ToIrregularUsingPattern
 //AW:BEFORE_TIMESLICES_END
 	}
 
+	/**Interpolation helper function
+	 * Date Pattern data - data time which you want to interpolate the value for.
+	 * TimedVariable prev - TimedVariable of the nearest in time previous input variable
+	 * TimedVariable next - TimedVariable of the nearest in time next input variable
+	 * Checks the type of data stored in the input and preforms appropriated interpolation between two points.
+	**/
 	void interpolate(Date patternDate, TimedVariable prev, TimedVariable next){
 		CwmsTsId tsId = (CwmsTsId) inputTS.getTimeSeriesIdentifier();
+		//check if input data in instantaneous. linear interpolation between two points.
 		if(CwmsConstants.PARAM_TYPE_INST.equalsIgnoreCase(tsId.getParamType())){
 			long diff =	patternDate.getTime() - prev.getTime().getTime();
 			try {
@@ -131,6 +139,7 @@ public class ToIrregularUsingPattern
 				warning("Interpolation resulted in invalid var: " + ex);
 			}
 		}
+		//check if input data is Average. copies the average value of the previous input variable.
 		else if(CwmsConstants.PARAM_TYPE_AVE.equalsIgnoreCase(tsId.getParamType())){
 			try {
 				setOutput(output, next.getDoubleValue(), patternDate);
@@ -140,6 +149,7 @@ public class ToIrregularUsingPattern
 				warning("Interpolation resulted in invalid var: " + ex);
 			}
 		}
+		//check if input data is Total. linear interpolation between zero at time of previous value and next value.
 		else if(CwmsConstants.PARAM_TYPE_TOTAL.equalsIgnoreCase(tsId.getParamType())){
 			long diff = patternDate.getTime() - prev.getTime().getTime();
 			try {
@@ -169,13 +179,17 @@ public class ToIrregularUsingPattern
 		throws DbCompException
 	{
 //AW:TIMESLICE
+		//if no pattern not interpolation needed
 		if(isMissing(pattern)){
 			return;
 		}
+		//if pattern and input exist at same timeslice return input value
 		if(!isMissing(input)){
 			setOutput(output, input);
 			return;
 		}
+
+		//Find previous and next input TimedVariables with respect to pattern
 		TimedVariable prevInput = inputTS.findPrev(_timeSliceBaseTime);
 		TimedVariable nextInput = inputTS.findNext(_timeSliceBaseTime);
 
@@ -190,10 +204,9 @@ public class ToIrregularUsingPattern
 				return;
 			}
 		}
-		if(nextInput == null){
+		if(nextInput == null || prevInput == null){
 			return;
 		}
-
 		interpolate(_timeSliceBaseTime, prevInput, nextInput);
 
 
