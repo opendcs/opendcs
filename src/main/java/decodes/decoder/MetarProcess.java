@@ -87,6 +87,21 @@ public class MetarProcess
 		{
 			throw new DecoderException("Cannot process METAR data without at least 10 characters ");
 		}
+		String msgString = rawmsg.toString();
+		String items[] = msgString.split(" ");
+		String icao="";
+		if( items.length > 0)
+		{
+			icao = items[0];
+		}
+
+		if( icao.length() != 4)
+		{
+			throw new DecoderException("Cannot find METAR station ID (4 characters long) '"+msgString+"'");
+		}
+
+		//MetarService service = MetarService.getInstance();
+		//Metar metar = service.retrieveFromAirport(icao);
 
 		Variable v = rawmsg.getPM(ShefPMParser.PM_MESSAGE_TYPE);
 		char formatType = v.getStringValue().charAt(0);

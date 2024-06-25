@@ -84,6 +84,7 @@
         <dependency org="org.jdbi" name="jdbi3-sqlobject" rev="3.38.2"/>
         <dependency org="org.jdbi" name="jdbi3-postgres" rev="3.38.2"/>
         <dependency org="org.flywaydb" name="flyway-core" rev="9.8.1"/>
+        <dependency org="io.github.mivek" name="metarParser" rev="2.16.0"/>
 
 
         <!-- test dependencies -->
