@@ -45,7 +45,7 @@ public class CacheKey<DBT> implements Comparable<CacheKey<DBT>>
     }
 
     /**
-     * Loose equality. If only one set needs to match of the other set has a null value.
+     * Loose equality. If only one set needs to match or the other set has a null value.
      */
     @Override
     public boolean equals(Object rhs)

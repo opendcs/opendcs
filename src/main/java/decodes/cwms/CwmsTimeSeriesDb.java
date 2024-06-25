@@ -786,7 +786,8 @@ public class CwmsTimeSeriesDb
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
 		module = "CwmsTimeSeriesDb";
-		cacheMap.put(Screening.class,
+                // add Cwms specific cache
+		cacheMap.put(Screening.class,     
         new ScheduledReloadDbObjectCache<Screening>(SiteDAO.CACHE_MAX_AGE, false, (cache) ->
         {
         try (ScreeningDAI dao = this.makeScreeningDAO())
@@ -797,7 +798,7 @@ public class CwmsTimeSeriesDb
         {
             log.atError()
             .setCause(ex)
-            .log("Unable to refresh Site Cache.");
+            .log("Unable to refresh Screening Cache.");
         }
         }, cacheExecutor));
 	}

@@ -650,7 +650,7 @@ public abstract class TimeSeriesDb
                         {
                             log.atError()
                             .setCause(ex)
-                            .log("Unable to refresh Site Cache.");
+                            .log("Unable to refresh TimeSeriesIdentifier Cache.");
                         }
                      }, cacheExecutor));
         cacheMap.put(DbComputation.class,
@@ -664,7 +664,7 @@ public abstract class TimeSeriesDb
                         {
                             log.atError()
                             .setCause(ex)
-                            .log("Unable to refresh Site Cache.");
+                            .log("Unable to refresh DbComputation Cache.");
                         }
                     }, cacheExecutor));
         cacheMap.put(AlarmScreening.class,
@@ -678,7 +678,7 @@ public abstract class TimeSeriesDb
                 {
                     log.atError()
                     .setCause(ex)
-                    .log("Unable to refresh Site Cache.");
+                    .log("Unable to refresh AlarmScreening Cache.");
                 }
             }, cacheExecutor));
         cacheMap.put(DbEnum.class,
@@ -699,7 +699,7 @@ public abstract class TimeSeriesDb
                         {
                             log.atError()
                             .setCause(ex)
-                            .log("Unable to refresh Site Cache.");
+                            .log("Unable to refresh TsGroup Cache.");
                         }
                     }, cacheExecutor));
     }

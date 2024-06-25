@@ -316,7 +316,7 @@ public class SqlDatabaseIO
                         {
                             log.atError()
                             .setCause(ex)
-                            .log("Unable to refresh Site Cache.");
+                            .log("Unable to refresh TimeSeriesIdentifier Cache.");
                         }
                      }, cacheExecutor));
 
@@ -331,7 +331,7 @@ public class SqlDatabaseIO
                 {
                     log.atError()
                     .setCause(ex)
-                    .log("Unable to refresh Site Cache.");
+                    .log("Unable to refresh AlarmScreening Cache.");
                 }
             }, cacheExecutor));
         cacheMap.put(DbEnum.class,
