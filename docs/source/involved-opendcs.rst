@@ -57,6 +57,9 @@ https://www.freelists.org/archive/opendcs-dev/
 GitHub Repository Overview
 **************************
 
+The OpenDCS organization URL is :  https://github.com/opendcs/opendcs
+
+Please use GitHub for Discussions, reporting issues, and contributions using pull-requests.
 
 opendcs
 =======
