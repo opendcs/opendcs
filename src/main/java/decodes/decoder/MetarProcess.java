@@ -15,6 +15,7 @@ import ilex.util.Logger;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
+import io.github.mivek.service.MetarService;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -100,7 +101,7 @@ public class MetarProcess
 			throw new DecoderException("Cannot find METAR station ID (4 characters long) '"+msgString+"'");
 		}
 
-		//MetarService service = MetarService.getInstance();
+		MetarService service = MetarService.getInstance();
 		//Metar metar = service.retrieveFromAirport(icao);
 
 		Variable v = rawmsg.getPM(ShefPMParser.PM_MESSAGE_TYPE);
