@@ -32,8 +32,7 @@ import decodes.util.PropertySpec;
 
 /**
  * This class is modeled on the generic WebAbstractDataSource. It is designed
- * specifically for the data mart at www.nrcs.usda.gov. This is a clearing house
- * for many kinds of data including SNOTEL and USGS data.
+ * specifically for USGS data.
  * 
  * Here is an example URL:
  * <a href="https://waterservices.usgs.gov/nwis/iv/?format=rdb,1.0&amp;sites=01646500&amp;startDT=2020-10-11T12:00-0400&amp;endDT=2020-10-12T08:00-0400&amp;parameterCd=00060,00065">USGS RDB Link</a>
@@ -51,8 +50,7 @@ import decodes.util.PropertySpec;
  * a USGS data type assigned. Any sensors that have a property "omit" set to "true" will be skipped.
  * 
  * Properties:
- * 	baseUrl - The base URL for the data mart. The default baseUrl is defined in the code below.
- *     https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customMultiTimeSeriesGroupByStationReport/
+ * 	baseUrl - The base URL for USGS data
  *  dataTypeStandard - default="usgs". This determines which sensor data types to include in the URL.
  */
 public class UsgsWebDataSource
