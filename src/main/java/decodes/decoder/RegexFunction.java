@@ -5,7 +5,6 @@ import decodes.sql.PlatformListIO;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
-import oracle.xml.common.regex.xerces.Match;
 import org.slf4j.LoggerFactory;
 
 import java.util.regex.Matcher;
@@ -15,8 +14,7 @@ public class RegexFunction
 	extends DecodesFunction
 {
 	private final static org.slf4j.Logger log = LoggerFactory.getLogger(PlatformListIO.class);
-	private int sensorNumber;
-	private String module = "regex";
+	private final String module = "regex";
 	private String argString = null;
 
 	public RegexFunction()
@@ -39,10 +37,12 @@ public class RegexFunction
 	public void execute(DataOperations dd, DecodedMessage decmsg) throws DecoderException
 	{
 		log.trace("Executing with args '" + argString + "'");
-		this.sensorNumber = getSensorNumber();
+		int sensorNumber = getSensorNumber();
 
 		Pattern pattern = Pattern.compile(this.argString);
-		Matcher matcher = pattern.matcher(dd.getRawMessage().toString());
+		String s= dd.getRawMessage().toString();
+		s = s.substring(dd.getBytePos(),s.length()-1);
+		Matcher matcher = pattern.matcher(s);
 		Variable v = getValue(matcher,sensorNumber);
 
 		if (matcher.groupCount()==1)
@@ -50,10 +50,19 @@ public class RegexFunction
 			TimedVariable tv = decmsg.addSample(sensorNumber, v, 1);
 			if (tv != null && DecodesScript.trackDecoding)
 			{
+				int start =matcher.start(1);
+				int end =matcher.end(1);
 				DecodedSample ds = new DecodedSample(this,
-						matcher.start(1), matcher.end(1),
+						start+dd.getBytePos(), end+dd.getBytePos(),
 						tv, decmsg.getTimeSeries(sensorNumber));
 				formatStatement.getDecodesScript().addDecodedSample(ds);
+				for (int i = 0; i <end ; i++)
+				{
+					if (dd.moreChars())
+					{
+						dd.forwardspace();
+					}
+				}
 			}
 		}
 		else
@@ -66,7 +75,7 @@ public class RegexFunction
 	 * Gets sensor number from the regular expression
 	 * expected to have named group that starts with 'sensor'
 	 * and ends with a number.  For example 'sensor2'
-	 * @return
+	 * @return number portion sensor[number]
 	 */
 	private int getSensorNumber() throws DecoderException
 	{ // ?<sensor2>[0-9\,\.]+)
@@ -83,8 +92,7 @@ public class RegexFunction
 			throw new DecoderException("Did not find expected closing '>' in named capture group "+ argString);
 		}
 		String number = argString.substring(idxStart+grpPrefix.length(),idxEnd);
-		int n = Integer.parseInt(number);
-		return n;
+		return  Integer.parseInt(number);
 	}
 
 
