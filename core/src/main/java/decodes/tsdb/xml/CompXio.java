@@ -29,9 +29,14 @@
 package decodes.tsdb.xml;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
@@ -39,10 +44,10 @@ import java.util.Iterator;
 
 import opendcs.dai.TsGroupDAI;
 
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Element;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -58,7 +63,6 @@ import ilex.xml.XmlObjectParser;
 import ilex.xml.XmlOutputStream;
 import decodes.sql.DbKey;
 import decodes.tsdb.*;
-import decodes.xml.XmlDbTags;
 import decodes.db.Constants;
 import decodes.db.SiteName;
 import decodes.db.DataType;
@@ -69,6 +73,7 @@ XML Input/Output for Computational Meta Data.
 public class CompXio
 	implements XmlObjectParser, TaggedStringOwner
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(CompXio.class);
 	private String module;
 	private String filename;
 	private TimeSeriesDb theDb = null;
@@ -85,26 +90,18 @@ public class CompXio
 		this.theDb = theDb;
 	}
 
-	/**
-	 * Reads the specified file and returns a collection of the CompMetaData
-	 * objects found therein.
-	 * @param filename the file name
-	 */
-	public ArrayList<CompMetaData> readFile(String filename)
-		throws DbXmlException
+	public ArrayList<CompMetaData> readStream(InputStream stream) throws DbXmlException
 	{
-		Logger.instance().info("CompXio.readFile(" + filename + ")");
-		this.filename = filename;
+		this.filename = "Provided Stream";
 		Document doc;
 		try
 		{
-			doc = DomHelper.readFile(module, filename);
+			doc = DomHelper.readStream(module, stream);
 		}
 		catch(ilex.util.ErrorException ex)
 		{
 			throw new DbXmlException(ex.toString());
 		}
-
 		ArrayList<CompMetaData> metadata = new ArrayList<CompMetaData>();
 
 		Node rootel = doc.getDocumentElement();
@@ -139,7 +136,35 @@ public class CompXio
 					addTsGroup(metadata, node);
 			}
 		}
+		if (log.isTraceEnabled())
+		{
+			for (CompMetaData cmd: metadata)
+			{
+				log.trace("Loaded {}", cmd.typeString());
+			}
+		}
 		return metadata;
+	}
+
+	/**
+	 * Reads the specified file and returns a collection of the CompMetaData
+	 * objects found therein.
+	 * @param filename the file name
+	 * @throws DbXmlException
+	 */
+	public ArrayList<CompMetaData> readFile(String filename) throws DbXmlException
+	{
+		Logger.instance().info("CompXio.readFile(" + filename + ")");
+		this.filename = filename;
+		File file = new File(filename);
+		try (InputStream in = new FileInputStream(file))
+		{
+			return this.readStream(in);
+		}
+		catch(IOException ex)
+		{
+			throw new DbXmlException("Unable to process " + filename, ex);
+		}
 	}
 
 	private void addAlgorithm(ArrayList<CompMetaData> metadata, Node node)

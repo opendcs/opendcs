@@ -69,6 +69,10 @@ org-aspectj-aspectjrt = { module = "org.aspectj:aspectjrt", version.ref="aspectj
 org-json-json = { module = "org.json:json", version.ref="json" }
 org-slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-api" }
 io-javalin = {module = "io.javalin:javalin", version.ref="javalin" }
+org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
+org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
+org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
 
 # CWMS
 cwms-db-jooq = { module ="mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db"}
@@ -98,10 +102,6 @@ fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-data
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref="testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref="testcontainers" }
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
-org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
-org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
-org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
-org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
 
 [bundles]
 junit = [ "junit-api", "junit-engine", "junit-params" ]

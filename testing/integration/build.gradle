@@ -7,13 +7,11 @@ plugins
 
 dependencies
 {
-    implementation(project(":opendcs"))
+    implementation(project(":core"))
     implementation(project(":install"))
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.junit.platform)
     testImplementation(libs.bundles.junit)
-    testImplementation(libs.bundles.jdbi)
-    testImplementation(libs.org.flywaydb.flyway.core)
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.hec.testcontainers.cwms)
@@ -27,8 +25,8 @@ test
     dependsOn ":install:stage"
     useJUnitPlatform()
     def stageDir = project(":install").stage.outDir
-    def classPath = (project(':opendcs').jar.outputs.files
-                  + project(":opendcs").configurations.runtimeClasspath).asPath
+    def classPath = (project(':core').jar.outputs.files
+                  + project(":core").configurations.runtimeClasspath).asPath
 
     systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
     def impl = project.properties.get("opendcs.test.engine")

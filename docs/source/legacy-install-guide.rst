@@ -939,43 +939,55 @@ After a successful installation, your XML database is ready to go.
 OpenDCS Database under PostgreSQL 
 -----------------------------------
 
-OPENDCS comes with scripts needed to create a PostgreSQL database
-instance with the entire schema to support DECODES and a fully
-functional time series database.
+OPENDCS comes with the required files to install the schema into a PostgresSQL database.
+Testing has been done with PostgresQL 15; however anything about 14 should work. Older version may work
+but will not be supported.
 
-The SQL schema files and shell scripts are in the “schema/opendcs-pg”
-directory under the installation.
+Previous versions of OpenDCS have made a distinction between the "DECODES" database and the Timeseries Database.
+For the Opendcs-Postgres version The schema now combines everything. You may set the `NUM_TS_TIMESERIES` and `NUM_TEXT_TIMESERIES` 
+values to 1 to reduce the amount of space used and ignore the tables.
 
-In this directory, edit a file called “defines.sh”. This file contains a
-few definitions needed by the installation script::
+The actual schema install scripts are contained within opendcs.jar; if you need to review them you can open the jar with a zip tool or 
+review them at https://github.com/opendcs/opendcs/tree/master/src/main/resources/db/OpenDCS-Postgres
 
-   DBNAME=open_tsdb
-   DBHOST=localhost
-   DBSUPER=postgres
-   LOG=createdb.log
+The installation assumes you have already installed Postgres or otherwise have appropriate access to a Postgres instance. If you do not
+have full control of your Postgres instance and must go through an IT department you require the following:
 
-Notes on these settings:
+1. A user to own the schema (this user should *NOT* be the application user.)
+2. A named database (from createdb) owned by that user (e.g. DCS)
+3. The credentials for said user.
+4. The fully-qualified hostname of the database (e.g. mydb.example.local)
 
--  Set DBNAME to the name of the database that you want to create. For
-   example if your organization’s abbreviation is AESRD, a good name
-   might be “aesrd_tsdb”.
+Create a `decodes.properties`, `user.properties`, or `<name>.profile` in the appropriate directory.
 
--  Set DBHOST to the host name where the PostgreSQL server is running.
-   If it is running on the same machine as OpenDCS, then *localhost*
-   will suffice.
+set the following properties:
 
--  Set DBSUPER to the name of the database super user that has
-   permission to create new users and databases.
+.. code-block:: properties
 
--  When you run the install script, all log information will be saved in
-   the file named by LOG. This is useful if any problems occur.
+   editDatabaseType: OPENTSDB
+   editDatabaseLocation: jdbc:postgresql://mydb.example.local/DCS
 
-Now select a user name and password for the OpenTSDB administrator
-account. This will be created during installation. It should *not* be
-the same as the database-wide superuser.
+Set other settings as appropriate to your environment and needs.
 
-Next you need to point OPENDCS to the database instance we are about to
-create. Start the launcher with the command::
+To start the initial schema installation:
+
+.. code-block:: bash
+
+   manageDatabase -I OpenDCS-Postgres -P full_path_to.properties
+   # enter the Schema owner username and password when prompted.
+   # You will be prompted for the number of numeric and text time series tables
+   # enter appropriate values for you're expected data volume.
+   # On a fresh install the schema installation will just happen.
+
+On a fresh installation you will be prompted to create an admin user.
+This user will be able to create new users and assign them appropriate roles, such as
+a user to run compproc or routesched processes (additional details in <./cp-userguide.rst> and <./routesched-guide.rst> ).
+
+To update to the latest schema run the `manageDatabase` command again. A list of updates
+will be provided and you will be prompted if you wish to continue.
+
+Instead of creating the properties file manually you can start the launcher to
+begin the configuration process:
 
    launcher_start &
 
@@ -994,15 +1006,17 @@ Location field enter the string in the format shown::
 
    jdbc:postgresql://**DBHOST**/**DBNAME**
 
-Use the DBHOST and DBNAME that you specified in the createDb.sh script
-above.
+Use the DBHOST and DBNAME for your provided database
 
 Select an administrative user name and password. This is different from
 the postgres superuser name that you specified above. Write it down and
 remember it!
 
 Hit the DB Password button. Type in the administrative user name and
-password that you selected.
+password that you selected. 
+
+Use this username and password combination when prompted by the `manageDatabase` for
+an admin user.
 
 You may want to peruse the other settable properties. You can hover the
 mouse pointer over the name for a tool-tip for each.
@@ -1010,36 +1024,28 @@ mouse pointer over the name for a tool-tip for each.
 After you are finished, hit the Save Changes button at the bottom and
 exit OpenDCS completely.
 
-You are now read to run the installation script called “createDb.sh”::
+You are now ready to run the migration tool as shown above.
 
-   cd $DCSTOOL_HOME/schema/opendcs-pg
-   ./createDb.sh
+You should now run run dbimport in the following order:
 
-The script will do the following:
+.. code-block:: bash
 
-1. Query you for the name of the administrator account that you selected
-   above. This will be a new database user with special privileges just
-   in the new database.
+   export DH=PATH_TO_THE_DECODES_INSTALLATION
+   # if you are using user.properties or decodes.properties you can leave the -P
+   # portion off and dbimport will load the appropriate default file.
 
-2. Query you for the number of numeric and string storage tables for
-   time series data. If you are unsure, just select the default by
-   hitting enter.
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/loading-app/*.xml
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/enum/*.xml
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/eu/EngineeringUnitList.xml
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/datatype/DataTypeEquivalenceList.xml
+   $DH/bin/dbimport -P path_to_your_properties -r $DH/edit-db/presentation/*.xml
 
-3. Define new database roles (described below). If this is the second
-   time you have run the script then warning messages will be displayed
-   that these roles already exist. These warnings can be safely ignored.
+   # if using computations
+   $DH/bin/compimport -P path_to_your_properties $DH/imports/comp-standard/*.xml
 
-4. Create the administrative user that you entered in step 1, and assign
-   it to the OTSDB_ADMIN role.
 
-5. Create the database instance named *DBNAME* (as you defined at the
-   top of the script).
-
-6. Install the schema (tables, indices, triggers, procedures, etc.).
-
-7. Initialize your time series data storage tables.
-
-8. Import several XML files from the edit-db subdirectory under OpenDCS.
+NOTE: we know this is a bit of a pain. Future work will simplify the processed in a similar way
+as the database schema install.
 
 Database roles created by the script:
 

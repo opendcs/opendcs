@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj covesw.azul.eventmon.EventMonitor %*%
+@"%~dp0\decj" covesw.azul.eventmon.EventMonitor %*%

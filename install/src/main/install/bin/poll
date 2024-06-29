@@ -9,7 +9,11 @@
 # Arguments are passed this way to preserve the grouping. Example. Need to
 # prevents  -S 'now - 1 day' from being passed as 5 separate args.
 #
-cmd="%INSTALL_PATH/bin/decj decodes.routing.Poll "
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+cmd="${APP_PATH}/decj decodes.routing.Poll "
 for a
 do
 	cmd=`echo $cmd \"$a\"`

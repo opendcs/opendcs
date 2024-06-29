@@ -5,7 +5,12 @@
 # an Oracle DBMS.
 #===========================================================================
 
-DH=%INSTALL_PATH
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+# Get the directory above bin for DCSTOOL_HOME
+DH=$(realpath "${APP_PATH}/..")
+
 
 echo "This script will install the OPENDCS Time Series Database Schema on an Oracle DBMS."
 echo -n "Have you edited defines.sh with your specific settings (y/n) ?"

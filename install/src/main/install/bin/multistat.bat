@@ -2,4 +2,4 @@
 rem 
 rem  Start the multi-status GUI
 rem 
-$INSTALL_PATH\bin\decj lrgs.multistat.MultiStat %*%
+"%~dp0\decj" lrgs.multistat.MultiStat %*%

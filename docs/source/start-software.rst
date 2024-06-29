@@ -2,8 +2,9 @@
 Software Set-Up
 ################################
 
+****************
 OpenDCS Overview
-================
+****************
 
 OpenDCS is a software built for the following purposes:
 
@@ -33,7 +34,7 @@ OpenDCS current and past contributors include:
 
 
 What is OpenDCS?
-----------------
+================
 
 OpenDCS is a software for retrieving and processing data from NOAA 
 GOES Satellite system.  OpenDCS is also used for retrieving data
@@ -55,25 +56,48 @@ processing from LRGS satellite data.  Automatically triggered
 calculations can be set-up if data is being stored in CWMS or HDB 
 systems.  
 
+In OpenDCS terms, this means that a user will have the tools
+to do the following (and more):
+
+* Create routing specs
+* Create algorithms and computations
+* Create and manage time series in database
+
+.. image:: ./media/start/software/im-00-swiss-army-knife.JPG
+   :alt: opendcs swiss army knife
+   :width: 800
+
+OpenDCS is designed to operate with a database.  A fast majority 
+of the documentation here assumes that a database is already set 
+up an running.  Below is a high level schematic to conveys how
+a OpenDCS is typically set-up.  The set-up and install 
+directions below focus on a Windows PC set-up.  Further documatation
+about server set-up and how to set up with OpenTSDB database can
+be found in the legacy documentation :doc:`Additional Content 
+on Installation <./legacy-install-guide>`
+
+.. image:: ./media/start/software/im-00-typical-set-up.JPG
+   :alt: typical office set-up
+   :width: 800
 
 Where can I find more information?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 Information about OpenDCS can be found on the github repository.
 
 Github: https://github.com/opendcs/opendcs 
 
 Where can I find this information in PDF format?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 Previous versions of OpenDCS (before 7.0.0), included a doc folder
-in the install directory (ie C:\\OPENDCS\doc), with PDFs, which were
-previously developer focused.  Versions 7.0.0 and after include 
-html code in the OPENDCS/docs folder.  The content of the older
-PDFs is now contained in the html files.
+in the install directory (ie C:\\OPENDCS\\doc), with PDFs, which were
+previously developer or advanced-user focused.  Versions 7.0.0 
+and after include html code in the OPENDCS\\doc folder.  The content of
+the older PDFs is now contained in the html files.
 
 What is the history of OpenDCS?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 * 1999 - Java-based LRGS developed for USGS
 * 2001 - Java-based DECODES developed for USGS and USACE (Database schem for XML and SQL)
@@ -87,20 +111,22 @@ What is the history of OpenDCS?
 * 2014 - OpenTSBD (Time Series Database) - implemented in PostgreSQL
 * 2015 and later - Improvements to all modules
 
-
+*************************
 How do I install OpenDCS?
-=========================
+*************************
 
-Installing OpenDCS requires a few steps outlined below.
+Installing OpenDCS requires a few steps outlined below.  The 
+content below is catered towards users who wish to install
+OpenDCS on personal workstations. 
 
-#. Download the software package (opendcs-installer-#.#.#.jar).
+#. Download the software package (opendcs-8.#.#.zip).
 #. Unzip the contents.
 #. Configure OpenDCS.
 
 What do I need installed before getting started with OpenDCS?
--------------------------------------------------------------
+=============================================================
 
-Prior to installing OpenDCS, java 1.8 or a later version must be
+Prior to installing OpenDCS, java 11 or a later version must be
 installed.  
 
 For windows users, check if java is installed and check if java is 
@@ -126,16 +152,18 @@ is installed.
 .. code-block:: batch
 
    > java -version
-   java version "1.8.0_391"
+   openjdk version "11.0.10"
 
-If a java version (at least 1.8.##) is returned, then java is installed.
+If a java version (at least 11.0.##) is returned, then java is installed.
 Proceed with installing OpenDCS.
  
-If nothing is returned or the version is older then 1.8, then install
-the 1.8 or up to java 17 from https://adoptium.net/temurin/releases/ .
+If nothing is returned or the version is older than 11, then install
+the 11 or up to java 17 from https://adoptium.net/temurin/releases/ .
 
-Where can I find releases of OpenDCS
-------------------------------------
+Other JREs should work but are not as tested by the project.
+
+Where can I find releases of OpenDCS?
+=====================================
 
 The latest version releases of OpenDCS can be found online: https://github.com/opendcs/opendcs.
 From the main github site click on the header "Releases" in the image below.
@@ -156,7 +184,7 @@ Once the jar file is downloaded. Install it by launching it (double clicking).
 
 
 How do I install the jar?
--------------------------
+=========================
 
 Prior to double clicking or launching the install jar, decide where you
 want to install the program.  The default location will be "C:\\OPENDCS".
@@ -164,77 +192,10 @@ If you already have a previous version installed in this location, back it
 up per your own standards. 
 
 Ensure that your desired installation path exists.  Ie if you wish to use 
-the default installation path, create an empty folder C:\OPENDCS.
+the default installation path, create an empty folder C:\\OPENDCS.
 
-Double click the opendcs-installer-#.#.#.jar to begin the installation.
-
-The first window to pop-up will be a welcome note.  Click next.
-
-.. image:: ./media/start/software/im-03-install.JPG
-   :alt: install window - welcome
-   :width: 400
-
-The next window will prompt a user to define an installation path.  If you 
-wish to use the default location (C:\OPENDCS) click "Next" (so long as
-the location exists). Or select the the location.  Then click "Next".
-You may get a warning "The directory already exists! Are you sure you
-want to install here and possibly overwrite existing files?".  Click "Yes".
-
-.. image:: ./media/start/software/im-04-install-path.JPG
-   :alt: install window - installation path
-   :width: 400
-
-Next, a window will pop up prompting the user to check which packs should
-be included in the install.  
-
-.. image:: ./media/start/software/im-05-install-packs.JPG
-   :alt: install window - pack selection
-   :width: 400
-
-The following packs should be checked for each respective agency:
-
-USACE
-
-* OpenDCSBase
-* XML Database Template
-* Docs
-* TSBD Computation Components
-* Corps Water Management Systems (CWMS) Components
-* LRGS
-
-USBR
-
-* OpenDCSBase
-* XML Database Template
-* Docs
-* TSBD Computation Components
-* Bureau of Reclamation Hydrologic Database (HDB) Components
-* LRGS
-
-Other Agency
-
-* OpenDCSBase
-* XML Database Template
-* Docs
-* TSBD Computation Components
-* Open Time Series Database Schema and Components
-* LRGS
-
-Click "Next". Then the installation will begin. Once "Finished"
-shows up in the window, then click "Next".
-
-.. image:: ./media/start/software/im-06-install-progress.JPG
-   :alt: install window - finished
-   :width: 400
-
-The next window relates to shortcut set-up and preferences.
-Select your preferences and click "Next".  The final window
-shown below will include a button "Done".  Click "Done" and 
-the installation is completed.  
-
-.. image:: ./media/start/software/im-07-install-complete.JPG
-   :alt: install window - done
-   :width: 400
+Unzip opendcs-8.#.#.zip to this folder. Inplace updates are not supported, a new folder
+with the version should always be used.
 
 Navigate to the install directory to view the contents that just
 installed.  Make note that the folder "doc" contains a folder "html"
@@ -242,21 +203,40 @@ where documentation can be accessed.  Open the index.html (ie drag the
 file into a browser).
 
 What do I need to edit/configure for my set-up?
------------------------------------------------
+===============================================
 
-Prior to launching the software, set up the **decodes.properties** file.
+OpenDCS on the first start of any program will determine if you have an existing
+DCSTOOL_USERDIR environment variable set or Create the default directory for you.
+
+If you have not set the variable OpenDCS will use it's default `$HOME/.opendcs` on unix type machines
+and `%AppData%\.opendcs` on Windows machines.
+
+If that directory already exists, it is assumed valid. If it does not exist OpenDCS will copy the
+default decodes.properties to `$DCSTOOL_USERDIR\user.properties` and also copy the default XML database to 
+`$DCSTOOL_USERDIR/edit-db`.
+
+
+This allows new users to get started more quickly. Additionally if you are setting up a fresh SQL based database, the
+contents of `$DCSTOOL_USERDIR/edit-db` should be imported in, starting with the `loading-app` directory.
+
+.. NOTE::
+   
+   We are currently in the process of improving how this required standard data is handled. We've provided this basic
+   instruction to help users get started but would preferred not to write out detail documentation since we'll be changing it soon.
+   If you have further questions please use https://github.com/opendcs/opendcs/discussions for more clarity.
 
 USACE and USBR users:
 
-* Copy the user.properties file from server to the C:\\OPENDCS directory.
-* Rename the file to decodes.properties.
+* Copy the user.properties file from server to the $DCSTOOL_USERDIR directory. 
+* Should should only have to do this once or if the contents change.
+* IF you will be connecting to multiple systems (such as a backup system) we suggest renaming to `<Meaning to you name>.profile`
 
 For more details about the decodes.properties see
 :any:`leg-inst-start-configure`
 
 
 How do I launch the software?
------------------------------
+=============================
 
 Now that the software is installed.  On windows double click:
 **launcher_start.bat** (in the C:\\OPENDCS\bin directory). 
@@ -276,16 +256,41 @@ and a Database Login should pop up prompting the user for credentials.
 
 USACE users:
 
-* USERNAME: User H7
-* PASSWORD: Oracle
-   
+* USERNAME: Oracle User
+* PASSWORD: Oracle Password
+
+
+***************************************
 OpenDCS Main Menu Components - Overview
-=======================================
+***************************************
 
 The OpenDCS main menu is divided into two parts outlined below.
 
+Profiles
+========
+
+The Profile system of OpenDCS is now always on. The default profile is `$DCSTOOL_USERDIR\user.properties` *unless* 
+you've called `launcher_start -P <some property file>` from the command line.
+
+Profiles are normal decodes.properties files that use the `.profile` extension. The File name, without extension, is used as the profile name.
+This system allows users to connect to multiple OpenDCS database instances when their work requires it.
+
+.. image:: ./media/start/software/im-12-profiles.png
+   :alt: Profile ComboBox and Management button
+   :width: 640
+
+The management button, the `...`, allows to to see existing Profiles and create new ones. After copying an existing profile, you can select it
+in the ComboBox and click setup to edit the contents of that particular profile. Applications launched will use the selected profile.
+
+When the default profile is selected, applications are launched in the same JVM as the launcher. When a non-default profile is selected 
+the launcher will create a new JVM to run the applications.
+
+.. NOTE::
+   
+   This System has existed in OpenDCS for a while, we've now decided to make it visible by default.
+
 DECODES Components
-------------------
+==================
 
 The top part of the menu consists of the DECODES Components
 
@@ -393,7 +398,7 @@ For more information about the Preferences and options, see
 :any:`leg-inst-start-configure`
 
 Time Series Database Components
--------------------------------
+===============================
 
 .. image:: ./media/start/software/im-11-timeseries-components.JPG
    :alt: main menu - time series components
@@ -450,23 +455,19 @@ All of the application write to a log. The default name is the internal name of 
 GUI application. The file on disk can be control in each application with the `-l filename.ext` command line switch
 if run from a terminal.
 
-The logging system has recently (7.0.13, which is not released) be updated to make use of newer, standard, technologies and exposes more information
-from the 3rd party libraries we use to easy development.
+The logging system has recently (7.0.13, which is not released) been updated to make use of newer, standard, technologies and exposes more information
+from the 3rd party libraries we use to ease development.
 
-You create a file named logfilter.txt in the directory $DCSTOOL_USERDIR, that will be picked up and used to filter out messages that aren't
+If something is overwhelming your logs, create a file named logfilter.txt in the directory $DCSTOOL_USERDIR, that will be picked up and used to filter out messages that aren't
 needed or wanted. For example most CWMS users will want to have a file of at least the following:
 
    org.jooq
 
 As not filtering that out can cause excessive messages in the log.
 
-.. warning::
-   
-   DCSTOOL_USERDIR is not fully utilized in windows yet. We are planning to correct that behavior with the release of 7.0.13.
-   As such users should currently only expect this mechanism to work in unix style environment
-
 .. note:: 
    This mechanism is intentionally limited. It is a goal of the project to switch the current custom logging backend
    to an available standard, such as logback or just java.util.logging which will provide the end-user with better
    options for log filtering and storage.
 
+   The mechanism only checks that a given "logger" starts with the text of the given line. No other matching is done.

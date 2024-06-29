@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.platstat.StaleDataChecker %*%
+@"%~dp0\decj" decodes.platstat.StaleDataChecker %*%

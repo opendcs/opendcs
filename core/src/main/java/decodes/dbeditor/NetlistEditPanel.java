@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Collections;
 
+import ilex.gui.Help;
 import lrgs.gui.PdtSelectDialog;
 import ilex.util.EnvExpander;
 import ilex.util.TextUtil;
@@ -302,11 +303,14 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 			TopFrame.instance().showError(dbeditLabels.getString("NetlistEditPanel.EditError"));
 			return;
 		}
-		NetworkListEntry nle = tableModel.getObjectAt(row);
+		//Get the correct row from the table model
+		int modelrow = netlistContentsTable.convertRowIndexToModel(row);
+		NetlistContentsTableModel tablemodel = (NetlistContentsTableModel)netlistContentsTable.getModel();
+		NetworkListEntry nle = tableModel.getObjectAt(modelrow);
 		NetlistEntryDialog dlg = new NetlistEntryDialog(nle);
 		launchDialog(dlg);
 		if (dlg.wasOkPressed())
-			tableModel.replace(nle, row);
+			tableModel.replace(nle, modelrow);
 	}
 
 	protected void mediumTypeSelected()
@@ -595,9 +599,10 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
 		tp.remove(this);
 	}
 
-	/** Does nothing. */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 }
 

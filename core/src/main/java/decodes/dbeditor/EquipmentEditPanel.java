@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.ResourceBundle;
 
+import ilex.gui.Help;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
@@ -396,8 +397,9 @@ public class EquipmentEditPanel extends DbEditorTab
 	}
 
 
-	/** Does nothing. */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 }

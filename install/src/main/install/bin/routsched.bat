@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.routing.RoutingScheduler %*%
+@"%~dp0\decj" decodes.routing.RoutingScheduler %*%

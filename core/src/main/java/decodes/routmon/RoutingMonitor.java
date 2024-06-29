@@ -45,6 +45,7 @@ import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
+import ilex.util.FileServerLock;
 import ilex.cmdline.*;
 import decodes.util.*;
 
@@ -168,7 +169,7 @@ Logger.instance().debug1("starting");
 	{
 		// Get the server lock, & fail if error.
 		String lockpath = EnvExpander.expand(lockFileArg.getValue());
-		mylock = new ServerLock(lockpath);
+		mylock = new FileServerLock(lockpath);
 
 		if (mylock.obtainLock() == false)
 		{

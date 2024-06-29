@@ -1,6 +1,3 @@
-/*
-* $Id$
-*/
 package lrgs.rtstat;
 
 import ilex.util.LoadResourceBundle;
@@ -11,12 +8,15 @@ import javax.swing.*;
 
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 Main class for the Real Time Status Applications.
 */
 public class RtStat
 {
+	private final static Logger log = LoggerFactory.getLogger(RtStat.class);
 	private static ResourceBundle labels = null;
 	private static ResourceBundle genericLabels = null;
 	
@@ -46,7 +46,13 @@ public class RtStat
 			{
 				public void run()
 				{
-					try { sleep(3000L); } catch (InterruptedException e){}
+					try
+					{
+						sleep(3000L);
+					} catch (InterruptedException e)
+					{
+					log.error("InterruptedException ",e);
+					}
 					SwingUtilities.invokeLater(
 						new Runnable()
 						{
@@ -113,7 +119,7 @@ public class RtStat
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			log.error("Error starting RtStat ",e);
 		}
 		RtStat rtStat = new RtStat(args);
 		rtStat.frame.setVisible(true);

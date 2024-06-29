@@ -127,6 +127,40 @@ The following workflow can be used:
 
 And repeat as required. This works for the GUI and nogui applications.
 
+Debugging OpenDCS from the build
+--------------------------------
+
+There is a `run` target that will allow you to run an OpenDCS application from the build environment.
+the "stage" directory is used as DCSTOOL_HOME and DCSTOOL_USERDIR is the same default as an install.
+
+.. WARNING::
+
+    By using the default behavior you *MAY* be connecting to a live system. Consider that while
+    manipulating any data. 
+
+    If this is a major concern you should set the DCSTOOL_USERDIR for the session ant runs in
+    to point to a directory that only contains profiles that connect to test systems.
+
+.. code-block:: bash
+    # to just run the launcher
+    ant run
+
+    # to run a specific app
+    ant run -Dopendcs.app=compedit
+
+    # to run a specific app with a profile
+    ant run -Dopendcs.app=dbedit -Popendcs.profile="full path to a profile or .properties file"
+
+    # to run with the java remote debugger enabled
+    ant run -DdebugPort=5006
+
+The logs are set to the highest debug level and printed to stdout.
+
+.. NOTE::
+
+    On linux, ctrl-c of the run task will terminate the application. This does not appear to work correctly on Windows
+    and you will likely need to close the application windows manually.
+
 MBeans
 ======
 
@@ -511,3 +545,33 @@ lrgs.sh handles first time setup, copy default config, initial admin user, and s
 
 The lrgs.lock file is currently ignored and docker just kills the process. Currently investigating better ways to 
 handle shutdown. Will likely just add a flag to remove the lock file entirely.
+
+The docker environment now uses the special sequence `lrgsStart -F -k -` to run in the foreground (-F) and use the NoOpServerLock file (-k -)  which causes
+the applications using that Lock to assume it's always valid for them.
+
+Database Scripts
+================
+
+OpenDCS is transitioning to using Flyway to manage database schema installation and upgrades.
+See https://flywaydb.org for detail on the specifics. The following assumes you have read 
+at least some of the documentation.
+
+The following guidance *MUST* be observed:
+
+- DO NOT ALTER a released versioned migration file. For example `src/main/resource/db/opendcs-pg/schema/V6.8__opendcs.sql` is final
+- For each implementation the structure should be as follows:
+  
+  - `src/main/resource/db/<implementation>/callbacks` for the before/after migration handlers
+  - `src/main/resource/db/<implementation>/schema` for the actual versioned migrations
+  - `src/main/resource/db/<implementation>/triggers` for any triggers
+  - and so on. A given implementation may also provide baseline/bootstrap data
+  - Java Migrations, if any, should followed the same structure but within the `src/main/java` folder.
+- Each new change should be add to a new migration file that includes the next version number (listed in `rcnum.txt`).
+  
+  - At the time of writing that would mean V7.0.12, the next would be V7.0.13
+
+- If we end up with a large number of migration and only looking at changes becomes confusing we can create a baseline migration
+  that gathers up all previous changes.
+
+While the actual versioned migrations *MUST* stay the same, the other organization is not final; please open a pull-request
+if you think you have a superior organization for these data.

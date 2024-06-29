@@ -689,6 +689,7 @@ import javax.management.ObjectName;
 import javax.management.openmbean.TabularData;
 
 import org.opendcs.jmx.ConnectionPoolMXBean;
+import org.slf4j.LoggerFactory;
 
 import opendcs.dai.DaiBase;
 import opendcs.dai.DataTypeDAI;
@@ -698,6 +699,7 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
+import opendcs.dao.DaoHelper;
 import opendcs.dao.LoadingAppDao;
 import opendcs.opentsdb.OpenTsdbSettings;
 import opendcs.util.sql.WrappedConnection;
@@ -740,9 +742,11 @@ data.
 public class CwmsTimeSeriesDb
 	extends TimeSeriesDb
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(CwmsTimeSeriesDb.class);
 	private CwmsConnectionPool pool = null;
 
 	private String dbOfficeId = null;
+	private DbKey dbOfficeCode = null;
 
 	private String[] currentlyUsedVersions = { "" };
 	GregorianCalendar saveTsCal = new GregorianCalendar(
@@ -916,7 +920,22 @@ public class CwmsTimeSeriesDb
 		return appId;
 	}
 
+	@Override
+	public void postConnectInit(String appName, Connection conn) throws BadConnectException
+	{
+		super.postConnectInit(appName, conn);
 
+		try (DaoHelper dao = new DaoHelper(this, "init", conn))
+		{
+			dbOfficeCode = dao.getSingleResult("select office_code from cwms_20.av_office where office_id=?",
+											   rs -> DbKey.createDbKey(rs, 1),
+											   dbOfficeId);
+		}
+		catch (SQLException ex)
+		{
+			throw new BadConnectException("Unable to lookup DbOfficeCode from Office Id " + dbOfficeId, ex);
+		}
+	}
 
 	public void setParmSDI(DbCompParm parm, DbKey siteId, String dtcode)
 		throws DbIoException, NoSuchObjectException
@@ -1497,7 +1516,7 @@ public class CwmsTimeSeriesDb
 
 	public DbKey getDbOfficeCode()
 	{
-		return conInfo.getDbOfficeCode();
+		return this.dbOfficeCode;
 	}
 
 	public BaseParam getBaseParam()
@@ -1525,9 +1544,10 @@ public class CwmsTimeSeriesDb
 		// int nIndeps = indeps.length;
 		// NOTE: indeps is already an array of doubles. I can pass
 		// it directly to the rateOne function.
-		Connection tc = getConnection();
+		
 		String action = "reading rating";
-		try (CwmsRatingDao crd = new CwmsRatingDao(this))
+		try (Connection tc = getConnection();
+			CwmsRatingDao crd = new CwmsRatingDao(this))
 		{
 			crd.setManualConnection(tc);
 			RatingSet ratingSet = crd.getRatingSet(specId);
@@ -1538,7 +1558,9 @@ public class CwmsTimeSeriesDb
 			{
 				StringBuilder sb = new StringBuilder();
 				for(double x : indeps)
+				{
 					sb.append(x + ",");
+				}
 				sb.deleteCharAt(sb.length()-1);
 				String msg = "Input values (" + sb.toString() + ") outside rating range.";
 				warning(msg);
@@ -1548,15 +1570,12 @@ public class CwmsTimeSeriesDb
 		}
 		catch (RatingException ex)
 		{
-			String msg = "Error while " + action + ", specId=" + specId + ": " + ex;
-			warning(msg);
-			ex.printStackTrace(Logger.instance().getLogOutput() != null 
-				? Logger.instance().getLogOutput() : System.err);
-			throw new RangeException(msg);
+			String msg = "Error while " + action + ", specId=" + specId;
+			throw new RangeException(msg, ex);
 		}
-		finally
+		catch (SQLException ex)
 		{
-			freeConnection(tc);
+			throw new DbCompException("Error during database operations.", ex);
 		}
 	}
 

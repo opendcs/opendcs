@@ -33,16 +33,25 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -52,8 +61,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
@@ -85,6 +96,7 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Week;
 import org.jfree.data.time.Year;
 import org.jfree.data.xy.XYDataset;
+import org.slf4j.LoggerFactory;
 
 import decodes.dbeditor.TraceDialog;
 import decodes.dbeditor.TraceLogger;
@@ -115,6 +127,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class CompRunGuiFrame extends TopFrame
 {
+	private static org.slf4j.Logger log = LoggerFactory.getLogger(CompRunGuiFrame.class);
 	static ResourceBundle labels = null;
 	private static ResourceBundle genericLabels = null;
 	public static String description;
@@ -131,6 +144,7 @@ public class CompRunGuiFrame extends TopFrame
 	private String noCompSelectedErr;
 	private String closeButtonLabel;// generic
 	private String saveCompOutput;
+	private String cancelComputationExecution;
 	public static String okButtonLabel;// generic
 	public static String cancelButtonLabel;// generic
 	public static String dateTimeColumnLabel;
@@ -138,7 +152,7 @@ public class CompRunGuiFrame extends TopFrame
 	public static String outputLabel;
 
 	private ComputationsTable mytable;
-	private Vector<CTimeSeries> myoutputs = null;
+	private Vector<CTimeSeries> myoutputs = new Vector<>();
 	private TimeSeriesDb theDb = null;
 	private DateTimeCalendar fromDTCal;
 	private DateTimeCalendar toDTCal;
@@ -155,9 +169,16 @@ public class CompRunGuiFrame extends TopFrame
 	private RunComputationsFrameTester runCompFrametester;
 	private ComputationsListDialog computationsListDialog = null;
 	private JButton traceButton = new JButton("Trace Execution");
+	private JProgressBar progressBar = new JProgressBar(0,100);
+	private SwingWorker<List<CTimeSeries>,CTimeSeries> compExecutionWorker = null;
+	private SwingWorker<Vector<DbComputation>,Void> buildTimeSeriesListWorker = null;
+	private JButton cancelExecutionButton = null;
+	private JButton runButton = null;
+	JButton saveButton = null;
 
 	private TraceDialog traceDialog = null;
-
+	private String cancelComputationExecutionLabel;
+	private ProgressState progress;
 	/**
 	 * Constructor
 	 * 
@@ -178,17 +199,13 @@ public class CompRunGuiFrame extends TopFrame
 		setAllLabels();
 		chartXLabel = "Time";
 
-		Date tempDate = new Date();
-		fromDTCal = new DateTimeCalendar(fromLabel, null, "dd MMM yyyy", timeZoneStr);
-		toDTCal = new DateTimeCalendar(toLabel, tempDate, "dd MMM yyyy", timeZoneStr);
-
-//		JPanel mycontent = new JPanel();
 		JPanel mycontent = (JPanel)this.getContentPane();
 		mycontent.setLayout(new BoxLayout(mycontent, BoxLayout.Y_AXIS));
-//		this.setContentPane(mycontent);
+
 		this.setTitle(labels.getString("RunComputationsFrame.frameTitle"));
 		this.trackChanges("runcomps");
-		// this.setSize(750,825);//800
+		traceDialog = new TraceDialog(this, false);
+		traceDialog.setTraceType("Computation Run");
 		mycontent.add(listPanel());
 		mycontent.add(timePanel());
 		mycontent.add(getChart());
@@ -227,8 +244,10 @@ public class CompRunGuiFrame extends TopFrame
 		noCompSelectedErr = labels.getString("RunComputationsFrame.noCompSelectedErr");
 		closeButtonLabel = genericLabels.getString("close");
 		saveCompOutput = labels.getString("RunComputationsFrame.saveCompOutput");
+		cancelComputationExecution = labels.getString("RunComputationsFrame.cancelComputationExecution");
 		okButtonLabel = genericLabels.getString("OK");
 		cancelButtonLabel = genericLabels.getString("cancel");
+		cancelComputationExecutionLabel = cancelButtonLabel;
 		dateTimeColumnLabel = labels.getString("TimeSeriesTable.dateTimeColumnLabel") + " (" + timeZoneStr
 			+ ")";
 		inputLabel = labels.getString("RunComputationsFrame.inputLabel");
@@ -301,8 +320,28 @@ public class CompRunGuiFrame extends TopFrame
 	{
 		JPanel time = new JPanel();
 		time.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED), selectTimeRun));
-		time.setLayout(new BorderLayout());
+		GridBagLayout gbl_time = new GridBagLayout();
+		gbl_time.columnWidths = new int[]{353, 150, 345, 0};
+		gbl_time.rowHeights = new int[]{76, 0};
+		gbl_time.columnWeights = new double[]{0.0, 1.0, 0.0, Double.MIN_VALUE};
+		gbl_time.rowWeights = new double[]{0.0, Double.MIN_VALUE};
+		time.setLayout(gbl_time);
 
+		JPanel runhalf = new JPanel();
+		runhalf.setLayout(new GridBagLayout());
+		runButton = new JButton(runCompsButton);
+		runButton.addActionListener(e -> runButtonPressed());
+
+		saveButton = new JButton(saveOutputButton);
+		saveButton.setEnabled(false);
+		saveButton.addActionListener(e -> saveButtonPressed());
+
+		traceButton.setEnabled(true);
+		traceButton.addActionListener(e -> traceButtonPressed());
+
+		Date tempDate = new Date();
+		fromDTCal = new DateTimeCalendar(fromLabel, null, "dd MMM yyyy", timeZoneStr);
+		toDTCal = new DateTimeCalendar(toLabel, tempDate, "dd MMM yyyy", timeZoneStr);
 		JPanel timehalf = new JPanel();
 		timehalf.setLayout(new GridBagLayout());
 		timehalf.add(fromDTCal, new GridBagConstraints(0, 0, 1, 1, 0.5, 0, GridBagConstraints.CENTER,
@@ -311,42 +350,53 @@ public class CompRunGuiFrame extends TopFrame
 			GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(4, 10, 4, 10), 0, 0));
 		timehalf.add(toDTCal, new GridBagConstraints(0, 1, 1, 1, 0.5, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 4, 10), 0, 0));
-		time.add(timehalf, BorderLayout.WEST);
-
-		JPanel runhalf = new JPanel();
-		runhalf.setLayout(new GridBagLayout());
-		JButton runButton = new JButton(runCompsButton);
-		runButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				runButtonPressed();
-			}
-		});
-		JButton saveButton = new JButton(saveOutputButton);
-		saveButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				saveButtonPressed();
-			}
-		});
-		traceButton.setEnabled(false);
-		traceButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				traceButtonPressed();
-			}
-		});
+		GridBagConstraints gbc_timehalf = new GridBagConstraints();
+		gbc_timehalf.anchor = GridBagConstraints.NORTHWEST;
+		gbc_timehalf.insets = new Insets(0, 0, 0, 5);
+		gbc_timehalf.gridx = 0;
+		gbc_timehalf.gridy = 0;
+		time.add(timehalf, gbc_timehalf);
+		GridBagConstraints gbc_progressBar = new GridBagConstraints();
+		gbc_progressBar.fill = GridBagConstraints.HORIZONTAL;
+		gbc_progressBar.insets = new Insets(0, 10, 0, 10);
+		gbc_progressBar.gridx = 1;
+		gbc_progressBar.gridy = 0;
+		time.add(progressBar, gbc_progressBar);
 
 		runhalf.add(runButton, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,
-			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 10), 0, 0));
+			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 5, 10), 0, 0));
 		runhalf.add(saveButton, new GridBagConstraints(1, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,
-			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 10), 0, 0));
+			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 5, 10), 0, 0));
 		runhalf.add(traceButton, new GridBagConstraints(0, 1, 1, 1, 0, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 10), 0, 0));
-		time.add(runhalf, BorderLayout.EAST);
+		GridBagConstraints gbc_runhalf = new GridBagConstraints();
+		gbc_runhalf.anchor = GridBagConstraints.EAST;
+		gbc_runhalf.fill = GridBagConstraints.VERTICAL;
+		gbc_runhalf.gridx = 2;
+		gbc_runhalf.gridy = 0;
+		time.add(runhalf, gbc_runhalf);
+		
+		cancelExecutionButton = new JButton(cancelComputationExecutionLabel);
+		cancelExecutionButton.setEnabled(false);
+		GridBagConstraints gbc_cancelExecutionButton = new GridBagConstraints();
+		gbc_cancelExecutionButton.insets = new Insets(4, 10, 5, 10);
+		gbc_cancelExecutionButton.fill = GridBagConstraints.HORIZONTAL;
+		gbc_cancelExecutionButton.gridx = 1;
+		gbc_cancelExecutionButton.gridy = 1;
+		runhalf.add(cancelExecutionButton, gbc_cancelExecutionButton);
+		cancelExecutionButton.addActionListener(e ->
+		{
+			if (this.compExecutionWorker != null && !this.compExecutionWorker.isDone())
+			{				
+				this.compExecutionWorker.cancel(true);
+				this.cancelExecutionButton.setEnabled(false);
+			}
+			else if (this.buildTimeSeriesListWorker != null && !this.buildTimeSeriesListWorker.isDone())
+			{
+				this.buildTimeSeriesListWorker.cancel(true);
+				this.cancelExecutionButton.setEnabled(false);
+			}
+		});
 		return time;
 	}
 
@@ -699,13 +749,24 @@ public class CompRunGuiFrame extends TopFrame
 
 	private void runButtonPressed()
 	{
+		// Create a trace logger and put in the pipeline with tee logger.
+		Logger originalLogger = Logger.instance();
+		final TraceLogger traceLogger = new TraceLogger(originalLogger.getProcName());
+		final TeeLogger teeLogger = new TeeLogger(originalLogger.getProcName(), originalLogger, traceLogger);
+		traceLogger.setMinLogPriority(Logger.E_DEBUG3);
+		Logger.setLogger(teeLogger);
+
+		runButton.setEnabled(false);
+		traceDialog.clear();
+		traceLogger.setDialog(traceDialog);
 		AlarmManager.deleteInstance();
 		
 		if (fromDTCal.getDate() == null || toDTCal.getDate() == null)
+		{
 			return;
-		Vector<CTimeSeries> inputs = new Vector<CTimeSeries>();
-		Vector<CTimeSeries> outputs = new Vector<CTimeSeries>();
-		Vector<DbComputation> compVector = new Vector<DbComputation>();
+		}
+		final Vector<CTimeSeries> inputs = new Vector<CTimeSeries>();
+		final Vector<DbComputation> compVector = new Vector<DbComputation>();
 
 		if (!standAloneMode)
 		{ // Get computation Obj from ComputationsEditPanel
@@ -723,6 +784,69 @@ public class CompRunGuiFrame extends TopFrame
 			return;
 		}
 
+		ifSelectionValid(compVector, (comps,compGroup) ->
+			{
+			progressBar.setStringPainted(true);
+			progressBar.setValue(0);
+			buildTimeSeriesListWorker = new SwingWorker<Vector<DbComputation>,Void>()
+			{
+
+				@Override
+				protected Vector<DbComputation> doInBackground() throws Exception
+				{
+					if (!buildComputationList(compVector, compGroup, (progress) -> setProgress(progress), () -> isCancelled()))
+					{
+						return null;
+					}
+					else
+					{
+						return compVector;
+					}
+				}
+
+				@Override
+				public void done()
+				{
+					try
+					{
+						if (this.isCancelled())
+						{
+							runButton.setEnabled(true);
+							return;
+						}
+						setProgress(100);
+						Vector<DbComputation> theComps = this.get();
+						if (theComps != null)
+						{
+							runSelectedComps(theComps, originalLogger, traceLogger, inputs);
+						}
+						else
+						{
+							runButton.setEnabled(true);
+						}
+					}
+					catch (InterruptedException | ExecutionException ex)
+					{
+						runButton.setEnabled(true);
+						log.atError()
+						.setCause(ex)
+						.log("Unable to execute computations.");
+						showError(ex.getLocalizedMessage());
+					}
+				}
+			};
+			buildTimeSeriesListWorker.addPropertyChangeListener(event -> updateProgress(event));
+			buildTimeSeriesListWorker.execute();
+		});
+	}
+
+	/**
+	 * Determines if the user selection is valid, if so pass on to next step, otherwise just return.
+	 * @param compVector
+	 * @param actionIfValid contains the code to run if the selection is valid.
+	 */
+	private void ifSelectionValid(Collection<DbComputation> compVector, BiConsumer<Collection<DbComputation>,TsGroup> actionIfValid)
+	{
 		String groupCompName = null;
 		TsGroup compGroup = null;
 		for (DbComputation comp : compVector)
@@ -745,20 +869,44 @@ public class CompRunGuiFrame extends TopFrame
 						+ compGroup.getGroupName() + "', computation '" + comp.getName() + "' uses group '"
 						+ comp.getGroupName()
 						+ "'. -- Please de-select one of these computations to proceed.");
-					return;
+					compGroup = new TsGroup();
+					compGroup.clear();
+					break;
 				}
 				else
+				{
 					Logger.instance().debug3(
 						"comp " + comp.getName() + " also uses group id=" + comp.getGroupId());
+				}
 			}
 		}
-		if (groupCompName == null)
-			Logger.instance().debug3("None of the selected computations uses a group.");
+		if (compGroup == null || (compGroup.getGroupName() != null))
+		{
+			actionIfValid.accept(compVector, compGroup);
+		}
+		else
+		{
+			log.trace("Requested computations use a different group. Unable to process.");
+		}
+	}
+
+	/**
+	 * Generates a list of fully concrete (algorithm + all inputs/outputs fully expands)
+	 * @param compVector vector instance that will hold the generated computations.
+	 * @param compGroup The Timeseries Group getting used for this computation. Maybe null to indicate a group comp
+	 *                  isn't being run and inputs and outputs are already defined.
+	 * @param setProgress Function that accepts the current progress of timeseries mutation
+	 * @return true if the expansion of the compVector was successful.
+	 */
+	private boolean buildComputationList(Vector<DbComputation> compVector, TsGroup compGroup,
+										 Consumer<Integer> setProgress, Supplier<Boolean> checkCancelled)
+	{
 		ArrayList<TimeSeriesIdentifier> groupTsIds = new ArrayList<TimeSeriesIdentifier>();
 		if (compGroup != null)
 		{
 			try
 			{
+				cancelExecutionButton.setEnabled(true);
 				DbComputation comp = compVector.get(0);
 				DbCompParm firstInput = null;
 				for (Iterator<DbCompParm> pit = comp.getParms(); pit.hasNext();)
@@ -773,29 +921,36 @@ public class CompRunGuiFrame extends TopFrame
 				if (firstInput == null)
 				{
 					showError("The computation has no inputs!");
-					return;
+					return false;
 				}
 
 				// Read a fresh copy of the group from the DB
-				TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
-				try { compGroup = groupDAO.getTsGroupById(compGroup.getGroupId()); }
-				finally { groupDAO.close(); }
 				
+				try (TsGroupDAI groupDAO = theDb.makeTsGroupDAO())
+				{
+					compGroup = groupDAO.getTsGroupById(compGroup.getGroupId());
+				}
+
 				// Expand the group and then filter it by the 1st input parm.
 				ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(compGroup);
-				
-
+				progress = new ProgressState(tsids.size());
 				// Collect the transformed tsids in a hash set to remove any
 				// duplicates
 				// that may result by transformation.
 				TreeSet<TimeSeriesIdentifier> transformedTsids = new TreeSet<TimeSeriesIdentifier>();
 				for (Iterator<TimeSeriesIdentifier> tsidit = tsids.iterator(); tsidit.hasNext();)
 				{
+					if (checkCancelled.get() == true)
+					{
+						return false;
+					}
 					TimeSeriesIdentifier tsid = tsidit.next();
 
 					// Transform the tsid by the parm. If the result is the same
 					// as the original, that means that the parm 'matches'.
 					TimeSeriesIdentifier transformed;
+					progress.incDone();
+					setProgress.accept(progress.getPercentDone());
 					try
 					{
 						transformed = theDb.transformTsidByCompParm(tsid, firstInput, false, false, "");
@@ -832,11 +987,15 @@ public class CompRunGuiFrame extends TopFrame
 				launchDialog(dlg);
 				TimeSeriesIdentifier[] tsidarray = dlg.getSelectedDataDescriptors();
 				for (TimeSeriesIdentifier tsid : tsidarray)
+				{
 					groupTsIds.add(tsid);
+				}
 
 				Logger.instance().debug3("Will execute with the following time-series: ");
 				for (TimeSeriesIdentifier tsid : groupTsIds)
+				{
 					Logger.instance().debug3("   " + tsid.getUniqueString());
+				}
 
 				ArrayList<DbComputation> concreteGroupComps = new ArrayList<DbComputation>();
 				StringBuilder errorMsgs = new StringBuilder();
@@ -844,7 +1003,9 @@ public class CompRunGuiFrame extends TopFrame
 				{
 					comp = compit.next();
 					if (!comp.hasGroupInput())
+					{
 						continue;
+					}
 
 					// This is a group computation. Use resolver to make
 					// a concrete copy, and then add it to concreteGroupComps.
@@ -870,222 +1031,281 @@ public class CompRunGuiFrame extends TopFrame
 			catch (DbIoException ex)
 			{
 				showError("Cannot expand group '" + compGroup.getGroupName() + "': " + ex);
-				return;
+				return false;
 			}
 		}
+		return true;
+	}
 
-		// Create a trace logger and put in the pipeline with tee logger.
-		Logger origLogger = Logger.instance();
-		TraceLogger traceLogger = new TraceLogger(origLogger.getProcName());
-		TeeLogger teeLogger = new TeeLogger(origLogger.getProcName(), origLogger, traceLogger);
-		traceLogger.setMinLogPriority(Logger.E_DEBUG3);
-		Logger.setLogger(teeLogger);
-
-		// Create the one-time trace dialog if not already done.
-		if (traceDialog == null)
-		{
-			traceDialog = new TraceDialog(this, true);
-			traceDialog.setTraceType("Computation Run");
-		}
-		traceDialog.clear();
-		traceLogger.setDialog(traceDialog);
-
+	/**
+	 * Actually run the selected computation with the given inputs.
+	 * @param compVector list of computations that are fully defined. E.g. it is explicit *what* timeseries to use for input and output.
+	 * @param originalLogger
+	 * @param traceLogger
+	 * @param inputs valid vector that is used to add input timeseries for computations that are actually run.
+	 */
+	private void runSelectedComps(Collection<DbComputation> compVector, Logger originalLogger, TraceLogger traceLogger, Vector<CTimeSeries> inputs)
+	{
+		final Vector<CTimeSeries> both = new Vector<CTimeSeries>();
 		// Flush the text area inside trace dialog
 		// Create the trace logger here and put in pipe with tee logger.
 		// Put trace dialog reference in trace logger.
-
-		needToSave = true;
-		for (DbComputation comp : compVector)
-		{
-			DataCollection runme = new DataCollection();
-			// ArrayList<Integer> outputIDs = new ArrayList<Integer>();
-			ArrayList<DbCompParm> outputParms = new ArrayList<DbCompParm>();
-
-			boolean lowerBoundClosed = true;
-			boolean upperBoundClosed = false;
-			lowerBoundClosed = TextUtil.str2boolean(comp.getProperty("aggLowerBoundClosed"));
-			upperBoundClosed = TextUtil.str2boolean(comp.getProperty("aggUpperBoundClosed"));
-
-			// Get all inputs and expand them
-			for (Iterator<DbCompParm> parmIt = comp.getParms(); parmIt.hasNext();)
+		compExecutionWorker = new SwingWorker<List<CTimeSeries>,CTimeSeries>() {
+			@Override
+			public List<CTimeSeries> doInBackground()
 			{
-				DbCompParm parm = parmIt.next();
-
-				// check for null on parm.getAlgoParmType
-				if (parm.isInput() && parm.getSiteDataTypeId() != null && !parm.getSiteDataTypeId().isNull())
+				runButton.setEnabled(false);
+				Vector<CTimeSeries> outputs = new Vector<CTimeSeries>();
+				progress = new ProgressState(compVector.size());
+				for (DbComputation comp : compVector)
 				{
+					if(this.isCancelled())
+					{
+						return outputs;
+					}
+					DataCollection runme = new DataCollection();
+					// ArrayList<Integer> outputIDs = new ArrayList<Integer>();
+					ArrayList<DbCompParm> outputParms = new ArrayList<DbCompParm>();
 
-					CTimeSeries ts = new CTimeSeries(parm);
-					ts.setModelRunId(comp.getModelRunId());
+					boolean lowerBoundClosed = true;
+					boolean upperBoundClosed = false;
+					lowerBoundClosed = TextUtil.str2boolean(comp.getProperty("aggLowerBoundClosed"));
+					upperBoundClosed = TextUtil.str2boolean(comp.getProperty("aggUpperBoundClosed"));
+
+					// Get all inputs and expand them
+					for (Iterator<DbCompParm> parmIt = comp.getParms(); parmIt.hasNext();)
+					{
+						DbCompParm parm = parmIt.next();
+
+						// check for null on parm.getAlgoParmType
+						if (parm.isInput() && parm.getSiteDataTypeId() != null && !parm.getSiteDataTypeId().isNull())
+						{
+
+							CTimeSeries ts = new CTimeSeries(parm);
+							ts.setModelRunId(comp.getModelRunId());
+							TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+							try
+							{
+								timeSeriesDAO.fillTimeSeries(ts, fromDTCal.getDate(), toDTCal.getDate(),
+									lowerBoundClosed, upperBoundClosed, false);
+							}
+							catch (Exception ex)
+							{
+								String msg = module + " Exception filling input timeseries in "
+									+ "runButtonPressed() " + ex;
+								if (!isCancelled())
+								{
+									showError(msg);
+								}
+								Logger.instance().warning(msg);
+								StringWriter sw = new StringWriter();
+								PrintWriter pw = new PrintWriter(sw);
+								ex.printStackTrace(pw);
+								Logger.instance().warning(sw.toString());
+								continue;
+							}
+							finally
+							{
+								timeSeriesDAO.close();
+							}
+							for (int pos = 0; pos < ts.size(); pos++)
+								VarFlags.setWasAdded(ts.sampleAt(pos));
+
+							try
+							{
+								runme.addTimeSeries(ts);
+								inputs.add(ts);
+							}
+							catch (DuplicateTimeSeriesException e)
+							{
+								// MJM some comps, like monthly delta may
+								// Have the same TS as two separate inputs.
+							}
+						}
+						else if (parm.isOutput())
+						{
+							// Record all the outputs to be sorted later
+							outputParms.add(parm);
+						}
+					}
+					try (AlgorithmDAI algoDAO = theDb.makeAlgorithmDAO())
+					{
+						Logger.instance().info(
+							"Running computation " + comp.getName() + " modelRunId=" + comp.getModelRunId()
+								+ ", with parms: ");
+						for (Iterator<DbCompParm> dcpit = comp.getParms(); dcpit.hasNext();)
+						{
+							DbCompParm dcp = dcpit.next();
+							CTimeSeries cts = runme.getTimeSeries(dcp.getSiteDataTypeId(), dcp.getInterval(),
+								dcp.getTableSelector(), comp.getModelRunId());
+							TimeSeriesIdentifier tsid = cts != null ? cts.getTimeSeriesIdentifier() : null;
+
+							Logger.instance().info(
+								"   "
+									+ dcp.getRoleName()
+									+ ":sdi="
+									+ dcp.getSiteDataTypeId()
+									+ ",intv="
+									+ dcp.getInterval()
+									+ ",tsel="
+									+ dcp.getTableSelector()
+									+ ",modId="
+									+ dcp.getModelId()
+									+ (cts == null ? " no existing TimeSeries" : " Existing TS with " + cts.size()
+										+ " values in it ")
+									+ (tsid == null ? "(no tsid)" : "and ts_id key=" + tsid.getKey() + " "
+										+ tsid.getUniqueString()));
+						}
+						// run inputs through computation
+						comp.setAlgorithm(algoDAO.getAlgorithmById(comp.getAlgorithmId()));
+						comp.prepareForExec(theDb);
+						comp.apply(runme, theDb);
+					}
+					catch (DbCompException e)
+					{
+						if (!isCancelled())
+						{
+							showError(module + " DbCompException in " + "runButtonPressed() " + e.getMessage());
+						}
+						continue;
+					}
+					catch (DbIoException e)
+					{
+						if (!compExecutionWorker.isCancelled())
+						{
+							showError(module + " DbIOException in " + "runButtonPressed() " + e.getMessage());
+						}
+						continue;
+					}
+					catch (NoSuchObjectException e)
+					{
+						if (!compExecutionWorker.isCancelled())
+						{
+							showError(module + " Cannot read Algorithm in " + "runButtonPressed() " + e.getMessage());
+						}
+						continue;
+					}
+					progress.incDone();
+					setProgress(progress.getPercentDone());
+					// Get all outputs & add outputs to total lists;
+					for (DbCompParm parm : outputParms)
+					{
+						boolean found = false;
+						for (CTimeSeries cts : runme.getAllTimeSeries())
+							if (cts.getSDI() == parm.getSiteDataTypeId()
+								&& TextUtil.strEqual(cts.getInterval(), parm.getInterval())
+								&& TextUtil.strEqual(cts.getTableSelector(), parm.getTableSelector()))
+							{
+								publish(cts);
+								outputs.add(cts);
+								Logger.instance().info(
+									"After running, Found output sdi=" + cts.getSDI() + ", size=" + cts.size()
+										+ ", units=" + cts.getUnitsAbbr());
+								found = true;
+								break;
+							}
+						if (!found)
+							Logger.instance().info("No time series found for output role " + parm.getRoleName());
+					}
+				}
+				return outputs;
+			}
+
+			@Override
+			protected void process(List<CTimeSeries> chunks)
+			{
+				for (CTimeSeries cts : inputs)
+				{
+					if (!both.contains(cts))
+					{
+						both.add(cts);
+					}
+				}
+
+				for (CTimeSeries cts : chunks)
+				{
+					if (both.contains(cts))
+						continue;
+
+					myoutputs.add(cts);
+
 					TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 					try
 					{
-						timeSeriesDAO.fillTimeSeries(ts, fromDTCal.getDate(), toDTCal.getDate(),
-							lowerBoundClosed, upperBoundClosed, false);
+						// We need to get meta data to display the axes.
+						// But if units are already defined for an output, don't change
+						// them.
+						String oldUnits = cts.getUnitsAbbr();
+						timeSeriesDAO.fillTimeSeriesMetadata(cts);
+						if (oldUnits != null && !oldUnits.equalsIgnoreCase("unknown"))
+							cts.setUnitsAbbr(oldUnits);
+						Logger.instance().info(
+							"After fill - Output TS: " + cts.getDisplayName() + ", nsamps=" + cts.size() + ", units="
+								+ cts.getUnitsAbbr());
 					}
-					catch (Exception ex)
+					catch (DbIoException e)
 					{
-						String msg = module + " Exception filling input timeseries in "
-							+ "runButtonPressed() " + ex;
-						showError(msg);
-						System.err.println(msg);
-						ex.printStackTrace(System.err);
+						Logger.instance().warning(
+							module + " DbIoException in " + "runButtonPressed() filling outputs " + e.getMessage());
+						continue;
+					}
+					catch (BadTimeSeriesException e)
+					{
+						Logger.instance().warning(
+							module + " BadTimeSeriesException in " + "runButtonPressed() filling outputs "
+								+ e.getMessage());
 						continue;
 					}
 					finally
 					{
 						timeSeriesDAO.close();
 					}
-					for (int pos = 0; pos < ts.size(); pos++)
-						VarFlags.setWasAdded(ts.sampleAt(pos));
 
-					try
-					{
-						runme.addTimeSeries(ts);
-						inputs.add(ts);
-					}
-					catch (DuplicateTimeSeriesException e)
-					{
-						// MJM some comps, like monthly delta may
-						// Have the same TS as two separate inputs.
-					}
-				}
-				else if (parm.isOutput())
-				{
-					// Record all the outputs to be sorted later
-					outputParms.add(parm);
+					both.add(cts);
+					plotDataOnChart(both, inputs.size());
+					timeSeriesTable.setInOut(inputs, myoutputs);
 				}
 			}
-			try (AlgorithmDAI algoDAO = theDb.makeAlgorithmDAO())
-			{
-				Logger.instance().info(
-					"Running computation " + comp.getName() + " modelRunId=" + comp.getModelRunId()
-						+ ", with parms: ");
-				for (Iterator<DbCompParm> dcpit = comp.getParms(); dcpit.hasNext();)
-				{
-					DbCompParm dcp = dcpit.next();
-					CTimeSeries cts = runme.getTimeSeries(dcp.getSiteDataTypeId(), dcp.getInterval(),
-						dcp.getTableSelector(), comp.getModelRunId());
-					TimeSeriesIdentifier tsid = cts != null ? cts.getTimeSeriesIdentifier() : null;
 
-					Logger.instance().info(
-						"   "
-							+ dcp.getRoleName()
-							+ ":sdi="
-							+ dcp.getSiteDataTypeId()
-							+ ",intv="
-							+ dcp.getInterval()
-							+ ",tsel="
-							+ dcp.getTableSelector()
-							+ ",modId="
-							+ dcp.getModelId()
-							+ (cts == null ? " no existing TimeSeries" : " Existing TS with " + cts.size()
-								+ " values in it ")
-							+ (tsid == null ? "(no tsid)" : "and ts_id key=" + tsid.getKey() + " "
-								+ tsid.getUniqueString()));
-				}
-				// run inputs through computation
-				comp.setAlgorithm(algoDAO.getAlgorithmById(comp.getAlgorithmId()));
-				comp.prepareForExec(theDb);
-				comp.apply(runme, theDb);
-			}
-			catch (DbCompException e)
+			@Override
+			protected void done()
 			{
-				// e.printStackTrace();
-				showError(module + " DbCompException in " + "runButtonPressed() " + e.getMessage());
-				continue;
+				runButton.setEnabled(true);
+				setProgress(100);
+				// Stop trace logger and remove from pipeline
+				traceLogger.setDialog(null);
+				Logger.setLogger(originalLogger);
+				cancelExecutionButton.setEnabled(false);
+				saveButton.setEnabled(true);
+				plotDataOnChart(both, inputs.size());
+				timeSeriesTable.setInOut(inputs, myoutputs);
 			}
-			catch (DbIoException e)
-			{
-				showError(module + " DbIOException in " + "runButtonPressed() " + e.getMessage());
-				continue;
-			}
-			catch (NoSuchObjectException e)
-			{
-				showError(module + " Cannot read Algorithm in " + "runButtonPressed() " + e.getMessage());
-				continue;
-			}
+		};
+		compExecutionWorker.addPropertyChangeListener(event -> updateProgress(event));
+		progressBar.setStringPainted(true);
+		progressBar.setString("Running");
+		progressBar.setValue(0);
+		saveButton.setEnabled(false);
+		cancelExecutionButton.setEnabled(true);
+		compExecutionWorker.execute();
+		needToSave = true;
+	}
 
-			// Get all outputs & add outputs to total lists;
-			for (DbCompParm parm : outputParms)
-			{
-				boolean found = false;
-				for (CTimeSeries cts : runme.getAllTimeSeries())
-					if (cts.getSDI() == parm.getSiteDataTypeId()
-						&& TextUtil.strEqual(cts.getInterval(), parm.getInterval())
-						&& TextUtil.strEqual(cts.getTableSelector(), parm.getTableSelector()))
-					{
-						outputs.add(cts);
-						Logger.instance().info(
-							"After running, Found output sdi=" + cts.getSDI() + ", size=" + cts.size()
-								+ ", units=" + cts.getUnitsAbbr());
-						found = true;
-						break;
-					}
-				if (!found)
-					Logger.instance().info("No time series found for output role " + parm.getRoleName());
-			}
-		}
-
-		Vector<CTimeSeries> both = new Vector<CTimeSeries>();
-		for (CTimeSeries cts : inputs)
+	private void updateProgress(PropertyChangeEvent event)
+	{
+		if ("progress".equals(event.getPropertyName()))
 		{
-			if (!both.contains(cts))
+			int value = (Integer)event.getNewValue();
+			progressBar.setValue(value);
+			if (value == 100)
 			{
-				both.add(cts);
+				progressBar.setString("done");
+			}
+			else if (progress != null)
+			{
+				progressBar.setString(String.format("%d of %d", progress.getDone(), progress.getTotal()));
 			}
 		}
-
-		for (CTimeSeries cts : outputs)
-		{
-			if (both.contains(cts))
-				continue;
-
-			TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-			try
-			{
-				// We need to get meta data to display the axes.
-				// But if units are already defined for an output, don't change
-				// them.
-				String oldUnits = cts.getUnitsAbbr();
-				timeSeriesDAO.fillTimeSeriesMetadata(cts);
-				if (oldUnits != null && !oldUnits.equalsIgnoreCase("unknown"))
-					cts.setUnitsAbbr(oldUnits);
-				Logger.instance().info(
-					"After fill - Output TS: " + cts.getDisplayName() + ", nsamps=" + cts.size() + ", units="
-						+ cts.getUnitsAbbr());
-			}
-			catch (DbIoException e)
-			{
-				Logger.instance().warning(
-					module + " DbIoException in " + "runButtonPressed() filling outputs " + e.getMessage());
-				continue;
-			}
-			catch (BadTimeSeriesException e)
-			{
-				Logger.instance().warning(
-					module + " BadTimeSeriesException in " + "runButtonPressed() filling outputs "
-						+ e.getMessage());
-				continue;
-			}
-			finally
-			{
-				timeSeriesDAO.close();
-			}
-
-			both.add(cts);
-		}
-
-		// Stop trace logger and remove frome pipeline
-		traceLogger.setDialog(null);
-		Logger.setLogger(origLogger);
-		traceLogger = null;
-		teeLogger = null;
-		traceButton.setEnabled(true);
-
-		myoutputs = outputs;
-		plotDataOnChart(both, inputs.size());
-		timeSeriesTable.setInOut(inputs, outputs);
 	}
 
 	private JScrollPane getTable()
@@ -1115,22 +1335,47 @@ public class CompRunGuiFrame extends TopFrame
 			}
 		});
 		closePanel.add(closeButton);
+
 		return closePanel;
 	}
 
 	private boolean doClose()
-	{ // depending on the mode that this GUI was started, we'll call
-		// System exit or not
+	{
+		if (compExecutionWorker != null && !compExecutionWorker.isDone())
+		{
+			int r = JOptionPane.showConfirmDialog(this, cancelComputationExecution);
+			if (r == JOptionPane.CANCEL_OPTION || r == JOptionPane.NO_OPTION)
+			{
+				return false;
+			}
+			else
+			{
+				compExecutionWorker.cancel(true);
+				needToSave = false;
+			}
+		}
 		if ((myoutputs != null) && (myoutputs.size() != 0) && needToSave)
 		{
 			int r = JOptionPane.showConfirmDialog(this, saveCompOutput);
-			if (r == JOptionPane.CANCEL_OPTION)
-				return false;
-			else if (r == JOptionPane.YES_OPTION)
-				saveCompOutput();
-			else
-				needToSave = false;
+			switch(r)
+			{
+				case JOptionPane.CANCEL_OPTION:
+				{
+					return false;
+				}
+				case JOptionPane.YES_OPTION:
+				{
+					saveCompOutput();
+					break;
+				}
+				default:
+				{
+					needToSave = false;
+				}
+			}
 		}
+		// depending on the mode that this GUI was started, we'll call
+		// System exit or not
 		if (!standAloneMode)
 		{
 			compEditParent.setRunCompGUIUp(false);
@@ -1140,7 +1385,13 @@ public class CompRunGuiFrame extends TopFrame
 		{
 			dispose();
 			if (exitOnClose)
+			{
+				/**
+				 * TODO: This shouldn't be necassary and Java will exit when the last non-daemon
+				 *  thread exits and we should rely on that behavior instead of forcing a System.exit
+				 */ 
 				System.exit(0);
+			}
 		}
 		return true;
 	}
@@ -1256,6 +1507,38 @@ public class CompRunGuiFrame extends TopFrame
 	{
 		this.runCompFrametester = runCompFrametester;
 
+	}
+
+	private static class ProgressState
+	{
+		private int total;
+		private int done;
+
+		public ProgressState(int total)
+		{
+			this.total = total;
+			this.done = 0;
+		}
+
+		public void incDone()
+		{
+			done++;
+		}
+
+		public int getTotal()
+		{
+			return total;
+		}
+
+		public int getDone()
+		{
+			return done;
+		}
+
+		public int getPercentDone()
+		{
+			return (100*done)/total;
+		}
 	}
 }
 

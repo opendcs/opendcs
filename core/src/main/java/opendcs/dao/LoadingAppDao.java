@@ -505,7 +505,7 @@ public class LoadingAppDao
             " where upper(loading_application_name) = upper(?)";
         try
         {
-            DbKey appId = getSingleResult(q, rs-> DbKey.createDbKey(rs, 1),name);
+            DbKey appId = getFirstResult(q, rs-> DbKey.createDbKey(rs, 1),name);
             if (appId == null)
             {
                 throw new NoSuchObjectException("No app named '" + name + "'");

@@ -158,8 +158,11 @@ to a variety of programs shown at the right.
 
 The core of the LRGS software was written by ILEX Engineering, Inc.,
 under contract to the federal government. As such it is freely
-available. Cove Software, LLC now maintains the software and provides
-support to the user community.
+available. The software is now hosted at https://github.com/opendcs/opendcs 
+and maintained by the current OpenDCS maintainers and anyone else who 
+wishes to contribute.  If paid support is required or desired see
+https://github.com/opendcs/opendcs/wiki/Getting-Paid-Support for known 
+providers.
 
 Figure 2‑2: The Role of the LRGS.
 
@@ -415,6 +418,10 @@ rotated.
 -N *numOldLogs* Sets the number of old log files to keep. Default=5. Old
 logs are given a numeric extension 1 (most recent) … *N*\ (oldest).
 
+-k specify a specific lock file name. If '-' is used, a NoOp Lock will be used
+where the process just assumes it has a valid lock. SIGTERM (on unix kill -15) will be required
+to stop the process. The primary use is in Container systems, or OS Service Management.
+
 LRGS Configuration
 ==================
 
@@ -472,7 +479,7 @@ beginning of the line.
 | Property     | Value Type   | Default      | Description  | Can    |
 | Name         |              |              |              |        |
 |              |              |              |              | Modify |
-+--------------+--------------+--------------+--------------+--------+
++==============+==============+==============+==============+========+
 | acce\        | true/false   | false        | Normally, an | Yes    |
 | ptDomsatARMs |              |              | LRGS does    |        |
 |              |              |              | its own      |        |
@@ -2186,9 +2193,10 @@ These values can also be set on the "Misc" tab of of the RtStat configuration di
 The following paths are provided:
 
 +-------+--------------------------------------------------------------+
-| path  | purpose                                                      |
-+-------+--------------------------------------------------------------+
+| Path  | Purpose                                                      |
++=======+==============================================================+
 |/health|Returns "200 OK" if the Lrgs thinks it's in a usable state.   |
++-------+--------------------------------------------------------------+
 |/status|Returns the default Lrgs Status page, same as lrgsstatus.html.|
 +-------+--------------------------------------------------------------+
 

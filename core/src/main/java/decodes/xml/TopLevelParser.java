@@ -249,7 +249,19 @@ public class TopLevelParser implements XmlObjectParser
 	 * @param topLevelObject the object to write in the stream
 	 * @throws IOException on IO error
 	 */
-	public static void write( OutputStream os, Object topLevelObject ) 
+	public static void write(OutputStream os, Object topLevelObject) throws IOException
+	{
+		write(os,topLevelObject,false);
+	}
+
+	/**
+	 * Writes the passed object to the passed stream.
+	 * @param os The stream to write to.
+	 * @param topLevelObject the object to write in the stream
+	 * @param insecure when true username and passwords are included in output
+	 * @throws IOException on IO error
+	 */
+	public static void write( OutputStream os, Object topLevelObject,boolean insecure )
 		throws IOException
 	{
 		XmlObjectWriter xow = null;
@@ -283,6 +295,10 @@ public class TopLevelParser implements XmlObjectParser
 		else if (topLevelObject instanceof Database)
 		{
 			DatabaseParser dp = new DatabaseParser((Database)topLevelObject);
+			if( insecure)
+			{
+				dp.setInsecure();
+			}
 			xow = dp;
 		}
 		else if (topLevelObject instanceof Site)

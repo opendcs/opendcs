@@ -1,8 +1,9 @@
 package decodes.tsdb.xml;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.ServerLock;
+import ilex.util.Logger;
+import ilex.util.FileServerLock;
 import ilex.util.TextUtil;
 import ilex.xml.XmlOutputStream;
 
@@ -26,6 +27,8 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbCompLock;
 import decodes.xml.XmlDatabaseIO;
 import opendcs.dai.LoadingAppDAI;
+import opendcs.dao.DaoBase;
+import opendcs.util.functional.DaoConsumer;
 
 /**
  * This class writes Loading App records into the DECODES XML database.
@@ -55,29 +58,36 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	public ArrayList<CompAppInfo> listComputationApps(boolean usedOnly)
 		throws DbIoException
 	{
-//System.out.println("listComputationApps() loadingAppDir is '" + loadingAppDir.getPath() + "'");
 		ArrayList<CompAppInfo> ret = new ArrayList<CompAppInfo>();
 		File [] files = loadingAppDir.listFiles();
-		for(File f : files)
+		if (files != null)
 		{
-			if (!f.getName().toLowerCase().endsWith(".xml"))
-				continue;
-			try
+			for(File f : files)
 			{
-				ArrayList<CompMetaData> objs = compXio.readFile(f.getPath());
-				for(CompMetaData obj : objs)
-					if (obj instanceof CompAppInfo)
-						ret.add((CompAppInfo)obj);
-			}
-			catch (DbXmlException ex)
-			{
-				String msg = module + ": " + "Error parsing loading app file '"
-					+ f.getPath() + "': " + ex + " -- skipped.";
-				Logger.instance().warning(msg);
-				throw new DbIoException(msg);
+				if (!f.getName().toLowerCase().endsWith(".xml"))
+				{
+					continue;
+				}
+				try
+				{
+					ArrayList<CompMetaData> objs = compXio.readFile(f.getPath());
+					for(CompMetaData obj : objs)
+					{
+						if (obj instanceof CompAppInfo)
+						{
+							ret.add((CompAppInfo)obj);
+						}
+					}
+				}
+				catch (DbXmlException ex)
+				{
+					String msg = module + ": " + "Error parsing loading app file '"
+						+ f.getPath() + "': " + ex + " -- skipped.";
+					Logger.instance().warning(msg);
+					throw new DbIoException(msg, ex);
+				}
 			}
 		}
-//System.out.println("Returning " + ret.size() + " apps.");
 		return ret;
 	}
 
@@ -240,7 +250,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 				if (appName.equals(fn))
 				{
 //System.out.println("This lock is for app '" + appName + "'");
-					ServerLock serverLock = new ServerLock(lf.getPath());
+					ServerLock serverLock = new FileServerLock(lf.getPath());
 					// Don't care about result, the isLocked method reads the lock info.
 					serverLock.isLocked(true);
 					TsdbCompLock tcl = new TsdbCompLock(DbKey.NullKey, serverLock.getFilePID(),
@@ -259,7 +269,7 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 		throws LockBusyException, DbIoException
 	{
 		String lockpath = makeFilePath(appInfo.getAppName());
-		serverLock = new ServerLock(lockpath);
+		serverLock = new FileServerLock(lockpath);
 		serverLock.setPID(pid);
 		if (!serverLock.obtainLock())
 			throw new LockBusyException("Lock file '" + lockpath + "' is already busy.");
@@ -338,4 +348,15 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 		// Only implemented for sql
 	}
 
+	@Override
+	public void inTransactionOf(DaoBase other) throws IllegalStateException
+	{
+		throw new UnsupportedOperationException("XML Database does not support transactions.");
+	}
+
+	@Override
+	public void inTransaction(DaoConsumer consumer) throws Exception
+	{
+		throw new UnsupportedOperationException("XML Database does not support transactions.");
+	}
 }

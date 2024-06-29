@@ -6,4 +6,8 @@
 #	markproduction false
 #		Sets all isProduction flags in the database to false
 #
-%INSTALL_PATH/bin/decj decodes.db.MarkProduction $*
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.db.MarkProduction $*

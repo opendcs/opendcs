@@ -1,0 +1,10 @@
+plugins
+{
+    id 'opendcs.java-conventions'
+    id 'java-library'
+}
+
+dependencies
+{
+    /* This should have no external runtime/api dependencies. */
+}

@@ -2,6 +2,8 @@ package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.text.DefaultCaret;
+
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
@@ -18,6 +20,7 @@ public class TraceDialog extends JDialog
 	private BorderLayout borderLayout1 = new BorderLayout();
 	private JPanel jPanel1 = new JPanel();
 	private JButton closeButton = new JButton();
+	private JToggleButton autoScroll = new JToggleButton("autoScroll",true);
 	private JPanel jPanel2 = new JPanel();
 	private FlowLayout flowLayout1 = new FlowLayout();
 	private JLabel jLabel1 = new JLabel();
@@ -85,6 +88,7 @@ public class TraceDialog extends JDialog
 				closeButton_actionPerformed(e);
 			}
 		});
+		autoScroll.setSelected(true);
 		jPanel2.setLayout(flowLayout1);
 		jLabel1.setText(
 			dbeditLabels.getString("TraceDialog.logMsgs"));
@@ -93,6 +97,7 @@ public class TraceDialog extends JDialog
 		getContentPane().add(panel1);
 		panel1.add(jPanel1, BorderLayout.SOUTH);
 		jPanel1.add(closeButton, null);
+		jPanel1.add(autoScroll, null);
 		panel1.add(jPanel2, BorderLayout.NORTH);
 		jPanel2.add(jLabel1, null);
 		panel1.add(eventScrollPane, BorderLayout.CENTER);
@@ -115,7 +120,14 @@ public class TraceDialog extends JDialog
 	{
 		if (numMessages < maxMessages)
 		{
-			eventArea.append(text);
+			SwingUtilities.invokeLater(() ->
+			{
+				eventArea.append(text);
+				if (autoScroll.isSelected())
+				{
+					eventArea.setCaretPosition(eventArea.getDocument().getLength());
+				}
+			});
 			numMessages++;
 		}
 

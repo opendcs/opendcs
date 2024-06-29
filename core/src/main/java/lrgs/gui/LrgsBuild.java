@@ -19,8 +19,8 @@ package is built.
 */
 public class LrgsBuild
 {
-	public static final String buildDate = "@DATE@";
-	public static final String rcNum = "@RCNUM@";
-	public static final String version = "@VERSION@";
+	public static final String buildDate = "7.0.13";
+	public static final String rcNum = "13";
+	public static final String version = "7.0";
 }
 

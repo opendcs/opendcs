@@ -65,6 +65,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.slf4j.LoggerFactory;
+
 import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTsId;
 import decodes.db.Constants;
@@ -98,14 +100,11 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
-import opendcs.opentsdb.Interval;
-import opendcs.opentsdb.OffsetErrorAction;
 import decodes.tsdb.TimeSeriesDb;
 
-public class OpenTimeSeriesDAO
-	extends DaoBase
-	implements TimeSeriesDAI
+public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTimeSeriesDAO.class);
 	// Open TSDB Uses CWMS 6-part Time Series Identifiers
 	protected static DbObjectCache<TimeSeriesIdentifier> cache = 
 		new DbObjectCache<TimeSeriesIdentifier>(2 * 60 * 60 * 1000L, false); // 2 hr cache
@@ -146,8 +145,7 @@ public class OpenTimeSeriesDAO
 	}
 
 	@Override
-	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
-		throws DbIoException, NoSuchObjectException
+	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString) throws DbIoException, NoSuchObjectException
 	{
 		int paren = uniqueString.lastIndexOf('(');
 		String displayName = null;
@@ -157,14 +155,18 @@ public class OpenTimeSeriesDAO
 			uniqueString = uniqueString.substring(0,  paren);
 			int endParen = displayName.indexOf(')');
 			if (endParen > 0)
+			{
 				displayName = displayName.substring(0,  endParen);
+			}
 		}
 		
 		CwmsTsId tsid = (CwmsTsId)cache.getByUniqueName(uniqueString);
 		if (tsid != null)
 		{
 			if (displayName != null)
+			{
 				tsid.setDisplayName(displayName);
+			}
 			return tsid;
 		}
 			
@@ -172,37 +174,60 @@ public class OpenTimeSeriesDAO
 		tsid.setUniqueString(uniqueString);
 		DbKey siteId = siteDAO.lookupSiteID(tsid.getSiteName());
 		if (siteId.isNull())
+		{
 			throw new NoSuchObjectException("No such site '" + tsid.getSiteName() + "'");
+		}
 		DbKey dataTypeId = tsid.getDataTypeId();
 		if (siteId.isNull())
+		{
 			throw new NoSuchObjectException("No such data type for '" + uniqueString + "'");
+		}
 
 		Interval interval = IntervalList.instance().getByName(tsid.getInterval());
 		if (interval == null)
+		{
 			throw new NoSuchObjectException("No such interval '" + tsid.getInterval() + "'");
+		}
 		Interval duration = IntervalList.instance().getByName(tsid.getDuration());
 		if (duration == null)
+		{
 			throw new NoSuchObjectException("No such duration '" + tsid.getDuration() + "'");
+		}
 
+		List<Object> parameters = new ArrayList<>();
 		String q = "select ts_id from ts_spec where "
-			+ "SITE_ID = " + siteId
-			+ " and DATATYPE_ID = " + dataTypeId
-			+ " and lower(STATISTICS_CODE) = " + sqlString(tsid.getStatisticsCode().toLowerCase())
-			+ " and INTERVAL_ID = " + interval.getKey()
-			+ " and DURATION_ID = " + duration.getKey()
-			+ " and lower(TS_VERSION) = " + sqlString(tsid.getVersion().toLowerCase());
-		ResultSet rs = doQuery(q);
+			+ "SITE_ID = ?"
+			+ " and DATATYPE_ID = ?"
+			+ " and lower(STATISTICS_CODE) = lower(?)"
+			+ " and INTERVAL_ID = ?"
+			+ " and DURATION_ID = ?"
+			+ " and lower(TS_VERSION) = lower(?)"; // why are we manuplating a user provided value like this?
+		parameters.add(siteId);
+		parameters.add(dataTypeId);
+		parameters.add(tsid.getStatisticsCode());
+		parameters.add(interval.getKey());
+		parameters.add(duration.getKey());
+		parameters.add(tsid.getVersion());
+
 		try
 		{
-			if (rs != null && rs.next())
+			DbKey tsKey = getSingleResultOr(q, 
+											rs -> DbKey.createDbKey(rs,"ts_id"),
+											null,
+											parameters.toArray(new Object[0]));
+			if (tsKey != null)
 			{
-				TimeSeriesIdentifier ret = getTimeSeriesIdentifier(DbKey.createDbKey(rs, 1));
+				TimeSeriesIdentifier ret = getTimeSeriesIdentifier(tsKey);
 				if (displayName != null)
+				{
 					ret.setDisplayName(displayName);
+				}
 				return ret;
 			}
 			else
+			{
 				throw new NoSuchObjectException("No Time Series matching '" + uniqueString + "'");
+			}
 		}
 		catch (SQLException ex)
 		{
@@ -211,11 +236,12 @@ public class OpenTimeSeriesDAO
 	}
 
 	@Override
-	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
-		throws DbIoException, NoSuchObjectException
+	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key) throws DbIoException, NoSuchObjectException
 	{
 		if (lastCacheReload == 0L)
+		{
 			reloadTsIdCache();
+		}
 		
 		TimeSeriesIdentifier ret = cache.getByKey(key);
 		
@@ -244,24 +270,35 @@ public class OpenTimeSeriesDAO
 		throws DbIoException, NoSuchObjectException
 	{
 		String q = "SELECT " + ts_spec_columns + " from TS_SPEC "
-			+ " where ts_id = " + key;
+			+ " where ts_id = ?";
 		
 		try
 		{
-			long now = System.currentTimeMillis();
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
+			CwmsTsId tsId =  getSingleResultOr(q, rs ->
 			{
-				CwmsTsId ret = rs2TsId(rs, true);
-				ret.setReadTime(now);
-				cache.put(ret);
-				return ret;
+				try
+				{
+					long now = System.currentTimeMillis();
+					CwmsTsId ret = rs2TsId(rs, true);
+					ret.setReadTime(now);
+					cache.put(ret);
+					return ret;
+				}
+				catch (Exception ex)
+				{
+					throw new SQLException("Unable to process returned row.", ex);
+				}
+			},
+			null,
+			key);
+
+			if (tsId != null)
+			{
+				return tsId;
 			}
 		}
 		catch(Exception ex)
 		{
-			System.err.println(ex.toString());
-			ex.printStackTrace(System.err);
 			throw new DbIoException(
 				"Error looking up TS Info for TS_CODE=" + key + ": " + ex);
 		}
@@ -410,50 +447,68 @@ public class OpenTimeSeriesDAO
 			ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
 		}
 
+		if (ctsid == null)
+		{
+			throw new BadTimeSeriesException("Could not retrieve timeseries meta data. TimeSeriesIdentifier is not present.");
+		}
+
 		UnitConverter unitConverter = null;
 		if (ctsid.getStorageType() == 'N'
 		 && ts.getUnitsAbbr() != null
 		 && !ts.getUnitsAbbr().equalsIgnoreCase(ctsid.getStorageUnits()))
+		{
 			unitConverter = Database.getDb().unitConverterSet.get(
 				EngineeringUnit.getEngineeringUnit(ctsid.getStorageUnits()),
 					EngineeringUnit.getEngineeringUnit(ts.getUnitsAbbr()));
+		}
 
 		String tableName = makeDataTableName(ctsid);
-		String q = "select " + ts_columns + " from " + tableName
-			+ " where ts_id = " + ctsid.getKey();
+		List<Object> parameters = new ArrayList<>();
+		StringBuilder q = new StringBuilder();
+		q.append("select " + ts_columns + " from " + tableName
+			+ " where ts_id = ?");
+		parameters.add(ctsid.getKey());
 		if (from != null)
-			q = q + " and sample_time " + (include_lower ? " >= " : " > ")
-				+ db.sqlDate(from);
+		{
+			q.append(" and sample_time " + (include_lower ? " >= " : " > ") + " ?");
+			parameters.add(from);
+		}
 		if (until != null)
-			q = q + " and sample_time " + (include_upper ? " <= " : " < ")
-			+ db.sqlDate(until);
+		{
+			q.append(" and sample_time " + (include_upper ? " <= " : " < ") + " ?");
+			parameters.add(until);
+		}
 		
 		try
 		{
-			ResultSet rs = doQuery(q);
-			int n = 0;
-			while (rs != null && rs.next())
+			int n[] = new int[1];
+			n[0] = 0;
+			final CwmsTsId loopTsId = ctsid;
+			final UnitConverter loopConverter = unitConverter;
+			doQuery(q.toString(), rs ->
 			{
-				TimedVariable tv = rs2tv(rs, ctsid, unitConverter);
+				TimedVariable tv = rs2tv(rs, loopTsId, loopConverter);
 
 				// For computation processor, we never want to overwrite data
 				// we already have. For a report generator, we DO.
 				Date d = tv.getTime();
-				if (!overwriteExisting
-				 && ts.findWithin(d.getTime() / 1000L, 10) != null)
-					continue;
+				if (!overwriteExisting && ts.findWithin(d.getTime() / 1000L, 10) != null)
+				{
+					return;
+				}
 
 				ts.addSample(tv);
-				n++;
-			}
-			return n;
+				n[0]++;
+			},
+			parameters.toArray(new Object[0]));
+			return n[0];
 		}
 		catch (SQLException ex)
 		{
 			String msg = "Error getting data for time series="
 					+ ctsid.getUniqueName() + ": " + ex;
 			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg ,ex);
 		}
 	}
 
@@ -631,11 +686,36 @@ public class OpenTimeSeriesDAO
 	{
 		TimeSeriesIdentifier tsid = ts.getTimeSeriesIdentifier();
 		if (tsid == null)
+		{
 			throw new BadTimeSeriesException("Cannot save time series without TSID.");
-		
-		CwmsTsId ctsid = (CwmsTsId)tsid;
+		}
+
 		debug3("Saving " + tsid.getUniqueString() + ", from cp units="
 			+ ts.getUnitsAbbr() + ", required=" + tsid.getStorageUnits());
+
+		CwmsTsId ctsid = (CwmsTsId)tsid;
+		// If we don't already have the timeseries key, either find it, or make the time series.
+		if (ctsid.getKey().isNull())
+		{
+			try
+			{
+				final TimeSeriesIdentifier tmp = this.getTimeSeriesIdentifier(tsid.getUniqueString());
+				ctsid.setKey(tmp.getKey());
+			}
+			catch (NoSuchObjectException ex)
+			{
+				info("Creating Timeseries");
+				try
+				{
+					final DbKey tmp = this.createTimeSeries(ctsid);
+					ctsid.setKey(tmp);
+				}
+				catch (NoSuchObjectException ex2)
+				{
+					throw new BadTimeSeriesException("Unable to create timeseries.", ex2);
+				}
+			}
+		}
 		TSUtil.convertUnits(ts, tsid.getStorageUnits());
 		debug3("After TSUtil.convertUnits, cts units=" + ts.getUnitsAbbr());
 		
@@ -792,110 +872,151 @@ public class OpenTimeSeriesDAO
 	public void deleteTimeSeriesRange(CTimeSeries ts, Date from, Date until)
 		throws DbIoException, BadTimeSeriesException
 	{
-		AlarmDAI alarmDAO = db.makeAlarmDAO();
 		try
 		{
-			alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey(), null);
-			alarmDAO.deleteHistoryAlarms(ts.getTimeSeriesIdentifier().getKey(), from, until);
+			this.inTransaction(dao ->
+			{
+				try (AlarmDAI alarmDAO = db.makeAlarmDAO())
+				{
+					alarmDAO.deleteCurrentAlarm(ts.getTimeSeriesIdentifier().getKey(), null);
+					alarmDAO.deleteHistoryAlarms(ts.getTimeSeriesIdentifier().getKey(), from, until);
+				}
+
+				CwmsTsId ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
+				if (ctsid == null)
+				{
+					fillTimeSeriesMetadata(ts);
+					ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
+				}
+
+				final String tableName = makeDataTableName(ctsid);
+				ArrayList<Object> parameters = new ArrayList<>();
+				String q = "delete from " + tableName
+					+ " where ts_id = ?"
+					+ " and flags & ? = 0 ";
+				parameters.add(ctsid.getKey());
+				parameters.add(CwmsFlags.PROTECTED);
+				if (from != null)
+				{
+					q = q + " and sample_time >= ?";
+					parameters.add(from);
+				}
+				if (until != null)
+				{
+					q = q + " and sample_time  <= ?";
+					parameters.add(until);
+				}
+				doModify(q, parameters.toArray(new Object[0]));
+			});
 		}
-		catch(Exception ex)
+		catch (Exception ex)
 		{
-			warning("deleteTimeSeries error deleting alarm records: " + ex);
+			if (ex.getCause() instanceof BadTimeSeriesException)
+			{
+				throw (BadTimeSeriesException)ex.getCause();
+			}
+			else if(ex.getCause() instanceof DbIoException)
+			{
+				throw (DbIoException)ex.getCause();
+			}
+			else
+			{
+				throw new DbIoException("Unable to delete timeseries data range.", ex);
+			}
 		}
-		finally
-		{
-			alarmDAO.close();
-		}
-	
-		CwmsTsId ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
-		if (ctsid == null)
-		{
-			fillTimeSeriesMetadata(ts);
-			ctsid = (CwmsTsId)ts.getTimeSeriesIdentifier();
-		}
-		
-		String tableName = makeDataTableName(ctsid);
-		String q = "delete from " + tableName
-			+ " where ts_id = " + ctsid.getKey()
-			+ " and flags & " + CwmsFlags.PROTECTED + " = 0 ";
-		if (from != null)
-			q = q + " and sample_time " + " >= " + db.sqlDate(from);
-		if (until != null)
-			q = q + " and sample_time " + " <= " + db.sqlDate(until);
-		
-		doModify(q);
 	}
 
 	@Override
 	public void deleteTimeSeries(TimeSeriesIdentifier tsid)
 		throws DbIoException
 	{
-		AlarmDAI alarmDAO = db.makeAlarmDAO();
-		try
+		final CwmsTsId ctsid = (CwmsTsId)tsid;
+		try (AlarmDAI alarmDAO = db.makeAlarmDAO();
+			 CompDependsDAI compDependsDAO = db.makeCompDependsDAO();)
 		{
-			alarmDAO.deleteCurrentAlarm(tsid.getKey(), null);
-			alarmDAO.deleteHistoryAlarms(tsid.getKey(), null, null);
-		}
-		catch(Exception ex)
-		{
-			warning("deleteTimeSeries error deleting alarm records: " + ex);
-		}
-		finally
-		{
-			alarmDAO.close();
-		}
-
-		CwmsTsId ctsid = (CwmsTsId)tsid;
-		String tableName = makeDataTableName(ctsid);
-		String q = "delete from " + tableName
-			+ " where ts_id = " + ctsid.getKey()
-			+ " and flags & " + CwmsFlags.PROTECTED + " = 0 ";
-		doModify(q);
-		doModify("delete from ts_property where ts_id = " + ctsid.getKey());
-		
-		CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
-		try
-		{
-			compDependsDAO.deleteCompDependsForTsKey(ctsid.getKey());
-		}
-		catch(Exception ex)
-		{
-			warning("deleteTimeSeries error deleting computation dependencies: " + ex);
-		}
-		finally { compDependsDAO.close(); }
-		
-		doModify("delete from cp_comp_tasklist where ts_id = " + ctsid.getKey());
-		
-		doModify("delete from ts_spec where ts_id = " + ctsid.getKey());
-		
-		q = "select num_ts_present, est_annual_values from storage_table_list "
-			+ "where table_num = " + ctsid.getStorageTable();
-		ResultSet rs = doQuery(q);
-		try
-		{
-			if (rs != null && rs.next())
+			this.inTransaction(dao ->
 			{
-				int num = rs.getInt(1);
-				int estValues = rs.getInt(2);
-				num--;
-				estValues -= interval2estAnnualValues(ctsid.getIntervalOb());
-				q = "update storage_table_list set num_ts_present = " + num
-					+ ", est_annual_values = " + estValues
-					+ " where table_num = "+ ctsid.getStorageTable();
-				doModify(q);
-			}
+				alarmDAO.inTransactionOf(dao);
+				compDependsDAO.inTransactionOf(dao);
+				try
+				{
+					alarmDAO.deleteCurrentAlarm(tsid.getKey(), null);
+					alarmDAO.deleteHistoryAlarms(tsid.getKey(), null, null);
+				}
+				catch(Exception ex)
+				{
+					throw new Exception("error deleting alarm records.", ex);
+				}
+
+				try
+				{
+					String tableName = makeDataTableName(ctsid);
+					String q = "delete from " + tableName
+						+ " where ts_id = ?"
+						+ " and flags & ? = 0 ";
+					dao.doModify(q, ctsid.getKey(), CwmsFlags.PROTECTED);
+					dao.doModify("delete from ts_property where ts_id = ?", ctsid.getKey());
+					compDependsDAO.deleteCompDependsForTsKey(ctsid.getKey());
+				}
+				catch(Exception ex)
+				{
+					throw new Exception("deleteTimeSeries error deleting computation dependencies.",ex);
+				}
+
+				try
+				{
+					dao.doModify("delete from cp_comp_tasklist where ts_id = ?", ctsid.getKey());
+				}
+				catch (Exception ex)
+				{
+					throw new Exception("Error removing tasklist entries", ex);
+				}
+
+				try
+				{
+					dao.doModify("delete from ts_spec where ts_id = ?", ctsid.getKey());
+				}
+				catch (Exception ex)
+				{
+					throw new Exception("Error deleting ts_spec entry", ex);
+				}
+
+				try
+				{
+					String q = "select num_ts_present, est_annual_values from storage_table_list "
+					+ "where table_num = ? and storage_type=?";
+					int num_andEstimate[] =
+								getSingleResult(q,
+												rs -> new int[]{ rs.getInt(1), rs.getInt(2)},
+												ctsid.getStorageTable(), ctsid.getStorageType());
+					num_andEstimate[0]--;
+					num_andEstimate[1] -= interval2estAnnualValues(ctsid.getIntervalOb());
+					q = "update storage_table_list set num_ts_present = ?"
+						+ ", est_annual_values = ?"
+						+ " where table_num = ?";
+					doModify(q, num_andEstimate[0], num_andEstimate[1], ctsid.getStorageTable());
+				}
+				catch (Exception ex)
+				{
+					throw new Exception("Unable to modify storage table", ex);
+				}
+
+				try(CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+				{
+					CpDependsNotify cdn = new CpDependsNotify();
+					cdn.setEventType(CpDependsNotify.TS_DELETED);
+					cdn.setKey(ctsid.getKey());
+					dai.saveRecord(cdn);
+				}
+				catch (Exception ex)
+				{
+					throw new Exception("Unable to create comp depends notification.", ex);
+				}
+			});
 		}
-		catch(SQLException ex)
+		catch (Exception ex)
 		{
-			warning("Error in query '" + q + "': " + ex);
-		}
-		
-		try(CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
-		{
-			CpDependsNotify cdn = new CpDependsNotify();
-			cdn.setEventType(CpDependsNotify.TS_DELETED);
-			cdn.setKey(ctsid.getKey());
-			dai.saveRecord(cdn);
+			throw new DbIoException(String.format("Error deleting time series. %s",tsid.toString()), ex);
 		}
 	}
 

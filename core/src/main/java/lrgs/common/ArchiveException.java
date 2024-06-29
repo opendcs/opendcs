@@ -26,6 +26,13 @@ public class ArchiveException extends Exception
 		this.hangup = hangup;
 	}
 
+	public ArchiveException(String msg, int errorCode, boolean hangup, Throwable cause)
+	{
+		super(msg,cause);
+		this.errorCode = errorCode;
+		this.hangup = hangup;
+	}
+
 	/** @return the error code associated with this exception. */
 	public int getErrorCode() { return errorCode; }
 

@@ -1,5 +1,11 @@
 package decodes.tsdb.groupedit;
 
+import decodes.gui.TimeSeriesChart;
+import decodes.gui.TimeSeriesChartFrame;
+import decodes.gui.TimeSeriesLine;
+import decodes.sql.DbKey;
+import decodes.sql.PlatformListIO;
+import decodes.tsdb.CTimeSeries;
 import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
 import ilex.util.Logger;
@@ -7,6 +13,12 @@ import ilex.util.Logger;
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.sql.Date;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.TemporalAmount;
+import java.util.Calendar;
 import java.util.Collection;
 
 import javax.swing.JLabel;
@@ -20,6 +32,7 @@ import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
+import org.slf4j.LoggerFactory;
 
 /**
  * Displays a sorting-list of TimeSeries Data Descriptor objects in the
@@ -29,6 +42,8 @@ import decodes.tsdb.TimeSeriesIdentifier;
 public class TsListPanel 
 	extends JPanel implements TsListControllers
 {
+	private final static org.slf4j.Logger log = LoggerFactory.getLogger(TsListPanel.class);
+
 	private String listTitle = "Time Series List";
 	
 	private BorderLayout borderLayout = new BorderLayout();
@@ -215,7 +230,23 @@ public class TsListPanel
 	{
 		tsListSelectPanel.refreshTSIDList();
 	}
-	
+
+	@Override
+	public void plot()
+	{
+		try
+		{
+			final TimeSeriesIdentifier[] tsids = tsListSelectPanel.getSelectedTSIDs();
+			TimeSeriesChartFrame f = new TimeSeriesChartFrame(theDb,tsids);
+			f.setVisible(true);
+			f.plot();
+		}catch (Exception e)
+		{
+			log.error("Error reading time-series data",e);
+		}
+
+	}
+
 	public Collection<String> getDistinctPart(String part)
 	{
 		return tsListSelectPanel.getDistinctPart(part);

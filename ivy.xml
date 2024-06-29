@@ -52,6 +52,7 @@
             <exclude org="org.jooq.pro" module="jooq-meta"/>
             <exclude org="org.jooq.pro" module="jooq-codegen"/>
         </dependency>
+        <dependency org="mil.army.usace.hec" name="cwms-db-jooq-codegen" rev="7.0.0-OpenDCS"/>
         <dependency org="mil.army.usace.hec" name="cwms-db-aspects" rev="9.3.5"/>
         <dependency org="mil.army.usace.hec" name="cwms-db-dao" rev="9.3.5"/>
         <dependency org="mil.army.usace.hec" name="hec-db-jdbc" rev="9.3.5"/>
@@ -79,16 +80,20 @@
         <dependency org="mil.army.usace.hec" name="hec-cwms-ratings-core" rev="1.1.0"/>
         <dependency org="org.slf4j" name="slf4j-api" rev="${slf4j.version}"/>
         <dependency org="io.javalin" name="javalin" rev="4.6.8" />
+        <dependency org="org.jdbi" name="jdbi3-core" rev="3.38.2"/>
+        <dependency org="org.jdbi" name="jdbi3-sqlobject" rev="3.38.2"/>
+        <dependency org="org.jdbi" name="jdbi3-postgres" rev="3.38.2"/>
+        <dependency org="org.flywaydb" name="flyway-core" rev="9.8.1"/>
 
 
         <!-- test dependencies -->
 
-        <dependency org="org.junit.platform" name="junit-platform-launcher" rev="1.8.2" conf="test_platform->default"/>
-        <dependency org="org.junit.platform" name="junit-platform-engine" rev="1.8.2" conf="test_platform->default"/>
-        <dependency org="org.junit.platform" name="junit-platform-commons" rev="1.8.2" conf="test_platform->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="5.9.1" conf="test->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-engine" rev="5.9.1" conf="test->default"/>
-        <dependency org="org.junit.jupiter" name="junit-jupiter-params" rev="5.9.1" conf="test->default"/>
+        <dependency org="org.junit.platform" name="junit-platform-launcher" rev="${junit.platform.version}" conf="test_platform->default"/>
+        <dependency org="org.junit.platform" name="junit-platform-engine" rev="${junit.platform.version}" conf="test_platform->default"/>
+        <dependency org="org.junit.platform" name="junit-platform-commons" rev="${junit.platform.version}" conf="test_platform->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-api" rev="${junit.jupiter.version}" conf="test->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-engine" rev="${junit.jupiter.version}" conf="test->default"/>
+        <dependency org="org.junit.jupiter" name="junit-jupiter-params" rev="${junit.jupiter.version}" conf="test->default"/>
         <dependency org="commons-io" name="commons-io" rev="2.11.0" conf="test->default"/>
         <dependency org="org.apache.derby" name="derby" rev="10.14.2.0" conf="test->default"/>
         <dependency org="uk.org.webcompere" name="system-stubs-jupiter" rev="2.0.2" conf="test->default"/>
@@ -149,6 +154,6 @@
 
         <conflict org="org.slf4j" module="slf4j-api" rev="${slf4j.version}"/>
         <conflict org="org.slf4j" module="jcl-over-slf4j" rev="${slf4j.version}"/>
-
+        <conflict org="mil.army.usace.hec" module="cwms-db-jooq-codegen" rev="7.0.0-OpenDCS"/>
     </dependencies>
 </ivy-module>

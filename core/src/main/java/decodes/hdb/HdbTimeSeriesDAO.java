@@ -1188,12 +1188,8 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 	public DataCollection getNewData(DbKey applicationId)
 		throws DbIoException
 	{
-		// Reload the TSID cache every hour.
-		if (System.currentTimeMillis() - lastTsidCacheRead > 3600000L)
-		{
-			lastTsidCacheRead = System.currentTimeMillis();
-			reloadTsIdCache();
-		}
+		// Since DAO is recreated every compApp loop, removed cache load
+		// todo: investigate tsid cache location
 
 		String q = "";
 		String attrList = "RECORD_NUM, SITE_DATATYPE_ID, INTERVAL, "

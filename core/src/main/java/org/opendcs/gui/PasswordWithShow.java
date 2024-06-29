@@ -33,7 +33,7 @@ public class PasswordWithShow extends JPanel
     {
 
         this.setLayout(new BoxLayout(this,BoxLayout.LINE_AXIS));
-        passwordField = new JPasswordField("showablePassword",width);
+        passwordField = new JPasswordField(width);
         defaultEchoChar = passwordField.getEchoChar();
         showPasswordButton = new JToggleButton(resources.getString("Password.show"));
         showPasswordButton.setName("showToggle");

@@ -816,4 +816,10 @@ public class SearchCriteriaEditor extends MenuFrame
 		me.startup(100, 100);
 	}
 
+	@Override
+	public SearchCriteria getCurrenCriteria()
+	{
+		return searchcrit;
+	}
+
 }

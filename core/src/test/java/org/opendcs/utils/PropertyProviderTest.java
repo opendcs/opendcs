@@ -13,6 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import fixtures.FileUtils;
+import ilex.util.EnvExpander;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 public class PropertyProviderTest
@@ -78,5 +79,18 @@ public class PropertyProviderTest
         final String passThroughVar = Property.getRealPropertyValue(passThroughExpected);
         assertEquals(passThroughExpected, passThroughVar, "Passthrough did not work.");
 
+    }
+
+
+    @ParameterizedTest
+    @CsvSource({
+        "Hello ${env." + ENV_VAR_NAME + "}_${" + PROP_VAR_NAME + "},Hello test env value_test prop value"
+    })
+    public void test_expansion(String valueIn, String valueExpanded) throws Exception
+    {
+        envVars.execute(() -> {
+            final String expansion = EnvExpander.expand(valueIn);
+            assertEquals(valueExpanded,expansion, "Could not set all values.");
+        });
     }
 }

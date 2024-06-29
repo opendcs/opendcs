@@ -1,120 +1,30 @@
-/*
-*  $Id: AW_AlgorithmBase.java,v 1.18 2020/02/20 20:47:00 mmaloney Exp $
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*  
-*  $Log: AW_AlgorithmBase.java,v $
-*  Revision 1.18  2020/02/20 20:47:00  mmaloney
-*  in setCompProperty, treat blank property value the same as null.
-*
-*  Revision 1.17  2019/07/17 18:21:31  mmaloney
-*  Added 'timedCompDataSince' and 'timedCompDataUntil' properites to control the data window for timed computations.
-*
-*  Revision 1.16  2018/11/14 15:58:48  mmaloney
-*  Added support for timedCompInterval and timedCompOffset properties.
-*
-*  Revision 1.15  2017/12/14 17:05:46  mmaloney
-*  Split out aggregate properties so that algo and comp editor can only show aggregate
-*  properties for aggregate-type algorithms.
-*
-*  Revision 1.14  2017/11/07 20:27:09  mmaloney
-*  Improved debugs.
-*
-*  Revision 1.13  2017/11/03 19:20:44  mmaloney
-*  Added isTrigger() and isGoodQuality methods.
-*
-*  Revision 1.12  2016/09/08 21:02:52  mmaloney
-*  Wrap call to initAlgorithm so that an unexpected exception won't kill compproc.
-*
-*  Revision 1.11  2016/05/05 15:51:03  mmaloney
-*  Added tooltip help for AggregateTimeOffset property.
-*
-*  Revision 1.10  2016/03/24 19:15:01  mmaloney
-*  Some refactoring to support Python. Also, the Mike Neilson fix for doubly-closed
-*  aggregate periods to prevent endless loop.
-*
-*  Revision 1.9  2016/01/27 22:03:55  mmaloney
-*  make baseTimes protected so it is available to sub-classes.
-*
-*  Revision 1.8  2015/12/31 21:18:30  mmaloney
-*  PropertySpecs for maxMissingValuesForFill and maxMissingTimeForFill.
-*
-*  Revision 1.7  2015/11/12 15:24:17  mmaloney
-*  Bugfix in saveOutput() whereby the NO_OVERWRITE feature was being thwarted.
-*
-*  Revision 1.6  2015/10/26 12:45:35  mmaloney
-*  PythonAlgorithm
-*
-*  Revision 1.5  2015/08/31 00:39:34  mmaloney
-*  Added clearNonReservedFlags() method.
-*
-*  Revision 1.4  2015/07/27 18:35:50  mmaloney
-*  Unused (optional) params should be flagged as missing so that the isMissing() method
-*  works inside the algorithms.
-*
-*  Revision 1.3  2015/07/14 18:33:40  mmaloney
-*  CWMS-6160 fix. If an algorithm explicitly set flag bits, then don't automatically assume
-*  that a quesntionable input implies a questionable output.
-*
-*  Revision 1.2  2015/04/14 18:19:26  mmaloney
-*  Throw DbCompException on an invalid aggregate interval. Before it was throwing
-*  NullPointer.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.55  2013/07/31 15:43:00  mmaloney
-*  dev
-*
-*  Revision 1.54  2013/07/31 15:41:31  mmaloney
-*  Document the new "ifQuestionable" property.
-*
-*  Revision 1.53  2013/07/31 15:27:44  mmaloney
-*  Added 'ifQuestionable' property feature.
-*
-*  Revision 1.52  2013/07/30 18:49:12  mmaloney
-*  dev
-*
-*  Revision 1.51  2013/07/30 18:37:51  mmaloney
-*  Implement description & proptypes for properties.
-*
-*  Revision 1.50  2013/07/26 17:57:48  mmaloney
-*  Added setInputFlagBits method that takes a mask.
-*
-*  Revision 1.49  2013/07/23 13:13:15  mmaloney
-*  setInputFlagBits must be public for USACE Validation Enhancement.
-*
-*  Revision 1.48  2013/07/05 16:14:42  shweta
-*  Set DbKey values for algorithms having DbKey properties like 'LimitsOnValue'
-*
-*  Revision 1.47  2013/03/22 19:41:17  mmaloney
-*  Correct handling of aggregate periods over a std/daylight time change.
-*
-*  Revision 1.46  2013/03/22 16:42:29  mmaloney
-*  DST Fix
-*
-*  Revision 1.45  2013/03/22 15:53:44  mmaloney
-*  debuging timzeon issue.
-*
-*  Revision 1.44  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
-*
-*/
+/**
+ * Copyright 2024 The OpenDCS Consortium and contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package decodes.tsdb.algo;
 
 import java.lang.reflect.Field;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import org.opendcs.utils.AnnotationHelpers;
 
 import ilex.util.Logger;
 import ilex.util.TextUtil;
@@ -1547,7 +1457,17 @@ ex.printStackTrace(System.err);
 	protected abstract void afterTimeSlices()
 		throws DbCompException;
 	
-	public abstract String[] getPropertyNames();
+	public String[] getPropertyNames()
+	{
+		List<String> ret = AnnotationHelpers.getFieldsWithAnnotation(this.getClass(), org.opendcs.annotations.PropertySpec.class)
+										    .stream()
+											.map(pair ->
+											{
+												return PropertySpec.getPropertyName(pair.first,pair.second);
+											})
+											.collect(Collectors.toList());
+		return ret.toArray(new String[0]);
+	}
 
  	/**
 	 * Finds a coefficient from the stat tables matching the sdi,
@@ -1707,7 +1627,19 @@ ex.printStackTrace(System.err);
 	 */
 	protected PropertySpec[] getAlgoPropertySpecs()
 	{
-		return null;
+		final Class<?> clazz = this.getClass();
+		return AnnotationHelpers.getFieldsWithAnnotation(clazz, org.opendcs.annotations.PropertySpec.class)
+							    .stream()
+							    .map(p ->
+								{
+									final Field f = p.first;
+									final org.opendcs.annotations.PropertySpec propSpec = p.second;
+									final String name = PropertySpec.getPropertyName(f, propSpec);
+									String specType = PropertySpec.getSpecTypeFromAnnotation(propSpec, f);
+									return new PropertySpec(name, specType, propSpec.description());
+								})
+								.collect(Collectors.toList())
+								.toArray(new PropertySpec[0]);
 	}
 	
 	@Override

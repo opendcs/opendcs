@@ -6,4 +6,4 @@ rem		Sets all isProduction flags in the database to true
 rem	markproduction false
 rem		Sets all isProduction flags in the database to false
 rem
-$INSTALL_PATH\bin\decj decodes.db.MarkProduction %*%
+"%~dp0\decj" decodes.db.MarkProduction %*%

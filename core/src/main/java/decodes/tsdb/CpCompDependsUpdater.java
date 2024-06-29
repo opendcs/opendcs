@@ -101,6 +101,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+
+import org.slf4j.LoggerFactory;
+
 import java.net.InetAddress;
 
 import opendcs.dai.CompDependsDAI;
@@ -134,6 +137,7 @@ This is the main class for the daemon that updates CP_COMP_DEPENDS.
 public class CpCompDependsUpdater
     extends TsdbAppTemplate
 {
+    private static org.slf4j.Logger log = LoggerFactory.getLogger(CpCompDependsUpdater.class);
     /** Holds app name, id, & description. */
     private CompAppInfo appInfo;
 
@@ -915,6 +919,7 @@ public class CpCompDependsUpdater
                         parmit.hasNext(); )
                     {
                         DbCompParm parm = parmit.next();
+                        info("Checking " + parm.getRoleName());
                         if (!parm.isInput())
                             continue;
                         // short-cut: for CWMS, the SDI in the parm _is_
@@ -1163,19 +1168,18 @@ public class CpCompDependsUpdater
             {
                 info("Clearing scratch pad.");
                 compDepends.clearScratchpad();
+                info("Adding records to scratch pad.");
                 compDepends.addRecordsToScratchPad(toAdd);
+                info("Merging scratch pad to active.");
                 compDepends.mergeScratchPadToActive();
             });
             return true;
         }
         catch(DbIoException ex)
         {
-            String msg = "fullEval Error: " + ex;
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            warning(msg);
-            ex.printStackTrace(pw);
-            warning(sw.toString());
+            log.atWarn()
+               .setCause(ex)
+               .log("Error during full eval.");
             return false;
         }
     }

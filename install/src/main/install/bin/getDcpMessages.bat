@@ -1,3 +1,2 @@
-@echo off
-$INSTALL_PATH/bin/decj.bat lrgs.lddc.GetDcpMessages %*%
+@"%~dp0\decj" lrgs.lddc.GetDcpMessages %*%
 

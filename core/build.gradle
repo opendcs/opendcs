@@ -7,6 +7,9 @@ configurations {
     all*.exclude group: "com.oracle.database.jdbc"
 }
 dependencies {
+    implementation(project(":annotations"))
+    implementation(libs.bundles.jdbi)
+    implementation(libs.org.flywaydb.flyway.core)
     implementation(libs.oracle)
     implementation(libs.postgresql)
     implementation(libs.asm)
@@ -81,6 +84,7 @@ dependencies {
     implementation(libs.io.javalin)
     implementation(libs.loboBrowser)
     implementation(libs.cobra)
+    testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.junit)
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)
@@ -125,10 +129,12 @@ dependencies {
 
 test
 {
+    doLast {
+        println "Build Dir = " + layout.buildDirectory.get().asFile
+    }
     useJUnitPlatform()
-    jvmArgs += "-Dbuild.dir=$buildDir"
-    jvmArgs += "-Dopendcs.jarfile=$buildDir/libs/opendcs-${version}.jar"
-    systemProperty "build.dir", "$buildDir"
+    systemProperty "opendcs.jarfile", jar.archiveFile.get().asFile
+    systemProperty "build.dir", layout.buildDirectory.get().asFile
 }
 
 test.dependsOn jar

@@ -31,6 +31,7 @@ import opendcs.util.functional.ResultSetConsumer;
 import opendcs.util.functional.ResultSetFunction;
 import opendcs.util.functional.StatementConsumer;
 import opendcs.util.functional.ThrowingFunction;
+import opendcs.util.sql.ConnectionInTransaction;
 import opendcs.util.sql.WrappedConnection;
 
 import java.sql.Connection;
@@ -100,6 +101,23 @@ public class DaoBase
     }
 
     /**
+     * When used within the transaction block of another Dao allow this to assume the same connection.
+     *
+     * NOTE: DAOs calling this should be created and discarded within the transaction block.
+     *
+     * @param other DAO with the in-transaction connection.
+     * @throws IllegalStateException if the other Dao does not already have a connection open this operation is not valid.
+     */
+    public void  inTransactionOf(DaoBase other) throws IllegalStateException
+    {
+        if (other.myCon == null)
+        {
+            throw new IllegalStateException("Provided DAO does not currently have a valid connection that would be in a transaction.");
+        }
+        this.setManualConnection(other.myCon);
+    }
+
+    /**
      * Assert what connection will be used for this DAOs operations.
      * Caller is responsible for cleaning up the Connection object.
      */
@@ -116,14 +134,20 @@ public class DaoBase
     public void close()
     {
         if (queryStmt1 != null)
+        {
             try { queryStmt1.close(); } catch(Exception ex) {}
+        }
         if (queryStmt2 != null)
+        {
             try { queryStmt2.close(); } catch(Exception ex) {}
+        }
         queryStmt1 = queryStmt2 = null;
 
         // for pooling: return the connection (if there is one) back to the pool.
         if (myCon != null && !conSetManually)
+        {
             db.freeConnection(myCon);
+        }
         myCon = null;
     }
 
@@ -432,6 +456,28 @@ public class DaoBase
             {
                 stmt.setInt(index,(Integer)param);
             }
+            else if (param instanceof Boolean)
+            {
+                Boolean v = (Boolean)param;
+                String value = "";
+                // There is a db.sqlBoolean but it tries to
+                // be helpful and wraps the return in ' ' which
+                // we don't need or want here.
+                // A callback to the "TimeseriesDatabase" class
+                // is probably the best solution for the data that various
+                // so they can take responsibility. That's also roughly
+                // how JDBI will work. That'll be handled as part of
+                // a separate PR.
+                if (db.isOracle())
+                {
+                    value = v ? "Y" : "N";
+                }
+                else
+                {
+                    value = v ? "TRUE" : "FALSE";
+                }
+                stmt.setString(index, value);
+            }
             else if (param instanceof String)
             {
                 stmt.setString(index,(String)param);
@@ -621,7 +667,7 @@ public class DaoBase
      * @param query query that may return more than 1 result
      * @param consumer function to take the ResultSet and process it into a Object of type R (or null)
      * @param parameters variables to bind into the query.
-     * @return
+     * @return value provided by the consumer or null
      * @throws SQLException
      */
     public <R> R getFirstResult(String query, ResultSetFunction<R> consumer, Object... parameters) throws SQLException
@@ -644,6 +690,30 @@ public class DaoBase
         else
         {
             return null;
+        }
+    }
+
+    /**
+     * A query that may return more than one result; but we only care about the first one.
+     *
+     * @param <R> The return type
+     * @param query query that may return more than 1 result
+     * @param consumer function to take the ResultSet and process it into a Object of type R (or null)
+     * @param defaultvalue value to provide if no query results
+     * @param parameters variables to bind into the query.
+     * @return The value from the query, or the defaultValue if the query returns nothing
+     * @throws SQLException
+     */
+    public <R> R getFirstResultOr(String query, ResultSetFunction<R> consumer, R defaultValue, Object... parameters) throws SQLException
+    {
+        R value = getFirstResult(query, consumer, parameters);
+        if (value == null)
+        {
+            return defaultValue;
+        }
+        else
+        {
+            return value;
         }
     }
 
@@ -699,11 +769,14 @@ public class DaoBase
     }
 
     /**
-     * Run a set of queryies with a specific connection in a transaction.
+     * Run a set of queries with a specific connection in a transaction.
      * Use the presented dao for all operations.
      *
      * The presented Dao is a {@link DaoHelper} which will be very picky
      * about which SQL functions can be called.
+     *
+     * If any component attempts to alter the auto commit state of the connection during
+     * the transaction an exception will be thrown.
      *
      * @param consumer given a new DAO that is manually set to a JDBC transaction.
      * @throws SQLException
@@ -713,14 +786,20 @@ public class DaoBase
         Connection c = getConnection();
         boolean autoCommit = c.getAutoCommit();
         c.setAutoCommit(false);
-        try (DaoBase dao = new DaoHelper(this.db,"transaction",c);)
+        try (DaoBase dao = new DaoHelper(this.db,"transaction",new ConnectionInTransaction(c));)
         {
             consumer.accept(dao);
             c.commit();
         }
+        catch (Exception ex)
+        {
+            c.rollback();
+            throw ex;
+        }
         finally
         {
             c.setAutoCommit(autoCommit);
+            c.close();
         }
     }
 }
