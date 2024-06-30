@@ -7,11 +7,15 @@ plugins
 
 dependencies
 {
+    api(project(":core"))
+    testCompileOnly(project(":core"))
     implementation(project(":core"))
     implementation(project(":install"))
+    testImplementation(project(":core"))
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.junit.platform)
     testImplementation(libs.bundles.junit)
+    testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.hec.testcontainers.cwms)

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import ilex.util.EnvExpander;
 import org.apache.commons.io.FileUtils;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
@@ -58,17 +59,17 @@ public class XmlConfiguration implements Configuration
     @Override
     public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception {
         File editDb = new File(userDir,"edit-db");
-        File dcstoolHome = new File(System.getProperty("DCSTOOL_HOME"));
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
         configBuilder.withDatabaseLocation("$DCSTOOL_USERDIR/edit-db");
         configBuilder.withEditDatabaseType("XML");
         configBuilder.withSiteNameTypePreference("CWMS");
+        final String homeDir = EnvExpander.expand("$DCSTOOL_HOME");
         try(OutputStream out = new FileOutputStream(propertiesFile);)
         {
-            FileUtils.copyDirectory(new File(dcstoolHome, "edit-db"),editDb);
-            FileUtils.copyDirectory(new File(dcstoolHome, "schema"),new File(userDir,"/schema/"));
+            FileUtils.copyDirectory(new File(homeDir, "/edit-db"),editDb);
+            FileUtils.copyDirectory(new File(homeDir, "/schema"),new File(userDir,"/schema/"));
             configBuilder.build(out);
             started = true;
         }

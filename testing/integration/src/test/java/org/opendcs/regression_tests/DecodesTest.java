@@ -1,10 +1,13 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -51,9 +54,10 @@ public class DecodesTest extends AppTestBase
                             )
                         );
         assertExitNullOrZero();
+        File outputFile = File.createTempFile("testOutput",null);
+        FileUtils.write(outputFile, output, Charset.forName("UTF8").name());
         File goldenFile = new File(TestResources.getResource(configuration,expectedResultFile));
-        String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
-        assertEquals(golden,output,"Output Doesn't match expected data.");
+        assertTrue(FileUtils.contentEqualsIgnoreEOL(goldenFile, outputFile, Charset.forName("UTF8").name()));
     }
 
     @ParameterizedTest

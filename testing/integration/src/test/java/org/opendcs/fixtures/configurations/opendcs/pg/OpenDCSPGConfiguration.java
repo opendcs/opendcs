@@ -32,6 +32,7 @@ import decodes.launcher.Profile;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import ilex.util.EnvExpander;
 import ilex.util.FileLogger;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
@@ -163,13 +164,12 @@ public class OpenDCSPGConfiguration implements Configuration
     public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception
     {
         File editDb = new File(userDir,"edit-db");
-        File dcstoolHome = new File(System.getProperty("DCSTOOL_HOME"));
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
-        // set username/pw (env)
-        FileUtils.copyDirectory(new File(dcstoolHome, "edit-db"),editDb);
-        FileUtils.copyDirectory(new File(dcstoolHome, "schema"),new File(userDir,"/schema/"));
+         final String homeDir = EnvExpander.expand("$DCSTOOL_HOME");
+        FileUtils.copyDirectory(new File(homeDir, "/edit-db"),editDb);
+        FileUtils.copyDirectory(new File(homeDir, "/schema"),new File(userDir,"/schema/"));
         installDb(exit, environment, properties, configBuilder);
         createPropertiesFile(configBuilder, this.propertiesFile);
     }

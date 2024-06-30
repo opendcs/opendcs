@@ -7,9 +7,10 @@ configurations {
     all*.exclude group: "com.oracle.database.jdbc"
 }
 dependencies {
-    implementation(project(":annotations"))
-    implementation(libs.bundles.jdbi)
-    implementation(libs.org.flywaydb.flyway.core)
+    annotationProcessor(project(":annotations"))
+    api(project(":annotations"))
+    api(libs.bundles.jdbi)
+    api(libs.org.flywaydb.flyway.core)
     implementation(libs.oracle)
     implementation(libs.postgresql)
     implementation(libs.asm)
