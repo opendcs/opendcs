@@ -8,7 +8,7 @@ database.  It is currently supported for the U.S. Bureau of Reclamation
 Hydrologic Database (HDB)and the U.S. Army Corps of Engineers Corps 
 Water Management System (CWMS).
 
-.. image:: ./media/start/computations/im-01-mainmenu-cp.JPG
+.. image:: ./media/start/computations/im-00a-mainmenu-cp.JPG
    :alt: main menu - computations in boxed red
    :width: 250
 
@@ -17,7 +17,7 @@ users must log-in with the following credentials.
 
 USACE users:
 
-* USERNAME: User H7
+* USERNAME: Username
 * PASSWORD: Oracle
 
 Computations can be helpful for operations because of the following abilities:
@@ -50,6 +50,10 @@ to follow the steps outlined below:
 #. Test computation
 #. Enable computation
 
+.. image:: ./media/start/computations/im-00b-comp-build-recap.JPG
+   :alt: steps to create a computation
+   :width: 700
+
 The next steps outline an example for putting together a very simple 
 "calculation" using the computation processor.  The steps are 
 intended to provide a template for how to set up a computation
@@ -78,8 +82,8 @@ or
 location.param.paramtype.interval.duration.version
 
 Note - the location, param, and version parts are often subdivided 
-with hyphens. See section ____ (coming soon) for more details on
-time series.
+with hyphens. See section :doc:`Time Series Introduction <./start-timeseries>`
+for more details on time series.
 
 * location - This refers to a Site in the database. This is the site name.
 * param - This is the Data Type (such as precip, stage, speed, etc).
@@ -175,8 +179,7 @@ the nuts and bolts of using the computation processor.
 In the examples below, all the time series and computations are 
 in UTC.  In most cases the examples below show how the default
 output is calculated. For more information about how to apply time
-shifts, and manipulate the calculation, see section _______resources-compuations
-resources-compuations.rst
+shifts, and manipulate the calculation.  
 
 To create a new computation click on the "New" button on the bottom of the 
 "List" tab. A window will pop up instructing the user to enter a name.
@@ -196,6 +199,9 @@ the process, and call a group for the computation (if applicable).
 Users can also specify a start and end time for when the computation
 is effective.  Recall that by default, computations in the computation
 process are triggered when new data is available in the database.  
+
+For more information about the default or standard algorithms that
+come installed in OpenDCS see :doc:`Resources - Algorithms <./resources-algorithms>`.
 
 Sample Calculation: Copy Time Series
 ------------------------------------
@@ -302,8 +308,6 @@ As a final few steps - add in any comments about the computation for
 documentation purposes.  Click "Commit" on the bottom of the screen so
 that all the steps above are saved.
 
-To see how to test the computation, see the section ____ below. 
-
 Sample Calculation: Stage - Top of Hour
 ---------------------------------------
 
@@ -328,8 +332,6 @@ settings.
 
 * **aggLowerBoundClosed** : true
 * **aggUperBoundClosed** : false
-
-For more detail about the Computation Properties see section ____. 
 
 The input and output roles for this algorithm are called
 
@@ -599,8 +601,5 @@ computations, including some of the following:
 * Defining trigger input criteria
 * Writing custom algorithms that pull data from the database
 
-For more information about getting started with these common utilities see  
-:doc:`More on Computations <./resources-computations>`
-(content coming soon)
 
 
