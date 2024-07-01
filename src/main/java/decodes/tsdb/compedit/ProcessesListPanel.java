@@ -260,7 +260,8 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 		CAPEdit.instance().compeditDescriptions
 		.getString("ProcessListPanel.TableColumn4") };
 	static int columnWidths[] = { 10, 25, 10, 55 };
-	static char sortType[] = { 'i', 'S', 'i', 'S' };
+//	static char sortType[] = { 'i', 'S', 'i', 'S' };
+	static Class[] sortType = {Integer.class, String.class, Integer.class, String.class};
 	int sortedBy = -1;
 	int minProcId = -1;
 	
@@ -278,6 +279,14 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 		Collections.sort(myvector, new ProcessesListComparator(c, sortType[c]));
 		sortedBy = c;
 		fireTableDataChanged();
+	}
+
+	@Override
+	public Class<?> getColumnClass(int columnIndex) {
+		if (myvector.isEmpty()) {
+			return Object.class;
+		}
+		return getValueAt(0, columnIndex).getClass();
 	}
 
 	public void fill()
@@ -357,16 +366,16 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 	}
 	
 	
-	public static String getNlColumn(CompAppInfo obj, int columnIndex) {
+	public static Object getNlColumn(CompAppInfo obj, int columnIndex) {
 		switch (columnIndex) {
 		case 0:
-			return String.valueOf(obj.getAppId());
+			return obj.getAppId().getValue();
 		case 1:
 			return obj.getAppName();
 		case 2:
-			return String.valueOf(obj.getNumComputations());
+			return Integer.valueOf(obj.getNumComputations());
 		case 3:
-			return getFirstLine(obj.getComment());
+			return obj.getComment();
 		default:
 			return "";
 		}
@@ -401,9 +410,9 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 class ProcessesListComparator implements Comparator<CompAppInfo>
 {
 	int column;
-	char sortType;
+	Class<?> sortType;
 
-	public ProcessesListComparator(int column, char sortType)
+	public ProcessesListComparator(int column, Class<?> sortType)
 	{
 		this.column = column;
 		this.sortType = sortType;
@@ -417,20 +426,20 @@ class ProcessesListComparator implements Comparator<CompAppInfo>
 		if (ds1 == ds2)
 			return 0;
 
-		String s1 = ProcessesListPanelTableModel.getNlColumn(ds1, column);
-		String s2 = ProcessesListPanelTableModel.getNlColumn(ds2, column);
-		if (sortType == 'i')
+		Object s1 = ProcessesListPanelTableModel.getNlColumn(ds1, column);
+		Object s2 = ProcessesListPanelTableModel.getNlColumn(ds2, column);
+		if (sortType == Integer.class)
 		{
 			try
 			{
-				int i1 = Integer.parseInt(s1.trim());
-				int i2 = Integer.parseInt(s2.trim());
+				int i1 = (Integer)s1;
+				int i2 = (Integer)s2;
 				return i1 - i2;
 			}
 			catch(Exception ex) {}
 		}
 
-		return s1.compareToIgnoreCase(s2);
+		return ((String)s1).compareToIgnoreCase((String)s2);
 	}
 
 	public boolean equals(Object ob)
