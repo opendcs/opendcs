@@ -64,6 +64,8 @@ As a recap, below is a table of algorithms that come with OpenDCS installs.
 |                    |SubSample                | decodes.tsdb.algo.SubSample               |
 |                    +-------------------------+-------------------------------------------+
 |                    |SumOverTimeAlgorithm     | decodes.tsdb.algo.SumOverTimeAlgorithm    |
+|                    +-------------------------+-------------------------------------------+
+|                    |ToIrregularUsingPattern  | decodes.cwms.algo.ToIrregularUsingPattern |
 +--------------------+-------------------------+-------------------------------------------+
 | * Hydrologic       |BridgeClearance          | decodes.tsdb.algo.BridgeClearance         |
 |                    +-------------------------+-------------------------------------------+
@@ -137,6 +139,9 @@ these algorithms are for executing simple arithmetic.
 +-------------------------+----------------------------------------------------------+
 |SumOverTimeAlgorithm     |Sums single 'input' parameter to a single 'sum' parameter |
 +-------------------------+----------------------------------------------------------+
+|ToIrregularUsingPattern  |Interpolates an 'input' to have dates matching Pattern    |
++-------------------------+----------------------------------------------------------+
+
 
 Recall, that when a computation is set up, the output is a 
 separate time series.   Input time series are NOT being manipulated 
@@ -429,6 +434,40 @@ SumOverTimeAlgorithm
 --------------------
 
 ... more content coming soon ...
+
+ToIrregularUsingPattern
+--------------------
+
+The ToIrregularusingPattern Algorithm generates a new time series data set from an existing
+irregular or regular interval time series data set. The times for the new time series are
+defined by the times of a second time series data set. Values for the new time series are
+computed from the original time series data by interpolating between the two bounding input
+point using three methods. The data type of the original time series data governs how values
+are interpolated.
+
+* Data type "INST-VAL" (or "INST-CUM") considers the value to change linearly over the interval from the previous data value to the current data value.
+* Data type "PER-AVER" considers the value to be constant at the current data value over the interval.
+* Data type "PER-CUM" considers the value to increase from 0.0 (at the start of the interval) up to the current value over the interval.
+
+Interpolation of the three data types is illustrated below.
+
+.. image:: ./media/resources/algorithms/im-30-comp-ToIrregular.JPG
+   :alt:  algorithm ToIrregularUsingPattern
+   :width: 500
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Inputs     |pattern          |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
+
+... more content coming soon ...
+
+
 
 Standard - Hydrologic
 =====================

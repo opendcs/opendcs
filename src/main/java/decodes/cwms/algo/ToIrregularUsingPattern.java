@@ -1,10 +1,10 @@
-package decodes.tsdb.algo;
+package decodes.cwms.algo;
 
 import decodes.cwms.CwmsConstants;
 import decodes.cwms.CwmsTsId;
-import decodes.db.DataType;
-import decodes.hdb.HdbTsId;
 import decodes.tsdb.*;
+import decodes.tsdb.algo.AWAlgoType;
+import decodes.tsdb.algo.AW_AlgorithmBase;
 import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
