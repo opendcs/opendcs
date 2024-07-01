@@ -41,14 +41,9 @@ task stage(type: Copy) {
     }
 
     from(configurations.opendcs) {
-        into 'bin'
-        include 'opendcs-*.jar'
-        rename 'opendcs-.*.jar', 'opendcs.jar'
-    }
-
-    from(configurations.opendcs) {
         into 'dep'
         exclude 'opendcs-*.jar'
+        rename('^(Cobra-1.0.2.jar|LoboBrowser-1.0.0.jar)','zzz$1')
         // TODO: rename lobo and cobra to prefix with zzz.
         // TODO: after everything generally working, get rid of those two deps.
     }
@@ -78,3 +73,23 @@ izpack {
 }
 
 build.finalizedBy izPackCreateInstaller
+
+
+task runLauncher(type: Exec) {
+    dependsOn stage
+
+    if (osWin) {
+        executable "cmd"
+        args "/c", "launcher_start.bat", "-d3", "-l", "CON:"
+    } else {
+        executable 'launcher_start'
+        args "-d3", "-l", "/dev/stdout"
+    }
+    environment "DCSTOOL_HOME": file(stage.outDir)
+    environment "PATH": files(
+                            file(stage.outDir+"/bin"),
+                            file(System.getenv("JAVA_HOME")+"/bin")
+                            )
+                        .asPath
+
+}

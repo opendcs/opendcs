@@ -7,7 +7,9 @@ pushd "%BIN_PATH%.."
 set "APP_PATH=%CD%"
 popd
 
-set "CLASSPATH=%BIN_PATH%opendcs.jar;%BIN_PATH%hibernate.cfg.xml;"
+set "ARG_FILE=%TEMP%\decj_argfile"
+
+set "CLASSPATH=%APP_PATH%\dummy.jar"
 
 if defined CP_SHARED_JAR_DIR (
  for /R "%CP_SHARED_JAR_DIR%" %%a in (*.jar) do (
@@ -37,4 +39,14 @@ for /R "%DCSTOOL_USERDIR%/dep" %%a in (*.jar) do (
   set "CLASSPATH=!CLASSPATH!;%%a"
   )
 
-java -Xmx240m %DECJ_MAXHEAP% %DECJ_OPTS% -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" %*%
+echo -Xmx240m >> %ARG_FILE%
+if defined DECJ_MAXHEAP (echo !DECJ_MAXHEAP! >> !ARG_FILE!)
+if defined DECJ_OPTS (echo !DECJ_OPTS! >> !ARG_FILE!)
+echo -cp !CLASSPATH! >> %ARG_FILE%
+echo -DDCSTOOL_HOME="%APP_PATH:\=/%" >> %ARG_FILE%
+echo -DDECODES_INSTALL_DIR="%APP_PATH:\=/%" >> %ARG_FILE%
+echo -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR:\=/%" >> %ARG_FILE%
+cat %ARG_FILE%
+@echo on
+java @"%ARG_FILE%" %*%
+del "%ARG_FILE%"

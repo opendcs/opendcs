@@ -1,6 +1,3 @@
-import org.apache.tools.ant.taskdefs.condition.Os
-
-def osWin = Os.isFamily(Os.FAMILY_WINDOWS)
 def pythonExe = osWin ? "python.exe" : "python3"
 def docsVenv = "$buildDir/sphinx"
 def docsDir = projectDir
