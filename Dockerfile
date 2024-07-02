@@ -2,14 +2,13 @@
 FROM openjdk:8-jdk-bullseye as builder
 
 RUN --mount=type=cache,target=/var/cache/apt \ 
-    apt-get update && apt-get -y upgrade && \
-    apt-get install -y ant
+    apt-get update && apt-get -y upgrade
 WORKDIR /app
 
 COPY . .
 
 RUN --mount=type=cache,target=/root \
-    ant stage -Dno.docs=true
+    ./gradlew  -Dno.docs=true
 # end initial build
 
 FROM openjdk:8-jre-alpine as opendcs_base

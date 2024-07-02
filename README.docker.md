@@ -22,4 +22,4 @@ Additional containers will be available later
 
 # Tags
 
-7, 7.0, latest
+8, 8.0, 8.0-latest
