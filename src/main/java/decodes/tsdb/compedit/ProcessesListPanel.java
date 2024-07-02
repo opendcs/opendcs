@@ -260,7 +260,7 @@ class ProcessesListPanelTableModel extends AbstractTableModel implements
 		CAPEdit.instance().compeditDescriptions
 		.getString("ProcessListPanel.TableColumn4") };
 	static int columnWidths[] = { 10, 25, 10, 55 };
-//	static char sortType[] = { 'i', 'S', 'i', 'S' };
+
 	static Class[] sortType = {Integer.class, String.class, Integer.class, String.class};
 	int sortedBy = -1;
 	int minProcId = -1;
