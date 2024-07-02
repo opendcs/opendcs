@@ -48,11 +48,11 @@ public class AlgoListTableModel
 	private String errMsg3;
 	
 //	Vector<DbCompAlgorithm> myvector = new Vector<DbCompAlgorithm>();
-	ArrayList<AlgorithmInList> myList = new ArrayList<AlgorithmInList>();
+	private ArrayList<AlgorithmInList> myList = new ArrayList<AlgorithmInList>();
 	private String columnNames[];
 	static int columnWidths[] = { 5, 20, 25, 8, 42};
 
-	static Class[] sortType = {Long.class, String.class, String.class, Integer.class, String.class};
+	private static Class[] sortType = {Long.class, String.class, String.class, Integer.class, String.class};
 
 	int sortedBy = -1;
 	int minAlgoId = -1;
