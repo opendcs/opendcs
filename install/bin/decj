@@ -48,7 +48,7 @@ if [ ! -d "$DCSTOOL_USERDIR" ]; then
 fi
 
 # Build classpath
-CP=$DH/bin/opendcs.jar:
+CP=$DH/bin/opendcs.jar:$DH/bin/opendcs-annotations.jar
 
 # # For CWMS Installations, add the HEC and RMA Jars.
 # if [ -n "$CWMS_JAR_DIR" -a -d "$CWMS_JAR_DIR" ]
