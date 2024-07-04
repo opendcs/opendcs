@@ -1,18 +1,7 @@
-buildscript {
-    repositories {
-        gradlePluginPortal()
-    }
-
-    dependencies {
-        classpath 'com.bmuschko:gradle-izpack-plugin:3.2'
-    }
-}
-
-
 plugins {
-    id 'com.bmuschko.izpack' version '3.2'
     id 'java'
     id 'opendcs.java-conventions'
+    id 'distribution'
 }
 
 configurations {
@@ -21,15 +10,15 @@ configurations {
 }
 
 dependencies {
-    izpack 'org.codehaus.izpack:izpack-standalone-compiler:4.3.5'
     opendcs project(":core")
     docs project(path: ":docs", configuration: 'docs')
 }
 
 task stage(type: Copy) {
+    ext.outDir = layout.buildDirectory.dir("stage").get()
     from 'src/main/install'
-    into "$buildDir/assemble/izpack"
-    ext.outDir = "${buildDir}/assemble/izpack"
+    into "${outDir}"
+    
 
     from 'src/main/izpack'
 
@@ -42,10 +31,6 @@ task stage(type: Copy) {
 
     from(configurations.opendcs) {
         into 'dep'
-        exclude 'opendcs-*.jar'
-        rename('^(Cobra-1.0.2.jar|LoboBrowser-1.0.0.jar)','zzz$1')
-        // TODO: rename lobo and cobra to prefix with zzz.
-        // TODO: after everything generally working, get rid of those two deps.
     }
 
     from(configurations.docs) {
@@ -53,27 +38,24 @@ task stage(type: Copy) {
     }
 
     doLast {
-        project.mkdir("$buildDir/assemble/izpack/dep")
-        project.mkdir("$buildDir/assemble/izpack/edit-db/config")
-        project.mkdir("$buildDir/assemble/izpack/edit-db/routing")
-        project.mkdir("$buildDir/assemble/izpack/edit-db/platform")
-        project.mkdir("$buildDir/assemble/izpack/edit-db/netlist")
-        project.mkdir("$buildDir/assemble/izpack/edit-db/equipment")
-        project.mkdir("$buildDir/assemble/izpack/edit-db/site")
-        project.mkdir("$buildDir/assemble/izpack/doc")
+        project.mkdir("${outDir}/edit-db/config")
+        project.mkdir("${outDir}/edit-db/routing")
+        project.mkdir("${outDir}/edit-db/platform")
+        project.mkdir("${outDir}/edit-db/netlist")
+        project.mkdir("${outDir}/edit-db/equipment")
+        project.mkdir("${outDir}/edit-db/site")
+        project.mkdir("${outDir}/doc")
     }
 }
 
-izPackCreateInstaller.dependsOn stage
-
-izpack {
-    
-    appProperties = ['version': version]
-    outputFile = file("$buildDir/distributions/opendcs-install-${version}.jar")
+distributions {
+    main {
+        distributionBaseName = rootProject.name
+        contents {
+            from stage
+        }
+    }
 }
-
-build.finalizedBy izPackCreateInstaller
-
 
 task runLauncher(type: Exec) {
     dependsOn stage
@@ -87,7 +69,7 @@ task runLauncher(type: Exec) {
     }
     environment "DCSTOOL_HOME": file(stage.outDir)
     environment "PATH": files(
-                            file(stage.outDir+"/bin"),
+                            file(stage.outDir.dir("bin")),
                             file(System.getenv("JAVA_HOME")+"/bin")
                             )
                         .asPath

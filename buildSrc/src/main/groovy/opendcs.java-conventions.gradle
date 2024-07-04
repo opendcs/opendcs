@@ -33,22 +33,10 @@ repositories {
                 artifact()
             }
     }
-    ivy
-    {
-        url "https://github.com"
-        metadataSources
-        {
-            artifact()
-        }
-        patternLayout
-        {
-            artifact "[organisation]/[module]/releases/download/[revision]/[artifact].[ext]"
-        }
-        content
-        {
-            includeGroup "lobobrowser"
-        }
-    }
+}
+
+jar {
+    archivesBaseName = "${rootProject.name}-${project.name}"
 }
 
 configurations {

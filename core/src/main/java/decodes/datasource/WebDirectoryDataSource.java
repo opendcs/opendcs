@@ -9,10 +9,16 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -21,6 +27,8 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.Vector;
 
+import org.python.apache.xerces.jaxp.DocumentBuilderImpl;
+import org.python.icu.impl.duration.TimeUnit;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -41,17 +49,16 @@ import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
 
-import org.cobraparser.ua.UserAgentContext;
-import org.cobraparser.html.parser.DocumentBuilderImpl;
-import org.cobraparser.html.parser.InputSourceImpl;
-import org.lobobrowser.request.UserAgentContextImpl;
-
-
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.transform.dom.DOMSource; 
+import javax.xml.transform.stream.StreamSource; 
+import javax.xml.transform.stream.StreamResult; 
 /**
  * Designed for MB Hydro use of the dd.weatheroffice.gc.ca web site.
  * Provide a directory URL with embedded times in it. Build the URL and list the files
  * contained in the directory. Parse the file names for mediumIDs I'm interested in.
  * File names also contain the message time stamp.
+ * https://dd.weather.gc.ca/hydrometric/csv/AB/daily/
  */
 public class WebDirectoryDataSource extends DataSourceExec
 {
@@ -402,44 +409,20 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 		Properties urlProps = new Properties();
 		urlProps.setProperty("TZ", urlTimeZone.getID());
 		currentDirUrl = EnvExpander.expand(directoryUrl, urlProps, nextDirectoryTime);
-		InputStream istrm = null;
-		Reader ireader = null;
 		try
 		{
 			Logger.instance().debug1(module + " reading URL '" + currentDirUrl + "'");
-			URL dirUrl = new URL(currentDirUrl);
-			URLConnection urlCon = dirUrl.openConnection();
-			istrm = urlCon.getInputStream();
-			ireader = new InputStreamReader(istrm);
-			InputSource isrc = new InputSourceImpl(ireader, currentDirUrl);
-			UserAgentContext uaCtx = new UserAgentContextImpl(null);
-			DocumentBuilderImpl docBldr = new DocumentBuilderImpl(uaCtx);
-			Document dirDoc = docBldr.parse(isrc);
-			isrc.getClass();
-			
-			NodeList anchorNodes = dirDoc.getElementsByTagName("a");
-			for (int idx = 0; idx < anchorNodes.getLength(); idx++)
-			{
-				Node node = anchorNodes.item(idx);
-				Node hrefAttr = node.getAttributes().getNamedItem("href");
-				if (hrefAttr == null)
-				{
-//Logger.instance().debug1(module + " skipping anchor '" + node.getNodeValue() 
-//+ "' because no href attr.");
-					continue;
-				}
-				
-				// For the file nodes we want, the href attribute is the same as the anchor content.
-				if (TextUtil.equals(node.getTextContent(), hrefAttr.getNodeValue()))
-					fileList.add(node.getTextContent());
-//else
-//Logger.instance().debug1(module + " skipping anchor with href='" + hrefAttr.getNodeValue() 
-//+ "' diff from content '" + node.getTextContent() + "'");
-			}
 
-//Logger.instance().debug1("Read new file list: ");
-//if (fileList.isEmpty()) Logger.instance().debug1("\tEmpty");
-//else for(String s : fileList) Logger.instance().debug1("\t" + s);
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(currentDirUrl))
+                .timeout(Duration.ofSeconds(10))
+                .GET()
+                .build();
+            var response = HttpClient.newBuilder().build().send(request, BodyHandlers.ofInputStream());
+            // TODO: we don't actually need to "parse" the HTML, just scan for <a HREF= tags and take the string.
+            // so regec will work but will sort out later.
+            
+			
 			return true;
 		}
 		catch(MalformedURLException ex)
@@ -456,10 +439,6 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 		catch(IOException ex)
 		{
 			Logger.instance().warning(module + " Error reading URL '" + currentDirUrl + "': " + ex);
-		} 
-		catch (SAXException ex)
-		{
-			Logger.instance().warning(module + " Error parsing data from URL '" + currentDirUrl + "': " + ex);
 		}
 		catch(Exception ex)
 		{
@@ -469,13 +448,6 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 			if (ps != null)
 				ex.printStackTrace(ps);
 			
-		}
-		finally
-		{
-			if (ireader != null)
-				try { ireader.close(); } catch(Exception ex) {}
-			if (istrm != null)
-				try { istrm.close(); } catch(Exception ex) {}
 		}
 		
 		return false;
