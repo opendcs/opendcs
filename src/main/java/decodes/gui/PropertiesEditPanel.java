@@ -4,39 +4,23 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.table.*;
 
-import org.cobraparser.html.domimpl.HTMLElementBuilder.P;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.TreeSet;
-import java.util.Enumeration;
 
 import javax.swing.border.*;
 
 import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.gui.properties.PropertiesTableModel;
-import decodes.util.DynamicPropertiesOwner;
-import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
 import java.awt.event.*;
-
-import ilex.util.Logger;
-import ilex.util.StringPair;
-import ilex.util.TextUtil;
 
 /**
  * A panel that allows you to edit a group of Properties.
 *
 * @see PropertiesEditDialog
 */
-@SuppressWarnings("serial")
 public class PropertiesEditPanel extends JPanel
 {
     private static ResourceBundle genericLabels = null;

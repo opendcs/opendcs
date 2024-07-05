@@ -4,24 +4,8 @@
 
 package decodes.gui.properties;
 
-import java.awt.*;
-
 import javax.swing.*;
-import javax.swing.table.*;
-
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.TreeSet;
-import java.util.Enumeration;
-
-import javax.swing.border.*;
 
 import decodes.gui.PropertiesEditDialog;
 import decodes.gui.PropertiesEditPanel;
@@ -36,14 +20,12 @@ import java.awt.event.*;
 
 import ilex.util.Logger;
 import ilex.util.StringPair;
-import ilex.util.TextUtil;
 
 /**
  * A panel that allows you to edit a group of Properties.
  *
  * @see PropertiesEditDialog
  */
-@SuppressWarnings("serial")
 public class PropertiesEditPanelController implements PropertiesEditController
 {
     private PropertiesOwner propertiesOwner;
@@ -51,7 +33,6 @@ public class PropertiesEditPanelController implements PropertiesEditController
     private PropertiesTableModel model;
     private JDialog ownerDialog;
     private JFrame ownerFrame;
-    private boolean changesMade = false;
 
     public PropertiesEditPanelController(PropertiesTableModel model, PropertiesEditPanel view)
     {
@@ -68,7 +49,6 @@ public class PropertiesEditPanelController implements PropertiesEditController
     public void setProperties(Properties properties)
     {
         model.setProperties(properties);
-        changesMade = false;
     }
 
     public void setView(PropertiesEditPanel view)
@@ -121,37 +101,31 @@ public class PropertiesEditPanelController implements PropertiesEditController
             propSpec.setDynamic(true);
         }
 
-        if (ownerDialog != null)
-            dlg = new PropertyEditDialog(ownerDialog, "", "", propSpec);
-        else if (ownerFrame != null)
-            dlg = new PropertyEditDialog(ownerFrame, "", "", propSpec);
-        else
-            dlg = new PropertyEditDialog(TopFrame.instance(), "", "", propSpec);
-        dlg.setLocation(50, 50);
-        dlg.setLocationRelativeTo(view);
+        dlg = getDialog("", "", propSpec);
         dlg.setVisible(true);
         StringPair sp = dlg.getResult();
         if (sp != null)
+        {
             model.add(sp);
+        }
         else
+        {
             return;
+        }
 
         if (propSpec != null && propSpec.isDynamic())
         {
-            ((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
-                sp.first, propSpec.getDescription());
+            ((DynamicPropertiesOwner)propertiesOwner)
+                .setDynamicPropDescription(sp.first, propSpec.getDescription());
             model.getPropHash().put(propSpec.getName().toUpperCase(), propSpec);
         }
-
-        changesMade = true;
     }
 
     /**
      * Called when the 'Edit' button is pressed. Displays a sub-dialog for user
     * to edit the selected name/value.
     *
-    * @param e
-    *            ignored.
+    * @param modelRow which row to edit.
     */
     public void editPressed(int modelRow)
     {
@@ -159,43 +133,54 @@ public class PropertiesEditPanelController implements PropertiesEditController
         StringPair sp = model.propAt(modelRow);
         PropertySpec propSpec = null;
         if (model.getPropHash() != null)
+        {
             propSpec = model.getPropHash().get(sp.first.toUpperCase());
-//System.out.println("Editing prop '" + sp.first + "' isDynamic=" +
-//(propSpec != null && propSpec.isDynamic()));
+        }
 
         PropertyEditDialog dlg = null;
         Logger.instance().debug3("Editing propspec=" + propSpec);
-        if (ownerDialog != null)
-            dlg = new PropertyEditDialog(ownerDialog, sp.first, sp.second, propSpec);
-        else if (ownerFrame != null)
-            dlg = new PropertyEditDialog(ownerFrame, sp.first, sp.second, propSpec);
-        else
-            dlg = new PropertyEditDialog(TopFrame.instance(), sp.first, sp.second, propSpec);
-        dlg.setLocation(50, 50);
-        dlg.setLocationRelativeTo(view);
+        dlg = getDialog(sp.first, sp.second, propSpec);
         dlg.setVisible(true);
         StringPair res = dlg.getResult();
         if (res != null)
         {
             model.setPropAt(modelRow, res);
-            changesMade = true;
             saveChanges();
         }
 
         if (propSpec != null && propSpec.isDynamic())
         {
-            ((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
-                propSpec.getName(), propSpec.getDescription());
+            ((DynamicPropertiesOwner)propertiesOwner)
+                .setDynamicPropDescription(propSpec.getName(), propSpec.getDescription());
             model.getPropHash().put(propSpec.getName().toUpperCase(), propSpec);
         }
+    }
+
+    private PropertyEditDialog getDialog(String property, String value, PropertySpec propertySpec)
+    {
+        PropertyEditDialog dlg;
+        if (ownerDialog != null)
+        {
+            dlg = new PropertyEditDialog(ownerDialog, property, value, propertySpec);
+        }
+        else if (ownerFrame != null)
+        {
+            dlg = new PropertyEditDialog(ownerFrame, property, value, propertySpec);
+        }
+        else
+        {
+            dlg = new PropertyEditDialog(TopFrame.instance(), property, value, propertySpec);
+        }
+        dlg.setLocation(50, 50);
+        dlg.setLocationRelativeTo(view);
+        return dlg;
     }
 
     /**
      * Called when the 'Delete' button is pressed. Removes the selected property
     * from the table.
     *
-    * @param e
-    *            ignored.
+    * @param modelRow which property to delete.
     */
     public void deleteButton_actionPerformed(int modelRow)
     {
@@ -208,13 +193,13 @@ public class PropertiesEditPanelController implements PropertiesEditController
         {
             model.getPropHash().remove(sp.first.toUpperCase());
             if (propSpec.isDynamic())
-                ((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
-                    propSpec.getName(), null);
-
+            {
+                ((DynamicPropertiesOwner)propertiesOwner)
+                    .setDynamicPropDescription(propSpec.getName(), null);
+            }
         }
 
         model.deletePropAt(modelRow);
-        changesMade = true;
     }
 
     /** @return true if anything in the table has been changed. */
@@ -237,35 +222,6 @@ public class PropertiesEditPanelController implements PropertiesEditController
     {
         model.redrawTable();
     }
-
-    /**
-     * Adds empty properties with the passed names, but doesn't overwrite any
-    * existing property settings.
-    *
-    * @param propnames
-    *            array of property names.
-    */
-    public void addEmptyProps(String[] propnames)
-    {
-        model.addEmptyProps(propnames);
-    }
-
-    /**
-     * Adds a default property name and value, only if a property with this name
-    * doesn't already exist.
-    */
-    // public void addDefaultProperty(String name, String value)
-    // {
-    // for(int i=0; i<model.props.size(); i++)
-    // if (name.equals(((Property)model.props.elementAt(i)).name))
-    // return;
-    // model.props.add(new Property(name, value));
-    // System.out.println("Added new property: " + name + "=" + value);
-    // model.fireTableDataChanged();
-    // }
-
-
-
 
     @Override
     public PropertiesTableModel getModel()

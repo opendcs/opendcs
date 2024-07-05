@@ -2,8 +2,6 @@ package decodes.gui.properties;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,7 +18,6 @@ import decodes.gui.TopFrame;
 import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 
@@ -83,7 +80,7 @@ public class PropertiesTableModel extends AbstractTableModel
              {
                  StringPair sp = new StringPair(propHash.get(ucName).getName(), "");
                  props.add(sp);
-                 Logger.instance().debug3("Added spec'ed property '" + sp.first + "'");
+                 log.trace("Added spec'ed property '{}'", sp.first);
              }
          }
          // Now remove the unassigned props that are no longer spec'ed
@@ -96,10 +93,10 @@ public class PropertiesTableModel extends AbstractTableModel
                                                                      // hash
              {
                  spit.remove();
-                 Logger.instance().debug3("Removed unspec'ed property '" + sp.first + "'");
+                 log.trace("Removed unspec'ed property '{}'", sp.first);
              }
          }
-         Logger.instance().debug3("Property table now has " + props.size() + " rows.");
+         log.trace("Property table now has {} rows.", props.size());
          this.fireTableDataChanged();
      }
 
@@ -233,10 +230,10 @@ public class PropertiesTableModel extends AbstractTableModel
          changed = true;
      }
 
-     public void addEmptyProps(String[] propnames)
+     public void addEmptyProps(String[] propNames)
      {
          int numAdded = 0;
-         for (String nm : propnames)
+         for (String nm : propNames)
          {
              int row = 0;
              for (; row < getRowCount(); row++)
@@ -384,4 +381,12 @@ public class PropertiesTableModel extends AbstractTableModel
         fireTableRowsInserted(props.size()-1, props.size()-1);
     }
 
+    /**
+     * Return the Property Owner in case a downstream component needs to check something.
+     * @return The set properties owner
+     */
+    public PropertiesOwner getPropertiesOwner()
+    {
+        return this.propertiesOwner;
+    }
  }
