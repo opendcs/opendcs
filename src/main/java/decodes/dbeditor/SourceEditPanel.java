@@ -80,7 +80,7 @@ public class SourceEditPanel extends DbEditorTab
 			if (dataSource.getDataSourceArg() == null)
 				dataSource.setDataSourceArg("");
 			theProperties = PropertiesUtil.string2props(dataSource.getDataSourceArg());
-			propertiesEditPanel = new PropertiesEditPanel(theProperties);
+			propertiesEditPanel = PropertiesEditPanel.from(theProperties);
 			propertiesEditPanel.setOwnerFrame(getParentFrame());
 
 			groupMemberListModel = new GroupMemberListModel(dataSource);
@@ -129,7 +129,7 @@ public class SourceEditPanel extends DbEditorTab
 	{
 		dataSource.setName(nameField.getText());
 		dataSource.dataSourceType = (String)sourceTypeCombo.getSelectedItem();
-		propertiesEditPanel.saveChanges();
+		propertiesEditPanel.getModel().saveChanges();
 		dataSource.setDataSourceArg(PropertiesUtil.props2string(theProperties));
 	}
 
@@ -218,7 +218,7 @@ public class SourceEditPanel extends DbEditorTab
 					Class<?> dsClass = dsEv.getExecClass();
 					Constructor<?> constructor = dsClass.getConstructor(DataSource.class, Database.class);
 					DataSourceExec exec = (DataSourceExec)constructor.newInstance(dataSource,getDb());
-					propertiesEditPanel.setPropertiesOwner(exec);
+					propertiesEditPanel.getModel().setPropertiesOwner(exec);
 				}
 				catch(Exception ex) {
 					log.error("Error setting properties for '{}'",dsType,ex);
@@ -528,5 +528,3 @@ class GroupMemberListModel extends AbstractListModel
 		this.fireContentsChanged(this, 0, getSize());
 	}
 }
-
-

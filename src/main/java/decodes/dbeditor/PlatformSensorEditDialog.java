@@ -23,8 +23,9 @@ import decodes.db.DataType;
 import decodes.db.PlatformSensor;
 import decodes.db.Site;
 import decodes.db.SiteName;
-import decodes.gui.PropertiesEditPanel;
 import decodes.gui.GuiDialog;
+import decodes.gui.PropertiesEditPanel;
+import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.util.DecodesSettings;
 
 /**
@@ -67,7 +68,7 @@ public class PlatformSensorEditDialog extends GuiDialog
 	JLabel usgsDdnoLabel = new JLabel();
 	JComboBox usgsDdnoCombo = new JComboBox();
 	GridBagLayout gridBagLayout2 = new GridBagLayout();
-	PropertiesEditPanel propsPanel = new PropertiesEditPanel(new Properties());
+	PropertiesEditPanel propsPanel = PropertiesEditPanel.from(new Properties());
 	GridBagLayout gridBagLayout3 = new GridBagLayout();
 	Border border5 = BorderFactory.createEtchedBorder(Color.white,
 		new Color(165, 163, 151));
@@ -401,14 +402,14 @@ public class PlatformSensorEditDialog extends GuiDialog
 		if (curpos != -1)
 			usgsDdnoCombo.setSelectedIndex(curpos);
 
-		propsPanel.setProperties(theProperties);
-		propsPanel.setPropertiesOwner(ps);
+		propsPanel.getModel().setProperties(theProperties);
+		propsPanel.getModel().setPropertiesOwner(ps);
 	}
 
 	private boolean saveChanges()
 	{
 		// Save properties changes and copy them back to the sensor object.
-		propsPanel.saveChanges();
+		propsPanel.getModel().saveChanges();
 		platformSensor.getProperties().clear();
 		PropertiesUtil.copyProps(platformSensor.getProperties(), theProperties);
 

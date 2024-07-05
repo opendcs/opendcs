@@ -318,7 +318,7 @@ public class LrgsConfigDialog extends GuiDialog
         hritFileCfgPanel.fillFields(lrgsConfig);
         edlConfigPanel.fillFields(lrgsConfig);
 
-        miscPanel.setProperties(lrgsConfig.getOtherProps());
+        miscPanel.getModel().setProperties(lrgsConfig.getOtherProps());
 
         //dds server tab
         getDdsListenPortField().setText(String.valueOf(lrgsConfig.ddsListenPort));
@@ -354,7 +354,7 @@ public class LrgsConfigDialog extends GuiDialog
         networkDcpCfgPanel.setContents(networkDcpSettings,
             lrgsConfig.networkDcpEnable);
 
-        miscPanel.setPropertiesOwner(lrgsConfig);
+        miscPanel.getModel().setPropertiesOwner(lrgsConfig);
     }
 
     /**
@@ -682,9 +682,9 @@ public class LrgsConfigDialog extends GuiDialog
             }
 
             // On the 'misc' tab
-            if (miscPanel.hasChanged())
+            if (miscPanel.getModel().hasChanged())
             {
-                miscPanel.saveChanges();
+                miscPanel.getModel().saveChanges();
                 changed = true;
             }
         }
@@ -1046,7 +1046,7 @@ public class LrgsConfigDialog extends GuiDialog
         JLabel lab = new JLabel(labels.getString(
                 "LrgsConfigDialog.miscPars"));
         miscConfigTab.add(lab, BorderLayout.NORTH);
-        miscPanel = new PropertiesEditPanel(new Properties());
+        miscPanel = PropertiesEditPanel.from(new Properties());
         miscConfigTab.add(miscPanel, BorderLayout.CENTER);
         return miscConfigTab;
     }
