@@ -29,19 +29,19 @@ public class PropertiesTableModel extends AbstractTableModel
      private static final org.slf4j.Logger log = LoggerFactory.getLogger(PropertiesTableModel.class);
      private static ResourceBundle genericLabels = PropertiesEditDialog.getGenericLabels();
      /** The properties as a list of StringPair object. */
-     ArrayList<StringPair> props = new ArrayList<StringPair>();
+     private ArrayList<StringPair> props = new ArrayList<StringPair>();
      private PropertiesOwner propertiesOwner;
 
      /** Column names */
-     static String columnNames[];
+     private static String columnNames[];
 
      /** The Properties set that we're editing. */
-     Properties origProps;
+     private Properties origProps;
 
      /** flag to keep track of changes */
-     boolean changed;
+     private boolean changed;
 
-     HashMap<String, PropertySpec> propHash = null;
+     private HashMap<String, PropertySpec> propHash = null;
 
      /** Constructs a new table model for the passed Properties set. */
      public PropertiesTableModel(Properties properties)
@@ -316,7 +316,9 @@ public class PropertiesTableModel extends AbstractTableModel
         // For quick access, construct a hash with upper-case names.
         propHash = new HashMap<String, PropertySpec>();
         for (PropertySpec ps : propertiesOwner.getSupportedProps())
+        {
             propHash.put(ps.getName().toUpperCase(), ps);
+        }
         if (propertiesOwner instanceof DynamicPropertiesOwner)
         {
             DynamicPropertiesOwner dpo = (DynamicPropertiesOwner)propertiesOwner;

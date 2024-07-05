@@ -47,7 +47,6 @@ import ilex.util.TextUtil;
 public class PropertiesEditPanelController implements PropertiesEditController
 {
     private PropertiesOwner propertiesOwner;
-    private HashMap<String, PropertySpec> propHash = null;
     private PropertiesEditPanel view;
     private PropertiesTableModel model;
     private JDialog ownerDialog;
@@ -141,7 +140,7 @@ public class PropertiesEditPanelController implements PropertiesEditController
         {
             ((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
                 sp.first, propSpec.getDescription());
-            propHash.put(propSpec.getName().toUpperCase(), propSpec);
+            model.getPropHash().put(propSpec.getName().toUpperCase(), propSpec);
         }
 
         changesMade = true;
@@ -159,8 +158,8 @@ public class PropertiesEditPanelController implements PropertiesEditController
 
         StringPair sp = model.propAt(modelRow);
         PropertySpec propSpec = null;
-        if (propHash != null)
-            propSpec = propHash.get(sp.first.toUpperCase());
+        if (model.getPropHash() != null)
+            propSpec = model.getPropHash().get(sp.first.toUpperCase());
 //System.out.println("Editing prop '" + sp.first + "' isDynamic=" +
 //(propSpec != null && propSpec.isDynamic()));
 
@@ -187,7 +186,7 @@ public class PropertiesEditPanelController implements PropertiesEditController
         {
             ((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
                 propSpec.getName(), propSpec.getDescription());
-            propHash.put(propSpec.getName().toUpperCase(), propSpec);
+            model.getPropHash().put(propSpec.getName().toUpperCase(), propSpec);
         }
     }
 
@@ -204,10 +203,10 @@ public class PropertiesEditPanelController implements PropertiesEditController
             return;
         StringPair sp = model.propAt(modelRow);
         PropertySpec propSpec =
-            propHash == null ? null : propHash.get(sp.first.toUpperCase());
+            model.getPropHash() == null ? null : model.getPropHash().get(sp.first.toUpperCase());
         if (propSpec != null)
         {
-            propHash.remove(sp.first.toUpperCase());
+            model.getPropHash().remove(sp.first.toUpperCase());
             if (propSpec.isDynamic())
                 ((DynamicPropertiesOwner)propertiesOwner).setDynamicPropDescription(
                     propSpec.getName(), null);
