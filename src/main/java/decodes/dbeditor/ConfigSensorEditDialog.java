@@ -35,6 +35,7 @@ import decodes.db.Database;
 import decodes.util.TimeOfDay;
 import decodes.db.Constants;
 import decodes.gui.GuiDialog;
+import decodes.gui.properties.PropertiesEditPanelController;
 
 /**
 Dialog for editing a configuration sensor.
@@ -154,9 +155,9 @@ public class ConfigSensorEditDialog extends GuiDialog
 			 && theSensor.getUsgsStatCode() == null)
 				theSensor.setUsgsStatCode(sc); 
 
-		    propertiesEditPanel = new PropertiesEditPanel(theProperties);
+		    propertiesEditPanel = PropertiesEditPanel.from(theProperties);
 			propertiesEditPanel.setOwnerDialog(this);
-			propertiesEditPanel.setPropertiesOwner(cs);
+			propertiesEditPanel.getModel().setPropertiesOwner(cs);
             jbInit();
             pack();
 			fillValues();
@@ -348,7 +349,7 @@ public class ConfigSensorEditDialog extends GuiDialog
 
 		theSensor.timeOfFirstSample = firstSampleTime;
 		theSensor.recordingInterval = recordingInterval;
-		propertiesEditPanel.saveChanges();
+		propertiesEditPanel.getModel().saveChanges();
 		theSensor.getProperties().clear();
 		PropertiesUtil.copyProps(theSensor.getProperties(), theProperties);
 		return true;

@@ -92,7 +92,7 @@ public class SiteEditPanel extends DbEditorTab
 	{
 		super();
 	    entityOpsPanel = new EntityOpsPanel(this);
-		propsPanel = new PropertiesEditPanel(null);
+		propsPanel = PropertiesEditPanel.from(null);
         try {
             jbInit();
 			TableColumnAdjuster.adjustColumnWidths(siteNameTable,
@@ -144,7 +144,7 @@ public class SiteEditPanel extends DbEditorTab
 			DatabaseIO dbio = site.getDatabase().getDbIo();
 			isCwms = dbio instanceof CwmsSqlDatabaseIO;
 			enableFields();
-			propsPanel.setProperties(theSite.getProperties());
+			propsPanel.getModel().setProperties(theSite.getProperties());
 			fillFields(theSite);
 		}
 	}
@@ -507,7 +507,7 @@ public class SiteEditPanel extends DbEditorTab
 		if (!TextUtil.strEqualIgnoreCase(eu, theSite.getElevationUnits()))
 			return true;
 
-		if (propsPanel.hasChanged())
+		if (propsPanel.getModel().hasChanged())
 			return true;
 
 		return namesChanged;
@@ -558,7 +558,7 @@ public class SiteEditPanel extends DbEditorTab
 			pn = null;
 		theSite.setPublicName(pn);
 
-		propsPanel.saveChanges();
+		propsPanel.getModel().saveChanges();
 
 		return true;
 	}

@@ -25,6 +25,7 @@ import decodes.db.Constants;
 import decodes.dbeditor.SiteSelectPanel;
 import decodes.gui.PropertiesEditPanel;
 import decodes.gui.SortingListTable;
+import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbAlgorithmExecutive;
@@ -147,7 +148,7 @@ public class ComputationsEditPanel
                 GridBagConstraints.CENTER, GridBagConstraints.BOTH,
                 new Insets(2,2,2,2), 0, 60));
 
-        propertiesPanel = new PropertiesEditPanel(new Properties());
+        propertiesPanel = PropertiesEditPanel.from(new Properties());
         propertiesPanel.setTitle(
             ceResources.getString("ComputationsEditPanel.PropertiesPanelTitle"));
         propertiesPanel.setOwnerFrame(CAPEdit.instance().getFrame());
@@ -278,7 +279,7 @@ public class ComputationsEditPanel
             }
         }
 
-        propertiesPanel.setProperties(propCopy);
+        propertiesPanel.getModel().setProperties(propCopy);
         setPropertiesPanelOwner();
 
         String s;
@@ -836,7 +837,7 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
             break;
         }
 
-        propertiesPanel.saveChanges();
+        propertiesPanel.getModel().saveChanges();
         ob.getProperties().clear();
         PropertiesUtil.copyProps(ob.getProperties(), propCopy);
         PropertiesUtil.copyProps(ob.getProperties(), hiddenProps);
@@ -955,7 +956,7 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                         plist.append(dcp.getRoleName());
                     }
                 }
-                propertiesPanel.saveChanges();
+                propertiesPanel.getModel().saveChanges();
             nextCompProp:
                 for(Enumeration cpnenum = propCopy.propertyNames(); cpnenum.hasMoreElements(); )
                 {
@@ -1036,10 +1037,10 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                         propCopy.setProperty(pname, value);
                 }
             }
-            propertiesPanel.setProperties(propCopy);
+            propertiesPanel.getModel().setProperties(propCopy);
             setPropertiesPanelOwner();
 
-            propertiesPanel.redrawTable();
+            propertiesPanel.getModel().redrawTable();
         }
     }
 
@@ -1057,7 +1058,7 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
             if (executive instanceof AW_AlgorithmBase)
             {
                 ((AW_AlgorithmBase)executive).initForGUI();
-                propertiesPanel.setPropertiesOwner((AW_AlgorithmBase)executive);
+                propertiesPanel.getModel().setPropertiesOwner((AW_AlgorithmBase)executive);
             }
         }
         catch (Exception ex)
@@ -1232,7 +1233,7 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
      */
     public String getProperty(String name)
     {
-        return propertiesPanel.getProperty(name);
+        return propertiesPanel.getModel().getProperty(name);
     }
 
     public DbCompAlgorithm getAlgorithm()
