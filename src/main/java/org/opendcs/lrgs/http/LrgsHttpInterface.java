@@ -1,9 +1,5 @@
 package org.opendcs.lrgs.http;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -11,14 +7,11 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ilex.xml.XmlOutputStream;
 import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LoadableLrgsInputInterface;
 import lrgs.lrgsmain.LrgsInputException;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
-import lrgs.lrgsmon.DetailReportGenerator;
-import lrgs.statusxml.LrgsStatusSnapshotExt;
 
 public class LrgsHttpInterface implements LoadableLrgsInputInterface
 {
@@ -26,6 +19,7 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     private static final String TYPE = "HTTP";
 
     private org.eclipse.jetty.server.Server server = null;
+    private ServletContextHandler ctx = null;
     private int slot;
     private int port = 7000;
     private String interfaceName;
@@ -53,46 +47,25 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     @Override
     public String getInputName()
     {
-        return TYPE+":"+port;
+        return TYPE+":"+interfaceName+":"+port;
     }
 
     @Override
     public void initLrgsInput() throws LrgsInputException
     {
         server = new org.eclipse.jetty.server.Server();
-		ServletContextHandler ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
 		ctx.setContextPath("/");
 		server.setHandler(ctx);
         ServletHolder serHol = ctx.addServlet(ServletContainer.class, "/*");
 		serHol.setInitOrder(1);
 		serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
-
-        server.setAttribute("lrgs", this.lrgs);
-        server.setAttribute("archive", this.archive);
+        ctx.setAttribute("lrgs", this.lrgs);
+        ctx.setAttribute("archive", this.archive);
 
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(this.port);
         server.addConnector(connector);
-
-        /*
-            .get("/status", ctx -> {
-                LrgsStatusSnapshotExt status = lrgs.getStatusProvider().getStatusSnapshot();
-                DetailReportGenerator gen = lrgs.getReportGenerator();
-                try(ByteArrayOutputStream bos = new ByteArrayOutputStream();)
-                {
-                    XmlOutputStream xos = new XmlOutputStream(bos, "html");
-                        gen.writeReport(xos, status.hostname, status, 10);
-                        ctx.status(HttpCode.OK)
-                           .result(bos.toByteArray())
-                           .contentType(ContentType.TEXT_HTML);
-                }
-                catch (Exception ex)
-                {
-                    ctx.status(HttpCode.SERVICE_UNAVAILABLE).json("Cannot generate report.");
-                }
-            })
-            ;
-            */
     }
 
     @Override
@@ -115,8 +88,6 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     {
         try
         {
-            server.setAttribute("lrgs", this.lrgs);
-            server.setAttribute("archive", this.archive);
             server.start();
         }
         catch (Exception ex)
@@ -192,9 +163,9 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     public void setMsgArchive(MsgArchive archive)
     {
         this.archive = archive;
-        if (server != null)
+        if (ctx != null)
         {            
-            server.setAttribute("archive", this.archive);
+            ctx.setAttribute("archive", this.archive);
         }
     }
 
@@ -202,9 +173,9 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     public void setLrgsMain(LrgsMain lrgsMain)
     {
         this.lrgs = lrgsMain;
-        if (server != null)
+        if (ctx != null)
         {
-            server.setAttribute("lrgs", this.lrgs);
+            ctx.setAttribute("lrgs", this.lrgs);
         }
     }
 }
