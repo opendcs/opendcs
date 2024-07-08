@@ -1,123 +1,154 @@
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
-import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
+import ilex.var.NamedVariable;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
-
-//AW:JAVADOC
 /**
-Takes up to 20 input values labeled input1 ... input20. Multiplies
-them by coefficients supplied in properties coeff1 ... coeff20.
-Adds them together and produces a single output labeled 'output'.
-The property input_constant is added to the ouput result.
-input_constant defaults to 0 if not supplied
-Values not assigned by computation are ignored.
-All coefficients default to 1.0 if not supplied.
- 
 This algorithm is a modification of Scaler adder
 Created by M. Bogner   May 2009
  */
-//AW:JAVADOC_END
+@Algorithm(
+		description ="Takes up to 20 input values labeled input1 ... input20. Multiplies\n" +
+				"them by coefficients supplied in properties coeff1 ... coeff20.\n" +
+				"Adds them together and produces a single output labeled 'output'.\n" +
+				"The property input_constant is added to the ouput result.\n" +
+				"input_constant defaults to 0 if not supplied\n" +
+				"Values not assigned by computation are ignored.\n" +
+				"All coefficients default to 1.0 if not supplied." )
 public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input1;	//AW:TYPECODE=i
-	public double input2;	//AW:TYPECODE=i
-	public double input3;	//AW:TYPECODE=i
-	public double input4;	//AW:TYPECODE=i
-	public double input5;	//AW:TYPECODE=i
-	public double input6;	//AW:TYPECODE=i
-	public double input7;	//AW:TYPECODE=i
-	public double input8;	//AW:TYPECODE=i
-	public double input9;	//AW:TYPECODE=i
-	public double input10;	//AW:TYPECODE=i
-	public double input11;	//AW:TYPECODE=i
-	public double input12;	//AW:TYPECODE=i
-	public double input13;	//AW:TYPECODE=i
-	public double input14;	//AW:TYPECODE=i
-	public double input15;	//AW:TYPECODE=i
-	public double input16;	//AW:TYPECODE=i
-	public double input17;	//AW:TYPECODE=i
-	public double input18;	//AW:TYPECODE=i
-	public double input19;	//AW:TYPECODE=i
-	public double input20;	//AW:TYPECODE=i
-	String _inputNames[] = { "input1", "input2", "input3", "input4", "input5",
-				 "input6", "input7", "input8", "input9", "input10",
-				 "input11", "input12", "input13", "input14", "input15",
-				 "input16", "input17", "input18", "input19", "input20"};
-//AW:INPUTS_END
+	@Input
+	public double input1;
+	@Input
+	public double input2;	
+	@Input
+	public double input3;	
+	@Input
+	public double input4;	
+	@Input
+	public double input5;	
+	@Input
+	public double input6;
+	@Input
+	public double input7;
+	@Input
+	public double input8;
+	@Input
+	public double input9;
+	@Input
+	public double input10;
+	@Input
+	public double input11;
+	@Input
+	public double input12;
+	@Input
+	public double input13;	
+	@Input
+	public double input14;	
+	@Input
+	public double input15;	
+	@Input
+	public double input16;	
+	@Input
+	public double input17;	
+	@Input
+	public double input18;	
+	@Input
+	public double input19;	
+	@Input
+	public double input20;	
 
-//AW:LOCALVARS
-	String alg_ver = "1.0.01";
-//AW:LOCALVARS_END
+	String alg_ver = "1.0.2";
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
-        public double input_constant = 0.0;
+	@org.opendcs.annotations.PropertySpec(value="0.0")
+	public double input_constant = 0.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff1 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff2 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff3 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff4 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff5 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff6 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff7 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff8 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff9 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff10 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff11 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff12 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff13 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff14 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff15 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff16 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff17 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff18 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff19 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double coeff20 = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input1_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input2_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input3_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input4_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input5_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input6_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input7_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input8_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input9_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input10_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input11_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input12_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input13_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input14_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input15_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input16_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input17_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input18_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input19_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input20_MISSING = "ignore";
-	String _propertyNames[] = {
-	"coeff1", "coeff2", "coeff3", "coeff4", "coeff5", 
-	"coeff6", "coeff7", "coeff8", "coeff9", "coeff10", 
-	"coeff11", "coeff12", "coeff13", "coeff14", "coeff15", 
-	"coeff16", "coeff17", "coeff18", "coeff19", "coeff20", 
-	"input1_MISSING", "input2_MISSING", "input3_MISSING", "input4_MISSING",
-	"input5_MISSING", "input6_MISSING", "input7_MISSING", "input8_MISSING",
-	"input9_MISSING", "input10_MISSING",
-	"input11_MISSING", "input12_MISSING", "input13_MISSING", "input14_MISSING",
-	"input15_MISSING", "input16_MISSING", "input17_MISSING", "input18_MISSING",
-	"input19_MISSING", "input20_MISSING"
- 	};
+
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -140,8 +171,6 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -157,7 +186,6 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		double tally = input_constant;
 		if (!isMissing(input1))
 			tally += (input1 * coeff1);
@@ -215,7 +243,6 @@ debug3("BigAdder doAWTimeSlice- " + alg_ver + " input20=" + input20 + ", coeff20
 +":: tally= " + tally);
 
 		setOutput(output, tally);
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -223,32 +250,6 @@ debug3("BigAdder doAWTimeSlice- " + alg_ver + " input20=" + input20 + ", coeff20
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }
