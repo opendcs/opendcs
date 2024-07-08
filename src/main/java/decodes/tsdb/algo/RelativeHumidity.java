@@ -85,81 +85,11 @@ public class RelativeHumidity
 		temperatureTS = getParmRef("temperature").timeSeries;
 		dewPointTS = getParmRef("dewPoint").timeSeries;
 
-
-		//Check for any uninterpolated  pattern dates in the past and interpolate with new inputs
-//		Date firstInputT = baseTimes.first();
-//		try {
-//			TimedVariable prevInput = tsdb.getPreviousValue(inputTS, firstInputT);
-//			TimedVariable nextInput = tsdb.getNextValue(inputTS, firstInputT);
-//			boolean lookback = true;
-//			TimedVariable prevPattern = tsdb.getPreviousValue(patternTS, firstInputT);
-//			while(lookback){
-//				if (0 > prevInput.getTime().compareTo(prevPattern.getTime())){
-//					lookback = false;
-//				}
-//				else{
-//					interpolate(prevPattern.getTime(), prevInput, nextInput);
-//					prevPattern = tsdb.getPreviousValue(patternTS, prevPattern.getTime());
-//				}
-//			}
-//
-//		}
-//		catch(Exception ex)
-//		{
-//			warning("Error accessing input/output time series: " + ex);
-//		}
-
 		
 //AW:BEFORE_TIMESLICES_END
 	}
 
-	/**Interpolation helper function
-	 * Date Pattern data - data time which you want to interpolate the value for.
-	 * TimedVariable prev - TimedVariable of the nearest in time previous input variable
-	 * TimedVariable next - TimedVariable of the nearest in time next input variable
-	 * Checks the type of data stored in the input and preforms appropriated interpolation between two points.
-	**/
-//	void interpolate(Date patternDate, TimedVariable prev, TimedVariable next){
-//		CwmsTsId tsId = (CwmsTsId) inputTS.getTimeSeriesIdentifier();
-//		//check if input data in instantaneous. linear interpolation between two points.
-//		if(CwmsConstants.PARAM_TYPE_INST.equalsIgnoreCase(tsId.getParamType())){
-//			long diff =	patternDate.getTime() - prev.getTime().getTime();
-//			try {
-//				double rise = next.getDoubleValue() - prev.getDoubleValue();
-//				long run = next.getTime().getTime() - prev.getTime().getTime();
-//				double value = (rise / run) * diff + prev.getDoubleValue();
-//				setOutput(output, value, patternDate);
-//			}
-//			catch (NoConversionException ex)
-//			{
-//				warning("Interpolation resulted in invalid var: " + ex);
-//			}
-//		}
-//		//check if input data is Average. copies the average value of the previous input variable.
-//		else if(CwmsConstants.PARAM_TYPE_AVE.equalsIgnoreCase(tsId.getParamType())){
-//			try {
-//				setOutput(output, next.getDoubleValue(), patternDate);
-//			}
-//			catch (NoConversionException ex)
-//			{
-//				warning("Interpolation resulted in invalid var: " + ex);
-//			}
-//		}
-//		//check if input data is Total. linear interpolation between zero at time of previous value and next value.
-//		else if(CwmsConstants.PARAM_TYPE_TOTAL.equalsIgnoreCase(tsId.getParamType())){
-//			long diff = patternDate.getTime() - prev.getTime().getTime();
-//			try {
-//				double rise = next.getDoubleValue();
-//				long run = next.getTime().getTime() - prev.getTime().getTime();
-//				double value = (rise / run) * diff;
-//				setOutput(output, value, patternDate);
-//			}
-//			catch (NoConversionException ex)
-//			{
-//				warning("Interpolation resulted in invalid var: " + ex);
-//			}
-//		}
-//	}
+
 
 	/**
 	 * Do the algorithm for a single time slice.
@@ -178,17 +108,20 @@ public class RelativeHumidity
 		if(isMissing(temperature) || isMissing(dewPoint)){
 			return;
 		}
-		
-		setOutput(output, next.getDoubleValue());
-		//Find previous and next input TimedVariables with respect to pattern
-//		TimedVariable prevInput = temperatureTS.findPrev(_timeSliceBaseTime);
-//		TimedVariable nextInput = temperatureTS.findNext(_timeSliceBaseTime);
+		if (dewPoint > temperature){
+			throw new DbCompException("dew point can not be greater than temperature");
+		}
 
-//		Date firstInputT = baseTimes.first();
+    	// Calculate the numerator
+		double numerator = Math.exp((17.625 * dewPoint) / (243.04 + dewPoint));
 
+    	// Calculate the denominator
+		double denominator = Math.exp((17.625 * temperature) / (243.04 + temperature));
 
+    // Calculate the relative humidity
+		double RH = 100 * (numerator / denominator);
 
-
+		setOutput(output, RH);
 		
 //AW:TIMESLICE_END
 	}
