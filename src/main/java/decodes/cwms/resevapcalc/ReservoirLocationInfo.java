@@ -4,7 +4,7 @@
  * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
  * Source may not be released without written approval from HEC
  */
-package usace.rowcps.computation.resevap;
+package decodes.cwms.resevapcalc;
 
 /**
  * This class holds some location reservoir specific values (lat, lon, instrument height)
