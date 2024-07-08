@@ -6,23 +6,10 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
-
-//AW:JAVADOC
 /**
-Takes up to 20 input values labeled input1 ... input20. Multiplies
-them by coefficients supplied in properties coeff1 ... coeff20.
-Adds them together and produces a single output labeled 'output'.
-The property input_constant is added to the ouput result.
-input_constant defaults to 0 if not supplied
-Values not assigned by computation are ignored.
-All coefficients default to 1.0 if not supplied.
-
 This algorithm is a modification of Scaler adder
 Created by M. Bogner   May 2009
  */
-//AW:JAVADOC_END
 @Algorithm(
 		description ="Takes up to 20 input values labeled input1 ... input20. Multiplies\n" +
 				"them by coefficients supplied in properties coeff1 ... coeff20.\n" +
@@ -184,8 +171,6 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -201,7 +186,6 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		double tally = input_constant;
 		if (!isMissing(input1))
 			tally += (input1 * coeff1);
@@ -259,7 +243,6 @@ debug3("BigAdder doAWTimeSlice- " + alg_ver + " input20=" + input20 + ", coeff20
 +":: tally= " + tally);
 
 		setOutput(output, tally);
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -267,8 +250,6 @@ debug3("BigAdder doAWTimeSlice- " + alg_ver + " input20=" + input20 + ", coeff20
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
 	}
 
 }
