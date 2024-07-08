@@ -149,7 +149,6 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String input20_MISSING = "ignore";
 
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -158,12 +157,7 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
