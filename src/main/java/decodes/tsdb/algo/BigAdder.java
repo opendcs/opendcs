@@ -61,7 +61,7 @@ public class BigAdder extends decodes.tsdb.algo.AW_AlgorithmBase
 	@Input
 	public double input20;	
 
-	String alg_ver = "1.0.01";
+	String alg_ver = "1.0.2";
 
 	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
