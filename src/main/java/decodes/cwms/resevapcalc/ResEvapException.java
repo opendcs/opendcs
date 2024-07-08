@@ -4,7 +4,7 @@
  * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
  * Source may not be released without written approval from HEC
  */
-package usace.rowcps.computation.resevap;
+package decodes.cwms.resevapcalc;
 
 /**
  * ResEvapException is used to communicate errors occurring in the
@@ -15,7 +15,7 @@ package usace.rowcps.computation.resevap;
  * @see HecMath
  */
 
-public class ResEvapException extends java.lang.Exception
+public class ResEvapException extends Exception
 {
     /**
      * Constructs an <code>ResEvapException</code> with no detail  message.
