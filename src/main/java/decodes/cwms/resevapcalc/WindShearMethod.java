@@ -1,4 +1,4 @@
-package usace.rowcps.computation.resevap;
+package decodes.cwms.resevapcalc;
 
 public enum WindShearMethod
 {
