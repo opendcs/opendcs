@@ -1,48 +1,27 @@
 package decodes.tsdb.algo;
 
-import decodes.cwms.CwmsConstants;
-import decodes.cwms.CwmsTsId;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.IntervalCodes;
 import ilex.var.NamedVariable;
-import ilex.var.NoConversionException;
-import ilex.var.TimedVariable;
 import opendcs.opentsdb.Interval;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-import java.util.Date;
-
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-
-/**
-Interpolate input data to fit Irregular time series pattern.
- */
-//AW:JAVADOC_END
+@Algorithm(
+		description ="Takes two inputs, Air temperature and dew point, to calculate relative humidity" )
 public class RelativeHumidity
 	extends AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double temperature;	//AW:TYPECODE=i
-	public double dewPoint;	//AW:TYPECODE=i
-	String _inputNames[] = { "temperature", "dewPoint" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
-	// Enter any local class variables needed by the algorithm.
-//AW:LOCALVARS_END
+	@Input
+	public double temperature;
+	@Input
+	public double dewPoint;
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
-	String _propertyNames[] = {};
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -67,7 +46,6 @@ public class RelativeHumidity
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		
 		// Validation
 		String outputIntvs = getParmRef("output").compParm.getInterval();
@@ -78,8 +56,7 @@ public class RelativeHumidity
 		if(!outputIntv.equals(temperatureIntv)){
 			throw new DbCompException("Output interval does not match temperature interval");
 		}
-		
-//AW:BEFORE_TIMESLICES_END
+
 	}
 
 
@@ -97,7 +74,6 @@ public class RelativeHumidity
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if(isMissing(temperature) || isMissing(dewPoint)){
 			return;
 		}
@@ -117,8 +93,7 @@ public class RelativeHumidity
 		double RRH = Math.round( RH * 1000.0) / 1000.0;
 
 		setOutput(output, RRH);
-		
-//AW:TIMESLICE_END
+
 	}
 
 	/**
@@ -127,32 +102,7 @@ public class RelativeHumidity
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
+
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }

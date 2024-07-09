@@ -78,6 +78,8 @@ As a recap, below is a table of algorithms that come with OpenDCS installs.
 |                    |UsgsEquation             | decodes.tsdb.algo.UsgsEquation                   |
 |                    +-------------------------+--------------------------------------------------+
 |                    |VirtualGage              | decodes.tsdb.algo.VirtualGage                    |
+|                    +-------------------------+--------------------------------------------------+
+|                    |RelativeHumidity         | decodes.tsdb.algo.RelativeHumidity               |
 +--------------------+-------------------------+--------------------------------------------------+
 | * Arithmetic or    |CentralRunningAverage    |                                                  |
 | * Transformation   +-------------------------+--------------------------------------------------+
@@ -731,6 +733,8 @@ Standard - Hydrologic
 +-------------------+-------------------------------------------------------+
 |VirtualGage        |Compute virtual elevation based on two other gages     |
 +-------------------+-------------------------------------------------------+
+|RelativeHumidity   |Compute relative humidity from temperature and dewPoint|
++-------------------+-------------------------------------------------------+
 
 BridgeClearance
 ---------------
@@ -812,6 +816,31 @@ VirtualGage
 -----------
 
 Exec Class: decodes.tsdb.algo.VirtualGage
+
+... more content coming soon ...
+
+RelativeHumidity
+-----------
+
+Exec Class: decodes.tsdb.algo.RelativeHumidity
+
+Calculates relative humidity with temperature and dew point data. Air temperature
+and dew point temperature are assumed to be in °C. Calculates relative humidity RH
+using the formula, RH = 100 × {exp[17.625 × Dp/(243.04 + Dp)]/exp[17.625 × T/(243.04 + T)]}.
+dew point temperature can not be above air temperature and output most share same interval
+as the temperature timeSeries.
+
+By default the following criteria are met or assumed in the algorithm.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |temperature      |
++           +-----------------+
+|           |dewPoint         |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
 
 ... more content coming soon ...
 
