@@ -798,11 +798,11 @@ more information about each.
     </target>
 
     <target name="upload-kiwi-tests" depends="prepare,common.resolve.build">
-        <gherkin-kiwi url="${kiwi.url}" username="${kiwi.username}" password="${kiwi.password}"
-                      version="${version}" planDefinitions="src/test-manual/testplans.kiwi"
-                      productName="OpenDCS"
-        >
+        <gherkin-tests>
             <fileset dir="." includes="src/test-manual/**/*.feature"/>
-        </gherkin-kiwi>
+            <kiwi url="${kiwi.url}" username="${kiwi.username}" password="${kiwi.password}"
+                  version="${version}" planDefinitions="src/test-manual/testplans.kiwi"
+                  productName="OpenDCS"/>
+        </gherkin-tests>
     </target>
 </project>
