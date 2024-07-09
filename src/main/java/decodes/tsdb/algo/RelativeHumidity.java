@@ -33,9 +33,6 @@ public class RelativeHumidity
 
 //AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
-	private CTimeSeries temperatureTS = null;
-	private CTimeSeries dewPointTS = null;
-	private String inUnits = null;
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -81,10 +78,6 @@ public class RelativeHumidity
 		if(!outputIntv.equals(temperatureIntv)){
 			throw new DbCompException("Output interval does not match temperature interval");
 		}
-
-		temperatureTS = getParmRef("temperature").timeSeries;
-		dewPointTS = getParmRef("dewPoint").timeSeries;
-
 		
 //AW:BEFORE_TIMESLICES_END
 	}
@@ -118,10 +111,12 @@ public class RelativeHumidity
     	// Calculate the denominator
 		double denominator = Math.exp((17.625 * temperature) / (243.04 + temperature));
 
-    // Calculate the relative humidity
+    	// Calculate the relative humidity
 		double RH = 100 * (numerator / denominator);
 
-		setOutput(output, RH);
+		double RRH = Math.round( RH * 1000.0) / 1000.0;
+
+		setOutput(output, RRH);
 		
 //AW:TIMESLICE_END
 	}
