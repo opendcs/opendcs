@@ -133,7 +133,7 @@
         <dependency org="com.puppycrawl.tools" name="checkstyle" rev="9.3" conf="build->default"/>
         <dependency org="com.github.spotbugs" name="spotbugs-ant" rev="4.7.3" conf="build->default"/>
         <dependency org="org.jacoco" name="org.jacoco.ant" rev="0.8.11" conf="build->default"/>
-        <dependency org="org.opendcs.testing" name="opendcs-tcms-ant-task" rev="1.0.0-M8" conf="build->default"/>
+        <dependency org="org.opendcs.testing" name="opendcs-tcms-ant-task" rev="1.0.0-M9" conf="build->default"/>
 
         <!-- Spotbugs -->
         <dependency org="com.github.spotbugs" name="spotbugs" rev="4.7.3" conf="spotbugs->default">
