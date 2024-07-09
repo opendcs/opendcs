@@ -6,7 +6,7 @@
     <property name="maven-snapshots" value="${deploy.url.snapshot}"/>
     <property name="snapshot-time" value="${snapshot.time}"/>
     <property name="root-version" value="${version}"/>
-    <property name="slf4j.version" value="2.0.7"/>
+    <property name="slf4j.version" value="2.0.13"/>
     <property name="jetty.version" value="9.4.53.v20231009"/>
     <property name="jetty.jsp.version" value="9.2.30.v20200428"/>
     <property name="jersey.version" value="2.40"/>
@@ -23,13 +23,22 @@
             <artifact pattern="${maven-snapshots}/[organisation]/[module]/[revision]/[artifact]-${root-version}-${snapshot-time}.[ext]"/>
         </url>
         <ibiblio name="maven-releases" m2compatible="true" root="${maven-releases}"/>
+
+
+        <filesystem name="local-maven2" m2compatible="true" checkmodified="true" changingPattern=".*SNAPSHOT">      
+            <ivy pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]/[module]-[revision].pom" />
+            <artifact pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]" />
+        </filesystem>
+          
         <chain name="default" returnFirst="true" checkmodified="true" changingPattern=".*SNAPSHOT">
+            
             <ibiblio name="central-https" m2compatible="true" root="https://repo1.maven.org/maven2/" usepoms="true"/>
             <ibiblio name="hec" m2compatible="true" root="https://www.hec.usace.army.mil/nexus/repository/maven-public"/>
             <url name="github" m2compatible="false">
                 <!-- https://github.com/lobobrowser/Cobra/releases/download/1.0.2/Cobra.jar -->
                 <artifact pattern="https://github.com/[organisation]/[module]/releases/download/[revision]/[artifact].[ext]"/>
             </url>
+            <resolever ref="local-maven2"/>
         </chain>
     </resolvers>
     <module>

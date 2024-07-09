@@ -1,0 +1,13 @@
+[
+    {     
+        "id": "DbEdit",
+        "name": "Decodes Database Editor",
+        "type": "Acceptance"
+    },
+    {
+        "id": "Launcher",
+        "name": "Launcher Operations",
+        "type": "Acceptance"
+    }
+    
+]

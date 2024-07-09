@@ -796,4 +796,13 @@ more information about each.
                  value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
         </exec>
     </target>
+
+    <target name="upload-kiwi-tests" depends="prepare,common.resolve.build">
+        <gherkin-kiwi url="${kiwi.url}" username="${kiwi.username}" password="${kiwi.password}"
+                      version="${version}" planDefinitions="src/test-manual/testplans.kiwi"
+                      productName="OpenDCS"
+        >
+            <fileset dir="." includes="src/test-manual/**/*.feature"/>
+        </gherkin-kiwi>
+    </target>
 </project>

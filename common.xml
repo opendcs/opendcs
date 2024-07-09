@@ -229,6 +229,8 @@
 
         <taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy" 
                  classpathref="groovy.classpath"/>
+        
+        <taskdef resource="org/opendcs/tcms/antcontrib/antcontrib.properties" classpathref="build.classpath"/>
 
         <mkdir dir="${coverage.dir}"/>
     </target>
