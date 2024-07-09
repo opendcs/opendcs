@@ -8,10 +8,8 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 
-@Algorithm(
-		description ="Takes two inputs, Air temperature and dew point, to calculate relative humidity" )
-public class RelativeHumidity
-	extends AW_AlgorithmBase
+@Algorithm(description ="Takes two inputs, Air temperature and dew point, to calculate relative humidity" )
+public class RelativeHumidity extends AW_AlgorithmBase
 {
 
 	@Input
@@ -28,8 +26,7 @@ public class RelativeHumidity
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
-	protected void initAWAlgorithm( )
-		throws DbCompException
+	protected void initAWAlgorithm() throws DbCompException
 	{
 //AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
@@ -43,8 +40,7 @@ public class RelativeHumidity
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
-	protected void beforeTimeSlices()
-		throws DbCompException
+	protected void beforeTimeSlices() throws DbCompException
 	{
 		
 		// Validation
@@ -53,7 +49,8 @@ public class RelativeHumidity
 		String temperatureIntvs = getParmRef("temperature").compParm.getInterval();
 		Interval temperatureIntv = IntervalCodes.getInterval(temperatureIntvs);
 
-		if(!outputIntv.equals(temperatureIntv)){
+		if(!outputIntv.equals(temperatureIntv))
+		{
 			throw new DbCompException("Output interval does not match temperature interval");
 		}
 
@@ -71,13 +68,14 @@ public class RelativeHumidity
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
-	protected void doAWTimeSlice()
-		throws DbCompException
+	protected void doAWTimeSlice() throws DbCompException
 	{
-		if(isMissing(temperature) || isMissing(dewPoint)){
+		if (isMissing(temperature) || isMissing(dewPoint))
+		{
 			return;
 		}
-		if (dewPoint > temperature){
+		if (dewPoint > temperature)
+		{
 			throw new DbCompException("dew point can not be greater than temperature");
 		}
 
@@ -99,8 +97,7 @@ public class RelativeHumidity
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
-	protected void afterTimeSlices()
-		throws DbCompException
+	protected void afterTimeSlices() throws DbCompException
 	{
 
 	}
