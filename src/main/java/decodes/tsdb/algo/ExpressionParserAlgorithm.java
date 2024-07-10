@@ -8,7 +8,6 @@ import decodes.tsdb.algo.jep.JepContext;
 import ilex.util.StringPair;
 import ilex.var.IFlags;
 import ilex.var.NamedVariable;
-import jnr.ffi.annotations.In;
 import org.nfunk.jep.SymbolTable;
 
 import org.opendcs.annotations.algorithm.Algorithm;
@@ -40,8 +39,6 @@ public class ExpressionParserAlgorithm
 	public double in4;
 	@Input
 	public double in5;
-	String _inputNames[] = { "in1", "in2", "in3", "in4", "in5" };
-
 	JepContext jepContext = null;
 	public ExpressionParserAlgorithm()
 	{
@@ -67,7 +64,6 @@ public class ExpressionParserAlgorithm
 	public NamedVariable out1 = new NamedVariable("out1", 0);
 	@Output
 	public NamedVariable out2 = new NamedVariable("out2", 0);
-	String _outputNames[] = { "out1", "out2" };
 
 	@org.opendcs.annotations.PropertySpec(value="")
 	public String pre_1 = "";
@@ -79,7 +75,7 @@ public class ExpressionParserAlgorithm
 	private void executeScript(ArrayList<StringPair> script)
 	{
 		// Remove outputs from the symbol table so that I can detect assignments after execution.
-		for(String nm: _outputNames)
+		for(String nm: getOutputNames())
 			jepContext.getParser().getSymbolTable().remove(nm);
 		int idx = 0;
 		jepContext.setOnErrorLabel(null);
@@ -177,7 +173,7 @@ public class ExpressionParserAlgorithm
 		// Prepopulate the symbol table with the info about the parameters.
 		SymbolTable symTab = jepContext.getParser().getSymbolTable();
 		symTab.clear();
-		for(String inputName : _inputNames)
+		for(String inputName : getInputNames())
 		{
 			ParmRef pr = getParmRef(inputName);		
 			if (pr != null && pr.compParm != null && pr.timeSeries != null 
@@ -253,7 +249,7 @@ public class ExpressionParserAlgorithm
 
 		// Add the inputs to the symbol table for this time slice.
 		SymbolTable symTab = jepContext.getParser().getSymbolTable();
-		for(String inputName : _inputNames)
+		for(String inputName : getInputNames())
 		{
 			double inputVal =
 				inputName.equals("in1") ? in1 :
@@ -344,7 +340,7 @@ debug3("out2 was set to " + out2value);
 		
 		// Check the input '.flags' values in the symbol table to see if any values were
 		// changed. If so, set the new flags and cause them to be written to the database.
-		for(String inputName : _inputNames)
+		for(String inputName : getInputNames())
 		{
 			String flagName = inputName + ".flags";
 debug3("Checking for " + flagName);
@@ -404,19 +400,6 @@ else debug3("...not found");
 			else if (out2value instanceof String)
 				setOutput(out2, (String)out2value);
 		}
-	}
-
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
 	}
 
 }

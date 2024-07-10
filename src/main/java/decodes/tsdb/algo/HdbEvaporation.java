@@ -1,61 +1,38 @@
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-import decodes.tsdb.RatingStatus;
-import decodes.hdb.HDBRatingTable;
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Implements an evaporation computation
-Primary value is "area".
-Really need average area, so two choices for second input:
-prevArea = previous EOP area or diffArea = deltaArea
-For now, chose prevArea.
-Third input is evapCoeff. This is a SDI pointer to either
-a coefficient timeseries, or to lookup a coefficient from the stat tables
-Output is evaporation as a volume.
-<p>Properties include: 
-<ul> 
-<li>ignoreTimeSeries - completely ignore changes to any timeseries value from evapCoeff, and always lookup from database.
-</li>
-</ul>
-
-
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Implements an evaporation computation\n" +
+		"Primary value is \"area\".\n" +
+		"Really need average area, so two choices for second input:\n" +
+		"prevArea = previous EOP area or diffArea = deltaArea\n" +
+		"For now, chose prevArea.\n" +
+		"Third input is evapCoeff. This is a SDI pointer to either\n" +
+		"a coefficient timeseries, or to lookup a coefficient from the stat tables\n" +
+		"Output is evaporation as a volume.\n" +
+		"Properties include: \n" +
+		"\n" +
+		"ignoreTimeSeries - completely ignore changes to any timeseries value from evapCoeff, and always lookup from database.\n" +
+		"\n")
 public class HdbEvaporation
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double area;	//AW:TYPECODE=i
-	public double evapCoeff;	//AW:TYPECODE=i
-	String _inputNames[] = { "area", "evapCoeff" };
-//AW:INPUTS_END
+	@Input
+	public double area;
+	@Input
+	public double evapCoeff;
 
-//AW:LOCALVARS
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output
 	public NamedVariable evap = new NamedVariable("evap", 0);
-	String _outputNames[] = { "evap" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@org.opendcs.annotations.PropertySpec(value="true")
 	public boolean ignoreTimeSeries = true;
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	public String evapCoeff_MISSING = "ignore";
-	String _propertyNames[] = { "ignoreTimeSeries", "evapCoeff_MISSING" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -65,12 +42,7 @@ public class HdbEvaporation
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -79,10 +51,8 @@ public class HdbEvaporation
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -98,12 +68,10 @@ public class HdbEvaporation
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if (ignoreTimeSeries || isMissing(evapCoeff)) {
 			evapCoeff = getCoeff("evapCoeff");
 		}
 		setOutput(evap, area*evapCoeff);			
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -111,34 +79,8 @@ public class HdbEvaporation
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }
