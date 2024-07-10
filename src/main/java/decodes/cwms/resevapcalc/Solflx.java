@@ -6,8 +6,13 @@
  */
 package decodes.cwms.resevapcalc;
 
-import hec.heclib.util.HecTime;
-import rma.util.RMAConst;
+//import hec.heclib.util.HecTime;
+//import rma.util.RMAConst;
+
+import decodes.cwms.HecConstants;
+
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  *
@@ -118,9 +123,9 @@ public class Solflx
     double ZEN;
     double SOLAR;
     
-    public void solflx( HecTime currentTime, double gmtOffset,
-            double longitude, 
-            double latitude, CloudCover[] cloudCover )
+    public void solflx(Date currentTime, double gmtOffset,
+                       double longitude,
+                       double latitude, CloudCover[] cloudCover )
     {
         EvapUtilities.DoubleContainer solzen = new EvapUtilities.DoubleContainer();
         EvapUtilities.DoubleContainer sdowndc = new EvapUtilities.DoubleContainer();
@@ -129,10 +134,13 @@ public class Solflx
         double sdown, direct, diffuse;
         int doy,hr;
 
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentTime);
+
         // Local variables
         // Convert variables from res_common.f to local subroutine      
-        doy = currentTime.dayOfYear();
-        hr = currentTime.hour();
+        doy = calendar.get(Calendar.DAY_OF_YEAR);
+        hr = calendar.get(Calendar.HOUR);
         
         frad = .017453292;
      
@@ -227,15 +235,15 @@ public class Solflx
         icla[2] = cloudCover[2].getCloudTypeFlag();
 
         // if missing cloud cover, get default values
-        if ( !RMAConst.isValidValue(covera[2]) )
+        if ( !HecConstants.isValidValue(covera[2]) )
         {
             covera[2] = cloudCover[2].getDefaultFractionCloudCover();
         }
-        if ( !RMAConst.isValidValue(covera[1]) )
+        if ( !HecConstants.isValidValue(covera[1]) )
         {
             covera[1] = cloudCover[1].getDefaultFractionCloudCover();
         }
-        if ( !RMAConst.isValidValue(covera[0]) )
+        if ( !HecConstants.isValidValue(covera[0]) )
         {
             covera[0] = cloudCover[0].getDefaultFractionCloudCover();
         }
