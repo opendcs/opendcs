@@ -6,9 +6,15 @@
  */
 package decodes.cwms.resevapcalc;
 
-import hec.heclib.util.HecTime;
-import hec.io.TimeSeriesContainer;
-import rma.util.RMAConst;
+import decodes.db.Constants;
+import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.IntervalCodes;
+//import hec.heclib.util.HecTime;
+//import hec.io.TimeSeriesContainer;
+//import rma.util.RMAConst;
+
+import java.util.Date;
+import java.util.Objects;
 
 /**
  *  Class hold meteorological time series data for Resevap program.
@@ -16,56 +22,57 @@ import rma.util.RMAConst;
 public class EvapMetData
 {
     // input met data timeseries
-    TimeSeriesContainer _windspeedTsc;
-    TimeSeriesContainer _airTempTsc;
-    TimeSeriesContainer _relHumidityTsc;
-    TimeSeriesContainer _dewPointTsc;
-    TimeSeriesContainer _airPressureTsc;
-    TimeSeriesContainer _fractionLowClouds;
-    TimeSeriesContainer _altitudeLowClouds;
-    TimeSeriesContainer _fractionMedClouds;
-    TimeSeriesContainer _altitudeMedClouds;
-    TimeSeriesContainer _fractionHighClouds;
-    TimeSeriesContainer _altitudeHighClouds;
+    CTimeSeries _windspeedTsc;
+    CTimeSeries _airTempTsc;
+    CTimeSeries _relHumidityTsc;
+    CTimeSeries _dewPointTsc;
+    CTimeSeries _airPressureTsc;
+    CTimeSeries _fractionLowClouds;
+    CTimeSeries _altitudeLowClouds;
+    CTimeSeries _fractionMedClouds;
+    CTimeSeries _altitudeMedClouds;
+    CTimeSeries _fractionHighClouds;
+    CTimeSeries _altitudeHighClouds;
     
     // these variables hold last valid values
-    double _wsTemp_old = RMAConst.UNDEF_DOUBLE;
-    double _windSpeed_old = RMAConst.UNDEF_DOUBLE;
-    double _airTemp_old = RMAConst.UNDEF_DOUBLE;
-    double _relHumidity_old = RMAConst.UNDEF_DOUBLE;
-    double _airPressure_old = RMAConst.UNDEF_DOUBLE;
+    //was originally RMA undefinedDouble = -FloatMax
+    double _wsTemp_old = Constants.undefinedDouble;
+    double _windSpeed_old = Constants.undefinedDouble;
+    double _airTemp_old = Constants.undefinedDouble;
+    double _relHumidity_old = Constants.undefinedDouble;
+    double _airPressure_old = Constants.undefinedDouble;
     
     // test variables hold the met values for the current time
-    double _wsTemp_current = RMAConst.UNDEF_DOUBLE;
-    double _windSpeed_current = RMAConst.UNDEF_DOUBLE;
-    double _airTemp_current = RMAConst.UNDEF_DOUBLE;
-    double _relHumidity_current = RMAConst.UNDEF_DOUBLE;
-    double _airPressure_current = RMAConst.UNDEF_DOUBLE;
+    double _wsTemp_current = Constants.undefinedDouble;
+    double _windSpeed_current = Constants.undefinedDouble;
+    double _airTemp_current = Constants.undefinedDouble;
+    double _relHumidity_current = Constants.undefinedDouble;
+    double _airPressure_current = Constants.undefinedDouble;
           
-    public double getWindSpeed( HecTime hecTime )
+    public double getWindSpeed( Date hecTime )
     {
         //return _windspeedTsc.getValue(hecTime);
         return getMetValue( _windspeedTsc, hecTime);
     }
     
-    public double getAirTemp( HecTime hecTime )
+    public double getAirTemp( Date hecTime )
     {
         //return _airTempTsc.getValue(hecTime);
         return getMetValue( _airTempTsc, hecTime);
     }
-    public double getRelHumidity( HecTime hecTime )
+    public double getRelHumidity( Date hecTime )
     {
         //return _relHumidityTsc.getValue(hecTime);
         return getMetValue( _relHumidityTsc, hecTime);
     }
     
-    public double getDewPoint( HecTime hecTime )
+    public double getDewPoint( Date hecTime )
     {
         //return _dewPointTsc.getValue(hecTime);
         return getMetValue( _dewPointTsc, hecTime);
     }
     
-    public double getAirPressure( HecTime hecTime )
+    public double getAirPressure( Date hecTime )
     {
         //return _airPressureTsc.getValue(hecTime);
         return getMetValue( _airPressureTsc, hecTime);
@@ -80,7 +87,7 @@ public class EvapMetData
      * @param hecTime
      * @return 
      */
-    public CloudCover[] getCloudCover( HecTime hecTime )
+    public CloudCover[] getCloudCover( Date hecTime )
     {
         CloudCover[] cloudCover = new CloudCover[3];
 //        double fractionCC = _fractionLowClouds.getValue(hecTime);
@@ -110,72 +117,44 @@ public class EvapMetData
         return cloudCover;
     }
 
-    private double getMetValue( TimeSeriesContainer tsc, HecTime hecTime )
+    private double getMetValue( CTimeSeries tsc, Date hecTime )
     {
-        // if regular interval data, use existing method.
-        if ( tsc.interval > 0 )
-        {
-            return tsc.getValue(hecTime);
-        }
-        
-        // looks like irregular data.  Return undef value if no data for the time
-        // perform no interpolation
-        long findTime = hecTime.value();
-        long sTimeValue = tsc.startTime;
-        long eTimeValue = tsc.endTime;
-
-        if ( findTime < sTimeValue || findTime > eTimeValue )
-        {
-            return hec.lang.Const.UNDEFINED_DOUBLE;
-        }
-        
-        for ( int i=0; i<tsc.times.length; i++)
-        {
-            if ( tsc.times[i] == findTime )
-            {
-                return tsc.values[i];
-            }
-            if ( tsc.times[i] > findTime )
-            {
-                return hec.lang.Const.UNDEFINED_DOUBLE;
-            }
-        }
-        return hec.lang.Const.UNDEFINED_DOUBLE;
+            return tsc.findNextIdx(hecTime);
     }
     
-    public void setAirTempTs( TimeSeriesContainer tsc )
+    public void setAirTempTs( CTimeSeries tsc )
     {
         _airTempTsc = tsc;
     }
     
-    public void setAirPressureTs( TimeSeriesContainer tsc )
+    public void setAirPressureTs( CTimeSeries tsc )
     {
         _airPressureTsc = tsc;
     }
 
-    public void setRelHumidityTs( TimeSeriesContainer tsc )
+    public void setRelHumidityTs( CTimeSeries tsc )
     {
         _relHumidityTsc = tsc;
     }
 
-    public void setWindSpeedTs( TimeSeriesContainer tsc )
+    public void setWindSpeedTs( CTimeSeries tsc )
     {
         _windspeedTsc = tsc;
     }
     
-    public void setHighCloudTs( TimeSeriesContainer tscFrac, TimeSeriesContainer tscHeight )
+    public void setHighCloudTs( CTimeSeries tscFrac, CTimeSeries tscHeight )
     {
         _fractionHighClouds = tscFrac;
         _altitudeHighClouds = tscHeight;
     }
     
-    public void setMedCloudTs( TimeSeriesContainer tscFrac, TimeSeriesContainer tscHeight )
+    public void setMedCloudTs( CTimeSeries tscFrac, CTimeSeries tscHeight )
     {
         _fractionMedClouds = tscFrac;
         _altitudeMedClouds = tscHeight;
     }
     
-    public void setLowCloudTs( TimeSeriesContainer tscFrac, TimeSeriesContainer tscHeight )
+    public void setLowCloudTs( CTimeSeries tscFrac, CTimeSeries tscHeight )
     {
         _fractionLowClouds = tscFrac;
         _altitudeLowClouds = tscHeight;

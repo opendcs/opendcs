@@ -6,10 +6,16 @@
  */
 package decodes.cwms.resevapcalc;
 
-import hec.heclib.util.HecTime;
+import decodes.cwms.HecConstants;
+import decodes.db.Constants;
+//import hec.heclib.util.HecTime;
+
+import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import rma.util.RMAConst;
+//import rma.util.RMAConst;
 
 /**
  * Compute surface heat exchange and evaporation rate from
@@ -53,8 +59,8 @@ public class MetComputation
         _evapWater = evapWater;
     }
 
-    public void computeMetAndEvap( HecTime currentTime, double surfaceTemp,
-    		ReservoirLocationInfo resLocationInfo)
+    public void computeMetAndEvap( Date currentTime, double surfaceTemp,
+                                  ReservoirLocationInfo resLocationInfo)
     {
         // get met values from time series for current time
         double airPressure = _metData.getAirPressure(currentTime);
@@ -73,25 +79,25 @@ public class MetComputation
         boolean missingMetData = false;
         _metFailed = false;
         
-        if ( !RMAConst.isValidValue(windSpeed) )
+        if ( !HecConstants.isValidValue(windSpeed) )
         {
             String msg = "Wind speed missing or bad " + currentTime;
 			LOGGER.log(Level.SEVERE, msg );
             missingMetData = true;
         }
-        if ( !RMAConst.isValidValue(airTemp) )
+        if ( !HecConstants.isValidValue(airTemp) )
         {
             String msg = "Air temp missing or bad " + currentTime;
             LOGGER.log(Level.SEVERE, msg );
             missingMetData = true;
         }
-        if ( !RMAConst.isValidValue(relHumidity) )
+        if ( !HecConstants.isValidValue(relHumidity) )
         {
             String msg = "RH missing or bad " + currentTime;
             LOGGER.log(Level.SEVERE, msg );
             missingMetData = true;
         }
-        if ( !RMAConst.isValidValue(airPressure) )
+        if ( !HecConstants.isValidValue(airPressure) )
         {
             String msg = "PRESSURE missing or bad " + currentTime;
             LOGGER.log(Level.SEVERE, msg );
@@ -116,14 +122,14 @@ public class MetComputation
         for ( int ic=0; ic<3; ic++)
         {
             CloudCover cld = cloudCover[ic];
-            if ( !RMAConst.isValidValue(cld.fractionCloudCover) )
+            if ( !HecConstants.isValidValue(cld.fractionCloudCover) )
             {
                 int ic1 = ic+1;
                 String msg = " Cover (" + ic1 + ") missing or bad"
                         + currentTime;
                 LOGGER.log(Level.SEVERE, msg );    
             }
-            if ( !RMAConst.isValidValue(cld.height) )
+            if ( !HecConstants.isValidValue(cld.height) )
             {
                 String heightStr = cld.getTypeName();
                 String msg = heightStr + " missing or bad " + currentTime;
@@ -133,7 +139,7 @@ public class MetComputation
         
         // If a met parameter is missing fill in with the previous hour value
         // Store copy of previous good value
-        if ( !RMAConst.isValidValue(windSpeed) )
+        if ( !HecConstants.isValidValue(windSpeed) )
         {
             windSpeed = _metData._windSpeed_old;
         }
@@ -142,7 +148,7 @@ public class MetComputation
             _metData._windSpeed_old = windSpeed;
         }
         
-        if ( !RMAConst.isValidValue(airTemp) )
+        if ( !HecConstants.isValidValue(airTemp) )
         {
             airTemp = _metData._airTemp_old;
         }
@@ -151,7 +157,7 @@ public class MetComputation
             _metData._airTemp_old = airTemp;
         }
         
-        if ( !RMAConst.isValidValue(relHumidity) )
+        if ( !HecConstants.isValidValue(relHumidity) )
         {
             relHumidity = _metData._relHumidity_old;
         }
@@ -160,7 +166,7 @@ public class MetComputation
             _metData._relHumidity_old = relHumidity;
         }
         
-        if ( !RMAConst.isValidValue(airPressure) )
+        if ( !HecConstants.isValidValue(airPressure) )
         {
             airPressure = _metData._airPressure_old;
         }
@@ -220,20 +226,21 @@ public class MetComputation
 	 * @param lat
 	 * @param lon
 	 */
-    public void computeMet( HecTime currentTime, double gmtOffset,
+    public void computeMet( Date currentTime, double gmtOffset,
             double surfaceTemp,
             double windSpeed, double airTemp, 
             double airPressure, double relHumidity,
             CloudCover[] cloudCover,
             double lat, double lon)
     {
-
-        int jday = currentTime.dayOfYear();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentTime);
+        int jday = calendar.get(Calendar.DAY_OF_YEAR);
         
         // scale cloud cover altitude
         for ( CloudCover cloud : cloudCover)
         {
-            if ( RMAConst.isValidValue(cloud.height) )
+            if ( HecConstants.isValidValue(cloud.height) )
             {
                 cloud.height /= 1000.;
             }
@@ -246,7 +253,7 @@ public class MetComputation
         _solar = solarFlx.SOLAR;
         
                     // compute incoming Long Wave radiation
-        if ( RMAConst.isValidValue(surfaceTemp) )
+        if ( HecConstants.isValidValue(surfaceTemp) )
         {
             // compute atmospheric emissivity
             double ematm = Dnirflx.emisatm( airTemp, relHumidity);

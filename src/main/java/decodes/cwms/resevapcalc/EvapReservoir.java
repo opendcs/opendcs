@@ -6,10 +6,14 @@
  */
 package decodes.cwms.resevapcalc;
 
-import hec.data.Units;
-import hec.data.UnitsConversionException;
-import hec.heclib.util.HecTime;
-import hec.io.TimeSeriesContainer;
+import decodes.cwms.HecConstants;
+import decodes.db.UnitConverter;
+import decodes.tsdb.CTimeSeries;
+import decodes.util.DecodesException;
+//import hec.data.Units;
+//import hec.data.UnitsConversionException;
+//import hec.heclib.util.HecTime;
+//import hec.io.TimeSeriesContainer;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -17,11 +21,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import rma.util.RMAConst;
+//import rma.util.RMAConst;
 
 /**
  * This class holds reservoir specific values (lat, lon, elev-area)
@@ -79,7 +84,7 @@ public class EvapReservoir
     public double[] _wt = new double[NLAYERS];    //TODO public for jython testing
     public double[] _kz = new double[NLAYERS];
     
-    public TimeSeriesContainer _elevationTsc;
+    public CTimeSeries _elevationTsc;
     
     //  is the index for the last layer 
     // resj = _numberLayers - 1
@@ -150,14 +155,14 @@ public class EvapReservoir
      * @param hecTime
      * @return   the reservoir elevation at hecTime in meters
      */
-    public double getCurrentElevation( HecTime hecTime )
+    public double getCurrentElevation( Date hecTime )
     {
     	if ( _elevationTsc == null )
     	{
     		return _elev;
     	}
-        double elev = _elevationTsc.getValue(hecTime);
-        if ( !RMAConst.isValidValue(elev) )
+        double elev = _elevationTsc.findNextIdx(hecTime);
+        if ( !HecConstants.isValidValue(elev) )
         {
         	// return undef value
         	return elev;
@@ -166,7 +171,8 @@ public class EvapReservoir
         // convert units on timeseries to meters
         try
         {
-        	elev = Units.convertUnits( elev, _elevationTsc.units.toString(), "m");
+            elev = new UnitConverter(_elevationTsc.getUnitsAbbr(), "m")
+        	//elev = Units.convertUnits( elev, _elevationTsc.units.toString(), "m");
         }
         catch ( UnitsConversionException ue )
         {
@@ -573,7 +579,7 @@ public class EvapReservoir
      * Set the reservoir elevation time series
      * @param tsc
      */
-    public void setElevationTs( TimeSeriesContainer tsc )
+    public void setElevationTs( CTimeSeries tsc )
     {
     	_elevationTsc = tsc;
     }
@@ -735,10 +741,10 @@ public class EvapReservoir
         _resj_old = _resj;
         _resj = resj;
 
-        if ( _debugout != null )
-        {
-        	writeLayerDebugInfo();
-        }
+//        if ( _debugout != null )
+//        {
+//        	writeLayerDebugInfo();
+//        }
         
         return true;
     }
@@ -746,47 +752,47 @@ public class EvapReservoir
     /** reservoir layer info for tracking changes with changing wsel
      * 
      */
-    public void writeLayerDebugInfo( )
-    {
-    	if ( _debugout == null )
-    	{
-    		return;
-    	}
-    	rma.util.NumberFormat nf10_3 = new rma.util.NumberFormat("%10.3f");
-    	rma.util.NumberFormat nf13_4 = new rma.util.NumberFormat("%13.4f");
-    	rma.util.NumberFormat nfi_3 = new rma.util.NumberFormat("%3d");
-    	
-    	try
-    	{
-	    	String depthstr = "resj+1 : " +  _resj+1 + "      wsel_ft" + nf10_3.form(_elev/.3048) 
-	    			+ "      wsel" + nf10_3.form(_elev) + "     depth" +  nf10_3.form(_depth);
-	    	_debugout.write( depthstr );
-	    	_debugout.newLine();
-	    	
-	    	String heading = " j               zd            delz            ztop           zarea           zelev            zvol";
-	    	StringBuffer strbuf = new StringBuffer();
-	    	
-	    	_debugout.write(heading );
-	    	_debugout.newLine();	    	
-	    	for ( int j=0; j<=_resj; j++)
-	    	{
-	    		strbuf.setLength(0);
-	    		strbuf.append( nfi_3.form(j+1) );
-	    		strbuf.append( nf13_4.form( _zd[j]) + "  " );
-	    		strbuf.append( nf13_4.form( _delz[j]) + "  " );
-	    		strbuf.append( nf13_4.form( _ztop[j]) + "  " );
-	    		strbuf.append( nf13_4.form( _zarea[j]) + "  " );
-	    		strbuf.append( nf13_4.form( _zelev[j]) + "  " );
-	    		strbuf.append( nf13_4.form( _zvol[j]) + "  " );
-	    		_debugout.write( strbuf.toString() );
-		    	_debugout.newLine();		    		
-	    	}
-    	}
-    	catch ( IOException ioe )
-    	{
-            LOGGER.log(Level.FINE, "Exception occurred while writing layer debug info.", ioe);
-    	}
-    }
+//    public void writeLayerDebugInfo( )
+//    {
+//    	if ( _debugout == null )
+//    	{
+//    		return;
+//    	}
+//    	rma.util.NumberFormat nf10_3 = new rma.util.NumberFormat("%10.3f");
+//    	rma.util.NumberFormat nf13_4 = new rma.util.NumberFormat("%13.4f");
+//    	rma.util.NumberFormat nfi_3 = new rma.util.NumberFormat("%3d");
+//
+//    	try
+//    	{
+//	    	String depthstr = "resj+1 : " +  _resj+1 + "      wsel_ft" + nf10_3.form(_elev/.3048)
+//	    			+ "      wsel" + nf10_3.form(_elev) + "     depth" +  nf10_3.form(_depth);
+//	    	_debugout.write( depthstr );
+//	    	_debugout.newLine();
+//
+//	    	String heading = " j               zd            delz            ztop           zarea           zelev            zvol";
+//	    	StringBuffer strbuf = new StringBuffer();
+//
+//	    	_debugout.write(heading );
+//	    	_debugout.newLine();
+//	    	for ( int j=0; j<=_resj; j++)
+//	    	{
+//	    		strbuf.setLength(0);
+//	    		strbuf.append( nfi_3.form(j+1) );
+//	    		strbuf.append( nf13_4.form( _zd[j]) + "  " );
+//	    		strbuf.append( nf13_4.form( _delz[j]) + "  " );
+//	    		strbuf.append( nf13_4.form( _ztop[j]) + "  " );
+//	    		strbuf.append( nf13_4.form( _zarea[j]) + "  " );
+//	    		strbuf.append( nf13_4.form( _zelev[j]) + "  " );
+//	    		strbuf.append( nf13_4.form( _zvol[j]) + "  " );
+//	    		_debugout.write( strbuf.toString() );
+//		    	_debugout.newLine();
+//	    	}
+//    	}
+//    	catch ( IOException ioe )
+//    	{
+//            LOGGER.log(Level.FINE, "Exception occurred while writing layer debug info.", ioe);
+//    	}
+//    }
     
     public int locate(double x)
     {
