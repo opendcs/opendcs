@@ -960,12 +960,11 @@ Python Algorithms
 
 Exec Class: decodes.tsdb.algo.PythonAlgorithm
 
+Creating a New Python Algorithm <https://opendcs-env.readthedocs.io/en/latest/legacy-cp-userguide.html#creating-a-new-python-algorithm>
+
 
 Java Algorithms
 ===============
 
-****************************
-OpenDCS Algorithm GUI Basics
-****************************
+There are examples in the OpenDCS source code <https://github.com/opendcs/opendcs/tree/master/src/main/java/decodes/tsdb/algo>
 
-... more content coming soon ...
