@@ -14,10 +14,10 @@ import org.opendcs.annotations.algorithm.Output;
 		"Third input is evapCoeff. This is a SDI pointer to either\n" +
 		"a coefficient timeseries, or to lookup a coefficient from the stat tables\n" +
 		"Output is evaporation as a volume.\n" +
-		"Properties include: \n" +
+		"<p>Properties include: \n" +
 		"\n" +
-		"ignoreTimeSeries - completely ignore changes to any timeseries value from evapCoeff, and always lookup from database.\n" +
-		"\n")
+		"<ul><li>ignoreTimeSeries - completely ignore changes to any timeseries value from evapCoeff, and always lookup from database.\n" +
+		"</li></ul></p>\n")
 public class HdbEvaporation
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {

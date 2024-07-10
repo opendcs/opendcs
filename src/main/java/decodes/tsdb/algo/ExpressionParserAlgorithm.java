@@ -9,7 +9,6 @@ import ilex.util.StringPair;
 import ilex.var.IFlags;
 import ilex.var.NamedVariable;
 import org.nfunk.jep.SymbolTable;
-
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
