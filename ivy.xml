@@ -79,7 +79,18 @@
         </dependency>
         <dependency org="mil.army.usace.hec" name="hec-cwms-ratings-core" rev="1.1.0"/>
         <dependency org="org.slf4j" name="slf4j-api" rev="${slf4j.version}"/>
-        <dependency org="io.javalin" name="javalin" rev="4.6.8" />
+
+        <dependency org="org.eclipse.jetty" name="jetty-jsp" rev="${jetty.jsp.version}"/>
+        <dependency org="org.eclipse.jetty" name="jetty-annotations" rev="${jetty.version}"/>
+        <dependency org="org.eclipse.jetty" name="jetty-server" rev="${jetty.version}"/>
+        <dependency org="org.eclipse.jetty" name="jetty-servlets" rev="${jetty.version}"/>
+        <dependency org="org.eclipse.jetty" name="jetty-servlet" rev="${jetty.version}"/>
+        <dependency org="org.eclipse.jetty" name="jetty-webapp" rev="${jetty.version}"/>
+        <dependency org="javax.servlet" name="javax.servlet-api" rev="${servlet/api.version}"/>
+        <dependency org="org.glassfish.jersey.containers" name="jersey-container-servlet" rev="${jersey.version}"/>
+        <dependency org="org.glassfish.jersey.inject" name="jersey-hk2" rev="${jersey.version}"/>
+        <dependency org="javax" name="javaee-api" rev="7.0"/>
+
         <dependency org="org.jdbi" name="jdbi3-core" rev="3.38.2"/>
         <dependency org="org.jdbi" name="jdbi3-sqlobject" rev="3.38.2"/>
         <dependency org="org.jdbi" name="jdbi3-postgres" rev="3.38.2"/>

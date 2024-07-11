@@ -27,6 +27,10 @@ public class CwmsConstants
 	public static final String CWMS_DATA_TYPE = "CWMS";
 	/** The default value for the Time Series descriptor Parameter Type */
 	public static final String PARAM_TYPE_INST = "Inst";
+	/** The default value for the Time Series descriptor Parameter Type */
+	public static final String PARAM_TYPE_AVE = "AVE";
+	/** The default value for the Time Series descriptor Parameter Type */
+	public static final String PARAM_TYPE_TOTAL = "TOTAL";
 	/** The default version value for the Time Series descriptor Version */
 	public static final String DEFAULT_VERSION_VALUE = "raw";
 	/** Store rule value REPLACE_ALL for Cwms store_ts procedure */

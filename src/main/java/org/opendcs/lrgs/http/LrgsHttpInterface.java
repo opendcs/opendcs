@@ -1,25 +1,25 @@
 package org.opendcs.lrgs.http;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.glassfish.jersey.servlet.ServletContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import ilex.xml.XmlOutputStream;
-import io.javalin.Javalin;
-import io.javalin.http.ContentType;
-import io.javalin.http.HttpCode;
 import lrgs.archive.MsgArchive;
 import lrgs.lrgsmain.LoadableLrgsInputInterface;
 import lrgs.lrgsmain.LrgsInputException;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
-import lrgs.lrgsmon.DetailReportGenerator;
-import lrgs.statusxml.LrgsStatusSnapshotExt;
 
 public class LrgsHttpInterface implements LoadableLrgsInputInterface
 {
+    private static Logger log = LoggerFactory.getLogger(LrgsHttpInterface.class);
     private static final String TYPE = "HTTP";
 
-    private Javalin app;
+    private org.eclipse.jetty.server.Server server = null;
+    private ServletContextHandler ctx = null;
     private int slot;
     private int port = 7000;
     private String interfaceName;
@@ -33,55 +33,69 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     }
 
     @Override
-    public void setSlot(int slot) {
+    public void setSlot(int slot)
+    {
         this.slot = slot;
     }
 
     @Override
-    public int getSlot() {
+    public int getSlot()
+    {
         return slot;
     }
 
     @Override
     public String getInputName()
     {
-        return TYPE+":"+port;
+        return TYPE+":"+interfaceName+":"+port;
     }
 
     @Override
     public void initLrgsInput() throws LrgsInputException
     {
-        app = Javalin.create()
-            .get("/health", ctx -> LrgsHealth.get(ctx, archive, lrgs))
-            .get("/status", ctx -> {
-                LrgsStatusSnapshotExt status = lrgs.getStatusProvider().getStatusSnapshot();
-                DetailReportGenerator gen = lrgs.getReportGenerator();
-                try(ByteArrayOutputStream bos = new ByteArrayOutputStream();)
-                {
-                    XmlOutputStream xos = new XmlOutputStream(bos, "html");
-                        gen.writeReport(xos, status.hostname, status, 10);
-                        ctx.status(HttpCode.OK)
-                           .result(bos.toByteArray())
-                           .contentType(ContentType.TEXT_HTML);
-                }
-                catch (Exception ex)
-                {
-                    ctx.status(HttpCode.SERVICE_UNAVAILABLE).json("Cannot generate report.");
-                }
-            })
-            ;
+        server = new org.eclipse.jetty.server.Server();
+		ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		ctx.setContextPath("/");
+		server.setHandler(ctx);
+        ServletHolder serHol = ctx.addServlet(ServletContainer.class, "/*");
+		serHol.setInitOrder(1);
+		serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        ctx.setAttribute("lrgs", this.lrgs);
+        ctx.setAttribute("archive", this.archive);
+
+        ServerConnector connector = new ServerConnector(server);
+        connector.setPort(this.port);
+        server.addConnector(connector);
     }
 
     @Override
     public void shutdownLrgsInput()
     {
-        app.stop();
+        try
+        {
+            server.stop();
+        }
+        catch (Exception ex)
+        {
+            log.atError()
+               .setCause(ex)
+               .log("Unable to stop Jetty Server");
+        }
     }
 
     @Override
     public void enableLrgsInput(boolean enabled)
     {
-        app.start(port);
+        try
+        {
+            server.start();
+        }
+        catch (Exception ex)
+        {
+            log.atError()
+               .setCause(ex)
+               .log("Unable to stop Jetty Server");
+        }
     }
 
     @Override
@@ -149,11 +163,19 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     public void setMsgArchive(MsgArchive archive)
     {
         this.archive = archive;
+        if (ctx != null)
+        {            
+            ctx.setAttribute("archive", this.archive);
+        }
     }
 
     @Override
     public void setLrgsMain(LrgsMain lrgsMain)
     {
         this.lrgs = lrgsMain;
+        if (ctx != null)
+        {
+            ctx.setAttribute("lrgs", this.lrgs);
+        }
     }
 }

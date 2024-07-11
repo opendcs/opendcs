@@ -78,6 +78,8 @@ As a recap, below is a table of algorithms that come with OpenDCS installs.
 |                    |UsgsEquation             | decodes.tsdb.algo.UsgsEquation                   |
 |                    +-------------------------+--------------------------------------------------+
 |                    |VirtualGage              | decodes.tsdb.algo.VirtualGage                    |
+|                    +-------------------------+--------------------------------------------------+
+|                    |RelativeHumidity         | decodes.tsdb.algo.RelativeHumidity               |
 +--------------------+-------------------------+--------------------------------------------------+
 | * Arithmetic or    |CentralRunningAverage    |                                                  |
 | * Transformation   +-------------------------+--------------------------------------------------+
@@ -110,6 +112,8 @@ The following two tables are the algorithms specific to CWMS or HDB.
 |                    |GroupAdder               | decodes.cwms.validation.CwmsScreeningAlgorithm   |
 |                    +-------------------------+--------------------------------------------------+
 |                    |Multiplication           | decodes.cwms.validation.DatchkScreeningAlgorithm |
+|                    +-------------------------+--------------------------------------------------+
+|                    |ToIrregularUsingPattern  | decodes.cwms.algo.ToIrregularUsingPattern        |
 +--------------------+-------------------------+--------------------------------------------------+
 | * HDB              |CallProcAlg              | decodes.hdb.algo.CallProcAlg                     |
 |                    +-------------------------+--------------------------------------------------+
@@ -156,6 +160,7 @@ The following two tables are the algorithms specific to CWMS or HDB.
 |                    |VolumeToFlowAlg          | decodes.hdb.algo.VolumeToFlowAlg                 |
 +--------------------+-------------------------+--------------------------------------------------+
 
+
 ***************************
 OpenDCS Standard Algorithms
 ***************************
@@ -195,6 +200,9 @@ these algorithms are for executing simple arithmetic.
 +-------------------------+----------------------------------------------------------+
 |SumOverTimeAlgorithm     |Sums single 'input' parameter to a single 'sum' parameter |
 +-------------------------+----------------------------------------------------------+
+|ToIrregularUsingPattern  |Interpolates an 'input' to have dates matching Pattern    |
++-------------------------+----------------------------------------------------------+
+
 
 Recall, that when a computation is set up, the output is a 
 separate time series.   Input time series are NOT being manipulated 
@@ -671,6 +679,40 @@ The minSamplesNeeded by default is 1.
    :alt:  algorithm sumovertime
    :width: 600
 
+ToIrregularUsingPattern
+--------------------
+
+The ToIrregularusingPattern Algorithm generates a new time series data set from an existing
+irregular or regular interval time series data set. The times for the new time series are
+defined by the times of a second time series data set. Values for the new time series are
+computed from the original time series data by interpolating between the two bounding input
+point using three methods. The data type of the original time series data governs how values
+are interpolated.
+
+* Data type "INST-VAL" (or "INST-CUM") considers the value to change linearly over the interval from the previous data value to the current data value.
+* Data type "PER-AVER" considers the value to be constant at the current data value over the interval.
+* Data type "PER-CUM" considers the value to increase from 0.0 (at the start of the interval) up to the current value over the interval.
+
+Interpolation of the three data types is illustrated below.
+
+.. image:: ./media/resources/algorithms/im-30-comp-ToIrregular.JPG
+   :alt:  algorithm ToIrregularUsingPattern
+   :width: 500
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |input            |
++-----------+-----------------+
+|Inputs     |pattern          |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
+
+... more content coming soon ...
+
+
+
 Standard - Hydrologic
 =====================
 
@@ -690,6 +732,8 @@ Standard - Hydrologic
 |UsgsEquation       |USGS Equation O = A* (B + I)^C + D                     |
 +-------------------+-------------------------------------------------------+
 |VirtualGage        |Compute virtual elevation based on two other gages     |
++-------------------+-------------------------------------------------------+
+|RelativeHumidity   |Compute relative humidity from temperature and dewPoint|
 +-------------------+-------------------------------------------------------+
 
 BridgeClearance
@@ -772,6 +816,31 @@ VirtualGage
 -----------
 
 Exec Class: decodes.tsdb.algo.VirtualGage
+
+... more content coming soon ...
+
+RelativeHumidity
+-----------
+
+Exec Class: decodes.tsdb.algo.RelativeHumidity
+
+Calculates relative humidity with temperature and dew point data. Air temperature
+and dew point temperature are assumed to be in °C. Calculates relative humidity RH
+using the formula, RH = 100 × {exp[17.625 × Dp/(243.04 + Dp)]/exp[17.625 × T/(243.04 + T)]}.
+dew point temperature can not be above air temperature and output most share same interval
+as the temperature timeSeries.
+
+By default the following criteria are met or assumed in the algorithm.
+
++-----------+-----------------+
+|**Role**   |**Role Name**    |
++===========+=================+
+|Inputs     |temperature      |
++           +-----------------+
+|           |dewPoint         |
++-----------+-----------------+
+|Outputs    |output           |
++-----------+-----------------+
 
 ... more content coming soon ...
 
@@ -891,12 +960,11 @@ Python Algorithms
 
 Exec Class: decodes.tsdb.algo.PythonAlgorithm
 
+Creating a New Python Algorithm <https://opendcs-env.readthedocs.io/en/latest/legacy-cp-userguide.html#creating-a-new-python-algorithm>
+
 
 Java Algorithms
 ===============
 
-****************************
-OpenDCS Algorithm GUI Basics
-****************************
+There are examples in the OpenDCS source code <https://github.com/opendcs/opendcs/tree/master/src/main/java/decodes/tsdb/algo>
 
-... more content coming soon ...

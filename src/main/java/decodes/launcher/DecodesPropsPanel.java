@@ -15,6 +15,7 @@ import ilex.util.UserAuthFile;
 import ilex.gui.LoginDialog;
 import decodes.gui.PropertiesEditPanel;
 import decodes.gui.TopFrame;
+import decodes.gui.properties.PropertiesTableModel;
 import decodes.util.DecodesSettings;
 
 import org.opendcs.authentication.AuthSourceService;
@@ -115,7 +116,8 @@ public class DecodesPropsPanel extends JPanel
 
         dbPasswordButton.addActionListener(e -> dbPasswordButtonPressed());
 
-        propsEditPanel = new PropertiesEditPanel(origProps, false);
+        propsEditPanel = PropertiesEditPanel.from(origProps, false);
+        // note, this seems wrong.
         propsEditPanel.setBorder(new TitledBorder(
             labels.getString("DecodesPropsPanel.preferences")));
         this.add(propsEditPanel, BorderLayout.CENTER);
@@ -126,17 +128,18 @@ public class DecodesPropsPanel extends JPanel
     protected void editDbTypeChanged()
     {
         String dbType = (String)editDbTypeCombo.getSelectedItem();
+        PropertiesTableModel model = propsEditPanel.getModel();
         if (dbType.equalsIgnoreCase("CWMS"))
         {
-            propsEditPanel.setProperty("dbClassName", "decodes.cwms.CwmsTimeSeriesDb");
-            propsEditPanel.setProperty("jdbcDriverClass", "oracle.jdbc.driver.OracleDriver");
-            propsEditPanel.setProperty("sqlKeyGenerator", "decodes.sql.OracleSequenceKeyGenerator");
+            model.setProperty("dbClassName", "decodes.cwms.CwmsTimeSeriesDb");
+            model.setProperty("jdbcDriverClass", "oracle.jdbc.driver.OracleDriver");
+            model.setProperty("sqlKeyGenerator", "decodes.sql.OracleSequenceKeyGenerator");
         }
         else if (dbType.equalsIgnoreCase("HDB"))
         {
-            propsEditPanel.setProperty("dbClassName", "decodes.hdb.HdbTimeSeriesDb");
-            propsEditPanel.setProperty("jdbcDriverClass", "oracle.jdbc.driver.OracleDriver");
-            propsEditPanel.setProperty("sqlKeyGenerator", "decodes.sql.OracleSequenceKeyGenerator");
+            model.setProperty("dbClassName", "decodes.hdb.HdbTimeSeriesDb");
+            model.setProperty("jdbcDriverClass", "oracle.jdbc.driver.OracleDriver");
+            model.setProperty("sqlKeyGenerator", "decodes.sql.OracleSequenceKeyGenerator");
         }
     }
 
@@ -164,8 +167,8 @@ public class DecodesPropsPanel extends JPanel
         // them from the properties list.
         PropertiesUtil.rmIgnoreCase(origProps, "editDatabaseType");
         PropertiesUtil.rmIgnoreCase(origProps, "editDatabaseLocation");
-        propsEditPanel.setProperties(origProps);
-        propsEditPanel.setPropertiesOwner(settings);
+        propsEditPanel.getModel().setProperties(origProps);
+        propsEditPanel.getModel().setPropertiesOwner(settings);
 
         int typ = settings.editDatabaseTypeCode;
         editDbTypeCombo.setSelectedIndex(
@@ -181,7 +184,7 @@ public class DecodesPropsPanel extends JPanel
     DecodesSettings saveToSettings()
     {
         DecodesSettings settings = new DecodesSettings();
-        propsEditPanel.saveChanges(); // this saves back to 'origProps'
+        propsEditPanel.getModel().saveChanges(); // this saves back to 'origProps'
         settings.loadFromProperties(origProps);
 
         int idx = editDbTypeCombo.getSelectedIndex();
