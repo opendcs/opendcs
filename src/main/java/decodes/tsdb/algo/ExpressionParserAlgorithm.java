@@ -1,61 +1,43 @@
 package decodes.tsdb.algo;
 
+import decodes.tsdb.DbCompException;
+import decodes.tsdb.ParmRef;
+import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.VarFlags;
+import decodes.tsdb.algo.jep.JepContext;
+import ilex.util.StringPair;
+import ilex.var.IFlags;
+import ilex.var.NamedVariable;
+import org.nfunk.jep.SymbolTable;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Properties;
 
-import org.nfunk.jep.SymbolTable;
-
-import ilex.var.IFlags;
-import ilex.var.NamedVariableList;
-import ilex.var.NamedVariable;
-import decodes.db.Constants;
-import decodes.db.SiteName;
-import decodes.tsdb.DbAlgorithmExecutive;
-import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.algo.jep.JepContext;
-import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.ParmRef;
-import ilex.var.TimedVariable;
-import decodes.tsdb.TimeSeriesIdentifier;
-
-//AW:IMPORTS
-// Place an import statements you need here.
-//TODO Add the JEP stuff
-import ilex.util.StringPair;
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Allow up to 5 inputs labeled in1...in5 and two outputs labeled out1 and out2.
-Properties can include:
-- Time slice expressions labeled ex_<label>, where <label> is any string.
-- Pre-time slice expressions labeled pre_<label>
-- Post-time slice expressions labeled post_<label>
-
-Expressions are executed in sort order.
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Allow up to 5 inputs labeled in1...in5 and two outputs labeled out1 and out2.\n" +
+		"Properties can include:\n" +
+		"- Time slice expressions labeled ex_<label>, where <label> is any string.\n" +
+		"- Pre-time slice expressions labeled pre_<label>\n" +
+		"- Post-time slice expressions labeled post_<label>\n" +
+		"\n" +
+		"Expressions are executed in sort order.")
 public class ExpressionParserAlgorithm
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double in1;	//AW:TYPECODE=i
-	public double in2;	//AW:TYPECODE=i
-	public double in3;	//AW:TYPECODE=i
-	public double in4;	//AW:TYPECODE=i
-	public double in5;	//AW:TYPECODE=i
-	String _inputNames[] = { "in1", "in2", "in3", "in4", "in5" };
-//AW:INPUTS_END
-
-//AW:LOCALVARS
+	@Input
+	public double in1;
+	@Input
+	public double in2;
+	@Input
+	public double in3;
+	@Input
+	public double in4;
+	@Input
+	public double in5;
 	JepContext jepContext = null;
 	public ExpressionParserAlgorithm()
 	{
@@ -76,25 +58,23 @@ public class ExpressionParserAlgorithm
 		else // id is the base part by itself
 			symTab.addVariable(name + ".base" + part, id);
 	}	
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable out1 = new NamedVariable("out1", 0);
+	@Output
 	public NamedVariable out2 = new NamedVariable("out2", 0);
-	String _outputNames[] = { "out1", "out2" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@org.opendcs.annotations.PropertySpec(value="")
 	public String pre_1 = "";
+	@org.opendcs.annotations.PropertySpec(value="")
 	public String ex_1 = "";
+	@org.opendcs.annotations.PropertySpec(value="")
 	public String post_1 = "";
-	String _propertyNames[] = { "pre_1", "ex_1", "post_1" };
-//AW:PROPERTIES_END
 
 	private void executeScript(ArrayList<StringPair> script)
 	{
 		// Remove outputs from the symbol table so that I can detect assignments after execution.
-		for(String nm: _outputNames)
+		for(String nm: getOutputNames())
 			jepContext.getParser().getSymbolTable().remove(nm);
 		int idx = 0;
 		jepContext.setOnErrorLabel(null);
@@ -142,11 +122,7 @@ public class ExpressionParserAlgorithm
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
 		// Code here will be run once, after the algorithm object is created.
 		jepContext = new JepContext(tsdb, this);
 
@@ -180,7 +156,6 @@ public class ExpressionParserAlgorithm
 		Collections.sort(timeSliceScript, spcomp);
 		Collections.sort(postScript, spcomp);
 		
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -189,7 +164,6 @@ public class ExpressionParserAlgorithm
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -198,7 +172,7 @@ public class ExpressionParserAlgorithm
 		// Prepopulate the symbol table with the info about the parameters.
 		SymbolTable symTab = jepContext.getParser().getSymbolTable();
 		symTab.clear();
-		for(String inputName : _inputNames)
+		for(String inputName : getInputNames())
 		{
 			ParmRef pr = getParmRef(inputName);		
 			if (pr != null && pr.compParm != null && pr.timeSeries != null 
@@ -254,7 +228,6 @@ public class ExpressionParserAlgorithm
 		if (preScript.size() > 0)
 			executeScript(preScript);
 
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -270,13 +243,12 @@ public class ExpressionParserAlgorithm
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
 		jepContext.setTimeSliceBaseTime(_timeSliceBaseTime);
 
 		// Add the inputs to the symbol table for this time slice.
 		SymbolTable symTab = jepContext.getParser().getSymbolTable();
-		for(String inputName : _inputNames)
+		for(String inputName : getInputNames())
 		{
 			double inputVal =
 				inputName.equals("in1") ? in1 :
@@ -367,7 +339,7 @@ debug3("out2 was set to " + out2value);
 		
 		// Check the input '.flags' values in the symbol table to see if any values were
 		// changed. If so, set the new flags and cause them to be written to the database.
-		for(String inputName : _inputNames)
+		for(String inputName : getInputNames())
 		{
 			String flagName = inputName + ".flags";
 debug3("Checking for " + flagName);
@@ -395,7 +367,6 @@ debug3("origFlags=0x" + Integer.toHexString(origFlags) + ", newFlags=0x" + Integ
 else debug3("...not found");
 		}
 
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -404,7 +375,6 @@ else debug3("...not found");
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
@@ -429,31 +399,6 @@ else debug3("...not found");
 			else if (out2value instanceof String)
 				setOutput(out2, (String)out2value);
 		}
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }

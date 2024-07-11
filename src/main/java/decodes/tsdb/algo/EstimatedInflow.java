@@ -1,37 +1,26 @@
 package decodes.tsdb.algo;
 
+import decodes.tsdb.DbCompException;
+import ilex.var.NamedVariable;
+
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
-import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
-import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Estimate inflow over the interval from reservoir storage and outflow.
-Estimated Inflow = delta(Storage) + AverageOutflow over period.
-Inputs are: Storage (in cubic meters), and outflow (in cubic meters per second)
-Output is estimated inflow (in cubic meters per second)
-
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Estimate inflow over the interval from reservoir storage and outflow.\n" +
+		"Estimated Inflow = delta(Storage) + AverageOutflow over period.\n" +
+		"Inputs are: Storage (in cubic meters), and outflow (in cubic meters per second)\n" +
+		"Output is estimated inflow (in cubic meters per second)")
 public class EstimatedInflow
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double storage;	//AW:TYPECODE=i
-	public double outflow;	//AW:TYPECODE=i
-	String _inputNames[] = { "storage", "outflow" };
-//AW:INPUTS_END
+	@Input
+	public double storage;
+	@Input
+	public double outflow;
 
-//AW:LOCALVARS
 	double store_t0 = 0.;
 	double store_t1 = 0.;
 	double out_t0 = 0.;
@@ -41,18 +30,14 @@ public class EstimatedInflow
 	Date first = null;
 	Date last = null;
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+    @Output
 	public NamedVariable inflow = new NamedVariable("inflow", 0);
-	String _outputNames[] = { "inflow" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@org.opendcs.annotations.PropertySpec(value="true")
 	public boolean aggUpperBoundClosed = true;
+	@org.opendcs.annotations.PropertySpec(value="true")
 	public boolean aggLowerBoundClosed = true;
-	String _propertyNames[] = { "aggUpperBoundClosed", "aggLowerBoundClosed" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -62,14 +47,8 @@ public class EstimatedInflow
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "inflow";
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -78,12 +57,10 @@ public class EstimatedInflow
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		firstInPeriod = true;
 		numSlices = 0;
 		first = null;
 		last = null;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -99,7 +76,6 @@ public class EstimatedInflow
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		numSlices++;
 		if (firstInPeriod)
 		{
@@ -114,7 +90,6 @@ public class EstimatedInflow
 			out_t1 = outflow;
 			last = _timeSliceBaseTime;
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -123,7 +98,6 @@ public class EstimatedInflow
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		if (numSlices >= 2)
 		{
 			// Determine # of seconds in the aggregate period
@@ -149,31 +123,6 @@ debug3("change in storage is " + dStore
 			// Output the estimated inflow in cubic meters.
 			setOutput(inflow, discharge);
 		}
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }

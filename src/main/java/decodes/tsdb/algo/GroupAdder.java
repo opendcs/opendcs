@@ -1,69 +1,44 @@
 package decodes.tsdb.algo;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-
-import opendcs.dai.ComputationDAI;
-import ilex.var.NamedVariableList;
-import ilex.var.NamedVariable;
-import ilex.var.NoConversionException;
-import decodes.tsdb.BadTimeSeriesException;
-import decodes.tsdb.DbAlgorithmExecutive;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.MissingAction;
-import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TsGroup;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.ParmRef;
-import ilex.var.TimedVariable;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.TsGroup;
 import decodes.util.TSUtil;
+import ilex.var.NamedVariable;
+import ilex.var.NoConversionException;
+import ilex.var.TimedVariable;
+import opendcs.dai.ComputationDAI;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
 
-//AW:JAVADOC
-/**
-Type a javadoc-style comment describing the algorithm class.
-Apply a mask to a group to obtain a list of time series.
-Retrieve all of the input values and add them together
-The MISSING value determines how values are fetched if they are not all present at the triggered time slice.
-Can be triggered by all (masked) TSID values in the group or can be run on a timer.
-
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Apply a mask to a group to obtain a list of time series.\n" +
+		"Retrieve all of the input values and add them together\n" +
+		"The MISSING value determines how values are fetched if they are not all present at the triggered time slice.\n" +
+		"Can be triggered by all (masked) TSID values in the group or can be run on a timer.")
 public class GroupAdder
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double mask;	//AW:TYPECODE=i
-	String _inputNames[] = { "mask" };
-//AW:INPUTS_END
+	@Input
+	public double mask;
 
-//AW:LOCALVARS
-	// Enter any local class variables needed by the algorithm.
 	private ArrayList<CTimeSeries> ts2sum = new ArrayList<CTimeSeries>();
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+    @Output
 	public NamedVariable sum = new NamedVariable("sum", 0);
+	@Output
 	public NamedVariable count = new NamedVariable("count", 0);
+	@Output
 	public NamedVariable average = new NamedVariable("average", 0);
-	String _outputNames[] = { "sum", "count", "average" };
-//AW:OUTPUTS_END
-
-//AW:PROPERTIES
-	String _propertyNames[] = {  };
-//AW:PROPERTIES_END
-
-	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
@@ -71,13 +46,7 @@ public class GroupAdder
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -87,8 +56,6 @@ public class GroupAdder
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
-		
 		// Fetch the TsGroup object and expand it.
 		TsGroup group = comp.getGroup();
 		if (group == null)
@@ -192,8 +159,10 @@ public class GroupAdder
 		
 debug3("After fill ...");
 for(CTimeSeries cts : ts2sum)
-debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr()
- + ", num samples=" + cts.size());
+{
+	debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units=" + cts.getUnitsAbbr()
+			+ ", num samples=" + cts.size());
+}
 		
 	  nextTimeSlice:
 		for(Date timeSlice : baseTimes)
@@ -208,47 +177,31 @@ debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units
 
 				if (tv == null)
 				{
-					switch(missingAction)
+					switch (missingAction)
 					{
-					case CLOSEST:
-						tv = cts.findClosest(timeSlice.getTime()/1000L); break;
-					case PREV: 
-						tv = cts.findPrev(timeSlice); break;
-					case NEXT: tv = cts.findNext(timeSlice); break;
-					case INTERP: tv = cts.findInterp(timeSlice.getTime()/1000L); break;
-					case FAIL:
-						debug1("Skipping time slice " + debugSdf.format(timeSlice)
-							+ " because there is no value for '" 
-							+ cts.getTimeSeriesIdentifier().getUniqueString() + "'");
-						continue nextTimeSlice;
-					default: // IGNORE
-						debug1("Skipping time series '" + cts.getTimeSeriesIdentifier().getUniqueString()
-							+ "' because no value at " + debugSdf.format(timeSlice));
-						continue;
+						case CLOSEST:
+							tv = cts.findClosest(timeSlice.getTime() / 1000L);
+							break;
+						case PREV:
+							tv = cts.findPrev(timeSlice);
+							break;
+						case NEXT:
+							tv = cts.findNext(timeSlice);
+							break;
+						case INTERP:
+							tv = cts.findInterp(timeSlice.getTime() / 1000L);
+							break;
+						case FAIL:
+							debug1("Skipping time slice " + debugSdf.format(timeSlice)
+									+ " because there is no value for '"
+									+ cts.getTimeSeriesIdentifier().getUniqueString() + "'");
+							continue nextTimeSlice;
+						default: // IGNORE
+							debug1("Skipping time series '" + cts.getTimeSeriesIdentifier().getUniqueString()
+									+ "' because no value at " + debugSdf.format(timeSlice));
+							continue;
 					}
-//try
-//{
-//	debug3("    " + cts.getTimeSeriesIdentifier() + " missing -- action=" + missingAction 
-//	+ ", result=" + tv.getDoubleValue());
-//}
-//catch (NoConversionException e)
-//{
-//	// Auto-generated catch block
-//	e.printStackTrace();
-//}
 				}
-//else
-//{
-//	try
-//	{
-//		debug3("    " + cts.getTimeSeriesIdentifier() + " value present=" + tv.getDoubleValue());
-//	}
-//	catch (NoConversionException e)
-//	{
-//		// Auto-generated catch block
-//		e.printStackTrace();
-//	}
-//}
 				if (tv != null)
 					try
 					{
@@ -277,7 +230,6 @@ debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units
 					+ " at time " + debugSdf.format(timeSlice));
 		}
 		
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -293,8 +245,6 @@ debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -303,33 +253,6 @@ debug3("    tsid: " + cts.getTimeSeriesIdentifier().getUniqueString() + ", units
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-		// All work done in BeforeTimeSlices
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }
