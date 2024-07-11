@@ -125,7 +125,14 @@ public class CompAppInfo
 	}
 
 	/** @return the comment */
-	public String getComment() { return comment; }
+	public String getComment()
+	{
+		if( comment == null)
+		{
+		   return "";
+		}
+		return comment;
+	}
 
 	/** 
 	 * Sets the comment
