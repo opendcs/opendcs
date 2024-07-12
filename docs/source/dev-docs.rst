@@ -348,6 +348,19 @@ The following prefixes are reserved:
 |file      |Values from files on the file system. |
 +----------+--------------------------------------+
 
+Additional Logging
+==================
+
+Similar to the connection pool tracing above, if you are having difficulty with a provider
+you can log missed results with the following feature flag.
+
+.. code-block:: bash
+
+    DECJ_MAXHEAP="-Dopendcs.property.providers.trace=true" routsched ...
+
+This will cause excessive logging and drastically slow execution. We do not recommend
+leaving this setting on for any length of time beyond a debugging session.
+
 Code Analysis
 -------------
 
