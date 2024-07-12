@@ -780,7 +780,7 @@ more information about each.
             </and>
             <then>
                 <property name="jfrOpts" value=""/>
-                <echo leve="warning">Can only run Java Flight recorder on JDK 11 or above</echo>
+                <echo level="warning">Can only run Java Flight recorder on JDK 11 or above</echo>
             </then>
             <elseif>
                 <isset property="opendcs.jfr"/>
