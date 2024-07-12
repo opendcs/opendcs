@@ -773,6 +773,37 @@ more information about each.
             </fileset>
         </chmod>
         <mkdir dir="${build.dir}/run"/>
+        <if>
+            <and>
+                <islessthan arg1="${java.specification.version}" arg2="11"/>
+                <isset property="opendcs.jfr"/>
+            </and>
+            <then>
+                <property name="jfrOpts" value=""/>
+                <echo leve="warning">Can only run Java Flight recorder on JDK 11 or above</echo>
+            </then>
+            <elseif>
+                <isset property="opendcs.jfr"/>
+                <then>
+                    <property name="can_jfr" value="true"/>
+                    <property name="jfrOpts"
+                                value="-XX:StartFlightRecording=disk=true,dumponexit=true,filename=${build.dir}/run/${opendcs.app}.recording.jfr,settings=profile"/>
+                </then>
+            </elseif>
+            <else>
+                <property name="jfrOpts" value=""/>
+            </else>
+        </if>
+
+        <condition property="debugOpts"
+                   value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"
+                   else="">
+            <isset property="debugPort"/>
+        </condition>
+
+        <property name="decj_opts" value="${debugOpts} ${jfrOpts}"/>
+        <echo message="with opts: ${decj_opts}"/>
+
         <exec executable="${stage.dir}/bin/${opendcs.app}" osfamily="unix">
             <env key="DCSTOOL_HOME" value="${stage.absolute.dir}"/>
             <env key="DECODES_INSTALL_DIR" value="${stage.absolute.dir}"/>
@@ -780,9 +811,7 @@ more information about each.
             <arg value="-l"/><arg value="/dev/stdout"/>
             <arg if:set="opendcs.profile" value="-P"/>
             <arg if:set="opendcs.profile" value="${opendcs.profile}"/>
-            <env if:set="debugPort"
-                 key="DECJ_OPTS"
-                 value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+            <env key="DECJ_OPTS" value="${decj_opts}"/>
         </exec>
         <exec executable="${stage.absolute.dir}/bin/${opendcs.app}.bat" osfamily="windows" vmlauncher="false">
             <env key="DCSTOOL_HOME" value="${stage.absolute.dir}"/>
@@ -791,9 +820,7 @@ more information about each.
             <arg value="-l"/><arg value="CON:"/>
             <arg if:set="opendcs.profile" value="-P"/>
             <arg if:set="opendcs.profile" value="${opendcs.profile}"/>
-            <env if:set="debugPort"
-                 key="DECJ_OPTS"
-                 value="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort}"/>
+            <env key="DECJ_OPTS" value="${decj_opts}"/>
         </exec>
     </target>
 </project>
