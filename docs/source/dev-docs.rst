@@ -155,7 +155,7 @@ the "stage" directory is used as DCSTOOL_HOME and DCSTOOL_USERDIR is the same de
     ant run -DdebugPort=5006
 
     # to run with Java Flight Recorder
-    ant run -Dopendcs.jfr
+    ant run -Dopendcs.jfr=true
     # recordings will be in the run directory of the build (default build/run)
     # with the name <opendcs.app>.recording.jfr where opendcs.app is the value of the property provided
     # or the default "launcher_start" app if the property is not set.
