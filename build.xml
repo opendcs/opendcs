@@ -774,6 +774,15 @@ more information about each.
         </chmod>
         <mkdir dir="${build.dir}/run"/>
         <if>
+            <isset property="opendcs.profile"/>
+            <then>
+                <basename property="opendcs.profile.name" file="${opendcs.profile}" suffix=".profile"/>
+            </then>
+            <else>
+                <property name="opendcs.profile.name" value="default"/>
+            </else>
+        </if>
+        <if>
             <and>
                 <islessthan arg1="${java.specification.version}" arg2="11"/>
                 <isset property="opendcs.jfr"/>
@@ -787,7 +796,7 @@ more information about each.
                 <then>
                     <property name="can_jfr" value="true"/>
                     <property name="jfrOpts"
-                                value="-XX:StartFlightRecording=disk=true,dumponexit=true,filename=${build.dir}/run/${opendcs.app}.recording.jfr,settings=profile"/>
+                                value="-XX:StartFlightRecording=disk=true,dumponexit=true,filename=${build.dir}/run/${opendcs.app}.${opendcs.profile.name}.recording.jfr,settings=profile"/>
                 </then>
             </elseif>
             <else>
