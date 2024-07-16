@@ -518,8 +518,8 @@ This tab takes users to the Algorithm Wizard.
 
 **Logging**
 
-All of the application write to a log. The default name is the internal name of the application or "gui.log" for the 
-GUI application. The file on disk can be control in each application with the `-l filename.ext` command line switch
+All of the applications write to a log. The default name is the internal name of the application or "gui.log" for the 
+GUI application. The file on disk can be controlled in each application with the `-l filename.ext` command line switch
 if run from a terminal.
 
 The logging system has recently (7.0.13, which is not released) be updated to make use of newer, standard, technologies and exposes more information
