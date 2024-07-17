@@ -149,10 +149,18 @@ the "stage" directory is used as DCSTOOL_HOME and DCSTOOL_USERDIR is the same de
     ant run -Dopendcs.app=compedit
 
     # to run a specific app with a profile
-    ant run -Dopendcs.app=dbedit -Popendcs.profile="full path to a profile or .properties file"
+    ant run -Dopendcs.app=dbedit -Dopendcs.profile="full path to a profile or .properties file"
 
     # to run with the java remote debugger enabled
     ant run -DdebugPort=5006
+
+    # to run with Java Flight Recorder
+    ant run -Dopendcs.jfr=true
+    # recordings will be in the run directory of the build (default build/run)
+    # with the name <opendcs.app>.recording.jfr where opendcs.app is the value of the property provided
+    # or the default "launcher_start" app if the property is not set.
+
+All of the options above can be in any combination.
 
 The logs are set to the highest debug level and printed to stdout.
 
@@ -341,6 +349,19 @@ The following prefixes are reserved:
 +----------+--------------------------------------+
 |file      |Values from files on the file system. |
 +----------+--------------------------------------+
+
+Additional Logging
+==================
+
+Similar to the connection pool tracing above, if you are having difficulty with a provider
+you can log missed results with the following feature flag.
+
+.. code-block:: bash
+
+    DECJ_MAXHEAP="-Dopendcs.property.providers.trace=true" routsched ...
+
+This will cause excessive logging and drastically slow execution. We do not recommend
+leaving this setting on for any length of time beyond a debugging session.
 
 Code Analysis
 -------------
