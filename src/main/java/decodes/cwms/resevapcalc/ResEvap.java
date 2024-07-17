@@ -6,32 +6,30 @@
  */
 package decodes.cwms.resevapcalc;
 
-import hec.data.ParameterType;
-import hec.data.Units;
-import hec.data.UnitsConversionException;
-import hec.heclib.dss.DssDataType;
-import hec.heclib.util.HecTime;
-import hec.heclib.util.Heclib;
-import hec.hecmath.HecMathException;
-import hec.hecmath.TimeSeriesMath;
-import hec.io.TimeSeriesContainer;
-import hec.lang.DSSPathString;
+import decodes.cwms.HecConstants;
+import decodes.tsdb.CTimeSeries;
+//import hec.data.ParameterType;
+//import hec.data.Units;
+//import hec.data.UnitsConversionException;
+//import hec.heclib.dss.DssDataType;
+//import hec.heclib.util.HecTime;
+//import hec.heclib.util.Heclib;
+//import hec.hecmath.HecMathException;
+//import hec.hecmath.TimeSeriesMath;
+//import hec.io.TimeSeriesContainer;
+//import hec.lang.DSSPathString;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.NavigableMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import rma.lang.RmaMath;
-import rma.util.RMAConst;
+//import rma.lang.RmaMath;
+//import rma.util.RMAConst;
 
 /**
  * Program to estimate evaporation from reservoirs
@@ -65,24 +63,24 @@ public class ResEvap
     rma.util.NumberFormat nfe11_3 = new rma.util.NumberFormat("%11.3E");    
         
     // output computed time series
-    TimeSeriesContainer _solarRadTsc;
-    TimeSeriesContainer _IR_DownTsc;
-    TimeSeriesContainer _IR_OutTsc;
-    TimeSeriesContainer _sensibleHeatTsc;
-    TimeSeriesContainer _latentHeatTsc;
-    TimeSeriesContainer _evapRateHourlyTsc;
-    TimeSeriesContainer _evapDailyTsc;
-    TimeSeriesContainer _surfaceTempTsc;
+    double _solarRadTsc;
+    double _IR_DownTsc;
+    double _IR_OutTsc;
+    double _sensibleHeatTsc;
+    double _latentHeatTsc;
+    double _evapRateHourlyTsc;
+    double _evapDailyTsc;
+    double _surfaceTempTsc;
     NavigableMap<Integer, Integer> _timeMap;
-    
-    TimeSeriesContainer[] _inputTimeSeries;
+
+    CTimeSeries[] _inputTimeSeries;
     
     // FPart of output Ts
     String _versionName;
             
     // store Water temperature profile data
     // one profile for each hour
-    double[][] _wtempProfiles;
+    double[] _wtempProfiles;
             
     public EvapReservoir _reservoir;
     public EvapMetData _metData;
@@ -157,14 +155,13 @@ public class ResEvap
      *  of the reservoir. 
      * 
      * The reservoir and met data object need to have previously been set.
-     * 
-     * @param startDateTime
-     * @param endDateTime
+     *
+     * @param currentTime
      * @param gmtOffset
      * @return 
      */
-    public boolean compute(String startDateTime, String endDateTime,
-            double gmtOffset, String versionName ) throws ResEvapException
+    public boolean compute(Date currentTime,
+            double gmtOffset ) throws ResEvapException
     {
     	if ( _reservoir == null )
     	{
@@ -191,16 +188,16 @@ public class ResEvap
         }
 
         // setup output time series objects
-        _versionName = versionName;
-        initializeOutputTsc( _reservoir._name, versionName, startDateTime, endDateTime);
+//        _versionName = "test";
+//        initializeOutputTsc( _reservoir._name, versionName, startDateTime, endDateTime);
         
         // determine number of periods
-        HecTime hecStartTime = new HecTime( startDateTime, HecTime.MINUTE_INCREMENT);
-        HecTime hecEndTime = new HecTime( endDateTime, HecTime.MINUTE_INCREMENT);
+//        HecTime hecStartTime = new HecTime( startDateTime, HecTime.MINUTE_INCREMENT);
+//        HecTime hecEndTime = new HecTime( endDateTime, HecTime.MINUTE_INCREMENT);
         int intervalMinutes = 60;
-        int nper = HecTime.nopers( intervalMinutes, hecStartTime.julian(),
-                hecStartTime.minutesSinceMidnight(),
-                hecEndTime.julian(), hecEndTime.minutesSinceMidnight() );
+//        int nper = HecTime.nopers( intervalMinutes, hecStartTime.julian(),
+//                hecStartTime.minutesSinceMidnight(),
+//                hecEndTime.julian(), hecEndTime.minutesSinceMidnight() );
 
         double deltT = 3600.;
         
@@ -298,7 +295,7 @@ public class ResEvap
 	        _reservoir._resj_old = resj;
 	        
 	        // loop through compute period
-	        HecTime currentTime = new HecTime(hecStartTime);
+//	        HecTime currentTime = new HecTime(hecStartTime);
 	        
 	        // reservoir location info (lat, lon, gmtOffset) for met compute
 	        ReservoirLocationInfo resLocationInfo = _reservoir.getReservoirLocationInfo();
@@ -309,107 +306,91 @@ public class ResEvap
 	        boolean useElevTS = false;  //TODO make an option
 	        double wselCurrent = _reservoir.getElevation();
 	        double wselOld = wselCurrent;
-	        
-	        for ( int jhour=0; jhour<=nper; jhour++)
-	        {
-	        	if ( useElevTS )
-	        	{
-	        		double newElev =_reservoir.getCurrentElevation(currentTime);
-	        	
-		        	if ( RMAConst.isValidValue(newElev) )
-		        	{
-		        		wselCurrent =  newElev;
-		        		wselOld = wselCurrent;
-		        		
-		        		if ( xout != null )
-		        		{
-							xout.write (currentTime.date(4) + " " + currentTime.getTime(false) +   "  wselCurrent  " + (float)wselCurrent);
-		        		}
-		        		_reservoir.setElevationMeters(wselCurrent);
-		        		_reservoir.resSetup( true );
-		        	}        	
-	        	}
-	        	
-	            if ( jhour > 0 )
-	            {
-	                currentTime.addMinutes(intervalMinutes);
-	            }
-	            double surfaceTemp = _reservoir._wt[resj];
-	            
-	            // compute solar and longwave down radiation
-	            // and evaporation for reservoir location
-	            metComputation.computeMetAndEvap(currentTime, surfaceTemp,
-	            		resLocationInfo );
-	            
-	            boolean noProblem = true;
-	            
-	            // if no valid met data yet skip reservoir temp compute
-	            if ( !metComputation._metFailed )
-	            {
-	            	// compute temperature profile in reservoir
-	                noProblem = resWtCompute.computeReservoirTemp( 
-	                        currentTime, metComputation, deltT);               
-	            }
-	            
-	
-	            // write out diagnostic text files if opened 
-	            String strval, s;
-	            double val;
-	            if ( noProblem )
-	            {
-	            	if ( out != null )
-	            	{
-		            	// write computed water temperature profile 
-		                resj = _reservoir.getResj();
-		                String dateTimeStr = currentTime.date(4) + "            "
-		                            + currentTime.getTime(false);
-		                try
-		                {
-		                    out.write(dateTimeStr);
-		                    for ( int i=resj; i>=0; i--)
-		                    {
-		                        strval = nf9_3.form(_reservoir._wt[i]);
-		                        out.write(strval);
-		                    }
-			                out.newLine();
-		                }
-		                catch ( IOException ex )
-		                {
-							LOGGER.log(Level.FINE, "Unable to read " + outfil.getAbsolutePath(), ex);
-		                }
 
-		                // write met and computed evap + surface heat exchange
-		                outputMetComputation(  currentTime,  _metData,  metComputation,
-								 surfaceTemp,  metout );               
-		            }
-	            	
-	                // put results into time series arrays
-	                int idx = _timeMap.get( currentTime.value() );
-	                if ( idx >= 0 && idx < _solarRadTsc.times.length )
-	                {
-	                    _solarRadTsc.values[idx] =  metComputation._solar;
-	                    _IR_DownTsc.values[idx] =  metComputation._flxir;
-	                    _IR_OutTsc.values[idx] =  metComputation._flxir_out;
-	                    _latentHeatTsc.values[idx] =  metComputation._evapWater._hl;
-	                    _sensibleHeatTsc.values[idx] =  metComputation._evapWater._hs;
-	                    _surfaceTempTsc.values[idx] =  surfaceTemp;  // BOP surface temp
-	                    
-	                    // evap is in mm/day.  Divide by 24 to get instantaneous
-	                    // hourly value
-	                    _evapRateHourlyTsc.values[idx] 
-	                    		=  metComputation._evapWater._evap / 24.;
-	                    
-	                    // store wt profile
-	                    int numLayers = _reservoir.getResj() + 1;
-	                    //_wtempProfiles[idx] = new double[numLayers];
-	                    _wtempProfiles[idx] = new double[EvapReservoir.NLAYERS];
-	                    for ( int ilyr = 0; ilyr<numLayers; ilyr++ )
-	                    {
-	                        _wtempProfiles[idx][ilyr] = _reservoir._wt[ilyr];
-	                    }
-	                }
-	            }
-	        }
+            if ( useElevTS )
+            {
+                double newElev =_reservoir.getCurrentElevation(currentTime);
+                if ( HecConstants.isValidValue(newElev) )
+                {
+                    wselCurrent =  newElev;
+                    wselOld = wselCurrent;
+
+//                    if ( xout != null )
+//                    {
+//                        xout.write (currentTime.date(4) + " " + currentTime.getTime(false) +   "  wselCurrent  " + (float)wselCurrent);
+//                    }
+                    _reservoir.setElevationMeters(wselCurrent);
+                    _reservoir.resSetup( true );
+                }
+            }
+
+            double surfaceTemp = _reservoir._wt[resj];
+
+            // compute solar and longwave down radiation
+            // and evaporation for reservoir location
+            metComputation.computeMetAndEvap(currentTime, surfaceTemp,
+                    resLocationInfo );
+
+            boolean noProblem = true;
+
+            // if no valid met data yet skip reservoir temp compute
+            if ( !metComputation._metFailed )
+            {
+                // compute temperature profile in reservoir
+                noProblem = resWtCompute.computeReservoirTemp(
+                        currentTime, metComputation, deltT);
+            }
+
+            // write out diagnostic text files if opened
+            String strval, s;
+            double val;
+            if ( noProblem )
+            {
+//                if ( out != null )
+//                {
+//                    // write computed water temperature profile
+//                    resj = _reservoir.getResj();
+//                    String dateTimeStr = currentTime.date(4) + "            "
+//                            + currentTime.getTime(false);
+//                    try
+//                    {
+//                        out.write(dateTimeStr);
+//                        for ( int i=resj; i>=0; i--)
+//                        {
+//                            strval = nf9_3.form(_reservoir._wt[i]);
+//                            out.write(strval);
+//                        }
+//                        out.newLine();
+//                    }
+//                    catch ( IOException ex )
+//                    {
+//                        LOGGER.log(Level.FINE, "Unable to read " + outfil.getAbsolutePath(), ex);
+//                    }
+//                    // write met and computed evap + surface heat exchange
+//                    outputMetComputation(  currentTime,  _metData,  metComputation,
+//                            surfaceTemp,  metout );
+//                }
+
+
+                _solarRadTsc =  metComputation._solar;
+                _IR_DownTsc =  metComputation._flxir;
+                _IR_OutTsc =  metComputation._flxir_out;
+                _latentHeatTsc =  metComputation._evapWater._hl;
+                _sensibleHeatTsc =  metComputation._evapWater._hs;
+                _surfaceTempTsc =  surfaceTemp;  // BOP surface temp
+                // evap is in mm/day.  Divide by 24 to get instantaneous
+                // hourly value
+                _evapRateHourlyTsc =  metComputation._evapWater._evap / 24.;
+                // store wt profile
+                int numLayers = _reservoir.getResj() + 1;
+                //_wtempProfiles[idx] = new double[numLayers];
+                _wtempProfiles = new double[EvapReservoir.NLAYERS];
+                for ( int ilyr = 0; ilyr<numLayers; ilyr++ )
+                {
+                    _wtempProfiles[ilyr] = _reservoir._wt[ilyr];
+                }
+            }
+
 	        
 	        try
 	        {
@@ -423,7 +404,7 @@ public class ResEvap
 				LOGGER.log(Level.SEVERE, "IOException occurred while closing files", ioe);
 	        }
 		}
-		catch (IOException | RuntimeException ex)
+		catch (RuntimeException ex)
 		{
 		    try
 		    {
@@ -451,107 +432,107 @@ public class ResEvap
      * @param surfaceTemp
      * @param metout
      */
-    private void outputMetComputation( HecTime currentTime, EvapMetData metData,  
-    		MetComputation metComputation, double surfaceTemp, BufferedWriter metout )
-    {                
-        try
-        {
-            String strval;
-            double val;
-            
-            String dateTimeStr = currentTime.date(4) + " " + currentTime.dayOfYear()
-                    + " " + currentTime.getTime(false);
-        
-            metout.write(dateTimeStr);
-            
-            // these are met input data ...
-            
-            val = metData._windSpeed_current;
-            if ( !RMAConst.isValidValue(val))  val = -901.;
-            strval = nf8_2.form(val);
-            metout.write(strval);
-            
-            val = metData._airTemp_current;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf8_2.form(val);
-            metout.write(strval);
-            
-            val = metData._relHumidity_current;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf8_2.form(val);
-            metout.write(strval);
-            
-            val = metData._airPressure_current;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf8_2.form(val);
-            metout.write(strval);
-            
-            val = surfaceTemp;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf9_3.form(val);
-            metout.write(strval);
-            
-//                    strval = mkFormatter.format(-901.);  // float(bo_kode)
-//                    s = strval.replaceAll("\\G0", " ");
-            metout.write("  -901.");
-            
-            // these are computed values ...
-            
-            val = metComputation._evapWater._ustar;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf9_3.form(val);
-            metout.write(strval);
-            
-            val = metComputation._evapWater._rstar;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf9_3.form(val);
-            metout.write(strval);
-             
-            val = metComputation._evapWater._obukhovLen;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            if ( val == 0.0 ) val = -901.;
-            float fval = (float)val;
-            strval = nfe11_3.form(fval);
-            metout.write(strval);
-             
-            val = metComputation._evapWater._hs;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf10_3.form(-val);  
-            metout.write(strval);
-            
-            val = metComputation._evapWater._hl;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf10_3.form(-val);
-            metout.write(strval);      
-            
-            val = metComputation._solar;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf10_3.form(val);
-            metout.write(strval);
-            
-            val = metComputation._flxir;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf10_3.form(val);
-            metout.write(strval);
-            
-            val = metComputation._flxir_out;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf10_3.form(val);
-            metout.write(strval);
-            
-            val = metComputation._evapWater._evap;
-            if ( !RMAConst.isValidValue(val)) val = -901.;
-            strval = nf9_3.form(val);
-            metout.write(strval);
-            
-            metout.newLine();
-        }
-        catch ( IOException ioe )
-        {
-			LOGGER.log(Level.FINE, "Unable to write output to ", ioe);
-        }
-    
-    }
+//    private void outputMetComputation( HecTime currentTime, EvapMetData metData,
+//    		MetComputation metComputation, double surfaceTemp, BufferedWriter metout )
+//    {
+//        try
+//        {
+//            String strval;
+//            double val;
+//
+//            String dateTimeStr = currentTime.date(4) + " " + currentTime.dayOfYear()
+//                    + " " + currentTime.getTime(false);
+//
+//            metout.write(dateTimeStr);
+//
+//            // these are met input data ...
+//
+//            val = metData._windSpeed_current;
+//            if ( !RMAConst.isValidValue(val))  val = -901.;
+//            strval = nf8_2.form(val);
+//            metout.write(strval);
+//
+//            val = metData._airTemp_current;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf8_2.form(val);
+//            metout.write(strval);
+//
+//            val = metData._relHumidity_current;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf8_2.form(val);
+//            metout.write(strval);
+//
+//            val = metData._airPressure_current;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf8_2.form(val);
+//            metout.write(strval);
+//
+//            val = surfaceTemp;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf9_3.form(val);
+//            metout.write(strval);
+//
+////                    strval = mkFormatter.format(-901.);  // float(bo_kode)
+////                    s = strval.replaceAll("\\G0", " ");
+//            metout.write("  -901.");
+//
+//            // these are computed values ...
+//
+//            val = metComputation._evapWater._ustar;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf9_3.form(val);
+//            metout.write(strval);
+//
+//            val = metComputation._evapWater._rstar;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf9_3.form(val);
+//            metout.write(strval);
+//
+//            val = metComputation._evapWater._obukhovLen;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            if ( val == 0.0 ) val = -901.;
+//            float fval = (float)val;
+//            strval = nfe11_3.form(fval);
+//            metout.write(strval);
+//
+//            val = metComputation._evapWater._hs;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf10_3.form(-val);
+//            metout.write(strval);
+//
+//            val = metComputation._evapWater._hl;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf10_3.form(-val);
+//            metout.write(strval);
+//
+//            val = metComputation._solar;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf10_3.form(val);
+//            metout.write(strval);
+//
+//            val = metComputation._flxir;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf10_3.form(val);
+//            metout.write(strval);
+//
+//            val = metComputation._flxir_out;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf10_3.form(val);
+//            metout.write(strval);
+//
+//            val = metComputation._evapWater._evap;
+//            if ( !RMAConst.isValidValue(val)) val = -901.;
+//            strval = nf9_3.form(val);
+//            metout.write(strval);
+//
+//            metout.newLine();
+//        }
+//        catch ( IOException ioe )
+//        {
+//			LOGGER.log(Level.FINE, "Unable to write output to ", ioe);
+//        }
+//
+//    }
     
     
     /**
@@ -563,101 +544,101 @@ public class ResEvap
      * @param endDateTime
      * @return
      */
-    protected boolean initializeOutputTsc( String locationName, String versionName,
-            String startDateTime, String endDateTime)
-    {
-        try
-        {
-            // generate a template for hourly time series data
-            int intervalMinutes = 60;
-            int offsetMinutes = 0;
-            TimeSeriesMath tsMath = (TimeSeriesMath)TimeSeriesMath.generateRegularIntervalTimeSeries(startDateTime, endDateTime, 
-                        intervalMinutes, offsetMinutes, Heclib.UNDEFINED_DOUBLE);
-            
-            TimeSeriesContainer hourlyTsc = tsMath.getContainer();
-            hourlyTsc.location = locationName;
-            hourlyTsc.type = ParameterType.INST;
-            hourlyTsc.version = versionName;
-            DSSPathString dsspath = new DSSPathString("", locationName, "", "", "1HOUR", versionName);
-            
-            _solarRadTsc = (TimeSeriesContainer)hourlyTsc.clone();
-            _solarRadTsc.parameter = "Irrad-Flux-Solar";
-            _solarRadTsc.units = "W/m2";
-            dsspath.setCPart(_solarRadTsc.parameter);
-            _solarRadTsc.fullName = dsspath.toString();
-            
-            _IR_DownTsc = (TimeSeriesContainer)hourlyTsc.clone();
-            _IR_DownTsc.parameter = "Irrad-Flux-IR";
-            _IR_DownTsc.units = "W/m2";
-            dsspath.setCPart(_IR_DownTsc.parameter);
-            _IR_DownTsc.fullName = dsspath.toString();
-            
-            _IR_OutTsc = (TimeSeriesContainer)hourlyTsc.clone();
-            _IR_OutTsc.parameter = "Irrad-Flux-Out";
-            _IR_OutTsc.units = "W/m2";
-            dsspath.setCPart(_IR_OutTsc.parameter);
-            _IR_OutTsc.fullName = dsspath.toString();
-            
-            _surfaceTempTsc = (TimeSeriesContainer)hourlyTsc.clone();
-            _surfaceTempTsc.parameter = "Temp-Water-Surface";
-            _surfaceTempTsc.units = "C";
-            dsspath.setCPart(_surfaceTempTsc.parameter);
-            _surfaceTempTsc.fullName = dsspath.toString();
-            
-            _sensibleHeatTsc = (TimeSeriesContainer)hourlyTsc.clone();
-            _sensibleHeatTsc.parameter = "Irrad-Heat-Sensible";
-            _sensibleHeatTsc.units = "W/m2";
-            dsspath.setCPart(_sensibleHeatTsc.parameter);
-            _sensibleHeatTsc.fullName = dsspath.toString();
-            
-            _latentHeatTsc = (TimeSeriesContainer)hourlyTsc.clone();
-            _latentHeatTsc.parameter = "Irrad-Heat-Latent";
-            _latentHeatTsc.units = "W/m2";
-            dsspath.setCPart(_latentHeatTsc.parameter);
-            _latentHeatTsc.fullName = dsspath.toString();
-            
-            _evapRateHourlyTsc = (TimeSeriesContainer)hourlyTsc.clone();
-            _evapRateHourlyTsc.parameter = "EvapRate";
-            _evapRateHourlyTsc.units = "mm/hr";
-            dsspath.setCPart(_evapRateHourlyTsc.parameter);
-            _evapRateHourlyTsc.fullName = dsspath.toString();
-                           
-            // put indices to tsc.times[] into a treemap by date
-            _timeMap = new TreeMap<Integer, Integer>();
-            HecTime hectim = new HecTime(hourlyTsc.times[0], HecTime.MINUTE_INCREMENT );
-			for (int i = 0; i < hourlyTsc.times.length; i++)
-			{
-			            hectim.set(hourlyTsc.times[i]);
-			            _timeMap.put( hourlyTsc.times[i], i);
-			}                
-            
-            int nprofiles = hourlyTsc.times.length;
-            _wtempProfiles = new double[nprofiles][];
-        }
-        catch ( HecMathException hme )
-        {
-			LOGGER.log(Level.SEVERE, "IOException occurred while closing files", hme);
-            return false;
-        }
-        
-        return true;
-    }
+//    protected boolean initializeOutputTsc( String locationName, String versionName,
+//            String startDateTime, String endDateTime)
+//    {
+//        try
+//        {
+//            // generate a template for hourly time series data
+//            int intervalMinutes = 60;
+//            int offsetMinutes = 0;
+//            TimeSeriesMath tsMath = (TimeSeriesMath)TimeSeriesMath.generateRegularIntervalTimeSeries(startDateTime, endDateTime,
+//                        intervalMinutes, offsetMinutes, Heclib.UNDEFINED_DOUBLE);
+//
+//            TimeSeriesContainer hourlyTsc = tsMath.getContainer();
+//            hourlyTsc.location = locationName;
+//            hourlyTsc.type = ParameterType.INST;
+//            hourlyTsc.version = versionName;
+//            DSSPathString dsspath = new DSSPathString("", locationName, "", "", "1HOUR", versionName);
+//
+//            _solarRadTsc = (TimeSeriesContainer)hourlyTsc.clone();
+//            _solarRadTsc.parameter = "Irrad-Flux-Solar";
+//            _solarRadTsc.units = "W/m2";
+//            dsspath.setCPart(_solarRadTsc.parameter);
+//            _solarRadTsc.fullName = dsspath.toString();
+//
+//            _IR_DownTsc = (TimeSeriesContainer)hourlyTsc.clone();
+//            _IR_DownTsc.parameter = "Irrad-Flux-IR";
+//            _IR_DownTsc.units = "W/m2";
+//            dsspath.setCPart(_IR_DownTsc.parameter);
+//            _IR_DownTsc.fullName = dsspath.toString();
+//
+//            _IR_OutTsc = (TimeSeriesContainer)hourlyTsc.clone();
+//            _IR_OutTsc.parameter = "Irrad-Flux-Out";
+//            _IR_OutTsc.units = "W/m2";
+//            dsspath.setCPart(_IR_OutTsc.parameter);
+//            _IR_OutTsc.fullName = dsspath.toString();
+//
+//            _surfaceTempTsc = (TimeSeriesContainer)hourlyTsc.clone();
+//            _surfaceTempTsc.parameter = "Temp-Water-Surface";
+//            _surfaceTempTsc.units = "C";
+//            dsspath.setCPart(_surfaceTempTsc.parameter);
+//            _surfaceTempTsc.fullName = dsspath.toString();
+//
+//            _sensibleHeatTsc = (TimeSeriesContainer)hourlyTsc.clone();
+//            _sensibleHeatTsc.parameter = "Irrad-Heat-Sensible";
+//            _sensibleHeatTsc.units = "W/m2";
+//            dsspath.setCPart(_sensibleHeatTsc.parameter);
+//            _sensibleHeatTsc.fullName = dsspath.toString();
+//
+//            _latentHeatTsc = (TimeSeriesContainer)hourlyTsc.clone();
+//            _latentHeatTsc.parameter = "Irrad-Heat-Latent";
+//            _latentHeatTsc.units = "W/m2";
+//            dsspath.setCPart(_latentHeatTsc.parameter);
+//            _latentHeatTsc.fullName = dsspath.toString();
+//
+//            _evapRateHourlyTsc = (TimeSeriesContainer)hourlyTsc.clone();
+//            _evapRateHourlyTsc.parameter = "EvapRate";
+//            _evapRateHourlyTsc.units = "mm/hr";
+//            dsspath.setCPart(_evapRateHourlyTsc.parameter);
+//            _evapRateHourlyTsc.fullName = dsspath.toString();
+//
+//            // put indices to tsc.times[] into a treemap by date
+//            _timeMap = new TreeMap<Integer, Integer>();
+//            HecTime hectim = new HecTime(hourlyTsc.times[0], HecTime.MINUTE_INCREMENT );
+//			for (int i = 0; i < hourlyTsc.times.length; i++)
+//			{
+//			            hectim.set(hourlyTsc.times[i]);
+//			            _timeMap.put( hourlyTsc.times[i], i);
+//			}
+//
+//            int nprofiles = hourlyTsc.times.length;
+//            _wtempProfiles = new double[nprofiles][];
+//        }
+//        catch ( HecMathException hme )
+//        {
+//			LOGGER.log(Level.SEVERE, "IOException occurred while closing files", hme);
+//            return false;
+//        }
+//
+//        return true;
+//    }
 
     /**
      * Get a List containing ResEvap computed TimeSeriesContainers 
      * @return
      */
-    public List<TimeSeriesContainer> getComputedMetTimeSeries()
+    public List<Double> getComputedMetTimeSeries()
     {
-    	List<TimeSeriesContainer> computedTsList = new ArrayList<TimeSeriesContainer>();
-    	computedTsList.add( (TimeSeriesContainer)_surfaceTempTsc.clone() );
-    	computedTsList.add( (TimeSeriesContainer)_sensibleHeatTsc.clone() );
-    	computedTsList.add( (TimeSeriesContainer)_latentHeatTsc.clone() );
-    	computedTsList.add( (TimeSeriesContainer)_solarRadTsc.clone() );
-    	computedTsList.add( (TimeSeriesContainer)_IR_DownTsc.clone() );
-    	computedTsList.add( (TimeSeriesContainer)_IR_OutTsc.clone() );
-    	computedTsList.add((TimeSeriesContainer)_evapRateHourlyTsc.clone() );
-    	
+    	List<Double> computedTsList = new ArrayList<Double>();
+    	computedTsList.add( _surfaceTempTsc );
+    	computedTsList.add( _sensibleHeatTsc );
+    	computedTsList.add( _latentHeatTsc );
+    	computedTsList.add( _solarRadTsc );
+    	computedTsList.add( _IR_DownTsc );
+    	computedTsList.add( _IR_OutTsc );
+    	computedTsList.add( _evapRateHourlyTsc );
+
     	return computedTsList;
     }
     
@@ -665,12 +646,12 @@ public class ResEvap
      * Get the computed hourly evaporation for the reservoir
      * @return
      */
-    public TimeSeriesContainer getHourlyEvapRateTimeSeries()
+    public double getHourlyEvapRateTimeSeries()
     {
     	return _evapRateHourlyTsc;
     }
 	
-	public TimeSeriesContainer getHourlyEvapTimeSeries()
+	public double getHourlyEvapTimeSeries()
 	{
 		TimeSeriesMath math = null;
 		try
@@ -698,7 +679,7 @@ public class ResEvap
      *  
      * @return
      */
-    public TimeSeriesContainer getDailyEvapTimeSeries()
+    public double getDailyEvapTimeSeries()
     {
 		TimeSeriesContainer evapTs = getHourlyEvapTimeSeries();
     	TimeSeriesMath tsAcc = null;
@@ -725,7 +706,7 @@ public class ResEvap
      * 
      * @return
      */
-    public TimeSeriesContainer getDailyEvapFlowTimeSeries()
+    public double getDailyEvapFlowTimeSeries()
     {
     	// get daily evap
     	TimeSeriesContainer dailyEvapTs = getDailyEvapTimeSeries();
@@ -804,7 +785,7 @@ public class ResEvap
      * @param intervalDepth
      * @return
      */
-    public TimeSeriesContainer[] getTemperatureProfileTs(double surfaceDepth, 
+    public double[] getTemperatureProfileTs(double surfaceDepth,
     		double bottomDepth, double intervalDepth)
     {
     	if ( intervalDepth < .01 )
