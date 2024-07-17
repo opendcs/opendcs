@@ -21,7 +21,6 @@ import javax.management.JMException;
 import javax.management.ObjectName;
 import javax.management.openmbean.OpenDataException;
 
-import org.eclipse.jetty.server.Authentication.Wrapped;
 import org.opendcs.jmx.ConnectionPoolMXBean;
 import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.utils.sql.SqlSettings;
