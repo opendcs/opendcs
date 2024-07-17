@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -223,8 +224,8 @@ public class CwmsTimeSeriesDAO
 
 
     @Override
-    public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
-        throws DbIoException, NoSuchObjectException
+    public Optional<TimeSeriesIdentifier> findTimeSeriesIdentifier(String uniqueString)
+        throws DbIoException
     {
 
         int paren = uniqueString.lastIndexOf('(');
@@ -249,7 +250,7 @@ public class CwmsTimeSeriesDAO
                 log.trace("Setting display name to '{}'", displayName);
                 ret.setDisplayName(displayName);
             }
-            return ret;
+            return Optional.of(ret);
         }
         else
         {
@@ -259,18 +260,31 @@ public class CwmsTimeSeriesDAO
         DbKey ts_code = ts_id2ts_code(uniqueString);
         if (ts_code == Constants.undefinedId)
         {
-            throw new NoSuchObjectException("No CWMS Time Series for ID '"
-                + uniqueString + "' and office ID "
-                + ((CwmsTimeSeriesDb)db).getDbOfficeId());
+            Optional.empty();
+            
+        }
+        try
+        {
+            ret = getTimeSeriesIdentifier(ts_code);
+            if (displayName != null)
+            {
+                log.trace("Setting display name to '{}'", displayName);
+                ret.setDisplayName(displayName);
+            }        
+        }
+        catch (NoSuchObjectException ex)
+        {
+            /**
+             * This should be rare in this context as the code itself was just looked
+             * up and is thus indicative of a major issues with the database.
+             */
+            ret = null;
+            log.atError()
+               .setCause(ex)
+               .log("TsCode {} was not found in the database for '{}'.", ts_code, uniqueString);
         }
 
-        ret = getTimeSeriesIdentifier(ts_code);
-        if (displayName != null)
-        {
-            log.trace("Setting display name to '{}'", displayName);
-            ret.setDisplayName(displayName);
-        }
-        return ret;
+        return Optional.ofNullable(ret);
     }
 
     /**
@@ -1526,5 +1540,21 @@ public class CwmsTimeSeriesDAO
         // NOTE: there should already be a pooled connection used by the
         // CWMS Components. This is primarily to cover the cases we haven't gotten to yet.
         return new WrappedConnection(myCon, rs -> {},true);
+    }
+
+    @Override
+    public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
+            throws DbIoException, NoSuchObjectException {
+        Optional<TimeSeriesIdentifier> ts = findTimeSeriesIdentifier(uniqueString);
+        if (ts.isPresent())
+        {
+            return ts.get();
+        }
+        else
+        {
+            throw new NoSuchObjectException("No CWMS Time Series for ID '"
+            + uniqueString + "' and office ID "
+            + ((CwmsTimeSeriesDb)db).getDbOfficeId());
+        }
     }
 }

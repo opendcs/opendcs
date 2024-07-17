@@ -63,6 +63,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import org.slf4j.LoggerFactory;
@@ -145,7 +146,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	}
 
 	@Override
-	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString) throws DbIoException, NoSuchObjectException
+	public Optional<TimeSeriesIdentifier> findTimeSeriesIdentifier(String uniqueString) throws DbIoException
 	{
 		int paren = uniqueString.lastIndexOf('(');
 		String displayName = null;
@@ -167,7 +168,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			{
 				tsid.setDisplayName(displayName);
 			}
-			return tsid;
+			return Optional.of(tsid);
 		}
 			
 		tsid = new CwmsTsId();
@@ -222,11 +223,12 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				{
 					ret.setDisplayName(displayName);
 				}
-				return ret;
+				return Optional.of(ret);
 			}
 			else
 			{
-				throw new NoSuchObjectException("No Time Series matching '" + uniqueString + "'");
+				return Optional.empty();
+				//throw new NoSuchObjectException("No Time Series matching '" + uniqueString + "'");
 			}
 		}
 		catch (SQLException ex)
