@@ -246,7 +246,10 @@ public class CwmsTimeSeriesDAO
         }
 
         TimeSeriesIdentifier ret = null;
-        synchronized(cache) { ret = cache.getByUniqueName(uniqueString); }
+        synchronized(cache)
+        {
+            ret = cache.getByUniqueName(uniqueString);
+        }
         if (ret != null)
         {
             if (displayName != null)
@@ -254,6 +257,10 @@ public class CwmsTimeSeriesDAO
                 ret.setDisplayName(displayName);
             }
             return FailableResult.success(ret);
+        }
+        else if (ret == null && lastCacheReloadWithin(1, TimeUnit.HOURS))
+        {
+            return FailableResult.failure(new NoSuchObjectException("No TimeSeries in fresh cache."));
         }
 
         DbKey ts_code = ts_id2ts_code(uniqueString);
@@ -307,6 +314,11 @@ public class CwmsTimeSeriesDAO
         return Constants.undefinedId;
     }
 
+    private static boolean lastCacheReloadWithin(long time, TimeUnit units)
+    {
+        final long within = units.toMillis(time);
+        return (System.currentTimeMillis() - lastCacheReload) < within;
+    }
 
     @Override
     public void close()

@@ -1124,7 +1124,7 @@ public class CwmsTimeSeriesDb
 	}
 
 	@Override
-	public TimeSeriesIdentifier transformTsidByCompParm(
+	public TimeSeriesIdentifier transformTsidByCompParm(TimeSeriesDAI tsDAI,
 			TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
 			boolean fillInParm, String timeSeriesDisplayName)
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException
@@ -1142,43 +1142,43 @@ public class CwmsTimeSeriesDb
 		{
 			String uniqueString = tsidRet.getUniqueString();
 			log.trace("CwmsTimeSeriesDb.transformTsid origString='{}', new string='{}', parm={}", origString, uniqueString, parm);
-			
+						
+			FailableResult<TimeSeriesIdentifier,TsdbException> tmpTsId = tsDAI.findTimeSeriesIdentifier(uniqueString);
 
-			try (TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();)
+			if (tmpTsId.isFailure())
 			{
-				FailableResult<TimeSeriesIdentifier,TsdbException> tmpTsId = timeSeriesDAO.findTimeSeriesIdentifier(uniqueString);
-				log.trace("CwmsTimeSeriesDb.transformTsid time series '{}' exists OK.", uniqueString);
-				if (tmpTsId.isFailure())
+				if (tmpTsId.getFailure() instanceof NoSuchObjectException)
 				{
-					if (tmpTsId.getFailure() instanceof NoSuchObjectException
-						&& createTS)
+					if (createTS)
 					{
-						if (timeSeriesDisplayName != null)
-						{
-							tsidRet.setDisplayName(timeSeriesDisplayName);
-							timeSeriesDAO.createTimeSeries(tsidRet);
-							fillInParm = true;
-						}
-						else
-						{
-							log.trace("CwmsTimeSeriesDb.transformTsid no such time series '{}'", uniqueString);
-							return null;
-						}
+						tsDAI.createTimeSeries(tsidRet);
+						fillInParm = true;
 					}
 					else
 					{
-						ExceptionHelpers.throwDbIoNoSuchObject(tmpTsId.getFailure());
+						log.trace("CwmsTimeSeriesDb.transformTsid no such time series '{}'", uniqueString);
+						return null;
 					}
 				}
 				else
 				{
-					tsidRet = tmpTsId.getSuccess();
+					ExceptionHelpers.throwDbIoNoSuchObject(tmpTsId.getFailure());
 				}
+			}
+			else
+			{
+				log.trace("CwmsTimeSeriesDb.transformTsid time series '{}' exists OK.", uniqueString);
+				tsidRet = tmpTsId.getSuccess();
 			}
 		}
 		else
 		{
 			tsidRet = tsid;
+		}
+
+		if (timeSeriesDisplayName != null)
+		{
+			tsidRet.setDisplayName(timeSeriesDisplayName);
 		}
 
 		if (fillInParm)
