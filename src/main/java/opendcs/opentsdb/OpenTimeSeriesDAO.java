@@ -66,6 +66,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
 
+import org.opendcs.database.ExceptionHelpers;
+import org.opendcs.utils.FailableResult;
 import org.slf4j.LoggerFactory;
 
 import decodes.cwms.CwmsFlags;
@@ -91,6 +93,7 @@ import decodes.tsdb.TasklistRec;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.TsdbException;
 import decodes.tsdb.VarFlags;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -146,7 +149,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	}
 
 	@Override
-	public Optional<TimeSeriesIdentifier> findTimeSeriesIdentifier(String uniqueString) throws DbIoException
+	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
 	{
 		int paren = uniqueString.lastIndexOf('(');
 		String displayName = null;
@@ -168,31 +171,41 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			{
 				tsid.setDisplayName(displayName);
 			}
-			return Optional.of(tsid);
+			return FailableResult.success(tsid);
 		}
 			
 		tsid = new CwmsTsId();
 		tsid.setUniqueString(uniqueString);
-		DbKey siteId = siteDAO.lookupSiteID(tsid.getSiteName());
-		if (siteId.isNull())
+		
+		DbKey siteId = null;
+		try
 		{
-			throw new NoSuchObjectException("No such site '" + tsid.getSiteName() + "'");
+			siteId = siteDAO.lookupSiteID(tsid.getSiteName());
+			if (siteId.isNull())
+			{
+				return FailableResult.failure(new NoSuchObjectException("No such site '" + tsid.getSiteName() + "'"));
+			}
 		}
-		DbKey dataTypeId = tsid.getDataTypeId();
-		if (siteId.isNull())
+		catch (DbIoException ex)
 		{
-			throw new NoSuchObjectException("No such data type for '" + uniqueString + "'");
+			return FailableResult.failure(ex);
+		}
+		
+		DbKey dataTypeId = tsid.getDataTypeId();
+		if (dataTypeId.isNull())
+		{
+			return FailableResult.failure(new NoSuchObjectException("No such data type for '" + uniqueString + "'"));
 		}
 
 		Interval interval = IntervalList.instance().getByName(tsid.getInterval());
 		if (interval == null)
 		{
-			throw new NoSuchObjectException("No such interval '" + tsid.getInterval() + "'");
+			return FailableResult.failure(new NoSuchObjectException("No such interval '" + tsid.getInterval() + "'"));
 		}
 		Interval duration = IntervalList.instance().getByName(tsid.getDuration());
 		if (duration == null)
 		{
-			throw new NoSuchObjectException("No such duration '" + tsid.getDuration() + "'");
+			return FailableResult.failure(new NoSuchObjectException("No such duration '" + tsid.getDuration() + "'"));
 		}
 
 		List<Object> parameters = new ArrayList<>();
@@ -218,47 +231,40 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 											parameters.toArray(new Object[0]));
 			if (tsKey != null)
 			{
-				TimeSeriesIdentifier ret = getTimeSeriesIdentifier(tsKey);
+				FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(tsKey);
+				
 				if (displayName != null)
 				{
-					ret.setDisplayName(displayName);
+					if (ret.isSuccess())
+					{
+						ret.getSuccess().setDisplayName(displayName);
+					}
 				}
-				return Optional.of(ret);
+				return ret;
 			}
 			else
 			{
-				return Optional.empty();
-				//throw new NoSuchObjectException("No Time Series matching '" + uniqueString + "'");
+				return FailableResult.failure(new NoSuchObjectException("No Time Series matching '" + uniqueString + "'"));
 			}
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException(ex.getMessage());
+			return FailableResult.failure(new DbIoException("Database communication failure.", ex));
 		}
 	}
 
 	@Override
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key) throws DbIoException, NoSuchObjectException
 	{
-		if (lastCacheReload == 0L)
+		FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
+		if (ret.isSuccess())
 		{
-			reloadTsIdCache();
-		}
-		
-		TimeSeriesIdentifier ret = cache.getByKey(key);
-		
-		if (ret != null)
-		{
-			debug3("getTimeSeriesIdentifier(ts_code=" + key 
-				+ ") id='" + ret.getUniqueString() + "' from cache.");
-			return ret;
+			return ret.getSuccess();
 		}
 		else
 		{
-			debug3("getTimeSeriesIdentifier(ts_code=" + key + ") Not in cache.");
+			return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
 		}
-		
-		return readTSID(key);
 	}
 	
 	/**
@@ -268,8 +274,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	 * @throws DbIoException
 	 * @throws NoSuchObjectException
 	 */
-	private CwmsTsId readTSID(DbKey key)
-		throws DbIoException, NoSuchObjectException
+	private FailableResult<CwmsTsId,TsdbException> readTSID(DbKey key)
 	{
 		String q = "SELECT " + ts_spec_columns + " from TS_SPEC "
 			+ " where ts_id = ?";
@@ -296,15 +301,14 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 			if (tsId != null)
 			{
-				return tsId;
+				return FailableResult.success(tsId);
 			}
 		}
 		catch(Exception ex)
 		{
-			throw new DbIoException(
-				"Error looking up TS Info for TS_CODE=" + key + ": " + ex);
+			return FailableResult.failure(new DbIoException("Error looking up TS Info for TS_CODE=" + key + ": " + ex));
 		}
-		throw new NoSuchObjectException("No time-series with ts_code=" + key);
+		return FailableResult.failure(new NoSuchObjectException("No time-series with ts_code=" + key));
 	}
 	
 	/**
@@ -1344,8 +1348,7 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 	}
 	
 	@Override
-	public synchronized void reloadTsIdCache()
-		throws DbIoException
+	public synchronized void reloadTsIdCache() throws DbIoException
 	{
 		cache.clear();
 		String q = "SELECT " + ts_spec_columns + " from TS_SPEC";
@@ -1623,7 +1626,12 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 		int n = 0;
 		
 		// Read the existing tsid with this key
-		CwmsTsId existing = this.readTSID(tsid.getKey());
+		final FailableResult<CwmsTsId,TsdbException> existingResult = this.readTSID(tsid.getKey());
+		if (existingResult.isFailure())
+		{
+			ExceptionHelpers.throwDbIoNoSuchObject(existingResult.getFailure());
+		}
+		final CwmsTsId existing = existingResult.getSuccess();
 		
 		// Compare each field of the passed tsid with the one in the db
 		// add a set clause to the update statement and increment 'n'.
@@ -1949,6 +1957,47 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 				+ " for time series " + cts.getTimeSeriesIdentifier().getUniqueString()
 				+ " flags=0x" + Integer.toHexString(tv.getFlags())
 				+ " cwms qualcode=0x" + Long.toHexString(rec.getQualityCode()));
+		}
+	}
+
+	@Override
+	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
+			throws DbIoException, NoSuchObjectException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'getTimeSeriesIdentifier'");
+	}
+
+	@Override
+	public FailableResult<TimeSeriesIdentifier, TsdbException> findTimeSeriesIdentifier(DbKey key) 
+	{
+	
+		if (lastCacheReload == 0L)
+		{
+			try
+			{
+				reloadTsIdCache();
+			}
+			catch (DbIoException ex)
+			{
+				return FailableResult.failure(ex);
+			}
+		}
+		
+		TimeSeriesIdentifier ret = cache.getByKey(key);
+		
+		if (ret != null)
+		{
+			return FailableResult.success(ret);
+		}
+		
+		FailableResult<CwmsTsId,TsdbException>  tsid = readTSID(key);
+		if (tsid.isSuccess())
+		{
+			return FailableResult.success(tsid.getSuccess());
+		}
+		else
+		{
+			return FailableResult.failure(tsid.getFailure());
 		}
 	}
 }
