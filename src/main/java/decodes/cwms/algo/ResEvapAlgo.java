@@ -1,10 +1,15 @@
 package decodes.cwms.algo;
 
+import decodes.cwms.resevapcalc.EvapMetData;
+import decodes.cwms.resevapcalc.EvapReservoir;
+import decodes.cwms.resevapcalc.ResEvap;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 import ilex.var.NamedVariable;
+
+import java.util.List;
 
 //AW:IMPORTS
 //AW:IMPORTS_END
@@ -15,7 +20,7 @@ import ilex.var.NamedVariable;
 Run ResEvap Calculations.
  */
 //AW:JAVADOC_END
-public class ResEvap
+public class ResEvapAlgo
 	extends AW_AlgorithmBase
 {
 //AW:INPUTS
@@ -44,6 +49,20 @@ public class ResEvap
 //AW:INPUTS_END
 
 //AW:LOCALVARS
+	private double start_depth = 0.;
+	private double depth_increment = .5;
+	private ResEvap resEvap;
+	private CTimeSeries windSpeedTS = null;
+	private CTimeSeries AirTempTS = null;
+	private CTimeSeries RelativeHumidityTS = null;
+	private CTimeSeries AtmPressTS = null;
+	private CTimeSeries PercentLowCloudTS = null;
+	private CTimeSeries ElevLowCloudTS = null;
+	private CTimeSeries PercentMidCloudTS = null;
+	private CTimeSeries ElevMidCloudTS = null;
+	private CTimeSeries PercentHighCloudTS = null;
+	private CTimeSeries ElevHighCloudTS = null;
+	private CTimeSeries ElevTS = null;
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -75,12 +94,12 @@ public class ResEvap
 	public String depth;
 	public String SecchiDepthId;
 	public String MaxTempDepthId;
-	public String reservior;
+	public String reservoirId;
 	public double Secchi;
 	public double Zero_elevation;
 	public double Lati;
 	public double Longi;
-	public int    GNT_Offset;
+	public int    GMT_Offset;
 	public String Timezone;
 	public String WindShear;
 	public double ThermalDifCoe;
@@ -90,12 +109,12 @@ public class ResEvap
 	String _propertyNames[] = {
 	"SecchiDepthId",
 	"MaxTempDepthId",
-	"reservior",
+	"reservoirId",
 	"Secchi",
 	"Zero_elevation",
 	"Lati",
 	"Longi",
-	"GNT_Offset",
+	"GMT_Offset",
 	"Timezone",
 	"WindShear",
 	"ThermalDifCoe",
@@ -118,6 +137,19 @@ public class ResEvap
 //AW:USERINIT
 //AW:USERINIT_END
 	}
+
+	//TODO read database
+	public double getStartElevation(){
+		return 0;
+	}
+	//TODO read database
+	public double[] getWTPElevation(){
+		return new double[]{0};
+	}
+	//TODO read database
+	public double getMaxTempDepthMeters(){
+		return 0;
+	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
@@ -126,6 +158,66 @@ public class ResEvap
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
+		windSpeedTS = getParmRef("windSpeed").timeSeries;
+		AirTempTS = getParmRef("AirTemp").timeSeries;
+		RelativeHumidityTS = getParmRef("RelativeHumidity").timeSeries;
+		AtmPressTS = getParmRef("AtmPress").timeSeries;
+		PercentLowCloudTS = getParmRef("PercentLowCloud").timeSeries;
+		ElevLowCloudTS = getParmRef("ElevLowCloud").timeSeries;
+		PercentMidCloudTS = getParmRef("PercentMidCloud").timeSeries;
+		ElevMidCloudTS = getParmRef("ElevMidCloud").timeSeries;
+		PercentHighCloudTS = getParmRef("PercentHighCloud").timeSeries;
+		ElevHighCloudTS = getParmRef("ElevHighCloud").timeSeries;
+		ElevTS = getParmRef("Elev").timeSeries;
+
+
+		EvapMetData metData = new EvapMetData();
+		metData.setWindSpeedTs(windSpeedTS);
+		metData.setAirTempTs(AirTempTS);
+		metData.setRelHumidityTs(RelativeHumidityTS);
+		metData.setAirPressureTs(AtmPressTS);
+		metData.setLowCloudTs(PercentLowCloudTS, ElevLowCloudTS);
+		metData.setMedCloudTs(PercentMidCloudTS, ElevMidCloudTS);
+		metData.setHighCloudTs(PercentHighCloudTS, ElevHighCloudTS);
+
+		EvapReservoir reservoir = new EvapReservoir();
+		reservoir.setName(reservoirId);
+
+		//  This need to be done early on
+		reservoir.setInputDataIsEnglish(true);
+		double lonneg = -Longi;
+		reservoir.setLatLon(Lati, lonneg);
+		reservoir.setSecchi(Secchi);
+
+		reservoir.setInstrumentHeights(32.81, 32.81, 32.81);
+
+		double startElev = getStartElevation();
+
+		reservoir.setElevation(startElev);
+		reservoir.setZeroElevation(Zero_elevation);
+
+		resEvap = new ResEvap();
+
+		if (!resEvap.setReservoir(reservoir)) {
+			throw new DbCompException("Reservoir not in Database. Exiting Script.");
+		}
+
+		// reservoir structure setup so now set wtemp profile
+		int resj = reservoir.getResj();
+
+//		print("ResJ: " + str(resj));
+//		print("WTP len: " + str(len(wtp)));
+
+		double[] wtp = getWTPElevation();
+		// reverse array order
+		double[] wtpR = new double[resj];
+		for (int i = 0; i<resj+1; i++){
+			wtpR[i] = wtp[resj-i];
+		}
+
+		reservoir.setInitWaterTemperatureProfile(wtpR, resj);
+
+		resEvap._metData = metData;
 //AW:BEFORE_TIMESLICES_END
 	}
 
@@ -143,6 +235,28 @@ public class ResEvap
 		throws DbCompException
 	{
 //AW:TIMESLICE
+		try {
+			boolean noProblem = resEvap.compute(_timeSliceBaseTime, GMT_Offset);
+			if (!noProblem){
+				throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.");
+			}
+		}
+		catch(Exception ex){
+			throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.", ex);
+		}
+
+		List<Double> computedList = resEvap.getComputedMetTimeSeries();
+		setOutput(HourlySurfaceTemp, computedList.get(0));
+		setOutput(HourlySensible, computedList.get(1));
+		setOutput(HourlyLatent, computedList.get(2));
+		setOutput(HourlySolar, computedList.get(3));
+		setOutput(HourlyFluxIn, computedList.get(4));
+		setOutput(HourlyFluxOut, computedList.get(5));
+		setOutput(HourlyEvap, computedList.get(6));
+
+		setOutput(DailyEvap, resEvap.getDailyEvapTimeSeries());
+		setOutput(DailyEvapAsFlow, resEvap.getDailyEvapFlowTimeSeries());
+		//setOutput(DailyWaterTempProfile, resEvap.getDailyTemperatureProfileTs(start_depth, getMaxTempDepthMeters(), depth_increment));
 //AW:TIMESLICE_END
 	}
 
