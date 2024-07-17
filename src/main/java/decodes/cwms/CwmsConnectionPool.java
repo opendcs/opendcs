@@ -20,6 +20,8 @@ import java.util.logging.Logger;
 import javax.management.JMException;
 import javax.management.ObjectName;
 import javax.management.openmbean.OpenDataException;
+
+import org.eclipse.jetty.server.Authentication.Wrapped;
 import org.opendcs.jmx.ConnectionPoolMXBean;
 import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.utils.sql.SqlSettings;
@@ -305,7 +307,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      */
     public synchronized void returnConnection(Connection conn) throws SQLException
     {
-        if(connectionsOut.contains(conn))
+        if (connectionsOut.contains(conn))
         {
             // the lambda handler above handles the count
             connectionsFreed++;
@@ -317,10 +319,16 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         {
             log.warning("Unknown connection returned to my pool.");
             unknownConnReturned++;
-            if(SqlSettings.TRACE_CONNECTIONS)
+            if (SqlSettings.TRACE_CONNECTIONS && !(conn instanceof WrappedConnection))
             {            
                 log.warning("Connection is from");
                 logStackTrace(log,Level.WARNING,Thread.currentThread().getStackTrace(),BEFORE_CUR_THREAD_STACK_CALL+1);
+            }
+            else if (SqlSettings.TRACE_CONNECTIONS)
+            {
+                final WrappedConnection wc = (WrappedConnection)conn;
+                log.warning(() -> "Connection opened from: " + String.join(System.lineSeparator(), wc.getOpenStackTrace()));
+                log.warning(() -> "Connection closed at: " + String.join(System.lineSeparator(), wc.getClosedStackTrace()));
             }
         }
     }

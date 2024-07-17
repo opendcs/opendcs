@@ -1963,8 +1963,16 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 	@Override
 	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
 			throws DbIoException, NoSuchObjectException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("Unimplemented method 'getTimeSeriesIdentifier'");
+		FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(uniqueString);
+		if (ret.isSuccess())
+		{
+			return ret.getSuccess();
+		}
+		else
+		{
+			return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
+		}
+
 	}
 
 	@Override

@@ -44,6 +44,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.opendcs.utils.sql.SqlSettings;
+
 import decodes.db.Constants;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
@@ -170,7 +172,7 @@ public class DaoBase
         }
 
 
-        return new WrappedConnection(myCon, c -> {});
+        return new WrappedConnection(myCon, c -> {}, SqlSettings.TRACE_CONNECTIONS);
     }
 
     /**
@@ -400,9 +402,11 @@ public class DaoBase
     }
 
     /**
-     * Provides connection to consumer, closing/return the connection when done.
+     * Provides connection to consumer, closing/return the connection when done unless.
+     * Connection was manually set. As would happen with a transaction.
      *
-     * NOTE: Thread safe IF the TimeseriesDB implementation supports connection pooling.
+     * NOTE: Thread safe IF the TimeseriesDB implementation supports connection pooling AND
+     *  you aren't calling in parallel from an "inTransaction" handler.
      * @param consumer @see opendcs.util.functional.ConnectionConsumer
      * @throws SQLException
      */
@@ -411,14 +415,14 @@ public class DaoBase
         Connection conn = null;
         try
         {
-            conn = db.getConnection();
+            conn = this.getConnection();
             consumer.accept(conn);
         }
         finally
         {
-            if( conn != null)
+            if(conn != null && !this.conSetManually)
             {
-                db.freeConnection(conn);
+                conn.close();
             }
         }
     }
