@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Optional;
 
+import org.opendcs.utils.FailableResult;
+
 import opendcs.dao.DbObjectCache;
 
 import decodes.sql.DbKey;
@@ -16,6 +18,7 @@ import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
+import decodes.tsdb.TsdbException;
 
 /**
  * Public interface for accessing time series data.
@@ -38,14 +41,12 @@ public interface TimeSeriesDAI extends DaiBase
 	 * @throws DbIoException if SQL exception occurs during operation
 	 * @throws NoSuchObjectException if no matching time series exists.
 	 */
-	public TimeSeriesIdentifier
-		getTimeSeriesIdentifier(String uniqueString)
+	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
 		throws DbIoException, NoSuchObjectException;
 
-
-	public Optional<TimeSeriesIdentifier> findTimeSeriesIdentifier(String uniqueString)
-		throws DbIoException;
+	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString);
 		
+	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key);
 	/**
 	 * Retrieve a time series identifier by unique surrogate key.
 	 * @param key the key
@@ -53,9 +54,7 @@ public interface TimeSeriesDAI extends DaiBase
 	 * @throws DbIoException on SQL errors
 	 * @throws NoSuchObjectException if no such time series
 	 */
-	public TimeSeriesIdentifier
-		getTimeSeriesIdentifier(DbKey key)
-		throws DbIoException, NoSuchObjectException;
+	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key) throws DbIoException, NoSuchObjectException;
 
 	/**
 	 * Fills the meta data for the time series.

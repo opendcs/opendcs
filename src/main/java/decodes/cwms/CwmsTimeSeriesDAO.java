@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import org.opendcs.database.ExceptionHelpers;
+import org.opendcs.utils.FailableResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +43,7 @@ import decodes.tsdb.RecordRangeHandle;
 import decodes.tsdb.TasklistRec;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.tsdb.TsdbException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
@@ -83,21 +86,11 @@ public class CwmsTimeSeriesDAO
     }
 
     @Override
-    public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
-        throws DbIoException, NoSuchObjectException
+    public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key)
     {
         if (DbKey.isNull(key))
         {
-            try
-            {
-                throw new NoSuchObjectException("Request for TSID with null ts_code");
-            }
-            catch(NoSuchObjectException ex)
-            {
-                log.atError()
-                   .setCause(ex)
-                   .log("Unable to retrieve timeseries identifier by key {}", key.getValue());
-            }
+            return FailableResult.failure(new NoSuchObjectException("Request for TSID with null ts_code"));
         }
 
         synchronized(cache)
@@ -106,11 +99,7 @@ public class CwmsTimeSeriesDAO
 
             if (ret != null)
             {
-                return ret;
-            }
-            else
-            {
-                log.trace("Not in cache ts_code={}", key.getValue());
+                return FailableResult.success(ret);
             }
 
             String q = cwmsTsidQueryBase
@@ -137,15 +126,31 @@ public class CwmsTimeSeriesDAO
                 if (ret != null)
                 {
                     cache.put(ret);
-                    return ret;
+                    return FailableResult.success(ret);
                 }
             }
             catch(Exception ex)
             {
-                throw new DbIoException("Error looking up TS Info for TS_CODE=" + key + ": ", ex);
+                return FailableResult.failure(new DbIoException("Error looking up TS Info for TS_CODE=" + key + ": ", ex));
             }
         }
-        throw new NoSuchObjectException("No time-series with ts_code=" + key);
+        return FailableResult.failure(new NoSuchObjectException("No time-series with ts_code=" + key));
+    }
+
+    @Override
+    public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
+        throws DbIoException, NoSuchObjectException
+    {
+        FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
+        if (ret.isSuccess())
+        {
+            return ret.getSuccess();
+        }
+        else
+        {
+            return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
+        }
+        
     }
 
     private CwmsTsId rs2TsId(ResultSet rs, boolean createDataType)
@@ -224,8 +229,7 @@ public class CwmsTimeSeriesDAO
 
 
     @Override
-    public Optional<TimeSeriesIdentifier> findTimeSeriesIdentifier(String uniqueString)
-        throws DbIoException
+    public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
     {
 
         int paren = uniqueString.lastIndexOf('(');
@@ -247,44 +251,28 @@ public class CwmsTimeSeriesDAO
         {
             if (displayName != null)
             {
-                log.trace("Setting display name to '{}'", displayName);
                 ret.setDisplayName(displayName);
             }
-            return Optional.of(ret);
-        }
-        else
-        {
-            log.trace("cache does not have '{}'", uniqueString);
+            return FailableResult.success(ret);
         }
 
         DbKey ts_code = ts_id2ts_code(uniqueString);
         if (ts_code == Constants.undefinedId)
         {
-            Optional.empty();
-            
+            return FailableResult.failure(
+                new NoSuchObjectException("No timeseries with name '"+uniqueString+"' is defined in this database.")
+            );
         }
-        try
+        
+        FailableResult<TimeSeriesIdentifier,TsdbException> tmp = findTimeSeriesIdentifier(ts_code);
+        if (tmp.isSuccess())
         {
-            ret = getTimeSeriesIdentifier(ts_code);
             if (displayName != null)
             {
-                log.trace("Setting display name to '{}'", displayName);
-                ret.setDisplayName(displayName);
+                tmp.getSuccess().setDisplayName(displayName);
             }        
         }
-        catch (NoSuchObjectException ex)
-        {
-            /**
-             * This should be rare in this context as the code itself was just looked
-             * up and is thus indicative of a major issues with the database.
-             */
-            ret = null;
-            log.atError()
-               .setCause(ex)
-               .log("TsCode {} was not found in the database for '{}'.", ts_code, uniqueString);
-        }
-
-        return Optional.ofNullable(ret);
+        return tmp;
     }
 
     /**
@@ -1543,18 +1531,15 @@ public class CwmsTimeSeriesDAO
     }
 
     @Override
-    public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
-            throws DbIoException, NoSuchObjectException {
-        Optional<TimeSeriesIdentifier> ts = findTimeSeriesIdentifier(uniqueString);
-        if (ts.isPresent())
+    public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString) throws DbIoException, NoSuchObjectException {
+        FailableResult<TimeSeriesIdentifier,TsdbException> ts = findTimeSeriesIdentifier(uniqueString);
+        if (ts.isSuccess())
         {
-            return ts.get();
+            return ts.getSuccess();
         }
         else
         {
-            throw new NoSuchObjectException("No CWMS Time Series for ID '"
-            + uniqueString + "' and office ID "
-            + ((CwmsTimeSeriesDb)db).getDbOfficeId());
+            return ExceptionHelpers.throwDbIoNoSuchObject(ts.getFailure());
         }
     }
 }

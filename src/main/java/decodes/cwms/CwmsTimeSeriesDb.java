@@ -688,7 +688,9 @@ import javax.management.JMException;
 import javax.management.ObjectName;
 import javax.management.openmbean.TabularData;
 
+import org.opendcs.database.ExceptionHelpers;
 import org.opendcs.jmx.ConnectionPoolMXBean;
+import org.opendcs.utils.FailableResult;
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.DaiBase;
@@ -1128,50 +1130,56 @@ public class CwmsTimeSeriesDb
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException
 	{
 		if (tsid == null)
+		{
 			tsid = makeEmptyTsId();
+		}
 
 		String origString = tsid.getUniqueString();
 		TimeSeriesIdentifier tsidRet = tsid.copyNoKey();
 		boolean transformed = transformUniqueString(tsidRet, parm);
-//Site tssite = tsidRet.getSite();
-//Logger.instance().debug3("After transformUniqueString, sitename=" + tsidRet.getSiteName()
-//+ ", site=" + (tssite==null ? "null" : tssite.getDisplayName()));
+
 		if (transformed)
 		{
 			String uniqueString = tsidRet.getUniqueString();
-			debug3("CwmsTimeSeriesDb.transformTsid origString='" + origString + "', new string='"
-				+ uniqueString + "', parm=" + parm);
-			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
+			log.trace("CwmsTimeSeriesDb.transformTsid origString='{}', new string='{}', parm={}", origString, uniqueString, parm);
+			
 
-			try
+			try (TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();)
 			{
-				tsidRet = timeSeriesDAO.getTimeSeriesIdentifier(uniqueString);
-				debug3("CwmsTimeSeriesDb.transformTsid "
-					+ "time series '" + uniqueString + "' exists OK.");
-			}
-			catch(NoSuchObjectException ex)
-			{
-				if (createTS)
+				FailableResult<TimeSeriesIdentifier,TsdbException> tmpTsId = timeSeriesDAO.findTimeSeriesIdentifier(uniqueString);
+				log.trace("CwmsTimeSeriesDb.transformTsid time series '{}' exists OK.", uniqueString);
+				if (tmpTsId.isFailure())
 				{
-					if (timeSeriesDisplayName != null)
-						tsidRet.setDisplayName(timeSeriesDisplayName);
-					timeSeriesDAO.createTimeSeries(tsidRet);
-					fillInParm = true;
+					if (tmpTsId.getFailure() instanceof NoSuchObjectException
+						&& createTS)
+					{
+						if (timeSeriesDisplayName != null)
+						{
+							tsidRet.setDisplayName(timeSeriesDisplayName);
+							timeSeriesDAO.createTimeSeries(tsidRet);
+							fillInParm = true;
+						}
+						else
+						{
+							log.trace("CwmsTimeSeriesDb.transformTsid no such time series '{}'", uniqueString);
+							return null;
+						}
+					}
+					else
+					{
+						ExceptionHelpers.throwDbIoNoSuchObject(tmpTsId.getFailure());
+					}
 				}
 				else
 				{
-					debug3("CwmsTimeSeriesDb.transformTsid "
-						+ "no such time series '" + uniqueString + "'");
-					return null;
+					tsidRet = tmpTsId.getSuccess();
 				}
-			}
-			finally
-			{
-				timeSeriesDAO.close();
 			}
 		}
 		else
+		{
 			tsidRet = tsid;
+		}
 
 		if (fillInParm)
 		{
