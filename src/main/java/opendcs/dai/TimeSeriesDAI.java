@@ -5,6 +5,7 @@ import ilex.var.TimedVariable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Optional;
 
 import opendcs.dao.DbObjectCache;
 
@@ -20,8 +21,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
  * Public interface for accessing time series data.
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public interface TimeSeriesDAI
-	extends DaiBase
+public interface TimeSeriesDAI extends DaiBase
 {
 	/**
 	 * When calling the listTimeSeries() method, don't reload the cache
@@ -42,6 +42,10 @@ public interface TimeSeriesDAI
 		getTimeSeriesIdentifier(String uniqueString)
 		throws DbIoException, NoSuchObjectException;
 
+
+	public Optional<TimeSeriesIdentifier> findTimeSeriesIdentifier(String uniqueString)
+		throws DbIoException;
+		
 	/**
 	 * Retrieve a time series identifier by unique surrogate key.
 	 * @param key the key
