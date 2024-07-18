@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+import org.opendcs.database.DbObjectCache;
+
 import decodes.sql.DbKey;
 import decodes.tsdb.BadScreeningException;
 import decodes.tsdb.DbIoException;
@@ -199,4 +201,6 @@ public interface AlarmDAI extends DaiBase
 	 */
 	public Date lastHistoryAlarmTime(TimeSeriesIdentifier tsid)
 		throws DbIoException;
+
+	public void reloadCache(DbObjectCache<AlarmScreening> cache) throws DbIoException;
 }

@@ -3,8 +3,9 @@ package opendcs.dai;
 import java.util.List;
 import java.util.Properties;
 
+import org.opendcs.database.DbObjectCache;
+
 import opendcs.dao.CachableHasProperties;
-import opendcs.dao.DbObjectCache;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;

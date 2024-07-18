@@ -65,6 +65,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.opendcs.database.DbObjectCache;
 import org.slf4j.LoggerFactory;
 
 import decodes.cwms.CwmsFlags;
@@ -99,15 +100,14 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.dao.DbObjectCache;
+import opendcs.dao.ScheduledReloadDbObjectCache;
 import decodes.tsdb.TimeSeriesDb;
 
 public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 {
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTimeSeriesDAO.class);
 	// Open TSDB Uses CWMS 6-part Time Series Identifiers
-	protected static DbObjectCache<TimeSeriesIdentifier> cache = 
-		new DbObjectCache<TimeSeriesIdentifier>(2 * 60 * 60 * 1000L, false); // 2 hr cache
+	private final DbObjectCache<TimeSeriesIdentifier> cache;
 	protected SiteDAI siteDAO = null;
 	protected DataTypeDAI dataTypeDAO = null;
 	protected Calendar utcCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -141,6 +141,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		dataTypeDAO = tsdb.makeDataTypeDAO();
 		suffixFmt.setMinimumIntegerDigits(4);
 		suffixFmt.setGroupingUsed(false);
+		this.cache = tsdb.getCache(TimeSeriesIdentifier.class);
 //		appId = tsdb.getAppId();
 	}
 
@@ -1340,18 +1341,22 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 			lastCacheReload = 0L;
 		return listTimeSeries();
 	}
+
+	@Override
+	public void reloadTsIdCache() throws DbIoException
+	{
+		this.reloadTsIdCache(this.cache);
+	}
 	
 	@Override
-	public synchronized void reloadTsIdCache()
-		throws DbIoException
+	public synchronized void reloadTsIdCache(DbObjectCache<TimeSeriesIdentifier> cache) throws DbIoException
 	{
 		cache.clear();
 		String q = "SELECT " + ts_spec_columns + " from TS_SPEC";
 		
 		try
 		{
-			ResultSet rs = doQuery(q);
-			while (rs != null && rs.next())
+			doQuery(q, rs ->
 			{
 				try
 				{
@@ -1361,7 +1366,11 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 				{
 					warning("Cannot create tsid for key=" + rs.getLong(1) + ": " + ex + " -- skipped.");
 				}
-			}
+				catch (DbIoException ex)
+				{
+					throw new SQLException("Database error reloading cache.", ex);
+				}
+			});
 		}
 		catch(Exception ex)
 		{

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import org.opendcs.database.DbObjectCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,6 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
-import opendcs.dao.DbObjectCache;
 import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -60,13 +60,11 @@ public class CwmsTimeSeriesDAO
     implements TimeSeriesDAI
 {
     private final Logger log = LoggerFactory.getLogger(CwmsTimeSeriesDAO.class);
-    protected static final  DbObjectCache<TimeSeriesIdentifier> cache =
-        new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
+    private final DbObjectCache<TimeSeriesIdentifier> cache;
     protected SiteDAI siteDAO = null;
     protected DataTypeDAI dataTypeDAO = null;
     private String dbOfficeId = null;
     private static boolean noUnitConv = false;
-    private static long lastCacheReload = 0L;
     private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
             + "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
             + "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a";
@@ -79,6 +77,7 @@ public class CwmsTimeSeriesDAO
         siteDAO = tsdb.makeSiteDAO();
         dataTypeDAO = tsdb.makeDataTypeDAO();
         this.dbOfficeId = dbOfficeId;
+        this.cache = tsdb.getCache(TimeSeriesIdentifier.class);
     }
 
     @Override
@@ -1040,12 +1039,6 @@ public class CwmsTimeSeriesDAO
     public ArrayList<TimeSeriesIdentifier> listTimeSeries()
         throws DbIoException
     {
-        // MJM 20161025 don't reload more if already done within threshold.
-        if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
-        {
-            reloadTsIdCache();
-        }
-
         ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
         synchronized(cache)
         {
@@ -1063,14 +1056,19 @@ public class CwmsTimeSeriesDAO
     {
         if (forceRefresh)
         {
-            lastCacheReload = 0L;
+            reloadTsIdCache(cache);
         }
         return listTimeSeries();
     }
 
-
     @Override
     public void reloadTsIdCache() throws DbIoException
+    {
+        reloadTsIdCache(cache);
+    }
+
+    @Override
+    public void reloadTsIdCache(DbObjectCache<TimeSeriesIdentifier> cache) throws DbIoException
     {
         log.debug("reloadTsIdCache()");
 
@@ -1128,7 +1126,6 @@ public class CwmsTimeSeriesDAO
         {
             setFetchSize(origFetchSize);
         }
-        lastCacheReload = System.currentTimeMillis();
     }
 
     @Override
@@ -1311,7 +1308,7 @@ public class CwmsTimeSeriesDAO
                     {
                         // msg handler will send this when he gets
                         // TsCodeChanged. It tells me to update my cache.
-                        DbObjectCache<TimeSeriesIdentifier> cache = getCache();
+                        final DbObjectCache<TimeSeriesIdentifier> cache = getCache();
                         synchronized(cache)
                         {
                             TimeSeriesIdentifier tsid = cache.getByKey(sdi);

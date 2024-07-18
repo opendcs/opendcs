@@ -422,8 +422,14 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
+import org.slf4j.LoggerFactory;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
@@ -444,6 +450,7 @@ import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dao.AlarmDAO;
 import opendcs.dao.AlgorithmDAO;
+import opendcs.dao.CachableDbObject;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.CompDependsNotifyDAO;
 import opendcs.dao.ComputationDAO;
@@ -456,6 +463,7 @@ import opendcs.dao.EnumSqlDao;
 import opendcs.dao.LoadingAppDao;
 import opendcs.dao.PlatformStatusDAO;
 import opendcs.dao.PropertiesSqlDao;
+import opendcs.dao.ScheduledReloadDbObjectCache;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
@@ -465,6 +473,7 @@ import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
+import decodes.db.DbEnum;
 import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -475,6 +484,7 @@ import decodes.sql.KeyGenerator;
 import decodes.sql.KeyGeneratorFactory;
 import decodes.sql.OracleDateParser;
 import decodes.sql.SqlDatabaseIO;
+import decodes.tsdb.alarm.AlarmScreening;
 
 /**
 This is the base class for the time-series database implementation.
@@ -485,10 +495,25 @@ data.
 public abstract class TimeSeriesDb
     implements HasProperties, DatabaseConnectionOwner
 {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(TimeSeriesDb.class);
     public static String module = "tsdb";
 
     /** The application ID of the connected program */
     protected DbKey appId = Constants.undefinedId;
+
+    /**
+     * Thread pool used for running cache reload tasks.
+     */
+    protected static final ScheduledExecutorService cacheExecutor = Executors.newScheduledThreadPool(1, (r) -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    /**
+     * Holds all object caches
+     */
+    protected final Map<Class<? extends CachableDbObject>, org.opendcs.database.DbObjectCache<?>> cacheMap = new HashMap<>();
 
     /** The model run ID currently in use for writing data. */
     protected int writeModelRunId;
@@ -593,9 +618,94 @@ public abstract class TimeSeriesDb
 
         cpCompDepends_col1 = isHdb() ? "TS_ID" : "SITE_DATATYPE_ID";
         getLogDateFormat().setTimeZone(TimeZone.getTimeZone("UTC"));
+        setupCaches();
+    }
+
+    private void setupCaches()
+    {
+        cacheMap.put(Site.class,
+                     new ScheduledReloadDbObjectCache<Site>(SiteDAO.CACHE_MAX_AGE, false, (cache) ->
+                    {
+                        try (SiteDAI dao = this.makeSiteDAO())
+                        {
+                            dao.fillCache(cache);
+                        }
+                        catch (DbIoException ex)
+                        {
+                            log.atError()
+                            .setCause(ex)
+                            .log("Unable to refresh Site Cache.");
+                        }
+                    },
+                    cacheExecutor));
+
+        cacheMap.put(TimeSeriesIdentifier.class,
+                     new ScheduledReloadDbObjectCache<TimeSeriesIdentifier>(SiteDAO.CACHE_MAX_AGE, false, (cache) ->
+                     {
+                        try (TimeSeriesDAI tsDai = this.makeTimeSeriesDAO())
+                        {
+                            tsDai.reloadTsIdCache(cache);
+                        }
+                        catch (DbIoException ex)
+                        {
+                            log.atError()
+                            .setCause(ex)
+                            .log("Unable to refresh TimeSeriesIdentifier Cache.");
+                        }
+                     }, cacheExecutor));
+        cacheMap.put(DbComputation.class,
+                    new ScheduledReloadDbObjectCache<DbComputation>(SiteDAO.CACHE_MAX_AGE, false, (cache) ->
+                    {
+                        try (ComputationDAI dao = this.makeComputationDAO())
+                        {
+                            dao.fillCache(cache);
+                        }
+                        catch (DbIoException ex)
+                        {
+                            log.atError()
+                            .setCause(ex)
+                            .log("Unable to refresh DbComputation Cache.");
+                        }
+                    }, cacheExecutor));
+        cacheMap.put(AlarmScreening.class,
+            new ScheduledReloadDbObjectCache<AlarmScreening>(AlarmDAO.CACHE_RELOAD_MSEC, false, (cache) ->
+            {
+                try (AlarmDAI dao = this.makeAlarmDAO())
+                {
+                    dao.reloadCache(cache);
+                }
+                catch (DbIoException ex)
+                {
+                    log.atError()
+                    .setCause(ex)
+                    .log("Unable to refresh AlarmScreening Cache.");
+                }
+            }, cacheExecutor));
+        cacheMap.put(DbEnum.class,
+                     new ScheduledReloadDbObjectCache<DbEnum>(
+                                EnumSqlDao.ENUM_MAX_LIFE,
+                                false,
+                                c -> {/* no op */},
+                                cacheExecutor)
+                        );
+        cacheMap.put(TsGroup.class,
+                    new ScheduledReloadDbObjectCache<TsGroup>(TsGroupDAO.cacheTimeLimit, false, (cache) ->
+                    {
+                        try (TsGroupDAI dao = this.makeTsGroupDAO())
+                        {
+                            dao.fillCache(cache);
+                        }
+                        catch (DbIoException ex)
+                        {
+                            log.atError()
+                            .setCause(ex)
+                            .log("Unable to refresh TsGroup Cache.");
+                        }
+                    }, cacheExecutor));
     }
 
     /** @return the JDBC connection in use by this object. */
+    @Override
     public Connection getConnection()
     {
         return new WrappedConnection(conn, c -> {});
@@ -2208,4 +2318,10 @@ public abstract class TimeSeriesDb
 
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public <Type extends CachableDbObject> org.opendcs.database.DbObjectCache<Type> getCache(Class<? extends CachableDbObject> dataType)
+    {
+        return (org.opendcs.database.DbObjectCache<Type>)cacheMap.get(dataType);
+    }
 }

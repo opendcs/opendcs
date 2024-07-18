@@ -315,7 +315,7 @@ public class Convert2Group
 			while(rs != null && rs.next())
 				grpIds.add(DbKey.createDbKey(rs, 1));
 				
-			tsGroupDAO.fillCache();
+			tsGroupDAO.fillCache(theDb.getCache(TsGroup.class));
 
 			info("Expanding Groups in Cache...");
 			groupHelper.evalAll();

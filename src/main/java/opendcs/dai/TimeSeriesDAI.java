@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
-import opendcs.dao.DbObjectCache;
+import org.h2.engine.DbObject;
+import org.opendcs.database.DbObjectCache;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
@@ -195,8 +196,9 @@ public interface TimeSeriesDAI
 	 * Flush and reload the internal Time Series ID cache inside the DAO
 	 * @throws DbIoException on error.
 	 */
-	public void reloadTsIdCache()
-		throws DbIoException;
+	public void reloadTsIdCache() throws DbIoException;
+
+	public void reloadTsIdCache(DbObjectCache<TimeSeriesIdentifier> cache) throws DbIoException;
 
 	/**
 	 * Some applications need direct access to the internal cache to adjust

@@ -1,0 +1,109 @@
+/**
+ * Copyright 2024 The OpenDCS Consortium and contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package org.opendcs.database;
+
+import java.util.Iterator;
+
+import decodes.sql.DbKey;
+import opendcs.dao.CachableDbObject;
+import opendcs.dao.DaoBase;
+
+/**
+ * Definition of a Cache Databases or DAOs can use to store objects.
+ * Provides common operations.
+ * 
+ * Cache invalidation and thread safety are determined by the implementations.
+ */
+public interface DbObjectCache<DBT extends CachableDbObject> {
+
+    /**
+     * Place an object in the cache.
+     * @param dbObj the object to cache
+     */
+    void put(DBT dbObj);
+
+    /**
+     * Removes an object from the cache.
+     *
+     * @param key DbKey of the object to be removed.
+     */
+    void remove(DbKey key);
+
+    /**
+     * Retrieve an object by its surrogate database key
+     * @param key the surrogate database key
+     * @return the object
+     */
+    DBT getByKey(DbKey key);
+
+    /**
+     * Used by caches like in ComputationDAO that must also check a last modify
+     * time in the database to determine if a cached object needs to be reloaded.
+     * Before returning an object from the cache, the dao's check method is consulted.
+     * @param key The key of the object
+     * @param daoBase the DAO
+     * @return the object or null if cached object doesn't exist or is not OK.
+     */
+    DBT getByKey(DbKey key, DaoBase daoBase);
+
+    /**
+     * Retrieve an object by its unique name
+     * @param uniqueName the unique name
+     * @return the object
+     */
+    DBT getByUniqueName(String uniqueName);
+    
+    /**
+     * Used by caches like in ComputationDAO that must also check a last modify
+     * time in the database to determine if a cached object needs to be reloaded.
+     * Before returning an object from the cache, the dao's check method is consulted.
+     * @param uniqueName The unique name of the object
+     * @param daoBase the DAO
+     * @return the object or null if cached object doesn't exist or is not OK.
+     */
+    DBT getByUniqueName(String uniqueName, DaoBase daoBase);
+
+    /**
+     * Retrieve the current cache size.
+     * @return
+     */
+    int size();
+
+    /**
+     * Searches the cache for an object that is 'equal to' the passed comparator.
+     * This method does a linear search of the objects in the cache, so it is not
+     * necessary that the Comparable be consistent in a sorting sense.
+     * @param cmp The comparator
+     * @return a matching object, or null if non is found.
+     */
+    DBT search(Comparable<DBT> cmp);
+
+    /**
+     * @return iterator into the list of cached values.
+     */
+    Iterator<DBT> iterator();
+
+    /**
+     * Completely clear the cache.
+     */
+    void clear();
+
+    /**
+     * Set maxAge in milliseconds
+     * @param maxAge
+     */
+    void setMaxAge(long maxAge);
+}

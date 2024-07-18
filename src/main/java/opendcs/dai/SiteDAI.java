@@ -1,11 +1,14 @@
 package opendcs.dai;
 
+import org.python.bouncycastle.util.BigIntegers.Cache;
+
 import decodes.db.Site;
 import decodes.db.SiteList;
 import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import opendcs.dao.CachableDbObject;
 
 /**
  * Defines public interface for reading/writing site (i.e. location) objects.
@@ -92,8 +95,12 @@ public interface SiteDAI
 	 * Fills the cache of all known sites in an efficient manner.
 	 * @throws DbIoException
 	 */
-	public void fillCache()
-		throws DbIoException;
+	public void fillCache() throws DbIoException;
+
+	default void fillCache(org.opendcs.database.DbObjectCache<Site> cache) throws DbIoException
+	{
+		// default do nothing.
+	}
 	
 	/**
 	 * @return the msec time that the cache was last filled, or 0 if never.

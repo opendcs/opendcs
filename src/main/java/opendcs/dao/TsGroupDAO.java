@@ -73,6 +73,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Stack;
 
+import org.opendcs.database.DbObjectCache;
+
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
@@ -85,15 +87,12 @@ import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.TsdbDatabaseVersion;
 
-public class TsGroupDAO
-	extends DaoBase 
-	implements TsGroupDAI
+public class TsGroupDAO extends DaoBase implements TsGroupDAI
 {
 	protected String GroupAttributes = 
 		"group_id, group_name, group_type, group_description";
-	private static long lastCacheFill = 0L;
 	public static long cacheTimeLimit = 20 * 60 * 1000L;
-	protected static DbObjectCache<TsGroup> cache = new DbObjectCache<TsGroup>(cacheTimeLimit, false);
+	protected final DbObjectCache<TsGroup> cache;
 	
 	// Used to guard against endless loop in subgroup associations.
 	private Stack<DbKey> loopGuard = new Stack<DbKey>();
@@ -101,6 +100,7 @@ public class TsGroupDAO
 	public TsGroupDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "TsGroupDAO");
+		this.cache = tsdb.getCache(TsGroup.class);
 	}
 
 	public synchronized TsGroup getTsGroupById(DbKey groupId)
@@ -269,8 +269,6 @@ public class TsGroupDAO
 	public ArrayList<TsGroup> getTsGroupList(String groupType)
 		throws DbIoException
 	{
-		if (System.currentTimeMillis() - lastCacheFill > cacheTimeLimit)
-			fillCache();
 		
 		ArrayList<TsGroup> ret = new ArrayList<TsGroup>();
 
@@ -481,9 +479,8 @@ public class TsGroupDAO
 		}
 	}
 
-
-	public void fillCache() 
-		throws DbIoException
+	@Override
+	public void fillCache(DbObjectCache<TsGroup> cache) throws DbIoException
 	{
 		String q = "";
 
@@ -610,7 +607,6 @@ public class TsGroupDAO
 		{
 			throw new DbIoException("TsGroupDAO.fillCache: Error in query '" + q + "': " + ex);
 		}
-		lastCacheFill = System.currentTimeMillis();
 	}
 
 	@Override

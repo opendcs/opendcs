@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
+import org.opendcs.database.DbObjectCache;
 import org.opendcs.utils.Property;
 
 import opendcs.dai.PropertiesDAI;
@@ -182,8 +183,7 @@ public class PropertiesSqlDao
     }
 
     @Override
-    public int readPropertiesIntoCache(String tableName, DbObjectCache<?> cache)
-        throws DbIoException
+    public int readPropertiesIntoCache(String tableName, DbObjectCache<?> cache) throws DbIoException
     {
         String q = "select * from " + tableName;
         Integer n[] = new Integer[1];

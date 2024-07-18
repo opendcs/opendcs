@@ -698,8 +698,11 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.CachableDbObject;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DaoHelper;
+import opendcs.dao.ScheduledReloadDbObjectCache;
+import opendcs.dao.SiteDAO;
 import opendcs.dao.LoadingAppDao;
 import opendcs.opentsdb.OpenTsdbSettings;
 import opendcs.util.sql.WrappedConnection;
@@ -721,6 +724,7 @@ import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
 import ilex.var.Variable;
 import decodes.cwms.rating.CwmsRatingDao;
+import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.ScreeningDAO;
 import decodes.db.Constants;
@@ -782,7 +786,21 @@ public class CwmsTimeSeriesDb
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
 		module = "CwmsTimeSeriesDb";
-		
+                // add Cwms specific cache
+		cacheMap.put(Screening.class,     
+        new ScheduledReloadDbObjectCache<Screening>(SiteDAO.CACHE_MAX_AGE, false, (cache) ->
+        {
+        try (ScreeningDAI dao = this.makeScreeningDAO())
+        {
+            dao.reloadCache(cache);
+        }
+        catch (DbIoException ex)
+        {
+            log.atError()
+            .setCause(ex)
+            .log("Unable to refresh Screening Cache.");
+        }
+        }, cacheExecutor));
 	}
 
 	public static Connection getDbConnection(final CwmsConnectionInfo info) throws BadConnectException
@@ -1683,6 +1701,4 @@ public class CwmsTimeSeriesDb
 			Logger.instance().warning("Unable to close returned connection: " + ex.getLocalizedMessage());
 		}
 	}
-	
-	
 }

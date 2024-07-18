@@ -16,6 +16,8 @@ package opendcs.dai;
 
 import java.util.ArrayList;
 
+import org.opendcs.database.DbObjectCache;
+
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsGroup;
@@ -25,8 +27,7 @@ import decodes.tsdb.TsGroup;
  * Defines public interface for reading/writing Time Series Group objects.
  * @author mmaloney - Mike Maloney, Cove Software, LLC
  */
-public interface TsGroupDAI
-	extends DaiBase
+public interface TsGroupDAI extends DaiBase
 {
 	
 	/**
@@ -90,8 +91,7 @@ public interface TsGroupDAI
 	/**
 	 * Fill cache with all groups.
 	 */
-	public void fillCache()
-		throws DbIoException;
+	public void fillCache(DbObjectCache<TsGroup> cache) throws DbIoException;
 
 	/**
 	 * Removes any computation dependencies for the group. That is computations

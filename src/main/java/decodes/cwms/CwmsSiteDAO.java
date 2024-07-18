@@ -71,6 +71,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.opendcs.database.DbObjectCache;
+
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.Platform;
@@ -83,6 +85,7 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbDatabaseVersion;
 import decodes.util.DecodesSettings;
 import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.dao.ScheduledReloadDbObjectCache;
 import opendcs.dao.SiteDAO;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -443,7 +446,7 @@ public class CwmsSiteDAO extends SiteDAO
 	}
 	
 	@Override
-	public void fillCache()
+	public void fillCache(DbObjectCache<Site> cache)
 		throws DbIoException
 	{
 		debug3("CwmsSiteDAO.fillCache()");
