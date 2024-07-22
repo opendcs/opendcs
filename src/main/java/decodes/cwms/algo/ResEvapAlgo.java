@@ -3,12 +3,20 @@ package decodes.cwms.algo;
 import decodes.cwms.resevapcalc.EvapMetData;
 import decodes.cwms.resevapcalc.EvapReservoir;
 import decodes.cwms.resevapcalc.ResEvap;
-import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.DbCompException;
+import decodes.db.Constants;
+import decodes.db.Site;
+import decodes.db.SiteName;
+import decodes.tsdb.*;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 import ilex.var.NamedVariable;
+import ilex.var.TimedVariable;
+import ilex.var.Variable;
+import opendcs.dai.SiteDAI;
+import opendcs.dai.TimeSeriesDAI;
+import opendcs.util.functional.ThrowingFunction;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -65,6 +73,10 @@ public class ResEvapAlgo
 	private CTimeSeries PercentHighCloudTS = null;
 	private CTimeSeries ElevHighCloudTS = null;
 	private CTimeSeries ElevTS = null;
+
+	SiteDAI siteDAO;
+	TimeSeriesDAI timeSeriesDAO;
+
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
@@ -94,6 +106,8 @@ public class ResEvapAlgo
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
+	public String WtpTsid;
+
 	public String depth;
 	public String SecchiDepthId;
 	public String MaxTempDepthId;
@@ -134,27 +148,80 @@ public class ResEvapAlgo
 		throws DbCompException
 	{
 //AW:INIT
+		try (SiteDAI siteDAO_temp = tsdb.makeSiteDAO();
+			 TimeSeriesDAI timeSeriesDAO_temp = tsdb.makeTimeSeriesDAO();
+		){
+			siteDAO = siteDAO_temp;
+			timeSeriesDAO = timeSeriesDAO_temp;
+		}
 		_awAlgoType = AWAlgoType.TIME_SLICE;
 //AW:INIT_END
 
 //AW:USERINIT
 //AW:USERINIT_END
 	}
-
+	public TimeSeriesIdentifier makeTSID(String tsIdStr) throws DbIoException {
+		try {
+			return timeSeriesDAO.getTimeSeriesIdentifier(tsIdStr);
+		} catch (NoSuchObjectException ex) {
+			//log.warn("No existing time series. Will attempt to create.");
+			try {
+				TimeSeriesIdentifier tsId = tsdb.makeEmptyTsId();
+				tsId.setUniqueString(tsIdStr);
+				Site site = tsdb.getSiteById(siteDAO.lookupSiteID(tsId.getSiteName()));
+				if (site == null) {
+					site = new Site();
+					site.addName(new SiteName(site, Constants.snt_CWMS, tsId.getSiteName()));
+					siteDAO.writeSite(site);
+				}
+				tsId.setSite(site);
+				//log.info("Calling createTimeSeries");
+				timeSeriesDAO.createTimeSeries(tsId);
+				//log.info("After createTimeSeries, ts key = {}", tsId.getKey());
+				return tsId;
+			} catch (Exception ex2) {
+				throw new DbIoException(String.format("No such time series and cannot create for '%'", tsIdStr), ex);
+			}
+		}
+	}
 	//TODO read database
 	public double getStartElevation(){
 		return 0;
 	}
+
 	//TODO read database
-	public double[] getWTPElevation(){
-		return new double[]{0};
+	public double[] getProfiles() throws Exception {
+		WaterTempProfiles BaseWtp = new WaterTempProfiles(timeSeriesDAO, WtpTsid, _timeSliceBaseTime, _timeSliceBaseTime, start_depth, depth_increment);
+		double[] arrayWTP = new double[BaseWtp.size()];
+		for(int i = 0; i < BaseWtp.size(); i++){
+			try {
+				arrayWTP[i] = BaseWtp.getTimeSeriesAt(i).findPrev(_timeSliceBaseTime).getDoubleValue();
+			}
+			catch (Exception ex){
+				throw new Exception("failed to load data from WTP");
+			}
+		}
+		return arrayWTP;
 	}
-	public void getProfiles(NamedVariable profile, double[] wtp){
 
-	}
-	public void setProfiles(NamedVariable profile, double[] wtp){
-
-		//setOutput(DailyWaterTempProfile, resEvap.getDailyTemperatureProfileTs(start_depth, getMaxTempDepthMeters(), depth_increment));
+	public void setProfiles(double[][] wtp) throws Exception {
+		ArrayList<CTimeSeries> WTPlist = new ArrayList<CTimeSeries>();
+		double currentDepth = start_depth;
+		for(int i = 0; i < wtp.length; i++){
+			try{
+				TimeSeriesIdentifier newTSID = makeTSID(WtpTsid+currentDepth);
+				CTimeSeries CTProfile = new CTimeSeries(newTSID);
+				CTProfile.addSample(new TimedVariable(new Variable(wtp[i][i]), _timeSliceBaseTime));
+				WTPlist.add(CTProfile);
+				currentDepth += depth_increment;
+			}
+			catch (Exception ex){
+				throw new Exception("failed to load time series profile");
+			}
+		}
+		WaterTempProfiles newWtp = new WaterTempProfiles(WTPlist, timeSeriesDAO, start_depth, depth_increment);
+		newWtp.SaveProfiles();
+		
 	}
 	public void setDailyProfiles(NamedVariable output, NamedVariable tsc,  Date CurrentTime){
 		//setOutput(DailyWaterTempProfile, resEvap.getDailyTemperatureProfileTs(start_depth, getMaxTempDepthMeters(), depth_increment));
@@ -227,7 +294,7 @@ public class ResEvapAlgo
 //		print("ResJ: " + str(resj));
 //		print("WTP len: " + str(len(wtp)));
 
-		double[] wtp = getWTPElevation();
+		double[] wtp = getProfiles();
 		// reverse array order
 		double[] wtpR = new double[resj];
 		for (int i = 0; i<resj+1; i++){
