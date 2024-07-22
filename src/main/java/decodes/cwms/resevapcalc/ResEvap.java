@@ -56,11 +56,11 @@ public class ResEvap
     public static final double WIND_CRITIC = 1.0;
     
     // some print formats
-    rma.util.NumberFormat nf8_3 = new rma.util.NumberFormat("%8.3f");
-    rma.util.NumberFormat nf8_2 = new rma.util.NumberFormat("%8.2f");
-    rma.util.NumberFormat nf9_3 = new rma.util.NumberFormat("%9.3f");
-    rma.util.NumberFormat nf10_3 = new rma.util.NumberFormat("%10.3f");
-    rma.util.NumberFormat nfe11_3 = new rma.util.NumberFormat("%11.3E");    
+//    rma.util.NumberFormat nf8_3 = new rma.util.NumberFormat("%8.3f");
+//    rma.util.NumberFormat nf8_2 = new rma.util.NumberFormat("%8.2f");
+//    rma.util.NumberFormat nf9_3 = new rma.util.NumberFormat("%9.3f");
+//    rma.util.NumberFormat nf10_3 = new rma.util.NumberFormat("%10.3f");
+//    rma.util.NumberFormat nfe11_3 = new rma.util.NumberFormat("%11.3E");
         
     // output computed time series
     double _solarRadTsc;
@@ -650,132 +650,136 @@ public class ResEvap
     {
     	return _evapRateHourlyTsc;
     }
+    public double[] getHourlyWaterTempProfile()
+    {
+        return _wtempProfiles;
+    }
 	
-	public double getHourlyEvapTimeSeries()
-	{
-		TimeSeriesMath math = null;
-		try
-		{
-			TimeSeriesMath tsMath = new TimeSeriesMath( _evapRateHourlyTsc );
-			math = (TimeSeriesMath) tsMath.transformTimeSeries("1HOUR", "", "AVE", false);
-		}
-		catch (HecMathException ex)
-		{
-			LOGGER.log(Level.SEVERE, "HecMathException occurred while converting hourly evap rate to hourly total evap", ex);
-		}
-		TimeSeriesContainer output = null;
-		if (math != null)
-		{
-			output = math.getContainer();
-			output.units = "mm";
-			output.parameter = "Evap";
-			output.type = DssDataType.PER_CUM.toString();
-		}
-		return output;
-	}
+//	public double getHourlyEvapTimeSeries()
+//	{
+//		TimeSeriesMath math = null;
+//		try
+//		{
+//			TimeSeriesMath tsMath = new TimeSeriesMath( _evapRateHourlyTsc );
+//			math = (TimeSeriesMath) tsMath.transformTimeSeries("1HOUR", "", "AVE", false);
+//		}
+//		catch (HecMathException ex)
+//		{
+//			LOGGER.log(Level.SEVERE, "HecMathException occurred while converting hourly evap rate to hourly total evap", ex);
+//		}
+//		TimeSeriesContainer output = null;
+//		if (math != null)
+//		{
+//			output = math.getContainer();
+//			output.units = "mm";
+//			output.parameter = "Evap";
+//			output.type = DssDataType.PER_CUM.toString();
+//		}
+//		return output;
+//	}
     
     /**
      * Get the computed daily evaporation for the reservoir
      *  
      * @return
      */
-    public double getDailyEvapTimeSeries()
-    {
-		TimeSeriesContainer evapTs = getHourlyEvapTimeSeries();
-    	TimeSeriesMath tsAcc = null;
-    	try 
-    	{
-    		TimeSeriesMath tsMath = new TimeSeriesMath( evapTs );
-    		tsAcc = (TimeSeriesMath)tsMath.transformTimeSeries("1DAY", "", "ACC", false);
-    	}
-
-        catch ( HecMathException hme )
-        {
-			LOGGER.log(Level.SEVERE, "HecMathException occurred while converting hourly total evap to daily total evap", hme);
-        }
-  	
-    	if ( tsAcc != null )
-    	{
-    		return tsAcc.getContainer();
-    	}
-    	return null;
-    }
+//    public double getDailyEvapTimeSeries()
+//    {
+//		TimeSeriesContainer evapTs = getHourlyEvapTimeSeries();
+//    	TimeSeriesMath tsAcc = null;
+//    	try
+//    	{
+//    		TimeSeriesMath tsMath = new TimeSeriesMath( evapTs );
+//    		tsAcc = (TimeSeriesMath)tsMath.transformTimeSeries("1DAY", "", "ACC", false);
+//    	}
+//
+//        catch ( HecMathException hme )
+//        {
+//			LOGGER.log(Level.SEVERE, "HecMathException occurred while converting hourly total evap to daily total evap", hme);
+//        }
+//
+//    	if ( tsAcc != null )
+//    	{
+//    		return tsAcc.getContainer();
+//    	}
+//    	return null;
+//    }
     
     /**
      * Get the computed daily evaporation flow for the reaservoir
      * 
      * @return
      */
-    public double getDailyEvapFlowTimeSeries()
-    {
-    	// get daily evap
-    	TimeSeriesContainer dailyEvapTs = getDailyEvapTimeSeries();
-    	
-    	TimeSeriesContainer dailyEvapFlowTs = (TimeSeriesContainer)dailyEvapTs.clone();
-    	
-    	// scale evap to meters
-    	double evap_to_meters = 1.;
-        try
-        {
-        	evap_to_meters = Units.convertUnits( 1., dailyEvapTs.units.toString(), "m");
-        }
-        catch ( UnitsConversionException ue )
-        {
-			LOGGER.log(Level.SEVERE, "Unable to convert " + dailyEvapTs.units + " to m", ue);
-        	return null;
-        }
-    	
-    	// multiply daily evap by surface area
-    	int itime;
-    	double undef = Heclib.UNDEFINED_DOUBLE;
-    	double lastValidElev = undef;
-    	double currentElev = undef;
-    	double dailyEvap, dailyEvapFlow, areaMetersSq;
-    	HecTime hecTime = new HecTime( HecTime.MINUTE_INCREMENT );
-    	for ( int i=0; i<dailyEvapFlowTs.numberValues; i++)
-    	{
-    		itime = dailyEvapFlowTs.times[i];
-    		hecTime.set(itime);
-    		dailyEvap = dailyEvapTs.values[i];
-            if ( RMAConst.isValidValue(dailyEvap) )
-            {
-            	// elevation returned in meters
-            	double elev = _reservoir.getCurrentElevation(hecTime);
-            	if ( RMAConst.isValidValue(elev) )
-            	{
-            		lastValidElev = elev;
-            		currentElev = elev;
-            	}
-            	else if ( RMAConst.isValidValue(lastValidElev) )
-            	{
-            		currentElev = lastValidElev;
-            	}
-            	else
-            	{
-            		dailyEvapFlowTs.values[i] = undef;
-            		continue;
-            	}
-            	
-            	areaMetersSq = _reservoir.intArea(currentElev);
-                dailyEvapFlow = areaMetersSq * dailyEvap * evap_to_meters;
-                dailyEvapFlowTs.values[i] = dailyEvapFlow/(86400.);
-            }
-            else
-            {
-            	dailyEvapFlowTs.values[i] = undef;
-            }
-
-    	}
-    	
-    	dailyEvapFlowTs.units = "cms";
-    	dailyEvapFlowTs.parameter = "FLOW-EVAP";
-    	DSSPathString dsspath = new DSSPathString( dailyEvapFlowTs.fullName );
-    	dsspath.setCPart(dailyEvapFlowTs.parameter);
-    	dailyEvapFlowTs.fullName = dsspath.getPathname();
-    	dailyEvapFlowTs.type = ParameterType.AVE;
-    	
-    	return dailyEvapFlowTs;
-    }
+//    public double getDailyEvapFlowTimeSeries()
+//    {
+//    	// get daily evap
+//    	TimeSeriesContainer dailyEvapTs = getDailyEvapTimeSeries();
+//
+//    	TimeSeriesContainer dailyEvapFlowTs = (TimeSeriesContainer)dailyEvapTs.clone();
+//
+//    	// scale evap to meters
+//    	double evap_to_meters = 1.;
+//        try
+//        {
+//        	evap_to_meters = Units.convertUnits( 1., dailyEvapTs.units.toString(), "m");
+//        }
+//        catch ( UnitsConversionException ue )
+//        {
+//			LOGGER.log(Level.SEVERE, "Unable to convert " + dailyEvapTs.units + " to m", ue);
+//        	return null;
+//        }
+//
+//    	// multiply daily evap by surface area
+//    	int itime;
+//    	double undef = Heclib.UNDEFINED_DOUBLE;
+//    	double lastValidElev = undef;
+//    	double currentElev = undef;
+//    	double dailyEvap, dailyEvapFlow, areaMetersSq;
+//    	HecTime hecTime = new HecTime( HecTime.MINUTE_INCREMENT );
+//    	for ( int i=0; i<dailyEvapFlowTs.numberValues; i++)
+//    	{
+//    		itime = dailyEvapFlowTs.times[i];
+//    		hecTime.set(itime);
+//    		dailyEvap = dailyEvapTs.values[i];
+//            if ( RMAConst.isValidValue(dailyEvap) )
+//            {
+//            	// elevation returned in meters
+//            	double elev = _reservoir.getCurrentElevation(hecTime);
+//            	if ( RMAConst.isValidValue(elev) )
+//            	{
+//            		lastValidElev = elev;
+//            		currentElev = elev;
+//            	}
+//            	else if ( RMAConst.isValidValue(lastValidElev) )
+//            	{
+//            		currentElev = lastValidElev;
+//            	}
+//            	else
+//            	{
+//            		dailyEvapFlowTs.values[i] = undef;
+//            		continue;
+//            	}
+//
+//            	areaMetersSq = _reservoir.intArea(currentElev);
+//                dailyEvapFlow = areaMetersSq * dailyEvap * evap_to_meters;
+//                dailyEvapFlowTs.values[i] = dailyEvapFlow/(86400.);
+//            }
+//            else
+//            {
+//            	dailyEvapFlowTs.values[i] = undef;
+//            }
+//
+//    	}
+//
+//    	dailyEvapFlowTs.units = "cms";
+//    	dailyEvapFlowTs.parameter = "FLOW-EVAP";
+//    	DSSPathString dsspath = new DSSPathString( dailyEvapFlowTs.fullName );
+//    	dsspath.setCPart(dailyEvapFlowTs.parameter);
+//    	dailyEvapFlowTs.fullName = dsspath.getPathname();
+//    	dailyEvapFlowTs.type = ParameterType.AVE;
+//
+//    	return dailyEvapFlowTs;
+//    }
     
     /** Fill array of  TimeSeriesContainer with results
      * of reservoir temperature computations
@@ -785,80 +789,80 @@ public class ResEvap
      * @param intervalDepth
      * @return
      */
-    public double[] getTemperatureProfileTs(double surfaceDepth,
-    		double bottomDepth, double intervalDepth)
-    {
-    	if ( intervalDepth < .01 )
-    	{
-    		return null;
-    	}
-    	
-    	// check for no data
-    	if ( _wtempProfiles == null || _wtempProfiles.length < 1 )
-    	{
-    		return null;
-    	}
-    	
-    	if ( bottomDepth < .0 )
-    	{
-    		bottomDepth = -bottomDepth;
-    	}
-    	double rprofs = (bottomDepth - surfaceDepth)/intervalDepth;
-    	int nprofs = (int)( rprofs + .01) + 1; 
-    	
-    	// clone the surfaceTemperature time series
-    	TimeSeriesContainer wtTemplate = (TimeSeriesContainer)_surfaceTempTsc.clone();
-    	DSSPathString dsspath = new DSSPathString( _surfaceTempTsc.fullName );
-    	dsspath.setCPart("Temp-Water");
-    	wtTemplate.parameter = "Temp-Water";
-    	wtTemplate.fullName = dsspath.getPathname();
-    	
-    	TimeSeriesContainer[] wtprofTs = new TimeSeriesContainer[nprofs];
-    	double dep = surfaceDepth;
-    	int iint,ifrac;
-    	double frac;
-    	String fstr, paramstr;
-    	for ( int i=0; i<nprofs; i++)
-    	{
-    		wtprofTs[i] = (TimeSeriesContainer)wtTemplate.clone();
-    		iint = (int)dep;
-    		frac = dep % 1.;
-    		ifrac = (int)Math.round(frac*10.);
-    		fstr = Integer.toString(iint) + "," + Integer.toString(ifrac);
-    		paramstr = wtTemplate.parameter + "-" + fstr + "m";
-    		wtprofTs[i].parameter = paramstr;
-    		dsspath.setCPart(paramstr);
-    		wtprofTs[i].fullName = dsspath.getPathname();
-    		
-    		dep += intervalDepth;
-    	}
-    	
-    	// initial values with missing data
-    	double undef = Heclib.UNDEFINED_DOUBLE;
-    	for ( int i=0; i<nprofs; i++)
-    	{
-    		Arrays.fill( wtprofTs[i].values, undef );
-    	}
-    	
-    	// transfer computed values.  Surface is at resj
-		int nvals = _wtempProfiles.length;
-		int layers = _wtempProfiles[0].length;
-		double tval;
-		
-    	int resj = _reservoir._resj;
-    	for ( int i=resj; i>=0; i--)
-    	{
-    		int ilayer = resj-i;
-    		
-    		for ( int itime=0; itime<nvals; itime++)
-    		{
-    			tval = _wtempProfiles[itime][i];	
-    			wtprofTs[ilayer].values[itime] = tval;
-    		}
-    	}
-    	
-    	return wtprofTs;
-    }
+//    public TimeSeriesContainer[] getTemperatureProfileTs(double surfaceDepth,
+//    		double bottomDepth, double intervalDepth)
+//    {
+//    	if ( intervalDepth < .01 )
+//    	{
+//    		return null;
+//    	}
+//
+//    	// check for no data
+//    	if ( _wtempProfiles == null || _wtempProfiles.length < 1 )
+//    	{
+//    		return null;
+//    	}
+//
+//    	if ( bottomDepth < .0 )
+//    	{
+//    		bottomDepth = -bottomDepth;
+//    	}
+//    	double rprofs = (bottomDepth - surfaceDepth)/intervalDepth;
+//    	int nprofs = (int)( rprofs + .01) + 1;
+//
+//    	// clone the surfaceTemperature time series
+//    	TimeSeriesContainer wtTemplate = (TimeSeriesContainer)_surfaceTempTsc.clone();
+//    	DSSPathString dsspath = new DSSPathString( _surfaceTempTsc.fullName );
+//    	dsspath.setCPart("Temp-Water");
+//    	wtTemplate.parameter = "Temp-Water";
+//    	wtTemplate.fullName = dsspath.getPathname();
+//
+//    	TimeSeriesContainer[] wtprofTs = new TimeSeriesContainer[nprofs];
+//    	double dep = surfaceDepth;
+//    	int iint,ifrac;
+//    	double frac;
+//    	String fstr, paramstr;
+//    	for ( int i=0; i<nprofs; i++)
+//    	{
+//    		wtprofTs[i] = (TimeSeriesContainer)wtTemplate.clone();
+//    		iint = (int)dep;
+//    		frac = dep % 1.;
+//    		ifrac = (int)Math.round(frac*10.);
+//    		fstr = Integer.toString(iint) + "," + Integer.toString(ifrac);
+//    		paramstr = wtTemplate.parameter + "-" + fstr + "m";
+//    		wtprofTs[i].parameter = paramstr;
+//    		dsspath.setCPart(paramstr);
+//    		wtprofTs[i].fullName = dsspath.getPathname();
+//
+//    		dep += intervalDepth;
+//    	}
+//
+//    	// initial values with missing data
+//    	double undef = Heclib.UNDEFINED_DOUBLE;
+//    	for ( int i=0; i<nprofs; i++)
+//    	{
+//    		Arrays.fill( wtprofTs[i].values, undef );
+//    	}
+//
+//    	// transfer computed values.  Surface is at resj
+//		int nvals = _wtempProfiles.length;
+//		int layers = _wtempProfiles[0].length;
+//		double tval;
+//
+//    	int resj = _reservoir._resj;
+//    	for ( int i=resj; i>=0; i--)
+//    	{
+//    		int ilayer = resj-i;
+//
+//    		for ( int itime=0; itime<nvals; itime++)
+//    		{
+//    			tval = _wtempProfiles[itime][i];
+//    			wtprofTs[ilayer].values[itime] = tval;
+//    		}
+//    	}
+//
+//    	return wtprofTs;
+//    }
 
     /**
      * Create daily interval TimeSeriesContainers of water temperature
@@ -869,86 +873,86 @@ public class ResEvap
      * @param intervalDepth
      * @return
      */
-    public TimeSeriesContainer[] getDailyTemperatureProfileTs(double surfaceDepth, 
-    		double bottomDepth, double intervalDepth)
-    {
-    	LOGGER.log(Level.SEVERE, "getDailyTemperatureProfileTs");
-    	TimeSeriesContainer[] hourlyTsArray = getTemperatureProfileTs(
-    			surfaceDepth, bottomDepth, intervalDepth );
-    	
-    	int nlayers = hourlyTsArray.length;
-    	TimeSeriesContainer[] dayTsArray = new TimeSeriesContainer[nlayers];
+//    public TimeSeriesContainer[] getDailyTemperatureProfileTs(double surfaceDepth,
+//    		double bottomDepth, double intervalDepth)
+//    {
+//    	LOGGER.log(Level.SEVERE, "getDailyTemperatureProfileTs");
+//    	TimeSeriesContainer[] hourlyTsArray = getTemperatureProfileTs(
+//    			surfaceDepth, bottomDepth, intervalDepth );
+//
+//    	int nlayers = hourlyTsArray.length;
+//    	TimeSeriesContainer[] dayTsArray = new TimeSeriesContainer[nlayers];
+//
+//		int icnt = 0;
+//		for ( TimeSeriesContainer hourlyTsc : hourlyTsArray )
+//		{
+//			if (Arrays.stream(hourlyTsc.values).noneMatch(RMAConst::isValidValue))
+//			{
+//				LOGGER.log(Level.FINE, () -> "No data found for " + hourlyTsc.parameter);
+//				icnt++;
+//				continue;
+//			}
+//
+//			try
+//			{
+//				TimeSeriesMath tsMath = new TimeSeriesMath( hourlyTsc );
+//	    		// need to set to dss type INST-VAL for transformTimeSeries to work
+//	    		tsMath.getContainer().type = "INST-VAL";
+//    			TimeSeriesMath tsMath24 =
+//    					(TimeSeriesMath)tsMath.transformTimeSeries("1DAY", "", "INT", false);
+//
+//    			TimeSeriesContainer dailyTsc = tsMath24.getContainer();
+//
+//    			verifyHourlyAndDailyMatch(hourlyTsc, dailyTsc);
+//
+//				dayTsArray[icnt] = dailyTsc;
+//	    	}
+//	        catch ( HecMathException ex )
+//	        {
+//				LOGGER.log(Level.SEVERE, ex, () -> "Exception occurred while transforming hourly temperature profile data to daily for " + hourlyTsc.parameter + ".");
+//	        	dayTsArray[icnt] = null;
+//	        }
+//
+//			icnt++;
+//		}
+//
+//    	return dayTsArray;
+//    }
 
-		int icnt = 0;
-		for ( TimeSeriesContainer hourlyTsc : hourlyTsArray )
-		{
-			if (Arrays.stream(hourlyTsc.values).noneMatch(RMAConst::isValidValue))
-			{
-				LOGGER.log(Level.FINE, () -> "No data found for " + hourlyTsc.parameter);
-				icnt++;
-				continue;
-			}
-
-			try 
-			{
-				TimeSeriesMath tsMath = new TimeSeriesMath( hourlyTsc );
-	    		// need to set to dss type INST-VAL for transformTimeSeries to work
-	    		tsMath.getContainer().type = "INST-VAL";
-    			TimeSeriesMath tsMath24 =
-    					(TimeSeriesMath)tsMath.transformTimeSeries("1DAY", "", "INT", false);
-    			
-    			TimeSeriesContainer dailyTsc = tsMath24.getContainer();
-
-    			verifyHourlyAndDailyMatch(hourlyTsc, dailyTsc);
-
-				dayTsArray[icnt] = dailyTsc;
-	    	}
-	        catch ( HecMathException ex )
-	        {
-				LOGGER.log(Level.SEVERE, ex, () -> "Exception occurred while transforming hourly temperature profile data to daily for " + hourlyTsc.parameter + ".");
-	        	dayTsArray[icnt] = null;
-	        }
-
-			icnt++;
-		}
-    		
-    	return dayTsArray;
-    }
-
-    private void verifyHourlyAndDailyMatch(TimeSeriesContainer hourlyTsc, TimeSeriesContainer dailyTsc)
-	{
-		if (LOGGER.isLoggable(Level.FINE))
-		{
-			LOGGER.log(Level.SEVERE, () -> "Checking Daily and Hourly timeseries " + dailyTsc.fullName + " for discrepancies in values and times");
-
-			//Only verify when the log level is fine
-			List<Integer> hourlyTimes = Arrays.stream(hourlyTsc.times).boxed().collect(Collectors.toList());
-			int dailyIndex = 0;
-
-			for (int dailyTime : dailyTsc.times)
-			{
-				HecTime dailyHecTime = dailyTsc.getTimes().elementAt(dailyIndex);
-				int hourlyIndex = hourlyTimes.indexOf(dailyTime);
-				if (hourlyIndex == -1)
-				{
-					//Can't find an index for this time in the hourly data.
-					LOGGER.log(Level.SEVERE, () -> "Hourly data doesn't contain a time for " + dailyHecTime.dateAndTime());
-					continue;
-				}
-				double hourlyValue = hourlyTsc.values[hourlyIndex];
-				double dailyValue = dailyTsc.values[dailyIndex];
-
-				if (!RmaMath.equals(hourlyValue, dailyValue, 0.00001f))
-				{
-					LOGGER.log(Level.SEVERE, () -> "Hourly and Daily value don't match at " + dailyHecTime.dateAndTime()
-							+ System.lineSeparator() + "\tExpected: " + hourlyValue
-							+ System.lineSeparator() + "\tReceived: " + dailyValue);
-				}
-
-				dailyIndex++;
-			}
-		}
-	}
+//    private void verifyHourlyAndDailyMatch(TimeSeriesContainer hourlyTsc, TimeSeriesContainer dailyTsc)
+//	{
+//		if (LOGGER.isLoggable(Level.FINE))
+//		{
+//			LOGGER.log(Level.SEVERE, () -> "Checking Daily and Hourly timeseries " + dailyTsc.fullName + " for discrepancies in values and times");
+//
+//			//Only verify when the log level is fine
+//			List<Integer> hourlyTimes = Arrays.stream(hourlyTsc.times).boxed().collect(Collectors.toList());
+//			int dailyIndex = 0;
+//
+//			for (int dailyTime : dailyTsc.times)
+//			{
+//				HecTime dailyHecTime = dailyTsc.getTimes().elementAt(dailyIndex);
+//				int hourlyIndex = hourlyTimes.indexOf(dailyTime);
+//				if (hourlyIndex == -1)
+//				{
+//					//Can't find an index for this time in the hourly data.
+//					LOGGER.log(Level.SEVERE, () -> "Hourly data doesn't contain a time for " + dailyHecTime.dateAndTime());
+//					continue;
+//				}
+//				double hourlyValue = hourlyTsc.values[hourlyIndex];
+//				double dailyValue = dailyTsc.values[dailyIndex];
+//
+//				if (!RmaMath.equals(hourlyValue, dailyValue, 0.00001f))
+//				{
+//					LOGGER.log(Level.SEVERE, () -> "Hourly and Daily value don't match at " + dailyHecTime.dateAndTime()
+//							+ System.lineSeparator() + "\tExpected: " + hourlyValue
+//							+ System.lineSeparator() + "\tReceived: " + dailyValue);
+//				}
+//
+//				dailyIndex++;
+//			}
+//		}
+//	}
 
     /** make some data for starting test run 
      * 
@@ -957,75 +961,75 @@ public class ResEvap
      * @param intervalDepth
      * @return
      */
-    public static TimeSeriesContainer[] generateDailyTemperatureProfileTs(
-    		String locationName, String versionName,
-    		String startDate, String endDate, double tval,
-    		double surfaceDepth, double bottomDepth, double intervalDepth )   		
-    {
-    	if ( intervalDepth < .01 )
-    	{
-    		return null;
-    	}
-    	
-    	if ( bottomDepth < .0 )
-    	{
-    		bottomDepth = -bottomDepth;
-    	}
-    	double rprofs = (bottomDepth - surfaceDepth)/intervalDepth;
-    	int nprofs = (int)( rprofs + .01) + 1; 
-    	
-    	int intervalMinutes = 1440;
-    	int offsetMinutes = 0;
-    	TimeSeriesContainer baseTsc = null;
-    	try
-    	{
-    		TimeSeriesMath tsMath = (TimeSeriesMath)TimeSeriesMath.generateRegularIntervalTimeSeries(
-    				startDate, endDate, 
-    				intervalMinutes, offsetMinutes, tval );
-    		baseTsc = tsMath.getContainer();
-        }
-        catch ( HecMathException hme )
-        {
-			LOGGER.log(Level.SEVERE, "Exception occurred while generating daily temperature profile data.", hme);
-            return null;
-        }
-        
-    	baseTsc.location = locationName;
-    	baseTsc.version = versionName;
-    	baseTsc.interval = intervalMinutes;
-    	baseTsc.units = "C";
-    	baseTsc.type = ParameterType.INST;
-    	baseTsc.units = "C";
-    	
-        DSSPathString dsspath = new DSSPathString("", locationName, "", "", "1DAY", versionName);
-    	dsspath.setCPart("Temp-Water");
-    	baseTsc.parameter = "Temp-Water";
-    	baseTsc.fullName = dsspath.getPathname();
-  	
-    	
-    	// clone the base time series
-    	TimeSeriesContainer wtTemplate = (TimeSeriesContainer)baseTsc.clone();
-    	
-    	TimeSeriesContainer[] wtprofTs = new TimeSeriesContainer[nprofs];
-    	double dep = surfaceDepth;
-    	int iint,ifrac;
-    	double frac;
-    	String fstr, paramstr;
-    	for ( int i=0; i<nprofs; i++)
-    	{
-    		wtprofTs[i] = (TimeSeriesContainer)wtTemplate.clone();
-    		iint = (int)dep;
-    		frac = dep % 1.;
-    		ifrac = (int)Math.round(frac*10.);
-    		fstr = Integer.toString(iint) + "," + Integer.toString(ifrac);
-    		paramstr = wtTemplate.parameter + "-" + fstr + "m";
-    		wtprofTs[i].parameter = paramstr;
-    		dsspath.setCPart(paramstr);
-    		wtprofTs[i].fullName = dsspath.getPathname();
-    		
-    		dep += intervalDepth;
-    	}
-    
-    	return wtprofTs;
-    }
+//    public static TimeSeriesContainer[] generateDailyTemperatureProfileTs(
+//    		String locationName, String versionName,
+//    		String startDate, String endDate, double tval,
+//    		double surfaceDepth, double bottomDepth, double intervalDepth )
+//    {
+//    	if ( intervalDepth < .01 )
+//    	{
+//    		return null;
+//    	}
+//
+//    	if ( bottomDepth < .0 )
+//    	{
+//    		bottomDepth = -bottomDepth;
+//    	}
+//    	double rprofs = (bottomDepth - surfaceDepth)/intervalDepth;
+//    	int nprofs = (int)( rprofs + .01) + 1;
+//
+//    	int intervalMinutes = 1440;
+//    	int offsetMinutes = 0;
+//    	TimeSeriesContainer baseTsc = null;
+//    	try
+//    	{
+//    		TimeSeriesMath tsMath = (TimeSeriesMath)TimeSeriesMath.generateRegularIntervalTimeSeries(
+//    				startDate, endDate,
+//    				intervalMinutes, offsetMinutes, tval );
+//    		baseTsc = tsMath.getContainer();
+//        }
+//        catch ( HecMathException hme )
+//        {
+//			LOGGER.log(Level.SEVERE, "Exception occurred while generating daily temperature profile data.", hme);
+//            return null;
+//        }
+//
+//    	baseTsc.location = locationName;
+//    	baseTsc.version = versionName;
+//    	baseTsc.interval = intervalMinutes;
+//    	baseTsc.units = "C";
+//    	baseTsc.type = ParameterType.INST;
+//    	baseTsc.units = "C";
+//
+//        DSSPathString dsspath = new DSSPathString("", locationName, "", "", "1DAY", versionName);
+//    	dsspath.setCPart("Temp-Water");
+//    	baseTsc.parameter = "Temp-Water";
+//    	baseTsc.fullName = dsspath.getPathname();
+//
+//
+//    	// clone the base time series
+//    	TimeSeriesContainer wtTemplate = (TimeSeriesContainer)baseTsc.clone();
+//
+//    	TimeSeriesContainer[] wtprofTs = new TimeSeriesContainer[nprofs];
+//    	double dep = surfaceDepth;
+//    	int iint,ifrac;
+//    	double frac;
+//    	String fstr, paramstr;
+//    	for ( int i=0; i<nprofs; i++)
+//    	{
+//    		wtprofTs[i] = (TimeSeriesContainer)wtTemplate.clone();
+//    		iint = (int)dep;
+//    		frac = dep % 1.;
+//    		ifrac = (int)Math.round(frac*10.);
+//    		fstr = Integer.toString(iint) + "," + Integer.toString(ifrac);
+//    		paramstr = wtTemplate.parameter + "-" + fstr + "m";
+//    		wtprofTs[i].parameter = paramstr;
+//    		dsspath.setCPart(paramstr);
+//    		wtprofTs[i].fullName = dsspath.getPathname();
+//
+//    		dep += intervalDepth;
+//    	}
+//
+//    	return wtprofTs;
+//    }
 }

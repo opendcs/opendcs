@@ -169,15 +169,15 @@ public class EvapReservoir
         }
         
         // convert units on timeseries to meters
-        try
-        {
-            elev = new UnitConverter(_elevationTsc.getUnitsAbbr(), "m")
-        	//elev = Units.convertUnits( elev, _elevationTsc.units.toString(), "m");
-        }
-        catch ( UnitsConversionException ue )
-        {
-            LOGGER.log(Level.SEVERE, "Exception occurred while transforming hourly temperature profile data to daily for .", ue);
-        }
+//        try
+//        {
+//            elev = new UnitConverter(_elevationTsc.getUnitsAbbr(), "m");
+//        	//elev = Units.convertUnits( elev, _elevationTsc.units.toString(), "m");
+//        }
+//        catch ( UnitsConversionException ue )
+//        {
+//            LOGGER.log(Level.SEVERE, "Exception occurred while transforming hourly temperature profile data to daily for .", ue);
+//        }
         
         return elev;
     }
@@ -474,8 +474,7 @@ public class EvapReservoir
     
     /**
      * Initialize temperature profile to a single value
-     * 
-     * @param waterTemp
+     *
      * @return 
      */
     public boolean setInitWaterTemperatureProfile( double[] wt, int resj )
