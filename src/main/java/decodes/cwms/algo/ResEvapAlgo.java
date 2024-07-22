@@ -9,6 +9,7 @@ import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 import ilex.var.NamedVariable;
 
+import java.util.Date;
 import java.util.List;
 
 //AW:IMPORTS
@@ -49,6 +50,7 @@ public class ResEvapAlgo
 //AW:INPUTS_END
 
 //AW:LOCALVARS
+	private Date LastDate = null;
 	private double start_depth = 0.;
 	private double depth_increment = .5;
 	private ResEvap resEvap;
@@ -67,6 +69,7 @@ public class ResEvapAlgo
 
 //AW:OUTPUTS
 	public NamedVariable DailyWaterTempProfile 	= new NamedVariable("DailyWaterTempProfile", 0);
+	public NamedVariable HourlyWaterTempProfile	= new NamedVariable("HourlyWaterTempProfile", 0);
 	public NamedVariable HourlySurfaceTemp 		= new NamedVariable("HourlySurfaceTemp", 0);
 	public NamedVariable HourlyEvap 			= new NamedVariable("HourlyEvap", 0);
 	public NamedVariable DailyEvap 				= new NamedVariable("DailyEvap", 0);
@@ -145,6 +148,22 @@ public class ResEvapAlgo
 	//TODO read database
 	public double[] getWTPElevation(){
 		return new double[]{0};
+	}
+	public void getProfiles(NamedVariable profile, double[] wtp){
+
+	}
+	public void setProfiles(NamedVariable profile, double[] wtp){
+
+		//setOutput(DailyWaterTempProfile, resEvap.getDailyTemperatureProfileTs(start_depth, getMaxTempDepthMeters(), depth_increment));
+	}
+	public void setDailyProfiles(NamedVariable output, NamedVariable tsc,  Date CurrentTime){
+		//setOutput(DailyWaterTempProfile, resEvap.getDailyTemperatureProfileTs(start_depth, getMaxTempDepthMeters(), depth_increment));
+	}
+	public void calcDaily(NamedVariable output, NamedVariable tsc,  Date CurrentTime){
+		//setOutput(DailyEvapAsFlow, resEvap.getDailyEvapFlowTimeSeries());
+	}
+	public void SetAsFlow(NamedVariable output, NamedVariable tsc,  Date CurrentTime){
+		//setOutput(DailyEvapAsFlow, resEvap.getDailyEvapFlowTimeSeries());
 	}
 	//TODO read database
 	public double getMaxTempDepthMeters(){
@@ -254,9 +273,14 @@ public class ResEvapAlgo
 		setOutput(HourlyFluxOut, computedList.get(5));
 		setOutput(HourlyEvap, computedList.get(6));
 
-		setOutput(DailyEvap, resEvap.getDailyEvapTimeSeries());
-		setOutput(DailyEvapAsFlow, resEvap.getDailyEvapFlowTimeSeries());
-		//setOutput(DailyWaterTempProfile, resEvap.getDailyTemperatureProfileTs(start_depth, getMaxTempDepthMeters(), depth_increment));
+		setProfiles(HourlyWaterTempProfile, resEvap.getHourlyWaterTempProfile());
+
+		if(_timeSliceBaseTime.getDate() != LastDate.getDate()){
+			calcDaily(DailyEvap, HourlyEvap, _timeSliceBaseTime);
+			SetAsFlow(DailyEvapAsFlow, DailyEvap, _timeSliceBaseTime);
+			setDailyProfiles(DailyWaterTempProfile, HourlyWaterTempProfile, _timeSliceBaseTime);
+		}
+		LastDate = _timeSliceBaseTime;
 //AW:TIMESLICE_END
 	}
 
