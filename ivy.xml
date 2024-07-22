@@ -6,6 +6,7 @@
           revision="${version}"
           e:snapshot="a${snapshot.time}"/>
     <configurations defaultconf="runtime" defaultconfmapping="runtime->default">
+        <conf name="annotations_runtime" visibility="public"/>
         <conf name="runtime" visibility="public"/>
         <conf name="runtime_last" visibility="public"/>
         <conf name="test"  visibility="private"/>
@@ -19,6 +20,8 @@
     <publications>
         <artifact name="opendcs" type="pom" conf="runtime" ext="pom"/>
         <artifact name="opendcs" type="jar" conf="runtime" ext="jar"/>
+        <artifact name="opendcs-annotations" type="pom" conf="annotations_runtime" ext="pom"/>
+        <artifact name="opendcs-annotations" type="jar" conf="annotations_runtime" ext="jar"/>
     </publications>
     <dependencies>
         <dependency org="com.oracle.ojdbc" name="ojdbc8" rev="19.3.0.0"/>

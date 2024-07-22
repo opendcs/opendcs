@@ -34,5 +34,6 @@
     </resolvers>
     <module>
         <module organisation="org.opendcs" name="opendcs" resolver="default"/>
+        <module organisation="org.opendcs" name="opendcs-annotations" resolver="default"/>
     </module>
 </ivysettings>
