@@ -16,5 +16,5 @@ public class ConnectionInTransaction extends WrappedConnection
     public void setAutoCommit(boolean state) throws SQLException
     {
         throw new SQLException("This connection is in a specific transaction. The auto commit state cannot be changed.");
-    }    
+    }
 }
