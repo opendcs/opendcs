@@ -285,9 +285,23 @@ more information about each.
                  author="true"
                  version="true"
                  use="true"
-                 windowTitle="OpenDCS API"
-                 classpathref="runtime.classpath">
+                 windowTitle="OpenDCS API">
+            <classpath>
+                <path refid="runtime.classpath"/>
+                <pathelement path="${annotations.classes}"/>
+            </classpath>
             <fileset dir="${src.dir}"/>
+            <tag name="todo" scope="all" description="To do:"/>
+        </javadoc>
+        <javadoc destdir="${build.dir}/javadocs-annotations"
+                 author="true"
+                 version="true"
+                 use="true"
+                 windowTitle="OpenDCS API Annotations">
+            <classpath>
+                <pathelement path="${annotations.classes}"/>
+            </classpath>
+            <fileset dir="${annotations.main.dir}"/>
             <tag name="todo" scope="all" description="To do:"/>
         </javadoc>
     </target>
@@ -297,11 +311,22 @@ more information about each.
         <mkdir dir="${build.release.dir}"/>
         <copy file="${dist.jar}" tofile="${build.release.dir}/opendcs-${version}.jar"/>
         <copy file="${build.dir}/lib/opendcs.pom" tofile="${build.release.dir}/opendcs-${version}.pom"/>
+        <!-- main bundle -->
         <jar jarfile="${build.release.dir}/opendcs-${version}-javadoc.jar"
              basedir="${build.dir}/javadocs"
              update="true"/>
         <jar jarfile="${build.release.dir}/opendcs-${version}-sources.jar">
             <fileset dir="${src.dir}" includes="**/*.java"/>
+        </jar>
+        <!-- annotations bundle -->
+        <property name="annotations.base" value="opendcs-annotations-${version}"/>
+        <copy file="${annotations.jar}" tofile="${build.release.dir}/${annotations.base}.jar"/>
+        <copy file="${build.dir}/lib/opendcs-annotations.pom" tofile="${build.release.dir}/${annotations.base}.pom"/>
+        <jar jarfile="${build.release.dir}/${annotations.base}-javadoc.jar"
+             basedir="${build.dir}/javadocs-annotations"
+             update="true"/>
+        <jar jarfile="${build.release.dir}/${annotations.base}-sources.jar">
+            <fileset dir="${annotations.main.dir}"/>
         </jar>
         <available property="have.gpg" file="gpg" filepath="${PATH}"/>
         <if>
@@ -317,8 +342,16 @@ more information about each.
                 <gpgsignfile target="opendcs-${version}.jar"/>
                 <gpgsignfile target="opendcs-${version}-javadoc.jar"/>
                 <gpgsignfile target="opendcs-${version}-sources.jar"/>
-                <jar jarfile="${build.release.dir}/bundle.jar">
-                    <fileset dir="${build.release.dir}" excludes="bundle.jar"/>
+                <jar jarfile="${build.release.dir}/bundle-core.jar">
+                    <fileset dir="${build.release.dir}" excludes="bundle*,opendcs-annotations*"/>
+                </jar>
+
+                <gpgsignfile target="${annotations.base}.jar"/>
+                <gpgsignfile target="${annotations.base}-sources.jar"/>
+                <gpgsignfile target="${annotations.base}-javadoc.jar"/>
+                <gpgsignfile target="${annotations.base}.pom"/>
+                <jar jarfile="${build.release.dir}/bundle-annotations.jar">
+                    <fileset dir="${build.release.dir}" excludes="bundle*,opendcs-${version}*"/>
                 </jar>
             </else>
         </if>
