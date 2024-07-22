@@ -18,6 +18,9 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.TimeZone;
 
+import org.opendcs.database.ExceptionHelpers;
+import org.opendcs.utils.FailableResult;
+
 import oracle.jdbc.OracleCallableStatement;
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -34,6 +37,7 @@ import decodes.tsdb.RecordRangeHandle;
 import decodes.tsdb.TasklistRec;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.tsdb.TsdbException;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesException;
@@ -91,104 +95,122 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	}
 
 	@Override
-	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
-		throws DbIoException, NoSuchObjectException
+	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
 	{
-debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
+		debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 
-
-		int paren = uniqueString.lastIndexOf('(');
-		String displayName = null;
-		if (paren > 0 && uniqueString.trim().endsWith(")"))
-		{
-			displayName = uniqueString.substring(paren+1);
-			uniqueString = uniqueString.substring(0,  paren);
-			int endParen = displayName.indexOf(')');
-			if (endParen > 0)
-				displayName = displayName.substring(0,  endParen);
-			debug3("using display name '" + displayName + "', unique str='" + uniqueString + "'");
-		}
-
-		HdbTsId ret = (HdbTsId)cache.getByUniqueName(uniqueString);
-		if (ret != null)
-		{
-			if (displayName != null)
-			{
-				debug3("Setting display name to '" + displayName + "'");
-				ret.setDisplayName(displayName);
-			}
-			return ret;
-		}
-
-
-		HdbTsId htsid = new HdbTsId(uniqueString);
-		String tsSiteName = htsid.getSiteName();
-		DbKey siteId = siteDAO.lookupSiteID(tsSiteName);
-		if (siteId == Constants.undefinedId)
-		{
-				throw new NoSuchObjectException("No hdb site with name '"
-					+ tsSiteName + "'");
-		}
-		DbKey sdi = ((HdbTimeSeriesDb)db).lookupSDI(siteId, htsid.getDataType().getCode());
-		if (sdi == Constants.undefinedId)
-			throw new NoSuchObjectException("No SDI for '" + uniqueString + "'");
-		htsid.setSite(siteDAO.getSiteById(siteId));
-		htsid.setSdi(sdi);
-		if (htsid.getTableSelector() == null)
-			htsid.setTableSelector("R_");
-
-		// Unique name in cache may be from a different site name type, so
-		// now re-search the cache with the site datatype ID.
-		for(CacheIterator cit = cache.iterator(); cit.hasNext(); )
-		{
-			HdbTsId tsid = (HdbTsId)cit.next();
-			if (sdi.equals(tsid.getSdi())
-			 && tsid.getInterval().equalsIgnoreCase(htsid.getInterval())
-			 && tsid.getTableSelector().equalsIgnoreCase(htsid.getTableSelector()))
-			 	return tsid;
-		}
-
-		debug3("cache does not have '" + uniqueString + "'");
-
-		String q = "SELECT TS_ID "
-			+ "FROM CP_TS_ID "
-			+ "WHERE SITE_DATATYPE_ID = " + htsid.getSdi()
-			+ " AND LOWER(INTERVAL) = " + sqlString(htsid.getInterval().toLowerCase())
-			+ " AND TABLE_SELECTOR = " + sqlString(htsid.getTableSelector());
-		if (htsid.getTableSelector().equalsIgnoreCase("M_"))
-			q = q + " AND MODEL_ID = " + htsid.getPart(HdbTsId.MODELID_PART);
 		try
 		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
-				htsid.setKey(DbKey.createDbKey(rs, 1));
-			else
+			int paren = uniqueString.lastIndexOf('(');
+			String displayName = null;
+			if (paren > 0 && uniqueString.trim().endsWith(")"))
 			{
-				String msg = "No CP_TS_ID for '" + htsid.getUniqueString() + "' NoSuchObject";
-				warning(msg);
-				throw new NoSuchObjectException(msg);
+				displayName = uniqueString.substring(paren+1);
+				uniqueString = uniqueString.substring(0,  paren);
+				int endParen = displayName.indexOf(')');
+				if (endParen > 0)
+					displayName = displayName.substring(0,  endParen);
+				debug3("using display name '" + displayName + "', unique str='" + uniqueString + "'");
 			}
-		}
-		catch(SQLException ex)
-		{
-			throw new NoSuchObjectException("Cannot get TS_ID for '"
-				+ htsid.getUniqueString() + "'");
-		}
-		ret = (HdbTsId)getTimeSeriesIdentifier(htsid.getKey());
-		// Preserve the modelRunId if it was set in the uniqueString. Also the display name.
-		ret.modelRunId = htsid.modelRunId;
-		if (displayName != null)
-		{
-			debug3("Setting display name to '" + displayName + "'");
-			ret.setDisplayName(displayName);
-		}
 
-		return ret;
+			HdbTsId ret = (HdbTsId)cache.getByUniqueName(uniqueString);
+			if (ret != null)
+			{
+				if (displayName != null)
+				{
+					debug3("Setting display name to '" + displayName + "'");
+					ret.setDisplayName(displayName);
+				}
+				return FailableResult.success(ret);
+			}
+
+
+			HdbTsId htsid = new HdbTsId(uniqueString);
+			String tsSiteName = htsid.getSiteName();
+			DbKey siteId = siteDAO.lookupSiteID(tsSiteName);
+			if (siteId == Constants.undefinedId)
+			{
+				return FailableResult.failure(new NoSuchObjectException("No hdb site with name '" + tsSiteName + "'"));
+			}
+			DbKey sdi = ((HdbTimeSeriesDb)db).lookupSDI(siteId, htsid.getDataType().getCode());
+			if (sdi == Constants.undefinedId)
+			{
+				return FailableResult.failure(new NoSuchObjectException("No SDI for '" + uniqueString + "'"));
+			}
+			htsid.setSite(siteDAO.getSiteById(siteId));
+			htsid.setSdi(sdi);
+			if (htsid.getTableSelector() == null)
+				htsid.setTableSelector("R_");
+
+			// Unique name in cache may be from a different site name type, so
+			// now re-search the cache with the site datatype ID.
+			for(CacheIterator cit = cache.iterator(); cit.hasNext(); )
+			{
+				HdbTsId tsid = (HdbTsId)cit.next();
+				if (sdi.equals(tsid.getSdi())
+				&& tsid.getInterval().equalsIgnoreCase(htsid.getInterval())
+				&& tsid.getTableSelector().equalsIgnoreCase(htsid.getTableSelector()))
+				{
+					return FailableResult.success(tsid);
+				}
+			}
+
+			debug3("cache does not have '" + uniqueString + "'");
+
+			String q = "SELECT TS_ID "
+				+ "FROM CP_TS_ID "
+				+ "WHERE SITE_DATATYPE_ID = " + htsid.getSdi()
+				+ " AND LOWER(INTERVAL) = " + sqlString(htsid.getInterval().toLowerCase())
+				+ " AND TABLE_SELECTOR = " + sqlString(htsid.getTableSelector());
+			if (htsid.getTableSelector().equalsIgnoreCase("M_"))
+			{
+				q = q + " AND MODEL_ID = " + htsid.getPart(HdbTsId.MODELID_PART);
+			}
+			try
+			{
+				ResultSet rs = doQuery(q);
+				if (rs != null && rs.next())
+				{
+					htsid.setKey(DbKey.createDbKey(rs, 1));
+				}
+				else
+				{
+					String msg = "No CP_TS_ID for '" + htsid.getUniqueString() + "' NoSuchObject";
+					warning(msg);
+					return FailableResult.failure(new NoSuchObjectException(msg));
+				}
+			}
+			catch(DbIoException ex)
+			{
+				return FailableResult.failure(ex);
+			}
+			catch(SQLException ex)
+			{
+				return FailableResult.failure(new NoSuchObjectException("Cannot get TS_ID for '" + htsid.getUniqueString() + "'"));
+			}
+			FailableResult<TimeSeriesIdentifier,TsdbException> tmp = findTimeSeriesIdentifier(htsid.getKey());
+			
+			if (tmp.isSuccess())
+			{
+				// Preserve the modelRunId if it was set in the uniqueString. Also the display name.
+				HdbTsId tsId = (HdbTsId)tmp.getSuccess();
+				tsId.modelRunId = htsid.modelRunId;
+				if (displayName != null)
+				{
+					debug3("Setting display name to '" + displayName + "'");
+					tsId.setDisplayName(displayName);
+				}
+			}
+			return tmp;
+		}
+		catch (TsdbException ex)
+		{
+			return FailableResult.failure(ex);
+		}
 	}
 
 	@Override
-	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
-			throws DbIoException, NoSuchObjectException
+	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key)
 	{
 		String q = tsidQuery + tsidJoinClause + " and a.ts_id = " + key;
 
@@ -196,16 +218,17 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		{
 			ResultSet rs = doQuery(q);
 			if (rs != null && rs.next())
-				return rs2TsId(rs);
+			{
+				return FailableResult.success(rs2TsId(rs));
+			}
 		}
 		catch(Exception ex)
 		{
 			System.err.println(ex.toString());
 			ex.printStackTrace(System.err);
-			throw new DbIoException(
-				"Error looking up TS Info for ts_id =" + key + ": " + ex);
+			return FailableResult.failure(new DbIoException("Error looking up TS Info for ts_id =" + key + ": " + ex));
 		}
-		throw new NoSuchObjectException("No time-series with ts_code=" + key);
+		return FailableResult.failure(new NoSuchObjectException("No time-series with ts_code=" + key));
 	}
 
 	/**
@@ -1418,6 +1441,34 @@ debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 		catch (SQLException ex)
 		{
 			throw new DbIoException("Error in '" + q + "': " + ex);
+		}
+	}
+
+	@Override
+	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString) throws DbIoException, NoSuchObjectException 
+	{
+		FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(uniqueString);
+		if (ret.isSuccess())
+		{
+			return ret.getSuccess();
+		}
+		else
+		{
+			return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
+		}
+	}
+
+	@Override
+	public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key) throws DbIoException, NoSuchObjectException
+	{
+		FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
+		if (ret.isSuccess())
+		{
+			return ret.getSuccess();
+		}
+		else
+		{
+			return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
 		}
 	}
 

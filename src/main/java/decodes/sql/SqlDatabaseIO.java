@@ -2446,7 +2446,7 @@ public class SqlDatabaseIO
     }
 
     @Override
-    public TimeSeriesIdentifier transformTsidByCompParm(TimeSeriesIdentifier tsid, DbCompParm parm,
+    public TimeSeriesIdentifier transformTsidByCompParm(TimeSeriesDAI tsDAI, TimeSeriesIdentifier tsid, DbCompParm parm,
         boolean createTS, boolean fillInParm, String timeSeriesDisplayName) throws DbIoException,
         NoSuchObjectException, BadTimeSeriesException
     {

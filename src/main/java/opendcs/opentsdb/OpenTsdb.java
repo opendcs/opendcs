@@ -216,7 +216,7 @@ public class OpenTsdb extends TimeSeriesDb
 	}
 
 	@Override
-	public TimeSeriesIdentifier transformTsidByCompParm(
+	public TimeSeriesIdentifier transformTsidByCompParm(TimeSeriesDAI timeSeriesDAO,
 		TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
 		boolean fillInParm, String timeSeriesDisplayName) throws DbIoException,
 		NoSuchObjectException, BadTimeSeriesException
@@ -233,7 +233,6 @@ public class OpenTsdb extends TimeSeriesDb
 			String uniqueString = tsidRet.getUniqueString();
 			debug3(module + " origString='" + origString + "', new string='"
 				+ uniqueString + "', parm=" + parm);
-			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
 
 			try
 			{
@@ -260,10 +259,6 @@ public class OpenTsdb extends TimeSeriesDb
 					debug3(module + " no such time series '" + uniqueString + "'");
 					return null;
 				}
-			}
-			finally
-			{
-				timeSeriesDAO.close();
 			}
 		}
 		else

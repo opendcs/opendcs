@@ -937,45 +937,64 @@ public class CompRunGuiFrame extends TopFrame
 				// Collect the transformed tsids in a hash set to remove any
 				// duplicates
 				// that may result by transformation.
-				TreeSet<TimeSeriesIdentifier> transformedTsids = new TreeSet<TimeSeriesIdentifier>();
-				for (Iterator<TimeSeriesIdentifier> tsidit = tsids.iterator(); tsidit.hasNext();)
+				final TreeSet<TimeSeriesIdentifier> transformedTsids = new TreeSet<TimeSeriesIdentifier>();
+				final DbCompParm theFirstInput = firstInput;
+				try (TimeSeriesDAI txDAI = theDb.makeTimeSeriesDAO())
 				{
-					if (checkCancelled.get() == true)
+					txDAI.inTransaction(dao ->
+					{
+						try (TimeSeriesDAI tsDAI = theDb.makeTimeSeriesDAO())
+						{
+							tsDAI.inTransactionOf(dao);
+							for (Iterator<TimeSeriesIdentifier> tsidit = tsids.iterator(); tsidit.hasNext();)
+							{
+								if (checkCancelled.get() == true)
+								{
+									throw new Exception("stop");
+								}
+								TimeSeriesIdentifier tsid = tsidit.next();
+
+								// Transform the tsid by the parm. If the result is the same
+								// as the original, that means that the parm 'matches'.
+								TimeSeriesIdentifier transformed;
+								progress.incDone();
+								setProgress.accept(progress.getPercentDone());
+								try
+								{
+									transformed = theDb.transformTsidByCompParm(tsDAI, tsid, theFirstInput, false, false, "");
+								}
+								catch (NoSuchObjectException e)
+								{
+									tsidit.remove();
+									continue;
+								}
+								catch (BadTimeSeriesException e)
+								{
+									// Can't happen because create flag is false.
+									continue;
+								}
+								if (transformed == null)
+								{
+									tsidit.remove();
+									continue;
+								}
+								Logger.instance().debug3("   original='" + tsid.getUniqueString() + "'");
+								Logger.instance().debug3("transformed='" + transformed.getUniqueString() + "'");
+
+								transformedTsids.add(transformed);
+								Logger.instance().debug3(
+									"transformedTsids now has " + transformedTsids.size() + " members.");
+							}
+						}
+					});
+				}
+				catch (Exception ex)
+				{
+					if ("stop".equals(ex.getMessage()))
 					{
 						return false;
 					}
-					TimeSeriesIdentifier tsid = tsidit.next();
-
-					// Transform the tsid by the parm. If the result is the same
-					// as the original, that means that the parm 'matches'.
-					TimeSeriesIdentifier transformed;
-					progress.incDone();
-					setProgress.accept(progress.getPercentDone());
-					try
-					{
-						transformed = theDb.transformTsidByCompParm(tsid, firstInput, false, false, "");
-					}
-					catch (NoSuchObjectException e)
-					{
-						tsidit.remove();
-						continue;
-					}
-					catch (BadTimeSeriesException e)
-					{
-						// Can't happen because create flag is false.
-						continue;
-					}
-					if (transformed == null)
-					{
-						tsidit.remove();
-						continue;
-					}
-					Logger.instance().debug3("   original='" + tsid.getUniqueString() + "'");
-					Logger.instance().debug3("transformed='" + transformed.getUniqueString() + "'");
-
-					transformedTsids.add(transformed);
-					Logger.instance().debug3(
-						"transformedTsids now has " + transformedTsids.size() + " members.");
+					throw new DbIoException("Error processing timeseries group.", ex);
 				}
 
 				TimeSeriesSelectDialog dlg = new TimeSeriesSelectDialog(theDb, false, this);
