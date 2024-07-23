@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * Wraps a connection and prevets the auto commit state from getting changed.
+ * Wraps a connection and prevents the auto commit state from getting changed.
  */
 public class ConnectionInTransaction extends WrappedConnection
 {
@@ -13,8 +13,18 @@ public class ConnectionInTransaction extends WrappedConnection
         super(realConnection);
     }
 
+    /**
+     * So long as the actual state isn't changing, this can be a noop.
+     * But only the original creator of the ConnectionInTransaction should
+     * be able to alter the commit state.
+     * @param state desired state of transaction auto commits.
+     */
     public void setAutoCommit(boolean state) throws SQLException
     {
-        throw new SQLException("This connection is in a specific transaction. The auto commit state cannot be changed.");
+        boolean existing = super.getAutoCommit();
+        if (existing != state)
+        {
+            throw new SQLException("This connection is in a specific transaction. The auto commit state cannot be changed.");
+        }
     }
 }

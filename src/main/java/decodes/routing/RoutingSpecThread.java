@@ -1927,7 +1927,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		}
 		catch (DbIoException ex)
 		{
-			throw new DbIoException("Cannot read manual sched entry: " + ex);
+			throw new DbIoException("Cannot read manual sched entry: " + ex, ex);
 		}
 		finally
 		{
