@@ -108,6 +108,11 @@ public class OpenDCSPGConfiguration implements Configuration
     */
     private void installDb(SystemExit exit,EnvironmentVariables environment, SystemProperties properties, UserPropertiesBuilder configBuilder) throws Exception
     {
+        // These should always be set.
+        environmentVars.put("DB_USERNAME",DCS_ADMIN_USER);
+        environmentVars.put("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
+        environment.set("DB_USERNAME",DCS_ADMIN_USER);
+        environment.set("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
         if (isRunning())
         {
             return;
@@ -137,8 +142,6 @@ public class OpenDCSPGConfiguration implements Configuration
         roles.add("OTSDB_MGR");
         mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
         log.info("Setting authentication environment vars.");
-        environmentVars.put("DB_USERNAME",DCS_ADMIN_USER);
-        environmentVars.put("DB_PASSWORD",DCS_ADMIN_USER_PASSWORD);
         ilex.util.Logger originalLog = ilex.util.Logger.instance();
         ilex.util.FileLogger fl = null;
         try
