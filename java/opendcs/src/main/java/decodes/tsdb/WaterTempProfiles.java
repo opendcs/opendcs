@@ -1,5 +1,6 @@
 package decodes.tsdb;
 
+import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
 
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ public class WaterTempProfiles extends DataCollection {
         for (CTimeSeries tsery : tseries) {
             try {
                 timeSeriesDAO.saveTimeSeries(tsery);
-                timeSeriesDAO.fillTimeSeries()
+                timeSeriesDAO.fillTimeSeries();
             } catch (Exception ex) {
                 String msg = "Error saving water temperature profile data: " + ex;
                 //warning(msg);
