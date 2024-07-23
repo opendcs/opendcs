@@ -319,7 +319,7 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
             q.append( "insert into schedule_entry("
                 + "schedule_entry_id, name, loading_application_id, routingspec_id, start_time, "
                 + "timezone, run_interval, enabled, last_modified)"
-                + " values(?,?,?,?, ?,?,?,?, ?");
+                + " values(?,?,?,?, ?,?,?,?, ?)");
 			parameters.add(scheduleEntry.getKey());
 			parameters.add(scheduleEntry.getName());
 			parameters.add(scheduleEntry.getLoadingAppId());
@@ -367,13 +367,20 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
     public void deleteScheduleEntry(ScheduleEntry scheduleEntry)
         throws DbIoException
     {
-        deleteScheduleStatusFor(scheduleEntry);
-        String q = "delete from schedule_entry where schedule_entry_id = ?";
 		try
 		{
-        	doModify(q, scheduleEntry.getKey());
+			inTransaction(dao ->
+			{
+				try (ScheduleEntryDAI schedDao = db.makeScheduleEntryDAO())
+				{
+					schedDao.inTransactionOf(dao);
+					schedDao.deleteScheduleStatusFor(scheduleEntry);
+					String q = "delete from schedule_entry where schedule_entry_id = ?";
+					dao.doModify(q, scheduleEntry.getKey());
+				}
+			});
 		}
-		catch (SQLException ex)
+		catch (Exception ex)
 		{
 			throw new DbIoException("Unable to delete scheduled entry", ex);
 		}
@@ -471,8 +478,8 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
         if (seStatus.getKey().isNull())
         {
             seStatus.forceSetId(getKey("schedule_entry_status"));
-            q.append("insert into schedule_entry_status values(?,?,?,?,? ,?,?,?,?,?, ?,?,?,?)");
-			
+            q.append("insert into schedule_entry_status values(?,?,?,?,? ,?,?,?,?,?, ?,?,?)");
+			parameters.add(seStatus.getKey());
 			parameters.add(seStatus.getScheduleEntryId());
 			parameters.add(seStatus.getRunStart());
             parameters.add(seStatus.getLastMessageTime());
@@ -522,7 +529,7 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Unable to insert or update scheduled entry status.", ex);
+			throw new DbIoException("Unable to insert or update scheduled entry status. Query: " + q, ex);
 		}
     }
 
@@ -535,29 +542,35 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
             return;
 		}
 
-        String q = "delete from platform_status where last_schedule_entry_status_id in "
+        StringBuilder q = new StringBuilder(
+			  "delete from platform_status where last_schedule_entry_status_id in "
             + "(select schedule_entry_status_id from schedule_entry_status "
             + "where run_start_time < ?"
             + " and schedule_entry_id in "
-            + "(select schedule_entry_id from schedule_entry where loading_application_id = ?))";
+            + "(select schedule_entry_id from schedule_entry where loading_application_id = ?))");
 		try
-		{   
-			doModify(q, cutoff, appInfo.getAppId());
-			q =
-				db.isOracle() ? // Oracle uses inner join syntax
-					"DELETE from schedule_entry_status "
-					+ "where run_start_time < ?"
-					+ " and schedule_entry_id in "
-					+ "(select schedule_entry_id from schedule_entry where loading_application_id = ?)"
-				: // else postgres 'using' syntax:
-					"delete from schedule_entry_status a "
-					+ "using schedule_entry b "
-					+ "where b.schedule_entry_id = a.schedule_entry_id "
-					+ "and a.run_start_time < ?"
-					+ " and b.loading_application_id = ?";
-        	doModify(q, cutoff, appInfo.getAppId());
+		{
+			inTransaction(dao ->
+			{
+				dao.doModify(q.toString(), cutoff, appInfo.getAppId());
+				q.setLength(0);
+				q.append(
+					db.isOracle() ? // Oracle uses inner join syntax
+						"DELETE from schedule_entry_status "
+						+ "where run_start_time < ?"
+						+ " and schedule_entry_id in "
+						+ "(select schedule_entry_id from schedule_entry where loading_application_id = ?)"
+					: // else postgres 'using' syntax:
+						"delete from schedule_entry_status a "
+						+ "using schedule_entry b "
+						+ "where b.schedule_entry_id = a.schedule_entry_id "
+						+ "and a.run_start_time < ?"
+						+ " and b.loading_application_id = ?"
+				);
+				dao.doModify(q.toString(), cutoff, appInfo.getAppId());
+			});
 		}
-		catch (SQLException ex)
+		catch (Exception ex)
 		{
 			throw new DbIoException("Error deleting schedule status.", ex);
 		}
@@ -574,19 +587,25 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
 
 		try
 		{
-			String q = "delete from dacq_event where schedule_entry_status_id in "
-				+ "(select schedule_entry_status_id from schedule_entry_status where schedule_entry_id = ?)";
-			doModify(q, scheduleEntry.getId());
+			final StringBuilder q = new StringBuilder();
+			inTransaction(dao ->
+			{
+				q.append("delete from dacq_event where schedule_entry_status_id in "
+					+ "(select schedule_entry_status_id from schedule_entry_status where schedule_entry_id = ?)");
+				doModify(q.toString(), scheduleEntry.getId());
 
-			q = "delete from platform_status where last_schedule_entry_status_id in "
-				+ "(select schedule_entry_status_id from schedule_entry_status "
-				+ "where schedule_entry_id = ?)";
-			doModify(q, scheduleEntry.getKey());
+				q.setLength(0);
+				q.append("delete from platform_status where last_schedule_entry_status_id in "
+					+ "(select schedule_entry_status_id from schedule_entry_status "
+					+ "where schedule_entry_id = ?)");
+				doModify(q.toString(), scheduleEntry.getKey());
 
-			q = "delete from schedule_entry_status where schedule_entry_id = ?";
-			doModify(q, scheduleEntry.getKey());
+				q.setLength(0);
+				q.append("delete from schedule_entry_status where schedule_entry_id = ?");
+				doModify(q.toString(), scheduleEntry.getKey());
+			});
 		}
-		catch (SQLException ex)
+		catch (Exception ex)
 		{
 			throw new DbIoException("Unable to delete schedule status", ex);
 		}
@@ -602,10 +621,10 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
 		}
 
         String q = "select " + sesColumns + " from " + sesTables + " where " + sesJoinClause;
-        q = q + " and a.schedule_entry_id = " + scheduleEntry.getKey()
+        q = q + " and a.schedule_entry_id = ?"
             + " and a.last_modified = "
             + "(select max(last_modified) from schedule_entry_status "
-            + " where schedule_entry_id = " + scheduleEntry.getKey() + ")";
+            + " where schedule_entry_id = ?)";
         try
         {
             return  getSingleResultOr(q, rs ->
