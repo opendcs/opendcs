@@ -87,11 +87,17 @@ The following table includes the csv parser operation.  This command is
 useful for when data messages are in a comma delimited format.  This command
 will instruct data in the csv to be mapped to either a sensor or date/time.
 
-+----------------------+----------------------------------------------------------+
-| **Command**          | **Description**                                          |
-+======================+==========================================================+
-| csv(sens#,...)       | Parse a series of comma separated values                 |
-+----------------------+----------------------------------------------------------+
++-----------------------------+------------------------------------------------------------+
+| **Command**                 | **Description**                                            |
++=============================+============================================================+
+| csv(sens#,...)              | Parse a series of comma separated values                   |
++-----------------------------+------------------------------------------------------------+
+| csv(delimiter=\|,sens#,...) | Parse a series of values separated by a specific delimiter |
+|                             | In this example the pipe, \|, character is used.           |
++-----------------------------+------------------------------------------------------------+
+
+The delimiter can be more than one character. The values `\s` and `\t` will be converted
+to a single space and tab respectively. Other values are used as is.
 
 Table 1-3: DECODES Format Operations - CSV Parser
 
@@ -2004,6 +2010,3 @@ GG176. and therefore an error will occur.
 +-----------------+-------------------------------------------+
 | get_sensor      | 1x,F(S,A,6,1)                             |
 +-----------------+-------------------------------------------+
-
-
-
