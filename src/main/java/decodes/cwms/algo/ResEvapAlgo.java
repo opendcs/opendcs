@@ -3,6 +3,7 @@ package decodes.cwms.algo;
 import decodes.cwms.resevapcalc.EvapMetData;
 import decodes.cwms.resevapcalc.EvapReservoir;
 import decodes.cwms.resevapcalc.ResEvap;
+import decodes.cwms.resevapcalc.WindShearMethod;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -10,6 +11,7 @@ import decodes.tsdb.*;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 import ilex.var.NamedVariable;
+import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import opendcs.dai.SiteDAI;
@@ -74,8 +76,12 @@ public class ResEvapAlgo
 	private CTimeSeries ElevHighCloudTS = null;
 	private CTimeSeries ElevTS = null;
 
+	private CTimeSeries HourlyEvapTS = null;
+
 	SiteDAI siteDAO;
 	TimeSeriesDAI timeSeriesDAO;
+	WaterTempProfiles hourlyWTP;
+	WaterTempProfiles DailyWTP;
 
 //AW:LOCALVARS_END
 
@@ -148,13 +154,14 @@ public class ResEvapAlgo
 		throws DbCompException
 	{
 //AW:INIT
-		try (SiteDAI siteDAO_temp = tsdb.makeSiteDAO();
-			 TimeSeriesDAI timeSeriesDAO_temp = tsdb.makeTimeSeriesDAO();
-		){
-			siteDAO = siteDAO_temp;
-			timeSeriesDAO = timeSeriesDAO_temp;
-		}
-		_awAlgoType = AWAlgoType.TIME_SLICE;
+
+        siteDAO =  tsdb.makeSiteDAO();
+        timeSeriesDAO = tsdb.makeTimeSeriesDAO();
+
+		hourlyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
+		DailyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
+
+        _awAlgoType = AWAlgoType.TIME_SLICE;
 //AW:INIT_END
 
 //AW:USERINIT
@@ -189,13 +196,13 @@ public class ResEvapAlgo
 		return 0;
 	}
 
-	//TODO read database
 	public double[] getProfiles() throws Exception {
-		WaterTempProfiles BaseWtp = new WaterTempProfiles(timeSeriesDAO, WtpTsid, _timeSliceBaseTime, _timeSliceBaseTime, start_depth, depth_increment);
-		double[] arrayWTP = new double[BaseWtp.size()];
-		for(int i = 0; i < BaseWtp.size(); i++){
+		Date LastTime = HourlyEvapTS.findPrev(_timeSliceBaseTime).getTime();
+		hourlyWTP = new WaterTempProfiles(timeSeriesDAO, WtpTsid, LastTime, _timeSliceBaseTime, start_depth, depth_increment);
+		double[] arrayWTP = new double[hourlyWTP.size()];
+		for(int i = 0; i < hourlyWTP.size(); i++){
 			try {
-				arrayWTP[i] = BaseWtp.getTimeSeriesAt(i).findPrev(_timeSliceBaseTime).getDoubleValue();
+				arrayWTP[i] = hourlyWTP.getTimeSeriesAt(i).findPrev(_timeSliceBaseTime).getDoubleValue();
 			}
 			catch (Exception ex){
 				throw new Exception("failed to load data from WTP");
@@ -204,33 +211,77 @@ public class ResEvapAlgo
 		return arrayWTP;
 	}
 
-	public void setProfiles(double[][] wtp) throws Exception {
-		ArrayList<CTimeSeries> WTPlist = new ArrayList<CTimeSeries>();
+	public void setProfiles(WaterTempProfiles newWTP, double[] wtp, Date CurrentTime) throws DbCompException {
 		double currentDepth = start_depth;
 		for(int i = 0; i < wtp.length; i++){
-			try{
-				TimeSeriesIdentifier newTSID = makeTSID(WtpTsid+currentDepth);
-				CTimeSeries CTProfile = new CTimeSeries(newTSID);
-				CTProfile.addSample(new TimedVariable(new Variable(wtp[i][i]), _timeSliceBaseTime));
-				WTPlist.add(CTProfile);
-				currentDepth += depth_increment;
+			if(i+1>newWTP.size()){
+				try{
+					TimeSeriesIdentifier newTSID = makeTSID(WtpTsid+currentDepth);
+					CTimeSeries CTProfile = new CTimeSeries(newTSID);
+					CTProfile.addSample(new TimedVariable(new Variable(wtp[i]), CurrentTime));
+					newWTP.addTimeSeries(CTProfile);
+				}
+					catch (Exception ex){
+					throw new DbCompException("failed to create new timeSeriesID"+ex);
+				}
 			}
-			catch (Exception ex){
-				throw new Exception("failed to load time series profile");
+			else{
+				CTimeSeries CTProfile = newWTP.getTimeSeriesAt(i);
+				CTProfile.addSample(new TimedVariable(new Variable(wtp[i]), CurrentTime));
 			}
+			currentDepth += depth_increment;
 		}
-		WaterTempProfiles newWtp = new WaterTempProfiles(WTPlist, timeSeriesDAO, start_depth, depth_increment);
-		newWtp.SaveProfiles();
-		
 	}
-	public void setDailyProfiles(NamedVariable output, NamedVariable tsc,  Date CurrentTime){
-		//setOutput(DailyWaterTempProfile, resEvap.getDailyTemperatureProfileTs(start_depth, getMaxTempDepthMeters(), depth_increment));
+
+	public void setDailyProfiles(Date CurrentTime) throws DbCompException {
+		double[] arrayWTP = new double[hourlyWTP.size()];
+		int i = 0;
+		Date newTime = CurrentTime;
+		for(CTimeSeries CTS: hourlyWTP.getAllTimeSeries()){
+			try{
+				arrayWTP[i] = CTS.findPrev(CurrentTime).getDoubleValue();
+				newTime = CTS.findPrev(CurrentTime).getTime();
+			}catch(NoConversionException ex){
+				throw new DbCompException("Failed to load value from timeseries"+ex);
+			}
+			i++;
+		}
+		setProfiles(DailyWTP, arrayWTP, newTime);
 	}
-	public void calcDaily(NamedVariable output, NamedVariable tsc,  Date CurrentTime){
-		//setOutput(DailyEvapAsFlow, resEvap.getDailyEvapFlowTimeSeries());
+
+	public void calcDailyEvap(NamedVariable output, CTimeSeries tsc,  Date CurrentTime) throws DbCompException {
+		double TotalEvap = calcDailyACC(tsc, CurrentTime);
+		Date LastTime = tsc.findPrev(CurrentTime).getTime();
+		setOutput(output, TotalEvap, LastTime);
+		SetAsFlow(TotalEvap, LastTime);
 	}
-	public void SetAsFlow(NamedVariable output, NamedVariable tsc,  Date CurrentTime){
-		//setOutput(DailyEvapAsFlow, resEvap.getDailyEvapFlowTimeSeries());
+
+	public double calcDailyACC(CTimeSeries tsc,  Date CurrentTime) throws DbCompException {
+		TimedVariable loopVar = tsc.findPrev(CurrentTime);
+		Date loopTime = loopVar.getTime();
+		Date pastTime;
+		double total = 0;
+		do{
+			try {
+				total += loopVar.getDoubleValue();
+				pastTime = loopTime;
+				loopVar = tsc.findPrev(loopTime);
+				loopTime = loopVar.getTime();
+
+			}
+			catch(Exception ex){
+				throw new DbCompException("Failed to load past Evap values"+ex);
+			}
+		}while(loopTime.getDate() == pastTime.getDate());
+
+		return total;
+	}
+
+	public void SetAsFlow(Double TotalEvap ,Date CurrentTime){
+		double elev = resEvap._reservoir.getCurrentElevation(CurrentTime);
+		double areaMetersSq = resEvap._reservoir.intArea(elev);
+		double dailyEvapFlow = (areaMetersSq * TotalEvap)/(86400.);
+		setOutput(DailyEvapAsFlow, dailyEvapFlow, CurrentTime);
 	}
 	//TODO read database
 	public double getMaxTempDepthMeters(){
@@ -244,6 +295,8 @@ public class ResEvapAlgo
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
+		HourlyEvapTS = getParmRef("HourlyEvap").timeSeries;
+
 		windSpeedTS = getParmRef("windSpeed").timeSeries;
 		AirTempTS = getParmRef("AirTemp").timeSeries;
 		RelativeHumidityTS = getParmRef("RelativeHumidity").timeSeries;
@@ -268,6 +321,8 @@ public class ResEvapAlgo
 
 		EvapReservoir reservoir = new EvapReservoir();
 		reservoir.setName(reservoirId);
+		reservoir.setThermalDiffusivityCoefficient(ThermalDifCoe);
+		reservoir.setWindShearMethod(WindShearMethod.valueOf(WindShear));
 
 		//  This need to be done early on
 		reservoir.setInputDataIsEnglish(true);
@@ -277,9 +332,10 @@ public class ResEvapAlgo
 
 		reservoir.setInstrumentHeights(32.81, 32.81, 32.81);
 
-		double startElev = getStartElevation();
+		//double startElev = getStartElevation();
 
-		reservoir.setElevation(startElev);
+		reservoir.setElevationTs(ElevTS);
+		reservoir.setElevation(ElevTS.findNextIdx(_timeSliceBaseTime));
 		reservoir.setZeroElevation(Zero_elevation);
 
 		resEvap = new ResEvap();
@@ -293,8 +349,13 @@ public class ResEvapAlgo
 
 //		print("ResJ: " + str(resj));
 //		print("WTP len: " + str(len(wtp)));
-
-		double[] wtp = getProfiles();
+		double[] wtp;
+		try{
+			wtp = getProfiles();
+		}
+		catch(Exception ex){
+			throw new DbCompException("failed to load profiles");
+		}
 		// reverse array order
 		double[] wtpR = new double[resj];
 		for (int i = 0; i<resj+1; i++){
@@ -318,8 +379,7 @@ public class ResEvapAlgo
 	 *        algorithm is to be aborted.
 	 */
 	protected void doAWTimeSlice()
-		throws DbCompException
-	{
+            throws DbCompException {
 //AW:TIMESLICE
 		try {
 			boolean noProblem = resEvap.compute(_timeSliceBaseTime, GMT_Offset);
@@ -340,12 +400,11 @@ public class ResEvapAlgo
 		setOutput(HourlyFluxOut, computedList.get(5));
 		setOutput(HourlyEvap, computedList.get(6));
 
-		setProfiles(HourlyWaterTempProfile, resEvap.getHourlyWaterTempProfile());
+		setProfiles(hourlyWTP, resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime);
 
 		if(_timeSliceBaseTime.getDate() != LastDate.getDate()){
-			calcDaily(DailyEvap, HourlyEvap, _timeSliceBaseTime);
-			SetAsFlow(DailyEvapAsFlow, DailyEvap, _timeSliceBaseTime);
-			setDailyProfiles(DailyWaterTempProfile, HourlyWaterTempProfile, _timeSliceBaseTime);
+			calcDailyEvap(DailyEvap, HourlyEvapTS, _timeSliceBaseTime);
+			setDailyProfiles(_timeSliceBaseTime);
 		}
 		LastDate = _timeSliceBaseTime;
 //AW:TIMESLICE_END
@@ -357,6 +416,8 @@ public class ResEvapAlgo
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
+		hourlyWTP.SaveProfiles();
+		DailyWTP.SaveProfiles();
 //AW:AFTER_TIMESLICES
 //AW:AFTER_TIMESLICES_END
 	}
