@@ -1,15 +1,18 @@
 package decodes.cwms.algo;
 
+import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.cwms.rating.CwmsRatingDao;
 import decodes.cwms.resevapcalc.EvapMetData;
 import decodes.cwms.resevapcalc.EvapReservoir;
 import decodes.cwms.resevapcalc.ResEvap;
 import decodes.cwms.resevapcalc.WindShearMethod;
-import decodes.db.Constants;
-import decodes.db.Site;
-import decodes.db.SiteName;
+import decodes.db.*;
 import decodes.tsdb.*;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
+import decodes.util.DecodesException;
+import ilex.util.Logger;
+import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -23,6 +26,13 @@ import java.util.Date;
 import java.util.List;
 
 //AW:IMPORTS
+
+//import hec.data.RatingException;
+import hec.data.cwmsRating.RatingSet;
+import hec.data.cwmsRating.RatingValue;
+import hec.data.cwmsRating.TableRating;
+
+
 //AW:IMPORTS_END
 
 //AW:JAVADOC
@@ -249,7 +259,7 @@ public class ResEvapAlgo
 		setProfiles(DailyWTP, arrayWTP, newTime);
 	}
 
-	public void calcDailyEvap(NamedVariable output, CTimeSeries tsc,  Date CurrentTime) throws DbCompException {
+	public void calcDailyEvap(NamedVariable output, CTimeSeries tsc,  Date CurrentTime) throws DbCompException, NoConversionException, DecodesException {
 		double TotalEvap = calcDailyACC(tsc, CurrentTime);
 		Date LastTime = tsc.findPrev(CurrentTime).getTime();
 		setOutput(output, TotalEvap, LastTime);
@@ -276,11 +286,37 @@ public class ResEvapAlgo
 
 		return total;
 	}
+	public double convertUnits(double cts, String currUnits, String newUnits) throws NoConversionException, DecodesException {
+		if (TextUtil.strEqualIgnoreCase(currUnits, newUnits) || newUnits == null || currUnits == null){
+			return cts;
+		}
 
-	public void SetAsFlow(Double TotalEvap ,Date CurrentTime){
+		EngineeringUnit euOld =	EngineeringUnit.getEngineeringUnit(currUnits);
+		EngineeringUnit euNew = EngineeringUnit.getEngineeringUnit(newUnits);
+		UnitConverter converter = null;
+		converter = Database.getDb().unitConverterSet.get(euOld, euNew);
+		if (converter == null)
+		{
+			throw new NoConversionException("failed to load converter");
+        }
+		double newValue;
+		try
+		{
+			newValue = converter.convert(cts);
+		} catch (DecodesException e)
+		{
+			throw new DecodesException("failed to run converter");
+		}
+
+		return newValue;
+	}
+
+	public void SetAsFlow(Double TotalEvap ,Date CurrentTime) throws NoConversionException, DecodesException {
+		double evap_to_meters = convertUnits(TotalEvap, HourlyEvapTS.getUnitsAbbr(), "m");
+
 		double elev = resEvap._reservoir.getCurrentElevation(CurrentTime);
 		double areaMetersSq = resEvap._reservoir.intArea(elev);
-		double dailyEvapFlow = (areaMetersSq * TotalEvap)/(86400.);
+		double dailyEvapFlow = (areaMetersSq * evap_to_meters)/(86400.);
 		setOutput(DailyEvapAsFlow, dailyEvapFlow, CurrentTime);
 	}
 	//TODO read database
@@ -324,11 +360,36 @@ public class ResEvapAlgo
 		reservoir.setThermalDiffusivityCoefficient(ThermalDifCoe);
 		reservoir.setWindShearMethod(WindShearMethod.valueOf(WindShear));
 
-		//  This need to be done early on
 		reservoir.setInputDataIsEnglish(true);
 		double lonneg = -Longi;
 		reservoir.setLatLon(Lati, lonneg);
 		reservoir.setSecchi(Secchi);
+
+		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
+		RatingSet ratingSet = crd.getRatingSet(Rating);
+		TableRating[] ratings = (TableRating[]) ratingSet.getRatings();
+		int rcount = ratingSet.getRatingCount();
+		TableRating rate0 = ratings[rcount-1];
+		RatingValue[] rt = rate0.getRatingValues();
+
+		// Use area units to determine unit system
+		String[] runits = rate0.getRatingUnits();
+		boolean is_english = false;
+//		unit_system = Units.getUnitSystemForUnits(runits[1]);
+//		if (unit_system == Units.ENGLISH_ID){
+//			is_english = true;
+//		}
+
+		double[] elev_array = new double[rcount];
+		double[] area_array = new double[rcount];
+		for ( int i =0; i< rcount; i++){
+			RatingValue rv = rt[i];
+			elev_array[i] = rv.getIndValue();
+			area_array[i] = rv.getDepValue();
+		}
+		reservoir.setElevAreaCurve(elev_array, area_array, rcount, is_english);
+
+
 
 		reservoir.setInstrumentHeights(32.81, 32.81, 32.81);
 
@@ -403,8 +464,12 @@ public class ResEvapAlgo
 		setProfiles(hourlyWTP, resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime);
 
 		if(_timeSliceBaseTime.getDate() != LastDate.getDate()){
-			calcDailyEvap(DailyEvap, HourlyEvapTS, _timeSliceBaseTime);
-			setDailyProfiles(_timeSliceBaseTime);
+            try {
+                calcDailyEvap(DailyEvap, HourlyEvapTS, _timeSliceBaseTime);
+            } catch (NoConversionException | DecodesException e) {
+                throw new RuntimeException(e);
+            }
+            setDailyProfiles(_timeSliceBaseTime);
 		}
 		LastDate = _timeSliceBaseTime;
 //AW:TIMESLICE_END
