@@ -19,7 +19,7 @@ import decodes.db.ScheduleEntryStatus;
 import decodes.sql.DbKey;
 import opendcs.dai.ScheduleEntryDAI;
 
-@ComputationConfigurationRequired("shared/loading-apps.xml")
+//@ComputationConfigurationRequired("shared/loading-apps.xml")
 @DecodesConfigurationRequired({
         "shared/test-sites.xml",
         "shared/ROWI4.xml",
@@ -49,6 +49,7 @@ public class ScheduledEntryTest extends AppTestBase
             dao.writeScheduleEntry(se);
 
             ScheduleEntryStatus ses = new ScheduleEntryStatus(DbKey.NullKey);
+            ses.setScheduleEntryName(se.getName());
             ses.setScheduleEntryId(se.getId());
             ses.setHostname("bleh");
             ses.setRunStart(new Date());
