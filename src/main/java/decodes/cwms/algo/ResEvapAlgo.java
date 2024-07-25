@@ -88,6 +88,7 @@ public class ResEvapAlgo
 
 	private CTimeSeries HourlyEvapTS = null;
 
+	CwmsRatingDao crd;
 	SiteDAI siteDAO;
 	TimeSeriesDAI timeSeriesDAO;
 	WaterTempProfiles hourlyWTP;
@@ -371,11 +372,12 @@ public class ResEvapAlgo
 		reservoir.setLatLon(Lati, lonneg);
 		reservoir.setSecchi(Secchi);
 
-		CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
+		crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
 		RatingSet ratingSet = crd.getRatingSet(Rating);
 		TableRating[] ratings = (TableRating[]) ratingSet.getRatings();
 		int rcount = ratingSet.getRatingCount();
 		TableRating rate0 = ratings[rcount-1];
+		//todo change resevap rating
 		RatingValue[] rt = rate0.getRatingValues();
 
 		// Use area units to determine unit system
@@ -469,6 +471,7 @@ public class ResEvapAlgo
 
 		setProfiles(hourlyWTP, resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime);
 
+		//TODO Aggregation
 		if(_timeSliceBaseTime.getDate() != LastDate.getDate()){
             try {
                 calcDailyEvap(DailyEvap, HourlyEvapTS, _timeSliceBaseTime);
@@ -489,6 +492,9 @@ public class ResEvapAlgo
 	{
 		hourlyWTP.SaveProfiles();
 		DailyWTP.SaveProfiles();
+
+		crd.close();
+
 //AW:AFTER_TIMESLICES
 //AW:AFTER_TIMESLICES_END
 	}
