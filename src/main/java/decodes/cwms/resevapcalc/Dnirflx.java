@@ -6,6 +6,7 @@
  */
 package decodes.cwms.resevapcalc;
 
+import decodes.cwms.HecConstants;
 import rma.util.RMAConst;
 
 /**
@@ -106,15 +107,15 @@ public class Dnirflx
         
         // if missing cloud cover, get default values
         // repeated in Solflx.insol() 
-        if ( !RMAConst.isValidValue(lcld) )
+        if ( !HecConstants.isValidValue(lcld) )
         {
             lcld = cloudCover[2].getDefaultFractionCloudCover();
         }
-        if ( !RMAConst.isValidValue(mcld) )
+        if ( !HecConstants.isValidValue(mcld) )
         {
             mcld = cloudCover[1].getDefaultFractionCloudCover();
         }
-        if ( !RMAConst.isValidValue(hcld) )
+        if ( !HecConstants.isValidValue(hcld) )
         {
             hcld = cloudCover[0].getDefaultFractionCloudCover();
         }
@@ -138,7 +139,7 @@ public class Dnirflx
         
         // Set cloud base altitude if missing
         // if ( lcldbse == mflag && lcld != 0.0 ) 
-        if ( !RMAConst.isValidValue(lcldbse) && lcld != 0.0 ) 
+        if ( !HecConstants.isValidValue(lcldbse) && lcld != 0.0 )
         {
             a = COEF[isean][ilat][0][0];            
             b = COEF[isean][ilat][0][1];            
@@ -152,7 +153,7 @@ public class Dnirflx
         }
         
         //if ( mcldbse == mflag && mcld != 0.0 ) 
-        if ( !RMAConst.isValidValue(mcldbse) && mcld != 0.0 ) 
+        if ( !HecConstants.isValidValue(mcldbse) && mcld != 0.0 )
         {
             a = COEF[isean][ilat][1][0];            
             b = COEF[isean][ilat][1][1];            
@@ -166,7 +167,7 @@ public class Dnirflx
         }
         
         //if ( hcldbse == mflag && hcld != 0.0 ) 
-        if ( !RMAConst.isValidValue(hcldbse) && hcld != 0.0 ) 
+        if ( !HecConstants.isValidValue(hcldbse) && hcld != 0.0 )
         {
             a = COEF[isean][ilat][2][0];            
             b = COEF[isean][ilat][2][1];            

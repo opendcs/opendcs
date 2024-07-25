@@ -122,6 +122,7 @@ public class ResEvapAlgo
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
+	//new prop
 	public String WtpTsid;
 
 	public String depth;
@@ -164,19 +165,16 @@ public class ResEvapAlgo
 		throws DbCompException
 	{
 //AW:INIT
-
-        siteDAO =  tsdb.makeSiteDAO();
-        timeSeriesDAO = tsdb.makeTimeSeriesDAO();
-
-		hourlyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
-		DailyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
-
+		//todo
+		//getParmRef("windSpeed").missingAction == MissingAction.IGNORE;
         _awAlgoType = AWAlgoType.TIME_SLICE;
+
 //AW:INIT_END
 
 //AW:USERINIT
 //AW:USERINIT_END
 	}
+
 	public TimeSeriesIdentifier makeTSID(String tsIdStr) throws DbIoException {
 		try {
 			return timeSeriesDAO.getTimeSeriesIdentifier(tsIdStr);
@@ -201,10 +199,11 @@ public class ResEvapAlgo
 			}
 		}
 	}
+
 	//TODO read database
-	public double getStartElevation(){
-		return 0;
-	}
+//	public double getStartElevation(){
+//		return 0;
+//	}
 
 	public double[] getProfiles() throws Exception {
 		Date LastTime = HourlyEvapTS.findPrev(_timeSliceBaseTime).getTime();
@@ -236,6 +235,7 @@ public class ResEvapAlgo
 				}
 			}
 			else{
+				// todo might need to change
 				CTimeSeries CTProfile = newWTP.getTimeSeriesAt(i);
 				CTProfile.addSample(new TimedVariable(new Variable(wtp[i]), CurrentTime));
 			}
@@ -331,6 +331,12 @@ public class ResEvapAlgo
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
+		siteDAO =  tsdb.makeSiteDAO();
+		timeSeriesDAO = tsdb.makeTimeSeriesDAO();
+
+		hourlyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
+		DailyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
+
 		HourlyEvapTS = getParmRef("HourlyEvap").timeSeries;
 
 		windSpeedTS = getParmRef("windSpeed").timeSeries;
