@@ -1,5 +1,8 @@
 package decodes.tsdb;
 
+import decodes.db.Constants;
+import decodes.db.Site;
+import decodes.db.SiteName;
 import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
 
@@ -43,10 +46,17 @@ public class WaterTempProfiles extends DataCollection {
         increment = incr;
         boolean loading = true;
         double currentDepth = startDepth;
+        TimeSeriesIdentifier tsid;
+        tsid = timeSeriesDAO.getTimeSeriesIdentifier(wtpId);
         while(loading){
             try {
-                TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(wtpId+currentDepth);
-                CTimeSeries cts = timeSeriesDAO.makeTimeSeries(tsid);
+                TimeSeriesIdentifier newtsid = tsid.copyNoKey();
+                Site newsite =  new Site();
+                newsite.copyFrom(tsid.getSite());
+                SiteName strsite = newsite.getName(Constants.snt_CWMS);
+                strsite.setNameValue(strsite.getNameValue()+currentDepth);
+                newtsid.setSite(newsite);
+                CTimeSeries cts = timeSeriesDAO.makeTimeSeries(newtsid);
                 int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
                 if (n == 0){
                     loading = false;
@@ -56,12 +66,9 @@ public class WaterTempProfiles extends DataCollection {
                 }
                 currentDepth += increment;
             }
-            catch (Exception ex)
+            catch (BadTimeSeriesException ex)
             {
-                String msg = "Error fetching water temperature profile data: " + ex;
-                //warning(msg);
-                System.err.print(msg);
-                ex.printStackTrace(System.err);
+                loading = false;
             }
         }
 
