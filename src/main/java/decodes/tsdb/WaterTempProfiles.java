@@ -3,8 +3,8 @@ package decodes.tsdb;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
-import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
+import org.opendcs.utils.FailableResult;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -54,21 +54,30 @@ public class WaterTempProfiles extends DataCollection {
                 Site newsite =  new Site();
                 newsite.copyFrom(tsid.getSite());
                 SiteName strsite = newsite.getName(Constants.snt_CWMS);
+                //todo formating
                 strsite.setNameValue(strsite.getNameValue()+currentDepth);
                 newtsid.setSite(newsite);
-                CTimeSeries cts = timeSeriesDAO.makeTimeSeries(newtsid);
-                int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
-                if (n == 0){
+                FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newtsid.getUniqueString());
+                if(check.isSuccess()) {
+                    CTimeSeries cts = timeSeriesDAO.makeTimeSeries(newtsid);
+                    int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
+                    if (n == 0) {
+                        loading = false;
+                    } else {
+                        tseries.add(cts);
+                    }
+                    currentDepth += increment;
+                }
+                else if(check.getFailure() instanceof NoSuchObjectException){
                     loading = false;
                 }
                 else{
-                    tseries.add(cts);
+                    throw new DbIoException("failed to load time series from database", check.getFailure());
                 }
-                currentDepth += increment;
             }
             catch (BadTimeSeriesException ex)
             {
-                loading = false;
+                throw new DbIoException("error retrieving data for time series", ex);
             }
         }
 
