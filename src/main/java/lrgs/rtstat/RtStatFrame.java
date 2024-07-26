@@ -76,7 +76,7 @@ public class RtStatFrame
 	private BorderLayout borderLayout1 = new BorderLayout();
 	private JPanel topPanel = new JPanel();
 	private JLabel hostLabel = new JLabel();
-	private JComboBox hostCombo = new JComboBox();
+	private JComboBox<String> hostCombo = new JComboBox<>();
 	private JLabel portLabel = new JLabel();
 	private JTextField portField = new JTextField(6);
 	private JLabel userLabel = new JLabel();
@@ -405,7 +405,7 @@ public class RtStatFrame
 		dlg.setLocation((frmSize.width - dlgSize.width) / 2 + loc.x, 
 			(frmSize.height - dlgSize.height) / 2 + loc.y);
 		dlg.setModal(true);
-		dlg.show();
+		dlg.setVisible(true);
 	}
 
 	public synchronized void connectButton_actionPerformed(ActionEvent e)
@@ -996,7 +996,7 @@ public class RtStatFrame
 		eventsPanel.addLine(event);
 	}
 
-	public static void loadConnectionsField(JComboBox hostCombo, Properties connectionList,
+	public static void loadConnectionsField(JComboBox<String> hostCombo, Properties connectionList,
 		String connectedHostName)
 	{
 		String fn = LddsClient.getLddsConnectionsFile();
@@ -1060,7 +1060,8 @@ public class RtStatFrame
 		}
 		Collections.sort(hosts);
 		int selected = -1;
-		//MJM Added: to put a black selection in the start of the list.
+		hostCombo.removeAllItems();
+		//MJM Added: to put a blank selection in the start of the list.
 		hostCombo.addItem("");
 		
 		for(int i = 0; i<hosts.size(); i++)
@@ -1071,14 +1072,14 @@ public class RtStatFrame
 				selected = i;
 		}
 		
-		if (selected == -1 && connectedHostName != null)
+		if (selected == -1 && connectedHostName != null && !connectedHostName.isEmpty())
 		{
 			hostCombo.addItem(connectedHostName);
 			selected = hosts.size();
 		}
 	}
 
-	public static void setFieldsFromHostSelection(JComboBox hostCombo, 
+	public static void setFieldsFromHostSelection(JComboBox<String> hostCombo,
 		Properties connectionList, JTextField portField, JTextField userField,
 		PasswordWithShow passwordField)
 	{
@@ -1176,7 +1177,7 @@ public class RtStatFrame
 		int n = hostCombo.getItemCount();
 		for(int i=0; i<n; i++)
 		{
-			String h = (String)hostCombo.getItemAt(i);
+			String h = hostCombo.getItemAt(i);
 			if (hostname.equalsIgnoreCase(h))
 			{
 				hostCombo.setSelectedIndex(i);
