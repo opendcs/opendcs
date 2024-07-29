@@ -96,8 +96,8 @@ will instruct data in the csv to be mapped to either a sensor or date/time.
 |                             | In this example the pipe, \|, character is used.           |
 +-----------------------------+------------------------------------------------------------+
 
-The delimiter can be more than one character. The values `\s` and `\t` will be converted
-to a single space and tab respectively. Other values are used as is.
+The delimiter can be more than one character; if more than one character the sequence of characters much match entirely.
+The values `\\s` and `\\t` will be converted to a single space and tab respectively. Other values are used as is.
 
 Table 1-3: DECODES Format Operations - CSV Parser
 
