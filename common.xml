@@ -267,6 +267,10 @@
                 <mapping conf="default" scope="compile"/>
                 <mapping conf="runtime" scope="runtime"/>
             </ivy:makepom>
+            <ivy:makepom ivyfile="build/ivy.xml" pomfile="build/lib/opendcs-annotations.pom" conf="annotation_runtime"
+                         artifactName="opendcs-annotations"
+                         templateFile="config/annotations.pom.template">
+            </ivy:makepom>
         </sequential>
     </macrodef>
 
