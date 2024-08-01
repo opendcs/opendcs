@@ -156,7 +156,6 @@ public class MetarParser {
 	 * @throws MetarParseException Error parsing the report
 	 * @deprecated MetarParser.parse(String) deprecated, please use
 	 *             MetarParser.parseRecord(String metarData)
-	 * @see MetarParser.parseRecord(String metarData)
 	 */
 	public static Metar parse(String metarData, int count) throws MetarParseException {
 		Metar met = MetarParser.parseRecord(metarData);
