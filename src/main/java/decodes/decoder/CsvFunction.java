@@ -141,7 +141,10 @@ public class CsvFunction
 			if (t.startsWith("delimiter"))
 			{
 				String[] parts = t.split("=");
-				this.delimiter = parts[1];
+				if( parts.length ==2 )
+				{
+					this.delimiter = parts[1];
+				}
 				if (delimiter.equals("\\s"))
 				{
 					delimiter = " ";
