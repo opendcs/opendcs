@@ -44,6 +44,9 @@ import lrgs.ldds.DdsUser;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.LddsMessage;
 import lrgs.lrgsmain.LrgsConfig;
+import lrgs.rtstat.hosts.LrgsConnection;
+import lrgs.rtstat.hosts.LrgsConnectionComboBoxModel;
+import lrgs.rtstat.hosts.LrgsConnectionPanel;
 import lrgs.ddsrecv.DdsRecvSettings;
 import lrgs.drgs.DrgsInputSettings;
 import lrgs.db.Outage;
@@ -76,7 +79,7 @@ public class RtStatFrame
 	private BorderLayout borderLayout1 = new BorderLayout();
 	private JPanel topPanel = new JPanel();
 	private JLabel hostLabel = new JLabel();
-	private JComboBox<String> hostCombo = new JComboBox<>();
+	private JComboBox<LrgsConnection> hostCombo = new JComboBox<>();
 	private JLabel portLabel = new JLabel();
 	private JTextField portField = new JTextField(6);
 	private JLabel userLabel = new JLabel();
@@ -89,6 +92,7 @@ public class RtStatFrame
 	private RtStatPanel rtStatPanel = new RtStatPanel();
 	private EventsPanel eventsPanel = new EventsPanel(false);
 	private JCheckBox passwordCheck = new JCheckBox();
+	private LrgsConnectionPanel connectionPanel = new LrgsConnectionPanel();
 	
 	/** True if the display is currently paused. */
 	boolean isPaused = false;
@@ -124,8 +128,7 @@ public class RtStatFrame
 	private NetlistMaintenanceDialog netlistDlg;
 	private DrgsInputSettings networkDcpSettings;
 	private NetworkDcpStatusFrame networkDcpStatusFrame = null;
-	private static String pwk = MessageBrowser.class.toString() + 
-		(""+Math.PI).substring(3, 10) + DecodesVersion.class.toString();
+	
 
 	/** Constructor. */
 	public RtStatFrame(int scanPeriod, String iconFile, String headerFile)
@@ -181,15 +184,11 @@ public class RtStatFrame
 			});
 		//loadConnectionsCombo();
 		hostCombo.setEditable(true);
-		hostCombo.addActionListener(e ->
-		{
-			setFieldsFromHostSelection(hostCombo, connectionList,
-									   portField, userField, passwordField);
-			boolean haveAPassword = passwordField.getPassword().length > 0;
-			passwordCheck.setSelected(haveAPassword);
-			passwordField.setEnabled(haveAPassword);
-		});
-		loadConnectionsField(hostCombo, connectionList, connectedHostName);
+		File lddsConnectionFile = new File(LddsClient.getLddsConnectionsFile());
+		hostCombo.setModel(new LrgsConnectionComboBoxModel(lddsConnectionFile));
+		hostCombo.addActionListener(this::setFieldsFromHostSelection);
+		
+		//loadConnectionsField(hostCombo, connectionList, connectedHostName);
 		netlistDlg = null;
 		rtStatPanel.htmlPanel.addHyperlinkListener(this);
 
@@ -295,7 +294,7 @@ public class RtStatFrame
 
 		hostLabel.setText(
 				labels.getString("RtStatFrame.host"));
-		topPanel.setLayout(gridBagLayout1);
+		topPanel.setLayout(new BorderLayout());
 		portLabel.setText(
 				labels.getString("RtStatFrame.port"));
 		portField.setText("16003");
@@ -349,6 +348,7 @@ public class RtStatFrame
 		jMenuBar1.add(jMenuFile);
 		jMenuBar1.add(jMenuHelp);
 		contentPane.add(topPanel, BorderLayout.NORTH);
+		topPanel.add(connectionPanel);/*
 		topPanel.add(hostLabel,  new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0
 	        ,GridBagConstraints.WEST, GridBagConstraints.NONE, 
 			new Insets(4, 5, 4, 1), 0, 0));
@@ -379,6 +379,7 @@ public class RtStatFrame
 		topPanel.add(pauseButton,  new GridBagConstraints(10, 0, 1, 1, 0.0, 0.0
 	        ,GridBagConstraints.CENTER, GridBagConstraints.NONE, 
 			new Insets(4, 10, 4, 5), 0, 0));
+		*/
 		contentPane.add(jSplitPane1, BorderLayout.CENTER);
 		jSplitPane1.add(rtStatPanel, JSplitPane.TOP);
 		jSplitPane1.add(eventsPanel, JSplitPane.BOTTOM);
@@ -546,8 +547,7 @@ public class RtStatFrame
 		{
 			setTitle(labels.getString("RtStatFrame.frameTitle")+": " + host);
 			client = tclient;
-			updateConnectionList(connectedHostName = host, "" + port, user, connectionList, passwd);
-			loadConnectionsField(hostCombo, connectionList, connectedHostName);
+			updateConnectionList();
 			displayEvent("Connected to " + host + ":"
 				+ port + " as user '" + user + "'");
 		}
@@ -994,132 +994,31 @@ public class RtStatFrame
 	public void displayEvent(String event)
 	{
 		eventsPanel.addLine(event);
-	}
+	}	
 
-	public static void loadConnectionsField(JComboBox<String> hostCombo, Properties connectionList,
-		String connectedHostName)
+	private  void setFieldsFromHostSelection(ActionEvent event )
 	{
-		String fn = LddsClient.getLddsConnectionsFile();
-		File file = new File(fn);
-		try
-		{
-			FileInputStream fis = new FileInputStream(file);
-			connectionList.clear();
-			connectionList.load(fis);
-			fis.close();
-		}
-		catch(IOException ioe)
-		{
-			log.error("No previously recorded connections");
-		}
 		
-		class ht implements Comparable<ht>
-		{
-			long lastUse;
-			String hostname;
-			@Override
-			public int compareTo(ht o)
-			{
-				if (lastUse > o.lastUse)
-				{
-					return -1;
-				}
-				else if (lastUse < o.lastUse)
-				{
-					return 1;
-				}
-				return hostname.compareTo(o.hostname);
-			}
-
-			public ht(long lastUse, String hostname)
-			{
-				super();
-				this.lastUse = lastUse;
-				this.hostname = hostname;
-			}
-		}
-		ArrayList<ht> hosts = new ArrayList<ht>();
-		for(Object key : connectionList.keySet())
-		{
-			String host = (String)key;
-			String v = connectionList.getProperty(host);
-			long lastUse = 0L;
-			String f[] = v.split(" ");
-			if (f != null && f.length >= 3)
-			{
-				try
-				{
-					lastUse = Long.parseLong(f[2]);
-				}
-				catch(NumberFormatException ex)
-				{
-					// Ignore
-				}
-			}
-			hosts.add(new ht(lastUse, host));
-		}
-		Collections.sort(hosts);
-		int selected = -1;
-		hostCombo.removeAllItems();
-		//MJM Added: to put a blank selection in the start of the list.
-		hostCombo.addItem("");
-		
-		for(int i = 0; i<hosts.size(); i++)
-		{
-			ht x = hosts.get(i);
-			hostCombo.addItem(x.hostname);
-			if (connectedHostName != null && connectedHostName.equalsIgnoreCase(x.hostname))
-				selected = i;
-		}
-		
-		if (selected == -1 && connectedHostName != null && !connectedHostName.isEmpty())
-		{
-			hostCombo.addItem(connectedHostName);
-			selected = hosts.size();
-		}
-	}
-
-	public static void setFieldsFromHostSelection(JComboBox<String> hostCombo,
-		Properties connectionList, JTextField portField, JTextField userField,
-		PasswordWithShow passwordField)
-	{
-		String host = (String)hostCombo.getSelectedItem();
-		if (host == null || host.length() == 0)
-		{
-			userField.setText("");
-			passwordField.setText("");
-			return;
-		}
-		String hl = connectionList.getProperty(host);
-		if (hl == null || hl.length() == 0)
+		LrgsConnection c = (LrgsConnection)hostCombo.getSelectedItem();
+		if (c == LrgsConnection.BLANK)
 		{
 			portField.setText("16003");
-			return;
-		}
-		StringTokenizer st = new StringTokenizer(hl);
-		if (st.hasMoreTokens())
-		{
-			portField.setText(st.nextToken());
+			userField.setText("");
+			passwordField.setText("");
 		}
 		else
 		{
-			portField.setText("16003");
-		}
+			portField.setText(""+c.getPort());
+			userField.setText(c.getUsername());
 
-		if (st.hasMoreTokens())
-		{
-			userField.setText(st.nextToken());
-		}
-		if (st.hasMoreTokens())
-		{
-			st.nextToken(); // Gobble the last modify time field.
-			if (st.hasMoreTokens())
-			{
-				String epw = st.nextToken();
+			String pw = c.getPassword();
+			if (pw != null && !pw.isEmpty())
+			{		
 				try
 				{
+					String pwk = "tmp";
 					DesEncrypter de = new DesEncrypter(pwk);
-					String dpw = de.decrypt(epw);
+					String dpw = de.decrypt(pw);
 					passwordField.setText(dpw);
 				}
 				catch (AuthException e)
@@ -1131,41 +1030,18 @@ public class RtStatFrame
 				passwordField.setText("");
 			}
 		}
+		
+		boolean haveAPassword = passwordField.getPassword().length > 0;
+		passwordCheck.setSelected(haveAPassword);
+		passwordField.setEnabled(haveAPassword);
 	}
 
 	/** 
 	  Updates the connection list file with a new connection.
 	*/
-	public static void updateConnectionList(String host, String port, String user,
-		Properties connectionList, String passwd)
+	public void updateConnectionList()
 	{
-		String v = port + " " + user + " " + System.currentTimeMillis();
-		if (passwd != null && passwd.trim().length() > 0)
-		{
-			// Encrypt password and tack it to the end of the line.
-			try
-			{
-				DesEncrypter de = new DesEncrypter(pwk);
-				v = v + " " + de.encrypt(passwd);
-			}
-			catch (AuthException e)
-			{
-			}
-		}
-		connectionList.setProperty(host, v);
-		String fn = LddsClient.getLddsConnectionsFile();
-		File file = new File(fn);
-		try
-		{
-			FileOutputStream fos = new FileOutputStream(file);
-			connectionList.store(fos, "Recent LRGS Connections");
-			fos.close();
-		}
-		catch(IOException ioe)
-		{
-			System.out.println("Cannot save connections to '"
-				+ file.getPath() + "': " + ioe);
-		}
+		
 	}
 
 	/**
@@ -1177,14 +1053,14 @@ public class RtStatFrame
 		int n = hostCombo.getItemCount();
 		for(int i=0; i<n; i++)
 		{
-			String h = hostCombo.getItemAt(i);
-			if (hostname.equalsIgnoreCase(h))
+			LrgsConnection c = (LrgsConnection)hostCombo.getItemAt(i);
+			if (hostname.equalsIgnoreCase(c.getHostName()))
 			{
 				hostCombo.setSelectedIndex(i);
 				return;
 			}
 		}
-		hostCombo.addItem(hostname);
+		hostCombo.addItem(new LrgsConnection(hostname, 16003, null, null, null));
 		hostCombo.setSelectedIndex(n);
 	}
 

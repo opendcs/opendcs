@@ -62,6 +62,8 @@ import ilex.util.EnvExpander;
 import lrgs.common.*;
 import lrgs.ldds.*;
 import lrgs.rtstat.RtStatFrame;
+import lrgs.rtstat.hosts.LrgsConnection;
+import lrgs.rtstat.hosts.LrgsConnectionComboBoxModel;
 
 /**
 The MessageBrowser allows the user to display DCP messages on the screen
@@ -85,7 +87,7 @@ public class MessageBrowser extends MenuFrame
     private SearchCriteria searchcrit;
     private SearchCriteriaEditorIF scedit;
 
-    private JComboBox hostField;
+    private JComboBox<LrgsConnection> hostField;
     private JTextField portField = new JTextField(15), userField = new JTextField(15);
     private PasswordWithShow passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
     private JButton connectButton;
@@ -204,18 +206,10 @@ public class MessageBrowser extends MenuFrame
                 GridBagConstraints.EAST, GridBagConstraints.NONE,
                 new Insets(2, 5, 2, 5), 0, 0)); 
 
-        hostField = new JComboBox();
+        hostField = new JComboBox<>();
         hostField.setEditable(true);
-        hostField.addActionListener(
-            new ActionListener()
-            {
-                public void actionPerformed(ActionEvent ae)
-                {
-                    RtStatFrame.setFieldsFromHostSelection(hostField, connectionList, portField, 
-                        userField, passwordField);
-                }
-            });
-        RtStatFrame.loadConnectionsField(hostField, connectionList, "");
+        hostField.setModel(new LrgsConnectionComboBoxModel(new File(LddsClient.getLddsConnectionsFile())));
+        hostField.addActionListener(e -> setConnectionFields());
         northwest.add(hostField,
             new GridBagConstraints(1, 0, 1, 1, 0.8, 1.0,
                 GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
@@ -824,9 +818,8 @@ public class MessageBrowser extends MenuFrame
                     hostName, port, userField.getText()));
 
             firstAfterConnect = true;
-            RtStatFrame.updateConnectionList(hostName, portField.getText(),
-                userField.getText(), connectionList, pw);
-            RtStatFrame.loadConnectionsField(hostField, connectionList, hostName);
+            //RtStatFrame.updateConnectionList();
+            //RtStatFrame.loadConnectionsField(hostField, connectionList, hostName);
         }
     }
 
@@ -1390,5 +1383,10 @@ public class MessageBrowser extends MenuFrame
         displayingAll = false;
         nextMessageButton.setEnabled(true);
         client.enableMultiMessageMode(false);
+    }
+
+    private void setConnectionFields()
+    {
+        /* TODO: getting moved to the new Panel. */
     }
 }

@@ -2,6 +2,7 @@ package lrgs.rtstat;
 
 import ilex.util.LoadResourceBundle;
 
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 import javax.swing.*;
@@ -83,16 +84,17 @@ public class RtStat
 	
 	public static void getMyLabelDescriptions()
 	{
-		DecodesSettings settings = DecodesSettings.instance();
 		//Load the generic properties file - includes labels that are used
 		//in multiple screens
+		Locale locale = Locale.getDefault();
+		LoadResourceBundle.setLocale(locale.getLanguage());
 		genericLabels = LoadResourceBundle.getLabelDescriptions(
 				"decodes/resources/generic",
-				settings.language);
+				locale.getLanguage());
 		//Return the main label descriptions for RStat App
 		labels = LoadResourceBundle.getLabelDescriptions(
 				"decodes/resources/rtstat",
-				settings.language);
+				locale.getLanguage());
 	}
 	
 	public static ResourceBundle getLabels() 
@@ -116,6 +118,7 @@ public class RtStat
 		try
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			System.out.println("Default local: " + Locale.getDefault().toString());
 		}
 		catch (Exception e)
 		{
