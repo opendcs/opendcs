@@ -93,7 +93,7 @@ will instruct data in the csv to be mapped to either a sensor or date/time.
 | csv(sens#,...)              | Parse a series of comma separated values                   |
 +-----------------------------+------------------------------------------------------------+
 | csv(delimiter=\|,sens#,...) | Parse a series of values separated by a specific delimiter |
-|                             | In this example the pipe, \|, character is used.           |
+|                             | In this example the pipe \(`\|`\), character is used.      |
 +-----------------------------+------------------------------------------------------------+
 
 The delimiter can be more than one character; if more than one character the sequence of characters much match entirely.
