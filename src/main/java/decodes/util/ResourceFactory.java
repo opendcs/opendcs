@@ -41,7 +41,6 @@ public class ResourceFactory
 		if (_instance == null)
 		{
 			_instance = new decodes.util.ResourceFactory();
-			_instance.initializeFunctionList();
 		}
 		return _instance;
 	}
@@ -63,19 +62,6 @@ public class ResourceFactory
 	public String getDdsVersionSuffix()
 	{
 		return "";
-	}
-
-	/**
-	 * Initializes the decoder's function list with canned functions.
-	 */
-	public void initializeFunctionList()
-	{
-		FunctionList.addFunction(new decodes.decoder.CsvFunction());
-		FunctionList.addFunction(new decodes.decoder.Nos6Min());
-		FunctionList.addFunction(new decodes.decoder.NosHourly());
-		FunctionList.addFunction(new decodes.decoder.ShefProcess());
-		FunctionList.addFunction(new decodes.decoder.SetMissingFunction());
-		FunctionList.addFunction(new decodes.decoder.RegexFunction());
 	}
 
 	public JDialog getAboutDialog(JFrame parent, String appAbbr, String appName)
