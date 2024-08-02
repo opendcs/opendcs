@@ -259,7 +259,7 @@ PropertyProvider
 The PropertyProvider system as added to support EnvExpander retrieving values from sources other than the java `System.properties`.
 The mechanism uses the java ServiceProvider mechanism so downstream users can implement any custom sources they need.
 
-To implement a custom implement the following class `org.opendcs.spi.properties.PropertyValueProvider`.
+To implement a custom property provider the following class `org.opendcs.spi.properties.PropertyValueProvider`.
 
 .. code-block:: java
     :linenos:
@@ -349,6 +349,46 @@ The following prefixes are reserved:
 +----------+--------------------------------------+
 |file      |Values from files on the file system. |
 +----------+--------------------------------------+
+
+Custom Decodes Functions
+========================
+
+To implement a custom implement the following class `org.opendcs.spi.decodes.DecodesFunctionProvider`. And Derived
+your actual function from `decodes.decoder.DecodesFunction`.
+
+Additionally make sure your full class name is in the appropriate
+`META-INF/services/org.opendcs.spi.decodes.DecodesFunctionProvider` file.
+
+.. code-block:: java
+    :linenos:
+
+    package org.opendcs.spi.decodes;
+
+    import decodes.decoder.DecodesFunction;
+
+    public interface DecodesFunctionProvider
+    {
+        /**
+        * Name of the decodes function that will be used in a DecodesScript.
+        * The name is case sensitive. If you function is provided outside of the
+        * OpenDCS distribution, please prefix the name with some sort of organizational identifier.
+        * @return
+        */
+        String getName();
+
+        /**
+        * Create an actual instance of your custom decodes function.
+        * @return Valid and immediately usable instance of a DecodesFunction.
+        */
+        DecodesFunction createInstance();
+    }
+
+Decodes Function Operations
+---------------------------
+
+We will expand this section later. For the moment please review the existing DecodesFunction implementations to
+determine the most appropriate implementation details for your function.
+
 
 Additional Logging
 ==================

@@ -14,7 +14,7 @@ public class CsvFunction
 	extends DecodesFunction
 {
 	private ArrayList<Integer> sensorNumbers = new ArrayList<Integer>();
-	private String module = "csv";
+	public static final String module = "csv";
 	private String argList = null;
 	
 	public CsvFunction()
