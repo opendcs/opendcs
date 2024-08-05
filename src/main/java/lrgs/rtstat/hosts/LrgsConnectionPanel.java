@@ -126,6 +126,10 @@ public class LrgsConnectionPanel extends JPanel
 		panel_4.add(pauseButton);
 
 		controller.setView(this);
+
+
+		int minWidth = passwordField.getMinimumSize().width + lblNewLabel_3.getMinimumSize().width + 50;
+		this.setMinimumSize(new Dimension(minWidth, 40));
 	}
 
 	private void changeConnection()
@@ -164,6 +168,11 @@ public class LrgsConnectionPanel extends JPanel
 	public void setModel(LrgsConnectionComboBoxModel model)
 	{
 		this.hostCombo.setModel(model);
+	}
+
+	public LrgsConnection getCurrentConnection()
+	{
+		return (LrgsConnection)hostCombo.getSelectedItem();
 	}
 
 	public void onConnect(Consumer<LrgsConnection> connectCallback)
