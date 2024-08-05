@@ -198,7 +198,7 @@ public class MessageBrowser extends MenuFrame
         northwest.setBorder(new TitledBorder(
                 labels.getString("MessageBrowser.serverTitle")));
 
-        lrgsConnectionPanel.setMinimumSize(new Dimension((int)(lrgsConnectionPanel.getMinimumSize().width*1.5),180));
+        lrgsConnectionPanel.setMinimumSize(new Dimension(529,140));
         lrgsConnectionPanel.setPreferredSize(lrgsConnectionPanel.getMinimumSize());
 
         northwest.add(lrgsConnectionPanel);
