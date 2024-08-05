@@ -1,6 +1,8 @@
 package lrgs.rtstat;
 
 import ilex.util.LoadResourceBundle;
+import lrgs.rtstat.hosts.LrgsConnection;
+import lrgs.rtstat.hosts.LrgsConnectionPanel;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -42,7 +44,13 @@ public class RtStat
 		if (hostname != null)
 		{
 			final String username = cmdLineArgs.getUserName();
-			
+			final String password = cmdLineArgs.getPassword();
+			final int port = cmdLineArgs.getPort();
+			if (username == null || password == null)
+			{
+				log.error("A Username and Password are now required for LRGS connections."
+						 + " Please set one with -pw <password>.");
+			}
 			Thread delay = new Thread()
 			{
 				public void run()
@@ -59,10 +67,17 @@ public class RtStat
 						{
 							public void run()
 							{
-								frame.setHost(hostname);
 								if (username != null)
-									frame.userField.setText(username.trim());
-								frame.connectButton_actionPerformed(null);
+								{
+									frame.connectButton_actionPerformed(
+										new LrgsConnection(hostname, port,
+															username,
+															LrgsConnection.encryptPassword(
+																password,
+																LrgsConnectionPanel.pwk),
+															null)
+									);
+								}
 							}
 						});
 				}
