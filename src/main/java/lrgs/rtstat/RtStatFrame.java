@@ -8,14 +8,10 @@ import javax.swing.event.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
@@ -28,13 +24,12 @@ import org.w3c.dom.Document;
 
 import decodes.gui.AboutBox;
 import decodes.gui.TopFrame;
-import decodes.util.DecodesVersion;
 import ilex.gui.EventsPanel;
 import ilex.gui.JobDialog;
 import ilex.gui.LoginDialog;
+import ilex.gui.WindowUtility;
 import ilex.util.AsciiUtil;
 import ilex.util.AuthException;
-import ilex.util.DesEncrypter;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
@@ -46,12 +41,10 @@ import lrgs.ldds.LddsClient;
 import lrgs.ldds.LddsMessage;
 import lrgs.lrgsmain.LrgsConfig;
 import lrgs.rtstat.hosts.LrgsConnection;
-import lrgs.rtstat.hosts.LrgsConnectionComboBoxModel;
 import lrgs.rtstat.hosts.LrgsConnectionPanel;
 import lrgs.ddsrecv.DdsRecvSettings;
 import lrgs.drgs.DrgsInputSettings;
 import lrgs.db.Outage;
-import lrgs.gui.MessageBrowser;
 import ilex.util.LoadResourceBundle;
 
 
@@ -82,7 +75,6 @@ public class RtStatFrame
 	private JLabel hostLabel = new JLabel();
 	private JComboBox<LrgsConnection> hostCombo = new JComboBox<>();
 	private PasswordWithShow passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
-	private JButton pauseButton = new JButton();
 	private JSplitPane jSplitPane1 = new JSplitPane();
 	private RtStatPanel rtStatPanel = new RtStatPanel();
 	private EventsPanel eventsPanel = new EventsPanel(false);
@@ -119,7 +111,7 @@ public class RtStatFrame
 	private DrgsInputSettings drgsSettings;
 	private NetlistMaintenanceDialog netlistDlg;
 	private DrgsInputSettings networkDcpSettings;
-	private NetworkDcpStatusFrame networkDcpStatusFrame = null;	
+	private NetworkDcpStatusFrame networkDcpStatusFrame = null;
 
 	/** Constructor. */
 	public RtStatFrame(int scanPeriod, String iconFile, String headerFile)
@@ -372,7 +364,7 @@ public class RtStatFrame
 	private boolean doConnect(LrgsConnection c)
 	{
 		closeConnection();
-		client = null;	
+		client = null;
 		final LddsClient tclient = new LddsClient(host, port);
 		final JobDialog connectionJobDialog = new JobDialog(
 			this,
@@ -852,23 +844,9 @@ public class RtStatFrame
 		}
 	}
 
-	private void pauseButton_actionPerformed(LrgsConnection c)
+	private void pauseButton_actionPerformed(boolean paused)
 	{
-		if (!isPaused)
-		{
-			isPaused = true;
-			pauseButton.setText(labels.getString("RtStatFrame.resume"));
-		}
-		else
-		{
-			isPaused = false;
-			pauseButton.setText(labels.getString("RtStatFrame.pause"));
-		}
-	}
-
-	private void passwordCheck_actionPerformed(ActionEvent e)
-	{
-		passwordField.setEnabled(passwordCheck.isSelected());
+		this.isPaused = paused;
 	}
 
 	/**
@@ -1041,6 +1019,28 @@ public class RtStatFrame
 
 	private void launch(JDialog dlg)
 	{
+
+		if (SwingUtilities.isEventDispatchThread())
+		{
+			real_launch(dlg);
+		}
+		else
+		{
+			try
+			{
+				SwingUtilities.invokeAndWait(() -> real_launch(dlg));
+			}
+			catch (InvocationTargetException | InterruptedException ex)
+			{
+				log.atError()
+				   .setCause(ex)
+				   .log("Error waiting for dialog to return.");
+			}
+		}
+	}
+
+	private void real_launch(JDialog dlg)
+	{
 		Dimension frameSize = this.getSize();
 		Point frameLoc = this.getLocation();
 		Dimension dlgSize = dlg.getPreferredSize();
@@ -1054,25 +1054,8 @@ public class RtStatFrame
 	 	{
 			yo = 0;
 		}
-
 		dlg.setLocation(frameLoc.x + xo, frameLoc.y + yo);
-		if (SwingUtilities.isEventDispatchThread())
-		{
-			dlg.setVisible(true);
-		}
-		else
-		{
-			try
-			{
-				SwingUtilities.invokeAndWait(() -> dlg.setVisible(true));
-			}
-			catch (InvocationTargetException | InterruptedException ex)
-			{
-				log.atError()
-				   .setCause(ex)
-				   .log("Error waiting for dialog to return.");
-			}
-		}
+		dlg.setVisible(true);
 	}
 
 	public void fileLrgsConfig_actionPerformed()

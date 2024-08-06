@@ -42,7 +42,9 @@ public final class LrgsConnectionPanel extends JPanel
 	private JComboBox<LrgsConnection> hostCombo;
 	private JTextField portField;
 	private JTextField usernameField;
+	private JButton pausedButton;
 	private PasswordWithShow passwordField;
+	private boolean paused = false;
 
 	private final LrgsConnectionPanelController controller;
 
@@ -124,9 +126,14 @@ public final class LrgsConnectionPanel extends JPanel
 		connectButton.addActionListener(e -> connect());
 		panel_4.add(connectButton);
 
-		JButton pauseButton = new JButton(labels.getString("RtStatFrame.pause")); //$NON-NLS-1$
-		panel_4.add(pauseButton);
-		pauseButton.setVisible(showPause);
+		pausedButton = new JButton(labels.getString("RtStatFrame.pause")); //$NON-NLS-1$
+		pausedButton.addActionListener(e -> 
+		{
+			paused = !paused;
+			pause(paused);
+		});
+		panel_4.add(pausedButton);
+		pausedButton.setVisible(showPause);
 
 		controller.setView(this);
 
@@ -137,6 +144,8 @@ public final class LrgsConnectionPanel extends JPanel
 
 	private void connect()
 	{
+		paused = false;
+		pause(false);
 		new SwingWorker<LrgsConnection, Void>()
 		{
 			// TODO. This should actually disable the button until the connection is finished.
@@ -145,7 +154,7 @@ public final class LrgsConnectionPanel extends JPanel
 			{
 				// Always build the connection from the fields, the user may have change a single setting.
 				LrgsConnection c = connectionFromFields();
-				if(controller.connect(c))
+				if (controller.connect(c))
 				{
 					return c;
 				}
@@ -217,9 +226,17 @@ public final class LrgsConnectionPanel extends JPanel
 		}.execute();
 	}
 
-	private void pause()
+	private void pause(boolean pause)
 	{
-		this.controller.pause((LrgsConnection)hostCombo.getSelectedItem());
+		if (paused)
+		{
+			pausedButton.setText(labels.getString("RtStatFrame.resume"));
+		}
+		else
+		{
+			pausedButton.setText(labels.getString("RtStatFrame.pause"));
+		}
+		this.controller.pause(paused);
 	}
 
 	public void setModel(LrgsConnectionComboBoxModel model)
@@ -237,7 +254,7 @@ public final class LrgsConnectionPanel extends JPanel
 		this.controller.onConnect(connectCallback);
 	}
 
-	public void onPause(Consumer<LrgsConnection> onPause)
+	public void onPause(Consumer<Boolean> onPause)
 	{
 		this.controller.onPause(onPause);
 	}

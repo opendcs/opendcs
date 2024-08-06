@@ -20,7 +20,7 @@ public class LrgsConnectionPanelController
     /** Defaults do nothing. */
     private Function<LrgsConnection,Boolean> connectionCallBack = c -> {return false;};
     private BiConsumer<LrgsConnection, LrgsConnection> connectionChangedCallback = (old,c) -> {};
-    private Consumer<LrgsConnection> pauseCallBack = c -> {};
+    private Consumer<Boolean> pauseCallBack = c -> {};
 
     public void setView(LrgsConnectionPanel lrgsConnectionPanel)
     {
@@ -46,13 +46,13 @@ public class LrgsConnectionPanelController
         this.connectionCallBack = connectCallback;
     }
 
-    public void onPause(Consumer<LrgsConnection> onPause)
+    public void onPause(Consumer<Boolean> onPause)
     {
         this.pauseCallBack = onPause;
     }
 
-    public void pause(LrgsConnection c)
+    public void pause(boolean paused)
     {
-        this.pauseCallBack.accept(c);
+        this.pauseCallBack.accept(paused);
     }
 }
