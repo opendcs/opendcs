@@ -13,8 +13,8 @@ public class LrgsConnectionPanelController {
     private LrgsConnectionComboBoxModel model = new LrgsConnectionComboBoxModel(new File(LddsClient.getLddsConnectionsFile()));
 
     /** Defaults do nothing. */
-    private Consumer<LrgsConnection> connectionCallBack = c -> {System.out.println("Connecting.");};
-    private BiConsumer<LrgsConnection, LrgsConnection> connectionChangedCallback = (old,c) -> {System.out.println("changing connection.");};
+    private Consumer<LrgsConnection> connectionCallBack = c -> {};
+    private BiConsumer<LrgsConnection, LrgsConnection> connectionChangedCallback = (old,c) -> {};
 
     public void setView(LrgsConnectionPanel lrgsConnectionPanel)
     {
@@ -27,12 +27,10 @@ public class LrgsConnectionPanelController {
     {
         if (selectedConnection != LrgsConnection.BLANK)
         {
-            System.out.println("Calling defined connection.");
             connectionCallBack.accept(selectedConnection);
         }
         else
         {
-            System.out.println("Connection from fields.");
             connectionCallBack.accept(view.connectionFromFields());
         }
     }

@@ -347,7 +347,6 @@ public class RtStatFrame
 
 	public void connectButton_actionPerformed(LrgsConnection c)
 	{
-		System.out.println("basic error checking." + c.toString() + ": " +c.toPropertyEntry());
 		final String thost = c.getHostName();
 		if (thost.length() == 0)
 		{
@@ -377,24 +376,19 @@ public class RtStatFrame
 			showError(labels.getString("RtStatFrame.passAuthErr"));
 			return;
 		}
-		System.out.println("Setting title.");
 		SwingUtilities.invokeLater(() -> setTitle(labels.getString("RtStatFrame.frameTitle")));
 
 		host = thost;
-		System.out.println("Connecting.");
 		doConnect(c);
 	}
 
 	private void doConnect(LrgsConnection c)
 	{
-		System.out.println("Closing connection.");
 		closeConnection();
-		client = null;
-		System.out.println("Creating new connection.");
+		client = null;	
 		final LddsClient tclient = new LddsClient(host, port);
 
-		connectionJobDialog.setCanCancel(true);
-		System.out.println("Creating Job thread.");
+		connectionJobDialog.setCanCancel(true);		
 		Thread backgroundJob =
 			new Thread()
 			{
@@ -462,7 +456,6 @@ public class RtStatFrame
 
 			};
 		backgroundJob.setName("LRGS Connection background thread.");
-		System.out.println("Starting job thread.");
 		backgroundJob.start();
 		launch(connectionJobDialog);
 		if (tclient.isConnected())
@@ -1185,7 +1178,6 @@ public class RtStatFrame
 		{
 			networkDcpStatusFrame = new NetworkDcpStatusFrame(this);
 			networkDcpStatusFrame.setVisible(true);
-			//System.out.println("Created networkDcpStatusFrame");
 		}
 		else
 		{

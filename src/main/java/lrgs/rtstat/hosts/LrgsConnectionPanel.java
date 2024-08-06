@@ -112,7 +112,6 @@ public class LrgsConnectionPanel extends JPanel
 				@Override
 				protected Void doInBackground() throws Exception
 				{
-					System.out.println("Calling connect function.");
 					controller.connect();
 					return null;
 				}
