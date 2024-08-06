@@ -88,7 +88,7 @@ public class MessageBrowser extends MenuFrame
     private SearchCriteria searchcrit;
     private SearchCriteriaEditorIF scedit;
 
-    private final LrgsConnectionPanel lrgsConnectionPanel = new LrgsConnectionPanel();
+    private final LrgsConnectionPanel lrgsConnectionPanel = new LrgsConnectionPanel(false);
     private JTextField scfileField;
     private JButton scSelectButton, scEditButton;
     private JTextField prefixField, suffixField;
@@ -675,7 +675,7 @@ public class MessageBrowser extends MenuFrame
       Uses current info from the hostname, port, user, and password fields
       to open the DDS connection and send the inital "Hello" message.
     */
-    public void connectButtonPress(LrgsConnection c)
+    public boolean connectButtonPress(LrgsConnection c)
     {
         statusBar.setText(labels.getString("MessageBrowser.connectingLabel"));
         if (client != null)
@@ -735,6 +735,7 @@ public class MessageBrowser extends MenuFrame
             client = null;
             statusBar.setText(
                     labels.getString("MessageBrowser.notConnectedLabel"));
+            return false;
         }
         else
         {
@@ -743,7 +744,7 @@ public class MessageBrowser extends MenuFrame
                     hostName, port, username));
 
             firstAfterConnect = true;
-            lrgsConnectionPanel.addOrUpdateConnection(c);
+            return client.isConnected();
         }
     }
 

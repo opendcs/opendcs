@@ -119,12 +119,7 @@ public class RtStatFrame
 	private DrgsInputSettings drgsSettings;
 	private NetlistMaintenanceDialog netlistDlg;
 	private DrgsInputSettings networkDcpSettings;
-	private NetworkDcpStatusFrame networkDcpStatusFrame = null;
-
-	private final JobDialog connectionJobDialog = new JobDialog(
-									this,
-									labels.getString("RtStatFrame.connectingToInfo") + host,
-									true);
+	private NetworkDcpStatusFrame networkDcpStatusFrame = null;	
 
 	/** Constructor. */
 	public RtStatFrame(int scanPeriod, String iconFile, String headerFile)
@@ -345,13 +340,13 @@ public class RtStatFrame
 		dlg.setVisible(true);
 	}
 
-	public void connectButton_actionPerformed(LrgsConnection c)
+	public boolean connectButton_actionPerformed(LrgsConnection c)
 	{
 		final String thost = c.getHostName();
 		if (thost.length() == 0)
 		{
 			showError(labels.getString("RtStatFrame.hostOrIpEmptyErr"));
-			return;
+			return false;
 		}
 
 		final int p = c.getPort();
@@ -366,7 +361,7 @@ public class RtStatFrame
 		if (user.length() == 0)
 		{
 			showError(labels.getString("RtStatFrame.userEmptyErr"));
-			return;
+			return false;
 		}
 
 		passwd = LrgsConnection.decryptPassword(c, LrgsConnectionPanel.pwk);
@@ -374,21 +369,27 @@ public class RtStatFrame
 		if (passwd == null || passwd.length() == 0)
 		{
 			showError(labels.getString("RtStatFrame.passAuthErr"));
-			return;
+			return false;
 		}
 		SwingUtilities.invokeLater(() -> setTitle(labels.getString("RtStatFrame.frameTitle")));
 
 		host = thost;
-		doConnect(c);
+		return doConnect(c);
 	}
 
-	private void doConnect(LrgsConnection c)
+	private boolean doConnect(LrgsConnection c)
 	{
 		closeConnection();
 		client = null;	
 		final LddsClient tclient = new LddsClient(host, port);
-
-		connectionJobDialog.setCanCancel(true);		
+		final JobDialog connectionJobDialog = new JobDialog(
+			this,
+			labels.getString("RtStatFrame.connectingToInfo") + host+":"+port,
+			true);
+		connectionJobDialog.setCanCancel(true);
+		connectionJobDialog.setTitle(
+			LoadResourceBundle.sprintf(labels.getString("RtStatFrame.connectingInfo"),host, port)
+			);
 		Thread backgroundJob =
 			new Thread()
 			{
@@ -455,7 +456,6 @@ public class RtStatFrame
 
 
 			};
-		backgroundJob.setName("LRGS Connection background thread.");
 		backgroundJob.start();
 		launch(connectionJobDialog);
 		if (tclient.isConnected())
@@ -463,8 +463,11 @@ public class RtStatFrame
 			setTitle(labels.getString("RtStatFrame.frameTitle")+": " + host);
 			client = tclient;
 			displayEvent("Connected to " + host + ":" + port + " as user '" + user + "'");
-			LrgsConnection newConnection = new LrgsConnection(c, new Date());
-			connectionPanel.addOrUpdateConnection(newConnection);
+			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 	private static void pause(long millis)

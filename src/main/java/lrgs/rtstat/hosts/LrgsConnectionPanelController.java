@@ -3,17 +3,22 @@ package lrgs.rtstat.hosts;
 import java.io.File;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import lrgs.ldds.LddsClient;
 
-public class LrgsConnectionPanelController {
-
+public class LrgsConnectionPanelController
+{
+    private static final Logger log = LoggerFactory.getLogger(LrgsConnectionPanelController.class);
     private LrgsConnectionPanel view;
     private LrgsConnection selectedConnection = LrgsConnection.BLANK;
     private LrgsConnectionComboBoxModel model = new LrgsConnectionComboBoxModel(new File(LddsClient.getLddsConnectionsFile()));
 
     /** Defaults do nothing. */
-    private Consumer<LrgsConnection> connectionCallBack = c -> {};
+    private Function<LrgsConnection,Boolean> connectionCallBack = c -> {return false;};
     private BiConsumer<LrgsConnection, LrgsConnection> connectionChangedCallback = (old,c) -> {};
 
     public void setView(LrgsConnectionPanel lrgsConnectionPanel)
@@ -23,16 +28,9 @@ public class LrgsConnectionPanelController {
         model.setSelectedItem(LrgsConnection.BLANK);
     }
 
-    public void connect()
+    public boolean connect(LrgsConnection c)
     {
-        if (selectedConnection != LrgsConnection.BLANK)
-        {
-            connectionCallBack.accept(selectedConnection);
-        }
-        else
-        {
-            connectionCallBack.accept(view.connectionFromFields());
-        }
+        return connectionCallBack.apply(c);
     }
 
     public void changeConnection(LrgsConnection c)
@@ -42,7 +40,7 @@ public class LrgsConnectionPanelController {
         connectionChangedCallback.accept(oldConnection, c);
     }
 
-    public void onConnect(Consumer<LrgsConnection> connectCallback)
+    public void onConnect(Function<LrgsConnection,Boolean> connectCallback)
     {
         this.connectionCallBack = connectCallback;
     }

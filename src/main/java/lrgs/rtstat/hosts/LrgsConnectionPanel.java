@@ -4,26 +4,37 @@ import javax.swing.JPanel;
 import java.awt.FlowLayout;
 import javax.swing.JComboBox;
 import javax.swing.JTextField;
+import javax.swing.ListCellRenderer;
 import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import decodes.util.DecodesVersion;
+import ilex.util.AsciiUtil;
 import lrgs.gui.MessageBrowser;
+import rma.swing.table.ComboBoxRenderer;
 
 import java.awt.Component;
 import java.awt.Dimension;
 import javax.swing.JButton;
 
+import java.util.Date;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-public class LrgsConnectionPanel extends JPanel
+public final class LrgsConnectionPanel extends JPanel
 {
+	private static final Logger log = LoggerFactory.getLogger(LrgsConnectionPanel.class);
 	private static final ResourceBundle labels = ResourceBundle.getBundle("decodes.resources.rtstat", Locale.getDefault()); //$NON-NLS-1$
 	public static String pwk = MessageBrowser.class.toString() +
 		(""+Math.PI).substring(3, 10) + DecodesVersion.class.toString();
@@ -40,10 +51,15 @@ public class LrgsConnectionPanel extends JPanel
 	 */
 	public LrgsConnectionPanel()
 	{
-		this(new LrgsConnectionPanelController());
+		this(new LrgsConnectionPanelController(), true);
 	}
 
-	private LrgsConnectionPanel(LrgsConnectionPanelController controller)
+	public LrgsConnectionPanel(boolean showPause)
+	{
+		this(new LrgsConnectionPanelController(), showPause);
+	}
+
+	private LrgsConnectionPanel(LrgsConnectionPanelController controller, boolean showPause)
 	{
 		this.controller = controller;
 		setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
@@ -64,6 +80,7 @@ public class LrgsConnectionPanel extends JPanel
 		hostCombo.setAlignmentX(Component.LEFT_ALIGNMENT);
 		hostCombo.setEditable(true);
 		hostCombo.addActionListener(e -> changeConnection());
+		hostCombo.setRenderer(new ConnectionRender());
 		panel.add(hostCombo);
 
 		JPanel panel_1 = new JPanel();
@@ -104,31 +121,67 @@ public class LrgsConnectionPanel extends JPanel
 		add(panel_4);
 
 		JButton connectButton = new JButton(labels.getString("RtStatFrame.connectButton")); //$NON-NLS-1$
-		connectButton.addActionListener(e ->
-		{
-			new SwingWorker<Void, Void>()
-			{
-				// TODO. This should actually disable the button until the connection is finished.
-				@Override
-				protected Void doInBackground() throws Exception
-				{
-					controller.connect();
-					return null;
-				}
-
-			}.execute();
-
-		});
+		connectButton.addActionListener(e -> connect());
 		panel_4.add(connectButton);
 
 		JButton pauseButton = new JButton(labels.getString("RtStatFrame.pause")); //$NON-NLS-1$
 		panel_4.add(pauseButton);
+		pauseButton.setVisible(showPause);
 
 		controller.setView(this);
 
 
 		int minWidth = passwordField.getMinimumSize().width + lblNewLabel_3.getMinimumSize().width + 50;
 		this.setMinimumSize(new Dimension(minWidth, 40));
+	}
+
+	private void connect()
+	{
+		new SwingWorker<LrgsConnection, Void>()
+		{
+			// TODO. This should actually disable the button until the connection is finished.
+			@Override
+			protected LrgsConnection doInBackground() throws Exception
+			{
+				// Always build the connection from the fields, the user may have change a single setting.
+				LrgsConnection c = connectionFromFields();
+				if(controller.connect(c))
+				{
+					return c;
+				}
+				else
+				{
+					return null;
+				}
+			}
+
+			@Override
+			protected void done()
+			{
+				try
+				{
+					LrgsConnection c = get();
+					if (c != null)
+					{
+						((LrgsConnectionComboBoxModel)hostCombo.getModel())
+							.addOrReplaceConnection(new LrgsConnection(c, new Date()));
+					}
+				}
+				catch (InterruptedException | ExecutionException ex)
+				{
+					log.atError()
+					   .setCause(ex)
+					   .log("Unable to connect to LRGS.");
+					JOptionPane.showMessageDialog(LrgsConnectionPanel.this,
+												  "Unable to connect to LRGS.",
+												  "Error!",
+												  JOptionPane.ERROR_MESSAGE
+												  );
+				}
+			}
+
+		}.execute();
+
 	}
 
 	private void changeConnection()
@@ -174,23 +227,38 @@ public class LrgsConnectionPanel extends JPanel
 		return (LrgsConnection)hostCombo.getSelectedItem();
 	}
 
-	public void onConnect(Consumer<LrgsConnection> connectCallback)
+	public void onConnect(Function<LrgsConnection,Boolean> connectCallback)
 	{
 		this.controller.onConnect(connectCallback);
 	}
 
-	public void addOrUpdateConnection(LrgsConnection newConnection)
+	private LrgsConnection connectionFromFields()
 	{
-		((LrgsConnectionComboBoxModel)hostCombo.getModel()).addOrReplaceConnection(newConnection);
-	}
-
-	public LrgsConnection connectionFromFields()
-	{
-		final String hostName = (String)hostCombo.getEditor().getItem();
+		final String hostName = hostCombo.getEditor().getItem().toString().trim();
 		final int port = Integer.parseInt(portField.getText());
 		final String username = usernameField.getText();
 		final String password = LrgsConnection.encryptPassword(passwordField.getText(), LrgsConnectionPanel.pwk);
 		return new LrgsConnection(hostName, port, username, password, null);
 	}
 
+	public static class ConnectionRender extends JLabel implements ListCellRenderer<LrgsConnection>
+	{
+
+		@Override
+		public Component getListCellRendererComponent(JList<? extends LrgsConnection> list, LrgsConnection value,
+				int index, boolean isSelected, boolean cellHasFocus)
+		{
+			if (value == LrgsConnection.BLANK)
+			{
+				setText(" ");
+			}
+			else
+			{
+				setText(String.format("%s:%d (%s)", value.getHostName(), value.getPort(), value.getUsername()));
+			}
+
+			return this;
+		}
+
+	}
 }

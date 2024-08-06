@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 import javax.swing.AbstractListModel;
@@ -69,17 +70,33 @@ public class LrgsConnectionComboBoxModel extends AbstractListModel<LrgsConnectio
     @Override
     public int getSize()
     {
-        return hosts.size();
+        synchronized(hosts)
+        {
+            return hosts.size();
+        }
     }
 
     @Override
     public LrgsConnection getElementAt(int index)
     {
-        return hosts.get(index);
+        synchronized(hosts)
+        {
+            return hosts.get(index);
+        }
     }
 
     public void addOrReplaceConnection(LrgsConnection c)
     {
+        Objects.requireNonNull(c, "Cannot add or replace a null connection");
+        if (c == LrgsConnection.BLANK)
+        {
+            return; // we don't update the blank connection
+        }
+        final String hostname = c.getHostName();
+        if (hostname == null || hostname.trim().isEmpty())
+        {
+            return;
+        }
         synchronized (hosts)
         {
             for (int i = 0; i < hosts.size(); i++)
@@ -110,7 +127,8 @@ public class LrgsConnectionComboBoxModel extends AbstractListModel<LrgsConnectio
     private void writeToDisk()
     {
         Properties props = new Properties();
-
+        synchronized(hosts)
+        {
             for (LrgsConnection c: hosts)
             {
                 if (c != LrgsConnection.BLANK)
@@ -118,6 +136,7 @@ public class LrgsConnectionComboBoxModel extends AbstractListModel<LrgsConnectio
                     props.put(c.getHostName(), c.toPropertyEntry());
                 }
             }
+        }
         try (FileOutputStream fos = new FileOutputStream(lddsConnectionFile))
         {
             props.store(fos, "Recent LRGS Connections.");
@@ -133,12 +152,18 @@ public class LrgsConnectionComboBoxModel extends AbstractListModel<LrgsConnectio
     @Override
     public void setSelectedItem(Object item)
     {
-        selectedIndex = hosts.indexOf(item);
+        synchronized(hosts)
+        {
+            selectedIndex = hosts.indexOf(item);
+        }
     }
 
     @Override
     public Object getSelectedItem()
     {
-        return selectedIndex >= 0 ? hosts.get(selectedIndex) : null;
+        synchronized (hosts)
+        {
+            return selectedIndex >= 0 ? hosts.get(selectedIndex) : null;
+        }
     }
 }
