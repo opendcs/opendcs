@@ -353,7 +353,7 @@ The following prefixes are reserved:
 Custom Decodes Functions
 ========================
 
-To implement a custom implement the following class `org.opendcs.spi.decodes.DecodesFunctionProvider`. And Derived
+To create a custom function, implement the following interface `org.opendcs.spi.decodes.DecodesFunctionProvider`, and derive
 your actual function from `decodes.decoder.DecodesFunction`.
 
 Additionally make sure your full class name is in the appropriate
