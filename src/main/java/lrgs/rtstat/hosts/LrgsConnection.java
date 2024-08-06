@@ -153,8 +153,8 @@ public final class LrgsConnection
         }
         try
         {
-		    final DesEncrypter de = new DesEncrypter(key);
-		    final String password = de.decrypt(encrypted);
+            final DesEncrypter de = new DesEncrypter(key);
+            final String password = de.decrypt(encrypted);
             return password;
         }
         catch (AuthException ex)
@@ -174,8 +174,8 @@ public final class LrgsConnection
         }
         try
         {
-		    final DesEncrypter de = new DesEncrypter(key);
-		    final String passwordEncrypted = de.encrypt(password);
+            final DesEncrypter de = new DesEncrypter(key);
+            final String passwordEncrypted = de.encrypt(password);
             return passwordEncrypted;
         }
         catch (AuthException ex)
