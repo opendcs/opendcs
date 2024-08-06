@@ -282,16 +282,8 @@ public class RtStatFrame
 				labels.getString("RtStatFrame.host"));
 		topPanel.setLayout(new BorderLayout());
 
-		pauseButton.setText(
-				labels.getString("RtStatFrame.pause"));
-		pauseButton.addActionListener(
-			new java.awt.event.ActionListener()
-			{
-	    		public void actionPerformed(ActionEvent e)
-	    		{
-					pauseButton_actionPerformed(e);
-	    		}
-			});
+		connectionPanel.onPause(c -> pauseButton_actionPerformed(c));
+
 		jSplitPane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
 		eventsPanel.setMaximumSize(new Dimension(32767, 150));
 		eventsPanel.setMinimumSize(new Dimension(10, 120));
@@ -860,7 +852,7 @@ public class RtStatFrame
 		}
 	}
 
-	private void pauseButton_actionPerformed(ActionEvent e)
+	private void pauseButton_actionPerformed(LrgsConnection c)
 	{
 		if (!isPaused)
 		{

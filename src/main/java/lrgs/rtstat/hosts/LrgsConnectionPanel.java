@@ -217,6 +217,11 @@ public final class LrgsConnectionPanel extends JPanel
 		}.execute();
 	}
 
+	private void pause()
+	{
+		this.controller.pause((LrgsConnection)hostCombo.getSelectedItem());
+	}
+
 	public void setModel(LrgsConnectionComboBoxModel model)
 	{
 		this.hostCombo.setModel(model);
@@ -230,6 +235,11 @@ public final class LrgsConnectionPanel extends JPanel
 	public void onConnect(Function<LrgsConnection,Boolean> connectCallback)
 	{
 		this.controller.onConnect(connectCallback);
+	}
+
+	public void onPause(Consumer<LrgsConnection> onPause)
+	{
+		this.controller.onPause(onPause);
 	}
 
 	private LrgsConnection connectionFromFields()
