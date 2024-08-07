@@ -31,6 +31,7 @@ public class HdbSiteDAO extends SiteDAO
 	private static HashMap<String, DbKey> stateName2Id = new HashMap<String, DbKey>();
 	private static HashMap<String, DbKey> stateAbbr2Id = new HashMap<String, DbKey>();
 	private static String myDbSiteCode = "ECO";
+	private static boolean siteCodeInit = false;
 	
 	public HdbSiteDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -102,7 +103,7 @@ public class HdbSiteDAO extends SiteDAO
 			}
 		}
 		
-		if (myDbSiteCode == null)
+		if (!siteCodeInit)
 		{
 			synchronized(myDbSiteCode)
 			{
@@ -125,6 +126,7 @@ public class HdbSiteDAO extends SiteDAO
 				{
 					Logger.instance().failure(module + " error in '" + q + "': " + ex);
 				}
+				siteCodeInit = true;
 			}
 		}
 		filterClause = "a.db_site_code = " + sqlString(myDbSiteCode);
