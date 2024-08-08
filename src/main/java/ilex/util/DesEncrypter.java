@@ -174,4 +174,3 @@ public class DesEncrypter
 		System.out.println(decrypted);
 	}
 }
-
