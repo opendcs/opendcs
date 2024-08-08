@@ -9,7 +9,6 @@ import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 import decodes.util.DecodesException;
 import hec.data.RatingException;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
@@ -17,10 +16,8 @@ import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
-import opendcs.util.functional.ThrowingFunction;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -28,8 +25,6 @@ import java.util.List;
 
 //import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import hec.data.cwmsRating.RatingValue;
-import hec.data.cwmsRating.TableRating;
 
 
 //AW:IMPORTS_END
@@ -288,10 +283,10 @@ public class ResEvapAlgo
 	public void SetAsFlow(Double TotalEvap ,Date CurrentTime) throws NoConversionException, DecodesException, RatingException {
 		double evap_to_meters = convertUnits(TotalEvap, HourlyEvapTS.getUnitsAbbr(), "m");
 
-		double elev = resEvap._reservoir.getCurrentElevation(CurrentTime);
+		double elev = resEvap.reservoir.getCurrentElevation(CurrentTime);
 		double areaMetersSq;
 		try {
-			areaMetersSq = resEvap._reservoir.intArea(elev);
+			areaMetersSq = resEvap.reservoir.intArea(elev);
 		}
 		catch(RatingException ex){
 			throw new RatingException("failed to compute rating", ex);
@@ -404,7 +399,7 @@ public class ResEvapAlgo
 
 		reservoir.setInitWaterTemperatureProfile(wtpR, resj);
 
-		resEvap._metData = metData;
+		resEvap.metData = metData;
 //AW:BEFORE_TIMESLICES_END
 	}
 
