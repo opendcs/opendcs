@@ -8,7 +8,7 @@ import decodes.db.DecodesScript;
 
 public class SetMissingFunction extends DecodesFunction
 {
-	private String module = "setMissing";
+	public static final String module = "setMissing";
 	
 	public SetMissingFunction()
 	{

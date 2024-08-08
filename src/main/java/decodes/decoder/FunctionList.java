@@ -13,6 +13,12 @@
 package decodes.decoder;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.ServiceLoader;
+
+import org.opendcs.spi.decodes.DecodesFunctionProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
 This class holds an expandable collection of 'functions' that can be
@@ -20,16 +26,33 @@ used inside DECODES format statements.
 */
 public class FunctionList
 {
-	/** A set of functions available to the tokenizer. */
-	private static HashMap<String, DecodesFunction> functions
-		= new HashMap<String, DecodesFunction>();
+	private static final Logger log = LoggerFactory.getLogger(FunctionList.class);
 
-	/**
-	 * Adds a function to the list.
-	 */
-	public static void addFunction(DecodesFunction func)
+	private static final ServiceLoader<DecodesFunctionProvider> loader = ServiceLoader.load(DecodesFunctionProvider.class);
+	/** A set of functions available to the tokenizer. */
+	private static HashMap<String, DecodesFunction> functions = new HashMap<>();
+
+	private static void loadFunctions()
 	{
-		functions.put(func.getFuncName().toLowerCase(), func);
+		Iterator<DecodesFunctionProvider> providers = loader.iterator();
+		while(providers.hasNext())
+		{
+			DecodesFunctionProvider dfp = providers.next();
+			final String name = dfp.getName().toLowerCase();
+			DecodesFunction newFunc = dfp.createInstance();
+			if (functions.containsKey(name))
+			{
+				DecodesFunction func = functions.get(name);
+				log.atWarn().log("Decodes Function List already contains a function named '{}' from '{}'."
+								+"New Function is from class '{}'. Keeping first loaded.",
+								 name, func.getClass().getName(), newFunc.getClass().getName());
+			}
+			else
+			{
+				functions.put(name, newFunc);
+			}
+		}
+
 	}
 
 	/**
@@ -38,6 +61,10 @@ public class FunctionList
 	 */
 	public static DecodesFunction lookup(String name)
 	{
+		if (functions.isEmpty())
+		{
+			loadFunctions();
+		}
 		DecodesFunction ret = functions.get(name.toLowerCase());
 		if (ret == null)
 			return null;

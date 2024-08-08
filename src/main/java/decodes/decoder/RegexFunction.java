@@ -14,7 +14,7 @@ public class RegexFunction
 	extends DecodesFunction
 {
 	private final static org.slf4j.Logger log = LoggerFactory.getLogger(PlatformListIO.class);
-	private final String module = "regex";
+	public static final String module = "regex";
 	private String argString = null;
 
 	public RegexFunction()
