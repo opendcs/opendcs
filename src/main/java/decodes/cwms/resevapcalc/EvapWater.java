@@ -17,15 +17,15 @@ package decodes.cwms.resevapcalc;
 public class EvapWater
 {
     //these variables have package access
-    double _evap;
-    double _hs;
-    double _hl;
-    double _ustar;
-    double _tstar;
-    double _pstar;
-    double _qstar;
-    double _rstar;
-    double _obukhovLen;
+    double evap;
+    double hs;
+    double hl;
+    double ustar;
+    double tstar;
+    double pstar;
+    double qstar;
+    double rstar;
+    double obukhovLen;
        
     /**
      * This function iteratively
@@ -282,14 +282,14 @@ public class EvapWater
         
         // store values in global variables.
         tau = taudc.d;
-        _hl = hldc.d;
-        _hs = hsdc.d;
-        _evap = evapdc.d;
+        hl = hldc.d;
+        hs = hsdc.d;
+        evap = evapdc.d;
         
-        _ustar = ustar;
-        _qstar = qstar;
-        _rstar = rstar;
-        _obukhovLen = l;
+        this.ustar = ustar;
+        this.qstar = qstar;
+        this.rstar = rstar;
+        obukhovLen = l;
 
     }
 }

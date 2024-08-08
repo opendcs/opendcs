@@ -19,7 +19,7 @@ import java.util.Date;
  * @author RESEVAP program by Steven F. Daly (ERDC/CRREL)
  * conversion to Java by Richard Rachiele (RMA)
  */
-public class Solflx
+public class SolarFlux
 {
     /* r1(4,4): = Cubic polynomial coefficients for Reflectivity
      *            for clear sky
