@@ -7,10 +7,8 @@
 package decodes.cwms.resevapcalc;
 
 import decodes.cwms.HecConstants;
-import decodes.db.Constants;
 //import hec.heclib.util.HecTime;
 
-import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
@@ -141,45 +139,45 @@ public class MetComputation
         // Store copy of previous good value
         if ( !HecConstants.isValidValue(windSpeed) )
         {
-            windSpeed = _metData._windSpeed_old;
+            windSpeed = _metData.windSpeed_old;
         }
         else
         {
-            _metData._windSpeed_old = windSpeed;
+            _metData.windSpeed_old = windSpeed;
         }
         
         if ( !HecConstants.isValidValue(airTemp) )
         {
-            airTemp = _metData._airTemp_old;
+            airTemp = _metData.airTemp_old;
         }
         else
         {
-            _metData._airTemp_old = airTemp;
+            _metData.airTemp_old = airTemp;
         }
         
         if ( !HecConstants.isValidValue(relHumidity) )
         {
-            relHumidity = _metData._relHumidity_old;
+            relHumidity = _metData.relHumidity_old;
         }
         else
         {
-            _metData._relHumidity_old = relHumidity;
+            _metData.relHumidity_old = relHumidity;
         }
         
         if ( !HecConstants.isValidValue(airPressure) )
         {
-            airPressure = _metData._airPressure_old;
+            airPressure = _metData.airPressure_old;
         }
         else
         {
-            _metData._airPressure_old = airPressure;
+            _metData.airPressure_old = airPressure;
         }
 
         // store values for later output
-        _metData._windSpeed_current = windSpeed;
-        _metData._airTemp_current = airTemp;
-        _metData._relHumidity_current = relHumidity;
-        _metData._airPressure_current = airPressure;
+        _metData.windSpeed_current = windSpeed;
+        _metData.airTemp_current = airTemp;
+        _metData.relHumidity_current = relHumidity;
+        _metData.airPressure_current = airPressure;
         
 
         // compute solar radiation
@@ -196,7 +194,7 @@ public class MetComputation
         if ( windSpeed < .10 )
         {
             windSpeed = .10;
-            _metData._windSpeed_current = windSpeed;
+            _metData.windSpeed_current = windSpeed;
         }
         // the global value TS was overriden in evap_wat.f TS < .0
         if ( surfaceTemp < .0 )
@@ -256,8 +254,8 @@ public class MetComputation
         if ( HecConstants.isValidValue(surfaceTemp) )
         {
             // compute atmospheric emissivity
-            double ematm = Dnirflx.emisatm( airTemp, relHumidity);
-            double flxir = Dnirflx.dnirflx( jday, airTemp,
+            double ematm = DownwellingInfraRedFlux.emisatm( airTemp, relHumidity);
+            double flxir = DownwellingInfraRedFlux.dnirflx( jday, airTemp,
                     relHumidity, ematm, lat, cloudCover );
 
             _flxir = flxir;

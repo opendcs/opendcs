@@ -6,41 +6,44 @@ import decodes.db.SiteName;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.utils.FailableResult;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class WaterTempProfiles extends DataCollection {
+public class WaterTempProfiles{
 
     private TimeSeriesDAI timeSeriesDAO = null;
 
     /** The time series */
-    private ArrayList<CTimeSeries> tseries;
-
-    /** Handle storing tasklist Record Ranges for computation processor. */
-    private RecordRangeHandle rrHandle;
+    public DataCollection tseries;
 
     private double startDepth;
     private double increment;
 
     /** Constructor -- builds an empty collection with a null handle. */
     public WaterTempProfiles(TimeSeriesDAI DAO, double start, double incr){
-        tseries = new ArrayList<CTimeSeries>();
-        rrHandle = null;
+        tseries = new DataCollection();
+
         timeSeriesDAO = DAO;
         startDepth = start;
         increment = incr;
     }
     public WaterTempProfiles(ArrayList<CTimeSeries> profiles, TimeSeriesDAI DAO, double start, double incr){
-        tseries = profiles;
-        rrHandle = null;
+        tseries = new DataCollection();
+        for (CTimeSeries data : profiles){
+            try {
+                tseries.addTimeSeries(data);
+            } catch (DuplicateTimeSeriesException e) {
+                throw new RuntimeException(e);
+            }
+        }
         timeSeriesDAO = DAO;
         startDepth = start;
         increment = incr;
     }
 
     public WaterTempProfiles(TimeSeriesDAI DAO, String wtpId, Date since, Date until, double start, double incr) throws DbIoException, NoSuchObjectException {
-        tseries = new ArrayList<CTimeSeries>();
-        rrHandle = null;
+        tseries = new DataCollection();
         timeSeriesDAO = DAO;
         startDepth = start;
         increment = incr;
@@ -54,8 +57,10 @@ public class WaterTempProfiles extends DataCollection {
                 Site newsite =  new Site();
                 newsite.copyFrom(tsid.getSite());
                 SiteName strsite = newsite.getName(Constants.snt_CWMS);
-                //todo formating
-                strsite.setNameValue(strsite.getNameValue()+currentDepth);
+
+                DecimalFormat decimalFormat = new DecimalFormat("000,0");
+                String formattedNumber = decimalFormat.format(currentDepth);
+                strsite.setNameValue(strsite.getNameValue()+"-D"+formattedNumber+"m");
                 newtsid.setSite(newsite);
                 FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newtsid.getUniqueString());
                 if(check.isSuccess()) {
@@ -64,7 +69,11 @@ public class WaterTempProfiles extends DataCollection {
                     if (n == 0) {
                         loading = false;
                     } else {
-                        tseries.add(cts);
+                        try {
+                            tseries.addTimeSeries(cts);
+                        } catch (DuplicateTimeSeriesException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                     currentDepth += increment;
                 }
@@ -84,7 +93,7 @@ public class WaterTempProfiles extends DataCollection {
     }
 
     public void SaveProfiles(){
-        for (CTimeSeries tsery : tseries) {
+        for (CTimeSeries tsery : tseries.getAllTimeSeries()) {
             try {
                 timeSeriesDAO.saveTimeSeries(tsery);
             } catch (Exception ex) {
