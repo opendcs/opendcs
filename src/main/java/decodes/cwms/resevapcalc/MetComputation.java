@@ -25,57 +25,57 @@ public class MetComputation
 {
 	private static final Logger LOGGER = Logger.getLogger(MetComputation.class.getName());
 	/** input meteorological data */
-    EvapMetData _metData;
+    EvapMetData metData;
     
     /** surface evap and convective and latent energy exchange */
-    EvapWater _evapWater;
+    EvapWater evapWater;
     
     // computed energy exchange values
-    double _solar;
-    double _flxir;
-    double _flxir_out;
-    double _hs;
-    double _hl;
+    double solar;
+    double flxir;
+    double flxir_out;
+    double hs;
+    double hl;
     
-    boolean _metFailed;
+    boolean metFailed;
     
     // there must be at least old met data available
-    boolean _metDefined = false;
+    boolean metDefined = false;
     
     public MetComputation()
     {
-        _evapWater = new EvapWater();
+        evapWater = new EvapWater();
     }
     
     public void setMetData( EvapMetData metData )
     {
-        _metData = metData;
+        this.metData = metData;
     }
     
     public void setEvapWater( EvapWater evapWater )
     {
-        _evapWater = evapWater;
+        this.evapWater = evapWater;
     }
 
     public void computeMetAndEvap( Date currentTime, double surfaceTemp,
                                   ReservoirLocationInfo resLocationInfo)
     {
         // get met values from time series for current time
-        double airPressure = _metData.getAirPressure(currentTime);
+        double airPressure = metData.getAirPressure(currentTime);
         // some rounding problems with kPa to mb conversion
         if ( airPressure < 0.0 )
         {
         	airPressure = -901.;
         }
-        double windSpeed = _metData.getWindSpeed(currentTime);
-        double relHumidity = _metData.getRelHumidity(currentTime);
-        double airTemp = _metData.getAirTemp(currentTime);
+        double windSpeed = metData.getWindSpeed(currentTime);
+        double relHumidity = metData.getRelHumidity(currentTime);
+        double airTemp = metData.getAirTemp(currentTime);
         
-        CloudCover[] cloudCover = _metData.getCloudCover(currentTime);
+        CloudCover[] cloudCover = metData.getCloudCover(currentTime);
        
         // check values
         boolean missingMetData = false;
-        _metFailed = false;
+        metFailed = false;
         
         if ( !HecConstants.isValidValue(windSpeed) )
         {
@@ -106,12 +106,12 @@ public class MetComputation
         // that can be used for missing data in next time step
         if ( !missingMetData )
         {
-            _metDefined = true;
+            metDefined = true;
         }
         
-        if ( !_metDefined )
+        if ( !metDefined)
         {
-            _metFailed = true;
+            metFailed = true;
             return;
         }
         
@@ -139,45 +139,45 @@ public class MetComputation
         // Store copy of previous good value
         if ( !HecConstants.isValidValue(windSpeed) )
         {
-            windSpeed = _metData.windSpeed_old;
+            windSpeed = metData.windSpeed_old;
         }
         else
         {
-            _metData.windSpeed_old = windSpeed;
+            metData.windSpeed_old = windSpeed;
         }
         
         if ( !HecConstants.isValidValue(airTemp) )
         {
-            airTemp = _metData.airTemp_old;
+            airTemp = metData.airTemp_old;
         }
         else
         {
-            _metData.airTemp_old = airTemp;
+            metData.airTemp_old = airTemp;
         }
         
         if ( !HecConstants.isValidValue(relHumidity) )
         {
-            relHumidity = _metData.relHumidity_old;
+            relHumidity = metData.relHumidity_old;
         }
         else
         {
-            _metData.relHumidity_old = relHumidity;
+            metData.relHumidity_old = relHumidity;
         }
         
         if ( !HecConstants.isValidValue(airPressure) )
         {
-            airPressure = _metData.airPressure_old;
+            airPressure = metData.airPressure_old;
         }
         else
         {
-            _metData.airPressure_old = airPressure;
+            metData.airPressure_old = airPressure;
         }
 
         // store values for later output
-        _metData.windSpeed_current = windSpeed;
-        _metData.airTemp_current = airTemp;
-        _metData.relHumidity_current = relHumidity;
-        _metData.airPressure_current = airPressure;
+        metData.windSpeed_current = windSpeed;
+        metData.airTemp_current = airTemp;
+        metData.relHumidity_current = relHumidity;
+        metData.airPressure_current = airPressure;
         
 
         // compute solar radiation
@@ -194,7 +194,7 @@ public class MetComputation
         if ( windSpeed < .10 )
         {
             windSpeed = .10;
-            _metData.windSpeed_current = windSpeed;
+            metData.windSpeed_current = windSpeed;
         }
         // the global value TS was overriden in evap_wat.f TS < .0
         if ( surfaceTemp < .0 )
@@ -244,11 +244,11 @@ public class MetComputation
             }
         }
         // compute incoming solar radiation
-        Solflx solarFlx = new Solflx();
+        SolarFlux solarFlx = new SolarFlux();
         solarFlx.solflx( currentTime, gmtOffset,
                 lon, lat, cloudCover );
 
-        _solar = solarFlx.SOLAR;
+        solar = solarFlx.SOLAR;
         
                     // compute incoming Long Wave radiation
         if ( HecConstants.isValidValue(surfaceTemp) )
@@ -258,7 +258,7 @@ public class MetComputation
             double flxir = DownwellingInfraRedFlux.dnirflx( jday, airTemp,
                     relHumidity, ematm, lat, cloudCover );
 
-            _flxir = flxir;
+            this.flxir = flxir;
         }
 
         // Calculate outgoing Long Wave radiation Flux
@@ -266,7 +266,7 @@ public class MetComputation
         double flxir_out = -1.*ResEvap.EMITTANCE_H20 * ResEvap.SIGMA
                 * Math.pow( ws_temp, 4. );
         
-        _flxir_out = flxir_out;
+        this.flxir_out = flxir_out;
         
         return;
 
@@ -293,11 +293,11 @@ public class MetComputation
         double ru = resLocationInfo.ru;
         double rq = resLocationInfo.rq;
         
-        if ( _evapWater == null )
+        if ( evapWater == null )
         {
-            _evapWater = new EvapWater();
+            evapWater = new EvapWater();
         }
-        _evapWater.evap_water( surfaceTemp,
+        evapWater.evap_water( surfaceTemp,
             airTemp, relHumidity,
             windSpeed, airPressure, 
             rt, ru, rq  );
