@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 //import rma.lang.RmaMath;
 //import rma.util.RMAConst;
@@ -63,14 +62,14 @@ public class ResEvap
 //    rma.util.NumberFormat nfe11_3 = new rma.util.NumberFormat("%11.3E");
         
     // output computed time series
-    double _solarRadTsc;
-    double _IR_DownTsc;
-    double _IR_OutTsc;
-    double _sensibleHeatTsc;
-    double _latentHeatTsc;
-    double _evapRateHourlyTsc;
-    double _evapDailyTsc;
-    double _surfaceTempTsc;
+    double solarRadTsc;
+    double IR_DownTsc;
+    double IR_OutTsc;
+    double sensibleHeatTsc;
+    double latentHeatTsc;
+    double evapRateHourlyTsc;
+    double evapDailyTsc;
+    double surfaceTempTsc;
     NavigableMap<Integer, Integer> _timeMap;
 
     CTimeSeries[] _inputTimeSeries;
@@ -80,12 +79,12 @@ public class ResEvap
             
     // store Water temperature profile data
     // one profile for each hour
-    double[] _wtempProfiles;
+    double[] wtempProfiles;
             
-    public EvapReservoir _reservoir;
-    public EvapMetData _metData;
+    public EvapReservoir reservoir;
+    public EvapMetData metData;
     
-    private File _workDir;
+    private File workDir;
     
     public ResEvap()
     {
@@ -105,7 +104,7 @@ public class ResEvap
      */
     public boolean setOutputDirectory( File workDir )
     {
-        _workDir = workDir;
+        this.workDir = workDir;
         
         return true;
     }
@@ -118,7 +117,7 @@ public class ResEvap
      */
     public boolean setReservoir( EvapReservoir reservoir )
     {
-        _reservoir = reservoir;
+        this.reservoir = reservoir;
         
         // check data
 
@@ -143,7 +142,7 @@ public class ResEvap
      */
     public boolean setMetData( EvapMetData metData )
     {
-        _metData = metData;
+        this.metData = metData;
         return true;
     }
     
@@ -163,12 +162,12 @@ public class ResEvap
     public boolean compute(Date currentTime,
             double gmtOffset ) throws ResEvapException
     {
-    	if ( _reservoir == null )
+    	if ( reservoir == null )
     	{
     		throw new ResEvapException ("ResEvap.compute: No reservoir has been set");
     	}
     	
-    	if ( _metData == null )
+    	if ( metData == null )
     	{
     		throw new ResEvapException ("ResEvap.compute: No Meteorological data has been set");
     	}
@@ -179,12 +178,12 @@ public class ResEvap
         File toutfil = null;
         File xoutfil = null;
         
-        if ( _workDir != null )
+        if ( workDir != null )
         {
-            outfil = new File(_workDir.getAbsolutePath() + "/" + "wtout_java.dat");
-            metoutfil = new File(_workDir.getAbsolutePath() + "/" + "testtout_java.dat");
-            toutfil = new File(_workDir.getAbsolutePath() + "/" + "xout2_java.dat");
-            xoutfil = new File(_workDir.getAbsolutePath() + "/" + "xout_java.dat");
+            outfil = new File(workDir.getAbsolutePath() + "/" + "wtout_java.dat");
+            metoutfil = new File(workDir.getAbsolutePath() + "/" + "testtout_java.dat");
+            toutfil = new File(workDir.getAbsolutePath() + "/" + "xout2_java.dat");
+            xoutfil = new File(workDir.getAbsolutePath() + "/" + "xout_java.dat");
         }
 
         // setup output time series objects
@@ -203,10 +202,10 @@ public class ResEvap
         
         // MetComputation handles the surface water heat exchange and evap 
         MetComputation metComputation = new MetComputation();
-        metComputation.setMetData(_metData);
+        metComputation.setMetData(metData);
         
         // ResWtCompute computes the water temperature profile for the reservoir.
-        ResWtCompute resWtCompute = new ResWtCompute( _reservoir );
+        ResWaterTemperatureCompute resWtCompute = new ResWaterTemperatureCompute(reservoir);
 
         
         // open files for text output  ...
@@ -233,7 +232,7 @@ public class ResEvap
             try
             {
             	xout = new BufferedWriter( new FileWriter( xoutfil ) );
-            	_reservoir.setDebugFile(xout);
+            	reservoir.setDebugFile(xout);
             }
             catch (IOException ex)
             {
@@ -288,28 +287,28 @@ public class ResEvap
 	        // call resSetup to printout reservoir layer info
 	        if (  xout != null )
 	        {
-	        	_reservoir.resSetup();   
+	        	reservoir.resSetup();
 	        }
 	        
-	        int resj = _reservoir.getResj();
-	        _reservoir._resj_old = resj;
+	        int resj = reservoir.getResj();
+	        reservoir._resj_old = resj;
 	        
 	        // loop through compute period
 //	        HecTime currentTime = new HecTime(hecStartTime);
 	        
 	        // reservoir location info (lat, lon, gmtOffset) for met compute
-	        ReservoirLocationInfo resLocationInfo = _reservoir.getReservoirLocationInfo();
+	        ReservoirLocationInfo resLocationInfo = reservoir.getReservoirLocationInfo();
 	        resLocationInfo.gmtOffset = gmtOffset;
 	        
 	        // use elevation time series for reservoir temperature profile
 	        // calculation, else use starting elevation
 	        boolean useElevTS = false;  //TODO make an option
-	        double wselCurrent = _reservoir.getElevation();
+	        double wselCurrent = reservoir.getElevation();
 	        double wselOld = wselCurrent;
 
             if ( useElevTS )
             {
-                double newElev =_reservoir.getCurrentElevation(currentTime);
+                double newElev = reservoir.getCurrentElevation(currentTime);
                 if ( HecConstants.isValidValue(newElev) )
                 {
                     wselCurrent =  newElev;
@@ -319,12 +318,12 @@ public class ResEvap
 //                    {
 //                        xout.write (currentTime.date(4) + " " + currentTime.getTime(false) +   "  wselCurrent  " + (float)wselCurrent);
 //                    }
-                    _reservoir.setElevationMeters(wselCurrent);
-                    _reservoir.resSetup( true );
+                    reservoir.setElevationMeters(wselCurrent);
+                    reservoir.resSetup( true );
                 }
             }
 
-            double surfaceTemp = _reservoir._wt[resj];
+            double surfaceTemp = reservoir._wt[resj];
 
             // compute solar and longwave down radiation
             // and evaporation for reservoir location
@@ -334,7 +333,7 @@ public class ResEvap
             boolean noProblem = true;
 
             // if no valid met data yet skip reservoir temp compute
-            if ( !metComputation._metFailed )
+            if ( !metComputation.metFailed)
             {
                 // compute temperature profile in reservoir
                 noProblem = resWtCompute.computeReservoirTemp(
@@ -372,22 +371,22 @@ public class ResEvap
 //                }
 
 
-                _solarRadTsc =  metComputation._solar;
-                _IR_DownTsc =  metComputation._flxir;
-                _IR_OutTsc =  metComputation._flxir_out;
-                _latentHeatTsc =  metComputation._evapWater._hl;
-                _sensibleHeatTsc =  metComputation._evapWater._hs;
-                _surfaceTempTsc =  surfaceTemp;  // BOP surface temp
+                solarRadTsc =  metComputation.solar;
+                IR_DownTsc =  metComputation.flxir;
+                IR_OutTsc =  metComputation.flxir_out;
+                latentHeatTsc =  metComputation.evapWater.hl;
+                sensibleHeatTsc =  metComputation.evapWater.hs;
+                surfaceTempTsc =  surfaceTemp;  // BOP surface temp
                 // evap is in mm/day.  Divide by 24 to get instantaneous
                 // hourly value
-                _evapRateHourlyTsc =  metComputation._evapWater._evap / 24.;
+                evapRateHourlyTsc =  metComputation.evapWater.evap / 24.;
                 // store wt profile
-                int numLayers = _reservoir.getResj() + 1;
+                int numLayers = reservoir.getResj() + 1;
                 //_wtempProfiles[idx] = new double[numLayers];
-                _wtempProfiles = new double[EvapReservoir.NLAYERS];
+                wtempProfiles = new double[EvapReservoir.NLAYERS];
                 for ( int ilyr = 0; ilyr<numLayers; ilyr++ )
                 {
-                    _wtempProfiles[ilyr] = _reservoir._wt[ilyr];
+                    wtempProfiles[ilyr] = reservoir._wt[ilyr];
                 }
             }
 
@@ -631,13 +630,13 @@ public class ResEvap
     public List<Double> getComputedMetTimeSeries()
     {
     	List<Double> computedTsList = new ArrayList<Double>();
-    	computedTsList.add( _surfaceTempTsc );
-    	computedTsList.add( _sensibleHeatTsc );
-    	computedTsList.add( _latentHeatTsc );
-    	computedTsList.add( _solarRadTsc );
-    	computedTsList.add( _IR_DownTsc );
-    	computedTsList.add( _IR_OutTsc );
-    	computedTsList.add( _evapRateHourlyTsc );
+    	computedTsList.add(surfaceTempTsc);
+    	computedTsList.add(sensibleHeatTsc);
+    	computedTsList.add(latentHeatTsc);
+    	computedTsList.add(solarRadTsc);
+    	computedTsList.add(IR_DownTsc);
+    	computedTsList.add(IR_OutTsc);
+    	computedTsList.add(evapRateHourlyTsc);
 
     	return computedTsList;
     }
@@ -648,11 +647,11 @@ public class ResEvap
      */
     public double getHourlyEvapRateTimeSeries()
     {
-    	return _evapRateHourlyTsc;
+    	return evapRateHourlyTsc;
     }
     public double[] getHourlyWaterTempProfile()
     {
-        return _wtempProfiles;
+        return wtempProfiles;
     }
 	
 //	public double getHourlyEvapTimeSeries()

@@ -16,13 +16,13 @@ import java.util.logging.Logger;
 /**
  *  Class used to compute reservoir temperature profile
  */
-public class ResWtCompute
+public class ResWaterTemperatureCompute
 {
-    private static final Logger LOGGER = Logger.getLogger(ResWtCompute.class.getName());
-    BufferedWriter _tout = null;
+    private static final Logger LOGGER = Logger.getLogger(ResWaterTemperatureCompute.class.getName());
+    BufferedWriter tout = null;
 
     // reservoir layers, segments.
-    EvapReservoir _reservoir;
+    EvapReservoir reservoir;
     int _resj_old = -1;
 
     // working arrays
@@ -36,9 +36,9 @@ public class ResWtCompute
     private double[] wt_tmp;
     private double[] pe_mix_out;
 
-    public ResWtCompute( EvapReservoir reservoir )
+    public ResWaterTemperatureCompute(EvapReservoir reservoir )
     {
-        _reservoir = reservoir;
+        this.reservoir = reservoir;
         
         // dimension working arrays
         a = new double[EvapReservoir.NLAYERS];
@@ -60,7 +60,7 @@ public class ResWtCompute
      */
     public void setOutfile( BufferedWriter tout )
     {
-        _tout = tout;
+        this.tout = tout;
     }
 
     /**
@@ -103,38 +103,38 @@ public class ResWtCompute
         // Determine average density of reservoir
 
         // global to local names
-        double[] zd = _reservoir._zd;
-        double[] kz = _reservoir._kz;
-        double[] zarea = _reservoir._zarea;
-        double[] delz = _reservoir._delz;
-        double[] zvol = _reservoir._zvol;
-        double[] ztop = _reservoir._ztop;
+        double[] zd = reservoir._zd;
+        double[] kz = reservoir._kz;
+        double[] zarea = reservoir._zarea;
+        double[] delz = reservoir._delz;
+        double[] zvol = reservoir._zvol;
+        double[] ztop = reservoir._ztop;
 
-        double[] rhow = _reservoir._rhow;
-        double[] cp = _reservoir._cp;
-        double[] wt = _reservoir._wt;
+        double[] rhow = reservoir._rhow;
+        double[] cp = reservoir._cp;
+        double[] wt = reservoir._wt;
 
-        WindShearMethod windShearMethod = _reservoir._windShearMethod;
-        double thermalDiffusivityCoefficient = _reservoir._thermalDiffusivityCoefficient;
+        WindShearMethod windShearMethod = reservoir._windShearMethod;
+        double thermalDiffusivityCoefficient = reservoir._thermalDiffusivityCoefficient;
 
-        double wsel = _reservoir.getElevation();
-        double surfArea = _reservoir._surfArea;
+        double wsel = reservoir.getElevation();
+        double surfArea = reservoir._surfArea;
         double grav = Const.GRAV;
 
-        double SOLAR= metComputation._solar;
-        double flxir = metComputation._flxir;
-        double flxir_out = metComputation._flxir_out;
-        double hs = metComputation._evapWater._hs;
-        double hl = metComputation._evapWater._hl;
-        double evap = metComputation._evapWater._evap;
-        double ustar = metComputation._evapWater._ustar;
+        double SOLAR= metComputation.solar;
+        double flxir = metComputation.flxir;
+        double flxir_out = metComputation.flxir_out;
+        double hs = metComputation.evapWater.hs;
+        double hl = metComputation.evapWater.hl;
+        double evap = metComputation.evapWater.evap;
+        double ustar = metComputation.evapWater.ustar;
 
-        double katten= _reservoir._attenuationConst;
+        double katten= reservoir._attenuationConst;
 
-        double ur = metComputation._metData.windSpeed_current;
-        double rh = metComputation._metData.relHumidity_current;
-        double tr = metComputation._metData.airTemp_current;
-        double p = metComputation._metData.airPressure_current;
+        double ur = metComputation.metData.windSpeed_current;
+        double rh = metComputation.metData.relHumidity_current;
+        double tr = metComputation.metData.airTemp_current;
+        double p = metComputation.metData.airPressure_current;
 
         double theta = ResEvap.THETA;
         double albedo = ResEvap.ALBEDO;
@@ -143,8 +143,8 @@ public class ResWtCompute
         double wind_critic = ResEvap.WIND_CRITIC;
         double eta_stir = ResEvap.ETA_STIRRING;
  
-        int resj_old = _reservoir._resj_old;
-        int resj = _reservoir.getResj();        
+        int resj_old = reservoir._resj_old;
+        int resj = reservoir.getResj();
         
         avg_rhow = 0.0;
         total_vol = 0.0;
@@ -490,7 +490,7 @@ public class ResWtCompute
                                 "\nzarea(resj) =" + zarea[resj] +                                
                                 "\nu_H2O_star =" + u_H2O_star +                                
                                 "\ndelT =" + delT ;   
-						Logger.getLogger(ResWtCompute.class.getName()).log(Level.SEVERE, msg);
+						Logger.getLogger(ResWaterTemperatureCompute.class.getName()).log(Level.SEVERE, msg);
                         
                         return false;
                     }
@@ -616,12 +616,12 @@ public class ResWtCompute
     {
         double total,totalpvol,zrhow, zout;
         
-        double[] rhow = _reservoir._rhow;
+        double[] rhow = reservoir._rhow;
         
         total = 0.;
         totalpvol = 0.;
-        double[] zvol = _reservoir._zvol;
-        double[] ztop = _reservoir._ztop;
+        double[] zvol = reservoir._zvol;
+        double[] ztop = reservoir._ztop;
         
         for ( int j=ibottom; j<=itop; j++ ) 
         {
@@ -675,7 +675,7 @@ public class ResWtCompute
         if ( b[0] == 0. )
         {
             //TODO error message system (throw exception?)
-			Logger.getLogger(ResWtCompute.class.getName()).log(Level.SEVERE, "tridag: rewrite equations");
+			Logger.getLogger(ResWaterTemperatureCompute.class.getName()).log(Level.SEVERE, "tridag: rewrite equations");
             return false;
         }
         // If this happens then you should rewrite your equations as a set of order N - 1, with u2
@@ -691,7 +691,7 @@ public class ResWtCompute
             if ( bet == 0.0 )
             {
                 //TODO error message system (throw exception?)
-                Logger.getLogger(ResWtCompute.class.getName()).log(Level.SEVERE, " tridag failed");  // !Algorithm fails; see below.
+                Logger.getLogger(ResWaterTemperatureCompute.class.getName()).log(Level.SEVERE, " tridag failed");  // !Algorithm fails; see below.
                 return false;             
             }
             u[j]=(r[j]-a[j]*u[j-1])/bet;
