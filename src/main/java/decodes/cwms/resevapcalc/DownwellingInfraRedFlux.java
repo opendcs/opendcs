@@ -7,7 +7,6 @@
 package decodes.cwms.resevapcalc;
 
 import decodes.cwms.HecConstants;
-import rma.util.RMAConst;
 
 /**
  * Data and functions for computing downwelling IR flux. 
@@ -15,7 +14,7 @@ import rma.util.RMAConst;
  * @author RESEVAP program by Steven F. Daly  (ERDC/CRREL)
  * conversion to Java by Richard Rachiele (RMA)
  */
-public class Dnirflx
+public class DownwellingInfraRedFlux
 {
     
     private static final double[][] COEF11 =
@@ -55,7 +54,7 @@ public class Dnirflx
         COEF[1][1] = COEF22;
     }
     
-    public Dnirflx()
+    public DownwellingInfraRedFlux()
     {
 
     }
