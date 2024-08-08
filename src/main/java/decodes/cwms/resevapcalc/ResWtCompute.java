@@ -9,7 +9,6 @@ package decodes.cwms.resevapcalc;
 //import hec.heclib.util.HecTime;
 
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -132,10 +131,10 @@ public class ResWtCompute
 
         double katten= _reservoir._attenuationConst;
 
-        double ur = metComputation._metData._windSpeed_current;
-        double rh = metComputation._metData._relHumidity_current;
-        double tr = metComputation._metData._airTemp_current;
-        double p = metComputation._metData._airPressure_current;
+        double ur = metComputation._metData.windSpeed_current;
+        double rh = metComputation._metData.relHumidity_current;
+        double tr = metComputation._metData.airTemp_current;
+        double p = metComputation._metData.airPressure_current;
 
         double theta = ResEvap.THETA;
         double albedo = ResEvap.ALBEDO;

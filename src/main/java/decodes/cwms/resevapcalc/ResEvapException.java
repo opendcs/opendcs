@@ -47,4 +47,9 @@ public class ResEvapException extends Exception
         super(message);
     }
 
+    public ResEvapException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
 }
