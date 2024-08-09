@@ -302,6 +302,9 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
                 + " upper(name) = upper(?)";
             try
             {
+                // Check for an existing Entry with the name provided. If it exists assigned the Key
+                // We will then perform and update. Otherwise nothing happens and we insert a new entry
+                // into the database.
 				doQuery(q, rs -> scheduleEntry.forceSetId(DbKey.createDbKey(rs, 1)), scheduleEntry.getName());
             }
             catch (SQLException ex)
