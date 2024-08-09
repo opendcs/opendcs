@@ -299,7 +299,7 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
         if (scheduleEntry.getKey().isNull())
         {
             String q = "select schedule_entry_id from schedule_entry where "
-                + " upper(name) = upper(?)";// + sqlString(scheduleEntry.getName().toUpperCase());
+                + " upper(name) = upper(?)";
             try
             {
 				doQuery(q, rs -> scheduleEntry.forceSetId(DbKey.createDbKey(rs, 1)), scheduleEntry.getName());
