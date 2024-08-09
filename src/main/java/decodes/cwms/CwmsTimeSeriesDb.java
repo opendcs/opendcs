@@ -826,7 +826,7 @@ public class CwmsTimeSeriesDb
 				if (!cgl.isLoginSuccess())
 				{
 					cgl.doLogin(null);
-					if (!cgl.isLoginSuccess()) // user hit cancel
+					if (!cgl.wasOk()) // user hit cancel
 					{
 						throw new BadConnectException("Login aborted by user.");
 					}
