@@ -14,6 +14,7 @@ public class ConnectionInTransaction extends WrappedConnection
     }
 
     /**
+     * Throws an Exception if the state would change, because we are in a transaction.
      * So long as the actual state isn't changing, this can be a noop.
      * But only the original creator of the ConnectionInTransaction should
      * be able to alter the commit state.
