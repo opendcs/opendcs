@@ -18,9 +18,11 @@ import opendcs.dai.DaiBase;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
+import opendcs.dai.TaskListDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.ScheduleEntryDAO;
+import opendcs.dao.TaskListDao;
 import opendcs.dao.XmitRecordDAO;
 import decodes.cwms.CwmsGroupHelper;
 import decodes.cwms.CwmsTsId;
@@ -572,6 +574,12 @@ public class OpenTsdb extends TimeSeriesDb
 		}
 
 		return ret;
+	}
+
+	@Override
+	public TaskListDAI makeTaskListDao()
+	{
+		return new OpenHydroDbTaskListDao(this);
 	}
 
 
