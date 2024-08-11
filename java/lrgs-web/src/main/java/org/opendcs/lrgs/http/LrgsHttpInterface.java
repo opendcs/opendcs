@@ -73,7 +73,8 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
 		server.setHandler(ctx);
         var serHol = ctx.addServlet(ServletContainer.class, "/*");
 		serHol.setInitOrder(1);
-		serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        serHol.setInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true");
         ctx.setAttribute("lrgs", this.lrgs);
         ctx.setAttribute("archive", this.archive);
 
