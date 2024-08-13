@@ -1,5 +1,6 @@
 package lrgs.rtstat;
 
+import ilex.util.AuthException;
 import ilex.util.LoadResourceBundle;
 import lrgs.rtstat.hosts.LrgsConnection;
 import lrgs.rtstat.hosts.LrgsConnectionPanel;
@@ -48,7 +49,7 @@ public class RtStat
 			final int port = cmdLineArgs.getPort();
 			if (username == null || password == null)
 			{
-				log.error("A Username and Password are now required for LRGS connections."
+				throw new AuthException("A Username and Password are now required for LRGS connections."
 						 + " Please set one with -pw <password>.");
 			}
 			Thread delay = new Thread()
@@ -60,7 +61,7 @@ public class RtStat
 						sleep(3000L);
 					} catch (InterruptedException e)
 					{
-					log.error("InterruptedException ",e);
+						log.error("InterruptedException ",e);
 					}
 					SwingUtilities.invokeLater(
 						new Runnable()
@@ -134,12 +135,12 @@ public class RtStat
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			System.out.println("Default local: " + Locale.getDefault().toString());
+			RtStat rtStat = new RtStat(args);
+			rtStat.frame.setVisible(true);
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
-			log.error("Error starting RtStat ",e);
+			log.error("Error starting RtStat.", ex);
 		}
-		RtStat rtStat = new RtStat(args);
-		rtStat.frame.setVisible(true);
 	}
 }
