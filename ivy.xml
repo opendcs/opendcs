@@ -82,6 +82,7 @@
 
         <dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.10.0"/>
         <dependency org="com.fasterxml.jackson.jaxrs" name="jackson-jaxrs-json-provider" rev="2.10.0"/>
+        <dependency org="com.fasterxml.jackson.datatype" name="jackson-datatype-jsr310" rev="2.10.0"/>
         <dependency org="org.glassfish.jersey.media" name="jersey-media-json-jackson" rev="${jersey.version}"/>
         <dependency org="org.eclipse.jetty" name="jetty-jsp" rev="${jetty.jsp.version}"/>
         <dependency org="org.eclipse.jetty" name="jetty-annotations" rev="${jetty.version}"/>

@@ -1,7 +1,10 @@
 package org.opendcs.lrgs.http;
 
 import java.io.IOException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import javax.servlet.ServletContext;
@@ -17,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 
+import org.opendcs.lrgs.http.dto.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,8 +65,8 @@ public class DdsHttp
         }
         if (mar != null)
         {
-            final ArrayList<String> messages = new ArrayList<>();
-            try{
+            final ArrayList<org.opendcs.lrgs.http.dto.DcpMsg> messages = new ArrayList<>();
+            try {
                 final DcpMsgIndex dmi = new DcpMsgIndex();
                 
                 int idx = mar.getNextPassingIndex(dmi, System.currentTimeMillis() + 500);
@@ -71,7 +75,16 @@ public class DdsHttp
                     final DcpMsg msgOut = dmi.getDcpMsg();
                     if (msgOut != null)
                     {
-                        messages.add(msgOut.getDataStr());
+                        
+                        final String type = "" + lrgs.getLrgsInputById(msgOut.getDataSourceId()).getType();
+                        
+                        final org.opendcs.lrgs.http.dto.DcpMsg msg = 
+                            new org.opendcs.lrgs.http.dto.DcpMsg(
+                                new DataSource(msgOut.getSource(), type),
+                                ZonedDateTime.ofInstant(msgOut.getLocalReceiveTime().toInstant(), ZoneId.of("UTC")),
+                                Base64.getEncoder().encodeToString(msgOut.getData())
+                                );
+                        messages.add(msg);
                     }
                     idx = mar.getNextPassingIndex(dmi, System.currentTimeMillis() + 500);
                 }
@@ -86,7 +99,7 @@ public class DdsHttp
             {
                 if (messages.isEmpty())
                 {
-                    return Response.noContent().build();
+                    return Response.noContent().header("Retry-After", "10").build();
                 }
                 return Response.ok().entity(messages).build();
             }
@@ -104,6 +117,7 @@ public class DdsHttp
 
     private MessageArchiveRetriever getMar(LrgsMain lrgs, HttpSession session) throws Exception
     {
+        log.info(session.toString());
         MessageArchiveRetriever mar = (MessageArchiveRetriever)session.getAttribute("mar");
         if (mar != null)
         {

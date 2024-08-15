@@ -371,6 +371,7 @@ more information about each.
                 <include name="opendcs.jar"/>
             </fileset>
         </copy>
+        <chmod perm="755" dir="stage/bin" excludes="*.bat"/>
         <copy todir="stage/dep">
             <fileset dir="build/lib">
                 <include name="opendcs-annotations.jar"/>
