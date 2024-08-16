@@ -11,10 +11,10 @@ set "CLASSPATH=%BIN_PATH%opendcs.jar;%BIN_PATH%hibernate.cfg.xml;"
 
 if defined CP_SHARED_JAR_DIR (
  for /R "%CP_SHARED_JAR_DIR%" %%a in (*.jar) do (
-   set "CLASSPATH=!CLASSPATH!;%%a"
+   set "CLASSPATH=!CLASSPATH!;%%sa"
  )
 )
-
+REM Use short name as the classpath has gotten beyond the windows environment variable support
 for /R "%APP_PATH%/dep" %%a in (*.jar) do (
   set "CLASSPATH=!CLASSPATH!;%%a"
   )
@@ -32,9 +32,9 @@ if not exist %DCSTOOL_USERDIR%\ (
   copy %APP_PATH%\decodes.properties %DCSTOOL_USERDIR%\user.properties
   xcopy %APP_PATH%\edit-db %DCSTOOL_USERDIR%\edit-db /E /I
 )
-
+REM Use short name as the classpath has gotten beyond the windows environment variable support
 for /R "%DCSTOOL_USERDIR%/dep" %%a in (*.jar) do (
-  set "CLASSPATH=!CLASSPATH!;%%a"
+  set "CLASSPATH=!CLASSPATH!;%%sa"
   )
 
 java -Xmx240m %DECJ_MAXHEAP% %DECJ_OPTS% -cp "!CLASSPATH!" -DDCSTOOL_HOME="%APP_PATH%" -DDECODES_INSTALL_DIR="%APP_PATH%" -DDCSTOOL_USERDIR="%DCSTOOL_USERDIR%" %*%
