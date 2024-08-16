@@ -1,6 +1,7 @@
 package decodes.datasource;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -20,12 +21,8 @@ import java.util.LinkedList;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.Vector;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import decodes.db.DataSource;
 import decodes.db.Database;
@@ -34,17 +31,11 @@ import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 import decodes.db.Platform;
 import decodes.util.PropertySpec;
-import hec.util.TextUtil;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
-
-import org.cobraparser.ua.UserAgentContext;
-import org.cobraparser.html.parser.DocumentBuilderImpl;
-import org.cobraparser.html.parser.InputSourceImpl;
-import org.lobobrowser.request.UserAgentContextImpl;
 
 
 /**
@@ -61,6 +52,7 @@ public class WebDirectoryDataSource extends DataSourceExec
 	private String urlFieldDelimiter = "_";
 	private TimeZone urlTimeZone = TimeZone.getTimeZone("UTC");
 	private String urlTimeFormat = "ddHHmm";
+	private static final Pattern HTML_LINK_PATTERN = Pattern.compile(".*<a.*href=\"(?<link>.*?)\".*/?>.*");
 	
 	/** Position of the time within the file name (0=no time, 1=1st position) */
 	private int urlTimePos = 3;
@@ -402,44 +394,25 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 		Properties urlProps = new Properties();
 		urlProps.setProperty("TZ", urlTimeZone.getID());
 		currentDirUrl = EnvExpander.expand(directoryUrl, urlProps, nextDirectoryTime);
-		InputStream istrm = null;
-		Reader ireader = null;
 		try
 		{
 			Logger.instance().debug1(module + " reading URL '" + currentDirUrl + "'");
 			URL dirUrl = new URL(currentDirUrl);
-			URLConnection urlCon = dirUrl.openConnection();
-			istrm = urlCon.getInputStream();
-			ireader = new InputStreamReader(istrm);
-			InputSource isrc = new InputSourceImpl(ireader, currentDirUrl);
-			UserAgentContext uaCtx = new UserAgentContextImpl(null);
-			DocumentBuilderImpl docBldr = new DocumentBuilderImpl(uaCtx);
-			Document dirDoc = docBldr.parse(isrc);
-			isrc.getClass();
 			
-			NodeList anchorNodes = dirDoc.getElementsByTagName("a");
-			for (int idx = 0; idx < anchorNodes.getLength(); idx++)
+			try (InputStream input = dirUrl.openStream();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(input)))
 			{
-				Node node = anchorNodes.item(idx);
-				Node hrefAttr = node.getAttributes().getNamedItem("href");
-				if (hrefAttr == null)
+				String line = null;
+				while((line = reader.readLine()) != null)
 				{
-//Logger.instance().debug1(module + " skipping anchor '" + node.getNodeValue() 
-//+ "' because no href attr.");
-					continue;
+					Matcher m = HTML_LINK_PATTERN.matcher(line);
+					if (m.matches())
+					{
+						fileList.add(m.group("link"));
+					}
 				}
-				
-				// For the file nodes we want, the href attribute is the same as the anchor content.
-				if (TextUtil.equals(node.getTextContent(), hrefAttr.getNodeValue()))
-					fileList.add(node.getTextContent());
-//else
-//Logger.instance().debug1(module + " skipping anchor with href='" + hrefAttr.getNodeValue() 
-//+ "' diff from content '" + node.getTextContent() + "'");
 			}
 
-//Logger.instance().debug1("Read new file list: ");
-//if (fileList.isEmpty()) Logger.instance().debug1("\tEmpty");
-//else for(String s : fileList) Logger.instance().debug1("\t" + s);
 			return true;
 		}
 		catch(MalformedURLException ex)
@@ -456,10 +429,6 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 		catch(IOException ex)
 		{
 			Logger.instance().warning(module + " Error reading URL '" + currentDirUrl + "': " + ex);
-		} 
-		catch (SAXException ex)
-		{
-			Logger.instance().warning(module + " Error parsing data from URL '" + currentDirUrl + "': " + ex);
 		}
 		catch(Exception ex)
 		{
@@ -469,13 +438,6 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 			if (ps != null)
 				ex.printStackTrace(ps);
 			
-		}
-		finally
-		{
-			if (ireader != null)
-				try { ireader.close(); } catch(Exception ex) {}
-			if (istrm != null)
-				try { istrm.close(); } catch(Exception ex) {}
 		}
 		
 		return false;
