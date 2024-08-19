@@ -1051,9 +1051,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries()
 		throws DbIoException
 	{
-		// MJM 20161025 don't reload more if already done within threshold.
-		if (System.currentTimeMillis() - lastCacheRefresh > cacheReloadMS)
-			reloadTsIdCache();
+		reloadTsIdCache();
 
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
 		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
@@ -1076,6 +1074,11 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	{
 		// Each TSID will need a site, so prefill the site cache to prevent
 		// it from doing individual reads for each site.
+		if (!(System.currentTimeMillis() - lastCacheRefresh > cacheReloadMS))
+		{
+			return;
+		}
+
 		if (System.currentTimeMillis() - siteDAO.getLastCacheFillMsec() > 60000L * 10)
 			siteDAO.fillCache();
 
@@ -1115,7 +1118,15 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	@Override
 	public DbObjectCache<TimeSeriesIdentifier> getCache()
 	{
-		return cache;
+		try
+		{
+			reloadTsIdCache();
+			return cache;
+		}
+		catch (Exception ex)
+		{
+			throw new RuntimeException("Unable to reload cache.", ex);
+		}
 	}
 
 	@Override

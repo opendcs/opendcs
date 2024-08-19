@@ -73,6 +73,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Stack;
 
+import org.opendcs.utils.FailableResult;
+
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
@@ -84,6 +86,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.tsdb.TsdbException;
 
 public class TsGroupDAO
 	extends DaoBase 
@@ -182,11 +185,12 @@ public class TsGroupDAO
 			
 			for(DbKey dataId : dataIds)
 			{
-				try
+				FailableResult<TimeSeriesIdentifier,TsdbException> tsId = timeSeriesDAO.findTimeSeriesIdentifier(dataId);
+				if (tsId.isSuccess())
 				{
-					group.addTsMember(timeSeriesDAO.getTimeSeriesIdentifier(dataId));
+					group.addTsMember(tsId.getSuccess());
 				}
-				catch(NoSuchObjectException ex)
+				else
 				{
 					warning("tsdb_group id=" + group.getGroupId()
 						+ " contains invalid ts member with data_id="
@@ -493,6 +497,7 @@ public class TsGroupDAO
 		{
 			cache.clear();
 			timeSeriesDAO.setManualConnection(conn);
+			DbObjectCache<TimeSeriesIdentifier> tsCache = timeSeriesDAO.getCache();
 			q = "SELECT " + GroupAttributes + " FROM tsdb_group";
 			dao.doQuery(q, rs -> cache.put(rs2group(rs)));
 
@@ -524,19 +529,16 @@ public class TsGroupDAO
 					warning("Null ts_id in tsdb_group_member_ts ");
 					return;
 				}
-				try
+				TimeSeriesIdentifier tsId = tsCache.getByKey(dataId);
+				if (tsId != null)
 				{
-					group.addTsMember(timeSeriesDAO.getTimeSeriesIdentifier(dataId));
+					group.addTsMember(tsId);
 				}
-				catch(NoSuchObjectException ex)
+				else
 				{
 					warning("tsdb_group id=" + group.getGroupId()
 						+ " contains invalid ts member with data_id="
 						+ dataId + " -- ignored.");
-				}
-				catch (DbIoException ex)
-				{
-					throw new SQLException("Unable to get timeseries identified for group member.", ex);
 				}
 			});
 

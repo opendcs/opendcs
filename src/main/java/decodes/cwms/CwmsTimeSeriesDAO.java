@@ -1053,12 +1053,7 @@ public class CwmsTimeSeriesDAO
     public ArrayList<TimeSeriesIdentifier> listTimeSeries()
         throws DbIoException
     {
-        // MJM 20161025 don't reload more if already done within threshold.
-        if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
-        {
-            reloadTsIdCache();
-        }
-
+        reloadTsIdCache();
         ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
         synchronized(cache)
         {
@@ -1085,6 +1080,12 @@ public class CwmsTimeSeriesDAO
     @Override
     public void reloadTsIdCache() throws DbIoException
     {
+        // MJM 20161025 don't reload more if already done within threshold.
+        if (!(System.currentTimeMillis() - lastCacheReload > cacheReloadMS))
+        {
+            return;
+        }
+
         log.debug("reloadTsIdCache()");
 
         // Each TSID will need a site, so prefill the site cache to prevent
@@ -1147,7 +1148,15 @@ public class CwmsTimeSeriesDAO
     @Override
     public DbObjectCache<TimeSeriesIdentifier> getCache()
     {
-        return cache;
+        try
+        {
+            reloadTsIdCache();
+            return cache;
+        }
+        catch (Exception ex)
+        {
+            throw new RuntimeException("Unable to reload timeseries cache.", ex);
+        }
     }
 
     @Override

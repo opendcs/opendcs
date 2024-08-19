@@ -1329,9 +1329,7 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries()
 		throws DbIoException
 	{
-		// MJM 20161025 don't reload more if already done within threshold.
-		if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
-			reloadTsIdCache();
+		reloadTsIdCache();
 		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<TimeSeriesIdentifier>();
 		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
 			ret.add(tsidit.next());
@@ -1350,6 +1348,11 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 	@Override
 	public synchronized void reloadTsIdCache() throws DbIoException
 	{
+		// MJM 20161025 don't reload more if already done within threshold.
+		if (!(System.currentTimeMillis() - lastCacheReload > cacheReloadMS))
+		{
+			return;
+		}
 		cache.clear();
 		String q = "SELECT " + ts_spec_columns + " from TS_SPEC";
 		
@@ -1373,7 +1376,7 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 			System.err.println(ex.toString());
 			ex.printStackTrace(System.err);
 			throw new DbIoException(
-				"Error reading TS_SPEC table: " + ex);
+				"Error reading TS_SPEC table: ", ex);
 		}
 		lastCacheReload = System.currentTimeMillis();
 	}
@@ -1381,7 +1384,15 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 	@Override
 	public DbObjectCache<TimeSeriesIdentifier> getCache()
 	{
-		return cache;
+		try
+        {
+            reloadTsIdCache();
+            return cache;
+        }
+        catch (Exception ex)
+        {
+            throw new RuntimeException("Unable to reload timeseries cache.", ex);
+        }
 	}
 
 	@Override
