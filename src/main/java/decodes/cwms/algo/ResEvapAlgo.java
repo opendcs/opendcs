@@ -8,6 +8,7 @@ import decodes.tsdb.*;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 import decodes.util.DecodesException;
+import decodes.util.PropertySpec;
 import hec.data.RatingException;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
@@ -118,6 +119,38 @@ public class ResEvapAlgo
 			"HourlySensible",
 	};
 //AW:OUTPUTS_END
+	private PropertySpec copyPropertySpecs[] =
+			{
+					new PropertySpec("WtpTsid", PropertySpec.NUMBER,
+							"Base String for water Temperature Profiles"),
+					new PropertySpec("depth", PropertySpec.NUMBER,
+							"Depth format for compuatation output"),
+					new PropertySpec("reservoirId", PropertySpec.NUMBER,
+							"Location ID of reservoir"),
+					new PropertySpec("Secchi", PropertySpec.NUMBER,
+							"Average secchi depth of reservoir"),
+					new PropertySpec("Zero_elevation", PropertySpec.NUMBER,
+							"Streambed elevation of reservoir"),
+					new PropertySpec("Lati", PropertySpec.NUMBER,
+							"Latitude of reservoir"),
+					new PropertySpec("Longi", PropertySpec.NUMBER,
+							"Longitude of reservoir"),
+					new PropertySpec("GMT_Offset", PropertySpec.NUMBER,
+							"GMT offset at reservoir location"),
+					new PropertySpec("Timezone", PropertySpec.NUMBER,
+							"Time zone at reservoir location"),
+					new PropertySpec("WindShear", PropertySpec.NUMBER,
+							"Windshear equation to be utilized in computation"),
+					new PropertySpec("ThermalDifCoe", PropertySpec.NUMBER,
+							"Thermal diffusivity coefficient to be utilized in computation"),
+					new PropertySpec("Rating", PropertySpec.NUMBER,
+							"Rating Curve specification for Elevation-Area curve")
+			};
+	@Override
+	protected PropertySpec[] getAlgoPropertySpecs()
+	{
+		return copyPropertySpecs;
+	}
 
 //AW:PROPERTIES
 	//new prop
