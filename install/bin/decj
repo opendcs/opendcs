@@ -40,8 +40,8 @@ fi
 export DCSTOOL_USERDIR
 
 if [ ! -d "$DCSTOOL_USERDIR" ]; then
-    echo "Creating Local User Directory and initial properties in ${DCSTOOL_USERDIR}"
-    echo "The default XML database has been copied to this directory."
+    echo "Creating Local User Directory and initial properties in ${DCSTOOL_USERDIR}" 1>&2
+    echo "The default XML database has been copied to this directory." 1>&2
     mkdir -p $DCSTOOL_USERDIR
     cp $DH/decodes.properties $DCSTOOL_USERDIR/user.properties
     cp -r $DH/edit-db $DCSTOOL_USERDIR/edit-db
@@ -52,7 +52,17 @@ CP=$DH/bin/opendcs.jar:
 
 # If a user-specific 'dep' (dependencies) directory exists, then
 # add all the jars therein to the classpath.
-CP=$CP:$DCSTOOL_USERDIR/*:$DH/dep/*
+if [ -d "$CP_SHARED_JAR_DIR"]; then
+  CP=$CP:$CP_SHARED_JAR_DIR/*
+  echo "The need of this is superseded by using a DCSTOOL_USERDIR for configuration." 1>&2
+  echo "Support for this variable will be moved in a future release. Please update " 1>&2
+  echo "your configuration." 1>&2
+fi
+
+if [ -d "$DCSTOOL_USERDIR/dep" ]; then
+  CP=$CP:$DCSTOOL_USERDIR/dep/*
+fi
+CP=$CP:$DH/dep/*
 
 cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
 
