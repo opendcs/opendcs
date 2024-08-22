@@ -43,6 +43,12 @@ import ilex.var.Variable;
  * Provide a directory URL with embedded times in it. Build the URL and list the files
  * contained in the directory. Parse the file names for mediumIDs I'm interested in.
  * File names also contain the message time stamp.
+ * 
+ * https://dd.weather.gc.ca/bulletins/alphanumeric/20240326/CA/CWAO/00/ was used to verify behavior
+ * of this source as best as possible. We suspect the agency has changed the directory structure of 
+ * the data and we are not currently aware of expectation. Please contact the OpenDCS team if you 
+ * need this working and can communicate the current expectations whether it's for the above link
+ * or another source of data following a similar design.
  */
 public class WebDirectoryDataSource extends DataSourceExec
 {
