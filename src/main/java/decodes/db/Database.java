@@ -172,7 +172,6 @@ public class Database extends DatabaseObject
 	public void read()
 		throws DatabaseException
 	{
-		System.out.println("calling start");
 		enumList.read();
 		dataTypeSet.read();
 		engineeringUnitList.read();
