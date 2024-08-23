@@ -370,11 +370,13 @@ public class CpCompDependsUpdater
     public void initDecodes()
         throws DecodesException
     {
+        /*
         DecodesInterface.silent = true;
         if (DecodesInterface.isInitialized())
             return;
         DecodesInterface.initDecodesMinimal(cmdLineArgs.getPropertiesFile());
         Database.getDb().dataTypeSet.read();
+        */
     }
 
     /**

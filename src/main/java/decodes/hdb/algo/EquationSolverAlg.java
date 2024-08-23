@@ -20,6 +20,7 @@ import decodes.hdb.HdbFlags;
 import decodes.hdb.HdbTsId;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 
 //AW:IMPORTS_END
@@ -48,7 +49,6 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
 //AW:LOCALVARS
     boolean do_setoutput = true;
-    Connection conn = null;
 
     private PropertySpec[] esaProps = 
     {
@@ -252,43 +252,54 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		// Then continue with evaluation the equation
 		{
 			// get the connection and a few other classes so we can do some sql
-			conn = tsdb.getConnection();
-			DBAccess db = new DBAccess(conn);
-			DataObject dbobj = new DataObject();
-			String dt_fmt = "dd-MMM-yyyy HH:mm";
+			// NOTE: this isn't likely going get high performance. However I don't
+			// believe afterTimeSlices is called on a failure so we can't guarantee
+			// the connection will be closed if it's not in a try-with block.
+			// we should probably add an after handler for algorithms that
+			// always runs for cleaning up resources like this.
+			try (Connection conn = tsdb.getConnection())
+			{
+				DBAccess db = new DBAccess(conn);
+				DataObject dbobj = new DataObject();
+				String dt_fmt = "dd-MMM-yyyy HH:mm";
 
-			String status = null;
-			String query = "select " + new_equation + " result_value from dual";
-			// now do the query for all the needed data
-			status = db.performQuery(query, dbobj);
-			debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+				String status = null;
+				String query = "select " + new_equation + " result_value from dual";
+				// now do the query for all the needed data
+				status = db.performQuery(query, dbobj);
+				debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
 
-			// see if there was an error
-			if (status.startsWith("ERROR"))
-			{
-				warning(" EquationSolver:  FAILED due to following oracle error");
-				warning(" EquationSolver: " + status);
-				return;
-			}
-			//
-			if (((String) dbobj.get("result_value")).length() == 0)
-			{
-				do_setoutput = false;
-				;
-				warning(" EquationSolver:  " + comp.getName() + " : " + query
-					+ "  Query FAILED due to NULL Equation result. ");
-			}
-			else
-			{
-				Double result_value = Double.valueOf(dbobj.get("result_value").toString());
+				// see if there was an error
+				if (status.startsWith("ERROR"))
+				{
+					warning(" EquationSolver:  FAILED due to following oracle error");
+					warning(" EquationSolver: " + status);
+					return;
+				}
 				//
-				/*
-				 * added to allow users to automatically set the Validation
-				 * column
-				 */
-				if (validation_flag.length() > 0)
-					setHdbValidationFlag(output, validation_flag.charAt(1));
-				setOutput(output, result_value);
+				if (((String) dbobj.get("result_value")).length() == 0)
+				{
+					do_setoutput = false;
+					;
+					warning(" EquationSolver:  " + comp.getName() + " : " + query
+						+ "  Query FAILED due to NULL Equation result. ");
+				}
+				else
+				{
+					Double result_value = Double.valueOf(dbobj.get("result_value").toString());
+					//
+					/*
+					* added to allow users to automatically set the Validation
+					* column
+					*/
+					if (validation_flag.length() > 0)
+						setHdbValidationFlag(output, validation_flag.charAt(1));
+					setOutput(output, result_value);
+				}
+			}
+			catch (SQLException ex)
+			{
+				throw new DbCompException("Unable to get SQL Connection.", ex);
 			}
 		}
 		//

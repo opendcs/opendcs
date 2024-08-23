@@ -67,7 +67,7 @@ public class CwmsTimeSeriesDAO
         new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
     protected SiteDAI siteDAO = null;
     protected DataTypeDAI dataTypeDAO = null;
-    private String dbOfficeId = null;
+    private final String dbOfficeId;
     private static boolean noUnitConv = false;
     private static long lastCacheReload = 0L;
     private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
@@ -322,8 +322,14 @@ public class CwmsTimeSeriesDAO
     @Override
     public void close()
     {
-        dataTypeDAO.close();
-        siteDAO.close();
+        if (dataTypeDAO != null)
+        {
+            dataTypeDAO.close();
+        }
+        if (siteDAO != null)
+        {
+            siteDAO.close();
+        }
         super.close();
     }
 
@@ -1532,7 +1538,14 @@ public class CwmsTimeSeriesDAO
         // local getConnection() method that saves the connection locally
         if (myCon == null)
         {
-            myCon = db.getConnection();
+            try
+            {
+                myCon = db.getConnection();
+            }
+            catch (SQLException ex)
+            {
+                throw new RuntimeException("Unable to get conneciton.", ex);
+            }
         }
         siteDAO.setManualConnection(myCon);
         dataTypeDAO.setManualConnection(myCon);

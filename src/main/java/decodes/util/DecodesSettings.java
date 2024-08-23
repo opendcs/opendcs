@@ -822,4 +822,13 @@ public class DecodesSettings
         settings.setSourceFile(propFile);
         return settings;
     }
+
+    public DecodesSettings asCopy()
+    {
+        Properties props = new Properties();
+        this.saveToProps(props);
+        DecodesSettings newSettings = new DecodesSettings();
+        newSettings.loadFromProperties(props);
+        return newSettings;
+    }
 }

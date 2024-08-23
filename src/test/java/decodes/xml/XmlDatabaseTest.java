@@ -39,7 +39,11 @@ final class XmlDatabaseTest {
         try {
             System.out.println(xmlDir.toString());
             String configName = "config-1";
-            XmlDatabaseIO dbio = (XmlDatabaseIO) DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, xmlDir.toString());
+            DecodesSettings settings = new DecodesSettings();
+            settings.editDatabaseTypeCode = DecodesSettings.DB_XML;
+            settings.editDatabaseLocation = xmlDir.toString();
+            settings.DbAuthFile = "noop:nothing";
+            XmlDatabaseIO dbio = (XmlDatabaseIO) DatabaseIO.makeDatabaseIO(settings);
 
             Database db = new Database();
             db.setDbIo(dbio);
@@ -59,19 +63,17 @@ final class XmlDatabaseTest {
             DecodesScript ds2 = addScript(pc,"Script2","label2: 3(/, F(D,A,10,4), x, F(T,A,8), csv(1, 2, 4, 5, 6, 3) )",false,"Decodes:goes-self-timed");
             addScriptSensor(ds2,2,"degF");
 
-            if( 2 != pc.getNumScripts())
-                throw new Exception("Expected 2 scripts (before save).  Found "+pc.getNumScripts());
+            assertEquals(2, pc.getNumScripts(), "Expected 2 scripts (before save).");
             db.write();
 
             // read from disk
             db = new Database();
-            dbio = (XmlDatabaseIO) DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, xmlDir.toString());
+            dbio = (XmlDatabaseIO) DatabaseIO.makeDatabaseIO(settings);
             db.setDbIo(dbio);
             db.read();
 
             PlatformConfig cfg = db.platformConfigList.get(configName);
-            if( 2 != cfg.getNumScripts())
-                throw new Exception("Expected 2 scripts (after reading from disk).  Found "+cfg.getNumScripts());
+            assertEquals(2, cfg.getNumScripts(), "Expected 2 scripts (after reading from disk).");
         }
         finally {
             deleteDirectory(xmlDir.toFile());

@@ -718,6 +718,7 @@ import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.lang.Const;
 import ilex.util.Logger;
+import ilex.util.PropertiesUtil;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
@@ -729,6 +730,7 @@ import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.DataType;
+import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.OracleSequenceKeyGenerator;
@@ -741,14 +743,11 @@ Sub classes must override all the abstract methods and provide
 a mechanism to persistently store time series and computational meta
 data.
 */
-public class CwmsTimeSeriesDb
-	extends TimeSeriesDb
+public class CwmsTimeSeriesDb extends TimeSeriesDb
 {
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(CwmsTimeSeriesDb.class);
-	private CwmsConnectionPool pool = null;
 
-	private String dbOfficeId = null;
-	private DbKey dbOfficeCode = null;
+	private final String dbOfficeId;
 
 	private String[] currentlyUsedVersions = { "" };
 	GregorianCalendar saveTsCal = new GregorianCalendar(
@@ -768,15 +767,19 @@ public class CwmsTimeSeriesDb
 	private CwmsConnectionInfo conInfo = null;
 
 	/**
-	 * No args constructor required because this is instantiated from
-	 * the class name.
+	 * Constructs a CwmsTimeSeriesDb object with the specified parameters.
+	 *
+	 * @param appName the name of the application using the database
+	 * @param dataSource the javax.sql.DataSource object for the database connection
+	 * @param settings the DecodesSettings object containing database settings
+	 * @throws DatabaseException if there is an issue with the database connection
 	 */
-	public CwmsTimeSeriesDb()
+	public CwmsTimeSeriesDb(String appName, javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
-		super();
+		super(appName, dataSource, settings);
 
 		Site.explicitList = true;
-
+		this.dbOfficeId = settings.CwmsOfficeId;
 		// CWMS uses ts_code as a unique identifier of a time-series
 		// Internally our SDI (site datatype id) is equivalent to CWMS ts_code
 		sdiIsUnique = true;
@@ -797,145 +800,6 @@ public class CwmsTimeSeriesDb
 		catch(SQLException ex)
 		{
 			throw new BadConnectException("Unable to get connection from pool",ex);
-		}
-	}
-	
-
-	/**
-	 * Connect this app to the database and return appID.
-	 * The credentials property set contains username, password,
-	 * etc, for connecting to database.
-	 * @param appName must match an application in the database.
-	 * @param credentials must contain all needed login parameters.
-	 * @return application ID.
-	 * @throws BadConnectException if failure to connect.
-	 */
-	public DbKey connect( String appName, Properties credentials )
-		throws BadConnectException
-	{
-		String dbUri = this.dbUri != null ? this.dbUri : DecodesSettings.instance().editDatabaseLocation;
-
-		String username = null;
-		String password = null;
-		CwmsGuiLogin cgl = null;
-		if (credentials == null && DecodesInterface.isGUI())
-		{			
-			cgl = CwmsGuiLogin.instance();
-			try
-			{
-				if (!cgl.isLoginSuccess())
-				{
-					cgl.doLogin(null);
-					if (!cgl.wasOk()) // user hit cancel
-					{
-						throw new BadConnectException("Login aborted by user.");
-					}
-				}
-				username = cgl.getUserName();
-				password = new String(cgl.getPassword());
-			}
-			catch(Exception ex)
-			{
-				throw new BadConnectException(
-					"Cannot display login dialog: " + ex);
-			}
-		}
-		else if(credentials == null)
-		{
-			throw new BadConnectException("Cannot connect to CWMS without credentials.");
-		}
-		else
-		{	// use the provided credentials
-			username = credentials.getProperty("username");
-			password = credentials.getProperty("password");
-		}
-
-		// MJM 2018-12-05 The new HEC/RMA connection facility requires that office ID
-		// be known before getting a connection from the pool. Therefore I cannot set
-		// it dynamically from the database or from user selection.
-		dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
-
-		// CWMS is Always GMT.
-		DecodesSettings.instance().sqlTimeZone = "GMT";
-
-
-		if (conInfo == null )
-		{
-			conInfo = new CwmsConnectionInfo();		
-			ConnectionLoginInfo loginInfo = new ConnectionLoginInfoImpl(dbUri, username, password, dbOfficeId);			
-			conInfo.setLoginInfo(loginInfo);
-		}
-
-		pool = CwmsConnectionPool.getPoolFor(conInfo);
-		if( pool != null)
-		{
-			try(Connection conn = pool.getConnection();)
-			{
-					Logger.instance().info(module +
-				" Connected to DECODES CWMS Database " + dbUri + " as user " + username
-				+ " with officeID=" + dbOfficeId);
-
-				postConnectInit(appName, conn); // Make sure the versions and such are set
-				setupKeyGenerator();
-
-				if(cgl!=null)
-				{
-					cgl.setLoginSuccess(true);
-				}
-
-				try
-				{
-					hec.data.Units.getAvailableUnits();
-				}
-				catch (Exception ex)
-				{
-					Logger.instance().warning(module + " Exception in hec.data.Units.getAvailableUnits: " + ex);
-				}
-
-				try
-				{
-					baseParam.load(this);
-				}
-				catch (Exception ex)
-				{
-					String msg = "Cannot load baseParam Units Map: " + ex;
-					failure(msg);
-				}
-				try(LoadingAppDAI la = this.makeLoadingAppDAO())
-				{
-					appId = la.lookupAppId(appName);
-				}
-				catch (DbIoException | NoSuchObjectException ex)
-				{
-					throw new BadConnectException("Unable to get loading app info",ex);
-				}
-			}
-			catch(SQLException ex)
-			{
-				throw new BadConnectException("Pool was able to start but not retrieve connection",ex);
-			}
-		}
-		else
-		{
-			throw new BadConnectException("unable to initialize pool for " + conInfo);
-		}
-		return appId;
-	}
-
-	@Override
-	public void postConnectInit(String appName, Connection conn) throws BadConnectException
-	{
-		super.postConnectInit(appName, conn);
-
-		try (DaoHelper dao = new DaoHelper(this, "init", conn))
-		{
-			dbOfficeCode = dao.getSingleResult("select office_code from cwms_20.av_office where office_id=?",
-											   rs -> DbKey.createDbKey(rs, 1),
-											   dbOfficeId);
-		}
-		catch (SQLException ex)
-		{
-			throw new BadConnectException("Unable to lookup DbOfficeCode from Office Id " + dbOfficeId, ex);
 		}
 	}
 
@@ -1515,16 +1379,11 @@ public class CwmsTimeSeriesDb
 	public ScheduleEntryDAI makeScheduleEntryDAO()
 	{
 		return null;
-	}
-
-	public void setDbUri(String dbUri)
-	{
-		this.dbUri = dbUri;
-	}
+	}	
 
 	public DbKey getDbOfficeCode()
 	{
-		return this.dbOfficeCode;
+		return conInfo.getDbOfficeCode();
 	}
 
 	public BaseParam getBaseParam()
@@ -1588,24 +1447,6 @@ public class CwmsTimeSeriesDb
 	}
 
 	@Override
-	public void closeConnection()
-	{
-		// Close prepared statements
-		if (getMinStmt != null)
-		{
-			try { getMinStmt.close(); }
-			catch(Exception ex) {}
-			getMinStmt = null;
-		}
-		if (getTaskListStmt != null)
-		{
-			try { getTaskListStmt.close(); }
-			catch(Exception ex) {}
-			getTaskListStmt = null;
-		}
-	}
-
-	@Override
 	public ArrayList<String> listVersions()
 		throws DbIoException
 	{
@@ -1661,15 +1502,9 @@ public class CwmsTimeSeriesDb
 	@Override
 	public Connection getConnection()
 	{
-		// Called from DAOs to get a new connection from the pool.
-		if (conInfo == null || conInfo.getLoginInfo() == null || pool == null)
-		{
-			failure("CwmsTimeSeriesDb.getConnection -- loginInfo is null! DB not initialized?");
-			throw new RuntimeException("Invalid sequence of events. Attempt to retrieve DB connection before information initialized.");
-		}
 		try
 		{
-			return pool.getConnection();
+			return dataSource.getConnection();
 		}
 		catch(SQLException ex)
 		{
@@ -1684,7 +1519,7 @@ public class CwmsTimeSeriesDb
 	{
 		try
 		{
-			pool.returnConnection(con);
+			con.close();
 		}
 		catch(SQLException ex)
 		{
@@ -1692,5 +1527,70 @@ public class CwmsTimeSeriesDb
 		}
 	}
 	
-	
+	@Override
+	public void postConInit(Connection conn) throws SQLException
+	{
+		readVersionInfo(this, conn);
+
+		// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
+		// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
+		int decodesDbVersion = getDecodesDatabaseVersion();
+		Logger.instance().info(module + " decodesDbVersion=" + decodesDbVersion);
+		keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
+				new OracleSequenceKeyGenerator() :
+				new CwmsSequenceKeyGenerator(decodesDbVersion);
+			TimeSeriesDb.readVersionInfo(this, conn);
+
+		String q = null;
+		try(Statement st = conn.createStatement();)
+		{
+			// Hard-code date & timestamp format for reads. Always use GMT.
+			q = "ALTER SESSION SET TIME_ZONE = 'GMT'";
+			Logger.instance().info(q);
+			st.execute(q);
+
+			q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
+			Logger.instance().info(q);
+			st.execute(q);
+
+			q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
+			Logger.instance().info(q);
+			st.execute(q);
+
+			q = "ALTER SESSION SET nls_timestamp_tz_format = 'yyyy-mm-dd hh24:mi:ss'";
+			Logger.instance().info(q);
+			st.execute(q);
+
+			Logger.instance().info("DECODES IF Connected to TSDB Version " + tsdbVersion);
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Error in '" + q + "': " + ex
+				+ " -- will proceed anyway.";
+			Logger.instance().failure(msg + " " + ex);
+		}
+
+		// CWMS-8979 Allow settings in the database to override values in user.properties.
+		String settingsApp = System.getProperty("SETTINGS");
+		if (settingsApp != null)
+		{
+			Logger.instance().info("SqlDatabaseIO Overriding Decodes Settings with properties in "
+				+ "Process Record '" + settingsApp + "'");
+
+			try (LoadingAppDAI loadingAppDAO = makeLoadingAppDAO())
+			{
+				CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
+				PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
+			}
+			catch (DbIoException ex)
+			{
+				Logger.instance().warning("Cannot load settings from app '" + settingsApp + "': " + ex);
+			}
+			catch (NoSuchObjectException ex)
+			{
+				Logger.instance().warning("Cannot load settings from non-existent app '" 
+					+ settingsApp + "': " + ex);
+			}
+		}
+	}	
 }

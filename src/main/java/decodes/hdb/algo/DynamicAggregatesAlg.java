@@ -23,6 +23,7 @@ import java.util.GregorianCalendar;
 import decodes.hdb.HdbFlags;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 
 import ilex.util.DatePair;
@@ -75,7 +76,6 @@ public class DynamicAggregatesAlg
 	boolean do_setoutput = true;
 	boolean is_current_period;
 	String flags;
-	Connection conn = null;
 	Date date_out;
 	int total_count;
 	long mvr_count;
@@ -154,7 +154,6 @@ public class DynamicAggregatesAlg
 		count = 0;
 		do_setoutput = true;
 		flags = "";
-		conn = null;
 		date_out = null;
 //AW:BEFORE_TIMESLICES_END
 	}
@@ -180,7 +179,8 @@ public class DynamicAggregatesAlg
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
-	protected void afterTimeSlices()
+	@Override
+	protected void afterTimeSlices() throws DbCompException
 	{
 //AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
@@ -277,151 +277,155 @@ public class DynamicAggregatesAlg
 		}
 //
 		// get the connection  and a few other classes so we can do some sql
-		conn = tsdb.getConnection();
-		SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm");
-                sdf.setTimeZone(
-                        TimeZone.getTimeZone(
-                        	DecodesSettings.instance().aggregateTimeZone));
-//                        DbCompConfig.instance().getAggregateTimeZone()));
-		String status = null;
-		DataObject dbobj = new DataObject();
-		dbobj.put("ALG_VERSION",alg_ver);
-                RBASEUtils rbu = new RBASEUtils(dbobj,conn);
-//
-		// now construct the additional model_run_id clause if model data
-		String if_model_data = "";
-		if (table_selector.equalsIgnoreCase("M_"))
+		try (Connection conn = tsdb.getConnection())
 		{
-		  if_model_data = " model_run_id = " + model_run_id + " and ";
-		}
-		//  see if we are in a current window
-		String query = "select hdb_utilities.date_in_window('" + output_interval.toLowerCase() +
-		               "',to_date('" +  sdf.format(_aggregatePeriodBegin) +
-		               "','dd-MM-yyyy HH24:MI')) is_current_period from dual";
-		conn = tsdb.getConnection();
-		DBAccess db = new DBAccess(conn);
-		status = db.performQuery(query,dbobj);
-		if (status.startsWith("ERROR")) 
-		{
-		  warning("DynamicAggregatesAlg-"+alg_ver+" Aborted: see following error message");
-		  warning(status);
-		  return;
-		}
-		debug3(query);
-		// do the aggregate query to get the aggregate value and the total_count of the records
-		String lower_limit = " >= ";
-		if(!aggLowerBoundClosed)
-		lower_limit = " > ";
-		String upper_limit = " < ";
-		if(aggUpperBoundClosed)
-		upper_limit = " <= ";
-
-		query = "select round(" + aggregate_name + "(value),7) result, count(*) total_count  from " +
-			 table_selector + input_interval.toLowerCase() +
-		         " where " + if_model_data + "  site_datatype_id = " + getSDI("input") + 
-		         " and start_date_time " + lower_limit +  "to_date('" +  sdf.format(_aggregatePeriodBegin) + "','dd-MM-yyyy HH24:MI')" +
-		         " and start_date_time " + upper_limit +  "to_date('" +  sdf.format(_aggregatePeriodEnd) + "','dd-MM-yyyy HH24:MI')";
-
-                // new option to not request any rounding added 2/2013 as requested by LC
-                if (no_rounding)
-                {
-		   query =
-                         "select " + aggregate_name + "(value) result, count(*) total_count  from " +
-			 table_selector + input_interval.toLowerCase() +
-		         " where " + if_model_data + "  site_datatype_id = " + getSDI("input") + 
-		         " and start_date_time " + lower_limit +  "to_date('" +  sdf.format(_aggregatePeriodBegin) + "','dd-MM-yyyy HH24:MI')" +
-		         " and start_date_time " + upper_limit +  "to_date('" +  sdf.format(_aggregatePeriodEnd) + "','dd-MM-yyyy HH24:MI')";
-                }
-
-		status = db.performQuery(query,dbobj);
-		debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
-		// now see if the aggregate query worked if not the abort!!!
-		if (status.startsWith("ERROR")) 
-		{
-		  warning("DynamicAggregatesAlg-"+alg_ver+" Aborted: see following error message");
-		  warning(status);
-		  return;
-		}
-		// now see how many records were found for this aggregate
-		//  and see if this calc is in current period and if partial calc is set
-		total_count = Integer.parseInt(dbobj.get("total_count").toString());
-//
-		//  delete any existing resultant value if this no records exist 
-		if (total_count == 0)
-		{
-		        debug3("DynamicAggregates-"+alg_ver+" Aborted: No records: " + _aggregatePeriodBegin + " SDI: " + getSDI("input"));
-			deleteOutput(output);
- 			return;
-		}
-
-//              otherwise we have some records so continue...
-
-		is_current_period = ((String)dbobj.get("is_current_period")).equalsIgnoreCase("Y");
-		if (!is_current_period && total_count < mvr_count) 
-		{
-		  debug1("DynamicAggregates-"+alg_ver+" Aborted: Minimum required records not met for historic period: " + _aggregatePeriodBegin + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: " + total_count);
-		  do_setoutput = false; 
-		}
-		if (is_current_period && !partial_calculations && total_count < mvr_count) 
-		{
-		  debug1("DynamicAggregates-"+alg_ver+" Aborted: Minimum required records not met for current period: " + _aggregatePeriodBegin + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: " + total_count);
-		  do_setoutput = false; 
-		}
-//
-		debug3("  MVRI: " + mvr_count + "  MVD: " + mvd_count + " do_setoutput:" + do_setoutput);
-		debug3("  ICP: " + is_current_period + "TotalCount: " + total_count);
-
-		// set the output if all is successful and set the flags appropriately
-		if (do_setoutput)
-		{
-			if (total_count < mvd_count)
-				flags = flags + "n";
-			if (is_current_period && total_count < mvr_count)
-			// now we have a partial calculation, so do what needs to be done
-			// for partials
+			DBAccess db = new DBAccess(conn);
+			SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm");
+					sdf.setTimeZone(
+							TimeZone.getTimeZone(
+								DecodesSettings.instance().aggregateTimeZone));
+	//                        DbCompConfig.instance().getAggregateTimeZone()));
+			String status = null;
+			DataObject dbobj = new DataObject();
+			dbobj.put("ALG_VERSION",alg_ver);
+					RBASEUtils rbu = new RBASEUtils(dbobj,conn);
+	//
+			// now construct the additional model_run_id clause if model data
+			String if_model_data = "";
+			if (table_selector.equalsIgnoreCase("M_"))
 			{
-				setHdbValidationFlag(output, 'T');
-				// call the RBASEUtils merge method to add a "seed record" to
-				// cp_historic_computations table
-				// The code modified the SDI from the getSDI method due to a
-				// change in int to long primitive type
-				// This code modified by M. Bogner August 2012 for the 3.0 CP
-				// upgrade project
-				// This code modified by M. Bogner March 2013 for the 5.2 CP
-				// upgrade project where the surrogate keys modified to an
-				// object
-				int tempSDI = (int) getSDI("input").getValue();
-
-				rbu.merge_cp_hist_calc((int) comp.getAppId().getValue(), tempSDI, input_interval,
-					_aggregatePeriodBegin, _aggregatePeriodEnd, "dd-MM-yyyy HH:mm",
-					tsdb.getWriteModelRunId(), table_selector);
+			if_model_data = " model_run_id = " + model_run_id + " and ";
 			}
-			Double value_out = Double.valueOf(dbobj.get("result").toString());
-			debug3("FLAGS: " + flags);
-			if (flags != null)
-				setHdbDerivationFlag(output, flags);
-			//
-			/* added to allow users to automatically set the Validation column */
-			if (validation_flag.length() > 0)
-				setHdbValidationFlag(output, validation_flag.charAt(1));
-			
-			// Added for HDB issue 386
-			if (value_out < 0.0 && negativeReplacement != Double.NEGATIVE_INFINITY)
+			//  see if we are in a current window
+			String query = "select hdb_utilities.date_in_window('" + output_interval.toLowerCase() +
+						"',to_date('" +  sdf.format(_aggregatePeriodBegin) +
+						"','dd-MM-yyyy HH24:MI')) is_current_period from dual";
+			status = db.performQuery(query,dbobj);
+			if (status.startsWith("ERROR")) 
 			{
-				debug1("Computed aggregate=" + value_out + ", will use negativeReplacement="
-					+ negativeReplacement);
-				value_out = negativeReplacement;
+			warning("DynamicAggregatesAlg-"+alg_ver+" Aborted: see following error message");
+			warning(status);
+			return;
 			}
-info("Setting output for agg period starting " + debugSdf.format(this._aggregatePeriodBegin));
-			setOutput(output, value_out);
-		}
-		// delete any existing value if this calculation failed
-		if (!do_setoutput)
-		{
-info("Deleting output for agg period starting " + debugSdf.format(this._aggregatePeriodBegin));
-			deleteOutput(output);
-		}
+			debug3(query);
+			// do the aggregate query to get the aggregate value and the total_count of the records
+			String lower_limit = " >= ";
+			if(!aggLowerBoundClosed)
+			lower_limit = " > ";
+			String upper_limit = " < ";
+			if(aggUpperBoundClosed)
+			upper_limit = " <= ";
 
+			query = "select round(" + aggregate_name + "(value),7) result, count(*) total_count  from " +
+				table_selector + input_interval.toLowerCase() +
+					" where " + if_model_data + "  site_datatype_id = " + getSDI("input") + 
+					" and start_date_time " + lower_limit +  "to_date('" +  sdf.format(_aggregatePeriodBegin) + "','dd-MM-yyyy HH24:MI')" +
+					" and start_date_time " + upper_limit +  "to_date('" +  sdf.format(_aggregatePeriodEnd) + "','dd-MM-yyyy HH24:MI')";
+
+					// new option to not request any rounding added 2/2013 as requested by LC
+					if (no_rounding)
+					{
+			query =
+							"select " + aggregate_name + "(value) result, count(*) total_count  from " +
+				table_selector + input_interval.toLowerCase() +
+					" where " + if_model_data + "  site_datatype_id = " + getSDI("input") + 
+					" and start_date_time " + lower_limit +  "to_date('" +  sdf.format(_aggregatePeriodBegin) + "','dd-MM-yyyy HH24:MI')" +
+					" and start_date_time " + upper_limit +  "to_date('" +  sdf.format(_aggregatePeriodEnd) + "','dd-MM-yyyy HH24:MI')";
+					}
+
+			status = db.performQuery(query,dbobj);
+			debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+			// now see if the aggregate query worked if not the abort!!!
+			if (status.startsWith("ERROR")) 
+			{
+			warning("DynamicAggregatesAlg-"+alg_ver+" Aborted: see following error message");
+			warning(status);
+			return;
+			}
+			// now see how many records were found for this aggregate
+			//  and see if this calc is in current period and if partial calc is set
+			total_count = Integer.parseInt(dbobj.get("total_count").toString());
+	//
+			//  delete any existing resultant value if this no records exist 
+			if (total_count == 0)
+			{
+					debug3("DynamicAggregates-"+alg_ver+" Aborted: No records: " + _aggregatePeriodBegin + " SDI: " + getSDI("input"));
+				deleteOutput(output);
+				return;
+			}
+
+	//              otherwise we have some records so continue...
+
+			is_current_period = ((String)dbobj.get("is_current_period")).equalsIgnoreCase("Y");
+			if (!is_current_period && total_count < mvr_count) 
+			{
+			debug1("DynamicAggregates-"+alg_ver+" Aborted: Minimum required records not met for historic period: " + _aggregatePeriodBegin + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			do_setoutput = false; 
+			}
+			if (is_current_period && !partial_calculations && total_count < mvr_count) 
+			{
+			debug1("DynamicAggregates-"+alg_ver+" Aborted: Minimum required records not met for current period: " + _aggregatePeriodBegin + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			do_setoutput = false; 
+			}
+	//
+			debug3("  MVRI: " + mvr_count + "  MVD: " + mvd_count + " do_setoutput:" + do_setoutput);
+			debug3("  ICP: " + is_current_period + "TotalCount: " + total_count);
+
+			// set the output if all is successful and set the flags appropriately
+			if (do_setoutput)
+			{
+				if (total_count < mvd_count)
+					flags = flags + "n";
+				if (is_current_period && total_count < mvr_count)
+				// now we have a partial calculation, so do what needs to be done
+				// for partials
+				{
+					setHdbValidationFlag(output, 'T');
+					// call the RBASEUtils merge method to add a "seed record" to
+					// cp_historic_computations table
+					// The code modified the SDI from the getSDI method due to a
+					// change in int to long primitive type
+					// This code modified by M. Bogner August 2012 for the 3.0 CP
+					// upgrade project
+					// This code modified by M. Bogner March 2013 for the 5.2 CP
+					// upgrade project where the surrogate keys modified to an
+					// object
+					int tempSDI = (int) getSDI("input").getValue();
+
+					rbu.merge_cp_hist_calc((int) comp.getAppId().getValue(), tempSDI, input_interval,
+						_aggregatePeriodBegin, _aggregatePeriodEnd, "dd-MM-yyyy HH:mm",
+						tsdb.getWriteModelRunId(), table_selector);
+				}
+				Double value_out = Double.valueOf(dbobj.get("result").toString());
+				debug3("FLAGS: " + flags);
+				if (flags != null)
+					setHdbDerivationFlag(output, flags);
+				//
+				/* added to allow users to automatically set the Validation column */
+				if (validation_flag.length() > 0)
+					setHdbValidationFlag(output, validation_flag.charAt(1));
+				
+				// Added for HDB issue 386
+				if (value_out < 0.0 && negativeReplacement != Double.NEGATIVE_INFINITY)
+				{
+					debug1("Computed aggregate=" + value_out + ", will use negativeReplacement="
+						+ negativeReplacement);
+					value_out = negativeReplacement;
+				}
+				info("Setting output for agg period starting " + debugSdf.format(this._aggregatePeriodBegin));
+				setOutput(output, value_out);
+			}
+			// delete any existing value if this calculation failed
+			if (!do_setoutput)
+			{
+				info("Deleting output for agg period starting " + debugSdf.format(this._aggregatePeriodBegin));
+				deleteOutput(output);
+			}
+		}
+		catch (SQLException ex)
+		{
+			throw new DbCompException("Unable to get connection.", ex);
+		}
 
 
 //AW:AFTER_TIMESLICES_END
