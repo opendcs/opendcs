@@ -10,6 +10,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.fixtures.UserPropertiesBuilder;
@@ -19,11 +20,14 @@ import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.output.OutputFrame;
 
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.db.Database;
 import decodes.launcher.Profile;
 import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.DecodesSettings;
+import ilex.util.Pair;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainers;
 import opendcs.dao.CompDependsDAO;
@@ -52,6 +56,8 @@ public class CwmsOracleConfiguration implements Configuration
     private HashMap<Object,Object> environmentVars = new HashMap<>();
     private String dcsUser = null;
     private String dcsUserPassword = null;
+    private Profile profile = null;
+    Pair<Database,TimeSeriesDb> databases = null;
 
     public CwmsOracleConfiguration(File userDir)
     {
@@ -226,12 +232,37 @@ public class CwmsOracleConfiguration implements Configuration
     @Override
     public TimeSeriesDb getTsdb() throws Throwable
     {
-        CwmsTimeSeriesDb db = new CwmsTimeSeriesDb();
+        synchronized (this)
+        {
+            if (databases == null)
+            {
+                buildDatabases();
+            }
+            return databases.second;
+        }
+    }
+
+    @Override
+    public Database getDecodesDatabase() throws Throwable
+    {
+        synchronized (this)
+        {
+            if (databases == null)
+            {
+                buildDatabases();
+            }
+            return databases.first;
+        }
+    }
+
+    private void buildDatabases() throws Exception
+    {
+        DecodesSettings settings = DecodesSettings.fromProfile(profile);
         Properties credentials = new Properties();
+        
         credentials.put("username",dcsUser);
         credentials.put("password",dcsUserPassword);
-        db.connect("utility",credentials);
-        return db;
+        databases = DatabaseService.getDatabaseFor("utility", settings, credentials);
     }
 
     @Override

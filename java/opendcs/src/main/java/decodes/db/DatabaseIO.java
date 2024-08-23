@@ -12,8 +12,12 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
+import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.SimpleDataSource;
+import org.opendcs.spi.authentication.AuthSource;
 import org.xml.sax.SAXException;
 
+import ilex.util.AuthException;
 import ilex.util.Counter;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
@@ -29,6 +33,16 @@ of the IO methods for reading/writing the DECODES database.
 */
 public abstract class DatabaseIO
 {
+
+	protected final javax.sql.DataSource dataSource;
+	protected final DecodesSettings settings;
+
+	public DatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
+	{
+		this.dataSource = dataSource;
+		this.settings = settings;
+	}
+
 	/**
 	  Creates a concrete IO class as specified by type and location
 	  arguments.
@@ -36,47 +50,64 @@ public abstract class DatabaseIO
 	  @param location Interpration varies depending on type.
 	  @return the DatabaseIO object
 	  @throws DatabaseException if type unrecognized or location is invalid.
+	  @deprecated DatabaseService should be used to create database instances
 	*/
-	public static final DatabaseIO makeDatabaseIO(int type, String location)
-		throws DatabaseException
+	@Deprecated
+	public static final DatabaseIO makeDatabaseIO(int type, String location) throws DatabaseException
+	{
+		return null;
+	}
+
+	/**
+	 
+	 * @param settings
+	 * @return
+	 * @throws DatabaseException
+	 * @deprecated DatabaseService should be used to create database instances
+	 */
+	@Deprecated
+	public static final DatabaseIO makeDatabaseIO(DecodesSettings settings) throws DatabaseException
+	{
+		return makeDatabaseIO(settings, settings.editDatabaseLocation);
+	}
+
+	/**
+	 * 
+	 * @param settings
+	 * @param locOverride
+	 * @return
+	 * @throws DatabaseException
+	 * @deprecated DatabaseService should be used to create database instances
+	 */
+	@Deprecated
+	public static final DatabaseIO makeDatabaseIO(DecodesSettings settings, String locOverride) throws DatabaseException
 	{
 		ResourceFactory.instance().initDbResources();
 		
-		try 
+		try
 		{
-			if (type == DecodesSettings.DB_XML)
-				return new XmlDatabaseIO(location);
+			final String location = locOverride.startsWith("jdbc:") ? locOverride : "jdbc:xml:" + locOverride;
+			final int type = settings.editDatabaseTypeCode;
+
+			AuthSource auth = AuthSourceService.getFromString(settings.DbAuthFile);
+			Properties credentials = auth.getCredentials();
+			SimpleDataSource dataSource = new SimpleDataSource(location, credentials);
+			switch (type)
+			{
+				case DecodesSettings.DB_XML:  		return new XmlDatabaseIO(dataSource, settings);
+				case DecodesSettings.DB_SQL:  		return new SqlDatabaseIO(dataSource, settings);
+				case DecodesSettings.DB_CWMS:     	return new decodes.cwms.CwmsSqlDatabaseIO(dataSource, settings);
+				case DecodesSettings.DB_OPENTSDB:	return new opendcs.opentsdb.OpenTsdbSqlDbIO(dataSource, settings);
+				case DecodesSettings.DB_HDB:		return new decodes.hdb.HdbSqlDatabaseIO(dataSource, settings);
+				default: throw new DatabaseException("No database defined (fix properties file)");
+			}
 		}
-		catch (SAXException se) 
+		catch (AuthException ex)
 		{
-			throw new DatabaseException("Caught a SAXException while " +
-				"attempting to create an XmlDatabaseIO object");
+			throw new DatabaseException("Unable to authenticate against the database.", ex);
 		}
-		catch (ParserConfigurationException pce) 
-		{
-			throw new DatabaseException("Caught a " +
-				"ParserConfigurationException while " +
-				"attempting to create an XmlDatabaseIO object");
-		}
-
-		if (type == DecodesSettings.DB_SQL)
-			return new SqlDatabaseIO(location);
-
-		if (type == DecodesSettings.DB_CWMS)
-			return new decodes.cwms.CwmsSqlDatabaseIO(location);
-
-		if (type == DecodesSettings.DB_OPENTSDB)
-			return new opendcs.opentsdb.OpenTsdbSqlDbIO(location);
 		
-		if (type == DecodesSettings.DB_HDB)
-			return new decodes.hdb.HdbSqlDatabaseIO(location);
-		
-		// Add other database interface types (URL) here...
-
-		throw new DatabaseException(
-			"No database defined (fix properties file)");
 	}
-
 
 	//========== Identification methods ==========================
 
@@ -411,6 +442,7 @@ public abstract class DatabaseIO
 	 * Returns the most recent data that the platform list was modified, this
 	 * will be the time of the most-recent platform mod.
 	 * @return the most recent data that the platform list was modified.
+	 * @throws DatabaseException 
 	 */
 	public abstract Date getPlatformListLMT();
 

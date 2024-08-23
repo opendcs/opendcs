@@ -16,6 +16,7 @@ import decodes.tsdb.algo.AWAlgoType;
 import decodes.hdb.dbutils.*;
 import decodes.hdb.HdbFlags;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 
 //AW:IMPORTS_END
@@ -40,7 +41,6 @@ public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:INPUTS_END
 
 //AW:LOCALVARS
-        Connection conn = null;
         boolean do_setoutput = true;
 
 //AW:LOCALVARS_END
@@ -130,13 +130,19 @@ public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		//           Then continue with the calling of the Procedure
         {
              // get the connection and a few other classes so we can do some sql
-             conn = tsdb.getConnection();
-             DBAccess db = new DBAccess(conn);
-             DataObject dbobj = new DataObject();
-             String dt_fmt = "dd-MMM-yyyy HH:mm";
-             // now do the procedure call with all the needed data
-             db.callProc(new_proccall,dbobj);
-             debug3(" Proc Call  STRING:" + new_proccall + "   DBOBJ: " + dbobj.toString() );
+             try(Connection conn = tsdb.getConnection())
+			 {
+             	DBAccess db = new DBAccess(conn);
+				DataObject dbobj = new DataObject();
+				String dt_fmt = "dd-MMM-yyyy HH:mm";
+				// now do the procedure call with all the needed data
+				db.callProc(new_proccall,dbobj);
+				debug3(" Proc Call  STRING:" + new_proccall + "   DBOBJ: " + dbobj.toString() );
+			 }
+			 catch (SQLException ex)
+			 {
+				throw new DbCompException("Unable to get connection.", ex);
+			 }
 	    }
 
 // 	    procedure call is expected to do everything so just return

@@ -77,11 +77,13 @@ import java.util.Iterator;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.spi.authentication.AuthSource;
 
 import opendcs.dai.TimeSeriesDAI;
 import ilex.util.AuthException;
 import ilex.util.Logger;
+import ilex.util.Pair;
 import ilex.util.TextUtil;
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
@@ -90,6 +92,8 @@ import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
 import decodes.db.Constants;
 import decodes.db.DataType;
+import decodes.db.Database;
+import decodes.db.DatabaseException;
 import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.TransportMedium;
@@ -103,6 +107,7 @@ import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesDb;
 
 /**
  * HdbConsumer writes data to the USBR Hydrologic Database.
@@ -145,36 +150,20 @@ public class HdbConsumer extends DataConsumer
 	public void open(String consumerArg, Properties props)
 		throws DataConsumerException
 	{
-		// Get username & password from Auth file
-		Properties credentials = null;
-		String authFileName = DecodesSettings.instance().DbAuthFile;		
-		try 
-		{
-			credentials = AuthSourceService.getFromString(authFileName)
-											 .getCredentials();
-		}
-		catch(AuthException ex)
-		{
-			String msg = "Cannot read DB auth from settings '" 
-				+ authFileName+ "': ";
-			throw new DataConsumerException(msg,ex);
-		}
-		
 		// Get the Oracle Data Source & open a connection.
 		try
 		{
-			hdbTsDb = new HdbTimeSeriesDb();
-			hdbTsDb.connect("decodes", credentials);
-			info("Connected to HDB Time Series Database as user " 
-				+ credentials.getProperty("username"));
+			Pair<Database,TimeSeriesDb> databases = DatabaseService.getDatabaseFor("decodes", DecodesSettings.instance());
+			hdbTsDb = (HdbTimeSeriesDb)databases.second;
+			info("Connected to HDB Time Series Database");
 			autoCreateTs = TextUtil.str2boolean(hdbTsDb.getProperty("autoCreateTs"));
 			timeSeriesDAO = hdbTsDb.makeTimeSeriesDAO();
 		}
-		catch (BadConnectException ex)
+		catch (DatabaseException ex)
 		{
 			String msg = "Cannot connect to HDB Time Series DB: " + ex;
 			failure(msg);
-			throw new DataConsumerException(msg);
+			throw new DataConsumerException(msg ,ex);
 		}
 	}
 
@@ -184,7 +173,6 @@ public class HdbConsumer extends DataConsumer
 	 */
 	public void close()
 	{
-		hdbTsDb.closeConnection();
 		hdbTsDb = null;
 		if (timeSeriesDAO != null)
 			timeSeriesDAO.close();

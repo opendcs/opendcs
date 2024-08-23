@@ -24,6 +24,7 @@ package opendcs.opentsdb;
 import ilex.util.AuthException;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
+import ilex.util.Pair;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -36,6 +37,8 @@ import java.util.Iterator;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.DatabaseService;
+import org.slf4j.LoggerFactory;
 
 import opendcs.dai.TimeSeriesDAI;
 import decodes.consumer.DataConsumer;
@@ -46,6 +49,8 @@ import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.DataType;
+import decodes.db.Database;
+import decodes.db.DatabaseException;
 import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -59,6 +64,7 @@ import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertySpec;
@@ -97,6 +103,7 @@ import decodes.util.TSUtil;
 */
 public class OpenTsdbConsumer extends DataConsumer
 {
+	public static final org.slf4j.Logger log = LoggerFactory.getLogger(OpenTsdbConsumer.class);
 	private String module = "OpenTsdbConsumer";
 	
 	private String dbAuthFile = null;
@@ -186,29 +193,27 @@ public class OpenTsdbConsumer extends DataConsumer
 		// Get the Oracle Data Source & open a connection.
 		try
 		{
-			openTsdb = new OpenTsdb();
+			DecodesSettings settings = DecodesSettings.instance().asCopy();
 			String s = PropertiesUtil.getIgnoreCase(props, "databaseLocation");
 			if (s != null)
-				openTsdb.setDatabaseLocation(s);
-			else
-				openTsdb.setDatabaseLocation(DecodesSettings.instance().editDatabaseLocation);
-			s = PropertiesUtil.getIgnoreCase(props, "jdbcOracleDriver");
-			if (s != null)
-				openTsdb.setJdbcOracleDriver(s);
-			else
-				openTsdb.setJdbcOracleDriver(DecodesSettings.instance().jdbcDriverClass);
+			{
+				settings.editDatabaseLocation = s;
+			}
 			
 			s = PropertiesUtil.getIgnoreCase(props, "appName");
 			if (s != null)
+			{
 				appName = s; 
-			          
-			appId = openTsdb.connect(appName, credentials);
+			}
+			Pair<Database, TimeSeriesDb> databases = DatabaseService.getDatabaseFor(s, settings, credentials);
+			openTsdb = (OpenTsdb)databases.second;
+			appId = openTsdb.getAppId();
 		}
-		catch (BadConnectException ex)
+		catch (DatabaseException ex)
 		{
 			String msg = module + " " + ex;
 			Logger.instance().fatal(msg);
-			throw new DataConsumerException(msg);
+			throw new DataConsumerException(msg, ex);
 		}
 
 		// Open and load the SHEF to CWMS Param properties file. This file
@@ -240,7 +245,6 @@ public class OpenTsdbConsumer extends DataConsumer
 	public void close()
 	{
 		Logger.instance().info(module + " closing database connection with appID=" + appId);
-		openTsdb.closeConnection();
 		openTsdb = null;
 	}
 
@@ -320,20 +324,9 @@ public class OpenTsdbConsumer extends DataConsumer
 		}
 		catch(Exception ex)
 		{
-			String emsg = module + " Error storing TS data: " + ex;
-			Logger.instance().warning(emsg);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
-			else
-				ex.printStackTrace(System.err);
-			// It might be a business rule exception, like improper units.
-			// So don't kill the whole routing spec, just go on.
-//			close();
-//			throw new DataConsumerException(emsg);
-		}
-		finally
-		{
+			log.atError()
+			   .setCause(ex)
+			   .log("Error storing TS data");
 		}
 	}
 	

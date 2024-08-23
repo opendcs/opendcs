@@ -18,10 +18,13 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.opentsdb.Interval;
 
+import org.opendcs.database.DatabaseService;
+import org.opendcs.database.SimpleDataSource;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import ilex.util.Logger;
+import ilex.util.Pair;
 import ilex.util.StderrLogger;
 import ilex.util.TeeLogger;
 import ilex.cmdline.*;
@@ -30,6 +33,7 @@ import decodes.sql.PlatformListIO;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.util.*;
 import decodes.db.*;
 import decodes.launcher.Profile;
@@ -267,27 +271,15 @@ public class DbImport
 		this.defaultAgency = defaultAgency;
 		this.newPlatformOwner = newPlatformOwner;
 		// Construct the database and the interface specified by properties.
-		theDb = new decodes.db.Database(false);
-		Database.setDb(theDb);
-
 		try
 		{
-
 			DecodesSettings settings = DecodesSettings.instance();
 			// unfortunately we still need to use the global decodes settings here.
 			settings.loadFromProfile(profile);
-			log.info("Using Database...");
-			if (dbLoc != null)
-			{
-				log.info("\t'{}'", dbLoc);
-				theDbio = DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, dbLoc);
-			}
-			else
-			{
-				log.info("\t'{}/{}'", settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-				theDbio = DatabaseIO.makeDatabaseIO(
-					settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-			}
+			Pair<Database,TimeSeriesDb> databases = DatabaseService.getDatabaseFor(null, settings);				
+			theDb = databases.first;
+			Database.setDb(theDb);
+			theDbio = theDb.getDbIo();
 		}
 		catch (IOException ex)
 		{
@@ -296,7 +288,6 @@ public class DbImport
 
 		// Standard Database Initialization for all Apps:
 		Site.explicitList = false; // YES Sites automatically added to SiteList
-		theDb.setDbIo(theDbio);
 
 		if (pdtFilePath != null)
 		{
@@ -467,12 +458,13 @@ public class DbImport
 	 * database. XML files will subsequently be read into the staging database.
 	 */
 	private void initStageDb()
-		throws SAXException, ParserConfigurationException
+		throws SAXException, ParserConfigurationException, DatabaseException
 	{
 		log.debug("Initializing the staging database.");
 		stageDb = new decodes.db.Database(false);
 		Database.setDb(stageDb);
-		stageDbio = new XmlDatabaseIO("");
+		javax.sql.DataSource ds = new SimpleDataSource("jdbc:xml:", "", "");
+		stageDbio = new XmlDatabaseIO(ds, null);
 		stageDb.setDbIo(stageDbio);
 		topParser = stageDbio.getParser();
 		newObjects = new Vector<IdDatabaseObject>();
