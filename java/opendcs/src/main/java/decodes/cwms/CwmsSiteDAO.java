@@ -93,7 +93,7 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
  */
 public class CwmsSiteDAO extends SiteDAO
 {
-	private String officeId = null;
+	private final String officeId;
 
 	public CwmsSiteDAO(DatabaseConnectionOwner tsdb, String officeId)
 	{

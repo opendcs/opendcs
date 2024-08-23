@@ -509,8 +509,8 @@ public class CwmsRatingMultIndep
 		for(int valIdx = 0; valIdx < indepTimes.size(); valIdx++)
 			valueTimes[valIdx] = indepTimes.get(valIdx);
 		
-		Connection conn = tsdb.getConnection();
-		try
+		
+		try (Connection conn = tsdb.getConnection())
 		{
 			debug1("Calling rate with " + valueSets.length + " inputs and " 
 				+ valueTimes.length + " values each.");
@@ -540,10 +540,6 @@ public class CwmsRatingMultIndep
 				warning("...cause: " + cause);
 				cause.printStackTrace(out);
 			}
-		}
-		finally
-		{
-			tsdb.freeConnection(conn);
 		}
 
 //AW:AFTER_TIMESLICES_END

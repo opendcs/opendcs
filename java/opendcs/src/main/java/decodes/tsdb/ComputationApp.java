@@ -648,6 +648,7 @@ public class ComputationApp
 	public void initDecodes()
 		throws DecodesException
 	{
+		/*
 		DecodesInterface.silent = true;
 		if (DecodesInterface.isInitialized())
 			return;
@@ -655,6 +656,7 @@ public class ComputationApp
 		decodes.db.Database.getDb().enumList.read();
 		decodes.db.Database.getDb().dataTypeSet.read();
 		decodes.db.Database.getDb().presentationGroupList.read();
+		*/
 	}
 
 	/**

@@ -164,8 +164,8 @@ public class TsImport extends TsdbAppTemplate
     public void initDecodes()
         throws DecodesException
     {
-        DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
-        Database.getDb().presentationGroupList.read();
+        //DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
+        //Database.getDb().presentationGroupList.read();
     }
 
 
