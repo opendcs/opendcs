@@ -1,14 +1,18 @@
 package decodes.tsdb;
 
+import decodes.cwms.CwmsTsId;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
+import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.utils.FailableResult;
 
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 
 public class WaterTempProfiles{
 
@@ -42,7 +46,7 @@ public class WaterTempProfiles{
         increment = incr;
     }
 
-    public WaterTempProfiles(TimeSeriesDAI DAO, String wtpId, Date since, Date until, double start, double incr) throws DbIoException, NoSuchObjectException {
+    public WaterTempProfiles(TimeSeriesDAI DAO,String resID, String wtpId, Date since, Date until, double start, double incr) throws DbIoException, NoSuchObjectException {
         tseries = new DataCollection();
         timeSeriesDAO = DAO;
         startDepth = start;
@@ -51,6 +55,7 @@ public class WaterTempProfiles{
         double currentDepth = startDepth;
         TimeSeriesIdentifier tsid;
         tsid = timeSeriesDAO.getTimeSeriesIdentifier(wtpId);
+
         while(loading){
             try {
                 TimeSeriesIdentifier newtsid = tsid.copyNoKey();
@@ -58,15 +63,17 @@ public class WaterTempProfiles{
                 newsite.copyFrom(tsid.getSite());
                 SiteName strsite = newsite.getName(Constants.snt_CWMS);
 
-                DecimalFormat decimalFormat = new DecimalFormat("000,0");
-                String formattedNumber = decimalFormat.format(currentDepth);
-                strsite.setNameValue(strsite.getNameValue()+"-D"+formattedNumber+"m");
-                newtsid.setSite(newsite);
+                DecimalFormat decimalFormat = new DecimalFormat("000.0");
+                String formattedNumber = decimalFormat.format(currentDepth).replace(".", ",");
+                strsite.setNameValue(resID+"-D"+formattedNumber+"m");
+                newtsid.setSite(strsite.site);
+                newtsid.setSiteName(strsite.getDisplayName());
                 FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newtsid.getUniqueString());
                 if(check.isSuccess()) {
-                    CTimeSeries cts = timeSeriesDAO.makeTimeSeries(newtsid);
-                    int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
-                    if (n == 0) {
+                    CTimeSeries cts = timeSeriesDAO.makeTimeSeries(check.getSuccess());
+//                    int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
+                    TimedVariable n = timeSeriesDAO.getPreviousValue(cts, until);
+                    if (n == null) {
                         loading = false;
                     } else {
                         try {
