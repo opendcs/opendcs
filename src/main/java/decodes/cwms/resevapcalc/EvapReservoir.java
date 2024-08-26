@@ -22,6 +22,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -38,12 +39,14 @@ import java.util.logging.Logger;
  */
 public class EvapReservoir
 {
+
 	private static final Logger LOGGER = Logger.getLogger(EvapReservoir.class.getName());
     public static final int MAX_RES_AREAS = 50000;
     public static final int NLAYERS = 1000;
     public static final double FT_TO_M = 0.3048;
     public static final double ACRES_TO_M2 = 4046.8564224;
-    
+
+    public Connection conn;
     // package access to these variables
     public    int   _numberLayers;    //TODO, not current set
     public    double _secchiDepth;
@@ -279,10 +282,10 @@ public class EvapReservoir
     public boolean setElevation( double elev )
     {
     	_elev = elev;
-    	if ( _isEnglish )
-    	{
-    		_elev *= FT_TO_M;
-    	}
+//    	if ( _isEnglish )
+//    	{
+//    		_elev *= FT_TO_M;
+//    	}
 
         double surfArea = 0;
         try {
@@ -477,7 +480,7 @@ public class EvapReservoir
      */
     public double intArea(double el) throws RatingException {
         try {
-            return _RatingAreaElev.rate(el);
+            return _RatingAreaElev.rate(conn, el);
         }
         catch(RatingException ex){
             throw new RatingException("failed to compute rating", ex);

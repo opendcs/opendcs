@@ -92,11 +92,13 @@ public class ResEvapAlgo
 	WaterTempProfiles hourlyWTP;
 	WaterTempProfiles DailyWTP;
 
+	EvapReservoir reservoir;
+
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
-	public NamedVariable DailyWaterTempProfile 	= new NamedVariable("DailyWaterTempProfile", 0);
-	public NamedVariable HourlyWaterTempProfile	= new NamedVariable("HourlyWaterTempProfile", 0);
+//	public NamedVariable DailyWaterTempProfile 	= new NamedVariable("DailyWaterTempProfile", 0);
+//	public NamedVariable HourlyWaterTempProfile	= new NamedVariable("HourlyWaterTempProfile", 0);
 	public NamedVariable HourlySurfaceTemp 		= new NamedVariable("HourlySurfaceTemp", 0);
 	public NamedVariable HourlyEvap 			= new NamedVariable("HourlyEvap", 0);
 	public NamedVariable DailyEvap 				= new NamedVariable("DailyEvap", 0);
@@ -107,7 +109,7 @@ public class ResEvapAlgo
 	public NamedVariable HourlyLatent 			= new NamedVariable("HourlyLatent", 0);
 	public NamedVariable HourlySensible 		= new NamedVariable("HourlySensible", 0);
 	String _outputNames[] = {
-			"DailyWaterTempProfile",
+//			"DailyWaterTempProfile",
 			"HourlySurfaceTemp",
 			"HourlyEvap",
 			"DailyEvap",
@@ -121,11 +123,11 @@ public class ResEvapAlgo
 //AW:OUTPUTS_END
 	private PropertySpec copyPropertySpecs[] =
 			{
-					new PropertySpec("WtpTsid", PropertySpec.NUMBER,
+					new PropertySpec("WtpTsid", PropertySpec.STRING,
 							"Base String for water Temperature Profiles"),
-					new PropertySpec("depth", PropertySpec.NUMBER,
+					new PropertySpec("depth", PropertySpec.STRING,
 							"Depth format for compuatation output"),
-					new PropertySpec("reservoirId", PropertySpec.NUMBER,
+					new PropertySpec("reservoirId", PropertySpec.STRING,
 							"Location ID of reservoir"),
 					new PropertySpec("Secchi", PropertySpec.NUMBER,
 							"Average secchi depth of reservoir"),
@@ -137,13 +139,13 @@ public class ResEvapAlgo
 							"Longitude of reservoir"),
 					new PropertySpec("GMT_Offset", PropertySpec.NUMBER,
 							"GMT offset at reservoir location"),
-					new PropertySpec("Timezone", PropertySpec.NUMBER,
+					new PropertySpec("Timezone", PropertySpec.STRING,
 							"Time zone at reservoir location"),
-					new PropertySpec("WindShear", PropertySpec.NUMBER,
+					new PropertySpec("WindShear", PropertySpec.STRING,
 							"Windshear equation to be utilized in computation"),
 					new PropertySpec("ThermalDifCoe", PropertySpec.NUMBER,
 							"Thermal diffusivity coefficient to be utilized in computation"),
-					new PropertySpec("Rating", PropertySpec.NUMBER,
+					new PropertySpec("Rating", PropertySpec.STRING,
 							"Rating Curve specification for Elevation-Area curve")
 			};
 	@Override
@@ -158,14 +160,14 @@ public class ResEvapAlgo
 
 	public String depth;
 	//remove todo
-	public String SecchiDepthId;
-	public String MaxTempDepthId;
+//	public String SecchiDepthId;
+//	public String MaxTempDepthId;
 	public String reservoirId;
 	public double Secchi;
 	public double Zero_elevation;
 	public double Lati;
 	public double Longi;
-	public int    GMT_Offset;
+	public double GMT_Offset;
 	public String Timezone;
 	public String WindShear;
 	public double ThermalDifCoe;
@@ -173,8 +175,9 @@ public class ResEvapAlgo
 
 
 	String _propertyNames[] = {
-	"SecchiDepthId",
-	"MaxTempDepthId",
+//	"SecchiDepthId",
+//	"MaxTempDepthId",
+	"WtpTsid",
 	"reservoirId",
 	"Secchi",
 	"Zero_elevation",
@@ -197,26 +200,26 @@ public class ResEvapAlgo
 		throws DbCompException
 	{
 //AW:INIT
-		boolean canCompute =
-		getParmRef("windSpeed").missingAction == MissingAction.IGNORE &&
-		getParmRef("RelativeHumidity").missingAction == MissingAction.IGNORE &&
-		getParmRef("AtmPress").missingAction == MissingAction.IGNORE &&
-		getParmRef("PercentLowCloud").missingAction == MissingAction.IGNORE &&
-		getParmRef("ElevLowCloud").missingAction == MissingAction.IGNORE &&
-		getParmRef("PercentMidCloud").missingAction == MissingAction.IGNORE &&
-		getParmRef("ElevMidCloud").missingAction == MissingAction.IGNORE &&
-		getParmRef("PercentHighCloud").missingAction == MissingAction.IGNORE &&
-		getParmRef("ElevHighCloud").missingAction == MissingAction.IGNORE &&
-		getParmRef("Elev").missingAction == MissingAction.IGNORE ;
-
-		if (!canCompute){
-			throw new DbCompException("One of algorithms inputs missing action is set to ignore. All inputs required");
-		}
+//		boolean canCompute =
+//		getParmRef("windSpeed").missingAction == MissingAction.IGNORE &&
+//		getParmRef("RelativeHumidity").missingAction == MissingAction.IGNORE &&
+//		getParmRef("AtmPress").missingAction == MissingAction.IGNORE &&
+//		getParmRef("PercentLowCloud").missingAction == MissingAction.IGNORE &&
+//		getParmRef("ElevLowCloud").missingAction == MissingAction.IGNORE &&
+//		getParmRef("PercentMidCloud").missingAction == MissingAction.IGNORE &&
+//		getParmRef("ElevMidCloud").missingAction == MissingAction.IGNORE &&
+//		getParmRef("PercentHighCloud").missingAction == MissingAction.IGNORE &&
+//		getParmRef("ElevHighCloud").missingAction == MissingAction.IGNORE &&
+//		getParmRef("Elev").missingAction == MissingAction.IGNORE ;
+//
+//		if (!canCompute){
+//			throw new DbCompException("One of algorithms inputs missing action is set to ignore. All inputs required");
+//		}
         _awAlgoType = AWAlgoType.AGGREGATING;
-		_aggPeriodVarRoleName = "sum";
+		_aggPeriodVarRoleName = "DailyEvap";
 		aggUpperBoundClosed = true;
 		aggLowerBoundClosed = false;
-		aggPeriodInterval = IntervalCodes.int_day;
+//		aggPeriodInterval = IntervalCodes.int_one_day;
 
 //AW:INIT_END
 
@@ -225,12 +228,12 @@ public class ResEvapAlgo
 	}
 
 	public double[] getProfiles() throws Exception {
-		Date LastTime = HourlyEvapTS.findPrev(_timeSliceBaseTime).getTime();
-		hourlyWTP = new WaterTempProfiles(timeSeriesDAO, WtpTsid, LastTime, _timeSliceBaseTime, start_depth, depth_increment);
+		Date LastTime = ElevTS.findPrev(baseTimes.first()).getTime();
+		hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WtpTsid, LastTime, baseTimes.first(), start_depth, depth_increment);
 		double[] arrayWTP = new double[hourlyWTP.tseries.size()];
 		for(int i = 0; i < hourlyWTP.tseries.size(); i++){
 			try {
-				arrayWTP[i] = hourlyWTP.tseries.getTimeSeriesAt(i).findPrev(_timeSliceBaseTime).getDoubleValue();
+				arrayWTP[i] = hourlyWTP.tseries.getTimeSeriesAt(i).findPrev(baseTimes.first()).getDoubleValue();
 			}
 			catch (Exception ex){
 				throw new Exception("failed to load data from WTP");
@@ -373,10 +376,15 @@ public class ResEvapAlgo
 		metData.setMedCloudTs(PercentMidCloudTS, ElevMidCloudTS);
 		metData.setHighCloudTs(PercentHighCloudTS, ElevHighCloudTS);
 
-		EvapReservoir reservoir = new EvapReservoir();
+		reservoir = new EvapReservoir();
 		reservoir.setName(reservoirId);
 		reservoir.setThermalDiffusivityCoefficient(ThermalDifCoe);
-		reservoir.setWindShearMethod(WindShearMethod.valueOf(WindShear));
+		try {
+			reservoir.setWindShearMethod(WindShearMethod.fromString(WindShear));
+		}
+		catch(Throwable ex){
+			ex.printStackTrace();
+		}
 
 		reservoir.setInputDataIsEnglish(true);
 		double lonneg = -Longi;
@@ -390,6 +398,8 @@ public class ResEvapAlgo
 		catch(RatingException ex){
 			throw new DbCompException("failed to load rating table", ex);
 		}
+		ratingSet.setDefaultValueTime(baseTimes.first().getTime());
+		reservoir.conn = tsdb.getConnection();
 
 		reservoir.setElevAreaRating(ratingSet);
 
@@ -400,7 +410,7 @@ public class ResEvapAlgo
 		reservoir.setElevationTs(ElevTS);
 		double initElev;
 		try{
-			initElev = ElevTS.sampleAt(ElevTS.findNextIdx(_timeSliceBaseTime)).getDoubleValue();
+			initElev = ElevTS.sampleAt(ElevTS.findNextIdx(baseTimes.first())).getDoubleValue();
 		}
 		catch(Exception ex){
 			throw new DbCompException("failed to load initial Elevation");
@@ -426,8 +436,8 @@ public class ResEvapAlgo
 		}
 		// reverse array order
 		double[] wtpR = new double[resj];
-		for (int i = 0; i<resj+1; i++){
-			wtpR[i] = wtp[resj-i];
+		for (int i = 0; i<resj; i++){
+			wtpR[i] = wtp[resj-i-1];
 		}
 
 		reservoir.setInitWaterTemperatureProfile(wtpR, resj);
@@ -446,6 +456,7 @@ public class ResEvapAlgo
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
             throws DbCompException {
 //AW:TIMESLICE
@@ -493,9 +504,11 @@ public class ResEvapAlgo
 		}
 		setDailyProfiles(_timeSliceBaseTime);
 
-		hourlyWTP.SaveProfiles();
-		DailyWTP.SaveProfiles();
+		//testing
+//		hourlyWTP.SaveProfiles();
+//		DailyWTP.SaveProfiles();
 
+		tsdb.freeConnection(reservoir.conn);
 		crd.close();
 		siteDAO.close();
 		timeSeriesDAO.close();
