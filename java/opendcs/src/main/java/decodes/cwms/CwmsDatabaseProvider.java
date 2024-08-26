@@ -36,10 +36,10 @@ public class CwmsDatabaseProvider implements DatabaseProvider
                                                                 settings.CwmsOfficeId);
             conInfo.setLoginInfo(info);
             Database db = new Database(true);
-            DataSource ds = CwmsConnectionPool.getPoolFor(conInfo);            
+            DataSource ds = CwmsConnectionPool.getPoolFor(conInfo);
+            Database.setDb(db); // the CwmsSqlDatabaseIO constructor calls into the Database instance to verify things.
             db.setDbIo(new CwmsSqlDatabaseIO(ds, settings));
             db.read();
-            
             CwmsTimeSeriesDb tsdb = new CwmsTimeSeriesDb(appName, ds, settings);
             
             return Pair.of(db,tsdb);
