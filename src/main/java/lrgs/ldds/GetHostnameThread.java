@@ -29,23 +29,23 @@ public class GetHostnameThread
     private String localIpMask = null;
     private int localIpMaskInt = 0;
     private int localIpAddr = 0;
-
+    
     public static GetHostnameThread instance()
     {
         if (_instance == null)
-		{
+        {
             _instance = new GetHostnameThread();
-		}
+            _instance.setDaemon(true); // Allow the JVM to just up and die even if this is still running.
+        }
         return _instance;
     }
-
-    private GetHostnameThread()
+    
+    public GetHostnameThread()
     {
-        super(module);
-        this.setDaemon(true);
+        super("GetHostnameThread");
         setLocalIpMask(LrgsConfig.instance().getMiscProp("localIpMask"));
     }
-
+    
     private void setLocalIpMask(String lim)
     {
         localIpMask = lim;
@@ -61,10 +61,7 @@ public class GetHostnameThread
             int nbits=32;
             if (slash > 0)
             {
-                try
-				{
-					nbits = Integer.parseInt(ipaddr.substring(slash+1));
-				}
+                try { nbits = Integer.parseInt(ipaddr.substring(slash+1)); }
                 catch(Exception ex)
                 {
                     Logger.instance().warning(module + " bad localIpMask setting '" + localIpMask + "': '"
@@ -75,7 +72,7 @@ public class GetHostnameThread
                 }
                 ipaddr = ipaddr.substring(0, slash);
             }
-
+            
             try
             {
                 Inet4Address a;
@@ -99,14 +96,13 @@ public class GetHostnameThread
         }
     }
 
-
     public synchronized void enqueue(LddsThread lt)
     {
         String lim = LrgsConfig.instance().getMiscProp("localIpMask");
         if (!TextUtil.strEqualIgnoreCase(localIpMask, lim))
-		{
+        {
             setLocalIpMask(lim);
-		}
+        }
 
         if (localIpAddr != 0)
         {
