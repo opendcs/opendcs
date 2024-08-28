@@ -4,15 +4,19 @@ import java.awt.*;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
+import org.opendcs.database.DatabaseService;
+
 import ilex.gui.WindowUtility;
 import lrgs.gui.DecodesInterface;
 
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
+import ilex.util.Pair;
 import ilex.util.StderrLogger;
 import ilex.cmdline.*;
 import decodes.util.*;
 import decodes.db.*;
+import decodes.tsdb.TimeSeriesDb;
 
 /**
 The MAIN class for the DECODES Database Editor.
@@ -25,13 +29,13 @@ public class DecodesDbEditor
     public static boolean turnOffPopUps = false;
     private static ResourceBundle genericLabels = null;
     private static ResourceBundle dbeditLabels = null;
-    
+
     /**Construct the application*/
     public DecodesDbEditor()
     {
         genericLabels = getGenericLabels();
         dbeditLabels = getDbeditLabels();
-        
+
         DbEditorFrame frame = new DbEditorFrame();
         theFrame = frame;
         decodes.gui.GuiApp.topFrame = frame;
@@ -54,7 +58,7 @@ public class DecodesDbEditor
      * @return resource bundle containing generic labels for the selected
      * language.
      */
-    public static ResourceBundle getGenericLabels() 
+    public static ResourceBundle getGenericLabels()
     {
         if (genericLabels == null)
         {
@@ -81,11 +85,11 @@ public class DecodesDbEditor
     }
 
     static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "dbedit.log");
-    static StringToken dbLocArg = new StringToken("E", 
+    static StringToken dbLocArg = new StringToken("E",
         "Explicit Database Location", "", TokenOptions.optSwitch, "");
     //To turn on or off the "Are you sure..." pop ups
-    static StringToken turnOnOffPopUps = new StringToken("T", 
-    "Turn on or off the 'Are you sure...' pop ups - (Values: On -or- Off)", 
+    static StringToken turnOnOffPopUps = new StringToken("T",
+    "Turn on or off the 'Are you sure...' pop ups - (Values: On -or- Off)",
     "", TokenOptions.optSwitch, "On");
     static
     {
@@ -95,13 +99,15 @@ public class DecodesDbEditor
     }
 
     /**Main method*/
-    public static void main(String[] args)
-        throws Exception
+    public static void main(String[] args) throws Exception
     {
         Logger.setLogger(new StderrLogger("DecodesDbEditor"));
 
         // Parse command line arguments.
-        try { cmdLineArgs.parseArgs(args); }
+        try
+        {
+            cmdLineArgs.parseArgs(args);
+        }
         catch(IllegalArgumentException ex)
         {
             System.exit(1);
@@ -112,63 +118,13 @@ public class DecodesDbEditor
             + ") =====================");
 
         DecodesSettings settings = DecodesSettings.instance();
-        
+        settings.loadFromProfile(cmdLineArgs.getProfile());
         DecodesInterface.setGUI(true);
-
-        // Construct the database and the interface specified by properties.
-        Database db = new decodes.db.Database();
-        Database.setDb(db);
-        DatabaseIO dbio;
-
-        String dbloc = dbLocArg.getValue();
-        if (dbloc.length() > 0)
-        {
-            dbio = DatabaseIO.makeDatabaseIO(settings.DB_XML, dbloc);
-        }
-        else
-            dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-                settings.editDatabaseLocation);
+        Pair<Database,TimeSeriesDb> databases = DatabaseService.getDatabaseFor(null, settings);
+        Database db = databases.first;
 
         Platform.configSoftLink = true;
-
-        // Standard Database Initialization for all Apps:
-        System.out.print("Reading DB: "); System.out.flush();
-        db.setDbIo(dbio);
-        System.out.print("Enum, "); System.out.flush();
-        db.enumList.read();
-        System.out.print("DataType, "); System.out.flush();
-        db.dataTypeSet.read();
-        System.out.print("EU, "); System.out.flush();
-        db.engineeringUnitList.read();
-
-        // Initialization for DB editor - read all the collections:
-        Site.explicitList = true;
-        System.out.print("Site, "); System.out.flush();
-        db.siteList.read();
-        Site.explicitList = true;
-        System.out.print("Equip, "); System.out.flush();
-        db.equipmentModelList.read();
-        System.out.print("Config, "); System.out.flush();
-        db.platformConfigList.read();
-        System.out.print("Plat, "); System.out.flush();
-        db.platformList.read();
-        db.platformConfigList.countPlatformsUsing();
-
-        System.out.print("Equip, "); System.out.flush();
-        db.equipmentModelList.read();
-        //db.equationSpecList.read();
-        System.out.print("Pres, "); System.out.flush();
-        db.presentationGroupList.read();
-        System.out.print("Routing, "); System.out.flush();
-        db.routingSpecList.read();
-        System.out.print("DataSource, "); System.out.flush();
-        db.dataSourceList.read();
-        System.out.print("Netlist, "); System.out.flush();
-        db.networkListList.read();
-        //db.eqTableList.read();
-        System.out.println("Database initialized.");
-        
-        
+        db.initializeForEditing();
 
 //        fixObjectReferences(db);
 //
@@ -177,9 +133,9 @@ public class DecodesDbEditor
         String onOffPopUps = turnOnOffPopUps.getValue();
         if (onOffPopUps.equalsIgnoreCase("OFF"))
             DecodesDbEditor.turnOffPopUps = true;
-        
+
         DecodesInterface.maintainGoesPdt();
-        
+
         new DecodesDbEditor();
     }
 
