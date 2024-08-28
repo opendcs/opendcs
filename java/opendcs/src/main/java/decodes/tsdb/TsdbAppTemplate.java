@@ -65,39 +65,42 @@ public abstract class TsdbAppTemplate
 
 	/** The time series database to use in this application. */
 	public static TimeSeriesDb theDb = null;
+	protected static Database decodesDb = null;
+	private DecodesSettings settings = null;
+	private String appName = null;
 
 	/** The application ID determined when connecting to the database. */
 	private DbKey appId = DbKey.NullKey;
-	
+
 	/**
 	 * Subclass can set this to true to cause application to restart if
 	 * the execute method exits due to database going down.
 	 */
 	protected boolean surviveDatabaseBounce = false;
-	
+
 	/**
 	 * Subclass can set this to true to cause application to restart if
 	 * the execute method exits due to database going down.
 	 */
 	protected boolean databaseFailed = false;
-	
+
 	/**
 	 * Most apps do the work in the runApp() method. Others, like GUIs
 	 * start threads and then allow the runApp method to exit. GUIs
 	 * should set noExitAfterRunApp to true.
 	 */
 	protected boolean noExitAfterRunApp = false;
-	
+
 	/**
 	 * Determined at startup, available via getPID();
 	 */
 	private int pid = -1;
-	
+
 	protected int appDebugMinPriority = Logger.E_INFORMATION;
-	
+
 	protected static TsdbAppTemplate appInstance = null;
-	
-	
+
+
 	/**
 	 * Base class constructor. Pass it the default name of the log file.
 	 */
@@ -107,11 +110,11 @@ public abstract class TsdbAppTemplate
 			logname = "test.log";
 		cmdLineArgs = new CmdLineArgs(false, logname);
 		cfgFileArg = new StringToken("c", "comp-config-file",
-			"", TokenOptions.optSwitch, ""); 
+			"", TokenOptions.optSwitch, "");
 		testModeArg = new BooleanToken("t", "test-mode",
 			"", TokenOptions.optSwitch, false);
-		modelRunArg = new IntegerToken("m", 
-			"output-model-run-ID", "", TokenOptions.optSwitch, -1); 
+		modelRunArg = new IntegerToken("m",
+			"output-model-run-ID", "", TokenOptions.optSwitch, -1);
 		appNameArg = new StringToken("a", "Application-Name", "", TokenOptions.optSwitch, "utility");
 		cmdLineArgs.addToken(cfgFileArg);
 		cmdLineArgs.addToken(testModeArg);
@@ -142,9 +145,12 @@ public abstract class TsdbAppTemplate
 		addCustomArgs(cmdLineArgs);
 		parseArgs(args);
 		startupLogMessage();
-		
+		appName = appNameArg.getValue();
+		Profile profile = cmdLineArgs.getProfile();
+		settings = DecodesSettings.instance();
+		settings.loadFromProfile(profile);
 		oneTimeInit();
-		
+
 		// Only daemons will set surviveDatabaseBounce=true.
 		// For other programs, like GUIs and utilities, the code will be
 		// executed only once.
@@ -157,16 +163,6 @@ public abstract class TsdbAppTemplate
 				try { Thread.sleep(15000L); } catch(InterruptedException ex) {}
 			firstRun = false;
 			databaseFailed = false;
-			try
-			{
-				initDecodes();
-			}
-			catch(DecodesException ex)
-			{
-				log.warn("Cannot init Decodes: ",ex);
-				databaseFailed = true;
-				continue;
-			}
 			try
 			{
 				createDatabase();
@@ -234,7 +230,7 @@ public abstract class TsdbAppTemplate
 
 	/**
 	 * Parses the command line arguments.
-	 * You probably don't need to override this method. This calls the 
+	 * You probably don't need to override this method. This calls the
 	 * parseArgs method in the CmdLineArgs class. Your app can retrieve the
 	 * results later.
 	 * @param args the argument from the main method.
@@ -272,6 +268,18 @@ public abstract class TsdbAppTemplate
 		throws ClassNotFoundException,
 		InstantiationException, IllegalAccessException
 	{
+		try
+		{
+
+			Pair<Database,TimeSeriesDb> databases= DatabaseService.getDatabaseFor(appName, settings);
+			decodesDb = databases.first;
+			decodesDb.initializeForDecoding();
+			theDb = databases.second;
+		}
+		catch (DecodesException ex)
+		{
+			throw new RuntimeException("Unable to create database.", ex);
+		}
 	}
 
 	/**
@@ -280,60 +288,46 @@ public abstract class TsdbAppTemplate
 	 */
 	public void tryConnect() throws BadConnectException
 	{
-		String nm = appNameArg.getValue();
-		try
+		try (LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO())
 		{
-			Profile profile = cmdLineArgs.getProfile();
-
-			DecodesSettings settings = DecodesSettings.instance();
-			settings.loadFromProfile(profile);
-			Pair<Database,TimeSeriesDb> databases= DatabaseService.getDatabaseFor(nm, settings);
-			theDb = databases.second;
-			try (LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO())
+			CompAppInfo thisApp = loadingAppDAO.getComputationApp(appName);
+			this.appId = thisApp.getAppId();
+			// CWMS-8979 Allow settings in the database to override values in user.properties.
+			String settingsApp = cmdLineArgs.getCmdLineProps().getProperty("settings");
+			if (settingsApp != null)
 			{
-				CompAppInfo thisApp = loadingAppDAO.getComputationApp(nm);
-				this.appId = thisApp.getAppId();
-				// CWMS-8979 Allow settings in the database to override values in user.properties.
-				String settingsApp = cmdLineArgs.getCmdLineProps().getProperty("settings");
-				if (settingsApp != null)
+				log.info("Overriding Decodes Settings with properties in Process Record '{}'", settingsApp );
+				try
 				{
-					log.info("Overriding Decodes Settings with properties in Process Record '{}'", settingsApp );
-					try
-					{
-						CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
-						this.appId = cai.getAppId();
-						PropertiesUtil.loadFromProps(settings, cai.getProperties());
-					}
-					catch (DbIoException ex)
-					{
-						log.warn("Cannot load settings from app '{}'", settingsApp , ex);
-					}
-					catch (NoSuchObjectException ex)
-					{
-						log.warn("Cannot load settings from non-existent app '{}'", settingsApp , ex);
-					}
+					CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
+					this.appId = cai.getAppId();
+					PropertiesUtil.loadFromProps(settings, cai.getProperties());
+				}
+				catch (DbIoException ex)
+				{
+					log.warn("Cannot load settings from app '{}'", settingsApp , ex);
+				}
+				catch (NoSuchObjectException ex)
+				{
+					log.warn("Cannot load settings from non-existent app '{}'", settingsApp , ex);
 				}
 			}
-			catch (DbIoException ex)
-			{
-				throw new BadConnectException("Unable to get AppId", ex);
-			}
-			catch (NoSuchObjectException ex)
-			{
-				throw new BadConnectException("unable to get database instance.", ex);
-			}
-
-			// Set test-mode flag & model run ID in the database interface.
-			theDb.setTestMode(testModeArg.getValue());
-			int modelRunId = modelRunArg.getValue();
-			if (modelRunId != -1)
-			{
-				theDb.setWriteModelRunId(modelRunId);
-			}
 		}
-		catch (IOException | DatabaseException ex)
+		catch (DbIoException ex)
+		{
+			throw new BadConnectException("Unable to get AppId", ex);
+		}
+		catch (NoSuchObjectException ex)
 		{
 			throw new BadConnectException("unable to get database instance.", ex);
+		}
+
+		// Set test-mode flag & model run ID in the database interface.
+		theDb.setTestMode(testModeArg.getValue());
+		int modelRunId = modelRunArg.getValue();
+		if (modelRunId != -1)
+		{
+			theDb.setWriteModelRunId(modelRunId);
 		}
 	}
 
@@ -345,7 +339,7 @@ public abstract class TsdbAppTemplate
 	{
 		log.atError().setCause(ex).log("Cannot read DB auth from file '{}'", afn ,ex);
 	}
-	
+
 	protected void badConnect(String appName, BadConnectException ex)
 	{
 		log.error("Cannot read DB auth from file '{}'", appName ,ex);
@@ -354,11 +348,8 @@ public abstract class TsdbAppTemplate
 	public void initDecodes()
 		throws DecodesException
 	{
-		/*DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
-		DecodesInterface.initializeForEditing();
-		*/
 	}
-	
+
 	public void shutdownDecodes()
 	{
 	//	DecodesInterface.shutdownDecodes();
@@ -379,7 +370,7 @@ public abstract class TsdbAppTemplate
 		}
 		theDb = null;
 	}
-	
+
 	/**
 	 * Convenience method to log warning with app name prefix.
 	 * @param msg the message
@@ -411,12 +402,12 @@ public abstract class TsdbAppTemplate
 	{
 		DecodesInterface.silent = silent;
 	}
-	
+
 	/**
 	 * @return the PID assigned by the underlying VM and determined at startup.
 	 */
 	public int getPID() { return pid; }
-	
+
 	public static int determinePID()
 	{
 		String pids = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
@@ -435,7 +426,7 @@ public abstract class TsdbAppTemplate
 		}
 		return -1;
 	}
-	
+
 	public static int determineEventPort(CompAppInfo appInfo)
 	{
 		int evtPort = -1;
@@ -453,7 +444,7 @@ public abstract class TsdbAppTemplate
 			evtPort = 20000 + (determinePID() % 10000);
 		return evtPort;
 	}
-	
+
 
 	/**
 	 * {@inheritDoc}

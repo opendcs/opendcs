@@ -4,12 +4,19 @@
 package decodes.db;
 
 import ilex.util.Logger;
+import opendcs.util.functional.ThrowingRunnable;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.opendcs.utils.logging.Timer;
+import org.slf4j.LoggerFactory;
+
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
+import decodes.util.DecodesException;
+import decodes.util.DecodesSettings;
 
 /**
  * The Database class provides a global means of accessing a 'current'
@@ -21,6 +28,7 @@ import decodes.tsdb.CompAppInfo;
 
 public class Database extends DatabaseObject
 {
+	private static org.slf4j.Logger log = LoggerFactory.getLogger(Database.class);
 	private static Database _theDb = null;  // Static 'current' instance
 
 	// Collection classes that represent this database:
@@ -54,14 +62,19 @@ public class Database extends DatabaseObject
 	public DataSourceList		dataSourceList;
 
 	public ArrayList<CompAppInfo> loadingAppList = new ArrayList<CompAppInfo>();
-	
+
 	public ArrayList<ScheduleEntry> schedEntryList = new ArrayList<ScheduleEntry>();
-	
+
 	public ArrayList<PlatformStatus> platformStatusList = new ArrayList<PlatformStatus>();
-	
+
 	/** The interface for reading and writing this database. */
 
 	private DatabaseIO dbio;
+
+	private boolean decodesInitialized = false;
+	private boolean initializedForDecoding = false;
+	private boolean initializedForEditing = false;
+	private boolean siteListRead = false;
 
 	/**
 	 * Default constructor.
@@ -91,7 +104,7 @@ public class Database extends DatabaseObject
 		engineeringUnitList.setDatabase(this);
 		enumList = new EnumList();
 		enumList.setDatabase(this);
-		
+
 		networkListList = new NetworkListList();
 		networkListList.setDatabase(this);
 		platformList = new PlatformList();
@@ -160,7 +173,7 @@ public class Database extends DatabaseObject
 
 	@Override
 	public void prepareForExec() {}
-	
+
 	@Override
 	public boolean isPrepared() { return false;}
 
@@ -223,7 +236,7 @@ public class Database extends DatabaseObject
 		}
 		platformList.write();
 	}
-	
+
 	/**
 	 * Reads an enumeration from the DB if necessary and adds it to the cache.
 	 * @param enumName Name of enumeration
@@ -236,7 +249,7 @@ public class Database extends DatabaseObject
 		DbEnum ret = enumList.getEnum(enumName);
 		if (ret != null || enumList.haveReadAllEnums())
 			return ret;
-		
+
 		try
 		{
 			if (!(dbio instanceof SqlDatabaseIO))
@@ -259,7 +272,7 @@ public class Database extends DatabaseObject
 			return null;
 		}
 	}
-	
+
 	public PresentationGroupList getPresentationGroupList()
 	{
 		if (!presentationGroupList.wasRead())
@@ -275,4 +288,103 @@ public class Database extends DatabaseObject
 		}
 		return presentationGroupList;
 	}
+
+	private void timedLoad(String dataSet, ThrowingRunnable<DecodesException> task) throws DecodesException
+	{
+		log.info("Loading {}.", dataSet);
+		final Duration duration = Timer.elapsedTime(task);
+		log.info("Loading {} to {} seconds", dataSet, duration.toMillis()/1000.);
+	}
+
+	public void init(DecodesSettings settings ) throws DecodesException
+	{
+		initMinimal(settings);
+		timedLoad("Enums", () -> this.enumList.read());
+		timedLoad("DataTypes", () -> this.dataTypeSet.read());
+		timedLoad("DataSources", () -> this.dataSourceList.read());
+		this.decodesInitialized = true;
+	}
+
+	public void initMinimal(DecodesSettings settings) throws DecodesException
+	{
+		if (decodesInitialized)
+		{
+			return;
+		}
+		log.info("Init DECODES DB: ");
+		timedLoad("Engineering Units", () -> this.engineeringUnitList.read());
+	}
+
+	public void initializeForEditing() throws DecodesException
+	{
+		if (!decodesInitialized)
+		{
+			throw new DecodesException("Must initialize DECODES before calling "
+				+ "initializeForEditing()");
+		}
+		if (initializedForEditing)
+		{
+			return;
+		}
+		log.info("Loading Sites.");
+
+		readSiteList(true);
+		final Duration siteReadTime = Timer.elapsedTime(() -> this.siteList.read());
+		log.info("Loading Sites Took {} seconds", siteReadTime.toMillis()/1000.0);
+
+		log.info("Loading Equipment.");
+		final Duration equipmentReadTime = Timer.elapsedTime(() -> this.equipmentModelList.read());
+		log.info("Loading equipment took {} seconds", equipmentReadTime.toMillis()/1000.0);
+
+		log.info("Loading Configs.");
+		final Duration platformConfigListTime = Timer.elapsedTime(() -> this.platformConfigList.read());
+		log.info("Loading Configs took {} seconds", platformConfigListTime.toMillis()/1000.0);
+
+		initializeForDecoding();
+
+		platformConfigList.countPlatformsUsing();
+
+		log.info("Loading Routing Specs.");
+		final Duration routingReadTime = Timer.elapsedTime(() -> this.routingSpecList.read());
+		log.info("Loading Routing Specs took {} seconds", routingReadTime.toMillis()/1000.0);
+		initializedForEditing = true;
+	}
+
+	public void initializeForDecoding() throws DecodesException
+	{
+		if (!decodesInitialized)
+		{
+			throw new DecodesException("Must initialize DECODES before calling "
+				+ "initializeForDecoding()");
+		}
+		if (initializedForDecoding)
+		{
+			return;
+		}
+		readSiteList(false);
+		timedLoad("PlatformConfigList", () -> this.platformConfigList.read());
+		timedLoad("Platforms", () -> this.platformList.read());
+		timedLoad("Presentation Groups", () -> this.presentationGroupList.read());
+		timedLoad("Network lists", () -> this.networkListList.read());
+		initializedForDecoding = true;
+	}
+
+	private void readSiteList(boolean explicit) throws DecodesException
+	{
+		final boolean orig = Site.explicitList;
+		try
+		{
+			Site.explicitList = explicit;
+			if(!siteListRead)
+			{
+				timedLoad("Sites", () -> siteList.read());
+				siteListRead = true;
+			}
+		}
+		finally
+		{
+			Site.explicitList = orig;
+		}
+	}
+
 }
