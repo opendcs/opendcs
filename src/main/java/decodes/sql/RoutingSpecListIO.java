@@ -350,21 +350,26 @@ public class RoutingSpecListIO extends SqlDbObjIo
               "IsProduction = " + sqlString(rs.isProduction) + " " +
             "WHERE ID = " + id;
 
-        executeUpdate(q);
+        
 
-        try
+        try (PropertiesDAI propsDao = _dbio.makePropertiesDAO())
         {
-            propsDao.writeProperties("RoutingSpecProperty", "RoutingSpecId",
-                                     rs.getId(), rs.getProperties());
+            propsDao.inTransaction(dao ->
+            {
+                dao.doModify(q, new Object[0]);
+                propsDao.writeProperties("RoutingSpecProperty", "RoutingSpecId",
+                                         rs.getId(), rs.getProperties());
+                // Update the RoutingSpecNetworkLists
+                delete_RS_NL(dao, rs);
+                insert_RS_NL(rs);
+            });
         }
-        catch (DbIoException ex)
+        catch (Exception ex)
         {
             throw new DatabaseException("Unable to update routing spec.", ex);
         }
 
-        // Update the RoutingSpecNetworkLists
-        delete_RS_NL(rs);
-        insert_RS_NL(rs);
+        
     }
 
     /**
@@ -456,46 +461,54 @@ public class RoutingSpecListIO extends SqlDbObjIo
     {
         DbKey id = rs.getId();
 
-        // Do the related tables first
-        delete_RS_NL(rs);
-
-        try (ScheduleEntryDAI seDAO = _dbio.makeScheduleEntryDAO();)
+        try (PropertiesDAI propsDAO = _dbio.makePropertiesDAO();
+             ScheduleEntryDAI seDAO = _dbio.makeScheduleEntryDAO();)
         {
-            propsDao.deleteProperties("RoutingSpecProperty", "RoutingSpecId", id);
-            if (seDAO != null)
+            propsDAO.inTransaction(dao -> 
             {
-                ArrayList<ScheduleEntry> seList = seDAO.listScheduleEntries(null);
-                for(ScheduleEntry se : seList)
+                try(PropertiesDAI props2 = _dbio.makePropertiesDAO())
                 {
-                    if (se.getRoutingSpecId().equals(rs.getId()))
+                    props2.inTransactionOf(dao);
+                    // Do the related tables first
+                    delete_RS_NL(dao, rs);
+                    props2.deleteProperties("RoutingSpecProperty", "RoutingSpecId", id);
+                    if (seDAO != null)
                     {
-                        seDAO.deleteScheduleEntry(se);
+                        seDAO.inTransactionOf(dao);
+                        ArrayList<ScheduleEntry> seList = seDAO.listScheduleEntries(null);
+                        for(ScheduleEntry se : seList)
+                        {
+                            if (se.getRoutingSpecId().equals(rs.getId()))
+                            {
+                                seDAO.deleteScheduleEntry(se);
+                            }
+                        }
                     }
+
+                    // Finally, do the main RoutingSpec table
+                    String q = "DELETE FROM RoutingSpec WHERE ID = ?";
+                    dao.doModify(q, id);
                 }
-            }
+            });
         }
-        catch (DbIoException ex)
+        catch (Exception ex)
         {
             throw new DatabaseException("Unable to delete routing spec entries", ex);
         }
-
-        // Finally, do the main RoutingSpec table
-        String q = "DELETE FROM RoutingSpec WHERE ID = " + id;
-        executeUpdate(q);
     }
 
     /**
     * Deletes the RoutingSpecNetworkList records corresponding to a
     * RoutingSpec.
     */
-    private void delete_RS_NL(RoutingSpec rs)
+    private void delete_RS_NL(DaoBase dao, RoutingSpec rs)
         throws DatabaseException, SQLException
     {
         DbKey id = rs.getId();
 
         String q = "DELETE FROM RoutingSpecNetworkList " +
-                   "WHERE RoutingSpecId = " + id;
-        tryUpdate(q);
+                   "WHERE RoutingSpecId = ?";
+        dao.doModify(q, id);
     }
 
     private DbKey name2id(String name)

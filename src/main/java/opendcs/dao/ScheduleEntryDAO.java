@@ -156,8 +156,8 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
 			{
 				try (LoadingAppDAI loadingAppDAO = db.makeLoadingAppDAO())
 				{
+                    loadingAppDAO.inTransactionOf(dao);
 					final ArrayList<CompAppInfo> appInfos = loadingAppDAO.listComputationApps(false);
-					loadingAppDAO.inTransactionOf(dao);
 					dao.doQuery(q.toString(), rs ->
 					{
 						ScheduleEntry se = new ScheduleEntry(DbKey.createDbKey(rs, 1));
