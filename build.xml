@@ -822,7 +822,13 @@ more information about each.
             <isset property="opendcs.lang"/>
         </condition>
 
-        <property name="decj_opts" value="${debugOpts} ${jfrOpts} ${lang}"/>
+        <condition property="extra_opts"
+                  value="${opendcs.app.decj}"
+                  else="">
+            <isset property="opendcs.app.decj"/>
+        </condition>
+
+        <property name="decj_opts" value="${debugOpts} ${jfrOpts} ${lang} ${extra_opts}"/>
         <echo message="with opts: ${decj_opts}"/>
 
         <exec executable="${stage.dir}/bin/${opendcs.app}" osfamily="unix">
@@ -832,6 +838,7 @@ more information about each.
             <arg value="-l"/><arg value="/dev/stdout"/>
             <arg if:set="opendcs.profile" value="-P"/>
             <arg if:set="opendcs.profile" value="${opendcs.profile}"/>
+            <arg if:set="opendcs.arg" value="${opendcs.arg}"/>
             <env key="DECJ_OPTS" value="${decj_opts}"/>
         </exec>
         <exec executable="${stage.absolute.dir}/bin/${opendcs.app}.bat" osfamily="windows" vmlauncher="false">
@@ -841,6 +848,7 @@ more information about each.
             <arg value="-l"/><arg value="CON:"/>
             <arg if:set="opendcs.profile" value="-P"/>
             <arg if:set="opendcs.profile" value="${opendcs.profile}"/>
+            <arg if:set="opendcs.arg" value="${opendcs.arg}"/>
             <env key="DECJ_OPTS" value="${decj_opts}"/>
         </exec>
     </target>
