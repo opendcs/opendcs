@@ -688,7 +688,9 @@ import javax.management.JMException;
 import javax.management.ObjectName;
 import javax.management.openmbean.TabularData;
 
+import org.opendcs.database.ExceptionHelpers;
 import org.opendcs.jmx.ConnectionPoolMXBean;
+import org.opendcs.utils.FailableResult;
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.DaiBase;
@@ -824,7 +826,7 @@ public class CwmsTimeSeriesDb
 				if (!cgl.isLoginSuccess())
 				{
 					cgl.doLogin(null);
-					if (!cgl.isLoginSuccess()) // user hit cancel
+					if (!cgl.wasOk()) // user hit cancel
 					{
 						throw new BadConnectException("Login aborted by user.");
 					}
@@ -1122,56 +1124,62 @@ public class CwmsTimeSeriesDb
 	}
 
 	@Override
-	public TimeSeriesIdentifier transformTsidByCompParm(
+	public TimeSeriesIdentifier transformTsidByCompParm(TimeSeriesDAI tsDAI,
 			TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
 			boolean fillInParm, String timeSeriesDisplayName)
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException
 	{
 		if (tsid == null)
+		{
 			tsid = makeEmptyTsId();
+		}
 
 		String origString = tsid.getUniqueString();
 		TimeSeriesIdentifier tsidRet = tsid.copyNoKey();
 		boolean transformed = transformUniqueString(tsidRet, parm);
-//Site tssite = tsidRet.getSite();
-//Logger.instance().debug3("After transformUniqueString, sitename=" + tsidRet.getSiteName()
-//+ ", site=" + (tssite==null ? "null" : tssite.getDisplayName()));
+
 		if (transformed)
 		{
 			String uniqueString = tsidRet.getUniqueString();
-			debug3("CwmsTimeSeriesDb.transformTsid origString='" + origString + "', new string='"
-				+ uniqueString + "', parm=" + parm);
-			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
+			log.trace("CwmsTimeSeriesDb.transformTsid origString='{}', new string='{}', parm={}", origString, uniqueString, parm);
+						
+			FailableResult<TimeSeriesIdentifier,TsdbException> tmpTsId = tsDAI.findTimeSeriesIdentifier(uniqueString);
 
-			try
+			if (tmpTsId.isFailure())
 			{
-				tsidRet = timeSeriesDAO.getTimeSeriesIdentifier(uniqueString);
-				debug3("CwmsTimeSeriesDb.transformTsid "
-					+ "time series '" + uniqueString + "' exists OK.");
-			}
-			catch(NoSuchObjectException ex)
-			{
-				if (createTS)
+				if (tmpTsId.getFailure() instanceof NoSuchObjectException)
 				{
-					if (timeSeriesDisplayName != null)
-						tsidRet.setDisplayName(timeSeriesDisplayName);
-					timeSeriesDAO.createTimeSeries(tsidRet);
-					fillInParm = true;
+					if (createTS)
+					{
+						tsDAI.createTimeSeries(tsidRet);
+						fillInParm = true;
+					}
+					else
+					{
+						log.trace("CwmsTimeSeriesDb.transformTsid no such time series '{}'", uniqueString);
+						return null;
+					}
 				}
 				else
 				{
-					debug3("CwmsTimeSeriesDb.transformTsid "
-						+ "no such time series '" + uniqueString + "'");
-					return null;
+					ExceptionHelpers.throwDbIoNoSuchObject(tmpTsId.getFailure());
 				}
 			}
-			finally
+			else
 			{
-				timeSeriesDAO.close();
+				log.trace("CwmsTimeSeriesDb.transformTsid time series '{}' exists OK.", uniqueString);
+				tsidRet = tmpTsId.getSuccess();
 			}
 		}
 		else
+		{
 			tsidRet = tsid;
+		}
+
+		if (timeSeriesDisplayName != null)
+		{
+			tsidRet.setDisplayName(timeSeriesDisplayName);
+		}
 
 		if (fillInParm)
 		{

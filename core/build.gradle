@@ -84,7 +84,9 @@ dependencies {
     }
     implementation(libs.hec.nucleus.metadata)
     implementation(libs.org.slf4j.api)
-    implementation(libs.io.javalin)
+    implementation(libs.bundles.jersey)
+    implementation(libs.bundles.jetty)
+    api(libs.javax.javaee.api)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.bundles.junit)

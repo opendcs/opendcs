@@ -329,11 +329,22 @@ public interface DatabaseConnectionOwner
 	 * @throws NoSuchObjectException if (createTS) and failed to create TS in database
 	 * @throws BadTimeSeriesException on attempt to create new TS with invalid TSID.
 	 */
-	public abstract TimeSeriesIdentifier transformTsidByCompParm(
+	TimeSeriesIdentifier transformTsidByCompParm(TimeSeriesDAI tsDAI,
 		TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
 		boolean fillInParm, String timeSeriesDisplayName)
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException;
 	
+	default TimeSeriesIdentifier transformTsidByCompParm(
+		TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
+		boolean fillInParm, String timeSeriesDisplayName)
+		throws DbIoException, NoSuchObjectException, BadTimeSeriesException
+	{
+		try (TimeSeriesDAI tsDai = this.makeTimeSeriesDAO())
+		{
+			return this.transformTsidByCompParm(tsDai, tsid, parm, createTS, fillInParm, timeSeriesDisplayName);
+		}
+	}
+
 	/**
 	 * Construct a DAO for reading writing DeviceStatus structures.
 	 */

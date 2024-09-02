@@ -141,7 +141,7 @@ public class CwmsSqlDatabaseIO
 				if (!cgl.isLoginSuccess())
 				{
 					cgl.doLogin(null);
-					if (!cgl.isLoginSuccess()) // user hit cancel
+					if (!cgl.wasOk()) // user hit cancel
 						throw new DatabaseException("Login aborted by user.");
 				}
 				_dbUser = cgl.getUserName();

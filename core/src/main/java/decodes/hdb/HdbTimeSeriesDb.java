@@ -855,7 +855,7 @@ public class HdbTimeSeriesDb
 	}
 
 	@Override
-	public TimeSeriesIdentifier transformTsidByCompParm(
+	public TimeSeriesIdentifier transformTsidByCompParm(TimeSeriesDAI timeSeriesDAO,
 			TimeSeriesIdentifier tsid, DbCompParm parm, boolean createTS,
 			boolean fillInParm, String timeSeriesDisplayName) 
 		throws DbIoException, NoSuchObjectException, BadTimeSeriesException
@@ -871,7 +871,6 @@ public class HdbTimeSeriesDb
 			String uniqueString = tsidRet.getUniqueString();
 			Logger.instance().debug3("HdbTimeSeriesDb.transformTsid new string='"
 				+ uniqueString);
-			TimeSeriesDAI timeSeriesDAO = makeTimeSeriesDAO();
 
 			try 
 			{
@@ -896,10 +895,6 @@ public class HdbTimeSeriesDb
 						+ "no such time series '" + uniqueString + "' and createFlag=false");
 					return null;
 				}
-			}
-			finally
-			{
-				timeSeriesDAO.close();
 			}
 		}
 		else

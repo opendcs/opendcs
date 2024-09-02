@@ -13,10 +13,10 @@ set "CLASSPATH=%APP_PATH%\dummy.jar"
 
 if defined CP_SHARED_JAR_DIR (
  for /R "%CP_SHARED_JAR_DIR%" %%a in (*.jar) do (
-   set "CLASSPATH=!CLASSPATH!;%%a"
+   set "CLASSPATH=!CLASSPATH!;%%sa"
  )
 )
-
+REM Use short name as the classpath has gotten beyond the windows environment variable support
 for /R "%APP_PATH%/dep" %%a in (*.jar) do (
   set "CLASSPATH=!CLASSPATH!;%%a"
   )
@@ -34,9 +34,9 @@ if not exist %DCSTOOL_USERDIR%\ (
   copy %APP_PATH%\decodes.properties %DCSTOOL_USERDIR%\user.properties
   xcopy %APP_PATH%\edit-db %DCSTOOL_USERDIR%\edit-db /E /I
 )
-
+REM Use short name as the classpath has gotten beyond the windows environment variable support
 for /R "%DCSTOOL_USERDIR%/dep" %%a in (*.jar) do (
-  set "CLASSPATH=!CLASSPATH!;%%a"
+  set "CLASSPATH=!CLASSPATH!;%%sa"
   )
 
 echo -Xmx240m >> %ARG_FILE%

@@ -227,7 +227,7 @@ public class AlgorithmsEditPanel
 
 		propCopy = new Properties();
 		PropertiesUtil.copyProps(propCopy, editedObject.getProperties());
-		propertiesPanel.setProperties(propCopy);
+		propertiesPanel.getModel().setProperties(propCopy);
 		algoParmTableModel.fill(editedObject);
 		String clsName = dca.getExecClass();
 		try
@@ -274,7 +274,7 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 			}
 		}
 
-		propertiesPanel.setPropertiesOwner(this);
+		propertiesPanel.getModel().setPropertiesOwner(this);
 	}
 
 	public DbCompAlgorithm getEditedObject()
@@ -530,7 +530,7 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 		ob.setName(nm);
 		ob.setComment(commentsText.getText());
 		ob.setExecClass(execClassField.getText().trim());
-		propertiesPanel.saveChanges();
+		propertiesPanel.getModel().saveChanges();
 		ob.getProperties().clear();
 		PropertiesUtil.copyProps(ob.getProperties(), propCopy);
 		algoParmTableModel.saveTo(ob);
@@ -569,7 +569,7 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 	protected JPanel getPropertiesPanel()
 	{
 		if (propertiesPanel == null) {
-			propertiesPanel = new PropertiesEditPanel(new Properties());
+			propertiesPanel = PropertiesEditPanel.from(new Properties());
 			propertiesPanel.setOwnerFrame(CAPEdit.instance().getFrame());
 		}
 		return propertiesPanel;

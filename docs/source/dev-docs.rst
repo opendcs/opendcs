@@ -149,10 +149,18 @@ the "stage" directory is used as DCSTOOL_HOME and DCSTOOL_USERDIR is the same de
     ant run -Dopendcs.app=compedit
 
     # to run a specific app with a profile
-    ant run -Dopendcs.app=dbedit -Popendcs.profile="full path to a profile or .properties file"
+    ant run -Dopendcs.app=dbedit -Dopendcs.profile="full path to a profile or .properties file"
 
     # to run with the java remote debugger enabled
     ant run -DdebugPort=5006
+
+    # to run with Java Flight Recorder
+    ant run -Dopendcs.jfr=true
+    # recordings will be in the run directory of the build (default build/run)
+    # with the name <opendcs.app>.recording.jfr where opendcs.app is the value of the property provided
+    # or the default "launcher_start" app if the property is not set.
+
+All of the options above can be in any combination.
 
 The logs are set to the highest debug level and printed to stdout.
 
@@ -251,7 +259,7 @@ PropertyProvider
 The PropertyProvider system as added to support EnvExpander retrieving values from sources other than the java `System.properties`.
 The mechanism uses the java ServiceProvider mechanism so downstream users can implement any custom sources they need.
 
-To implement a custom implement the following class `org.opendcs.spi.properties.PropertyValueProvider`.
+To implement a custom property provider the following class `org.opendcs.spi.properties.PropertyValueProvider`.
 
 .. code-block:: java
     :linenos:
@@ -341,6 +349,59 @@ The following prefixes are reserved:
 +----------+--------------------------------------+
 |file      |Values from files on the file system. |
 +----------+--------------------------------------+
+
+Custom Decodes Functions
+========================
+
+To create a custom function, implement the following interface `org.opendcs.spi.decodes.DecodesFunctionProvider`, and derive
+your actual function from `decodes.decoder.DecodesFunction`.
+
+Additionally make sure your full class name is in the appropriate
+`META-INF/services/org.opendcs.spi.decodes.DecodesFunctionProvider` file.
+
+.. code-block:: java
+    :linenos:
+
+    package org.opendcs.spi.decodes;
+
+    import decodes.decoder.DecodesFunction;
+
+    public interface DecodesFunctionProvider
+    {
+        /**
+        * Name of the decodes function that will be used in a DecodesScript.
+        * The name is case sensitive. If you function is provided outside of the
+        * OpenDCS distribution, please prefix the name with some sort of organizational identifier.
+        * @return
+        */
+        String getName();
+
+        /**
+        * Create an actual instance of your custom decodes function.
+        * @return Valid and immediately usable instance of a DecodesFunction.
+        */
+        DecodesFunction createInstance();
+    }
+
+Decodes Function Operations
+---------------------------
+
+We will expand this section later. For the moment please review the existing DecodesFunction implementations to
+determine the most appropriate implementation details for your function.
+
+
+Additional Logging
+==================
+
+Similar to the connection pool tracing above, if you are having difficulty with a provider
+you can log missed results with the following feature flag.
+
+.. code-block:: bash
+
+    DECJ_MAXHEAP="-Dopendcs.property.providers.trace=true" routsched ...
+
+This will cause excessive logging and drastically slow execution. We do not recommend
+leaving this setting on for any length of time beyond a debugging session.
 
 Code Analysis
 -------------

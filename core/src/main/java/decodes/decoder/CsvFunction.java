@@ -14,8 +14,9 @@ public class CsvFunction
 	extends DecodesFunction
 {
 	private ArrayList<Integer> sensorNumbers = new ArrayList<Integer>();
-	private String module = "csv";
+	public static final String module = "csv";
 	private String argList = null;
+	private String delimiter = ",";
 	
 	public CsvFunction()
 	{
@@ -53,12 +54,12 @@ public class CsvFunction
 					trace("End of line seen.");
 					break;
 				}
-				if (c == ',')
+				if (dd.checkString(delimiter))
 				{
 					processColumn(col++, sb.toString().trim(), decmsg, dd.getCurrentLine(),
 						fieldStart, dd);
 					sb.setLength(0);
-					fieldStart = dd.getBytePos()+1;
+					fieldStart = dd.getBytePos()+delimiter.length();
 				}
 				else
 					sb.append(c);
@@ -137,14 +138,33 @@ public class CsvFunction
 		{
 			String t = st.nextToken();
 			t = t.trim();
-			try
+			if (t.startsWith("delimiter"))
 			{
-				int sensorNum = Integer.parseInt(t);
-				sensorNumbers.add(sensorNum);
+				String[] parts = t.split("=");
+				if( parts.length ==2 )
+				{
+					this.delimiter = parts[1];
+				}
+				if (delimiter.equals("\\s"))
+				{
+					delimiter = " ";
+				}
+				else if (delimiter.equals("\\t"))
+				{
+					delimiter = "\t";
+				}
 			}
-			catch(Exception ex)
+			else
 			{
-				sensorNumbers.add(-1);
+				try
+				{
+					int sensorNum = Integer.parseInt(t);
+					sensorNumbers.add(sensorNum);
+				}
+				catch(Exception ex)
+				{
+					sensorNumbers.add(-1);
+				}
 			}
 		}
 		trace("Instantiated from argument '" + argString + "' -- # sensors=" 

@@ -311,10 +311,6 @@ CREATE TABLE DATATYPEEQUIVALENCE
 	PRIMARY KEY (ID0, ID1)
 ) WITHOUT OIDS;
 
-<<<<<<<< HEAD:testing/integration/src/test/resources/db/opendcs-pg/schema/V6.8__opendcs.sql
-
-========
->>>>>>>> master:src/main/resources/db/OpenDCS-Postgres/schema/V6.8__opendcs.sql
 CREATE TABLE DECODESDATABASEVERSION
 (
 	-- Should be only one record representing the highest numbered version.
@@ -2247,94 +2243,6 @@ CREATE SEQUENCE ALARM_LIMIT_SETIdSeq;
 CREATE SEQUENCE TS_SPECIdSeq;
 
 CREATE SEQUENCE CP_DEPENDS_NOTIFYIdSeq;
-
-create table dcp_trans_day_map
-(
-	table_suffix varchar(4) not null unique,
-	-- day 0 = jan 1, 1970. null means this suffix not used.
-	day_number int,
-	primary key (table_suffix)
-) without oids;
-
-COMMENT ON COLUMN DCP_TRANS_DAY_MAP.DAY_NUMBER IS 'Day 0 = Jan 1, 1970. Null means this suffix not used.';
-
-do $$
-declare
-	i int;
-	suffix varchar(2);
-begin
-    /* Create Tables */
-	for i in 1..31
-	loop
-		suffix := to_char(i,'fm00');
-		execute 'CREATE TABLE DCP_TRANS_DATA_' || suffix ||
-		'(
-			RECORD_ID BIGINT NOT NULL,
-			BLOCK_NUM INT NOT NULL,
-			MSG_DATA VARCHAR(4000) NOT NULL,
-			PRIMARY KEY (RECORD_ID, BLOCK_NUM)
-		) WITHOUT OIDS';
-
-		execute 'CREATE TABLE DCP_TRANS_' || suffix ||
-		'(
-			RECORD_ID BIGINT NOT NULL UNIQUE,
-			-- ''G'' = GOES, ''L'' = Data Logger, ''I'' = Iridium.
-			-- This field determines how the header should be parsed.
-			MEDIUM_TYPE VARCHAR(1) NOT NULL,
-			MEDIUM_ID VARCHAR(64) NOT NULL,
-			LOCAL_RECV_TIME BIGINT NOT NULL,
-			TRANSMIT_TIME BIGINT NOT NULL,
-			FAILURE_CODES VARCHAR(8) NOT NULL,
-			-- Second of day when the transmit window started
-			WINDOW_START_SOD INT,
-			-- Transmit window length in seconds
-			WINDOW_LENGTH INT,
-			XMIT_INTERVAL INT,
-			CARRIER_START BIGINT,
-			CARRIER_STOP BIGINT,
-			FLAGS INT NOT NULL,
-			CHANNEL INT NOT NULL,
-			BATTERY FLOAT,
-			-- Total message length, determines number of additional blocks
-			-- required to store message.
-			MSG_LENGTH INT NOT NULL,
-			-- First block of data. Very long messages will have additional blocks.
-			MSG_DATA VARCHAR(4000) NOT NULL,
-			PRIMARY KEY (RECORD_ID)
-		) WITHOUT OIDS';
-
-		/* Create Foreign Keys */
-		execute 'ALTER TABLE DCP_TRANS_DATA_' || suffix ||
-			' ADD FOREIGN KEY (RECORD_ID)
-			REFERENCES DCP_TRANS_' || suffix || '(RECORD_ID)
-			ON UPDATE RESTRICT
-			ON DELETE RESTRICT';
-
-		execute 'CREATE SEQUENCE DCP_TRANS_' || suffix || 'IDSEQ';
-
-		insert into dcp_trans_day_map(table_suffix,day_number) values(suffix, null);
-
-		/* Create Indexes */
-
-		execute 'CREATE INDEX DCP_TRANS_DATA_REC_IDX_' || suffix || ' ON DCP_TRANS_DATA_' || suffix || ' USING BTREE (RECORD_ID)';
-		execute 'CREATE INDEX DCP_TRANS_ADDR_IDX_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (MEDIUM_TYPE, MEDIUM_ID)';
-		-- Used for GOES channel expansion in DCP Monitor
-		execute 'CREATE INDEX DCP_TRANS_CHAN_IDX_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (CHANNEL)';
-		execute 'CREATE INDEX DCP_TRANS_MEDIUM_TYPE_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (MEDIUM_TYPE)';
-
-		/* Comments */
-
-		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MEDIUM_TYPE IS '' G = GOES, L = Data Logger, I = Iridium. ' ||
-				'This field determines how the header should be parsed.''';
-		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.WINDOW_START_SOD IS ''Second of day when the transmit window started''';
-		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.WINDOW_LENGTH IS ''Transmit window length in seconds''';
-		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MSG_LENGTH IS ''Total message length, determines number of additional blocks' ||
-				'required to store message.''';
-		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MSG_DATA IS ''First block of data. Very long messages will have additional blocks.''';
-	end loop;
-end$$;
-
-
 
 create table dcp_trans_day_map
 (

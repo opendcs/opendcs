@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+import org.opendcs.database.ExceptionHelpers;
+import org.opendcs.utils.FailableResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +42,7 @@ import decodes.tsdb.RecordRangeHandle;
 import decodes.tsdb.TasklistRec;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.tsdb.TsdbException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
@@ -82,21 +85,11 @@ public class CwmsTimeSeriesDAO
     }
 
     @Override
-    public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
-        throws DbIoException, NoSuchObjectException
+    public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key)
     {
         if (DbKey.isNull(key))
         {
-            try
-            {
-                throw new NoSuchObjectException("Request for TSID with null ts_code");
-            }
-            catch(NoSuchObjectException ex)
-            {
-                log.atError()
-                   .setCause(ex)
-                   .log("Unable to retrieve timeseries identifier by key {}", key.getValue());
-            }
+            return FailableResult.failure(new NoSuchObjectException("Request for TSID with null ts_code"));
         }
 
         synchronized(cache)
@@ -105,11 +98,7 @@ public class CwmsTimeSeriesDAO
 
             if (ret != null)
             {
-                return ret;
-            }
-            else
-            {
-                log.trace("Not in cache ts_code={}", key.getValue());
+                return FailableResult.success(ret);
             }
 
             String q = cwmsTsidQueryBase
@@ -136,15 +125,31 @@ public class CwmsTimeSeriesDAO
                 if (ret != null)
                 {
                     cache.put(ret);
-                    return ret;
+                    return FailableResult.success(ret);
                 }
             }
             catch(Exception ex)
             {
-                throw new DbIoException("Error looking up TS Info for TS_CODE=" + key + ": ", ex);
+                return FailableResult.failure(new DbIoException("Error looking up TS Info for TS_CODE=" + key + ": ", ex));
             }
         }
-        throw new NoSuchObjectException("No time-series with ts_code=" + key);
+        return FailableResult.failure(new NoSuchObjectException("No time-series with ts_code=" + key));
+    }
+
+    @Override
+    public TimeSeriesIdentifier getTimeSeriesIdentifier(DbKey key)
+        throws DbIoException, NoSuchObjectException
+    {
+        FailableResult<TimeSeriesIdentifier,TsdbException> ret = findTimeSeriesIdentifier(key);
+        if (ret.isSuccess())
+        {
+            return ret.getSuccess();
+        }
+        else
+        {
+            return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
+        }
+        
     }
 
     private CwmsTsId rs2TsId(ResultSet rs, boolean createDataType)
@@ -223,8 +228,7 @@ public class CwmsTimeSeriesDAO
 
 
     @Override
-    public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
-        throws DbIoException, NoSuchObjectException
+    public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
     {
 
         int paren = uniqueString.lastIndexOf('(');
@@ -241,36 +245,40 @@ public class CwmsTimeSeriesDAO
         }
 
         TimeSeriesIdentifier ret = null;
-        synchronized(cache) { ret = cache.getByUniqueName(uniqueString); }
+        synchronized(cache)
+        {
+            ret = cache.getByUniqueName(uniqueString);
+        }
         if (ret != null)
         {
             if (displayName != null)
             {
-                log.trace("Setting display name to '{}'", displayName);
                 ret.setDisplayName(displayName);
             }
-            return ret;
+            return FailableResult.success(ret);
         }
-        else
+        else if (ret == null && lastCacheReloadWithin(1, TimeUnit.HOURS))
         {
-            log.trace("cache does not have '{}'", uniqueString);
+            return FailableResult.failure(new NoSuchObjectException("No TimeSeries in fresh cache."));
         }
 
         DbKey ts_code = ts_id2ts_code(uniqueString);
         if (ts_code == Constants.undefinedId)
         {
-            throw new NoSuchObjectException("No CWMS Time Series for ID '"
-                + uniqueString + "' and office ID "
-                + ((CwmsTimeSeriesDb)db).getDbOfficeId());
+            return FailableResult.failure(
+                new NoSuchObjectException("No timeseries with name '"+uniqueString+"' is defined in this database.")
+            );
         }
-
-        ret = getTimeSeriesIdentifier(ts_code);
-        if (displayName != null)
+        
+        FailableResult<TimeSeriesIdentifier,TsdbException> tmp = findTimeSeriesIdentifier(ts_code);
+        if (tmp.isSuccess())
         {
-            log.trace("Setting display name to '{}'", displayName);
-            ret.setDisplayName(displayName);
+            if (displayName != null)
+            {
+                tmp.getSuccess().setDisplayName(displayName);
+            }        
         }
-        return ret;
+        return tmp;
     }
 
     /**
@@ -305,6 +313,11 @@ public class CwmsTimeSeriesDAO
         return Constants.undefinedId;
     }
 
+    private static boolean lastCacheReloadWithin(long time, TimeUnit units)
+    {
+        final long within = units.toMillis(time);
+        return (System.currentTimeMillis() - lastCacheReload) < within;
+    }
 
     @Override
     public void close()
@@ -1526,5 +1539,18 @@ public class CwmsTimeSeriesDAO
         // NOTE: there should already be a pooled connection used by the
         // CWMS Components. This is primarily to cover the cases we haven't gotten to yet.
         return new WrappedConnection(myCon, rs -> {},true);
+    }
+
+    @Override
+    public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString) throws DbIoException, NoSuchObjectException {
+        FailableResult<TimeSeriesIdentifier,TsdbException> ts = findTimeSeriesIdentifier(uniqueString);
+        if (ts.isSuccess())
+        {
+            return ts.getSuccess();
+        }
+        else
+        {
+            return ExceptionHelpers.throwDbIoNoSuchObject(ts.getFailure());
+        }
     }
 }

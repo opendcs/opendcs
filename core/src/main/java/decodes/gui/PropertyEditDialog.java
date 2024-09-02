@@ -22,7 +22,6 @@ import java.util.ResourceBundle;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 
@@ -30,11 +29,9 @@ import ilex.util.TextUtil;
  * Dialog for editing a single property name and value.
  */
 @SuppressWarnings("serial")
-public class PropertyEditDialog 
-	extends GuiDialog
+public class PropertyEditDialog extends GuiDialog
 {
-	private static ResourceBundle genericLabels = 
-		PropertiesEditDialog.getGenericLabels();
+	private static ResourceBundle genericLabels = PropertiesEditDialog.getGenericLabels();
 	private JButton okButton = new JButton();
 	private JButton cancelButton = new JButton();
 	private String name, value;
@@ -49,7 +46,7 @@ public class PropertyEditDialog
 	/**
 	 * Construct dialog with frame owner.
 	 * 
-	 * @param owne the owner frame
+	 * @param owner the owner frame
 	 * @param name the property name
 	 * @param value the property value edited in a JTextField
 	 */
@@ -61,7 +58,7 @@ public class PropertyEditDialog
 	/**
 	 * Construct dialog with frame owner.
 	 * 
-	 * @param owne the owner frame
+	 * @param owner the owner frame
 	 * @param name the property name
 	 * @param value the property value edited in a JTextField
 	 * @param propSpec the Specification for this property

@@ -340,5 +340,13 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'makeCompDependsNotifyDAO'");
     }
+
+    @Override
+    public TimeSeriesIdentifier transformTsidByCompParm(TimeSeriesDAI tsDAI, TimeSeriesIdentifier tsid, DbCompParm parm,
+            boolean createTS, boolean fillInParm, String timeSeriesDisplayName)
+            throws DbIoException, NoSuchObjectException, BadTimeSeriesException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'transformTsidByCompParm'");
+    }
     
 }

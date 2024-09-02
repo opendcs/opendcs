@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.management.openmbean.CompositeData;
@@ -59,6 +60,14 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean
     private ZonedDateTime end = null;
     private final Thread openingThread;
 
+
+    private Predicate<String> stackTraceFilter = (l) ->
+               l.startsWith("org.opendcs")
+            || l.startsWith("opendcs")
+            || l.startsWith("decodes")
+            || l.startsWith("ilex")
+            || l.startsWith("java")
+        ;
 
     public WrappedConnection(Connection realConnection){
         this(realConnection, (c) -> {},false);
@@ -117,8 +126,8 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean
         {
             closeTrace = new ArrayList<>();
             StackTraceElement ste[] = Thread.currentThread().getStackTrace();
-            // start at 3, after this constructor and the getThread/Stack trace call
-            for(int i = 3; i < ste.length; i++)
+            // start at 2, after this method and the getThread/Stack trace call
+            for(int i = 0; i < ste.length; i++)
             {
                 closeTrace.add(ste[i]);
             }
@@ -532,10 +541,22 @@ public class WrappedConnection implements Connection, WrappedConnectionMBean
 		return openTrace != null
                     ? openTrace.stream()
                                .map(ste->ste.toString())
+                               .filter(stackTraceFilter)
                                .collect(Collectors.toList())
                                .toArray(new String[0])
                     : new String[]{"No Trace."};
 	}
+
+    public String[] getClosedStackTrace()
+    {
+        return closeTrace != null
+                    ? closeTrace.stream()
+                               .map(ste->ste.toString())
+                               .filter(stackTraceFilter)
+                               .collect(Collectors.toList())
+                               .toArray(new String[0])
+                    : new String[]{"No Trace."};
+    }
 
 	@Override
 	public boolean getTracingOn()

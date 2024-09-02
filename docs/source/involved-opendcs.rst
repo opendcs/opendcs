@@ -16,7 +16,7 @@ https://www.freelists.org/list/opendcs
 
 Only subscribers of this list serve can send e-mails. 
 
-.. image:: ./media/involved/opendcs/im-00-freelists-opendcs.JPG
+.. image:: ./media/opendcs/im-00-freelists-opendcs.JPG
    :alt: subscribe free lists opendcs
    :width: 550
 
@@ -24,7 +24,7 @@ For an archive of old e-mails sent see the following link.
 
 https://www.freelists.org/archive/opendcs/  
 
-.. image:: ./media/involved/opendcs/im-01-freelists-opendcs-archive.JPG
+.. image:: ./media/opendcs/im-01-freelists-opendcs-archive.JPG
    :alt: archive free lists opendcs
    :width: 550
 
@@ -40,7 +40,7 @@ https://www.freelists.org/list/opendcs-dev
 
 Only subscribers of this list serve can send e-mails. 
 
-.. image:: ./media/involved/opendcs/im-02-freelists-opendcs-dev.JPG
+.. image:: ./media/opendcs/im-02-freelists-opendcs-dev.JPG
    :alt: subscribe free lists opendcs dev
    :width: 550
 
@@ -48,7 +48,7 @@ For an archive of old e-mails sent see the following link.
 
 https://www.freelists.org/archive/opendcs-dev/  
 
-.. image:: ./media/involved/opendcs/im-03-freelists-opendcs-dev-archive.JPG
+.. image:: ./media/opendcs/im-03-freelists-opendcs-dev-archive.JPG
    :alt: archive free lists opendcs dev
    :width: 550
 

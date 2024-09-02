@@ -39,6 +39,7 @@ import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
 import ilex.util.FileLogger;
 import lrgs.gui.DecodesInterface;
+import uk.org.webcompere.systemstubs.ThrowingRunnable;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -191,7 +192,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
      */
     private void assignFields(Object testInstance) throws Exception
     {
-        List<Field> fields = AnnotationSupport.findAnnotatedFields(testInstance.getClass(),ConfiguredField.class);
+        final List<Field> fields = AnnotationSupport.findAnnotatedFields(testInstance.getClass(),ConfiguredField.class);
         for (Field f: fields)
         {
             try
@@ -204,12 +205,12 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 else if (f.getType().equals(TimeSeriesDb.class) && configuration.isRunning())
                 {
                     f.setAccessible(true);
-                    f.set(testInstance,configuration.getTsdb());
+                    withEnvProps(() -> f.set(testInstance,configuration.getTsdb()));
                 }
                 else if (f.getType().equals(Database.class) && configuration.isRunning())
                 {
                     f.setAccessible(true);
-                    f.set(testInstance,configuration.getDecodesDatabase());
+                    withEnvProps(() -> f.set(testInstance,configuration.getDecodesDatabase()));
                 }
             }
             catch (Throwable ex)
@@ -217,6 +218,11 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 throw new PreconditionViolationException("Unable to assign configuration to field.", ex);
             }
         }
+    }
+
+    private void withEnvProps(ThrowingRunnable runnable) throws Exception
+    {
+        this.environment.execute(() -> this.properties.execute(runnable));
     }
 
     /**

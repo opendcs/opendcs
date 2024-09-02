@@ -1,69 +1,52 @@
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-
-//AW:IMPORTS
 import decodes.tsdb.RatingStatus;
 import decodes.hdb.HDBRatingTable;
-import java.util.Date;
 import java.lang.Math;
 
 // Mark: Be sure to import DbKey
 import decodes.sql.DbKey;
 import decodes.util.PropertySpec;
-//AW:IMPORTS_END
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-Implements the ACAPS rating algorithm from tables in the database.
-Independent value is called "elevation".
-Dependent values are "storage" and "area".
-variableM controls whether the
-constantM value provides the exponent
-or if it is found in a rating table.
-Equations are
-diff=elevation-Y0 from A0 lookup.
-A=round((A1 + M*A2*diff),2)
-S=round((A0 + A1*diff + A2*Math.pow(diff,M)),2)
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Implements the ACAPS rating algorithm from tables in the database.\n" +
+		"Independent value is called \"elevation\".\n" +
+		"Dependent values are \"storage\" and \"area\".\n" +
+		"variableM controls whether the\n" +
+		"constantM value provides the exponent\n" +
+		"or if it is found in a rating table.\n" +
+		"Equations are\n" +
+		"diff=elevation-Y0 from A0 lookup.\n" +
+		"A=round((A1 + M*A2*diff),2)\n" +
+		"S=round((A0 + A1*diff + A2*Math.pow(diff,M)),2)")
 public class HdbACAPSRating
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double elevation;	//AW:TYPECODE=i
-	String _inputNames[] = { "elevation" };
-//AW:INPUTS_END
+	@Input
+	public double elevation;
 
-//AW:LOCALVARS
 	HDBRatingTable A0RatingTable = null;
 	HDBRatingTable A1RatingTable = null;
 	HDBRatingTable A2RatingTable = null;
 	HDBRatingTable MRatingTable = null;
 	private boolean firstCall = true;
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+  	@Output
 	public NamedVariable storage = new NamedVariable("storage", 0);
+	@Output
 	public NamedVariable area = new NamedVariable("area", 0);
-	String _outputNames[] = { "storage", "area" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
 	//Makes no sense to handle shifts, or exceedences, since ACAPS
-	//does not work at all when below lowest value, and maximum value is undefined 
+	//does not work at all when below lowest value, and maximum value is undefined
+	@org.opendcs.annotations.PropertySpec(value="2.0")
 	public double constantM = 2.0;
+	@org.opendcs.annotations.PropertySpec(value="false")
 	public boolean variableM = false;
-	String _propertyNames[] = { "constantM", "variableM" };
-//AW:PROPERTIES_END
 
     private PropertySpec ACAPSRatingPropertySpecs[] =
 	{
@@ -86,12 +69,7 @@ public class HdbACAPSRating
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -100,7 +78,6 @@ public class HdbACAPSRating
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		if (firstCall)
 		{
 			// Find the name for the input parameter.
@@ -122,7 +99,6 @@ public class HdbACAPSRating
 		A1RatingTable.resetRatingId();
 		A2RatingTable.resetRatingId();
 		MRatingTable.resetRatingId();
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -138,7 +114,6 @@ public class HdbACAPSRating
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if (isMissing(elevation)) {
 			deleteAllOutputs();
 		}
@@ -169,7 +144,6 @@ public class HdbACAPSRating
 			setOutput(storage, loc_storage);
 			setOutput(area, loc_area);
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -177,34 +151,8 @@ public class HdbACAPSRating
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }

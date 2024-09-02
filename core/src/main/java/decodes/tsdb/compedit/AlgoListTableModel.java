@@ -35,7 +35,7 @@ import decodes.util.DecodesSettings;
 
 public class AlgoListTableModel 
 	extends AbstractTableModel 
-	implements SortingListTableModel 
+	implements SortingListTableModel
 {
 	
 	private String idLabel;
@@ -48,10 +48,11 @@ public class AlgoListTableModel
 	private String errMsg3;
 	
 //	Vector<DbCompAlgorithm> myvector = new Vector<DbCompAlgorithm>();
-	ArrayList<AlgorithmInList> myList = new ArrayList<AlgorithmInList>();
+	private ArrayList<AlgorithmInList> myList = new ArrayList<AlgorithmInList>();
 	private String columnNames[];
 	static int columnWidths[] = { 5, 20, 25, 8, 42};
-	static char sortType[] = { 'i', 'S', 'S', 'i', 'S' };
+
+	private static Class[] sortType = {Long.class, String.class, String.class, Integer.class, String.class};
 
 	int sortedBy = -1;
 	int minAlgoId = -1;
@@ -160,23 +161,32 @@ public class AlgoListTableModel
 		return columnNames[col];
 	}
 
-	public Object getValueAt(int rowIndex, int columnIndex) 
+	@Override
+	public Object getValueAt(int rowIndex, int columnIndex)
 	{
 		AlgorithmInList ail = myList.get(rowIndex);
 		return getNlColumn(ail, columnIndex);
 	}
 	
-	public static String getNlColumn(AlgorithmInList obj, int columnIndex) 
+	public static Object getNlColumn(AlgorithmInList obj, int columnIndex)
 	{
 		switch(columnIndex)
 		{
-		case 0: return "" + obj.getAlgorithmId();
+		case 0: return obj.getAlgorithmId().getValue();
 		case 1: return obj.getAlgorithmName();
 		case 2: return obj.getExecClass();
-		case 3: return "" + obj.getNumCompsUsing();
+		case 3: return Integer.valueOf(obj.getNumCompsUsing());
 		case 4: return obj.getDescription();
 		default: return "";
 		}
+	}
+
+	@Override
+	public Class<?> getColumnClass(int columnIndex) {
+		if (myList.isEmpty()) {
+			return Object.class;
+		}
+		return getValueAt(0, columnIndex).getClass();
 	}
 
 	public boolean existsInList(String name)
@@ -202,9 +212,9 @@ public class AlgoListTableModel
 class AlgorithmsListComparator implements Comparator<AlgorithmInList>
 {
 	int column;
-	char sortType;
+	Class<?> sortType;
 
-	public AlgorithmsListComparator(int column, char sortType)
+	public AlgorithmsListComparator(int column, Class<?> sortType)
 	{
 		this.column = column;
 		this.sortType = sortType;
@@ -217,20 +227,30 @@ class AlgorithmsListComparator implements Comparator<AlgorithmInList>
 	{
 		if (ds1 == ds2)
 			return 0;
-		String s1 = AlgoListTableModel.getNlColumn(ds1, column);
-		String s2 = AlgoListTableModel.getNlColumn(ds2, column);
-		if (sortType == 'i')
+		Object s1 = AlgoListTableModel.getNlColumn(ds1, column);
+		Object s2 = AlgoListTableModel.getNlColumn(ds2, column);
+		if (sortType == Integer.class)
 		{
 			try
 			{
-				int i1 = Integer.parseInt(s1.trim());
-				int i2 = Integer.parseInt(s2.trim());
+				Integer i1 = (Integer)s1;
+				Integer i2 = (Integer)s2;
 				return i1 - i2;
 			}
 			catch(Exception ex) {}
 		}
+		if (sortType == Long.class)
+		{
+			try
+			{
+				Long i1 = (Long)s1;
+				Long i2 = (Long)s2;
+				return (int)(i1 - i2);
+			}
+			catch(Exception ex) {}
+		}
 
-		return s1.compareToIgnoreCase(s2);
+		return ((String)s1).compareToIgnoreCase((String) s2);
 	}
 
 	public boolean equals(Object ob)

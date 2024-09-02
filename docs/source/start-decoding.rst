@@ -87,11 +87,17 @@ The following table includes the csv parser operation.  This command is
 useful for when data messages are in a comma delimited format.  This command
 will instruct data in the csv to be mapped to either a sensor or date/time.
 
-+----------------------+----------------------------------------------------------+
-| **Command**          | **Description**                                          |
-+======================+==========================================================+
-| csv(sens#,...)       | Parse a series of comma separated values                 |
-+----------------------+----------------------------------------------------------+
++-----------------------------+------------------------------------------------------------+
+| **Command**                 | **Description**                                            |
++=============================+============================================================+
+| csv(sens#,...)              | Parse a series of comma separated values                   |
++-----------------------------+------------------------------------------------------------+
+| csv(delimiter=\|,sens#,...) | Parse a series of values separated by a specific delimiter |
+|                             | In this example the pipe \(`\|`\), character is used.      |
++-----------------------------+------------------------------------------------------------+
+
+The delimiter can be more than one character; if more than one character the sequence of characters much match entirely.
+The values `\\s` and `\\t` will be converted to a single space and tab respectively. Other values are used as is.
 
 Table 1-3: DECODES Format Operations - CSV Parser
 
@@ -1603,6 +1609,68 @@ included in the message.
    :alt:  csv parser - 5 sensors
    :width: 550
 
+
+Regex Function - regex(expression)
+=============================================
+
+.. image:: ./media/start/decoding/im-34-regex-decodes-function.JPG
+   :alt:  regular expression parser
+   :width: 550
+
+
+The regex function is used to capture specific parts of a message.  For example the HTML message above has a value 3,238.6 that we can capture using:
+
+
+.. code-block:: none
+
+  regex(<td data-header="Location">Lake McConaughy</td>\r*\s*<td data-header="Today \(Feet above Sea Level\)">(?<sensor2>[0-9\,\.]+))
+
+The regular expression needs one named capture group in the format sensor#. Where # is the sensor number. In this above example it is 'sensor2'
+
+The opening and closing parenthesis (  ) represent the group
+
+
++------------------------+--------------------------------------+
+| **Regex Sample**       | **Description**                      |
++========================+======================================+
+| (                      | opening parenthesis for capture group|
++------------------------+--------------------------------------+
+| ?<sensor2>             | name the capture 'sensor2'           |
++------------------------+--------------------------------------+
+| [0-9\,\.]+             | Matches a number that optionally     |
+|                        | includes a comma and period.         |
++------------------------+--------------------------------------+
+|)                       | Closing parenthesis                  |
++------------------------+--------------------------------------+
+
+
+Any characters that have special meaning in regular expressions need to be prefixed with a slash '\'.  For example in the message the text:
+
+(Feet above Sea Level)
+
+was modified to \\(Feet above Sea Level\\) to remove the special meaning of parenthesis.
+
+
+\\r* in the expression was used to capture linefeed characters (blank lines)
+
+\\s* in the expression is used to capture white spaces
+
+The asterisk (*) means zero or more linefeeds or spaces in the \\r* and \\s* examples.
+
+Please consult regular expression documentation for more details.  There are excellent online websites that allow testing your data and regular expressions.
+
+.. code-block:: none
+
+  <tbody>
+                      <tr class="odd">
+                      <td data-header="Location">Lake McConaughy</td>
+                      <td data-header="Today (Feet above Sea Level)">3,238.6  =  1,056,100ac-ft (60.6% capacity)</td>
+                      <td data-header="1 Week Ago">3,239.2</td>
+                      <td data-header="1 Month Ago">3,242.5</td>
+                      <td data-header="1 Year Ago">3,234.5</td>
+                  </tr>
+
+
 Check Operation - C(*,*label*\)
 ===============================
 
@@ -1942,35 +2010,3 @@ GG176. and therefore an error will occur.
 +-----------------+-------------------------------------------+
 | get_sensor      | 1x,F(S,A,6,1)                             |
 +-----------------+-------------------------------------------+
-
-
-***************************
-DECODES Headers and Formats
-***************************
-
-GOES
-====
-
-... more content coming soon ...
-
-SHEF
-====
-
-... more content coming soon ...
-
-Iridium
-=======
-
-... more content coming soon ...
-
-Other
-=====
-
-... more content coming soon ...
-
-
-***************************************
-DECODES - Basics on new DECODING Script
-***************************************
-
-
