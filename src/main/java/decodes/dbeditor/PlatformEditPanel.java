@@ -652,8 +652,7 @@ ConfigSelectController
 	  Makes a historical version of the platform with specified expiration.
 	  @param expiration the expiration date/time.
 	 */
-	public void makeHistoricalVersion(Date expiration)
-	throws DatabaseException
+	public void makeHistoricalVersion(Date expiration) throws DatabaseException
 	{
 		Platform histVersion = thePlatform.noIdCopy();
 
@@ -661,6 +660,7 @@ ConfigSelectController
 		Database.getDb().platformList.add(histVersion);
 		histVersion.write();
 		Database.getDb().platformList.write();
+		this.parent.platformListPanel.platformSelectPanel.addPlatform(histVersion);
 	}
 
 	/** @return the name for the platform being edited. */
@@ -686,49 +686,10 @@ ConfigSelectController
 					true);
 		dlg.fillFields(ps, refConfig.getSensor(ps.sensorNumber));
 
-		//		PropertiesEditDialog dlg = new PropertiesEditDialog(
-		//			"Sensor " + ps.sensorNumber, ps.properties);
-
 		launchDialog(dlg);
 		sensorTableModel.fireTableDataChanged();
 	}
 
-	//	/** Called when 'clear sensor site' button pressed. */
-	//	void clearSensorSiteButton_actionPerformed(ActionEvent e)
-	//	{
-	//		int r = platformSensorTable.getSelectedRow();
-	//		if (r == -1)
-	//		{
-	//			DbEditorFrame.instance().showError("Select sensor, then press Clear...");
-	//			return;
-	//		}
-	//		PlatformSensor ps = sensorTableModel.getObjectAt(r);
-	//		ps.site = null;
-	//		//ps.siteId = Constants.undefinedId;
-	//		sensorTableModel.fireTableDataChanged();
-	//	}
-	//
-	//	/** Called when 'select sensor site' button pressed. */
-	//	void selectSensorSiteButton_actionPerformed(ActionEvent e)
-	//	{
-	//		int r = platformSensorTable.getSelectedRow();
-	//		if (r == -1)
-	//		{
-	//			DbEditorFrame.instance().showError("Select sensor, then press Select Site...");
-	//			return;
-	//		}
-	//		PlatformSensor ps = sensorTableModel.getObjectAt(r);
-	//
-	//		SiteSelectDialog dlg = new SiteSelectDialog();
-	//		launchDialog(dlg);
-	//		Site site = dlg.getSelectedSite();
-	//		if (site != null) // selection was made?
-	//		{
-	//			ps.site = site;
-	//			//ps.siteId = site.siteId;
-	//		}
-	//		sensorTableModel.fireTableDataChanged();
-	//	}
 
 	/** Called when Transport Medium 'Add' button pressed. */
 	void addTransportMediaButton_actionPerformed(ActionEvent e)
@@ -850,7 +811,6 @@ ConfigSelectController
 			Database.getDb().platformList.add(thePlatform);
 			Database.getDb().platformList.write();
 			parent.getPlatformListPanel().replacePlatform(origPlatform, thePlatform);
-			parent.getPlatformListPanel().reSort();
 
 			// If any transport media have changed, and those media were in a netlist,
 			// ask user if she wants to update the list.
@@ -861,10 +821,6 @@ ConfigSelectController
 			{
 				TransportMedium oldTm = oldTmIt.next();
 				TransportMedium newTm = thePlatform.getTransportMedium(oldTm.getMediumType());
-//System.out.println("oldTm: type=" + oldTm.getMediumType() + ", id=" + oldTm.getMediumId());
-//System.out.println("newTm: " + 
-//	(newTm == null ? "null" : 
-//	("type=" + newTm.getMediumType() + ", id=" + newTm.getMediumId())));
 
 				if (newTm != null && newTm.getMediumId().equals(oldTm.getMediumId()))
 					continue;
@@ -1210,9 +1166,9 @@ class SensorInfoTableModel extends AbstractTableModel
 
 	public void fillValuesNew()
 	{
-		for(Iterator it = thePlatform.getPlatformSensors(); it.hasNext(); )
+		for(Iterator<PlatformSensor> it = thePlatform.getPlatformSensors(); it.hasNext(); )
 		{
-			PlatformSensor ps = (PlatformSensor)it.next();
+			PlatformSensor ps = it.next();
 			ps.setUsgsDdno(0);
 			ps.clearValidDdnos();
 		}
@@ -1224,9 +1180,9 @@ class SensorInfoTableModel extends AbstractTableModel
 		if (thePlatform == null)
 			return;
 		// First clear the flags in each platform sensor.
-		for(Iterator it = thePlatform.getPlatformSensors(); it.hasNext(); )
+		for(Iterator<PlatformSensor> it = thePlatform.getPlatformSensors(); it.hasNext(); )
 		{
-			PlatformSensor ps = (PlatformSensor)it.next();
+			PlatformSensor ps = it.next();
 			ps.guiCheck = false;
 		}
 
@@ -1235,9 +1191,9 @@ class SensorInfoTableModel extends AbstractTableModel
 		if (refConfig != null)
 		{
 			ncs = refConfig.getNumSensors();
-			for(Iterator it = refConfig.getSensors(); it.hasNext(); )
+			for(Iterator<ConfigSensor> it = refConfig.getSensors(); it.hasNext(); )
 			{
-				ConfigSensor cs = (ConfigSensor)it.next();
+				ConfigSensor cs = it.next();
 				PlatformSensor ps =
 					thePlatform.getPlatformSensor(cs.sensorNumber);
 				if (ps != null)
@@ -1266,9 +1222,9 @@ class SensorInfoTableModel extends AbstractTableModel
 
 		// Finally remove any platform sensors not checked-off, meaning that
 		// the corresponding config sensor no longer exists.
-		for(Iterator it = thePlatform.getPlatformSensors(); it.hasNext(); )
+		for(Iterator<PlatformSensor> it = thePlatform.getPlatformSensors(); it.hasNext(); )
 		{
-			PlatformSensor ps = (PlatformSensor)it.next();
+			PlatformSensor ps = it.next();
 			if (!ps.guiCheck)
 				it.remove();
 		}
