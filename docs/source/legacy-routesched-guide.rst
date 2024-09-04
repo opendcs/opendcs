@@ -61,7 +61,7 @@ more information.
 +--------------+-------------------------------------------------+
 |Environment   |Retreieves arbitrary variable from the           |
 |              |application environment using                    |
-|              |`${env.VARIABLE_NAME`                            |
+|              |`${env.VARIABLE_NAME}`                            |
 +--------------+-------------------------------------------------+
 |Java          |Retrieves abritary variable from the application |
 |Properties    |`System.properties` using                        |
@@ -78,7 +78,7 @@ The property value sources can be nested as needed; however, it is prefered to u
    The Secrets Properties providers are a recent addition. It is possible that not all DataSource username/password
    retrievals have been adapted to the new system. Please informs us if the usage is missing on any DataSources you are using.
 
-   Additinoally not all properties support environment expansion at all; if you feel a given property anywhere should please
+   Additionally not all properties support environment expansion at all; if you feel a given property anywhere should please
    inform us.
 
    If you have implemented a custom DataSource we recommend updating your code to use the feature as soon as practical.
