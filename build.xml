@@ -409,24 +409,12 @@ more information about each.
                 <include name="opendcs-annotations.jar"/>
             </fileset>
             <mappedresources enablemultiplemappings="false">
-                <!-- tweak to load at end as LoboBrowser here is including it's own jooq libaries for some reason breaking CWMS use-->
                 <restrict>
                     <path refid="runtime.classpath"/>
                     <type type="file"/>
                 </restrict>
                 <chainedmapper>
                     <flattenmapper/>
-                    <regexpmapper from="^(Cobra-1.0.2.jar|LoboBrowser-1.0.0.jar)" to="zzz\1"/>
-                </chainedmapper>
-            </mappedresources>
-            <mappedresources enablemultiplemappings="false">
-                <restrict>
-                    <path refid="runtime.classpath"/>
-                    <type type="file"/>
-                </restrict>
-                <chainedmapper>
-                    <flattenmapper/>
-                    <regexpmapper from="^(?!Cobra-1.0.2.jar|LoboBrowser-1.0.0.jar)(.*)" to="\1"/>
                 </chainedmapper>
             </mappedresources>
         </copy>
@@ -533,22 +521,7 @@ more information about each.
             <fileset dir="${project.dir}/python"/>
         </copy>
     </target>
-    <!-- same as package, but remove libraries not needed by USACE or USBR -->
-    <target name="nonfed" depends="stage">
-        <delete file="stage/dep/jep-2.4.1.jar"/>
-        <delete file="stage/dep/jython-2.7.2.jar"/>
-        <delete file="stage/dep/xmlparserv2-12.1.0.2.jar"/>
-        <delete file="stage/dep/Cobra.jar"/>
-        <!-- Invokes izpack to build installable package with defaults for CWMS -->
-        <izpack input="${project.dir}/izpack/opendcs-install.xml"
-                output="stage/opendcs-nf-${version}.jar"
-                installerType="standard"
-                basedir="stage"
-                izPackDir="${izpack.dir}">
-            <property name="version" value="${version}"/>
-            <property name="hdb.preselect" value="no"/>
-        </izpack>
-    </target>
+
     <!-- same as nonfed, but includes OpenTSDB and computation files -->
     <target name="opendcs" depends="stage,common.izpack.dependencies">
         <!-- Invokes izpack to build installable package with defaults for CWMS -->

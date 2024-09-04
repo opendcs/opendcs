@@ -16,7 +16,7 @@ if [ -z "$DCSTOOL_HOME" ]
 then
   DCSTOOL_HOME=$DH
   export DCSTOOL_HOME
-elif [ "$DH" != "$DCSTOOL_HOME" ]
+elif [ "$DH" != "$(realpath ${DCSTOOL_HOME})" ]
 then
   echo "Environment has set a different DCSTOOL_HOME than the location of the application start script."
   echo "Environment $DCSTOOL_HOME"
@@ -40,8 +40,8 @@ fi
 export DCSTOOL_USERDIR
 
 if [ ! -d "$DCSTOOL_USERDIR" ]; then
-    echo "Creating Local User Directory and initial properties in ${DCSTOOL_USERDIR}"
-    echo "The default XML database has been copied to this directory."
+    echo "Creating Local User Directory and initial properties in ${DCSTOOL_USERDIR}" 1>&2
+    echo "The default XML database has been copied to this directory." 1>&2
     mkdir -p $DCSTOOL_USERDIR
     cp $DH/decodes.properties $DCSTOOL_USERDIR/user.properties
     cp -r $DH/edit-db $DCSTOOL_USERDIR/edit-db
@@ -50,43 +50,19 @@ fi
 # Build classpath
 CP=$DH/bin/opendcs.jar:
 
-# # For CWMS Installations, add the HEC and RMA Jars.
-# if [ -n "$CWMS_JAR_DIR" -a -d "$CWMS_JAR_DIR" ]
-# then
-#   CP=$CP:$CWMS_JAR_DIR/hec.jar:$CWMS_JAR_DIR/hecData.jar:$CWMS_JAR_DIR/heclib.jar:$CWMS_JAR_DIR/rma.jar:$CWMS_JAR_DIR/lookup.jar
-# fi
-# if [ -n "$CWMS_SYSJAR_DIR" -a -d "$CWMS_SYSJAR_DIR" ]
-# then
-#   CP=$CP:$CWMS_SYSJAR_DIR/jdom.jar:$CWMS_SYSJAR_DIR/jdom-1.0.jar
-# fi
-
-
-if [ ! -z "$CP_SHARED_JAR_DIR" -a -d "$CP_SHARED_JAR_DIR" ]
-then
-  for f in $CP_SHARED_JAR_DIR/*.jar
-  do
-    CP=$CP:$f
-  done
-fi
-
 # If a user-specific 'dep' (dependencies) directory exists, then
 # add all the jars therein to the classpath.
-if [ -d "$DCSTOOL_USERDIR/dep" ]
-then
-  for f in $DCSTOOL_USERDIR/dep/*.jar
-  do
-    CP=$CP:$f
-  done
+if [ -d "$CP_SHARED_JAR_DIR"]; then
+  CP=$CP:$CP_SHARED_JAR_DIR/*
+  echo "The need of this is superseded by using a DCSTOOL_USERDIR for configuration." 1>&2
+  echo "Support for this variable will be moved in a future release. Please update " 1>&2
+  echo "your configuration." 1>&2
 fi
 
-# Add the OpenDCS standard 3rd party jars to the classpath
-if [ "$DCSTOOL_USERDIR" != "$DH" ]
-then
- for f in `ls $DH/dep/*.jar | sort`
- do
-   CP=$CP:$f
- done
+if [ -d "$DCSTOOL_USERDIR/dep" ]; then
+  CP=$CP:$DCSTOOL_USERDIR/dep/*
 fi
+CP=$CP:$DH/dep/*
 
 cmd="java -Xms120m $DECJ_MAXHEAP $DECJ_OPTS -cp $CP -DDCSTOOL_HOME=$DH -DDECODES_INSTALL_DIR=$DH -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
 
