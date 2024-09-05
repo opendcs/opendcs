@@ -7,14 +7,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
-import javax.swing.table.*;
 import java.util.stream.Collectors;
 import java.util.Vector;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.ResourceBundle;
-import java.util.Vector;
+import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -24,21 +22,23 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 
 import decodes.gui.*;
 import decodes.db.*;
+import decodes.dbeditor.platform.PlatformSelectTableModel;
 
 /**
 Displays a sorting-list of Platform objects in the database.
  */
-public class PlatformListPanel extends JPanel
-	implements ListOpsController
+public class PlatformListPanel extends JPanel implements ListOpsController
 {
+	private static final String NO_PLATFORM_NAMES = "<no platform names>";
+	private static final String NO_AGENCY = "<no agency>";
+	private static final String NO_TRANSPORT_MEDIUM = "<no transport medium>";
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 	List<RowFilter<TableModel, Integer>> filters = new ArrayList<RowFilter<TableModel, Integer>>();
-	TableRowSorter sorter = null;
+	TableRowSorter<?> sorter = null;
 	Vector<Platform> vectplatf = null;
 
 	BorderLayout borderLayout1 = new BorderLayout();
@@ -50,16 +50,16 @@ public class PlatformListPanel extends JPanel
 
 	JPanel filterComboBoxesPanel = new JPanel();
 	JLabel platformLbl = new JLabel("Platform:");
-	JComboBox platformCbx = null;
+	JComboBox<String> platformCbx = null;
 
 	JLabel agencyLbl = new JLabel("Agency:");
-	JComboBox agencyCbx = null;
+	JComboBox<String> agencyCbx = null;
 
 	JLabel transportLbl = new JLabel("Transport-ID:");
-	JComboBox transportCbx = null;
+	JComboBox<String> transportCbx = null;
 
 	JLabel configLbl = new JLabel("Config:");
-	JComboBox configCbx = null;
+	JComboBox<String> configCbx = null;
 
 	/** Constructor. */
 	public PlatformListPanel() {
@@ -153,86 +153,58 @@ public class PlatformListPanel extends JPanel
 	private void loadFilterLists()
 	{
 		vectplatf = Database.getDb().platformList.getPlatformVector();
-		Vector<String> platformNames = new Vector<String>(vectplatf.size() + 1);
-		platformNames.add(0, "");
-		for (int x = 1; x < vectplatf.size(); x++)
-		{
-			platformNames.add(x, vectplatf.get(x).getDisplayName());
-		}
-		for (int x = 0; x < platformNames.size(); x++)
-		{
-			if (null == platformNames.get(x))
-			{
-				platformNames.remove(x);
-			}
-		}
+		Vector<String> platformNames = vectplatf.stream()
+												.map(Platform::getDisplayName)
+												.filter(a -> a != null)
+												.distinct()
+												.collect(Collectors.toCollection(Vector::new));
 		Collections.sort(platformNames);
-		platformCbx = new JComboBox(platformNames);
+		platformNames.add(0,"");
+		platformNames.add(1, NO_PLATFORM_NAMES);
+		platformCbx = new JComboBox<>(platformNames.toArray(new String[0]));
 		platformCbx.setSize(new Dimension(25, 25));
 		platformCbx.setSelectedIndex(-1);
 
 		// Agency filter list
-		Vector<String> agencies = new Vector<String>(vectplatf.size() + 1);
-		agencies.add(0, "");
-		for (int y = 1; y < vectplatf.size(); y++)
-		{
-			agencies.add(y, vectplatf.get(y).getAgency());
-		}
-		agencies = agencies.stream().distinct().collect(Collectors.toCollection(Vector::new));
-		for (int x = 0; x < agencies.size(); x++)
-		{
-			if (null == agencies.get(x))
-			{
-				agencies.remove(x);
-			}
-		}
-
+		Vector<String> agencies = vectplatf.stream()
+										   .map(Platform::getAgency)
+										   .filter(a -> a != null)
+										   .distinct()
+										   .collect(Collectors.toCollection(Vector::new));
 		Collections.sort(agencies);
-		agencyCbx = new JComboBox(agencies);
+		agencies.add(0, "");
+		agencies.add(1, NO_AGENCY);
+		agencyCbx = new JComboBox<>(agencies);
 		agencyCbx.setSize(new Dimension(25, 25));
 		agencyCbx.setSelectedIndex(-1);
 
 		// Transport Id filter list
-		Vector<String> transportIds = new Vector<String>(vectplatf.size() + 1);
-		transportIds.add(0, "");
-		for (int x = 1; x < vectplatf.size(); x++)
-		{
-			transportIds.add(x, vectplatf.get(x).getPreferredTransportId());
-		}
-		transportIds = transportIds.stream().distinct().collect(Collectors.toCollection(Vector::new));
-		for (int x = 0; x < transportIds.size(); x++)
-		{
-			if (null == transportIds.get(x))
-			{
-				transportIds.remove(x);
-			}
-		}
+		Vector<String> transportIds = vectplatf.stream()
+											   .filter(p -> p.getTransportMedia().hasNext())
+											   .map(Platform::getPreferredTransportId)
+											   .distinct()
+											   .collect(Collectors.toCollection(Vector::new));
 		Collections.sort(transportIds);
-		transportCbx = new JComboBox(transportIds);
+		transportIds.add(0, "");
+		transportIds.add(1, NO_TRANSPORT_MEDIUM);
+		transportCbx = new JComboBox<>(transportIds);
 		transportCbx.setSize(new Dimension(25, 25));
 		transportCbx.setSelectedIndex(-1);
 
 		// Config filter list
-		Vector<String> configNames = new Vector<String>(vectplatf.size() + 1);
+		Vector<String> configNames = vectplatf.stream()
+										      .filter(p -> p.getConfig() != null)
+											  .map(Platform::getConfigName)
+											  .distinct()
+											  .collect(Collectors.toCollection(Vector::new));
 		configNames.add(0, "");
-		for (int x = 1; x < vectplatf.size(); x++)
-		{
-			configNames.add(x, vectplatf.get(x).getConfigName());
-		}
-		configNames = configNames.stream().distinct().collect(Collectors.toCollection(Vector::new));
-		for (int x = 0; x < configNames.size(); x++)
-		{
-			if (null == configNames.get(x))
-			{
-				configNames.remove(x);
-			}
-		}
 		Collections.sort(configNames);
-		configCbx = new JComboBox(configNames);
+		configCbx = new JComboBox<>(configNames);
 		configCbx.setSize(new Dimension(25, 25));
 		configCbx.setSelectedIndex(-1);
 
 	}
+
 
 	/**
 	 * Setting up filter options
@@ -242,23 +214,47 @@ public class PlatformListPanel extends JPanel
 
 		if ((platformCbx.getSelectedIndex() > 0) && (platformCbx.getSelectedItem().toString().length() > 0))
 		{
-			RowFilter<TableModel, Integer> filterName = RowFilter
-				.regexFilter(platformCbx.getSelectedItem().toString(), 0);
-			filters.add(filterName);			
+			final String filterText = (String)platformCbx.getSelectedItem();
+			if (filterText.equals(NO_PLATFORM_NAMES))
+			{
+				filters.add(new PlatformSelectTableModel.ColumnEmptyRowFilter(genericLabels.getString("platform")));
+			}
+			else
+			{
+				RowFilter<TableModel, Integer> filterName = RowFilter
+					.regexFilter(platformCbx.getSelectedItem().toString(), 0);
+				filters.add(filterName);
+			}
 		}
 
 		if ((agencyCbx.getSelectedIndex() > 0) && (agencyCbx.getSelectedItem().toString().length() > 0))
 		{
-			RowFilter<TableModel, Integer> filterAgency = RowFilter
-				.regexFilter(agencyCbx.getSelectedItem().toString(), 1);
-			filters.add(filterAgency);			
+			final String filterText = (String)agencyCbx.getSelectedItem();
+			if (filterText.equals(NO_AGENCY))
+			{
+				filters.add(new PlatformSelectTableModel.ColumnEmptyRowFilter(dbeditLabels.getString("PlatformSelectPanel.agency")));
+			}
+			else
+			{
+				RowFilter<TableModel, Integer> filterAgency = RowFilter
+					.regexFilter(agencyCbx.getSelectedItem().toString(), 1);
+				filters.add(filterAgency);
+			}
 		}
 
 		if ((transportCbx.getSelectedIndex() > 0) && (transportCbx.getSelectedItem().toString().length() > 0)) 
 		{
-			RowFilter<TableModel, Integer> filterTransport = RowFilter
-				.regexFilter(transportCbx.getSelectedItem().toString(), 2);
-			filters.add(filterTransport);			
+			final String filterText = (String)transportCbx.getSelectedItem();
+			if (filterText.equals(NO_TRANSPORT_MEDIUM))
+			{
+				filters.add(new PlatformSelectTableModel.ColumnEmptyRowFilter(dbeditLabels.getString("PlatformSelectPanel.transport")));
+			}
+			else
+			{
+				RowFilter<TableModel, Integer> filterTransport = RowFilter
+					.regexFilter(transportCbx.getSelectedItem().toString(), 2);
+				filters.add(filterTransport);
+			}
 		}
 
 		if ((configCbx.getSelectedIndex() > 0) && (configCbx.getSelectedItem().toString().length() > 0))
@@ -445,12 +441,6 @@ public class PlatformListPanel extends JPanel
 	public void replacePlatform(Platform oldp, Platform newp)
 	{
 		platformSelectPanel.replacePlatform(oldp, newp);
-	}
-
-	/** Resorts the list by the current column selection. */
-	public void reSort()
-	{
-		platformSelectPanel.reSort();
 	}
 
 	/**
