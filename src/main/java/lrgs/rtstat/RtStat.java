@@ -1,7 +1,11 @@
 package lrgs.rtstat;
 
+import ilex.util.AuthException;
 import ilex.util.LoadResourceBundle;
+import lrgs.rtstat.hosts.LrgsConnection;
+import lrgs.rtstat.hosts.LrgsConnectionPanel;
 
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 import javax.swing.*;
@@ -41,7 +45,13 @@ public class RtStat
 		if (hostname != null)
 		{
 			final String username = cmdLineArgs.getUserName();
-			
+			final String password = cmdLineArgs.getPassword();
+			final int port = cmdLineArgs.getPort();
+			if (username == null || password == null)
+			{
+				throw new AuthException("A Username and Password are now required for LRGS connections."
+						 + " Please set one with -pw <password>.");
+			}
 			Thread delay = new Thread()
 			{
 				public void run()
@@ -51,17 +61,24 @@ public class RtStat
 						sleep(3000L);
 					} catch (InterruptedException e)
 					{
-					log.error("InterruptedException ",e);
+						log.error("InterruptedException ",e);
 					}
 					SwingUtilities.invokeLater(
 						new Runnable()
 						{
 							public void run()
 							{
-								frame.setHost(hostname);
 								if (username != null)
-									frame.userField.setText(username.trim());
-								frame.connectButton_actionPerformed(null);
+								{
+									frame.connectButton_actionPerformed(
+										new LrgsConnection(hostname, port,
+															username,
+															LrgsConnection.encryptPassword(
+																password,
+																LrgsConnectionPanel.pwk),
+															null)
+									);
+								}
 							}
 						});
 				}
@@ -83,16 +100,17 @@ public class RtStat
 	
 	public static void getMyLabelDescriptions()
 	{
-		DecodesSettings settings = DecodesSettings.instance();
 		//Load the generic properties file - includes labels that are used
 		//in multiple screens
+		Locale locale = Locale.getDefault();
+		LoadResourceBundle.setLocale(locale.getLanguage());
 		genericLabels = LoadResourceBundle.getLabelDescriptions(
 				"decodes/resources/generic",
-				settings.language);
+				locale.getLanguage());
 		//Return the main label descriptions for RStat App
 		labels = LoadResourceBundle.getLabelDescriptions(
 				"decodes/resources/rtstat",
-				settings.language);
+				locale.getLanguage());
 	}
 	
 	public static ResourceBundle getLabels() 
@@ -116,12 +134,13 @@ public class RtStat
 		try
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			System.out.println("Default local: " + Locale.getDefault().toString());
+			RtStat rtStat = new RtStat(args);
+			rtStat.frame.setVisible(true);
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
-			log.error("Error starting RtStat ",e);
+			log.error("Error starting RtStat.", ex);
 		}
-		RtStat rtStat = new RtStat(args);
-		rtStat.frame.setVisible(true);
 	}
 }

@@ -1,6 +1,6 @@
 /*
 *  $Id$
-*  
+*
 *  $Log$
 *  Revision 1.5  2016/04/15 19:31:22  mmaloney
 *  LRGS Server List sorted by access time, most-recent-first.
@@ -62,6 +62,9 @@ import ilex.util.EnvExpander;
 import lrgs.common.*;
 import lrgs.ldds.*;
 import lrgs.rtstat.RtStatFrame;
+import lrgs.rtstat.hosts.LrgsConnection;
+import lrgs.rtstat.hosts.LrgsConnectionComboBoxModel;
+import lrgs.rtstat.hosts.LrgsConnectionPanel;
 
 /**
 The MessageBrowser allows the user to display DCP messages on the screen
@@ -85,10 +88,7 @@ public class MessageBrowser extends MenuFrame
     private SearchCriteria searchcrit;
     private SearchCriteriaEditorIF scedit;
 
-    private JComboBox hostField;
-    private JTextField portField = new JTextField(15), userField = new JTextField(15);
-    private PasswordWithShow passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
-    private JButton connectButton;
+    private final LrgsConnectionPanel lrgsConnectionPanel = new LrgsConnectionPanel(false);
     private JTextField scfileField;
     private JButton scSelectButton, scEditButton;
     private JTextField prefixField, suffixField;
@@ -155,7 +155,7 @@ public class MessageBrowser extends MenuFrame
         }
 
 
-        getMyLabelDescriptions();        
+        getMyLabelDescriptions();
         setTitle(labels.getString("MessageBrowser.frameTitle"));
         filechooser = new JFileChooser();
 
@@ -194,100 +194,34 @@ public class MessageBrowser extends MenuFrame
         contpane.add(west, BorderLayout.WEST);
 
         // NorthWest contains Server group
-        JPanel northwest = new JPanel(new GridBagLayout());
+        JPanel northwest = new JPanel(new BorderLayout());
         northwest.setBorder(new TitledBorder(
                 labels.getString("MessageBrowser.serverTitle")));
 
-        northwest.add(new JLabel(
-                labels.getString("MessageBrowser.hostName")),
-            new GridBagConstraints(0, 0, 1, 1, 0.2, 1.0,
-                GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+        // The below dimensions were determined by sizing the controls within
+        // the eclipse window builder tool and using those measurements. If anyone
+        // has a better method to get the minimum size, please go for it.
+        lrgsConnectionPanel.setMinimumSize(new Dimension(529,140));
+        lrgsConnectionPanel.setPreferredSize(lrgsConnectionPanel.getMinimumSize());
 
-        hostField = new JComboBox();
-        hostField.setEditable(true);
-        hostField.addActionListener(
-            new ActionListener()
-            {
-                public void actionPerformed(ActionEvent ae)
-                {
-                    RtStatFrame.setFieldsFromHostSelection(hostField, connectionList, portField, 
-                        userField, passwordField);
-                }
-            });
-        RtStatFrame.loadConnectionsField(hostField, connectionList, "");
-        northwest.add(hostField,
-            new GridBagConstraints(1, 0, 1, 1, 0.8, 1.0,
-                GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+        northwest.add(lrgsConnectionPanel);
 
-        northwest.add(new JLabel(labels.getString("MessageBrowser.port")),
-            new GridBagConstraints(0, 1, 1, 1, 0.2, 1.0,
-                GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 5, 2, 5), 0, 0)); 
-        northwest.add(portField,
-            new GridBagConstraints(1, 1, 1, 1, 0.8, 1.0,
-                GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
-                new Insets(2, 5, 2, 5), 0, 0)); 
-        portField.setText(GuiApp.getProperty("MessageBrowser.Port"));
-
-        Dimension d = portField.getPreferredSize();
-        hostField.setPreferredSize(d);
-
-        northwest.add(new JLabel(
-                labels.getString("MessageBrowser.userName")),
-            new GridBagConstraints(0, 2, 1, 1, 0.2, 1.0,
-                GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 5, 2, 5), 0, 0)); 
-        northwest.add(userField,
-            new GridBagConstraints(1, 2, 1, 1, 0.8, 1.0,
-                GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-                new Insets(2, 5, 2, 5), 0, 0)); 
-        if(this.userName.length()>0)
-            userField.setText(this.userName);
-        else
-        userField.setText(GuiApp.getProperty("MessageBrowser.User"));
-
-        northwest.add(new JLabel(
-                labels.getString("MessageBrowser.password")),
-            new GridBagConstraints(0, 3, 1, 1, 0.2, 1.0,
-                GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 5, 2, 5), 0, 0)); 
-        //northwest.add(passwordField = new JTextField(15),
-        northwest.add(passwordField,
-            new GridBagConstraints(1, 3, 1, 1, 0.8, 1.0,
-                GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-                new Insets(2, 5, 2, 5), 0, 0)); 
-
-        // Connect button across bottom:
-        connectButton =
-            new SingleClickButton(labels.getString("MessageBrowser.connect"))
-            {
-                public void buttonPressed(AWTEvent event)
-                {
-                    connectButtonPress();
-                }
-            };
-        northwest.add(connectButton, 
-            new GridBagConstraints(0, 4, 2, 1, 0.0, 0.0,
-                GridBagConstraints.CENTER, GridBagConstraints.NONE,
-                new Insets(2, 5, 2, 5), 0, 0)); 
-
+        lrgsConnectionPanel.onConnect(c -> connectButtonPress(c));
         // Finally, add northwest to the west panel.
-        west.add(northwest, 
+        west.add(northwest,
             new GridBagConstraints(0, 0, 1, 1, 0.0, 1.0,
-                GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+                GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH,
+                new Insets(2, 5, 2, 5), 0, 0));
 
 
         // Midwest contains Search Criteria Group.
         JPanel midwest = new JPanel(new BorderLayout());
         midwest.setBorder(new TitledBorder(
                 labels.getString("MessageBrowser.searchCriteria")));
-        west.add(midwest, 
+        west.add(midwest,
             new GridBagConstraints(0, 1, 1, 1, 0.0, 0.2,
                 GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+                new Insets(2, 5, 2, 5), 0, 0));
         JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         p.add(new JLabel(labels.getString("MessageBrowser.fileName")));
         p.add(scfileField = new JTextField(15));
@@ -349,7 +283,7 @@ public class MessageBrowser extends MenuFrame
         p.add(nextMessageButton,
             new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                 GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 0, 2, 5), 0, 0)); 
+                new Insets(2, 0, 2, 5), 0, 0));
 
         displayAllButton = new JButton(
                 labels.getString("MessageBrowser.displayAll"));
@@ -364,10 +298,10 @@ public class MessageBrowser extends MenuFrame
         p.add(displayAllButton,
             new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                 GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 0, 2, 5), 0, 0)); 
+                new Insets(2, 0, 2, 5), 0, 0));
 
 
-        clearButton = new JButton("    " + 
+        clearButton = new JButton("    " +
                 genericLabels.getString("clear")+ "    ");
         clearButton.addActionListener(
             new ActionListener()
@@ -380,7 +314,7 @@ public class MessageBrowser extends MenuFrame
         p.add(clearButton,
             new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
                 GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+                new Insets(2, 5, 2, 5), 0, 0));
 
         saveToFileButton =
             new SingleClickButton(
@@ -396,7 +330,7 @@ public class MessageBrowser extends MenuFrame
         p.add(saveToFileButton,
             new GridBagConstraints(3, 0, 1, 1, 1.0, 0.0,
                 GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 5, 2, 0), 0, 0)); 
+                new Insets(2, 5, 2, 0), 0, 0));
 
         center.add(p, BorderLayout.SOUTH);
 
@@ -409,21 +343,21 @@ public class MessageBrowser extends MenuFrame
                 labels.getString("MessageBrowser.beforeMsg")),
             new GridBagConstraints(0, 0, 1, 1, 0.2, 1.0,
                 GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+                new Insets(2, 5, 2, 5), 0, 0));
 
         southwest.add(prefixField = new JTextField(16),
             new GridBagConstraints(1, 0, 1, 1, 0.8, 1.0,
                 GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+                new Insets(2, 5, 2, 5), 0, 0));
         prefixField.setText(GuiApp.getProperty("MessageBrowser.Prefix"));
         southwest.add(new JLabel(labels.getString("MessageBrowser.afterMsg")),
             new GridBagConstraints(0, 1, 1, 1, 0.2, 1.0,
                 GridBagConstraints.EAST, GridBagConstraints.NONE,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+                new Insets(2, 5, 2, 5), 0, 0));
         southwest.add(suffixField = new JTextField(16),
             new GridBagConstraints(1, 1, 1, 1, 0.8, 1.0,
                 GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+                new Insets(2, 5, 2, 5), 0, 0));
         suffixField.setText(GuiApp.getProperty("MessageBrowser.Suffix"));
 
 
@@ -432,14 +366,14 @@ public class MessageBrowser extends MenuFrame
             southwest.add(new JLabel(labels.getString("MessageBrowser.show")),
                 new GridBagConstraints(0, 2, 1, 1, 0.2, 1.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
-                    new Insets(2, 5, 2, 5), 0, 0)); 
+                    new Insets(2, 5, 2, 5), 0, 0));
             showCombo = new JComboBox(showChoices);
             showCombo.setSelectedItem(
                 GuiApp.getProperty("MessageBrowser.Show", "Raw"));
             southwest.add(showCombo,
                 new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0,
                     GridBagConstraints.WEST, GridBagConstraints.NONE,
-                    new Insets(2, 5, 2, 5), 0, 0)); 
+                    new Insets(2, 5, 2, 5), 0, 0));
 
             showCombo.addActionListener(
                 new ActionListener()
@@ -462,7 +396,7 @@ public class MessageBrowser extends MenuFrame
             if (outFmts == null)
             {
                 String[] thisFmt = new String[1];
-                thisFmt[0] = "human-readable"; 
+                thisFmt[0] = "human-readable";
                 outCombo = new JComboBox(thisFmt);
             } else {
 
@@ -490,20 +424,20 @@ public class MessageBrowser extends MenuFrame
                     labels.getString("MessageBrowser.beforeData")),
                 new GridBagConstraints(0, 4, 1, 1, 0.2, 1.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
-                    new Insets(2, 5, 2, 5), 0, 0)); 
+                    new Insets(2, 5, 2, 5), 0, 0));
             southwest.add(beforeDataField = new JTextField(16),
                 new GridBagConstraints(1, 4, 1, 1, 0.8, 1.0,
                     GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-                    new Insets(2, 5, 2, 5), 0, 0)); 
+                    new Insets(2, 5, 2, 5), 0, 0));
 
             southwest.add(new JLabel(labels.getString("MessageBrowser.afterData")),
                 new GridBagConstraints(0, 5, 1, 1, 0.2, 1.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
-                    new Insets(2, 5, 2, 5), 0, 0)); 
+                    new Insets(2, 5, 2, 5), 0, 0));
             southwest.add(afterDataField = new JTextField(16),
                 new GridBagConstraints(1, 5, 1, 1, 0.8, 1.0,
                     GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-                    new Insets(2, 5, 2, 5), 0, 0)); 
+                    new Insets(2, 5, 2, 5), 0, 0));
         }
 
         wrapCheck = new JCheckBox(
@@ -512,7 +446,7 @@ public class MessageBrowser extends MenuFrame
         southwest.add(wrapCheck,
             new GridBagConstraints(0, (canDecode ? 6 : 2), 2, 1, 1.0, 1.0,
                 GridBagConstraints.CENTER, GridBagConstraints.NONE,
-                new Insets(2, 6, 2, 5), 0, 0)); 
+                new Insets(2, 6, 2, 5), 0, 0));
         wrapLines = wrapCheck.isSelected();
         messageArea.setLineWrap(wrapLines);
         wrapCheck.addItemListener(
@@ -522,15 +456,15 @@ public class MessageBrowser extends MenuFrame
                 {
                     wrapLines = ev.getStateChange() == ItemEvent.SELECTED;
                     messageArea.setLineWrap(wrapLines);
-                    GuiApp.setProperty("MessageBrowser.WrapLongLines", 
+                    GuiApp.setProperty("MessageBrowser.WrapLongLines",
                         wrapLines ? "true" : "false");
                 }
             });
 
-        west.add(southwest, 
+        west.add(southwest,
             new GridBagConstraints(0, 2, 1, 1, 0.0, 1.0,
                 GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-                new Insets(2, 5, 2, 5), 0, 0)); 
+                new Insets(2, 5, 2, 5), 0, 0));
 
         String dir = System.getProperty("user.dir");
         filechooser.setCurrentDirectory(new File(dir));
@@ -565,15 +499,15 @@ public class MessageBrowser extends MenuFrame
         GuiApp.getProperty("MessageBrowser.Port",
             "" + LddsParams.DefaultPort);
         GuiApp.getProperty("MessageBrowser.Timeout", "60");
-        GuiApp.getProperty("MessageBrowser.DefaultSearchCrit", 
+        GuiApp.getProperty("MessageBrowser.DefaultSearchCrit",
             "$DCSTOOL_USERDIR/MessageBrowser.sc");
         String nm = "MessageBrowser.WrapLongLines";
         GuiApp.getProperty(nm, "true");
-        EditPropsAction.registerEditor(nm, 
+        EditPropsAction.registerEditor(nm,
             new JComboBox(new String[] { "true", "false" }));
         nm = "MessageBrowser.showMsgMetaData";
         GuiApp.getProperty(nm, "false");
-        EditPropsAction.registerEditor(nm, 
+        EditPropsAction.registerEditor(nm,
             new JComboBox(new String[] { "true", "false" }));
 
         // Try to initialize DECODES:
@@ -622,7 +556,7 @@ public class MessageBrowser extends MenuFrame
 
             nm = "MessageBrowser.EnableEquations";
             GuiApp.getProperty(nm, "true");
-            EditPropsAction.registerEditor(nm, 
+            EditPropsAction.registerEditor(nm,
                 new JComboBox(new String[] { "true", "false" }));
 
             nm = "MessageBrowser.Show";
@@ -741,7 +675,7 @@ public class MessageBrowser extends MenuFrame
       Uses current info from the hostname, port, user, and password fields
       to open the DDS connection and send the inital "Hello" message.
     */
-    public void connectButtonPress()
+    public boolean connectButtonPress(LrgsConnection c)
     {
         statusBar.setText(labels.getString("MessageBrowser.connectingLabel"));
         if (client != null)
@@ -756,33 +690,18 @@ public class MessageBrowser extends MenuFrame
         msgOutputThread = null;
         nextMessageButton.setEnabled(true);
 
-        int port;
-        try
-        {
-            port = Integer.parseInt(portField.getText());
-        }
-        catch(NumberFormatException nfe)
-        {
-            port = LddsParams.DefaultPort;
-        }
+        int port = c.getPort();
 
         String errmsg = null;
-        hostName = (String)hostField.getSelectedItem();
-        String pw = new String(passwordField.getPassword());
-
+        hostName = c.getHostName();
+        String pw = LrgsConnection.decryptPassword(c, LrgsConnectionPanel.pwk);
+        String username = c.getUsername();
         try
         {
             client = new LddsClient(hostName, port);
             client.connect();
 
-            if (pw.length() > 0)
-            {
-                client.sendAuthHello(userField.getText(), pw);
-            }
-            else
-            {
-                client.sendHello(userField.getText());
-            }
+            client.sendAuthHello(username, pw);
 
             msgOutputThread = new DcpMsgOutputThread(this, client,
                 msgDisplayStream, 5, "", "");
@@ -816,17 +735,16 @@ public class MessageBrowser extends MenuFrame
             client = null;
             statusBar.setText(
                     labels.getString("MessageBrowser.notConnectedLabel"));
+            return false;
         }
         else
         {
             statusBar.setText(LoadResourceBundle.sprintf(
                     labels.getString("MessageBrowser.connectedToAsUserLabel"),
-                    hostName, port, userField.getText()));
+                    hostName, port, username));
 
             firstAfterConnect = true;
-            RtStatFrame.updateConnectionList(hostName, portField.getText(),
-                userField.getText(), connectionList, pw);
-            RtStatFrame.loadConnectionsField(hostField, connectionList, hostName);
+            return client.isConnected();
         }
     }
 
@@ -843,7 +761,7 @@ public class MessageBrowser extends MenuFrame
     }
 
     /**
-      Called when Search Criteria Edit button is pressed. 
+      Called when Search Criteria Edit button is pressed.
       If an SC Edit dialog is already active, just switch to it. Otherwise
       start one on the currently selected criteria.
     */
@@ -858,7 +776,7 @@ public class MessageBrowser extends MenuFrame
         String s = scfileField.getText();
         s = EnvExpander.expand(s, System.getProperties());
 
-        decodes.util.ResourceFactory rf = 
+        decodes.util.ResourceFactory rf =
             decodes.util.ResourceFactory.instance();
         try
         {
@@ -934,13 +852,13 @@ public class MessageBrowser extends MenuFrame
             }
             catch(Exception ioe)
             {
-                if (ioe instanceof FileNotFoundException 
+                if (ioe instanceof FileNotFoundException
                  && curSCName.endsWith("MessageBrowser.sc"))
                 {
-                    try 
+                    try
                     {
-                        f.createNewFile(); 
-                        try 
+                        f.createNewFile();
+                        try
                         {
                             searchcrit = new SearchCriteria(f);
                         }
@@ -988,7 +906,7 @@ public class MessageBrowser extends MenuFrame
     {
         if (client == null)
         {
-            connectButtonPress();
+            connectButtonPress(lrgsConnectionPanel.getCurrentConnection());
             if (client == null) // unsuccessful connect?
             {
                 return;
@@ -1004,13 +922,13 @@ public class MessageBrowser extends MenuFrame
         }
         msgOutputThread.prefix = prefixField.getText();
         msgOutputThread.suffix = suffixField.getText();
-        msgOutputThread.timeout = 
+        msgOutputThread.timeout =
             GuiApp.getIntProperty("MessageBrowser.Timeout", 5);
         msgOutputThread.showRaw = showRaw;
         msgOutputThread.doDecode = doDecode;
         msgOutputThread.beforeData = canDecode ? beforeDataField.getText() : null;
         msgOutputThread.afterData = canDecode ? afterDataField.getText() : null;
-        msgOutputThread.showMetaData = 
+        msgOutputThread.showMetaData =
             GuiApp.getBooleanProperty("MessageBrowser.showMsgMetaData", false);
 
         displayPaused = false;
@@ -1025,7 +943,7 @@ public class MessageBrowser extends MenuFrame
     */
     public void sendNetworkLists(SearchCriteria searchcrit)
     {
-        if (searchcrit.NetlistFiles == null 
+        if (searchcrit.NetlistFiles == null
          || searchcrit.NetlistFiles.size() == 0)
         {
             Logger.instance().debug3("No lists to send.");
@@ -1118,16 +1036,8 @@ public class MessageBrowser extends MenuFrame
     */
     public void saveToFileButtonPress()
     {
-        // Get port number
-        int port;
-        try
-        {
-            port = Integer.parseInt(portField.getText());
-        }
-        catch(NumberFormatException nfe)
-        {
-            port = LddsParams.DefaultPort;
-        }
+        final LrgsConnection currentLrgs = lrgsConnectionPanel.getCurrentConnection();
+        final int port = currentLrgs.getPort();
 
         // Make sure current 'searchcrit' object is up-to-date and make
         // a copy for the output thread to use.
@@ -1135,16 +1045,16 @@ public class MessageBrowser extends MenuFrame
         SearchCriteria outputcrit = new SearchCriteria(searchcrit);
 
         MessageOutput output = new MessageOutput(
-            (String)hostField.getSelectedItem(), port, userField.getText(),
+            currentLrgs.getHostName(), port, currentLrgs.getUsername(),
             outputcrit, prefixField.getText(), suffixField.getText(),
             true, doDecode,
             (canDecode ? beforeDataField.getText() : null),
             (canDecode ? afterDataField.getText() : null), showRaw);
         //String s = passwordField.getText().trim();
-        String s = new String(passwordField.getPassword());
+        String s = currentLrgs.getPassword();
         if (s.length() > 0)
         {
-            output.setPassword(s);
+            output.setPassword(LrgsConnection.decryptPassword(currentLrgs, LrgsConnectionPanel.pwk));
         }
 
         output.startup(x+40, y+40);
@@ -1174,7 +1084,7 @@ public class MessageBrowser extends MenuFrame
         return displayPaused;
     }
 
-    /** 
+    /**
     Called when output thread encounters an error. Display it in a dialog.
     @param msg the error message
     */
@@ -1287,7 +1197,7 @@ public class MessageBrowser extends MenuFrame
                 settings.language);
     }
 
-    public static ResourceBundle getLabels() 
+    public static ResourceBundle getLabels()
     {
         if (labels == null)
         {
@@ -1296,7 +1206,7 @@ public class MessageBrowser extends MenuFrame
         return labels;
     }
 
-    public static ResourceBundle getGenericLabels() 
+    public static ResourceBundle getGenericLabels()
     {
         if (genericLabels == null)
         {
@@ -1341,7 +1251,7 @@ public class MessageBrowser extends MenuFrame
     {
         if (client == null)
         {
-            connectButtonPress();
+            connectButtonPress(lrgsConnectionPanel.getCurrentConnection());
             if (client == null) // unsuccessful connect?
             {
                 return;
@@ -1366,13 +1276,13 @@ public class MessageBrowser extends MenuFrame
 
         msgOutputThread.prefix = prefixField.getText();
         msgOutputThread.suffix = suffixField.getText();
-        msgOutputThread.timeout = 
+        msgOutputThread.timeout =
             GuiApp.getIntProperty("MessageBrowser.Timeout", 30);
         msgOutputThread.doDecode = doDecode;
         msgOutputThread.showRaw = showRaw;
         msgOutputThread.beforeData = canDecode ? beforeDataField.getText() : null;
         msgOutputThread.afterData = canDecode ? afterDataField.getText() : null;
-        msgOutputThread.showMetaData = 
+        msgOutputThread.showMetaData =
             GuiApp.getBooleanProperty("MessageBrowser.showMsgMetaData", false);
 
         displayPaused = false;
@@ -1390,5 +1300,10 @@ public class MessageBrowser extends MenuFrame
         displayingAll = false;
         nextMessageButton.setEnabled(true);
         client.enableMultiMessageMode(false);
+    }
+
+    private void setConnectionFields()
+    {
+        /* TODO: getting moved to the new Panel. */
     }
 }

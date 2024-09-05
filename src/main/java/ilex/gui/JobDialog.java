@@ -227,7 +227,6 @@ public class JobDialog
     void closeDlg()
     {
         setVisible(false);
-        dispose();
     }
 
     /**

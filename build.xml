@@ -816,7 +816,13 @@ more information about each.
             <isset property="debugPort"/>
         </condition>
 
-        <property name="decj_opts" value="${debugOpts} ${jfrOpts}"/>
+        <condition property="lang"
+                   value="-Duser.language=${opendcs.lang}"
+                   else="">
+            <isset property="opendcs.lang"/>
+        </condition>
+
+        <property name="decj_opts" value="${debugOpts} ${jfrOpts} ${lang}"/>
         <echo message="with opts: ${decj_opts}"/>
 
         <exec executable="${stage.dir}/bin/${opendcs.app}" osfamily="unix">

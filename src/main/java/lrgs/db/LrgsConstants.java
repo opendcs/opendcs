@@ -38,6 +38,8 @@ public class LrgsConstants
 	public static final char maxClientExceeded = 'M';
 	public static final char badIpAddress = 'I';
 	
+	public static final int DEFAULT_LRGS_PORT = 16003;
+
 	public static String outageTypeName(char code)
 	{
 		switch(code)
