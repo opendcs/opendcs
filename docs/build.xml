@@ -14,6 +14,7 @@
     </condition>
     <available property="have.python" file="${PYTHON_EXE}" filepath="${PATH}"/>
     <available property="have.latexmk" file="latexmk" filepath="${PATH}"/>
+    <available property="have.plantuml" file="plantuml" filepath="${PATH}"/>
 
     <target name="check.docs">
         <uptodate property="no.docs" targetFile="${status.dir}/docs.build.date">
@@ -58,6 +59,13 @@
                         <echo message="Command 'latexmk' is not available. Will only build html files for documentation."/>
                         <echo message="If you want to generate PDFs please install a LaTeX distribution, latexmk and set in PATH as appropriate to your system"/>
                         <echo message="on ubuntu `sudo apt install texlive-latex-base texlive-latex-recommended texlive-latex-extra latexmk"/>
+                    </then>
+                </if>
+                <if>
+                    <not><isset property="have.plantuml"/></not>
+                    <then>
+                        <echo message="Command 'plantuml' is not available. This will prevent create of certain diagrams within the documentation."/>
+                        <echo message="If you will be updating diagrams, please install plantuml per https://chiplicity.readthedocs.io/en/latest/Using_Sphinx/UsingGraphicsAndDiagramsInSphinx.html"/>
                     </then>
                 </if>
                 <property name="canbuilddocs" value="true"/>                

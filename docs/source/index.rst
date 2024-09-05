@@ -108,6 +108,7 @@ Reminder - legacy PDFs are no longer being updated.
    :caption: Developer Documentation
    
    Developer Documentation <./dev-docs.rst>
+   Algorithm Development <./algorithm-dev.rst>
    
 .. toctree:: 
    :maxdepth: 1
