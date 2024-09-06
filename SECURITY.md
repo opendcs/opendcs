@@ -15,7 +15,7 @@ The following versions are supported.
 
 To report a vulnerability please browses to the issues, click New Issues, and select Report a Vulnerability.
 
-Provided as much delete as you are willing so we can get started on fixing any issues.
+Provide as much delete as you are willing so we can get started on fixing any issues.
 
 
 ## Regarding Static Analysis tools
