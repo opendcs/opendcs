@@ -13,7 +13,7 @@ The following versions are supported.
 
 ## Reporting a Vulnerability
 
-To report a vulnerability please browses to the issues, click New Issues, and select Report a Vulnerability.
+To report a vulnerability please go to [issues](https://github.com/opendcs/opendcs/issues), click New Issues, and select Report a Vulnerability.
 
 Provide as much delete as you are willing so we can get started on fixing any issues.
 
