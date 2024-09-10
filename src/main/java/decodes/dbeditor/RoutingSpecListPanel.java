@@ -233,9 +233,4 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
 			dbtp.setSelectedComponent(newTab);
 		}
 	}
-
-	public void resort()
-	{
-		rsSelectPanel.resort();
-	}
 }
