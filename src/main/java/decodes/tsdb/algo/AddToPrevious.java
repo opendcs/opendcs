@@ -7,7 +7,6 @@ import ilex.var.TimedVariable;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.ParmRef;
-import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
@@ -35,7 +34,8 @@ public class AddToPrevious extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
 	protected void initAWAlgorithm()
-			throws DbCompException {
+			throws DbCompException
+	{
 		_awAlgoType = AWAlgoType.TIME_SLICE;
 	}
 	
@@ -43,7 +43,8 @@ public class AddToPrevious extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * This method is called once before iterating all time slices.
 	 */
 	protected void beforeTimeSlices()
-			throws DbCompException {
+			throws DbCompException
+	{
 		justStarted = true;
 	}
 
@@ -58,12 +59,14 @@ public class AddToPrevious extends decodes.tsdb.algo.AW_AlgorithmBase
 	 *        algorithm is to be aborted.
 	 */
 	protected void doAWTimeSlice()
-			throws DbCompException {
-		if (justStarted) {
+			throws DbCompException
+	{
+		if (justStarted)
+		{
 			ParmRef inputParmRef = getParmRef("input");
 			CTimeSeries inputTS = inputParmRef.timeSeries;
-			TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
-			try {
+			try (TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO())
+			{
 				TimedVariable prevInput =
 						timeSeriesDAO.getPreviousValue(inputTS,
 								inputParmRef.compParm.baseTimeToParamTime(
@@ -73,8 +76,6 @@ public class AddToPrevious extends decodes.tsdb.algo.AW_AlgorithmBase
 				warning("Can't get prev value, time-slice at "
 						+ debugSdf.format(_timeSliceBaseTime));
 				prevVal = 0.0;
-			} finally {
-				timeSeriesDAO.close();
 			}
 			justStarted = false;
 		}
@@ -86,6 +87,7 @@ public class AddToPrevious extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * This method is called once after iterating all time slices.
 	 */
 	protected void afterTimeSlices()
-			throws DbCompException {
+			throws DbCompException
+	{
 	}
 }
