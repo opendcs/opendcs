@@ -131,7 +131,7 @@ public class DataSourceListTableModel extends AbstractTableModel
         }
     }
 
-    private static String getDsColumn(DataSource ds, int c)
+    private static Object getDsColumn(DataSource ds, int c)
     {
         switch(c)
         {
@@ -141,7 +141,7 @@ public class DataSourceListTableModel extends AbstractTableModel
             case 2:
                 return ds.getDataSourceArgDisplay() == null ? "" : ds.getDataSourceArgDisplay();
             case 3:
-                return "" + ds.numUsedBy;
+                return ds.numUsedBy;
             default: return "";
         }
     }

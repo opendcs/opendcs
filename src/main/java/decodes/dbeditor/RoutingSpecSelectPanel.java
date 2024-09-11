@@ -31,7 +31,7 @@ import decodes.db.RoutingSpec;
 
 
 @SuppressWarnings("serial")
-public class RoutingSpecSelectPanel extends JPanel 
+public class RoutingSpecSelectPanel extends JPanel
 {
     private static final Logger log = LoggerFactory.getLogger(RoutingSpecSelectPanel.class);
     static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
@@ -109,7 +109,7 @@ public class RoutingSpecSelectPanel extends JPanel
         int modelRow = rslTable.convertRowIndexToModel(idx);
         return tableModel.getObjectAt(modelRow);
     }
-    
+
     public void clearSelection()
     {
         rslTable.clearSelection();
