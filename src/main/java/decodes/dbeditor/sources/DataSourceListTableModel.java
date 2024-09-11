@@ -33,9 +33,9 @@ import decodes.gui.TopFrame;
 public class DataSourceListTableModel extends AbstractTableModel
 {
     private static final Logger log = LoggerFactory.getLogger(DataSourceListTableModel.class);
-	private static ResourceBundle generic = ResourceBundle.getBundle("decodes/resources/generic");    
+    private static ResourceBundle generic = ResourceBundle.getBundle("decodes/resources/generic");
     private static ResourceBundle dbedit = ResourceBundle.getBundle("decodes/resources/dbedit");
-    private String colNames[] = 
+    private String colNames[] =
     {
         generic.getString("name"),
         generic.getString("type"),
@@ -83,20 +83,20 @@ public class DataSourceListTableModel extends AbstractTableModel
 
     public void deleteObject(DataSource ds)
     {
-        
+
         try
-        { 
-            db.getDbIo().deleteDataSource(ds); 
+        {
+            db.getDbIo().deleteDataSource(ds);
             theList.remove(ds);
             fireTableDataChanged();
         }
         catch(DatabaseException e)
         {
-            if ( ds.getId() != Constants.undefinedId ) 
+            if ( ds.getId() != Constants.undefinedId )
             {
                 log.atError()
-                .setCause(e)
-                .log("Unable to delete DataSource {}.", ds);
+                   .setCause(e)
+                   .log("Unable to delete DataSource {}.", ds);
                 TopFrame.instance().showError(e.toString());
             }
         }
@@ -115,30 +115,34 @@ public class DataSourceListTableModel extends AbstractTableModel
 
     public boolean isCellEditable(int r, int c)
     {
-        return false; 
+        return false;
     }
 
     public Object getValueAt(int r, int c)
     {
         DataSource ds = getObjectAt(r);
         if (ds == null)
+        {
             return "";
+        }
         else
+        {
             return getDsColumn(ds, c);
+        }
     }
 
     private static String getDsColumn(DataSource ds, int c)
     {
         switch(c)
         {
-        case 0: return ds.getName();
-        case 1:
-            return ds.dataSourceType == null ? "" : ds.dataSourceType;
-        case 2:
-            return ds.getDataSourceArgDisplay() == null ? "" : ds.getDataSourceArgDisplay();
-        case 3:
-            return "" + ds.numUsedBy;
-        default: return "";
+            case 0: return ds.getName();
+            case 1:
+                return ds.dataSourceType == null ? "" : ds.dataSourceType;
+            case 2:
+                return ds.getDataSourceArgDisplay() == null ? "" : ds.getDataSourceArgDisplay();
+            case 3:
+                return "" + ds.numUsedBy;
+            default: return "";
         }
     }
 
@@ -148,5 +152,4 @@ public class DataSourceListTableModel extends AbstractTableModel
         theList.add(newOb);
         fireTableDataChanged();
     }
-
 }
