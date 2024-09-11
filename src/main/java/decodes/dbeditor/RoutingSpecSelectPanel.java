@@ -104,6 +104,11 @@ public class RoutingSpecSelectPanel
 		tableModel.addObject(rs);
 	}
 
+	public RSListTableModel getModel()
+	{
+		return this.tableModel;
+	}
+
 	public void deleteSelection()
 	{
 		int r = rslTable.getSelectedRow();

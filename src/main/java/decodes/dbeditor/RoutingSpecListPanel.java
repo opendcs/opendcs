@@ -14,6 +14,7 @@ import ilex.util.Logger;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.RoutingSpec;
+import decodes.dbeditor.routing.RSListTableModel;
 
 /**
  * DBEDIT panel that shows a list of routing specs in the database.
@@ -51,6 +52,11 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
 	void setParent(DbEditorFrame parent)
 	{
 		this.parent = parent;
+	}
+
+	public RSListTableModel getModel()
+	{
+		return this.rsSelectPanel.getModel();
 	}
 
 	/** Initializes GUI components. */

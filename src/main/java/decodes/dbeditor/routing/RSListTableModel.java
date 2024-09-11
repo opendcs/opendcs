@@ -100,8 +100,6 @@ public class RSListTableModel extends AbstractTableModel
 
 	public void deleteObject(RoutingSpec ob)
 	{
-		
-
 		try
 		{
 			db.getDbIo().deleteRoutingSpec(ob);
