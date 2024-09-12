@@ -88,11 +88,12 @@ Reminder - legacy PDFs are no longer being updated.
    :caption: Getting Started
    
    Software Set-Up <./start-software.rst>
+   Setup LRGS <./start-lrgs.rst>
    Time Series - Intro <./start-timeseries.rst>
    Routing Spec - Intro<./start-routingspec.rst>
    DECODING - Intro<./start-decoding.rst>
    Computations - Intro <./start-computations.rst>
-   Screening - Intro <./start-screening.rst>
+   Screening - Intro <./start-screening.rst>   
    
 .. toctree::
    :maxdepth: 1
