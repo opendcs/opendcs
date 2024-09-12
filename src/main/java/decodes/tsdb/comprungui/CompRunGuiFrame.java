@@ -1069,6 +1069,7 @@ public class CompRunGuiFrame extends TopFrame
 		// Flush the text area inside trace dialog
 		// Create the trace logger here and put in pipe with tee logger.
 		// Put trace dialog reference in trace logger.
+		myoutputs.clear();
 		compExecutionWorker = new SwingWorker<List<CTimeSeries>,CTimeSeries>() {
 			@Override
 			public List<CTimeSeries> doInBackground()
