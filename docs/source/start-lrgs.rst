@@ -16,10 +16,10 @@ See INTENT.md at the project home for information on licensing.
 What is the LRGS?
 #################
 
-The letters LRGS stand for Local Readout Ground Station. The primary purpose of this component is to get date from
+The letters LRGS stand for Local Readout Ground Station. The primary purpose of this component is to get data from
 satellite sources, a DRGS (Direct Readout Ground Station) or an HRIT (High Rate Information Transfer).
 
-See The legacy lrgs user guide for additonal informaiton <./legacy-lrgs-userguide.rst>
+See The legacy lrgs user guide for additional information <./legacy-lrgs-userguide.rst>
 
 While this is still a reasonable description the LRGS can take data from Satellites (HRIT, DRGS, NOAAport), Irridium,
 , HRIT files, or another LRGS (DDS Protocol), and any network device that implements the DAMS-NT protocol as 
@@ -27,10 +27,10 @@ built-in sources.
 
 Users can also provide custom sources to the LRGS.
 
-What each LRGS data source has incommon is that it aqcuires a unit of data, for example a GOES transmission, and saves it 
+What each LRGS data source has in common is that it acquires a unit of data, for example a GOES transmission, and saves it 
 to an archive as a `DcpMsg`. DECODES can then search for and further process these individual messages.
 
-The remainder of this guide will focus on setting up the LRGS component of OpenDCS.
+The remainder of this guide will focus on setting up the LRGS component of OpenDCS for Linux.  However,  LRGS also works on a windows computer.
 
 
 Installation - Linux
