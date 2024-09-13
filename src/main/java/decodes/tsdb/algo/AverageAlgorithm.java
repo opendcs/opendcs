@@ -2,7 +2,7 @@ package decodes.tsdb.algo;
 
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
-import decodes.util.PropertySpec;
+import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
@@ -21,24 +21,14 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 
 	double tally;
 	int count;
-	PropertySpec specs[] =
-	{
-		new PropertySpec("negativeReplacement", PropertySpec.NUMBER, 
-			"(no default) If set, and output would be negative, then replace with the number supplied.")
-	};
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return specs;
-	}
-
-	public double negativeReplacement = Double.NEGATIVE_INFINITY;
 
 	@Output
 	NamedVariable average = new NamedVariable(AVERAGESTRING, 0);
 
 	@org.opendcs.annotations.PropertySpec(value = "1")
 	public long minSamplesNeeded = 1;
+	@PropertySpec(value = "-1.0 / 0.0")
+	public double negativeReplacement = Double.NEGATIVE_INFINITY;
 
 	// Allow javac to generate a no-args constructor.
 
