@@ -41,20 +41,6 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 	private String inUnits = null;
 	private String outUnits = null;
 
-	private final PropertySpec copyPropertySpecs[] =
-	{
-		new PropertySpec("multiplier", PropertySpec.NUMBER,
-			"(optional) Multiply input by this amount."),
-		new PropertySpec("offset", PropertySpec.NUMBER,
-			"(optional) Add this to input (after applying multiplier, if specified).")
-	};
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return copyPropertySpecs;
-	}
-
-
 	@Output
 	public NamedVariable output = new NamedVariable(OUTPUTSTRING, 0);
 
