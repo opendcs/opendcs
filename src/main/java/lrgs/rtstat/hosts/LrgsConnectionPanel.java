@@ -17,9 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import decodes.util.DecodesVersion;
-import ilex.util.AsciiUtil;
 import lrgs.gui.MessageBrowser;
-import rma.swing.table.ComboBoxRenderer;
 
 import java.awt.Component;
 import java.awt.Dimension;

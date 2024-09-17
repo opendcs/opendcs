@@ -38,6 +38,7 @@ public class LrgsConnectionPanelController
     {
         LrgsConnection oldConnection = selectedConnection;
         selectedConnection = c;
+        model.setSelectedItem(c);
         connectionChangedCallback.accept(oldConnection, c);
     }
 
