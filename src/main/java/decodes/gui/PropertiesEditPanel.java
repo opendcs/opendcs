@@ -225,7 +225,7 @@ public class PropertiesEditPanel extends JPanel
 
     public static PropertiesEditPanel from(Properties properties)
     {
-        return from(properties, false);
+        return from(properties, true);
     }
 
 
