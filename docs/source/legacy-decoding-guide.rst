@@ -1275,7 +1275,7 @@ The field type can be one of the following:
 
    MINT Minute Interval Field (see 7.10.2)
 
-   MOFF Minute Offset Field (see 7.10.2
+   MOFF Minute Offset Field (see 7.10.2)
 
    F Format Label Field (see 0)
 
