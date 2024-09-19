@@ -48,15 +48,15 @@ if [ ! -d "$DCSTOOL_USERDIR" ]; then
 fi
 
 # Build classpath
-CP=$DH/bin/opendcs.jar:
+CP=$DH/bin/opendcs.jar
 
 # If a user-specific 'dep' (dependencies) directory exists, then
 # add all the jars therein to the classpath.
-if [ -d "$CP_SHARED_JAR_DIR"]; then
+if [ "$CP_SHARED_JAR_DIR" != "" ]; then
   CP=$CP:$CP_SHARED_JAR_DIR/*
-  echo "The need of this is superseded by using a DCSTOOL_USERDIR for configuration." 1>&2
-  echo "Support for this variable will be moved in a future release. Please update " 1>&2
-  echo "your configuration." 1>&2
+  echo "The need of the CP_SHARED_JAR_DIR is variable superseded by using a " 1>&2 
+  echo "DCSTOOL_USERDIR for configuration. Support for this variable will" 1>&2
+  echo "be moved in a future release. Please update your configuration." 1>&2
 fi
 
 if [ -d "$DCSTOOL_USERDIR/dep" ]; then
