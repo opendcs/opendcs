@@ -17,6 +17,11 @@ import decodes.tsdb.DbIoException;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
+
+/**
+ * Computation resolver that filters out data for stations listed in specific
+ * network lists. Used to prevent data from stations that should be excluded.
+ */
 public class StationExcludeCompResolver 
 	extends CompResolver
 	implements PropertiesOwner
@@ -37,6 +42,13 @@ public class StationExcludeCompResolver
 	private String rsName = "";
 	private ArrayList<NetworkList> excludeList = new ArrayList<NetworkList>();
 
+
+	/**
+	 * Resolves the computation based on whether the station should be excluded.
+	 *
+	 * @param msg The data collection message.
+	 * @return Always returns null.
+	 */
 	@Override
 	public Computation[] resolve(IDataCollection msg)
 	{
@@ -92,8 +104,10 @@ public class StationExcludeCompResolver
 		// Always return null.
 		return null;
 	}
-	
 
+	/**
+	 * Checks and reloads the network lists used to exclude stations.
+	 */
 	private void checkNetlists()
 	{
 		excludeList.clear();
@@ -124,6 +138,11 @@ public class StationExcludeCompResolver
 		}
 	}
 
+	/**
+	 * Initializes the resolver with properties from the provided specification.
+	 *
+	 * @param routingSpec The routing specification containing config properties.
+	 */
 	@Override
 	public void init(RoutingSpec routingSpec)
 	{
@@ -138,6 +157,11 @@ public class StationExcludeCompResolver
 		rsName = routingSpec.getName();
 	}
 
+	/**
+	 * Returns the supported property specifications.
+	 *
+	 * @return An array of PropertySpec objects representing the supported properties.
+	 */
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
