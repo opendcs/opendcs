@@ -32,114 +32,112 @@ import decodes.gui.TopFrame;
 
 public class PresentationGroupTableModel extends AbstractTableModel
 {
-	private static final Logger log = LoggerFactory.getLogger(PresentationGroupTableModel.class);
+    private static final Logger log = LoggerFactory.getLogger(PresentationGroupTableModel.class);
     private static final ResourceBundle generic = ResourceBundle.getBundle("decodes/resources/generic");
     private static final ResourceBundle dbedit = ResourceBundle.getBundle("decodes/resources/dbedit");
-	static String colNames[] = 
-	{
-		generic.getString("name"),
-		dbedit.getString("PresentationGroupSelectPanel.inheritsFrom"),
-		generic.getString("lastMod"),
-		generic.getString("isProduction")
-	};
-	private PresentationGroupSelectPanel panel;
-	private PresentationGroupList pgList;
-	private final Database db;
+    static String colNames[] =
+    {
+        generic.getString("name"),
+        dbedit.getString("PresentationGroupSelectPanel.inheritsFrom"),
+        generic.getString("lastMod"),
+        generic.getString("isProduction")
+    };
+    private PresentationGroupSelectPanel panel;
+    private PresentationGroupList pgList;
+    private final Database db;
 
-	public PresentationGroupTableModel(PresentationGroupSelectPanel pgsp, Database db)
-	{
-		super();
-		this.panel = pgsp;
-		this.db = db;
-		pgList = db.presentationGroupList;
-		refill();
-	}
+    public PresentationGroupTableModel(PresentationGroupSelectPanel pgsp, Database db)
+    {
+        super();
+        this.panel = pgsp;
+        this.db = db;
+        pgList = db.presentationGroupList;
+        refill();
+    }
 
-	public void refill()
-	{
-		fireTableDataChanged();
-	}
+    public void refill()
+    {
+        fireTableDataChanged();
+    }
 
-	public void add(PresentationGroup ob)
-	{
-		pgList.add(ob);
-		fireTableDataChanged();
-	}
+    public void add(PresentationGroup ob)
+    {
+        pgList.add(ob);
+        fireTableDataChanged();
+    }
 
-	public void replace(PresentationGroup oldOb, PresentationGroup newOb)
-	{
-		pgList.remove(oldOb);
-		pgList.add(newOb);
-		fireTableDataChanged();
-	}
+    public void replace(PresentationGroup oldOb, PresentationGroup newOb)
+    {
+        pgList.remove(oldOb);
+        pgList.add(newOb);
+        fireTableDataChanged();
+    }
 
-	public void deleteAt(int index)
-	{
-		try
-		{ 
-			PresentationGroup ob = pgList.getPGAt(index);		
-			db.getDbIo().deletePresentationGroup(ob);
-			pgList.remove(ob);
-			fireTableDataChanged();
-		}
-		catch(DatabaseException e)
-		{
-			log.atError()
-			   .setCause(e)
-			   .log("Unable to delete Presentation Group.");
-			TopFrame.instance().showError(e.toString());
-		}
-		
-	}
+    public void deleteAt(int index)
+    {
+        try
+        {
+            PresentationGroup ob = pgList.getPGAt(index);
+            db.getDbIo().deletePresentationGroup(ob);
+            pgList.remove(ob);
+            fireTableDataChanged();
+        }
+        catch(DatabaseException e)
+        {
+            log.atError()
+               .setCause(e)
+               .log("Unable to delete Presentation Group.");
+            TopFrame.instance().showError(e.toString());
+        }
 
-	public int getColumnCount()
-	{
-		int r = colNames.length;
-		return r;
-	}
+    }
 
-	public String getColumnName(int c)
-	{
-		return colNames[c];
-	}
+    public int getColumnCount()
+    {
+        int r = colNames.length;
+        return r;
+    }
 
-	public boolean isCellEditable(int r, int c)
-	{
-		return false;
-	}
+    public String getColumnName(int c)
+    {
+        return colNames[c];
+    }
 
-	public int getRowCount()
-	{
-		return pgList.size();
-	}
+    public boolean isCellEditable(int r, int c)
+    {
+        return false;
+    }
 
-	public Object getValueAt(int r, int c)
-	{
-		return getColumnValue(getObjectAt(r), c);
-	}
+    public int getRowCount()
+    {
+        return pgList.size();
+    }
 
-	public PresentationGroup getObjectAt(int r)
-	{
-		return (PresentationGroup)getRowObject(r);
-	}
+    public Object getValueAt(int r, int c)
+    {
+        return getColumnValue(getObjectAt(r), c);
+    }
 
-	public Object getRowObject(int r)
-	{
-		return pgList.getPGAt(r);
-	}
+    public PresentationGroup getObjectAt(int r)
+    {
+        return (PresentationGroup)getRowObject(r);
+    }
 
-	private static Object getColumnValue(PresentationGroup pg, int c)
-	{
-		switch(c)
-		{
-		case 0: return pg.groupName;
-		case 1: return pg.inheritsFrom == null ? "" : pg.inheritsFrom;
-		case 2:
-			return pg.lastModifyTime == null ? "" : pg.lastModifyTime;
-		case 3: return pg.isProduction;
-		default: return "";
-		}
-	}
+    public Object getRowObject(int r)
+    {
+        return pgList.getPGAt(r);
+    }
+
+    private static Object getColumnValue(PresentationGroup pg, int c)
+    {
+        switch(c)
+        {
+        case 0: return pg.groupName;
+        case 1: return pg.inheritsFrom == null ? "" : pg.inheritsFrom;
+        case 2:
+            return pg.lastModifyTime == null ? "" : pg.lastModifyTime;
+        case 3: return pg.isProduction;
+        default: return "";
+        }
+    }
 }
-
-    
