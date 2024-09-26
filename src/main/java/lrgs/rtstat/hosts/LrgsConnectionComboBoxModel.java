@@ -1,13 +1,9 @@
 package lrgs.rtstat.hosts;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -110,8 +106,8 @@ public class LrgsConnectionComboBoxModel extends AbstractListModel<LrgsConnectio
                 {
                     hosts.set(i, c);
                     Collections.sort(hosts, sorter);
-                    fireContentsChanged(c, i, i);
                     setSelectedItem(c);
+                    fireContentsChanged(c, 0, hosts.size());
                     writeToDisk();
                     return;
                 }

@@ -17,6 +17,9 @@ package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
+
+import org.slf4j.LoggerFactory;
+
 import java.util.ResourceBundle;
 
 import ilex.util.LoadResourceBundle;
@@ -32,11 +35,12 @@ import decodes.dbeditor.routing.RSListTableModel;
 @SuppressWarnings("serial")
 public class RoutingSpecListPanel extends JPanel implements ListOpsController
 {
-    static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
-    static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
-    private ListOpsPanel listOpsPanel = new ListOpsPanel(this);
-    private DbEditorFrame parent = null;
-    private RoutingSpecSelectPanel rsSelectPanel = new RoutingSpecSelectPanel();
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecListPanel.class);
+	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
+	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
+	private ListOpsPanel listOpsPanel = new ListOpsPanel(this);
+	private DbEditorFrame parent = null;
+	private RoutingSpecSelectPanel rsSelectPanel = new RoutingSpecSelectPanel();
 
     /** Constructor. */
     public RoutingSpecListPanel()
@@ -218,6 +222,9 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
             }
             catch(DatabaseException e)
             {
+				log.atError()
+				   .setCause(e)
+				   .log("Unable to delete routing spec.");
                 DbEditorFrame.instance().showError(
                     RoutingSpecListPanel.dbeditLabels.getString("RoutingSpecListPanel.errorDelete")
                     + e.toString());

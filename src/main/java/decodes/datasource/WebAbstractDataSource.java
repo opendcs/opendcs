@@ -10,6 +10,8 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.Vector;
 
+import org.slf4j.LoggerFactory;
+
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
 import ilex.util.Logger;
@@ -31,9 +33,9 @@ import decodes.util.PropertySpec;
  * Properties:
  * 	abstractUrl - The URL containing $MEDIUMID or ${MEDIUMID} variable.
  */
-public class WebAbstractDataSource
-	extends DataSourceExec
+public class WebAbstractDataSource extends DataSourceExec
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(WebAbstractDataSource.class);
 	private String module = "WebAbstractDataSource";
 	
 	// aggregate list of IDs from all network lists.
@@ -182,7 +184,7 @@ public class WebAbstractDataSource
 		catch(InvalidDatabaseException ex) 
 		{
 			log(Logger.E_INFORMATION, module + " " + ex);
-			throw new DataSourceException(module + " " + ex);
+			throw new DataSourceException(module + " " + ex, ex);
 		}
 	}
 	
@@ -217,19 +219,11 @@ public class WebAbstractDataSource
 				currentWebDs.init(myProps, rsSince, rsUntil, null);
 				return currentWebDs.getRawMessage();
 			}
-			catch(DataSourceException ex)
-			{
-				String msg = module + " cannot open '"
-					+ url + "': " + ex;
-				log(Logger.E_WARNING, msg);
-			}
 			catch(Exception ex)
 			{
-				String msg = module + " cannot open '"
-					+ url + "': " + ex;
-				log(Logger.E_WARNING, msg);
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot open URL '{}'");
 			}
 		}
 		// No more medium IDs

@@ -15,7 +15,7 @@ perhaps even rejected if the raw data is too extreme.
 
 Reasons that screening may be used include the following:
 
-* Prevent unrealistic or physically possible values from reporting
+* Prevent unrealistic or physically impossible values from reporting
 * Help attribute flags to help monitor the state of the system where the gages are deployed
 * Minimize gage malfunctions from reporting
 
