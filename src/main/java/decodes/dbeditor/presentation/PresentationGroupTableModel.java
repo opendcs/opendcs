@@ -70,6 +70,7 @@ public class PresentationGroupTableModel extends AbstractTableModel
 	{
 		pgList.remove(oldOb);
 		pgList.add(newOb);
+		fireTableDataChanged();
 	}
 
 	public void deleteAt(int index)
