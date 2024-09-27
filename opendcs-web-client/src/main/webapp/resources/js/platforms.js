@@ -596,21 +596,23 @@ function openSensorInfoDialog(rowClicked)
             $("#platformSpecificMaxTextbox").val(rowData[7]);
             $("#usgsDdnoTextbox").val(rowData[8]);
 
-            if (platformSensorData != null)
-            {
-                var sensProps = JSON.parse(rowData[5]);
-
-                var actions = [{
-                    "type": "delete",
-                    "onclick": null
-                }];
-                setOpendcsPropertiesTable("platformSensorPropertiesTable", 
-                        openDcsData.propspecs["decodes.db.PlatformSensor"].data, 
-                        sensProps, 
-                        true, 
-                        null, 
-                        actions);
+            //The actual values that are set, not just the propspecs.
+            var sensProps = {};
+            if (platformSensorData != null) {
+                sensProps = JSON.parse(rowData[5]);
             }
+
+            var actions = [{
+                "type": "delete",
+                "onclick": null
+            }];
+            setOpendcsPropertiesTable("platformSensorPropertiesTable",
+                    openDcsData.propspecs["decodes.db.PlatformSensor"].data,
+                    sensProps,
+                    true,
+                    null,
+                    actions);
+
             if (configSensorData != null)
             {
                 if (configSensorData.absoluteMin != null)
