@@ -32,7 +32,6 @@
         <dependency org="cglib" name="cglib" rev="2.1_3"/>
         <dependency org="commons-logging" name="commons-logging" rev="1.0.4"/>
         <dependency org="commons-net" name="commons-net" rev="3.9.0"/>
-        <!--<dependency org="dom4j" name="dom4j" rev="1.6.1"/>-->
         <dependency org="org.dom4j" name="dom4j" rev="2.1.4"/>
         <dependency org="ch.ethz.ganymed" name="ganymed-ssh2" rev="build210"/>
         <dependency org="org.apache.poi" name="poi" rev="5.0.0"/>
@@ -79,6 +78,7 @@
             <exclude org="org.jfree"/>
             <exclude org="com.mrsid"/>
             <exclude org="javax.help"/>
+            <exclude org="dom4j"/>
         </dependency>
         <dependency org="mil.army.usace.hec" name="hec-cwms-ratings-core" rev="1.1.0"/>
         <dependency org="org.slf4j" name="slf4j-api" rev="${slf4j.version}"/>

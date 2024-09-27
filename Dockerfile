@@ -3,7 +3,7 @@ FROM openjdk:8-jdk-bullseye as builder
 
 RUN --mount=type=cache,target=/var/cache/apt \ 
     apt-get update && apt-get -y upgrade && \
-    apt-get install -y ant
+    apt-get install -y --no-install-recommends ant
 WORKDIR /app
 
 COPY . .
@@ -12,9 +12,11 @@ RUN --mount=type=cache,target=/root \
     ant stage -Dno.docs=true
 # end initial build
 
-FROM openjdk:8-jre-alpine as opendcs_base
+FROM eclipse-temurin:11-jre-alpine as opendcs_base
 
-RUN apk update && apk add bash
+RUN apk upgrade --no-cache
+RUN apk add --no-cache \
+    bash
 RUN addgroup opendcs && \
     adduser -D opendcs -G opendcs
 WORKDIR /opt/opendcs
