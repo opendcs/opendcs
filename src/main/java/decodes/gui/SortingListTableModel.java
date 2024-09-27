@@ -3,8 +3,11 @@ package decodes.gui;
 import javax.swing.table.TableModel;
 
 /**
-This interface works with SortingListTable.
-*/
+  * This interface works with SortingListTable.
+  * @deprecated Swing JTable sorts correctly with standard models.
+  *             Models should not attempt to sort their data.
+  */
+@Deprecated
 public interface SortingListTableModel extends TableModel
 {
 	/**

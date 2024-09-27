@@ -23,6 +23,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import org.slf4j.LoggerFactory;
+
 import ilex.gui.Help;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgFlag;
@@ -45,6 +47,7 @@ import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.RoutingSpec;
+import decodes.dbeditor.routing.RSListTableModel;
 import decodes.gui.EnumComboBox;
 import decodes.gui.PropertiesEditPanel;
 import decodes.util.PropertiesOwner;
@@ -58,6 +61,7 @@ public class RoutingSpecEditPanel
 	extends DbEditorTab 
 	implements ChangeTracker, EntityOpsController, PropertiesOwner
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecEditPanel.class);
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -613,15 +617,18 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		}
 		catch (DatabaseException e)
 		{
-			DbEditorFrame.instance().showError(
-				LoadResourceBundle.sprintf(genericLabels.getString("cannotSave"), getEntityName(),
-					e.toString()));
+			final String msg =
+				LoadResourceBundle.sprintf(genericLabels.getString("cannotSave"), getEntityName(), e.toString());
+			log.atError()
+			   .setCause(e)
+			   .log(msg);
+			DbEditorFrame.instance().showError(msg);
 			return false;
 		}
 
-		Database.getDb().routingSpecList.remove(origObject);
-		Database.getDb().routingSpecList.add(theObject);
-		parent.getRoutingSpecListPanel().resort();
+		RSListTableModel model = parent.getRoutingSpecListPanel().getModel();
+		model.deleteObject(origObject);
+		model.addObject(theObject);
 
 		// Make a new copy in case user wants to keep editing.
 		origObject = theObject;
