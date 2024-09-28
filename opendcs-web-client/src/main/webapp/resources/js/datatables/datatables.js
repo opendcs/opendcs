@@ -55,8 +55,12 @@ class OpenDcsDataTable {
 	  this.jq.DataTable(this.properties);
   }
 	
-  addRow(newRow) {
-	  this.dataTable.row.add(newRow);
+  addRow(newRow, backgroundColor) {
+	  var tempRow = this.dataTable.row.add(newRow);
+      if (backgroundColor != null)
+      {
+          tempRow.node().style.backgroundColor = backgroundColor;
+      }
   }
   
   clearDataTable(paging) {
@@ -84,7 +88,7 @@ class OpenDcsDataTable {
       };
 
       var actionDropdownHtml = '<div class="list-icons float-right">'
-          + '<div class="dropdown">'
+          + '<div class="dropleft">'
           + '    <a href="javascript:void(0)" class="list-icons-item" data-toggle="dropdown" onclick="clickedDropdown(event, this)" data-ignorefocusout="true">'
           + '    <i class="icon-menu9"></i>'
           + '</a>'
@@ -104,7 +108,7 @@ class OpenDcsDataTable {
 
       return actionDropdownHtml;
   }
-  
+
   addBlankRowToDataTable(redraw, dragIcon)
   {
 	  console.log("Adding blank row to datatable.");
@@ -119,7 +123,8 @@ class OpenDcsDataTable {
       {
           emptyRow[0] = '<i class="move-cursor icon-arrow-resize8 mr-3 icon-1x"></i>';
       }
-      this.addRow(emptyRow);
+      //Add green row, signifying new row to be added to table..
+      this.addRow(emptyRow, "#c4ffc9");
       if (redraw)
       {
     	  this.dataTable.draw();

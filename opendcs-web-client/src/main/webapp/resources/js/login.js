@@ -66,10 +66,10 @@ function login()
             "password": password
     };
     $.ajax({
-        url: `../api/gateway?opendcs_api_call=credentials`,
+        url: `${window.API_BASE_URL}/credentials`,
         type: "POST",
         data: JSON.stringify(params),
-        headers: {     
+        headers: {
             "Content-Type": "application/json"
         },
         success: function(response) {

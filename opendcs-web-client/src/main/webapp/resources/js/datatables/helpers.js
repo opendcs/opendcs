@@ -187,6 +187,9 @@ function clickedDropdown(event, clickedDropdown)
         $(clickedDropdown).next(".dropdown-menu").toggle();
     }
     event.stopPropagation();
+    //This scrolls down so the dropdown will be fully visible in the case that
+    //it forces the scroll to move down.
+    event.target.scrollIntoView();
 }
 
 function clickedDropdown_deprecated(event, clickedDropdown)

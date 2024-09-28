@@ -62,7 +62,7 @@ function verifyCredentials()
     }
 
     $.ajax({
-        url: `../api/gateway?opendcs_api_call=check`,
+        url: `${window.API_BASE_URL}/check`,
         type: "GET",
         data: params,
         dataType_json: "json",

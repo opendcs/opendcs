@@ -27,6 +27,10 @@
         <welcome-file>default.htm</welcome-file>
         <welcome-file>default.jsp</welcome-file>
     </welcome-file-list>
+    <context-param>
+        <param-name>api_base_url</param-name>
+        <param-value>http://opendcsapi:8080/odcsapi</param-value>
+    </context-param>
     <servlet>
         <servlet-name>MainDashboard</servlet-name>
         <servlet-class>portal.decodes.MainDashboard</servlet-class>

@@ -32,7 +32,6 @@
 	type="text/css">
 <link href="../resources/css/select.dataTables.css" rel="stylesheet"
 	type="text/css">
-<!-- <link href="../resources/css/qaqc.css" rel="stylesheet" type="text/css">-->
 <link href="../resources/css/main.css" rel="stylesheet" type="text/css">
 
 <%-- /global stylesheets --%>
@@ -63,6 +62,13 @@
 <script src="../resources/js/lib/dom_utilities.js"></script>
 <script src="../resources/js/lib/opendcs_utilities.js"></script>
 <%-- /opendcs web files --%>
+
+<%-- Get API Path --%>
+<script>
+	window.API_BASE_URL = '<%= getServletConfig().getServletContext().getInitParameter("api_base_url") %>';
+	window.API_PORT = '<%= getServletConfig().getServletContext().getInitParameter("api_port") %>';
+</script>
+<%-- /get api path --%>
 
 <jsp:include page="/resources/jsp/modals/waiting.jsp" />
 <jsp:include page="/resources/jsp/modals/notification.jsp" />

@@ -472,12 +472,11 @@ function populatePlatformDialog(data)
         var token = sessionStorage.getItem("token");
         var params = {
                 "configid": data.configId,
-                "opendcs_api_call": "config",
                 "token": token
         }
 
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_BASE_URL}/config`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -662,9 +661,8 @@ function openPlatformDialog(rowClicked, copyRow)
         var token = sessionStorage.getItem("token");
         show_waiting_modal();
         params["token"] = token;
-        params["opendcs_api_call"] = "platform";
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_BASE_URL}/platform`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -986,7 +984,7 @@ function initializeEvents()
                 params["platformId"] = pId;
             }
             $.ajax({
-                url: `../api/gateway?token=${token}&opendcs_api_call=platform`,
+                url: `${window.API_BASE_URL}/platform`,
                 type: "POST",
                 headers: {     
                     "Content-Type": "application/json"
