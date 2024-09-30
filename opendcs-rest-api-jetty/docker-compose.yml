@@ -63,7 +63,7 @@ services:
       opendcs-api:
         condition: service_healthy
     user: root
-    command: ["/bin/sh", "-c", "touch /zap/wrk/test.txt && zap-api-scan.py -t http://opendcs-api:8000/open_api.json -f openapi -r zap_report.html -w zap_report.md"]
+    command: ["/bin/sh", "-c", "touch /zap/wrk/test.txt && zap-api-scan.py -I -t http://opendcs-api:8000/open_api.json -f openapi -r zap_report.html -w zap_report.md"]
     volumes:
       - ./build/test-results/owasp:/zap/wrk:rw
     networks:

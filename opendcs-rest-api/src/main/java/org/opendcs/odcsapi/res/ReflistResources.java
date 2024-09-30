@@ -18,6 +18,7 @@ package org.opendcs.odcsapi.res;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -37,6 +38,7 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
 /**
@@ -52,22 +54,18 @@ public class ReflistResources
 	@GET
 	@Path("reflists")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getRefLists(
-		@QueryParam("name") String listNames,
-		@QueryParam("token") String token
-		)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getRefLists(@QueryParam("name") String listNames) throws DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
 		
 		try (DbInterface dbi = new DbInterface(); 
 			ApiRefListDAO dao = new ApiRefListDAO(dbi))
 		{
 			HashMap<String, ApiRefList> ret = dao.getAllRefLists();
 			ArrayList<String> searches = getSearchTerms(listNames);
-			if (searches.size() > 0)
+			if (!searches.isEmpty())
 			{
-				ArrayList<String> toRm = new ArrayList<String>();
+				ArrayList<String> toRm = new ArrayList<>();
 			nextName:
 				for(String rlname : ret.keySet())
 				{
@@ -88,14 +86,9 @@ public class ReflistResources
 	@Path("reflist")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response postRefList(@QueryParam("token") String token, ApiRefList reflist)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response postRefList(ApiRefList reflist) throws DbException
 	{
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		
-		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();
 			ApiRefListDAO reflistDAO = new ApiRefListDAO(dbi))
 		{
@@ -107,14 +100,9 @@ public class ReflistResources
 	@Path("reflist")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response deleReflist(
-		@QueryParam("token") String token, 
-		@QueryParam("reflistid") Long reflistId)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response deleReflist(@QueryParam("reflistid") Long reflistId) throws DbException
 	{
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
 		
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();
@@ -128,13 +116,9 @@ public class ReflistResources
 	@GET
 	@Path("seasons")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getSeasons(
-		@QueryParam("token") String token
-		)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getSeasons() throws WebAppException, DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		try (DbInterface dbi = new DbInterface(); 
 			ApiRefListDAO dao = new ApiRefListDAO(dbi))
 		{
@@ -145,14 +129,10 @@ public class ReflistResources
 	@GET
 	@Path("season")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getSeason(
-		@QueryParam("token") String token,
-		@QueryParam("abbr") String abbr
-		)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getSeason(@QueryParam("abbr") String abbr)
 		throws WebAppException, DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		try (DbInterface dbi = new DbInterface(); 
 			ApiRefListDAO dao = new ApiRefListDAO(dbi))
 		{
@@ -164,15 +144,10 @@ public class ReflistResources
 	@Path("season")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response postSeason(@QueryParam("token") String token, 
-		@QueryParam("fromabbr") String fromAbbr, ApiSeason season)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response postSeason(@QueryParam("fromabbr") String fromAbbr, ApiSeason season)
 		throws WebAppException, DbException
 	{
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		
-		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();
 			ApiRefListDAO reflistDAO = new ApiRefListDAO(dbi))
 		{
@@ -187,14 +162,10 @@ public class ReflistResources
 	@Path("season")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response deleteSeason(@QueryParam("token") String token, 
-		@QueryParam("abbr") String abbr)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response deleteSeason(@QueryParam("abbr") String abbr)
 		throws WebAppException, DbException
 	{
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		
 		if (abbr == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, "Provide 'abbr' argument to delete a season.");
 		
@@ -213,17 +184,17 @@ public class ReflistResources
 	 * Parans may also be square brackets.
 	 * Parens may be omitted. E.g. one,two,three
 	 * Terms are optionally enclosed in quotes.
-	 * @param arg
+	 * @param theArg
 	 * @return ArrayList of search terms. Empty if empty string.
 	 */
 	private ArrayList<String> getSearchTerms(String theArg)
 	{
-		ArrayList<String> ret = new ArrayList<String>();
+		ArrayList<String> ret = new ArrayList<>();
 		
 		if (theArg == null)
 			return ret;
 		theArg = theArg.trim();
-		if (theArg.length() == 0)
+		if (theArg.isEmpty())
 			return ret;
 		
 		if (theArg.charAt(0) == '[' || theArg.charAt(0) == '(')
@@ -288,7 +259,7 @@ public class ReflistResources
 	
 	/**
 	 * Pass string that has been trimmed to start just AFTER the open bracket.
-	 * @param s
+	 * @param arg
 	 * @return the index of the close bracket or length of string if not found.
 	 */
 	private int findCloseBracket(String arg)

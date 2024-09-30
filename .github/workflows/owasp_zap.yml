@@ -9,7 +9,7 @@ on:
 jobs:
   owasp-zap:
     name: Analyze with OWASP Zap API
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4.1.7
@@ -24,11 +24,17 @@ jobs:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+      - name: Verify Docker Compose installation
+        run: docker-compose --version
       - name: Run OWASP Zap
-        run: ./gradlew runOwaspZap
+        run: ./gradlew runOwaspZap --stacktrace
       - name: docker-compose down
         if: always()
-        run: ./gradlew stopOwaspZap
+        run: ./gradlew stopOwaspZap --stacktrace
       - name: Trim Summary Report
         run: |
           sudo sed '/## Alert Detail/Q' ./opendcs-rest-api-jetty/build/test-results/owasp/zap_report.md > ./zap_report_summary.md

@@ -31,7 +31,6 @@ public class ApiCmdLineArgs
 	private String keyStorePassword;
 
 	private String decodesPropFile = "$DCSTOOL_USERDIR/user.properties";
-	private boolean secureMode = false;
 	private String corsFile = "$DCSTOOL_HOME/opendcs_api_cors.cfg";
 	
 	private enum State
@@ -107,8 +106,6 @@ public class ApiCmdLineArgs
 					if (arg.length() > 2)
 						splitArg = arg.substring(2);
 				}
-				else if (arg.startsWith("-s"))
-					secureMode = true;
 				else
 					throw new StartException("Unknown argument '" + arg + "'. Cannot start.");
 				break;
@@ -251,11 +248,6 @@ public class ApiCmdLineArgs
 	public void setCorsFile(String corsFile)
 	{
 		this.corsFile = corsFile;
-	}
-	
-	public boolean isSecureMode()
-	{
-		return secureMode;
 	}
 
 }

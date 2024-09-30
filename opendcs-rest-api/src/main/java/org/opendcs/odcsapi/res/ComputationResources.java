@@ -16,9 +16,9 @@
 package org.opendcs.odcsapi.res;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -37,20 +37,20 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
 @Path("/")
-public class ComputationResrouces
+public class ComputationResources
 {
 	@Context HttpHeaders httpHeaders;
 	
 	@GET
 	@Path("computationrefs")
 	@Produces(MediaType.APPLICATION_JSON)
- 	//public ArrayList<ApiComputationRef> getComputationRefs(@QueryParam("token") String token,
-	public Response getComputationRefs(@QueryParam("token") String token,
-		@QueryParam("site") String site,
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getComputationRefs(@QueryParam("site") String site,
 		@QueryParam("algorithm") String algorithm,
 		@QueryParam("datatype") String datatype,
 		@QueryParam("group") String group,
@@ -59,14 +59,10 @@ public class ComputationResrouces
 		@QueryParam("interval") String interval)
 		throws WebAppException, DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		Logger.getLogger(ApiConstants.loggerName).fine("getComputationRefs");
 		try (DbInterface dbi = new DbInterface();
 			ApiComputationDAO dao = new ApiComputationDAO(dbi))
 		{
-			//return Response.ok(dao.getComputationRefs(site, algorithm, datatype, group,
-			//	process, enabled, interval)).header("X-Content-Type-Options", "nosniff").build();
 			return ApiHttpUtil.createResponse(dao.getComputationRefs(site, algorithm, datatype, group,
 					process, enabled, interval));
 		}
@@ -75,14 +71,10 @@ public class ComputationResrouces
 	@GET
 	@Path("computation")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getComputation(
-		@QueryParam("computationid") Long compId,
-		@QueryParam("token") String token
-		)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getComputation(@QueryParam("computationid") Long compId)
 		throws WebAppException, DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		if (compId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, 
 				"Missing required computationid parameter.");
@@ -101,25 +93,17 @@ public class ComputationResrouces
 	@Path("computation")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response postComputation(@QueryParam("token") String token, 
-		ApiComputation comp)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response postComputation(ApiComputation comp)
 		throws WebAppException, DbException, SQLException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("post comp received comp " + comp.getName()
 			+ " with ID=" + comp.getComputationId());
 		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		
 		try (DbInterface dbi = new DbInterface();
 			ApiComputationDAO dao = new ApiComputationDAO(dbi))
 		{
 			return ApiHttpUtil.createResponse(dao.writeComputation(comp));
-		}
-		catch(WebAppException e)
-		{
-			throw e;
 		}
 	}
 
@@ -127,76 +111,20 @@ public class ComputationResrouces
 	@Path("computation")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response deleteComputation(
-		@QueryParam("token") String token, 
-		@QueryParam("computationid") Long computationId)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response deleteComputation(@QueryParam("computationid") Long computationId) throws DbException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine(
-			"DELETE computation received computationId=" + computationId + ", token=" + token);
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+			"DELETE computation received computationId=" + computationId);
 		
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();
 			ApiComputationDAO dao = new ApiComputationDAO(dbi))
 		{
 			dao.deleteComputation(computationId);
-			//return Response.status(HttpServletResponse.SC_OK).entity(
-			//		"Computation with ID " + computationId + " deleted").build();
 			return ApiHttpUtil.createResponse("Computation with ID " + computationId + " deleted");
 
 		}
 	}
-	/*
-	@POST
-	@Path("resolvecomp")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response resolveComp(@QueryParam("token") String token, 
-		ApiComputation comp)
-		throws WebAppException, DbException
-	{
-		Logger.getLogger(ApiConstants.loggerName).fine("resolve comp " + comp.getName());
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		
-		try (DbInterface dbi = new DbInterface())
-		{
-			CompRunner compRunner = new CompRunner();
-			return ApiHttpUtil.createResponse(compRunner.resolveCompInputs(comp, dbi));
-		}
-		catch(WebAppException e)
-		{
-			throw e;
-		}
-	}
-	*/
-	/*
-	@POST
-	@Path("comptest")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response testComp(@QueryParam("token") String token, 
-		ApiCompTestRequest req)
-		throws WebAppException, DbException
-	{
-		Logger.getLogger(ApiConstants.loggerName).fine("comp test " + req.getComputation().getName());
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		
-		try (DbInterface dbi = new DbInterface())
-		{
-			CompRunner compRunner = new CompRunner();
-			return ApiHttpUtil.createResponse(compRunner.testComp(req, dbi));
-		}
-	}
-	*/
 }
 

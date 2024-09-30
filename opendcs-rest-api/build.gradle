@@ -3,6 +3,7 @@ plugins {
     id "opendcs-rest-api.deps-conventions"
     id "opendcs-rest-api.publishing-conventions"
     id "war"
+    id 'com.bmuschko.tomcat' version '2.7.0'
 }
 
 configurations {
@@ -17,11 +18,26 @@ dependencies {
     implementation(libs.servlet.api)
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
+    implementation(libs.nimbus)
+    implementation(libs.jwt)
     implementation(libs.jersey.hk2)
     implementation(libs.slf4j.jdk)
     runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(libs.postgresql)
     webjars(libs.swagger.ui)
+    testImplementation(libs.jersey.test)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.inline)
+    testRuntimeOnly(libs.byte.buddy)
+    testImplementation(libs.mockito.junit.jupiter)
+    dependencies {
+    def tomcatVersion = '9.0.30'
+    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
+            "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}",
+            "org.apache.tomcat:tomcat-jdbc:${tomcatVersion}"
+    }
+    compileOnly(libs.auto.service)
+    annotationProcessor(libs.auto.service)
 }
 
 task extractWebJars(type: Copy) {
@@ -50,6 +66,7 @@ jar {
 
 war {
     dependsOn extractWebJars
+    from 'src/main/webapp'
 }
 
 publishing {
@@ -68,3 +85,11 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
         }
     }
 }
+
+tomcat {
+    httpPort = 7010
+    contextPath = '/odcsapi'
+    httpProtocol = 'org.apache.coyote.http11.Http11Nio2Protocol'
+    ajpProtocol  = 'org.apache.coyote.ajp.AjpNio2Protocol'
+}
+[tomcatRun, tomcatRunWar]*.configFile = file('src/test/resources/context.xml')

@@ -16,9 +16,11 @@
 package org.opendcs.odcsapi.res;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -38,23 +40,22 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.sec.UserToken;
+import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
 @Path("/")
 public class RoutingResources
 {
-	@Context HttpHeaders httpHeaders;
+	@Context private HttpServletRequest request;
+	@Context private HttpHeaders httpHeaders;
 
 	@GET
 	@Path("routingrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getRoutingRefs(@QueryParam("token") String token)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getRoutingRefs() throws DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		Logger.getLogger(ApiConstants.loggerName).fine("getRoutingRefs");
 		try (DbInterface dbi = new DbInterface();
 			ApiRoutingDAO dao = new ApiRoutingDAO(dbi))
@@ -66,13 +67,10 @@ public class RoutingResources
 	@GET
 	@Path("routing")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getRouting(
-		@QueryParam("routingid") Long routingId,
-		@QueryParam("token") String token
-		)
-		throws WebAppException, DbException, SQLException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getRouting(@QueryParam("routingid") Long routingId)
+			throws WebAppException, DbException, SQLException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
 		
 		if (routingId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, 
@@ -90,16 +88,12 @@ public class RoutingResources
 	@Path("routing")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response postRouting(@QueryParam("token") String token, 
-		ApiRouting routing)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response postRouting(ApiRouting routing)
 		throws WebAppException, DbException, SQLException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("post routing received routing " + routing.getName() 
 			+ " with ID=" + routing.getRoutingId());
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
 		
 		try (DbInterface dbi = new DbInterface();
 				ApiRoutingDAO dao = new ApiRoutingDAO(dbi))
@@ -113,18 +107,11 @@ public class RoutingResources
 	@Path("routing")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response deleteRouting(
-		@QueryParam("token") String token, 
-		@QueryParam("routingid") Long routingId)
+	public Response deleteRouting(@QueryParam("routingid") Long routingId)
 		throws WebAppException, DbException, SQLException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(
-			"DELETE routing received routingId=" + routingId
-			+ ", token=" + token);
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+		Logger.getLogger(ApiConstants.loggerName)
+				.fine("DELETE routing received routingId=" + routingId);
 		
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();
@@ -138,11 +125,10 @@ public class RoutingResources
 	@GET
 	@Path("schedulerefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getScheduleRefs(@QueryParam("token") String token)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getScheduleRefs()
+		throws DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		Logger.getLogger(ApiConstants.loggerName).fine("getScheduleRefs");
 		try (DbInterface dbi = new DbInterface();
 			ApiRoutingDAO dao = new ApiRoutingDAO(dbi))
@@ -154,14 +140,10 @@ public class RoutingResources
 	@GET
 	@Path("schedule")
 	@Produces(MediaType.APPLICATION_JSON)
- 	public Response getSchedule(
-		@QueryParam("scheduleid") Long scheduleId,
-		@QueryParam("token") String token
-		)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+ 	public Response getSchedule(@QueryParam("scheduleid") Long scheduleId)
 		throws WebAppException, DbException, SQLException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		if (scheduleId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, 
 				"Missing required scheduleid parameter.");
@@ -178,16 +160,12 @@ public class RoutingResources
 	@Path("schedule")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response postSchedule(@QueryParam("token") String token, 
-		ApiScheduleEntry schedule)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response postSchedule(ApiScheduleEntry schedule)
 		throws WebAppException, DbException, SQLException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("post schedule received sched " + schedule.getName() 
 			+ " with ID=" + schedule.getSchedEntryId());
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
 		
 		try (DbInterface dbi = new DbInterface();
 				ApiRoutingDAO dao = new ApiRoutingDAO(dbi))
@@ -201,18 +179,12 @@ public class RoutingResources
 	@Path("schedule")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response deleteSchedule(
-		@QueryParam("token") String token, 
-		@QueryParam("scheduleid") Long scheduleId)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response deleteSchedule(@QueryParam("scheduleid") Long scheduleId)
 		throws WebAppException, DbException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(
-			"DELETE schedule received scheduleId=" + scheduleId
-			+ ", token=" + token);
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+		Logger.getLogger(ApiConstants.loggerName)
+				.fine("DELETE schedule received scheduleId=" + scheduleId);
 		
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();
@@ -227,11 +199,10 @@ public class RoutingResources
 	@GET
 	@Path("routingstatus")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getRoutingStats(@QueryParam("token") String token)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getRoutingStats()
 		throws WebAppException, DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		Logger.getLogger(ApiConstants.loggerName).fine("getRoutingStats");
 		try (DbInterface dbi = new DbInterface();
 			ApiRoutingDAO dao = new ApiRoutingDAO(dbi))
@@ -243,12 +214,10 @@ public class RoutingResources
 	@GET
 	@Path("routingexecstatus")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getRoutingExecStatus(@QueryParam("token") String token,
-		@QueryParam("scheduleentryid") Long scheduleEntryId)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getRoutingExecStatus(@QueryParam("scheduleentryid") Long scheduleEntryId)
 		throws WebAppException, DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		if (scheduleEntryId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, "missing required scheduleentryid argument.");
 		
@@ -263,21 +232,17 @@ public class RoutingResources
 	@GET
 	@Path("dacqevents")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getDacqEvents(@QueryParam("token") String token,
-		@QueryParam("appid") Long appId, @QueryParam("routingexecid") Long routingExecId,
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response getDacqEvents(@QueryParam("appid") Long appId, @QueryParam("routingexecid") Long routingExecId,
 		@QueryParam("platformid") Long platformId, @QueryParam("backlog") String backlog)
-		throws WebAppException, DbException
+		throws DbException
 	{
-		UserToken userToken = DbInterface.getTokenManager().getToken(httpHeaders, token);
-		if (userToken == null)
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		
 		Logger.getLogger(ApiConstants.loggerName).fine("getDacqEvents");
 		try (DbInterface dbi = new DbInterface();
 			ApiRoutingDAO dao = new ApiRoutingDAO(dbi))
 		{
-			return ApiHttpUtil.createResponse(dao.getDacqEvents(appId, routingExecId, platformId, backlog, userToken));
+			HttpSession session = request.getSession(true);
+			return ApiHttpUtil.createResponse(dao.getDacqEvents(appId, routingExecId, platformId, backlog, session));
 		}
 	}
 }
