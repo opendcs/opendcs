@@ -476,7 +476,7 @@ function populatePlatformDialog(data)
         }
 
         $.ajax({
-            url: `${window.API_BASE_URL}/config`,
+            url: `${window.API_URL}/config`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -662,7 +662,7 @@ function openPlatformDialog(rowClicked, copyRow)
         show_waiting_modal();
         params["token"] = token;
         $.ajax({
-            url: `${window.API_BASE_URL}/platform`,
+            url: `${window.API_URL}/platform`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -984,7 +984,7 @@ function initializeEvents()
                 params["platformId"] = pId;
             }
             $.ajax({
-                url: `${window.API_BASE_URL}/platform`,
+                url: `${window.API_URL}/platform`,
                 type: "POST",
                 headers: {     
                     "Content-Type": "application/json"

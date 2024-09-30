@@ -77,13 +77,10 @@ var presentationGroupRefs = {};
  */
 function getRouting()
 {
-    var params = {
-            "opendcs_api_call": "routingrefs"
-    };
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/routingrefs`,
         type: "GET",
-        data: params,
+        data: {},
         success: function(response) {
             var allRouting = response;
             updateRoutingTable(allRouting);
@@ -213,10 +210,9 @@ function openRoutingDialog(rowClicked, copyRow)
     if (data != null)
     {
         params["routingid"] = data[0];
-        params["opendcs_api_call"] = "routing";
         $.ajax({
             //url: "/OHydroJson/routing",
-            url: `../api/gateway`,
+            url: `${window.API_URL}/routing`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -760,10 +756,8 @@ function openSaveModal()
             params["routingId"] = parseInt(routingId, 10);
         }
 
-        var token = sessionStorage.getItem("token");
-        var url = `../api/gateway?token=${token}&opendcs_api_call=routing`;
         $.ajax({
-            url: url,
+            url: `${window.API_URL}/routing`,
             type: "POST",
             headers: {     
                 "Content-Type": "application/json"   
@@ -901,7 +895,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
     $.ajax({
-        url: `../api/gateway?opendcs_api_call=propspecs`,
+        url: `${window.API_URL}/propspecs`,
         type: "GET",
         headers: {     
             "Content-Type": "application/json"
@@ -919,11 +913,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/reflists`,
         type: "GET",
         data: {
-            "name": "outputformat",
-            "opendcs_api_call": "reflists"
+            "name": "outputformat"
         },
         success: function(response) {
 
@@ -943,11 +936,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/presentationrefs`,
         type: "GET",
         data: {
-            "name": "outputformat",
-            "opendcs_api_call": "presentationrefs"
+            "name": "outputformat"
         },
         success: function(response) {
 
@@ -969,11 +961,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/datasourcerefs`,
         type: "GET",
-        data: {
-            "opendcs_api_call": "datasourcerefs"
-        },
+        data: {},
         success: function(response) {
             for (var key in response)
             {
@@ -1137,8 +1127,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         platformSelectionTable2.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
             var data = this.data();
-            // ... do something with data(), or this.node(), etc
-            if (platformIds.indexOf(data[0].toString()) != -1)
+            //Sometimes the index is a string, while other times it is an
+            //integer.  TODO: Figure out why this is the case.
+            if (platformIds.indexOf(data[0]) !== -1
+                || platformIds.indexOf(data[0].toString()) !== -1)
     		{
         		this.select();
     		}

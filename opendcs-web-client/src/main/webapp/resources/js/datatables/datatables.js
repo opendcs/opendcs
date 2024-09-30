@@ -876,10 +876,9 @@ class ApiData {
                     "ajaxObject": null
             }
             $.ajax({
-                url: `../api/gateway`,
+                url: `${window.API_URL}/${opendcsApiCall}`,
                 type: "GET",
                 data: {
-                    "opendcs_api_call": opendcsApiCall,
                     "class": propspec
                 },
                 success: onSuccess,
@@ -949,11 +948,9 @@ class ApiData {
                     "ajaxObject": null
             }
             $.ajax({
-                url: `../api/gateway`,
+                url: `${window.API_URL}/${opendcsApiCall}`,
                 type: "GET",
-                data: {
-                    "opendcs_api_call": opendcsApiCall
-                },
+                data: {},
                 success: fullOnSuccess,
                 error: fullOnError
             });

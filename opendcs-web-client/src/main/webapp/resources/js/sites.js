@@ -255,11 +255,10 @@ function openSaveModal()
             var sn = siteNamesData[x];
             params["sitenames"][sn[0]] = sn[1];
         }
-        var token = sessionStorage.getItem("token");
-        var url = `../api/gateway?token=${token}&opendcs_api_call=site`
-            show_waiting_modal();
+
+                show_waiting_modal();
         $.ajax({
-            url: url,
+            url: `${window.API_URL}/site`,
             type: "POST",
             headers: {     
                 "Content-Type": "application/json"   
@@ -399,15 +398,12 @@ function openSiteDialog(rowClicked)
     if (rowClicked != null)
     {
         var siteData = sitesTable.row(this).data();
-        var token = sessionStorage.getItem("token");
         params = {
-                "siteid": siteData[0],
-                "token": token,
-                "opendcs_api_call": "site"
+                "siteid": siteData[0]
         };
         show_waiting_modal();
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/site`,
             type: "GET",
             data: params,
             success: function(response) {

@@ -131,13 +131,10 @@ var recordingModeRefs = {
  */
 function getConfigs()
 {
-    var params = {
-            "opendcs_api_call": "configrefs"
-    };
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/configrefs`,
         type: "GET",
-        data: params,
+        data: {},
         success: function(response) {
             allConfigs = response;
             updateConfigsTable(response);
@@ -311,7 +308,6 @@ function openConfigDialog(rowClicked, isCopyRow)
             editingConfig = false;
         }
         var data = configsTable.row(thisObj).data();
-        var token = sessionStorage.getItem("token");
 
         show_waiting_modal();
 
@@ -335,11 +331,9 @@ function openConfigDialog(rowClicked, isCopyRow)
         }
 
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/config`,
             type: "GET",
             data: {
-                "opendcs_api_call": "config",
-                "token": token,
                 "configid": configId
             },
             success: function(response) {
@@ -844,7 +838,7 @@ document.addEventListener('DOMContentLoaded', function() {
         openDecodingScriptDialog(null);
     });
     $.ajax({
-        url: `../api/gateway?opendcs_api_call=propspecs`,
+        url: `${window.API_URL}/propspecs`,
         type: "GET",
         headers: {     
             "Content-Type": "application/json"
@@ -869,10 +863,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     $.ajax({
-        url: `../api/gateway`,
-        data: {
-            "opendcs_api_call": "platformrefs"
-        },
+        url: `${window.API_URL}/platformrefs`,
+        data: {},
         type: "GET",
         success: function(response) {
             platformRefs = response;
@@ -1150,11 +1142,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 delete saveData["configId"];
             }
 
-
-            var token = sessionStorage.getItem("token");
-
             $.ajax({
-                url: `../api/gateway?token=${token}&opendcs_api_call=config`,
+                url: `${window.API_URL}/config`,
                 type: "POST",
                 headers: {     
                     "Content-Type": "application/json"
@@ -1263,15 +1252,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     });
 
-    var token = sessionStorage.getItem("token");
-
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/reflists`,
         type: "GET",
         data: {
-            "opendcs_api_call": "reflists",
-            "name": "DataTypeStandard",
-            "token": token
+            "name": "DataTypeStandard"
         },
         success: function(response) {
             var dataTypeStandards = response.DataTypeStandard.items;
@@ -1292,13 +1277,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/reflists`,
         crossDomain: true,
         type: "GET",
         data: {
-            "opendcs_api_call": "reflists",
-            "name": "TransportMediumType",
-            "token": token
+            "name": "TransportMediumType"
         },
         success: function(response) {
             allTransportMediumTypes = response.TransportMediumType.items;
@@ -1317,19 +1300,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/tsdb_properties`,
         type: "GET",
-        data: {
-            "opendcs_api_call": "tsdb_properties",
-        },
+        data: {},
         success: function(response) {
             tsdbProperties = response;
             $.ajax({
-                url: `../api/gateway`,
+                url: `${window.API_URL}/datasourcerefs`,
                 type: "GET",
-                data: {
-                    "opendcs_api_call": "datasourcerefs"
-                },
+                data: {},
                 success: function(response) {
                     for (var key in response)
                     {
@@ -1376,12 +1355,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         show_waiting_modal();
 
-        var token = sessionStorage.getItem("token");
-
         var tsdbProps = {"api.datasource": $( "#dataSourceSelect option:selected" ).text()};
 
         $.ajax({
-            url: `../api/gateway?opendcs_api_call=tsdb_properties&token=${token}`,
+            url: `${window.API_URL}/tsdb_properties`,
             type: "POST",
             headers: {     
                 "Content-Type": "application/json"
@@ -1391,13 +1368,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 var token = sessionStorage.getItem("token");
                 var tmId = $("#dcpAddressTextbox").val();
                 var params = {
-                        "tmid": tmId,
-                        "opendcs_api_call": "message",
-                        "token": token
+                        "tmid": tmId
                 };
                 var token = sessionStorage.getItem("token");
                 $.ajax({
-                    url: `../api/gateway`,
+                    url: `${window.API_URL}/message`,
                     type: "GET",
                     data: params,
                     success: function(response) {
@@ -1449,7 +1424,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var token = sessionStorage.getItem("token");
 
         $.ajax({
-            url: `../api/gateway?token=${token}&script=${clickedScriptName}&opendcs_api_call=decode`,
+            url: `${window.API_URL}/decode?script=${clickedScriptName}`,
             type: "POST",
             headers: {     
                 "Content-Type": "application/json"

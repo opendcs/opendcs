@@ -50,11 +50,7 @@
 					            <input type="password" name="password" class="form-control" placeholder="Password" maxlength="150" required id="id_password">
 					            
 					          </p>
-					        
-					        <p>
-					          
-					        </p>
-					        <button class="btn btn-primary" id="loginButton">Login</button>
+					        <button class="btn btn-primary mb-2" id="loginButton">Login</button>
 					
 					
 					    <!-- Remind Passowrd -->

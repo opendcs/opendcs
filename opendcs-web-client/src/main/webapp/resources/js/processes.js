@@ -194,9 +194,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     show_waiting_modal();
 
-                    var token = sessionStorage.getItem("token");
                     $.ajax({
-                        url: `../api/gateway?token=${token}&opendcs_api_call=app`,
+                        url: `${window.API_URL}/app`,
                         type: "POST",
                         headers: {     
                             "Content-Type": "application/json"
@@ -290,12 +289,11 @@ function openMainTableDialog(rowClicked, copy)
         }
         var appId = clickedData[0];
         var params = {
-                "opendcs_api_call": "app",
                 "appid": appId,
                 "copy": copy
         }
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/app`,
             type: "GET",
             data: params,
             success: function(response) {

@@ -62,7 +62,7 @@ function verifyCredentials()
     }
 
     $.ajax({
-        url: `${window.API_BASE_URL}/check`,
+        url: `${window.API_URL}/check`,
         type: "GET",
         data: params,
         dataType_json: "json",

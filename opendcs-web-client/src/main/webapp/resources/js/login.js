@@ -66,7 +66,7 @@ function login()
             "password": password
     };
     $.ajax({
-        url: `${window.API_BASE_URL}/credentials`,
+        url: `${window.API_URL}/credentials`,
         type: "POST",
         data: JSON.stringify(params),
         headers: {

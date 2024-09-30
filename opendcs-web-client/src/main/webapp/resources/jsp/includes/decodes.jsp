@@ -65,8 +65,9 @@
 
 <%-- Get API Path --%>
 <script>
-	window.API_BASE_URL = '<%= getServletConfig().getServletContext().getInitParameter("api_base_url") %>';
-	window.API_PORT = '<%= getServletConfig().getServletContext().getInitParameter("api_port") %>';
+	var origin = window.location.origin;
+	var apiBasePath = `<%= getServletConfig().getServletContext().getInitParameter("api_base_path") %>`;
+	window.API_URL = new URL(apiBasePath, origin).href;
 </script>
 <%-- /get api path --%>
 

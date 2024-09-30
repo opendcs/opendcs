@@ -244,11 +244,10 @@ function populateNetlistDetails(netlistId)
     if (netlistId != -1) 
     {
         var params = {
-                "opendcs_api_call": "netlist",
                 "netlistid": netlistId
         };
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/netlist`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -455,7 +454,6 @@ function initializeEvents()
                 "bg-info", 
                 function() {
 
-            var token = sessionStorage.getItem("token");
             var tsm = $("#transportMediumTypeSelectbox").val();
             var params = {
                     "name": $("#netlistName").val(),
@@ -588,7 +586,7 @@ function initializeEvents()
             }
 
             $.ajax({
-                url: `../api/gateway?opendcs_api_call=netlist&token=${token}`,
+                url: `${window.API_URL}/netlist`,
                 type: "POST",
                 headers: {     
                     "Content-Type": "application/json"   

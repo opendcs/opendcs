@@ -28,8 +28,8 @@
         <welcome-file>default.jsp</welcome-file>
     </welcome-file-list>
     <context-param>
-        <param-name>api_base_url</param-name>
-        <param-value>http://opendcsapi:8080/odcsapi</param-value>
+        <param-name>api_base_path</param-name>
+        <param-value>odcsapi</param-value>
     </context-param>
     <servlet>
         <servlet-name>MainDashboard</servlet-name>
