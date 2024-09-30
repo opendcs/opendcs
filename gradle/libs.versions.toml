@@ -3,13 +3,13 @@ opendcs = "7.0.12"
 
 jetty = "9.4.53.v20231009"
 jetty-jsp = "9.2.30.v20200428"
-javax-servlet-jsp = "2.3.0"
+javax-servlet-jsp = "2.3.3"
 servlet-api = "4.0.1" #Updating this further will require a change to the jakarta namespace.
-slf4j = "2.0.10"
+slf4j = "2.0.16"
 jersey = "2.40"
-postgresql = "42.7.2"
-swagger = "2.2.19"
-swagger-ui = "5.10.3"
+postgresql = "42.7.4"
+swagger = "2.2.24"
+swagger-ui = "5.17.14"
 glassfish-jaxb = "2.3.3"
 websocket = "1.1"
 javax-validation = "2.0.1.Final"
@@ -18,9 +18,9 @@ jwt = "4.4.0"
 auto-service = "1.1.1"
 
 #Test Dependencies
-junit = "5.10.1"
+junit = "5.11.1"
 mockito = "3.12.4"
-byte-buddy = "1.15.1"
+byte-buddy = "1.15.3"
 
 [libraries]
 opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }

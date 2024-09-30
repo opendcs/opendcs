@@ -20,7 +20,7 @@ plugins {
     id "opendcs-rest-api.java-conventions"
     id "opendcs-rest-api.deps-conventions"
     id "opendcs-rest-api.publishing-conventions"
-    id "de.undercouch.download" version "5.5.0"
+    id "de.undercouch.download" version "5.6.0"
 }
 
 dependencies {
