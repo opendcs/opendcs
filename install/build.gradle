@@ -8,13 +8,14 @@ configurations
 {
     annotations
     opendcs
-    opendcs_deps
+    docs
 }
 
 dependencies
 {
     annotations(project(":opendcs-annotations"))
     opendcs(project(":opendcs"))
+    docs(project(path: ":docs", configuration: 'docs'))
 }
 
 distributions
@@ -77,7 +78,11 @@ distributions
                 from configurations.annotations
                 from configurations.opendcs
                 exclude "**/opendcs-${version}.jar"
-            }            
+            }
+            into('doc')
+            {
+                from configurations.docs
+            }
         }
     }
 }
