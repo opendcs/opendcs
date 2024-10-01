@@ -33,22 +33,6 @@ repositories {
                 artifact()
             }
     }
-    ivy
-    {
-        url "https://github.com"
-        metadataSources
-        {
-            artifact()
-        }
-        patternLayout
-        {
-            artifact "[organisation]/[module]/releases/download/[revision]/[artifact].[ext]"
-        }
-        content
-        {
-            includeGroup "lobobrowser"
-        }
-    }
 }
 
 eclipse {
@@ -75,8 +59,14 @@ dependencies {
     pmd 'net.sourceforge.pmd:pmd-java8:6.55.0'
 }
 
-checkstyle {
+test
+{
+    useJUnitPlatform()
+}
 
+checkstyle {
+    configFile = file("${rootDir}/config/checkstyle.xml")
+    sourceSets = []
 }
 
 spotbugs {
@@ -116,3 +106,5 @@ task cpd {
         }
     }
 }
+tasks.findAll { task -> task.name.startsWith("spotbugs")}.each { task -> task.enabled = gradle.startParameter.taskNames.contains(task.name) }
+tasks.findAll { task -> task.name.startsWith("checkstyle")}.each { task -> task.enabled = gradle.startParameter.taskNames.contains(task.name) }
