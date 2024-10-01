@@ -1,0 +1,58 @@
+plugins
+{
+    id 'distribution'
+}
+
+
+distributions
+{
+    main
+    {
+        distributionBaseName = 'opendcs'
+        contents
+        {
+            exclude '**/scripts'
+            into('bin')
+            {
+                from ('src/main/dist/scripts')
+                
+                filePermissions
+                {
+                    user
+                    {
+                        write = false;
+                        execute = true
+                    }
+                    group
+                    {
+                        write = false;
+                        execute = true
+                    }
+                    other
+                    {
+                        read = true
+                        execute = true
+                    }
+                }
+            }
+            filePermissions
+                {
+                    user
+                    {
+                        write = false;
+                        read = true
+                    }
+                    group
+                    {
+                        write = false;
+                        read = true
+                    }
+                    other
+                    {
+                        read = true
+                        write = false
+                    }
+                }
+        }
+    }
+}
