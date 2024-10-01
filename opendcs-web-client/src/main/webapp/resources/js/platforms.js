@@ -469,10 +469,8 @@ function populatePlatformDialog(data)
         }
         $('#configSelectbox').trigger('change');
 
-        var token = sessionStorage.getItem("token");
         var params = {
-                "configid": data.configId,
-                "token": token
+                "configid": data.configId
         }
 
         $.ajax({
@@ -658,9 +656,7 @@ function openPlatformDialog(rowClicked, copyRow)
             $("#platformTitle").text(data[1]);
         }
 
-        var token = sessionStorage.getItem("token");
         show_waiting_modal();
-        params["token"] = token;
         $.ajax({
             url: `${window.API_URL}/platform`,
             type: "GET",
@@ -881,7 +877,6 @@ function initializeEvents()
                 `Are you sure you want to save the ${pn} platform?`, 
                 "bg-info", 
                 function() {
-            var token = sessionStorage.getItem("token");
             var sensorInfoData = sensorInformationTable.data();
             var platformSensors = [];
 

@@ -1351,7 +1351,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     $("#loadMessageButton").on("click", function(e) {
-        var token = sessionStorage.getItem("token");
 
         show_waiting_modal();
 
@@ -1365,12 +1364,10 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             data: JSON.stringify(tsdbProps),
             success: function(response) {
-                var token = sessionStorage.getItem("token");
                 var tmId = $("#dcpAddressTextbox").val();
                 var params = {
                         "tmid": tmId
                 };
-                var token = sessionStorage.getItem("token");
                 $.ajax({
                     url: `${window.API_URL}/message`,
                     type: "GET",
@@ -1421,7 +1418,6 @@ document.addEventListener('DOMContentLoaded', function() {
         var curScriptInfo = findObjectInListByPropValue(params.config.scripts, "name", $("#scriptNameTextbox").val());
         params["config"]["scripts"][curScriptInfo["index"]]["formatStatements"] = openDecodingJson["formatStatements"];
         params["config"]["scripts"][curScriptInfo["index"]]["scriptSensors"] = openDecodingJson["scriptSensors"];
-        var token = sessionStorage.getItem("token");
 
         $.ajax({
             url: `${window.API_URL}/decode?script=${clickedScriptName}`,

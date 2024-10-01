@@ -56,10 +56,7 @@ function initializeUserDropdown()
 function verifyCredentials()
 {
     console.log("Verifying token is valid.")
-    var token = sessionStorage.getItem("token");
-    var params = {
-            "token": token
-    }
+    var params = {};
 
     $.ajax({
         url: `${window.API_URL}/check`,
