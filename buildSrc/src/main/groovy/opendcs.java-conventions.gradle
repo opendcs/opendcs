@@ -6,34 +6,7 @@ plugins {
     id 'com.github.spotbugs'
 }
 
-repositories {
-    maven
-        {
-            url "https://www.hec.usace.army.mil/nexus/repository/maven-public"
-            content
-            {
-                includeGroupByRegex "mil.army.usace.hec.*"
-                includeGroupByRegex "org.jooq.pro"
-                excludeGroup "com.oracle"
-            }
-            metadataSources
-            {
-                mavenPom()
-                artifact()
-            }
-    }
-    mavenCentral() {
-            content
-            {
-                excludeGroupByRegex "mil.army.usace.hec.*"
-            }
-            metadataSources
-            {
-                mavenPom()
-                artifact()
-            }
-    }
-}
+
 
 eclipse {
     classpath {
