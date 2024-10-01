@@ -1,8 +1,21 @@
 plugins
 {
+    id 'opendcs.deps-conventions'
     id 'distribution'
 }
 
+configurations
+{
+    annotations
+    opendcs
+    opendcs_deps
+}
+
+dependencies
+{
+    annotations(project(":opendcs-annotations"))
+    opendcs(project(":opendcs"))
+}
 
 distributions
 {
@@ -20,7 +33,7 @@ distributions
                 {
                     user
                     {
-                        write = false;
+                        write = true;
                         execute = true
                     }
                     group
@@ -33,26 +46,38 @@ distributions
                         read = true
                         execute = true
                     }
+                }
+                from(configurations.opendcs)
+                {
+                    include "**/opendcs-${version}.jar"
+                    rename("opendcs-${version}.jar",'opendcs.jar')
                 }
             }
             filePermissions
+            {
+                user
                 {
-                    user
-                    {
-                        write = false;
-                        read = true
-                    }
-                    group
-                    {
-                        write = false;
-                        read = true
-                    }
-                    other
-                    {
-                        read = true
-                        write = false
-                    }
+                    write = false;
+                    read = true
                 }
+                group
+                {
+                    write = false;
+                    read = true
+                }
+                other
+                {
+                    read = true
+                    write = false
+                }
+            }
+
+            into('dep')
+            {
+                from configurations.annotations
+                from configurations.opendcs
+                exclude "**/opendcs-${version}.jar"
+            }            
         }
     }
 }
