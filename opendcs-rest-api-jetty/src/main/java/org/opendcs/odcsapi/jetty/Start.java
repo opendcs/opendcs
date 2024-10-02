@@ -25,7 +25,8 @@ import java.util.EnumSet;
 import java.util.Properties;
 import java.util.Scanner;
 
-import org.opendcs.odcsapi.start.StartException;
+import org.glassfish.jersey.servlet.ServletProperties;
+import org.opendcs.odcsapi.res.RestServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +80,6 @@ public class Start
 		LOGGER.info("Listening Https Port={}", apiCmdLineArgs.getHttpsPort());
 		LOGGER.info("Top Context={}", apiCmdLineArgs.getContext());
 		LOGGER.info("Cors File={}", apiCmdLineArgs.getCorsFile());
-		LOGGER.info("Secure Mode={}", apiCmdLineArgs.isSecureMode());
 
 		// Initialize the JETTY server and servlet holders.
 		org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
@@ -142,6 +142,7 @@ public class Start
 		serHol.setInitOrder(1);
 		serHol.setInitParameter("jersey.config.server.provider.packages",
 				"org.opendcs.odcsapi.res");
+		serHol.setInitParameter(ServletProperties.JAXRS_APPLICATION_CLASS, RestServices.class.getName());
 
 		// Get whatever is needed from decodes properties.
 		Properties decodesProps = new Properties();
@@ -165,7 +166,6 @@ public class Start
 				DbInterface.siteNameTypePreference = n;
 		}
 		ApiPropertiesUtil.copyProps(DbInterface.decodesProperties, decodesProps);
-		DbInterface.secureMode = apiCmdLineArgs.isSecureMode();
 
 		PGSimpleDataSource ds = new PGSimpleDataSource();
 		ds.setURL(dbUrl);

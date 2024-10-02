@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import javax.servlet.http.HttpSession;
+
 import org.opendcs.odcsapi.beans.ApiAppRef;
 import org.opendcs.odcsapi.beans.ApiDacqEvent;
 import org.opendcs.odcsapi.beans.ApiInterval;
@@ -40,7 +42,6 @@ import org.opendcs.odcsapi.beans.ApiScheduleEntryRef;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.sec.UserToken;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
 import org.opendcs.odcsapi.util.ApiTextUtil;
 
@@ -49,6 +50,7 @@ public class ApiRoutingDAO
 {
 	public static String module = "RoutingDAO";
 	public static final String evPriorities[] = { "DEBUG3", "DEBUG2", "DEBUG1", "INFO", "WARNING", "FAILURE", "FATAL" };
+	private static final String LAST_DACQ_ATTRIBUTE = "last-dacq-event-id";
 
 	public ApiRoutingDAO(DbInterface dbi)
 	{
@@ -761,7 +763,7 @@ public class ApiRoutingDAO
 	}
 	
 	public ArrayList<ApiDacqEvent> getDacqEvents(Long appId, Long routingExecId,
-		Long platformId, String backlog, UserToken userToken)
+		Long platformId, String backlog, HttpSession httpSession)
 		throws DbException
 	{
 		ArrayList<ApiDacqEvent> ret = new ArrayList<ApiDacqEvent>();
@@ -790,15 +792,16 @@ public class ApiRoutingDAO
 			c = "and";
 			args.add(routingExecId);
 		}
-		
+
 		if (backlog != null && backlog.trim().length() > 0)
 		{
 			if (backlog.equalsIgnoreCase("last"))
 			{
-				if (userToken.getLastDacqEventId() != null)
+				Object lastDacqEventId = httpSession.getAttribute(LAST_DACQ_ATTRIBUTE);
+				if (lastDacqEventId != null)
 				{	
 					q = q + " " + c + " DACQ_EVENT_ID > ?";
-					args.add(userToken.getLastDacqEventId());
+					args.add(lastDacqEventId);
 				}
 			}
 			else
@@ -824,7 +827,7 @@ public class ApiRoutingDAO
 								cal.add(cconst, -intv.getCalMultilier());
 								q = q + " " + c + " EVENT_TIME >= ?";
 								args.add(cal.getTimeInMillis());
-								userToken.setLastDacqEventId(null);
+								httpSession.removeAttribute(LAST_DACQ_ATTRIBUTE);
 							}
 							
 							break;
@@ -881,8 +884,10 @@ public class ApiRoutingDAO
 			throw new DbException(module, ex, msg);
 		}
 
-		if (ret.size() > 0)
-			userToken.setLastDacqEventId(ret.get(ret.size()-1).getEventId());
+		if (!ret.isEmpty())
+		{
+			httpSession.setAttribute(LAST_DACQ_ATTRIBUTE, ret.get(ret.size()-1).getEventId());
+		}
 		return ret;
 	}
 }

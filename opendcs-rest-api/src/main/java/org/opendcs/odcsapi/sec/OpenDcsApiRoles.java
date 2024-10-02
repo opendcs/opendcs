@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -13,29 +13,24 @@
  *  limitations under the License.
  */
 
-package org.opendcs.odcsapi.beans;
+package org.opendcs.odcsapi.sec;
 
-public class TestBean
+public enum OpenDcsApiRoles
 {
-	private int value = 1;
-	private String name = "two";
-		
-	public int getValue()
+
+	ODCS_API_GUEST(AuthorizationCheck.ODCS_API_GUEST),
+	ODCS_API_USER(AuthorizationCheck.ODCS_API_USER),
+	ODCS_API_ADMIN(AuthorizationCheck.ODCS_API_ADMIN);
+
+	private final String role;
+
+	OpenDcsApiRoles(String role)
 	{
-		return value;
+		this.role = role;
 	}
-	public void setValue(int value)
+
+	public String getRole()
 	{
-		this.value = value;
+		return role;
 	}
-	public String getName()
-	{
-		return name;
-	}
-	public void setName(String name)
-	{
-		this.name = name;
-	}
-	
-	
 }

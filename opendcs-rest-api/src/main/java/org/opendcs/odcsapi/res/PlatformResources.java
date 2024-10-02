@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -39,6 +40,7 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
@@ -50,16 +52,11 @@ public class PlatformResources
 	@GET
 	@Path("platformrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response gePlatformRefs(
-		@QueryParam("token") String token,
-		@QueryParam("tmtype") String tmtype
-		)
-		throws WebAppException, DbException, SQLException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response gePlatformRefs(@QueryParam("tmtype") String tmtype)
+		throws DbException, SQLException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
-		HashMap<String, ApiPlatformRef> ret = new HashMap<String, ApiPlatformRef>();
-		
+		HashMap<String, ApiPlatformRef> ret = new HashMap<>();
 		Logger.getLogger(ApiConstants.loggerName).fine("getPlatforms, tmtype=" + tmtype);
 		try (DbInterface dbi = new DbInterface();
 			ApiPlatformDAO platformDAO = new ApiPlatformDAO(dbi))
@@ -68,23 +65,17 @@ public class PlatformResources
 			for(ApiPlatformRef ps : platSpecs)
 				ret.put(ps.getName(), ps);
 		}
-		
 		Logger.getLogger(ApiConstants.loggerName).fine("getPlatforms returning " + ret.size() + " objects.");
-		
 		return ApiHttpUtil.createResponse(ret);
 	}
 	
 	@GET
 	@Path("platform")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getPlatform(
-		@QueryParam("platformid") Long platformId,
-		@QueryParam("token") String token
-		)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getPlatform(@QueryParam("platformid") Long platformId)
 		throws WebAppException, DbException, SQLException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		if (platformId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, 
 				"Missing required platformid parameter.");
@@ -101,16 +92,12 @@ public class PlatformResources
 	@Path("platform")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response postPlatform(@QueryParam("token") String token, 
-		ApiPlatform platform)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response postPlatform(ApiPlatform platform)
 		throws WebAppException, DbException, SQLException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(
-			"post platform received platformId=" + platform.getPlatformId());
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+		Logger.getLogger(ApiConstants.loggerName)
+				.fine("post platform received platformId=" + platform.getPlatformId());
 		
 		try (DbInterface dbi = new DbInterface();
 			ApiPlatformDAO dao = new ApiPlatformDAO(dbi))
@@ -124,18 +111,12 @@ public class PlatformResources
 	@Path("platform")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response deletePlatform(
-		@QueryParam("token") String token, 
-		@QueryParam("platformid") Long platformId)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response deletePlatform(@QueryParam("platformid") Long platformId)
 		throws WebAppException, DbException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(
-			"DELETE platform received id=" + platformId
-			+ ", token=" + token);
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+		Logger.getLogger(ApiConstants.loggerName)
+				.fine("DELETE platform received id=" + platformId);
 		
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();
@@ -149,14 +130,10 @@ public class PlatformResources
 	@GET
 	@Path("platformstat")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response gePlatformStats(
-		@QueryParam("token") String token,
-		@QueryParam("netlistid") Long netlistId
-		)
-		throws WebAppException, DbException, SQLException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response gePlatformStats(@QueryParam("netlistid") Long netlistId)
+		throws DbException, SQLException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		Logger.getLogger(ApiConstants.loggerName).fine("gePlatformStats, netlistid=" + netlistId);
 		try (DbInterface dbi = new DbInterface();
 			ApiPlatformDAO platformDAO = new ApiPlatformDAO(dbi))

@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -15,26 +15,21 @@
 
 package org.opendcs.odcsapi.hydrojson;
 
-import java.util.logging.Logger;
-
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.Properties;
-
+import java.util.ServiceLoader;
+import java.util.logging.Logger;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import org.opendcs.odcsapi.dao.ApiDaoBase;
+import org.opendcs.odcsapi.dao.DAOProvider;
 import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.lrgsclient.StaleClientChecker;
-import org.opendcs.odcsapi.sec.TokenManager;
 import org.opendcs.odcsapi.start.StartException;
 import org.opendcs.odcsapi.util.ApiConstants;
 
@@ -43,33 +38,28 @@ import org.opendcs.odcsapi.util.ApiConstants;
  * @author mmaloney
  *
  */
-public class DbInterface
-	implements AutoCloseable
+public final class DbInterface implements AutoCloseable
 {
+	public static final String CWMS = "CWMS";
+	public static final String OPENTSDB = "OPENTSDB";
 	static final String module = "DbInterface";
-	static public String dbType = "opentsdb";
-	static public boolean isOracle = false;
-	static public boolean isCwms = false;
-	static public boolean isHdb = false;
-	static public boolean isOpenTsdb = false;
+	public static String dbType = "opentsdb";
+	public static boolean isCwms = false;
+	public static boolean isHdb = false;
+	public static boolean isOpenTsdb = true;
 	private static DataSource dataSource = null;
 	private static final String sequenceSuffix = "IdSeq";
-	static public String siteNameTypePreference = "CWMS";
-	static public Properties decodesProperties = new Properties();
-	static public boolean secureMode = false;
-	
-	/** Provides reason for last error return. */
-	private String reason = null;
-	
+	public static String siteNameTypePreference = "CWMS";
+	//Will remove with issue: https://github.com/opendcs/rest_api/issues/191
+	@Deprecated
+	public static final Properties decodesProperties = new Properties();
+	private final boolean isOracle;
+
 	/** The Connection used by this instance of DbInterface. */
 	private Connection connection = null;
-	
-	private static TokenManager tokenManager = null;
-	private static StaleClientChecker staleClientChecker = null;
 
 	
-	public DbInterface() 
-		throws DbException
+	public DbInterface() throws DbException
 	{
 		try
 		{
@@ -80,7 +70,7 @@ public class DbInterface
 				dataSource = (DataSource)envCtx.lookup("jdbc/opentsdb");
 			}
 			else
-				Logger.getLogger(ApiConstants.loggerName).info("Using DataSource provided by Jetty main class.");
+				Logger.getLogger(ApiConstants.loggerName).config("Using DataSource provided by Jetty main class.");
 			connection = dataSource.getConnection();
 			isOracle = connection.getMetaData().getDatabaseProductName().toLowerCase().contains("oracle");
 		}
@@ -99,86 +89,20 @@ public class DbInterface
 			throw new DbException(module, ex, msg);
 		}
 
-		if (staleClientChecker == null)
-		{
-			staleClientChecker = new StaleClientChecker();
-			staleClientChecker.start();
-		}
-
-		Logger.getLogger(ApiConstants.loggerName).info("isHdb=" + isHdb + ", isCwms=" + isCwms 
+		Logger.getLogger(ApiConstants.loggerName).config("isHdb=" + isHdb + ", isCwms=" + isCwms
 			+ ", isOpenTsdb=" + isOpenTsdb + ", isOracle=" + isOracle);
 	}
-	
-	public boolean isUserValid(String username, String password)
-			throws DbException, SQLException
-	{
-		if (isOracle)
-			throw new DbException(module, null, "User validation not implemented for Oracle.");
-		
-		Connection poolCon = getConnection();
-		Connection userCon = null;
 
-		try (ApiDaoBase daoBase = new ApiDaoBase(this, "DbInterface"))
-		{
-			// The only way to verify that user/pw is valid is to attempt to establish a connection:
-			DatabaseMetaData metaData = poolCon.getMetaData();
-			String url = metaData.getURL();
-			
-			// This validates the username & password.
-			userCon = DriverManager.getConnection(url, username, password);
-			// Above with throw SQLException if user/pw is not valid.
-			
-			// Now verify that user has appropriate privilege. This only works on Postgress currently:
-			String q = "select pm.roleid, pr.rolname from pg_auth_members pm, pg_roles pr "
-				//+ "where pm.member = (select oid from pg_roles where rolname = '" + username + "') "
-				+ "where pm.member = (select oid from pg_roles where rolname = '?') "
-				+ "and pm.roleid = pr.oid";
-			//ResultSet rs = daoBase.doQuery(q);
-			Connection conn = null;
-			ResultSet rs = daoBase.doQueryPs(conn, q, username);
-			while(rs.next())
-			{
-				int roleid = rs.getInt(1);
-				String role = rs.getString(2);
-				Logger.getLogger(ApiConstants.loggerName).info("User '" + username + "' has role " + roleid + "=" + role);
-				if (role.equalsIgnoreCase("OTSDB_ADMIN") || role.equalsIgnoreCase("OTSDB_MGR"))
-					return true;
-			}
-			reason = "User " + username + " does not have OTSDB_ADMIN or OTSDB_MGR privilege "
-					+ "- Not Authorized.";
-			Logger.getLogger(ApiConstants.loggerName).warning("isUserValid(" + username + ") failed: " + reason);
-			userCon.close();
-			return false;
-		}
-		catch (Exception e)
-		{
-			Logger.getLogger(ApiConstants.loggerName).warning("isUserValid - Authentication failed: " + e);
-			if (userCon != null)
-			{
-                try
-				{
-                    userCon.close();
-                }
-				catch (SQLException ex)
-				{
-                    throw new SQLException("There was an issue closing the connection.", ex);
-                }
-            }
-			reason = e.getMessage();
-			return false;
-		}
-	}
-
-	public String getReason()
+	public static String getOidcAuthenticatedUrl()
 	{
-		return reason;
+		throw new UnsupportedOperationException("Authentication URL for OIDC not yet implemented.");
 	}
 
 	public static void setDataSource(DataSource dataSource)
 	{
 		DbInterface.dataSource = dataSource;
 	}
-	
+
 	public Connection getConnection()
 	{
 		return connection;
@@ -190,6 +114,7 @@ public class DbInterface
 		{
 			//TODO if I'm using a connection pool, return the connection to the pool here.
 			connection.close();
+			Logger.getLogger(ApiConstants.loggerName).config("DbInterface connection was closed.");
 		}
 		catch(Exception ex)
 		{
@@ -285,12 +210,32 @@ public class DbInterface
 		return d.getTime();
 	}
 
-	public static TokenManager getTokenManager()
+	public <T> T getDao(Class<T> daoType)
 	{
-		if (tokenManager == null)
-			tokenManager = new TokenManager(secureMode);
-		
-		return tokenManager;
+		String databaseType;
+		if(isCwms)
+		{
+			databaseType = CWMS;
+		}
+		else if(isOpenTsdb)
+		{
+			databaseType = OPENTSDB;
+		}
+		else
+		{
+			throw new UnsupportedOperationException("DAO Lookup currently only supported by OpenTSDB and CWMS");
+		}
+
+		ServiceLoader<DAOProvider> serviceLoader = ServiceLoader.load(DAOProvider.class);
+		for(DAOProvider daoProvider : serviceLoader)
+		{
+			if(daoProvider.provides(daoType, databaseType))
+			{
+				//noinspection unchecked
+				return (T) daoProvider.createDAO(this);
+			}
+		}
+		throw new UnsupportedOperationException("DAO Lookup for " + databaseType + " not supported for type " + daoType);
 	}
 
 	/*

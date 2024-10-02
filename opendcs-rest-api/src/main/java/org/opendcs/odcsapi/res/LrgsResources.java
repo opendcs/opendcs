@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -20,9 +20,11 @@ import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -49,15 +51,14 @@ import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.lrgsclient.ApiLddsClient;
+import org.opendcs.odcsapi.lrgsclient.ClientConnectionCache;
 import org.opendcs.odcsapi.lrgsclient.DdsProtocolError;
 import org.opendcs.odcsapi.lrgsclient.DdsServerError;
 import org.opendcs.odcsapi.lrgsclient.LrgsErrorCode;
-import org.opendcs.odcsapi.sec.UserToken;
+import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
-
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Resources for interacting with an LRGS for DCP messages and status.
@@ -65,33 +66,27 @@ import javax.servlet.http.HttpServletResponse;
 @Path("/")
 public class LrgsResources
 {
-	@Context HttpHeaders httpHeaders;
+	@Context private HttpServletRequest request;
+	@Context private HttpHeaders httpHeaders;
 
 	@POST
 	@Path("searchcrit")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response postSearchCrit(@QueryParam("token") String token, ApiSearchCrit searchcrit)
-		throws WebAppException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response postSearchCrit(ApiSearchCrit searchcrit)
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("post searchcrit");
-	
-		UserToken userToken = DbInterface.getTokenManager().getToken(httpHeaders, token);
-		if (userToken == null)
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		
-		// If userToken already contains an LddsClient, close and delete it.
+
+
+		HttpSession session = request.getSession(true);
+		// If session already contains an LddsClient, close and delete it.
 		// I.e., if a message retrieval is already in progress, the new searchcrit
-		// cancels it. I new client will have to be started on the next GET messages.
-		ApiLddsClient client = userToken.getLddsClient();
-		if (client != null)
-		{
-			client.disconnect();
-			userToken.setLddsClient(null);
-		}
-		
-		userToken.setSearchCrit(searchcrit);
+		// cancels it. A new client will have to be started on the next GET messages.
+		ClientConnectionCache.getInstance().removeApiLddsClient(session.getId());
+		String searchCritSessionAttribute = ApiSearchCrit.ATTRIBUTE;
+		session.setAttribute(searchCritSessionAttribute, searchcrit);
+
 		return Response.status(HttpServletResponse.SC_OK).entity(
 			"Searchcrit cached for current session.").build();
 	}
@@ -99,16 +94,17 @@ public class LrgsResources
 	@GET
 	@Path("searchcrit")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ApiSearchCrit getSearchCrit(@QueryParam("token") String token)
-		throws WebAppException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public ApiSearchCrit getSearchCrit() throws WebAppException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("getSearchCrit");
-		
-		UserToken userToken = DbInterface.getTokenManager().getToken(httpHeaders, token);
-		if (userToken == null)
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		ApiSearchCrit searchcrit = userToken.getSearchCrit();
+
+		HttpSession session = request.getSession(false);
+		if(session == null)
+			throw new WebAppException(ErrorCodes.NO_SUCH_OBJECT,
+					"No searchcrit is currently stored.");
+		String sessionAttribute = ApiSearchCrit.ATTRIBUTE;
+		ApiSearchCrit searchcrit = (ApiSearchCrit) session.getAttribute(sessionAttribute);
 		if (searchcrit == null)
 			throw new WebAppException(ErrorCodes.NO_SUCH_OBJECT, 
 				"No searchcrit is currently stored.");
@@ -118,28 +114,28 @@ public class LrgsResources
 	@GET
 	@Path("messages")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ApiRawMessageBlock getMessages(@QueryParam("token") String token)
-		throws WebAppException, SQLException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public ApiRawMessageBlock getMessages() throws WebAppException, SQLException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("getMessages");
-		
-		UserToken userToken = DbInterface.getTokenManager().getToken(httpHeaders, token);
-		if (userToken == null)
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
-		ApiSearchCrit searchcrit = userToken.getSearchCrit();
+
+		HttpSession session = request.getSession(true);
+		String sessionAttribute = ApiSearchCrit.ATTRIBUTE;
+		ApiSearchCrit searchcrit = (ApiSearchCrit) session.getAttribute(sessionAttribute);
 		if (searchcrit == null)
 			throw new WebAppException(ErrorCodes.NO_SUCH_OBJECT, 
 				"POST searchcrit required prior to GET messages.");
 		
 		ApiDataSource dataSource = null;
-		ApiLddsClient client = userToken.getLddsClient();
+		ClientConnectionCache clientConnectionCache = ClientConnectionCache.getInstance();
+		ApiLddsClient client = clientConnectionCache.getApiLddsClient(session.getId())
+				.orElse(null);
 		
 		String action = "connecting";
 		// See if there is already an ApiLddsClient object in the userToken.
 		// If so, skip the stuff below where I connect & send netlists & searchcrit.
 		// Just skip to getting the next message block
-		if (client == null)
+		if (client != null)
 		{
 			// This is a new retrieval. Create client, send netlists & searchcrit.
 		
@@ -166,7 +162,7 @@ public class LrgsResources
 				
 				client = new ApiLddsClient(host, port);
 				client.connect();
-				userToken.setLddsClient(client);
+				clientConnectionCache.setApiLddsClient(client, session.getId());
 				
 				String username = dataSource.getProps().getProperty("username");
 				String password = dataSource.getProps().getProperty("password");
@@ -191,37 +187,32 @@ public class LrgsResources
 			}
 			catch (DbException ex)
 			{
-				client.disconnect();
-				userToken.setLddsClient(null);
+				clientConnectionCache.removeApiLddsClient(session.getId());
 				throw new WebAppException(ErrorCodes.DATABASE_ERROR,
 						"There was an error getting messages from the LRGS client: ", ex);
 			}
 			catch (UnknownHostException ex)
 			{
-				client.disconnect();
-				userToken.setLddsClient(null);
+				clientConnectionCache.removeApiLddsClient(session.getId());
 				throw new WebAppException(ErrorCodes.BAD_CONFIG, "Cannot connect to LRGS data source "
 					+ dataSource.getName() + ": " + ex);
 			}
 			catch (IOException ex)
 			{
-				client.disconnect();
-				userToken.setLddsClient(null);
+				clientConnectionCache.removeApiLddsClient(session.getId());
 				throw new WebAppException(ErrorCodes.BAD_CONFIG, "IO Error on LRGS data source "
 					+ dataSource.getName() + ": " + ex);
 			}
 			catch (DdsProtocolError ex)
 			{
-				client.disconnect();
-				userToken.setLddsClient(null);
+				clientConnectionCache.removeApiLddsClient(session.getId());
 				String em = "Error while " + action + ": " + ex;
 				Logger.getLogger(ApiConstants.loggerName).warning("getMessages " + em);
 				throw new WebAppException(ErrorCodes.IO_ERROR, em);
 			}
 			catch (DdsServerError ex)
 			{
-				client.disconnect();
-				userToken.setLddsClient(null);
+				clientConnectionCache.removeApiLddsClient(session.getId());
 				String em = "Error while " + action + ": " + ex;
 				Logger.getLogger(ApiConstants.loggerName).warning("getMessages " + em);
 				throw new WebAppException(ErrorCodes.IO_ERROR, em);
@@ -236,15 +227,13 @@ public class LrgsResources
 		}
 		catch (IOException ex)
 		{
-			client.disconnect();
-			userToken.setLddsClient(null);
+			clientConnectionCache.removeApiLddsClient(session.getId());
 			throw new WebAppException(ErrorCodes.BAD_CONFIG, "IO Error on LRGS data source "
 				+ dataSource.getName() + ": " + ex);
 		}
 		catch (DdsProtocolError ex)
 		{
-			client.disconnect();
-			userToken.setLddsClient(null);
+			clientConnectionCache.removeApiLddsClient(session.getId());
 			throw new WebAppException(ErrorCodes.IO_ERROR, "Error while " + action + ": " + ex);
 		}
 		catch (DdsServerError ex)
@@ -252,16 +241,14 @@ public class LrgsResources
 			if (ex.Derrno == LrgsErrorCode.DUNTIL)
 			{
 				// The retrieval is now finished. Close the client
-				client.disconnect();
-				userToken.setLddsClient(null);
+				clientConnectionCache.removeApiLddsClient(session.getId());
 				
 				ApiRawMessageBlock ret = new ApiRawMessageBlock();
 				ret.setMoreToFollow(false);
 				return ret;
 			}
 			// Any other server error returns an error.
-			client.disconnect();
-			userToken.setLddsClient(null);
+			clientConnectionCache.removeApiLddsClient(session.getId());
 			throw new WebAppException(ErrorCodes.IO_ERROR, "Error while " + action + ": " + ex);
 		}
 	}
@@ -317,8 +304,8 @@ public class LrgsResources
 	@GET
 	@Path("message")
 	@Produces(MediaType.APPLICATION_JSON)
-	public ApiRawMessage getMessage(@QueryParam("token") String token,
-		@QueryParam("tmid") String tmid, @QueryParam("tmtype") String tmtype)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public ApiRawMessage getMessage(@QueryParam("tmid") String tmid, @QueryParam("tmtype") String tmtype)
 		throws WebAppException, SQLException
 	{
 		if (tmid == null)
@@ -329,40 +316,33 @@ public class LrgsResources
 		searchcrit.getPlatformIds().add(tmid);
 		searchcrit.setSince("now - 12 hours");
 		searchcrit.setUntil("now");
-		postSearchCrit(token, searchcrit);
+		postSearchCrit(searchcrit);
 		
 		// Get a message block and return the first (most recent) message in it.
-		ApiRawMessageBlock mb = getMessages(token);
-		if (mb.getMessages().size() == 0)
+		ApiRawMessageBlock mb = getMessages();
+		if (mb.getMessages().isEmpty())
+		{
 			throw new WebAppException(ErrorCodes.NO_SUCH_OBJECT, "No message for '"
-				+ tmid + "' in last 12 hours.");
+					+ tmid + "' in last 12 hours.");
+		}
 		
 		// This method gets a SINGLE message, so we're finished with client now.
-		UserToken userToken = DbInterface.getTokenManager().getToken(httpHeaders, token);
-		if (userToken != null)
+		HttpSession session = request.getSession(false);
+		if(session != null)
 		{
-			ApiLddsClient client = userToken.getLddsClient();
-			if (client != null)
-			{
-				client.disconnect();
-				userToken.setLddsClient(null);
-			}
+			ClientConnectionCache.getInstance().removeApiLddsClient(session.getId());
 		}
-
 		return mb.getMessages().get(0);		
 	}
 	
 	@GET
 	@Path("lrgsstatus")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getLrgsStatus(@QueryParam("token") String token,
-		@QueryParam("source") String source)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getLrgsStatus(@QueryParam("source") String source)
 		throws WebAppException, SQLException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("getLrgsStatus");
-		
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		ApiDataSource dataSource = null;
 		ApiLddsClient client = null;
 		

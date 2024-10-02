@@ -124,21 +124,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LoginCredintials"
+                "$ref": "#/components/schemas/LoginCredentials"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "*\tThe 'username' argument will be the same username passed to the POST method.\n*\tThe 'token' argument is a randomized hexadecimal string that must be passed to subsequent methods that require authentication.\n*\tThe 'lastUsed' argument is a long integer number of milliseconds since the epoch (Jan 1 1970 at midnight UTC).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthToken"
-                }
-              }
-            }
+            "description": "Successful authentication."
           },
           "401": {
             "description": "If the passed username or password is not valid, or if the user is not assigned the required role, an HTTP 401 error is returned with an explanatory message. It will typically be one of the following:  \n* FATAL: password authentication failed for user 'xyz'\n* User xyz does not have OTSDB_ADMIN or OTSDB_MGR privilege – Not Authorized.",
@@ -166,6 +159,22 @@
         ]
       }
     },
+    "/logout": {
+      "summary": "Remove access tokens and clear the client's session.",
+      "description": "Clear client session",
+      "get": {
+        "summary": "Remove access tokens and clear the client's session.",
+        "description": "Session variables for the client will be cleared. The auth token will be invalidated.",
+        "responses": {
+          "200": {
+            "description": "Session was cleared."
+          }
+        },
+        "tags": [
+          "REST - Authentication and Authorization"
+        ]
+      }
+    },
     "/check": {
       "get": {
         "security": [
@@ -178,13 +187,6 @@
         "responses": {
           "200": {
             "description": "If the token is valid, the token JSON object will be returned in the same format as the /credintials request for authentication.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthToken"
-                }
-              }
-            }
           },
           "410": {
             "description": "If the token is not valid, HTTP 410 is returned. The body of the response is JSON in the form:  \n{\"errMessage\":\"Token '6d34fa0e3bb72fcd' does not exist.\",\"status\":410}",
@@ -3382,23 +3384,6 @@
       }
     },
     "schemas": {
-      "AuthToken": {
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string",
-            "example": "xyz"
-          },
-          "lastUsed": {
-            "type": "integer",
-            "example": 1596807452610
-          },
-          "token": {
-            "type": "string",
-            "example": "9fe6390676c7dca9"
-          }
-        }
-      },
       "season": {
         "type": "object",
         "properties": {
@@ -5358,7 +5343,7 @@
           "calMultilier": 14
         }
       },
-      "LoginCredintials": {
+      "LoginCredentials": {
         "type": "object",
         "properties": {
           "username": {

@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import javax.annotation.security.RolesAllowed;
 import javax.imageio.ImageIO;
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
@@ -18,6 +19,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.opendcs.odcsapi.sec.AuthorizationCheck;
+
 @Path("/")
 public class SwaggerResources
 {
@@ -26,6 +29,7 @@ public class SwaggerResources
     @GET
     @Produces(MediaType.TEXT_HTML)
     @Path("swaggerui")
+    @RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
     public Response getSwagger() throws IOException
     {
         String result = this.getSwaggerTextResource("index.html");
@@ -33,6 +37,7 @@ public class SwaggerResources
     }
     @GET
     @Path("{fileName: .*\\.(css|js)$ }")
+    @RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
     public Response getTextFile(@PathParam("fileName") String fileName) throws IOException
     {
         String result = this.getSwaggerTextResource(fileName);
@@ -42,6 +47,7 @@ public class SwaggerResources
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{fileName: .*\\.(json)$ }")
+    @RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
     public Response getJsonFile(@PathParam("fileName") String fileName) throws IOException
     {
         String result = this.getSwaggerTextResource(fileName);
@@ -51,6 +57,7 @@ public class SwaggerResources
     @GET
     @Produces("image/png")
     @Path("{fileName: .*\\.(png|jpeg)$ }")
+    @RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
     public Response getImageFile(@PathParam("fileName") String fileName) throws IOException
     {
         byte[] imageData = getSwaggerImageResource(fileName);

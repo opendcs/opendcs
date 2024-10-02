@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -13,30 +13,31 @@
  *  limitations under the License.
  */
 
-package org.opendcs.odcsapi.sec;
+package org.opendcs.odcsapi.sec.basicauth;
 
 public class Credentials
 {
 	private String username = null;
 	private String password = null;
-	
-	public Credentials() {}
-	
+
 	public String getUsername()
 	{
 		return username;
 	}
+
 	public void setUsername(String username)
 	{
 		this.username = username;
 	}
+
 	public String getPassword()
 	{
 		return password;
 	}
+
 	public void setPassword(String password)
 	{
 		this.password = password;
 	}
-	
+
 }

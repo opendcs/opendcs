@@ -16,9 +16,9 @@
 package org.opendcs.odcsapi.res;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -39,6 +39,7 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
@@ -50,11 +51,9 @@ public class ConfigResources
 	@GET
 	@Path("configrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getConfigRefs(@QueryParam("token") String token)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getConfigRefs() throws DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		Logger.getLogger(ApiConstants.loggerName).fine("geConfigRefs");
 		try (DbInterface dbi = new DbInterface();
 			ApiConfigDAO configDAO = new ApiConfigDAO(dbi))
@@ -66,14 +65,9 @@ public class ConfigResources
 	@GET
 	@Path("config")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getConfig(
-		@QueryParam("configid") Long configId,
-		@QueryParam("token") String token
-		)
-		throws WebAppException, DbException, SQLException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response getConfig(@QueryParam("configid") Long configId) throws WebAppException, DbException, SQLException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		if (configId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, 
 				"Missing required configid parameter.");
@@ -90,16 +84,11 @@ public class ConfigResources
 	@Path("config")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response postConfig(@QueryParam("token") String token, 
-			ApiPlatformConfig config)
-		throws WebAppException, DbException, SQLException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response postConfig(ApiPlatformConfig config) throws WebAppException, DbException, SQLException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("post config received config " + config.getName() 
 			+ " with ID=" + config.getConfigId());
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
 		
 		Logger.getLogger(ApiConstants.loggerName).fine("POST config script sensors: ");
 		for(ApiConfigScript acs : config.getScripts())
@@ -122,18 +111,10 @@ public class ConfigResources
 	@Path("config")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response deleteConfig(
-		@QueryParam("token") String token, 
-		@QueryParam("configid") Long configId)
-		throws WebAppException, DbException, SQLException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response deleteConfig(@QueryParam("configid") Long configId) throws WebAppException, DbException, SQLException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(
-			"DELETE config received configid=" + configId
-			+ ", token=" + token);
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+		Logger.getLogger(ApiConstants.loggerName).fine("DELETE config received configid=" + configId);
 		
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();

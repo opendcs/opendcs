@@ -25,6 +25,15 @@ Assuming the context is 'odcsapi', an example of the SwaggerUI location is http:
 These files are being served up from the resource file 'SwaggerResources.java' file located at 
 'src/main/java/org/opendcs/odcsapi/res/SwaggerResources.java'.
 
+### web.xml configurations
+The bundled [web.xml](opendcs-rest-api/src/main/webapp/WEB-INF/web.xml) contains the following
+properties that should be configured for your system.
+- `opendcs.rest.api.authorization.type` - supports a comma separated list of authorization types. These can include basic,sso,openid. See section on authorization for details.
+- `opendcs.rest.api.authorization.expiration.duration` - denotes the duration that an authorization attempt is valid for. Defaults to 15 minutes.
+- `opendcs.rest.api.cwms.office` - office id specific to CWMS systems. This is the office the authorizing user will check privileges for.
+- `opendcs.rest.api.authorization.jwt.jwkset.url` - for openid authorization this is the JWK Set URL
+- `opendcs.rest.api.authorization.jwt.issuer.url`  - for openid authorization this is the Issuer URL
+
 ## OPENDCS Web Client
 The gradle task `./gradlew :opendcs-web-client:war` will create a war file in the `build/libs` directory.
 
@@ -46,7 +55,7 @@ The `start.sh` script can be configured with the following arguments:
         export DCSTOOL_HOME=/home/opendcs/OPENDCS
         export DCSTOOL_USERDIR=/home/opendcs
         export JAVA_OPTS="-DDCSTOOL_HOME=$DCSTOOL_HOME -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
-        export JAVA_ARGS="-p 8081 -c odcsapi -cors /home/testuser/OPENDCS/opendcs_web_cors.cfg -s"
+        export JAVA_ARGS="-p 8081 -c odcsapi -cors /home/testuser/OPENDCS/opendcs_web_cors.cfg"
         ./start.sh
         ```
 - The java args help configure the server
@@ -69,8 +78,6 @@ The `start.sh` script can be configured with the following arguments:
     - Key Password (the password that was used to generate the key).
   - -P
     - Decodes Properties file path (by default it’s at $DCSTOOL_HOME/decodes.properties.
-  - -s
-    - Secure mode.  The authentication is done via the header, rather than as parameters passed through parameters.
 
 Additionally, the build can run from a developer environment using the gradle task `./gradlew :opendcs-rest-api-jetty:startJetty`.
 Properties read from gradle.properties will be used to configure the server.
@@ -128,3 +135,9 @@ The Codespaces are intended for the easy and consistent onboarding of developers
 heavy-weight development IDE's.
 
 Configuration for the dev container is found in [devcontainer.json](./.devcontainer/devcontainer.json)
+
+# Authorization
+The OpenDCS REST API supports three authorization mechanisms Basic Authentication, Container Single Sign-On, and OpenID Connect.
+
+When the client attempts to access endpoints that are not marked with the Guest role the authorization mechanisms are checked to determine
+which roles are currently granted to the client. See [./opendcs-rest-api/README.md](opendcs-rest-api/README.md) for more info.

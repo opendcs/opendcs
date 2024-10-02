@@ -12,7 +12,7 @@ buildscript {
 }
 
 plugins {
-    id "com.palantir.git-version" version "3.0.0"
+    id "com.palantir.git-version" version "3.1.0"
 }
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     apply plugin: "org.sonarqube"

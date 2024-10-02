@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 import de.undercouch.gradle.tasks.download.Download
 import org.apache.tools.ant.filters.ReplaceTokens
 
@@ -5,7 +20,7 @@ plugins {
     id "opendcs-rest-api.java-conventions"
     id "opendcs-rest-api.deps-conventions"
     id "opendcs-rest-api.publishing-conventions"
-    id "de.undercouch.download" version "5.5.0"
+    id "de.undercouch.download" version "5.6.0"
 }
 
 dependencies {
@@ -139,8 +154,7 @@ tasks.register('startJettyOdcsApi', JavaExec) { ->
     args(
             "-p", project.findProperty("REST_API_PORT") ?: "8081",
             "-c", project.findProperty("REST_API_CONTEXT") ?: "odcsapi",
-            "-cors", project.findProperty("REST_API_CORS") ?: "config/opendcs_web_cors.cfg",
-            "-s")
+            "-cors", project.findProperty("REST_API_CORS") ?: "config/opendcs_web_cors.cfg")
     doFirst {
         if (project.findProperty("postgresdb.url") == null) {
             environment 'OPENDCS_USERNAME', "tsdbadm"
@@ -160,12 +174,22 @@ tasks.register('renameTarball', Copy) {
     rename { 'opendcs-rest-api-jetty.tgz' }
 }
 
+tasks.register('buildDockerImages', Exec) {
+    group = 'build'
+    dependsOn renameTarball
+    dependsOn downloadOpenDcsInstaller
+    doFirst {
+        commandLine 'docker-compose', 'build', 'opendcs-api'
+    }
+}
+
 tasks.register('runOwaspZap', Exec) {
     group = 'run'
     dependsOn renameTarball
     dependsOn downloadOpenDcsInstaller
+    dependsOn buildDockerImages
     doFirst {
-        commandLine 'docker-compose', 'up', "zap"
+        commandLine 'docker-compose', 'up', '--abort-on-container-exit', 'zap'
     }
 }
 

@@ -15,10 +15,14 @@
 
 package org.opendcs.odcsapi.beans;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class ApiSearchCrit
+public class ApiSearchCrit implements Serializable
 {
+	public static final String ATTRIBUTE = "api-search-crit";
+	private static final long serialVersionUID = -1770468107162716859L;
+
 	private String since = null;
 	private String until = null;
 	private boolean settlingTimeDelay = false;

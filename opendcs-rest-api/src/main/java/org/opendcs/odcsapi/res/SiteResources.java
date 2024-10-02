@@ -15,9 +15,9 @@
 
 package org.opendcs.odcsapi.res;
 
-import java.util.Collection;
 import java.util.logging.Logger;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -36,6 +36,7 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
@@ -47,13 +48,10 @@ public class SiteResources
 	@GET
 	@Path("siterefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response geSiteRefs(
-		@QueryParam("token") String token
-		)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response geSiteRefs()
+		throws DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		Logger.getLogger(ApiConstants.loggerName).fine("getSiteRefs");
 		try (DbInterface dbi = new DbInterface();
 			ApiSiteDAO dao = new ApiSiteDAO(dbi))
@@ -65,14 +63,10 @@ public class SiteResources
 	@GET
 	@Path("site")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response geSiteFull(
-		@QueryParam("token") String token,
-		@QueryParam("siteid") Long siteId
-		)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	public Response geSiteFull(@QueryParam("siteid") Long siteId)
 		throws WebAppException, DbException
 	{
-		DbInterface.getTokenManager().checkToken(httpHeaders, token);
-		
 		if (siteId == null)
 			throw new WebAppException(ErrorCodes.MISSING_ID, 
 				"Missing required siteid parameter.");
@@ -89,16 +83,12 @@ public class SiteResources
 	@Path("site")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response postSite(@QueryParam("token") String token, ApiSite site)
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response postSite(ApiSite site)
 		throws WebAppException, DbException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(
-			"POST site received site id=" + site.getSiteId()
-			+ ", token=" + token);
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+		Logger.getLogger(ApiConstants.loggerName)
+				.fine("POST site received site id=" + site.getSiteId());
 		
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();
@@ -119,18 +109,11 @@ public class SiteResources
 	@Path("site")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response deleteSite(
-		@QueryParam("token") String token, 
-		@QueryParam("siteid") Long siteId)
-		throws WebAppException, DbException
+	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	public Response deleteSite(@QueryParam("siteid") Long siteId) throws WebAppException, DbException
 	{
-		Logger.getLogger(ApiConstants.loggerName).fine(
-			"DELETE site received site id=" + siteId
-			+ ", token=" + token);
-		
-		if (!DbInterface.getTokenManager().checkToken(httpHeaders, token))
-			throw new WebAppException(ErrorCodes.TOKEN_REQUIRED, 
-				"Valid token is required for this operation.");
+		Logger.getLogger(ApiConstants.loggerName)
+				.fine("DELETE site received site id=" + siteId);
 		
 		// Use username and password to attempt to connect to the database
 		try (DbInterface dbi = new DbInterface();

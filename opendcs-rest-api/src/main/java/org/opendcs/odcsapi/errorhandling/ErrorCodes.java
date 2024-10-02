@@ -19,8 +19,6 @@ import javax.servlet.http.HttpServletResponse;
 
 public class ErrorCodes
 {
-	/** Missing required token argument or invalid token provided */
-	public static final int TOKEN_REQUIRED = HttpServletResponse.SC_UNAUTHORIZED;
 	
 	/** username/password authentication failed */
 	public static final int AUTH_FAILED = HttpServletResponse.SC_FORBIDDEN;
