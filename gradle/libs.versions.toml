@@ -13,6 +13,7 @@ swagger-ui = "5.10.3"
 glassfish-jaxb = "2.3.3"
 websocket = "1.1"
 javax-validation = "2.0.1.Final"
+selenium = "3.141.59"
 
 #Test Dependencies
 junit = "5.10.1"
@@ -40,6 +41,7 @@ postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" 
 swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2-jakarta", version.ref = "swagger" }
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "glassfish-jaxb" }
 websocket = { module = "javax.websocket:javax.websocket-api", version.ref = "websocket" }
+selenium = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
 
 # webjars
 swagger-ui = { module = "org.webjars:swagger-ui", version.ref="swagger-ui" }
