@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-//@Disabled("For demonstration purposes currently.")
+@Disabled("For demonstration purposes currently.")
 @Tag("integration")
 public class LoginTest {
 
