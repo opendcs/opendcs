@@ -27,6 +27,18 @@
         <welcome-file>default.htm</welcome-file>
         <welcome-file>default.jsp</welcome-file>
     </welcome-file-list>
+    <context-param>
+        <param-name>api_base_path</param-name>
+        <param-value>odcsapi</param-value>
+    </context-param>
+    <context-param>
+        <param-name>authentication_type</param-name>
+        <param-value>basic</param-value>
+    </context-param>
+    <context-param>
+        <param-name>authentication_base_path</param-name>
+        <param-value>CWMSLogin/login</param-value>
+    </context-param>
     <servlet>
         <servlet-name>MainDashboard</servlet-name>
         <servlet-class>portal.decodes.MainDashboard</servlet-class>

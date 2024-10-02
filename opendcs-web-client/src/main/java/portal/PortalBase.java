@@ -31,8 +31,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import api.Gateway;
-
 /**
  * Represents a PortalBase.
  * This class is the base class for any of the Web Client pages.  It is the base class for handling the web requests from each of the 
@@ -99,6 +97,7 @@ public class PortalBase extends HttpServlet {
 
         //This needs to be run from the "GET" and not the constructor.  It gets the servlet context this way,
         //Where it cannot from the constructor.
+        /*
         if (this.apiBaseUrl == null)
         {
             Gateway g = new Gateway();
@@ -106,7 +105,7 @@ public class PortalBase extends HttpServlet {
             LOGGER.debug("Setting the base url of the api to {}.", g.baseUrl);
             this.setApiBaseUrl(g.baseUrl);
         }
-
+        */
         String destination = this.getDestination();
         request.setAttribute("tool",  this.getTool());
         request.setAttribute("page",  this.getPage());

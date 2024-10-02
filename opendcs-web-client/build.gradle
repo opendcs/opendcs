@@ -10,6 +10,9 @@ dependencies {
     implementation(libs.servlet.api)
     implementation(libs.websocket)
     implementation(libs.slf4j.jdk)
+
+    testImplementation(libs.selenium)
+    testImplementation(libs.junit.api)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
 }
@@ -36,5 +39,21 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
                     'src/main/webapp/resources/css/limitless/*,' +
                     'src/main/webapp/resources/css/icons/**'
         }
+    }
+}
+
+tasks.register('integrationTest', Test) {
+    group "verification"
+    useJUnitPlatform {
+        includeTags "integration"
+    }
+    shouldRunAfter test
+    dependsOn war
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags "integration"
     }
 }

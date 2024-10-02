@@ -119,20 +119,16 @@ document.addEventListener('DOMContentLoaded', function() {
             versions[version]++;
         }
         classInstance.getData(["unitlist"], function(classInstance, response) {
-            var params = {
-                    "opendcs_api_call": "datatypelist"
-            }
+            var params = {};
             $.ajax({
-                url: `../api/gateway`,
+                url: `${window.API_URL}/datatypelist`,
                 type: "GET",
                 data: params,
                 success: function(response) {
                     var dataTypeObjectList = response;
-                    var params = {
-                            "opendcs_api_call": "siterefs"
-                    }
+                    var params = {};
                     $.ajax({
-                        url: `../api/gateway`,
+                        url: `${window.API_URL}/siterefs`,
                         type: "GET",
                         data: params,
                         success: function(response) {
@@ -355,12 +351,11 @@ document.addEventListener('DOMContentLoaded', function() {
         var algorithmId = selectedData[0];
         var algorithmName = selectedData[1];
         var params = {
-                "opendcs_api_call": "algorithm",
                 "algorithmid": algorithmId
         }
         //Get the clicked algorithm data and populate the modal with that data.
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/algorithm`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -511,11 +506,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     });
 
-    params = {
-            "opendcs_api_call": "apprefs"
-    }
+    params = {}
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/apprefs`,
         type: "GET",
         data: params,
         success: function(response) {
@@ -553,11 +546,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    params = {
-            "opendcs_api_call": "tsgrouprefs"
-    }
+    params = {};
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/tsgrouprefs`,
         type: "GET",
         data: params,
         success: function(response) {
@@ -594,12 +585,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    params = {
-            "opendcs_api_call": "algorithmrefs"
-    };
+    params = {};
     //Ajax call to load the list of algorithms into the algorithm datatable.
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/algorithmrefs`,
         type: "GET",
         data: params,
         success: function(response) {
@@ -704,11 +693,10 @@ document.addEventListener('DOMContentLoaded', function() {
         var clickedData = algorithmTable.row(this).data();
         var className = clickedData[2];
         var params = {
-                "opendcs_api_call": "propspecs",
-                "class": className
+            "class": className
         };
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/propspect`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -870,9 +858,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     show_waiting_modal();
 
-                    var token = sessionStorage.getItem("token");
                     $.ajax({
-                        url: `../api/gateway?token=${token}&opendcs_api_call=computation`,
+                        url: `${window.API_URL}/computation`,
                         type: "POST",
                         headers: {     
                             "Content-Type": "application/json"
@@ -923,14 +910,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     });
 
-    var params = {
-            "opendcs_api_call": "computationrefs"
-    };
+    var params = {};
     //Opens the main table dialog (this is how to add a new element to the 
     //main datatable.
     show_waiting_modal();
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/computationrefs`,
         type: "GET",
         data: params,
         success: function(response) {
@@ -1020,12 +1005,11 @@ function beginOpenMainTableDialog(rowClicked, copy)
         updateSwitchValue("enabledCheckbox", enabled); 
 
         var params = {
-                "computationid": clickedData[0],
-                "opendcs_api_call": "computation"
+                "computationid": clickedData[0]
         };
         show_waiting_modal();
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/computation`,
             type: "GET",
             data: params,
             success: function(response) {

@@ -103,11 +103,9 @@ function createActionDropdown(applicableActions)
 function setPropSpecsMeta()
 {
     //seasonMeta
-    var params = { 
-            "opendcs_api_call": "seasons"
-    };
+    var params = {};
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/seasons`,
         type: "GET",
         data: params,
         success: function(response) {
@@ -117,12 +115,11 @@ function setPropSpecsMeta()
             console.log("Error getting seasons.");
         }
     });
-    params = { 
-            "opendcs_api_call": "reflists",
+    params = {
             "name": "TransportMediumType"
     };
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/reflists`,
         type: "GET",
         data: params,
         success: function(response) {
@@ -187,6 +184,9 @@ function clickedDropdown(event, clickedDropdown)
         $(clickedDropdown).next(".dropdown-menu").toggle();
     }
     event.stopPropagation();
+    //This scrolls down so the dropdown will be fully visible in the case that
+    //it forces the scroll to move down.
+    event.target.scrollIntoView();
 }
 
 function clickedDropdown_deprecated(event, clickedDropdown)
@@ -231,8 +231,7 @@ function deleteOpendcsObject_default(event, clickedLink, params)
             `Are you sure you want to delete the ${objectName} ${objectTypeDisplayName}?`, 
             "bg-warning", 
             function() {
-        var token = sessionStorage.getItem("token");
-        var url = `../api/gateway?opendcs_api_call=${objectType}&token=${token}`;
+        var url = `${window.API_URL}/${objectType}`;
 
         if (objectId != "")
         {

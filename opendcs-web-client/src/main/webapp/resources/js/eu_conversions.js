@@ -55,11 +55,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     sensorUnitConversion = new SensorUnitConversion("mainTable", 3, 4, true, function(thisObject) 
             {
-        var params = {
-                "opendcs_api_call": "unitlist"
-        }
+        var params = {};
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/unitlist`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -93,11 +91,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                             ]
                 };
-                var params = {
-                        "opendcs_api_call": "euconvlist"
-                }
+                var params = {};
                 $.ajax({
-                    url: `../api/gateway`,
+                    url: `${window.API_URL}/euconvlist`,
                     type: "GET",
                     data: params,
                     success: function(response) {
@@ -190,9 +186,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         saveQueue.push(curSaveData.toAbbr);
 
-                        var token = sessionStorage.getItem("token");
                         $.ajax({
-                            url: `../api/gateway?token=${token}&opendcs_api_call=euconv`,
+                            url: `${window.API_URL}/euconv`,
                                     type: "POST",
                                     headers: {     
                                         "Content-Type": "application/json"
@@ -294,12 +289,9 @@ function deleteEuConversion(event, clickedLink)
             "bg-warning", 
             function() {
 
-        var token = sessionStorage.getItem("token");
-
-        var url = `../api/gateway?opendcs_api_call=euconv&token=${token}&euconvid=${ucId}`;
         show_waiting_modal();
         $.ajax({
-            url: url,
+            url: `${window.API_URL}/euconv&euconvid=${ucId}`,
             type: "DELETE",
             headers: {     
                 "Content-Type": "application/json"   

@@ -114,9 +114,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         saveQueue.push(curSaveData.abbr);
 
-                        var token = sessionStorage.getItem("token");
                         $.ajax({
-                            url: `../api/gateway?token=${token}&opendcs_api_call=season`,
+                            url: `${window.API_URL}/season`,
                                     type: "POST",
                                     headers: {     
                                         "Content-Type": "application/json"
@@ -182,11 +181,9 @@ document.addEventListener('DOMContentLoaded', function() {
         mainTable.draw(false);
     });
 
-    var params = {
-            "opendcs_api_call": "seasons"
-    };
+    var params = {};
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/seasons`,
         type: "GET",
         data: params,
         success: function(response) {
@@ -255,12 +252,9 @@ function deleteSeason(event, clickedLink)
             "bg-warning", 
             function() {
 
-        var token = sessionStorage.getItem("token");
-
-        var url = `../api/gateway?opendcs_api_call=season&token=${token}&abbr=${originalAbbrev}`;
         show_waiting_modal();
         $.ajax({
-            url: url,
+            url: `${window.API_URL}/season?abbr=${originalAbbrev}`,
             type: "DELETE",
             headers: {     
                 "Content-Type": "application/json"   

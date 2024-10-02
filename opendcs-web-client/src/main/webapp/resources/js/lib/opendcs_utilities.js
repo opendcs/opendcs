@@ -443,10 +443,9 @@ class SensorUnitConversion {
         var thisClass = this;
         $.ajax({
             //url: "/OHydroJson/reflists?name=UnitConversionAlgorithm&token=" + token,
-            url: `../api/gateway`,
+            url: `${window.API_URL}/reflists`,
             type: "GET",
             data: {
-                "opendcs_api_call": "reflists",
                 "name": "UnitConversionAlgorithm"
             },
             success: function(response) {
@@ -496,10 +495,9 @@ class OpenDcsData {
                     "ajaxObject": null
             }
             $.ajax({
-                url: `../api/gateway`,
+                url: `${window.API_URL}/${opendcsApiCall}`,
                 type: "GET",
                 data: {
-                    "opendcs_api_call": opendcsApiCall,
                     "class": propspec
                 },
                 success: onSuccess,
@@ -522,16 +520,15 @@ class OpenDcsData {
 
 
             var fullOnSuccess = function(response) {
-                // Get everything after the `?`
-                const [ , paramString ] = this.url.split( '?' );
-                const urlParams = new URLSearchParams(paramString);
-                var apiCall = urlParams.get("opendcs_api_call");
-                thisClass.data[apiCall].data = response;
-                thisClass.data[apiCall].status = "success";
-                thisClass.data[apiCall].ajaxObject = this;
-                for (var y = 0; y < thisClass.data[apiCall].grouped_api_calls.length; y++)
+                var urlObj = new URL(this.url); //This works because window.API_URL has the full URL
+                var apiEndpoint = urlObj.pathname.substring(urlObj.pathname.lastIndexOf("/") + 1);
+
+                thisClass.data[apiEndpoint].data = response;
+                thisClass.data[apiEndpoint].status = "success";
+                thisClass.data[apiEndpoint].ajaxObject = this;
+                for (var y = 0; y < thisClass.data[apiEndpoint].grouped_api_calls.length; y++)
                 {
-                    var curApiCall = thisClass.data[apiCall].grouped_api_calls[y];
+                    var curApiCall = thisClass.data[apiEndpoint].grouped_api_calls[y];
                     if (thisClass.data[curApiCall].status != "success")
                     {
                         console.log(`Still Waiting for API calls to complete.`);
@@ -569,11 +566,9 @@ class OpenDcsData {
                     "ajaxObject": null
             }
             $.ajax({
-                url: `../api/gateway`,
+                url: `${window.API_URL}/${opendcsApiCall}`,
                 type: "GET",
-                data: {
-                    "opendcs_api_call": opendcsApiCall
-                },
+                data: {},
                 success: fullOnSuccess,
                 error: fullOnError
             });

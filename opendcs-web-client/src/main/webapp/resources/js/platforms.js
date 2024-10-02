@@ -469,15 +469,12 @@ function populatePlatformDialog(data)
         }
         $('#configSelectbox').trigger('change');
 
-        var token = sessionStorage.getItem("token");
         var params = {
-                "configid": data.configId,
-                "opendcs_api_call": "config",
-                "token": token
+                "configid": data.configId
         }
 
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/config`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -659,12 +656,9 @@ function openPlatformDialog(rowClicked, copyRow)
             $("#platformTitle").text(data[1]);
         }
 
-        var token = sessionStorage.getItem("token");
         show_waiting_modal();
-        params["token"] = token;
-        params["opendcs_api_call"] = "platform";
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/platform`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -883,7 +877,6 @@ function initializeEvents()
                 `Are you sure you want to save the ${pn} platform?`, 
                 "bg-info", 
                 function() {
-            var token = sessionStorage.getItem("token");
             var sensorInfoData = sensorInformationTable.data();
             var platformSensors = [];
 
@@ -986,7 +979,7 @@ function initializeEvents()
                 params["platformId"] = pId;
             }
             $.ajax({
-                url: `../api/gateway?token=${token}&opendcs_api_call=platform`,
+                url: `${window.API_URL}/platform`,
                 type: "POST",
                 headers: {     
                     "Content-Type": "application/json"

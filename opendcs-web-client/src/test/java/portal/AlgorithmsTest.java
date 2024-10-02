@@ -51,8 +51,6 @@ class AlgorithmsTest {
 	void doGet() throws Exception {
 		when(servletConfig.getServletContext())
 				.thenReturn(servletContext);
-		when(servletContext.getRealPath("/conf/api.conf"))
-				.thenReturn("src/test/webapp/conf/api.conf");
 		when(servletContext.getRequestDispatcher("/algorithms.jsp"))
 				.thenReturn(requestDispatcher);
 		when(request.getRequestDispatcher("/algorithms.jsp"))

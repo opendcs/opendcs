@@ -112,13 +112,13 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("Loaded engineering_units.js.");
 
     var params = {
-            "opendcs_api_call": "propspecs",
             "class": "decodes.cwms.validation.ScreeningAlgorithm"
     }
 
     //Get the prop specs.
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/propspecs`,
+
         type: "GET",
         data: params,
         success: function(response) {
@@ -273,9 +273,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     show_waiting_modal();
 
-                    var token = sessionStorage.getItem("token");
                     $.ajax({
-                        url: `../api/gateway?token=${token}&opendcs_api_call=algorithm`,
+                        url: `${window.API_URL}/algorithm`,
                         type: "POST",
                         headers: {     
                             "Content-Type": "application/json"
@@ -324,14 +323,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     });
 
-    var params = {
-            "opendcs_api_call": "algorithmrefs"
-    };
+    var params = {};
 
     //Ajax call to load the list of data into the main datatable.
     show_waiting_modal();
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/algorithmrefs`,
         type: "GET",
         data: params,
         success: function(response) {
@@ -408,12 +405,11 @@ function beginOpenMainTableDialog(rowClicked, copy)
         $("#commentsTextarea").val(clickedData[4]);
 
         var params = {
-                "algorithmid": clickedData[0],
-                "opendcs_api_call": "algorithm"
+                "algorithmid": clickedData[0]
         };
         show_waiting_modal();
         $.ajax({
-            url: `../api/gateway`,
+            url: `${window.API_URL}/algorithm`,
             type: "GET",
             data: params,
             success: function(response) {

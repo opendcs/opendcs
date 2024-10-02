@@ -32,6 +32,6 @@ public class Schedule extends PortalBase {
      * @throws IOException 
      */
     public Schedule() throws IOException {
-        super("/schedule.jsp", "decodes", "schedule");
+        super("/schedule.jsp", "decodes", "schedule entry");
     }
 }

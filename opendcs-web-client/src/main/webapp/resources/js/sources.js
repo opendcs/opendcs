@@ -305,12 +305,9 @@ function openSourcesDialog(rowClicked, copyRow)
         {
             $("#displayedId").val(sourceData[5]);
         }
-        var token = sessionStorage.getItem("token");
         show_waiting_modal();
-        params["token"] = token;
-        params["opendcs_api_call"] = "datasource";
         $.ajax({
-            url: "../api/gateway",
+            url: `${window.API_URL}/datasource`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -398,8 +395,6 @@ function initializeEvents()
     });
 
     $("#saveSourcesModalButton").on("click", function(e){
-        var token = sessionStorage.getItem("token");
-
         var groupMembers = [];
         var groupData = groupTable.rows( { selected: true } ).data();
         for (var x = 0; x < groupData.length; x++)
@@ -450,7 +445,7 @@ function initializeEvents()
         }
         show_waiting_modal();
         $.ajax({
-            url: `../api/gateway?token=${token}&opendcs_api_call=datasource`,
+            url: `${window.API_URL}/datasource`,
             type: "POST",
             headers: {     
                 "Content-Type": "application/json"
@@ -496,15 +491,12 @@ function initializeEvents()
     });
 
     $("#deleteSourceModalButton").on("click", function(e){
-        var token = sessionStorage.getItem("token");
-        var url = `../api/gateway?token=${token}`;
-        var params = {
-                "opendcs_api_call": "datasource"
-        };
+        var url = `${window.API_URL}/datasource`;
+        var params = {};
         var dataSourceId = $("#sourceId").text();
         if (dataSourceId != "")
         {
-            url += "&datasourceid=" + dataSourceId;
+            url += "?datasourceid=" + dataSourceId;
         }
         else
         {

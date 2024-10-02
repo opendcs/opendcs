@@ -56,13 +56,10 @@ function initializeUserDropdown()
 function verifyCredentials()
 {
     console.log("Verifying token is valid.")
-    var token = sessionStorage.getItem("token");
-    var params = {
-            "token": token
-    }
+    var params = {};
 
     $.ajax({
-        url: `../api/gateway?opendcs_api_call=check`,
+        url: `${window.API_URL}/check`,
         type: "GET",
         data: params,
         dataType_json: "json",

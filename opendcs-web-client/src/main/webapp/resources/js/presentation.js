@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
     elems.forEach(function(html) {
         var switchery = new Switchery(html);
     });
-    var token = sessionStorage.getItem("token");
 
     openDcsData = new OpenDcsData();
     show_waiting_modal();
@@ -245,17 +244,16 @@ function presentationClicked(rowClicked, copy)
         clickedData = presentationTable.row(this).data();
         $("#displayedPresentationGroupId").data("value", clickedData[0]);
     }
-    var token = sessionStorage.getItem("token");
+
     show_waiting_modal();
     $.ajax({
-        url: `../api/gateway?token=${token}`,
+        url: `${window.API_URL}/presentation`,
         type: "GET",
         headers: {     
             "Content-Type": "application/json"
         },
         data: {
-            "groupid": clickedData[0],
-            "opendcs_api_call": "presentation"
+            "groupid": clickedData[0]
         },
         success: function(response) {
             hide_waiting_modal(500);
@@ -299,7 +297,6 @@ function initializeEvents()
                 `Are you sure you want to save the ${pn} presentation group?`, 
                 "bg-info", 
                 function() {
-            var token = sessionStorage.getItem("token");
 
             var params = {
                     "name": $("#presentationName").val(),
@@ -341,8 +338,7 @@ function initializeEvents()
             }
 
             $.ajax({
-                //url: "/OHydroJson/presentation?token=" + token,
-                url: `../api/gateway?token=${token}&opendcs_api_call=presentation`,
+                url: `${window.API_URL}/presentation`,
                 type: "POST",
                 headers: {     
                     "Content-Type": "application/json"

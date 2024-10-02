@@ -83,9 +83,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                                         "sortNumber": x+1
                         };
                     }
-                    var token = sessionStorage.getItem("token");
+
                     $.ajax({
-                        url: `../api/gateway?token=${token}&opendcs_api_call=reflist`,
+                        url: `${window.API_URL}/reflist`,
                         type: "POST",
                         headers: {     
                             "Content-Type": "application/json"
@@ -174,11 +174,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    var params = {
-            "opendcs_api_call": "reflists"
-    };
+    var params = {};
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/reflists`,
         type: "GET",
         data: params,
         success: function(response) {

@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         var fromAbbrString = "";
                         if (fromAbbr != null && fromAbbr != "")
                     	{
-                        	fromAbbrString = "&fromabbr=" + fromAbbr;
+                        	fromAbbrString = (x === 0) ? "?fromabbr=" + fromAbbr : "&fromabbr=" + fromAbbr;
                     	}
                         saveData.push(newRow);
                         
@@ -98,9 +98,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         saveQueue.push(curSaveData.abbr);
 
-                        var token = sessionStorage.getItem("token");
                         $.ajax({
-                            url: `../api/gateway?token=${token}&opendcs_api_call=eu${fromAbbrString}`,
+                            url: `${window.API_URL}/eu${fromAbbrString}`,
                                     type: "POST",
                                     headers: {     
                                         "Content-Type": "application/json"
@@ -163,15 +162,12 @@ document.addEventListener('DOMContentLoaded', function() {
         mainTable.draw(false);
     });
 
-    var params = {
-            "opendcs_api_call": "reflists"
-    };
     //This is to load the data on the webpage.
     show_waiting_modal();
     $.ajax({
-        url: `../api/gateway`,
+        url: `${window.API_URL}/reflists`,
         type: "GET",
-        data: params,
+        data: {},
         success: function(response) {
             var refLists = response;
             var unitFamilyList = Object.keys(refLists.UnitFamily.items);
@@ -210,13 +206,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                         ]
             };
-            var params = {
-                    "opendcs_api_call": "unitlist"
-            }
             $.ajax({
-                url: `../api/gateway`,
+                url: `${window.API_URL}/unitlist`,
                 type: "GET",
-                data: params,
+                data: {},
                 success: function(response) {
                     for (var x = 0; x < response.length; x++)
                     {
@@ -276,12 +269,9 @@ function deleteEngineeringUnit(event, clickedLink)
             "bg-warning", 
             function() {
 
-        var token = sessionStorage.getItem("token");
-
-        var url = `../api/gateway?opendcs_api_call=eu&token=${token}&abbr=${originalAbbrev}`;
         show_waiting_modal();
         $.ajax({
-            url: url,
+            url: `${window.API_URL}/eu?abbr=${originalAbbrev}`,
             type: "DELETE",
             headers: {     
                 "Content-Type": "application/json"   

@@ -106,12 +106,11 @@ function openScheduleDialog(rowClicked, rowCopy)
         $("#scheduleEntryRoutingSpec").val(scheduleData[3]);
 
         var params = {
-                "scheduleid": scheduleData[0],
-                "opendcs_api_call": "schedule"
+                "scheduleid": scheduleData[0]
         };
         show_waiting_modal();
         $.ajax({
-            url: "../api/gateway",
+            url: `${window.API_URL}/schedule`,
             type: "GET",
             data: params,
             success: function(response) {
@@ -245,11 +244,8 @@ function openSaveModal()
             params["runInterval"] = $("#runEveryDigit").val() + " " + $("#runEveryUnit").val();
         }
 
-
-        var token = sessionStorage.getItem("token");
-        var url = `../api/gateway?opendcs_api_call=schedule&token=${token}`;
         $.ajax({
-            url: url,
+            url: `${window.API_URL}/schedule`,
             type: "POST",
             headers: {     
                 "Content-Type": "application/json"   
