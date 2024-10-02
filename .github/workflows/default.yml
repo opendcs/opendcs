@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     name: Build, Test, and Analyze
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.0
         with:
@@ -33,6 +33,18 @@ jobs:
           dependency-graph: generate-and-submit
       - name: Build
         run: ./gradlew build
+#Disabling integration tests for now. Should work more reliably
+#after getting testcontainer support going with the opendcs test fixtures
+#      - name: Install Docker Compose
+#        run: |
+#           sudo apt-get update
+#           sudo apt-get install -y docker-compose
+#      - name: Verify Docker Compose installation
+#        run: docker-compose --version
+#      - name: Validate docker-compose.yaml
+#        run: docker-compose -f opendcs-rest-api-jetty/docker-compose.yml config
+#      - name: Integration Tests
+#        run: ./gradlew integrationTest --stacktrace --info
       - name: Analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any

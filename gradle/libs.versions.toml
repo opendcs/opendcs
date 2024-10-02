@@ -22,6 +22,9 @@ auto-service = "1.1.1"
 junit = "5.11.1"
 mockito = "3.12.4"
 byte-buddy = "1.15.3"
+rest-assured = "5.5.0"
+hamcrest = "3.0"
+tomcat = "9.0.91"
 
 [libraries]
 opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
@@ -63,3 +66,11 @@ mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito
 byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 jersey-test = { module = "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory", version.ref = "jersey" }
+rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-assured" }
+hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
+tomcat-embedded-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat" }
+tomcat-embedded-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat" }
+tomcat-jdbc = { module = "org.apache.tomcat:tomcat-jdbc", version.ref = "tomcat" }
+
+[bundles]
+tomcat = [ "tomcat-embedded-core", "tomcat-embedded-jasper", "tomcat-jdbc" ]

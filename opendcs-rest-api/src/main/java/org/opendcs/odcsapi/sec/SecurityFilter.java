@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.InternalServerErrorException;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -165,6 +166,6 @@ public final class SecurityFilter implements ContainerRequestFilter
 				}
 			}
 		}
-		throw new UnsupportedOperationException("DAO AuthorizationType: " + parameterKey + "=" + initParameter + " is not supported.");
+		throw new NotAuthorizedException("Unable to authorize user. Supported authorization: " + initParameter);
 	}
 }

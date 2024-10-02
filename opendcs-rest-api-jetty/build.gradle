@@ -86,10 +86,21 @@ tasks.register('copyUserProperties', Copy) {
     }
 }
 
-tasks.register('startPostgresContainer', Exec) {
+tasks.register('buildPostgresContainer', Exec) {
+    dependsOn installOpenDcs
+    dependsOn copyUserProperties
     doFirst() {
-        if (!project.findProperty("postgresdb.url")) {
-            commandLine 'docker-compose', 'up', '-d', 'db'
+        if (!project.hasProperty("postgresdb.url")) {
+            commandLine 'docker-compose', 'build', '--no-cache', 'db'
+        }
+    }
+}
+
+tasks.register('startPostgresContainer', Exec) {
+    dependsOn buildPostgresContainer
+    if (!project.hasProperty("postgresdb.url")) {
+        doFirst() {
+            commandLine 'docker-compose', 'up', '-d', 'db', '--wait'
         }
     }
 }
@@ -185,8 +196,6 @@ tasks.register('buildDockerImages', Exec) {
 
 tasks.register('runOwaspZap', Exec) {
     group = 'run'
-    dependsOn renameTarball
-    dependsOn downloadOpenDcsInstaller
     dependsOn buildDockerImages
     doFirst {
         commandLine 'docker-compose', 'up', '--abort-on-container-exit', 'zap'

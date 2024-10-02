@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   db:
     container_name: "OpenTSDB"
@@ -20,10 +19,10 @@ services:
       DCSTOOL_USERDIR: /opendcs
       DBHOST_JDBC: jdbc:postgresql://127.0.0.1/open_tsdb
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "open_tsdb"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d open_tsdb" ]
       interval: 30s
       timeout: 60s
-      retries: 5
+      retries: 15
       start_period: 80s
     volumes:
       - db-data:/var/lib/postgresql/data/
@@ -49,7 +48,7 @@ services:
       JAVA_OPTS: -DDCSTOOL_HOME=/opendcs/ -DDCSTOOL_USERDIR=/opendcs/
       JAVA_ARGS: -p 8000 -c odcsapi
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/odcsapi/reflists"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/odcsapi/reflists" ]
       interval: 30s
       timeout: 10s
       retries: 15
@@ -63,7 +62,7 @@ services:
       opendcs-api:
         condition: service_healthy
     user: root
-    command: ["/bin/sh", "-c", "touch /zap/wrk/test.txt && zap-api-scan.py -I -t http://opendcs-api:8000/open_api.json -f openapi -r zap_report.html -w zap_report.md"]
+    command: [ "/bin/sh", "-c", "touch /zap/wrk/test.txt && zap-api-scan.py -I -t http://opendcs-api:8000/open_api.json -f openapi -r zap_report.html -w zap_report.md" ]
     volumes:
       - ./build/test-results/owasp:/zap/wrk:rw
     networks:

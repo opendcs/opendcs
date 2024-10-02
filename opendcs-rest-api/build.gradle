@@ -1,9 +1,23 @@
+/*
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 plugins {
     id "opendcs-rest-api.java-conventions"
     id "opendcs-rest-api.deps-conventions"
     id "opendcs-rest-api.publishing-conventions"
     id "war"
-    id 'com.bmuschko.tomcat' version '2.7.0'
 }
 
 configurations {
@@ -30,12 +44,9 @@ dependencies {
     testImplementation(libs.mockito.inline)
     testRuntimeOnly(libs.byte.buddy)
     testImplementation(libs.mockito.junit.jupiter)
-    dependencies {
-    def tomcatVersion = '9.0.30'
-    tomcat "org.apache.tomcat.embed:tomcat-embed-core:${tomcatVersion}",
-            "org.apache.tomcat.embed:tomcat-embed-jasper:${tomcatVersion}",
-            "org.apache.tomcat:tomcat-jdbc:${tomcatVersion}"
-    }
+    testImplementation(libs.rest.assured)
+    testImplementation(libs.hamcrest)
+    testImplementation(libs.bundles.tomcat)
     compileOnly(libs.auto.service)
     annotationProcessor(libs.auto.service)
 }
@@ -86,10 +97,47 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     }
 }
 
-tomcat {
-    httpPort = 7010
-    contextPath = '/odcsapi'
-    httpProtocol = 'org.apache.coyote.http11.Http11Nio2Protocol'
-    ajpProtocol  = 'org.apache.coyote.ajp.AjpNio2Protocol'
+
+tasks.register('generateConfig', Copy) {
+    doFirst {
+        project.delete "$buildDir/tomcat/"
+        project.mkdir "$buildDir/tomcat/logs"
+    }
+    from 'src/test/resources/tomcat'
+    into "$buildDir/tomcat"
+
+    //rename "context.xml", "context.xml.template"
+    rename "tomcat-server.xml", "server.xml"
+
+    inputs.dir "src/test/resources"
+    outputs.dir "$buildDir/tomcat/conf"
 }
-[tomcatRun, tomcatRunWar]*.configFile = file('src/test/resources/context.xml')
+
+tasks.register('integrationTest', Test) {
+    group "verification"
+    useJUnitPlatform {
+        includeTags "integration"
+    }
+    shouldRunAfter test
+    dependsOn war
+    dependsOn generateConfig
+    jvmArgs += "-DwarContext=/opendcs-rest-api"
+    jvmArgs += "-Djava.util.logging.config.file=$projectDir/test/resources/logging.properties"
+    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("postgresdb") }
+    if (!project.hasProperty("postgresdb.url")) {
+        systemProperties.put("postgresdb.url", "jdbc:postgresql://localhost:5432/open_tsdb")
+        systemProperties.put("opendcs.db.username", "tsdbadm")
+        systemProperties.put("opendcs.db.password", "postgres_pass")
+    }
+    dependsOn(":opendcs-rest-api-jetty:startPostgresContainer")
+    finalizedBy(":opendcs-rest-api-jetty:stopPostgresContainer")
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags "integration"
+    }
+}
