@@ -306,45 +306,56 @@ public class ResEvap
 	        double wselCurrent = reservoir.getElevation();
 	        double wselOld = wselCurrent;
 
-            if ( useElevTS )
-            {
-                double newElev = reservoir.getCurrentElevation(currentTime);
-                if ( HecConstants.isValidValue(newElev) )
-                {
-                    wselCurrent =  newElev;
-                    wselOld = wselCurrent;
+//            double[] solarRadTscArr = new double[24];
+//            double[] IR_DownTscArr = new double[24];
+//            double[] IR_OutTscArr = new double[24];
+//            double[] latentHeatTscArr = new double[24];
+//            double[] sensibleHeatTscArr = new double[24];
+//            double[] surfaceTempTscArr = new double[24];
+//            double[] evapRateHourlyTscArr = new double[24];
 
-//                    if ( xout != null )
-//                    {
-//                        xout.write (currentTime.date(4) + " " + currentTime.getTime(false) +   "  wselCurrent  " + (float)wselCurrent);
-//                    }
-                    reservoir.setElevationMeters(wselCurrent);
-                    reservoir.resSetup( true );
+//            if ( useElevTS )
+//            {
+//                double newElev = reservoir.getCurrentElevation(currentTime);
+//                if ( HecConstants.isValidValue(newElev) )
+//                {
+//                    wselCurrent =  newElev;
+//                    wselOld = wselCurrent;
+//
+////                    if ( xout != null )
+////                    {
+////                        xout.write (currentTime.date(4) + " " + currentTime.getTime(false) +   "  wselCurrent  " + (float)wselCurrent);
+////                    }
+//                    reservoir.setElevationMeters(wselCurrent);
+//                    reservoir.resSetup( true );
+//                }
+//            }
+//            for(int jhour = 0; jhour <= 24; ++jhour) {
+
+                double surfaceTemp = reservoir._wt[resj];
+
+//                if (jhour > 0) {
+//                    currentTime.setTime(currentTime.getTime() + 60 * 60 * 1000);
+//                }
+
+                // compute solar and longwave down radiation
+                // and evaporation for reservoir location
+                metComputation.computeMetAndEvap(currentTime, surfaceTemp,
+                        resLocationInfo);
+
+                boolean noProblem = true;
+
+                // if no valid met data yet skip reservoir temp compute
+                if (!metComputation.metFailed) {
+                    // compute temperature profile in reservoir
+                    noProblem = resWtCompute.computeReservoirTemp(
+                            currentTime, metComputation, deltT);
                 }
-            }
 
-            double surfaceTemp = reservoir._wt[resj];
-
-            // compute solar and longwave down radiation
-            // and evaporation for reservoir location
-            metComputation.computeMetAndEvap(currentTime, surfaceTemp,
-                    resLocationInfo );
-
-            boolean noProblem = true;
-
-            // if no valid met data yet skip reservoir temp compute
-            if ( !metComputation.metFailed)
-            {
-                // compute temperature profile in reservoir
-                noProblem = resWtCompute.computeReservoirTemp(
-                        currentTime, metComputation, deltT);
-            }
-
-            // write out diagnostic text files if opened
-            String strval, s;
-            double val;
-            if ( noProblem )
-            {
+                // write out diagnostic text files if opened
+                String strval, s;
+                double val;
+                if (noProblem) {
 //                if ( out != null )
 //                {
 //                    // write computed water temperature profile
@@ -371,26 +382,35 @@ public class ResEvap
 //                }
 
 
-                solarRadTsc =  metComputation.solar;
-                IR_DownTsc =  metComputation.flxir;
-                IR_OutTsc =  metComputation.flxir_out;
-                latentHeatTsc =  metComputation.evapWater.hl;
-                sensibleHeatTsc =  metComputation.evapWater.hs;
-                surfaceTempTsc =  surfaceTemp;  // BOP surface temp
-                // evap is in mm/day.  Divide by 24 to get instantaneous
-                // hourly value
-                evapRateHourlyTsc =  metComputation.evapWater.evap / 24.;
-                // store wt profile
-                int numLayers = reservoir.getResj() + 1;
-                //_wtempProfiles[idx] = new double[numLayers];
-                wtempProfiles = new double[EvapReservoir.NLAYERS];
-                for ( int ilyr = 0; ilyr<numLayers; ilyr++ )
-                {
-                    wtempProfiles[ilyr] = reservoir._wt[ilyr];
-                }
-            }
+                    solarRadTsc = metComputation.solar;
+                    IR_DownTsc = metComputation.flxir;
+                    IR_OutTsc = metComputation.flxir_out;
+                    latentHeatTsc = metComputation.evapWater.hl;
+                    sensibleHeatTsc = metComputation.evapWater.hs;
+                    surfaceTempTsc = surfaceTemp;  // BOP surface temp
+                    // evap is in mm/day.  Divide by 24 to get instantaneous
+                    // hourly value
+                    evapRateHourlyTsc = metComputation.evapWater.evap / 24.;
 
-	        
+//                    solarRadTscArr[jhour] = metComputation.solar;
+//                    IR_DownTscArr[jhour] = metComputation.flxir;
+//                    IR_OutTscArr[jhour] = metComputation.flxir_out;
+//                    latentHeatTscArr[jhour] = metComputation.evapWater.hl;
+//                    sensibleHeatTscArr[jhour] = metComputation.evapWater.hs;
+//                    surfaceTempTscArr[jhour] = surfaceTemp;  // BOP surface temp
+//                    // evap is in mm/day.  Divide by 24 to get instantaneous
+//                    // hourly value
+//                    evapRateHourlyTscArr[jhour] = metComputation.evapWater.evap / 24.;
+
+                    // store wt profile
+                    int numLayers = reservoir.getResj() + 1;
+                    //_wtempProfiles[idx] = new double[numLayers];
+                    wtempProfiles = new double[EvapReservoir.NLAYERS];
+                    for (int ilyr = 0; ilyr < numLayers; ilyr++) {
+                        wtempProfiles[ilyr] = reservoir._wt[ilyr];
+                    }
+                }
+//            }
 	        try
 	        {
 	        	if ( out != null )  out.close();
