@@ -162,13 +162,19 @@ public class EvapReservoir
      * @param hecTime
      * @return   the reservoir elevation at hecTime in meters
      */
-    public double getCurrentElevation( Date hecTime )
-    {
+    public double getCurrentElevation( Date hecTime ) throws DecodesException {
     	if ( _elevationTsc == null )
     	{
     		return _elev;
     	}
-        double elev = _elevationTsc.findNextIdx(hecTime);
+        int elevIdx = _elevationTsc.findNextIdx(hecTime);
+        double elev;
+        try {
+            elev = _elevationTsc.sampleAt(elevIdx).getDoubleValue();
+        }
+        catch(Exception ex){
+            throw new DecodesException("failed to load current elevation", ex);
+        }
         if ( !HecConstants.isValidValue(elev) )
         {
         	// return undef value
@@ -480,7 +486,7 @@ public class EvapReservoir
      */
     public double intArea(double el) throws RatingException {
         try {
-            return _RatingAreaElev.rate(conn, el);
+            return _RatingAreaElev.rate(conn, el / FT_TO_M);
         }
         catch(RatingException ex){
             throw new RatingException("failed to compute rating", ex);
