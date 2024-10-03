@@ -58,8 +58,7 @@ public class MetComputation
     }
 
     public void computeMetAndEvap( Date currentTime, double surfaceTemp,
-                                  ReservoirLocationInfo resLocationInfo)
-    {
+                                  ReservoirLocationInfo resLocationInfo) throws ResEvapException {
         // get met values from time series for current time
         double airPressure = metData.getAirPressure(currentTime);
         // some rounding problems with kPa to mb conversion
@@ -245,7 +244,7 @@ public class MetComputation
         }
         // compute incoming solar radiation
         SolarFlux solarFlx = new SolarFlux();
-        solarFlx.solflx( currentTime, gmtOffset,
+        solarFlx.solflx( currentTime, 0,//gmt_offset todo
                 lon, lat, cloudCover );
 
         solar = solarFlx.SOLAR;
