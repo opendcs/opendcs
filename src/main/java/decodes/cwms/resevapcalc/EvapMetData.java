@@ -47,31 +47,26 @@ public class EvapMetData
     double relHumidity_current = Constants.undefinedDouble;
     double airPressure_current = Constants.undefinedDouble;
           
-    public double getWindSpeed( Date hecTime )
-    {
+    public double getWindSpeed( Date hecTime ) throws ResEvapException {
         //return _windspeedTsc.getValue(hecTime);
         return getMetValue(windspeedTsc, hecTime);
     }
     
-    public double getAirTemp( Date hecTime )
-    {
+    public double getAirTemp( Date hecTime ) throws ResEvapException {
         //return _airTempTsc.getValue(hecTime);
         return getMetValue(airTempTsc, hecTime);
     }
-    public double getRelHumidity( Date hecTime )
-    {
+    public double getRelHumidity( Date hecTime ) throws ResEvapException {
         //return _relHumidityTsc.getValue(hecTime);
         return getMetValue(relHumidityTsc, hecTime);
     }
     
-    public double getDewPoint( Date hecTime )
-    {
+    public double getDewPoint( Date hecTime ) throws ResEvapException {
         //return _dewPointTsc.getValue(hecTime);
         return getMetValue(dewPointTsc, hecTime);
     }
     
-    public double getAirPressure( Date hecTime )
-    {
+    public double getAirPressure( Date hecTime ) throws ResEvapException {
         //return _airPressureTsc.getValue(hecTime);
         return getMetValue(airPressureTsc, hecTime);
     }
@@ -85,8 +80,7 @@ public class EvapMetData
      * @param hecTime
      * @return 
      */
-    public CloudCover[] getCloudCover( Date hecTime )
-    {
+    public CloudCover[] getCloudCover( Date hecTime ) throws ResEvapException {
         CloudCover[] cloudCover = new CloudCover[3];
 //        double fractionCC = _fractionLowClouds.getValue(hecTime);
 //        double altitude = _altitudeLowClouds.getValue(hecTime);
@@ -115,9 +109,16 @@ public class EvapMetData
         return cloudCover;
     }
 
-    private double getMetValue( CTimeSeries tsc, Date hecTime )
-    {
-            return tsc.findNextIdx(hecTime);
+    private double getMetValue( CTimeSeries tsc, Date hecTime ) throws ResEvapException {
+            int idx = tsc.findNextIdx(hecTime);
+            double value;
+            try{
+                value = tsc.sampleAt(idx).getDoubleValue();
+            }
+            catch (Exception ex){
+                throw new ResEvapException("failed to load met value from timeseries", ex);
+            }
+            return value;
     }
     
     public void setAirTempTs( CTimeSeries tsc )

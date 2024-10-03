@@ -21,6 +21,7 @@ import opendcs.dai.TimeSeriesDAI;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 //AW:IMPORTS
 
@@ -85,6 +86,7 @@ public class ResEvapAlgo
 	private CTimeSeries ElevTS = null;
 
 	private CTimeSeries HourlyEvapTS = null;
+	private CTimeSeries DailyEvapTS = null;
 
 	CwmsRatingDao crd;
 	SiteDAI siteDAO;
@@ -217,6 +219,7 @@ public class ResEvapAlgo
 //		}
         _awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "DailyEvap";
+		aggregateTimeZone = Timezone;
 		aggUpperBoundClosed = true;
 		aggLowerBoundClosed = false;
 //		aggPeriodInterval = IntervalCodes.int_one_day;
@@ -244,7 +247,7 @@ public class ResEvapAlgo
 
 	public void setProfiles(WaterTempProfiles newWTP, double[] wtp, Date CurrentTime) throws DbCompException {
 		double currentDepth = start_depth;
-		for(int i = 0; i < wtp.length; i++){
+		for(int i = 0; i < wtp.length && currentDepth+(Zero_elevation*0.3048)<=Elev; i++){
 			if(i+1>newWTP.tseries.size()){
 				try{
 					TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(WtpTsid);
@@ -255,9 +258,9 @@ public class ResEvapAlgo
 					newsite.copyFrom(newTSID.getSite());
 					SiteName strsite = newsite.getName(Constants.snt_CWMS);
 
-					DecimalFormat decimalFormat = new DecimalFormat("000,0");
-					String formattedNumber = decimalFormat.format(currentDepth);
-					strsite.setNameValue(strsite.getNameValue()+"-D"+formattedNumber+"m");
+					DecimalFormat decimalFormat = new DecimalFormat("000.0");
+					String formattedNumber = decimalFormat.format(currentDepth).replace(".", ",");
+					strsite.setNameValue(reservoirId+"-D"+formattedNumber+"m");
 					newTSID.setSite(newsite);
 
 					CTimeSeries CTProfile = new CTimeSeries(newTSID);
@@ -317,7 +320,7 @@ public class ResEvapAlgo
 	}
 
 	public void SetAsFlow(Double TotalEvap ,Date CurrentTime) throws NoConversionException, DecodesException, RatingException {
-		double evap_to_meters = convertUnits(TotalEvap, HourlyEvapTS.getUnitsAbbr(), "m");
+		double evap_to_meters = convertUnits(TotalEvap, DailyEvapTS.getUnitsAbbr(), "m");
 
 		double elev = resEvap.reservoir.getCurrentElevation(CurrentTime);
 		double areaMetersSq;
@@ -328,7 +331,7 @@ public class ResEvapAlgo
 			throw new RatingException("failed to compute rating", ex);
 		}
 		double dailyEvapFlow = (areaMetersSq * evap_to_meters)/(86400.);
-		setOutput(DailyEvapAsFlow, dailyEvapFlow, CurrentTime);
+		setOutput(DailyEvapAsFlow, dailyEvapFlow, _timeSliceBaseTime);
 	}
 
 	//TODO read database
@@ -344,105 +347,105 @@ public class ResEvapAlgo
 //AW:BEFORE_TIMESLICES
 		tally = 0.0;
 		count = 0;
+		if (baseTimes.size() == 24) {
 
-		siteDAO =  tsdb.makeSiteDAO();
-		timeSeriesDAO = tsdb.makeTimeSeriesDAO();
-		crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsdb);
+			siteDAO = tsdb.makeSiteDAO();
+			timeSeriesDAO = tsdb.makeTimeSeriesDAO();
+			crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
 
-		hourlyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
-		DailyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
+			hourlyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
+			DailyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
 
-		HourlyEvapTS = getParmRef("HourlyEvap").timeSeries;
+			HourlyEvapTS = getParmRef("HourlyEvap").timeSeries;
+			DailyEvapTS = getParmRef("DailyEvap").timeSeries;
 
-		windSpeedTS = getParmRef("windSpeed").timeSeries;
-		AirTempTS = getParmRef("AirTemp").timeSeries;
-		RelativeHumidityTS = getParmRef("RelativeHumidity").timeSeries;
-		AtmPressTS = getParmRef("AtmPress").timeSeries;
-		PercentLowCloudTS = getParmRef("PercentLowCloud").timeSeries;
-		ElevLowCloudTS = getParmRef("ElevLowCloud").timeSeries;
-		PercentMidCloudTS = getParmRef("PercentMidCloud").timeSeries;
-		ElevMidCloudTS = getParmRef("ElevMidCloud").timeSeries;
-		PercentHighCloudTS = getParmRef("PercentHighCloud").timeSeries;
-		ElevHighCloudTS = getParmRef("ElevHighCloud").timeSeries;
-		ElevTS = getParmRef("Elev").timeSeries;
+			windSpeedTS = getParmRef("windSpeed").timeSeries;
+			AirTempTS = getParmRef("AirTemp").timeSeries;
+			RelativeHumidityTS = getParmRef("RelativeHumidity").timeSeries;
+			AtmPressTS = getParmRef("AtmPress").timeSeries;
+			PercentLowCloudTS = getParmRef("PercentLowCloud").timeSeries;
+			ElevLowCloudTS = getParmRef("ElevLowCloud").timeSeries;
+			PercentMidCloudTS = getParmRef("PercentMidCloud").timeSeries;
+			ElevMidCloudTS = getParmRef("ElevMidCloud").timeSeries;
+			PercentHighCloudTS = getParmRef("PercentHighCloud").timeSeries;
+			ElevHighCloudTS = getParmRef("ElevHighCloud").timeSeries;
+			ElevTS = getParmRef("Elev").timeSeries;
 
 
-		EvapMetData metData = new EvapMetData();
-		metData.setWindSpeedTs(windSpeedTS);
-		metData.setAirTempTs(AirTempTS);
-		metData.setRelHumidityTs(RelativeHumidityTS);
-		metData.setAirPressureTs(AtmPressTS);
-		metData.setLowCloudTs(PercentLowCloudTS, ElevLowCloudTS);
-		metData.setMedCloudTs(PercentMidCloudTS, ElevMidCloudTS);
-		metData.setHighCloudTs(PercentHighCloudTS, ElevHighCloudTS);
+			EvapMetData metData = new EvapMetData();
+			metData.setWindSpeedTs(windSpeedTS);
+			metData.setAirTempTs(AirTempTS);
+			metData.setRelHumidityTs(RelativeHumidityTS);
+			metData.setAirPressureTs(AtmPressTS);
+			metData.setLowCloudTs(PercentLowCloudTS, ElevLowCloudTS);
+			metData.setMedCloudTs(PercentMidCloudTS, ElevMidCloudTS);
+			metData.setHighCloudTs(PercentHighCloudTS, ElevHighCloudTS);
 
-		reservoir = new EvapReservoir();
-		reservoir.setName(reservoirId);
-		reservoir.setThermalDiffusivityCoefficient(ThermalDifCoe);
-		try {
-			reservoir.setWindShearMethod(WindShearMethod.fromString(WindShear));
+			reservoir = new EvapReservoir();
+			reservoir.setName(reservoirId);
+			reservoir.setThermalDiffusivityCoefficient(ThermalDifCoe);
+			try {
+				reservoir.setWindShearMethod(WindShearMethod.fromString(WindShear));
+			} catch (Throwable ex) {
+				ex.printStackTrace();
+			}
+
+			reservoir.setInputDataIsEnglish(true);
+			double lonneg = -Longi;
+			reservoir.setLatLon(Lati, lonneg);
+			reservoir.setSecchi(Secchi);
+
+			RatingSet ratingSet;
+			try {
+				ratingSet = crd.getRatingSet(Rating);
+			} catch (RatingException ex) {
+				throw new DbCompException("failed to load rating table", ex);
+			}
+
+			ratingSet.setDefaultValueTime(baseTimes.first().getTime());
+			reservoir.conn = tsdb.getConnection();
+
+			reservoir.setElevAreaRating(ratingSet);
+
+
+			reservoir.setInstrumentHeights(32.81, 32.81, 32.81);
+
+			reservoir.setElevationTs(ElevTS);
+			double initElev;
+			try {
+				initElev = ElevTS.findPrev(baseTimes.first()).getDoubleValue();
+//				initElev = ElevTS.sampleAt(ElevTS.findNextIdx(baseTimes.first())).getDoubleValue();
+			} catch (Exception ex) {
+				throw new DbCompException("failed to load initial Elevation");
+			}
+			reservoir.setElevation(initElev);
+			reservoir.setZeroElevation(Zero_elevation);
+
+			resEvap = new ResEvap();
+
+			if (!resEvap.setReservoir(reservoir)) {
+				throw new DbCompException("Reservoir not in Database. Exiting Script.");
+			}
+
+			// reservoir structure setup so now set wtemp profile
+			int resj = reservoir.getResj();
+
+			double[] wtp;
+			try {
+				wtp = getProfiles();
+			} catch (Exception ex) {
+				throw new DbCompException("failed to load profiles");
+			}
+			// reverse array order
+			double[] wtpR = new double[resj + 1];
+			for (int i = 0; i < resj + 1; i++) {
+				wtpR[i] = wtp[resj - i];
+			}
+
+			reservoir.setInitWaterTemperatureProfile(wtpR, resj);
+
+			resEvap.metData = metData;
 		}
-		catch(Throwable ex){
-			ex.printStackTrace();
-		}
-
-		reservoir.setInputDataIsEnglish(true);
-		double lonneg = -Longi;
-		reservoir.setLatLon(Lati, lonneg);
-		reservoir.setSecchi(Secchi);
-
-		RatingSet ratingSet;
-		try {
-			ratingSet = crd.getRatingSet(Rating);
-		}
-		catch(RatingException ex){
-			throw new DbCompException("failed to load rating table", ex);
-		}
-		ratingSet.setDefaultValueTime(baseTimes.first().getTime());
-		reservoir.conn = tsdb.getConnection();
-
-		reservoir.setElevAreaRating(ratingSet);
-
-
-
-		reservoir.setInstrumentHeights(32.81, 32.81, 32.81);
-
-		reservoir.setElevationTs(ElevTS);
-		double initElev;
-		try{
-			initElev = ElevTS.sampleAt(ElevTS.findNextIdx(baseTimes.first())).getDoubleValue();
-		}
-		catch(Exception ex){
-			throw new DbCompException("failed to load initial Elevation");
-		}
-		reservoir.setElevation(initElev);
-		reservoir.setZeroElevation(Zero_elevation);
-
-		resEvap = new ResEvap();
-
-		if (!resEvap.setReservoir(reservoir)) {
-			throw new DbCompException("Reservoir not in Database. Exiting Script.");
-		}
-
-		// reservoir structure setup so now set wtemp profile
-		int resj = reservoir.getResj();
-
-		double[] wtp;
-		try{
-			wtp = getProfiles();
-		}
-		catch(Exception ex){
-			throw new DbCompException("failed to load profiles");
-		}
-		// reverse array order
-		double[] wtpR = new double[resj];
-		for (int i = 0; i<resj; i++){
-			wtpR[i] = wtp[resj-i-1];
-		}
-
-		reservoir.setInitWaterTemperatureProfile(wtpR, resj);
-
-		resEvap.metData = metData;
 //AW:BEFORE_TIMESLICES_END
 	}
 
@@ -460,29 +463,30 @@ public class ResEvapAlgo
 	protected void doAWTimeSlice()
             throws DbCompException {
 //AW:TIMESLICE
-		try {
-			boolean noProblem = resEvap.compute(_timeSliceBaseTime, GMT_Offset);
-			if (!noProblem){
-				throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.");
+		if (baseTimes.size() == 24) {
+			try {
+				boolean noProblem = resEvap.compute(_timeSliceBaseTime, GMT_Offset);
+				if (!noProblem) {
+					throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.");
+				}
+			} catch (Exception ex) {
+				throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.", ex);
 			}
+
+			List<Double> computedList = resEvap.getComputedMetTimeSeries();
+			setOutput(HourlySurfaceTemp, computedList.get(0));
+			setOutput(HourlySensible, computedList.get(1));
+			setOutput(HourlyLatent, computedList.get(2));
+			setOutput(HourlySolar, computedList.get(3));
+			setOutput(HourlyFluxIn, computedList.get(4));
+			setOutput(HourlyFluxOut, computedList.get(5));
+			setOutput(HourlyEvap, computedList.get(6));
+
+			setProfiles(hourlyWTP, resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime);
+
+			count++;
+			tally += computedList.get(6);
 		}
-		catch(Exception ex){
-			throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.", ex);
-		}
-
-		List<Double> computedList = resEvap.getComputedMetTimeSeries();
-		setOutput(HourlySurfaceTemp, computedList.get(0));
-		setOutput(HourlySensible, computedList.get(1));
-		setOutput(HourlyLatent, computedList.get(2));
-		setOutput(HourlySolar, computedList.get(3));
-		setOutput(HourlyFluxIn, computedList.get(4));
-		setOutput(HourlyFluxOut, computedList.get(5));
-		setOutput(HourlyEvap, computedList.get(6));
-
-		setProfiles(hourlyWTP, resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime);
-
-		count++;
-		tally += computedList.get(6);
 //AW:TIMESLICE_END
 	}
 
@@ -493,16 +497,17 @@ public class ResEvapAlgo
             throws DbCompException{
 		if (count < 24)
 		{
-			throw new DbCompException("There are less than 24 hourly samples, can not compute daily sums");
+			warning("There are less than 24 hourly samples, can not compute daily sums");
 		}
-
-		setOutput(DailyEvap, tally);
-		try {
-			SetAsFlow(tally, _timeSliceBaseTime);
-		} catch (RatingException| NoConversionException | DecodesException e) {
-			throw new RuntimeException(e);
+		else{
+			setOutput(DailyEvap, tally, _timeSliceBaseTime);
+			try {
+				SetAsFlow(tally, _timeSliceBaseTime);
+			} catch (RatingException| NoConversionException | DecodesException e) {
+				throw new RuntimeException(e);
+			}
 		}
-		setDailyProfiles(_timeSliceBaseTime);
+//		setDailyProfiles(_timeSliceBaseTime);
 
 		//testing
 //		hourlyWTP.SaveProfiles();
