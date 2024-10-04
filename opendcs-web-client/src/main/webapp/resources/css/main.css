@@ -368,6 +368,12 @@ html .content {
 	background-color: #f0756c !important;
 }
 
+.opendcs-bordered-cells td {
+	border-style: solid;
+	border-width: 1px;
+	border-color: #d6d6d6;
+}
+
 /**** Editable Select ****/
 .select-editable {
      position:relative;
