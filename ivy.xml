@@ -165,7 +165,6 @@
         <exclude org="javax.media"/>
         <exclude org="com.sun.media"/>
         <exclude org="log4j"/>
-        <exclude org="org.jdom"/>
         <exclude org="org.apache.xmlbeans" module="xmlbeans"/>
 
         <!-- overides to forced updated or specific versions -->
