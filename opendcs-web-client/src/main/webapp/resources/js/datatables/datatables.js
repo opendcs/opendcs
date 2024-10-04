@@ -26,7 +26,8 @@ class OpenDcsDataTable {
 	  }
     this.domId = domId;
     this.jq = $(`#${domId}`);
-    this.tableProperties = tableProperties != null ? tableProperties : defaultTableProperties;
+    this.tableProperties = tableProperties != undefined && tableProperties != null
+        ? tableProperties : defaultTableProperties;
     this.properties = properties;
     
     this.setInlineOptions(inlineOptions);
