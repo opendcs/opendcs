@@ -39,6 +39,7 @@ import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
+import ilex.util.Pair;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
 import ilex.util.TextUtil;
@@ -56,10 +57,14 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
 
+import org.opendcs.database.DatabaseService;
+import org.slf4j.LoggerFactory;
+
 import lrgs.gui.DecodesInterface;
 import lrgs.gui.MessageBrowser;
 import lrgs.nledit.NetlistEditFrame;
 import lrgs.rtstat.RtStat;
+import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.dbeditor.DbEditorFrame;
 import decodes.gui.TopFrame;
@@ -67,6 +72,7 @@ import decodes.platstat.PlatformMonitor;
 import decodes.platwiz.Frame1;
 import decodes.platwiz.PlatformWizard;
 import decodes.routmon2.RoutingMonitor;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.algoedit.AlgorithmWizard;
 import decodes.tsdb.compedit.CAPEdit;
 import decodes.tsdb.comprungui.CompRunGuiFrame;
@@ -88,6 +94,7 @@ public class LauncherFrame
     extends JFrame
     implements ProcWaiterCallback
 {
+    private static org.slf4j.Logger log = LoggerFactory.getLogger(LauncherFrame.class);
     private static Logger logger = Logger.instance();
 
     private static ResourceBundle labels = getLabels();
@@ -167,6 +174,7 @@ public class LauncherFrame
     // Future improvements will alter how that test works.
     private Profile profile = null;
     private final Profile launchProfile;
+    private Pair<Database,TimeSeriesDb> databases = null;
 
     public LauncherFrame(String args[], Profile launchProfile)
     {
@@ -187,7 +195,7 @@ public class LauncherFrame
         algorithmWizFrame = null;
         platformWizFrame = null;
         alarmsFrame = null;
-Logger.instance().info("LauncherFrame ctor");
+        Logger.instance().info("LauncherFrame ctor");
         String dbClass = DecodesSettings.instance().getTsdbClassName();
         if (dbClass != null)
         {
@@ -947,8 +955,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (DecodesException ex)
         {
-            Logger.instance().log(Logger.E_FAILURE,
-                "Cannot initialize DECODES: '" + ex);
+            log.atError()
+               .setCause(ex)
+               .log("Cannot initialize DECODES.");
         }
     }
 
@@ -1016,7 +1025,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                     if (!DecodesInterface.isInitialized())
                     {
                         doInitDecodes();
-                        DecodesInterface.initializeForEditing();
                     }
                 }
                 catch (DecodesException ex)
@@ -1174,24 +1182,25 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     private void doInitDecodes() throws DecodesException
     {
-        // Load the DCS Tool Configuration
+        if (databases != null)
+        {
+            return;
+        }
+
 
         // Initialize minimal DECODES database.
         try
         {
-            DecodesInterface.setGUI(true);
-            DecodesInterface.initDecodes(
-                EnvExpander.expand(
-                    "$DECODES_INSTALL_DIR/decodes.properties"));
+            // Load the DCS Tool Configuration
+            DecodesSettings settings = DecodesSettings.fromProfile(launchProfile);
+            databases = DatabaseService.getDatabaseFor(null, settings);
+
         }
-        catch (DecodesException ex)
+        catch (Exception ex)
         {
-            String msg = "Error initializing DECODES database: " + ex;
-            Logger.instance().log(Logger.E_FAILURE, msg);
-            System.err.println(msg);
-            // showError(msg);
-            throw ex;
+            throw new DecodesException("Unable to initialize decodes.", ex);
         }
+
     }
 
     /**
