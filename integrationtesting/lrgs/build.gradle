@@ -1,0 +1,15 @@
+plugins {
+    id 'opendcs.java-conventions'
+    id 'opendcs.deps-conventions'
+}
+
+
+dependencies {
+    implementation project(":opendcs")
+    implementation project(":testing:fixtures")
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.commons.io)
+    testImplementation(libs.apache.derby)
+    testImplementation(libs.webcompere.system.stubs.jupiter)
+}

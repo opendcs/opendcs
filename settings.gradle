@@ -11,3 +11,10 @@ project(":opendcs-annotations").projectDir=file("java/annotations")
 
 include ":opendcs"
 project(":opendcs").projectDir=file("java/opendcs")
+
+
+include ":testing:lrgs"
+project(":testing:lrgs").projectDir=file("integrationtesting/lrgs")
+
+include ":testing:fixtures"
+project(":testing:fixtures").projectDir=file("integrationtesting/fixtures")
