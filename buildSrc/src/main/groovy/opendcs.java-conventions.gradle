@@ -5,6 +5,7 @@ plugins {
     id 'eclipse'
     // NOTE: external plugin version is specified in implementation dependency artifact of the project's build file
     id 'com.github.spotbugs'
+    id 'jacoco'
 }
 
 
@@ -36,6 +37,17 @@ dependencies {
 test
 {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.9"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+    }
 }
 
 checkstyle {
