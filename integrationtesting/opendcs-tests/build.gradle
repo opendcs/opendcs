@@ -1,0 +1,55 @@
+plugins {
+    id 'opendcs.java-conventions'
+    id 'opendcs.deps-conventions'
+}
+
+dependencies {
+    implementation project(":install")
+
+    testCompileOnly project(":opendcs")
+    testImplementation project(":testing:fixtures")
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.hec.testcontainers.cwms)
+    testImplementation(libs.bundles.jdbi)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.junit.platform)
+    testImplementation(libs.commons.io)
+    testImplementation(libs.apache.derby)
+    testImplementation(libs.fasterxml.jackson.databind)
+    testImplementation(libs.webcompere.system.stubs.jupiter)
+}
+
+def impl = project.findProperty("opendcs.test.engine")
+def tmpdir = "${project.layout.buildDirectory.get()}/runs/${impl}/tmp"
+
+test {
+    dependsOn ":install:installDist"
+    enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" + name)
+    doFirst {
+        project.mkdir(tmpdir)
+    }
+    def install = project(":install")
+    def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
+    def classPath = (project(':opendcs').jar.outputs.files
+                  + project(":opendcs").configurations.runtimeClasspath).asPath
+
+    
+    systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
+    
+    jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
+    jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
+    jvmArgs += "-Dopendcs.test.classpath=${classPath}"
+    jvmArgs += "-Dresource.dir=${projectDir}/src/test/resources" // TODO: make clearer
+    jvmArgs += "-DDCSTOOL_HOME=${stageDir}"
+
+    reports {
+        html {
+            outputLocation = reporting.baseDirectory.dir("${impl}")
+        }
+        junitXml {
+            outputLocation = reporting.baseDirectory.dir("${impl}")
+        }
+    }
+}

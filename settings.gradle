@@ -1,4 +1,4 @@
-rootProject.name = 'opendcs'
+rootProject.name = 'OPENDCS Toolkit'
 
 include ":install"
 project(":install").projectDir=file("install")
@@ -18,3 +18,6 @@ project(":testing:lrgs").projectDir=file("integrationtesting/lrgs")
 
 include ":testing:fixtures"
 project(":testing:fixtures").projectDir=file("integrationtesting/fixtures")
+
+include ":testing:opendcs-tests"
+project(":testing:opendcs-tests").projectDir=file("integrationtesting/opendcs-tests")

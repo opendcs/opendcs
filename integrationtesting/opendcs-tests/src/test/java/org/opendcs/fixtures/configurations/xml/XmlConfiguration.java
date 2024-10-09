@@ -66,8 +66,8 @@ public class XmlConfiguration implements Configuration
         configBuilder.withSiteNameTypePreference("CWMS");
         try(OutputStream out = new FileOutputStream(propertiesFile);)
         {
-            FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
-            FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
+            FileUtils.copyDirectory(new File(System.getProperty("DCSTOOL_HOME")+"/edit-db"),editDb);
+            FileUtils.copyDirectory(new File(System.getProperty("DCSTOOL_HOME")+"/schema"),new File(userDir,"/schema/"));
             configBuilder.build(out);
             started = true;
         }

@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import org.assertj.core.api.ZonedDateTimeAssert;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
