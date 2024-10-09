@@ -58,7 +58,7 @@ distributions
             {
                 user
                 {
-                    write = false;
+                    write = true;
                     read = true
                 }
                 group
@@ -82,6 +82,10 @@ distributions
             into('doc')
             {
                 from configurations.docs
+            }
+
+            into('schema') {
+                from "${rootDir}/schema"
             }
         }
     }
