@@ -105,7 +105,14 @@ dependencies {
 test
 {
     jvmArgs += "-Dbuild.dir=$buildDir"
-    jvmArgs += "-Dopendcs.jarfile=$buildDir/libs/opendcs-${version}.jar"
+    jvmArgumentProviders.add(
+        new CommandLineArgumentProvider()
+        {
+            Iterable<String> asArguments()
+            {
+                return ["-Dopendcs.jarfile=${jar.archiveFile.get().asFile}"];
+            }
+        })
     systemProperty "build.dir", "$buildDir"
 }
 
