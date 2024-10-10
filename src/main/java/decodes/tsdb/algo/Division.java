@@ -1,80 +1,56 @@
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.ParmRef;
-import ilex.var.TimedVariable;
-import decodes.tsdb.TimeSeriesIdentifier;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
+@Algorithm(description = "Divide one time series with another using : (a*input1+b)/(c*input2+d). \n" +
+		"If the denominator is zero then output is not set ")
 
-//AW:JAVADOC
-/**
-Divide one time series with another using : (a*input1+b)/(c*input2+d). 
-If the denominator is zero then output is not set 
- */
-//AW:JAVADOC_END
-public class Division
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class Division extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double input1;	//AW:TYPECODE=i
+	@Input
 	public double input2;	//AW:TYPECODE=i
-	String _inputNames[] = { "input1", "input2" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
 	double numerator;
 	double denominator;
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "1.0")
 	public double a = 1.0;
+	@PropertySpec(value = "0")
 	public double b = 0;
+	@PropertySpec(value = "1.0")
 	public double c = 1.0;
+	@PropertySpec(value = "0")
 	public double d = 0;
-	String _propertyNames[] = { "a", "b", "c", "d" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -87,51 +63,26 @@ public class Division
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		numerator = a*input1+b;
 		denominator = c*input2 + d;
 		if(denominator > 0) 
 			setOutput(output,numerator/denominator);
 		//else
 			//setOutput(output,undefined);
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+
+	@Override
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
