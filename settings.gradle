@@ -1,0 +1,23 @@
+rootProject.name = 'OPENDCS Toolkit'
+
+include ":install"
+project(":install").projectDir=file("install")
+
+include ":docs"
+project(":docs").projectDir=file("docs")
+
+include ":opendcs-annotations"
+project(":opendcs-annotations").projectDir=file("java/annotations")
+
+include ":opendcs"
+project(":opendcs").projectDir=file("java/opendcs")
+
+
+include ":testing:lrgs"
+project(":testing:lrgs").projectDir=file("integrationtesting/lrgs")
+
+include ":testing:fixtures"
+project(":testing:fixtures").projectDir=file("integrationtesting/fixtures")
+
+include ":testing:opendcs-tests"
+project(":testing:opendcs-tests").projectDir=file("integrationtesting/opendcs-tests")

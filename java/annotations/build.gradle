@@ -1,0 +1,9 @@
+plugins
+{
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'java-library'
+}
+
+// NOTE: this project should not contain any runtime dependencies
+// Build dependencies, such as google autowire are acceptable.

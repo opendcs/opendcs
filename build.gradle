@@ -1,0 +1,8 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+ext.osWin = Os.isFamily(Os.FAMILY_WINDOWS)
+
+allprojects {
+    group = 'org.opendcs'
+    version = '7.0.14-SNAPSHOT'
+}

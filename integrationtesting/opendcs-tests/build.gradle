@@ -1,0 +1,106 @@
+plugins {
+    id 'opendcs.java-conventions'
+    id 'opendcs.deps-conventions'
+}
+
+dependencies {
+    implementation project(":install")
+
+    testCompileOnly project(":opendcs")
+    testImplementation project(":testing:fixtures")
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.hec.testcontainers.cwms)
+    testImplementation(libs.bundles.jdbi)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.bundles.junit.platform)
+    testImplementation(libs.commons.io)
+    testImplementation(libs.apache.derby)
+    testImplementation(libs.fasterxml.jackson.databind)
+    testImplementation(libs.webcompere.system.stubs.jupiter)
+}
+
+def impl = project.findProperty("opendcs.test.engine")
+def tmpdir = "${project.layout.buildDirectory.get()}/runs/${impl}/tmp"
+
+test {
+    dependsOn ":install:installDist"
+    dependsOn ":opendcs:test"
+
+    enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" + name)
+    doFirst {
+        project.mkdir(tmpdir)
+    }
+    def install = project(":install")
+    def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
+    def classPath = (project(':opendcs').jar.outputs.files
+                  + project(":opendcs").configurations.runtimeClasspath).asPath
+
+    
+    systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
+    
+    jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
+    jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
+    jvmArgs += "-Dopendcs.test.classpath=${classPath}"
+    jvmArgs += "-Dresource.dir=${projectDir}/src/test/resources" // TODO: make clearer
+    jvmArgs += "-DDCSTOOL_HOME=${stageDir}"
+
+    reports {
+        html {
+            outputLocation = reporting.baseDirectory.dir("${impl}")
+        }
+        junitXml {
+            outputLocation = reporting.baseDirectory.dir("${impl}")
+        }
+    }
+    jacoco {
+        destinationFile = layout.buildDirectory.file("jacoco/${impl}.exec").get().asFile
+        excludes += [
+                "**/easy_install/**",
+                "**/python_packages",
+                "**/certifi/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/requests/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/idna/**",
+                "**/pkg_resources/**"
+            ]
+    }
+}
+
+jacocoTestReport {
+    dependsOn test
+    //additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
+    //additionalClassDirs files(project(":opendcs").sourceSets.main.output)
+    sourceSets project(":opendcs").sourceSets.main
+    reports {
+        html {
+            outputLocation = jacoco.reportsDirectory.dir("jacoco-${impl}-html")
+        }
+        xml {
+            outputLocation = jacoco.reportsDirectory.file("jacoco-${impl}.xml")
+        }
+
+    }
+    def excludes = [
+                "**/easy_install/**",
+                "**/python_packages",
+                "**/certifi/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/requests/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/idna/**",
+                "**/pkg_resources/**"
+            ]
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: excludes)
+        }))
+    }
+}

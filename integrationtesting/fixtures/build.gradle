@@ -1,0 +1,13 @@
+plugins {
+    id 'opendcs.java-conventions'
+    id 'opendcs.deps-conventions'
+}
+
+dependencies {
+    api project(":opendcs")
+    api enforcedPlatform(libs.junit.bom)
+    api(libs.bundles.junit)
+    api(libs.commons.io)
+    api(libs.apache.derby)
+    api(libs.webcompere.system.stubs.jupiter)
+}
