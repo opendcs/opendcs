@@ -48,9 +48,11 @@ public abstract class GroupHelper
 	public void evalAll()
 		throws DbIoException
 	{
-		try ( TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO(); )
+		try (TimeSeriesDAI tsDao = tsdb.makeTimeSeriesDAO();
+		     TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO(); )
 		{
 			ArrayList<TsGroup> allGroups = null;
+			tsDao.reloadTsIdCache();
 			allGroups = tsGroupDAO.getTsGroupList(null);
 			for(TsGroup grp : allGroups)
 				expandTsGroup(grp);
