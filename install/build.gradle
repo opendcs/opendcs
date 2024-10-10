@@ -107,6 +107,7 @@ task runApp(type: Exec) {
     def lang = project.findProperty("opendcs.lang")
     def appArgs = project.findProperty("opendcs.arg")
     def useJfr = project.findProperty("opendcs.jfr") ? true : false
+    def debugPort = Integer.parseInt(project.findProperty("opendcs.debug") ?: "0")
 
     var decjOpts = ""
     println("Using app ${app}")
@@ -126,7 +127,11 @@ task runApp(type: Exec) {
     }
 
     if (lang != null) {
-        decjOpts +="-D.user.language=${lang} "
+        decjOpts +=" -D.user.language=${lang} "
+    }
+
+    if (debugPort > 0) {
+        decjOpts += " -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${debugPort} "
     }
 
     if (useJfr && (javaVersion >= 11)) {
