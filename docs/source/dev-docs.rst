@@ -45,7 +45,7 @@ The integration tests are only run if explicitly called out:
 .. WARNING::
 
     DO NOT RUN THESE TESTS AGAINST A PRODUCTION DATABASE.
-    The test engine assumes it has complete control of the databse it's pointed at and given may
+    The test engine assumes it has complete control of the database it's pointed at and given may
     destroy anything it requires to verify operations.
 
 The option opendcs.test.engine is required and the following values are supported
