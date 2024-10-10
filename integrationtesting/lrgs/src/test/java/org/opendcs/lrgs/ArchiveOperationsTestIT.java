@@ -1,4 +1,4 @@
-package org.opendcs.regression_tests.lrgs;
+package org.opendcs.lrgs;
 
 import static org.opendcs.fixtures.assertions.Waiting.assertResultWithinTimeFrame;
 
