@@ -90,3 +90,58 @@ distributions
         }
     }
 }
+
+def javaVersion = Double.parseDouble(project.findProperty("org.gradle.java.version") ?: "1.8" )
+
+task runApp(type: Exec) {
+    dependsOn installDist
+    def runDir = "${project.layout.getBuildDirectory().dir("run").get()}"
+    doFirst {
+        project.mkdir(runDir)
+    }
+    def binDir = "${installDist.destinationDir}/bin/${File.separator}"
+
+    def ext = osWin ? ".bat": ""
+    def app = project.findProperty( "opendcs.app" )?: 'launcher_start'
+    def profile = project.findProperty("opendcs.profile") ?: "default"
+    def lang = project.findProperty("opendcs.lang")
+    def appArgs = project.findProperty("opendcs.arg")
+    def useJfr = project.findProperty("opendcs.jfr") ? true : false
+
+    var decjOpts = ""
+    println("Using app ${app}")
+    if (osWin) {
+        executable "cmd"
+        args "/c", binDir+app+ext, "-d3", "-l", "CON:"
+    } else {
+        executable binDir+app
+        args "-d3", "-l", "/dev/stdout"
+    }
+    if (!profile.equals("default")) {
+        args += ["-P", profile]
+    }
+
+    if (appArgs != null) {
+        args += appArgs
+    }
+
+    if (lang != null) {
+        decjOpts +="-D.user.language=${lang} "
+    }
+
+    if (useJfr && (javaVersion >= 11)) {
+        decjOpts += "-XX:StartFlightRecording=disk=true,dumponexit=true,filename=${runDir}/${app}.${profile}.recording.jfr,settings=profile"
+    } else if (useJfr) {
+        logger.warn("Unable to run Flight Recorder on JDKs below 8. Use an 11 or higher JDK for running flight recorder.")
+    }
+
+    environment "DECJ_OPTS", decjOpts
+    environment "DCSTOOL_HOME": file(installDist.destinationDir)
+    environment "DECODES_INSTALL_DIR": file(installDist.destinationDir)
+    environment "PATH": (files (file(binDir),
+                               file(System.getenv("JAVA_HOME")+"/bin"),
+                               "${environment.PATH}".split(File.pathSeparator)
+                               ).asPath)
+
+    workingDir runDir
+}
