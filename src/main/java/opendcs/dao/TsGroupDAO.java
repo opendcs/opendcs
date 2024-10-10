@@ -73,6 +73,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Stack;
 
+import org.opendcs.utils.FailableResult;
+
 import opendcs.dai.CompDependsNotifyDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
@@ -84,6 +86,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 import decodes.tsdb.TsGroupMember;
 import decodes.tsdb.TsdbDatabaseVersion;
+import decodes.tsdb.TsdbException;
 
 public class TsGroupDAO
 	extends DaoBase 
@@ -485,131 +488,136 @@ public class TsGroupDAO
 	public void fillCache() 
 		throws DbIoException
 	{
-		String q = "";
-
-		try (Connection conn = getConnection();
-			TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO();
-			DaoHelper dao = new DaoHelper(db, q, conn))
+		try
 		{
-			cache.clear();
-			timeSeriesDAO.setManualConnection(conn);
-			q = "SELECT " + GroupAttributes + " FROM tsdb_group";
-			dao.doQuery(q, rs -> cache.put(rs2group(rs)));
-
-			q = "select group_id, "
-				+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
-				+ " from tsdb_group_member_ts";
-			// MJM CWMS-10515: Have to join all the child tables with the parent TSDB_GROUP
-			// in order for VPD to do its magic.
-			if (db.isCwms())
+			this.inTransaction(dao ->
 			{
-				q = "select c.group_id, ts_id from tsdb_group_member_ts c, tsdb_group p "
-					+ "where c.group_id = p.group_id";
-			}
-			
-			
-			dao.doQuery(q, rs ->
-			{
-				DbKey groupId = DbKey.createDbKey(rs, 1);
-				TsGroup group = cache.getByKey(groupId);
-				DbKey dataId = DbKey.createDbKey(rs, 2);
+				String q = "";
+				try (TimeSeriesDAI timeSeriesDAO = db.makeTimeSeriesDAO())
+				{
+					timeSeriesDAO.inTransactionOf(dao);
+					cache.clear();
+					q = "SELECT " + GroupAttributes + " FROM tsdb_group";
+					dao.doQuery(q, rs -> cache.put(rs2group(rs)));
 
-				if (group == null)
-				{
-					warning("Bad group id=" + groupId + " in tsdb_group_member_ts with ts_code=" + dataId + " -- no corresponding group.");
-					return;
-				}
-				if (DbKey.isNull(dataId))
-				{
-					warning("Null ts_id in tsdb_group_member_ts ");
-					return;
-				}
-				try
-				{
-					group.addTsMember(timeSeriesDAO.getTimeSeriesIdentifier(dataId));
-				}
-				catch(NoSuchObjectException ex)
-				{
-					warning("tsdb_group id=" + group.getGroupId()
-						+ " contains invalid ts member with data_id="
-						+ dataId + " -- ignored.");
-				}
-				catch (DbIoException ex)
-				{
-					throw new SQLException("Unable to get timeseries identified for group member.", ex);
-				}
-			});
+					q = "select group_id, "
+						+ (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_9 ? "ts_id" : "data_id")
+						+ " from tsdb_group_member_ts";
+					// MJM CWMS-10515: Have to join all the child tables with the parent TSDB_GROUP
+					// in order for VPD to do its magic.
+					if (db.isCwms())
+					{
+						q = "select c.group_id, ts_id from tsdb_group_member_ts c, tsdb_group p "
+							+ "where c.group_id = p.group_id";
+					}
 
-			// Now read the site list.
-			q = "SELECT group_id, site_id from tsdb_group_member_site";
-			
-			if (db.isCwms())
-			{
-				q = "SELECT c.group_id, c.site_id from tsdb_group_member_site c, tsdb_group p "
-					+ "where c.group_id = p.group_id";
-			}
-			dao.doQuery(q, rs ->
-			{
-				DbKey groupId = DbKey.createDbKey(rs, 1);
-				TsGroup group = cache.getByKey(groupId);
-				group.addSiteId(DbKey.createDbKey(rs, 2));
-			});
+					dao.doQuery(q, rs ->
+					{
+						DbKey groupId = DbKey.createDbKey(rs, 1);
+						TsGroup group = cache.getByKey(groupId);
+						DbKey dataId = DbKey.createDbKey(rs, 2);
 
-			// Now read the data-type list.
-			q = "SELECT c.group_id, data_type_id from tsdb_group_member_dt c, tsdb_group p "
-				+ "where c.group_id = p.group_id";
+						if (group == null)
+						{
+							warning("Bad group id=" + groupId + " in tsdb_group_member_ts with ts_code=" + dataId + " -- no corresponding group.");
+							return;
+						}
+						if (DbKey.isNull(dataId))
+						{
+							warning("Null ts_id in tsdb_group_member_ts ");
+							return;
+						}
 
-			dao.doQuery(q, rs->
-			{
-				DbKey groupId = DbKey.createDbKey(rs, 1);
-				TsGroup group = cache.getByKey(groupId);
-				if (group == null)
-				{
-					warning("Bad group id=" + groupId + " in tsdb_group_member_dt -- no corresponding group.");
+						FailableResult<TimeSeriesIdentifier,TsdbException> result = timeSeriesDAO.findTimeSeriesIdentifier(dataId);
+						if (result.isSuccess())
+						{
+							group.addTsMember(result.getSuccess());
+						}
+						else if (result.getFailure() instanceof NoSuchObjectException)
+						{
+							warning("tsdb_group id=" + group.getGroupId()
+							+ " contains invalid ts member with data_id="
+							+ dataId + " -- ignored.");
+						}
+						else
+						{
+							throw new SQLException("Unable to get timeseries identified for group member.", result.getFailure());
+						}
+					});
+
+					// Now read the site list.
+					q = "SELECT group_id, site_id from tsdb_group_member_site";
+
+					if (db.isCwms())
+					{
+						q = "SELECT c.group_id, c.site_id from tsdb_group_member_site c, tsdb_group p "
+							+ "where c.group_id = p.group_id";
+					}
+					dao.doQuery(q, rs ->
+					{
+						DbKey groupId = DbKey.createDbKey(rs, 1);
+						TsGroup group = cache.getByKey(groupId);
+						group.addSiteId(DbKey.createDbKey(rs, 2));
+					});
+
+					// Now read the data-type list.
+					q = "SELECT c.group_id, data_type_id from tsdb_group_member_dt c, tsdb_group p "
+						+ "where c.group_id = p.group_id";
+
+					dao.doQuery(q, rs->
+					{
+						DbKey groupId = DbKey.createDbKey(rs, 1);
+						TsGroup group = cache.getByKey(groupId);
+						if (group == null)
+						{
+							warning("Bad group id=" + groupId + " in tsdb_group_member_dt -- no corresponding group.");
+						}
+						else
+						{
+							group.addDataTypeId(DbKey.createDbKey(rs, 2));
+						}
+					});
+
+					q = "select c.group_id, member_type, member_value from tsdb_group_member_other c, tsdb_group p "
+						+ "where c.group_id = p.group_id";
+
+					dao.doQuery(q, rs->
+					{
+						DbKey groupId = DbKey.createDbKey(rs, 1);
+						TsGroup group = cache.getByKey(groupId);
+						if (group == null)
+						{
+							warning("Bad group id=" + groupId + " in tsdb_group_member_other -- no corresponding group.");
+						}
+						else
+						{
+							group.addOtherMember(rs.getString(2), rs.getString(3));
+						}
+					});
+
+					q = "select parent_group_id, child_group_id, include_group from tsdb_group_member_group c, tsdb_group p "
+						+ "where c.parent_group_id = p.group_id";
+
+					dao.doQuery(q, rs ->
+					{
+						DbKey parentGroupId = DbKey.createDbKey(rs, 1);
+						TsGroup parentGroup = cache.getByKey(parentGroupId);
+						DbKey childGroupId = DbKey.createDbKey(rs, 2);
+						TsGroup childGroup = cache.getByKey(childGroupId);
+						char combine = 'A';
+						String s = rs.getString(3);
+						if (s != null && s.length() > 0)
+							combine = s.charAt(0);
+						parentGroup.addSubGroup(childGroup, combine);
+					});
 				}
-				else
-				{
-					group.addDataTypeId(DbKey.createDbKey(rs, 2));
-				}
-			});
-
-			q = "select c.group_id, member_type, member_value from tsdb_group_member_other c, tsdb_group p "
-				+ "where c.group_id = p.group_id";
-
-			dao.doQuery(q, rs->
-			{
-				DbKey groupId = DbKey.createDbKey(rs, 1);
-				TsGroup group = cache.getByKey(groupId);
-				if (group == null)
-				{
-					warning("Bad group id=" + groupId + " in tsdb_group_member_other -- no corresponding group.");
-				}
-				else
-				{
-					group.addOtherMember(rs.getString(2), rs.getString(3));
-				}
-			});
-
-			q = "select parent_group_id, child_group_id, include_group from tsdb_group_member_group c, tsdb_group p "
-				+ "where c.parent_group_id = p.group_id";
-
-			dao.doQuery(q, rs ->
-			{
-				DbKey parentGroupId = DbKey.createDbKey(rs, 1);
-				TsGroup parentGroup = cache.getByKey(parentGroupId);
-				DbKey childGroupId = DbKey.createDbKey(rs, 2);
-				TsGroup childGroup = cache.getByKey(childGroupId);
-				char combine = 'A';
-				String s = rs.getString(3);
-				if (s != null && s.length() > 0)
-					combine = s.charAt(0);
-				parentGroup.addSubGroup(childGroup, combine);
 			});
 		}
-		catch(SQLException ex)
+		catch (Exception ex)
 		{
-			throw new DbIoException("TsGroupDAO.fillCache: Error in query '" + q + "': " + ex);
+			throw new DbIoException("Error filling TsGroup cache.", ex);
 		}
+
 		lastCacheFill = System.currentTimeMillis();
 	}
 
