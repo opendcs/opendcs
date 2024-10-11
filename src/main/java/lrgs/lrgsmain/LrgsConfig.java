@@ -221,6 +221,9 @@ public class LrgsConfig implements PropertiesOwner
     /** If specified, iridium raw-data will be captured here. */
     public String iridiumCaptureFile = null;
 
+    /** If false, the payload Information Element for the payload will not be shown in the payload itself. */
+    public boolean iridiumIEInPayload = true;
+
     /** Domsat Protocol Converter Host Name */
     public String dpcHost = null;
 
