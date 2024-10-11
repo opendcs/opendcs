@@ -27,7 +27,7 @@ public class AverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 
 	@org.opendcs.annotations.PropertySpec(value = "1")
 	public long minSamplesNeeded = 1;
-	@PropertySpec(value = "-1.0 / 0.0")
+	@PropertySpec(value = "Double.NEGATIVE_INFINITY")
 	public double negativeReplacement = Double.NEGATIVE_INFINITY;
 
 	// Allow javac to generate a no-args constructor.
