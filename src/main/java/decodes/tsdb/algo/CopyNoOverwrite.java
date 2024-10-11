@@ -12,75 +12,52 @@
 */
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.algo.AW_AlgorithmBase;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-CopyAlgorithm copies a single 'input' parameter to a single 'output' parameter.
- 
-Modified June 2009 By M. Bogner to add missing property for proper deletes and 
-a version
-*/
-//AW:JAVADOC_END
+@Algorithm(description = "CopyAlgorithm copies a single 'input' parameter to a single 'output' parameter.\n" +
+		" \n" +
+		"Modified June 2009 By M. Bogner to add missing property for proper deletes and \n" +
+		"a version")
 public class CopyNoOverwrite extends AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double input;
-	// AW will also define an array of the names like this:
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
-	// A single output named 'output':
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "ignore")
 	public String input_MISSING = "ignore";
-	String _propertyNames[] = { "input_MISSING" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
 		_aggPeriodVarRoleName = null;
-//AW:INIT_END
-
-//AW:USERINIT
 		// No initialization needed for Copy.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
 		// Normally for copy, output units will be the same as input.
 		String inUnits = getInputUnitsAbbr("input");
 		if (inUnits != null && inUnits.length() > 0)
 			setOutputUnitsAbbr("output", inUnits);
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -93,48 +70,21 @@ public class CopyNoOverwrite extends AW_AlgorithmBase
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// Copy input to output and set no-overwrite flag.
 		setOutput(output, input);
 		setFlagBits(output, VarFlags.NO_OVERWRITE);
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// No post-timeslice code needed.
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
