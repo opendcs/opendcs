@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+
 import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
@@ -12,74 +17,63 @@ import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
 
-//AW:JAVADOC
-/**
-AverageAlgorithm averages single 'input' parameter to a single 'average' 
-parameter. The averaging period is determined by the interval of the output
-parameter.
-
- */
-//AW:JAVADOC_END
-public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
+@Algorithm(description = "Stat takes a single input and generate multiple statistical measurements for the given time window.\n" + //
+		" Only the desired output parameter values need their timeseries set, if an output parameter is\n" + //
+		" not set it will be ignored.\n"
+		)
+public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	//AW:INPUTS
-		double input;	//AW:TYPECODE=i
-		String _inputNames[] = { "input" };
-	//AW:INPUTS_END
+		@Input
+		double input;
 
-	//AW:LOCALVARS
 		ArrayList<Double> inputData = new ArrayList<Double>();
 		double tally;
 		double _min;
 		double _max;
 		int count;
 
-	//AW:LOCALVARS_END
-
-	//AW:OUTPUTS
+		@Output(type = Double.class)
 		NamedVariable ave = new NamedVariable("ave", 0);
+		@Output(type = Double.class)
 		NamedVariable min = new NamedVariable("min", 0);
+		@Output(type = Double.class)
 		NamedVariable max = new NamedVariable("max", 0);
+		@Output(type = Double.class)
 		NamedVariable med = new NamedVariable("med", 0);
+		@Output(type = Double.class)
 		NamedVariable stddev = new NamedVariable("stddev", 0);
-		
-		String _outputNames[] = { "ave", "min", "max", "med", "stddev" };
-	//AW:OUTPUTS_END
 
-	//AW:PROPERTIES
+		@PropertySpec(value = "1")
 		long minSamplesNeeded = 1;
+		@PropertySpec(value = "true")
 		boolean aveEnabled = true;
+		@PropertySpec(value = "true")
 		boolean minEnabled = true;
+		@PropertySpec(value = "true")
 		boolean maxEnabled = true;
+		@PropertySpec(value = "true")
 		boolean medEnabled = true;
+		@PropertySpec(value = "true")
 		boolean stddevEnabled = true;
-		String _propertyNames[] = { "minSamplesNeeded", "aveEnabled", "minEnabled", "maxEnabled", "medEnabled", 
-			"stddevEnabled" };
-	//AW:PROPERTIES_END
 
 		// Allow javac to generate a no-args constructor.
 
 		/**
 		 * Algorithm-specific initialization provided by the subclass.
 		 */
+		@Override
 		protected void initAWAlgorithm( )
 		{
-	//AW:INIT
 			_awAlgoType = AWAlgoType.AGGREGATING;
 			_aggPeriodVarRoleName = "ave";
-	//AW:INIT_END
-
-	//AW:USERINIT
-			// No one-time init required.
-	//AW:USERINIT_END
 		}
 		
 		/**
 		 * This method is called once before iterating all time slices.
 		 */
-		protected void beforeTimeSlices()
+		@Override
+		protected void beforeTimeSlices() throws DbCompException
 		{
-	//AW:BEFORE_TIMESLICES
 			// Zero out the tally & count for this agg period.
 			tally = 0.0;
 			count = 0;
@@ -97,13 +91,6 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 				setOutputUnitsAbbr("stddev", inUnits);
 			}
 			this.debug3("Starting aggregate period at " + debugSdf.format(_aggregatePeriodBegin));
-//			debug3("present: ave=" + isAssigned("ave")
-//				+ ", min=" + isAssigned("min")
-//				+ ", max=" + isAssigned("max")
-//				+ ", med=" + isAssigned("med")
-//				+ ", stddev=" + isAssigned("stddev"));
-
-	//AW:BEFORE_TIMESLICES_END
 		}
 
 		/**
@@ -116,18 +103,21 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 		 * @throws DbCompException (or subclass thereof) if execution of this
 		 *        algorithm is to be aborted.
 		 */
-		protected void doAWTimeSlice()
-			throws DbCompException
+		@Override
+		protected void doAWTimeSlice() throws DbCompException
 		{
-		//AW:TIMESLICE
 			debug2("AverageAlgorithm:doAWTimeSlice, input=" + input + ", timeslice=" + debugSdf.format(_timeSliceBaseTime));
 			if (!isMissing(input))
 			{
 				inputData.add(input);
 				if(input<_min)
+				{
 					_min = input;
+				}
 				if(input>_max)
+				{
 					_max = input;
+				}
 				tally += input;
 				count++;
 			}
@@ -137,15 +127,17 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 		/**
 		 * This method is called once after iterating all time slices.
 		 */
-		protected void afterTimeSlices()
+		@Override
+		protected void afterTimeSlices() throws DbCompException
 		{
-//AW:AFTER_TIMESLICES
 			if (count < minSamplesNeeded)
 			{
 				warning("Do not have minimum # samples (" + minSamplesNeeded
 					+ ") -- not producing an average.");
 				if (_aggInputsDeleted)
+				{
 					deleteOutput(ave);
+				}
 			}
 			debug3("After timeslice aggPeriodEnd=" + debugSdf.format(_aggregatePeriodEnd)
 				+ " count=" + count + ", min=" + _min + ", max=" + _max + ", tally=" + tally);
@@ -153,19 +145,26 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 			Collections.sort(inputData);
 
 			if (aveEnabled)
+			{
 				setOutput(ave, tally / (double)count);
+			}
 			if (minEnabled)
+			{
 				setOutput(min, _min);
+			}
 			if (maxEnabled)
+			{
 				setOutput(max, _max);
+			}
 			if (medEnabled)
 			{
 				int medIdx = (count % 2 == 0) ? count/2-1 : count/2;
 				setOutput(med, inputData.get(medIdx));
 			}
 			if (stddevEnabled)
+			{
 				setOutput(stddev, stdDeviation(inputData, tally/(double)count));
-//AW:AFTER_TIMESLICES_END
+			}
 		}
 		
 		/**Standard Deviation based on entire population
@@ -185,29 +184,4 @@ public class Stat  extends decodes.tsdb.algo.AW_AlgorithmBase
 			result = Math.sqrt((result/inputData.size()));		
 			return result;
 		}
-
-		/**
-		 * Required method returns a list of all input time series names.
-		 */
-		public String[] getInputNames()
-		{
-			return _inputNames;
-		}
-
-		/**
-		 * Required method returns a list of all output time series names.
-		 */
-		public String[] getOutputNames()
-		{
-			return _outputNames;
-		}
-
-		/**
-		 * Required method returns a list of properties that have meaning to
-		 * this algorithm.
-		 */
-		public String[] getPropertyNames()
-		{
-			return _propertyNames;
-		}	
 }
