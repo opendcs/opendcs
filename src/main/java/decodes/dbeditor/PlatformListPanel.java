@@ -230,6 +230,7 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 		if ((agencyCbx.getSelectedIndex() > 0) && (agencyCbx.getSelectedItem().toString().length() > 0))
 		{
 			final String filterText = (String)agencyCbx.getSelectedItem();
+			final int columnIndex = platformSelectPanel.model.getColumnFor(dbeditLabels.getString("PlatformSelectPanel.agency"));
 			if (filterText.equals(NO_AGENCY))
 			{
 				filters.add(new PlatformSelectTableModel.ColumnEmptyRowFilter(dbeditLabels.getString("PlatformSelectPanel.agency")));
@@ -237,7 +238,7 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 			else
 			{
 				RowFilter<TableModel, Integer> filterAgency = RowFilter
-					.regexFilter(agencyCbx.getSelectedItem().toString(), 1);
+					.regexFilter(agencyCbx.getSelectedItem().toString(), columnIndex);
 				filters.add(filterAgency);
 			}
 		}
