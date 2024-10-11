@@ -211,9 +211,10 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 	 */
 	private void updateFilters() {
 		filters.clear();
-
+		
 		if ((platformCbx.getSelectedIndex() > 0) && (platformCbx.getSelectedItem().toString().length() > 0))
 		{
+			final int columnIndex = platformSelectPanel.model.getColumnFor(dbeditLabels.getString("platform"));
 			final String filterText = (String)platformCbx.getSelectedItem();
 			if (filterText.equals(NO_PLATFORM_NAMES))
 			{
@@ -222,7 +223,7 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 			else
 			{
 				RowFilter<TableModel, Integer> filterName = RowFilter
-					.regexFilter(platformCbx.getSelectedItem().toString(), 0);
+					.regexFilter(platformCbx.getSelectedItem().toString(), columnIndex);
 				filters.add(filterName);
 			}
 		}
@@ -246,6 +247,7 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 		if ((transportCbx.getSelectedIndex() > 0) && (transportCbx.getSelectedItem().toString().length() > 0)) 
 		{
 			final String filterText = (String)transportCbx.getSelectedItem();
+			final int columnIndex = platformSelectPanel.model.getColumnFor(dbeditLabels.getString("PlatformSelectPanel.transport"));
 			if (filterText.equals(NO_TRANSPORT_MEDIUM))
 			{
 				filters.add(new PlatformSelectTableModel.ColumnEmptyRowFilter(dbeditLabels.getString("PlatformSelectPanel.transport")));
@@ -253,15 +255,16 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 			else
 			{
 				RowFilter<TableModel, Integer> filterTransport = RowFilter
-					.regexFilter(transportCbx.getSelectedItem().toString(), 2);
+					.regexFilter(transportCbx.getSelectedItem().toString(), columnIndex);
 				filters.add(filterTransport);
 			}
 		}
 
 		if ((configCbx.getSelectedIndex() > 0) && (configCbx.getSelectedItem().toString().length() > 0))
 		{
+			final int columnIndex = platformSelectPanel.model.getColumnFor(dbeditLabels.getString("PlatformSelectPanel.config"));
 			RowFilter<TableModel, Integer> filterConfig = RowFilter
-				.regexFilter(configCbx.getSelectedItem().toString(), 3);
+				.regexFilter(configCbx.getSelectedItem().toString(), columnIndex);
 			filters.add(filterConfig);
 		}
 
