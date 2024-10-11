@@ -255,10 +255,8 @@ public abstract class TsdbAppTemplate
 	}
 
 	/**
-	 * Creates the TimeSeriesDb object and connects to the underlying SQL
-	 * database.
-	 * 'theDb' is static in this base-class. Therefore if a sibling in
-	 * the launcher has already loaded the database, this method does nothing.
+	 * Creates the (Database and TimeSeriesDb) objects and connects to the underlying SQL
+	 * database.  Initilizes the cooresponding static fields (decodesDb and theDb).
 	 * This is also why this method is synchronized.
 	 * @throws ClassNotFoundException if can't find database class name
 	 * @throws InstantiationException if can't instantiate database object
