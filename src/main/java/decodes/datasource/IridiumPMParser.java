@@ -30,8 +30,10 @@ public class IridiumPMParser extends PMParser
 	public static final String LATITUDE = "latitude";
 	public static final String LONGITUDE = "longitude";
 	public static final String CEP_RADIUS = "radius";
+	public static final String PAYLOAD_LEN = "PayloadSize";
 
 	private SimpleDateFormat goesDateFormat = null;
+	private int headerLength = -1;
 
 	/** default constructor */
 	public IridiumPMParser()
@@ -163,12 +165,12 @@ public class IridiumPMParser extends PMParser
 		idx = hdr.indexOf("RAD=");
 		if (idx != -1)
 		{
-			int comma = hdr.indexOf("IE:02", idx);
+			int comma = hdr.indexOf(',', idx);
 			try
 			{
 				msg.setPM(CEP_RADIUS, 
 					new Variable(
-						Double.parseDouble(hdr.substring(idx+4, comma-1))));
+						Double.parseDouble(hdr.substring(idx+4, comma))));
 			}
 			catch(Exception ex)
 			{
@@ -176,10 +178,33 @@ public class IridiumPMParser extends PMParser
 					+ hdr + "'");
 			}
 		}
-		
+
+		idx = hdr.indexOf("PLEN=");
+		if (idx != -1)
+		{
+			// Currently this is the last header so there's no comma after, but there is a space
+			int comma = hdr.indexOf(' ', idx);
+			try
+			{
+				msg.setPM(PAYLOAD_LEN, 
+					new Variable(
+						Integer.parseInt(hdr.substring(idx+5, comma))));
+			}
+			catch(Exception ex)
+			{
+				Logger.instance().warning("Bad PLEN field in Iridium header '"
+					+ hdr + "'");
+			}
+		}
+
+		// If iridiumIEInPayload is true, this length does not include the IE:02 portion;
+		// if false, the IE:02 part is removed, and this really is the length of the header.
 		idx = hdr.indexOf(" ");
+		if (!hdr.substring(idx+1, idx+6).equals("IE:02")) idx++;	// include the ending space in the header portion
+
 		if (idx < 75) idx = 75;
 		msg.setHeaderLength(idx);
+		headerLength = idx;
 	}
 
 	public boolean containsExplicitLength()
@@ -190,7 +215,7 @@ public class IridiumPMParser extends PMParser
 	/** @return 75, the length of a ASCII-ized Iridium header. */
 	public int getHeaderLength()
 	{
-		return -1;
+		return headerLength;
 	}
 
 	/** @return "iridium" */
