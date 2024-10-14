@@ -13,7 +13,7 @@ jobs:
     name: Build, Test, and Analyze
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.1
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Set up JDK 17
@@ -22,7 +22,7 @@ jobs:
           java-version: 17
           distribution: 'temurin'
       - name: Cache SonarCloud packages
-        uses: actions/cache@v4.1.0
+        uses: actions/cache@v4.1.1
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -53,14 +53,14 @@ jobs:
       - name: Bundle tarballs
         run: ./gradlew bundle
       - name: Upload WAR files
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: warfile
           path: ./**/build/libs/*.war
           retention-days: 1
           if-no-files-found: error
       - name: Upload Tarballs
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: opendcs-rest-api-artifacts
           path: ./**/build/distributions/*.tar.gz

@@ -12,14 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4.2.0
+      - uses: actions/checkout@v4.2.1
       - name: Set up JDK 17
         uses: actions/setup-java@v4.4.0
         with:
           java-version: 17
           distribution: 'temurin'
       - name: Cache Gradle packages
-        uses: actions/cache@v4.1.0
+        uses: actions/cache@v4.1.1
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
@@ -45,7 +45,7 @@ jobs:
           vars: |
             empty: empty
       - name: Upload Full HTML Report
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: zap_report.html
           path: ./opendcs-rest-api-jetty/build/test-results/owasp/zap_report.html
