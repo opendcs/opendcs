@@ -13,7 +13,6 @@ import decodes.tsdb.BadConnectException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
-import ilex.util.Pair;
 import opendcs.dai.DaiBase;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
 
@@ -38,12 +37,26 @@ public class CwmsDatabaseProvider implements DatabaseProvider
                                                                 credentials.getProperty("password"),
                                                                 settings.CwmsOfficeId);
             conInfo.setLoginInfo(info);
+          
+            DataSource dataSource = CwmsConnectionPool.getPoolFor(conInfo);
+            return createDatabase(dataSource, settings);
+        }
+        catch (BadConnectException ex)
+        {
+            throw new DatabaseException("Unable to connect to CWMS DB", ex);
+        }
+    }
+
+    @Override
+    public OpenDcsDatabase createDatabase(DataSource dataSource, DecodesSettings settings) throws DatabaseException
+    {
+        try
+        {
             Database db = new Database(true);
-            DataSource ds = CwmsConnectionPool.getPoolFor(conInfo);
             Database.setDb(db); // the CwmsSqlDatabaseIO constructor calls into the Database instance to verify things.
-            db.setDbIo(new CwmsSqlDatabaseIO(ds, settings));
+            db.setDbIo(new CwmsSqlDatabaseIO(dataSource, settings));
             db.init(settings);
-            CwmsTimeSeriesDb tsdb = new CwmsTimeSeriesDb(appName, ds, settings);
+            CwmsTimeSeriesDb tsdb = new CwmsTimeSeriesDb(null, dataSource, settings);
 
             return new OpenDcsDatabase()
             {
@@ -71,14 +84,9 @@ public class CwmsDatabaseProvider implements DatabaseProvider
 
             };
         }
-        catch (BadConnectException ex)
-        {
-            throw new DatabaseException("Unable to connect to CWMS DB", ex);
-        }
         catch (DecodesException ex)
         {
             throw new DatabaseException("Unable to perform minimal decodes initialization.", ex);
         }
     }
-    
 }
