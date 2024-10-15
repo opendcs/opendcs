@@ -8,6 +8,7 @@ import org.opendcs.spi.database.DatabaseProvider;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import decodes.xml.XmlDatabaseIO;
 import ilex.util.Pair;
@@ -29,7 +30,14 @@ public class XmlDatabaseProvider implements DatabaseProvider
         javax.sql.DataSource dataSource = new SimpleDataSource(settings.editDatabaseLocation, credentials);
         XmlDatabaseIO dbIo = new XmlDatabaseIO(dataSource, settings);
         db.setDbIo(dbIo);
-        db.read();
+        try
+        {
+            db.init(settings);
+        }
+        catch(DecodesException ex)
+        {
+            throw new DatabaseException("Unable to initialize decodes.", ex);
+        }
         return Pair.of(db, null);
     }
 }
