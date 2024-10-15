@@ -2,6 +2,8 @@ package decodes.xml.jdbc;
 
 import java.util.Properties;
 
+import javax.sql.DataSource;
+
 import org.opendcs.database.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.spi.database.DatabaseProvider;
@@ -26,9 +28,14 @@ public class XmlDatabaseProvider implements DatabaseProvider
     public OpenDcsDatabase createDatabase(String appName, DecodesSettings settings, Properties credentials)
             throws DatabaseException 
     {
-        Database db = new Database(true);
-
         javax.sql.DataSource dataSource = new SimpleDataSource(settings.editDatabaseLocation, credentials);
+        return createDatabase(dataSource, settings);
+    }
+
+    @Override
+    public OpenDcsDatabase createDatabase(DataSource dataSource, DecodesSettings settings) throws DatabaseException
+    {
+        Database db = new Database(true);
         XmlDatabaseIO dbIo = new XmlDatabaseIO(dataSource, settings);
         db.setDbIo(dbIo);
         try

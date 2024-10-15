@@ -2,6 +2,8 @@ package opendcs.opentsdb;
 
 import java.util.Properties;
 
+import javax.sql.DataSource;
+
 import org.opendcs.database.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.spi.database.DatabaseProvider;
@@ -32,6 +34,12 @@ public class OpenTsdbProvider implements DatabaseProvider
             credentials.setProperty("user", credentials.getProperty("username"));
         }
         javax.sql.DataSource dataSource = new SimpleDataSource(settings.editDatabaseLocation, credentials);
+        return createDatabase(dataSource, settings);
+    }
+
+
+    private Database getDecodesDatabase(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
+    {
         Database db = new Database(true);            
         db.setDbIo(new OpenTsdbSqlDbIO(dataSource, settings));
         Database.setDb(db);
@@ -43,31 +51,45 @@ public class OpenTsdbProvider implements DatabaseProvider
         {
             throw new DatabaseException("Unable to initialize decodes.", ex);
         }
+        return db;
+    }
 
-        OpenTsdb tsdb = new OpenTsdb(appName, dataSource, settings);
+    @Override
+    public OpenDcsDatabase createDatabase(DataSource dataSource, DecodesSettings settings) throws DatabaseException
+    {
+        Database decodesDb = getDecodesDatabase(dataSource, settings);
+        OpenTsdb tsDb = new OpenTsdb(null, dataSource, settings);
+        return new OpenDcsDatabaseImpl(decodesDb, tsDb);
+    }
 
-        return new OpenDcsDatabase() {
-            Database decodesDb = db;
-            TimeSeriesDb tsDb = tsdb;
+    public static class OpenDcsDatabaseImpl implements OpenDcsDatabase
+    {
+        final Database decodesDb;
+        final TimeSeriesDb tsDb;
 
-            @Override
-            public Database getDecodesDatabase()
-            {
-                return decodesDb;
-            }
+        private OpenDcsDatabaseImpl(Database decodesDb, TimeSeriesDb tsDb)
+        {
+            this.decodesDb = decodesDb;
+            this.tsDb = tsDb;
+        }
 
-            @Override
-            public TimeSeriesDb getTimeSeriesDb()
-            {
-                return tsDb;
-            }
+        @Override
+        public Database getDecodesDatabase()
+        {
+            return decodesDb;
+        }
 
-            @Override
-            public <T extends DaiBase> T getDao(Class<T> dao) throws DatabaseException
-            {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Unimplemented method 'getDao'");
-            }
-        };
+        @Override
+        public TimeSeriesDb getTimeSeriesDb()
+        {
+            return tsDb;
+        }
+
+        @Override
+        public <T extends DaiBase> T getDao(Class<T> dao) throws DatabaseException
+        {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'getDao'");
+        }
     }
 }
