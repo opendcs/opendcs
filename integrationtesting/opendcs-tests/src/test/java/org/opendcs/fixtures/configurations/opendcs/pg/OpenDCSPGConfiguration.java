@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
+import org.opendcs.database.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
@@ -63,7 +64,7 @@ public class OpenDCSPGConfiguration implements Configuration
     private static AtomicBoolean started = new AtomicBoolean(false);
     private HashMap<Object,Object> environmentVars = new HashMap<>();
     private Profile profile = null;
-    private Pair<Database,TimeSeriesDb> databases = null;
+    private OpenDcsDatabase databases = null;
 
     // FUTURE work: allow passing of override values to bypass the test container creation
     // ... OR setup a separate testcontainer library like USACE did for CWMS.
@@ -224,7 +225,7 @@ public class OpenDCSPGConfiguration implements Configuration
             {
                 buildDatabases();
             }
-            return databases.second;
+            return databases.getTimeSeriesDb();
         }
     }
 
@@ -237,7 +238,7 @@ public class OpenDCSPGConfiguration implements Configuration
             {
                 buildDatabases();
             }
-            return databases.first;
+            return databases.getDecodesDatabase();
         }
     }
 

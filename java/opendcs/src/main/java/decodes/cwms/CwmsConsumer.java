@@ -84,6 +84,7 @@ import java.util.logging.Level;
 
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
+import org.opendcs.database.OpenDcsDatabase;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -253,8 +254,8 @@ public class CwmsConsumer extends DataConsumer
 			settings.DbAuthFile = cwmsCfg.DbAuthFile;
 			settings.CwmsOfficeId = cwmsCfg.cwmsOfficeId;
 			settings.editTimeZone = cwmsCfg.timeZone;
-			Pair<Database,TimeSeriesDb> databases = DatabaseService.getDatabaseFor("decodes", settings, credentials);
-			cwmsTsdb = (CwmsTimeSeriesDb)databases.second;
+			OpenDcsDatabase databases = DatabaseService.getDatabaseFor("decodes", settings, credentials);
+			cwmsTsdb = (CwmsTimeSeriesDb)databases.getTimeSeriesDb();
 			
 			Logger.instance().info(module + " Connected to CWMS database at "
 				+ cwmsCfg.getDbUri() + " as user " + credentials.getProperty("username"));
