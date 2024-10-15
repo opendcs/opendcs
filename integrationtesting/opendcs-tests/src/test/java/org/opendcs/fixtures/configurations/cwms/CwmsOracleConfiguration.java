@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
+import org.opendcs.database.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
@@ -57,7 +58,7 @@ public class CwmsOracleConfiguration implements Configuration
     private String dcsUser = null;
     private String dcsUserPassword = null;
     private Profile profile = null;
-    Pair<Database,TimeSeriesDb> databases = null;
+    private OpenDcsDatabase databases = null;
 
     public CwmsOracleConfiguration(File userDir)
     {
@@ -238,7 +239,7 @@ public class CwmsOracleConfiguration implements Configuration
             {
                 buildDatabases();
             }
-            return databases.second;
+            return databases.getTimeSeriesDb();
         }
     }
 
@@ -251,7 +252,7 @@ public class CwmsOracleConfiguration implements Configuration
             {
                 buildDatabases();
             }
-            return databases.first;
+            return databases.getDecodesDatabase();
         }
     }
 

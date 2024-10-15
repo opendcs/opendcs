@@ -8,18 +8,15 @@ import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.spi.authentication.AuthSource;
 import org.opendcs.spi.database.DatabaseProvider;
 
-import decodes.db.Database;
 import decodes.db.DatabaseException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import ilex.util.AuthException;
-import ilex.util.Pair;
 
 public class DatabaseService
 {
     private static ServiceLoader<DatabaseProvider> loader = ServiceLoader.load(DatabaseProvider.class);
 
-    public static Pair<Database,TimeSeriesDb> getDatabaseFor(String appName, DecodesSettings settings) throws DatabaseException
+    public static OpenDcsDatabase getDatabaseFor(String appName, DecodesSettings settings) throws DatabaseException
     {
         try
         {
@@ -33,7 +30,7 @@ public class DatabaseService
         }
     }
 
-    public static Pair<Database,TimeSeriesDb> getDatabaseFor(String appName, DecodesSettings settings, Properties credentials) throws DatabaseException
+    public static OpenDcsDatabase getDatabaseFor(String appName, DecodesSettings settings, Properties credentials) throws DatabaseException
     {
         final Iterator<DatabaseProvider> providers = loader.iterator();
         while (providers.hasNext())
