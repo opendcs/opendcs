@@ -58,6 +58,7 @@ import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
 
 import org.opendcs.database.DatabaseService;
+import org.opendcs.database.OpenDcsDatabase;
 import org.slf4j.LoggerFactory;
 
 import lrgs.gui.DecodesInterface;
@@ -174,7 +175,7 @@ public class LauncherFrame
     // Future improvements will alter how that test works.
     private Profile profile = null;
     private final Profile launchProfile;
-    private Pair<Database,TimeSeriesDb> databases = null;
+    private OpenDcsDatabase databases = null;
 
     public LauncherFrame(String args[], Profile launchProfile)
     {

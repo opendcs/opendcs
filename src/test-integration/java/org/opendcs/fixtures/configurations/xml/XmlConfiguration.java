@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.opendcs.database.DatabaseService;
+import org.opendcs.database.OpenDcsDatabase;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
 
@@ -35,7 +36,7 @@ public class XmlConfiguration implements Configuration
     private File propertiesFile;
     private boolean started = false;
     private Profile profile = null;
-    private Pair<Database,TimeSeriesDb> databases = null;
+    private OpenDcsDatabase databases = null;
 
     public XmlConfiguration(File userDir) throws Exception
     {
@@ -113,6 +114,6 @@ public class XmlConfiguration implements Configuration
             final DecodesSettings settings = DecodesSettings.fromProfile(profile);
             databases = DatabaseService.getDatabaseFor(NAME, settings);
         }
-        return databases.first;
+        return databases.getDecodesDatabase();
     }
 }

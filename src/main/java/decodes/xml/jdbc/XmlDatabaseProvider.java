@@ -2,6 +2,7 @@ package decodes.xml.jdbc;
 
 import java.util.Properties;
 
+import org.opendcs.database.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.spi.database.DatabaseProvider;
 
@@ -11,7 +12,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import decodes.xml.XmlDatabaseIO;
-import ilex.util.Pair;
+import opendcs.dai.DaiBase;
 
 public class XmlDatabaseProvider implements DatabaseProvider
 {
@@ -22,7 +23,7 @@ public class XmlDatabaseProvider implements DatabaseProvider
     }
 
     @Override
-    public Pair<Database,TimeSeriesDb> createDatabase(String appName, DecodesSettings settings, Properties credentials)
+    public OpenDcsDatabase createDatabase(String appName, DecodesSettings settings, Properties credentials)
             throws DatabaseException 
     {
         Database db = new Database(true);
@@ -38,6 +39,27 @@ public class XmlDatabaseProvider implements DatabaseProvider
         {
             throw new DatabaseException("Unable to initialize decodes.", ex);
         }
-        return Pair.of(db, null);
+        return new OpenDcsDatabase()
+        {
+            Database decodesDb = db;
+
+            @Override
+            public Database getDecodesDatabase()
+            {
+                return decodesDb;
+            }
+
+            @Override
+            public TimeSeriesDb getTimeSeriesDb() {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("XML database doesn't support timeseries operations.");
+            }
+
+            @Override
+            public <T extends DaiBase> T getDao(Class<T> dao) throws DatabaseException {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Unimplemented method 'getDao'");
+            }
+        };
     }
 }

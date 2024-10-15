@@ -2,6 +2,7 @@ package opendcs.opentsdb;
 
 import java.util.Properties;
 
+import org.opendcs.database.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.spi.database.DatabaseProvider;
 
@@ -11,6 +12,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import ilex.util.Pair;
+import opendcs.dai.DaiBase;
 
 public class OpenTsdbProvider implements DatabaseProvider
 {
@@ -22,7 +24,7 @@ public class OpenTsdbProvider implements DatabaseProvider
     }
 
     @Override
-    public Pair<Database,TimeSeriesDb> createDatabase(String appName, DecodesSettings settings, Properties credentials) throws DatabaseException
+    public OpenDcsDatabase createDatabase(String appName, DecodesSettings settings, Properties credentials) throws DatabaseException
     {
         if (credentials.getProperty("user") == null && credentials.getProperty("username") != null)
         {
@@ -44,6 +46,28 @@ public class OpenTsdbProvider implements DatabaseProvider
 
         OpenTsdb tsdb = new OpenTsdb(appName, dataSource, settings);
 
-        return Pair.of(db, tsdb);
+        return new OpenDcsDatabase() {
+            Database decodesDb = db;
+            TimeSeriesDb tsDb = tsdb;
+
+            @Override
+            public Database getDecodesDatabase()
+            {
+                return decodesDb;
+            }
+
+            @Override
+            public TimeSeriesDb getTimeSeriesDb()
+            {
+                return tsDb;
+            }
+
+            @Override
+            public <T extends DaiBase> T getDao(Class<T> dao) throws DatabaseException
+            {
+                // TODO Auto-generated method stub
+                throw new UnsupportedOperationException("Unimplemented method 'getDao'");
+            }
+        };
     }
 }

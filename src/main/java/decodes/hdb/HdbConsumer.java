@@ -78,6 +78,7 @@ import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
+import org.opendcs.database.OpenDcsDatabase;
 import org.opendcs.spi.authentication.AuthSource;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -153,8 +154,8 @@ public class HdbConsumer extends DataConsumer
 		// Get the Oracle Data Source & open a connection.
 		try
 		{
-			Pair<Database,TimeSeriesDb> databases = DatabaseService.getDatabaseFor("decodes", DecodesSettings.instance());
-			hdbTsDb = (HdbTimeSeriesDb)databases.second;
+			OpenDcsDatabase databases = DatabaseService.getDatabaseFor("decodes", DecodesSettings.instance());
+			hdbTsDb = (HdbTimeSeriesDb)databases.getTimeSeriesDb();
 			info("Connected to HDB Time Series Database");
 			autoCreateTs = TextUtil.str2boolean(hdbTsDb.getProperty("autoCreateTs"));
 			timeSeriesDAO = hdbTsDb.makeTimeSeriesDAO();
