@@ -289,8 +289,8 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 		// determine what happens.
 		// If NULL is the method then the dep output wil be set to Const.UNDEFINED_DOUBLE
 
-		Connection conn = tsdb.getConnection();
-		try
+		
+		try (Connection conn = tsdb.getConnection())
 		{
 			debug1("Calling rate with " + times.length + " times/values");
 			double depVals[] = ratingSet.rate(conn, times, vals);
@@ -319,10 +319,6 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 				warning("...cause: " + cause);
 				cause.printStackTrace(out);
 			}
-		}
-		finally
-		{
-			tsdb.freeConnection(conn);
 		}
 		
 		
