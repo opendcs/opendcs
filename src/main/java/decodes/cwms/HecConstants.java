@@ -14,8 +14,15 @@
  */
 package decodes.cwms;
 
+import decodes.db.Constants;
+
 public class HecConstants
 {
 	public static final int UNDEFINED_UTC_OFFSET = Integer.MAX_VALUE;
     public static final int NO_UTC_OFFSET = Integer.MIN_VALUE;
+
+    public static boolean isValidValue(double v)
+    {
+        return !Double.isInfinite(v) && !Double.isNaN(v) && v != Constants.undefinedDouble;
+    }
 }
