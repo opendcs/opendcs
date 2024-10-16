@@ -18,6 +18,7 @@ import opendcs.dai.DaiBase;
 
 public class OpenTsdbProvider implements DatabaseProvider
 {
+    private String appName = null;
 
     @Override
     public boolean canCreate(DecodesSettings settings)
@@ -33,6 +34,7 @@ public class OpenTsdbProvider implements DatabaseProvider
             // our AuthSource provides "username", the Postgres JDBC driver expects "user"
             credentials.setProperty("user", credentials.getProperty("username"));
         }
+        this.appName = appName;
         javax.sql.DataSource dataSource = new SimpleDataSource(settings.editDatabaseLocation, credentials);
         return createDatabase(dataSource, settings);
     }
@@ -58,7 +60,7 @@ public class OpenTsdbProvider implements DatabaseProvider
     public OpenDcsDatabase createDatabase(DataSource dataSource, DecodesSettings settings) throws DatabaseException
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
-        OpenTsdb tsDb = new OpenTsdb(null, dataSource, settings);
+        OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
         return new OpenDcsDatabaseImpl(decodesDb, tsDb);
     }
 
