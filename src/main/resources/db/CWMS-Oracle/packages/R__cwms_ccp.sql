@@ -23,8 +23,8 @@ whenever sqlerror continue
 set define on
 @@defines.sql
 
-define queue_name       = &&CWMS_SCHEMA..cwms_sec.get_user_office_id||'_TS_STORED';
-define callback_proc    = &&CCP_SCHEMA..CWMS_CCP.NOTIFY_FOR_COMP;
+define queue_name       = ${CWMS_SCHEMA}.cwms_sec.get_user_office_id||'_TS_STORED';
+define callback_proc    = ${CCP_SCHEMA}.CWMS_CCP.NOTIFY_FOR_COMP;
 
 
 ---------------------------------------------------------------------------
@@ -92,9 +92,9 @@ create or replace package body cwms_ccp as
     l_subscriber_name    varchar2(32);
   begin
     if p_queue_name is null then
-      l_subscription_name := '"&&CWMS_SCHEMA"."%":"'||p_subscriber_name||'"';
+      l_subscription_name := '"${CWMS_SCHEMA}"."%":"'||p_subscriber_name||'"';
     else
-      l_subscription_name := '"&&CWMS_SCHEMA"."'||p_queue_name||'":"'||p_subscriber_name||'"';
+      l_subscription_name := '"${CWMS_SCHEMA}"."'||p_queue_name||'":"'||p_subscriber_name||'"';
     end if;
 
     for rec in
@@ -106,7 +106,7 @@ create or replace package body cwms_ccp as
       l_subscriber_name := trim(both '"' from regexp_substr(rec.subscription_name, '[^:]+', 1, 2));
       l_queue_name := trim(both '"' from regexp_substr(regexp_substr(rec.subscription_name, '[^:]+', 1, 1), '[^.]+', 1, 2));
 
-      &&CWMS_SCHEMA..cwms_ts.unregister_ts_callback(
+      ${CWMS_SCHEMA}.cwms_ts.unregister_ts_callback(
         '&callback_proc',
         l_subscriber_name,
         l_queue_name);
@@ -124,7 +124,7 @@ create or replace package body cwms_ccp as
   begin
     for rec in
       (select name from dba_queues
-         where owner = upper('&&CWMS_SCHEMA') and queue_type in('NORMAL_QUEUE')
+         where owner = upper('${CWMS_SCHEMA}') and queue_type in('NORMAL_QUEUE')
            and name like '%_TS_STORED'
       )
     loop
@@ -132,7 +132,7 @@ create or replace package body cwms_ccp as
         continue;
       end if;
 
-      l_queue_name := '&&CWMS_SCHEMA..'||rec.name;
+      l_queue_name := '${CWMS_SCHEMA}.'||rec.name;
       begin
         dbms_aqadm.remove_subscriber(
           l_queue_name,
@@ -154,7 +154,7 @@ create or replace package body cwms_ccp as
   begin
     for rec in
       (select name from dba_queues
-         where owner = '&&CWMS_SCHEMA' and queue_type in('NORMAL_QUEUE')
+         where owner = '${CWMS_SCHEMA}' and queue_type in('NORMAL_QUEUE')
            and name like '%_TS_STORED'
       )
     loop
@@ -162,7 +162,7 @@ create or replace package body cwms_ccp as
         continue;
       end if;
 
-      l_subscriber_name := &&CWMS_SCHEMA..cwms_ts.register_ts_callback(
+      l_subscriber_name := ${CWMS_SCHEMA}.cwms_ts.register_ts_callback(
         '&callback_proc',
         p_subscriber_name,
         rec.name);
@@ -200,7 +200,7 @@ create or replace package body cwms_ccp as
   begin
     for rec1 in
       (select * from dba_queues
-         where owner = upper('&&CWMS_SCHEMA') and queue_type in('NORMAL_QUEUE')
+         where owner = upper('${CWMS_SCHEMA}') and queue_type in('NORMAL_QUEUE')
            and name like '%_TS_STORED'
       )
     loop
@@ -208,7 +208,7 @@ create or replace package body cwms_ccp as
 
       for rec2 in
         (select * from dba_queue_subscribers
-           where owner = upper('&&CWMS_SCHEMA') and consumer_name in(l_subscriber_name)
+           where owner = upper('${CWMS_SCHEMA}') and consumer_name in(l_subscriber_name)
              and queue_name like '%_TS_STORED'
         )
       loop
@@ -235,7 +235,7 @@ create or replace package body cwms_ccp as
     l_count           integer;
     l_run_interval    varchar2(8);
     l_comment         varchar2(256);
-    l_user_id         varchar2(30) := '&&&CCP_SCHEMA';
+    l_user_id         varchar2(30) := '${CCP_SCHEMA}';
     l_job_id          varchar2(30) := 'CHECK_NOTIFY_CALLBACK_PROC_JOB';
 
     function job_count
@@ -314,7 +314,7 @@ create or replace package body cwms_ccp as
   begin
     l_start_time := to_date(to_char(p_start_time, c_timestamp_fmt), c_timestamp_fmt);
     l_end_time   := to_date(to_char(p_end_time, c_timestamp_fmt), c_timestamp_fmt);
-    l_unit_id    := &&CWMS_SCHEMA..cwms_ts.get_db_unit_id(p_tsid);
+    l_unit_id    := ${CWMS_SCHEMA}.cwms_ts.get_db_unit_id(p_tsid);
 
     for r2 in
       (select distinct cc.loading_application_id
@@ -377,7 +377,7 @@ create or replace package body cwms_ccp as
   is
     l_office_cd   integer;
   begin
-    l_office_cd := &&CWMS_SCHEMA..cwms_util.get_db_office_code (p_office_id);
+    l_office_cd := ${CWMS_SCHEMA}.cwms_util.get_db_office_code (p_office_id);
 
     insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
       values(cp_depends_notifyidseq.nextval, 'D', p_ts_code, SYSDATE, l_office_cd);
@@ -562,8 +562,8 @@ create or replace package body cwms_ccp as
             l_msgtype        := get_string(l_message, l_msgid, 'type', l_msgtype_len);
             l_office_id      := get_string(l_message, l_msgid, 'office_id', l_office_id_len);
             l_enqueue_millis := l_message.get_long(l_msgid, 'millis');
-            l_enqueue_time   := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_enqueue_millis);
-            l_queue_delay    := &&CWMS_SCHEMA..cwms_util.to_millis(l_dequeue_time) - l_enqueue_millis;
+            l_enqueue_time   := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_enqueue_millis);
+            l_queue_delay    := ${CWMS_SCHEMA}.cwms_util.to_millis(l_dequeue_time) - l_enqueue_millis;
             l_comment  := 'Starting Case';
             -----------------------------------------------------------------
             -- operate on the message based on its type
@@ -579,9 +579,9 @@ create or replace package body cwms_ccp as
                 l_store_millis := l_message.get_long(l_msgid, 'store_time');
                 l_version_date := l_message.get_long(l_msgid, 'version_date');
 
-                l_start_time   := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_start_millis);
-                l_end_time     := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_end_millis);
-                l_store_time   := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_store_millis);
+                l_start_time   := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_start_millis);
+                l_end_time     := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_end_millis);
+                l_store_time   := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_store_millis);
                 l_comment      := 'start time= '||l_start_time||
                                   ', end time= '||l_end_time;
 
@@ -609,8 +609,8 @@ create or replace package body cwms_ccp as
                 l_ts_code      := l_message.get_long(l_msgid, 'ts_code');
                 l_start_millis := l_message.get_long(l_msgid, 'start_time');
                 l_end_millis   := l_message.get_long(l_msgid, 'end_time');
-                l_start_time   := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_start_millis);
-                l_end_time     := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_end_millis);
+                l_start_time   := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_start_millis);
+                l_end_time     := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_end_millis);
                 l_deleted_time := l_message.get_long(l_msgid, 'deleted_time');
                 l_version_date := l_message.get_long(l_msgid, 'version_date');
                 l_comment      := 'start time= '||l_start_time||
@@ -809,13 +809,13 @@ show errors;
 ---------------------------------------------------------------------------
 -- Grant execute privilege on packages TO cwms_user
 ---------------------------------------------------------------------------
-GRANT EXECUTE ON &&CCP_SCHEMA..cwms_ccp TO CCP_USERS;
+GRANT EXECUTE ON ${CCP_SCHEMA}.cwms_ccp TO CCP_USERS;
 
 ---------------------------------------------------------------------------
 -- Create public synonyms for CCP packages
 ---------------------------------------------------------------------------
 DROP PUBLIC SYNONYM cwms_ccp;
-CREATE PUBLIC SYNONYM cwms_ccp FOR &&CCP_SCHEMA..cwms_ccp;
+CREATE PUBLIC SYNONYM cwms_ccp FOR ${CCP_SCHEMA}.cwms_ccp;
 
 
 ---------------------------------------------------------------------------
@@ -824,11 +824,11 @@ CREATE PUBLIC SYNONYM cwms_ccp FOR &&CCP_SCHEMA..cwms_ccp;
 begin
   -- in 'addCcpUser.sql' we registered user CCP in the default office.
   -- This is a kludge: TS API requires caller to be registered in an office.
---  &&CWMS_SCHEMA..cwms_env.set_session_office_id('&DEFAULT_OFFICE_ID');
-  &&CCP_SCHEMA..cwms_ccp.reload_callback_proc(
+--  ${CWMS_SCHEMA}.cwms_env.set_session_office_id('&DEFAULT_OFFICE_ID');
+  ${CCP_SCHEMA}.cwms_ccp.reload_callback_proc(
     'CCP_SUBSCRIBER');
 
-  &&CCP_SCHEMA..cwms_ccp.start_check_callback_proc_job;
+  ${CCP_SCHEMA}.cwms_ccp.start_check_callback_proc_job;
 end;
 /
 
@@ -910,7 +910,7 @@ create or replace package body cwms_ccp_vpd as
 	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
 
     -- This is required by the queue handler
-    if upper(k_session_user_name) in ('SYS', '&&CCP_SCHEMA', '&&CWMS_SCHEMA')
+    if upper(k_session_user_name) in ('SYS', '${CCP_SCHEMA}', '${CWMS_SCHEMA}')
     then
       l_pred := '1 = 1';
     else
@@ -952,7 +952,7 @@ create or replace package body cwms_ccp_vpd as
 	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
 
     -- This is required by the queue handler
-    if upper(k_session_user_name) in ('SYS', '&&CCP_SCHEMA', '&&CWMS_SCHEMA')
+    if upper(k_session_user_name) in ('SYS', '${CCP_SCHEMA}', '${CWMS_SCHEMA}')
     then
       l_pred := '1 = 1';
     else
@@ -997,13 +997,13 @@ show errors;
 ---------------------------------------------------------------------------
 -- Grant execute privilege on packages TO cwms_user
 ---------------------------------------------------------------------------
-GRANT EXECUTE ON &&CCP_SCHEMA..cwms_ccp_vpd TO CCP_USERS;
+GRANT EXECUTE ON ${CCP_SCHEMA}.cwms_ccp_vpd TO CCP_USERS;
 
 ---------------------------------------------------------------------------
 -- Create synonym for CWMS_CCP_VPD package
 ---------------------------------------------------------------------------
 DROP PUBLIC SYNONYM cwms_ccp_vpd;
-CREATE PUBLIC SYNONYM cwms_ccp_vpd FOR &&CCP_SCHEMA..cwms_ccp_vpd;
+CREATE PUBLIC SYNONYM cwms_ccp_vpd FOR ${CCP_SCHEMA}.cwms_ccp_vpd;
 
 
 spool off
