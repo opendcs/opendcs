@@ -146,9 +146,9 @@ public class PropertiesSqlDao extends DaoBase implements PropertiesDAI
         final String q = "insert into " + tableName + " values(?,?,?,?)";
         try
         {
-            doModifyBatch(q, key ->
+            doModifyBatch(q, propertyKey ->
             {
-                return new Object[]{parentKey, key, props.getProperty((String)key)};
+                return new Object[]{parentKey, key2, propertyKey, props.getProperty((String)propertyKey)};
             },
             props.keySet(),
             200);
