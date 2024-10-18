@@ -117,6 +117,9 @@ public class RSListTableModel extends AbstractTableModel
         RoutingSpec found = theList.find(ob.getName());
         if (found != null)
         {
+            // we very specifically do not call DbIo.deleteRoutingSpec here as we just saved
+            // the updates and we don't need to bother writing them to the database again.
+            // we just need the RoutingSpecList to have the new spec.
             theList.remove(found);
         }
         theList.add(ob);
