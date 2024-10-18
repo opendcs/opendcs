@@ -67,61 +67,58 @@ public class CwmsOracleConfiguration implements Configuration
             log.info("starting CWMS Database");
             cwmsDb.start();
             log.info("CWMS Database started.");
-            cwmsDb.executeSQL("create user CCP no authentication", "sys");
+            cwmsDb.executeSQL("create tablespace CCP_DATA DATAFILE 'ccp_data.dbf' SIZE 100M REUSE AUTOEXTEND ON NEXT 1M MAXSIZE 2000M","sys");
+            cwmsDb.executeSQL("create user CCP no authentication default tablespace ccp_data QUOTA UNLIMITED ON ccp_data", "sys");
             cwmsDb.executeSQL("alter user CCP GRANT CONNECT through " + cwmsDb.getUsername(), "sys");
             cwmsDb.executeSQL("GRANT CWMS_USER TO CCP","sys");
+            cwmsDb.executeSQL("create role ccp_users","sys");
+            cwmsDb.executeSQL("grant create session,resource,connect to ccp_users","sys");
+            cwmsDb.executeSQL("grant ccp_users to cwms_user", "sys");
             cwmsDb.executeSQL("GRANT ALTER ANY TABLE,CREATE ANY TABLE,CREATE ANY INDEX,CREATE ANY SEQUENCE,"
                             + "CREATE ANY VIEW,CREATE ANY PROCEDURE,CREATE ANY TRIGGER,CREATE ANY JOB,"
                             + "CREATE ANY SYNONYM,DROP ANY SYNONYM,CREATE PUBLIC SYNONYM,DROP PUBLIC SYNONYM"
-                            + " TO CCP");
-            cwmsDb.executeSQL("GRANT CREATE ANY CONTEXT,ADMINISTER DATABASE TRIGGER TO CCP");
-            cwmsDb.executeSQL("begin\n" + //
-                                "  -- Grant the aq object permissions to the CCP\n" + //
-                                "  GRANT SELECT ON dba_scheduler_jobs to CCP;\n" + //
-                                "  GRANT SELECT ON dba_queue_subscribers to CCP;\n" + //
-                                "  GRANT SELECT ON dba_subscr_registrations to CCP;\n" + //
-                                "  GRANT SELECT ON dba_queues to CCP;\n" + //
-                                "  GRANT EXECUTE ON dbms_aq TO CCP;\n" + //
-                                "  GRANT EXECUTE ON dbms_aqadm TO CCP;\n" + //
-                                "  -- Grant the vpd privileges to the CCP.\n" + //
-                                "  GRANT EXECUTE ON DBMS_SESSION to CCP;\n" + //
-                                "  GRANT EXECUTE ON DBMS_RLS to CCP;\n" + //
-                                "  -- Grant the aqadm privileges to the CCP.\n" + //
-                                "\n" + //
-                                "    sys.dbms_aqadm.grant_system_privilege (\n" + //
-                                "      privilege    => 'enqueue_any',\n" + //
-                                "      grantee      => 'CCP',\n" + //
+                            + " TO CCP","sys");
+            cwmsDb.executeSQL("GRANT CREATE ANY CONTEXT,ADMINISTER DATABASE TRIGGER TO CCP","sys");
+            cwmsDb.executeSQL("begin\n" + //                                
+                                "  execute immediate 'GRANT SELECT ON dba_scheduler_jobs to CCP';\n" + //
+                                "  execute immediate 'GRANT SELECT ON dba_queue_subscribers to CCP';\n" + //
+                                "  execute immediate 'GRANT SELECT ON dba_subscr_registrations to CCP';\n" + //
+                                "  execute immediate 'GRANT SELECT ON dba_queues to CCP';\n" + //
+                                "  execute immediate 'GRANT EXECUTE ON dbms_aq TO CCP';\n" + //
+                                "  execute immediate 'GRANT EXECUTE ON dbms_aqadm TO CCP';\n" + //
+                                "  execute immediate 'GRANT EXECUTE ON DBMS_SESSION to CCP';\n" + //
+                                "  execute immediate 'GRANT EXECUTE ON DBMS_RLS to CCP';\n" + //
+                                "" + //
+                                "    sys.dbms_aqadm.grant_system_privilege (" + //
+                                "      privilege    => 'enqueue_any'," + //
+                                "      grantee      => 'CCP'," + //
                                 "      admin_option => false);\n" + //
-                                "    sys.dbms_aqadm.grant_system_privilege (\n" + //
-                                "      privilege    => 'dequeue_any',\n" + //
-                                "      grantee      => 'CCP',\n" + //
+                                "    sys.dbms_aqadm.grant_system_privilege (" + //
+                                "      privilege    => 'dequeue_any'," + //
+                                "      grantee      => 'CCP'," + //
                                 "      admin_option => false);\n" + //
-                                "    sys.dbms_aqadm.grant_system_privilege (\n" + //
-                                "      privilege    => 'manage_any',\n" + //
-                                "      grantee      => 'CCP',\n" + //
+                                "    sys.dbms_aqadm.grant_system_privilege (" + //
+                                "      privilege    => 'manage_any'," + //
+                                "      grantee      => 'CCP'," + //
                                 "      admin_option => false);\n" + //
-                                "  -- Grant the permissions on cwms tables, views, and packages to the CCP\n" + //
-                                "  GRANT SELECT ON cwms_v_loc TO CCP WITH GRANT OPTION;\n" + //
-                                "  GRANT SELECT ON cwms_v_ts_id TO CCP WITH GRANT OPTION;\n" + //
-                                "  GRANT SELECT ON cwms_v_tsv TO CCP;\n" + //
-                                "  GRANT SELECT ON cwms_20.cwms_seq TO CCP;\n" + //
-                                "  GRANT SELECT ON cwms_20.cwms_seq TO CCP_USERS;\n" + //
-                                "\n" + //
-                                "  GRANT EXECUTE ON cwms_t_date_table TO CCP;\n" + //
-                                "  GRANT EXECUTE ON cwms_t_jms_map_msg_tab TO CCP;\n" + //
-                                "\n" + //
-                                "  GRANT EXECUTE ON CWMS_20.cwms_ts TO CCP;\n" + //
-                                "  GRANT EXECUTE ON CWMS_20.cwms_msg TO CCP;\n" + //
-                                "  GRANT EXECUTE ON CWMS_20.cwms_util TO CCP;\n" + //
-                                "  GRANT EXECUTE ON CWMS_20.cwms_sec TO CCP;\n" + //
-                                "\n" + //
-                                "  GRANT EXECUTE ON CWMS_20.cwms_env TO CCP;\n" + //
-                                "  GRANT EXECUTE ON CWMS_20.cwms_env TO CCP_USERS;\n" + //
-                                "\n" + //
-                                "  -- Grant the permissions on cwms tables to the CCP for multiple office\n" + //
-                                "  -- GRANT SELECT ON CWMS_20.at_sec_user_office TO CCP;\n" + //
-                                "\n" + //
-                                "  ALTER USER CCP DEFAULT ROLE ALL;\n" + //
+                                "  execute immediate 'GRANT SELECT ON cwms_v_loc TO CCP WITH GRANT OPTION';\n" + //
+                                "  execute immediate 'GRANT SELECT ON cwms_v_ts_id TO CCP WITH GRANT OPTION';\n" + //
+                                "  execute immediate 'GRANT SELECT ON cwms_v_tsv TO CCP';\n" + //
+                                "  execute immediate 'GRANT SELECT ON cwms_20.cwms_seq TO CCP';\n" + //
+                                "  execute immediate 'GRANT SELECT ON cwms_20.cwms_seq TO CCP_USERS';\n" + //
+                                "" + //
+                                "  execute immediate 'GRANT EXECUTE ON cwms_t_date_table TO CCP';\n" + //
+                                "  execute immediate 'GRANT EXECUTE ON cwms_t_jms_map_msg_tab TO CCP';\n" + //
+                                "" + //
+                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_ts TO CCP';\n" + //
+                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_msg TO CCP';\n" + //
+                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_util TO CCP';\n" + //
+                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_sec TO CCP';\n" + //
+                                "" + //
+                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_env TO CCP';\n" + //
+                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_env TO CCP_USERS';\n" + //
+                                "" + //
+                                "  execute immediate 'ALTER USER CCP DEFAULT ROLE ALL';\n" + //
                                 "END;","sys");
 
             SimpleDataSource ds = new SimpleDataSource(cwmsDb.getJdbcUrl(),
@@ -132,6 +129,8 @@ public class CwmsOracleConfiguration implements Configuration
             mp.setPlaceholderValue("CWMS_SCHEMA", "CWMS_20");
             mp.setPlaceholderValue("CCP_SCHEMA", "CCP");
             mp.setPlaceholderValue("DEFAULT_OFFICE_CODE", "1");
+            mp.setPlaceholderValue("DEFAULT_OFFICE", "HQ");
+            mp.setPlaceholderValue("TABLE_SPACE_SPEC", "tablespace CCP_DATA");
             mm.migrate();
         }
 
@@ -173,7 +172,7 @@ public class CwmsOracleConfiguration implements Configuration
         
         try (OutputStream out = new FileOutputStream(new File(userDir,"logfilter.txt")))
         {
-            out.write("org.jooq\n".getBytes());
+            out.write("org.jooq".getBytes());
         }
     }
 
