@@ -120,6 +120,7 @@ public class RSListTableModel extends AbstractTableModel
             theList.remove(found);
         }
         theList.add(ob);
+        fireTableDataChanged();
     }
 
     public void deleteObject(RoutingSpec ob)
