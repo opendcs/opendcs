@@ -93,7 +93,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
     {
         log.debug("Reading RoutingSpecs...");
 
-        Statement stmt = createStatement();
+        
 
         String q = "SELECT id, name, dataSourceId, enableEquations, " +
                    "usePerformanceMeasurements, outputFormat, outputTimeZone, " +
@@ -101,79 +101,81 @@ public class RoutingSpecListIO extends SqlDbObjIo
                    "consumerType, consumerArg, lastModifyTime, isProduction " +
                    "FROM RoutingSpec";
 
-        ResultSet resultSet = stmt.executeQuery( q );
-
-        while (resultSet != null && resultSet.next())
+        try (Statement stmt = createStatement(); 
+             ResultSet resultSet = stmt.executeQuery( q );
+        )
         {
-            DbKey id = DbKey.createDbKey(resultSet, 1);
-            String name = resultSet.getString(2);
-
-            RoutingSpec routingSpec = new RoutingSpec(name);
-
-            routingSpec.setId(id);
-
-            DbKey dataSourceId = DbKey.createDbKey(resultSet, 3);
-            routingSpec.dataSource = null;
-            try
+            while (resultSet != null && resultSet.next())
             {
-                DataSource ds = _dbio._dataSourceListIO.getDS(rsList, dataSourceId);
-                routingSpec.dataSource = ds;
+                DbKey id = DbKey.createDbKey(resultSet, 1);
+                String name = resultSet.getString(2);
+
+                RoutingSpec routingSpec = new RoutingSpec(name);
+
+                routingSpec.setId(id);
+
+                DbKey dataSourceId = DbKey.createDbKey(resultSet, 3);
+                routingSpec.dataSource = null;
+                try
+                {
+                    DataSource ds = _dbio._dataSourceListIO.getDS(rsList, dataSourceId);
+                    routingSpec.dataSource = ds;
+                }
+                catch(DatabaseException ex)
+                {
+                    log.atWarn()
+                    .setCause(ex)
+                    .log(
+                        "Invalid dataSourceId {} in routing spec '{}'"
+                        + " -- valid data source must be assigned before this"
+                        + " spec can be used: ",dataSourceId, name );
+                }
+
+                routingSpec.enableEquations =
+                    TextUtil.str2boolean(resultSet.getString(4));
+                routingSpec.usePerformanceMeasurements =
+                    TextUtil.str2boolean(resultSet.getString(5));
+
+                routingSpec.outputFormat = resultSet.getString(6);
+
+                routingSpec.outputTimeZoneAbbr = resultSet.getString(7);
+
+                routingSpec.presentationGroupName = resultSet.getString(8);
+
+                routingSpec.sinceTime = resultSet.getString(9);
+                routingSpec.untilTime = resultSet.getString(10);
+
+                routingSpec.consumerType = resultSet.getString(11);
+
+                routingSpec.consumerArg = resultSet.getString(12);
+                if (routingSpec.consumerArg == null)
+                {
+                    routingSpec.consumerArg = "";
+                }
+
+                routingSpec.lastModifyTime = getTimeStamp(resultSet, 13, routingSpec.lastModifyTime);
+
+                routingSpec.isProduction = TextUtil.str2boolean(resultSet.getString(14));
+
+                // Get the properties associated with this object.
+                try
+                {
+                    propsDao.readProperties(
+                        "RoutingSpecProperty", "RoutingSpecId",
+                        routingSpec.getId(), routingSpec.getProperties());
+                }
+                catch (DbIoException ex)
+                {
+                    throw new DatabaseException("Unable to read routing spec.", ex);
+                }
+
+                // Get the NetworkLits associated with this database.
+
+                read_RS_NL(routingSpec);
+
+                rsList.add(routingSpec);
             }
-            catch(DatabaseException ex)
-            {
-                log.atWarn()
-                   .setCause(ex)
-                   .log(
-                      "Invalid dataSourceId {} in routing spec '{}'"
-                    + " -- valid data source must be assigned before this"
-                    + " spec can be used: ",dataSourceId, name );
-            }
-
-            routingSpec.enableEquations =
-                TextUtil.str2boolean(resultSet.getString(4));
-            routingSpec.usePerformanceMeasurements =
-                TextUtil.str2boolean(resultSet.getString(5));
-
-            routingSpec.outputFormat = resultSet.getString(6);
-
-            routingSpec.outputTimeZoneAbbr = resultSet.getString(7);
-
-            routingSpec.presentationGroupName = resultSet.getString(8);
-
-            routingSpec.sinceTime = resultSet.getString(9);
-            routingSpec.untilTime = resultSet.getString(10);
-
-            routingSpec.consumerType = resultSet.getString(11);
-
-            routingSpec.consumerArg = resultSet.getString(12);
-            if (routingSpec.consumerArg == null)
-            {
-                routingSpec.consumerArg = "";
-            }
-
-            routingSpec.lastModifyTime = getTimeStamp(resultSet, 13, routingSpec.lastModifyTime);
-
-            routingSpec.isProduction = TextUtil.str2boolean(resultSet.getString(14));
-
-            // Get the properties associated with this object.
-            try
-            {
-                propsDao.readProperties(
-                    "RoutingSpecProperty", "RoutingSpecId",
-                    routingSpec.getId(), routingSpec.getProperties());
-            }
-            catch (DbIoException ex)
-            {
-                throw new DatabaseException("Unable to read routing spec.", ex);
-            }
-
-            // Get the NetworkLits associated with this database.
-
-            read_RS_NL(routingSpec);
-
-            rsList.add(routingSpec);
         }
-        stmt.close();
     }
 
     /**
