@@ -22,14 +22,19 @@ if not exist %DCSTOOL_USERDIR%\ (
   copy %APP_PATH%\decodes.properties %DCSTOOL_USERDIR%\user.properties
   xcopy %APP_PATH%\edit-db %DCSTOOL_USERDIR%\edit-db /E /I
 )
+
 if defined CP_SHARED_JAR_DIR (
-  if exist "%CP_SHARED_JAR_DIR%" do (
-    set "CLASSPATH=!CLASSPATH!;%CP_SHARED_JAR_DIR/*"
-    echo "The need of CP_SHARED_JAR_DIR is superseded by using a DCSTOOL_USERDIR for configuration." 1>&2
-    echo "Support for this variable will be moved in a future release. Please update " 1>&2
-    echo "your configuration." 1>&2
-  )
+    if exist "%CP_SHARED_JAR_DIR%" (
+	      set "CLASSPATH=%CLASSPATH%;%CP_SHARED_JAR_DIR%\*"
+        echo "The need of CP_SHARED_JAR_DIR is superseded by using a DCSTOOL_USERDIR for configuration." 1>&2
+        echo "Support for this variable will be moved in a future release. Please update " 1>&2
+        echo "your configuration." 1>&2
+        echo !CLASSPATH!
+    ) else (
+        echo "Directory %CP_SHARED_JAR_DIR% does not exist." 1>&2
+    )
 )
+
 
 if exist "%DCSTOOL_USERDIR%/dep\" do (
   set "CLASSPATH=!CLASSPATH!;%DCSTOOL_USERDIR%/dep/*"
