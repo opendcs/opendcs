@@ -909,7 +909,7 @@ public class PlatformListIO extends SqlDbObjIo
             ps.platform.getId(), ps.sensorNumber, ps.getProperties()); }
         catch (DbIoException e)
         {
-            throw new DatabaseException(e.getMessage());
+            throw new DatabaseException(e.getMessage(), e);
         }
         finally
         {
