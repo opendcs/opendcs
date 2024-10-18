@@ -54,6 +54,10 @@ public class CwmsOracleProvider implements MigrationProvider
                 ""));
         properties.add(
             new MigrationProperty(
+                "DEFAULT_OFFICE", String.class,
+                ""));
+        properties.add(
+            new MigrationProperty(
                 "TABLE_SPACE_SPEC", String.class,
                 ""));
     }
@@ -79,7 +83,7 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void registerJdbiPlugins(Jdbi jdbi)
     {
-        jdbi.installPlugin(new PostgresPlugin());
+        //jdbi.installPlugin(new OraclePlugin());
     }
 
     @Override

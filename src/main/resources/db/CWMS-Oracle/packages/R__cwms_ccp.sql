@@ -16,17 +16,6 @@
 -- Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 -- All rights reserved.
 -----------------------------------------------------------------------------
-set echo on
-spool pkg_cwms_ccp.log
-
-whenever sqlerror continue
-set define on
-@@defines.sql
-
-define queue_name       = ${CWMS_SCHEMA}.cwms_sec.get_user_office_id||'_TS_STORED';
-define callback_proc    = ${CCP_SCHEMA}.CWMS_CCP.NOTIFY_FOR_COMP;
-
-
 ---------------------------------------------------------------------------
 -- create the callback procedure within the cwms_ccp package
 ---------------------------------------------------------------------------
@@ -100,14 +89,14 @@ create or replace package body cwms_ccp as
     for rec in
       (select subscription_name from dba_subscr_registrations
          where subscription_name like l_subscription_name
-           and location_name = 'plsql://&callback_proc'
+           and location_name = 'plsql://${CCP_SCHEMA}.CWMS_CCP.NOTIFY_FOR_COMP'
       )
     loop
       l_subscriber_name := trim(both '"' from regexp_substr(rec.subscription_name, '[^:]+', 1, 2));
       l_queue_name := trim(both '"' from regexp_substr(regexp_substr(rec.subscription_name, '[^:]+', 1, 1), '[^.]+', 1, 2));
 
       ${CWMS_SCHEMA}.cwms_ts.unregister_ts_callback(
-        '&callback_proc',
+        '${CCP_SCHEMA}.CWMS_CCP.NOTIFY_FOR_COMP',
         l_subscriber_name,
         l_queue_name);
     end loop;
@@ -163,7 +152,7 @@ create or replace package body cwms_ccp as
       end if;
 
       l_subscriber_name := ${CWMS_SCHEMA}.cwms_ts.register_ts_callback(
-        '&callback_proc',
+        '${CCP_SCHEMA}.CWMS_CCP.NOTIFY_FOR_COMP',
         p_subscriber_name,
         rec.name);
     end loop;
