@@ -29,7 +29,7 @@ public class TraceDialog extends JDialog
 	
 	private int maxMessages = 20000;
 	private int numMessages = 0;
-
+	private String closeText = null;
 
 	/**
 	 * Constructor for Dialog parent.
@@ -113,11 +113,24 @@ public class TraceDialog extends JDialog
 	}
 
 	/**
+	 * Text which if seen in addText will automatically close the dialog.
+	 * @param text exact text to check for.
+	 */
+	void setCloseText(String text)
+	{
+		this.closeText = text;
+	}
+
+	/**
 	 * Adds text to the dialog.
 	 * @param text the text.
 	 */
 	public void addText(String text)
 	{
+		if (closeText != null && closeText.equals(text))
+		{
+			this.setVisible(false);
+		}
 		if (numMessages < maxMessages)
 		{
 			SwingUtilities.invokeLater(() ->
@@ -130,7 +143,6 @@ public class TraceDialog extends JDialog
 			});
 			numMessages++;
 		}
-
 	}
 
 	/**

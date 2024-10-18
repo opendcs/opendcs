@@ -165,19 +165,8 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
         RoutingSpec newOb = ob.copy();
         newOb.setName(newName);
         newOb.clearId();
-        try
-        {
-            newOb.write();
-        }
-        catch (DatabaseException e)
-        {
-            DbEditorFrame.instance().showError(
-                LoadResourceBundle.sprintf(
-                    genericLabels.getString("cannotSave"), getEntityType()
-                        + " '" + newOb.getName() + "'", e.toString()));
-            return;
-        }
-        rsSelectPanel.addRoutingSpec(newOb);
+        // this previously tried to save to the database initially.
+        // Allow the user to determine if this should be done.
         doOpen(newOb);
     }
 

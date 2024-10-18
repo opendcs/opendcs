@@ -112,6 +112,16 @@ public class RSListTableModel extends AbstractTableModel
         fireTableDataChanged();
     }
 
+    public void addOrReplace(RoutingSpec ob)
+    {
+        RoutingSpec found = theList.find(ob.getName());
+        if (found != null)
+        {
+            theList.remove(found);
+        }
+        theList.add(ob);
+    }
+
     public void deleteObject(RoutingSpec ob)
     {
         try
