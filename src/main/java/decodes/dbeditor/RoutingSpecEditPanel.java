@@ -9,12 +9,17 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -22,6 +27,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
 import org.slf4j.LoggerFactory;
 
@@ -298,7 +304,7 @@ public class RoutingSpecEditPanel
 		theObject.getProperties().setProperty("rs.timeApplyTo", timeApplyTo);
 		for(String nln : sc.NetlistFiles)
 		{
-Logger.instance().debug3("Added netlist name '" + nln + "'");
+			Logger.instance().debug3("Added netlist name '" + nln + "'");
 			theObject.networkListNames.add(nln);
 		}
 		
@@ -610,32 +616,71 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 	public boolean saveChanges()
 	{
 		getDataFromFields();
-		try
+		final String CLOSE_MSG = "Routing Spec Saved.";
+		final TraceDialog dlg = new TraceDialog(this.parent, true);
+		dlg.setCloseText(CLOSE_MSG);
+		final AtomicBoolean result = new AtomicBoolean(false);
+		SwingWorker<Boolean,String> worker = new SwingWorker<Boolean,String>()
 		{
-			theObject.lastModifyTime = new Date();
-			theObject.write();
-		}
-		catch (DatabaseException e)
-		{
-			final String msg =
-				LoadResourceBundle.sprintf(genericLabels.getString("cannotSave"), getEntityName(), e.toString());
-			log.atError()
-			   .setCause(e)
-			   .log(msg);
-			DbEditorFrame.instance().showError(msg);
-			return false;
-		}
 
-		RSListTableModel model = parent.getRoutingSpecListPanel().getModel();
-		model.deleteObject(origObject);
-		model.addObject(theObject);
+			@Override
+			protected Boolean doInBackground() throws Exception
+			{
+				publish("Writing\n\tRouting Spec");
+				theObject.lastModifyTime = new Date();
+				theObject.write();
+				publish("... done\n");
+				RSListTableModel model = parent.getRoutingSpecListPanel().getModel();
+				publish("\t updating list");
+				model.addOrReplace(theObject);
+				publish("... done\n");
 
-		// Make a new copy in case user wants to keep editing.
-		origObject = theObject;
-		theObject = origObject.copy();
-		setTopObject(origObject);
+				// Make a new copy in case user wants to keep editing.
+				origObject = theObject;
+				theObject = origObject.copy();
+				setTopObject(origObject);
+				return true;
+			} 
 
-		return true;
+			@Override
+			protected void process(List<String> chunks)
+			{
+				for (String text: chunks)
+				{
+					dlg.addText(text);
+				}
+			}
+
+			@Override
+			protected void done()
+			{
+				try
+				{
+					if (get())
+					{
+						result.set(true);
+						dlg.addText(CLOSE_MSG);
+					}
+				}
+				catch (Exception ex)
+				{
+					final String msg =
+						LoadResourceBundle.sprintf(genericLabels.getString("cannotSave"), getEntityName(), ex.toString());
+					log.atError()
+					   .setCause(ex)
+					   .log(msg);
+					StringWriter sw = new StringWriter();
+					PrintWriter pw = new PrintWriter(sw);
+					pw.println();
+					pw.println(msg);
+					ex.printStackTrace(pw);
+					dlg.addText(sw.toString());
+				}
+			}
+		};
+		worker.execute();
+		dlg.setVisible(true);
+		return result.get();
 	}
 
 	/** @see EntityOpsController */

@@ -41,6 +41,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -586,7 +587,7 @@ public class DaoBase
      * @param batchSize How many elements of the list to execute for each batch.
      * @throws SQLException
      */
-    public <ValueType> void doModifyBatch(String query, ThrowingFunction<ValueType, Object[] , SQLException> bindingFunction, List<ValueType> values, int batchSize) throws SQLException
+    public <ValueType> void doModifyBatch(String query, ThrowingFunction<ValueType, Object[] , SQLException> bindingFunction, Collection<ValueType> values, int batchSize) throws SQLException
     {
         withStatement(query, (stmt) -> {
             int count = 0;

@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.opendcs.utils.Property;
 
@@ -44,9 +45,7 @@ import decodes.tsdb.DbIoException;
  *
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class PropertiesSqlDao
-    extends DaoBase
-    implements PropertiesDAI
+public class PropertiesSqlDao extends DaoBase implements PropertiesDAI
 {
     public PropertiesSqlDao(DatabaseConnectionOwner tsdb)
     {
@@ -122,12 +121,19 @@ public class PropertiesSqlDao
         DbKey parentKey, Properties props) throws DbIoException
     {
         deleteProperties(tableName, idColumn, parentKey);
-        for(Object kob : props.keySet())
+        final String q = "insert into " + tableName + " values(?,?,?)";
+        try
         {
-            String key = (String)kob;
-            String q = "insert into " + tableName + " values(" + parentKey
-                + ", " + sqlString(key) + ", " + sqlString(props.getProperty(key)) + ")";
-            doModify(q);
+            doModifyBatch(q, key ->
+            {
+                return new Object[]{parentKey, key, props.getProperty((String)key)};
+            },
+            props.keySet(),
+            200);
+        }
+        catch (SQLException ex)
+        {
+            throw new DbIoException("Unable to insert properties.", ex);
         }
     }
 
@@ -137,13 +143,19 @@ public class PropertiesSqlDao
         throws DbIoException
     {
         deleteProperties(tableName, idColumn, id2Column, parentKey, key2);
-        for(Object kob : props.keySet())
+        final String q = "insert into " + tableName + " values(?,?,?,?)";
+        try
         {
-            String propName = (String)kob;
-            String q = "insert into " + tableName + " values(" + parentKey
-                + ", " + key2
-                + ", " + sqlString(propName) + ", " + sqlString(props.getProperty(propName)) + ")";
-            doModify(q);
+            doModifyBatch(q, key ->
+            {
+                return new Object[]{parentKey, key, props.getProperty((String)key)};
+            },
+            props.keySet(),
+            200);
+        }
+        catch (SQLException ex)
+        {
+            throw new DbIoException("Unable to insert properties.", ex);
         }
     }
 
@@ -182,77 +194,83 @@ public class PropertiesSqlDao
     }
 
     @Override
-    public int readPropertiesIntoCache(String tableName, DbObjectCache<?> cache)
-        throws DbIoException
+    public int readPropertiesIntoCache(String tableName, DbObjectCache<?> cache) throws DbIoException
     {
         String q = "select * from " + tableName;
-        Integer n[] = new Integer[1];
-        n[0] = 0;
+        final AtomicInteger n = new AtomicInteger(0);
         try
         {
-            doQuery(q, rs -> {
+            doQuery(q, rs ->
+            {
                 Object ob = cache.getByKey(DbKey.createDbKey(rs, 1));
                 if (ob == null)
+                {
                     return;
+                }
                 if (!(ob instanceof HasProperties))
-                    throw new SQLException(
-                        "Cannot read properties because cached object is not HasProperties");
+                {
+                    throw new SQLException("Cannot read properties because cached object is not HasProperties");
+                }
 
                 String name = rs.getString(2);
                 String value = rs.getString(3);
                 if (value == null)
+                {
                     value = "";
+                }
 
                 HasProperties hp = (HasProperties)ob;
                 hp.setProperty(name, value);
-                n[0]++;
+                n.getAndIncrement();
             });
-            return n[0];
+            return n.get();
         }
-        catch (SQLException e)
+        catch (SQLException ex)
         {
             throw new DbIoException("Error reading properties for table "
-                + tableName + ": " + e.getMessage(),e);
+                + tableName + ": " + ex.getMessage(), ex);
         }
     }
 
     @Override
-    public int readPropertiesIntoList(String tableName, List<? extends CachableHasProperties> list,
-        String whereClause)
+    public int readPropertiesIntoList(String tableName, List<? extends CachableHasProperties> list, String whereClause)
         throws DbIoException
     {
         String q = "select * from " + tableName;
         if (whereClause != null)
+        {
             q = q + " " + whereClause;
-        ResultSet rs = doQuery(q);
-        int n = 0;
+        }
+
+        final AtomicInteger n = new AtomicInteger(0);
         try
         {
-          nextProp:
-            while(rs != null && rs.next())
+            doQuery(q, rs ->
             {
                 DbKey key = DbKey.createDbKey(rs, 1);
                 for(CachableHasProperties chp : list)
+                {
                     if (chp.getKey().equals(key))
                     {
                         String name = rs.getString(2);
                         String value = rs.getString(3);
                         if (value == null)
+                        {
                             value = "";
+                        }
 
                         chp.setProperty(name, value);
-                        n++;
-                        continue nextProp;
+                        n.getAndIncrement();
+                        return;
                     }
-                //warning("Table '" + tableName + "' has property with key=" + key
-                //    + " and no matching object in list.");
-            }
-            return n;
+                }
+            });
+            return n.get();
         }
-        catch (SQLException e)
+        catch (SQLException ex)
         {
             throw new DbIoException("Error reading properties for table "
-                + tableName + ": " + e.getMessage());
+                + tableName + ": " + ex.getMessage(), ex);
         }
     }
 
