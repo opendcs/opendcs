@@ -1,6 +1,5 @@
 package org.opendcs.lrgs.http;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,9 +11,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
@@ -29,7 +26,6 @@ import lrgs.common.DcpMsgIndex;
 import lrgs.common.DcpNameMapper;
 import lrgs.common.EndOfArchiveException;
 import lrgs.common.SearchCriteria;
-import lrgs.common.SearchSyntaxException;
 import lrgs.common.SearchTimeoutException;
 import lrgs.common.UntilReachedException;
 import lrgs.ddsserver.MessageArchiveRetriever;
@@ -77,7 +73,6 @@ public class DdsHttp
                 }
                 return Response.ok().entity(messages).build();
             } catch (ArchiveUnavailableException e) {
-                log.error("can't get messages", e);
                 return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
                             .entity("\"Failed to get messages\"")
                             .build();
