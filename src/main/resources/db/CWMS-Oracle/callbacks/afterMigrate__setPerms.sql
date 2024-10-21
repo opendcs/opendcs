@@ -21,7 +21,8 @@ BEGIN
   -- grant insert, update, delete privileges on all CCP tables to ccp_users_w
   for rec in (
     select object_name from sys.all_objects
-      where owner = upper('${CCP_SCHEMA}') and object_type in('TABLE') order by object_id
+      where owner = upper('${CCP_SCHEMA}') and object_type in('TABLE') 
+      and upper(object_name) not like 'FLYWAY%' order by object_id
     )
   loop
     begin
@@ -38,7 +39,8 @@ BEGIN
   -- Grant select privilege on sequences TO ccp_users_w and ccp_users_p
   for rec in (
     select object_name from sys.all_objects
-      where owner = upper('${CCP_SCHEMA}') and object_type in('SEQUENCE') order by object_id
+      where owner = upper('${CCP_SCHEMA}') and object_type in('SEQUENCE')
+        and upper(object_name) not like 'FLYWAY%' order by object_id
     )
   loop
     begin
@@ -75,3 +77,12 @@ grant select on ccp.datapresentationidseq to ccp_users;
 grant select on ccp.cp_computationidseq to ccp_users;
 grant select on ccp.cp_algorithmidseq to ccp_users;
 grant select on ccp.platformidseq to ccp_users;
+
+---------------------------------------------------------------------------
+-- Grant execute privilege on packages TO cwms_user
+---------------------------------------------------------------------------
+GRANT EXECUTE ON ${CCP_SCHEMA}.cwms_ccp_vpd TO CCP_USERS;
+---------------------------------------------------------------------------
+-- Grant execute privilege on packages TO cwms_user
+---------------------------------------------------------------------------
+GRANT EXECUTE ON ${CCP_SCHEMA}.cwms_ccp TO CCP_USERS;
