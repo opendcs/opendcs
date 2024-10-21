@@ -28,7 +28,7 @@ begin
         policy_name         => 'plcy_cwms_ccp_office_v'
       );
       DBMS_RLS.drop_policy (
-        object_schema       => '&${CCP_SCHEMA}',
+        object_schema       => '${CCP_SCHEMA}',
         object_name         => rec.table_name,
         policy_name         => 'plcy_cwms_ccp_office_u'
       );
