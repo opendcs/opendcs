@@ -1,22 +1,3 @@
-/*
-create or replace public synonym platformidseq for ccp.platformidseq;
-create or replace public synonym cp_algorithmidseq for ccp.cp_algorithmidseq;
-create or replace public synonym cp_computationidseq for ccp.cp_computationidseq;
-create or replace public synonym datapresentationidseq for ccp.datapresentationidseq;
-create or replace public synonym datasourceidseq for ccp.datasourceidseq;
-create or replace public synonym datatypeidseq for ccp.datatypeidseq;
-create or replace public synonym decodesscriptidseq for ccp.decodesscriptidseq;
-create or replace public synonym enumidseq for ccp.enumidseq;
-create or replace public synonym equipmentidseq for ccp.equipmentidseq;
-create or replace public synonym hdb_loading_applicationidseq for ccp.hdb_loading_applicationidseq;
-create or replace public synonym networklistidseq for ccp.networklistidseq;
-create or replace public synonym platformconfigidseq for ccp.platformconfigidseq;
-create or replace public synonym presentationgroupidseq for ccp.presentationgroupidseq;
-create or replace public synonym routingspecidseq for ccp.routingspecidseq;
-create or replace public synonym schedule_entryidseq for ccp.schedule_entryidseq;
-create or replace public synonym tsdb_groupidseq for ccp.tsdb_groupidseq;
-create or replace public synonym unitconverteridseq for ccp.unitconverteridseq;
-*/
 ---------------------------------------------------------------------------
 -- Create public synonyms for CCP objects
 ---------------------------------------------------------------------------
@@ -42,3 +23,10 @@ BEGIN
 
 END;
 /
+
+
+---------------------------------------------------------------------------
+-- Create synonym for CWMS_CCP_VPD package
+---------------------------------------------------------------------------
+CREATE OR REPLACE PUBLIC SYNONYM cwms_ccp_vpd FOR ${CCP_SCHEMA}.cwms_ccp_vpd;
+CREATE OR REPLACE PUBLIC SYNONYM cwms_ccp FOR ${CCP_SCHEMA}.cwms_ccp;
