@@ -18,6 +18,7 @@ import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
 
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.launcher.Profile;
 import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
@@ -57,13 +58,15 @@ public class CwmsOracleConfiguration implements Configuration
         this.propertiesFile = new File(userDir,"/user.properties");
     }
 
-    private void installDb(SystemExit exit,EnvironmentVariables environment) throws Exception
+    private void installDb(SystemExit exit,EnvironmentVariables environment, UserPropertiesBuilder configBuilder) throws Exception
     {
         if (!started)
         {
             cwmsDb = CwmsDatabaseContainers.createDatabaseContainer(CWMS_ORACLE_IMAGE)
                             .withSchemaImage(CWMS_SCHEMA_IMAGE)
-                            .withVolumeName(CWMS_ORACLE_VOLUME);
+                            .withVolumeName(CWMS_ORACLE_VOLUME)
+                            .withOfficeId("SPK")
+                            .withOfficeEroc("l2");
             log.info("starting CWMS Database");
             cwmsDb.start();
             log.info("CWMS Database started.");
@@ -128,15 +131,21 @@ public class CwmsOracleConfiguration implements Configuration
             MigrationProvider mp = mm.getMigrationProvider();
             mp.setPlaceholderValue("CWMS_SCHEMA", "CWMS_20");
             mp.setPlaceholderValue("CCP_SCHEMA", "CCP");
-            mp.setPlaceholderValue("DEFAULT_OFFICE_CODE", "1");
-            mp.setPlaceholderValue("DEFAULT_OFFICE", "HQ");
+            mp.setPlaceholderValue("DEFAULT_OFFICE_CODE", "44");
+            mp.setPlaceholderValue("DEFAULT_OFFICE", "SOK");
             mp.setPlaceholderValue("TABLE_SPACE_SPEC", "tablespace CCP_DATA");
             mm.migrate();
+            cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Mgr','SPK') ; end;", "cwms_20");
+            cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Proc','SPK') ; end;", "cwms_20");
+            this.dbUrl = cwmsDb.getJdbcUrl();
+            this.dcsUser = cwmsDb.getUsername(); // System.getProperty("opendcs.cwms.dcsuser.name",cwmsDb.getUsername());
+            this.dcsUserPassword = cwmsDb.getPassword(); //
+            createPropertiesFile(configBuilder, this.propertiesFile);
+            final Profile profile = Profile.getProfile(this.propertiesFile);
+            mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
         }
 
-        this.dbUrl = cwmsDb.getJdbcUrl();
-        dcsUser = System.getProperty("opendcs.cwms.dcsuser.name",cwmsDb.getUsername());
-        dcsUserPassword = System.getProperty("opendcs.cwms.dcsuser.password",cwmsDb.getPassword());
+        System.getProperty("opendcs.cwms.dcsuser.password",cwmsDb.getPassword());
         environment.set("DB_USERNAME",dcsUser);
         environment.set("DB_PASSWORD",dcsUserPassword);
         environmentVars.put("DB_USERNAME",dcsUser);
@@ -153,8 +162,17 @@ public class CwmsOracleConfiguration implements Configuration
         editDb.mkdirs();
         FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
         FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));        
-        installDb(exit,environment); // need files copied first.
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
+        installDb(exit, environment, configBuilder); // need files copied first.
+        createPropertiesFile(configBuilder, this.propertiesFile);
+        try (OutputStream out = new FileOutputStream(new File(userDir,"logfilter.txt")))
+        {
+            out.write("org.jooq".getBytes());
+        }
+    }
+
+    private void createPropertiesFile(UserPropertiesBuilder configBuilder, File propertiesFile) throws Exception
+    {
         configBuilder.withEditDatabaseType("CWMS");
         configBuilder.withDatabaseDriver("oracle.jdbc.driver.OracleDriver");
         configBuilder.withSiteNameTypePreference("CWMS");
@@ -167,12 +185,6 @@ public class CwmsOracleConfiguration implements Configuration
         try (OutputStream out = new FileOutputStream(propertiesFile);)
         {
             configBuilder.build(out);
-        }
-        
-        
-        try (OutputStream out = new FileOutputStream(new File(userDir,"logfilter.txt")))
-        {
-            out.write("org.jooq".getBytes());
         }
     }
 
