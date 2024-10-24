@@ -18,13 +18,13 @@ import org.opendcs.spi.database.MigrationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import ilex.util.EnvExpander;
-import opendcs.opentsdb.OpenTsdb;
 
 /**
  * OpenDCSPgProvider provides support for handling installation and updates of the OpenDCS-Postgres
@@ -212,14 +212,13 @@ public class CwmsOracleProvider implements MigrationProvider
             DecodesSettings settings = DecodesSettings.fromProfile(profile);
             settings.DbAuthFile="java-auth-source:password=DCS_PASS,username=DCS_USER";
             settings.saveToProfile(tmpProfile);
-
             if (!decodesFiles.isEmpty())
             {
                 List<String> fileNames = decodesFiles.stream()
                                                      .map(f -> f.getAbsolutePath())
                                                      .collect(Collectors.toList());
                 log.info("Loading baseline decodes data.");
-                DbImport dbImportObj = new DbImport(tmpProfile, null, false, false,
+                DbImport dbImportObj = new DbImport(tmpProfile, null, false, true,
                                                     false, false, true, null,
                                                     null, null, null, fileNames);
                 dbImportObj.importDatabase();
@@ -231,7 +230,8 @@ public class CwmsOracleProvider implements MigrationProvider
                                                      .map(f -> f.getAbsolutePath())
                                                      .collect(Collectors.toList());
                 log.info("Loading baseline computation data.");
-                TimeSeriesDb tsDb = new OpenTsdb();
+
+                TimeSeriesDb tsDb = new CwmsTimeSeriesDb();
 
                 tsDb.connect("utility", creds);
 
@@ -251,5 +251,12 @@ public class CwmsOracleProvider implements MigrationProvider
             System.clearProperty("DCS_PASS");
             System.clearProperty("DCS_USER");
         }
+    }
+
+    public List<String> schemas()
+    {
+        ArrayList<String> theSchemas = new ArrayList<>();
+        theSchemas.add("CCP");
+        return theSchemas;
     }
 }
