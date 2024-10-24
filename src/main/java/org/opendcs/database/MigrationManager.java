@@ -40,7 +40,7 @@ public final class MigrationManager
         flywayConfig = Flyway.configure()
                              .loggers("org.opendcs.database.logging.MigrationLogCreator")
                              .dataSource(ds)
-                             .schemas("CCP")
+                             .schemas(migrationProvider.schemas().toArray(new String[0]))
                              .createSchemas(false)
                              .locations("db/"+implementation)
                              .validateMigrationNaming(true);
