@@ -94,9 +94,9 @@
         <dependency org="org.glassfish.jersey.inject" name="jersey-hk2" rev="${jersey.version}"/>
         <dependency org="javax" name="javaee-api" rev="7.0"/>
 
-        <dependency org="org.jdbi" name="jdbi3-core" rev="3.38.2"/>
-        <dependency org="org.jdbi" name="jdbi3-sqlobject" rev="3.38.2"/>
-        <dependency org="org.jdbi" name="jdbi3-postgres" rev="3.38.2"/>
+        <dependency org="org.jdbi" name="jdbi3-core" rev="${jdbi.version}"/>
+        <dependency org="org.jdbi" name="jdbi3-sqlobject" rev="${jdbi.version}"/>
+        <dependency org="org.jdbi" name="jdbi3-postgres" rev="${jdbi.version}"/>
         <dependency org="org.flywaydb" name="flyway-core" rev="9.8.1"/>
 
 
@@ -114,11 +114,7 @@
         <dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.14.2" conf="test->default"/>
         <dependency org="org.testcontainers" name="testcontainers" rev="1.18.1" conf="test->default"/>
         <dependency org="org.testcontainers" name="postgresql" rev="1.18.1" conf="test->default"/>
-        <dependency org="mil.army.usace.hec" name="testcontainers-cwms" rev="1.0.7" conf="test->default"/>
-        <dependency org="org.jdbi" name="jdbi3-core" rev="3.38.2" conf="test->default"/>
-        <dependency org="org.jdbi" name="jdbi3-sqlobject" rev="3.38.2" conf="test->default"/>
-        <dependency org="org.jdbi" name="jdbi3-postgres" rev="3.38.2" conf="test->default"/>
-        <dependency org="org.flywaydb" name="flyway-core" rev="9.8.1" conf="test->default"/>
+        <dependency org="mil.army.usace.hec" name="testcontainers-cwms" rev="2.0.0-RC01" conf="test->default"/>
         <dependency org="org.assertj" name="assertj-swing-junit" rev="3.9.2" conf="test->default"/>
 
         <!-- izpack -->

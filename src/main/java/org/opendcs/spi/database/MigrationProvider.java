@@ -2,6 +2,7 @@ package org.opendcs.spi.database;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -79,6 +80,11 @@ public interface MigrationProvider
      */
     default public void determineCurrentPlaceHolders(Jdbi jdbi)
     {
+    }
+
+    default List<String> schemas()
+    {
+        return new ArrayList<>();
     }
 
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles);
