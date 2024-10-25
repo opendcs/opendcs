@@ -125,8 +125,7 @@ public class CwmsOracleProvider implements MigrationProvider
             "${DCSTOOL_HOME}/edit-db/eu/EngineeringUnitList.xml",
             "${DCSTOOL_HOME}/edit-db/datatype/DataTypeEquivalenceList.xml",
             "${DCSTOOL_HOME}/edit-db/presentation",
-            "${DCSTOOL_HOME}/edit-db/loading-app",
-            "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml"
+            "${DCSTOOL_HOME}/edit-db/loading-app"
         };
             
         fillFiles(files, decodesData, ".xml");
@@ -218,7 +217,7 @@ public class CwmsOracleProvider implements MigrationProvider
                                                      .map(f -> f.getAbsolutePath())
                                                      .collect(Collectors.toList());
                 log.info("Loading baseline decodes data.");
-                DbImport dbImportObj = new DbImport(tmpProfile, null, false, true,
+                DbImport dbImportObj = new DbImport(tmpProfile, null, false, false,
                                                     false, false, true, null,
                                                     null, null, null, fileNames);
                 dbImportObj.importDatabase();

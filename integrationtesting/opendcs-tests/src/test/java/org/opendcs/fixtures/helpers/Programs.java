@@ -56,7 +56,6 @@ public class Programs
                         theArgs.add("-l"); theArgs.add(log.getAbsolutePath());
                         theArgs.add("-P"); theArgs.add(propertiesFile.getAbsolutePath());
                         theArgs.add("-d3");
-                        theArgs.add("-o");
                         theArgs.addAll(
                             files.stream()
                                  .map(f->f.getAbsolutePath())
