@@ -10,6 +10,7 @@ create table dcp_trans_day_map
 
 COMMENT ON COLUMN DCP_TRANS_DAY_MAP.DAY_NUMBER IS 'Day 0 = Jan 1, 1970. Null means this suffix not used.';
 create or replace public synonym dcp_trans_day_map for ccp.dcp_trans_day_map;
+
 declare
 	i int;
 	suffix varchar2(4);
@@ -59,7 +60,7 @@ begin
         stmt := 'ALTER TABLE DCP_TRANS_DATA_' || suffix 
              || ' ADD CONSTRAINT DCP_TRANS_DATA_FK_' || suffix
              || ' FOREIGN KEY (RECORD_ID)'
-             || ' REFERENCES DCP_TRANS_' || suffix || '(RECORD_ID) ${TABLE_SPACE_SPEC}';
+             || ' REFERENCES DCP_TRANS_' || suffix || '(RECORD_ID)';
         execute immediate stmt;
 
 		execute immediate 'CREATE SEQUENCE DCP_TRANS_' || suffix || 'IDSEQ';
