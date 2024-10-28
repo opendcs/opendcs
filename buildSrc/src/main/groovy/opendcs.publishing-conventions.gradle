@@ -1,0 +1,11 @@
+plugins {
+    id 'signing'
+    id 'maven-publish'
+}
+
+
+
+
+signing {
+    useGpgCmd()    
+}
