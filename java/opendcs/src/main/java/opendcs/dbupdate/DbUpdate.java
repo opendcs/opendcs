@@ -524,13 +524,6 @@ public class DbUpdate extends TsdbAppTemplate
 	public void tryConnect()
 		throws BadConnectException
 	{
-		// Connect to the database!
-		Properties props = new Properties();
-		props.setProperty("username", username);
-		props.setProperty("password", new String(password));
-
-		String nm = appNameArg.getValue();
-		Logger.instance().info("Connecting to TSDB as user '" + username + "'");
-		setAppId(theDb.connect(nm, props));
+		throw new RuntimeException("This application is no longer supported. Use the new manageDatabase app.");
 	}
 }

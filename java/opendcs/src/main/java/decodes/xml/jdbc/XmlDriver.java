@@ -26,7 +26,7 @@ public class XmlDriver implements Driver
         }
         else if (!url.startsWith("jdbc:xml:"))
         {
-            throw new SQLException(String.format("URL provided, '%s', is not for this driver.", url));
+            return null;
         }
         else
         {
