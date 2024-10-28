@@ -1,6 +1,7 @@
 plugins
 {
     id 'opendcs.deps-conventions'
+    id 'opendcs.publishing-conventions'
     id 'distribution'
 }
 
@@ -149,4 +150,10 @@ task runApp(type: Exec) {
                                ).asPath)
 
     workingDir runDir
+}
+
+
+signing {
+    sign distZip
+    sign distTar
 }
