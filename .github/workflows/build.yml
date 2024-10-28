@@ -1,9 +1,9 @@
 name: OpenDCS Build and unit tests
 on:
   pull_request:
-    branches: ["master"]
+    branches: ["main"]
   push:
-    branches: ["master"]
+    branches: ["main"]
 
 jobs:
   tests:
