@@ -25,4 +25,5 @@ repositories {
                 artifact()
             }
     }
+    gradlePluginPortal()
 }
