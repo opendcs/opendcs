@@ -54,20 +54,20 @@ jobs:
           ./gradlew :testing:opendcs-test:test -D"opendcs.test.engine=OpenDCS-Postgres" --info
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 11
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
       - name: Cache Gradle packages
         uses: actions/cache@v4
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 11
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Build and analyze
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 11
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
