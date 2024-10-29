@@ -4,5 +4,5 @@ ext.osWin = Os.isFamily(Os.FAMILY_WINDOWS)
 
 allprojects {
     group = 'org.opendcs'
-    version = '7.0.14-SNAPSHOT'
+    version = '7.0.14'
 }
