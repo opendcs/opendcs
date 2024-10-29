@@ -1,4 +1,4 @@
-package org.opendcs.fixtures;
+package org.opendcs.fixtures.configuration;
 
 import java.io.IOException;
 import java.io.OutputStream;

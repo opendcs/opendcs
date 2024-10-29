@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.support.AnnotationSupport;
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.configuration.Configuration;
 
 /**
  * Only run this test if the database under test is a SQL based database

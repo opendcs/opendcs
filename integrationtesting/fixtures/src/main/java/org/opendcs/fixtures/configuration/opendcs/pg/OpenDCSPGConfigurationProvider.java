@@ -1,9 +1,9 @@
-package org.opendcs.fixtures.configurations.opendcs.pg;
+package org.opendcs.fixtures.configuration.opendcs.pg;
 
 import java.io.File;
 
-import org.opendcs.spi.configuration.Configuration;
-import org.opendcs.spi.configuration.ConfigurationProvider;
+import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.fixtures.configuration.ConfigurationProvider;
 
 public class OpenDCSPGConfigurationProvider implements ConfigurationProvider
 {
