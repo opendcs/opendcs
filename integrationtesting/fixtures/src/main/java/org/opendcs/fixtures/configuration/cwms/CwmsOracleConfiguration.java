@@ -1,4 +1,4 @@
-package org.opendcs.fixtures.configurations.cwms;
+package org.opendcs.fixtures.configuration.cwms;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -12,11 +12,10 @@ import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.fixtures.UserPropertiesBuilder;
-import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.configuration.UserPropertiesBuilder;
+import org.opendcs.fixtures.configuration.opendcs.pg.OpenDCSPGConfiguration;
+import org.opendcs.fixtures.configuration.Configuration;
 
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Database;
 import decodes.launcher.Profile;
 import decodes.sql.OracleSequenceKeyGenerator;
@@ -24,7 +23,6 @@ import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
-import ilex.util.Pair;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
@@ -77,8 +75,10 @@ public class CwmsOracleConfiguration implements Configuration
         dcsUserPassword = System.getProperty("opendcs.cwms.dcsuser.password",cwmsDb.getPassword());
         environment.set("DB_USERNAME",dcsUser);
         environment.set("DB_PASSWORD",dcsUserPassword);
+        environment.set("DB_URL",dbUrl);
         environmentVars.put("DB_USERNAME",dcsUser);
         environmentVars.put("DB_PASSWORD",dcsUserPassword);
+        environmentVars.put("DB_URL",dbUrl);
         started = true;
         //TODO strip/reinstall schema
     }

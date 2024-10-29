@@ -1,4 +1,4 @@
-package org.opendcs.spi.configuration;
+package org.opendcs.fixtures.configuration;
 
 import java.io.File;
 import java.util.Map;
@@ -74,7 +74,7 @@ public interface Configuration
     }
 
     /**
-     * Returns an independent instance of the {@decodes.db.Database} Decodes Database for this configuration.
+     * Returns an independent instance of the {@link decodes.db.Database} Decodes Database for this configuration.
      *
      * @return Instance of the Decodes Database for this run/test.
      * @throws Throwable

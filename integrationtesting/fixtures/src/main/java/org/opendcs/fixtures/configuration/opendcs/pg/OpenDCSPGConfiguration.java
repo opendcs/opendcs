@@ -1,4 +1,4 @@
-package org.opendcs.fixtures.configurations.opendcs.pg;
+package org.opendcs.fixtures.configuration.opendcs.pg;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -23,27 +23,23 @@ import org.opendcs.database.MigrationManager;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
-import org.opendcs.fixtures.UserPropertiesBuilder;
-import org.opendcs.fixtures.helpers.Programs;
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.fixtures.configuration.UserPropertiesBuilder;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import decodes.db.Database;
 import decodes.launcher.Profile;
-import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
 import ilex.util.FileLogger;
-import ilex.util.Pair;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.opentsdb.OpenTsdb;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -134,6 +130,8 @@ public class OpenDCSPGConfiguration implements Configuration
         }
 
         db.start();
+        environmentVars.put("DB_URL",db.getJdbcUrl());
+        environment.set("DB_URL",db.getJdbcUrl());
         createPropertiesFile(configBuilder, this.propertiesFile);
         profile = Profile.getProfile(this.propertiesFile);
         DataSource ds = new SimpleDataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword());

@@ -20,12 +20,11 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
-import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
 import org.opendcs.fixtures.assertions.Waiting;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.configuration.Configuration;
 
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;

@@ -1,4 +1,4 @@
-package org.opendcs.spi.configuration;
+package org.opendcs.fixtures.configuration;
 
 import java.io.File;
 
