@@ -118,3 +118,8 @@ test
 }
 
 test.dependsOn jar
+
+javadoc {
+    options.addBooleanOption('Xdoclint:none', true)
+    source("8")
+}
