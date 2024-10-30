@@ -21,11 +21,5 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
                 issuer.set("https://oauth2.sigstore.dev/auth")
             }
         }
-}
-}
-/*
-tasks.withType(SigstoreSignFilesTask).configureEach {
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(11)
     }
-}*/
+}
