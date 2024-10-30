@@ -1,4 +1,5 @@
 .. _main.legacy.decoding.guide:
+
 ###############################
 DECODES Platform Decoding Guide
 ###############################
