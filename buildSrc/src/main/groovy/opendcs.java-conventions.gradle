@@ -18,7 +18,12 @@ eclipse {
 }
 
 java {
-    toolchain {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(JavaCompile).configureEach {
+    javaCompiler = javaToolchains.compilerFor {
         languageVersion = JavaLanguageVersion.of(8)
     }
 }

@@ -2,8 +2,21 @@ plugins
 {
     id 'opendcs.deps-conventions'
     id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
     id 'java-library'
 }
 
 // NOTE: this project should not contain any runtime dependencies
 // Build dependencies, such as google autowire are acceptable.
+
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs-annotations'
+            from components.java
+        }
+
+
+    }
+}

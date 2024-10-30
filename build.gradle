@@ -1,8 +1,20 @@
+plugins {
+    id "com.palantir.git-version" version "3.1.0"
+}
+
 import org.apache.tools.ant.taskdefs.condition.Os
+
 
 ext.osWin = Os.isFamily(Os.FAMILY_WINDOWS)
 
+def static versionLabel(gitInfo) {
+    def branch = gitInfo.branchName // all branches are snapshots, only tags get released
+    def tag = gitInfo.lastTag
+    // tag is returned as is. Branch may need cleanup
+    return branch == null ? tag : "main.99." + branch.replace("/", "-") + "-SNAPSHOT"
+}
+
 allprojects {
     group = 'org.opendcs'
-    version = '7.0.14-SNAPSHOT'
+    version = versionLabel(versionDetails())
 }

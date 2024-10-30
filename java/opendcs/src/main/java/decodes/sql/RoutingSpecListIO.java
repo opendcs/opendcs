@@ -552,7 +552,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
                 catch(DatabaseException ex) {} // guaranteed not to happen.
             }
 
-            String q ="SELECT lastModifyTime FROM RoutingSpec WHERE id = ?" + id;
+            String q ="SELECT lastModifyTime FROM RoutingSpec WHERE id = ?";
             return dao.getSingleResultOr(q, rs -> getTimeStamp(rs, 1, null), null, id);
         }
         catch(SQLException ex)
