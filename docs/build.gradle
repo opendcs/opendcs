@@ -1,3 +1,7 @@
+plugins {
+    id 'base'
+}
+
 def pythonExe = osWin ? "python.exe" : "python3"
 def docsVenv = "$buildDir/sphinx"
 def docsDir = projectDir

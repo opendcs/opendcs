@@ -19,7 +19,7 @@ The purpose of this document is to describe how different technologies are used 
 Extra attention is given to testing and using OpenDCS within containers.
 
 The Gradle Build
-=============
+================
 
 Basics
 ------
@@ -122,6 +122,7 @@ the "stage" directory is used as DCSTOOL_HOME and DCSTOOL_USERDIR is the same de
     to point to a directory that only contains profiles that connect to test systems.
 
 .. code-block:: bash
+
     # to just run the launcher
     ./gradlew runApp
 

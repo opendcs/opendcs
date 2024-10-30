@@ -680,7 +680,7 @@ The minSamplesNeeded by default is 1.
    :width: 600
 
 ToIrregularUsingPattern
---------------------
+-----------------------
 
 The ToIrregularusingPattern Algorithm generates a new time series data set from an existing
 irregular or regular interval time series data set. The times for the new time series are
@@ -695,7 +695,7 @@ are interpolated.
 
 Interpolation of the three data types is illustrated below.
 
-.. image:: ./media/resources/algorithms/im-30-comp-ToIrregular.JPG
+.. image:: ./media/resources/algorithms/im-30-comp-ToIrregular.png
    :alt:  algorithm ToIrregularUsingPattern
    :width: 500
 
@@ -820,7 +820,7 @@ Exec Class: decodes.tsdb.algo.VirtualGage
 ... more content coming soon ...
 
 RelativeHumidity
------------
+----------------
 
 Exec Class: decodes.tsdb.algo.RelativeHumidity
 
@@ -967,4 +967,3 @@ Java Algorithms
 ===============
 
 There are examples in the OpenDCS source code <https://github.com/opendcs/opendcs/tree/master/src/main/java/decodes/tsdb/algo>
-
