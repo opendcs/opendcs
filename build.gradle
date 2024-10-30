@@ -44,7 +44,7 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             property "sonar.organization", "opendcs"
             property "sonar.host.url", "https://sonarcloud.io"
             property "sonar.pullrequest.provider", "GitHub"
-            property "sonar.pullrequest.github.repository", "opendcs/rest_api"
+            property "sonar.pullrequest.github.repository", "opendcs/opendcs"
             property "sonar.projectVersion", sonarVersion()
         }
     }
