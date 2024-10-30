@@ -174,7 +174,6 @@ Now set the LRGS Admin Password::
         echo "Admin Password is $LRGS_ADMIN_PASSWORD"
         echo "This will not be printed on subsequent runs"
     fi
-    
     cat `<<EOF | editPasswd
         adduser lrgsadmin
         $LRGS_ADMIN_PASSWORD
@@ -184,6 +183,7 @@ Now set the LRGS Admin Password::
         write
         quit
     EOF
+
 
 .. code-block:: bash
     
