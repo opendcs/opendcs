@@ -9,17 +9,37 @@ import opendcs.dao.DaoBase;
 import opendcs.dao.DaoHelper;
 import opendcs.util.functional.DaoConsumer;
 
-public interface DaiBase
-	extends AutoCloseable
+public interface DaiBase extends AutoCloseable
 {
-	public ResultSet doQuery(String q)
-		throws DbIoException;
+    /**
+     * 
+     * @param q
+     * @return
+     * @throws DbIoException
+     * @deprecated This function should not be as is don't not handled the user of bind variables
+     */
+    @Deprecated
+	public ResultSet doQuery(String q) throws DbIoException;
 	
-	public ResultSet doQuery2(String q) 
-		throws DbIoException;
+    /**
+     * 
+     * @param q
+     * @return
+     * @throws DbIoException
+     * @deprecated This function should not be as is don't not handled the user of bind variables
+     */
+    @Deprecated
+	public ResultSet doQuery2(String q) throws DbIoException;
 
-	public int doModify(String q)
-		throws DbIoException;
+    /**
+     * 
+     * @param q
+     * @return
+     * @throws DbIoException
+     * @deprecated This function should not be as is don't not handled the user of bind variables
+     */
+    @Deprecated
+	public int doModify(String q) throws DbIoException;
 
 	public void close();
 	
