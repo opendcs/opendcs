@@ -18,6 +18,7 @@ configurations {
 }
 
 dependencies {
+    annotationProcessor(project(":opendcs-annotations"))
     api(project(":opendcs-annotations"))
     api(project(":opendcs-api"))
     implementation(libs.bundles.oracle)
@@ -118,3 +119,8 @@ test
 }
 
 test.dependsOn jar
+
+javadoc {
+    options.addBooleanOption('Xdoclint:none', true)
+    source("8")
+}

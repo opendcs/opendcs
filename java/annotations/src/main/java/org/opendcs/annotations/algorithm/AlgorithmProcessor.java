@@ -76,7 +76,7 @@ final public class AlgorithmProcessor extends AbstractProcessor
 
     private void writeAlgo(XMLOutputFactory xmlFactory, Filer filer, Element element) throws XMLStreamException, IOException
     {
-        final FileObject fo = filer.createResource(StandardLocation.SOURCE_OUTPUT, "algorithms", element.getSimpleName().toString()+".xml", (Element[])null);
+        final FileObject fo = filer.createResource(StandardLocation.CLASS_OUTPUT, "algorithms", element.getSimpleName().toString()+".xml", (Element[])null);
         final XMLStreamWriter out = xmlFactory.createXMLStreamWriter(fo.openOutputStream());
         out.writeStartDocument();
             out.writeCharacters("\n");

@@ -5,6 +5,7 @@ on:
       - "main"
       - "7.0"
       - "8.0"
+    types: [opened, synchronize, reopened]
   push:
     branches:
       - "main"
@@ -51,11 +52,23 @@ jobs:
         run: |
           ./gradlew :testing:opendcs-test:test -D"opendcs.test.engine=OpenDCS-XML" --info
           ./gradlew :testing:opendcs-test:test -D"opendcs.test.engine=OpenDCS-Postgres" --info
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4.0.0
-        if: success() || failure()
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
         with:
-          name: test-results-${{matrix.platform}}-jdk-${{matrix.jdk}}
-          path: |
-            build/reports/**
-            build/runs/**/config**
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+      - name: Build and analyze
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew build sonar --info -Dorg.gradle.jvmargs=-Xmx4096M
