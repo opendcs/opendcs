@@ -4,16 +4,15 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.tsdb.BadConnectException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
-import opendcs.dai.DaiBase;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
 
 public class CwmsDatabaseProvider implements DatabaseProvider
@@ -58,31 +57,7 @@ public class CwmsDatabaseProvider implements DatabaseProvider
             db.init(settings);
             CwmsTimeSeriesDb tsdb = new CwmsTimeSeriesDb(null, dataSource, settings);
 
-            return new OpenDcsDatabase()
-            {
-                Database decodesDb = db;
-                TimeSeriesDb tsDb = tsdb;
-
-                @Override
-                public Database getDecodesDatabase()
-                {
-                    return decodesDb;
-                }
-
-                @Override
-                public TimeSeriesDb getTimeSeriesDb()
-                {
-                    return tsDb;
-                }
-
-                @Override
-                public <T extends DaiBase> T getDao(Class<T> dao) throws DatabaseException
-                {
-                    // TODO Auto-generated method stub
-                    throw new UnsupportedOperationException("Unimplemented method 'getDao'");
-                }
-
-            };
+            return new SimpleOpenDcsDatabaseWrapper(settings, db, tsdb);
         }
         catch (DecodesException ex)
         {

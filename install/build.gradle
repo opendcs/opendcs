@@ -152,8 +152,8 @@ task runApp(type: Exec) {
     workingDir runDir
 }
 
-
+/*
 signing {
     sign distZip
     sign distTar
-}
+}*/

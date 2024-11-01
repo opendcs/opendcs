@@ -5,7 +5,7 @@ import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.LoadingAppDAI;
@@ -273,9 +273,9 @@ public abstract class TsdbAppTemplate
 		{
 
 			OpenDcsDatabase databases= DatabaseService.getDatabaseFor(appName, settings);
-			decodesDb = databases.getDecodesDatabase();
+			decodesDb = databases.getLegacyDatabase(Database.class).get();
 			decodesDb.initializeForDecoding();
-			theDb = databases.getTimeSeriesDb();
+			theDb = databases.getLegacyDatabase(TimeSeriesDb.class).get();
 		}
 		catch (DecodesException ex)
 		{

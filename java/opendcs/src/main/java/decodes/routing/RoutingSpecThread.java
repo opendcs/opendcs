@@ -1578,7 +1578,9 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		// Construct the database and the interface specified by properties.
 		ResourceFactory.instance();
 		
-		Database db = DatabaseService.getDatabaseFor(null, settings).getDecodesDatabase();
+		Database db = DatabaseService.getDatabaseFor(null, settings)
+									 .getLegacyDatabase(Database.class)
+									 .get();
 		Database.setDb(db);
 
 		// Initialize standard collections:

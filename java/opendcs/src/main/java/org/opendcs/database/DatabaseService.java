@@ -9,6 +9,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.spi.authentication.AuthSource;
 import org.opendcs.spi.database.DatabaseProvider;
 

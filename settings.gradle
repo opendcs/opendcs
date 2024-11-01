@@ -9,6 +9,9 @@ project(":docs").projectDir=file("docs")
 include ":opendcs-annotations"
 project(":opendcs-annotations").projectDir=file("java/annotations")
 
+include ":opendcs-api"
+project(":opendcs-api").projectDir=file("java/opendcs-api")
+
 include ":opendcs"
 project(":opendcs").projectDir=file("java/opendcs")
 

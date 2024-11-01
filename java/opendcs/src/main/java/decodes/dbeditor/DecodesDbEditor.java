@@ -5,7 +5,7 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 
 import org.opendcs.database.DatabaseService;
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 
 import ilex.gui.WindowUtility;
 import lrgs.gui.DecodesInterface;
@@ -122,7 +122,7 @@ public class DecodesDbEditor
         settings.loadFromProfile(cmdLineArgs.getProfile());
         DecodesInterface.setGUI(true);
         OpenDcsDatabase databases = DatabaseService.getDatabaseFor(null, settings);
-        Database db = databases.getDecodesDatabase();
+        Database db = databases.getLegacyDatabase(Database.class).get();
 
         Platform.configSoftLink = true;
         db.initializeForEditing();

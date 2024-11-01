@@ -5,7 +5,7 @@ import decodes.util.DecodesSettings;
 
 import java.util.Properties;
 
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 
 public interface DatabaseProvider
 {
