@@ -19,7 +19,7 @@ import opendcs.dai.ScheduleEntryDAI;
 import opendcs.opentsdb.Interval;
 
 import org.opendcs.database.DatabaseService;
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -278,7 +278,7 @@ public class DbImport
 			// unfortunately we still need to use the global decodes settings here.
 			settings.loadFromProfile(profile);
 			OpenDcsDatabase databases = DatabaseService.getDatabaseFor(null, settings);				
-			theDb = databases.getDecodesDatabase();
+			theDb = databases.getLegacyDatabase(Database.class).get();
 			Database.setDb(theDb);
 			theDbio = theDb.getDbIo();
 		}

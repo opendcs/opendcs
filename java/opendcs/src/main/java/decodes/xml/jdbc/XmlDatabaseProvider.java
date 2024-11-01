@@ -4,8 +4,9 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
+import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
@@ -46,27 +47,6 @@ public class XmlDatabaseProvider implements DatabaseProvider
         {
             throw new DatabaseException("Unable to initialize decodes.", ex);
         }
-        return new OpenDcsDatabase()
-        {
-            Database decodesDb = db;
-
-            @Override
-            public Database getDecodesDatabase()
-            {
-                return decodesDb;
-            }
-
-            @Override
-            public TimeSeriesDb getTimeSeriesDb() {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("XML database doesn't support timeseries operations.");
-            }
-
-            @Override
-            public <T extends DaiBase> T getDao(Class<T> dao) throws DatabaseException {
-                // TODO Auto-generated method stub
-                throw new UnsupportedOperationException("Unimplemented method 'getDao'");
-            }
-        };
+        return new SimpleOpenDcsDatabaseWrapper(settings, db, null);
     }
 }

@@ -38,7 +38,7 @@ import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -207,7 +207,8 @@ public class OpenTsdbConsumer extends DataConsumer
 				appName = s; 
 			}
 			OpenDcsDatabase databases = DatabaseService.getDatabaseFor(s, settings, credentials);
-			openTsdb = (OpenTsdb)databases.getTimeSeriesDb();
+			// We are always settings this type before calling get database.
+			openTsdb = databases.getLegacyDatabase(OpenTsdb.class).get();
 			appId = openTsdb.getAppId();
 		}
 		catch (DatabaseException ex)

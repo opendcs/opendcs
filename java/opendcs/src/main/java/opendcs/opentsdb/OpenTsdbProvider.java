@@ -4,8 +4,10 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
+import org.opendcs.database.SimpleOpenDcsDatabaseWrapper;
+import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.spi.database.DatabaseProvider;
 
 import decodes.db.Database;
@@ -61,37 +63,6 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
         OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
-        return new OpenDcsDatabaseImpl(decodesDb, tsDb);
-    }
-
-    public static class OpenDcsDatabaseImpl implements OpenDcsDatabase
-    {
-        final Database decodesDb;
-        final TimeSeriesDb tsDb;
-
-        private OpenDcsDatabaseImpl(Database decodesDb, TimeSeriesDb tsDb)
-        {
-            this.decodesDb = decodesDb;
-            this.tsDb = tsDb;
-        }
-
-        @Override
-        public Database getDecodesDatabase()
-        {
-            return decodesDb;
-        }
-
-        @Override
-        public TimeSeriesDb getTimeSeriesDb()
-        {
-            return tsDb;
-        }
-
-        @Override
-        public <T extends DaiBase> T getDao(Class<T> dao) throws DatabaseException
-        {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException("Unimplemented method 'getDao'");
-        }
+        return new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb);
     }
 }

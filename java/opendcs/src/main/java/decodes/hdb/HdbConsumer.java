@@ -78,7 +78,7 @@ import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.spi.authentication.AuthSource;
 
 import opendcs.dai.TimeSeriesDAI;
@@ -155,7 +155,8 @@ public class HdbConsumer extends DataConsumer
 		try
 		{
 			OpenDcsDatabase databases = DatabaseService.getDatabaseFor("decodes", DecodesSettings.instance());
-			hdbTsDb = (HdbTimeSeriesDb)databases.getTimeSeriesDb();
+			// We now in this context we can only have an HDB database
+			hdbTsDb = databases.getLegacyDatabase(HdbTimeSeriesDb.class).get();
 			info("Connected to HDB Time Series Database");
 			autoCreateTs = TextUtil.str2boolean(hdbTsDb.getProperty("autoCreateTs"));
 			timeSeriesDAO = hdbTsDb.makeTimeSeriesDAO();

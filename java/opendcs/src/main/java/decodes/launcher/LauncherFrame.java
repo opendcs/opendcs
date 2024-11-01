@@ -58,7 +58,7 @@ import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
 
 import org.opendcs.database.DatabaseService;
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.slf4j.LoggerFactory;
 
 import lrgs.gui.DecodesInterface;
