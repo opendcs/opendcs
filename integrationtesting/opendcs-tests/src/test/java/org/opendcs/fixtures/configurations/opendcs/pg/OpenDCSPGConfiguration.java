@@ -20,7 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
@@ -225,7 +225,7 @@ public class OpenDCSPGConfiguration implements Configuration
             {
                 buildDatabases();
             }
-            return databases.getTimeSeriesDb();
+            return databases.getLegacyDatabase(TimeSeriesDb.class).get();
         }
     }
 
@@ -238,7 +238,7 @@ public class OpenDCSPGConfiguration implements Configuration
             {
                 buildDatabases();
             }
-            return databases.getDecodesDatabase();
+            return databases.getLegacyDatabase(Database.class).get();
         }
     }
 

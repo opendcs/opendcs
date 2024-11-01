@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.opendcs.database.DatabaseService;
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.spi.configuration.Configuration;
@@ -156,7 +156,7 @@ public class CwmsOracleConfiguration implements Configuration
             {
                 buildDatabases();
             }
-            return databases.getTimeSeriesDb();
+            return databases.getLegacyDatabase(TimeSeriesDb.class).get();
         }
     }
 
@@ -169,7 +169,7 @@ public class CwmsOracleConfiguration implements Configuration
             {
                 buildDatabases();
             }
-            return databases.getDecodesDatabase();
+            return databases.getLegacyDatabase(Database.class).get();
         }
     }
 

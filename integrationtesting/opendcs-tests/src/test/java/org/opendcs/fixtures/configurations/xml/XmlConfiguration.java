@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.opendcs.database.DatabaseService;
-import org.opendcs.database.OpenDcsDatabase;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
 
@@ -114,6 +114,6 @@ public class XmlConfiguration implements Configuration
             final DecodesSettings settings = DecodesSettings.fromProfile(profile);
             databases = DatabaseService.getDatabaseFor(NAME, settings);
         }
-        return databases.getDecodesDatabase();
+        return databases.getLegacyDatabase(Database.class).get();
     }
 }
