@@ -22,6 +22,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import decodes.hdb.HdbFlags;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import ilex.util.DatePair;
 import decodes.tsdb.ParmRef;
@@ -52,7 +53,6 @@ public class EOPInterpAlg
 	double value_out ;
 	boolean do_setoutput = true;
 	Date date_out;
-	Connection conn = null;
 	int total_count = 0;
 
 //AW:LOCALVARS_END
@@ -133,7 +133,8 @@ public class EOPInterpAlg
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
-	protected void afterTimeSlices()
+	@Override
+	protected void afterTimeSlices() throws DbCompException
 	{
 //AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
@@ -211,61 +212,67 @@ public class EOPInterpAlg
                 if (intstr_out.equalsIgnoreCase("year")) calIntervalRoll =  Calendar.YEAR;
                 if (intstr_out.equalsIgnoreCase("month")) calIntervalRoll =  Calendar.MONTH;
 
-		cal2.setTime(_aggregatePeriodBegin);
-		//debug3("EOPINTERP- " + alg_ver + " window calendar before  forward roll: " + cal2.toString());
-		cal2.add(calIntervalRoll,1);
+			cal2.setTime(_aggregatePeriodBegin);
+			//debug3("EOPINTERP- " + alg_ver + " window calendar before  forward roll: " + cal2.toString());
+			cal2.add(calIntervalRoll,1);
 
-		//debug3("EOPINTERP- " + alg_ver + " next  window calendar: " + cal2.toString());
-		Date nextWindowSDT = cal2.getTime();
-		// line removed to allow other roll forwards besides just an hour MAB 10/29/10
-		//Date nextWindowSDT = new Date( _aggregatePeriodEnd.getTime() + MS_PER_HOUR);
-		Date nextWindowEDT = nextWindowSDT; 
-//   mod by M. Bogner for CP upgrade 3.0.  get SDI must have been changed to a long so
-//   I cast it to an int
-//   mod March 2013 by M. Bogner for CP upgrade 5.3.  get SDI must have been changed to an object so
-//   I cast it to an int after I get a long with the getValue method
-		Integer sdi = (int) getSDI("input").getValue();
-		conn = tsdb.getConnection();
-		String dt_fmt = "dd-MMM-yyyy HH:mm";
-		RBASEUtils rbu = new RBASEUtils(dbobj,conn);
-		debug2("EOPINTERP- " + alg_ver + "  Interval: " + intstr_out + " NWSDT: " + nextWindowSDT);
-		
-		rbu.getStandardDates(sdi,intstr_out,nextWindowSDT,nextWindowEDT,dt_fmt);
-		
-		
-		SimpleDateFormat sdf = new SimpleDateFormat(dt_fmt);
-		do_setoutput = true;
-		parmRef = getParmRef("input");
-		if (parmRef == null) warning("Unknown aggregate control output variable 'INPUT'");
-		String input_interval = parmRef.compParm.getInterval();
-                String table_selector = parmRef.compParm.getTableSelector();
+			//debug3("EOPINTERP- " + alg_ver + " next  window calendar: " + cal2.toString());
+			Date nextWindowSDT = cal2.getTime();
+			// line removed to allow other roll forwards besides just an hour MAB 10/29/10
+			//Date nextWindowSDT = new Date( _aggregatePeriodEnd.getTime() + MS_PER_HOUR);
+			Date nextWindowEDT = nextWindowSDT; 
+	//   mod by M. Bogner for CP upgrade 3.0.  get SDI must have been changed to a long so
+	//   I cast it to an int
+	//   mod March 2013 by M. Bogner for CP upgrade 5.3.  get SDI must have been changed to an object so
+	//   I cast it to an int after I get a long with the getValue method
+			Integer sdi = (int) getSDI("input").getValue();
+			try(Connection conn = tsdb.getConnection())
+			{
+				String dt_fmt = "dd-MMM-yyyy HH:mm";
+				RBASEUtils rbu = new RBASEUtils(dbobj,conn);
+				debug2("EOPINTERP- " + alg_ver + "  Interval: " + intstr_out + " NWSDT: " + nextWindowSDT);
+				
+				rbu.getStandardDates(sdi,intstr_out,nextWindowSDT,nextWindowEDT,dt_fmt);
+				
+				
+				SimpleDateFormat sdf = new SimpleDateFormat(dt_fmt);
+				do_setoutput = true;
+				parmRef = getParmRef("input");
+				if (parmRef == null) warning("Unknown aggregate control output variable 'INPUT'");
+				String input_interval = parmRef.compParm.getInterval();
+						String table_selector = parmRef.compParm.getTableSelector();
 
-		String status = null;
-		DBAccess db = new DBAccess(conn);
-		// do the first record in next interval query to get the start_date_time and value 
-		String query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') nwsdt, value nwdv from " +
-			" ( select start_date_time,value,rank() " +
-			" over(order by start_date_time) rn from " + table_selector + input_interval.toLowerCase() +
-			" where site_datatype_id = " + getSDI("input") +
-		    " and start_date_time >= " +  "to_date('" +  (String) dbobj.get("SD_SDT") +
-			"','dd-mon-yyyy HH24:MI')" + 
-		    " and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
-		 "','dd-mon-yyyy HH24:MI')) where rn = 1";
-		status = db.performQuery(query,dbobj);
-		debug2("EOPINTERP- " + alg_ver + " SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
-		// now see if this next interval query worked if not then we can't continue!!!
-		if (((String)dbobj.get("NWDV")).length() == 0)
-		{
-		    do_setoutput = false;
-                    debug2("EOPINTERP- " + alg_ver + " : Cannot do Computation due to lack of EOP record: " + getSDI("input") + " " + _aggregatePeriodEnd );
+				String status = null;
+				DBAccess db = new DBAccess(conn);
+				// do the first record in next interval query to get the start_date_time and value 
+				String query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') nwsdt, value nwdv from " +
+					" ( select start_date_time,value,rank() " +
+					" over(order by start_date_time) rn from " + table_selector + input_interval.toLowerCase() +
+					" where site_datatype_id = " + getSDI("input") +
+					" and start_date_time >= " +  "to_date('" +  (String) dbobj.get("SD_SDT") +
+					"','dd-mon-yyyy HH24:MI')" + 
+					" and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
+				"','dd-mon-yyyy HH24:MI')) where rn = 1";
+				status = db.performQuery(query,dbobj);
+				debug2("EOPINTERP- " + alg_ver + " SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+				// now see if this next interval query worked if not then we can't continue!!!
+				if (((String)dbobj.get("NWDV")).length() == 0)
+				{
+					do_setoutput = false;
+							debug2("EOPINTERP- " + alg_ver + " : Cannot do Computation due to lack of EOP record: " + getSDI("input") + " " + _aggregatePeriodEnd );
 
-		}
-		if (status.startsWith("ERROR"))
-                {
-		   warning("EOPInterpAlg terminated due to following ORACLE ERROR");
-                   warning(status);
-		   return;
- 		}
+				}
+				if (status.startsWith("ERROR"))
+				{
+					warning("EOPInterpAlg terminated due to following ORACLE ERROR");
+					warning(status);
+					return;
+				}
+			}
+			catch (SQLException ex)
+			{
+				throw new DbCompException("Unable to get sql connection.", ex);
+			}
 		} // end of block for BOP next period
 		//
 		//  now continue with calculation if do_setoutput is still true

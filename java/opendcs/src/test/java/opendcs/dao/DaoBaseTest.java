@@ -47,7 +47,7 @@ public class DaoBaseTest
         }
         catch(SQLException err)
         {
-            if (err.getSQLState().equals("08006") )
+            if ("08006".equals(err.getSQLState()))
             {
                 dbOwner.setConnection(null);
             } 
