@@ -45,6 +45,7 @@ test {
     jvmArgs += "-Dopendcs.test.classpath=${classPath}"
     jvmArgs += "-Dresource.dir=${projectDir}/src/test/resources" // TODO: make clearer
     jvmArgs += "-DDCSTOOL_HOME=${stageDir}"
+    jvmArgs += "-Djava.util.logging.config.file=${projectDir}/src/test/test-config/logging.properties"
 
     reports {
         html {

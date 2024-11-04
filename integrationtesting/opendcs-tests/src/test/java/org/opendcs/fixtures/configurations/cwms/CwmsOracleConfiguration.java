@@ -160,8 +160,9 @@ public class CwmsOracleConfiguration implements Configuration
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
-        FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
-        FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));        
+        String stageDir = System.getProperty("DCSTOOL_HOME");
+        FileUtils.copyDirectory(new File(stageDir + "/edit-db"),editDb);
+        FileUtils.copyDirectory(new File(stageDir + "/schema"),new File(userDir,"/schema/"));
         UserPropertiesBuilder configBuilder = new UserPropertiesBuilder();
         installDb(exit, environment, configBuilder); // need files copied first.
         createPropertiesFile(configBuilder, this.propertiesFile);
