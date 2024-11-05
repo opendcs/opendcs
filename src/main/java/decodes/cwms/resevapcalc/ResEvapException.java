@@ -12,7 +12,6 @@ package decodes.cwms.resevapcalc;
  *
  * @author  Richard Rachiele
  * @version 1.1 June  2015
- * @see HecMath
  */
 
 public class ResEvapException extends Exception

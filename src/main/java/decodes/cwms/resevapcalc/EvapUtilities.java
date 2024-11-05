@@ -80,8 +80,8 @@ public class EvapUtilities
      * @param baroPres - (Input) the barometric pressure in mb.
      * @param tempC - (Input) the temperature in degrees Celcius.
      * @param sal - (Input) the salinity in psu.
-     * @param rhoA - (Output) the density of moist air in kg/m**3.
-     * @param rhoV - (Output) the water vapor density in kg/m**3.
+     * @param rhoAdc - (Output) the density of moist air in kg/m**3.
+     * @param rhoVdc - (Output) the water vapor density in kg/m**3.
      * @param q - (Output) the specific humidity in kg/kg.
      * @param iflag - (Input) method to evaluate the saturation vapor pressure, ESAT:
      */
