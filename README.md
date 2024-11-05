@@ -50,11 +50,11 @@ can be scary we would like to encourage you to join us anyways.
 
 # Compiling
 
-- OpenDCS is compiled using gradle
+- OpenDCS is compiled using the gradle wrapper 'gradlew'
 - OpenDCS 7.x targets Java 8. A JDK 8 is recommended for build though 11 and 17 will work
 - Our runtime target is Java 8, however we will support 11 and 17 at runtime
 
-in the following examples replace `./gradle` with `gradlew` if you are using windows.
+in the following examples replace `./gradlew` with `gradlew` if you are using windows.
 
 To build the file opendcs.jar run the following command:
 
@@ -104,7 +104,7 @@ ant test
 ./gradlew testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-Postgres
 
 #To test the LRGS
-gradle testing:lrgs:test -Dno.docs=true
+gradlew testing:lrgs:test -Pno.docs=true
 ```
 
 This will run all of the various tests and let you know you have everything setup such that you can start development.
