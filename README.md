@@ -116,7 +116,7 @@ This is a current limitation of the ant build.
 To run a specific test only use:
 
 ```
-?? <test target> -Dtests=<Test class name>
+./gradlew <test target> --tests # See [gradle documentation ](https://docs.gradle.org/current/userguide/java_testing.html#simple_name_pattern) for more detail
 ```
 
 It is possible a file glob will work in the tests parameter above but we have not tested this.
