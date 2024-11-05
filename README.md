@@ -133,7 +133,9 @@ If you wish to help in this way please created additional targets and required f
 
 To create the appropriate project files for VS Code or Eclipse you can run the following task:
 
-`./gradle opendcs:eclipse`
+`./gradlew opendcs:eclipse`
+
+Or you can use the VS Code gradle integration.
 
 This will create the appropriate .project and .classpath files for intellisense to behave correctly.
 
