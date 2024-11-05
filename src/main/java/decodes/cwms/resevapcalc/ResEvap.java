@@ -289,7 +289,7 @@ public class ResEvap
 	        {
 	        	reservoir.resSetup();
 	        }
-	        
+
 	        int resj = reservoir.getResj();
 	        reservoir._resj_old = resj;
 	        
@@ -390,7 +390,7 @@ public class ResEvap
                     surfaceTempTsc = surfaceTemp;  // BOP surface temp
                     // evap is in mm/day.  Divide by 24 to get instantaneous
                     // hourly value
-                    evapRateHourlyTsc = metComputation.evapWater.evap / 24.;
+                    evapRateHourlyTsc = metComputation.evapWater.evap/ 24.;
 
 //                    solarRadTscArr[jhour] = metComputation.solar;
 //                    IR_DownTscArr[jhour] = metComputation.flxir;
@@ -407,7 +407,7 @@ public class ResEvap
                     //_wtempProfiles[idx] = new double[numLayers];
                     wtempProfiles = new double[EvapReservoir.NLAYERS];
                     for (int ilyr = 0; ilyr < numLayers; ilyr++) {
-                        wtempProfiles[ilyr] = reservoir._wt[ilyr];
+                        wtempProfiles[ilyr] = reservoir._wt[numLayers-1-ilyr];
                     }
                 }
 //            }

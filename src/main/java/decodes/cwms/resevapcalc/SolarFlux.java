@@ -13,6 +13,7 @@ import decodes.cwms.HecConstants;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 /**
  *
@@ -136,11 +137,11 @@ public class SolarFlux
 
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(currentTime);
-
+        calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
         // Local variables
         // Convert variables from res_common.f to local subroutine      
         doy = calendar.get(Calendar.DAY_OF_YEAR);
-        hr = calendar.get(Calendar.HOUR);
+        hr = calendar.get(Calendar.HOUR_OF_DAY);
         
         frad = .017453292;
      
