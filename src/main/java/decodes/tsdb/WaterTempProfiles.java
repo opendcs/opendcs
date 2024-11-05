@@ -16,8 +16,6 @@ import java.util.Locale;
 
 public class WaterTempProfiles{
 
-    private TimeSeriesDAI timeSeriesDAO = null;
-
     /** The time series */
     public DataCollection tseries;
 
@@ -27,8 +25,6 @@ public class WaterTempProfiles{
     /** Constructor -- builds an empty collection with a null handle. */
     public WaterTempProfiles(TimeSeriesDAI DAO, double start, double incr){
         tseries = new DataCollection();
-
-        timeSeriesDAO = DAO;
         startDepth = start;
         increment = incr;
     }
@@ -41,14 +37,13 @@ public class WaterTempProfiles{
                 throw new RuntimeException(e);
             }
         }
-        timeSeriesDAO = DAO;
         startDepth = start;
         increment = incr;
     }
 
-    public WaterTempProfiles(TimeSeriesDAI DAO,String resID, String wtpId, Date since, Date until, double start, double incr) throws DbIoException, NoSuchObjectException {
+    //Initialize WaterTempProfiles with profiles from time slice previous to Until in database DAO connection
+    public WaterTempProfiles(TimeSeriesDAI timeSeriesDAO, String resID, String wtpId, Date since, Date until, double start, double incr) throws DbIoException, NoSuchObjectException {
         tseries = new DataCollection();
-        timeSeriesDAO = DAO;
         startDepth = start;
         increment = incr;
         boolean loading = true;
@@ -71,9 +66,8 @@ public class WaterTempProfiles{
                 FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newtsid.getUniqueString());
                 if(check.isSuccess()) {
                     CTimeSeries cts = timeSeriesDAO.makeTimeSeries(check.getSuccess());
-//                    int n = timeSeriesDAO.fillTimeSeries(cts, since, until);
-                    TimedVariable n = timeSeriesDAO.getPreviousValue(cts, until);
-                    if (n == null) {
+                    int n = timeSeriesDAO.fillTimeSeries(cts, since, until, true, true,true);
+                    if (n == 0) {
                         loading = false;
                     } else {
                         try {
@@ -99,13 +93,12 @@ public class WaterTempProfiles{
 
     }
 
-    public void SaveProfiles(){
+    public void SaveProfiles(TimeSeriesDAI timeSeriesDAO){
         for (CTimeSeries tsery : tseries.getAllTimeSeries()) {
             try {
                 timeSeriesDAO.saveTimeSeries(tsery);
             } catch (Exception ex) {
                 String msg = "Error saving water temperature profile data: " + ex;
-                //warning(msg);
                 System.err.print(msg);
                 ex.printStackTrace(System.err);
             }
