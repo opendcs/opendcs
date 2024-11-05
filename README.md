@@ -58,7 +58,7 @@ in the following examples replace `./gradle` with `gradlew` if you are using win
 
 To build the file opendcs.jar run the following command:
 
-`./gradle jar` 
+`./gradlew :opendcs:jar` 
 
 output is here:
 
