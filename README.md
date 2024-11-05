@@ -67,7 +67,7 @@ java/opendcs/build/libs/opendcs-main.99.main-SNAPSHOT.jar
 
 If you want to build a distribution run:
 
-`./gradle distZip`
+`./gradlew distZip`
 
 or
 
