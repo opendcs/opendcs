@@ -96,7 +96,7 @@ ant test
 # programmed script the task may return failure.
 
 # Test the GUI (NOTE: leave your hands off the keyboard and mouse or the runner gets confused.)
-./gradle test -Dno.docs=true
+./gradlew test -Pno.docs=true
 
 # Tests of a "live" system.
 ./gradle testing:opendcs-tests:test -Dno.docs=true -Dopendcs.test.engine=OpenDCS-XML
