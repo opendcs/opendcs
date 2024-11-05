@@ -1,0 +1,10 @@
+<?xml version="1.0" standalone="yes"?>
+<ScheduleEntry name="SampleSchedEntry">
+	<LoadingAppName>RoutingScheduler</LoadingAppName>
+	<RoutingSpecName>TestRouting</RoutingSpecName>
+	<StartTime>01/01/1970 00:00:00</StartTime>
+	<TimeZone>America/New_York</TimeZone>
+	<RunInterval>1 hour</RunInterval>
+	<Enabled>false</Enabled>
+	<LastModifyTime>10/25/2013 14:32:24</LastModifyTime>
+</ScheduleEntry>

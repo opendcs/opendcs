@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Database>
+  <Platform PlatformId="1">
+    <Description>Iowa River at Oakville, IA (USGS)</Description>
+    <Agency>MVR</Agency>
+    <IsProduction>false</IsProduction>
+    <LastModifyTime>08/25/2010 16:47:17</LastModifyTime>
+    <Site>
+      <Latitude>N 42&#176;16&apos;22&quot;</Latitude>
+      <Longitude>W 91&#176;03&apos;49&quot;</Longitude>
+      <Elevation>1.7976931348623157E308</Elevation>
+      <ElevationUnits>ft</ElevationUnits>
+      <Description>Iowa River at Oakville, IA (USGS)</Description>
+      <SiteProperty PropertyName="PUBLIC_NAME">Iowa River at Oakville</SiteProperty>
+      <SiteName NameType="local">OKVI4</SiteName>
+      <SiteName NameType="CWMS">OKVI4</SiteName>
+      <SiteName NameType="usgs" AgencyCode="USGS" UsgsDbno="01">
+        05465700
+      </SiteName>
+    </Site>
+    <PlatformConfig ConfigName="OKVI4">
+      <Description>Iowa River at Oakville, IA</Description>
+      <ConfigSensor SensorNumber="1">
+        <SensorName>Stage</SensorName>
+        <DataType Standard="SHEF-PE" Code="HG"/>
+        <RecordingMode>F</RecordingMode>
+        <RecordingInterval>00:15</RecordingInterval>
+        <TimeOfFirstSample>00:00</TimeOfFirstSample>
+        <AbsoluteMin>0.009999999776482582</AbsoluteMin>
+        <AbsoluteMax>49.61000061035156</AbsoluteMax>
+      </ConfigSensor>
+      <ConfigSensor SensorNumber="2">
+        <SensorName>Precip</SensorName>
+        <DataType Standard="SHEF-PE" Code="PC"/>
+        <RecordingMode>F</RecordingMode>
+        <RecordingInterval>00:15</RecordingInterval>
+        <TimeOfFirstSample>00:00</TimeOfFirstSample>
+        <AbsoluteMin>-0.10000000149011612</AbsoluteMin>
+        <AbsoluteMax>251.0</AbsoluteMax>
+      </ConfigSensor>
+      <ConfigSensor SensorNumber="3">
+        <SensorName>Battery</SensorName>
+        <DataType Standard="SHEF-PE" Code="VB"/>
+        <RecordingMode>F</RecordingMode>
+        <RecordingInterval>01:00</RecordingInterval>
+        <TimeOfFirstSample>00:00</TimeOfFirstSample>
+        <AbsoluteMin>0.0</AbsoluteMin>
+        <AbsoluteMax>14.0</AbsoluteMax>
+      </ConfigSensor>
+      <DecodesScript ScriptName="ST">
+        <ScriptType>Decodes</ScriptType>
+        <FormatStatement Label="st">
+          4x,4(f(s,b,3,1),f(s,b,3,2)),24x,f(s,b,1,3)
+        </FormatStatement>
+        <ScriptSensor SensorNumber="1">
+          <UnitConverter FromUnitsAbbr="raw" ToUnitsAbbr="ft">
+            <Algorithm>usgs-standard</Algorithm>
+            <A>0.01</A>
+            <B>0.0</B>
+            <C>1.0</C>
+            <D>0.0</D>
+            <E>0.0</E>
+            <F>0.0</F>
+          </UnitConverter>
+        </ScriptSensor>
+        <ScriptSensor SensorNumber="2">
+          <UnitConverter FromUnitsAbbr="raw" ToUnitsAbbr="in">
+            <Algorithm>usgs-standard</Algorithm>
+            <A>0.01</A>
+            <B>0.0</B>
+            <C>1.0</C>
+            <D>0.0</D>
+            <E>0.0</E>
+            <F>0.0</F>
+          </UnitConverter>
+        </ScriptSensor>
+        <ScriptSensor SensorNumber="3">
+          <UnitConverter FromUnitsAbbr="raw" ToUnitsAbbr="v">
+            <Algorithm>usgs-standard</Algorithm>
+            <A>0.3125</A>
+            <B>0.0</B>
+            <C>1.0</C>
+            <D>0.311</D>
+            <E>0.0</E>
+            <F>0.0</F>
+          </UnitConverter>
+        </ScriptSensor>
+      </DecodesScript>
+    </PlatformConfig>
+    <TransportMedium MediumType="goes-self-timed" MediumId="CE344292">
+      <DecodesScript ScriptName="ST"/>
+      <ChannelNum>49</ChannelNum>
+      <AssignedTime>00:04:50</AssignedTime>
+      <TransmitWindow>00:00:10</TransmitWindow>
+      <TransmitInterval>01:00</TransmitInterval>
+      <Preamble>S</Preamble>
+      <TimeZone>UTC</TimeZone>
+    </TransportMedium>
+    <PlatformSensor SensorNumber="1">
+      <PlatformSensorProperty PropertyName="RdbShef">QR</PlatformSensorProperty>
+      <PlatformSensorProperty PropertyName="ExceedBounds">
+        true
+      </PlatformSensorProperty>
+      <PlatformSensorProperty PropertyName="RdbFile">
+        OKVI4.rdb
+      </PlatformSensorProperty>
+    </PlatformSensor>
+  </Platform>
+  <RoutingSpec Name="OKVI4-input">
+    <IsProduction>false</IsProduction>
+    <DataSource Name="OKVI4" Type="file">
+      <DataSourceArg>
+        filename=${java.INPUT_DATA}/OKVI4.data,
+        MediumType=GOES, before=\001, after=\002\n
+      </DataSourceArg>
+    </DataSource>
+    <EnableEquations>false</EnableEquations>
+    <UsePerformanceMeasurements>false</UsePerformanceMeasurements>
+    <OutputFormat>human-readable</OutputFormat>
+    <OutputTimeZone>UTC</OutputTimeZone>
+    <ConsumerType>pipe</ConsumerType>
+    <ConsumerArg></ConsumerArg>
+    <RoutingSpecNetworkList Name="&lt;all&gt;"/>
+  </RoutingSpec>
+</Database>

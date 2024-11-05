@@ -1,0 +1,84 @@
+package decodes.comp;
+
+import ilex.util.Logger;
+import ilex.var.IFlags;
+import ilex.var.TimedVariable;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.TimeZone;
+
+import decodes.db.Platform;
+import decodes.decoder.DecodedMessage;
+import decodes.decoder.TimeSeries;
+
+
+public class TimeRangeFilter extends Computation
+{
+	private int maxFutureMinutes;
+	private int maxAgeHours;
+	public final static String module = "TimeRangeFilter";
+	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy MM/dd HH:mm");
+	
+	public TimeRangeFilter(int maxFutureMinutes, int maxAgeHours)
+	{
+		this.maxFutureMinutes = maxFutureMinutes;
+		this.maxAgeHours = maxAgeHours;
+	}
+
+	@Override
+	public void apply(IDataCollection msg)
+	{
+		// It will always be a DecodedMessage
+		if (!(msg instanceof DecodedMessage))
+			return;
+		DecodedMessage dm = (DecodedMessage)msg;
+		
+		Platform p = dm.getPlatform();
+		Logger.instance().debug1("Applying time range filter to message from "
+			+ (p != null ? p.getSiteName() : "unknown platform")
+			+ ", maxFutureMinutes=" + maxFutureMinutes + ", maxAgeHours=" + maxAgeHours);
+
+		for(Iterator<TimeSeries> tsit = dm.getAllTimeSeries(); tsit.hasNext(); )
+		{
+			TimeSeries ts = tsit.next();
+			for(int tsIdx = 0; tsIdx < ts.size(); tsIdx++)
+			{
+				TimedVariable tv = ts.sampleAt(tsIdx);
+				int flags = tv.getFlags();
+				if ((flags & (IFlags.IS_MISSING | IFlags.IS_ERROR)) != 0)
+					continue;
+				
+				Date sampleTime = tv.getTime();
+				
+				// deltaT is difference between sample time and now. 
+				// Future data is positive, past data is negative
+				long deltaT = sampleTime.getTime() - System.currentTimeMillis();
+				if (deltaT > maxFutureMinutes * 60000L)
+				{
+					Logger.instance().debug3(module + " "
+						+ ts.getSensor().getSite().getDisplayName() + " "
+						+ ts.getSensorName() + " Discarding FUTURE TIME " 
+						+ sampleTime);
+					tv.setFlags(flags | IFlags.IS_ERROR | IFlags.IS_MISSING);
+				}
+				else if (deltaT < -maxAgeHours * 3600000L)
+				{
+					Logger.instance().debug3(module + " "
+						+ ts.getSensor().getSite().getDisplayName() + " "
+						+ ts.getSensorName() + " Discarding ANCIENT TIME " 
+						+ sampleTime + ", deltaT=" + deltaT);
+					tv.setFlags(flags | IFlags.IS_ERROR | IFlags.IS_MISSING);
+				}
+			}
+		}
+	}
+	
+	public void setLoggerTz(TimeZone tz)
+	{
+		if (tz != null)
+			sdf.setTimeZone(tz);
+	}
+
+}

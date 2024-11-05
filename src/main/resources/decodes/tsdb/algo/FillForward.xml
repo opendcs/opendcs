@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="FillForward">
+    <Comment>
+      Project an input value by copying it forward in time for the specified
+      number of intervals.
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.FillForward</ExecClass>
+    <AlgoProperty name="NumIntervals">4</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

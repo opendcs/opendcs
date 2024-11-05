@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="GroupAdder">
+    <Comment>
+      Type a javadoc-style comment describing the algorithm class.
+Apply a mask
+      to a group to obtain a list of time series.
+Retrieve all of the input
+      values and add them together
+The MISSING value determines how values are
+      fetched if they are not all present at the triggered time slice.
+Can be
+      triggered by all (masked) TSID values in the group or can be run on a
+      timer.
+The &apos;sum&apos; output must be defined. count and average are
+      optional. These will be the number of values summed and the average.
+
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.GroupAdder</ExecClass>
+    <AlgoParm roleName="mask">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="sum">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="count">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="average">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

@@ -1,0 +1,6 @@
+<?xml version="1.0" standalone="yes"?>
+<LoadingApplication name="utility">
+  <Comment>Utility Program -- used by several apps</Comment>
+  <AppProperty name="monitor">false</AppProperty>
+  <AppProperty name="apptype">utility</AppProperty>
+</LoadingApplication>

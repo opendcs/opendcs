@@ -1,0 +1,40 @@
+#
+# This is the TERM script that talks to an Amasser DCP
+#
+XMIT "\r\r"
+WAIT 5
+WAIT 20, "Password Please"
+
+# send the word "AMASSER" as a password
+XMIT "AMASSER\r"
+WAIT 15, "DESCRIPTION:"
+XMIT "\r"
+
+# The main menu displays here. The last item ends with the word 'exit'.
+WAIT 20, "exit"
+
+# Select menu item 4. This displays a submenu that ends with 'Main Menu'
+XMIT "4\r"
+WAIT 10,"Main Menu"
+
+# Select submenu item 2 and wait for a date prompt
+XMIT "2\r"
+WAIT 15, "YYYY/MM/DD"
+
+# Transmit the Start Date in the format specified
+STARTFORMAT "yyyy/MM/dd"
+XMIT "$START\r"
+CAPTURE ON
+WAIT 5
+XMIT "\r"
+
+# Note: 30 may not be long enough for multiple days. The connection is 1200 baud.
+WAIT 30,"Main Menu"|"FUNCTION"
+CAPTURE OFF
+
+# Select Main menu
+WAIT 1
+XMIT "M\r"
+WAIT 2
+XMIT "7\r"
+WAIT 5

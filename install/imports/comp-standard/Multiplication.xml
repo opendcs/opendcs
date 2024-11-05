@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="Multiplication">
+    <Comment>
+      Multiply one time series with another using : (a*input1+b)*(c*input2+d). 
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.Multiplication</ExecClass>
+    <AlgoProperty name="b">0</AlgoProperty>
+    <AlgoProperty name="a">1.0</AlgoProperty>
+    <AlgoProperty name="d">0</AlgoProperty>
+    <AlgoProperty name="c">1.0</AlgoProperty>
+    <AlgoParm roleName="input1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

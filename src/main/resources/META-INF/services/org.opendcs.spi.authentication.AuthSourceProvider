@@ -1,0 +1,5 @@
+org.opendcs.authentication.impl.UserAuthFileProvider
+org.opendcs.authentication.impl.EnvironmentAuthSourceProvider
+org.opendcs.authentication.impl.PropertyAuthSourceProvider
+org.opendcs.authentication.impl.GuiAuthSourceProvider
+org.opendcs.authentication.impl.SecretsFileAuthSourceProvider

@@ -1,0 +1,13 @@
+#!/bin/sh
+#
+# nl2lrgs - Convert Network Lists to LRGS file format
+#
+# usage: nl2lrgs <options> <netlist1> <netlist2> ...
+# options:
+#	-e               Export from 'editable' database (default is installed)
+#
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.dbimport.LrgsNetlist $*

@@ -1,0 +1,1462 @@
+<?xml version="1.0" standalone="yes"?>
+<EngineeringUnitList>
+  <EngineeringUnit UnitsAbbr="raw">
+    <Name>Raw Undefined Units</Name>
+    <Family>univ</Family>
+    <Measures>undefined</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="dyn">
+    <Name>dyn</Name>
+    <Family>Metric</Family>
+    <Measures>force</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kM^2">
+    <Name>square kilometers</Name>
+    <Family>Metric</Family>
+    <Measures>area</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="m^3">
+    <Name>cubic meter</Name>
+    <Family>Metric</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mt">
+    <Name>Metric ton</Name>
+    <Family>Metric</Family>
+    <Measures>mass</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="M^2">
+    <Name>square meters</Name>
+    <Family>Metric</Family>
+    <Measures>area</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ppt">
+    <Name>parts per thousand</Name>
+    <Family>univ</Family>
+    <Measures>ratio</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mM^2">
+    <Name>square millimeters</Name>
+    <Family>Metric</Family>
+    <Measures>area</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ppm">
+    <Name>parts per million</Name>
+    <Family>univ</Family>
+    <Measures>ratio</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="cfs">
+    <Name>cubic feet per second</Name>
+    <Family>English</Family>
+    <Measures>flow</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mM">
+    <Name>millimeters</Name>
+    <Family>Metric</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mL">
+    <Name>milliliter</Name>
+    <Family>Metric</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mi">
+    <Name>miles</Name>
+    <Family>English</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ft/s">
+    <Name>feet per second</Name>
+    <Family>English</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ton">
+    <Name>tons</Name>
+    <Family>English</Family>
+    <Measures>mass</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="yd/s">
+    <Name>yards per second</Name>
+    <Family>English</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mG">
+    <Name>milligrams</Name>
+    <Family>Metric</Family>
+    <Measures>mass</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="acre*ft">
+    <Name>acre feet</Name>
+    <Family>English</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="erg">
+    <Name>ergs</Name>
+    <Family>English</Family>
+    <Measures>energy</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="floz">
+    <Name>fluid ounce</Name>
+    <Family>English</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="pct">
+    <Name>percent</Name>
+    <Family>univ</Family>
+    <Measures>ratio</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ft">
+    <Name>feet</Name>
+    <Family>English</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="yd">
+    <Name>yards</Name>
+    <Family>English</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mi^2">
+    <Name>square miles</Name>
+    <Family>English</Family>
+    <Measures>area</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mph">
+    <Name>miles per hour</Name>
+    <Family>English</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="cM/s">
+    <Name>centimeters per second</Name>
+    <Family>Metric</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="m^3/s">
+    <Name>cubic meters per second</Name>
+    <Family>Metric</Family>
+    <Measures>flow</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kM/hr">
+    <Name>kilometers per hour</Name>
+    <Family>Metric</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kph">
+    <Name>kilometers per hour</Name>
+    <Family>Metric</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kpa">
+    <Name>kilopascals</Name>
+    <Family>Metric</Family>
+    <Measures>pressure</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="lb">
+    <Name>pounds</Name>
+    <Family>English</Family>
+    <Measures>mass</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="min">
+    <Name>minutes</Name>
+    <Family>univ</Family>
+    <Measures>time</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="knots">
+    <Name>nautical miles per hour</Name>
+    <Family>Metric</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ft*lbf/s">
+    <Name>foot-pounds per second</Name>
+    <Family>English</Family>
+    <Measures>power</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kW">
+    <Name>kilowatts</Name>
+    <Family>Metric</Family>
+    <Measures>power</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="in/s">
+    <Name>inches per second</Name>
+    <Family>English</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="inHg">
+    <Name>inches of mercury</Name>
+    <Family>English</Family>
+    <Measures>pressure</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="qt">
+    <Name>quart</Name>
+    <Family>English</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kM">
+    <Name>kilometers</Name>
+    <Family>Metric</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kL">
+    <Name>kiloliter</Name>
+    <Family>Metric</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kj">
+    <Name>kilojoules</Name>
+    <Family>Metric</Family>
+    <Measures>energy</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kG">
+    <Name>kilograms</Name>
+    <Family>Metric</Family>
+    <Measures>mass</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="uMHOs">
+    <Name>MicroMHOs per centimeter</Name>
+    <Family>metric</Family>
+    <Measures>conductance</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="M/s">
+    <Name>meters per second</Name>
+    <Family>Metric</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="week">
+    <Name>weeks</Name>
+    <Family>univ</Family>
+    <Measures>time</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="lbf">
+    <Name>pound-force</Name>
+    <Family>English</Family>
+    <Measures>force</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mM/s">
+    <Name>millimeters per second</Name>
+    <Family>Metric</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mmHg">
+    <Name>millimeters of mercury</Name>
+    <Family>Metric</Family>
+    <Measures>pressure</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="W">
+    <Name>watts</Name>
+    <Family>Metric</Family>
+    <Measures>power</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="V">
+    <Name>volts</Name>
+    <Family>Metric</Family>
+    <Measures>voltage</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="pt">
+    <Name>pint</Name>
+    <Family>English</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="N">
+    <Name>newtons</Name>
+    <Family>Metric</Family>
+    <Measures>force</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="M">
+    <Name>meters</Name>
+    <Family>Metric</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="L">
+    <Name>liter</Name>
+    <Family>Metric</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="j">
+    <Name>joules</Name>
+    <Family>Metric</Family>
+    <Measures>energy</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="G">
+    <Name>grams</Name>
+    <Family>Metric</Family>
+    <Measures>mass</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="psi">
+    <Name>pounds per square inch</Name>
+    <Family>English</Family>
+    <Measures>pressure</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="pH">
+    <Name>pH</Name>
+    <Family>univ</Family>
+    <Measures>acidity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="count">
+    <Name>counts</Name>
+    <Family>univ</Family>
+    <Measures>count</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ft^3">
+    <Name>cubic feet</Name>
+    <Family>English</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="nmi">
+    <Name>nautical miles</Name>
+    <Family>English</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ft^2">
+    <Name>square feet</Name>
+    <Family>English</Family>
+    <Measures>area</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="yd^2">
+    <Name>square yards</Name>
+    <Family>English</Family>
+    <Measures>area</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="pa">
+    <Name>pascals</Name>
+    <Family>Metric</Family>
+    <Measures>pressure</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="degK">
+    <Name>degrees Kelvin</Name>
+    <Family>Metric</Family>
+    <Measures>temperature</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="uMHO">
+    <Name>MicroMHOs per centimeter</Name>
+    <Family>metric</Family>
+    <Measures>conductance</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="oz">
+    <Name>ounces</Name>
+    <Family>English</Family>
+    <Measures>mass</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="cM">
+    <Name>centimeters</Name>
+    <Family>Metric</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="degF">
+    <Name>degrees Fahrenheit</Name>
+    <Family>English</Family>
+    <Measures>temperature</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="degC">
+    <Name>degrees Celsius</Name>
+    <Family>Metric</Family>
+    <Measures>temperature</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="g/L">
+    <Name>grams per liter</Name>
+    <Family>Metric</Family>
+    <Measures>concentration</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="in">
+    <Name>inches</Name>
+    <Family>English</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="uMHOs/cm">
+    <Name>MicroMHOs per centimeter</Name>
+    <Family>metric</Family>
+    <Measures>conductance</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mG/L">
+    <Name>milligrams per liter</Name>
+    <Family>Metric</Family>
+    <Measures>concentration</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="cc">
+    <Name>cubic centimeter</Name>
+    <Family>Metric</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="uM">
+    <Name>micrometers</Name>
+    <Family>Metric</Family>
+    <Measures>length</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="%">
+    <Name>percent</Name>
+    <Family>univ</Family>
+    <Measures>ratio</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="uL">
+    <Name>microliter</Name>
+    <Family>Metric</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mi/hr">
+    <Name>miles per hour</Name>
+    <Family>English</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="cM^2">
+    <Name>square centimeters</Name>
+    <Family>Metric</Family>
+    <Measures>area</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="gal">
+    <Name>gallon</Name>
+    <Family>English</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="uG">
+    <Name>micrograms</Name>
+    <Family>Metric</Family>
+    <Measures>mass</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="sec">
+    <Name>second</Name>
+    <Family>univ</Family>
+    <Measures>time</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="day">
+    <Name>days</Name>
+    <Family>univ</Family>
+    <Measures>time</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="btu">
+    <Name>british thermal unit</Name>
+    <Family>English</Family>
+    <Measures>energy</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="hr">
+    <Name>hours</Name>
+    <Family>univ</Family>
+    <Measures>time</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="hp">
+    <Name>horsepower</Name>
+    <Family>English</Family>
+    <Measures>power</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kcal">
+    <Name>Kilocalories</Name>
+    <Family>English</Family>
+    <Measures>energy</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="atm">
+    <Name>atmospheres</Name>
+    <Family>Metric</Family>
+    <Measures>pressure</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="acre">
+    <Name>acres</Name>
+    <Family>English</Family>
+    <Measures>area</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="in^3">
+    <Name>cubic inches</Name>
+    <Family>English</Family>
+    <Measures>volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="in^2">
+    <Name>square inches</Name>
+    <Family>English</Family>
+    <Measures>area</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="nmi/hr">
+    <Name>nautical miles per hour</Name>
+    <Family>English</Family>
+    <Measures>velocity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="bar">
+    <Name>bars</Name>
+    <Family>Metric</Family>
+    <Measures>pressure</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="cal">
+    <Name>Calories</Name>
+    <Family>English</Family>
+    <Measures>energy</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ft^3/s">
+    <Name>cubic feet per second</Name>
+    <Family>English</Family>
+    <Measures>flow</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mbar">
+    <Name>millibars</Name>
+    <Family>Metric</Family>
+    <Measures>pressure</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="uG/L">
+    <Name>micrograms per liter</Name>
+    <Family>Metric</Family>
+    <Measures>concentration</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="deg">
+    <Name>Degrees</Name>
+    <Family>univ</Family>
+    <Measures>angle</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="deg*10">
+    <Name>Tens of Degrees</Name>
+    <Family>univ</Family>
+    <Measures>angle</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="deg" ToUnitsAbbr="deg*10">
+    <Algorithm>linear</Algorithm>
+    <A>0.1</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="min" ToUnitsAbbr="sec">
+    <Algorithm>linear</Algorithm>
+    <A>60.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="%" ToUnitsAbbr="pct">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="in^3">
+    <Algorithm>linear</Algorithm>
+    <A>231.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ppt" ToUnitsAbbr="ppm">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mG/L" ToUnitsAbbr="uG/L">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mi" ToUnitsAbbr="ft">
+    <Algorithm>linear</Algorithm>
+    <A>5280.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="inHg" ToUnitsAbbr="pa">
+    <Algorithm>linear</Algorithm>
+    <A>3386.38</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="kpa" ToUnitsAbbr="pa">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="cM^2" ToUnitsAbbr="M^2">
+    <Algorithm>linear</Algorithm>
+    <A>1.0E-4</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="lbf" ToUnitsAbbr="N">
+    <Algorithm>linear</Algorithm>
+    <A>4.448222</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="week" ToUnitsAbbr="day">
+    <Algorithm>linear</Algorithm>
+    <A>7.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="G" ToUnitsAbbr="mG">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="btu" ToUnitsAbbr="j">
+    <Algorithm>linear</Algorithm>
+    <A>1055.056</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="qt" ToUnitsAbbr="pt">
+    <Algorithm>linear</Algorithm>
+    <A>2.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mi^2" ToUnitsAbbr="acre">
+    <Algorithm>linear</Algorithm>
+    <A>640.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ft*lbf/s" ToUnitsAbbr="W">
+    <Algorithm>linear</Algorithm>
+    <A>1.355818</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="yd/s" ToUnitsAbbr="ft/s">
+    <Algorithm>linear</Algorithm>
+    <A>3.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="uMHOs" ToUnitsAbbr="uMHOs/cm">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="m" ToUnitsAbbr="cm">
+    <Algorithm>linear</Algorithm>
+    <A>100.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mmHg" ToUnitsAbbr="pa">
+    <Algorithm>linear</Algorithm>
+    <A>133.3224</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ft/s" ToUnitsAbbr="mph">
+    <Algorithm>linear</Algorithm>
+    <A>0.681818181818</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mM^2" ToUnitsAbbr="M^2">
+    <Algorithm>linear</Algorithm>
+    <A>1.0E-6</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="nmi" ToUnitsAbbr="m">
+    <Algorithm>linear</Algorithm>
+    <A>1852.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mph" ToUnitsAbbr="mi/hr">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="uMHOs" ToUnitsAbbr="uMHO">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="m" ToUnitsAbbr="um">
+    <Algorithm>linear</Algorithm>
+    <A>1000000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="pt" ToUnitsAbbr="floz">
+    <Algorithm>linear</Algorithm>
+    <A>16.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="yd" ToUnitsAbbr="ft">
+    <Algorithm>linear</Algorithm>
+    <A>3.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ton" ToUnitsAbbr="lb">
+    <Algorithm>linear</Algorithm>
+    <A>2000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="atm" ToUnitsAbbr="pa">
+    <Algorithm>linear</Algorithm>
+    <A>101325.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mL" ToUnitsAbbr="cc">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="day" ToUnitsAbbr="hr">
+    <Algorithm>linear</Algorithm>
+    <A>24.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="acre*ft" ToUnitsAbbr="ft^3">
+    <Algorithm>linear</Algorithm>
+    <A>43560.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="kL" ToUnitsAbbr="L">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="hr" ToUnitsAbbr="min">
+    <Algorithm>linear</Algorithm>
+    <A>60.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="kM^2" ToUnitsAbbr="M^2">
+    <Algorithm>linear</Algorithm>
+    <A>1000000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mL" ToUnitsAbbr="uL">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="yd^2" ToUnitsAbbr="ft^2">
+    <Algorithm>linear</Algorithm>
+    <A>9.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="kW" ToUnitsAbbr="W">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ft/s" ToUnitsAbbr="in/s">
+    <Algorithm>linear</Algorithm>
+    <A>12.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="acre" ToUnitsAbbr="ft^2">
+    <Algorithm>linear</Algorithm>
+    <A>43560.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="degC" ToUnitsAbbr="degK">
+    <Algorithm>linear</Algorithm>
+    <A>1.0</A>
+    <B>273.15</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mi" ToUnitsAbbr="m">
+    <Algorithm>linear</Algorithm>
+    <A>1609.344</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="kcal" ToUnitsAbbr="cal">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="m^3" ToUnitsAbbr="L">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="degC" ToUnitsAbbr="degF">
+    <Algorithm>linear</Algorithm>
+    <A>1.8</A>
+    <B>32.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="cfs" ToUnitsAbbr="ft^3/s">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="qt">
+    <Algorithm>linear</Algorithm>
+    <A>4.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="M/s" ToUnitsAbbr="cM/s">
+    <Algorithm>linear</Algorithm>
+    <A>100.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ft/s" ToUnitsAbbr="M/s">
+    <Algorithm>linear</Algorithm>
+    <A>0.3048</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="m^3/s" ToUnitsAbbr="cfs">
+    <Algorithm>linear</Algorithm>
+    <A>35.31466247</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mt" ToUnitsAbbr="G">
+    <Algorithm>linear</Algorithm>
+    <A>1000000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="kj" ToUnitsAbbr="j">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="m" ToUnitsAbbr="mm">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="g/L" ToUnitsAbbr="mG/L">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ft^3" ToUnitsAbbr="in^3">
+    <Algorithm>linear</Algorithm>
+    <A>1728.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="lb" ToUnitsAbbr="G">
+    <Algorithm>linear</Algorithm>
+    <A>453.59237</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="L" ToUnitsAbbr="mL">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ft^2" ToUnitsAbbr="in^2">
+    <Algorithm>linear</Algorithm>
+    <A>144.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="L">
+    <Algorithm>linear</Algorithm>
+    <A>3.785412</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="dyn" ToUnitsAbbr="N">
+    <Algorithm>linear</Algorithm>
+    <A>1.0E-5</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="cal" ToUnitsAbbr="j">
+    <Algorithm>linear</Algorithm>
+    <A>4.184</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ft" ToUnitsAbbr="m">
+    <Algorithm>linear</Algorithm>
+    <A>0.3048</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mph" ToUnitsAbbr="kM/hr">
+    <Algorithm>linear</Algorithm>
+    <A>1.609344</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="psi" ToUnitsAbbr="pa">
+    <Algorithm>linear</Algorithm>
+    <A>6874.75729</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="lb" ToUnitsAbbr="oz">
+    <Algorithm>linear</Algorithm>
+    <A>16.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="bar" ToUnitsAbbr="pa">
+    <Algorithm>linear</Algorithm>
+    <A>100000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ft^2" ToUnitsAbbr="M^2">
+    <Algorithm>linear</Algorithm>
+    <A>0.09290304</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="hp" ToUnitsAbbr="W">
+    <Algorithm>linear</Algorithm>
+    <A>746.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mph" ToUnitsAbbr="knots">
+    <Algorithm>linear</Algorithm>
+    <A>0.8689762419006</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="cM/s" ToUnitsAbbr="mM/s">
+    <Algorithm>linear</Algorithm>
+    <A>10.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="kG" ToUnitsAbbr="G">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="ft" ToUnitsAbbr="in">
+    <Algorithm>linear</Algorithm>
+    <A>12.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mG" ToUnitsAbbr="uG">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mi^2" ToUnitsAbbr="ft^2">
+    <Algorithm>linear</Algorithm>
+    <A>2.78784E7</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="j" ToUnitsAbbr="erg">
+    <Algorithm>linear</Algorithm>
+    <A>1.0E7</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="%" ToUnitsAbbr="ppt">
+    <Algorithm>linear</Algorithm>
+    <A>10.0</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="m" ToUnitsAbbr="km">
+    <Algorithm>linear</Algorithm>
+    <A>0.0010</A>
+    <B>0.0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="rev">
+    <Name>Revolution</Name>
+    <Family>univ</Family>
+    <Measures>Angle</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="rpm">
+    <Name>Revolutions per minute</Name>
+    <Family>univ</Family>
+    <Measures>Angular Speed</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="1000 m2">
+    <Name>Thousands of square meters</Name>
+    <Family>Metric</Family>
+    <Measures>Area</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="m2" ToUnitsAbbr="1000 m2">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="ft2">
+    <Name>Square feet</Name>
+    <Family>English</Family>
+    <Measures>Area</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="ft^2" ToUnitsAbbr="ft2">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="ha">
+    <Name>Hectares</Name>
+    <Family>English</Family>
+    <Measures>Area</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="acre" ToUnitsAbbr="ha">
+    <Algorithm>linear</Algorithm>
+    <A>0.4046856</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="km2">
+    <Name>Square kilometers</Name>
+    <Family>Metric</Family>
+    <Measures>Area</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="kM^2" ToUnitsAbbr="km2">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="m2">
+    <Name>Square meters</Name>
+    <Family>Metric</Family>
+    <Measures>Area</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="M^2" ToUnitsAbbr="m2">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="mile2">
+    <Name>Square miles</Name>
+    <Family>English</Family>
+    <Measures>Area</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="mi^2" ToUnitsAbbr="mile2">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="cfs/mi2">
+    <Name>Cfs per square mile</Name>
+    <Family>English</Family>
+    <Measures>Areal Volume Rate</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="cms/km2">
+    <Name>Cms per square kilometer</Name>
+    <Family>Metric</Family>
+    <Measures>Areal Volume Rate</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mho">
+    <Name>Mhos</Name>
+    <Family>univ</Family>
+    <Measures>Conductance</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="umho" ToUnitsAbbr="mho">
+    <Algorithm>linear</Algorithm>
+    <A>0.000001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="S">
+    <Name>Siemens</Name>
+    <Family>univ</Family>
+    <Measures>Conductance</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="mho" ToUnitsAbbr="S">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="umho">
+    <Name>Micro-mhos</Name>
+    <Family>univ</Family>
+    <Measures>Conductance</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="uMHO" ToUnitsAbbr="umho">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="uS">
+    <Name>Micro-Siemens</Name>
+    <Family>univ</Family>
+    <Measures>Conductance</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="umho" ToUnitsAbbr="uS">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="umho/cm">
+    <Name>Micro-mhos per centimeter</Name>
+    <Family>univ</Family>
+    <Measures>Conductivity</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="uMHOs/cm" ToUnitsAbbr="umho/cm">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="unit">
+    <Name>Count</Name>
+    <Family>univ</Family>
+    <Measures>Count</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="count" ToUnitsAbbr="unit">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="$">
+    <Name>Dollars</Name>
+    <Family>univ</Family>
+    <Measures>Currency</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="volt">
+    <Name>Volts</Name>
+    <Family>Metric</Family>
+    <Measures>Electromotive Potential</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="V" ToUnitsAbbr="volt">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="GWh">
+    <Name>Gigawatt-hours</Name>
+    <Family>univ</Family>
+    <Measures>Energy</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="MWh" ToUnitsAbbr="GWh">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="kWh">
+    <Name>Kilowatt-hours</Name>
+    <Family>univ</Family>
+    <Measures>Energy</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="Wh" ToUnitsAbbr="kWh">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="MWh">
+    <Name>Megawatt-hours</Name>
+    <Family>univ</Family>
+    <Measures>Energy</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="kWh" ToUnitsAbbr="MWh">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="TWh">
+    <Name>Terawatt-hour</Name>
+    <Family>univ</Family>
+    <Measures>Energy</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="GWh" ToUnitsAbbr="TWh">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="Wh">
+    <Name>Watt-hours</Name>
+    <Family>univ</Family>
+    <Measures>Energy</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="kj" ToUnitsAbbr="Wh">
+    <Algorithm>linear</Algorithm>
+    <A>0.2777778</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="lb">
+    <Name>Pounds</Name>
+    <Family>English</Family>
+    <Measures>Force</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="lbf" ToUnitsAbbr="lb">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="su">
+    <Name>Standard pH units</Name>
+    <Family>univ</Family>
+    <Measures>pH</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="pH" ToUnitsAbbr="su">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="langley/min">
+    <Name>Langley per minute</Name>
+    <Family>English</Family>
+    <Measures>Irradiance</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="W/m2">
+    <Name>Watts per square meter</Name>
+    <Family>Metric</Family>
+    <Measures>Irradiance</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="J/m2">
+    <Name>Joules per square meters</Name>
+    <Family>Metric</Family>
+    <Measures>Irradiation</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="langley">
+    <Name>Langley</Name>
+    <Family>English</Family>
+    <Measures>Irradiation</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="cm">
+    <Name>Centimeters</Name>
+    <Family>Metric</Family>
+    <Measures>Length</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="cM" ToUnitsAbbr="cm">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="km">
+    <Name>Kilometers</Name>
+    <Family>Metric</Family>
+    <Measures>Length</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="kM" ToUnitsAbbr="km">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="m">
+    <Name>Meters</Name>
+    <Family>Metric</Family>
+    <Measures>Length</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="M" ToUnitsAbbr="m">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="mm">
+    <Name>Millimeters</Name>
+    <Family>Metric</Family>
+    <Measures>Length</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="mM" ToUnitsAbbr="mm">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="in/day">
+    <Name>Inches per day</Name>
+    <Family>English</Family>
+    <Measures>Linear Speed</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="in/hr" ToUnitsAbbr="in/day">
+    <Algorithm>linear</Algorithm>
+    <A>0.4166667</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="in/hr">
+    <Name>Inches per hour</Name>
+    <Family>English</Family>
+    <Measures>Linear Speed</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="ft/s" ToUnitsAbbr="in/hr">
+    <Algorithm>linear</Algorithm>
+    <A>43200</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="kph">
+    <Name>Kilometers per hour</Name>
+    <Family>Metric</Family>
+    <Measures>Linear Speed</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="kM/hr" ToUnitsAbbr="kph">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="m/s">
+    <Name>Meters per second</Name>
+    <Family>Metric</Family>
+    <Measures>Linear Speed</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="M/s" ToUnitsAbbr="m/s">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="mm/day">
+    <Name>Millimeters per day</Name>
+    <Family>Metric</Family>
+    <Measures>Linear Speed</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="mm/hr" ToUnitsAbbr="mm/day">
+    <Algorithm>linear</Algorithm>
+    <A>24</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="mm/hr">
+    <Name>Millimeters per hour</Name>
+    <Family>Metric</Family>
+    <Measures>Linear Speed</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="mM/s" ToUnitsAbbr="mm/hr">
+    <Algorithm>linear</Algorithm>
+    <A>3600</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="g/l">
+    <Name>Grams per liter</Name>
+    <Family>Metric</Family>
+    <Measures>Mass Concentration</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="g/L" ToUnitsAbbr="g/l">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="gm/cm3">
+    <Name>Grams per cubic centimeters</Name>
+    <Family>Metric</Family>
+    <Measures>Mass Concentration</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="g/l" ToUnitsAbbr="gm/cm3">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="mg/l">
+    <Name>Milligrams per liter</Name>
+    <Family>Metric</Family>
+    <Measures>Mass Concentration</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="mG/L" ToUnitsAbbr="mg/l">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="in/deg-day">
+    <Name>Inches per degree-day</Name>
+    <Family>English</Family>
+    <Measures>Phase Change Rate Index</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mm/deg-day">
+    <Name>Millimeters per degree-day</Name>
+    <Family>Metric</Family>
+    <Measures>Phase Change Rate Index</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="GW">
+    <Name>Gigawatts</Name>
+    <Family>univ</Family>
+    <Measures>Power</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="MW" ToUnitsAbbr="GW">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="MW">
+    <Name>Megawatts</Name>
+    <Family>univ</Family>
+    <Measures>Power</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="kW" ToUnitsAbbr="MW">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="TW">
+    <Name>Terawatts</Name>
+    <Family>univ</Family>
+    <Measures>Power</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="GW" ToUnitsAbbr="TW">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="in-hg">
+    <Name>Inches of mercury</Name>
+    <Family>English</Family>
+    <Measures>Pressure</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="inHg" ToUnitsAbbr="in-hg">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="kPa">
+    <Name>Kilopascals</Name>
+    <Family>Metric</Family>
+    <Measures>Pressure</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="kpa" ToUnitsAbbr="kPa">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="mb">
+    <Name>Millibars</Name>
+    <Family>Metric</Family>
+    <Measures>Pressure</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="mbar" ToUnitsAbbr="mb">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="mm-hg">
+    <Name>Millimeters of mercury</Name>
+    <Family>Metric</Family>
+    <Measures>Pressure</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="mmHg" ToUnitsAbbr="mm-hg">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="C">
+    <Name>Centigrade</Name>
+    <Family>Metric</Family>
+    <Measures>Temperature</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="degC" ToUnitsAbbr="C">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="F">
+    <Name>Fahrenheit</Name>
+    <Family>English</Family>
+    <Measures>Temperature</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="degF" ToUnitsAbbr="F">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="FNU">
+    <Name>Formazin Nephelometric Unit</Name>
+    <Family>univ</Family>
+    <Measures>Turbidity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="JTU">
+    <Name>Jackson Turbitiy Unit</Name>
+    <Family>univ</Family>
+    <Measures>Turbidity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="NTU">
+    <Name>Nephelometric Turbidity Unit</Name>
+    <Family>univ</Family>
+    <Measures>Turbidity</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="1000 m3">
+    <Name>Thousands of cubic meters</Name>
+    <Family>Metric</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="m3" ToUnitsAbbr="1000 m3">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="ac-ft">
+    <Name>Acre-feet</Name>
+    <Family>English</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="ac-ft" ToUnitsAbbr="m3">
+    <Algorithm>linear</Algorithm>
+    <A>1233.4818</A>
+    <B>0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="acre*ft" ToUnitsAbbr="ac-ft">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="dsf">
+    <Name>day-second-foot</Name>
+    <Family>English</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="ft3">
+    <Name>Cubic feet</Name>
+    <Family>English</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="ft^3" ToUnitsAbbr="ft3">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="kaf">
+    <Name>Kiloacre-feet</Name>
+    <Family>English</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="ac-ft" ToUnitsAbbr="kaf">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="kgal">
+    <Name>Kilogallons</Name>
+    <Family>English</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="kgal">
+    <Algorithm>linear</Algorithm>
+    <A>0.001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="km3">
+    <Name>Cubic kilometers</Name>
+    <Family>Metric</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="m3" ToUnitsAbbr="km3">
+    <Algorithm>linear</Algorithm>
+    <A>1.0E-9</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="m3">
+    <Name>Cubic meters</Name>
+    <Family>Metric</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="M^3">
+    <Name>Cubic meters</Name>
+    <Family>Metric</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="M^3" ToUnitsAbbr="m3">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="mgal">
+    <Name>Millions of gallons</Name>
+    <Family>English</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="gal" ToUnitsAbbr="mgal">
+    <Algorithm>linear</Algorithm>
+    <A>0.000001</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="mile3">
+    <Name>Cubic miles</Name>
+    <Family>English</Family>
+    <Measures>Volume</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="km3" ToUnitsAbbr="mile3">
+    <Algorithm>linear</Algorithm>
+    <A>0.2399128</A>
+    <B>0</B>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="cms">
+    <Name>Cubic meters per second</Name>
+    <Family>Metric</Family>
+    <Measures>Volume Rate</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="m^3/s" ToUnitsAbbr="cms">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="gpm">
+    <Name>Gallons per minute</Name>
+    <Family>English</Family>
+    <Measures>Volume Rate</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="kcfs">
+    <Name>Kilo-cubic feet per second</Name>
+    <Family>English</Family>
+    <Measures>Volume Rate</Measures>
+  </EngineeringUnit>
+  <EngineeringUnit UnitsAbbr="mgd">
+    <Name>Millions of gallons per day</Name>
+    <Family>English</Family>
+    <Measures>Volume Rate</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="kcfs" ToUnitsAbbr="cfs">
+    <Algorithm>linear</Algorithm>
+    <A>1000.0</A>
+    <B>0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mG/L" ToUnitsAbbr="ppm">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+  <EngineeringUnit UnitsAbbr="uS/cm">
+    <Name>Micro Siemens per Centimeter</Name>
+    <Family>Metric</Family>
+    <Measures>Conductance</Measures>
+  </EngineeringUnit>
+  <UnitConverter FromUnitsAbbr="uS/cm" ToUnitsAbbr="umho/cm">
+    <Algorithm>none</Algorithm>
+  </UnitConverter>
+</EngineeringUnitList>

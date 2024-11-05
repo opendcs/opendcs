@@ -1,0 +1,50 @@
+#
+# This is the POLL script that talks to a Campbell DCP
+#
+
+# Send CR several times to ensure baud rate set correctly
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+XMIT "\r"
+WAIT 1
+
+# Now try to get the '*' prompt, then send the username as a kind of login.
+# Note: Usernames comes from the first column of camplst.in. It is
+# usually '00000000' (8 zeros)
+XMIT "\r"
+WAIT 5
+XMIT "\r"
+WAIT 20,"*"
+XMIT "${USERNAME}\r"
+WAIT 5,"*"
+
+# Command 'A' selects final storage area
+CAPTURE ON
+XMIT "A\r"
+WAIT 5,"*"
+
+# Command B sets # hours backlog, then D starts the dump
+XMIT "${HOURS}B\r"
+WAIT 5,"*"
+XMIT "${HOURS}D\r"
+WAIT 300,"*"|"CARRIER"
+
+
+# E ends the call
+CAPTURE OFF
+XMIT "E\r"
+

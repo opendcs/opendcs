@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<drgsconf>
+
+	<!-- Specify up to 64 DRGS connections here... -->
+	
+<!--
+	Add other connections here (up to number=63)
+-->
+</drgsconf>

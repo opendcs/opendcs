@@ -1,0 +1,473 @@
+<CompMetaData>
+  <Algorithm name="AddToPrevious">
+    <Comment>
+      Adds the current value to the previous value in the database and outputs
+      the sum. Works on any time-series, any interval. This algorithm does
+      assume that you are calling it with a series of contiguous values, like
+      you would get out of a DCP message.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.AddToPrevious</ExecClass>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="AverageAlgorithm">
+    <Comment>
+      AverageAlgorithm averages single &apos;input&apos; parameter to a single
+      &apos;average&apos; parameter. The averaging period is determined by the
+      interval of the output parameter.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.AverageAlgorithm</ExecClass>
+    <AlgoProperty name="minSamplesNeeded">1</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="average">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="BridgeClearance">
+    <Comment>
+      Computes bridge clearance by subtracting waterlevel from constant
+      &apos;low chord&apos;. Make sure that the waterlevel and low chord are
+      consistent. If one is a stage above arbitrary datum, then they both must
+      be. Likewise, if one is an elevation above sea level, the other must be
+      also.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.BridgeClearance</ExecClass>
+    <AlgoProperty name="lowChord">0</AlgoProperty>
+    <AlgoParm roleName="waterLevel">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="clearance">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="ChooseOne">
+    <Comment>
+      Given two inputs, output the best one: If only one is present at the
+      time-slice, output it. If one is outside the specified upper or lower
+      limit (see properties) output the other. If both are acceptable, output
+      the first one. Useful in situations where you have redundant sensors.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.ChooseOne</ExecClass>
+    <AlgoProperty name="upperLimit">999999999999.9</AlgoProperty>
+    <AlgoProperty name="input2_MISSING">IGNORE</AlgoProperty>
+    <AlgoProperty name="lowerLimit">-999999999999.9</AlgoProperty>
+    <AlgoProperty name="input1_MISSING">IGNORE</AlgoProperty>
+    <AlgoProperty name="chooseHigher">true</AlgoProperty>
+    <AlgoParm roleName="input1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="CopyAlgorithm">
+    <Comment>
+      CopyAlgorithm copies a single &apos;input&apos; parameter to a single
+      &apos;output&apos; parameter. Modified June 2009 By M. Bogner to add
+      missing property for proper deletes and a version
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.CopyAlgorithm</ExecClass>
+    <AlgoProperty name="input_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="offset"></AlgoProperty>
+    <AlgoProperty name="multiplier"></AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="CopyNoOverwrite">
+    <Comment>
+      CopyAlgorithm copies a single &apos;input&apos; parameter to a single
+      &apos;output&apos; parameter. Modified June 2009 By M. Bogner to add
+      missing property for proper deletes and a version
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.CopyNoOverwrite</ExecClass>
+    <AlgoProperty name="input_MISSING">ignore</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="DisAggregate">
+    <Comment>
+      Dis-aggregates by spreading out the input values to the outputs in various
+      ways (fill, interpolate, split). The interval of the input should always
+      be equal to, or longer than, the output. Example: Input is daily, output
+      is hour. 24 output values are written covering the period of each input.
+
+      The &apos;method&apos; property determines how each output period is
+      determined: &lt;ul&gt; &lt;li&gt;fill (default) - Each output is the
+      same as the input covering the period. &lt;/li&gt;
+
+      &lt;li&gt;interp - Determine the output by interpolating between input
+      values&lt;/li&gt;  &lt;li&gt;split - Divide the input equally between
+      the outputs for the period.&lt;/li&gt; &lt;/ul&gt;
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.DisAggregate</ExecClass>
+    <AlgoProperty name="method">fill</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="EstimatedInflow">
+    <Comment>
+      Estimate inflow over the interval from reservoir storage and outflow.
+      Estimated Inflow = delta(Storage) + AverageOutflow over period. Inputs
+      are: Storage (in cubic meters), and outflow (in cubic meters per second)
+      Output is estimated inflow (in cubic meters per second)
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.EstimatedInflow</ExecClass>
+    <AlgoProperty name="aggUpperBoundClosed">true</AlgoProperty>
+    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
+    <AlgoParm roleName="storage">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outflow">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="inflow">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="IncrementalPrecip">
+    <Comment>
+      Compute Incremental Precip from Cumulative Precip over a specified period.
+      Period determined by the interval of the output parameter, specified in
+      computation record.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.IncrementalPrecip</ExecClass>
+    <AlgoProperty name="aggUpperBoundClosed">true</AlgoProperty>
+    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
+    <AlgoParm roleName="cumulativePrecip">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="incrementalPrecip">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="RdbRating">
+    <Comment>
+      Implements rating table computations. Holds the lookup table &amp; shift
+      values. Independent (e.g. STAGE) value is called &quot;indep&quot;.
+
+      Dependent (e.g. FLOW) is called &quot;dep&quot;. &lt;p&gt;Properties
+      include: &lt;ul&gt; &lt;li&gt;applyShifts - true if you want algorithm
+      to apply shifts. Usually unnecessary because RDB files are expanded.
+      &lt;/li&gt;  &lt;li&gt;tableDir - Directory containing
+      table files.&lt;/li&gt; &lt;/ul&gt;
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.RdbRating</ExecClass>
+    <AlgoProperty name="exceedUpperBound">false</AlgoProperty>
+    <AlgoProperty name="applyShifts">false</AlgoProperty>
+    <AlgoProperty name="exceedLowerBound">false</AlgoProperty>
+    <AlgoProperty name="tableDir">$DECODES_INSTALL_DIR/rdb</AlgoProperty>
+    <AlgoProperty name="interp">log</AlgoProperty>
+    <AlgoProperty name="filePrefix"></AlgoProperty>
+    <AlgoProperty name="fileSuffix">.rdb</AlgoProperty>
+    <AlgoParm roleName="indep">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="dep">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="TabRating">
+    <Comment>
+      Implements rating table computations. Holds the lookup table &amp; shift
+      values. Independent (e.g. STAGE) value is called &quot;indep&quot;.
+
+      Dependent (e.g. FLOW) is called &quot;dep&quot;. &lt;p&gt;Properties
+      include: &lt;ul&gt;  &lt;li&gt;tableDir - Directory containing table
+      files&lt;/li&gt;  &lt;li&gt;tableName - Overrides sitename.tab
+      default&lt;/li&gt; &lt;/ul&gt;
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.TabRating</ExecClass>
+    <AlgoProperty name="exceedUpperBound">false</AlgoProperty>
+    <AlgoProperty name="tableName"></AlgoProperty>
+    <AlgoProperty name="exceedLowerBound">false</AlgoProperty>
+    <AlgoProperty name="tableNameSuffix">.tab</AlgoProperty>
+    <AlgoProperty name="tableDir">$DECODES_INSTALL_DIR/tab-files</AlgoProperty>
+    <AlgoProperty name="interp">log</AlgoProperty>
+    <AlgoParm roleName="indep">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="dep">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="Resample">
+    <Comment>
+      Resample an input to an output with a different interval. Output must not
+      be irregular. Input may be irregular or any interval greater than or less
+      than the output.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.Resample</ExecClass>
+    <AlgoProperty name="method">interp</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="RunningAverageAlgorithm">
+    <Comment>
+      RunningAverageAlgorithm averages single &apos;input&apos; parameter to a
+      single &apos;average&apos; parameter. A separate aggPeriodInterval
+      property should be supplied. Example, input=Hourly Water Level,
+      output=Daily Running Average, computed hourly, so each hour&apos;s output
+      is the average of values at [t-23h ... t].
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.RunningAverageAlgorithm</ExecClass>
+    <AlgoProperty name="minSamplesNeeded">1</AlgoProperty>
+    <AlgoProperty name="outputFutureData">false</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="average">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="ScalerAdder">
+    <Comment>
+      Takes up to 10 input values labeled input1 ... input10. Multiplies them
+      by coefficients supplied in properties coeff1 ... coeff10. Adds them
+      together and produces a single output labeled &apos;output&apos;. Values
+      not assigned by computation are ignored. All coefficients default to 1.0
+      if not supplied.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.ScalerAdder</ExecClass>
+    <AlgoProperty name="input5_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="input3_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="input1_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="coeff10">1.0</AlgoProperty>
+    <AlgoProperty name="input10_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="input9_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="input7_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="input6_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="input4_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="coeff9">1.0</AlgoProperty>
+    <AlgoProperty name="coeff8">1.0</AlgoProperty>
+    <AlgoProperty name="input2_MISSING">ignore</AlgoProperty>
+    <AlgoProperty name="coeff7">1.0</AlgoProperty>
+    <AlgoProperty name="coeff6">1.0</AlgoProperty>
+    <AlgoProperty name="coeff5">1.0</AlgoProperty>
+    <AlgoProperty name="coeff4">1.0</AlgoProperty>
+    <AlgoProperty name="coeff3">1.0</AlgoProperty>
+    <AlgoProperty name="coeff2">1.0</AlgoProperty>
+    <AlgoProperty name="coeff1">1.0</AlgoProperty>
+    <AlgoProperty name="input8_MISSING">ignore</AlgoProperty>
+    <AlgoParm roleName="input1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input3">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input4">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input5">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input6">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input7">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input8">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input9">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input10">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="SubSample">
+    <Comment>
+      Convert a short interval to a longer interval by taking the first value
+      equal-to or after the longer-period timestamp. Example: Convert 10min
+      data to 30min data by taking data on the hour and half-hour
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.SubSample</ExecClass>
+    <AlgoProperty name="aggUpperBoundClosed">false</AlgoProperty>
+    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
+    <AlgoParm roleName="inputShortInterval">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outputLongInterval">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+
+  <Algorithm name="SumOverTimeAlgorithm">
+    <Comment>
+      SumOverTimeAlgorithm sums single &apos;input&apos; parameter to a single
+      &apos;sum&apos; parameter. The summing period is determined by the
+      interval of the output parameter.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.SumOverTimeAlgorithm</ExecClass>
+    <AlgoProperty name="minSamplesNeeded">1</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="sum">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="UsgsEquation">
+    <Comment>
+      Implements the USGS Equation: output = A * (B + input)^C + D where A, B,
+      C, and D are constants provided as properties. Defaults: A=1, B=0, C=1, D=0
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.UsgsEquation</ExecClass>
+    <AlgoProperty name="A">1</AlgoProperty>
+    <AlgoProperty name="D">0</AlgoProperty>
+    <AlgoProperty name="C">1</AlgoProperty>
+    <AlgoProperty name="B">0</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+
+  <Algorithm name="VirtualGage">
+    <Comment>
+      Compute a virtual elevation at an intermediate point between two other
+      gages. Inputs are the upstream and downstream elevation, Properties
+      specify Upstream position (e.g. Mile number), Downstream position, and
+      Virtual Gage position. The positions are required to do proper
+      interpolation. Default values place the virtual gage halfway between up
+      &amp; downstream gages. If provided, you may set gagezero properties for
+      each of the locations, thus the output can be in gage height or elevation.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.VirtualGage</ExecClass>
+    <AlgoProperty name="downstreamPosition">10</AlgoProperty>
+    <AlgoProperty name="upstreamGageZero">0</AlgoProperty>
+    <AlgoProperty name="virtualPosition">5</AlgoProperty>
+    <AlgoProperty name="upstreamPosition">0</AlgoProperty>
+    <AlgoProperty name="virtualGageZero">0</AlgoProperty>
+    <AlgoProperty name="downstreamGageZero">0</AlgoProperty>
+    <AlgoParm roleName="upstreamGage">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="downstreamGage">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="virtualGage">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Algorithm name="FillForward">
+    <Comment>
+      Project an input value by copying it forward in time for the specified
+      number of intervals.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.FillForward</ExecClass>
+    <AlgoProperty name="NumIntervals">4</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Algorithm name="Multiplication">
+    <Comment>
+      Multiply one time series with another using : (a*input1+b)*(c*input2+d). 
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.Multiplication</ExecClass>
+    <AlgoProperty name="b">0</AlgoProperty>
+    <AlgoProperty name="a">1.0</AlgoProperty>
+    <AlgoProperty name="d">0</AlgoProperty>
+    <AlgoProperty name="c">1.0</AlgoProperty>
+    <AlgoParm roleName="input1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Algorithm name="Division">
+    <Comment>
+      Divide one time series with another using : (a*input1+b)/(c*input2+d). 
+If
+      the denominator is zero then output is not set 
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.Division</ExecClass>
+    <AlgoProperty name="b">0</AlgoProperty>
+    <AlgoProperty name="a">1.0</AlgoProperty>
+    <AlgoProperty name="d">0</AlgoProperty>
+    <AlgoProperty name="c">1.0</AlgoProperty>
+    <AlgoParm roleName="input1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="input2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Algorithm name="Last Value From Period">
+    <Comment>
+      Within a given window select the most recent valid value to be at the end
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.LastValueFromPeriod</ExecClass>
+    <AlgoProperty name="minSamplesNeeded">1</AlgoProperty>
+    <AlgoProperty name="aggregateTimeZone">UTC</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

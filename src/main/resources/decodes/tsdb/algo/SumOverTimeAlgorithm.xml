@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="SumOverTimeAlgorithm">
+    <Comment>
+      SumOverTimeAlgorithm sums single &apos;input&apos; parameter to a single
+      &apos;sum&apos; 
+parameter. The summing period is determined by the
+      interval of the output
+parameter.
+
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.SumOverTimeAlgorithm</ExecClass>
+    <AlgoProperty name="minSamplesNeeded">1</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="sum">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

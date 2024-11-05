@@ -1,0 +1,6 @@
+#!/bin/sh
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.cwms.validation.gui.ScreeningEditor $*

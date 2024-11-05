@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="VirtualGage">
+    <Comment>
+      Compute a virtual elevation at an intermediate point between two other
+      gages.
+Inputs are the upstream and downstream elevation,
+Properties
+      specify Upstream position (e.g. Mile number), Downstream position, and
+      Virtual Gage position.
+The positions are required to do proper
+      interpolation. Default values place the virtual gage halfway between up
+      &amp; downstream gages.
+If provided, you may set gagezero properties for
+      each of the locations, thus the output can be in gage height or elevation.
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.VirtualGage</ExecClass>
+    <AlgoProperty name="downstreamPosition">10</AlgoProperty>
+    <AlgoProperty name="upstreamGageZero">0</AlgoProperty>
+    <AlgoProperty name="virtualPosition">5</AlgoProperty>
+    <AlgoProperty name="upstreamPosition">0</AlgoProperty>
+    <AlgoProperty name="virtualGageZero">0</AlgoProperty>
+    <AlgoProperty name="downstreamGageZero">0</AlgoProperty>
+    <AlgoParm roleName="upstreamGage">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="downstreamGage">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="virtualGage">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

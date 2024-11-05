@@ -1,0 +1,45 @@
+<shortcuts>
+<programGroup defaultName="OpenDCS" location="applications"/>
+<shortcut 
+    name="OpenDCS-Toolkit"
+    target="$INSTALL_PATH\bin\launcher_start"
+    commandLine=""
+    workingDirectory="$INSTALL_PATH"
+    description="OpenDCS-Toolkit"
+    iconFile="$INSTALL_PATH\icons\setup48x48.gif"
+    initialState="minimized"
+    programGroup="yes"
+    desktop="yes" 
+    applications="no" 
+    startMenu="no" 
+    startup="no">
+</shortcut>
+<shortcut 
+    name="LRGS Status"
+    target="$INSTALL_PATH\bin\rtstat"
+    commandLine=""
+    workingDirectory="$INSTALL_PATH"
+    description="LRGS Status"
+    iconFile="$INSTALL_PATH\icons\retproc48x48.gif"
+    initialState="minimized"
+    programGroup="yes"
+    desktop="yes" 
+    applications="no" 
+    startMenu="no" 
+    startup="no">
+</shortcut>
+<shortcut 
+    name="RefList Edit"
+    target="$INSTALL_PATH\bin\rledit"
+    commandLine=""
+    workingDirectory="$INSTALL_PATH"
+    description="RefList Edit"
+    iconFile="$INSTALL_PATH\icons\list.gif"
+    initialState="minimized"
+    programGroup="yes"
+    desktop="yes" 
+    applications="no" 
+    startMenu="no" 
+    startup="no">
+</shortcut>
+</shortcuts>

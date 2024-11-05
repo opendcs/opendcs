@@ -1,0 +1,4 @@
+<?xml version="1.0" standalone="yes"?>
+<DataSource Name="eddn2" Type="lrgs">
+  <DataSourceArg>port=16003, hostname=lrgseddn2.cr.usgs.gov, username=your_DDS_user_name</DataSourceArg>
+</DataSource>

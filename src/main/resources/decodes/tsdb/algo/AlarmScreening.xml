@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="AlarmScreening">
+    <Comment>
+      Perform value, rate-of-change, stuck-sensor, and missing-value checks on
+      the input. Set data flags in the input, and optionally the output parameter
+      depending on property settings.
+    </Comment>
+    <ExecClass>decodes.tsdb.alarm.AlarmScreeningAlgorithm</ExecClass>
+    <AlgoProperty name="noOverwrite">false</AlgoProperty>
+    <AlgoProperty name="setInputFlags">false</AlgoProperty>
+    <AlgoProperty name="noOutputOnReject">false</AlgoProperty>
+
+    <AlgoProperty name="mail.smtp.auth">false</AlgoProperty>
+    <AlgoProperty name="mail.smtp.starttls.enable">false</AlgoProperty>
+    <AlgoProperty name="mail.smtp.host"></AlgoProperty>
+    <AlgoProperty name="mail.smtp.port">587</AlgoProperty>
+    <AlgoProperty name="smtp.username"></AlgoProperty>
+    <AlgoProperty name="smtp.password"></AlgoProperty>
+    <AlgoProperty name="fromAddr"></AlgoProperty>
+    <AlgoProperty name="fromName"></AlgoProperty>
+    <AlgoProperty name="resendSeconds">86400</AlgoProperty>
+    <AlgoProperty name="notifyMaxAgeDays">30</AlgoProperty>
+
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

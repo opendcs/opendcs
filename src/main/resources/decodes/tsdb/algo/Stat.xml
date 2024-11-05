@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="Stat">
+    <Comment>
+      AverageAlgorithm averages single &apos;input&apos; parameter to a single
+      &apos;average&apos; 
+parameter. The averaging period is determined by the
+      interval of the output
+parameter.
+
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.Stat</ExecClass>
+    <AlgoProperty name="stddevEnabled">true</AlgoProperty>
+    <AlgoProperty name="aveEnabled">true</AlgoProperty>
+    <AlgoProperty name="minSamplesNeeded">1</AlgoProperty>
+    <AlgoProperty name="medEnabled">true</AlgoProperty>
+    <AlgoProperty name="minEnabled">true</AlgoProperty>
+    <AlgoProperty name="maxEnabled">true</AlgoProperty>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="ave">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="min">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="max">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="med">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="stddev">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

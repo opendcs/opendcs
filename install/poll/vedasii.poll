@@ -1,0 +1,39 @@
+#
+# Script for Vedas II Loggers
+#
+WAITR 20, "Enter Password"
+XMIT "\r"
+WAITR 20, "Restricted"
+WAIT 1
+XMIT "\r"
+WAITX 10, "Sanity"|"Time Trip"
+
+XMIT "\r\r\r"
+
+# Try 5 times to get to the Main menu
+LOOPWAIT 5
+XMIT "\r"
+WAIT 15, "Operator Mode"
+ENDLOOP
+
+# Select 7. Operator Mode
+XMIT "7\r"
+WAITR 30,"PCMCIA Card"
+WAIT 3
+
+# Select 2. View Archived Data
+XMIT "2\r"
+
+# Enter date and time separately to different prompts
+WAITR 25, "Enter Date"
+STARTFORMAT "yyyy/MM/dd"
+XMIT "$START\r"
+WAITR 15,"Enter Time"
+STARTFORMAT "HH:mm:ss"
+XMIT "$START\r"
+
+WAITR 25, "Display Label"
+CAPTURE ON
+XMIT "\r"
+WAIT 40,"End of Archived"|"NO CARRIER"
+

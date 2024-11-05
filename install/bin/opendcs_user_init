@@ -1,0 +1,56 @@
+#!/bin/bash
+
+# This script initializes a new user for the shared Linux/Unix
+# OPENDCS Installation
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+DCSTOOL_HOME=$(realpath "${APP_PATH}/..")
+export DCSTOOL_HOME
+
+if [ -z "$DCSTOOL_USERDIR" ]
+then
+	echo "DCSTOOL_USERDIR evironment variable not set"
+	if [ -n "$1" ]
+	then
+		echo "\t Using provided directory"
+		DCSTOOL_USERDIR=$1
+	else
+		echo "\t Using default directory under user home."
+		DCSTOOL_USERDIR=$HOME/.opendcs
+	fi
+fi
+
+echo DCSTOOL_USERDIR=$DCSTOOL_USERDIR
+echo "Using $DCSTOOL_USERDIR as User Directory"
+
+echo "Okay to proceed (y/n)?"
+read x
+if [ "$x" != "y" ]
+then
+	exit 1
+fi
+
+if [ ! -d "$DCSTOOL_USERDIR" ]
+then
+	mkdir -p $DCSTOOL_USERDIR
+	cp $DCSTOOL_HOME/decodes.properties $DCSTOOL_USERDIR/user.properties
+fi
+
+
+
+uinit=$HOME/opendcs.init
+echo "# Variables for user access to OPENDCS" >$uinit
+echo "DCSTOOL_USERDIR=$DCSTOOL_USERDIR" >>$uinit
+echo "export DCSTOOL_USERDIR" >>$uinit
+echo "DCSTOOL_HOME=$DCSTOOL_HOME" >>$uinit
+echo "export DCSTOOL_HOME" >>$uinit
+echo "DECODES_INSTALL_DIR=$DCSTOOL_HOME" >>$uinit
+echo "export DECODES_INSTALL_DIR" >>$uinit
+echo "PATH=\$DCSTOOL_HOME/bin:\$PATH" >>$uinit
+chmod 755 $uinit
+
+echo "Please source the file $uinit in your .bash_profile like this:"
+echo '    . $HOME/opendcs.init'
+echo 'Note: the dot - space is necessary at the beginning of the line.'

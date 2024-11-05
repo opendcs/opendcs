@@ -1,0 +1,13 @@
+#!/bin/sh
+#
+# platformxref - Create platform cross reference file
+#
+# usage: platformxref
+# options:
+#		-e        Create cross reference in editable database (default = installed)
+#
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.xml.CreatePlatformXref $*

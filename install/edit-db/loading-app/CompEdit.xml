@@ -1,0 +1,6 @@
+<?xml version="1.0" standalone="yes"?>
+<LoadingApplication name="CompEdit">
+  <Comment>GUI Computation Editor</Comment>
+  <AppProperty name="monitor">false</AppProperty>
+  <AppProperty name="apptype">gui</AppProperty>
+</LoadingApplication>

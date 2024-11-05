@@ -1,0 +1,48 @@
+/* Styles for table header */
+th
+{
+vertical-align: top;
+text-align: center;
+font-weight: bold;
+font-style: italic;
+}
+
+/* Table data entries: */
+td
+{
+vertical-align: top;
+text-align: center;
+color: black;
+background-color: white;
+}
+
+/* Table data entries that are flagged as OK */
+td.OK
+{
+color: rgb(0,80,0);
+font-size: small;
+}
+
+/* Table data entries that are flagged as erroneous */
+td.ERR
+{
+color: red;
+font-size: small;
+}
+
+/* Reverse data entries that are flagged as OK */
+td.REVOK
+{
+color: rgb(51,255,51);
+font-weight: bold;
+background-color: black;
+}
+
+/* Table data entries that are flagged as erroneous */
+td.REVERR
+{
+color: rgb(255,255,51);
+font-weight: bold;
+background-color: black;
+}
+

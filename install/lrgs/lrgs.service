@@ -1,0 +1,20 @@
+#
+# This is the LRGS service file for CENTOS 7
+# To use this file
+# 1. Modify the paths to the scripts below if you have installed LRGS in
+#    a different directory from /home/lrgs/OPENDCS.
+# 2. Copy this file into /usr/lib/systemd/system. Make sure it is owned by
+#    root.
+# 3. Run the command: systemctl enable lrgs.service
+
+[Unit]
+Description=OPENDCS LRGS Service
+
+[Service]
+Type=forking
+ExecStart=/home/lrgs/OPENDCS/bin/startLrgsService
+ExecStop=/home/lrgs/OPENDCS/bin/stopLrgsService
+
+[Install]
+WantedBy=multi-user.target
+

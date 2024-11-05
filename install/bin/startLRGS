@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# This script starts the LRGS daemon.
+#
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+if [ -z "$LRGSHOME" ] 
+then
+  echo "the environment variable 'LRGSHOME' should be set to a path outside the installation directory."
+  exit 1
+fi
+LD_LIBRARY_PATH=$LRGSHOME/lib
+export LD_LIBRARY_PATH
+nohup ${APP_PATH}/decj -DLRGSHOME=$LRGSHOME lrgs.lrgsmain.LrgsMain $* >>lrgs.nohup 2>&1 &

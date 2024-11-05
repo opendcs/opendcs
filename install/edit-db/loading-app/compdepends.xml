@@ -1,0 +1,6 @@
+<?xml version="1.0" standalone="yes"?>
+<LoadingApplication name="compdepends">
+  <Comment>Daemon to determine computation dependencies</Comment>
+  <AppProperty name="monitor">true</AppProperty>
+  <AppProperty name="apptype">compdepends</AppProperty>
+</LoadingApplication>

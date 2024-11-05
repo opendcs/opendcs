@@ -1,0 +1,11 @@
+#!/bin/bash
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+# This script starts the LRGS background process as the lrgs user.
+
+# Modify these settings as appropriate for your installation:
+LRGSUSER=lrgs
+# This command starts LRGS:
+su - $LRGSUSER -c ${APP_PATH}/startLRGS

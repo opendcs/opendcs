@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<LoadingApplication name="AlbertaScada">
+  <Comment>Retrieves data from Lethbridge SCADA database</Comment>
+  <AppProperty name="tagfile">$HOME/SHARED/dacq/scada-tags.lst</AppProperty>
+  <AppProperty name="jdbcDriverClass">
+    net.sourceforge.jtds.jdbc.Driver
+  </AppProperty>
+  <AppProperty name="dbTZ">MST</AppProperty>
+  <AppProperty name="numdays">2</AppProperty>
+  <AppProperty name="tmpDir">$HOME/SHARED/dacq/tmp</AppProperty>
+  <AppProperty name="interval">1</AppProperty>
+  <AppProperty name="firstQuery">00:05</AppProperty>
+  <AppProperty name="appType">albertascada</AppProperty>
+  <AppProperty name="outputDir">$HOME/SHARED/dacq/zrxp</AppProperty>
+  <AppProperty name="username">waterdata</AppProperty>
+  <AppProperty name="dailyArchiveDir">$HOME/SHARED/dacq/archive</AppProperty>
+  <AppProperty name="queryFile">$DCSTOOL_HOME/scada-query.sql</AppProperty>
+  <AppProperty name="password">insert password here</AppProperty>
+  <AppProperty name="dbUrl">jdbc:jtds:sqlserver://sdmsdata</AppProperty>
+  <AppProperty name="LastModified">20141023144426</AppProperty>
+</LoadingApplication>

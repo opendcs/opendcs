@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="SubSample">
+    <Comment>
+      Convert a short interval to a longer interval by taking the first value
+      equal-to or after the longer-period timestamp.
+Example: Convert 10min data
+      to 30min data by taking data on the hour and half-hour
+
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.SubSample</ExecClass>
+    <AlgoProperty name="aggUpperBoundClosed">false</AlgoProperty>
+    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
+    <AlgoParm roleName="inputShortInterval">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outputLongInterval">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

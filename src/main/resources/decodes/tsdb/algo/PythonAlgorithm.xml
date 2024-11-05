@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="PythonAlgorithm">
+    <Comment>Implements the Jython Python interpreter.
+</Comment>
+    <ExecClass>decodes.tsdb.algo.PythonAlgorithm</ExecClass>
+    <AlgoProperty name="dummyprop">123.456</AlgoProperty>
+    <AlgoParm roleName="dummyin">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="dummyout">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+</CompMetaData>

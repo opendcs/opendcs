@@ -1,0 +1,21 @@
+<?xml version="1.0" standalone="yes"?>
+<EnumList>
+  <Enum Name="Season">
+      <EnumValue EnumValue="Spring">
+        <Description>Spring</Description>
+        <EditClass>3/20-12:00 6/21-12:00</EditClass>
+      </EnumValue>
+      <EnumValue EnumValue="Summer">
+        <Description>Summer</Description>
+        <EditClass>6/21-12:00 9/22-12:00</EditClass>
+      </EnumValue>
+      <EnumValue EnumValue="Autumn">
+        <Description>Autumn</Description>
+        <EditClass>9/22-12:00 12/21-12:00</EditClass>
+      </EnumValue>
+      <EnumValue EnumValue="Winter">
+        <Description>Winter</Description>
+        <EditClass>12/21-12:00 3/20-12:00</EditClass>
+      </EnumValue>
+  </Enum>
+</EnumList>

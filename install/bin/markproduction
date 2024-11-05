@@ -1,0 +1,13 @@
+#!/bin/sh
+#
+# usage: 
+#	markproduction
+#		Sets all isProduction flags in the database to true
+#	markproduction false
+#		Sets all isProduction flags in the database to false
+#
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.db.MarkProduction $*

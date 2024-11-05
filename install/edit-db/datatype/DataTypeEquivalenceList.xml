@@ -1,0 +1,122 @@
+<?xml version="1.0" standalone="yes"?>
+<DataTypeEquivalenceList>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00300"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00076"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00010"/>
+    <DataType Standard="SHEF-PE" Code="TW"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="SP"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="SN"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="VP"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="SL"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="PC"/>
+    <DataType Standard="EPA-CODE" Code="00045"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="PA"/>
+    <DataType Standard="EPA-CODE" Code="00047"/> 
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="VB"/>
+    <DataType Standard="EPA-CODE" Code="70969"/>
+    <DataType Standard="Hydstra-Code" Code="300"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00036"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="UY"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00035"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="UX"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00065"/>
+    <DataType Standard="SHEF-PE" Code="HG"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00096"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00095"/>
+    <DataType Standard="SHEF-PE" Code="WC"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="US"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00061"/>
+    <DataType Standard="SHEF-PE" Code="QR"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="RF"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="RE"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="UG"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="99772"/>
+    <DataType Standard="Hydstra-Code" Code="10"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="99065"/>
+    <DataType Standard="Hydstra-Code" Code="100"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="99999"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="UF"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="UD"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="BV"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="HT"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="HR"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="HP"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00020"/>
+    <DataType Standard="SHEF-PE" Code="TA"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="HH"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="TI"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="SHEF-PE" Code="TC"/>
+  </DataTypeEquivalence>
+  <DataTypeEquivalence>
+    <DataType Standard="EPA-CODE" Code="00400"/>
+  </DataTypeEquivalence>
+</DataTypeEquivalenceList>
