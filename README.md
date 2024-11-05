@@ -71,7 +71,7 @@ If you want to build a distribution run:
 
 or
 
-`./gradle distTar`
+`./gradlew distTar`
 
 output is here:
 
