@@ -79,7 +79,7 @@ opendcs/install/build/distributions/opendcs-main.99.main-SNAPSHOT.zip
 
 To get a simple baseline environment going:
 
-`./gradle runApp`
+`./gradlew runApp --info`
 
 This will start the "launcher_start" application and do an initial setup of an XML database suitable for DECODES operations
 going that you can use for manual and exploratory testing.
