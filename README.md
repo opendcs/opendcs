@@ -99,7 +99,7 @@ ant test
 ./gradlew test -Pno.docs=true
 
 # Tests of a "live" system.
-./gradle testing:opendcs-tests:test -Dno.docs=true -Dopendcs.test.engine=OpenDCS-XML
+./gradlew testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-XML
 # and if you have docker
 gradle testing:opendcs-tests:test -Dno.docs=true -Dopendcs.test.engine=OpenDCS-Postgres
 
