@@ -486,7 +486,9 @@ public class EvapReservoir
      */
     public double intArea(double el) throws RatingException {
         try {
-            return _RatingAreaElev.rate(conn, el / FT_TO_M);
+            double ftElvation = el / FT_TO_M;
+            double ftSquared = _RatingAreaElev.rate(conn, ftElvation);
+            return ftSquared*Math.pow(FT_TO_M,2);
         }
         catch(RatingException ex){
             throw new RatingException("failed to compute rating", ex);
