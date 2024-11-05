@@ -147,12 +147,7 @@ public class SolarFlux
      
 //        dhr = ((float)(hr))/100.0;
         dhr = hr;
-        
-        
-        // Note.  Default cloud cover values set in CloudCover
-//        if (cover[2] == -901) cover[2] = 0.54;    //missing low cloud set to climo value
-//        if (cover[1] == -901) cover[1] = 0.00;    // missing missing midle cloud set to climo value
-//        if (cover[0] == -901) cover[0] = 0.00;    // missing missing midle cloud set to climo value
+
         
         // Calculate the solar zenith angle
         if ( longitude <= -180. ) longitude += 360.0;
@@ -409,18 +404,5 @@ public class SolarFlux
         solzen.d = Math.acos(cosz)/0.017453292;
         coszd.d = cosz;
     }
-            
-//    public static class DoubleContainer
-//    {
-//        double d;
-//
-//        public DoubleContainer()
-//        {
-//            this.d = 0.0;
-//        }
-//        public DoubleContainer(double d)
-//        {
-//            this.d = d;
-//        }
-//    }    
+
 }

@@ -1,7 +1,6 @@
 package decodes.cwms.algo;
 
 import decodes.cwms.CwmsTimeSeriesDb;
-import decodes.cwms.CwmsTsId;
 import decodes.cwms.rating.CwmsRatingDao;
 import decodes.cwms.resevapcalc.*;
 import decodes.db.*;
@@ -12,7 +11,6 @@ import decodes.tsdb.algo.AW_AlgorithmBase;
 import decodes.util.DecodesException;
 import decodes.util.PropertySpec;
 import hec.data.RatingException;
-import hec.data.cwmsRating.AbstractRating;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
@@ -21,17 +19,16 @@ import ilex.var.Variable;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
 
 //AW:IMPORTS
 
-//import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import opendcs.dao.DaoBase;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.FailableResult;
 
 
@@ -43,20 +40,35 @@ import org.opendcs.utils.FailableResult;
 Run ResEvap Calculations.
  */
 //AW:JAVADOC_END
+@Algorithm(
+		description ="Preform Reservoir Evaporation calculation based on an algorithm developed my NWDM," +
+				" Which utilizes air temp, air speed, solar radiation, and water temperature profiles to return" +
+				" evaporation rates and total evaporation as flow" )
 public class ResEvapAlgo
 	extends AW_AlgorithmBase
 {
 //AW:INPUTS
+	@Input
 	public double windSpeed;		//AW:TYPECODE=i
+	@Input
 	public double AirTemp;			//AW:TYPECODE=i
+	@Input
 	public double RelativeHumidity;	//AW:TYPECODE=i
+	@Input
 	public double AtmPress;			//AW:TYPECODE=i
+	@Input
 	public double PercentLowCloud;	//AW:TYPECODE=i
+	@Input
 	public double ElevLowCloud;		//AW:TYPECODE=i
+	@Input
 	public double PercentMidCloud;	//AW:TYPECODE=i
+	@Input
 	public double ElevMidCloud;		//AW:TYPECODE=i
+	@Input
 	public double PercentHighCloud;	//AW:TYPECODE=i
+	@Input
 	public double ElevHighCloud;	//AW:TYPECODE=i
+	@Input
 	public double Elev;				//AW:TYPECODE=i
 	String _inputNames[] = { "windSpeed",
 	"AirTemp",
@@ -106,19 +118,25 @@ public class ResEvapAlgo
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
-//	public NamedVariable DailyWaterTempProfile 	= new NamedVariable("DailyWaterTempProfile", 0);
-//	public NamedVariable HourlyWaterTempProfile	= new NamedVariable("HourlyWaterTempProfile", 0);
+	@Output
 	public NamedVariable HourlySurfaceTemp 		= new NamedVariable("HourlySurfaceTemp", 0);
+	@Output
 	public NamedVariable HourlyEvap 			= new NamedVariable("HourlyEvap", 0);
+	@Output
 	public NamedVariable DailyEvap 				= new NamedVariable("DailyEvap", 0);
+	@Output
 	public NamedVariable DailyEvapAsFlow 		= new NamedVariable("DailyEvapAsFlow", 0);
+	@Output
 	public NamedVariable HourlyFluxOut 			= new NamedVariable("HourlyFluxOut", 0);
+	@Output
 	public NamedVariable HourlyFluxIn 			= new NamedVariable("HourlyFluxIn", 0);
+	@Output
 	public NamedVariable HourlySolar 			= new NamedVariable("HourlySolar", 0);
+	@Output
 	public NamedVariable HourlyLatent 			= new NamedVariable("HourlyLatent", 0);
+	@Output
 	public NamedVariable HourlySensible 		= new NamedVariable("HourlySensible", 0);
 	String _outputNames[] = {
-//			"DailyWaterTempProfile",
 			"HourlySurfaceTemp",
 			"HourlyEvap",
 			"DailyEvap",
@@ -164,26 +182,50 @@ public class ResEvapAlgo
 	}
 
 //AW:PROPERTIES
-	//new prop
-	public String WtpTsid;
-
-	public String depth;
-	//remove todo
+// TODO Implement Location Levels
 //	public String SecchiDepthId;
 //	public String MaxTempDepthId;
+
+	@org.opendcs.annotations.PropertySpec(name = "WtpTsid", propertySpecType = PropertySpec.STRING,
+			description = "Base String for water Temperature Profiles, Example FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap")
+	public String WtpTsid;
+	@org.opendcs.annotations.PropertySpec(name = "depth", propertySpecType = PropertySpec.STRING,
+			description = "Depth format for computation output, Example value: D%03d,%dm")
+	public String depth;//Currently unused
+	@org.opendcs.annotations.PropertySpec(name = "reservoirId", propertySpecType = PropertySpec.STRING,
+			description = "Location ID of reservoir")
 	public String reservoirId;
+	@org.opendcs.annotations.PropertySpec(name = "Secchi", propertySpecType = PropertySpec.NUMBER,
+			description = "Average secchi depth of reservoir in feet")
 	public double Secchi;
+	@org.opendcs.annotations.PropertySpec(name = "Zero_elevation", propertySpecType = PropertySpec.NUMBER,
+			description = "Streambed elevation of reservoir in feet")
 	public double Zero_elevation;
+	@org.opendcs.annotations.PropertySpec(name = "Lati", propertySpecType = PropertySpec.NUMBER,
+			description = "Latitude of reservoir")
 	public double Lati;
+	@org.opendcs.annotations.PropertySpec(name = "Longi", propertySpecType = PropertySpec.NUMBER,
+			description = "Longitude of reservoir")
 	public double Longi;
-	public double GMT_Offset;
-	public String Timezone;
+	@org.opendcs.annotations.PropertySpec(name = "GMT_Offset", propertySpecType = PropertySpec.NUMBER,
+			description = "GMT offset at reservoir location")
+	public double GMT_Offset;//Currently Unused
+	@org.opendcs.annotations.PropertySpec(name = "Timezone", propertySpecType = PropertySpec.STRING,
+			description = "Time zone at reservoir location, Example: US/Central")
+	public String Timezone;//Currently Unused
+	@org.opendcs.annotations.PropertySpec(name = "WindShear", propertySpecType = PropertySpec.STRING,
+			description = "Windshear equation to be utilized in computation")
 	public String WindShear;
+	@org.opendcs.annotations.PropertySpec(name = "ThermalDifCoe", propertySpecType = PropertySpec.NUMBER,
+			description = "Thermal diffusivity coefficient to be utilized in computation")
 	public double ThermalDifCoe;
+	@org.opendcs.annotations.PropertySpec(name = "Rating", propertySpecType = PropertySpec.STRING,
+			description = "Rating Curve specification for Elevation-Area curve, Example: FTPK.Elev;Area.Linear.Step")
 	public String Rating;
 
 
 	String _propertyNames[] = {
+//TODO Implement Location Levels
 //	"SecchiDepthId",
 //	"MaxTempDepthId",
 	"WtpTsid",
@@ -236,7 +278,7 @@ public class ResEvapAlgo
 		return arrayWTP;
 	}
 
-	//Saves double[] of WTP to WTP object at time step.
+	//Saves double[] of WTP to WTP object at time step, Stores data in CTimesSeries sets Flag  of timedVariable to T0_WRITE.
 	public void setProfiles(WaterTempProfiles newWTP, double[] wtp, Date CurrentTime, String WTPID) throws DbCompException {
 		double currentDepth = start_depth;
 		for(int i = 0; i < wtp.length && currentDepth+(Zero_elevation*0.3048)<=Elev; i++){
@@ -279,7 +321,6 @@ public class ResEvapAlgo
 				}
 			}
 			else{
-				// todo might need to change
 				CTimeSeries CTProfile = newWTP.tseries.getTimeSeriesAt(i);
 				TimedVariable newTV = new TimedVariable(new Variable(wtp[i]), CurrentTime);
 				newTV.setFlags(VarFlags.TO_WRITE);
@@ -308,6 +349,7 @@ public class ResEvapAlgo
 		setProfiles(DailyWTP, arrayWTP, CurrentTime, WtpTsid);
 	}
 
+	//Returns Converted double of cts from currUnits space to NewUnits
 	public double convertUnits(double cts, String currUnits, String newUnits) throws NoConversionException, DecodesException {
 		if (TextUtil.strEqualIgnoreCase(currUnits, newUnits) || newUnits == null || currUnits == null){
 			return cts;
@@ -349,7 +391,7 @@ public class ResEvapAlgo
 		setOutput(DailyEvapAsFlow, dailyEvapFlow, _timeSliceBaseTime);
 	}
 
-	//TODO read database
+	//TODO Implement Location Levels
 	public double getMaxTempDepthMeters(){
 		return 0;
 	}
@@ -369,6 +411,7 @@ public class ResEvapAlgo
 			timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 			crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
 
+			//Get site Data from Database
 			try {
 				DbKey siteID = siteDAO.lookupSiteID(reservoirId);
 				site = siteDAO.getSiteById(siteID);
@@ -376,6 +419,7 @@ public class ResEvapAlgo
 				throw new RuntimeException("Failed to load Site data", e);
 			}
 
+			//If missing data overwrite with site info
 			if(Longi==0){
 				Longi = Double.parseDouble(site.longitude);
 			}
@@ -482,6 +526,7 @@ public class ResEvapAlgo
 
 			resEvap.metData = metData;
 
+			//retrieve Evaporation Rate from Previous Timestep to be used to calculate average instantaneous EvapRate over the hour
 			try {
 				CTimeSeries cts = timeSeriesDAO.makeTimeSeries(HourlyEvapTS.getTimeSeriesIdentifier());
 				cts.setUnitsAbbr("mm/hr");
@@ -556,7 +601,7 @@ public class ResEvapAlgo
 			setDailyProfiles(_timeSliceBaseTime);
 		}
 
-		//testing
+		//TODO save HourlyWTP
 //		hourlyWTP.SaveProfiles(timeSeriesDAO);
 		DailyWTP.SaveProfiles(timeSeriesDAO);
 

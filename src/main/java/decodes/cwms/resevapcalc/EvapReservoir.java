@@ -288,11 +288,6 @@ public class EvapReservoir
     public boolean setElevation( double elev )
     {
     	_elev = elev;
-//    	if ( _isEnglish )
-//    	{
-//    		_elev *= FT_TO_M;
-//    	}
-
         double surfArea = 0;
         try {
             surfArea = intArea(_elev);

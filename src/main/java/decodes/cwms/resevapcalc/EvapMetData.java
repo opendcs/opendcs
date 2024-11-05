@@ -48,26 +48,21 @@ public class EvapMetData
     double airPressure_current = Constants.undefinedDouble;
           
     public double getWindSpeed( Date hecTime ) throws ResEvapException {
-        //return _windspeedTsc.getValue(hecTime);
         return getMetValue(windspeedTsc, hecTime);
     }
     
     public double getAirTemp( Date hecTime ) throws ResEvapException {
-        //return _airTempTsc.getValue(hecTime);
         return getMetValue(airTempTsc, hecTime);
     }
     public double getRelHumidity( Date hecTime ) throws ResEvapException {
-        //return _relHumidityTsc.getValue(hecTime);
         return getMetValue(relHumidityTsc, hecTime);
     }
     
     public double getDewPoint( Date hecTime ) throws ResEvapException {
-        //return _dewPointTsc.getValue(hecTime);
         return getMetValue(dewPointTsc, hecTime);
     }
     
     public double getAirPressure( Date hecTime ) throws ResEvapException {
-        //return _airPressureTsc.getValue(hecTime);
         return getMetValue(airPressureTsc, hecTime);
     }
     
@@ -82,24 +77,18 @@ public class EvapMetData
      */
     public CloudCover[] getCloudCover( Date hecTime ) throws ResEvapException {
         CloudCover[] cloudCover = new CloudCover[3];
-//        double fractionCC = _fractionLowClouds.getValue(hecTime);
-//        double altitude = _altitudeLowClouds.getValue(hecTime);
         double fractionCC = getMetValue(fractionLowClouds, hecTime);
         double altitude = getMetValue(altitudeLowClouds, hecTime);
         
         cloudCover[2] = new CloudCover( fractionCC,
                 altitude, CloudCover.CloudHeightType.height_low);
 
-//        fractionCC = _fractionMedClouds.getValue(hecTime);
-//        altitude = _altitudeMedClouds.getValue(hecTime);
         fractionCC = getMetValue(fractionMedClouds, hecTime);
         altitude = getMetValue(altitudeMedClouds, hecTime);
         
         cloudCover[1] = new CloudCover( fractionCC,
                     altitude, CloudCover.CloudHeightType.height_med);
-        
-//        fractionCC = _fractionHighClouds.getValue(hecTime);
-//        altitude = _altitudeHighClouds.getValue(hecTime);
+
         fractionCC = getMetValue(fractionHighClouds, hecTime);
         altitude = getMetValue(altitudeHighClouds, hecTime);
         
