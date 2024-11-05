@@ -139,4 +139,8 @@ This will create the appropriate .project and .classpath files for intellisense 
 
 ## Intellij
 
-See https://github.com/opendcs/opendcs/wiki/Coding-OpenDCS-with-IntelliJ for guidance in setting up intellij.
+Intellij detects the gradle project and has a Gradle tool window.
+
+Some gradle tasks require a python environment.  Here is an example that launches inteliJ from a conda environment to have python enabled.
+(base) C:\>conda activate karl
+(karl) C:\project\opendcs>C:\Programs\ideaIC-2022.1.win\bin\idea64.exe
