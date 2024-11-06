@@ -382,6 +382,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                     File tmp = Files.createTempDirectory("configs-"+configProvider.getImplementation()).toFile();
                     configuration = configProvider.getConfig(tmp);
                     ilex.util.Logger.setLogger(new FileLogger("test", new File(tmp,"log.txt").getAbsolutePath(),200*1024*1024));
+                    ilex.util.Logger.instance().setMinLogPriority(ilex.util.Logger.E_DEFAULT_MIN_LOG_PRIORITY);
                 }
                 catch (Exception ex)
                 {

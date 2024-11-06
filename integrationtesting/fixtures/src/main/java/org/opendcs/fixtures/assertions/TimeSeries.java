@@ -13,7 +13,14 @@ public class TimeSeries
     {
         try
         {
-            if (!expected.getTimeSeriesIdentifier().equals(actual.getTimeSeriesIdentifier()))
+            /**
+             * The CTimeSeries and TimeSeriesIdentifier objects get populated in different ways at different times.
+             * As the unique string and key are supposed to be always unique we will assume that here for the comparison.
+             * The current TimeSeriesIdentifier equals sets both DbKey and UniqueString and there are 
+             * several cases were the Unique String is initially used and the DbKey is never correctly populated
+             */
+            if ( !expected.getTimeSeriesIdentifier().getKey().equals(actual.getTimeSeriesIdentifier().getKey())
+              || !expected.getTimeSeriesIdentifier().getUniqueString().equals(actual.getTimeSeriesIdentifier().getUniqueString()))
             {
                 AssertionFailureBuilder.assertionFailure()
                                     .reason("Time Series Identifiers do not match.")
