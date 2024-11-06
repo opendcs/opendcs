@@ -668,8 +668,7 @@ public class CwmsTimeSeriesDAO
     }
 
     @Override
-    public void saveTimeSeries(CTimeSeries ts) throws DbIoException,
-        BadTimeSeriesException
+    public void saveTimeSeries(CTimeSeries ts) throws DbIoException, BadTimeSeriesException
     {
         // NOTE: For CWMS, we don't need separate methods for write/delete
         // because a deleted value is just one with a null value and the
@@ -788,6 +787,19 @@ public class CwmsTimeSeriesDAO
                     qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
                     overrideProtection, versionDate, false);
             }
+            if (DbKey.NullKey.equals(ts.getSDI()))
+            {
+                // time series was just created so assign the new ts_code back.
+                TimeSeriesIdentifier tsIdDb = this.getTimeSeriesIdentifier(tsId.getUniqueString());
+                tsId.setKey(tsIdDb.getKey());
+                // NOTE: this duplication is currently necessary due to the CTimeSeries design
+                // Cleaning up CTimeSeries is it's own project.
+                ts.setSDI(tsIdDb.getKey());
+            }
+        }
+        catch(NoSuchObjectException ex)
+        {
+            throw new DbIoException("Couldn't not retrieve the ts_code of saved timeseries " + tsId.getUniqueName(), ex);
         }
         catch(SQLException ex)
         {
