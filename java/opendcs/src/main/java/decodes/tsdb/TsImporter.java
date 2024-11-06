@@ -170,7 +170,9 @@ public class TsImporter
         {
             units = paramValue;
             if (currentTS != null)
+            {
                 currentTS.setUnitsAbbr(units);
+            }
         }
         else if (paramName.equalsIgnoreCase("DATEFORMAT"))
         {
