@@ -76,7 +76,7 @@ public class TimeSeriesDaoIT extends AppTestBase
                 assertTrue(tsIdSavedResult.isSuccess(), "Time series was not correctly saved.");
                 final TimeSeriesIdentifier tsIdSaved = tsIdSavedResult.getSuccess();
                 final CTimeSeries result = tsDao.makeTimeSeries(tsIdSaved);
-                //result.setUnitsAbbr(tsIn.getUnitsAbbr());
+                result.setUnitsAbbr(tsIn.getUnitsAbbr());
                 log.info("Created CTimeseries {}", result);
                 tsDao.fillTimeSeries(result,
                                      tsIn.sampleAt(0).getTime(), 

@@ -3,6 +3,7 @@ package org.opendcs.fixtures.assertions;
 import java.util.Date;
 
 import org.junit.jupiter.api.AssertionFailureBuilder;
+import org.junit.jupiter.api.Assertions;
 
 import decodes.tsdb.CTimeSeries;
 import ilex.var.TimedVariable;
@@ -10,6 +11,10 @@ import ilex.var.TimedVariable;
 public class TimeSeries
 {
     public static void assertEquals(CTimeSeries expected, CTimeSeries actual, String message)
+    {
+        assertEquals(expected, actual, .0001, message);
+    }
+    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, double delta, String message)
     {
         try
         {
@@ -19,8 +24,9 @@ public class TimeSeries
              * The current TimeSeriesIdentifier equals sets both DbKey and UniqueString and there are 
              * several cases were the Unique String is initially used and the DbKey is never correctly populated
              */
-            if ( !expected.getTimeSeriesIdentifier().getKey().equals(actual.getTimeSeriesIdentifier().getKey())
-              || !expected.getTimeSeriesIdentifier().getUniqueString().equals(actual.getTimeSeriesIdentifier().getUniqueString()))
+            if ( !(expected.getTimeSeriesIdentifier() == actual.getTimeSeriesIdentifier()
+                || expected.getTimeSeriesIdentifier().getKey().equals(actual.getTimeSeriesIdentifier().getKey())
+                || expected.getTimeSeriesIdentifier().getUniqueString().equals(actual.getTimeSeriesIdentifier().getUniqueString())))
             {
                 AssertionFailureBuilder.assertionFailure()
                                     .reason("Time Series Identifiers do not match.")
@@ -56,14 +62,12 @@ public class TimeSeries
                                             .expected(expectedDate)
                                             .buildAndThrow();
                     }
-                    if (!expectedVar.getStringValue().equals(actualVar.getStringValue()))
+                    if (actualVar.isNumeric() )
                     {
-                        AssertionFailureBuilder.assertionFailure()
-                                            .reason("Value at position " + i + " do not match.")
-                                            .message(message)
-                                            .actual(actualVar.getStringValue())
-                                            .expected(expectedVar.getStringValue())
-                                            .buildAndThrow();
+                        double expectedValue = expectedVar.getDoubleValue();
+                        double actualValue = actualVar.getDoubleValue();
+                        Assertions.assertEquals(expectedValue,actualValue, delta, "Values at position " + i + " do not match");
+                        
                     }
                 }
             }

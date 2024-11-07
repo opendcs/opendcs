@@ -349,7 +349,7 @@ public class CwmsTimeSeriesDAO
         }
         StringBuffer q = new StringBuffer();
         ArrayList<Object> parameters = new ArrayList<>();
-        q.append("SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+        q.append("SELECT DATE_TIME, VALUE, QUALITY_CODE FROM CWMS_V_TSV "
             + " WHERE TS_CODE = ?");
         parameters.add(ts_code);
 
@@ -455,7 +455,7 @@ public class CwmsTimeSeriesDAO
         // in the CTimeSeries.
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
-        String qbase = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+        String qbase = "SELECT DATE_TIME, VALUE, QUALITY_CODE FROM CWMS_V_TSV "
             + " WHERE TS_CODE = " + cts.getSDI()
             + " and DATE_TIME IN (";
 
@@ -558,7 +558,7 @@ public class CwmsTimeSeriesDAO
         // in the CTimeSeries.
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
-        String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+        String q = "SELECT DATE_TIME, VALUE, QUALITY_CODE FROM CWMS_V_TSV "
             + " WHERE TS_CODE = ?"
             + " and DATE_TIME = "
             +   "(select max(date_time) from CWMS_V_TSV "
@@ -620,7 +620,7 @@ public class CwmsTimeSeriesDAO
         // in the CTimeSeries.
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
-        String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+        String q = "SELECT DATE_TIME, VALUE, QUALITY_CODE FROM CWMS_V_TSV "
             + " WHERE TS_CODE = ?"
             + " and DATE_TIME = "
             +   "(select min(date_time) from CWMS_V_TSV "
@@ -787,19 +787,16 @@ public class CwmsTimeSeriesDAO
                     qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
                     overrideProtection, versionDate, false);
             }
-            if (DbKey.NullKey.equals(ts.getSDI()))
+
+            TimeSeriesIdentifier tsIdCached = cache.getByUniqueName(tsId.getUniqueString());
+            if (tsIdCached == null)
             {
-                // time series was just created so assign the new ts_code back.
-                TimeSeriesIdentifier tsIdDb = this.getTimeSeriesIdentifier(tsId.getUniqueString());
-                tsId.setKey(tsIdDb.getKey());
-                // NOTE: this duplication is currently necessary due to the CTimeSeries design
-                // Cleaning up CTimeSeries is it's own project.
-                ts.setSDI(tsIdDb.getKey());
+                // If this key is not in the cache it was freshly saved. Add it to the
+                // Cache now for anything that may use it.
+                DbKey tsCode = ts_id2ts_code(tsId.getUniqueString());
+                tsId.setKey(tsCode);
+                cache.put(tsId);
             }
-        }
-        catch(NoSuchObjectException ex)
-        {
-            throw new DbIoException("Couldn't not retrieve the ts_code of saved timeseries " + tsId.getUniqueName(), ex);
         }
         catch(SQLException ex)
         {
