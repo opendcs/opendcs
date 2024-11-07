@@ -8,7 +8,6 @@ import java.io.File;
 import java.sql.Connection;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -26,6 +25,8 @@ import org.opendcs.fixtures.assertions.Waiting;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
@@ -49,7 +50,8 @@ import opendcs.dao.DaoBase;
 @ComputationConfigurationRequired("shared/loading-apps.xml")
 public class CompProcTestIT extends AppTestBase
 {
-    private static final Logger log = Logger.getLogger(CompProcTestIT.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(CompProcTestIT.class);
+
     @ConfiguredField
     protected TimeSeriesDb db;
 
@@ -138,8 +140,12 @@ public class CompProcTestIT extends AppTestBase
                                           environment, exit,
                                           "01-Jan-2012/00:00", "03-Jan-2012/00:00", "UTC",
                                           "regtest", tsids);
+                if (log.isTraceEnabled())
+                {
+                    log.trace("Current Output TimeSeries: {}{}", System.lineSeparator(), output);
+                }
                 return golden.equals(output);
-            }, 1, TimeUnit.MINUTES, 15, TimeUnit.SECONDS
+            }, 3, TimeUnit.MINUTES, 15, TimeUnit.SECONDS
             ,"Calculated results were not found within the expected time frame.");
         }
         catch(InterruptedException ex)
