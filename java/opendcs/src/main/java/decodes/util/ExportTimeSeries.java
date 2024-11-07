@@ -86,12 +86,20 @@ public class ExportTimeSeries
 	private DataConsumer consumer = null;
 	private final static long MS_PER_DAY = 3600 * 24 * 1000L;
 	private PrintStream outputStream = null;
+	private boolean forceTsIdCacheReload;
 	
 
 	public ExportTimeSeries()
 	{
+		this(false);
+		
+	}
+
+	public ExportTimeSeries(boolean forceTsIdCacheReload)
+	{
 		super("util.log");
 		setSilent(true);
+		this.forceTsIdCacheReload = forceTsIdCacheReload;
 	}
 
 	public static void main(String args[])
@@ -151,60 +159,61 @@ public class ExportTimeSeries
 		until = convert2Date(s, true);
 
 		ArrayList<CTimeSeries> ctss = new ArrayList<CTimeSeries>();
-		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
-		for(int n = tsidArg.NumberOfValues(), i=0; i<n; i++)
+		try (TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO())
 		{
-			String outTS = tsidArg.getValue(i);
-			if (outTS.equalsIgnoreCase("all"))
+			for(int n = tsidArg.NumberOfValues(), i=0; i<n; i++)
 			{
-				ArrayList<TimeSeriesIdentifier> tsids = tsDAO.listTimeSeries();
-				for(TimeSeriesIdentifier tsid : tsids)
+				String outTS = tsidArg.getValue(i);
+				if (outTS.equalsIgnoreCase("all"))
 				{
-					CTimeSeries ts = theDb.makeTimeSeries(tsid);
-					int nvalues = tsDAO.fillTimeSeries(ts, since, until);
-					Logger.instance().info("Read " + nvalues + " values for time series " 
-						+ tsid.getUniqueString());
-					ctss.add(ts);
+					ArrayList<TimeSeriesIdentifier> tsids = tsDAO.listTimeSeries();
+					for(TimeSeriesIdentifier tsid : tsids)
+					{
+						CTimeSeries ts = theDb.makeTimeSeries(tsid);
+						int nvalues = tsDAO.fillTimeSeries(ts, since, until);
+						Logger.instance().info("Read " + nvalues + " values for time series " 
+							+ tsid.getUniqueString());
+						ctss.add(ts);
+					}
+					break; // No need to continue, we have all time series now.
 				}
-				break; // No need to continue, we have all time series now.
-			}
-			else if (TextUtil.startsWithIgnoreCase(outTS, "group:"))
-			{
-				String groupName = outTS.substring(6);
-				TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
-				TsGroup grp = groupDAO.getTsGroupByName(groupName);
-				groupDAO.close();
-				if (grp == null)
+				else if (TextUtil.startsWithIgnoreCase(outTS, "group:"))
 				{
-					Logger.instance().warning("No such time series group: " + groupName + " -- skipped.");
-					continue;
+					String groupName = outTS.substring(6);
+					TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+					TsGroup grp = groupDAO.getTsGroupByName(groupName);
+					groupDAO.close();
+					if (grp == null)
+					{
+						Logger.instance().warning("No such time series group: " + groupName + " -- skipped.");
+						continue;
+					}
+					ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(grp);
+					for(TimeSeriesIdentifier tsid : tsids)
+					{
+						CTimeSeries ts = theDb.makeTimeSeries(tsid);
+						int nvalues = tsDAO.fillTimeSeries(ts, since, until);
+						Logger.instance().info("Read " + nvalues + " values for time series " 
+							+ tsid.getUniqueString());
+						ctss.add(ts);
+					}
 				}
-				ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(grp);
-				for(TimeSeriesIdentifier tsid : tsids)
+				else // Should be a time series ID
 				{
-					CTimeSeries ts = theDb.makeTimeSeries(tsid);
-					int nvalues = tsDAO.fillTimeSeries(ts, since, until);
-					Logger.instance().info("Read " + nvalues + " values for time series " 
-						+ tsid.getUniqueString());
-					ctss.add(ts);
-				}
-			}
-			else // Should be a time series ID
-			{
-				try
-				{
-					CTimeSeries ts = theDb.makeTimeSeries(outTS);
-					int nvalues = tsDAO.fillTimeSeries(ts, since, until);
-					Logger.instance().info("Read " + nvalues + " values for time series " + outTS);
-					ctss.add(ts);
-				}
-				catch(NoSuchObjectException ex)
-				{
-					Logger.instance().warning("No time series for '" + outTS + "': " + ex);
+					try
+					{
+						CTimeSeries ts = theDb.makeTimeSeries(outTS);
+						int nvalues = tsDAO.fillTimeSeries(ts, since, until);
+						Logger.instance().info("Read " + nvalues + " values for time series " + outTS);
+						ctss.add(ts);
+					}
+					catch(NoSuchObjectException ex)
+					{
+						Logger.instance().warning("No time series for '" + outTS + "': " + ex);
+					}
 				}
 			}
 		}
-		tsDAO.close();
 
 		String tidArg = transportIdArg.getValue();
 		String ttype = "site";
@@ -220,15 +229,19 @@ public class ExportTimeSeries
 		Platform p = null;
 		if (tidArg != null && tidArg.length() > 0)
 		{
-			SiteDAI siteDAO = theDb.makeSiteDAO();
-			if (ttype.equalsIgnoreCase("site"))
+			try(SiteDAI siteDAO = theDb.makeSiteDAO())
 			{
-				DbKey siteId = siteDAO.lookupSiteID(tidArg);
-				Site site = siteDAO.getSiteById(siteId);
-				p = Database.getDb().platformList.findPlatform(site, null);
+				if (ttype.equalsIgnoreCase("site"))
+				{
+					DbKey siteId = siteDAO.lookupSiteID(tidArg);
+					Site site = siteDAO.getSiteById(siteId);
+					p = Database.getDb().platformList.findPlatform(site, null);
+				}
+				else
+				{
+					p = Database.getDb().platformList.findPlatform(ttype, tidArg, now);
+				}
 			}
-			else
-				p = Database.getDb().platformList.findPlatform(ttype, tidArg, now);
 		}
 
 		byte[] dummyData = new byte[0];
