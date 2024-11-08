@@ -128,7 +128,7 @@ task runApp(type: Exec) {
     }
 
     if (lang != null) {
-        decjOpts +=" -D.user.language=${lang} "
+        decjOpts +=" -Duser.language=${lang} "
     }
 
     if (debugPort > 0) {
