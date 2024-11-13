@@ -189,9 +189,6 @@ public class ResEvapAlgo
 	@org.opendcs.annotations.PropertySpec(name = "WtpTsid", propertySpecType = PropertySpec.STRING,
 			description = "Base String for water Temperature Profiles, Example FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap")
 	public String WtpTsid;
-	@org.opendcs.annotations.PropertySpec(name = "depth", propertySpecType = PropertySpec.STRING,
-			description = "Depth format for computation output, Example value: D%03d,%dm")
-	public String depth;//Currently unused
 	@org.opendcs.annotations.PropertySpec(name = "reservoirId", propertySpecType = PropertySpec.STRING,
 			description = "Location ID of reservoir")
 	public String reservoirId;
@@ -207,12 +204,6 @@ public class ResEvapAlgo
 	@org.opendcs.annotations.PropertySpec(name = "Longi", propertySpecType = PropertySpec.NUMBER,
 			description = "Longitude of reservoir")
 	public double Longi;
-	@org.opendcs.annotations.PropertySpec(name = "GMT_Offset", propertySpecType = PropertySpec.NUMBER,
-			description = "GMT offset at reservoir location")
-	public double GMT_Offset;//Currently Unused
-	@org.opendcs.annotations.PropertySpec(name = "Timezone", propertySpecType = PropertySpec.STRING,
-			description = "Time zone at reservoir location, Example: US/Central")
-	public String Timezone;//Currently Unused
 	@org.opendcs.annotations.PropertySpec(name = "WindShear", propertySpecType = PropertySpec.STRING,
 			description = "Windshear equation to be utilized in computation")
 	public String WindShear;
@@ -426,9 +417,6 @@ public class ResEvapAlgo
 			if(Lati==0){
 				Lati = Double.parseDouble(site.latitude);
 			}
-			if(isMissing(Timezone)){
-				Timezone = site.timeZoneAbbr;
-			}
 
 			//initialized Water Temperature Profiles
 			hourlyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
@@ -555,7 +543,7 @@ public class ResEvapAlgo
 //AW:TIMESLICE
 		if (baseTimes.size() == 24) {
 			try {
-				boolean noProblem = resEvap.compute(_timeSliceBaseTime, GMT_Offset);
+				boolean noProblem = resEvap.compute(_timeSliceBaseTime, 0.0);
 				if (!noProblem) {
 					throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.");
 				}
