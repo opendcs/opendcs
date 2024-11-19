@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2018
  * United States Army Corps of Engineers - Hydrologic Engineering Center (USACE/HEC)
  * All Rights Reserved.  USACE PROPRIETARY/CONFIDENTIAL.
@@ -6,32 +6,25 @@
  */
 package decodes.cwms.resevapcalc;
 
+import decodes.tsdb.DbCompException;
+
 /**
  * ResEvapException is used to communicate errors occurring in the
- * use of the java ResEvap computations 
+ * use of the java ResEvap computations
  *
- * @author  Richard Rachiele
+ * @author Richard Rachiele
  * @version 1.1 June  2015
  */
 
-public class ResEvapException extends Exception
-{
-    /**
-     * Constructs an <code>ResEvapException</code> with no detail  message.
-     */
-    public ResEvapException()
-    {
-        super();
-    }
+public class ResEvapException extends DbCompException {
 
     /**
      * Constructs a new <code>ResEvapException</code> and copies the
      * message from <code>e</code>.<p>
      *
-     * @param   e   a <code>java.lang.Exception</code>.
+     * @param e a <code>java.lang.Exception</code>.
      */
-    public ResEvapException(Exception e)
-    {
+    public ResEvapException(Exception e) {
         super(e.toString());
     }
 
@@ -39,15 +32,13 @@ public class ResEvapException extends Exception
      * Constructs an <code>ResEvapException</code> with the specified
      * detail message.<p>
      *
-     * @param   message   the detail message.
+     * @param message the detail message.
      */
-    public ResEvapException(String message)
-    {
+    public ResEvapException(String message) {
         super(message);
     }
 
-    public ResEvapException(String message, Throwable cause)
-    {
+    public ResEvapException(String message, Throwable cause) {
         super(message, cause);
     }
 

@@ -41,7 +41,7 @@ public class EvapUtilities
      * @param airTemp - air temperature in degrees Celsius.
      * @return 
      */
-    public static double spec_ht_air(double airTemp)
+    public static double computeSpecHeatAir(double airTemp)
     { 
         double spcHeat = 1005.60 + airTemp*(0.017211 + 0.000392*airTemp);
         
@@ -85,9 +85,9 @@ public class EvapUtilities
      * @param q - (Output) the specific humidity in kg/kg.
      * @param iflag - (Input) method to evaluate the saturation vapor pressure, ESAT:
      */
-    public static void den_from_rh (double relH, double baroPres, 
-            double tempC, double sal, DoubleContainer rhoAdc,
-            DoubleContainer rhoVdc, DoubleContainer q, int iflag)
+    public static void findDensityFromRh(double relH, double baroPres,
+                                         double tempC, double sal, DoubleContainer rhoAdc,
+                                         DoubleContainer rhoVdc, DoubleContainer q, int iflag)
     {
         // TK is 0 degrees C in kelvins.
         // MW is the molecular weight of water in kg/mole.
@@ -253,7 +253,7 @@ public class EvapUtilities
      * @param obukhovLen - is the Obukhov length.
      * @return 
      */
-    public static double psi_m( double zu, double obukhovLen )
+    public static double computePsiM(double zu, double obukhovLen )
     {      
         // Stability parameter
         double zeta = zu/obukhovLen;
@@ -293,7 +293,7 @@ public class EvapUtilities
      * @param obukhovLen - is the Obukhov length.
      * @return 
      */  
-    public static double psi_h( double zs, double obukhovLen )
+    public static double computePsiHumidity(double zs, double obukhovLen )
     {      
         // Stability parameter
         double zeta = zs/obukhovLen;
@@ -470,9 +470,9 @@ public class EvapUtilities
      * @param ce     - (Output) transfer coefficient for latent heat
      * @param kode 
      */
-    public static void bulk_coefs( double z0, double zt, double zq,
-           double oblen, double ru, double rt, double rq, DoubleContainer cd,
-           DoubleContainer ch, DoubleContainer ce, int kode) 
+    public static void calcBulkCoefs(double z0, double zt, double zq,
+                                     double oblen, double ru, double rt, double rq, DoubleContainer cd,
+                                     DoubleContainer ch, DoubleContainer ce, int kode)
     {
         double psim, psiht, psihq;
 
@@ -491,9 +491,9 @@ public class EvapUtilities
             }
             
             //  Normal processing for both stable and unstable stratification.           
-            psim = psi_m(ru,oblen);     // Computes phim
-            psiht = psi_h(rt,oblen);    // Computes phih for temperature
-            psihq = psi_h(rq,oblen);    // Computes phih for humidity
+            psim = computePsiM(ru,oblen);     // Computes phim
+            psiht = computePsiHumidity(rt,oblen);    // Computes phih for temperature
+            psihq = computePsiHumidity(rq,oblen);    // Computes phih for humidity
         }
        
         //  Compute transfer coefficients.
@@ -629,7 +629,7 @@ public class EvapUtilities
      * @param tx
      * @return 
      */
-     public static double den_h2o( double tx )
+     public static double calcDensityH2o(double tx )
     {            
         double den = 1000. - 0.019549 *
                Math.pow( Math.abs ( tx-4.0), 1.68 );
@@ -643,7 +643,7 @@ public class EvapUtilities
      * @param px
      * @return 
      */
-    public static double cp_h2o( double px )
+    public static double calcHeatCapacityH2o(double px )
     {            
         double tx;
         if ( px < 0.0 )
@@ -671,7 +671,7 @@ public class EvapUtilities
         final double[] b = { 240.97, 272.55 };
 
         double lv = latent(tempC);      // Latent heat of vaporization
-        double cp = spec_ht_air(tempC); // Specific heat of air
+        double cp = computeSpecHeatAir(tempC); // Specific heat of air
         
         double f = 1.0;     // Fractional relative humidity
         
@@ -682,7 +682,7 @@ public class EvapUtilities
          
         // This returns the density of moist air (RHOA) and saturation
         // vapor density (RHOVS).
-        den_from_rh( f, baroPres, tempC, sal, rhoA, rhoVS, dum, iflag);
+        findDensityFromRh( f, baroPres, tempC, sal, rhoA, rhoVS, dum, iflag);
         
         double rhoD = rhoA.d + rhoVS.d;
 

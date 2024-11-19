@@ -25,9 +25,9 @@ public class CloudCover
    
     public enum CloudHeightType
     {
-        height_low, 
-        height_med,
-        height_high
+        HEIGHT_LOW,
+        HEIGHT_MED,
+        HEIGHT_HIGH
     }
 
     public CloudCover( double fraction, double height, CloudHeightType type)
@@ -42,15 +42,15 @@ public class CloudCover
         // ICLD is cloud type.  2 means cirrus high clouds, 3 means
         // altocumulus middle clouds, and 3 means stratus low clouds.
         int[] icld = { 2, 3, 4 };
-        if ( cloudType == CloudHeightType.height_low)
+        if ( cloudType == CloudHeightType.HEIGHT_LOW)
         {
             return 4;
         }
-        else if ( cloudType == CloudHeightType.height_med)
+        else if ( cloudType == CloudHeightType.HEIGHT_MED)
         {
             return 3;
         }
-        else if ( cloudType == CloudHeightType.height_high)
+        else if ( cloudType == CloudHeightType.HEIGHT_HIGH)
         {
             return 2;
         }
@@ -60,15 +60,15 @@ public class CloudCover
     
     public String getTypeName()
     {
-        if ( this.cloudType == CloudHeightType.height_low)
+        if ( this.cloudType == CloudHeightType.HEIGHT_LOW)
         {
             return "Height Low";
         }
-        else if ( this.cloudType == CloudHeightType.height_med)
+        else if ( this.cloudType == CloudHeightType.HEIGHT_MED)
         {
             return "Height Med";
         }
-        else if ( this.cloudType == CloudHeightType.height_high)
+        else if ( this.cloudType == CloudHeightType.HEIGHT_HIGH)
         {
             return "Height High";
         }
@@ -77,15 +77,15 @@ public class CloudCover
     
     public double getDefaultFractionCloudCover()
     {
-         if ( this.cloudType == CloudHeightType.height_low)
+         if ( this.cloudType == CloudHeightType.HEIGHT_LOW)
         {
             return MISSING_VALUE_LOW;
         }
-        else if ( this.cloudType == CloudHeightType.height_med)
+        else if ( this.cloudType == CloudHeightType.HEIGHT_MED)
         {
             return MISSING_VALUE_MED;
         }
-        else if ( this.cloudType == CloudHeightType.height_high)
+        else if ( this.cloudType == CloudHeightType.HEIGHT_HIGH)
         {
             return MISSING_VALUE_HI;
         }
