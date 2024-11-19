@@ -103,7 +103,7 @@ public class EvapWater
         }
         
         // Compute potential temperature.
-        thetar = tr + (Const.GRAV/EvapUtilities.spec_ht_air( tr ) *rt);
+        thetar = tr + (Const.GRAV/EvapUtilities.computeSpecHeatAir( tr ) *rt);
         
         // Do not want subfreezing surface temperature in a model that assumes open water
         if ( ts < 0.0 ) 
@@ -127,13 +127,13 @@ public class EvapWater
         
         // returns density of moist air at surface (rhoa) and specific
         // humidity at surface (qs).
-        EvapUtilities.den_from_rh( rhs, p, ts, s, rhoAdc, dumdc, qsdc, iflag );
+        EvapUtilities.findDensityFromRh( rhs, p, ts, s, rhoAdc, dumdc, qsdc, iflag );
         qs = qsdc.d;
         rhoa = rhoAdc.d;
         
         f = rh/100.0;			// fractional relative humidity
         // returns specific humidity at height rq.
-        EvapUtilities.den_from_rh( f, p, tr, s, dumdc, dum1dc, qrdc, iflag );
+        EvapUtilities.findDensityFromRh( f, p, tr, s, dumdc, dum1dc, qrdc, iflag );
         qr = qrdc.d;
         del_q = qs - qr;		// humidity difference
         qave = 0.5*(qs + qr);		// layer-averaged q
@@ -168,7 +168,7 @@ public class EvapWater
         kode = 0;		// identifies neutral stability
         dum = 0.;
         // returns first estimates of cd, ch, ce.
-        EvapUtilities.bulk_coefs( z0, zt, zq, dum, ru, rt, rq,
+        EvapUtilities.calcBulkCoefs( z0, zt, zq, dum, ru, rt, rq,
                 cddc, chdc, cedc, kode );
 
         cd = cddc.d;
@@ -198,7 +198,7 @@ public class EvapWater
             tstar_old = tstar;
             qstar_old = qstar;
 
-            EvapUtilities.bulk_coefs( z0, zt, zq, l, r10, rt, rq,
+            EvapUtilities.calcBulkCoefs( z0, zt, zq, l, r10, rt, rq,
                     cddc, chdc, cedc, kode);
 
             cd = cddc.d;
@@ -221,7 +221,7 @@ public class EvapWater
             zq = zqdc.d;     
             
             // provides new values of cd, ch, and ce.
-            EvapUtilities.bulk_coefs( z0, zt, zq, l, ru, rt, rq, cddc, chdc, cedc, kode );
+            EvapUtilities.calcBulkCoefs( z0, zt, zq, l, ru, rt, rq, cddc, chdc, cedc, kode );
             cd = cddc.d;
             ch = chdc.d;
             ce = cedc.d;
@@ -268,7 +268,7 @@ public class EvapWater
         // **** end iteration loop  ****************************
         
         // compute the fluxes.
-        cp_air = EvapUtilities.spec_ht_air( ts );  // specific heat of air
+        cp_air = EvapUtilities.computeSpecHeatAir( ts );  // specific heat of air
         lv = EvapUtilities.latent( ts );		// latent heat of vaporization
         
         // returns all the fluxes.  

@@ -72,35 +72,30 @@ Important Notes:
 |           +------------------+----------------------------------------------+
 |           |HourlyLatent      |                                              |
 +-----------+------------------+----------------------------------------------+
-|Properties |WtpTsid           |Base String for water Temperature Profiles,   |
+|Properties |wtpTsId           |Base String for water Temperature Profiles,   |
 |           |                  |Example FTPK-Lower-D000,0m.Temp-Water.Inst.   |
 |           |                  |1Day.0.Rev-NWO-Evap                           |
 |           +------------------+----------------------------------------------+
-|           |depth             |Depth format for computation output,          |
-|           |                  |Example value: D%03d,%dm                      |
-|           +------------------+----------------------------------------------+
 |           |reservoirId       |Location ID of reservoir                      |
 |           +------------------+----------------------------------------------+
-|           |Secchi            |Average secchi depth of reservoir in feet     |
+|           |secchi            |Average secchi depth of reservoir in feet     |
 |           +------------------+----------------------------------------------+
-|           |Zero_elevation    |Streambed elevation of reservoir in feet      |
+|           |zeroElevation    |Streambed elevation of reservoir in feet      |
 |           +------------------+----------------------------------------------+
-|           |Lati              |Latitude of reservoir                         |
+|           |latitude          |Latitude of reservoir                         |
 |           +------------------+----------------------------------------------+
-|           |Longi             |Longitude of reservoir                        |
+|           |longitude         |Longitude of reservoir                        |
 |           +------------------+----------------------------------------------+
-|           |GMT_Offset        |GMT offset at reservoir location              |
-|           +------------------+----------------------------------------------+
-|           |Timezone          |Time zone at reservoir location,              |
+|           |timezone          |Time zone at reservoir location,              |
 |           |                  |Example value: D%03d,%dm                      |
 |           +------------------+----------------------------------------------+
-|           |WindShear         |Wind shear equation to be utilized in         |
+|           |windShear         |Wind shear equation to be utilized in         |
 |           |                  |computation,(Donelan or Fischer)              |
 |           +------------------+----------------------------------------------+
-|           |ThermalDifCoe     |Thermal diffusivity coefficient to be         |
+|           |thermalDifCoe     |Thermal diffusivity coefficient to be         |
 |           |                  |utilized in computation                       |
 |           +------------------+----------------------------------------------+
-|           |Rating            |Rating Curve specification for Elevation-Area |
+|           |rating            |Rating Curve specification for Elevation-Area |
 |           |                  |curve, Example: FTPK.Elev;Area.Linear.Step    |
 +-----------+------------------+----------------------------------------------+
 

@@ -1,29 +1,23 @@
 package decodes.cwms.resevapcalc;
 
-public enum WindShearMethod
-{
+public enum WindShearMethod {
     DONELAN("Donelan"),
     FISCHER("Fischer");
 
-    private final String _name;
+    private final String name;
 
-    WindShearMethod(String name)
-    {
-        _name = name;
+    WindShearMethod(String name) {
+        this.name = name;
     }
 
     @Override
-    public String toString()
-    {
-        return _name;
+    public String toString() {
+        return name;
     }
 
-    public static WindShearMethod fromString(String name)
-    {
-        for (WindShearMethod windShearMethod : WindShearMethod.values())
-        {
-            if (windShearMethod._name.equalsIgnoreCase(name))
-            {
+    public static WindShearMethod fromString(String name) {
+        for (WindShearMethod windShearMethod : WindShearMethod.values()) {
+            if (windShearMethod.name.equalsIgnoreCase(name)) {
                 return windShearMethod;
             }
         }

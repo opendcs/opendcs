@@ -7,29 +7,16 @@
 package decodes.cwms.resevapcalc;
 
 import decodes.cwms.HecConstants;
-import decodes.db.UnitConverter;
 import decodes.tsdb.CTimeSeries;
 import decodes.util.DecodesException;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-//import hec.data.Units;
-//import hec.data.UnitsConversionException;
-//import hec.heclib.util.HecTime;
-//import hec.io.TimeSeriesContainer;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-//import rma.util.RMAConst;
 
 /**
  * This class holds reservoir specific values (lat, lon, elev-area)
@@ -48,64 +35,64 @@ public class EvapReservoir
 
     public Connection conn;
     // package access to these variables
-    public    int   _numberLayers;    //TODO, not current set
-    public    double _secchiDepth;
-    public    double _attenuationConst;
-    public    double _zeroElevaton = -1;
-    public    double _lat;
-    public    double _long;
-    public WindShearMethod _windShearMethod = WindShearMethod.DONELAN;
-    public double _thermalDiffusivityCoefficient = 1.2;
+    public    int numberLayers;    //TODO, not current set
+    public    double secchiDepth;
+    public    double attenuationConst;
+    public    double zeroElevaton = -1;
+    public    double latitude;
+    public    double longitude;
+    public WindShearMethod windShearMethod = WindShearMethod.DONELAN;
+    public double thermalDiffusivityCoefficient = 1.2;
     
     // instrument height
-    protected double _ru;
-    protected double _rt;
-    protected double _rq;
+    protected double ru;
+    protected double rt;
+    protected double rq;
     
-    double _gmtOffset;
-    String _tzString;
-    public double _elev;
-    public double _instrumentHeight;
+    double gmtOffset;
+    String tzString;
+    public double elev;
+    public double instrumentHeight;
 
-    public RatingSet _RatingAreaElev;
+    public RatingSet ratingAreaElev;
 
-    public double[] _elevA;		//TODO public for jython testing
-    public double[] _surfA;
-    public int _nSurfArea;
-    public int _nResBottom;
-    public double _depth;
+    public double[] elevA;
+    public double[] surfA;
+    public int nSurfArea;
+    public int nResBottom;
+    public double depth;
    // public double _wsel;	// this is a copy of _elev used for layering setup
-    public double _surfArea;
+    public double surfArea;
     
     // reservoir layers
-    public double[] _zd = new double[NLAYERS];
-    public double[] _delz = new double[NLAYERS];
-    public double[] _ztop = new double[NLAYERS];
-    public double[] _zarea = new double[NLAYERS];
-    public double[] _zelev = new double[NLAYERS];
-    public double[] _zvol = new double[NLAYERS];
+    public double[] zd = new double[NLAYERS];
+    public double[] delz = new double[NLAYERS];
+    public double[] ztop = new double[NLAYERS];
+    public double[] zarea = new double[NLAYERS];
+    public double[] zelev = new double[NLAYERS];
+    public double[] zvol = new double[NLAYERS];
     
     // water temperature 
-    public double[] _rhow = new double[NLAYERS];
-    public double[] _cp = new double[NLAYERS];
-    public double[] _wt = new double[NLAYERS];    //TODO public for jython testing
-    public double[] _kz = new double[NLAYERS];
+    public double[] rhow = new double[NLAYERS];
+    public double[] cp = new double[NLAYERS];
+    public double[] wt = new double[NLAYERS];
+    public double[] kz = new double[NLAYERS];
     
-    public CTimeSeries _elevationTsc;
+    public CTimeSeries elevationTsc;
     
     //  is the index for the last layer 
-    // resj = _numberLayers - 1
-    int _resj;
-    int _resj_old;
+    // resj = numberLayers - 1
+    int resj;
+    int resjOld;
     
-    int _resj1;
-    boolean _isEnglish = true;
-    boolean _isDewpoint = false;
+    int resj1;
+    boolean isEnglish = true;
+    boolean isDewpoint = false;
     
-    boolean _elevTS_flag = false; //TODO
+    boolean elevTS_flag = false; //TODO
        
-    String _name;
-    BufferedWriter _debugout = null;
+    String name;
+    BufferedWriter debugout = null;
     
     public EvapReservoir()
     {
@@ -114,36 +101,36 @@ public class EvapReservoir
     
     public void setInputDataIsEnglish( boolean tf)
     {
-        _isEnglish = tf;
+        isEnglish = tf;
     }
     
     public void setName( String name )
     {
-        _name = name;
+        this.name = name;
     }
     
     public String getName()
     {
-        return _name;
+        return name;
     }
     
     public void setTimeZoneString( String tzStr )
     {
-        _tzString = tzStr;
+        tzString = tzStr;
     }
     public void setLatLon( double lat, double lon )
     {
-        _lat = lat;
-        _long = lon;
+        this.latitude = lat;
+        longitude = lon;
     }
     public void setGmtOffset( double gmtOffset )
     {
-        _gmtOffset = gmtOffset;
+        this.gmtOffset = gmtOffset;
     }
     
     public double getGmtOffset()
     {
-        return _gmtOffset;
+        return gmtOffset;
     }
     
     /**
@@ -152,7 +139,7 @@ public class EvapReservoir
      */
     public void setDebugFile( BufferedWriter debugout )
     {
-    	_debugout = debugout;
+    	this.debugout = debugout;
     }
     
     /**
@@ -163,14 +150,14 @@ public class EvapReservoir
      * @return   the reservoir elevation at hecTime in meters
      */
     public double getCurrentElevation( Date hecTime ) throws DecodesException {
-    	if ( _elevationTsc == null )
+    	if ( elevationTsc == null )
     	{
-    		return _elev;
+    		return elev;
     	}
-        int elevIdx = _elevationTsc.findNextIdx(hecTime);
+        int elevIdx = elevationTsc.findNextIdx(hecTime);
         double elev;
         try {
-            elev = _elevationTsc.sampleAt(elevIdx).getDoubleValue();
+            elev = elevationTsc.sampleAt(elevIdx).getDoubleValue();
         }
         catch(Exception ex){
             throw new DecodesException("failed to load current elevation", ex);
@@ -188,36 +175,36 @@ public class EvapReservoir
             double tempHeigth, double relHeight )
     {
         double sclfct = 1.;
-        if ( _isEnglish )
+        if (isEnglish)
         {
             sclfct = FT_TO_M;
         }
         
-        _ru = windHeight * sclfct;
-        _rt = tempHeigth * sclfct;
-        _rq = relHeight * sclfct;      
-        _instrumentHeight = windHeight * sclfct;
+        ru = windHeight * sclfct;
+        rt = tempHeigth * sclfct;
+        rq = relHeight * sclfct;
+        instrumentHeight = windHeight * sclfct;
     }
     
     public void setSecchi(double secchi )
     {
-        _secchiDepth = secchi;
-        if ( _isEnglish )
+        secchiDepth = secchi;
+        if (isEnglish)
         {
-        	_secchiDepth *= FT_TO_M;
+        	secchiDepth *= FT_TO_M;
         }
         
-        _attenuationConst =  1.70/_secchiDepth;
+        attenuationConst =  1.70/ secchiDepth;
     }
 
     public void setWindShearMethod(WindShearMethod method)
     {
-        _windShearMethod = method;
+        windShearMethod = method;
     }
 
     public void setThermalDiffusivityCoefficient(double thermalDiffusivityCoefficient)
     {
-        _thermalDiffusivityCoefficient = thermalDiffusivityCoefficient;
+        this.thermalDiffusivityCoefficient = thermalDiffusivityCoefficient;
     }
     
     /**
@@ -228,13 +215,13 @@ public class EvapReservoir
     public ReservoirLocationInfo getReservoirLocationInfo()
     {
     	ReservoirLocationInfo resInfo = new ReservoirLocationInfo(
-    	_lat,
-    	_long,
-    	_instrumentHeight,
-        _gmtOffset,
-    	_ru,
-    	_rt,
-    	_rq);
+                latitude,
+                longitude,
+                instrumentHeight,
+                gmtOffset,
+                ru,
+                rt,
+                rq);
     	
     	return resInfo;
     }
@@ -248,7 +235,7 @@ public class EvapReservoir
     {
         for ( int i=0; i<=resj; i++)
         {
-            _wt[i] = wt[i];
+            this.wt[i] = wt[i];
         }
         return true;
     }
@@ -274,7 +261,7 @@ public class EvapReservoir
 
     public boolean setElevAreaRating ( RatingSet AreaElevRating)
     {
-        _RatingAreaElev = AreaElevRating;
+        ratingAreaElev = AreaElevRating;
 
         return true;
     }
@@ -287,14 +274,14 @@ public class EvapReservoir
      */
     public boolean setElevation( double elev )
     {
-    	_elev = elev;
+    	this.elev = elev;
         double surfArea = 0;
         try {
-            surfArea = intArea(_elev);
+            surfArea = intArea(this.elev);
         } catch (RatingException e) {
             throw new RuntimeException(e);
         }
-        _surfArea = surfArea/(1000.*1000.);
+        this.surfArea = surfArea/(1000.*1000.);
         
     	return true;
     }
@@ -307,7 +294,7 @@ public class EvapReservoir
      */
     public boolean setElevationMeters( double elev )
     {
-    	_elev = elev;
+    	this.elev = elev;
     	return true;
     }
     
@@ -319,15 +306,15 @@ public class EvapReservoir
      */
     public double getElevation( )
     {
-    	return _elev;
+    	return elev;
     }
     
     public boolean setZeroElevation( double elev )
     {
-    	_zeroElevaton = elev;
-    	if ( _isEnglish && elev > -1. )
+    	zeroElevaton = elev;
+    	if ( isEnglish && elev > -1. )
     	{
-    		_zeroElevaton *= FT_TO_M;
+    		zeroElevaton *= FT_TO_M;
     	}
     	return true;
     }
@@ -338,7 +325,7 @@ public class EvapReservoir
      */
     public void setElevationTs( CTimeSeries tsc )
     {
-    	_elevationTsc = tsc;
+    	elevationTsc = tsc;
     }
     
     /**
@@ -350,12 +337,12 @@ public class EvapReservoir
     {
 
     	// Set wsel to entered elevation
-        double wsel = _elev;
+        double wsel = elev;
 
-        if(_zeroElevaton == -1){
+        if(zeroElevaton == -1){
             return false;
         }
-        double depth = wsel - _zeroElevaton;
+        double depth = wsel - zeroElevaton;
 
         if ( depth <= 0. )
         {
@@ -365,22 +352,22 @@ public class EvapReservoir
         }
 
         // save in global variables
-        _depth = depth;
+        this.depth = depth;
         // compute surface area
         double surfArea = 0;
         try {
-            surfArea = intArea(_elev);
+            surfArea = intArea(elev);
         } catch (RatingException e) {
             throw new RuntimeException(e);
         }
-        _surfArea = surfArea/(1000.*1000.);
+        this.surfArea = surfArea/(1000.*1000.);
         
         return true;
     }
 
     public int getResj()
     {
-    	return _resj;
+    	return resj;
     }
     
     public boolean resSetup()
@@ -400,18 +387,18 @@ public class EvapReservoir
         zelevx = new double[NLAYERS];
         zareax = new double[NLAYERS];
         zvolx = new double[NLAYERS];
-        double wsel = _elev;
+        double wsel = elev;
 
         // Estimate depth. If constant, already known. If wsel is read in, calculate now
         if ( updateDepth )
         {
-            _depth = wsel - _zeroElevaton;
+            depth = wsel - zeroElevaton;
         }
         
         // Use .5m steps for entire depth
         double zdepth = .25;
         int j = 0;
-        while ( zdepth <= _depth)
+        while ( zdepth <= depth)
         {
             zdx[j] = zdepth;
             delzx[j] = 0.5;
@@ -429,14 +416,14 @@ public class EvapReservoir
         int resj = j-1;
         
         // Put last step at bottom
-		LOGGER.log(Level.FINE, " resj,  depth, wsel {0}  {1}  {2}", new Object[]{resj, _depth, wsel});
+		LOGGER.log(Level.FINE, " resj,  depth, wsel {0}  {1}  {2}", new Object[]{resj, depth, wsel});
    
-        if ( zdx[resj] < _depth )
+        if ( zdx[resj] < depth)
         {
-            zdx[resj] = _depth;
+            zdx[resj] = depth;
             delzx[resj] = (zdx[resj]-zdx[resj-1])-0.5*delzx[resj-1];
-            ztop_depth[resj] = _depth-delzx[resj];
-            zelevx[resj] = _zeroElevaton + delzx[resj];
+            ztop_depth[resj] = depth -delzx[resj];
+            zelevx[resj] = zeroElevaton + delzx[resj];
             try {
                 zareax[resj] = intArea(zelevx[resj]);
             } catch (RatingException e) {
@@ -456,17 +443,17 @@ public class EvapReservoir
         int i = 0;
         for ( j=resj; j>=0; j--)
         {
-            _zd[i]    = zdx[j];
-            _delz[i]  = delzx[j];
-            _ztop[i]  = _depth-ztop_depth[j];
-            _zarea[i] = zareax[j];
-            _zelev[i] = zelevx[j];
-            _zvol[i]  = zvolx[j];
+            zd[i]    = zdx[j];
+            delz[i]  = delzx[j];
+            ztop[i]  = depth -ztop_depth[j];
+            zarea[i] = zareax[j];
+            zelev[i] = zelevx[j];
+            zvol[i]  = zvolx[j];
             i++;
         }     
 
-        _resj_old = _resj;
-        _resj = resj;
+        resjOld = this.resj;
+        this.resj = resj;
         
         return true;
     }
@@ -482,7 +469,7 @@ public class EvapReservoir
     public double intArea(double el) throws RatingException {
         try {
             double ftElvation = el / FT_TO_M;
-            double ftSquared = _RatingAreaElev.rate(conn, ftElvation);
+            double ftSquared = ratingAreaElev.rate(conn, ftElvation);
             return ftSquared*Math.pow(FT_TO_M,2);
         }
         catch(RatingException ex){
