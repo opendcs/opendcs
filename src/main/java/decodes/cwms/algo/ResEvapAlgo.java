@@ -15,11 +15,9 @@ import ilex.util.TextUtil;
 import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
-import ilex.var.Variable;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
-import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -29,7 +27,6 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.opendcs.utils.FailableResult;
 
 
 //AW:IMPORTS_END
@@ -41,7 +38,7 @@ Run ResEvap Calculations.
  */
 //AW:JAVADOC_END
 @Algorithm(
-		description ="Preform Reservoir Evaporation calculation based on an algorithm developed my NWDM," +
+		description ="Preform Reservoir Evaporation calculation based on an algorithm developed by NWDM," +
 				" Which utilizes air temp, air speed, solar radiation, and water temperature profiles to return" +
 				" evaporation rates and total evaporation as flow" )
 public class ResEvapAlgo
@@ -51,36 +48,25 @@ public class ResEvapAlgo
 	@Input
 	public double windSpeed;		//AW:TYPECODE=i
 	@Input
-	public double AirTemp;			//AW:TYPECODE=i
+	public double airTemp;			//AW:TYPECODE=i
 	@Input
-	public double RelativeHumidity;	//AW:TYPECODE=i
+	public double relativeHumidity;	//AW:TYPECODE=i
 	@Input
-	public double AtmPress;			//AW:TYPECODE=i
+	public double atmPress;			//AW:TYPECODE=i
 	@Input
-	public double PercentLowCloud;	//AW:TYPECODE=i
+	public double percentLowCloud;	//AW:TYPECODE=i
 	@Input
-	public double ElevLowCloud;		//AW:TYPECODE=i
+	public double elevLowCloud;		//AW:TYPECODE=i
 	@Input
-	public double PercentMidCloud;	//AW:TYPECODE=i
+	public double percentMidCloud;	//AW:TYPECODE=i
 	@Input
-	public double ElevMidCloud;		//AW:TYPECODE=i
+	public double elevMidCloud;		//AW:TYPECODE=i
 	@Input
-	public double PercentHighCloud;	//AW:TYPECODE=i
+	public double percentHighCloud;	//AW:TYPECODE=i
 	@Input
-	public double ElevHighCloud;	//AW:TYPECODE=i
+	public double elevHighCloud;	//AW:TYPECODE=i
 	@Input
-	public double Elev;				//AW:TYPECODE=i
-	String _inputNames[] = { "windSpeed",
-	"AirTemp",
-	"RelativeHumidity",
-	"AtmPress",
-	"PercentLowCloud",
-	"ElevLowCloud",
-	"PercentMidCloud",
-	"ElevMidCloud",
-	"PercentHighCloud",
-	"ElevHighCloud",
-	"Elev"			 };
+	public double elev;				//AW:TYPECODE=i
 //AW:INPUTS_END
 
 //AW:LOCALVARS
@@ -88,30 +74,30 @@ public class ResEvapAlgo
 	int count; //number of days calculated
 	double previousHourlyEvap;
 
-	private double start_depth = 0.;
-	private double depth_increment = .5;
+	private double startDepth = 0.;
+	private double depthIncrement = .5;
 	private ResEvap resEvap;
 	private CTimeSeries windSpeedTS = null;
-	private CTimeSeries AirTempTS = null;
-	private CTimeSeries RelativeHumidityTS = null;
-	private CTimeSeries AtmPressTS = null;
-	private CTimeSeries PercentLowCloudTS = null;
-	private CTimeSeries ElevLowCloudTS = null;
-	private CTimeSeries PercentMidCloudTS = null;
-	private CTimeSeries ElevMidCloudTS = null;
-	private CTimeSeries PercentHighCloudTS = null;
-	private CTimeSeries ElevHighCloudTS = null;
-	private CTimeSeries ElevTS = null;
+	private CTimeSeries airTempTS = null;
+	private CTimeSeries relativeHumidityTS = null;
+	private CTimeSeries atmPressTS = null;
+	private CTimeSeries percentLowCloudTS = null;
+	private CTimeSeries elevLowCloudTS = null;
+	private CTimeSeries percentMidCloudTS = null;
+	private CTimeSeries elevMidCloudTS = null;
+	private CTimeSeries percentHighCloudTS = null;
+	private CTimeSeries elevHighCloudTS = null;
+	private CTimeSeries elevTS = null;
 
-	private CTimeSeries HourlyEvapTS = null;
-	private CTimeSeries DailyEvapTS = null;
+	private CTimeSeries hourlyEvapTS = null;
+	private CTimeSeries dailyEvapTS = null;
 
 	Site site;
 	CwmsRatingDao crd;
 	SiteDAI siteDAO;
 	TimeSeriesDAI timeSeriesDAO;
 	WaterTempProfiles hourlyWTP;
-	WaterTempProfiles DailyWTP;
+	WaterTempProfiles dailyWTP;
 
 	EvapReservoir reservoir;
 
@@ -119,118 +105,57 @@ public class ResEvapAlgo
 
 //AW:OUTPUTS
 	@Output
-	public NamedVariable HourlySurfaceTemp 		= new NamedVariable("HourlySurfaceTemp", 0);
+	public NamedVariable hourlySurfaceTemp = new NamedVariable("hourlySurfaceTemp", 0);
 	@Output
-	public NamedVariable HourlyEvap 			= new NamedVariable("HourlyEvap", 0);
+	public NamedVariable hourlyEvap = new NamedVariable("hourlyEvap", 0);
 	@Output
-	public NamedVariable DailyEvap 				= new NamedVariable("DailyEvap", 0);
+	public NamedVariable dailyEvap = new NamedVariable("dailyEvap", 0);
 	@Output
-	public NamedVariable DailyEvapAsFlow 		= new NamedVariable("DailyEvapAsFlow", 0);
+	public NamedVariable dailyEvapAsFlow = new NamedVariable("dailyEvapAsFlow", 0);
 	@Output
-	public NamedVariable HourlyFluxOut 			= new NamedVariable("HourlyFluxOut", 0);
+	public NamedVariable hourlyFluxOut = new NamedVariable("hourlyFluxOut", 0);
 	@Output
-	public NamedVariable HourlyFluxIn 			= new NamedVariable("HourlyFluxIn", 0);
+	public NamedVariable hourlyFluxIn = new NamedVariable("hourlyFluxIn", 0);
 	@Output
-	public NamedVariable HourlySolar 			= new NamedVariable("HourlySolar", 0);
+	public NamedVariable hourlySolar = new NamedVariable("hourlySolar", 0);
 	@Output
-	public NamedVariable HourlyLatent 			= new NamedVariable("HourlyLatent", 0);
+	public NamedVariable hourlyLatent = new NamedVariable("hourlyLatent", 0);
 	@Output
-	public NamedVariable HourlySensible 		= new NamedVariable("HourlySensible", 0);
-	String _outputNames[] = {
-			"HourlySurfaceTemp",
-			"HourlyEvap",
-			"DailyEvap",
-			"DailyEvapAsFlow",
-			"HourlyFluxOut",
-			"HourlyFluxIn",
-			"HourlySolar",
-			"HourlyLatent",
-			"HourlySensible",
-	};
+	public NamedVariable hourlySensible = new NamedVariable("hourlySensible", 0);
 //AW:OUTPUTS_END
-	private PropertySpec copyPropertySpecs[] =
-			{
-					new PropertySpec("WtpTsid", PropertySpec.STRING,
-							"Base String for water Temperature Profiles"),
-					new PropertySpec("depth", PropertySpec.STRING,
-							"Depth format for compuatation output"),
-					new PropertySpec("reservoirId", PropertySpec.STRING,
-							"Location ID of reservoir"),
-					new PropertySpec("Secchi", PropertySpec.NUMBER,
-							"Average secchi depth of reservoir"),
-					new PropertySpec("Zero_elevation", PropertySpec.NUMBER,
-							"Streambed elevation of reservoir"),
-					new PropertySpec("Lati", PropertySpec.NUMBER,
-							"Latitude of reservoir"),
-					new PropertySpec("Longi", PropertySpec.NUMBER,
-							"Longitude of reservoir"),
-					new PropertySpec("GMT_Offset", PropertySpec.NUMBER,
-							"GMT offset at reservoir location"),
-					new PropertySpec("Timezone", PropertySpec.STRING,
-							"Time zone at reservoir location"),
-					new PropertySpec("WindShear", PropertySpec.STRING,
-							"Windshear equation to be utilized in computation"),
-					new PropertySpec("ThermalDifCoe", PropertySpec.NUMBER,
-							"Thermal diffusivity coefficient to be utilized in computation"),
-					new PropertySpec("Rating", PropertySpec.STRING,
-							"Rating Curve specification for Elevation-Area curve")
-			};
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return copyPropertySpecs;
-	}
 
 //AW:PROPERTIES
 // TODO Implement Location Levels
 //	public String SecchiDepthId;
 //	public String MaxTempDepthId;
 
-	@org.opendcs.annotations.PropertySpec(name = "WtpTsid", propertySpecType = PropertySpec.STRING,
+	@org.opendcs.annotations.PropertySpec(name = "wtpTsId", propertySpecType = PropertySpec.STRING,
 			description = "Base String for water Temperature Profiles, Example FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap")
-	public String WtpTsid;
+	public String wtpTsId;
 	@org.opendcs.annotations.PropertySpec(name = "reservoirId", propertySpecType = PropertySpec.STRING,
 			description = "Location ID of reservoir")
 	public String reservoirId;
-	@org.opendcs.annotations.PropertySpec(name = "Secchi", propertySpecType = PropertySpec.NUMBER,
+	@org.opendcs.annotations.PropertySpec(name = "secchi", propertySpecType = PropertySpec.NUMBER,
 			description = "Average secchi depth of reservoir in feet")
-	public double Secchi;
-	@org.opendcs.annotations.PropertySpec(name = "Zero_elevation", propertySpecType = PropertySpec.NUMBER,
+	public double secchi;
+	@org.opendcs.annotations.PropertySpec(name = "zeroElevation", propertySpecType = PropertySpec.NUMBER,
 			description = "Streambed elevation of reservoir in feet")
-	public double Zero_elevation;
-	@org.opendcs.annotations.PropertySpec(name = "Lati", propertySpecType = PropertySpec.NUMBER,
+	public double zeroElevation;
+	@org.opendcs.annotations.PropertySpec(name = "latitude", propertySpecType = PropertySpec.NUMBER,
 			description = "Latitude of reservoir")
-	public double Lati;
-	@org.opendcs.annotations.PropertySpec(name = "Longi", propertySpecType = PropertySpec.NUMBER,
+	public double latitude;
+	@org.opendcs.annotations.PropertySpec(name = "longitude", propertySpecType = PropertySpec.NUMBER,
 			description = "Longitude of reservoir")
-	public double Longi;
-	@org.opendcs.annotations.PropertySpec(name = "WindShear", propertySpecType = PropertySpec.STRING,
+	public double longitude;
+	@org.opendcs.annotations.PropertySpec(name = "windShear", propertySpecType = PropertySpec.STRING,
 			description = "Windshear equation to be utilized in computation")
-	public String WindShear;
-	@org.opendcs.annotations.PropertySpec(name = "ThermalDifCoe", propertySpecType = PropertySpec.NUMBER,
+	public String windShear;
+	@org.opendcs.annotations.PropertySpec(name = "thermalDifCoe", propertySpecType = PropertySpec.NUMBER,
 			description = "Thermal diffusivity coefficient to be utilized in computation")
-	public double ThermalDifCoe;
-	@org.opendcs.annotations.PropertySpec(name = "Rating", propertySpecType = PropertySpec.STRING,
+	public double thermalDifCoe;
+	@org.opendcs.annotations.PropertySpec(name = "rating", propertySpecType = PropertySpec.STRING,
 			description = "Rating Curve specification for Elevation-Area curve, Example: FTPK.Elev;Area.Linear.Step")
-	public String Rating;
-
-
-	String _propertyNames[] = {
-//TODO Implement Location Levels
-//	"SecchiDepthId",
-//	"MaxTempDepthId",
-	"WtpTsid",
-	"reservoirId",
-	"Secchi",
-	"Zero_elevation",
-	"Lati",
-	"Longi",
-	"GMT_Offset",
-	"Timezone",
-	"WindShear",
-	"ThermalDifCoe",
-	"Rating",
-	};
+	public String rating;
 //AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
@@ -243,7 +168,7 @@ public class ResEvapAlgo
 	{
 //AW:INIT
         _awAlgoType = AWAlgoType.AGGREGATING;
-		_aggPeriodVarRoleName = "DailyEvap";
+		_aggPeriodVarRoleName = "dailyEvap";
 		aggUpperBoundClosed = true;
 		aggLowerBoundClosed = false;
 
@@ -254,13 +179,13 @@ public class ResEvapAlgo
 	}
 
 	//Initialized hourly water temperature profiles and return double[] of WTP of the previous timeSlice before base.
-	public double[] getProfiles(String WTPID) throws Exception {
+	private double[] getProfiles(String WTPID) throws Exception {
 		Date untilTime = new Date(baseTimes.first().getTime() + 86400000);
-		hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WTPID, baseTimes.first(), untilTime, start_depth, depth_increment);
-		double[] arrayWTP = new double[hourlyWTP.tseries.size()];
-		for(int i = 0; i < hourlyWTP.tseries.size(); i++){
+		hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WTPID, baseTimes.first(), untilTime, startDepth, depthIncrement);
+		double[] arrayWTP = new double[hourlyWTP.getTimeSeries().size()];
+		for(int i = 0; i < hourlyWTP.getTimeSeries().size(); i++){
 			try {
-				arrayWTP[i] = hourlyWTP.tseries.getTimeSeriesAt(i).findPrev(baseTimes.first()).getDoubleValue();
+				arrayWTP[i] = hourlyWTP.getTimeSeries().getTimeSeriesAt(i).findPrev(baseTimes.first()).getDoubleValue();
 			}
 			catch (Exception ex){
 				throw new Exception("failed to load data from WTP");
@@ -269,63 +194,11 @@ public class ResEvapAlgo
 		return arrayWTP;
 	}
 
-	//Saves double[] of WTP to WTP object at time step, Stores data in CTimesSeries sets Flag  of timedVariable to T0_WRITE.
-	public void setProfiles(WaterTempProfiles newWTP, double[] wtp, Date CurrentTime, String WTPID) throws DbCompException {
-		double currentDepth = start_depth;
-		for(int i = 0; i < wtp.length && currentDepth+(Zero_elevation*0.3048)<=Elev; i++){
-			if(i+1>newWTP.tseries.size()){
-				try{
-					TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(WTPID);
-					TimeSeriesIdentifier newTSID = tsid.copyNoKey();
-
-					Site newsite =  new Site();
-					newsite.copyFrom(newTSID.getSite());
-					SiteName strsite = newsite.getName(Constants.snt_CWMS);
-
-					DecimalFormat decimalFormat = new DecimalFormat("000.0");
-					String formattedNumber = decimalFormat.format(currentDepth).replace(".", ",");
-					strsite.setNameValue(reservoirId+"-D"+formattedNumber+"m");
-					newsite.addName(strsite);
-					newTSID.setSite(newsite);
-					newTSID.setSiteName(strsite.getDisplayName());
-
-					CTimeSeries CTProfile;
-					FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newTSID.getUniqueString());
-					if(check.isSuccess()) {
-						CTProfile = timeSeriesDAO.makeTimeSeries(check.getSuccess());
-					}
-					else if(check.getFailure() instanceof NoSuchObjectException){
-						timeSeriesDAO.createTimeSeries(newTSID);
-						CTProfile = new CTimeSeries(newTSID);
-					}
-					else{
-						throw new DbIoException("failed to load time series from database", check.getFailure());
-					}
-
-					TimedVariable newTV = new TimedVariable(new Variable(wtp[i]), CurrentTime);
-					newTV.setFlags(VarFlags.TO_WRITE);
-					CTProfile.addSample(newTV);
-					newWTP.tseries.addTimeSeries(CTProfile);
-				}
-				catch (Exception ex){
-					throw new DbCompException("failed to create new timeSeriesID"+ex);
-				}
-			}
-			else{
-				CTimeSeries CTProfile = newWTP.tseries.getTimeSeriesAt(i);
-				TimedVariable newTV = new TimedVariable(new Variable(wtp[i]), CurrentTime);
-				newTV.setFlags(VarFlags.TO_WRITE);
-				CTProfile.addSample(newTV);
-			}
-			currentDepth += depth_increment;
-		}
-	}
-
 	//Saves last hourly time slice to dailyWTP object
-	public void setDailyProfiles(Date CurrentTime) throws DbCompException {
-		double[] arrayWTP = new double[hourlyWTP.tseries.size()];
+	private void setDailyProfiles(Date CurrentTime) throws DbCompException {
+		double[] arrayWTP = new double[hourlyWTP.getTimeSeries().size()];
 		int i = 0;
-		for(CTimeSeries CTS: hourlyWTP.tseries.getAllTimeSeries()){
+		for(CTimeSeries CTS: hourlyWTP.getTimeSeries().getAllTimeSeries()){
 			try{
 				int idx = CTS.findNextIdx(CurrentTime);
 				if(idx == -1){
@@ -337,7 +210,7 @@ public class ResEvapAlgo
 			}
 			i++;
 		}
-		setProfiles(DailyWTP, arrayWTP, CurrentTime, WtpTsid);
+		dailyWTP.setProfiles(arrayWTP, CurrentTime, wtpTsId, reservoirId, zeroElevation, elev, timeSeriesDAO);
 	}
 
 	//Returns Converted double of cts from currUnits space to NewUnits
@@ -367,8 +240,8 @@ public class ResEvapAlgo
 	}
 
 	//Converts evaporation to meters then to flow  and save value to output
-	public void SetAsFlow(Double TotalEvap ,Date CurrentTime) throws NoConversionException, DecodesException, RatingException {
-		double evap_to_meters = convertUnits(TotalEvap, DailyEvapTS.getUnitsAbbr(), "m");
+	private void setAsFlow(Double TotalEvap , Date CurrentTime) throws NoConversionException, DecodesException, RatingException {
+		double evap_to_meters = convertUnits(TotalEvap, dailyEvapTS.getUnitsAbbr(), "m");
 
 		double elev = resEvap.reservoir.getCurrentElevation(CurrentTime);
 		double areaMetersSq;
@@ -379,11 +252,11 @@ public class ResEvapAlgo
 			throw new RatingException("failed to compute rating", ex);
 		}
 		double dailyEvapFlow = (areaMetersSq * evap_to_meters)/(86400.);
-		setOutput(DailyEvapAsFlow, dailyEvapFlow, _timeSliceBaseTime);
+		setOutput(dailyEvapAsFlow, dailyEvapFlow, _timeSliceBaseTime);
 	}
 
 	//TODO Implement Location Levels
-	public double getMaxTempDepthMeters(){
+	private double getMaxTempDepthMeters(){
 		return 0;
 	}
 	
@@ -411,80 +284,80 @@ public class ResEvapAlgo
 			}
 
 			//If missing data overwrite with site info
-			if(Longi==0){
-				Longi = Double.parseDouble(site.longitude);
+			if(longitude ==0){
+				longitude = Double.parseDouble(site.longitude);
 			}
-			if(Lati==0){
-				Lati = Double.parseDouble(site.latitude);
+			if(latitude ==0){
+				latitude = Double.parseDouble(site.latitude);
 			}
 
 			//initialized Water Temperature Profiles
-			hourlyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
-			DailyWTP = new WaterTempProfiles(timeSeriesDAO, start_depth, depth_increment);
+			hourlyWTP = new WaterTempProfiles(timeSeriesDAO, startDepth, depthIncrement);
+			dailyWTP = new WaterTempProfiles(timeSeriesDAO, startDepth, depthIncrement);
 
 			//initialized input timeseries
-			HourlyEvapTS = getParmRef("HourlyEvap").timeSeries;
-			DailyEvapTS = getParmRef("DailyEvap").timeSeries;
+			hourlyEvapTS = getParmRef("hourlyEvap").timeSeries;
+			dailyEvapTS = getParmRef("dailyEvap").timeSeries;
 
 			windSpeedTS = getParmRef("windSpeed").timeSeries;
-			AirTempTS = getParmRef("AirTemp").timeSeries;
-			RelativeHumidityTS = getParmRef("RelativeHumidity").timeSeries;
-			AtmPressTS = getParmRef("AtmPress").timeSeries;
-			PercentLowCloudTS = getParmRef("PercentLowCloud").timeSeries;
-			ElevLowCloudTS = getParmRef("ElevLowCloud").timeSeries;
-			PercentMidCloudTS = getParmRef("PercentMidCloud").timeSeries;
-			ElevMidCloudTS = getParmRef("ElevMidCloud").timeSeries;
-			PercentHighCloudTS = getParmRef("PercentHighCloud").timeSeries;
-			ElevHighCloudTS = getParmRef("ElevHighCloud").timeSeries;
-			ElevTS = getParmRef("Elev").timeSeries;
+			airTempTS = getParmRef("airTemp").timeSeries;
+			relativeHumidityTS = getParmRef("relativeHumidity").timeSeries;
+			atmPressTS = getParmRef("atmPress").timeSeries;
+			percentLowCloudTS = getParmRef("percentLowCloud").timeSeries;
+			elevLowCloudTS = getParmRef("elevLowCloud").timeSeries;
+			percentMidCloudTS = getParmRef("percentMidCloud").timeSeries;
+			elevMidCloudTS = getParmRef("elevMidCloud").timeSeries;
+			percentHighCloudTS = getParmRef("percentHighCloud").timeSeries;
+			elevHighCloudTS = getParmRef("elevHighCloud").timeSeries;
+			elevTS = getParmRef("elev").timeSeries;
 
 
 			//initialize MetData
 			EvapMetData metData = new EvapMetData();
 			metData.setWindSpeedTs(windSpeedTS);
-			metData.setAirTempTs(AirTempTS);
-			metData.setRelHumidityTs(RelativeHumidityTS);
-			metData.setAirPressureTs(AtmPressTS);
-			metData.setLowCloudTs(PercentLowCloudTS, ElevLowCloudTS);
-			metData.setMedCloudTs(PercentMidCloudTS, ElevMidCloudTS);
-			metData.setHighCloudTs(PercentHighCloudTS, ElevHighCloudTS);
+			metData.setAirTempTs(airTempTS);
+			metData.setRelHumidityTs(relativeHumidityTS);
+			metData.setAirPressureTs(atmPressTS);
+			metData.setLowCloudTs(percentLowCloudTS, elevLowCloudTS);
+			metData.setMedCloudTs(percentMidCloudTS, elevMidCloudTS);
+			metData.setHighCloudTs(percentHighCloudTS, elevHighCloudTS);
 
 			//initialize Evaporation Reservoir
 			reservoir = new EvapReservoir();
 			reservoir.setName(reservoirId);
-			reservoir.setThermalDiffusivityCoefficient(ThermalDifCoe);
+			reservoir.setThermalDiffusivityCoefficient(thermalDifCoe);
 			try {
-				reservoir.setWindShearMethod(WindShearMethod.fromString(WindShear));
+				reservoir.setWindShearMethod(WindShearMethod.fromString(windShear));
 			} catch (Throwable ex) {
 				ex.printStackTrace();
 			}
 
 			reservoir.setInputDataIsEnglish(true);
-			double lonneg = -Longi; // why make longitude positive?
-			reservoir.setLatLon(Lati, lonneg);
-			reservoir.setSecchi(Secchi);
+			double longitudeNeg = -longitude; // why make longitude positive?
+			reservoir.setLatLon(latitude, longitudeNeg);
+			reservoir.setSecchi(secchi);
 
 			RatingSet ratingSet;
 			try {
-				ratingSet = crd.getRatingSet(Rating);
+				ratingSet = crd.getRatingSet(rating);
 			} catch (RatingException ex) {
-				throw new DbCompException("failed to load rating table", ex);
+				throw new DbCompException("Failed to load rating table", ex);
 			}
 
 			ratingSet.setDefaultValueTime(baseTimes.first().getTime());
 			reservoir.conn = tsdb.getConnection();
 			reservoir.setElevAreaRating(ratingSet);
 			reservoir.setInstrumentHeights(32.81, 32.81, 32.81);
-			reservoir.setElevationTs(ElevTS);
+			reservoir.setElevationTs(elevTS);
 
 			double initElev;
 			try {
-				initElev = ElevTS.findPrev(baseTimes.first()).getDoubleValue();
+				initElev = elevTS.findPrev(baseTimes.first()).getDoubleValue();
 			} catch (Exception ex) {
-				throw new DbCompException("failed to load initial Elevation");
+				throw new DbCompException("Failed to load initial Elevation");
 			}
 			reservoir.setElevation(initElev);
-            reservoir.setZeroElevation(Zero_elevation);
+            reservoir.setZeroElevation(zeroElevation);
 
 
 			//initialize Reservoir Evaporation object
@@ -499,9 +372,9 @@ public class ResEvapAlgo
 			//load water temperature profiles
 			double[] wtp;
 			try {
-				wtp = getProfiles(WtpTsid);
+				wtp = getProfiles(wtpTsId);
 			} catch (Exception ex) {
-				throw new DbCompException("failed to load profiles");
+				throw new DbCompException("Failed to load profiles");
 			}
 
 			// reverse array order
@@ -516,7 +389,7 @@ public class ResEvapAlgo
 
 			//retrieve Evaporation Rate from Previous Timestep to be used to calculate average instantaneous EvapRate over the hour
 			try {
-				CTimeSeries cts = timeSeriesDAO.makeTimeSeries(HourlyEvapTS.getTimeSeriesIdentifier());
+				CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapTS.getTimeSeriesIdentifier());
 				cts.setUnitsAbbr("mm/hr");
 				TimedVariable n = timeSeriesDAO.getPreviousValue(cts, baseTimes.first());
 				previousHourlyEvap = n.getDoubleValue();
@@ -552,15 +425,15 @@ public class ResEvapAlgo
 			}
 
 			List<Double> computedList = resEvap.getComputedMetTimeSeries();
-			setOutput(HourlySurfaceTemp, computedList.get(0));
-			setOutput(HourlySensible, -computedList.get(1));
-			setOutput(HourlyLatent, -computedList.get(2));
-			setOutput(HourlySolar, computedList.get(3));
-			setOutput(HourlyFluxIn, computedList.get(4));
-			setOutput(HourlyFluxOut, computedList.get(5));
-			setOutput(HourlyEvap, computedList.get(6));
+			setOutput(hourlySurfaceTemp, computedList.get(0));
+			setOutput(hourlySensible, -computedList.get(1)); //HourlySensible is a negative output energy convert to positive
+			setOutput(hourlyLatent, -computedList.get(2)); //HourlyLatent is a negative output energy convert to positive
+			setOutput(hourlySolar, computedList.get(3));
+			setOutput(hourlyFluxIn, computedList.get(4));
+			setOutput(hourlyFluxOut, computedList.get(5));
+			setOutput(hourlyEvap, computedList.get(6));
 
-			setProfiles(hourlyWTP, resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, WtpTsid);
+			hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, reservoirId, zeroElevation, elev, timeSeriesDAO);
 
 			count++;
 			tally += (previousHourlyEvap + computedList.get(6))/2;
@@ -580,9 +453,9 @@ public class ResEvapAlgo
 			warning("There are less than 24 hourly samples, can not compute daily sums");
 		}
 		else{
-			setOutput(DailyEvap, tally, _timeSliceBaseTime);
+			setOutput(dailyEvap, tally, _timeSliceBaseTime);
 			try {
-				SetAsFlow(tally, _timeSliceBaseTime);
+				setAsFlow(tally, _timeSliceBaseTime);
 			} catch (RatingException| NoConversionException | DecodesException e) {
 				throw new RuntimeException(e);
 			}
@@ -591,7 +464,7 @@ public class ResEvapAlgo
 
 		//TODO save HourlyWTP
 //		hourlyWTP.SaveProfiles(timeSeriesDAO);
-		DailyWTP.SaveProfiles(timeSeriesDAO);
+		dailyWTP.SaveProfiles(timeSeriesDAO);
 
 		tsdb.freeConnection(reservoir.conn);
 		crd.close();
@@ -602,28 +475,4 @@ public class ResEvapAlgo
 //AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }

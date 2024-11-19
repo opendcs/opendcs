@@ -8,6 +8,8 @@ package decodes.cwms.resevapcalc;
 
 import decodes.cwms.HecConstants;
 
+import java.util.Objects;
+
 /**
  * Data and functions for computing downwelling IR flux. 
 
@@ -54,7 +56,7 @@ public class DownwellingInfraRedFlux
         COEF[1][1] = COEF22;
     }
     
-    public DownwellingInfraRedFlux()
+    private DownwellingInfraRedFlux()
     {
 
     }
@@ -95,6 +97,11 @@ public class DownwellingInfraRedFlux
         // Convert variables from res_common.f to local subroutine
         doy = jday;
         ta = airTemp;
+
+        Objects.requireNonNull(cloudCover, "Input CloudCover cannot be null");
+        Objects.requireNonNull(cloudCover[2], "CloudCover at index 2 cannot be null");
+        Objects.requireNonNull(cloudCover[1], "CloudCover at index 1 cannot be null");
+        Objects.requireNonNull(cloudCover[0], "CloudCover at index 0 cannot be null");
         
         lcldbse = cloudCover[2].height;
         mcldbse = cloudCover[1].height;
