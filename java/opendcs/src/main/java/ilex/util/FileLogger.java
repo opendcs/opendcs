@@ -7,6 +7,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -29,6 +30,7 @@ public class FileLogger extends Logger
 	* The current output PrintStream
 	*/
 	private final AtomicReference<PrintStream> output = new AtomicReference<>();
+	private final AtomicLong bytesWritten = new AtomicLong(0L);
 
 	/**
 	* The filename supplied to the constructor.
@@ -60,10 +62,10 @@ public class FileLogger extends Logger
 	*/
 	public static boolean appendFlag = true;
 
-	private FileChannel fileChan = null;
 	private AtomicBoolean closeOperations = new AtomicBoolean(false);	
 	private BlockingQueue<String> queue = new ArrayBlockingQueue<>(5000); // TODO: intentionally arbitrary number for now.;
 	private Thread writerThread;
+	private boolean isTerminal = false;
 	
 	/**
 	* Construct with a process name and a filename.
@@ -71,8 +73,7 @@ public class FileLogger extends Logger
 	* @param filename Name of log file.
 	* @throws FileNotFoundException if can't open file
 	*/
-	public FileLogger( String procName, String filename )
-		throws FileNotFoundException
+	public FileLogger(String procName, String filename) throws FileNotFoundException
 	{
 		this(procName, filename, defaultMaxLength);
 	}
@@ -87,16 +88,16 @@ public class FileLogger extends Logger
 	* @param maxLength Maximum length of log file
 	* @throws FileNotFoundException if can't open file
 	*/
-	public FileLogger( String procName, String filename, int maxLength )
-		throws FileNotFoundException
+	public FileLogger(String procName, String filename, int maxLength) throws FileNotFoundException
 	{
 		super(procName);
 		this.filename = EnvExpander.expand(filename);
 		this.maxLength = maxLength;
+		isTerminal = ("/dev/stdout".equals(filename) || "CON:".equalsIgnoreCase(filename));
 		openNewLog();
 		writerThread = new Thread(() ->
 			{
-				while(closeOperations.get() == false)
+				while (closeOperations.get() == false)
 				{
 					try
 					{
@@ -104,7 +105,15 @@ public class FileLogger extends Logger
 						PrintStream ps = output.get();
 						if (msg != null && ps != null && !ps.checkError())
 						{
+							if (!isTerminal) // avoid any kind of buffer overflow errors since this would just keep accumulating.
+							{
+								bytesWritten.getAndAdd(msg.length());
+							}
 							ps.println(msg);
+						}
+						if (!isTerminal && (bytesWritten.get() >= this.maxLength))
+						{
+							rotateLogs();
 						}
 					}
 					catch (InterruptedException ex)
@@ -121,14 +130,14 @@ public class FileLogger extends Logger
 	/**
 	* Close this log file.
 	*/
-	public void close( )
+	public void close()
 	{
 		PrintStream ps = output.getAndSet(null);
 		if (ps != null)
 		{
 			ps.close();
 		}
-		fileChan = null;
+		bytesWritten.getAndSet(0L);
 	}
 
 	/**
@@ -138,7 +147,7 @@ public class FileLogger extends Logger
 	* @param priority the priority
 	* @param text the formatted log message text
 	*/
-	public synchronized void doLog( int priority, String text )
+	public synchronized void doLog(int priority, String text)
 	{
 		try
 		{
@@ -160,7 +169,7 @@ public class FileLogger extends Logger
 	{
 		// Note: This needs to be a separate method because it must be
 		// synchronized with doLog(). 
-		// And because doLog() calls rotate(), it can't be syncrhonized.
+		// And because doLog() calls rotate(), it can't be synchronized.
 		rotate();
 	}
 
@@ -172,9 +181,12 @@ public class FileLogger extends Logger
 	 */
 	protected void rotate()
 	{
-		close();
-		renameCurrentLog();
-		openNewLog();
+		if (!isTerminal)
+		{
+			close();
+			renameCurrentLog();
+			openNewLog();
+		}
 	}
 
 	protected void openNewLog()
@@ -187,9 +199,12 @@ public class FileLogger extends Logger
 			// I'm pretty sure just CON: worked on the terminal so it's probably some odd
 			// interaction with ant and how the command itself is run.
 			OutputStream os = null;
-			if (filename.equalsIgnoreCase("CON:")) {
+			if (isTerminal)
+			{
 				os = System.out;
-			} else {
+			}
+			else
+			{
 				os = new FileOutputStream(outputFile, appendFlag);
 			}
 			output.set(new PrintStream(os, true));
@@ -209,7 +224,9 @@ public class FileLogger extends Logger
 	{
 		File oldFile = new File(filename + ".old");
 		if (oldFile.exists())
+		{
 			oldFile.delete();
+		}
 		outputFile.renameTo(oldFile);
 	}
 
