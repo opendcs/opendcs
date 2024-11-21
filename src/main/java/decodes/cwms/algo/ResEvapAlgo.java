@@ -270,6 +270,28 @@ public class ResEvapAlgo
 		count = 0;
 		if (baseTimes.size() == 24) {
 
+			setOutputUnitsAbbr("windSpeed", "m/s");
+			setOutputUnitsAbbr("airTemp", "C");
+			setOutputUnitsAbbr("relativeHumidity", "%");
+			setOutputUnitsAbbr("atmPress", "mbar");
+			setOutputUnitsAbbr("percentLowCloud", "%");
+			setOutputUnitsAbbr("elevLowCloud", "m");
+			setOutputUnitsAbbr("percentMidCloud", "%");
+			setOutputUnitsAbbr("elevMidCloud", "m");
+			setOutputUnitsAbbr("percentHighCloud", "%");
+			setOutputUnitsAbbr("elevHighCloud", "m");
+			setOutputUnitsAbbr("elev", "m");
+
+			setOutputUnitsAbbr("hourlySurfaceTemp", "C");
+			setOutputUnitsAbbr("hourlyEvap", "mm/hr");
+			setOutputUnitsAbbr("dailyEvap", "mm");
+			setOutputUnitsAbbr("dailyEvapAsFlow", "cms");
+			setOutputUnitsAbbr("hourlyFluxOut", "W/m2");
+			setOutputUnitsAbbr("hourlyFluxIn", "W/m2");
+			setOutputUnitsAbbr("hourlySolar", "W/m2");
+			setOutputUnitsAbbr("hourlyLatent", "W/m2");
+			setOutputUnitsAbbr("hourlySensible", "W/m2");
+
 			//initialize database connections
 			siteDAO = tsdb.makeSiteDAO();
 			timeSeriesDAO = tsdb.makeTimeSeriesDAO();
