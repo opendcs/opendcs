@@ -1499,7 +1499,8 @@ public class CwmsTimeSeriesDAO
         }
         if (rrhandle != null)
         {
-            rrhandle.addRecNum(rec.getRecordNum());
+            // TODO: implement new Scheme
+            //rrhandle.addRecNum(rec.getRecordNum());
         }
 
         // Construct timed variable with appropriate flags & add it.
@@ -1512,7 +1513,8 @@ public class CwmsTimeSeriesDAO
             VarFlags.setWasAdded(tv);
             cts.addSample(tv);
             // Remember which tasklist records are in this timeseries.
-            cts.addTaskListRecNum(rec.getRecordNum());
+            // TODO: implement new scheme
+            //cts.addTaskListRecNum(rec.getRecordNum());
             log.trace("Added value {} to time series '{}' flags=0x{} cwms qualcode=0x{}",
                 tv.toString(), cts.getTimeSeriesIdentifier().getUniqueString(),
                 Integer.toHexString(tv.getFlags()), Long.toHexString(rec.getQualityCode()));

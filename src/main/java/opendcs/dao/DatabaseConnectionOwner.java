@@ -44,6 +44,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.opendcs.tsdb.interfacess.ProvidesTaskListDao;
+
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.CompDependsDAI;
@@ -74,7 +76,7 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 
-public interface DatabaseConnectionOwner
+public interface DatabaseConnectionOwner extends ProvidesTaskListDao
 {
 	/** @return a database connection */
 	public Connection getConnection();
