@@ -35,6 +35,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -107,6 +108,8 @@ public class LrgsConfigDialog extends GuiDialog
     private JComboBox mergePref4Combo = null;
     private JTextField ddsListenPortField = null;
     private JTextField ddsBindAddrField = null;
+    private JTextField ddsKeystoreFile = new JTextField();
+    private JPasswordField ddsKeystorePass = new JPasswordField();
     private JTextField ddsMaxClientsField = null;
     private JTextField ddsParentDirectoryField = null;
     private JTextField ddsLogFileField = null;
@@ -561,6 +564,22 @@ public class LrgsConfigDialog extends GuiDialog
                 changed = true;
             }
 
+            fieldName = "DDS Keystore File";
+            sv = getStringFieldValue(ddsKeystoreFile, LrgsConfig.def_keyStoreFile);
+            if (lrgsConfig.keyStoreFile != sv)
+            {
+                lrgsConfig.keyStoreFile = sv;
+                changed = true;
+            }
+
+            fieldName = "DDS Keystore Password";
+            sv = getStringFieldValue(ddsKeystorePass, null);
+            if (lrgsConfig.keyStorePassword != sv)
+            {
+                lrgsConfig.keyStorePassword = sv;
+                changed = true;
+            }
+
             fieldName = "DDS Bind Addr";
             sv = getStringFieldValue(getDdsBindAddrField(), 
                 lrgsConfig.def_ddsBindAddr);
@@ -928,56 +947,79 @@ public class LrgsConfigDialog extends GuiDialog
                     TitledBorder.CENTER, TitledBorder.BELOW_TOP, new Font("Dialog", Font.BOLD, 14), new Color(51, 51, 51)));
 
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsListeningPort")), 
-                new GridBagConstraints(0, 0, 1, 1, 0, .5,
+                new GridBagConstraints(0, 0, 1, 1, 0, 0,
                     GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
                     new Insets(6, 0, 6, 2), 0, 0));
             ddsServerConfigTab.add(getDdsListenPortField(), 
-                new GridBagConstraints(1, 0, 1, 1, .25, 0.,
+                new GridBagConstraints(1, 0, 1, 1, .5, 0.,
                     GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 0), 0, 0));
 
+            ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDiaolog.ddsKeystoreFile")),
+                new GridBagConstraints(0, 1, 1, 1, 0, 0,
+                    GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
+                    new Insets(6, 0, 6, 2), 0, 0));
+            ddsServerConfigTab.add(ddsKeystoreFile, 
+                new GridBagConstraints(1, 1, 1, 1, .5, 0.,
+                    GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
+                    new Insets(6, 0, 6, 0), 0, 0));
+            ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.warnReconnectRequired")), 
+                    new GridBagConstraints(2, 1, 1, 1, 0.5, 0.0,
+                        GridBagConstraints.WEST, GridBagConstraints.NONE,
+                        new Insets(6, 0, 6, 10), 0, 0));
+
+            ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDiaolog.ddsKeystorePassword")),
+                new GridBagConstraints(0, 2, 1, 1, 0, 0,
+                    GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
+                    new Insets(6, 0, 6, 2), 0, 0));
+            ddsServerConfigTab.add(ddsKeystorePass, 
+                new GridBagConstraints(1, 2, 1, 1, .5, 0.,
+                    GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
+                    new Insets(6, 0, 6, 0), 0, 0));
+
+
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsBindIPAddress")), 
-                new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                     new Insets(6, 0, 6, 2), 0, 0));
             ddsServerConfigTab.add(getDdsBindAddrField(), 
-                new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0,
+                new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 0), 80, 0));
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsMultiNICSystems")), 
-                new GridBagConstraints(2, 1, 1, 1, 0.5, 0.0,
+                new GridBagConstraints(2, 3, 1, 1, 0.5, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.NONE,
                     new Insets(6, 0, 6, 10), 0, 0));
 
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsMaxClients")),
-                new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                     new Insets(6, 10, 6, 2), 0, 0));
             ddsServerConfigTab.add(getDdsMaxClientsField(),
-                new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
+                new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 0), 0, 0));
 
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsSandboxDir")), 
-                new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                     new Insets(6, 10, 6, 2), 0, 0));
             ddsServerConfigTab.add(getDdsParentDirectoryField(), 
-                new GridBagConstraints(1, 3, 2, 1, 1.0, 0.0,
+                new GridBagConstraints(1, 5, 2, 1, 1.0, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 40), 0, 0));
 
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsUsageLogFile")), 
-                new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, 
+                new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0, 
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                     new Insets(6, 10, 6, 2), 0, 0));
             ddsServerConfigTab.add(getDdsLogFileField(), 
-                new GridBagConstraints(1, 4, 2, 1, 1.0, 0.0,
+                new GridBagConstraints(1, 6, 2, 1, 1.0, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 40), 0, 0));
 
             ddsServerConfigTab.add(getDdsRequireAuthCheck(), 
-                new GridBagConstraints(1, 5, 2, 1, 0.0, 0.0,
+                new GridBagConstraints(1, 7, 2, 1, 0.0, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.NONE,
                     new Insets(6, 0, 6, 0), 0, 0));
 
@@ -985,23 +1027,23 @@ public class LrgsConfigDialog extends GuiDialog
             localAdminOnlyCheck.setToolTipText(
                 "Do not allow administration from remotely shared accounts.");
             ddsServerConfigTab.add(localAdminOnlyCheck,
-                new GridBagConstraints(1, 6, 2, 1, 0.0, 0.0,
+                new GridBagConstraints(1, 8, 2, 1, 0.0, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.NONE,
                     new Insets(6, 0, 6, 5), 0, 0));
 
             requireStrongAuthCheck.setText("Require SHA-256 Authentication");
             ddsServerConfigTab.add(requireStrongAuthCheck,
-                new GridBagConstraints(1, 7, 2, 1, 0.0, 0.0,
+                new GridBagConstraints(1, 9, 2, 1, 0.0, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.NONE,
                     new Insets(6, 0, 6, 5), 0, 0));
 
             JLabel lb = new JLabel("Local Sandbox Directory:");
             ddsServerConfigTab.add(lb,
-                new GridBagConstraints(0, 8, 1, 1, 0.0, 0.5,
+                new GridBagConstraints(0, 10, 1, 1, 0.0, 0.5,
                     GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
                     new Insets(6, 10, 6, 2), 0, 0));
             ddsServerConfigTab.add(localSandboxDir,
-                new GridBagConstraints(1, 8, 1, 1, 1.0, 0.5,
+                new GridBagConstraints(1, 10, 1, 1, 1.0, 0.5,
                     GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
                     new Insets(5, 0, 5, 40), 0, 0));
         }
