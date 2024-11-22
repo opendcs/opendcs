@@ -7,6 +7,7 @@
 package decodes.cwms.resevapcalc;
 
 import decodes.cwms.HecConstants;
+import org.opendcs.units.Constants;
 
 import java.util.Objects;
 
@@ -200,7 +201,7 @@ public class DownwellingInfraRedFlux
         if  (mcld == 0.0 ) zmcld = 0.0;
         if  (hcld == 0.0 ) zhcld = 0.0;
         
-        flxclr = ematm* Const.SIGMA * Math.pow( ta + 273.15, 4.);
+        flxclr = ematm* Constants.SIGMA * Math.pow( ta + 273.15, 4.);
         flxcld = lcld*(94.0 - 5.8*zlcld) + mcld*(94.0 - 5.8*zmcld)
             	   + hcld*(94.0 - 5.8*zhcld);
         
