@@ -20,3 +20,4 @@ doc-source/*.rst
 *.iml
 .idea/
 !install/bin
+gradle.properties
