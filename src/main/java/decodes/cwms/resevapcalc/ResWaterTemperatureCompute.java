@@ -6,6 +6,8 @@
  */
 package decodes.cwms.resevapcalc;
 
+import org.opendcs.units.Constants;
+
 import java.io.BufferedWriter;
 import java.util.Date;
 import java.util.logging.Level;
@@ -113,7 +115,7 @@ public class ResWaterTemperatureCompute {
 
         double wsel = reservoir.getElevation();
         double surfArea = reservoir.surfArea;
-        double grav = Const.GRAV;
+        double grav = Constants.CONST_G;
 
         double SOLAR = metComputation.solar;
         double flxir = metComputation.flxir;

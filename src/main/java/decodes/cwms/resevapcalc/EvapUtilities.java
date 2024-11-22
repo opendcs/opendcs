@@ -6,6 +6,7 @@
  */
 package decodes.cwms.resevapcalc;
 
+import org.opendcs.units.Constants;
 /**
  *
  * @author RESEVAP program by Steven F. Daly (ERDC/CRREL)
@@ -13,13 +14,6 @@ package decodes.cwms.resevapcalc;
  */
 public class EvapUtilities
 {
-    /*  K is the von Karman constant. */
-    public static final double CONST_K = 0.4;
-    
-    /*  G is the acceleration of gravity. */    
-    public static final double CONST_G = 9.81;
-    
-    
     
 /**
  * Computes  the kinematic viscosity of air in m**2/s.
@@ -187,7 +181,7 @@ public class EvapUtilities
      */
     public static double roughness( double r, double cdnr )
     {      
-        return r * Math.exp( -CONST_K/ Math.sqrt(cdnr));
+        return r * Math.exp( -Constants.CONST_K/ Math.sqrt(cdnr));
     }
     
     /**
@@ -200,7 +194,7 @@ public class EvapUtilities
      */
     public static double cdnr( double ru, double z0 )
     {      
-        double val = Math.log( ru/z0 )/CONST_K;
+        double val = Math.log( ru/z0 )/Constants.CONST_K;
         return Math.pow( val, -2.);
     }
       
@@ -241,7 +235,7 @@ public class EvapUtilities
         // aerodynamically smooth surface.
         final double tk = 273.15;
 
-        return ((( tave+tk) * (ustar*ustar)) / (CONST_K*CONST_G) ) /
+        return ((( tave+tk) * (ustar*ustar)) / (Constants.CONST_K*Constants.CONST_G) ) /
                 ( tstar + ((0.61*( tave+tk ) * qstar )/(1.0 + (0.61*qave))));
     }
     
@@ -380,7 +374,7 @@ public class EvapUtilities
     public static double drift_snow( double ustar, double gnu )
     {            
         double z0_smooth = smooth(ustar, gnu);     // Aerodynamically smooth part
-        double z0_drift = (0.065/CONST_G)*(ustar*ustar);     //Drifting snow part
+        double z0_drift = (0.065/Constants.CONST_G)*(ustar*ustar);     //Drifting snow part
         double utmp = ((ustar-0.25)/0.052);
         double z0_stat = 1.13E-3* Math.exp( -(utmp*utmp));   //Statistical intermediate partt
         
@@ -541,7 +535,7 @@ public class EvapUtilities
     public static double c( double z1, double z2, double z01,
             double z02, double psi1, double psi2 )
     {
-        double cval = (CONST_K*CONST_K)/((Math.log(z1/z01) - psi1)
+        double cval = (Constants.CONST_K*Constants.CONST_K)/((Math.log(z1/z01) - psi1)
                 * ( Math.log( z2/z02) - psi2));
 
         return cval;
@@ -579,7 +573,7 @@ public class EvapUtilities
         if ( l < 0.0 )
         {
             // COARE algorithm's gustiness correction.
-            double wstar = ustar * ( Math.pow(-zi/(CONST_K*l),.333333) );
+            double wstar = ustar * ( Math.pow(-zi/(Constants.CONST_K*l),.333333) );
             double spd = Math.sqrt( (ur*ur) + (beta*wstar)*(beta*wstar) );
             return spd;
         }

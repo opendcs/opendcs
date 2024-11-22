@@ -7,6 +7,7 @@
 package decodes.cwms.resevapcalc;
 
 import decodes.cwms.HecConstants;
+import org.opendcs.units.Constants;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -204,7 +205,7 @@ public class SolarFlux {
         // comput extra-terrestrial insolation
         // account for variation of sun/earth distance due to
         // eliptical orbit. Redone daily at 0500 hours.
-        sdowne = 2. * Const.PI * ((float) (jday - 2)) / 365.242;
+        sdowne = 2. * Constants.PI * ((float) (jday - 2)) / 365.242;
         sdowne = (1.0001399 + 0.0167261 * Math.cos(sdowne));
         sdowne = sdowne * sdowne;
 
