@@ -3,6 +3,10 @@ plugins {
     id 'opendcs.deps-conventions'
 }
 
+repositories { 
+    mavenLocal()
+}
+
 dependencies {
     implementation project(":install")
 
@@ -27,6 +31,7 @@ def tmpdir = "${project.layout.buildDirectory.get()}/runs/${impl}/tmp"
 test {
     dependsOn ":install:installDist"
     dependsOn ":opendcs:test"
+    //outputs.upToDateWhen {false}
 
     enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" + name)
     doFirst {
@@ -36,9 +41,10 @@ test {
     def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
     def classPath = (project(':opendcs').jar.outputs.files
                   + project(":opendcs").configurations.runtimeClasspath).asPath
-
+    inputs.property "opendcs.test.engine", project.findProperty("opendcs.test.engine")
     
     systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
+    systemProperties += project.properties.findAll {k, v -> k.startsWith("testcontainer")}
     
     jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
     jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"

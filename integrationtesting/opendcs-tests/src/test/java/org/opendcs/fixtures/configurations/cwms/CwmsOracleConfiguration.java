@@ -16,6 +16,7 @@ import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
+import org.testcontainers.containers.output.OutputFrame;
 
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.launcher.Profile;
@@ -66,7 +67,10 @@ public class CwmsOracleConfiguration implements Configuration
                             .withSchemaImage(CWMS_SCHEMA_IMAGE)
                             .withVolumeName(CWMS_ORACLE_VOLUME)
                             .withOfficeId("SPK")
-                            .withOfficeEroc("l2");
+                            .withOfficeEroc("l2")
+                            .withLogConsumer(line -> {
+                                log.info(((OutputFrame)line).getUtf8String());
+                            });
             log.info("starting CWMS Database");
             cwmsDb.start();
             log.info("CWMS Database started.");
@@ -132,20 +136,20 @@ public class CwmsOracleConfiguration implements Configuration
             mp.setPlaceholderValue("CWMS_SCHEMA", "CWMS_20");
             mp.setPlaceholderValue("CCP_SCHEMA", "CCP");
             mp.setPlaceholderValue("DEFAULT_OFFICE_CODE", "44");
-            mp.setPlaceholderValue("DEFAULT_OFFICE", "SOK");
+            mp.setPlaceholderValue("DEFAULT_OFFICE", "SPK");
             mp.setPlaceholderValue("TABLE_SPACE_SPEC", "tablespace CCP_DATA");
             mm.migrate();
             cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Mgr','SPK') ; end;", "cwms_20");
             cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Proc','SPK') ; end;", "cwms_20");
             this.dbUrl = cwmsDb.getJdbcUrl();
-            this.dcsUser = cwmsDb.getUsername(); // System.getProperty("opendcs.cwms.dcsuser.name",cwmsDb.getUsername());
-            this.dcsUserPassword = cwmsDb.getPassword(); //
+            this.dcsUser = cwmsDb.getUsername();
+            this.dcsUserPassword = cwmsDb.getPassword();
             createPropertiesFile(configBuilder, this.propertiesFile);
             final Profile profile = Profile.getProfile(this.propertiesFile);
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
         }
 
-        System.getProperty("opendcs.cwms.dcsuser.password",cwmsDb.getPassword());
+        
         environment.set("DB_USERNAME",dcsUser);
         environment.set("DB_PASSWORD",dcsUserPassword);
         environmentVars.put("DB_USERNAME",dcsUser);
