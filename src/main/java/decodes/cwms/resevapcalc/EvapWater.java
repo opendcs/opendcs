@@ -6,6 +6,8 @@
  */
 package decodes.cwms.resevapcalc;
 
+import org.opendcs.units.Constants;
+
 /**
  *
  * @author RESEVAP program by Steven F. Daly  (ERDC/CRREL)
@@ -103,7 +105,7 @@ public class EvapWater
         }
         
         // Compute potential temperature.
-        thetar = tr + (Const.GRAV/EvapUtilities.computeSpecHeatAir( tr ) *rt);
+        thetar = tr + (Constants.CONST_G /EvapUtilities.computeSpecHeatAir( tr ) *rt);
         
         // Do not want subfreezing surface temperature in a model that assumes open water
         if ( ts < 0.0 ) 
