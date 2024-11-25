@@ -5,6 +5,7 @@ import static opendcs.util.logging.JulUtils.*;
 import java.lang.management.ManagementFactory;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,16 +15,21 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.management.JMException;
 import javax.management.ObjectName;
 import javax.management.openmbean.OpenDataException;
+import javax.sql.DataSource;
 
 import org.opendcs.jmx.ConnectionPoolMXBean;
 import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.utils.sql.SqlSettings;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import decodes.db.Constants;
 import decodes.sql.DbKey;
@@ -34,7 +40,7 @@ import ilex.util.TextUtil;
 import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
-import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
+
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
 /**
@@ -57,7 +63,8 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 	private int connectionsFreed = 0;
 	private int unknownConnReturned = 0;
     private int connectionsClosedDuringGet = 0;
-    private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
+    //private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
+    private DataSource pool;
 
     /**
      * Get a Pool for a given database.
@@ -70,7 +77,8 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         CwmsConnectionPool ret = pools.get(info);
         if (ret == null)
         {
-            try(Connection conn = pool.getConnection(info.getLoginInfo());)
+            ConnectionLoginInfo loginInfo = info.getLoginInfo();
+            try(Connection conn = DriverManager.getConnection(loginInfo.getUrl(), loginInfo.getUser(), loginInfo.getPassword()))
 			{
                 fillOutConnectionInfo(info,conn);
                 ret = new CwmsConnectionPool(info);
@@ -159,11 +167,25 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
     private CwmsConnectionPool(CwmsConnectionInfo info)
     {
         this.info = info;
+        final String poolName =
+            String.format("CwmsConnectionPool(%s/%s)",
+            info.getLoginInfo().getUrl().replace("?","\\?").replace(":","-"),
+            info.getLoginInfo().getUser());
+        final HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(info.getLoginInfo().getUrl());
+        config.setUsername(info.getLoginInfo().getUser());
+        config.setPassword(info.getLoginInfo().getPassword());
+        config.setConnectionTimeout(10000);
+        config.setMaximumPoolSize(10);
+        config.setIdleTimeout(60000);
+        config.setPoolName(poolName);
+        config.setRegisterMbeans(true);
+        config.setMaxLifetime(TimeUnit.HOURS.toMillis(2));
+        this.pool = new HikariDataSource(config);
         try
 		{
-            String name = String.format("CwmsConnectionPool(%s/%s)",info.getLoginInfo().getUrl().replace("?","\\?"),info.getLoginInfo().getUser());
 			ManagementFactory.getPlatformMBeanServer()
-							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+name+"\",hashCode=" + this.hashCode()));
+							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+poolName+"\",hashCode=" + this.hashCode()));
 		}
 		catch(JMException ex)
 		{
@@ -222,6 +244,11 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 		return this.connectionsOut.toArray(new WrappedConnection[0]);
 	}
 
+
+    private static Connection getConnection(ConnectionLoginInfo info) throws SQLException
+    {
+        return DriverManager.getConnection(info.getUrl(), info.getUser(), info.getPassword());
+    }
     /**
      * Retrieve a valid connection from the pool.
      *
@@ -239,7 +266,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             Connection conn = null;
             try
             {
-                conn = pool.getConnection(info.getLoginInfo());
+                conn = getConnection(info.getLoginInfo());
                 conn.setAutoCommit(true);
                 setCtxDbOfficeId(conn, info);
                 final WrappedConnection wc = new WrappedConnection(conn,(c)->{
@@ -255,7 +282,6 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
                     connectionsClosedDuringGet++;
                     if (conn != null) {
                         conn.close();
-                        CwmsDbConnectionPool.close(conn);
                         conn = null;
                     }
                 }
@@ -310,9 +336,9 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         {
             // the lambda handler above handles the count
             connectionsFreed++;
-            connectionsOut.remove(conn);
             Connection rc = ((WrappedConnection)conn).getRealConnection();
-            CwmsDbConnectionPool.close(rc);
+            rc.close();
+            connectionsOut.remove(conn);
         }
         else
         {

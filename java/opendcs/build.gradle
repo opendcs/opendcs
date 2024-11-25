@@ -63,6 +63,7 @@ dependencies {
         exclude group: "com.oracle.database.jdbc", module: "jmscommon"
         exclude group: "mil.army.usace.hec", module: "hec-monolith"
     }
+    implementation(libs.hikaricp)
 
     implementation(libs.hec.monolith) {
         exclude group: "codebase"
