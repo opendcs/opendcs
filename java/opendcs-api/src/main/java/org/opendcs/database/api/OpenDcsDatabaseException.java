@@ -1,6 +1,6 @@
 package org.opendcs.database.api;
 
-public class OpenDcsDatabaseException extends Exceptio
+public class OpenDcsDatabaseException extends Exception
 {
     public OpenDcsDatabaseException(String msg)
     {
