@@ -97,6 +97,12 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	@Override
 	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
 	{
+		return findTimeSeriesIdentifier(uniqueString, false);
+	}
+
+	@Override
+	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime)
+	{
 		debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
 
 		try

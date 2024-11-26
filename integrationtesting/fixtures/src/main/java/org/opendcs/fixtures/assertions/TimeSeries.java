@@ -35,6 +35,15 @@ public class TimeSeries
                                     .expected(expected.getTimeSeriesIdentifier())
                                     .buildAndThrow();
             }
+            else if (!expected.getUnitsAbbr().equals(actual.getUnitsAbbr()))
+            {
+                AssertionFailureBuilder.assertionFailure()
+                                    .reason("Time Series units do not match.")
+                                    .message(message)
+                                    .actual(actual.getUnitsAbbr())
+                                    .expected(expected.getUnitsAbbr())
+                                    .buildAndThrow();
+            }
             else if(expected.size() != actual.size())
             {
                 AssertionFailureBuilder.assertionFailure()
@@ -66,7 +75,7 @@ public class TimeSeries
                     {
                         double expectedValue = expectedVar.getDoubleValue();
                         double actualValue = actualVar.getDoubleValue();
-                        Assertions.assertEquals(expectedValue,actualValue, delta, "Values at position " + i + " do not match");
+                        Assertions.assertEquals(expectedValue,actualValue, delta, "Values at position " + i + "(" + actualDate +") do not match");
                         
                     }
                 }
