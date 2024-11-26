@@ -729,6 +729,7 @@ import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.DataType;
+import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.OracleSequenceKeyGenerator;
@@ -1691,6 +1692,33 @@ public class CwmsTimeSeriesDb
 			Logger.instance().warning("Unable to close returned connection: " + ex.getLocalizedMessage());
 		}
 	}
+
 	
+	/**
+     * Given a unique time-series identifier string, make a CTimeSeries
+     * object, populated with meta-data from the database.
+     * @param tsidStr the unique string identifying this time series.
+     * @return The CTimeSeries object
+     * @throws DbIoException on database I/O error
+     * @throws NoSuchObjectException if no such time series exists in the database.
+     */
+	@Override
+    public CTimeSeries makeTimeSeries(String tsidStr)
+        throws DbIoException, NoSuchObjectException
+    {
+        
+        try (TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO())
+        {
+            FailableResult<TimeSeriesIdentifier,TsdbException> tsid = timeSeriesDAO.findTimeSeriesIdentifier(tsidStr, true);
+			if (tsid.isSuccess())
+			{
+				return makeTimeSeries(tsid.getSuccess());
+			}
+            else
+			{
+				return ExceptionHelpers.throwDbIoNoSuchObject(tsid.getFailure());
+			}
+        }
+    }
 	
 }

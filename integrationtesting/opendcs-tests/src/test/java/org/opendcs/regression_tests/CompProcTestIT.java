@@ -136,15 +136,23 @@ public class CompProcTestIT extends AppTestBase
             final String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
             Waiting.assertResultWithinTimeFrame((t) ->
             {
-                final String output = Programs.OutputTs(new File(logDir,"/outputTs.log"), config.getPropertiesFile(),
-                                          environment, exit,
-                                          "01-Jan-2012/00:00", "03-Jan-2012/00:00", "UTC",
-                                          "regtest", tsids);
-                if (log.isTraceEnabled())
+                try
                 {
-                    log.trace("Current Output TimeSeries: {}{}", System.lineSeparator(), output);
+                    final String output = Programs.OutputTs(new File(logDir,"/outputTs.log"), config.getPropertiesFile(),
+                                            environment, exit,
+                                            "01-Jan-2012/00:00", "03-Jan-2012/00:00", "UTC",
+                                            "regtest", tsids);
+                    if (log.isTraceEnabled())
+                    {
+                        log.trace("Current Output TimeSeries: {}{}", System.lineSeparator(), output);
+                    }
+                    return golden.equals(output);
                 }
-                return golden.equals(output);
+                catch (Throwable ex)
+                {
+                    log.error("Test application had an unexpected error", ex);
+                    return false;
+                }
             }, 3, TimeUnit.MINUTES, 15, TimeUnit.SECONDS
             ,"Calculated results were not found within the expected time frame.");
         }

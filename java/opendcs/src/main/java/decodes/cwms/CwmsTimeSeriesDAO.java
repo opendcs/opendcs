@@ -226,9 +226,14 @@ public class CwmsTimeSeriesDAO
         return ret;
     }
 
-
     @Override
     public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
+    {
+        return findTimeSeriesIdentifier(uniqueString, false);
+    }
+
+    @Override
+    public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime)
     {
 
         int paren = uniqueString.lastIndexOf('(');
@@ -257,7 +262,7 @@ public class CwmsTimeSeriesDAO
             }
             return FailableResult.success(ret);
         }
-        else if (ret == null && lastCacheReloadWithin(1, TimeUnit.HOURS))
+        else if (ret == null && !ignoreCacheTime && lastCacheReloadWithin(1, TimeUnit.HOURS))
         {
             return FailableResult.failure(new NoSuchObjectException("No TimeSeries in fresh cache."));
         }

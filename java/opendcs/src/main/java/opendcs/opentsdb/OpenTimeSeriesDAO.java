@@ -151,6 +151,12 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	@Override
 	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
 	{
+		return findTimeSeriesIdentifier(uniqueString, false);
+	}
+
+	@Override
+	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime)
+	{
 		int paren = uniqueString.lastIndexOf('(');
 		String displayName = null;
 		if (paren > 0 && uniqueString.trim().endsWith(")"))
@@ -173,7 +179,6 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			}
 			return FailableResult.success(tsid);
 		}
-			
 		tsid = new CwmsTsId();
 		tsid.setUniqueString(uniqueString);
 		
