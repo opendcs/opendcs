@@ -20,4 +20,11 @@ public interface OpenDcsDatabase
      * @return A valid instance for this database, or an empty optional if the DAO is not supported
      */
     <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao);
+
+    /**
+     * Start a new transaction to perform data source operations.
+     * @return a valid DataTransaction containing any connections required to perform operations
+     * @throws OpenDcsDatabaseTransaction if any issues creating the transaction.
+     */
+    DataTransaction newTransaction() throws OpenDcsDatabaseException;
 }
