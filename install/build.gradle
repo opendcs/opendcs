@@ -124,7 +124,7 @@ task runApp(type: Exec) {
     }
 
     if (appArgs != null) {
-        args += appArgs//.split("\\s+")
+        args += appArgs
     }
 
     if (lang != null) {
