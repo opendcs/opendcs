@@ -33,7 +33,7 @@ public interface DataTransaction extends AutoCloseable {
     /**
      * Finalize transaction state across all connections.
      * 
-     * On successful commit implementations *MUST* provide a new valid transaction.
+     * On successful commit, implementations *MUST* provide a new valid transaction.
      * 
      * @throws OpenDcsDatabaseException any issues with finalizing the transaction.
      */
