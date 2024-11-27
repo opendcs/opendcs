@@ -242,13 +242,8 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 	public synchronized WrappedConnectionMBean[] getConnectionsList() throws OpenDataException
     {
 		return this.connectionsOut.toArray(new WrappedConnection[0]);
-	}
-
-
-    private static Connection getConnection(ConnectionLoginInfo info) throws SQLException
-    {
-        return DriverManager.getConnection(info.getUrl(), info.getUser(), info.getPassword());
     }
+
     /**
      * Retrieve a valid connection from the pool.
      *
@@ -266,7 +261,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             Connection conn = null;
             try
             {
-                conn = getConnection(info.getLoginInfo());
+                conn = pool.getConnection();
                 conn.setAutoCommit(true);
                 setCtxDbOfficeId(conn, info);
                 final WrappedConnection wc = new WrappedConnection(conn,(c)->{
