@@ -239,11 +239,9 @@ public class DbEnum
      */
     public EnumValue findEnumValue(String value)
     {
-        logger.info("Enums number of values: {}", enumValues.size());
         for(Iterator<EnumValue> it = enumValues.iterator(); it.hasNext();)
         {
             EnumValue ev = it.next();
-            logger.info("\tvalue -> {}", ev.getValue());
             if (value.equalsIgnoreCase(ev.getValue()))
                 return ev;
         }

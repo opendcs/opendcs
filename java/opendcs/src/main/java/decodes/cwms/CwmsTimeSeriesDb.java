@@ -1706,7 +1706,6 @@ public class CwmsTimeSeriesDb
     public CTimeSeries makeTimeSeries(String tsidStr)
         throws DbIoException, NoSuchObjectException
     {
-        
         try (TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO())
         {
             FailableResult<TimeSeriesIdentifier,TsdbException> tsid = timeSeriesDAO.findTimeSeriesIdentifier(tsidStr, true);
