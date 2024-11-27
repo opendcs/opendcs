@@ -43,8 +43,8 @@ public interface DataTransaction extends AutoCloseable {
     void commit() throws OpenDcsDataException;
 
     /**
-     * Reset data sources to know state.
-     * Transaction *MUST* should be in the valid initial state after return.
+     * Reset data sources to known state.
+     * Transaction *MUST* return to the valid initial state.
      */
     void rollback() throws OpenDcsDataException;
 
