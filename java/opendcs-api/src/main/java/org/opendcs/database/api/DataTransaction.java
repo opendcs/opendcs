@@ -10,7 +10,7 @@ import javax.management.openmbean.OpenDataException;
  * Implementations are free to provide any type required; however, generic implementations 
  * will assume SQL based operations.
  * 
- * Implementations if this interface *MUST* hold and provide connections to datasources 
+ * Implementations of this interface *MUST* hold and provide connections to datasources 
  * in such a way that all operations are a valid single transaction. For JDBC connection this
  * means instances hold a single {@link java.sql.Connection} or @{link org.jdbi.Handle} for operations.
  * 
