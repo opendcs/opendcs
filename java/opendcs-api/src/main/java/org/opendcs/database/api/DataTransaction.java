@@ -16,6 +16,9 @@ import javax.management.openmbean.OpenDataException;
  * 
  * Instances of this class are *NOT* thread safe and should not be shared between threads.
  * 
+ * SQL Based connections *MUST* be a valid SQL Transaction e.g. setAutoCommit(false).
+ * For any additional connection types, transaction support is the responsibility of the implementation.
+ *
  */
 public interface DataTransaction extends AutoCloseable {
 
@@ -38,6 +41,12 @@ public interface DataTransaction extends AutoCloseable {
      * @throws OpenDcsDatabaseException any issues with finalizing the transaction.
      */
     void commit() throws OpenDcsDataException;
+
+    /**
+     * Reset data sources to know state.
+     * Transaction *MUST* should be in the valid initial state after return.
+     */
+    void rollback() throws OpenDcsDataException;
 
     /**
      * Default autoclose behavior is to call commit.
