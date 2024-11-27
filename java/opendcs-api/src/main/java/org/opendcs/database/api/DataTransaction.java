@@ -29,7 +29,7 @@ public interface DataTransaction extends AutoCloseable {
      *            for the connections they use.
      * @param connectionType
      * @return optional with the instance of the connection type, if available.
-     * @throws OpenDCSDatabaseException any issues with the connection, if implementations check validity.
+     * @throws OpenDCSDataException any issues with the connection, if implementations check validity.
      */
     <T> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException;
 
@@ -38,7 +38,7 @@ public interface DataTransaction extends AutoCloseable {
      * 
      * On successful commit, implementations *MUST* provide a new valid transaction.
      * 
-     * @throws OpenDcsDatabaseException any issues with finalizing the transaction.
+     * @throws OpenDcsDataException any issues with finalizing the transaction.
      */
     void commit() throws OpenDcsDataException;
 
@@ -50,10 +50,10 @@ public interface DataTransaction extends AutoCloseable {
 
     /**
      * Default autoclose behavior is to call commit.
-     * @throws Exception
+     * @throws OpenDcsDataException
      */
     @Override
-    default void close() throws Exception
+    default void close() throws OpenDcsDataException
     {
         commit();
     }
