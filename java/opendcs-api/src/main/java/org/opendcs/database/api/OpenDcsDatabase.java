@@ -7,7 +7,7 @@ public interface OpenDcsDatabase
 {
     /**
      * Retrieve an instance of the given legacy database type.
-     * @param <T> Type of Legacy Database. `decodes.sql.Database` or `TimeeriesDb` or one of it's derivatives.
+     * @param <T> Type of Legacy Database. `decodes.sql.Database` or `TimeSeriesDb` or one of its derivatives.
      * @param legacyDatabaseType class reference to the desired database type.
      * @return Optional&lt;T&gt; that contains the Instance, or empty if not available.
      */
