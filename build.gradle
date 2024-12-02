@@ -46,30 +46,6 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             property "sonar.pullrequest.provider", "GitHub"
             property "sonar.pullrequest.github.repository", "opendcs/opendcs"
             property "sonar.projectVersion", sonarVersion()
-        }
-    }
-}
-
-ext.sonarVersion = {
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'describe', '--tags', '--abbrev=0', "--always"
-        standardOutput = stdout
-    }
-    return stdout.toString().trim() + "+"
-}
-
-
-
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    sonar {
-        properties {
-            property "sonar.projectKey", "opendcs_opendcs"
-            property "sonar.organization", "opendcs"
-            property "sonar.host.url", "https://sonarcloud.io"
-            property "sonar.pullrequest.provider", "GitHub"
-            property "sonar.pullrequest.github.repository", "opendcs/rest_api"
-            property "sonar.projectVersion", sonarVersion()
             // TODO: just remove the C files that are no longer used. However, they are still
             // called in some of the java
             property "sonar.c.file.suffixes", "-"
