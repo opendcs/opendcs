@@ -10,6 +10,7 @@ import decodes.cwms.HecConstants;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -203,7 +204,8 @@ public class MetComputation {
                            double airPressure, double relHumidity,
                            CloudCover[] cloudCover,
                            double lat, double lon) {
-        Calendar calendar = Calendar.getInstance();
+
+        GregorianCalendar calendar = new GregorianCalendar();
         calendar.setTime(currentTime);
         int jday = calendar.get(Calendar.DAY_OF_YEAR);
 
