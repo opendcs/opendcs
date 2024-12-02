@@ -38,9 +38,9 @@ public class CwmsOracleConfiguration implements Configuration
 {
     private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
 
-    private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","registry.hecdev.net/cwms/database-ready-ora-23.5:latest-dev");
+    private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev");
     private static final String CWMS_ORACLE_VOLUME = System.getProperty("opendcs.cwms.oracle.volume","cwms_opendcs_volume");
-    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","registry.hecdev.net/cwms/schema_installer:latest-dev");
+    private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","registry-public.hecdev.net/cwms/schema_installer:latest-dev");
 
     public static final String NAME = "CWMS-Oracle";
 
