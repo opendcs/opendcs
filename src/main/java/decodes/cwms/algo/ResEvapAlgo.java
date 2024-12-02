@@ -18,8 +18,7 @@ import ilex.var.TimedVariable;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 //AW:IMPORTS
 
@@ -72,6 +71,7 @@ public class ResEvapAlgo
 //AW:LOCALVARS
 	double tally; //running tally of hourly Evaporation
 	int count; //number of days calculated
+	boolean isDayLightSavings;
 	double previousHourlyEvap;
 
 	private double startDepth = 0.;
@@ -169,6 +169,7 @@ public class ResEvapAlgo
 //AW:INIT
         _awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "dailyEvap";
+		//aggPeriodInterval = IntervalCodes.int_one_day;
 		aggUpperBoundClosed = true;
 		aggLowerBoundClosed = false;
 
@@ -185,7 +186,7 @@ public class ResEvapAlgo
 		double[] arrayWTP = new double[hourlyWTP.getTimeSeries().size()];
 		for(int i = 0; i < hourlyWTP.getTimeSeries().size(); i++){
 			try {
-				arrayWTP[i] = hourlyWTP.getTimeSeries().getTimeSeriesAt(i).findPrev(baseTimes.first()).getDoubleValue();
+				arrayWTP[i] = hourlyWTP.getTimeSeries().getTimeSeriesAt(i).findPrev(untilTime).getDoubleValue();
 			}
 			catch (Exception ex){
 				throw new Exception("failed to load data from WTP");
@@ -268,7 +269,22 @@ public class ResEvapAlgo
 //AW:BEFORE_TIMESLICES
 		tally = 0.0;
 		count = 0;
-		if (baseTimes.size() == 24) {
+
+		String evapInterval = getParmRef("dailyEvap").tsid.getInterval();
+		String flowInterval = getParmRef("dailyEvapAsFlow").tsid.getInterval();
+		boolean evapIR = Objects.equals(evapInterval, IntervalCodes.int_one_day_dst);
+		boolean flowIR = Objects.equals(flowInterval, IntervalCodes.int_one_day_dst);
+
+
+		if(aggTZ.useDaylightTime() && !(evapIR && flowIR)){
+			throw new DbCompException("Aggregating timezone used daylight savings and dailyEvapAsFlow or dailyEvap is not an irregular daily timeseries");
+		}
+
+		int offsetBefore = aggTZ.getOffset( baseTimes.first().getTime() - 12 * 3600 * 1000);
+		int offsetAfter = aggTZ.getOffset(baseTimes.first().getTime() + 12 * 3600 * 1000);
+		isDayLightSavings = offsetBefore < offsetAfter;
+
+		if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings)) {
 
 			setOutputUnitsAbbr("windSpeed", "m/s");
 			setOutputUnitsAbbr("airTemp", "C");
@@ -413,8 +429,20 @@ public class ResEvapAlgo
 			try {
 				CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapTS.getTimeSeriesIdentifier());
 				cts.setUnitsAbbr("mm/hr");
-				TimedVariable n = timeSeriesDAO.getPreviousValue(cts, baseTimes.first());
-				previousHourlyEvap = n.getDoubleValue();
+	//			TimedVariable n = timeSeriesDAO.getPreviousValue(cts, baseTimes.first());
+//				GregorianCalendar calendar = new GregorianCalendar();
+//				calendar.setTime(baseTimes.first());
+//				TimeZone gmtTimeZone = TimeZone.getTimeZone("UTC");
+//				calendar.setTimeZone(gmtTimeZone);
+//				Date test = calendar.getTime();
+				Date until = new Date(baseTimes.first().getTime() + 86400000);
+				Date from = new Date(baseTimes.first().getTime() - 86400000);
+				int k = timeSeriesDAO.fillTimeSeries(cts, from, until, true, true, true);
+				// TimedVariable n = timeSeriesDAO.getPreviousValue(hourlyEvapTS, test);
+				// previousHourlyEvap = n.getDoubleValue();
+				Date test = baseTimes.first();
+				TimedVariable PrevTV = cts.findPrev(test);
+				previousHourlyEvap = PrevTV.getDoubleValue();
 			} catch (Exception ex) {
 				throw new DbCompException("Failed to initialize HourlyEvapRate");
 			}
@@ -436,7 +464,7 @@ public class ResEvapAlgo
 	protected void doAWTimeSlice()
             throws DbCompException {
 //AW:TIMESLICE
-		if (baseTimes.size() == 24) {
+		if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings)) {
 			try {
 				boolean noProblem = resEvap.compute(_timeSliceBaseTime, 0.0);
 				if (!noProblem) {
@@ -470,7 +498,7 @@ public class ResEvapAlgo
 	 */
 	protected void afterTimeSlices()
             throws DbCompException{
-		if (count < 24)
+		if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
 		{
 			warning("There are less than 24 hourly samples, can not compute daily sums");
 		}
@@ -482,17 +510,16 @@ public class ResEvapAlgo
 				throw new RuntimeException(e);
 			}
 			setDailyProfiles(_timeSliceBaseTime);
+
+			//TODO save HourlyWTP
+	//		hourlyWTP.SaveProfiles(timeSeriesDAO);
+			dailyWTP.SaveProfiles(timeSeriesDAO);
+
+			tsdb.freeConnection(reservoir.conn);
+			crd.close();
+			siteDAO.close();
+			timeSeriesDAO.close();
 		}
-
-		//TODO save HourlyWTP
-//		hourlyWTP.SaveProfiles(timeSeriesDAO);
-		dailyWTP.SaveProfiles(timeSeriesDAO);
-
-		tsdb.freeConnection(reservoir.conn);
-		crd.close();
-		siteDAO.close();
-		timeSeriesDAO.close();
-
 //AW:AFTER_TIMESLICES
 //AW:AFTER_TIMESLICES_END
 	}
