@@ -8,8 +8,9 @@ import decodes.tsdb.DbIoException;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DaoHelper;
 import opendcs.util.functional.DaoConsumer;
+import org.opendcs.database.api.OpenDcsDao;
 
-public interface DaiBase extends AutoCloseable
+public interface DaiBase extends AutoCloseable, OpenDcsDao
 {
     /**
      * 
