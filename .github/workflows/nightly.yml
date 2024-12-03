@@ -1,7 +1,16 @@
-name: Nightly Release
+name: Nightly Release Build
 on:
-  schedule:
-    - cron: "0 * * * *"
+  workflow_call:
+    inputs:
+      tag:
+       type: string
+       required: true
+      branch:
+       type: string
+       required: true
+    secrets:
+      token:
+       required: true
 
 jobs:
   tests:
@@ -13,6 +22,8 @@ jobs:
     runs-on: ${{matrix.platform}}
     steps:
       - uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{inputs.branch}}
       - name: Set up JDK
         uses: actions/setup-java@v4.4.0
         with:
@@ -26,22 +37,22 @@ jobs:
           ./gradlew distTar distZip
       - name: create docker images
         run: |
-          ./build_docker.sh ghcr.io/opendcs main-nightly
+          ./build_docker.sh ghcr.io/opendcs ${{inputs.tag}}
       - name: upload Release
         run: |
           VERSION=`./gradlew properties -q | grep "^version:" | awk '{ print $2}'`
-          gh release upload "main-nightly" install/build/distributions/${VERSION}.tar#opendcs-main-nightly.tar --clobber
-          gh release upload "main-nightly" install/build/distributions/${VERSION}.zip#opendcs-main-nightly.zip --clobber
+          gh release upload ${{inputs.tag}} install/build/distributions/${VERSION}.tar#opendcs-${{inputs.tag}}.tar --clobber
+          gh release upload ${{inputs.tag}} install/build/distributions/${VERSION}.zip#opendcs-${{inputs.tag}}.zip --clobber
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.token }}
       - name: Push images
         run: |
-          docker push ghcr.io/opendcs/lrgs:main-nightly
-          docker push ghcr.io/opendcs/routingscheduler:main-nightly
-          docker push ghcr.io/opendcs/compdepends:main-nightly
-          docker push ghcr.io/opendcs/compproc:main-nightly
+          docker push ghcr.io/opendcs/lrgs:${{inputs.tag}}
+          docker push ghcr.io/opendcs/routingscheduler:${{inputs.tag}}
+          docker push ghcr.io/opendcs/compdepends:${{inputs.tag}}
+          docker push ghcr.io/opendcs/compproc:${{inputs.tag}}
       

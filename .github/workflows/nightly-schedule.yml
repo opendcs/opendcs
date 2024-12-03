@@ -1,0 +1,15 @@
+name: Nightly Releases
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+
+jobs:
+  main:
+    uses: ./.github/workflows/nightly.yml
+    secrets:
+      token: ${{ GITHUB_TOKEN }}
+    with:
+      branch: "main"
+      tag: "main-nightly"
