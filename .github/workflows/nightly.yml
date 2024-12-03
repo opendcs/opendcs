@@ -1,0 +1,47 @@
+name: Nightly Release
+on:
+  schedule:
+    - cron: "0 * * * *"
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: true
+      matrix:
+        platform: [ubuntu-latest]
+        jdk: [11]
+    runs-on: ${{matrix.platform}}
+    steps:
+      - uses: actions/checkout@v4.1.1
+      - name: Set up JDK
+        uses: actions/setup-java@v4.4.0
+        with:
+          java-version: ${{matrix.jdk}}
+          distribution: temurin
+      - uses: actions/setup-python@v5.1.0
+        with:
+          python-version: "3.8"
+      - name: Create distributions
+        run: |
+          ./gradlew distTar distZip
+      - name: create docker images
+        run: |
+          ./build_docker.sh ghcr.io/opendcs main-nightly
+      - name: upload Release
+        run: |
+          VERSION=`./gradlew properties -q | grep "^version:" | awk '{ print $2}'`
+          gh release upload "main-nightly" install/build/distributions/${VERSION}.tar#opendcs-main-nightly.tar --clobber
+          gh release upload "main-nightly" install/build/distributions/${VERSION}.zip#opendcs-main-nightly.zip --clobber
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push images
+        run: |
+          docker push ghcr.io/opendcs/lrgs:main-nightly
+          docker push ghcr.io/opendcs/routingscheduler:main-nightly
+          docker push ghcr.io/opendcs/compdepends:main-nightly
+          docker push ghcr.io/opendcs/compproc:main-nightly
+      
