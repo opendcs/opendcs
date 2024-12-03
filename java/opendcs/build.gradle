@@ -2,7 +2,7 @@ plugins
 {
     id 'opendcs.deps-conventions'
     id 'opendcs.java-conventions'
-    id 'java-library'
+    id 'opendcs.publishing-conventions'
 }
 
 configurations {
@@ -123,4 +123,13 @@ test.dependsOn jar
 javadoc {
     options.addBooleanOption('Xdoclint:none', true)
     source("8")
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'opendcs'
+            from components.java
+        }
+    }
 }
