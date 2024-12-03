@@ -2,6 +2,7 @@ plugins
 {
     id 'opendcs.deps-conventions'
     id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
     id 'java-library'
 }
 
@@ -92,7 +93,7 @@ dependencies {
         exclude group: "mil.army.usace.hec", module: "hec-monolith"
     }
     implementation(libs.hec.nucleus.metadata)
-    api(libs.org.slf4j.api)
+    implementation(libs.org.slf4j.api)
     implementation(libs.bundles.jersey)
     implementation(libs.bundles.jdbi)
     implementation(libs.org.flywaydb.flyway.core)
