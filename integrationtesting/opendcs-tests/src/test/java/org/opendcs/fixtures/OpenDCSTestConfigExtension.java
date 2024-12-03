@@ -30,8 +30,8 @@ import org.opendcs.fixtures.annotations.TsdbAppRequired;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.fixtures.helpers.TestResources;
-import org.opendcs.spi.configuration.Configuration;
-import org.opendcs.spi.configuration.ConfigurationProvider;
+import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.fixtures.configuration.ConfigurationProvider;
 
 import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
