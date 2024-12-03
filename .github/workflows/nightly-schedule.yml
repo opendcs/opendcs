@@ -1,8 +1,7 @@
 name: Nightly Releases
 on:
   schedule:
-    - cron: "0 * * * *"
-  workflow_dispatch:
+    - cron: "0 * * * *"  
 
 
 jobs:
@@ -12,4 +11,3 @@ jobs:
       token: ${{ GITHUB_TOKEN }}
     with:
       branch: "main"
-      tag: "main-nightly"
