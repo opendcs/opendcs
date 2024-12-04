@@ -1711,7 +1711,15 @@ public class CwmsTimeSeriesDb
             FailableResult<TimeSeriesIdentifier,TsdbException> tsid = timeSeriesDAO.findTimeSeriesIdentifier(tsidStr, true);
 			if (tsid.isSuccess())
 			{
-				return makeTimeSeries(tsid.getSuccess());
+				TimeSeriesIdentifier tsId = tsid.getSuccess();
+				// There is an odd situtation that happens were a TimeSeries ID has been load, but never had the storage units attached.
+				// Several downstream components depend on the storage units being present and this ensures that the value is available.
+				// This is likely due to the more aggressive cache usages that CWMS is using to speed up various operations.
+				if (tsId.getStorageUnits() == null )
+				{
+					tsId.setStorageUnits(this.getStorageUnitsForDataType(tsId.getDataType()));
+				}
+				return makeTimeSeries(tsId);
 			}
             else
 			{
