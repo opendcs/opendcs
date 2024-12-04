@@ -98,7 +98,7 @@ public class CwmsOracleProvider implements MigrationProvider
         /*
         jdbi.useTransaction(h ->
         {
-            
+
             try(Call createUser = h.createCall("call create_user(:user,:pw)");
                 Call assignRole = h.createCall("call assign_role(:user,:role)");)
             {
@@ -127,7 +127,7 @@ public class CwmsOracleProvider implements MigrationProvider
             "${DCSTOOL_HOME}/edit-db/presentation",
             "${DCSTOOL_HOME}/edit-db/loading-app"
         };
-            
+
         fillFiles(files, decodesData, ".xml");
         if (log.isTraceEnabled())
         {

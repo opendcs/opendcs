@@ -16,7 +16,7 @@ declare
 	suffix varchar2(4);
     stmt varchar2(4000);
 begin
-    -- Create Tables 
+    -- Create Tables
 	for i in 1..31
 	loop
 		suffix := to_char(i,'fm09');
@@ -26,9 +26,9 @@ begin
 			MSG_DATA VARCHAR2(4000) NOT NULL,
 			PRIMARY KEY (RECORD_ID, BLOCK_NUM)
 		) ${TABLE_SPACE_SPEC}]';
-        
+
         execute immediate stmt;
-        
+
 		stmt := 'CREATE TABLE DCP_TRANS_' || suffix || q'[(
 			RECORD_ID NUMBER(18) NOT NULL,
 			-- ''G'' = GOES, ''L'' = Data Logger, ''I'' = Iridium.
@@ -56,8 +56,8 @@ begin
 			PRIMARY KEY (RECORD_ID)
 		) ]';
         --dbms_output.put_line('Creating ' || stmt);
-        execute immediate stmt;		
-        stmt := 'ALTER TABLE DCP_TRANS_DATA_' || suffix 
+        execute immediate stmt;
+        stmt := 'ALTER TABLE DCP_TRANS_DATA_' || suffix
              || ' ADD CONSTRAINT DCP_TRANS_DATA_FK_' || suffix
              || ' FOREIGN KEY (RECORD_ID)'
              || ' REFERENCES DCP_TRANS_' || suffix || '(RECORD_ID)';
@@ -89,7 +89,7 @@ begin
 end;
 /
 
--- Long term these should go away in favor of the 
+-- Long term these should go away in favor of the
 -- built in flyway version table.
 -- however too many internal locations relay on them so removal will happen in 8.0
 delete from DecodesDatabaseVersion;

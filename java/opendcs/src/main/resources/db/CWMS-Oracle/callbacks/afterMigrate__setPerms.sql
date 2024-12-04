@@ -1,9 +1,9 @@
 -----------------------------------------------------------------------------
--- This software was written by Cove Software, LLC ("COVE") under contract 
--- to the United States Government. 
+-- This software was written by Cove Software, LLC ("COVE") under contract
+-- to the United States Government.
 -- No warranty is provided or implied other than specific contractual terms
 -- between COVE and the U.S. Government
--- 
+--
 -- Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 -- All rights reserved.
 -----------------------------------------------------------------------------
@@ -21,7 +21,7 @@ BEGIN
   -- grant insert, update, delete privileges on all CCP tables to ccp_users_w
   for rec in (
     select object_name from sys.all_objects
-      where owner = upper('${CCP_SCHEMA}') and object_type in('TABLE') 
+      where owner = upper('${CCP_SCHEMA}') and object_type in('TABLE')
       and upper(object_name) not like 'FLYWAY%' order by object_id
     )
   loop

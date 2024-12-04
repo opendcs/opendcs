@@ -86,7 +86,7 @@ public class CwmsOracleConfiguration implements Configuration
                             + "CREATE ANY SYNONYM,DROP ANY SYNONYM,CREATE PUBLIC SYNONYM,DROP PUBLIC SYNONYM"
                             + " TO CCP","sys");
             cwmsDb.executeSQL("GRANT CREATE ANY CONTEXT,ADMINISTER DATABASE TRIGGER TO CCP","sys");
-            cwmsDb.executeSQL("begin\n" + //                                
+            cwmsDb.executeSQL("begin\n" + //
                                 "  execute immediate 'GRANT SELECT ON dba_scheduler_jobs to CCP';\n" + //
                                 "  execute immediate 'GRANT SELECT ON dba_queue_subscribers to CCP';\n" + //
                                 "  execute immediate 'GRANT SELECT ON dba_subscr_registrations to CCP';\n" + //
@@ -149,7 +149,7 @@ public class CwmsOracleConfiguration implements Configuration
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
         }
 
-        
+
         environment.set("DB_USERNAME",dcsUser);
         environment.set("DB_PASSWORD",dcsUserPassword);
         environmentVars.put("DB_USERNAME",dcsUser);
@@ -160,7 +160,7 @@ public class CwmsOracleConfiguration implements Configuration
 
     @Override
     public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception
-    {        
+    {
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
