@@ -43,7 +43,7 @@ create or replace package body cwms_ccp_vpd as
   --   0 = Administrator: Predicate is always '1 = 1'. Record creation disallowed.
   --       When called this way p_db_office_code can be null
   --   1 = Manager: Full read/write access to all tables. Predicate checks db_office_code
-  --   2 = Process: Read access to all tables. Write access to cp_comp_tasklist and 
+  --   2 = Process: Read access to all tables. Write access to cp_comp_tasklist and
   --       cp_comp_proc_lock, cp_comp_depends, and cp_comp_depends_scratchpad.
   --   3 = Reviewer: Read access to all tables only
   --   4 = Equivalent to never calling this method. Access denied to everything.
@@ -73,7 +73,7 @@ create or replace package body cwms_ccp_vpd as
   begin
     l_pred := '1 = 0';
 
-	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
+	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code);
 
     -- This is required by the queue handler
     if upper(k_session_user_name) in ('SYS', '${CCP_SCHEMA}', '${CWMS_SCHEMA}')
@@ -85,7 +85,7 @@ create or replace package body cwms_ccp_vpd as
       if l_ccp_priv_level is null then
         l_ccp_priv_level := 4;
       end if;
-  
+
       if l_ccp_priv_level = 0 then
         l_pred := '1 = 1';
       elsif l_ccp_priv_level >= 1 and l_ccp_priv_level <= 3 then
@@ -115,7 +115,7 @@ create or replace package body cwms_ccp_vpd as
   begin
     l_pred := '1 = 0';
 
-	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
+	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code);
 
     -- This is required by the queue handler
     if upper(k_session_user_name) in ('SYS', '${CCP_SCHEMA}', '${CWMS_SCHEMA}')
@@ -127,7 +127,7 @@ create or replace package body cwms_ccp_vpd as
       if l_ccp_priv_level is null then
         l_ccp_priv_level := 4;
       end if;
-  
+
       -- sys or superuser
       if l_ccp_priv_level = 0 then
         l_pred := '1 = 1';
@@ -136,7 +136,7 @@ create or replace package body cwms_ccp_vpd as
         l_pred := 'db_office_code = '||l_session_ccp_office_code;
       -- process can modify specific tables
       elsif l_ccp_priv_level = 2 then
-        if upper(p_table) in ('CP_COMP_PROC_LOCK', 'CP_COMP_TASKLIST', 
+        if upper(p_table) in ('CP_COMP_PROC_LOCK', 'CP_COMP_TASKLIST',
           'CP_COMP_DEPENDS', 'CP_COMP_DEPENDS_SCRATCHPAD')
         then
           l_pred := 'db_office_code = '||l_session_ccp_office_code;

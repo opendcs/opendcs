@@ -1,13 +1,13 @@
 ------------------------------------------------------------------------------
--- CWMS DECODES and CCP Database Schema 
+-- CWMS DECODES and CCP Database Schema
 ------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
--- This software was written by Cove Software, LLC ("COVE") under contract 
--- to the United States Government. 
+-- This software was written by Cove Software, LLC ("COVE") under contract
+-- to the United States Government.
 -- No warranty is provided or implied other than specific contractual terms
 -- between COVE and the U.S. Government
--- 
+--
 -- Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 -- All rights reserved.
 -----------------------------------------------------------------------------
@@ -215,7 +215,7 @@ CREATE TABLE DACQ_EVENT
 	PLATFORM_ID NUMBER(18),
 	EVENT_TIME date NOT NULL,
 	-- INFO = 3, WARNING = 4, FAILURE = 5, FATAL = 6
-	-- 
+	--
 	EVENT_PRIORITY INT NOT NULL,
 	-- Software subsystem that generated this event
 	SUBSYSTEM VARCHAR2(24),
@@ -735,7 +735,7 @@ CREATE TABLE SERIAL_PORT_STATUS
 -- 	PUBLIC_NAME VARCHAR2(64),
 -- 	PRIMARY KEY (ID)
 -- ) ${TABLE_SPACE_SPEC};
- 
+
 
 CREATE TABLE SITENAME
 (
@@ -1477,11 +1477,11 @@ CREATE SEQUENCE DACQ_EVENTIDSEQ MINVALUE 1 START WITH 1 NOCACHE;
 --------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
--- This software was written by Cove Software, LLC ("COVE") under contract 
--- to the United States Government. 
+-- This software was written by Cove Software, LLC ("COVE") under contract
+-- to the United States Government.
 -- No warranty is provided or implied other than specific contractual terms
 -- between COVE and the U.S. Government
--- 
+--
 -- Copyright 2019 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 -- All rights reserved.
 -----------------------------------------------------------------------------
