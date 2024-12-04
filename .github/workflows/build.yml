@@ -46,7 +46,7 @@ jobs:
         # at some point though.
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ./gradlew :testing:opendcs-test:test -D"opendcs.test.engine=OpenDCS-XML" --info
+          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-XML" --info
       - name: integration tests (OpenDCS-Postgres)
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
@@ -55,7 +55,7 @@ jobs:
         # at some point though.
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ./gradlew :testing:opendcs-test:test -D"opendcs.test.engine=OpenDCS-Postgres" --info
+          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-Postgres" --info
       - name: integration tests (CWMS-Oracle)
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
@@ -64,7 +64,7 @@ jobs:
         # at some point though.
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ./gradlew :testing:opendcs-test:test -D"opendcs.test.engine=CWMS-Oracle" --info
+          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=CWMS-Oracle" --info
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
