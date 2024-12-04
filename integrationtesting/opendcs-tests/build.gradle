@@ -3,10 +3,6 @@ plugins {
     id 'opendcs.deps-conventions'
 }
 
-repositories { 
-    mavenLocal()
-}
-
 dependencies {
     implementation project(":install")
 

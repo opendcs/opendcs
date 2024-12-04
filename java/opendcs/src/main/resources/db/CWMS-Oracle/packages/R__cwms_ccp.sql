@@ -8,11 +8,11 @@
 ---------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
--- This software was written by Cove Software, LLC ("COVE") under contract 
--- to the United States Government. 
+-- This software was written by Cove Software, LLC ("COVE") under contract
+-- to the United States Government.
 -- No warranty is provided or implied other than specific contractual terms
 -- between COVE and the U.S. Government
--- 
+--
 -- Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 -- All rights reserved.
 -----------------------------------------------------------------------------
@@ -335,7 +335,7 @@ create or replace package body cwms_ccp as
          r1.quality_code,
          r1.quality_code
       from cwms_v_tsv r1
-      where r1.ts_code = p_ts_code 
+      where r1.ts_code = p_ts_code
         and r1.date_time >= l_start_time and r1.date_time <= l_end_time
         and r1.data_entry_date <= p_enqueue_time;
     end loop;   /* end of for r2 loop */
@@ -352,7 +352,7 @@ create or replace package body cwms_ccp as
   is
   begin
     insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
-        values(cp_depends_notifyidseq.nextval, 'T', p_ts_code, SYSDATE, 
+        values(cp_depends_notifyidseq.nextval, 'T', p_ts_code, SYSDATE,
 			(select db_office_code from cwms_v_ts_id where ts_code = p_ts_code));
     commit;
   end notify_tscreated;
@@ -429,7 +429,7 @@ create or replace package body cwms_ccp as
   is
   begin
     insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
-        values(cp_depends_notifyidseq.nextval, 'H', p_ts_code, SYSDATE, 
+        values(cp_depends_notifyidseq.nextval, 'H', p_ts_code, SYSDATE,
 			(select db_office_code from cwms_v_ts_id where ts_code = p_ts_code));
     commit;
   end notify_tscodechanged;
@@ -444,7 +444,7 @@ create or replace package body cwms_ccp as
   is
   begin
     insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
-        values(cp_depends_notifyidseq.nextval, 'M', p_ts_code, SYSDATE, 
+        values(cp_depends_notifyidseq.nextval, 'M', p_ts_code, SYSDATE,
 			(select db_office_code from cwms_v_ts_id where ts_code = p_ts_code));
     commit;
   end notify_tsrenamed;
@@ -637,7 +637,7 @@ create or replace package body cwms_ccp as
 
                 l_comment      := 'calling notify_tsdelete with ts_code='||l_ts_code
 			||',office_id='||l_office_id;
-                
+
                 notify_tsdeleted(
                   p_ts_code => l_ts_code,
                   p_office_id => l_office_id);
