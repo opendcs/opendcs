@@ -45,6 +45,7 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             property "sonar.host.url", "https://sonarcloud.io"
             property "sonar.pullrequest.provider", "GitHub"
             property "sonar.pullrequest.github.repository", "opendcs/opendcs"
+            property "sonar.coverage.jacoco.xmlReportPaths", "**/jacoco-*.xml"
             property "sonar.projectVersion", sonarVersion()
             // TODO: just remove the C files that are no longer used. However, they are still
             // called in some of the java
