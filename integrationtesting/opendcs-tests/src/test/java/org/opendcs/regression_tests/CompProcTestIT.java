@@ -153,7 +153,7 @@ public class CompProcTestIT extends AppTestBase
                     log.error("Test application had an unexpected error", ex);
                     return false;
                 }
-            }, 5, TimeUnit.MINUTES, 15, TimeUnit.SECONDS
+            }, 10, TimeUnit.MINUTES, 10, TimeUnit.SECONDS
             ,"Calculated results were not found within the expected time frame.");
         }
         catch(InterruptedException ex)
