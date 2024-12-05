@@ -95,12 +95,13 @@ dependencies {
     implementation(libs.bundles.jersey)
     implementation(libs.bundles.jdbi)
     implementation(libs.org.flywaydb.flyway.core)
+    implementation(libs.bundles.jackson)
+
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)
     testImplementation(libs.webcompere.system.stubs.jupiter)
-    testImplementation(libs.fasterxml.jackson.databind)
 }
 
 test

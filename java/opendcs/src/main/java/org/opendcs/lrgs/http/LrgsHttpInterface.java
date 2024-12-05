@@ -54,12 +54,14 @@ public class LrgsHttpInterface implements LoadableLrgsInputInterface
     public void initLrgsInput() throws LrgsInputException
     {
         server = new org.eclipse.jetty.server.Server();
-		ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
-		ctx.setContextPath("/");
-		server.setHandler(ctx);
+
+        ctx = new ServletContextHandler(ServletContextHandler.SESSIONS);
+        ctx.setContextPath("/");
+        server.setHandler(ctx);
         ServletHolder serHol = ctx.addServlet(ServletContainer.class, "/*");
-		serHol.setInitOrder(1);
-		serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        serHol.setInitOrder(1);
+        serHol.setInitParameter("jersey.config.server.provider.packages", "org.opendcs.lrgs.http");
+        serHol.setInitParameter("com.sun.jersey.api.json.POJOMappingFeature", "true");
         ctx.setAttribute("lrgs", this.lrgs);
         ctx.setAttribute("archive", this.archive);
 

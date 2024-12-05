@@ -38,7 +38,7 @@ junit = "5.10.2"
 commons-io = "2.11.0"
 derby = "10.14.2.0"
 webcompere = "2.0.2"
-jackson = "2.14.2"
+jackson = "2.18.1"
 
 # integration test deps
 testcontainers = "1.18.1"
@@ -79,7 +79,10 @@ javax-servlet = { module = "javax.servlet:javax.servlet-api", version.ref="servl
 javax-javaee-api = { module = "javax:javaee-api", version.ref="javax-javaee-api" }
 jersey-containers = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref="jersey" }
 jersey-inject = { module ="org.glassfish.jersey.inject:jersey-hk2", version.ref="jersey" }
-
+jersey-media = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref="jersey" }
+fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+fasterxml-jackson-jaxrs = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider", version.ref="jackson" }
+fasterxml-jackson-datatype = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref="jackson" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
@@ -107,7 +110,7 @@ junit-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
-fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+
 
 #integration test deps
 
@@ -122,4 +125,5 @@ jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres" ]
 oracle = [ "oracle-ojdbc8" , "oracle-ucp" ]
 jersey = [ "org-eclipse-jetty-jsp", "org-eclipse-jetty-annotations", "org-eclipse-jetty-server", 
             "org-eclipse-jetty-servlets", "org-eclipse-jetty-webapp", "javax-servlet",
-            "javax-javaee-api", "jersey-containers","jersey-inject" ] 
+            "javax-javaee-api", "jersey-containers","jersey-inject", "jersey-media" ]
+jackson = [ "fasterxml-jackson-databind", "fasterxml-jackson-datatype", "fasterxml-jackson-jaxrs" ]
