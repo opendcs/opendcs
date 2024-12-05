@@ -12,91 +12,68 @@
  */
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
+@Algorithm(description = "Given two inputs, output the best one:\n" +
+		"If only one is present at the time-slice, output it.\n" +
+		"Else if input1LowThreshold is defined, output input1 if it is >= the threshold, else input2.\n" +
+		"Else (input1LowThreshold not defined) output higher if (chooseHigher) else the lower.\n" +
+		"Useful in situations where you have redundant sensors.")
 
-//AW:JAVADOC
-/**
-Given two inputs, output the best one:
-If only one is present at the time-slice, output it.
-Else if input1LowThreshold is defined, output input1 if it is >= the threshold, else input2.
-Else (input1LowThreshold not defined) output higher if (chooseHigher) else the lower.
-Useful in situations where you have redundant sensors.
- */
-//AW:JAVADOC_END
-public class ChooseOne
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class ChooseOne extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double input1;	//AW:TYPECODE=i
+	@Input
 	public double input2;	//AW:TYPECODE=i
-	String _inputNames[] = { "input1", "input2" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
-	// Enter any local class variables needed by the algorithm.
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "999999999999.9")
 	public static final double HIGH_DOUBLE = 999999999999.9;
-	public double upperLimit = HIGH_DOUBLE;
+	@PropertySpec(value = "-999999999999.9")
 	public double lowerLimit = -999999999999.9;
+	@PropertySpec(value = "IGNORE")
 	public String input1_MISSING = "IGNORE";
+	@PropertySpec(value = "IGNORE")
 	public String input2_MISSING = "IGNORE";
+	@PropertySpec(value = "true")
 	public boolean chooseHigher = true;
+	@PropertySpec(value = "999999999999.9")
 	public double input1LowThreshold = 999999999999.9;
-	String _propertyNames[] = { "upperLimit", "lowerLimit", "input1_MISSING", "input2_MISSING", 
-		"chooseHigher", "input1LowThreshold" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
 		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// Normally for copy, output units will be the same as input.
 		String inUnits = getInputUnitsAbbr("input1");
 		if (inUnits == null || inUnits.length() == 0)
 			inUnits = getInputUnitsAbbr("input2");
 		if (inUnits != null && inUnits.length() > 0)
 			setOutputUnitsAbbr("output", inUnits);
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -109,10 +86,11 @@ public class ChooseOne
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
+		double upperLimit = HIGH_DOUBLE;
 		boolean no_1 = isMissing(input1) || input1 > upperLimit || input1 < lowerLimit;
 		boolean no_2 = isMissing(input2) || input2 > upperLimit || input2 < lowerLimit;
 		if (!no_1 && !no_2) // both present?
@@ -128,45 +106,18 @@ public class ChooseOne
 		else if (!no_2)
 			setOutput(output, input2);
 		// Otherwise both bad. No output for this slice.
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
 		// period.
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
