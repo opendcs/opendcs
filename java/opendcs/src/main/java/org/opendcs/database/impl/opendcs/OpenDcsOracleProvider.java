@@ -30,7 +30,7 @@ import opendcs.opentsdb.OpenTsdb;
  * OpenDCSPgProvider provides support for handling installation and updates of the OpenDCS-Postgres
  * schema.
  */
-public class OpenDcsPgProvider implements MigrationProvider
+public class OpenDcsOracleProvider implements MigrationProvider
 {
     private static final Logger log = LoggerFactory.getLogger(OpenDcsOracleProvider.class);
     public static final String NAME = "OpenDCS-Oracle";
@@ -48,6 +48,10 @@ public class OpenDcsPgProvider implements MigrationProvider
             new MigrationProperty(
                 "NUM_TEXT_TABLES", Integer.class,
                 "How many tables should be used to balance text timeseries data."));
+        properties.add(
+            new MigrationProperty("TABLES_SPACE_SPEC", String.class, "")
+        );
+        properties.add(new MigrationProperty("TSDB_ADM_SCHEMA", String.class,""));
     }
 
     @Override
@@ -71,7 +75,7 @@ public class OpenDcsPgProvider implements MigrationProvider
     @Override
     public void registerJdbiPlugins(Jdbi jdbi)
     {
-        jdbi.installPlugin(new PostgresPlugin());
+        
     }
 
     @Override
@@ -83,6 +87,7 @@ public class OpenDcsPgProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
+        /*
         jdbi.useTransaction(h ->
         {
             try(Call createUser = h.createCall("call create_user(:user,:pw)");
@@ -99,6 +104,7 @@ public class OpenDcsPgProvider implements MigrationProvider
                 }
             }
         });
+        */
     }
 
     @Override
@@ -231,5 +237,12 @@ public class OpenDcsPgProvider implements MigrationProvider
             System.clearProperty("DCS_PASS");
             System.clearProperty("DCS_USER");
         }
+    }
+
+    public List<String> schemas()
+    {
+        ArrayList<String> theSchemas = new ArrayList<>();
+        theSchemas.add("otsdb_admin");
+        return theSchemas;
     }
 }
