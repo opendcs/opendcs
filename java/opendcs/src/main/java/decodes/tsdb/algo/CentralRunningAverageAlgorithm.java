@@ -8,50 +8,42 @@ package decodes.tsdb.algo;
 import java.util.Date;
 import java.util.Calendar;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.IntervalCodes;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-CentralRunningAverageAlgorithm averages single 'input' parameter to a single 'average' 
-parameter. A separate aggPeriodInterval property should be supplied.
-Example, input=Hourly Water Level, output=Daily Running Average, computed hourly,
-so each hour's output is the average of values at [t-23h ... t].
+@Algorithm(description = "CentralRunningAverageAlgorithm averages single 'input' parameter to a single 'average' \n" +
+		"parameter. A separate aggPeriodInterval property should be supplied.\n" +
+		"Example, input=Hourly Water Level, output=Daily Running Average, computed hourly,\n" +
+		"so each hour's output is the average of values at [t-23h ... t].\n" +
+		"\n" +
+		"This algorithm differs from RunningAverage algorithm in that the output is placed\n" +
+		"at the center of the period, rather than at the beginning.")
 
-This algorithm differs from RunningAverage algorithm in that the output is placed
-at the center of the period, rather than at the beginning.
- */
-//AW:JAVADOC_END
 public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	private static final String AVERAGESTRING = "average";
 
-//AW:LOCALVARS
+	@Input
+	public double input;	//AW:TYPECODE=i
+
 	double tally;
 	int count;
 	Date lastTimeSlice = null;
-	int aggregateInterval; 
-//AW:LOCALVARS_END
+	int aggregateInterval;
 
-//AW:OUTPUTS
-	public NamedVariable average = new NamedVariable("average", 0);
-	String _outputNames[] = { "average" };
-//AW:OUTPUTS_END
+	@Output
+	public NamedVariable average = new NamedVariable(AVERAGESTRING, 0);
 
-//AW:PROPERTIES
+
+	@PropertySpec(value = "1")
 	public long minSamplesNeeded = 1;
+	@PropertySpec(value = "false")
 	public boolean outputFutureData = false;
-	String _propertyNames[] = { "minSamplesNeeded", "outputFutureData" };
-//AW:PROPERTIES_END
 
 	public CentralRunningAverageAlgorithm()
 	{
@@ -64,24 +56,21 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.RUNNING_AGGREGATE;
-		_aggPeriodVarRoleName = "average";
-//AW:INIT_END
+		_aggPeriodVarRoleName = AVERAGESTRING;
 
-//AW:USERINIT
 		aggregateInterval = IntervalCodes.getIntervalSeconds(aggPeriodInterval);
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
 		// Zero out the tally & count for this agg period.
 		tally = 0.0;
 		count = 0;
@@ -91,7 +80,6 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 		String inUnits = getInputUnitsAbbr("input");
 		if (inUnits != null && inUnits.length() > 0)
 			setOutputUnitsAbbr("average", inUnits);
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -104,10 +92,10 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 //		debug2("AverageAlgorithm:doAWTimeSlice, input=" + input);
 		if (!isMissing(input))
 		{
@@ -115,18 +103,17 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 			count++;
 			lastTimeSlice = _timeSliceBaseTime;
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-debug1("CentralRunningAverageAlgorithm:afterTimeSlices, count=" + count
-+ ", lastTimeSlice=" + 
-(lastTimeSlice==null ? "null" : debugSdf.format(lastTimeSlice)));
+		debug1("CentralRunningAverageAlgorithm:afterTimeSlices, count=" + count
+		+ ", lastTimeSlice=" +
+		(lastTimeSlice==null ? "null" : debugSdf.format(lastTimeSlice)));
 
 		boolean doOutput = true;
 		if (count < minSamplesNeeded)
@@ -142,7 +129,6 @@ debug1("CentralRunningAverageAlgorithm:afterTimeSlices, count=" + count
 //				+ debugSdf.format(lastTimeSlice));
 			doOutput = false;
 		}
-		
                 debug3("Start " + _aggregatePeriodBegin + " end " + _aggregatePeriodEnd);
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(_aggregatePeriodBegin);
@@ -155,31 +141,5 @@ debug1("CentralRunningAverageAlgorithm:afterTimeSlices, count=" + count
 			if (_aggInputsDeleted)
 				deleteOutput(average,cal.getTime());
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
