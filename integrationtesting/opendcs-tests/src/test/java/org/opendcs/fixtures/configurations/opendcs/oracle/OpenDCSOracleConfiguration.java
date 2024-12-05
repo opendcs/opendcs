@@ -134,6 +134,9 @@ public class OpenDCSOracleConfiguration implements Configuration
         MigrationProvider mp = mm.getMigrationProvider();
         mp.setPlaceholderValue("NUM_TS_TABLES", "1");
         mp.setPlaceholderValue("NUM_TEXT_TABLES","1");
+        mp.setPlaceholderValue("TSDB_ADM_SCHEMA","otsdb_adm");
+        mp.setPlaceholderValue("TSDB_ADM_PASSWORD","otsdb_adm");
+        mp.setPlaceholderValue("TABLE_SPACE_SPEC","");
         mm.migrate();
         Jdbi jdbi = mm.getJdbiHandle();
         log.info("Creating application user.");
