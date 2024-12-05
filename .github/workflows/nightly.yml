@@ -53,7 +53,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.token != null && secrets.token || GITHUB_TOKEN }}
+          password: ${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}
       - name: Push images
         run: |
           docker push ghcr.io/opendcs/lrgs:${{inputs.branch}}-nightly

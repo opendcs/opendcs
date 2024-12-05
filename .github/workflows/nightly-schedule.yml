@@ -8,6 +8,6 @@ jobs:
   main:
     uses: ./.github/workflows/nightly.yml
     secrets:
-      token: ${{ GITHUB_TOKEN }}
+      token: ${{ secrets.GITHUB_TOKEN }}
     with:
       branch: "main"
