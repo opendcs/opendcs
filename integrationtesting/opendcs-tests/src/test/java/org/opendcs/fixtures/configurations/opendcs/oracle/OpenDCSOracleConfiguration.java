@@ -1,4 +1,4 @@
-package org.opendcs.fixtures.configurations.opendcs.pg;
+package org.opendcs.fixtures.configurations.opendcs.oracle;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -25,7 +25,7 @@ import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.oracle.OracleContainer;
 
 import decodes.db.Database;
 import decodes.launcher.Profile;
@@ -43,16 +43,16 @@ import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
- * Handles setup of an OpenDCS Postgres SQL Database instance.
+ * Handles setup of an OpenDCS Oracle SQL Database instance.
  *
  */
-public class OpenDCSPGConfiguration implements Configuration
+public class OpenDCSOracleConfiguration implements Configuration
 {
-    private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
+    private static Logger log = Logger.getLogger(OpenDCSOracleConfiguration.class.getName());
 
-    public static final String NAME = "OpenDCS-Postgres";
+    public static final String NAME = "OpenDCS-Oracle";
 
-    private static PostgreSQLContainer<?> db = null;
+    private static OracleContainer db = null;
     private File userDir;
     private File propertiesFile;
     private static AtomicBoolean started = new AtomicBoolean(false);
@@ -66,7 +66,7 @@ public class OpenDCSPGConfiguration implements Configuration
     private static final String DCS_ADMIN_USER = "dcs_admin";
     private static final String DCS_ADMIN_USER_PASSWORD = "dcs_admin_password";
 
-    public OpenDCSPGConfiguration(File userDir) throws Exception
+    public OpenDCSOracleConfiguration(File userDir) throws Exception
     {
         this.userDir = userDir;
         this.propertiesFile = new File(userDir,"/user.properties");
@@ -119,7 +119,7 @@ public class OpenDCSPGConfiguration implements Configuration
         }
         if(db == null)
         {
-            db = new PostgreSQLContainer<>("postgres:15.3")
+            db = new OracleContainer("gvenzl/oracle-free:full-faststart")
                     .withUsername(SCHEMA_OWNING_USER)
                     .withDatabaseName(DATABASE_NAME)
                     .withPassword(SCHEMA_OWNING_USER_PASSWORD);
