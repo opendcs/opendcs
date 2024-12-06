@@ -1,13 +1,13 @@
 ------------------------------------------------------------------------------
--- CWMS DECODES and CCP Database Schema 
+-- CWMS DECODES and CCP Database Schema
 ------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
--- This software was written by Cove Software, LLC ("COVE") under contract 
--- to the United States Government. 
+-- This software was written by Cove Software, LLC ("COVE") under contract
+-- to the United States Government.
 -- No warranty is provided or implied other than specific contractual terms
 -- between COVE and the U.S. Government
--- 
+--
 -- Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 -- All rights reserved.
 -----------------------------------------------------------------------------
@@ -33,7 +33,7 @@ CREATE TABLE CONFIGSENSOR
 	-- Used by USGS
 	STAT_CD VARCHAR2(5),
 	PRIMARY KEY (CONFIGID, SENSORNUMBER)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE CONFIGSENSORDATATYPE
@@ -43,7 +43,7 @@ CREATE TABLE CONFIGSENSORDATATYPE
 	SENSORNUMBER INT NOT NULL,
 	DATATYPEID NUMBER(18) NOT NULL,
 	PRIMARY KEY (CONFIGID, SENSORNUMBER, DATATYPEID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE CONFIGSENSORPROPERTY
@@ -54,7 +54,7 @@ CREATE TABLE CONFIGSENSORPROPERTY
 	PROP_NAME VARCHAR2(24) NOT NULL,
 	PROP_VALUE VARCHAR2(240) NOT NULL,
 	PRIMARY KEY (CONFIGID, SENSORNUMBER, PROP_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE CP_ALGORITHM
@@ -64,10 +64,10 @@ CREATE TABLE CP_ALGORITHM
 	-- May be null for pseudo or placeholder algorithms
 	EXEC_CLASS VARCHAR2(240),
 	CMMNT VARCHAR2(1000),
-	db_office_code integer default &&&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ALGORITHM_ID),
 	CONSTRAINT ALGORITHM_NAME_UNIQUE UNIQUE(ALGORITHM_NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE CP_ALGO_PROPERTY
@@ -78,7 +78,7 @@ CREATE TABLE CP_ALGO_PROPERTY
 	-- NOT NULL on PROP_VALUE here.
 	PROP_VALUE VARCHAR2(240),
 	PRIMARY KEY(ALGORITHM_ID, PROP_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE CP_ALGO_TS_PARM
@@ -87,7 +87,7 @@ CREATE TABLE CP_ALGO_TS_PARM
 	ALGO_ROLE_NAME VARCHAR2(24) NOT NULL,
 	PARM_TYPE VARCHAR2(24) NOT NULL,
 	PRIMARY KEY(ALGORITHM_ID, ALGO_ROLE_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 CREATE TABLE CP_COMPUTATION
 (
@@ -103,10 +103,10 @@ CREATE TABLE CP_COMPUTATION
 	-- Null means never expires
 	EFFECTIVE_END_DATE_TIME date,
 	GROUP_ID NUMBER(18),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (COMPUTATION_ID),
 	CONSTRAINT COMPUTATION_NAME_UNIQUE UNIQUE(COMPUTATION_NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 -- An entry in this table asserts that a time series is an input to a given computation.
@@ -115,18 +115,18 @@ CREATE TABLE CP_COMP_DEPENDS
 (
 	TS_ID NUMBER(18) NOT NULL,
 	COMPUTATION_ID NUMBER(18) NOT NULL,
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (TS_ID, COMPUTATION_ID, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE CP_COMP_DEPENDS_SCRATCHPAD
 (
 	TS_ID NUMBER(18) NOT NULL,
 	COMPUTATION_ID NUMBER(18) NOT NULL,
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (TS_ID, COMPUTATION_ID, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE CP_COMP_PROC_LOCK
@@ -137,7 +137,7 @@ CREATE TABLE CP_COMP_PROC_LOCK
 	HEARTBEAT date NOT NULL,
 	CUR_STATUS VARCHAR2(64),
 	PRIMARY KEY (LOADING_APPLICATION_ID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE CP_COMP_PROPERTY
@@ -146,7 +146,7 @@ CREATE TABLE CP_COMP_PROPERTY
 	PROP_NAME VARCHAR2(48) NOT NULL,
 	PROP_VALUE VARCHAR2(240) NOT NULL,
 	PRIMARY KEY (COMPUTATION_ID, PROP_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 create table cp_comp_tasklist
@@ -168,10 +168,10 @@ create table cp_comp_tasklist
     unit_id varchar(16),                       -- add this field for using cwms DB
     version_date date,                         -- add this field for using cwms DB
 	PRIMARY KEY (RECORD_NUM)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 create unique index cp_comp_tasklist_idx_app
-    on cp_comp_tasklist(loading_application_id, record_num) &&TBL_SPACE_SPEC;
+    on cp_comp_tasklist(loading_application_id, record_num) ${TABLE_SPACE_SPEC};
 
 CREATE TABLE CP_COMP_TS_PARM
 (
@@ -193,7 +193,7 @@ CREATE TABLE CP_COMP_TS_PARM
 	-- For group comps, this overrides the site selection.
 	SITE_ID NUMBER(18),
 	CONSTRAINT comp_parm_unique UNIQUE (COMPUTATION_ID, ALGO_ROLE_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE CP_DEPENDS_NOTIFY
@@ -202,9 +202,9 @@ CREATE TABLE CP_DEPENDS_NOTIFY
 	EVENT_TYPE CHAR NOT NULL,
 	KEY NUMBER(18) NOT NULL,
 	DATE_TIME_LOADED date NOT NULL,
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (RECORD_NUM, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE DACQ_EVENT
@@ -215,7 +215,7 @@ CREATE TABLE DACQ_EVENT
 	PLATFORM_ID NUMBER(18),
 	EVENT_TIME date NOT NULL,
 	-- INFO = 3, WARNING = 4, FAILURE = 5, FATAL = 6
-	-- 
+	--
 	EVENT_PRIORITY INT NOT NULL,
 	-- Software subsystem that generated this event
 	SUBSYSTEM VARCHAR2(24),
@@ -223,9 +223,9 @@ CREATE TABLE DACQ_EVENT
     MSG_RECV_TIME DATE,
 	EVENT_TEXT VARCHAR2(256) NOT NULL,
     LOADING_APPLICATION_ID NUMBER(18),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (DACQ_EVENT_ID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE DATAPRESENTATION
@@ -245,7 +245,7 @@ CREATE TABLE DATAPRESENTATION
 	MIN_VALUE DOUBLE PRECISION,
 	PRIMARY KEY (ID),
 	CONSTRAINT pres_dt_unique UNIQUE (GROUPID, DATATYPEID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE DATASOURCE
@@ -256,10 +256,10 @@ CREATE TABLE DATASOURCE
 	DATASOURCETYPE VARCHAR2(24) NOT NULL,
 	-- interpretation depends on the data source type
 	DATASOURCEARG VARCHAR2(400),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ID),
 	CONSTRAINT DSNAME_UNIQUE UNIQUE(NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE DATASOURCEGROUPMEMBER
@@ -270,7 +270,7 @@ CREATE TABLE DATASOURCEGROUPMEMBER
 	MEMBERID NUMBER(18) NOT NULL,
 	PRIMARY KEY (GROUPID, MEMBERID),
 	CONSTRAINT group_seq_unique UNIQUE (GROUPID, SEQUENCENUM)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE DATATYPE
@@ -280,10 +280,10 @@ CREATE TABLE DATATYPE
 	CODE VARCHAR2(65) NOT NULL,
 	-- Used for reports and GUIs.
 	DISPLAY_NAME VARCHAR2(64),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ID),
 	CONSTRAINT dt_std_code_unique UNIQUE (STANDARD, CODE, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 -- An entry in this table expresses that two different data types are to be considered equivalent.
@@ -292,7 +292,7 @@ CREATE TABLE DATATYPEEQUIVALENCE
 	ID0 INT NOT NULL,
 	ID1 INT NOT NULL,
 	PRIMARY KEY (ID0, ID1)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE DECODESDATABASEVERSION
@@ -303,7 +303,7 @@ CREATE TABLE DECODESDATABASEVERSION
 	-- Options expressed as comma-separated name=value pairs.
 	DB_OPTIONS VARCHAR2(400),
 	PRIMARY KEY (VERSION_NUM)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE DECODESSCRIPT
@@ -317,7 +317,7 @@ CREATE TABLE DECODESSCRIPT
 	DATAORDER CHAR DEFAULT 'A' NOT NULL,
 	PRIMARY KEY (ID),
 	CONSTRAINT config_script_name_unique UNIQUE (CONFIGID, NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE ENGINEERINGUNIT
@@ -331,9 +331,9 @@ CREATE TABLE ENGINEERINGUNIT
 	-- States what physical quantity this unit measures.
 	-- E.g. 'ft' measures 'length'
 	MEASURES VARCHAR2(24) NOT NULL,
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (UNITABBR, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 -- An enumeration
@@ -346,10 +346,10 @@ CREATE TABLE ENUM
 	DEFAULTVALUE VARCHAR2(24),
 	-- Description of what this enumeration is used for
 	DESCRIPTION VARCHAR2(400),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ID),
 	CONSTRAINT ENNAME_UNIQUE UNIQUE(NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE ENUMVALUE
@@ -366,7 +366,7 @@ CREATE TABLE ENUMVALUE
 	-- Order of this value within the enumeration.
 	SORTNUMBER INT,
 	PRIMARY KEY (ENUMID, ENUMVALUE)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE EQUIPMENTMODEL
@@ -377,10 +377,10 @@ CREATE TABLE EQUIPMENTMODEL
 	MODEL VARCHAR2(64),
 	DESCRIPTION VARCHAR2(400),
 	EQUIPMENTTYPE VARCHAR2(24),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ID),
 	CONSTRAINT EQNAME_UNIQUE UNIQUE(NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE EQUIPMENTPROPERTY
@@ -389,7 +389,7 @@ CREATE TABLE EQUIPMENTPROPERTY
 	NAME VARCHAR2(24) NOT NULL,
 	PROP_VALUE VARCHAR2(240) NOT NULL,
 	CONSTRAINT equip_prop_name_unique UNIQUE (EQUIPMENTID, NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE FORMATSTATEMENT
@@ -401,7 +401,7 @@ CREATE TABLE FORMATSTATEMENT
 	LABEL VARCHAR2(24) NOT NULL,
 	FORMAT VARCHAR2(400),
 	CONSTRAINT script_sequence_unique UNIQUE (DECODESSCRIPTID, SEQUENCENUM)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE HDB_LOADING_APPLICATION
@@ -412,10 +412,10 @@ CREATE TABLE HDB_LOADING_APPLICATION
 	-- True if this app does manual editing
 	MANUAL_EDIT_APP CHAR(1) DEFAULT 'N' NOT NULL,
 	CMMNT VARCHAR2(1000),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (LOADING_APPLICATION_ID),
 	CONSTRAINT APPNAME_UNIQUE UNIQUE(LOADING_APPLICATION_NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 --
@@ -433,7 +433,7 @@ CREATE TABLE HDB_LOADING_APPLICATION
 -- 	CAL_MULTIPLIER INT NOT NULL,
 -- 	PRIMARY KEY (INTERVAL_ID),
 -- 	CONSTRAINT ICNAME_UNIQUE UNIQUE(NAME)
--- ) &&TBL_SPACE_SPEC;
+-- ) ${TABLE_SPACE_SPEC};
 --
 
 
@@ -447,10 +447,10 @@ CREATE TABLE NETWORKLIST
 	-- If not null, must match a site name type enum value.
 	SITENAMETYPEPREFERENCE VARCHAR2(24) NOT NULL,
 	LASTMODIFYTIME date NOT NULL,
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ID),
 	CONSTRAINT NLNAME_UNIQUE UNIQUE(NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE NETWORKLISTENTRY
@@ -462,7 +462,7 @@ CREATE TABLE NETWORKLISTENTRY
 	PLATFORM_NAME VARCHAR2(64),
 	DESCRIPTION VARCHAR2(80),
 	PRIMARY KEY (NETWORKLISTID, TRANSPORTID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE PLATFORM
@@ -480,8 +480,8 @@ CREATE TABLE PLATFORM
 	-- To distinguish multiple platforms at the same site.
 	PLATFORMDESIGNATOR VARCHAR2(24),
 	PRIMARY KEY (ID),
-	CONSTRAINT site_designator_unique UNIQUE (SITEID, PLATFORMDESIGNATOR)
-) &&TBL_SPACE_SPEC;
+	CONSTRAINT site_designator_unique UNIQUE (SITEID, PLATFORMDESIGNATOR, EXPIRATION)
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE PLATFORMCONFIG
@@ -492,10 +492,10 @@ CREATE TABLE PLATFORMCONFIG
 	DESCRIPTION VARCHAR2(400),
 	-- Legacy
 	EQUIPMENTID NUMBER(18),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ID),
 	CONSTRAINT PCNAME_UNIQUE UNIQUE(NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE PLATFORMPROPERTY
@@ -504,7 +504,7 @@ CREATE TABLE PLATFORMPROPERTY
 	PROP_NAME VARCHAR2(24) NOT NULL,
 	PROP_VALUE VARCHAR2(240) NOT NULL,
 	PRIMARY KEY (PLATFORMID, PROP_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE PLATFORMSENSOR
@@ -515,7 +515,7 @@ CREATE TABLE PLATFORMSENSOR
 	-- Database Descriptor Number - Legacy field for USGS compatibility
 	DD_NU INT,
 	PRIMARY KEY (PLATFORMID, SENSORNUMBER)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE PLATFORMSENSORPROPERTY
@@ -525,7 +525,7 @@ CREATE TABLE PLATFORMSENSORPROPERTY
 	PROP_NAME VARCHAR2(24),
 	PROP_VALUE VARCHAR2(240),
 	PRIMARY KEY (PLATFORMID, SENSORNUMBER, PROP_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE PLATFORM_STATUS
@@ -544,9 +544,9 @@ CREATE TABLE PLATFORM_STATUS
 	-- Null means that the schedule entry is too old and has been purged.
 	LAST_SCHEDULE_ENTRY_STATUS_ID NUMBER(18),
 	ANNOTATION VARCHAR2(400),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (PLATFORM_ID, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE PRESENTATIONGROUP
@@ -557,10 +557,10 @@ CREATE TABLE PRESENTATIONGROUP
 	INHERITSFROM NUMBER(18),
 	LASTMODIFYTIME date NOT NULL,
 	ISPRODUCTION VARCHAR2(5) DEFAULT 'FALSE' NOT NULL,
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ID),
 	CONSTRAINT PGNAME_UNIQUE UNIQUE(NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE REF_LOADING_APPLICATION_PROP
@@ -569,7 +569,7 @@ CREATE TABLE REF_LOADING_APPLICATION_PROP
 	PROP_NAME VARCHAR2(64) NOT NULL,
 	PROP_VALUE VARCHAR2(240) NOT NULL,
 	PRIMARY KEY (LOADING_APPLICATION_ID, PROP_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE ROUNDINGRULE
@@ -578,7 +578,7 @@ CREATE TABLE ROUNDINGRULE
 	UPPERLIMIT DOUBLE PRECISION NOT NULL,
 	SIGDIGITS INT NOT NULL,
 	PRIMARY KEY (DATAPRESENTATIONID, UPPERLIMIT)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE ROUTINGSPEC
@@ -603,10 +603,10 @@ CREATE TABLE ROUTINGSPEC
 	CONSUMERARG VARCHAR2(400),
 	LASTMODIFYTIME date NOT NULL,
 	ISPRODUCTION VARCHAR2(5) DEFAULT 'FALSE' NOT NULL,
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ID),
 	CONSTRAINT RSNAME_UNIQUE UNIQUE(NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE ROUTINGSPECNETWORKLIST
@@ -614,7 +614,7 @@ CREATE TABLE ROUTINGSPECNETWORKLIST
 	ROUTINGSPECID NUMBER(18) NOT NULL,
 	NETWORKLISTNAME VARCHAR2(64) NOT NULL,
 	PRIMARY KEY (ROUTINGSPECID, NETWORKLISTNAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE ROUTINGSPECPROPERTY
@@ -623,7 +623,7 @@ CREATE TABLE ROUTINGSPECPROPERTY
 	PROP_NAME VARCHAR2(24) NOT NULL,
 	PROP_VALUE VARCHAR2(240) NOT NULL,
 	PRIMARY KEY (ROUTINGSPECID, PROP_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE SCHEDULE_ENTRY
@@ -644,10 +644,10 @@ CREATE TABLE SCHEDULE_ENTRY
 	-- true or false
 	ENABLED VARCHAR2(5) NOT NULL,
 	LAST_MODIFIED date NOT NULL,
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (SCHEDULE_ENTRY_ID),
 	CONSTRAINT SENAME_UNIQUE UNIQUE(NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 -- Describes a schedule run.
@@ -676,7 +676,7 @@ CREATE TABLE SCHEDULE_ENTRY_STATUS
 	LAST_MODIFIED date NOT NULL,
 	PRIMARY KEY (SCHEDULE_ENTRY_STATUS_ID),
 	CONSTRAINT sched_entry_start_unique UNIQUE (SCHEDULE_ENTRY_ID, RUN_START_TIME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE SCRIPTSENSOR
@@ -685,7 +685,7 @@ CREATE TABLE SCRIPTSENSOR
 	SENSORNUMBER INT NOT NULL,
 	UNITCONVERTERID NUMBER(18) NOT NULL,
 	PRIMARY KEY (DECODESSCRIPTID, SENSORNUMBER)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE SERIAL_PORT_STATUS
@@ -711,9 +711,9 @@ CREATE TABLE SERIAL_PORT_STATUS
 	-- Short string. Usually one of the following:
 	-- idle, dialing, login, receiving, goodbye, error
 	PORT_STATUS VARCHAR2(32),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (PORT_NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 -- NOTE: CWMS Locations are mapped to DECODES Sites. So no SITE table in CWMS.
 -- CREATE TABLE SITE
@@ -734,8 +734,8 @@ CREATE TABLE SERIAL_PORT_STATUS
 -- 	MODIFY_TIME NUMBER(19) NOT NULL,
 -- 	PUBLIC_NAME VARCHAR2(64),
 -- 	PRIMARY KEY (ID)
--- ) &&TBL_SPACE_SPEC;
- 
+-- ) ${TABLE_SPACE_SPEC};
+
 
 CREATE TABLE SITENAME
 (
@@ -749,7 +749,7 @@ CREATE TABLE SITENAME
 	-- For USGS Compatibility
 	AGENCY_CD VARCHAR2(5),
 	PRIMARY KEY (SITEID, NAMETYPE)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE SITE_PROPERTY
@@ -758,7 +758,7 @@ CREATE TABLE SITE_PROPERTY
 	PROP_NAME VARCHAR2(24) NOT NULL,
 	PROP_VALUE VARCHAR2(240) NOT NULL,
 	PRIMARY KEY (SITE_ID, PROP_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE TRANSPORTMEDIUM
@@ -794,13 +794,13 @@ CREATE TABLE TRANSPORTMEDIUM
 	DOLOGIN VARCHAR2(5),
 	USERNAME VARCHAR2(32),
 	PASSWORD VARCHAR2(32),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (PLATFORMID, MEDIUMTYPE)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 -- Guarantees no two transportmedia have same type and id.
 create unique index transportmediumidx
-    on transportmedium(mediumtype,mediumid,db_office_code) &&TBL_SPACE_SPEC;
+    on transportmedium(platformid, mediumtype,mediumid,db_office_code) ${TABLE_SPACE_SPEC};
 
 -- There should be a single row in this table. When schema is updated, the old row should be removed.
 CREATE TABLE TSDB_DATABASE_VERSION
@@ -808,7 +808,7 @@ CREATE TABLE TSDB_DATABASE_VERSION
 	DB_VERSION INT NOT NULL,
 	DESCRIPTION VARCHAR2(400) NOT NULL,
 	PRIMARY KEY (DB_VERSION)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE TSDB_GROUP
@@ -818,10 +818,10 @@ CREATE TABLE TSDB_GROUP
 	-- Must match a group_type enumeration value.
 	GROUP_TYPE VARCHAR2(24) NOT NULL,
 	GROUP_DESCRIPTION VARCHAR2(1000),
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (GROUP_ID),
 	CONSTRAINT GROUP_NAME_UNIQUE UNIQUE(GROUP_NAME, db_office_code)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE TSDB_GROUP_MEMBER_DT
@@ -829,7 +829,7 @@ CREATE TABLE TSDB_GROUP_MEMBER_DT
 	GROUP_ID NUMBER(18) NOT NULL,
 	DATA_TYPE_ID NUMBER(18) NOT NULL,
 	PRIMARY KEY (GROUP_ID, DATA_TYPE_ID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE TSDB_GROUP_MEMBER_GROUP
@@ -839,7 +839,7 @@ CREATE TABLE TSDB_GROUP_MEMBER_GROUP
 	-- How to combine child with parent: A=Add, S=Subtract, I=Intersect
 	INCLUDE_GROUP CHAR DEFAULT 'A' NOT NULL,
 	PRIMARY KEY (PARENT_GROUP_ID, CHILD_GROUP_ID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE TSDB_GROUP_MEMBER_OTHER
@@ -849,7 +849,7 @@ CREATE TABLE TSDB_GROUP_MEMBER_OTHER
 	MEMBER_TYPE VARCHAR2(24) NOT NULL,
 	MEMBER_VALUE VARCHAR2(240) NOT NULL,
 	PRIMARY KEY (GROUP_ID, MEMBER_TYPE, MEMBER_VALUE)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE TSDB_GROUP_MEMBER_SITE
@@ -857,7 +857,7 @@ CREATE TABLE TSDB_GROUP_MEMBER_SITE
 	GROUP_ID NUMBER(18) NOT NULL,
 	SITE_ID NUMBER(18) NOT NULL,
 	PRIMARY KEY (GROUP_ID, SITE_ID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE TSDB_GROUP_MEMBER_TS
@@ -865,7 +865,7 @@ CREATE TABLE TSDB_GROUP_MEMBER_TS
 	GROUP_ID NUMBER(18) NOT NULL,
 	TS_ID NUMBER(18) NOT NULL,
 	PRIMARY KEY (GROUP_ID, TS_ID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 -- Global properties on the database components.
@@ -874,7 +874,7 @@ CREATE TABLE TSDB_PROPERTY
 	PROP_NAME VARCHAR2(24) NOT NULL,
 	PROP_VALUE VARCHAR2(240) NOT NULL,
 	PRIMARY KEY (PROP_NAME)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 CREATE TABLE UNITCONVERTER
@@ -891,9 +891,9 @@ CREATE TABLE UNITCONVERTER
 	D DOUBLE PRECISION,
 	E DOUBLE PRECISION,
 	F DOUBLE PRECISION,
-	db_office_code integer default &&dflt_office_code,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
 	PRIMARY KEY (ID)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 CREATE TABLE CP_ALGO_SCRIPT
 (
@@ -902,7 +902,7 @@ CREATE TABLE CP_ALGO_SCRIPT
 	BLOCK_NUM NUMBER(4) NOT NULL,
 	SCRIPT_DATA VARCHAR2(4000) NOT NULL,
 	PRIMARY KEY (ALGORITHM_ID, SCRIPT_TYPE, BLOCK_NUM)
-) &&TBL_SPACE_SPEC;
+) ${TABLE_SPACE_SPEC};
 
 
 ALTER TABLE CP_ALGO_SCRIPT
@@ -1287,7 +1287,224 @@ ALTER TABLE SCRIPTSENSOR
 ;
 
 
-CREATE INDEX PLATFORM_ID_IDX ON DACQ_EVENT (PLATFORM_ID) &&TBL_SPACE_SPEC;
+CREATE INDEX PLATFORM_ID_IDX ON DACQ_EVENT (PLATFORM_ID) ${TABLE_SPACE_SPEC};
 CREATE INDEX EVT_PLAT_MSG_IDX ON DACQ_EVENT (PLATFORM_ID, MSG_RECV_TIME);
 CREATE INDEX EVT_SCHED_IDX ON DACQ_EVENT (SCHEDULE_ENTRY_STATUS_ID);
 CREATE INDEX EVT_TIME_IDX ON DACQ_EVENT (EVENT_TIME);
+
+
+CREATE TABLE ALARM_CURRENT
+(
+    TS_ID int NOT NULL UNIQUE,
+    LIMIT_SET_ID int NOT NULL,
+    ASSERT_TIME NUMBER(19) NOT NULL,
+    DATA_VALUE double precision,
+    DATA_TIME NUMBER(19),
+    ALARM_FLAGS int NOT NULL,
+    MESSAGE varchar2(256),
+    LAST_NOTIFICATION_SENT NUMBER(19),
+	db_office_code integer default ${DEFAULT_OFFICE_CODE}
+) ${TABLE_SPACE_SPEC};
+
+CREATE TABLE ALARM_EVENT
+(
+	ALARM_EVENT_ID INT NOT NULL UNIQUE,
+	ALARM_GROUP_ID INT NOT NULL,
+	LOADING_APPLICATION_ID INT NOT NULL,
+	PRIORITY INT NOT NULL,
+	PATTERN varchar2(256),
+	db_office_code integer default ${DEFAULT_OFFICE_CODE}
+) ${TABLE_SPACE_SPEC};
+
+
+CREATE TABLE ALARM_GROUP
+(
+	ALARM_GROUP_ID INT NOT NULL UNIQUE,
+	ALARM_GROUP_NAME VARCHAR2(32) NOT NULL UNIQUE,
+	LAST_MODIFIED NUMBER(19) NOT NULL,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE}
+) ${TABLE_SPACE_SPEC};
+
+CREATE TABLE ALARM_HISTORY
+(
+    TS_ID int NOT NULL,
+    LIMIT_SET_ID int NOT NULL,
+    ASSERT_TIME NUMBER(19) NOT NULL,
+    DATA_VALUE double precision,
+    DATA_TIME NUMBER(19),
+    ALARM_FLAGS int NOT NULL,
+    MESSAGE varchar2(256),
+    END_TIME NUMBER(19) NOT NULL,
+    CANCELLED_BY varchar2(32),
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
+    PRIMARY KEY (TS_ID, LIMIT_SET_ID, ASSERT_TIME)
+) ${TABLE_SPACE_SPEC};
+
+CREATE TABLE ALARM_LIMIT_SET
+(
+    LIMIT_SET_ID int NOT NULL UNIQUE,
+    SCREENING_ID int NOT NULL,
+    season_name varchar2(24),
+    reject_high double precision,
+    critical_high double precision,
+    warning_high double precision,
+    warning_low double precision,
+    critical_low double precision,
+    reject_low double precision,
+    stuck_duration varchar2(32),
+    stuck_tolerance double precision,
+    stuck_min_to_check double precision,
+    stuck_max_gap varchar2(32),
+    roc_interval varchar2(32),
+    reject_roc_high double precision,
+    critical_roc_high double precision,
+    warning_roc_high double precision,
+    warning_roc_low double precision,
+    critical_roc_low double precision,
+    reject_roc_low double precision,
+    missing_period varchar2(32),
+    missing_interval varchar2(32),
+    missing_max_values int,
+    hint_text varchar2(256),
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
+	CONSTRAINT LIMIT_SET_SCRSEA_UNIQUE UNIQUE(SCREENING_ID, season_name)
+) ${TABLE_SPACE_SPEC};
+
+CREATE TABLE ALARM_SCREENING
+(
+    SCREENING_ID int NOT NULL UNIQUE,
+    SCREENING_NAME varchar2(32) NOT NULL UNIQUE,
+    SITE_ID int,
+    DATATYPE_ID int NOT NULL,
+    START_DATE_TIME NUMBER(19),
+    LAST_MODIFIED NUMBER(19) NOT NULL,
+    ENABLED VARCHAR2(5) DEFAULT 'true' NOT NULL,
+    ALARM_GROUP_ID int,
+    SCREENING_DESC varchar2(1024),
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
+	CONSTRAINT AS_SDI_START_UNIQUE UNIQUE(SITE_ID, DATATYPE_ID, START_DATE_TIME)
+) ${TABLE_SPACE_SPEC};
+
+CREATE TABLE EMAIL_ADDR
+(
+	ALARM_GROUP_ID INT NOT NULL,
+	ADDR VARCHAR2(256) NOT NULL,
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
+	PRIMARY KEY (ALARM_GROUP_ID, ADDR)
+) ${TABLE_SPACE_SPEC};
+
+CREATE TABLE FILE_MONITOR
+(
+	ALARM_GROUP_ID INT NOT NULL,
+	PATH VARCHAR2(256) NOT NULL,
+	PRIORITY INT NOT NULL,
+	MAX_FILES int,
+	MAX_FILES_HINT VARCHAR2(128),
+	-- Maximum Last Modify Time
+	MAX_LMT VARCHAR2(32),
+	MAX_LMT_HINT VARCHAR2(128),
+	ALARM_ON_DELETE VARCHAR2(5),
+	ON_DELETE_HINT VARCHAR2(128),
+	MAX_SIZE NUMBER(19),
+	MAX_SIZE_HINT VARCHAR2(128),
+	ALARM_ON_EXISTS VARCHAR2(5),
+	ON_EXISTS_HINT VARCHAR2(128),
+	ENABLED VARCHAR2(5),
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
+	PRIMARY KEY (ALARM_GROUP_ID, PATH)
+) ${TABLE_SPACE_SPEC};
+
+CREATE TABLE PROCESS_MONITOR
+(
+	ALARM_GROUP_ID INT NOT NULL,
+	LOADING_APPLICATION_ID INT NOT NULL,
+	ENABLED VARCHAR2(5),
+	db_office_code integer default ${DEFAULT_OFFICE_CODE},
+	PRIMARY KEY (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
+) ${TABLE_SPACE_SPEC};
+
+ALTER TABLE PROCESS_MONITOR
+	ADD CONSTRAINT PROCESS_MONITOR_FK1
+	FOREIGN KEY (ALARM_GROUP_ID)
+	REFERENCES ALARM_GROUP (ALARM_GROUP_ID);
+
+ALTER TABLE FILE_MONITOR
+	ADD CONSTRAINT FILE_MONITOR_FK1
+	FOREIGN KEY (ALARM_GROUP_ID)
+	REFERENCES ALARM_GROUP (ALARM_GROUP_ID);
+
+ALTER TABLE EMAIL_ADDR
+	ADD CONSTRAINT EMAIL_ADDR_FK1
+	FOREIGN KEY (ALARM_GROUP_ID)
+	REFERENCES ALARM_GROUP (ALARM_GROUP_ID);
+
+ALTER TABLE PROCESS_MONITOR
+	ADD CONSTRAINT PROCESS_MONITOR_FKLA
+	FOREIGN KEY (LOADING_APPLICATION_ID)
+	REFERENCES HDB_LOADING_APPLICATION(LOADING_APPLICATION_ID);
+
+ALTER TABLE ALARM_SCREENING
+    ADD CONSTRAINT ALARM_SCREENING_FKAGI
+	FOREIGN KEY (ALARM_GROUP_ID)
+    REFERENCES ALARM_GROUP (ALARM_GROUP_ID);
+
+ALTER TABLE ALARM_HISTORY
+    ADD CONSTRAINT ALARM_HISTORY_FKLSI
+	FOREIGN KEY (LIMIT_SET_ID)
+    REFERENCES ALARM_LIMIT_SET (LIMIT_SET_ID);
+
+ALTER TABLE ALARM_CURRENT
+    ADD CONSTRAINT ALARM_CURRENT_FKLSI
+	FOREIGN KEY (LIMIT_SET_ID)
+    REFERENCES ALARM_LIMIT_SET (LIMIT_SET_ID);
+
+ALTER TABLE ALARM_LIMIT_SET
+    ADD CONSTRAINT LIMIT_SET_FKSI
+	FOREIGN KEY (SCREENING_ID)
+    REFERENCES ALARM_SCREENING (SCREENING_ID);
+
+CREATE INDEX AS_LAST_MODIFIED ON ALARM_SCREENING (LAST_MODIFIED);
+
+create sequence cp_comp_tasklistidseq minvalue 1 start with 1 maxvalue 2000000000 nocache cycle;
+CREATE SEQUENCE SCHEDULE_ENTRY_STATUSIDSEQ MINVALUE 1 START WITH 1 MAXVALUE 2000000000 NOCACHE CYCLE;
+CREATE SEQUENCE CP_DEPENDS_NOTIFYIDSEQ MINVALUE 1 START WITH 1 MAXVALUE 2000000000 NOCACHE CYCLE;
+CREATE SEQUENCE DACQ_EVENTIDSEQ MINVALUE 1 START WITH 1 NOCACHE;
+
+
+--------------------------------------------------------------------------
+-- This script updates OPENDCS 6.6 CCP Schema to OpenDCS 6.8.
+-- IT MUST BE EXECUTED BY THE CCP SCHEMA OWNER.
+--------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+-- This software was written by Cove Software, LLC ("COVE") under contract
+-- to the United States Government.
+-- No warranty is provided or implied other than specific contractual terms
+-- between COVE and the U.S. Government
+--
+-- Copyright 2019 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+-- All rights reserved.
+-----------------------------------------------------------------------------
+create sequence platformidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence cp_algorithmidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence cp_computationidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence datapresentationidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence datasourceidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence datatypeidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence decodesscriptidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence enumidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence equipmentidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence hdb_loading_applicationidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence networklistidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence platformconfigidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence presentationgroupidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence routingspecidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence schedule_entryidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence tsdb_groupidseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+create sequence unitconverteridseq increment by 1000 start with ${DEFAULT_OFFICE_CODE} nocache;
+
+  -----------------------------------------------------------------
+  -- Finally, update the database version numbers in the database
+  -----------------------------------------------------------------
+insert into DecodesDatabaseVersion values(68, 'Updated to OpenDCS 6.8');
+insert into tsdb_database_version values(68, 'Updated to OpenDCS 6.8');

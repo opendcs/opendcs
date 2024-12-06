@@ -1541,6 +1541,7 @@ public abstract class TimeSeriesDb
     {
         TimeSeriesIdentifier tsId = this.makeEmptyTsId();
         tsId.setUniqueString(uniqueString);
+        tsId.setStorageUnits(this.getStorageUnitsForDataType(tsId.getDataType()));
         return tsId;
     }
 
