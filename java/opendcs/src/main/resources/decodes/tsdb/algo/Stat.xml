@@ -2,7 +2,7 @@
 <CompMetaData>
   <Algorithm name="Stat">
     <Comment>
-      AverageAlgorithm averages single &apos;input&apos; parameter to a single
+      Stat algorithm averages single &apos;input&apos; parameter to a single
       &apos;average&apos; 
 parameter. The averaging period is determined by the
       interval of the output
