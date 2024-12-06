@@ -19,13 +19,16 @@ on:
           - main-fork
 
 jobs:
-  tests:
+  release:
     strategy:
       fail-fast: true
       matrix:
         platform: [ubuntu-latest]
         jdk: [11]
     runs-on: ${{matrix.platform}}
+    permissions:
+      packages: write
+      contents: write
     steps:
       - uses: actions/checkout@v4.1.1
         with:
