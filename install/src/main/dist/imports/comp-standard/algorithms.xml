@@ -16,43 +16,6 @@
   </Algorithm>
 
 
-  <Algorithm name="EstimatedInflow">
-    <Comment>
-      Estimate inflow over the interval from reservoir storage and outflow.
-      Estimated Inflow = delta(Storage) + AverageOutflow over period. Inputs
-      are: Storage (in cubic meters), and outflow (in cubic meters per second)
-      Output is estimated inflow (in cubic meters per second)
-    </Comment>
-    <ExecClass>decodes.tsdb.algo.EstimatedInflow</ExecClass>
-    <AlgoProperty name="aggUpperBoundClosed">true</AlgoProperty>
-    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
-    <AlgoParm roleName="storage">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="outflow">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="inflow">
-      <ParmType>o</ParmType>
-    </AlgoParm>
-  </Algorithm>
-
-  <Algorithm name="IncrementalPrecip">
-    <Comment>
-      Compute Incremental Precip from Cumulative Precip over a specified period.
-      Period determined by the interval of the output parameter, specified in
-      computation record.
-    </Comment>
-    <ExecClass>decodes.tsdb.algo.IncrementalPrecip</ExecClass>
-    <AlgoProperty name="aggUpperBoundClosed">true</AlgoProperty>
-    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
-    <AlgoParm roleName="cumulativePrecip">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="incrementalPrecip">
-      <ParmType>o</ParmType>
-    </AlgoParm>
-  </Algorithm>
 
   <Algorithm name="RdbRating">
     <Comment>
@@ -284,52 +247,5 @@
       <ParmType>o</ParmType>
     </AlgoParm>
   </Algorithm>
-  <Algorithm name="FillForward">
-    <Comment>
-      Project an input value by copying it forward in time for the specified
-      number of intervals.
-    </Comment>
-    <ExecClass>decodes.tsdb.algo.FillForward</ExecClass>
-    <AlgoProperty name="NumIntervals">4</AlgoProperty>
-    <AlgoParm roleName="input">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="output">
-      <ParmType>o</ParmType>
-    </AlgoParm>
-  </Algorithm>
-  <Algorithm name="Multiplication">
-    <Comment>
-      Multiply one time series with another using : (a*input1+b)*(c*input2+d). 
 
-    </Comment>
-    <ExecClass>decodes.tsdb.algo.Multiplication</ExecClass>
-    <AlgoProperty name="b">0</AlgoProperty>
-    <AlgoProperty name="a">1.0</AlgoProperty>
-    <AlgoProperty name="d">0</AlgoProperty>
-    <AlgoProperty name="c">1.0</AlgoProperty>
-    <AlgoParm roleName="input1">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="input2">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="output">
-      <ParmType>o</ParmType>
-    </AlgoParm>
-  </Algorithm>
-  <Algorithm name="Last Value From Period">
-    <Comment>
-      Within a given window select the most recent valid value to be at the end
-    </Comment>
-    <ExecClass>decodes.tsdb.algo.LastValueFromPeriod</ExecClass>
-    <AlgoProperty name="minSamplesNeeded">1</AlgoProperty>
-    <AlgoProperty name="aggregateTimeZone">UTC</AlgoProperty>
-    <AlgoParm roleName="input">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="output">
-      <ParmType>o</ParmType>
-    </AlgoParm>
-  </Algorithm>
 </CompMetaData>

@@ -115,45 +115,6 @@ Uses the CWMS API provided by HEC to
   </Algorithm>
 
 
-
-  <Algorithm name="EstimatedInflow">
-    <Comment>
-      Estimate inflow over the interval from reservoir storage and outflow.
-      Estimated Inflow = delta(Storage) + AverageOutflow over period. Inputs
-      are: Storage (in cubic meters), and outflow (in cubic meters per second)
-      Output is estimated inflow (in cubic meters per second)
-    </Comment>
-    <ExecClass>decodes.tsdb.algo.EstimatedInflow</ExecClass>
-    <AlgoProperty name="aggUpperBoundClosed">true</AlgoProperty>
-    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
-    <AlgoParm roleName="storage">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="outflow">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="inflow">
-      <ParmType>o</ParmType>
-    </AlgoParm>
-  </Algorithm>
-
-  <Algorithm name="IncrementalPrecip">
-    <Comment>
-      Compute Incremental Precip from Cumulative Precip over a specified period.
-      Period determined by the interval of the output parameter, specified in
-      computation record.
-    </Comment>
-    <ExecClass>decodes.tsdb.algo.IncrementalPrecip</ExecClass>
-    <AlgoProperty name="aggUpperBoundClosed">true</AlgoProperty>
-    <AlgoProperty name="aggLowerBoundClosed">true</AlgoProperty>
-    <AlgoParm roleName="cumulativePrecip">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="incrementalPrecip">
-      <ParmType>o</ParmType>
-    </AlgoParm>
-  </Algorithm>
-
   <Algorithm name="RdbRating">
     <Comment>
       Implements rating table computations. Holds the lookup table &amp; shift
@@ -387,20 +348,6 @@ Uses the CWMS API provided by HEC to
     </AlgoParm>
   </Algorithm>
 
-  <Algorithm name="FillForward">
-    <Comment>
-      Project an input value by copying it forward in time for the specified
-      number of intervals.
-    </Comment>
-    <ExecClass>decodes.tsdb.algo.FillForward</ExecClass>
-    <AlgoProperty name="NumIntervals">4</AlgoProperty>
-    <AlgoParm roleName="input">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="output">
-      <ParmType>o</ParmType>
-    </AlgoParm>
-  </Algorithm>
 
   <Algorithm name="CwmsScreening">
     <Comment>
