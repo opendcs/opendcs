@@ -500,9 +500,6 @@ public class ResEvapAlgo
             throws DbCompException{
 		if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
 		{
-			warning("There are less than 24 hourly samples, can not compute daily sums");
-		}
-		else{
 			setOutput(dailyEvap, tally, _timeSliceBaseTime);
 			try {
 				setAsFlow(tally, _timeSliceBaseTime);
@@ -512,13 +509,16 @@ public class ResEvapAlgo
 			setDailyProfiles(_timeSliceBaseTime);
 
 			//TODO save HourlyWTP
-	//		hourlyWTP.SaveProfiles(timeSeriesDAO);
+			//		hourlyWTP.SaveProfiles(timeSeriesDAO);
 			dailyWTP.SaveProfiles(timeSeriesDAO);
 
 			tsdb.freeConnection(reservoir.conn);
 			crd.close();
 			siteDAO.close();
 			timeSeriesDAO.close();
+		}
+		else{
+			warning("There are less than 24 hourly samples, can not compute daily sums");
 		}
 //AW:AFTER_TIMESLICES
 //AW:AFTER_TIMESLICES_END
