@@ -1,1 +1,2 @@
 org.opendcs.database.impl.opendcs.OpenDcsPgProvider
+decodes.cwms.database.CwmsOracleProvider
