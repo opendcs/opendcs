@@ -33,7 +33,7 @@ import opendcs.opentsdb.OpenTsdb;
 public class OpenDcsPgProvider implements MigrationProvider
 {
     private static final Logger log = LoggerFactory.getLogger(OpenDcsOracleProvider.class);
-    public static final String NAME = "OpenDCS-Oracle";
+    public static final String NAME = "OpenDCS-Postgres";
 
     private Map<String,String> placeholders = new HashMap<>();
     private static final List<MigrationProvider.MigrationProperty> properties = new ArrayList<>();
