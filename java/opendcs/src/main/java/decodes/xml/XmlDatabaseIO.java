@@ -281,9 +281,6 @@ public class XmlDatabaseIO extends DatabaseIO
 	{
 		String fileName = makePath(dir, name);
 		File file = new File(fileName);
-		if( !file.exists()){
-			throw new FileNotFoundException(fileName);
-		}
 		return file.lastModified();
 	}
 

@@ -1,4 +1,4 @@
-package org.opendcs.fixtures.configurations.opendcs.pg;
+package org.opendcs.fixtures.configurations.opendcs.oracle;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -20,12 +20,14 @@ import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
-import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
+import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
+import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.oracle.OracleContainer;
 
+import decodes.db.Database;
 import decodes.launcher.Profile;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
@@ -41,16 +43,16 @@ import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
- * Handles setup of an OpenDCS Postgres SQL Database instance.
+ * Handles setup of an OpenDCS Oracle SQL Database instance.
  *
  */
-public class OpenDCSPGConfiguration implements Configuration
+public class OpenDCSOracleConfiguration implements Configuration
 {
-    private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
+    private static Logger log = Logger.getLogger(OpenDCSOracleConfiguration.class.getName());
 
-    public static final String NAME = "OpenDCS-Postgres";
+    public static final String NAME = "OpenDCS-Oracle";
 
-    private static PostgreSQLContainer<?> db = null;
+    private static OracleContainer db = null;
     private File userDir;
     private File propertiesFile;
     private static AtomicBoolean started = new AtomicBoolean(false);
@@ -59,12 +61,12 @@ public class OpenDCSPGConfiguration implements Configuration
     // FUTURE work: allow passing of override values to bypass the test container creation
     // ... OR setup a separate testcontainer library like USACE did for CWMS.
     private static final String DATABASE_NAME = "dcs";
-    private static final String SCHEMA_OWNING_USER = "dcs_owner";
+    private static final String SCHEMA_OWNING_USER = "otsdb_adm";
     private static final String SCHEMA_OWNING_USER_PASSWORD = "dcs_owner_password";
     private static final String DCS_ADMIN_USER = "dcs_admin";
     private static final String DCS_ADMIN_USER_PASSWORD = "dcs_admin_password";
 
-    public OpenDCSPGConfiguration(File userDir) throws Exception
+    public OpenDCSOracleConfiguration(File userDir) throws Exception
     {
         this.userDir = userDir;
         this.propertiesFile = new File(userDir,"/user.properties");
@@ -117,7 +119,7 @@ public class OpenDCSPGConfiguration implements Configuration
         }
         if(db == null)
         {
-            db = new PostgreSQLContainer<>("postgres:15.3")
+            db = new OracleContainer("gvenzl/oracle-free:full-faststart")
                     .withUsername(SCHEMA_OWNING_USER)
                     .withDatabaseName(DATABASE_NAME)
                     .withPassword(SCHEMA_OWNING_USER_PASSWORD);
@@ -128,10 +130,13 @@ public class OpenDCSPGConfiguration implements Configuration
         final Profile profile = Profile.getProfile(this.propertiesFile);
         DataSource ds = new SimpleDataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword());
 
-        MigrationManager mm = new MigrationManager(ds,OpenDcsPgProvider.NAME);
+        MigrationManager mm = new MigrationManager(ds,OpenDcsOracleProvider.NAME);
         MigrationProvider mp = mm.getMigrationProvider();
         mp.setPlaceholderValue("NUM_TS_TABLES", "1");
         mp.setPlaceholderValue("NUM_TEXT_TABLES","1");
+        mp.setPlaceholderValue("TSDB_ADM_SCHEMA",SCHEMA_OWNING_USER);
+        mp.setPlaceholderValue("TSDB_ADM_PASSWORD",SCHEMA_OWNING_USER_PASSWORD);
+        mp.setPlaceholderValue("TABLE_SPACE_SPEC","");
         mm.migrate();
         Jdbi jdbi = mm.getJdbiHandle();
         log.info("Creating application user.");

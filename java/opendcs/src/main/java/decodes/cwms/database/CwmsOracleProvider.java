@@ -1,4 +1,4 @@
-package org.opendcs.database.impl.opendcs;
+package decodes.cwms.database;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,22 +18,22 @@ import org.opendcs.spi.database.MigrationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import ilex.util.EnvExpander;
-import opendcs.opentsdb.OpenTsdb;
 
 /**
- * OpenDCSPgProvider provides support for handling installation and updates of the OpenDCS-Postgres
+ * CwmsOracleProvider provides support for handling installation and updates of the OpenDCS-CWMS-Oracle
  * schema.
  */
-public class OpenDcsPgProvider implements MigrationProvider
+public class CwmsOracleProvider implements MigrationProvider
 {
-    private static final Logger log = LoggerFactory.getLogger(OpenDcsOracleProvider.class);
-    public static final String NAME = "OpenDCS-Postgres";
+    private static final Logger log = LoggerFactory.getLogger(CwmsOracleProvider.class);
+    public static final String NAME = "CWMS-Oracle";
 
     private Map<String,String> placeholders = new HashMap<>();
     private static final List<MigrationProvider.MigrationProperty> properties = new ArrayList<>();
@@ -42,12 +42,24 @@ public class OpenDcsPgProvider implements MigrationProvider
     {
         properties.add(
             new MigrationProperty(
-                "NUM_TS_TABLES", Integer.class,
+                "CWMS_SCHEMA", String.class,
                 "How many tables should be used to partition numeric timeseries data."));
         properties.add(
             new MigrationProperty(
-                "NUM_TEXT_TABLES", Integer.class,
+                "CCP_SCHEMA", String.class,
                 "How many tables should be used to balance text timeseries data."));
+        properties.add(
+            new MigrationProperty(
+                "DEFAULT_OFFICE_CODE", Integer.class,
+                ""));
+        properties.add(
+            new MigrationProperty(
+                "DEFAULT_OFFICE", String.class,
+                ""));
+        properties.add(
+            new MigrationProperty(
+                "TABLE_SPACE_SPEC", String.class,
+                ""));
     }
 
     @Override
@@ -71,7 +83,7 @@ public class OpenDcsPgProvider implements MigrationProvider
     @Override
     public void registerJdbiPlugins(Jdbi jdbi)
     {
-        jdbi.installPlugin(new PostgresPlugin());
+        //jdbi.installPlugin(new OraclePlugin());
     }
 
     @Override
@@ -83,8 +95,10 @@ public class OpenDcsPgProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
+        /*
         jdbi.useTransaction(h ->
         {
+
             try(Call createUser = h.createCall("call create_user(:user,:pw)");
                 Call assignRole = h.createCall("call assign_role(:user,:role)");)
             {
@@ -98,19 +112,22 @@ public class OpenDcsPgProvider implements MigrationProvider
                               .invoke();
                 }
             }
-        });
+        });*/
     }
 
     @Override
     public List<File> getDecodesData()
     {
         List<File> files = new ArrayList<>();
-        String decodesData[] = {
+        String decodesData[] =
+        {
             "${DCSTOOL_HOME}/edit-db/enum",
             "${DCSTOOL_HOME}/edit-db/eu/EngineeringUnitList.xml",
             "${DCSTOOL_HOME}/edit-db/datatype/DataTypeEquivalenceList.xml",
             "${DCSTOOL_HOME}/edit-db/presentation",
-            "${DCSTOOL_HOME}/edit-db/loading-app"};
+            "${DCSTOOL_HOME}/edit-db/loading-app"
+        };
+
         fillFiles(files, decodesData, ".xml");
         if (log.isTraceEnabled())
         {
@@ -126,11 +143,13 @@ public class OpenDcsPgProvider implements MigrationProvider
     public List<File> getComputationData()
     {
         List<File> files = new ArrayList<>();
-        String computationData[] = {
+        String computationData[] =
+        {
             "${DCSTOOL_HOME}/imports/comp-standard/algorithms.xml",
             "${DCSTOOL_HOME}/imports/comp-standard/Division.xml",
-            "${DCSTOOL_HOME}/imports/comp-standard/Multiplication.xml"
-            };
+            "${DCSTOOL_HOME}/imports/comp-standard/Multiplication.xml",
+            "${DCSTOOL_HOME}/schema/cwms/cwms-comps.xml"
+        };
         fillFiles(files, computationData, ".xml");
         return files;
     }
@@ -192,7 +211,6 @@ public class OpenDcsPgProvider implements MigrationProvider
             DecodesSettings settings = DecodesSettings.fromProfile(profile);
             settings.DbAuthFile="java-auth-source:password=DCS_PASS,username=DCS_USER";
             settings.saveToProfile(tmpProfile);
-
             if (!decodesFiles.isEmpty())
             {
                 List<String> fileNames = decodesFiles.stream()
@@ -211,7 +229,8 @@ public class OpenDcsPgProvider implements MigrationProvider
                                                      .map(f -> f.getAbsolutePath())
                                                      .collect(Collectors.toList());
                 log.info("Loading baseline computation data.");
-                TimeSeriesDb tsDb = new OpenTsdb();
+
+                TimeSeriesDb tsDb = new CwmsTimeSeriesDb();
 
                 tsDb.connect("utility", creds);
 
@@ -231,5 +250,12 @@ public class OpenDcsPgProvider implements MigrationProvider
             System.clearProperty("DCS_PASS");
             System.clearProperty("DCS_USER");
         }
+    }
+
+    public List<String> schemas()
+    {
+        ArrayList<String> theSchemas = new ArrayList<>();
+        theSchemas.add("CCP");
+        return theSchemas;
     }
 }
