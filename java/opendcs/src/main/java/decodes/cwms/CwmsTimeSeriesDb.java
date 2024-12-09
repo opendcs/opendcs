@@ -1712,7 +1712,7 @@ public class CwmsTimeSeriesDb
 			if (tsid.isSuccess())
 			{
 				TimeSeriesIdentifier tsId = tsid.getSuccess();
-				// There is an odd situtation that happens were a TimeSeries ID has been load, but never had the storage units attached.
+				// There is an odd situation that happens were a TimeSeries ID has been loaded, but never had the storage units attached.
 				// Several downstream components depend on the storage units being present and this ensures that the value is available.
 				// This is likely due to the more aggressive cache usages that CWMS is using to speed up various operations.
 				if (tsId.getStorageUnits() == null )
