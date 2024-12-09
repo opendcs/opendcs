@@ -61,7 +61,7 @@ public class OpenDCSOracleConfiguration implements Configuration
     // FUTURE work: allow passing of override values to bypass the test container creation
     // ... OR setup a separate testcontainer library like USACE did for CWMS.
     private static final String DATABASE_NAME = "dcs";
-    private static final String SCHEMA_OWNING_USER = "dcs_owner";
+    private static final String SCHEMA_OWNING_USER = "otsdb_adm";
     private static final String SCHEMA_OWNING_USER_PASSWORD = "dcs_owner_password";
     private static final String DCS_ADMIN_USER = "dcs_admin";
     private static final String DCS_ADMIN_USER_PASSWORD = "dcs_admin_password";
@@ -134,8 +134,8 @@ public class OpenDCSOracleConfiguration implements Configuration
         MigrationProvider mp = mm.getMigrationProvider();
         mp.setPlaceholderValue("NUM_TS_TABLES", "1");
         mp.setPlaceholderValue("NUM_TEXT_TABLES","1");
-        mp.setPlaceholderValue("TSDB_ADM_SCHEMA","otsdb_adm");
-        mp.setPlaceholderValue("TSDB_ADM_PASSWORD","otsdb_adm");
+        mp.setPlaceholderValue("TSDB_ADM_SCHEMA",SCHEMA_OWNING_USER);
+        mp.setPlaceholderValue("TSDB_ADM_PASSWORD",SCHEMA_OWNING_USER_PASSWORD);
         mp.setPlaceholderValue("TABLE_SPACE_SPEC","");
         mm.migrate();
         Jdbi jdbi = mm.getJdbiHandle();
