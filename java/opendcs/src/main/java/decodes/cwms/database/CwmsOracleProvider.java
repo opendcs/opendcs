@@ -27,7 +27,7 @@ import decodes.util.DecodesSettings;
 import ilex.util.EnvExpander;
 
 /**
- * OpenDCSPgProvider provides support for handling installation and updates of the OpenDCS-Postgres
+ * CwmsOracleProvider provides support for handling installation and updates of the OpenDCS-CWMS-Oracle
  * schema.
  */
 public class CwmsOracleProvider implements MigrationProvider
