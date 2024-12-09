@@ -87,7 +87,6 @@ public class OpenDcsOracleProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        /*
         jdbi.useTransaction(h ->
         {
             try(Call createUser = h.createCall("call create_user(:user,:pw)");
@@ -104,7 +103,6 @@ public class OpenDcsOracleProvider implements MigrationProvider
                 }
             }
         });
-        */
     }
 
     @Override
