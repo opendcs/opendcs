@@ -76,7 +76,7 @@ public class ExportTimeSeries
 		TokenOptions.optArgument|TokenOptions.optRequired |TokenOptions.optMultiple, "");
 
 	private static TimeZone tz = null;
-
+	private static final String GROUP_LABEL = "group:";
 
 	private OutputFormatter outputFormatter = null;
 	private static SimpleDateFormat timeSdf = null;
@@ -176,9 +176,9 @@ public class ExportTimeSeries
 					}
 					break; // No need to continue, we have all time series now.
 				}
-				else if (TextUtil.startsWithIgnoreCase(outTS, "group:"))
+				else if (TextUtil.startsWithIgnoreCase(outTS, GROUP_LABEL))
 				{
-					String groupName = outTS.substring(6);
+					String groupName = outTS.substring(GROUP_LABEL.length());
 					TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
 					TsGroup grp = groupDAO.getTsGroupByName(groupName);
 					groupDAO.close();
