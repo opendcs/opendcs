@@ -20,14 +20,12 @@ import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
-import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
+import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
-import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import decodes.db.Database;
 import decodes.launcher.Profile;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
@@ -130,7 +128,7 @@ public class OpenDCSPGConfiguration implements Configuration
         final Profile profile = Profile.getProfile(this.propertiesFile);
         DataSource ds = new SimpleDataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword());
 
-        MigrationManager mm = new MigrationManager(ds,OpenDcsOracleProvider.NAME);
+        MigrationManager mm = new MigrationManager(ds,OpenDcsPgProvider.NAME);
         MigrationProvider mp = mm.getMigrationProvider();
         mp.setPlaceholderValue("NUM_TS_TABLES", "1");
         mp.setPlaceholderValue("NUM_TEXT_TABLES","1");
