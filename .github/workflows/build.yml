@@ -3,10 +3,14 @@ on:
   pull_request:
     branches:
       - "main"
+      - "7.0"
+      - "8.0"
     types: [opened, synchronize, reopened]
   push:
     branches:
       - "main"
+      - "7.0"
+      - "8.0"
 
 jobs:
   tests:
