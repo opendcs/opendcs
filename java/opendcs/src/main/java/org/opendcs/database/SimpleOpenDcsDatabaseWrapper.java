@@ -3,6 +3,7 @@ package org.opendcs.database;
 import java.util.Objects;
 import java.util.Optional;
 
+import opendcs.dai.AlgorithmDAI;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDatabase;
 
@@ -46,6 +47,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     @Override
     public <T extends OpenDcsDao> Optional<T> getDao(Class<T> dao)
     {
+        if(dao.equals(AlgorithmDAI.class))
+        {
+            return (Optional<T>) Optional.of(timeSeriesDb.makeAlgorithmDAO());
+        }
+
         //TODO: likely implementation, lookup dynamically for functions that the return the given DAO in the implementation
         // caching that knowledge as appropriate.
         return Optional.empty();
