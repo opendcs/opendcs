@@ -4,6 +4,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
+
 import decodes.tsdb.DbIoException;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DaoHelper;
@@ -45,6 +48,17 @@ public interface DaiBase extends AutoCloseable
 	
 	public void setManualConnection(Connection conn);
 
+    /**
+     * This method should never be called from outside the DAO instance.
+     *
+     * @deprecated This function exists to support migration to a stateless model. Once
+     *             all usages of the DAOs pass in the transaction this will be removed.
+     */
+    @Deprecated
+    default DataTransaction getTransaction() throws OpenDcsDataException
+    {
+        return null;
+    }
 
 	/**
      * When used within the transaction block of another Dao allow this to assume the same connection.

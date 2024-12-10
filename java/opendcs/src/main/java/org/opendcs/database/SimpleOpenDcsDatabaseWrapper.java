@@ -3,7 +3,9 @@ package org.opendcs.database;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 
 import decodes.db.Database;
@@ -51,4 +53,9 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         return Optional.empty();
     }
     
+    @Override
+    public DataTransaction newTransaction() throws OpenDcsDataException
+    {
+        return null;
+    }
 }
