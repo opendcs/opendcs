@@ -1,6 +1,6 @@
 /*
  * $Id: ExportTimeSeries.java,v 1.3 2020/02/20 15:29:13 mmaloney Exp $
- * 
+ *
  * $Log: ExportTimeSeries.java,v $
  * Revision 1.3  2020/02/20 15:29:13  mmaloney
  * Added all and group options.
@@ -11,7 +11,7 @@
  * Revision 1.1  2017/08/22 19:49:55  mmaloney
  * Refactor
  *
- * 
+ *
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 */
 package decodes.util;
@@ -72,12 +72,12 @@ public class ExportTimeSeries
 	private StringToken timezoneArg = new StringToken("Z", "Time Zone", "", TokenOptions.optSwitch, "UTC");
 	private StringToken transportIdArg = new StringToken("I", "TransportID", "", TokenOptions.optSwitch, "");
 	private StringToken lookupTypeArg = new StringToken("L", "Lookup Type", "", TokenOptions.optSwitch, "id");
-	private StringToken tsidArg = new StringToken("", "time-series-IDs | all | group:groupname", "", 
+	private StringToken tsidArg = new StringToken("", "time-series-IDs | all | group:groupname", "",
 		TokenOptions.optArgument|TokenOptions.optRequired |TokenOptions.optMultiple, "");
-	
-	private static TimeZone tz = null;
 
-	
+	private static TimeZone tz = null;
+	private static final String GROUP_LABEL = "group:";
+
 	private OutputFormatter outputFormatter = null;
 	private static SimpleDateFormat timeSdf = null;
 	private static SimpleDateFormat dateSdf = null;
@@ -86,12 +86,19 @@ public class ExportTimeSeries
 	private DataConsumer consumer = null;
 	private final static long MS_PER_DAY = 3600 * 24 * 1000L;
 	private PrintStream outputStream = null;
-	
+	private boolean forceTsIdCacheReload;
+
 
 	public ExportTimeSeries()
 	{
+		this(false);
+	}
+
+	public ExportTimeSeries(boolean forceTsIdCacheReload)
+	{
 		super("util.log");
 		setSilent(true);
+		this.forceTsIdCacheReload = forceTsIdCacheReload;
 	}
 
 	public static void main(String args[])
@@ -112,17 +119,17 @@ public class ExportTimeSeries
 		cmdLineArgs.addToken(transportIdArg);
 		cmdLineArgs.addToken(tsidArg);
 	}
-	
+
 	public void setOutputStream(PrintStream ps)
 	{
 		outputStream = ps;
 	}
 
 	@Override
-	protected void runApp() 
-		throws OutputFormatterException, DataConsumerException, 
-		DbIoException, BadTimeSeriesException, NoSuchObjectException, 
-		UnknownPlatformException, IOException 
+	protected void runApp()
+		throws OutputFormatterException, DataConsumerException,
+		DbIoException, BadTimeSeriesException, NoSuchObjectException,
+		UnknownPlatformException, IOException
 	{
 		tz = TimeZone.getTimeZone(timezoneArg.getValue());
 
@@ -136,10 +143,10 @@ public class ExportTimeSeries
 		consumer.open("", props);
 		if (outputStream != null)
 			((PipeConsumer)consumer).setOutputStream(outputStream);
-		
+
 		outputFormatter = OutputFormatter.makeOutputFormatter(
 			fmtArg.getValue(), tz, presGroup, props, null);
-		
+
 		String s = sinceArg.getValue().trim();
 		Date since = null, until = null;
 		if (s.equalsIgnoreCase("all"))
@@ -151,60 +158,61 @@ public class ExportTimeSeries
 		until = convert2Date(s, true);
 
 		ArrayList<CTimeSeries> ctss = new ArrayList<CTimeSeries>();
-		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
-		for(int n = tsidArg.NumberOfValues(), i=0; i<n; i++)
+		try (TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO())
 		{
-			String outTS = tsidArg.getValue(i);
-			if (outTS.equalsIgnoreCase("all"))
+			for(int n = tsidArg.NumberOfValues(), i=0; i<n; i++)
 			{
-				ArrayList<TimeSeriesIdentifier> tsids = tsDAO.listTimeSeries();
-				for(TimeSeriesIdentifier tsid : tsids)
+				String outTS = tsidArg.getValue(i);
+				if (outTS.equalsIgnoreCase("all"))
 				{
-					CTimeSeries ts = theDb.makeTimeSeries(tsid);
-					int nvalues = tsDAO.fillTimeSeries(ts, since, until);
-					Logger.instance().info("Read " + nvalues + " values for time series " 
-						+ tsid.getUniqueString());
-					ctss.add(ts);
+					ArrayList<TimeSeriesIdentifier> tsids = tsDAO.listTimeSeries();
+					for(TimeSeriesIdentifier tsid : tsids)
+					{
+						CTimeSeries ts = theDb.makeTimeSeries(tsid);
+						int nvalues = tsDAO.fillTimeSeries(ts, since, until);
+						Logger.instance().info("Read " + nvalues + " values for time series "
+							+ tsid.getUniqueString());
+						ctss.add(ts);
+					}
+					break; // No need to continue, we have all time series now.
 				}
-				break; // No need to continue, we have all time series now.
-			}
-			else if (TextUtil.startsWithIgnoreCase(outTS, "group:"))
-			{
-				String groupName = outTS.substring(6);
-				TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
-				TsGroup grp = groupDAO.getTsGroupByName(groupName);
-				groupDAO.close();
-				if (grp == null)
+				else if (TextUtil.startsWithIgnoreCase(outTS, GROUP_LABEL))
 				{
-					Logger.instance().warning("No such time series group: " + groupName + " -- skipped.");
-					continue;
+					String groupName = outTS.substring(GROUP_LABEL.length());
+					TsGroupDAI groupDAO = theDb.makeTsGroupDAO();
+					TsGroup grp = groupDAO.getTsGroupByName(groupName);
+					groupDAO.close();
+					if (grp == null)
+					{
+						Logger.instance().warning("No such time series group: " + groupName + " -- skipped.");
+						continue;
+					}
+					ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(grp);
+					for(TimeSeriesIdentifier tsid : tsids)
+					{
+						CTimeSeries ts = theDb.makeTimeSeries(tsid);
+						int nvalues = tsDAO.fillTimeSeries(ts, since, until);
+						Logger.instance().info("Read " + nvalues + " values for time series "
+							+ tsid.getUniqueString());
+						ctss.add(ts);
+					}
 				}
-				ArrayList<TimeSeriesIdentifier> tsids = theDb.expandTsGroup(grp);
-				for(TimeSeriesIdentifier tsid : tsids)
+				else // Should be a time series ID
 				{
-					CTimeSeries ts = theDb.makeTimeSeries(tsid);
-					int nvalues = tsDAO.fillTimeSeries(ts, since, until);
-					Logger.instance().info("Read " + nvalues + " values for time series " 
-						+ tsid.getUniqueString());
-					ctss.add(ts);
-				}
-			}
-			else // Should be a time series ID
-			{
-				try
-				{
-					CTimeSeries ts = theDb.makeTimeSeries(outTS);
-					int nvalues = tsDAO.fillTimeSeries(ts, since, until);
-					Logger.instance().info("Read " + nvalues + " values for time series " + outTS);
-					ctss.add(ts);
-				}
-				catch(NoSuchObjectException ex)
-				{
-					Logger.instance().warning("No time series for '" + outTS + "': " + ex);
+					try
+					{
+						CTimeSeries ts = theDb.makeTimeSeries(outTS);
+						int nvalues = tsDAO.fillTimeSeries(ts, since, until);
+						Logger.instance().info("Read " + nvalues + " values for time series " + outTS);
+						ctss.add(ts);
+					}
+					catch(NoSuchObjectException ex)
+					{
+						Logger.instance().warning("No time series for '" + outTS + "': " + ex);
+					}
 				}
 			}
 		}
-		tsDAO.close();
 
 		String tidArg = transportIdArg.getValue();
 		String ttype = "site";
@@ -215,20 +223,24 @@ public class ExportTimeSeries
 				ttype = tidArg.substring(0, cidx);
 			tidArg = tidArg.substring(cidx+1);
 		}
-		
+
 		Date now = new Date();
 		Platform p = null;
 		if (tidArg != null && tidArg.length() > 0)
 		{
-			SiteDAI siteDAO = theDb.makeSiteDAO();
-			if (ttype.equalsIgnoreCase("site"))
+			try(SiteDAI siteDAO = theDb.makeSiteDAO())
 			{
-				DbKey siteId = siteDAO.lookupSiteID(tidArg);
-				Site site = siteDAO.getSiteById(siteId);
-				p = Database.getDb().platformList.findPlatform(site, null);
+				if (ttype.equalsIgnoreCase("site"))
+				{
+					DbKey siteId = siteDAO.lookupSiteID(tidArg);
+					Site site = siteDAO.getSiteById(siteId);
+					p = Database.getDb().platformList.findPlatform(site, null);
+				}
+				else
+				{
+					p = Database.getDb().platformList.findPlatform(ttype, tidArg, now);
+				}
 			}
-			else
-				p = Database.getDb().platformList.findPlatform(ttype, tidArg, now);
 		}
 
 		byte[] dummyData = new byte[0];
@@ -239,9 +251,9 @@ public class ExportTimeSeries
 		rawMsg.setHeaderLength(0);
 		rawMsg.setPM(GoesPMParser.MESSAGE_TIME, new Variable(now));
 		rawMsg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(0L));
-		
+
 		outputTimeSeries(rawMsg, ctss);
-		
+
 		outputFormatter.shutdown();
 	}
 
@@ -255,7 +267,7 @@ public class ExportTimeSeries
 		}
 		catch (InvalidDatabaseException ex)
 		{
-			Logger.instance().warning("Cannot initialize presentation group '" 
+			Logger.instance().warning("Cannot initialize presentation group '"
 				+ groupName + ": " + ex);
 			presGroup = null;
 		}
@@ -280,7 +292,7 @@ public class ExportTimeSeries
 					 && dp.getUnitsAbbr().equalsIgnoreCase("omit"))
 					{
 						Logger.instance().log(Logger.E_DEBUG2,
-							"Omitting sensor '" + sensor.getName() 
+							"Omitting sensor '" + sensor.getName()
 							+ "' as per Presentation Group.");
 						toAdd = false;
 					}
@@ -291,7 +303,7 @@ public class ExportTimeSeries
 			if (toAdd)
 				decmsg.addTimeSeries(ts);
 		}
-		
+
 		outputFormatter.formatMessage(decmsg, consumer);
 	}
 
@@ -344,12 +356,12 @@ public class ExportTimeSeries
 				return isTo ? new Date() : convert2Date("yesterday", false);
 			}
 		}
-		try 
+		try
 		{
 			Date d = timeSdf.parse(s);
 			return d;
 		}
-		catch(ParseException ex) 
+		catch(ParseException ex)
 		{
 			try
 			{
@@ -359,12 +371,12 @@ public class ExportTimeSeries
 					d.setTime(d.getTime() + (MS_PER_DAY-1));
 				return d;
 			}
-			catch(ParseException ex2) 
+			catch(ParseException ex2)
 			{
 				Logger.instance().warning("Bad time format '" + s + "'");
 				return isTo ? new Date() : convert2Date("yesterday", false);
 			}
 		}
 	}
-	
+
 }
