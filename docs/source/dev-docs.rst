@@ -74,6 +74,14 @@ Distribution tasks are used to prepare for release
 |                         |requires `-Dgpg.key.id` command line option                              |
 +-------------------------+-------------------------------------------------------------------------+
 
+Building Documentation
+-----------------------
+
+.. code-block:: bash
+
+    ./gradlew buildDocs
+
+
 Debugging OpenDCS
 -----------------
 
