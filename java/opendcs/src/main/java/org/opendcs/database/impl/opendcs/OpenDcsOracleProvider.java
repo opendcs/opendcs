@@ -240,7 +240,7 @@ public class OpenDcsOracleProvider implements MigrationProvider
     public List<String> schemas()
     {
         ArrayList<String> theSchemas = new ArrayList<>();
-        theSchemas.add("otsdb_admin");
+        theSchemas.add("OTSDB_ADM");
         return theSchemas;
     }
 }

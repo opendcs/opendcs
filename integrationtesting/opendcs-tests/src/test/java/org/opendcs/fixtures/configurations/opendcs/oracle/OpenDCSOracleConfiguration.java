@@ -5,6 +5,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +29,7 @@ import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
+import org.testcontainers.containers.JdbcDatabaseContainer.NoDriverFoundException;
 import org.testcontainers.oracle.OracleContainer;
 
 import decodes.db.Database;
@@ -122,10 +127,12 @@ public class OpenDCSOracleConfiguration implements Configuration
             db = new OracleContainer("gvenzl/oracle-free:full-faststart")
                     .withUsername(SCHEMA_OWNING_USER)
                     .withDatabaseName(DATABASE_NAME)
-                    .withPassword(SCHEMA_OWNING_USER_PASSWORD);
+                    .withPassword(SCHEMA_OWNING_USER_PASSWORD)
+                    ;
         }
 
         db.start();
+        schemaSetup(db, db.getUsername());
         createPropertiesFile(configBuilder, this.propertiesFile);
         final Profile profile = Profile.getProfile(this.propertiesFile);
         DataSource ds = new SimpleDataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword());
@@ -263,5 +270,34 @@ public class OpenDCSOracleConfiguration implements Configuration
     public String getName()
     {
         return NAME;
+    }
+
+    private static void schemaSetup(OracleContainer db, String user) throws SQLException
+    {
+        Driver driverInstance;
+        try
+        {
+            driverInstance = (Driver)Class.forName(db.getDriverClassName()).newInstance();
+        }
+        catch (InstantiationException | IllegalAccessException | ClassNotFoundException ex)
+        {
+            throw new SQLException("Unable to initialize schema user.", ex);
+        }
+
+        Properties info = new Properties();
+        info.put("user", "sys");        
+        info.put("internal_logon","sysdba");
+        info.put("password", db.getPassword());
+        try (Connection conn =  driverInstance.connect(db.getJdbcUrl(),info);
+             Statement stmt = conn.createStatement();)
+        {
+            stmt.executeQuery("GRANT ALTER ANY TABLE,CREATE ANY TABLE,CREATE ANY INDEX,CREATE ANY SEQUENCE,"
+                            + "CREATE ANY VIEW,CREATE ANY PROCEDURE,CREATE ANY TRIGGER,CREATE ANY JOB,"
+                            + "CREATE ANY SYNONYM,DROP ANY SYNONYM,CREATE PUBLIC SYNONYM,DROP PUBLIC SYNONYM,"
+                            + "CREATE ROLE, CREATE USER"
+                            + " TO " + user);
+            stmt.executeQuery("GRANT CREATE SESSION,RESOURCE,CONNECT"
+                            + " TO " + user);
+        }
     }
 }
