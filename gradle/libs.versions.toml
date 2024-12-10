@@ -44,7 +44,7 @@ webcompere = "2.0.2"
 jackson = "2.14.2"
 
 # integration test deps
-testcontainers = "1.18.1"
+testcontainers = "1.20.4"
 hec-testcontainers-cwms = "2.0.0"
 
 [libraries]
@@ -115,6 +115,7 @@ fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-data
 
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref="testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref="testcontainers" }
+testcontainers-oracle-free = { module = "org.testcontainers:oracle-free", version.ref="testcontainers" }
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
 
 [bundles]
