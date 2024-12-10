@@ -310,13 +310,13 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	}
 
 	@Override
-	public DbEnum getEnum(DataTransaction tx, String enumName) throws OpenDcsDataException {
+	public Optional<DbEnum> getEnum(DataTransaction tx, String enumName) throws OpenDcsDataException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("Unimplemented method 'getEnum'");
 	}
 
 	@Override
-	public DbEnum getEnum(DataTransaction tx, DbKey id) throws OpenDcsDataException {
+	public Optional<DbEnum> getEnum(DataTransaction tx, DbKey id) throws OpenDcsDataException {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("Unimplemented method 'getEnum'");
 	}

@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Optional;
 
+import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.utils.FailableResult;
 
 import opendcs.dao.DbObjectCache;
@@ -24,7 +25,7 @@ import decodes.tsdb.TsdbException;
  * Public interface for accessing time series data.
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public interface TimeSeriesDAI extends DaiBase
+public interface TimeSeriesDAI extends DaiBase, OpenDcsDao
 {
 	/**
 	 * When calling the listTimeSeries() method, don't reload the cache
