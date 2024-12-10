@@ -1,0 +1,73 @@
+name: Nightly Release Build
+on:
+  workflow_call:
+    inputs:
+      branch:
+       type: string
+       required: true
+    secrets:
+      token:
+       required: false
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: choice
+        required: true
+        description: Which Branch to make the build from
+        options:
+          - main
+          - main-fork
+
+jobs:
+  release:
+    strategy:
+      fail-fast: true
+      matrix:
+        platform: [ubuntu-latest]
+        jdk: [11]
+    runs-on: ${{matrix.platform}}
+    permissions:
+      packages: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          ref: ${{inputs.branch}}
+      - name: Set up JDK
+        uses: actions/setup-java@v4.4.0
+        with:
+          java-version: ${{matrix.jdk}}
+          distribution: temurin
+      - uses: actions/setup-python@v5.1.0
+        with:
+          python-version: "3.8"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4.1.0
+      - name: Create distributions
+        run: |
+          ./gradlew distTar distZip
+      - name: create docker images
+        run: |
+          REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
+          ./build_docker.sh ghcr.io/${REPO} ${{inputs.branch}}-nightly
+      - name: upload Release
+        env: 
+            GH_TOKEN: "${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}"
+        run: |
+          VERSION=`./gradlew properties -q | grep "^version:" | awk '{ print $2}'`
+          gh release upload ${{inputs.branch}}-nightly install/build/distributions/opendcs-${VERSION}.tar#opendcs-${{inputs.branch}}-nightly.tar --clobber
+          gh release upload ${{inputs.branch}}-nightly install/build/distributions/opendcs-${VERSION}.zip#opendcs-${{inputs.branch}}-nightly.zip --clobber
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}
+      - name: Push images
+        run: |
+          REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
+          docker push ghcr.io/${REPO}/lrgs:${{inputs.branch}}-nightly
+          docker push ghcr.io/${REPO}/routingscheduler:${{inputs.branch}}-nightly
+          docker push ghcr.io/${REPO}/compdepends:${{inputs.branch}}-nightly
+          docker push ghcr.io/${REPO}/compproc:${{inputs.branch}}-nightly
+      

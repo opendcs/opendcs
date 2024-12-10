@@ -14,6 +14,7 @@ import org.opendcs.spi.configuration.Configuration;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.util.DecodesSettings;
+import decodes.xml.CreatePlatformXref;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -57,6 +58,10 @@ public class XmlConfiguration implements Configuration
 
     @Override
     public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception {
+        if (started)
+        {
+            return;
+        }
         File editDb = new File(userDir,"edit-db");
         new File(userDir,"output").mkdir();
         editDb.mkdirs();
