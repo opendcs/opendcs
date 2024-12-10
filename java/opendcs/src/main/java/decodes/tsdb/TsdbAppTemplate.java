@@ -67,6 +67,7 @@ public abstract class TsdbAppTemplate
 	/** The time series database to use in this application. */
 	public static TimeSeriesDb theDb = null;
 	protected static Database decodesDb = null;
+	protected OpenDcsDatabase db;
 	private DecodesSettings settings = null;
 	private String appName = null;
 
@@ -272,10 +273,10 @@ public abstract class TsdbAppTemplate
 		try
 		{
 
-			OpenDcsDatabase databases= DatabaseService.getDatabaseFor(appName, settings);
-			decodesDb = databases.getLegacyDatabase(Database.class).get();
+			db = DatabaseService.getDatabaseFor(appName, settings);
+			decodesDb = db.getLegacyDatabase(Database.class).get();
 			decodesDb.initializeForDecoding();
-			theDb = databases.getLegacyDatabase(TimeSeriesDb.class).get();
+			theDb = db.getLegacyDatabase(TimeSeriesDb.class).get();
 		}
 		catch (DecodesException ex)
 		{
@@ -289,7 +290,7 @@ public abstract class TsdbAppTemplate
 	 */
 	public void tryConnect() throws BadConnectException
 	{
-		try (LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO())
+		try (LoadingAppDAI loadingAppDAO = db.getDao(LoadingAppDAI.class).get())
 		{
 			CompAppInfo thisApp = loadingAppDAO.getComputationApp(appName);
 			this.appId = thisApp.getAppId();

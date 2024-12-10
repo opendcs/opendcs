@@ -336,9 +336,9 @@ public class ComputationApp
 			while(!shutdownFlag)
 			{
 				Logger.instance().debug3("ComputationApp start of main loop.");
-				try(
-					TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-					LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
+				try(// TODO: This is a good place to hook a transaction. Still need to be implemented though before we can demo it
+					TimeSeriesDAI timeSeriesDAO = db.getDao(TimeSeriesDAI.class).get();
+					LoadingAppDAI loadingAppDAO = db.getDao(LoadingAppDAI.class).get();
 					TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 					)
 				{
