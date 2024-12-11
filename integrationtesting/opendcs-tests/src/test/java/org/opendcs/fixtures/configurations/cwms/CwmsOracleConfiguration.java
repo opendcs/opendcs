@@ -315,4 +315,17 @@ public class CwmsOracleConfiguration implements Configuration
         }
         return false;
     }
+
+    @Override
+    public OpenDcsDatabase getOpenDcsDatabase() throws Throwable
+    {
+        synchronized (this)
+        {
+            if (databases == null)
+            {
+                buildDatabases();
+            }
+            return databases;
+        }
+    }
 }

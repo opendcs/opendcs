@@ -3,6 +3,8 @@ package org.opendcs.spi.configuration;
 import java.io.File;
 import java.util.Map;
 
+import org.opendcs.database.api.OpenDcsDatabase;
+
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
@@ -100,4 +102,6 @@ public interface Configuration
     * @return
     */
     public String getName();
+
+    public OpenDcsDatabase getOpenDcsDatabase() throws Throwable;
 }

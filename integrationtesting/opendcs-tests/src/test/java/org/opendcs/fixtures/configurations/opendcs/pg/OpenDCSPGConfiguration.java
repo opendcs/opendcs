@@ -217,27 +217,13 @@ public class OpenDCSPGConfiguration implements Configuration
     @Override
     public TimeSeriesDb getTsdb() throws Throwable
     {
-        synchronized(this)
-        {
-            if (databases == null)
-            {
-                buildDatabases();
-            }
-            return databases.getLegacyDatabase(TimeSeriesDb.class).get();
-        }
+        return getOpenDcsDatabase().getLegacyDatabase(TimeSeriesDb.class).get();
     }
 
     @Override
     public Database getDecodesDatabase() throws Throwable
     {
-        synchronized(this)
-        {
-            if (databases == null)
-            {
-                buildDatabases();
-            }
-            return databases.getLegacyDatabase(Database.class).get();
-        }
+        return getOpenDcsDatabase().getLegacyDatabase(Database.class).get();
     }
 
     private void buildDatabases() throws Exception
@@ -290,5 +276,18 @@ public class OpenDCSPGConfiguration implements Configuration
     public String getName()
     {
         return NAME;
+    }
+
+    @Override
+    public OpenDcsDatabase getOpenDcsDatabase() throws Throwable
+    {
+        synchronized(this)
+        {
+            if (databases == null)
+            {
+                buildDatabases();
+            }
+            return databases;
+        }
     }
 }

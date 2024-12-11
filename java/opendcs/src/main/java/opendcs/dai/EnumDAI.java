@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 
 import decodes.db.DbEnum;
@@ -20,7 +21,7 @@ import decodes.tsdb.DbIoException;
  * Data Access Interface for database-resident enumerations
  * @author mmaloney Mike Maloney
  */
-public interface EnumDAI extends DaiBase
+public interface EnumDAI extends DaiBase, OpenDcsDao
 {
 	@Deprecated
 	public DbEnum getEnum(String enumName) throws DbIoException;

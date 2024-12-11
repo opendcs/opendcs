@@ -109,11 +109,20 @@ public class XmlConfiguration implements Configuration
 
     public Database getDecodesDatabase() throws Throwable
     {
-        if (databases == null)
+        return getOpenDcsDatabase().getLegacyDatabase(Database.class).get();
+    }
+
+    @Override
+    public OpenDcsDatabase getOpenDcsDatabase() throws Throwable
+    {
+        synchronized(this)
         {
-            final DecodesSettings settings = DecodesSettings.fromProfile(profile);
-            databases = DatabaseService.getDatabaseFor(NAME, settings);
+            if (databases == null)
+            {
+                final DecodesSettings settings = DecodesSettings.fromProfile(profile);
+                databases = DatabaseService.getDatabaseFor(NAME, settings);
+            }
+            return databases;
         }
-        return databases.getLegacyDatabase(Database.class).get();
     }
 }

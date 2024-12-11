@@ -57,7 +57,7 @@ public class CwmsDatabaseProvider implements DatabaseProvider
             db.init(settings);
             CwmsTimeSeriesDb tsdb = new CwmsTimeSeriesDb(null, dataSource, settings);
 
-            return new SimpleOpenDcsDatabaseWrapper(settings, db, tsdb);
+            return new SimpleOpenDcsDatabaseWrapper(settings, db, tsdb, dataSource);
         }
         catch (DecodesException ex)
         {
