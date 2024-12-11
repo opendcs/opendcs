@@ -40,7 +40,6 @@ allprojects {
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonar {
         properties {
-            sonar {  
             property "sonar.projectKey", "MikeNeilson_opendcs"
             property "sonar.organization", "mikeneilson"
             property "sonar.host.url", "https://sonarcloud.io"
