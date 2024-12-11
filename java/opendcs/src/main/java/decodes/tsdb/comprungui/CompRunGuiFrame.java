@@ -38,16 +38,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.TimeZone;
-import java.util.TreeSet;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -153,6 +144,7 @@ public class CompRunGuiFrame extends TopFrame
 
 	private ComputationsTable mytable;
 	private Vector<CTimeSeries> myoutputs = new Vector<>();
+	private Vector<CTimeSeries> myinputs = new Vector<>();
 	private TimeSeriesDb theDb = null;
 	private DateTimeCalendar fromDTCal;
 	private DateTimeCalendar toDTCal;
@@ -1074,6 +1066,8 @@ public class CompRunGuiFrame extends TopFrame
 			@Override
 			public List<CTimeSeries> doInBackground()
 			{
+				myinputs.clear();
+
 				runButton.setEnabled(false);
 				Vector<CTimeSeries> outputs = new Vector<CTimeSeries>();
 				progress = new ProgressState(compVector.size());
@@ -1135,6 +1129,7 @@ public class CompRunGuiFrame extends TopFrame
 							{
 								runme.addTimeSeries(ts);
 								inputs.add(ts);
+								myinputs.add(ts);
 							}
 							catch (DuplicateTimeSeriesException e)
 							{
@@ -1470,6 +1465,7 @@ public class CompRunGuiFrame extends TopFrame
 					Logger.instance().failure(msg);
 				}
 			}
+			timeSeriesTable.setInOut(myinputs, myoutputs);
 		}
 		finally
 		{
