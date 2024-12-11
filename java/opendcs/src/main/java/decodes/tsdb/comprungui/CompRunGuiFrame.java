@@ -38,16 +38,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ResourceBundle;
-import java.util.TimeZone;
-import java.util.TreeSet;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -153,6 +144,7 @@ public class CompRunGuiFrame extends TopFrame
 
 	private ComputationsTable mytable;
 	private Vector<CTimeSeries> myoutputs = new Vector<>();
+	private Vector<CTimeSeries> myinputs = new Vector<>();
 	private TimeSeriesDb theDb = null;
 	private DateTimeCalendar fromDTCal;
 	private DateTimeCalendar toDTCal;
@@ -225,6 +217,71 @@ public class CompRunGuiFrame extends TopFrame
 			}
 		});
 		exitOnClose = true;
+
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param standAloneMode
+	 *            True if running from launcher or tester. False if running
+	 *            inside compedit.
+	 * @param dbComps
+	 * 	          List of comps to fill computation table initially.
+	 * @param since
+	 * 	          From Date to fill fromDTcal initially.
+	 * @param until
+	 * 	          To Date to fill toDTcal initially.
+	 */
+	public CompRunGuiFrame(boolean standAloneMode, Vector<DbComputation> dbComps, Date since, Date until)
+	{
+		super();
+
+		this.standAloneMode = standAloneMode;
+
+		labels = RunComputationsFrameTester.getLabels();
+		genericLabels = RunComputationsFrameTester.getGenericLabels();
+		timeZoneStr = DecodesSettings.instance().sqlTimeZone;
+		timeZoneStr = timeZoneStr == null ? "UTC" : timeZoneStr;
+		setAllLabels();
+		chartXLabel = "Time";
+
+		JPanel mycontent = (JPanel)this.getContentPane();
+		mycontent.setLayout(new BoxLayout(mycontent, BoxLayout.Y_AXIS));
+
+		this.setTitle(labels.getString("RunComputationsFrame.frameTitle"));
+		this.trackChanges("runcomps");
+		traceDialog = new TraceDialog(this, false);
+		traceDialog.setTraceType("Computation Run");
+		mycontent.add(listPanel());
+		mycontent.add(timePanel());
+		mycontent.add(getChart());
+		mycontent.add(getTable());
+		mycontent.add(closePanel());
+		pack();
+
+		// Default operation is to do nothing when user hits 'X' in
+		// upper right to close the window. We will catch the closing
+		// event and do the same thing as if user had hit close.
+		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+		addWindowListener(new WindowAdapter()
+		{
+			public void windowClosing(WindowEvent e)
+			{
+				doClose();
+			}
+		});
+		exitOnClose = true;
+
+		if(since!=null){
+			fromDTCal.setDate(since);
+		}
+		if(until!=null) {
+			toDTCal.setDate(until);
+		}
+
+		mytable.fill(dbComps);
+
 
 	}
 
@@ -1074,6 +1131,8 @@ public class CompRunGuiFrame extends TopFrame
 			@Override
 			public List<CTimeSeries> doInBackground()
 			{
+				myinputs.clear();
+
 				runButton.setEnabled(false);
 				Vector<CTimeSeries> outputs = new Vector<CTimeSeries>();
 				progress = new ProgressState(compVector.size());
@@ -1135,6 +1194,7 @@ public class CompRunGuiFrame extends TopFrame
 							{
 								runme.addTimeSeries(ts);
 								inputs.add(ts);
+								myinputs.add(ts);
 							}
 							catch (DuplicateTimeSeriesException e)
 							{
@@ -1470,6 +1530,7 @@ public class CompRunGuiFrame extends TopFrame
 					Logger.instance().failure(msg);
 				}
 			}
+			timeSeriesTable.setInOut(myinputs, myoutputs);
 		}
 		finally
 		{
