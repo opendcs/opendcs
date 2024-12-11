@@ -38,7 +38,16 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ResourceBundle;
+import java.util.TimeZone;
+import java.util.TreeSet;
+import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -1127,12 +1136,12 @@ public class CompRunGuiFrame extends TopFrame
 		// Create the trace logger here and put in pipe with tee logger.
 		// Put trace dialog reference in trace logger.
 		myoutputs.clear();
+		myinputs.clear();
+		myinputs.addAll(inputs);
 		compExecutionWorker = new SwingWorker<List<CTimeSeries>,CTimeSeries>() {
 			@Override
 			public List<CTimeSeries> doInBackground()
 			{
-				myinputs.clear();
-
 				runButton.setEnabled(false);
 				Vector<CTimeSeries> outputs = new Vector<CTimeSeries>();
 				progress = new ProgressState(compVector.size());
@@ -1193,7 +1202,6 @@ public class CompRunGuiFrame extends TopFrame
 							try
 							{
 								runme.addTimeSeries(ts);
-								inputs.add(ts);
 								myinputs.add(ts);
 							}
 							catch (DuplicateTimeSeriesException e)
@@ -1294,7 +1302,7 @@ public class CompRunGuiFrame extends TopFrame
 			@Override
 			protected void process(List<CTimeSeries> chunks)
 			{
-				for (CTimeSeries cts : inputs)
+				for (CTimeSeries cts : myinputs)
 				{
 					if (!both.contains(cts))
 					{
@@ -1342,8 +1350,8 @@ public class CompRunGuiFrame extends TopFrame
 					}
 
 					both.add(cts);
-					plotDataOnChart(both, inputs.size());
-					timeSeriesTable.setInOut(inputs, myoutputs);
+					plotDataOnChart(both, myinputs.size());
+					timeSeriesTable.setInOut(myinputs, myoutputs);
 				}
 			}
 
@@ -1357,8 +1365,8 @@ public class CompRunGuiFrame extends TopFrame
 				Logger.setLogger(originalLogger);
 				cancelExecutionButton.setEnabled(false);
 				saveButton.setEnabled(true);
-				plotDataOnChart(both, inputs.size());
-				timeSeriesTable.setInOut(inputs, myoutputs);
+				plotDataOnChart(both, myinputs.size());
+				timeSeriesTable.setInOut(myinputs, myoutputs);
 			}
 		};
 		compExecutionWorker.addPropertyChangeListener(event -> updateProgress(event));
