@@ -3,10 +3,14 @@ on:
   pull_request:
     branches:
       - "main"
+      - "7.0"
+      - "8.0"
     types: [opened, synchronize, reopened]
   push:
     branches:
       - "main"
+      - "7.0"
+      - "8.0"
 
 jobs:
   tests:
@@ -38,7 +42,7 @@ jobs:
       - name: Unit and LRGS tests
         run: |
           ./gradlew test --info
-      - name: integration tests
+      - name: integration tests (XML)
         # There is an odd issues with the log file name on the windows runner.
         # It does work locally though. Will work on it later.
         # Integration tests require docker now for test containers.
@@ -46,8 +50,25 @@ jobs:
         # at some point though.
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          ./gradlew :testing:opendcs-test:test -D"opendcs.test.engine=OpenDCS-XML" --info
-          ./gradlew :testing:opendcs-test:test -D"opendcs.test.engine=OpenDCS-Postgres" --info
+          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-XML" --info
+      - name: integration tests (OpenDCS-Postgres)
+        # There is an odd issues with the log file name on the windows runner.
+        # It does work locally though. Will work on it later.
+        # Integration tests require docker now for test containers.
+        # More work required to deal with the other platforms. Should be workable
+        # at some point though.
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-Postgres" --info
+      - name: integration tests (CWMS-Oracle)
+        # There is an odd issues with the log file name on the windows runner.
+        # It does work locally though. Will work on it later.
+        # Integration tests require docker now for test containers.
+        # More work required to deal with the other platforms. Should be workable
+        # at some point though.
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=CWMS-Oracle" --info
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
@@ -62,9 +83,9 @@ jobs:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
-      - name: Build and analyze
+      - name: Analyze
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew build sonar --info -Dorg.gradle.jvmargs=-Xmx4096M
+        run: ./gradlew sonar --info -Dorg.gradle.jvmargs=-Xmx4096M

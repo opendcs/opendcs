@@ -16,7 +16,7 @@ on:
         description: Which Branch to make the build from
         options:
           - main
-          - main-fork
+          - "7.0"
 
 jobs:
   release:
@@ -51,7 +51,7 @@ jobs:
           REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
           ./build_docker.sh ghcr.io/${REPO} ${{inputs.branch}}-nightly
       - name: upload Release
-        env: 
+        env:
             GH_TOKEN: "${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}"
         run: |
           VERSION=`./gradlew properties -q | grep "^version:" | awk '{ print $2}'`
@@ -70,4 +70,3 @@ jobs:
           docker push ghcr.io/${REPO}/routingscheduler:${{inputs.branch}}-nightly
           docker push ghcr.io/${REPO}/compdepends:${{inputs.branch}}-nightly
           docker push ghcr.io/${REPO}/compproc:${{inputs.branch}}-nightly
-      

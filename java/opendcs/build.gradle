@@ -91,7 +91,7 @@ dependencies {
         exclude group: "mil.army.usace.hec", module: "hec-monolith"
     }
     implementation(libs.hec.nucleus.metadata)
-    implementation(libs.org.slf4j.api)
+    api(libs.org.slf4j.api)
     implementation(libs.bundles.jersey)
     implementation(libs.bundles.jdbi)
     implementation(libs.org.flywaydb.flyway.core)

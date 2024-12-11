@@ -226,9 +226,14 @@ public class CwmsTimeSeriesDAO
         return ret;
     }
 
-
     @Override
     public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString)
+    {
+        return findTimeSeriesIdentifier(uniqueString, false);
+    }
+
+    @Override
+    public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime)
     {
 
         int paren = uniqueString.lastIndexOf('(');
@@ -257,7 +262,7 @@ public class CwmsTimeSeriesDAO
             }
             return FailableResult.success(ret);
         }
-        else if (ret == null && lastCacheReloadWithin(1, TimeUnit.HOURS))
+        else if (ret == null && !ignoreCacheTime && lastCacheReloadWithin(1, TimeUnit.HOURS))
         {
             return FailableResult.failure(new NoSuchObjectException("No TimeSeries in fresh cache."));
         }
@@ -349,7 +354,7 @@ public class CwmsTimeSeriesDAO
         }
         StringBuffer q = new StringBuffer();
         ArrayList<Object> parameters = new ArrayList<>();
-        q.append("SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+        q.append("SELECT DATE_TIME, VALUE, QUALITY_CODE FROM CWMS_V_TSV "
             + " WHERE TS_CODE = ?");
         parameters.add(ts_code);
 
@@ -455,7 +460,7 @@ public class CwmsTimeSeriesDAO
         // in the CTimeSeries.
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
-        String qbase = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+        String qbase = "SELECT DATE_TIME, VALUE, QUALITY_CODE FROM CWMS_V_TSV "
             + " WHERE TS_CODE = " + cts.getSDI()
             + " and DATE_TIME IN (";
 
@@ -558,7 +563,7 @@ public class CwmsTimeSeriesDAO
         // in the CTimeSeries.
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
-        String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+        String q = "SELECT DATE_TIME, VALUE, QUALITY_CODE FROM CWMS_V_TSV "
             + " WHERE TS_CODE = ?"
             + " and DATE_TIME = "
             +   "(select max(date_time) from CWMS_V_TSV "
@@ -620,7 +625,7 @@ public class CwmsTimeSeriesDAO
         // in the CTimeSeries.
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
 
-        String q = "SELECT DATE_TIME, ROUND(VALUE,8), QUALITY_CODE FROM CWMS_V_TSV "
+        String q = "SELECT DATE_TIME, VALUE, QUALITY_CODE FROM CWMS_V_TSV "
             + " WHERE TS_CODE = ?"
             + " and DATE_TIME = "
             +   "(select min(date_time) from CWMS_V_TSV "
@@ -668,8 +673,7 @@ public class CwmsTimeSeriesDAO
     }
 
     @Override
-    public void saveTimeSeries(CTimeSeries ts) throws DbIoException,
-        BadTimeSeriesException
+    public void saveTimeSeries(CTimeSeries ts) throws DbIoException, BadTimeSeriesException
     {
         // NOTE: For CWMS, we don't need separate methods for write/delete
         // because a deleted value is just one with a null value and the
@@ -787,6 +791,16 @@ public class CwmsTimeSeriesDAO
                 cwmsDbTs.store(conn, dbOfficeId, path, ts.getUnitsAbbr(), times, values,
                     qualities, num2write, CwmsConstants.REPLACE_MISSING_VALUES_ONLY,
                     overrideProtection, versionDate, false);
+            }
+
+            TimeSeriesIdentifier tsIdCached = cache.getByUniqueName(tsId.getUniqueString());
+            if (tsIdCached == null)
+            {
+                // If this key is not in the cache it was freshly saved. Add it to the
+                // Cache now for anything that may use it.
+                DbKey tsCode = ts_id2ts_code(tsId.getUniqueString());
+                tsId.setKey(tsCode);
+                cache.put(tsId);
             }
         }
         catch(SQLException ex)
