@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
 
+import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 
@@ -51,6 +52,19 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	public EnumSqlDao(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb, "EnumSqlDao");
+	}
+
+	@Override
+	public DataTransaction getTransaction() throws OpenDcsDataException
+	{
+		try
+		{
+			return new SimpleTransaction(db.getConnection());
+		}
+		catch (SQLException ex)
+		{
+			throw new OpenDcsDataException("Unable to get connection.", ex);
+		}
 	}
 	
 	private String getEnumColumns(int dbVer)

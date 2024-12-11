@@ -23,6 +23,7 @@ import org.junit.platform.commons.PreconditionViolationException;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
@@ -211,6 +212,11 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 {
                     f.setAccessible(true);
                     withEnvProps(() -> f.set(testInstance,configuration.getDecodesDatabase()));
+                }
+                else if (f.getType().equals(OpenDcsDatabase.class) && configuration.isRunning())
+                {
+                    f.setAccessible(true);
+                    withEnvProps(() -> f.set(testInstance,configuration.getOpenDcsDatabase()));
                 }
             }
             catch (Throwable ex)

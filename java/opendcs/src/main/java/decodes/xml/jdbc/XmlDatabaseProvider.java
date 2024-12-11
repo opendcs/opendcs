@@ -47,6 +47,6 @@ public class XmlDatabaseProvider implements DatabaseProvider
         {
             throw new DatabaseException("Unable to initialize decodes.", ex);
         }
-        return new SimpleOpenDcsDatabaseWrapper(settings, db, null);
+        return new SimpleOpenDcsDatabaseWrapper(settings, db, null, dataSource);
     }
 }

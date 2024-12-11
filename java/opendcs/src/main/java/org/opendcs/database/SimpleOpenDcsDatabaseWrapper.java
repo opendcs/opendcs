@@ -2,11 +2,14 @@ package org.opendcs.database;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import javax.sql.DataSource;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
@@ -26,13 +29,15 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     private final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
+    private final DataSource dataSource;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
 
-    public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb)
+    public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
         this.settings = settings;
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
+        this.dataSource = dataSource;
     }
 
     @SuppressWarnings("unchecked") // class is checked before casting
@@ -70,7 +75,12 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                     {
                         try
                         {
-                            return (T)m.invoke(decodesDb.getDbIo());
+                            T ret = (T)m.invoke(this.decodesDb.getDbIo());
+                            if (ret == null)
+                            {
+                                log.atError().log("retrieval of DAO returned null instead of the expected DAO." + this.decodesDb.getDbIo() + " " + m.toGenericString());
+                            }
+                            return ret;
                         }
                         catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
                         {
@@ -90,7 +100,12 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                     {
                         try
                         {
-                            return (T)m.invoke(timeSeriesDb);
+                            T ret = (T)m.invoke(timeSeriesDb);
+                            if (ret == null)
+                            {
+                                log.atError().log("retrieval of DAO returned null instead of the expected DAO." + timeSeriesDb + " " + m.toGenericString());
+                            }
+                            return ret;
                         }
                         catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
                         {
@@ -105,12 +120,19 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                 return new DaoWrapper<>(() -> null);
             });
         return Optional.ofNullable((T)wrapper.create());
-    }    
+    }
 
     @Override
     public DataTransaction newTransaction() throws OpenDcsDataException
     {
-        return null;
+        try
+        {
+            return new SimpleTransaction(this.dataSource.getConnection());
+        }
+        catch (SQLException ex)
+        {
+            throw new OpenDcsDataException("Unable to get JDBC Connection.", ex);
+        }
     }
 
     private Optional<Method> findDaoMaker(Class<?> implClass, Class<? extends OpenDcsDao> daoType)

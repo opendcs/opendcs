@@ -63,6 +63,6 @@ public class OpenTsdbProvider implements DatabaseProvider
     {
         Database decodesDb = getDecodesDatabase(dataSource, settings);
         OpenTsdb tsDb = new OpenTsdb(appName, dataSource, settings);
-        return new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb);
+        return new SimpleOpenDcsDatabaseWrapper(settings, decodesDb, tsDb, dataSource);
     }
 }
