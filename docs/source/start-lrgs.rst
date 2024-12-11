@@ -164,7 +164,7 @@ You will need to set your environment. Add the following to .bashrc, if using ba
     source ~/.bashrc
     
 
-Now set the LRGS Admin Password::
+Now set the LRGS Admin Password:
 
 .. code-block:: bash
 
