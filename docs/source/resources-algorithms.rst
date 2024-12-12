@@ -741,15 +741,13 @@ BridgeClearance
 
 Exec Class: decodes.tsdb.algo.BridgeClearance
 
+Computes bridge clearance by subtracting waterlevel from constant 'lowChord'.
+Make sure that the waterlevel and low chord are consistent. If one is a stage
+above arbitrary datum, then they both must be. Likewise, if one is an elevation
+above sea level, the other must be also.
+
+
 .. image:: ./media/resources/algorithms/im-042-excel-bridgeclearance.JPG
-   :alt: algorithm bridge clearance
-   :width: 600
-
-.. image:: ./media/resources/algorithms/im-043-comptest-bridgeclearance.JPG
-   :alt: algorithm bridge clearance
-   :width: 600
-
-.. image:: ./media/resources/algorithms/im-044-comp-bridgeclearance.JPG
    :alt: algorithm bridge clearance
    :width: 600
 
