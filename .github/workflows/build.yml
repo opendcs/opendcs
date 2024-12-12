@@ -69,23 +69,9 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: |
           ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=CWMS-Oracle" --info
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v4
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
+      - name: Upload Coverage
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk = 17
+        uses: actions/upload-artifact@v4.4.3
         with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
-          restore-keys: ${{ runner.os }}-gradle
-      - name: Analyze
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonar --info -Dorg.gradle.jvmargs=-Xmx4096M
+          name: coverage
+          path: build/**/jacoco*.xml
