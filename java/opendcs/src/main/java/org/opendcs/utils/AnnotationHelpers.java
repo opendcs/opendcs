@@ -7,8 +7,8 @@ import java.util.List;
 
 import ilex.util.Pair;
 
-public class AnnotationHelpers {
-    
+public final class AnnotationHelpers
+{
     private AnnotationHelpers()
     {
         // prevent instance of class
@@ -17,7 +17,7 @@ public class AnnotationHelpers {
     public static <AnnotationType extends Annotation> List<Pair<Field,AnnotationType>> getFieldsWithAnnotation(Class<?> clazz, Class<AnnotationType> annotationType)
     {
         ArrayList<Pair<Field,AnnotationType>> ret = new ArrayList<>();
-        Field[] fields = clazz.getFields();
+        Field[] fields = clazz.getDeclaredFields();
         for (Field f: fields)
         {
             if (f.isAnnotationPresent(annotationType))
