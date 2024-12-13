@@ -23,7 +23,7 @@ Important Notes:
 * Make sure to set your aggregateTimeOffset to your timezoneOffset if the form "8 hours"
 * Always set your aggregateTimeZone to "ETC/GMT"
 
-.. image:: ./media/resources/algorithms/im-005-ResEvap-Properties.jpg
+.. image:: ./media/resources/algorithms/im-042-ResEvap-Properties.jpg
    :alt:  ResEvap Properties
    :width: 600
 
