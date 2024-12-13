@@ -21,3 +21,4 @@ doc-source/*.rst
 .idea/
 !install/bin
 out
+gradle.properties

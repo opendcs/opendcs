@@ -312,7 +312,8 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             connectionsFreed++;
             connectionsOut.remove(conn);
             Connection rc = ((WrappedConnection)conn).getRealConnection();
-            CwmsDbConnectionPool.close(rc);
+            rc.close();
+            //CwmsDbConnectionPool.close(rc);
         }
         else
         {

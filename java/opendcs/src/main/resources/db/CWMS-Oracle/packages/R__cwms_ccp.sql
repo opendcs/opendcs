@@ -8,25 +8,14 @@
 ---------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------
--- This software was written by Cove Software, LLC ("COVE") under contract 
--- to the United States Government. 
+-- This software was written by Cove Software, LLC ("COVE") under contract
+-- to the United States Government.
 -- No warranty is provided or implied other than specific contractual terms
 -- between COVE and the U.S. Government
--- 
+--
 -- Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
 -- All rights reserved.
 -----------------------------------------------------------------------------
-set echo on
-spool pkg_cwms_ccp.log
-
-whenever sqlerror continue
-set define on
-@@defines.sql
-
-define queue_name       = &&CWMS_SCHEMA..cwms_sec.get_user_office_id||'_TS_STORED';
-define callback_proc    = &&CCP_SCHEMA..CWMS_CCP.NOTIFY_FOR_COMP;
-
-
 ---------------------------------------------------------------------------
 -- create the callback procedure within the cwms_ccp package
 ---------------------------------------------------------------------------
@@ -92,22 +81,22 @@ create or replace package body cwms_ccp as
     l_subscriber_name    varchar2(32);
   begin
     if p_queue_name is null then
-      l_subscription_name := '"&&CWMS_SCHEMA"."%":"'||p_subscriber_name||'"';
+      l_subscription_name := '"${CWMS_SCHEMA}"."%":"'||p_subscriber_name||'"';
     else
-      l_subscription_name := '"&&CWMS_SCHEMA"."'||p_queue_name||'":"'||p_subscriber_name||'"';
+      l_subscription_name := '"${CWMS_SCHEMA}"."'||p_queue_name||'":"'||p_subscriber_name||'"';
     end if;
 
     for rec in
       (select subscription_name from dba_subscr_registrations
          where subscription_name like l_subscription_name
-           and location_name = 'plsql://&callback_proc'
+           and location_name = 'plsql://${CCP_SCHEMA}.CWMS_CCP.NOTIFY_FOR_COMP'
       )
     loop
       l_subscriber_name := trim(both '"' from regexp_substr(rec.subscription_name, '[^:]+', 1, 2));
       l_queue_name := trim(both '"' from regexp_substr(regexp_substr(rec.subscription_name, '[^:]+', 1, 1), '[^.]+', 1, 2));
 
-      &&CWMS_SCHEMA..cwms_ts.unregister_ts_callback(
-        '&callback_proc',
+      ${CWMS_SCHEMA}.cwms_ts.unregister_ts_callback(
+        '${CCP_SCHEMA}.CWMS_CCP.NOTIFY_FOR_COMP',
         l_subscriber_name,
         l_queue_name);
     end loop;
@@ -124,7 +113,7 @@ create or replace package body cwms_ccp as
   begin
     for rec in
       (select name from dba_queues
-         where owner = upper('&&CWMS_SCHEMA') and queue_type in('NORMAL_QUEUE')
+         where owner = upper('${CWMS_SCHEMA}') and queue_type in('NORMAL_QUEUE')
            and name like '%_TS_STORED'
       )
     loop
@@ -132,7 +121,7 @@ create or replace package body cwms_ccp as
         continue;
       end if;
 
-      l_queue_name := '&&CWMS_SCHEMA..'||rec.name;
+      l_queue_name := '${CWMS_SCHEMA}.'||rec.name;
       begin
         dbms_aqadm.remove_subscriber(
           l_queue_name,
@@ -154,7 +143,7 @@ create or replace package body cwms_ccp as
   begin
     for rec in
       (select name from dba_queues
-         where owner = '&&CWMS_SCHEMA' and queue_type in('NORMAL_QUEUE')
+         where owner = '${CWMS_SCHEMA}' and queue_type in('NORMAL_QUEUE')
            and name like '%_TS_STORED'
       )
     loop
@@ -162,8 +151,8 @@ create or replace package body cwms_ccp as
         continue;
       end if;
 
-      l_subscriber_name := &&CWMS_SCHEMA..cwms_ts.register_ts_callback(
-        '&callback_proc',
+      l_subscriber_name := ${CWMS_SCHEMA}.cwms_ts.register_ts_callback(
+        '${CCP_SCHEMA}.CWMS_CCP.NOTIFY_FOR_COMP',
         p_subscriber_name,
         rec.name);
     end loop;
@@ -200,7 +189,7 @@ create or replace package body cwms_ccp as
   begin
     for rec1 in
       (select * from dba_queues
-         where owner = upper('&&CWMS_SCHEMA') and queue_type in('NORMAL_QUEUE')
+         where owner = upper('${CWMS_SCHEMA}') and queue_type in('NORMAL_QUEUE')
            and name like '%_TS_STORED'
       )
     loop
@@ -208,7 +197,7 @@ create or replace package body cwms_ccp as
 
       for rec2 in
         (select * from dba_queue_subscribers
-           where owner = upper('&&CWMS_SCHEMA') and consumer_name in(l_subscriber_name)
+           where owner = upper('${CWMS_SCHEMA}') and consumer_name in(l_subscriber_name)
              and queue_name like '%_TS_STORED'
         )
       loop
@@ -235,7 +224,7 @@ create or replace package body cwms_ccp as
     l_count           integer;
     l_run_interval    varchar2(8);
     l_comment         varchar2(256);
-    l_user_id         varchar2(30) := '&&&CCP_SCHEMA';
+    l_user_id         varchar2(30) := '${CCP_SCHEMA}';
     l_job_id          varchar2(30) := 'CHECK_NOTIFY_CALLBACK_PROC_JOB';
 
     function job_count
@@ -314,7 +303,7 @@ create or replace package body cwms_ccp as
   begin
     l_start_time := to_date(to_char(p_start_time, c_timestamp_fmt), c_timestamp_fmt);
     l_end_time   := to_date(to_char(p_end_time, c_timestamp_fmt), c_timestamp_fmt);
-    l_unit_id    := &&CWMS_SCHEMA..cwms_ts.get_db_unit_id(p_tsid);
+    l_unit_id    := ${CWMS_SCHEMA}.cwms_ts.get_db_unit_id(p_tsid);
 
     for r2 in
       (select distinct cc.loading_application_id
@@ -346,7 +335,7 @@ create or replace package body cwms_ccp as
          r1.quality_code,
          r1.quality_code
       from cwms_v_tsv r1
-      where r1.ts_code = p_ts_code 
+      where r1.ts_code = p_ts_code
         and r1.date_time >= l_start_time and r1.date_time <= l_end_time
         and r1.data_entry_date <= p_enqueue_time;
     end loop;   /* end of for r2 loop */
@@ -363,7 +352,7 @@ create or replace package body cwms_ccp as
   is
   begin
     insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
-        values(cp_depends_notifyidseq.nextval, 'T', p_ts_code, SYSDATE, 
+        values(cp_depends_notifyidseq.nextval, 'T', p_ts_code, SYSDATE,
 			(select db_office_code from cwms_v_ts_id where ts_code = p_ts_code));
     commit;
   end notify_tscreated;
@@ -377,7 +366,7 @@ create or replace package body cwms_ccp as
   is
     l_office_cd   integer;
   begin
-    l_office_cd := &&CWMS_SCHEMA..cwms_util.get_db_office_code (p_office_id);
+    l_office_cd := ${CWMS_SCHEMA}.cwms_util.get_db_office_code (p_office_id);
 
     insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
       values(cp_depends_notifyidseq.nextval, 'D', p_ts_code, SYSDATE, l_office_cd);
@@ -440,7 +429,7 @@ create or replace package body cwms_ccp as
   is
   begin
     insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
-        values(cp_depends_notifyidseq.nextval, 'H', p_ts_code, SYSDATE, 
+        values(cp_depends_notifyidseq.nextval, 'H', p_ts_code, SYSDATE,
 			(select db_office_code from cwms_v_ts_id where ts_code = p_ts_code));
     commit;
   end notify_tscodechanged;
@@ -455,7 +444,7 @@ create or replace package body cwms_ccp as
   is
   begin
     insert into cp_depends_notify(record_num, event_type, key, date_time_loaded, db_office_code)
-        values(cp_depends_notifyidseq.nextval, 'M', p_ts_code, SYSDATE, 
+        values(cp_depends_notifyidseq.nextval, 'M', p_ts_code, SYSDATE,
 			(select db_office_code from cwms_v_ts_id where ts_code = p_ts_code));
     commit;
   end notify_tsrenamed;
@@ -562,8 +551,8 @@ create or replace package body cwms_ccp as
             l_msgtype        := get_string(l_message, l_msgid, 'type', l_msgtype_len);
             l_office_id      := get_string(l_message, l_msgid, 'office_id', l_office_id_len);
             l_enqueue_millis := l_message.get_long(l_msgid, 'millis');
-            l_enqueue_time   := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_enqueue_millis);
-            l_queue_delay    := &&CWMS_SCHEMA..cwms_util.to_millis(l_dequeue_time) - l_enqueue_millis;
+            l_enqueue_time   := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_enqueue_millis);
+            l_queue_delay    := ${CWMS_SCHEMA}.cwms_util.to_millis(l_dequeue_time) - l_enqueue_millis;
             l_comment  := 'Starting Case';
             -----------------------------------------------------------------
             -- operate on the message based on its type
@@ -579,9 +568,9 @@ create or replace package body cwms_ccp as
                 l_store_millis := l_message.get_long(l_msgid, 'store_time');
                 l_version_date := l_message.get_long(l_msgid, 'version_date');
 
-                l_start_time   := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_start_millis);
-                l_end_time     := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_end_millis);
-                l_store_time   := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_store_millis);
+                l_start_time   := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_start_millis);
+                l_end_time     := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_end_millis);
+                l_store_time   := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_store_millis);
                 l_comment      := 'start time= '||l_start_time||
                                   ', end time= '||l_end_time;
 
@@ -609,8 +598,8 @@ create or replace package body cwms_ccp as
                 l_ts_code      := l_message.get_long(l_msgid, 'ts_code');
                 l_start_millis := l_message.get_long(l_msgid, 'start_time');
                 l_end_millis   := l_message.get_long(l_msgid, 'end_time');
-                l_start_time   := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_start_millis);
-                l_end_time     := &&CWMS_SCHEMA..cwms_util.to_timestamp(l_end_millis);
+                l_start_time   := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_start_millis);
+                l_end_time     := ${CWMS_SCHEMA}.cwms_util.to_timestamp(l_end_millis);
                 l_deleted_time := l_message.get_long(l_msgid, 'deleted_time');
                 l_version_date := l_message.get_long(l_msgid, 'version_date');
                 l_comment      := 'start time= '||l_start_time||
@@ -648,7 +637,7 @@ create or replace package body cwms_ccp as
 
                 l_comment      := 'calling notify_tsdelete with ts_code='||l_ts_code
 			||',office_id='||l_office_id;
-                
+
                 notify_tsdeleted(
                   p_ts_code => l_ts_code,
                   p_office_id => l_office_id);
@@ -803,208 +792,3 @@ create or replace package body cwms_ccp as
 
 end cwms_ccp;
 /
-
-show errors;
-
----------------------------------------------------------------------------
--- Grant execute privilege on packages TO cwms_user
----------------------------------------------------------------------------
-GRANT EXECUTE ON &&CCP_SCHEMA..cwms_ccp TO CCP_USERS;
-
----------------------------------------------------------------------------
--- Create public synonyms for CCP packages
----------------------------------------------------------------------------
-DROP PUBLIC SYNONYM cwms_ccp;
-CREATE PUBLIC SYNONYM cwms_ccp FOR &&CCP_SCHEMA..cwms_ccp;
-
-
----------------------------------------------------------------------------
--- Start the check callback procedure job
----------------------------------------------------------------------------
-begin
-  -- in 'addCcpUser.sql' we registered user CCP in the default office.
-  -- This is a kludge: TS API requires caller to be registered in an office.
---  &&CWMS_SCHEMA..cwms_env.set_session_office_id('&DEFAULT_OFFICE_ID');
-  &&CCP_SCHEMA..cwms_ccp.reload_callback_proc(
-    'CCP_SUBSCRIBER');
-
-  &&CCP_SCHEMA..cwms_ccp.start_check_callback_proc_job;
-end;
-/
-
----------------------------------------------------------------------------
--- Create the context, package, and triger for multipe-offices
----------------------------------------------------------------------------
--- MJM 20190307 As per HEC, use CWMS_ENV, not CCPENV
--- create or replace context CCPENV using cwms_ccp_vpd;
-
-create or replace package cwms_ccp_vpd authid current_user as
-  procedure set_ccp_session_ctx(
-    p_db_office_code  integer default null,
-    p_ccp_priv_level  integer default null,
-    p_db_office_id    varchar2 default null
-  )
-  ;
-  -- View data VPD policy function
-  function get_pred_session_office_code_v (
-    p_schema  in varchar2,
-    p_table   in varchar2)
-    return varchar2
-  ;
-
-  -- Update data VPD policy function
-  function get_pred_session_office_code_u (
-    p_schema  in varchar2,
-    p_table   in varchar2)
-    return varchar2
-  ;
-
-end cwms_ccp_vpd;
-/
-
-create or replace package body cwms_ccp_vpd as
-  k_ccp_env                 varchar2(20) := 'CWMS_ENV';
-  k_ccp_office_code         varchar2(20) := 'SESSION_OFFICE_CODE';
-  k_ccp_office_id           varchar2(20) := 'SESSION_OFFICE_ID';
-  k_ccp_priv_level          varchar2(20) := 'CCP_PRIV_LEVEL';
-
-  k_session_user_name       varchar2(20) := SYS_CONTEXT('USERENV', 'SESSION_USER');
-
-  -------------------------------------------------------------------------------------
-  -- CWMS 3.0 session context method.
-  -- Java figures out the appropriate db_office_code and privilege
-  -- Meaning of p_ccp_priv_level:
-  --   0 = Administrator: Predicate is always '1 = 1'. Record creation disallowed.
-  --       When called this way p_db_office_code can be null
-  --   1 = Manager: Full read/write access to all tables. Predicate checks db_office_code
-  --   2 = Process: Read access to all tables. Write access to cp_comp_tasklist and 
-  --       cp_comp_proc_lock, cp_comp_depends, and cp_comp_depends_scratchpad.
-  --   3 = Reviewer: Read access to all tables only
-  --   4 = Equivalent to never calling this method. Access denied to everything.
-  -------------------------------------------------------------------------------------
-  procedure set_ccp_session_ctx(
-    p_db_office_code  integer default null,
-    p_ccp_priv_level  integer default null,
-    p_db_office_id    varchar2 default null
-  )
-  is
-  begin
-    CWMS_ENV.SET_SESSION_OFFICE_ID (p_db_office_id);
-  end set_ccp_session_ctx;
-
-
-  ------------------------------------------------------------------------------------
-  -- VPD Predicate Method for SELECT statements
-  ------------------------------------------------------------------------------------
-  function get_pred_session_office_code_v (
-    p_schema  in varchar2,
-    p_table   in varchar2)
-    return varchar2
-  is
-    l_pred    varchar2(400);
-    l_session_ccp_office_code integer := null;
-    l_ccp_priv_level  integer := 4;
-  begin
-    l_pred := '1 = 0';
-
-	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
-
-    -- This is required by the queue handler
-    if upper(k_session_user_name) in ('SYS', '&&CCP_SCHEMA', '&&CWMS_SCHEMA')
-    then
-      l_pred := '1 = 1';
-    else
-      -- Read privilege level from context or default to level 4
-      l_ccp_priv_level := SYS_CONTEXT(k_ccp_env, k_ccp_priv_level);
-      if l_ccp_priv_level is null then
-        l_ccp_priv_level := 4;
-      end if;
-  
-      if l_ccp_priv_level = 0 then
-        l_pred := '1 = 1';
-      elsif l_ccp_priv_level >= 1 and l_ccp_priv_level <= 3 then
-        l_pred := 'db_office_code = '||l_session_ccp_office_code;
-      else
-        l_pred := '1 = 0';
-      end if;
-    end if;
-
-    dbms_output.put_line('session office code: '||l_session_ccp_office_code);
-    dbms_output.put_line('predicate: '||l_pred);
-
-    return l_pred;
-  end get_pred_session_office_code_v;
-
-  ------------------------------------------------------------------------------------
-  -- VPD Predicate Method for UPDATE statements
-  ------------------------------------------------------------------------------------
-  function get_pred_session_office_code_u (
-    p_schema  in varchar2,
-    p_table   in varchar2)
-    return varchar2
-  is
-    l_pred    varchar2(400);
-    l_session_ccp_office_code integer := null;
-    l_ccp_priv_level  integer := 4;
-  begin
-    l_pred := '1 = 0';
-
-	l_session_ccp_office_code := SYS_CONTEXT(k_ccp_env, k_ccp_office_code); 
-
-    -- This is required by the queue handler
-    if upper(k_session_user_name) in ('SYS', '&&CCP_SCHEMA', '&&CWMS_SCHEMA')
-    then
-      l_pred := '1 = 1';
-    else
-      -- Read privilege level from context or default to level 4
-      l_ccp_priv_level := SYS_CONTEXT(k_ccp_env, k_ccp_priv_level);
-      if l_ccp_priv_level is null then
-        l_ccp_priv_level := 4;
-      end if;
-  
-      -- sys or superuser
-      if l_ccp_priv_level = 0 then
-        l_pred := '1 = 1';
-      -- manager
-      elsif l_ccp_priv_level = 1 then
-        l_pred := 'db_office_code = '||l_session_ccp_office_code;
-      -- process can modify specific tables
-      elsif l_ccp_priv_level = 2 then
-        if upper(p_table) in ('CP_COMP_PROC_LOCK', 'CP_COMP_TASKLIST', 
-          'CP_COMP_DEPENDS', 'CP_COMP_DEPENDS_SCRATCHPAD')
-        then
-          l_pred := 'db_office_code = '||l_session_ccp_office_code;
-        else
-          raise_application_error(-20100, 'CCP Process cannot modify this table');
-        end if;
-      -- reviewer cannot modify anything
-      elsif l_ccp_priv_level >= 3 then
-        raise_application_error(-20100, 'CCP Reviewer cannot modify in this office');
-      end if;
-    end if;
-
-    dbms_output.put_line('session office code: '||l_session_ccp_office_code);
-    dbms_output.put_line('predicate: '||l_pred);
-
-    return l_pred;
-  end get_pred_session_office_code_u;
-
-end cwms_ccp_vpd;
-/
-
-show errors;
-
----------------------------------------------------------------------------
--- Grant execute privilege on packages TO cwms_user
----------------------------------------------------------------------------
-GRANT EXECUTE ON &&CCP_SCHEMA..cwms_ccp_vpd TO CCP_USERS;
-
----------------------------------------------------------------------------
--- Create synonym for CWMS_CCP_VPD package
----------------------------------------------------------------------------
-DROP PUBLIC SYNONYM cwms_ccp_vpd;
-CREATE PUBLIC SYNONYM cwms_ccp_vpd FOR &&CCP_SCHEMA..cwms_ccp_vpd;
-
-
-spool off
-exit;
