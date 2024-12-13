@@ -19,7 +19,8 @@ package decodes.cwms.resevapcalc;
  * This class holds some location reservoir specific values (lat, lon, instrument height)
  * used for the meteorological computations.
  */
-public class ReservoirLocationInfo {
+public class ReservoirLocationInfo
+    {
     // package access to these variables
     public final double latitude;
     public final double longitude;
@@ -30,7 +31,8 @@ public class ReservoirLocationInfo {
     public final double rt; //sensor tempHeigth
     public final double rq; //sensor relHeight
 
-    public ReservoirLocationInfo(double latitude, double longitude, double instrumentHeight, double gmtOffset, double ru, double rt, double rq) {
+    public ReservoirLocationInfo(double latitude, double longitude, double instrumentHeight, double gmtOffset, double ru, double rt, double rq)
+        {
         this.latitude = latitude;
         this.longitude = longitude;
         this.instrumentHeight = instrumentHeight;
@@ -38,5 +40,5 @@ public class ReservoirLocationInfo {
         this.rt = rt;
         this.ru = ru;
         this.rq = rq;
+        }
     }
-}

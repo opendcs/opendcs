@@ -28,7 +28,8 @@ import java.util.TimeZone;
  * conversion to Java by Richard Rachiele (RMA)
  * OpenDCS implementation by Oskar Hurst (HEC)
  */
-public class SolarFlux {
+public class SolarFlux
+    {
     /* r1(4,4): = Cubic polynomial coefficients for Reflectivity
      *            for clear sky
      * r2(4,4): = Cubic relectivity coeffients for Reflectivity
@@ -133,7 +134,8 @@ public class SolarFlux {
 
     public void solflx(Date currentTime, double gmtOffset,
                        double longitude,
-                       double latitude, CloudCover[] cloudCover) {
+                       double latitude, CloudCover[] cloudCover)
+        {
         EvapUtilities.DoubleContainer solzen = new EvapUtilities.DoubleContainer();
         EvapUtilities.DoubleContainer sdowndc = new EvapUtilities.DoubleContainer();
         EvapUtilities.DoubleContainer cosz = new EvapUtilities.DoubleContainer();
@@ -164,12 +166,14 @@ public class SolarFlux {
                 latitude, longitude, solzen, cosz);
 
 
-        if (solzen.d >= 90.) {
+        if (solzen.d >= 90.)
+            {
             // still dark set flux to zero and return
             sdown = 0.0;
             direct = 0.0;
             diffuse = 0.0;
-        } else {
+            } else
+            {
             // Calculate the total, direct and diffuse flux on a horizontal
             // surface for each hour. In the future this should be
             // modified to account for a sloping surface.  The direct and diffuse
@@ -178,11 +182,11 @@ public class SolarFlux {
             insol(jday, cloudCover, cosz.d);
 
             sdown = this.sdown;
-        }
+            }
 
         SOLAR = sdown;
         ZEN = solzen.d;
-    }
+        }
 
     /**
      * INSOL computes direct and diffuse solar radiation using
@@ -193,7 +197,8 @@ public class SolarFlux {
      * @param cosz
      */
     public void insol(int jday, CloudCover[] cloudCover,
-                      double cosz) {
+                      double cosz)
+        {
         double sdown0;
         double wgt, rcld, tcld, fr, tclr;
         double coszsq, coszcube, d3, d2, rg, d1, rclr, sdowne;
@@ -235,17 +240,21 @@ public class SolarFlux {
         icla[2] = cloudCover[2].getCloudTypeFlag();
 
         // if missing cloud cover, get default values
-        if (!HecConstants.isValidValue(covera[2])) {
+        if (!HecConstants.isValidValue(covera[2]))
+            {
             covera[2] = cloudCover[2].getDefaultFractionCloudCover();
-        }
-        if (!HecConstants.isValidValue(covera[1])) {
+            }
+        if (!HecConstants.isValidValue(covera[1]))
+            {
             covera[1] = cloudCover[1].getDefaultFractionCloudCover();
-        }
-        if (!HecConstants.isValidValue(covera[0])) {
+            }
+        if (!HecConstants.isValidValue(covera[0]))
+            {
             covera[0] = cloudCover[0].getDefaultFractionCloudCover();
-        }
+            }
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++)
+            {
             // Initialize parameters
             wgt = 0.0;
             rcld = 0.0;
@@ -257,7 +266,8 @@ public class SolarFlux {
             fr = covera[i];
             ll = i;
 
-            if (jj != 0) {
+            if (jj != 0)
+                {
                 j = jj - 1;
                 wgt = WTX[0][j] + WTX[1][j] * cosz + WTX[2][j] * fr + WTX[3][j] * cosz * fr
                         + WTX[4][j] * coszsq + WTX[5][j] * fr * fr;
@@ -266,21 +276,23 @@ public class SolarFlux {
                 if (fr < 0.05) wgt = 0.0;
                 if (fr > 0.95) wgt = 1.0;
 
-                if (wgt > 0.0) {
+                if (wgt > 0.0)
+                    {
                     rcld = R2[0][j] + R2[1][j] * cosz + R2[2][j] * coszsq
                             + R2[3][j] * coszcube;
                     tcld = T2[0][j] + T2[1][j] * cosz + T2[2][j] * coszsq
                             + T2[3][j] * coszcube;
+                    }
                 }
-            }
 
             // Compute reflectivity and transmitivity for each layer
-            if (wgt < 1.) {
+            if (wgt < 1.)
+                {
                 rclr = R1[0][ll] + R1[1][ll] * cosz + R1[2][ll] * coszsq
                         + R1[3][ll] * coszcube;
                 tclr = T1[0][ll] + T1[1][ll] * cosz + T1[2][ll] * coszsq
                         + T1[3][ll] * coszcube;
-            }
+                }
 
             rk[i] = wgt * rcld + (1. - wgt) * rclr;
             tk[i] = wgt * tcld + (1. - wgt) * tclr;
@@ -289,7 +301,7 @@ public class SolarFlux {
             tdk[i] = tk[i] - rk[i];
 
             if (tdk[i] < 0.0) tdk[i] = 0.0;
-        }
+            }
 
         // calculation of insolation at the ground-sdown
         rg = 0.2;       // set to the value of water
@@ -301,29 +313,32 @@ public class SolarFlux {
         sdown = d3 * sdown - (d1 * rk[1] * rg * tk[2] * tk[2]);
         sdown = sdown - (rk[0] * rg * tk[1] * tk[1] * tk[2] * tk[2]);
         sdown = (tk[0] * tk[1] * tk[2] * sdown0) / sdown;
-        if (sdown <= 0.0) {
+        if (sdown <= 0.0)
+            {
             sdown = 0.0;
             direct = 0.0;
             diffuse = 0.0;
-        } else {
+            } else
+            {
             // Direct component of insolation 
             direct = tdk[0] * tdk[1] * tdk[2] * sdown0;
 
             //  Diffuse component of insolation
             diffuse = sdown - direct;
-        }
+            }
 
         this.sdown = sdown;
         this.direct = direct;
         this.diffuse = diffuse;
-    }
+        }
 
 
     /// public static void zenith ( int jjday, double local_hr,double gmt_offset,
     public static void zenith(int jjday, double local_hr,
                               double gmt_offset,
                               double zlat, double zlong,
-                              EvapUtilities.DoubleContainer solzen, EvapUtilities.DoubleContainer coszd) {
+                              EvapUtilities.DoubleContainer solzen, EvapUtilities.DoubleContainer coszd)
+        {
         double gmt, phi, phir, sinp, cosp, cosz;
         double sin2p, cos2p, sig, sigr, sind, cosd, xm, hr, zlatr, sinz, saz, az;
         double xpi, h;
@@ -365,25 +380,30 @@ public class SolarFlux {
         // Tables, Sixth revised edition, Robert J. List, p.497.
         // Note: Need to redo this for Southern Hemisphere
 
-        if (sinz == 0.) {
+        if (sinz == 0.)
+            {
             saz = xpi;
-        } else if (sind - Math.sin(zlatr) * cosz <= 0.) {
+            } else if (sind - Math.sin(zlatr) * cosz <= 0.)
+            {
             az = (cosd * Math.sin(hr) / sinz);
             if (az < -1.0) az = -1.0;      // Otherwise, will have a math error.
             saz = Math.asin(az) + xpi;
-        } else if (hr > 0.0) {
+            } else if (hr > 0.0)
+            {
             saz = 2 * xpi - Math.asin(cosd * Math.sin(hr) / sinz);
-        } else {
+            } else
+            {
             saz = -Math.asin(cosd * Math.sin(hr) / sinz);
-        }
+            }
 
         saz = saz / frad;
 
-        if (saz < 0.0) {
+        if (saz < 0.0)
+            {
             saz = saz + 360.0;
-        }
+            }
         solzen.d = Math.acos(cosz) / 0.017453292;
         coszd.d = cosz;
-    }
+        }
 
-}
+    }

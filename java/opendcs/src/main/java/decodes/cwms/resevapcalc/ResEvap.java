@@ -37,7 +37,8 @@ import java.util.*;
  * conversion to Java by Richard Rachiele (RMA)
  * OpenDCS implementation by Oskar Hurst (HEC)
  */
-public class ResEvap {
+public class ResEvap
+    {
     // Some global constant parameter vaiues set here
     public static final double EMITTANCE_H20 = 0.98;
     public static final double PENFRAC = 0.4;
@@ -68,13 +69,15 @@ public class ResEvap {
     private double surfaceTempTsc;
     private File workDir;
 
-    public ResEvap() {
-    }
+    public ResEvap()
+        {
+        }
 
-    public ResEvap(EvapReservoir reservoir, EvapMetData metData, Connection conn) {
+    public ResEvap(EvapReservoir reservoir, EvapMetData metData, Connection conn)
+        {
         setReservoir(reservoir, conn);
         setMetData(metData);
-    }
+        }
 
     /**
      * This is the directory location output of results to textfiles
@@ -82,11 +85,12 @@ public class ResEvap {
      * @param workDir
      * @return
      */
-    public boolean setOutputDirectory(File workDir) {
+    public boolean setOutputDirectory(File workDir)
+        {
         this.workDir = workDir;
 
         return true;
-    }
+        }
 
     /**
      * set the reservoir data for the compute and initialize
@@ -95,22 +99,25 @@ public class ResEvap {
      * @param reservoir
      * @return
      */
-    public boolean setReservoir(EvapReservoir reservoir, Connection conn) {
+    public boolean setReservoir(EvapReservoir reservoir, Connection conn)
+        {
         this.reservoir = reservoir;
 
         // check data
 
         // Initialize reservoir layers
-        if (!reservoir.initRes(conn)) {
+        if (!reservoir.initRes(conn))
+            {
             return false;
-        }
+            }
 
-        if (!reservoir.resSetup(conn)) {
+        if (!reservoir.resSetup(conn))
+            {
             return false;
-        }
+            }
         return true;
 
-    }
+        }
 
     /**
      * set the meteorological data for the compute
@@ -118,10 +125,11 @@ public class ResEvap {
      * @param metData
      * @return
      */
-    public boolean setMetData(EvapMetData metData) {
+    public boolean setMetData(EvapMetData metData)
+        {
         this.metData = metData;
         return true;
-    }
+        }
 
     /**
      * compute reservoir evaporation for the time window defined by the
@@ -137,14 +145,17 @@ public class ResEvap {
      * @return
      */
     public boolean compute(Date currentTime,
-                           double gmtOffset, Connection conn) throws ResEvapException {
-        if (reservoir == null) {
+                           double gmtOffset, Connection conn) throws ResEvapException
+        {
+        if (reservoir == null)
+            {
             throw new ResEvapException("ResEvap.compute: No reservoir has been set");
-        }
+            }
 
-        if (metData == null) {
+        if (metData == null)
+            {
             throw new ResEvapException("ResEvap.compute: No Meteorological data has been set");
-        }
+            }
 
         // diagnostic output
         File outfil = null;
@@ -152,12 +163,13 @@ public class ResEvap {
         File toutfil = null;
         File xoutfil = null;
 
-        if (workDir != null) {
+        if (workDir != null)
+            {
             outfil = new File(workDir.getAbsolutePath() + "/" + "wtout_java.dat");
             metoutfil = new File(workDir.getAbsolutePath() + "/" + "testtout_java.dat");
             toutfil = new File(workDir.getAbsolutePath() + "/" + "xout2_java.dat");
             xoutfil = new File(workDir.getAbsolutePath() + "/" + "xout_java.dat");
-        }
+            }
 
         int intervalMinutes = 60;
 
@@ -175,43 +187,55 @@ public class ResEvap {
 
         // file for reservoir energy balance
         BufferedWriter tout = null;
-        if (toutfil != null) {
-            try {
+        if (toutfil != null)
+            {
+            try
+                {
                 tout = new BufferedWriter(new FileWriter(toutfil));
                 resWtCompute.setOutfile(tout);
-            } catch (IOException ex) {
+                } catch (IOException ex)
+                {
                 LOGGER.info("Unable to read {}", toutfil.getAbsolutePath(), ex);
+                }
             }
-        }
 
         // debug reservoir layers
         BufferedWriter xout = null;
-        if (xoutfil != null) {
-            try {
+        if (xoutfil != null)
+            {
+            try
+                {
                 xout = new BufferedWriter(new FileWriter(xoutfil));
                 reservoir.setDebugFile(xout);
-            } catch (IOException ex) {
+                } catch (IOException ex)
+                {
                 LOGGER.info("Unable to read {}", xoutfil.getAbsolutePath(), ex);
+                }
             }
-        }
 
         // file for reservoir temperature profile
         BufferedWriter out = null;
-        if (outfil != null) {
-            try {
+        if (outfil != null)
+            {
+            try
+                {
                 out = new BufferedWriter(new FileWriter(outfil));
-            } catch (IOException ex) {
+                } catch (IOException ex)
+                {
                 LOGGER.info("Unable to read {}", outfil.getAbsolutePath(), ex);
+                }
             }
-        }
 
         // met and surface heat exchange
         BufferedWriter metout = null;
-        if (outfil != null) {
-            try {
+        if (outfil != null)
+            {
+            try
+                {
                 metout = new BufferedWriter(new FileWriter(metoutfil));
 
-                if (metout != null) {
+                if (metout != null)
+                    {
                     String heading =
                             "    Date    JD  GMT     U       T      RH       P       Ts      K       u*        R*       L          Hs        HL        Qs        IR       IR_out     Evap";
                     metout.write(heading);
@@ -221,20 +245,23 @@ public class ResEvap {
                             "                       m/s    deg C     %      mb      deg C           m/s                m      ********** W/m**2 ***********************     mm/d";
                     metout.write(heading);
                     metout.newLine();
-                }
-            } catch (IOException ex) {
+                    }
+                } catch (IOException ex)
+                {
                 LOGGER.info("Unable to read {}", metoutfil.getAbsolutePath(), ex);
+                }
             }
-        }
 
         // Do compute
-        try {
+        try
+            {
             // init stuff
 
             // call resSetup to printout reservoir layer info
-            if (xout != null) {
+            if (xout != null)
+                {
                 reservoir.resSetup(conn);
-            }
+                }
 
             int resj = reservoir.getResj();
             reservoir.resjOld = resj;
@@ -271,13 +298,15 @@ public class ResEvap {
             boolean noProblem = true;
 
             // if no valid met data yet skip reservoir temp compute
-            if (!metComputation.metFailed) {
+            if (!metComputation.metFailed)
+                {
                 // compute temperature profile in reservoir
                 noProblem = resWtCompute.computeReservoirTemp(
                         currentTime, metComputation, deltT);
-            }
+                }
 
-            if (noProblem) {
+            if (noProblem)
+                {
 
                 solarRadTsc = metComputation.solar;
                 IRDownTsc = metComputation.flxir;
@@ -292,40 +321,47 @@ public class ResEvap {
                 // store wt profile
                 int numLayers = reservoir.getResj() + 1;
                 wtempProfiles = new double[EvapReservoir.NLAYERS];
-                for (int ilyr = 0; ilyr < numLayers; ilyr++) {
+                for (int ilyr = 0; ilyr < numLayers; ilyr++)
+                    {
                     wtempProfiles[ilyr] = reservoir.wt[numLayers - 1 - ilyr];
+                    }
                 }
-            }
-            try {
+            try
+                {
                 if (out != null) out.close();
                 if (metout != null) metout.close();
                 if (tout != null) tout.close();
                 if (xout != null) xout.close();
-            } catch (IOException ioe) {
+                } catch (IOException ioe)
+                {
                 LOGGER.error("IOException occurred while closing files", ioe);
-            }
-        } catch (RuntimeException ex) {
-            try {
+                }
+            } catch (RuntimeException ex)
+            {
+            try
+                {
                 if (out != null) out.close();
                 if (metout != null) metout.close();
                 if (tout != null) tout.close();
                 if (xout != null) xout.close();
-            } catch (IOException ioe) {
+                } catch (IOException ioe)
+                {
                 LOGGER.error("IOException occurred while closing files", ioe);
-            }
+                }
             LOGGER.error("Error within computation", ex);
             throw new ResEvapException(ex);
-        }
+            }
 
         return true;
-    }
+        }
 
     /**
      * Get a List containing ResEvap computed TimeSeriesContainers
      *
      * @return
      */
-    public List<Double> getComputedMetTimeSeries() {
+    public List<Double> getComputedMetTimeSeries()
+        {
         List<Double> computedTsList = new ArrayList<Double>();
         computedTsList.add(surfaceTempTsc);
         computedTsList.add(sensibleHeatTsc);
@@ -336,18 +372,20 @@ public class ResEvap {
         computedTsList.add(evapRateHourlyTsc);
 
         return computedTsList;
-    }
+        }
 
     /**
      * Get the computed hourly evaporation for the reservoir
      *
      * @return
      */
-    public double getHourlyEvapRateTimeSeries() {
+    public double getHourlyEvapRateTimeSeries()
+        {
         return evapRateHourlyTsc;
-    }
+        }
 
-    public double[] getHourlyWaterTempProfile() {
+    public double[] getHourlyWaterTempProfile()
+        {
         return wtempProfiles;
+        }
     }
-}
