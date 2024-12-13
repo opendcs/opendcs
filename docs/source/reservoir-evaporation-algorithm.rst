@@ -101,9 +101,9 @@ Important Notes:
 
 See the legacy documentation below to better understand how the algorithm behaves.
 
-****************************
+**************************************************
 Reservoir Evaporation Legacy Documentation
-****************************
+**************************************************
 
 .. toctree::
    :maxdepth: 1
