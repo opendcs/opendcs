@@ -12,7 +12,7 @@ import decodes.tsdb.CTimeSeries;
 import java.util.Date;
 
 /**
- *  Class hold meteorological time series data for Resevap program.
+ *  EvapMetData holds meteorological time series data, such as wind-speed, air-temperature.
  */
 public class EvapMetData
 {

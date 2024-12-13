@@ -11,12 +11,13 @@ import decodes.tsdb.CTimeSeries;
 import decodes.util.DecodesException;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import org.opendcs.units.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.sql.Connection;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * This class holds reservoir specific values (lat, lon, elev-area)
@@ -27,13 +28,10 @@ import java.util.logging.Logger;
 public class EvapReservoir
 {
 
-	private static final Logger LOGGER = Logger.getLogger(EvapReservoir.class.getName());
+	private static final Logger LOGGER = LoggerFactory.getLogger(EvapReservoir.class.getName());
     public static final int MAX_RES_AREAS = 50000;
     public static final int NLAYERS = 1000;
-    public static final double FT_TO_M = 0.3048;
-    public static final double ACRES_TO_M2 = 4046.8564224;
 
-    public Connection conn;
     // package access to these variables
     public    int numberLayers;    //TODO, not current set
     public    double secchiDepth;
@@ -177,7 +175,7 @@ public class EvapReservoir
         double sclfct = 1.;
         if (isEnglish)
         {
-            sclfct = FT_TO_M;
+            sclfct = Constants.FT_TO_M;
         }
         
         ru = windHeight * sclfct;
@@ -191,7 +189,7 @@ public class EvapReservoir
         secchiDepth = secchi;
         if (isEnglish)
         {
-        	secchiDepth *= FT_TO_M;
+        	secchiDepth *= Constants.FT_TO_M;
         }
         
         attenuationConst =  1.70/ secchiDepth;
@@ -272,12 +270,12 @@ public class EvapReservoir
      * @param elev
      * @return
      */
-    public boolean setElevation( double elev )
+    public boolean setElevation( double elev, Connection conn)
     {
     	this.elev = elev;
         double surfArea = 0;
         try {
-            surfArea = intArea(this.elev);
+            surfArea = intArea(this.elev, conn);
         } catch (RatingException e) {
             throw new RuntimeException(e);
         }
@@ -314,7 +312,7 @@ public class EvapReservoir
     	zeroElevaton = elev;
     	if ( isEnglish && elev > -1. )
     	{
-    		zeroElevaton *= FT_TO_M;
+    		zeroElevaton *= Constants.FT_TO_M;
     	}
     	return true;
     }
@@ -333,7 +331,7 @@ public class EvapReservoir
      * 
      * @return 
      */
-    public boolean initRes()
+    public boolean initRes(Connection conn)
     {
 
     	// Set wsel to entered elevation
@@ -347,7 +345,7 @@ public class EvapReservoir
         if ( depth <= 0. )
         {
             String msg = "Water Elev less than Reservoir Bottom Elevation";
-			LOGGER.log(Level.WARNING, msg);
+            LOGGER.warn(msg);
             return false;
         }
 
@@ -356,7 +354,7 @@ public class EvapReservoir
         // compute surface area
         double surfArea = 0;
         try {
-            surfArea = intArea(elev);
+            surfArea = intArea(elev, conn);
         } catch (RatingException e) {
             throw new RuntimeException(e);
         }
@@ -370,12 +368,12 @@ public class EvapReservoir
     	return resj;
     }
     
-    public boolean resSetup()
+    public boolean resSetup(Connection conn)
     {
-    	return resSetup(false );
+    	return resSetup(false, conn);
     }
     
-    public boolean resSetup( boolean updateDepth )
+    public boolean resSetup( boolean updateDepth, Connection conn)
     {
         double[] zdx, delzx, ztop_depth;
         double[] zelevx, zareax, zvolx;
@@ -406,7 +404,7 @@ public class EvapReservoir
             ztop_depth[j] = ((double)j)*0.5;
             zelevx[j] = wsel - ((double)j)*0.5;
             try {
-                zareax[j] = intArea(zelevx[j]);
+                zareax[j] = intArea(zelevx[j], conn);
             } catch (RatingException e) {
                 throw new RuntimeException(e);
             }
@@ -416,7 +414,7 @@ public class EvapReservoir
         int resj = j-1;
         
         // Put last step at bottom
-		LOGGER.log(Level.FINE, " resj,  depth, wsel {0}  {1}  {2}", new Object[]{resj, depth, wsel});
+        LOGGER.info(" resj,  depth, wsel {0}  {1}  {2}", new Object[]{resj, depth, wsel});
    
         if ( zdx[resj] < depth)
         {
@@ -425,7 +423,7 @@ public class EvapReservoir
             ztop_depth[resj] = depth -delzx[resj];
             zelevx[resj] = zeroElevaton + delzx[resj];
             try {
-                zareax[resj] = intArea(zelevx[resj]);
+                zareax[resj] = intArea(zelevx[resj], conn);
             } catch (RatingException e) {
                 throw new RuntimeException(e);
             }
@@ -466,11 +464,11 @@ public class EvapReservoir
      * @param el
      * @return 
      */
-    public double intArea(double el) throws RatingException {
+    public double intArea(double el, Connection conn) throws RatingException {
         try {
-            double ftElvation = el / FT_TO_M;
+            double ftElvation = el / Constants.FT_TO_M;
             double ftSquared = ratingAreaElev.rate(conn, ftElvation);
-            return ftSquared*Math.pow(FT_TO_M,2);
+            return ftSquared*Math.pow(Constants.FT_TO_M,2);
         }
         catch(RatingException ex){
             throw new RatingException("failed to compute rating", ex);

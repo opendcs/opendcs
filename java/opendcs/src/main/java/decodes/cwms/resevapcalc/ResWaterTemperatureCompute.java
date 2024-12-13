@@ -7,6 +7,7 @@
 package decodes.cwms.resevapcalc;
 
 import org.opendcs.units.Constants;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.util.Date;
@@ -17,7 +18,7 @@ import java.util.logging.Logger;
  * Class used to compute reservoir temperature profile
  */
 public class ResWaterTemperatureCompute {
-    private static final Logger LOGGER = Logger.getLogger(ResWaterTemperatureCompute.class.getName());
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(ResWaterTemperatureCompute.class.getName());
     BufferedWriter tout = null;
 
     // reservoir layers, segments.

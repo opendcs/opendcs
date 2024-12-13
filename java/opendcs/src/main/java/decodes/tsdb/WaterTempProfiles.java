@@ -1,6 +1,5 @@
 package decodes.tsdb;
 
-import decodes.cwms.CwmsTsId;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -10,10 +9,14 @@ import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.utils.FailableResult;
 
 import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Locale;
+
+/**
+ * Represents a collection of water temperature profiles.
+ * This class provides methods to initialize and manage a collection of water temperature profiles,
+ * including loading profiles from a database, setting profiles at a specific time step, and saving profiles.
+ */
 
 public class WaterTempProfiles {
 

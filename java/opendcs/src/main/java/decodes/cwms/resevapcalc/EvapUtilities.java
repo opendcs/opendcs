@@ -11,9 +11,20 @@ import org.opendcs.units.Constants;
  *
  * @author RESEVAP program by Steven F. Daly (ERDC/CRREL)
  * conversion to Java by Richard Rachiele (RMA)
+ * OpenDCS implementation by Oskar Hurst (HEC)
  */
+
+/**
+ * EvapUtilities contains static methods for computing evaporation related values.
+ */
+
 public class EvapUtilities
 {
+
+    private EvapUtilities() {
+        // Prevent instantiation
+        throw new IllegalStateException("EvapUtilities class cannot be instantiated");
+    }
     
 /**
  * Computes  the kinematic viscosity of air in m**2/s.
@@ -83,21 +94,11 @@ public class EvapUtilities
                                          double tempC, double sal, DoubleContainer rhoAdc,
                                          DoubleContainer rhoVdc, DoubleContainer q, int iflag)
     {
-        // TK is 0 degrees C in kelvins.
-        // MW is the molecular weight of water in kg/mole.
-        // RGAS is the gas constant in J/mole-K.
-        // P0 is standard pressure in mb.
- 
-        final double tK = 273.15;
-        final double mw = 18.0160E-3;        
-        final double rgas = 8.31441;      
-        final double p0 = 1013.25;      
-        
         // convert to Kelvin
-        double t = tempC + tK;
+        double t = tempC + Constants.tK;
         
         // Density of dry air in kg/m**3
-        double rhoD = 1.2923*(tK/(tempC+tK))*(baroPres/p0);
+        double rhoD = 1.2923*(Constants.tK/(tempC+Constants.tK))*(baroPres/Constants.p0);
             
         // This computes saturation vapor pressure ESAT in hPa
         double eSat = satVpr( baroPres, tempC, iflag );
@@ -106,7 +107,7 @@ public class EvapUtilities
         double fac = 1.0 - 0.000537*sal;  //Salinity depression
         
         // Ideal gas law
-        double rhoV = (100.0*e*mw*fac)/(rgas*t);   
+        double rhoV = (100.0*e*Constants.mw*fac)/(Constants.rgas*t);
         
         // Density of moist air
         double rhoA = rhoD + rhoV;   
@@ -233,10 +234,9 @@ public class EvapUtilities
     {            
         // This is basically the (constant) roughness Reynolds number of an
         // aerodynamically smooth surface.
-        final double tk = 273.15;
 
-        return ((( tave+tk) * (ustar*ustar)) / (Constants.CONST_K*Constants.CONST_G) ) /
-                ( tstar + ((0.61*( tave+tk ) * qstar )/(1.0 + (0.61*qave))));
+        return ((( tave+Constants.tK) * (ustar*ustar)) / (Constants.CONST_K*Constants.CONST_G) ) /
+                ( tstar + ((0.61*( tave+Constants.tK ) * qstar )/(1.0 + (0.61*qave))));
     }
     
     /**

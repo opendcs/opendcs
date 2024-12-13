@@ -18,6 +18,7 @@ import ilex.var.TimedVariable;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
+import java.sql.Connection;
 import java.util.*;
 
 //AW:IMPORTS
@@ -95,6 +96,7 @@ public class ResEvapAlgo
 	Site site;
 	CwmsRatingDao crd;
 	SiteDAI siteDAO;
+	Connection conn;
 	TimeSeriesDAI timeSeriesDAO;
 	WaterTempProfiles hourlyWTP;
 	WaterTempProfiles dailyWTP;
@@ -247,7 +249,7 @@ public class ResEvapAlgo
 		double elev = resEvap.reservoir.getCurrentElevation(CurrentTime);
 		double areaMetersSq;
 		try {
-			areaMetersSq = resEvap.reservoir.intArea(elev);
+			areaMetersSq = resEvap.reservoir.intArea(elev, conn);
 		}
 		catch(RatingException ex){
 			throw new RatingException("failed to compute rating", ex);
@@ -312,6 +314,7 @@ public class ResEvapAlgo
 			siteDAO = tsdb.makeSiteDAO();
 			timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 			crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
+			conn = tsdb.getConnection();
 
 			//Get site Data from Database
 			try {
@@ -383,7 +386,6 @@ public class ResEvapAlgo
 			}
 
 			ratingSet.setDefaultValueTime(baseTimes.first().getTime());
-			reservoir.conn = tsdb.getConnection();
 			reservoir.setElevAreaRating(ratingSet);
 			reservoir.setInstrumentHeights(32.81, 32.81, 32.81);
 			reservoir.setElevationTs(elevTS);
@@ -394,13 +396,13 @@ public class ResEvapAlgo
 			} catch (Exception ex) {
 				throw new DbCompException("Failed to load initial Elevation");
 			}
-			reservoir.setElevation(initElev);
+			reservoir.setElevation(initElev, conn);
             reservoir.setZeroElevation(zeroElevation);
 
 
 			//initialize Reservoir Evaporation object
 			resEvap = new ResEvap();
-			if (!resEvap.setReservoir(reservoir)) {
+			if (!resEvap.setReservoir(reservoir, conn)) {
 				throw new DbCompException("Reservoir not in Database. Exiting Script.");
 			}
 
@@ -429,17 +431,9 @@ public class ResEvapAlgo
 			try {
 				CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapTS.getTimeSeriesIdentifier());
 				cts.setUnitsAbbr("mm/hr");
-	//			TimedVariable n = timeSeriesDAO.getPreviousValue(cts, baseTimes.first());
-//				GregorianCalendar calendar = new GregorianCalendar();
-//				calendar.setTime(baseTimes.first());
-//				TimeZone gmtTimeZone = TimeZone.getTimeZone("UTC");
-//				calendar.setTimeZone(gmtTimeZone);
-//				Date test = calendar.getTime();
 				Date until = new Date(baseTimes.first().getTime() + 86400000);
 				Date from = new Date(baseTimes.first().getTime() - 86400000);
 				int k = timeSeriesDAO.fillTimeSeries(cts, from, until, true, true, true);
-				// TimedVariable n = timeSeriesDAO.getPreviousValue(hourlyEvapTS, test);
-				// previousHourlyEvap = n.getDoubleValue();
 				Date test = baseTimes.first();
 				TimedVariable PrevTV = cts.findPrev(test);
 				previousHourlyEvap = PrevTV.getDoubleValue();
@@ -466,7 +460,7 @@ public class ResEvapAlgo
 //AW:TIMESLICE
 		if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings)) {
 			try {
-				boolean noProblem = resEvap.compute(_timeSliceBaseTime, 0.0);
+				boolean noProblem = resEvap.compute(_timeSliceBaseTime, 0.0, conn);
 				if (!noProblem) {
 					throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.");
 				}
@@ -512,7 +506,7 @@ public class ResEvapAlgo
 			//		hourlyWTP.SaveProfiles(timeSeriesDAO);
 			dailyWTP.SaveProfiles(timeSeriesDAO);
 
-			tsdb.freeConnection(reservoir.conn);
+			tsdb.freeConnection(conn);
 			crd.close();
 			siteDAO.close();
 			timeSeriesDAO.close();

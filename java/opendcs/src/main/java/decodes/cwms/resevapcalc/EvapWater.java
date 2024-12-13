@@ -12,6 +12,7 @@ import org.opendcs.units.Constants;
  *
  * @author RESEVAP program by Steven F. Daly  (ERDC/CRREL)
  * conversion to Java by Richard Rachiele (RMA)
+ * OpenDCS implementation by Oskar Hurst (HEC)
  * 
  * Class used to compute and hold evaporation rate, latent and sensible heat
  * fluxes.

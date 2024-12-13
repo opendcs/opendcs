@@ -16,6 +16,7 @@ import java.util.Objects;
 
  * @author RESEVAP program by Steven F. Daly  (ERDC/CRREL)
  * conversion to Java by Richard Rachiele (RMA)
+ * OpenDCS implementation by Oskar Hurst (HEC)
  */
 public class DownwellingInfraRedFlux
 {

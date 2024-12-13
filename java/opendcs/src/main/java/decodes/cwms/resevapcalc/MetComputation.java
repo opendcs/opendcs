@@ -7,21 +7,21 @@
 package decodes.cwms.resevapcalc;
 
 import decodes.cwms.HecConstants;
+import org.slf4j.LoggerFactory;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Compute surface heat exchange and evaporation rate from
  * meteorological values.
  *
  * @author richard
+ * OpenDCS implementation by Oskar Hurst (HEC)
  */
 public class MetComputation {
-    private static final Logger LOGGER = Logger.getLogger(MetComputation.class.getName());
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MetComputation.class.getName());
     /**
      * input meteorological data
      */
@@ -76,22 +76,22 @@ public class MetComputation {
 
         if (!HecConstants.isValidValue(windSpeed)) {
             String msg = "Wind speed missing or bad " + currentTime;
-            LOGGER.log(Level.SEVERE, msg);
+            LOGGER.error(msg);
             missingMetData = true;
         }
         if (!HecConstants.isValidValue(airTemp)) {
             String msg = "Air temp missing or bad " + currentTime;
-            LOGGER.log(Level.SEVERE, msg);
+            LOGGER.error(msg);
             missingMetData = true;
         }
         if (!HecConstants.isValidValue(relHumidity)) {
             String msg = "RH missing or bad " + currentTime;
-            LOGGER.log(Level.SEVERE, msg);
+            LOGGER.error(msg);
             missingMetData = true;
         }
         if (!HecConstants.isValidValue(airPressure)) {
             String msg = "PRESSURE missing or bad " + currentTime;
-            LOGGER.log(Level.SEVERE, msg);
+            LOGGER.error(msg);
             missingMetData = true;
         }
 
@@ -114,12 +114,12 @@ public class MetComputation {
                 int ic1 = ic + 1;
                 String msg = " Cover (" + ic1 + ") missing or bad"
                         + currentTime;
-                LOGGER.log(Level.SEVERE, msg);
+                LOGGER.error(msg);
             }
             if (!HecConstants.isValidValue(cld.height)) {
                 String heightStr = cld.getTypeName();
                 String msg = heightStr + " missing or bad " + currentTime;
-                LOGGER.log(Level.SEVERE, msg);
+                LOGGER.error(msg);
             }
         }
 

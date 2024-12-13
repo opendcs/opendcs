@@ -7,14 +7,14 @@
 package decodes.cwms.resevapcalc;
 
 import decodes.tsdb.CTimeSeries;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 /**
@@ -26,10 +26,9 @@ import java.util.logging.Logger;
  * Version 1.1  31 August 2009
  * VERSION 2.0 7 July 2010
  * conversion to Java by Richard Rachiele (RMA)
+ * OpenDCS implementation by Oskar Hurst (HEC)
  */
 public class ResEvap {
-    private static final Logger LOGGER = Logger.getLogger(ResEvap.class.getName());
-
     // Some global constant parameter vaiues set here
     public static final double EMITTANCE_H20 = 0.98;
     public static final double PENFRAC = 0.4;
@@ -39,37 +38,32 @@ public class ResEvap {
     public static final double ETA_CONVECTIVE = .50;
     public static final double ETA_STIRRING = .40;
     public static final double WIND_CRITIC = 1.0;
-
-    // output computed time series
-    double solarRadTsc;
-    double IRDownTsc;
-    double IROutTsc;
-    double sensibleHeatTsc;
-    double latentHeatTsc;
-    double evapRateHourlyTsc;
-    double evapDailyTsc;
-    double surfaceTempTsc;
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MetComputation.class.getName());
+    public EvapReservoir reservoir;
+    public EvapMetData metData;
     NavigableMap<Integer, Integer> _timeMap;
-
     CTimeSeries[] inputTimeSeries;
-
     // FPart of output Ts
     String versionName;
-
     // store Water temperature profile data
     // one profile for each hour
     double[] wtempProfiles;
-
-    public EvapReservoir reservoir;
-    public EvapMetData metData;
-
+    // output computed time series
+    private double solarRadTsc;
+    private double IRDownTsc;
+    private double IROutTsc;
+    private double sensibleHeatTsc;
+    private double latentHeatTsc;
+    private double evapRateHourlyTsc;
+    private double evapDailyTsc;
+    private double surfaceTempTsc;
     private File workDir;
 
     public ResEvap() {
     }
 
-    public ResEvap(EvapReservoir reservoir, EvapMetData metData) {
-        setReservoir(reservoir);
+    public ResEvap(EvapReservoir reservoir, EvapMetData metData, Connection conn) {
+        setReservoir(reservoir, conn);
         setMetData(metData);
     }
 
@@ -92,17 +86,17 @@ public class ResEvap {
      * @param reservoir
      * @return
      */
-    public boolean setReservoir(EvapReservoir reservoir) {
+    public boolean setReservoir(EvapReservoir reservoir, Connection conn) {
         this.reservoir = reservoir;
 
         // check data
 
         // Initialize reservoir layers
-        if (!reservoir.initRes()) {
+        if (!reservoir.initRes(conn)) {
             return false;
         }
 
-        if (!reservoir.resSetup()) {
+        if (!reservoir.resSetup(conn)) {
             return false;
         }
         return true;
@@ -134,7 +128,7 @@ public class ResEvap {
      * @return
      */
     public boolean compute(Date currentTime,
-                           double gmtOffset) throws ResEvapException {
+                           double gmtOffset, Connection conn) throws ResEvapException {
         if (reservoir == null) {
             throw new ResEvapException("ResEvap.compute: No reservoir has been set");
         }
@@ -177,7 +171,7 @@ public class ResEvap {
                 tout = new BufferedWriter(new FileWriter(toutfil));
                 resWtCompute.setOutfile(tout);
             } catch (IOException ex) {
-                LOGGER.log(Level.FINE, "Unable to read " + toutfil.getAbsolutePath(), ex);
+                LOGGER.info("Unable to read {}", toutfil.getAbsolutePath(), ex);
             }
         }
 
@@ -188,7 +182,7 @@ public class ResEvap {
                 xout = new BufferedWriter(new FileWriter(xoutfil));
                 reservoir.setDebugFile(xout);
             } catch (IOException ex) {
-                LOGGER.log(Level.FINE, "Unable to read " + xoutfil.getAbsolutePath(), ex);
+                LOGGER.info("Unable to read {}", xoutfil.getAbsolutePath(), ex);
             }
         }
 
@@ -198,7 +192,7 @@ public class ResEvap {
             try {
                 out = new BufferedWriter(new FileWriter(outfil));
             } catch (IOException ex) {
-                LOGGER.log(Level.FINE, "Unable to read " + outfil.getAbsolutePath(), ex);
+                LOGGER.info("Unable to read {}", outfil.getAbsolutePath(), ex);
             }
         }
 
@@ -220,7 +214,7 @@ public class ResEvap {
                     metout.newLine();
                 }
             } catch (IOException ex) {
-                LOGGER.log(Level.FINE, "Unable to read " + metoutfil.getAbsolutePath(), ex);
+                LOGGER.info("Unable to read {}", metoutfil.getAbsolutePath(), ex);
             }
         }
 
@@ -230,14 +224,11 @@ public class ResEvap {
 
             // call resSetup to printout reservoir layer info
             if (xout != null) {
-                reservoir.resSetup();
+                reservoir.resSetup(conn);
             }
 
             int resj = reservoir.getResj();
             reservoir.resjOld = resj;
-
-            // loop through compute period
-//	        HecTime currentTime = new HecTime(hecStartTime);
 
             // reservoir location info (lat, lon, gmtOffset) for met compute
             ReservoirLocationInfo resLocationInfo = reservoir.getReservoirLocationInfo();
@@ -302,7 +293,7 @@ public class ResEvap {
                 if (tout != null) tout.close();
                 if (xout != null) xout.close();
             } catch (IOException ioe) {
-                LOGGER.log(Level.SEVERE, "IOException occurred while closing files", ioe);
+                LOGGER.error("IOException occurred while closing files", ioe);
             }
         } catch (RuntimeException ex) {
             try {
@@ -311,9 +302,9 @@ public class ResEvap {
                 if (tout != null) tout.close();
                 if (xout != null) xout.close();
             } catch (IOException ioe) {
-                LOGGER.log(Level.SEVERE, "IOException occurred while closing files", ioe);
+                LOGGER.error("IOException occurred while closing files", ioe);
             }
-            LOGGER.log(Level.SEVERE, "Error within computation", ex);
+            LOGGER.error("Error within computation", ex);
             throw new ResEvapException(ex);
         }
 
