@@ -49,8 +49,6 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             property "sonar.pullrequest.github.repository", "opendcs/opendcs"
             property "sonar.coverage.jacoco.xmlReportPaths", "./**/jacoco*.xml"
             property "sonar.projectVersion", sonarVersion()
-            // Set branch name, mostly used when running local sonar task.
-            property "sonar.branch.name", versionDetails().branchName ?:  versionDetails().lastTag
             // TODO: just remove the C files that are no longer used. However, they are still
             // called in some of the java
             property "sonar.c.file.suffixes", "-"
