@@ -21,8 +21,7 @@ import decodes.tsdb.DbIoException;
  * Data Access Interface for database-resident enumerations
  * @author mmaloney Mike Maloney
  */
-public interface EnumDAI
-	extends AutoCloseable
+public interface EnumDAI extends DaiBase
 {
 	@Deprecated
 	public DbEnum getEnum(String enumName) throws DbIoException;
