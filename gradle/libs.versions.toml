@@ -21,7 +21,7 @@ jsch="0.1.55"
 aspectj="1.8.10"
 json="20231013"
 slf4j-api= { strictly = "2.0.12" }
-jetty = "9.4.56.v20240826"
+jetty = "10.0.24"
 jetty-jsp = "9.2.30.v20200428"
 jersey = "2.40"
 servlet-api = "4.0.1"
