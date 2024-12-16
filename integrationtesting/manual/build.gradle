@@ -1,0 +1,40 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+    }
+}
+plugins {
+   id 'opendcs.deps-conventions'
+   id 'base'
+   id 'org.opendcs.testing.gradle-gherkin-kiwi'
+}
+
+
+
+kiwi {
+    product = "OpenDCS"
+    
+    plans {
+        DdbEdit {
+            planName = "Decodes Database Editor"
+            type = "Acceptance"
+        }
+
+        Launcher {
+            planName = "Application Launcher"
+            type = "Acceptance"
+        }
+    }
+
+    outputs {
+        hec {
+            product = "OpenDCS"
+            type = "kiwi"
+            url = project.findProperty("kiwi.url") ?: "url not set"
+            version = project.version
+            username = project.findProperty("kiwi.user") ?: "username not set"
+            password = project.findProperty("kiwi.password") ?: "password not set"
+        }
+    }
+}

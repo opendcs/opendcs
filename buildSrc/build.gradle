@@ -3,6 +3,7 @@ plugins {
 }
 
 repositories {
+    mavenLocal()
     gradlePluginPortal() // so that external plugins can be resolved in dependencies section
     mavenCentral()
 }
@@ -10,6 +11,7 @@ repositories {
 
 
 dependencies {
+    implementation 'org.opendcs.testing:gradle-plugin:1.0.0-M12'
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:5.0.14'
     if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
         implementation 'dev.sigstore:sigstore-gradle-sign-plugin:1.0.0'

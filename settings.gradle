@@ -23,3 +23,6 @@ project(":testing:fixtures").projectDir=file("integrationtesting/fixtures")
 
 include ":testing:opendcs-tests"
 project(":testing:opendcs-tests").projectDir=file("integrationtesting/opendcs-tests")
+
+include ":testing:manual"
+project(":testing:manual").projectDir=file("integrationtesting/manual")
