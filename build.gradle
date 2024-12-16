@@ -20,8 +20,10 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
+def gitDetails = versionDetails()
 
 ext.osWin = Os.isFamily(Os.FAMILY_WINDOWS)
+ext.gitCommit = gitDetails.gitHashFull ?: "Not build from git";
 
 def static versionLabel(gitInfo) {
     def branch = gitInfo.branchName // all branches are snapshots, only tags get released
@@ -32,7 +34,7 @@ def static versionLabel(gitInfo) {
 
 allprojects {
     group = 'org.opendcs'
-    version = versionLabel(versionDetails())
+    version = versionLabel(gitDetails)
 }
 
 
@@ -47,6 +49,8 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             property "sonar.pullrequest.github.repository", "opendcs/opendcs"
             property "sonar.coverage.jacoco.xmlReportPaths", "./**/jacoco*.xml"
             property "sonar.projectVersion", sonarVersion()
+            // Set branch name, mostly used when running local sonar task.
+            property "sonar.branch.name", versionDetails().branchName ?:  versionDetails().lastTag
             // TODO: just remove the C files that are no longer used. However, they are still
             // called in some of the java
             property "sonar.c.file.suffixes", "-"
