@@ -28,6 +28,9 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
+import org.opendcs.odcsapi.lrgsclient.ClientConnectionChecker;
+import org.opendcs.odcsapi.res.ContextPropertySetup;
+import org.opendcs.odcsapi.res.DataSourceContextCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,6 +79,9 @@ public final class TomcatServer
 		Pipeline pipeline = host.getPipeline();
 		pipeline.addValve(ssoValve);
 		context = (StandardContext) tomcatInstance.addWebapp(contextName, Paths.get("src/main/webapp").toAbsolutePath().toString());
+		context.addApplicationListener(DataSourceContextCreator.class.getName());
+		context.addApplicationListener(ClientConnectionChecker.class.getName());
+		context.addApplicationListener(ContextPropertySetup.class.getName());
 	}
 
 	public int getPort()

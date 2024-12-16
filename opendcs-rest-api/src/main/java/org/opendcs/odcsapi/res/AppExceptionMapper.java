@@ -22,8 +22,10 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import decodes.tsdb.ConstraintException;
+import decodes.tsdb.TsdbException;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 import org.slf4j.Logger;
@@ -33,86 +35,138 @@ import org.slf4j.LoggerFactory;
 @Provider
 public class AppExceptionMapper implements ExceptionMapper<Throwable>
 {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(AppExceptionMapper.class);
-	
+
 	@Override
 	public Response toResponse(Throwable ex)
 	{
-		if (ex instanceof WebAppException)
+		Response retval;
+		if(ex instanceof WebAppException)
 		{
-			if(((WebAppException) ex).getStatus() >= 500)
-			{
-				LOGGER.warn("Server error",  ex);
-			}
-			else
-			{
-				LOGGER.info("Client error",  ex);
-			}
-			WebAppException wae = (WebAppException)ex;
-			String errmsg = "{ \"status\": " + wae.getStatus() + ", "
-				+ "\"message\": \"" + wae.getErrMessage() + "\" }";
-			return ApiHttpUtil.createResponse(errmsg, wae.getStatus());
+			retval = handle((WebAppException) ex);
 		}
-		else if (ex instanceof javax.ws.rs.NotFoundException)
+		else if(ex instanceof ConstraintException)
 		{
-			LOGGER.debug("No data found",  ex);
-			String errmsg = "{ \"status\": " + ErrorCodes.NO_SUCH_OBJECT + ", "
-					+ "\"message\": \"" + "No Such Method" + "\" }";
-			return ApiHttpUtil.createResponse(errmsg, HttpServletResponse.SC_GONE);
+			retval = handle((ConstraintException) ex);
 		}
-		else if (ex instanceof DbException)
+		else if(ex instanceof TsdbException)
 		{
-			DbException dbex = (DbException)ex;
-			
-			String msg = "DbException ";
-			if (dbex.getModule() != null)
-				msg = msg + "in module " + dbex.getModule();
-			msg = msg + ": " + ex;
-			LOGGER.warn(msg, ex);
-			String returnErrMsg = "There was an error.  Please contact your sys admin.";
-			if (dbex.getCause() != null)
-			{
-				String tempCause = dbex.getCause().toString().toLowerCase();
-				if (tempCause.contains("duplicate key value violates unique constraint"))
-				{
-					returnErrMsg = "There was an error saving this.  The most likely error is that there is a duplicate key value.  Please contact your system administrator for more information.";
-				}
-				else if (tempCause.contains("value too long"))
-				{
-					returnErrMsg = "There was an error saving this.  The most likely error is that there is an attempt to save a value that exceeds the allowed length.  Please contact your system administrator for more information.";
-				}
-				LOGGER.warn(returnErrMsg, ex);
-			}
-			else
-			{
-				LOGGER.warn(msg, ex);
-			}
-			String errmsg = "{ \"status\": " + 400 + ", "
-					+ "\"message\": \"" + returnErrMsg + "\" }";
-			return ApiHttpUtil.createResponse(errmsg, HttpServletResponse.SC_BAD_REQUEST);
+			retval = handle((TsdbException) ex);
 		}
-		else if( ex instanceof WebApplicationException)
+		else if(ex instanceof DbException)
 		{
-			LOGGER.warn("Error in request", ex);
-			String message = ex.getMessage();
-			if(ex instanceof InternalServerErrorException)
-			{
-				message = "Internal Server Error";
-			}
-			int status = ((WebApplicationException) ex).getResponse().getStatus();
-			String errmsg = "{ \"status\": " + status + ", "
-					+ "\"message\": \"" + message + "\" }";
-			return ApiHttpUtil.createResponse(errmsg, status);
+			retval = handle((DbException) ex);
+		}
+		else if(ex instanceof WebApplicationException)
+		{
+			retval = handle((WebApplicationException) ex);
+		}
+		else if(ex instanceof UnsupportedOperationException)
+		{
+			retval = handle((UnsupportedOperationException) ex);
 		}
 		else
 		{
-			LOGGER.warn("Unknown Error", ex);
-			// Return generic error message
-			String errmsg = "{ \"status\": " + 400 + ", "
-					+ "\"message\": \"" + "Bad Request.  There was an issue with the request, please try again or contact your system administrator." + "\" }";
-			return ApiHttpUtil.createResponse(errmsg, HttpServletResponse.SC_BAD_REQUEST);
+			retval = handle(ex);
 		}
+		return retval;
+	}
+
+	private static Response handle(Throwable ex)
+	{
+		LOGGER.warn("Unknown Error", ex);
+		Status status = new Status("Bad Request.  There was an issue with the request, please try again or contact your system administrator.");
+		return ApiHttpUtil.createResponse(status, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+	}
+
+	private static Response handle(UnsupportedOperationException wae)
+	{
+		LOGGER.warn("Unsupported endpoint", wae);
+		return ApiHttpUtil.createResponse(new Status(wae.getMessage()), HttpServletResponse.SC_NOT_IMPLEMENTED);
+	}
+
+	private static Response handle(WebApplicationException wae)
+	{
+		LOGGER.warn("Error in request", wae);
+		String message = wae.getMessage();
+		if(wae instanceof InternalServerErrorException)
+		{
+			message = "Internal Server Error";
+		}
+		int status = wae.getResponse().getStatus();
+		return ApiHttpUtil.createResponse(new Status(message), status);
+	}
+
+	private static Response handle(DbException dbex)
+	{
+		String returnErrMsg = "There was an error.  Please contact your sys admin.";
+		if(dbex.getCause() != null)
+		{
+			String tempCause = dbex.getCause().toString().toLowerCase();
+			if(tempCause.contains("duplicate key value violates unique constraint"))
+			{
+				returnErrMsg = "There was an error saving this.  The most likely error is that there is a duplicate key value.  Please contact your system administrator for more information.";
+			}
+			else if(tempCause.contains("value too long"))
+			{
+				returnErrMsg = "There was an error saving this.  " +
+						"The most likely error is that there is an attempt to save a value that exceeds the allowed length.  " +
+						"Please contact your system administrator for more information.";
+			}
+		}
+		LOGGER.warn(returnErrMsg, dbex);
+		return ApiHttpUtil.createResponse(new Status(returnErrMsg), HttpServletResponse.SC_BAD_REQUEST);
+	}
+
+	private static Response handle(TsdbException dbex)
+	{
+		LOGGER.warn("Unexpected DbIoException thrown from request", dbex);
+		String returnErrMsg = "There was an error.  Please contact your sys admin.";
+		if(dbex.getCause() != null)
+		{
+			String tempCause = dbex.getCause().toString().toLowerCase();
+			if(tempCause.contains("value too long"))
+			{
+				returnErrMsg = "There was an error saving this.  " +
+						"The most likely error is that there is an attempt to save a value that exceeds the allowed length.  " +
+						"Please contact your system administrator for more information.";
+			}
+			LOGGER.warn(returnErrMsg, dbex);
+		}
+		return ApiHttpUtil.createResponse(new Status(returnErrMsg), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+	}
+
+	private static Response handle(ConstraintException dbex)
+	{
+		String returnErrMsg = "There was an error.  Please contact your sys admin.";
+		if(dbex.getCause() != null)
+		{
+			String tempCause = dbex.getCause().toString().toLowerCase();
+			if(tempCause.contains("duplicate key value violates unique constraint"))
+			{
+				returnErrMsg = "There was an error saving this.  The most likely error is that there is a duplicate key value.  Please contact your system administrator for more information.";
+			}
+			LOGGER.warn(returnErrMsg, dbex);
+		}
+		else
+		{
+			LOGGER.warn("Violated constraint exception thrown from request", dbex);
+		}
+		return ApiHttpUtil.createResponse(new Status(returnErrMsg), HttpServletResponse.SC_BAD_REQUEST);
+	}
+
+	private static Response handle(WebAppException wae)
+	{
+		if(wae.getStatus() >= 500)
+		{
+			LOGGER.warn("Server error", wae);
+		}
+		else
+		{
+			LOGGER.info("Client error", wae);
+		}
+		return ApiHttpUtil.createResponse(new Status(wae.getErrMessage()), wae.getStatus());
 	}
 
 }

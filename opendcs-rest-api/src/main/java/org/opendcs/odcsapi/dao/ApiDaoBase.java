@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -15,18 +15,21 @@
 
 package org.opendcs.odcsapi.dao;
 
-import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.util.ApiConstants;
-
-import decodes.sql.DbKey;
-
-import java.util.logging.Logger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.Logger;
 
+import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.util.ApiConstants;
+
+/**
+ * @deprecated implementations will be replaced by those in OpenDCS itself to reduce
+ * redundant query maintenance and allow support for multiple database implementations.
+ */
+@Deprecated
 public class ApiDaoBase
 	implements ApiDaiBase
 {

@@ -37,7 +37,10 @@ import org.opendcs.odcsapi.util.ApiConstants;
  * This class is constructed for each request and is used to access the TSDB.
  * @author mmaloney
  *
+ * @deprecated implementations will be replaced by those in OpenDCS itself to reduce
+ * redundant query maintenance and allow support for multiple database implementations.
  */
+@Deprecated
 public final class DbInterface implements AutoCloseable
 {
 	public static final String CWMS = "CWMS";
@@ -107,7 +110,12 @@ public final class DbInterface implements AutoCloseable
 	{
 		return connection;
 	}
-	
+
+	public static DataSource getDataSource()
+	{
+		return dataSource;
+	}
+
 	public void close()
 	{
 		try
@@ -190,17 +198,6 @@ public final class DbInterface implements AutoCloseable
 		{
 			throw new DbException(module, ex, "Cannot convert date!");
 		}
-	}
-	
-	/**
-	* In open TSDB, date/times are represented as long integer.
-	* @return the numeric date falue or NULL if passed a null date.
-	*/
-	public String sqlDate(Date d)
-	{
-		if (d == null)
-			return "NULL";
-		return "" + d.getTime();
 	}
 	
 	public Long sqlDateV(Date d)

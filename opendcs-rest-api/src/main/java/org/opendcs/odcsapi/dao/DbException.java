@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -18,28 +18,18 @@ package org.opendcs.odcsapi.dao;
 public class DbException extends Exception
 {
 	private static final long serialVersionUID = 4552935582551955795L;
-	private String module = null;
-	private Exception cause = null;
-	
-	public DbException(String msg)
-	{
-		super(msg);
-	}
-	
+
+	/**
+	 * @deprecated no need for the "module" parameter as the stack trace and other logging configuration is sufficient.
+	 */
+	@Deprecated
 	public DbException(String module, Exception cause, String msg)
 	{
-		this(msg);
-		this.module = module;
-		this.cause = cause;
+		super(msg, cause);
 	}
 
-	public String getModule()
+	public DbException(String message, Exception cause)
 	{
-		return module;
-	}
-
-	public Exception getCause()
-	{
-		return cause;
+		super(message, cause);
 	}
 }

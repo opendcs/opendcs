@@ -25,6 +25,10 @@ plugins {
 
 dependencies {
     implementation(project(":opendcs-rest-api"))
+
+    //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
+    implementation(files("../opendcs-rest-api/temp-deps/opendcs.jar"))
+
     implementation(libs.jetty.server)
     implementation(libs.jetty.servlets)
     implementation(libs.jetty.servlet)

@@ -25,14 +25,18 @@ import javax.ws.rs.ext.Provider;
 
 
 @Provider
-@Priority(Priorities.AUTHENTICATION)
+@Priority(Priorities.USER)
 public final class SecurityHeadersFilter implements ContainerResponseFilter
 {
 
 	@Override
-	public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException
+	public void filter(ContainerRequestContext request, ContainerResponseContext response) throws IOException
 	{
-		responseContext.getHeaders().putSingle("X-Content-Type-Options", "nosniff");
-		responseContext.getHeaders().remove("Server");
+		response.getHeaders().putSingle("Strict-Transport-Security", "max-age=63072000");
+		response.getHeaders().putSingle("Access-Control-Allow-Credentials", "true");
+		response.getHeaders().putSingle("Access-Control-Allow-Headers", "Content-Type");
+		response.getHeaders().putSingle("Content-Type", "application/json");
+		response.getHeaders().putSingle("X-Content-Type-Options", "nosniff");
+		response.getHeaders().remove("Server");
 	}
 }

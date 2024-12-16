@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -20,26 +20,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Iterator;
-
 import javax.ws.rs.WebApplicationException;
-
-import org.opendcs.odcsapi.beans.ApiDecodedMessage;
-import org.opendcs.odcsapi.beans.ApiDecodesTSValue;
-import org.opendcs.odcsapi.beans.ApiDecodesTimeSeries;
-import org.opendcs.odcsapi.beans.ApiPlatformConfig;
-import org.opendcs.odcsapi.beans.ApiConfigSensor;
-import org.opendcs.odcsapi.beans.ApiConfigScript;
-import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
-import org.opendcs.odcsapi.beans.ApiRawMessage;
-import org.opendcs.odcsapi.beans.ApiScriptFormatStatement;
-import org.opendcs.odcsapi.beans.ApiTokenPosition;
-import org.opendcs.odcsapi.beans.ApiUnitConverter;
-import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.errorhandling.ErrorCodes;
-import org.opendcs.odcsapi.errorhandling.WebAppException;
-import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.util.ApiPropertiesUtil;
-import org.opendcs.odcsapi.util.ApiTextUtil;
 
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.HeaderParseException;
@@ -61,22 +42,45 @@ import decodes.db.UnitConverterDb;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecodedSample;
 import decodes.sql.DbKey;
+import decodes.tsdb.DbIoException;
 import ilex.util.Logger;
 import ilex.var.TimedVariable;
+import opendcs.dai.DataTypeDAI;
+import opendcs.dai.EnumDAI;
+import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.odcsapi.beans.ApiConfigScript;
+import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
+import org.opendcs.odcsapi.beans.ApiConfigSensor;
+import org.opendcs.odcsapi.beans.ApiDecodedMessage;
+import org.opendcs.odcsapi.beans.ApiDecodesTSValue;
+import org.opendcs.odcsapi.beans.ApiDecodesTimeSeries;
+import org.opendcs.odcsapi.beans.ApiPlatformConfig;
+import org.opendcs.odcsapi.beans.ApiRawMessage;
+import org.opendcs.odcsapi.beans.ApiScriptFormatStatement;
+import org.opendcs.odcsapi.beans.ApiTokenPosition;
+import org.opendcs.odcsapi.beans.ApiUnitConverter;
+import org.opendcs.odcsapi.dao.DbException;
+import org.opendcs.odcsapi.errorhandling.ErrorCodes;
+import org.opendcs.odcsapi.errorhandling.WebAppException;
+import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.util.ApiPropertiesUtil;
+import org.opendcs.odcsapi.util.ApiTextUtil;
 
 public class TestDecoder
 {
+	private static long lastDecodesInitMsec = 0L;
+
 	/**
 	 * Do a test decode of the passed message data using the named script within the
 	 * passed configuration.
 	 * @param msgData
 	 * @param cfg
 	 * @param scriptName
-	 * @param dbi 
+	 * @param db
 	 * @return
 	 */
 	public static ApiDecodedMessage decodeMessage(ApiRawMessage msgData, 
-		ApiPlatformConfig cfg, String scriptName, DbInterface dbi)
+		ApiPlatformConfig cfg, String scriptName, OpenDcsDatabase db)
 		throws DbException, WebAppException
 	{
 		final ApiDecodedMessage ret = new ApiDecodedMessage();
@@ -130,7 +134,7 @@ public class TestDecoder
 		{
 			try
 			{
-				CompRunner.initDecodes(TsdbManager.makeTsdb(dbi));
+				initDecodes(db);
 				PMParser pmParser = PMParser.getPMParser(mediumType);
 				if (pmParser == null)
 				{
@@ -339,5 +343,33 @@ public class TestDecoder
 		}
 	}
 
+	/**
+	 * Synchronized to make sure multiple concurrent sessions don't init at the same time.
+	 * Also, only initialize once per minute.
+	 */
+	private static synchronized void initDecodes(OpenDcsDatabase db)
+			throws DbException
+	{
+		// Don't init more than once per minute.
+		long now = System.currentTimeMillis();
+		if (now - lastDecodesInitMsec < 60*1000L)
+			return;
+		lastDecodesInitMsec = now;
 
+		if (decodes.db.Database.getDb() == null)
+			decodes.db.Database.setDb(new decodes.db.Database());
+
+		try (DataTypeDAI dtDAO = db.getDao(DataTypeDAI.class)
+				.orElseThrow(() -> new UnsupportedOperationException("TestDecodes is not supported"));
+			 EnumDAI enumDAO = db.getDao(EnumDAI.class)
+					 .orElseThrow(() -> new UnsupportedOperationException("TestDecodes is not supported")))
+		{
+			enumDAO.readEnumList(decodes.db.Database.getDb().enumList);
+			dtDAO.readDataTypeSet(decodes.db.Database.getDb().dataTypeSet);
+		}
+		catch (DbIoException ex)
+		{
+			throw new DbException("Error initializing decodes for test decoding", ex);
+		}
+	}
 }

@@ -25,10 +25,15 @@ configurations {
 }
 
 dependencies {
-    api(libs.opendcs) {
-        //Workaround for the excessive opendcs dependencies
-        exclude group: '*', module: '*'
-    }
+    implementation(files("temp-deps/opendcs.jar"))
+    implementation(files("temp-deps/opendcs-api.jar"))
+    implementation(files("temp-deps/opendcs-annotations.jar"))
+
+
+    //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
+//    api(libs.opendcs)
+//    api(libs.opendcs.api)
+
     implementation(libs.servlet.api)
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
@@ -47,6 +52,13 @@ dependencies {
     testImplementation(libs.rest.assured)
     testImplementation(libs.hamcrest)
     testImplementation(libs.bundles.tomcat)
+
+    //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
+    implementation(files("temp-deps/opendcs-integrationtesting-fixtures.jar"))
+    implementation("uk.org.webcompere:system-stubs-jupiter:2.0.2")
+
+
+//    implementation(libs.opendcs.integrationtesting)
     compileOnly(libs.auto.service)
     annotationProcessor(libs.auto.service)
 }
@@ -100,17 +112,17 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
 
 tasks.register('generateConfig', Copy) {
     doFirst {
-        project.delete "$buildDir/tomcat/"
-        project.mkdir "$buildDir/tomcat/logs"
+        project.delete layout.buildDirectory.file("tomcat/")
+        project.mkdir layout.buildDirectory.file("tomcat/logs")
     }
     from 'src/test/resources/tomcat'
-    into "$buildDir/tomcat"
+    into layout.buildDirectory.file("tomcat")
 
     //rename "context.xml", "context.xml.template"
     rename "tomcat-server.xml", "server.xml"
 
     inputs.dir "src/test/resources"
-    outputs.dir "$buildDir/tomcat/conf"
+    outputs.dir layout.buildDirectory.file("tomcat/conf")
 }
 
 tasks.register('integrationTest', Test) {
@@ -121,19 +133,45 @@ tasks.register('integrationTest', Test) {
     shouldRunAfter test
     dependsOn war
     dependsOn generateConfig
+    dependsOn downloadAndUnzipInstaller
     jvmArgs += "-DwarContext=/opendcs-rest-api"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/test/resources/logging.properties"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
-    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+    jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
     systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("postgresdb") }
+    def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
+    systemProperties.put("DCSTOOL_HOME", outputDir)
     if (!project.hasProperty("postgresdb.url")) {
         systemProperties.put("postgresdb.url", "jdbc:postgresql://localhost:5432/open_tsdb")
         systemProperties.put("opendcs.db.username", "tsdbadm")
         systemProperties.put("opendcs.db.password", "postgres_pass")
     }
-    dependsOn(":opendcs-rest-api-jetty:startPostgresContainer")
-    finalizedBy(":opendcs-rest-api-jetty:stopPostgresContainer")
+}
+
+
+task downloadAndUnzipInstaller {
+    def zipUrl = 'https://github.com/opendcs/opendcs/releases/download/7.0.14/opendcs-7.0.14.zip'
+    def outputDir = file("${buildDir}/opendcs-install")
+    def zipFile = file("${buildDir}/download/opendcs-install.zip")
+
+    outputs.dir(new File(outputDir, "opendcs-7.0.14"))
+
+    doLast {
+        if(!zipFile.exists()) {
+            outputDir.mkdirs()
+            zipFile.parentFile.mkdirs()
+            new URL(zipUrl).withInputStream { inp ->
+                zipFile.withOutputStream { out -> out << inp }
+            }
+            copy {
+                //Skip the root dir as it is contains the version number which makes it hard
+                //to work with through automation
+                from zipTree(zipFile)
+                into outputDir
+            }
+        }
+    }
 }
 
 test {

@@ -5,7 +5,7 @@ jetty = "9.4.53.v20231009"
 jetty-jsp = "9.2.30.v20200428"
 javax-servlet-jsp = "2.3.3"
 servlet-api = "4.0.1" #Updating this further will require a change to the jakarta namespace.
-slf4j = "2.0.16"
+slf4j = "2.0.12"
 jersey = "2.40"
 postgresql = "42.7.4"
 swagger = "2.2.24"
@@ -25,9 +25,11 @@ byte-buddy = "1.15.3"
 rest-assured = "5.5.0"
 hamcrest = "3.0"
 tomcat = "9.0.91"
+testcontainers = "1.20.3"
 
 [libraries]
 opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
+opendcs-api = { module = "org.opendcs:opendcs-api", version.ref = "opendcs" }
 jetty-jsp = { module = "org.eclipse.jetty:jetty-jsp", version.ref = "jetty-jsp" }
 jetty-annotations = { module = "org.eclipse.jetty:jetty-annotations", version.ref = "jetty" }
 jetty-server = { module = "org.eclipse.jetty:jetty-server", version.ref = "jetty" }
@@ -37,7 +39,7 @@ jetty-webapp = { module = "org.eclipse.jetty:jetty-webapp", version.ref = "jetty
 
 javax-validation = { module = "javax.validation:validation-api", version.ref = "javax-validation" }
 
-javax-servlet-jsp = { module = "javax.servlet.jsp:javax.servlet.jsp-api", version.ref= "javax-servlet-jsp" }
+javax-servlet-jsp = { module = "javax.servlet.jsp:javax.servlet.jsp-api", version.ref = "javax-servlet-jsp" }
 servlet-api = { module = "javax.servlet:javax.servlet-api", version.ref = "servlet-api" }
 slf4j-jdk = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 
@@ -50,14 +52,15 @@ swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2-jakarta", version
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "glassfish-jaxb" }
 websocket = { module = "javax.websocket:javax.websocket-api", version.ref = "websocket" }
 selenium = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
-nimbus = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus"}
-jwt = { module = "com.auth0:java-jwt", version.ref = "jwt"}
-auto-service = { module = "com.google.auto.service:auto-service", version.ref = "auto-service"}
+nimbus = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
+jwt = { module = "com.auth0:java-jwt", version.ref = "jwt" }
+auto-service = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
 
 # webjars
-swagger-ui = { module = "org.webjars:swagger-ui", version.ref="swagger-ui" }
+swagger-ui = { module = "org.webjars:swagger-ui", version.ref = "swagger-ui" }
 
 #Test Dependencies
+opendcs-integrationtesting-fixtures = { module = "org.opendcs:opendcs-integrationtesting-fixtures", version.ref = "opendcs"}
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
@@ -71,6 +74,8 @@ hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 tomcat-embedded-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat" }
 tomcat-embedded-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat" }
 tomcat-jdbc = { module = "org.apache.tomcat:tomcat-jdbc", version.ref = "tomcat" }
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers" }
 
 [bundles]
-tomcat = [ "tomcat-embedded-core", "tomcat-embedded-jasper", "tomcat-jdbc" ]
+tomcat = ["tomcat-embedded-core", "tomcat-embedded-jasper", "tomcat-jdbc"]

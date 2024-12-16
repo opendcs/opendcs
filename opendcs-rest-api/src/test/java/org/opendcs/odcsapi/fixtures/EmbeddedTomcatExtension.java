@@ -22,6 +22,7 @@ import io.restassured.filter.session.SessionFilter;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.commons.PreconditionViolationException;
 import org.slf4j.Logger;
 
 import static io.restassured.RestAssured.given;
@@ -71,7 +72,7 @@ public final class EmbeddedTomcatExtension implements BeforeAllCallback, AfterAl
 			}
 		}
 		if (attempts == maxAttempts) {
-			throw new IllegalStateException("Server didn't start in time...");
+			throw new PreconditionViolationException("Server didn't start in time...");
 		}
 	}
 
