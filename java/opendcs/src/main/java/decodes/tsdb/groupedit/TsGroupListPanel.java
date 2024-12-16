@@ -696,7 +696,7 @@ class TsGroupsColumnComparator implements Comparator<TsGroup>
 			return 0;
 		}
 		
-		if (col == 0)// sort integers ascending
+		if (col == 0)// sort Longs ascending
 		{
 			try
 			{
