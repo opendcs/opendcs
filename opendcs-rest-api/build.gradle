@@ -127,6 +127,7 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonarqube {
         properties {
             property 'sonar.exclusions', 'src/main/resources/swaggerui/**'
+            property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml,${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReport/integrationTestReport.xml"
         }
     }
 }
@@ -168,6 +169,7 @@ tasks.register('integrationTest', Test) {
     jvmArgs += "-Dopendcs.test.integration.CWMS-Oracle.disabled=true"
     def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
     systemProperties.put("DCSTOOL_HOME", outputDir)
+    finalizedBy integrationTestReport
 }
 
 
@@ -198,5 +200,16 @@ task downloadAndUnzipInstaller {
 test {
     useJUnitPlatform {
         excludeTags "integration"
+    }
+}
+
+tasks.register('integrationTestReport', JacocoReport) {
+    group = "verification"
+    dependsOn tasks.named('integrationTest')
+    executionData = files(layout.buildDirectory.dir("jacoco").get().file("integrationTest.exec"))
+    sourceDirectories.setFrom(files("src/main/java"))
+    classDirectories.setFrom(files(layout.buildDirectory.dir("classes/java/main").get().getAsFile()))
+    reports {
+        xml.required.set(true)
     }
 }

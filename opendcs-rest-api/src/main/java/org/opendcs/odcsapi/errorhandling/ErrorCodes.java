@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -27,7 +27,7 @@ public class ErrorCodes
 	public static final int NO_SUCH_OBJECT = HttpServletResponse.SC_GONE;
 	
 	/** Missing required ID arg */
-	public static final int MISSING_ID = HttpServletResponse.SC_NOT_ACCEPTABLE;
+	public static final int MISSING_ID = HttpServletResponse.SC_BAD_REQUEST;
 	
 	/** Unexplained exception during database I/O */
 	public static final int DATABASE_ERROR = HttpServletResponse.SC_BAD_REQUEST; //This was 500, but should not be sending 500 back to the end user. "Bad Request" is probably not the proper error code here.

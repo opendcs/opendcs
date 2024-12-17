@@ -1,0 +1,39 @@
+{
+  "algorithmId": 2810703126,
+  "name": "TempString_check",
+  "execClass": "decodes.tsdb.algo.PythonAlgorithm",
+  "description": "Review temp-string sensor elevation. if the sensor is below the pool elevation then output the temperature value",
+  "props": {
+    "loclvl_bottomCon": ".Stor.Inst.0.Bottom of Conservation",
+    "loclvl_botFlood": ".Stor.Inst.0.Bottom of Flood Control",
+    "loclvl_guideCurve": ".Stor.Inst.0.Regulating",
+    "loclvl_topCon": ".Stor.Inst.0.Top of Conservation",
+    "loclvl_maxPool": ".Stor.Inst.0.Top of Max Flood Control",
+    "loclvl_fullPool": ".Stor.Inst.0.Top of Flood Control"
+  },
+  "parms": [
+    {
+      "roleName": "ATempStringobs",
+      "parmType": "i"
+    },
+    {
+      "roleName": "Poolelev",
+      "parmType": "i"
+    },
+    {
+      "roleName": "TempStringout",
+      "parmType": "o"
+    }
+  ],
+  "numCompsUsing": 0,
+  "algoScripts": [
+    {
+      "text": "#Tue May 03 11:42:01 PDT 2022\nAlgorithmType=TIME_SLICE\n",
+      "scriptType": "I"
+    },
+    {
+      "text": "\n\n\n\n\n\n\n\nstringElev = float(ATempStringobs.sublocation.replace(\"E\",\"\").replace(\"ft\",\"\"))\n\nif stringElev <= Poolelev.value:\n               setOutput(\"TempStringout\",ATempStringobs.value)",
+      "scriptType": "T"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2024 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -16,7 +16,7 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 
 public class ApiAlgorithm
@@ -37,34 +37,13 @@ public class ApiAlgorithm
 	private Properties props = new Properties();
 	
 	/** parameters to this algorithm */
-	private ArrayList<ApiAlgoParm> parms = new ArrayList<ApiAlgoParm>();
+	private List<ApiAlgoParm> parms = new ArrayList<>();
 
 	/** For use in the editor -- the number of computations using this algo. */
 	private int numCompsUsing = 0;
 	
-	private ArrayList<ApiAlgorithmScript> algoScripts = 
-		new ArrayList<ApiAlgorithmScript>();
-	
-//TODO have I accounted for scripts?
-//	public ApiAlgorithm(DbCompAlgorithm dca)
-//	{
-//		this.setAlgorithmId(dca.getId().getValue());
-//		this.setName(dca.getName());
-//		this.setExecClass(dca.getExecClass());
-//		this.setDescription(dca.getComment());
-//		this.setProps(dca.getProperties());
-//		this.setNumCompsUsing(dca.getNumCompsUsing());
-//		for(DbCompAlgorithmScript dcas : dca.getScripts())
-//		{
-//			ApiAlgorithmScript as = new ApiAlgorithmScript();
-//			as.setScriptType(dcas.getScriptType().getDbChar());
-//			as.setText(dcas.getText());
-//			algoScripts.add(as);
-//		}
-//		for(Iterator<DbAlgoParm> dit = dca.getParms(); dit.hasNext(); )
-//			parms.add(dit.next());
-//	}
-//
+	private List<ApiAlgorithmScript> algoScripts = new ArrayList<>();
+
 	public Long getAlgorithmId()
 	{
 		return algorithmId;
@@ -105,12 +84,12 @@ public class ApiAlgorithm
 		this.props = props;
 	}
 
-	public ArrayList<ApiAlgoParm> getParms()
+	public List<ApiAlgoParm> getParms()
 	{
 		return parms;
 	}
 
-	public void setParms(ArrayList<ApiAlgoParm> parms)
+	public void setParms(List<ApiAlgoParm> parms)
 	{
 		this.parms = parms;
 	}
@@ -125,12 +104,12 @@ public class ApiAlgorithm
 		this.numCompsUsing = numCompsUsing;
 	}
 
-	public ArrayList<ApiAlgorithmScript> getAlgoScripts()
+	public List<ApiAlgorithmScript> getAlgoScripts()
 	{
 		return algoScripts;
 	}
 
-	public void setAlgoScripts(ArrayList<ApiAlgorithmScript> algoScripts)
+	public void setAlgoScripts(List<ApiAlgorithmScript> algoScripts)
 	{
 		this.algoScripts = algoScripts;
 	}
