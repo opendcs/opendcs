@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Computation name="TestResEvapFinal-FTPK-L">
+    <Comment></Comment>
+    <Enabled>false</Enabled>
+    <AlgorithmName>ResEvapAlgo</AlgorithmName>
+    <LastModified>2024-11-25 06:52:16 PST</LastModified>
+    <CompProperty name="aggregateTimeOffset">1 hour</CompProperty>
+    <CompProperty name="aggregateTimeZone">US/Arizona</CompProperty>
+    <CompProperty name="zeroElevation">2034</CompProperty>
+    <CompProperty name="rating">FTPK.Elev;Area.Linear.Step</CompProperty>
+    <CompProperty name="reservoirId">FTPK-Lower</CompProperty>
+    <CompProperty name="secchi">13.00</CompProperty>
+    <CompProperty name="wtpTsId">
+      FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap-test
+    </CompProperty>
+    <CompProperty name="latitude">48.0007194444444</CompProperty>
+    <CompProperty name="windShear">Fischer</CompProperty>
+    <CompProperty name="thermalDifCoe">0.5</CompProperty>
+    <CompParm roleName="airTemp">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="Temp-Air"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="atmPress">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="Pres-Atmospheric"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="elev">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK</SiteName>
+        <DataType Standard="CWMS" code="Elev"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Best-MRBWM</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="elevHighCloud">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="Elev-CloudHigh"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="elevLowCloud">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="Elev-CloudLow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="elevMidCloud">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="Elev-CloudMid"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="percentHighCloud">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="%-CloudHigh"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="percentLowCloud">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="%-CloudLow"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="percentMidCloud">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="%-CloudMid"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="relativeHumidity">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="%-RelativeHumidity"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="windSpeed">
+      <SiteDataType>
+        <SiteName NameType="CWMS">KGGW</SiteName>
+        <DataType Standard="CWMS" code="Speed-Wind"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-AWC</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="dailyEvap">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK-Lower</SiteName>
+        <DataType Standard="CWMS" code="Evap"/>
+      </SiteDataType>
+      <Interval>1Day</Interval>
+      <TableSelector>Total.1Day.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="dailyEvapAsFlow">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK-Lower</SiteName>
+        <DataType Standard="CWMS" code="Flow-Evap"/>
+      </SiteDataType>
+      <Interval>1Day</Interval>
+      <TableSelector>Ave.1Day.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="hourlyEvap">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK-Lower</SiteName>
+        <DataType Standard="CWMS" code="EvapRate"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Total.1Hour.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="hourlyFluxIn">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK-Lower</SiteName>
+        <DataType Standard="CWMS" code="Irrad-Flux_IR"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="hourlyFluxOut">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK-Lower</SiteName>
+        <DataType Standard="CWMS" code="Irrad-Flux_IR-Out"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="hourlyLatent">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK-Lower</SiteName>
+        <DataType Standard="CWMS" code="Irrad-Heat_Latent"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="hourlySensible">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK-Lower</SiteName>
+        <DataType Standard="CWMS" code="Irrad-Heat_Sensible"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="hourlySolar">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK-Lower</SiteName>
+        <DataType Standard="CWMS" code="Irrad-Flux_Solar"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="hourlySurfaceTemp">
+      <SiteDataType>
+        <SiteName NameType="CWMS">FTPK-Lower-Surface</SiteName>
+        <DataType Standard="CWMS" code="Temp-Water"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.Rev-NWO-Evap-test</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>
