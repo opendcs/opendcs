@@ -39,9 +39,9 @@ import io.restassured.filter.session.SessionFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.opendcs.odcsapi.fixtures.EmbeddedTomcatExtension;
+import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 
 import static io.restassured.RestAssured.given;
@@ -50,7 +50,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(EmbeddedTomcatExtension.class)
+@ExtendWith(DatabaseContextProvider.class)
 @Tag("integration")
 final class OpenIdAuthIT
 {
@@ -66,7 +66,7 @@ final class OpenIdAuthIT
 		//Can remove if we get a testcontainers call going with a keycloak/authelia config
 		JwtVerifier verifier = mock(JwtVerifier.class);
 		JWTClaimsSet mock = mock(JWTClaimsSet.class);
-		when(mock.getStringClaim("preferred_username")).thenReturn(System.getProperty("opendcs.db.username"));
+		when(mock.getStringClaim("preferred_username")).thenReturn(System.getProperty("DB_USERNAME"));
 		when(verifier.getClaimsSet(any(), any())).thenReturn(mock);
 		JwtVerifier.setInstance(verifier);
 	}
@@ -77,7 +77,7 @@ final class OpenIdAuthIT
 		JwtVerifier.setInstance(original);
 	}
 
-	@Test
+	@TestTemplate
 	void testOpenIdAuthFlow() throws Exception
 	{
 		DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.type", "openid");
@@ -177,7 +177,7 @@ final class OpenIdAuthIT
 				.subject("123456-7890-1234-5678-901234567890")
 				.claim("scp", "read write")
 				.claim("cid", "client-id-123")
-				.claim("preferred_username", System.getProperty("opendcs.db.username"))
+				.claim("preferred_username", System.getProperty("DB_USERNAME"))
 				.jwtID(UUID.randomUUID().toString())
 				.issueTime(Date.from(Instant.now()))
 				.expirationTime(Date.from(Instant.now().plus(5, ChronoUnit.MINUTES)))

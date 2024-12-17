@@ -23,9 +23,11 @@ import io.restassured.filter.session.SessionFilter;
 import org.apache.catalina.session.StandardSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.opendcs.odcsapi.fixtures.EmbeddedTomcatExtension;
+import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
+import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
+import org.opendcs.odcsapi.fixtures.DbType;
 import org.opendcs.odcsapi.fixtures.TomcatServer;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
@@ -35,8 +37,9 @@ import org.slf4j.LoggerFactory;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@ExtendWith(EmbeddedTomcatExtension.class)
+@ExtendWith(DatabaseContextProvider.class)
 @Tag("integration")
 final class ServletSsoAuthIT
 {
@@ -53,7 +56,7 @@ final class ServletSsoAuthIT
 	private static void setupSession()
 	{
 		String username = System.getProperty("opendcs.db.username");
-		TomcatServer tomcat = EmbeddedTomcatExtension.getOpendcsInstance();
+		TomcatServer tomcat = DatabaseSetupExtension.getCurrentTomcat();
 		StandardSession session = (StandardSession) tomcat.getTestSessionManager()
 				.createSession(COOKIE);
 		if(session == null) {
@@ -72,9 +75,10 @@ final class ServletSsoAuthIT
 				.wrappedRegister(COOKIE, mcup, "CLIENT-CERT", null,null);
 	}
 
-	@Test
+	@TestTemplate
 	void testSsoAuthFlow()
 	{
+		assumeTrue(DatabaseSetupExtension.getCurrentDbType() == DbType.CWMS);
 		DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.type", "sso");
 		//Initial session should be unauthorized
 		given()

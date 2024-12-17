@@ -31,7 +31,22 @@ dependencies {
 
 
     //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
-//    api(libs.opendcs)
+    //Hacky workaround to still get transitive dependencies for runtime, but use
+    //branched code
+    api(libs.opendcs) {
+        exclude group: "org.opendcs", module: "opendcs"
+        exclude group: "org.opendcs", module: "opendcs-annotations"
+        exclude group: "javax.media", module: "jai_core"
+        exclude group: "javax.media", module: "jai_codec"
+        exclude group: "org.jooq.pro", module: "jooq-meta"
+        exclude group: "org.jooq.pro", module: "jooq-codegen"
+        exclude group: "com.oracle.database.jdbc", module: "jmscommon"
+        exclude group: "com.oracle.database.jdbc", module: "aqapi"
+        exclude group: "com.oracle.database.jdbc", module: "xmlparserv2"
+        exclude group: "com.oracle.database.jdbc", module: "xdb"
+        exclude group: "com.sun.media", module: "jai_imageio"
+        exclude group: "com.mrsid", module: "mrsidreader"
+    }
 //    api(libs.opendcs.api)
 
     implementation(libs.servlet.api)
@@ -52,13 +67,20 @@ dependencies {
     testImplementation(libs.rest.assured)
     testImplementation(libs.hamcrest)
     testImplementation(libs.bundles.tomcat)
+    testImplementation(libs.commons.io)
+    testImplementation(libs.apache.derby)
+    testImplementation(libs.webcompere.system.stubs.jupiter)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.hec.testcontainers.cwms)
+    testImplementation(libs.bundles.jdbi)
+    implementation(libs.org.flywaydb.flyway.core)
 
     //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
     implementation(files("temp-deps/opendcs-integrationtesting-fixtures.jar"))
-    implementation("uk.org.webcompere:system-stubs-jupiter:2.0.2")
 
 
-//    implementation(libs.opendcs.integrationtesting)
+//    implementation(libs.opendcs.integrationtesting.fixtures)
     compileOnly(libs.auto.service)
     annotationProcessor(libs.auto.service)
 }
@@ -130,6 +152,11 @@ tasks.register('integrationTest', Test) {
     useJUnitPlatform {
         includeTags "integration"
     }
+    doFirst {
+        classpath = classpath.filter {
+            !it.name.endsWith('opendcs-7.0.13.jar')
+        }
+    }
     shouldRunAfter test
     dependsOn war
     dependsOn generateConfig
@@ -138,15 +165,9 @@ tasks.register('integrationTest', Test) {
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/test/resources/logging.properties"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("postgresdb") }
+    jvmArgs += "-Dopendcs.test.integration.CWMS-Oracle.disabled=true"
     def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
     systemProperties.put("DCSTOOL_HOME", outputDir)
-    if (!project.hasProperty("postgresdb.url")) {
-        systemProperties.put("postgresdb.url", "jdbc:postgresql://localhost:5432/open_tsdb")
-        systemProperties.put("opendcs.db.username", "tsdbadm")
-        systemProperties.put("opendcs.db.password", "postgres_pass")
-    }
 }
 
 

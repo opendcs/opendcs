@@ -74,7 +74,7 @@ public class DatabaseContextProvider implements TestTemplateInvocationContextPro
 				{
 					File tmp = Files.createTempDirectory("configs-" + provider.getImplementation()).toFile();
 					Configuration config = provider.getConfig(tmp);
-					EXTENSIONS.add(new DatabaseSetupExtension(config));
+					EXTENSIONS.add(new DatabaseSetupExtension(config, dbType));
 				}
 				catch(Exception ex)
 				{

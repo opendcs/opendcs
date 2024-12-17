@@ -21,17 +21,17 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.opendcs.odcsapi.fixtures.EmbeddedTomcatExtension;
+import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-@ExtendWith(EmbeddedTomcatExtension.class)
 @Tag("integration")
+@ExtendWith(DatabaseContextProvider.class)
 final class BasicAuthIT
 {
 
@@ -43,7 +43,7 @@ final class BasicAuthIT
 		sessionFilter = new SessionFilter();
 	}
 
-	@Test
+	@TestTemplate
 	void testBasicAuthFlow()
 	{
 		DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.type", "basic");
@@ -61,8 +61,8 @@ final class BasicAuthIT
 			.statusCode(is(HttpServletResponse.SC_UNAUTHORIZED))
 		;
 		Credentials credentials = new Credentials();
-		credentials.setUsername(System.getProperty("opendcs.db.username"));
-		credentials.setPassword(System.getProperty("opendcs.db.password"));
+		credentials.setUsername(System.getProperty("DB_USERNAME"));
+		credentials.setPassword(System.getProperty("DB_PASSWORD"));
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept("application/json")

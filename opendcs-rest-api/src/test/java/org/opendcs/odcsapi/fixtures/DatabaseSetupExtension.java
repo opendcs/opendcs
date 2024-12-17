@@ -34,12 +34,26 @@ import static org.hamcrest.Matchers.is;
 public class DatabaseSetupExtension implements BeforeEachCallback
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseSetupExtension.class);
+	private static DbType currentDbType;
+	private static TomcatServer currentTomcat;
 	private final Configuration config;
+	private final DbType dbType;
 	private TomcatServer tomcatServer;
 
-	public DatabaseSetupExtension(Configuration config)
+	public DatabaseSetupExtension(Configuration config, DbType dbType)
 	{
 		this.config = config;
+		this.dbType = dbType;
+	}
+
+	public static DbType getCurrentDbType()
+	{
+		return currentDbType;
+	}
+
+	public static TomcatServer getCurrentTomcat()
+	{
+		return currentTomcat;
 	}
 
 	@Override
@@ -53,6 +67,8 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		RestAssured.baseURI = "http://localhost";
 		RestAssured.port = tomcatServer.getPort();
 		RestAssured.basePath = warContext;
+		currentDbType = dbType;
+		currentTomcat = tomcatServer;
 	}
 
 	private TomcatServer startTomcat(String warContext) throws Exception
