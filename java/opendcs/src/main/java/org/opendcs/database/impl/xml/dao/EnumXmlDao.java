@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -15,11 +16,9 @@ import java.util.Optional;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
@@ -93,26 +92,24 @@ public class EnumXmlDao implements EnumDAI
     @Override
     public DbEnum getEnum(String enumName) throws DbIoException
     {
-
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'getEnum'");
     }
 
     @Override
-    public void readEnumList(EnumList top) throws DbIoException {
-        // TODO Auto-generated method stub
+    public void readEnumList(EnumList top) throws DbIoException
+    {
         throw new UnsupportedOperationException("Unimplemented method 'readEnumList'");
     }
 
     @Override
-    public void writeEnumList(EnumList enumList) throws DbIoException {
-        // TODO Auto-generated method stub
+    public void writeEnumList(EnumList enumList) throws DbIoException
+    {
         throw new UnsupportedOperationException("Unimplemented method 'writeEnumList'");
     }
 
     @Override
-    public void writeEnum(DbEnum dbenum) throws DbIoException {
-        // TODO Auto-generated method stub
+    public void writeEnum(DbEnum dbenum) throws DbIoException
+    {
         throw new UnsupportedOperationException("Unimplemented method 'writeEnum'");
     }
 
@@ -125,60 +122,70 @@ public class EnumXmlDao implements EnumDAI
     @Override
     public Collection<DbEnum> getEnums(DataTransaction tx) throws OpenDcsDataException
     {
-        XmlConnection conn = tx.connection(XmlConnection.class).get();
-
-        Collection<DbEnum> enumList = new HashSet<>();
-        XMLInputFactory f = XMLInputFactory.newInstance();
-        File xmlFile = new File(conn.getDirectory(), "enum/EnumList.xml");
-        
-        try (InputStream stream = new FileInputStream(xmlFile))
+        try
         {
-            XMLEventReader reader = f.createXMLEventReader(stream);
-            while(reader.hasNext())
+            XmlConnection conn = tx.connection(Connection.class).get().unwrap(XmlConnection.class);
+
+            Collection<DbEnum> enumList = new HashSet<>();
+            XMLInputFactory f = XMLInputFactory.newInstance();
+            File xmlFile = new File(conn.getDirectory(), "enum/EnumList.xml");
+            
+            try (InputStream stream = new FileInputStream(xmlFile))
             {
+                XMLEventReader reader = f.createXMLEventReader(stream);
                 DbEnum curEnum = null;
                 EnumValue curValue = null;
-                XMLEvent event = reader.nextEvent();
-                if (event.isStartElement())
+                while(reader.hasNext())
                 {
-                    StartElement se = event.asStartElement();
-                    String elementName = se.getName().getLocalPart();
-                    if (elementName.equals("Enum"))
-                    {    
-                        curEnum = new DbEnum(se.getAttributeByName(QName.valueOf("Name")).getValue());
-                    }
-                    else if (elementName.equals("EnumValue"))
+                    XMLEvent event = reader.nextEvent();
+                    if (event.isStartElement())
                     {
-                        curValue = new EnumValue(curEnum, se.getAttributeByName(QName.valueOf("EnumValue")).getValue());
-                    }
-                    else if (elementName.equals("Description"))
-                    {
-                        event = reader.nextEvent();
-                        if (curValue != null)
+                        StartElement se = event.asStartElement();
+                        String elementName = se.getName().getLocalPart();
+                        if ("Enum".equals(elementName))
+                        {    
+                            curEnum = new DbEnum(se.getAttributeByName(QName.valueOf("Name")).getValue());
+                        }
+                        else if ("EnumValue".equals(elementName))
                         {
-                            curValue.setDescription(event.asCharacters().getData());
+                            curValue = new EnumValue(curEnum, se.getAttributeByName(QName.valueOf("EnumValue")).getValue());
+                        }
+                        else if ("Description".equals(elementName))
+                        {
+                            event = reader.nextEvent();
+                            if (curValue != null && event.isCharacters())
+                            {
+                                curValue.setDescription(event.asCharacters().getData());
+                            }
+                            else if (curEnum != null && event.isCharacters())
+                            {
+                                curEnum.setDescription(event.asCharacters().getData());
+                            }
+                        }
+                    }
+                    else if (event.isEndElement())
+                    {
+                        if ("Enum".equals(event.asEndElement().getName().getLocalPart()))
+                        {
+                            enumList.add(curEnum);
+                            cache.put(curEnum);
+                            curEnum = null;
+                        }
+                        else if ("EnumValue".equals(event.asEndElement().getName().getLocalPart()))
+                        {
+                            if (curEnum != null)
+                            {
+                                curEnum.addValue(curValue);
+                                curValue = null;
+                            }
                         }
                     }
                 }
-                else if (event.isEndElement())
-                {
-                    if (event.asEndElement().getName().getLocalPart().equals("Enum"))
-                    {
-                        enumList.add(curEnum);
-                        cache.put(curEnum);
-                        curEnum = null;
-                    }
-                    else if (event.asEndElement().getName().getLocalPart().equals("EnumValue"))
-                    {
-                        curEnum.addValue(curValue);
-                        curValue = null;
-                    }
-                }
+            
+                return enumList;
             }
-        
-            return enumList;
         }
-        catch (IOException | XMLStreamException ex)
+        catch (IOException | XMLStreamException | SQLException ex)
         {
             throw new OpenDcsDataException("Unable to read enum list.", ex);
         }
@@ -196,7 +203,7 @@ public class EnumXmlDao implements EnumDAI
             {
                 if (dbEnum.getUniqueName().equals(enumName))
                 {
-                    ret = null;
+                    ret = dbEnum;
                     break;
                 }
             }
@@ -213,46 +220,48 @@ public class EnumXmlDao implements EnumDAI
     @Override
     public DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException 
     {
-        XmlConnection conn = (XmlConnection)tx.connection(Connection.class).get();
-        XMLOutputFactory f = XMLOutputFactory.newInstance();
-        /**
-         * NOTE: at this time we're intentionally not worrying about the need to read this list back first.
-         */
-        File xmlFile = new File(conn.getDirectory(), "enum/EnumList.xml");
-        try (OutputStream outStream = new FileOutputStream(xmlFile))
+        try
         {
-            XMLStreamWriter writer = f.createXMLStreamWriter(outStream);
-            writer.writeStartDocument("UTF-8", "1.0");
-            writer.writeStartElement("EnumList");
-                writer.writeStartElement("Enum");
-                    writer.writeAttribute("Name", dbEnum.enumName);
-                    writer.writeStartElement("Description");
-                        writer.writeCharacters(dbEnum.getDescription());
-                    writer.writeEndElement();
-                    Iterator<EnumValue> it = dbEnum.iterator();
-                    while(it.hasNext())
-                    {
-                        EnumValue curVal = it.next();
-                        writer.writeStartElement("EnumValue");
-                            writer.writeAttribute("EnumValue", curVal.getValue());
-                            writer.writeStartElement("Description");
-                            writer.writeCharacters(curVal.getDescription());
-                            writer.writeEndElement();
-                            writer.writeStartElement("SortNumber");
-                                writer.writeCharacters(""+curVal.getSortNumber());
-                            writer.writeEndElement();
-                        
+            XmlConnection conn = tx.connection(Connection.class).get().unwrap(XmlConnection.class);
+            XMLOutputFactory f = XMLOutputFactory.newInstance();
+            /**
+             * NOTE: at this time we're intentionally not worrying about the need to read this list back first.
+             */
+            File xmlFile = new File(conn.getDirectory(), "enum/EnumList.xml");
+            try (OutputStream outStream = new FileOutputStream(xmlFile))
+            {
+                XMLStreamWriter writer = f.createXMLStreamWriter(outStream);
+                writer.writeStartDocument("UTF-8", "1.0");
+                writer.writeStartElement("EnumList");
+                    writer.writeStartElement("Enum");
+                        writer.writeAttribute("Name", dbEnum.enumName);
+                        writer.writeStartElement("Description");
+                            writer.writeCharacters(dbEnum.getDescription());
                         writer.writeEndElement();
-                    }
+                        Iterator<EnumValue> it = dbEnum.iterator();
+                        while(it.hasNext())
+                        {
+                            EnumValue curVal = it.next();
+                            writer.writeStartElement("EnumValue");
+                                writer.writeAttribute("EnumValue", curVal.getValue());
+                                writer.writeStartElement("Description");
+                                writer.writeCharacters(curVal.getDescription());
+                                writer.writeEndElement();
+                                writer.writeStartElement("SortNumber");
+                                    writer.writeCharacters(""+curVal.getSortNumber());
+                                writer.writeEndElement();
+                            
+                            writer.writeEndElement();
+                        }
+                    writer.writeEndElement();
                 writer.writeEndElement();
-            writer.writeEndElement();
-            writer.writeEndDocument();
+                writer.writeEndDocument();
+                return dbEnum;
+            }
         }
-        catch (IOException | XMLStreamException ex)
+        catch (IOException | XMLStreamException | SQLException ex)
         {
             throw new OpenDcsDataException("Unable to write enum to XML database.",ex);
         }
-        return dbEnum;
     }
-    
 }
