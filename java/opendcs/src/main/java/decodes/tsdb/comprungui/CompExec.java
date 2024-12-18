@@ -252,7 +252,7 @@ public class CompExec extends TsdbAppTemplate
 					if (!tsids.contains(tsid))
 						continue;
 
-					DbComputation concrete = DbCompResolver.makeConcrete(theDb, tsid, comp, false);
+					DbComputation concrete = DbCompResolver.makeConcrete(theDb, timeSeriesDAO, tsid, comp, false);
 					if (concrete != null)
 						// The resolver's addToResults method gets rid of duplicates.
 						resolver.addToResults(toRun, concrete, null);

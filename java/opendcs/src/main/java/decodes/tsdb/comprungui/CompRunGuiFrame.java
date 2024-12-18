@@ -1084,32 +1084,46 @@ public class CompRunGuiFrame extends TopFrame
 
 				ArrayList<DbComputation> concreteGroupComps = new ArrayList<DbComputation>();
 				StringBuilder errorMsgs = new StringBuilder();
-				for (Iterator<DbComputation> compit = compVector.iterator(); compit.hasNext();)
+				try (TimeSeriesDAI txDAI = theDb.makeTimeSeriesDAO())
 				{
-					comp = compit.next();
-					if (!comp.hasGroupInput())
+					txDAI.inTransaction(dao ->
 					{
-						continue;
-					}
-
-					// This is a group computation. Use resolver to make
-					// a concrete copy, and then add it to concreteGroupComps.
-					// First call compit.remote() to remove the abstract copy.
-					compit.remove();
-
-					for (TimeSeriesIdentifier tsid : groupTsIds)
-					{
-						try
+						try (TimeSeriesDAI inTxDai = theDb.makeTimeSeriesDAO())
 						{
-							DbComputation concrete = DbCompResolver.makeConcrete(theDb, tsid, comp, true);
-							concreteGroupComps.add(concrete);
+							inTxDai.inTransactionOf(dao);
+							for (Iterator<DbComputation> compit = compVector.iterator(); compit.hasNext();)
+							{
+								DbComputation localComp = compit.next();
+								if (!localComp.hasGroupInput())
+								{
+									continue;
+								}
+
+								// This is a group computation. Use resolver to make
+								// a concrete copy, and then add it to concreteGroupComps.
+								// First call compit.remote() to remove the abstract copy.
+								compit.remove();
+
+								for (TimeSeriesIdentifier tsid : groupTsIds)
+								{
+									try
+									{
+										DbComputation concrete = DbCompResolver.makeConcrete(theDb, txDAI, tsid, localComp, true);
+										concreteGroupComps.add(concrete);
+									}
+									catch (NoSuchObjectException ex)
+									{
+										errorMsgs.append("Cannot execute '" + comp.getName() + "' for time series '"
+											+ tsid.getUniqueString() + "': " + ex.getMessage() + "\r\n");
+									}
+								}
+							}
 						}
-						catch (NoSuchObjectException ex)
-						{
-							errorMsgs.append("Cannot execute '" + comp.getName() + "' for time series '"
-								+ tsid.getUniqueString() + "': " + ex.getMessage() + "\r\n");
-						}
-					}
+					});
+				}
+				catch (Exception ex)
+				{
+					throw new DbIoException("Unable to create concrete group comps.", ex);
 				}
 				compVector.addAll(concreteGroupComps);
 			}

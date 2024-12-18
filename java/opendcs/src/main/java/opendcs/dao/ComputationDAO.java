@@ -81,6 +81,7 @@ import opendcs.dai.ComputationDAI;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PropertiesDAI;
+import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dao.DbObjectCache.CacheIterator;
 import opendcs.util.sql.WrappedConnection;
@@ -714,7 +715,7 @@ public class ComputationDAO
 		ArrayList<DbCompAlgorithm> algos = algorithmDAO.listAlgorithms();
 
 		debug3("Expanding group comps and checking filter");
-		try
+		try (TimeSeriesDAI tsDAO = this.db.makeTimeSeriesDAO())
 		{
 			ArrayList<DbKey> groupCompIds = new ArrayList<DbKey>();
 
@@ -836,7 +837,7 @@ public class ComputationDAO
 				for(TimeSeriesIdentifier tsid : group.getExpandedList())
 					try
 					{
-						if (filter.passes(DbCompResolver.makeConcrete((TimeSeriesDb)db, tsid, groupComp, false)))
+						if (filter.passes(DbCompResolver.makeConcrete((TimeSeriesDb)db, tsDAO, tsid, groupComp, false)))
 						{
 							ret.add(
 								new ComputationInList(groupComp.getKey(), groupComp.getName(),

@@ -5,21 +5,25 @@ import static opendcs.util.logging.JulUtils.*;
 import java.lang.management.ManagementFactory;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.management.JMException;
 import javax.management.ObjectName;
 import javax.management.openmbean.OpenDataException;
+import javax.sql.DataSource;
 
 import org.opendcs.jmx.ConnectionPoolMXBean;
 import org.opendcs.jmx.WrappedConnectionMBean;
@@ -32,9 +36,12 @@ import decodes.tsdb.DbIoException;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import opendcs.util.sql.WrappedConnection;
+import oracle.jdbc.datasource.impl.OracleDataSource;
+import oracle.ucp.jdbc.PoolDataSource;
+import oracle.ucp.jdbc.PoolDataSourceFactory;
 import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
-import usace.cwms.db.dao.util.connection.CwmsDbConnectionPool;
+
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
 /**
@@ -57,7 +64,8 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 	private int connectionsFreed = 0;
 	private int unknownConnReturned = 0;
     private int connectionsClosedDuringGet = 0;
-    private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
+    //private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
+    private DataSource pool;
 
     /**
      * Get a Pool for a given database.
@@ -70,7 +78,8 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         CwmsConnectionPool ret = pools.get(info);
         if (ret == null)
         {
-            try(Connection conn = pool.getConnection(info.getLoginInfo());)
+            ConnectionLoginInfo loginInfo = info.getLoginInfo();
+            try(Connection conn = DriverManager.getConnection(loginInfo.getUrl(), loginInfo.getUser(), loginInfo.getPassword()))
 			{
                 fillOutConnectionInfo(info,conn);
                 ret = new CwmsConnectionPool(info);
@@ -153,17 +162,37 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      * @param info info object with baseline info (URL,user,password). Additional information will be added.
      * @param conn a valid open connection from the CwmsDbConnectionPool
      * @throws BadConnectException Unable to lookup baseline information or set VPD context.
-     * @throws SQLException Anything wrong with a query/connection
-     * @throws DbIoException Unable to retrieve general database contents.
+     * @throws SQLException Anything wrong with configuring the UCP Pool
      */
-    private CwmsConnectionPool(CwmsConnectionInfo info)
+    private CwmsConnectionPool(CwmsConnectionInfo info) throws SQLException
     {
         this.info = info;
+        final String poolName =
+            String.format("CwmsConnectionPool(%s/%s)",
+            info.getLoginInfo().getUrl().replace("?","\\?").replace(":","-"),
+            info.getLoginInfo().getUser());
+        PoolDataSource ds = PoolDataSourceFactory.getPoolDataSource();
+        OracleDataSource.registerMBean();
+        ds.setConnectionFactoryClassName("oracle.jdbc.datasource.impl.OracleDataSource");
+        ds.setURL(info.getLoginInfo().getUrl());
+        ds.setUser(info.getLoginInfo().getUser());
+        ds.setPassword(info.getLoginInfo().getPassword());
+        ds.setInitialPoolSize(2);
+        ds.setMinIdle(2);
+        ds.setMaxPoolSize(10);
+        ds.setValidateConnectionOnBorrow(true);
+        ds.setAbandonedConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(10));
+        ds.setConnectionPoolName(poolName);
+        ds.setMaxConnectionReuseTime(TimeUnit.HOURS.toSeconds(2));
+        ds.setInactiveConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(1));
+        ds.setConnectionWaitDuration(Duration.ofSeconds(5));
+        ds.setMaxIdleTime((int)TimeUnit.MINUTES.toSeconds(1));
+        this.pool = ds; 
+
         try
-		{
-            String name = String.format("CwmsConnectionPool(%s/%s)",info.getLoginInfo().getUrl().replace("?","\\?"),info.getLoginInfo().getUser());
+		{            
 			ManagementFactory.getPlatformMBeanServer()
-							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+name+"\",hashCode=" + this.hashCode()));
+							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+poolName+"\",hashCode=" + this.hashCode()));
 		}
 		catch(JMException ex)
 		{
@@ -220,7 +249,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 	public synchronized WrappedConnectionMBean[] getConnectionsList() throws OpenDataException
     {
 		return this.connectionsOut.toArray(new WrappedConnection[0]);
-	}
+    }
 
     /**
      * Retrieve a valid connection from the pool.
@@ -239,7 +268,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             Connection conn = null;
             try
             {
-                conn = pool.getConnection(info.getLoginInfo());
+                conn = pool.getConnection();
                 conn.setAutoCommit(true);
                 setCtxDbOfficeId(conn, info);
                 final WrappedConnection wc = new WrappedConnection(conn,(c)->{
@@ -255,7 +284,6 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
                     connectionsClosedDuringGet++;
                     if (conn != null) {
                         conn.close();
-                        CwmsDbConnectionPool.close(conn);
                         conn = null;
                     }
                 }
@@ -310,10 +338,9 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         {
             // the lambda handler above handles the count
             connectionsFreed++;
-            connectionsOut.remove(conn);
             Connection rc = ((WrappedConnection)conn).getRealConnection();
             rc.close();
-            //CwmsDbConnectionPool.close(rc);
+            connectionsOut.remove(conn);
         }
         else
         {
