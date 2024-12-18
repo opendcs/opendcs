@@ -11,16 +11,12 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 
 import decodes.db.DbEnum;
-import decodes.tsdb.TimeSeriesDb;
 import opendcs.dai.EnumDAI;
 
 class DbEnumDaoTestIT extends AppTestBase
 {
     @ConfiguredField
     OpenDcsDatabase db;
-
-    @ConfiguredField
-    private TimeSeriesDb tsDb;
 
     @Test
     void test_write_enum() throws Exception
