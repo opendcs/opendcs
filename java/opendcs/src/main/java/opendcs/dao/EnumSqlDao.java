@@ -282,8 +282,17 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	* Assume no conflict with EnumValues already in the database.
 	* @param ev the EnumValue
 	*/
-	public void writeEnumValue(EnumValue ev)
-		throws DbIoException
+	public void writeEnumValue(EnumValue ev) throws DbIoException
+	{
+		writeEnumValue(this, ev);
+	}
+
+	/**
+	* Write a single EnumValue to the database.
+	* Assume no conflict with EnumValues already in the database.
+	* @param ev the EnumValue
+	*/
+	private void writeEnumValue(DaoBase dao, EnumValue ev) throws DbIoException
 	{
 		ArrayList<Object> args = new ArrayList<>();
 		args.add(ev.getDbenum().getId().getValue());
@@ -313,7 +322,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		}
 		try
 		{
-			doModify(q,args.toArray());
+			dao.doModify(q,args.toArray());
 		} 
 		catch(SQLException er)
 		{
@@ -347,10 +356,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 						        .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
 			try (DaoHelper helper = new DaoHelper(this.db, "helper-enum", conn))
 			{
-				ret = helper.getSingleResult(q,(rs) -> {
-					DbEnum en = rs2Enum(rs, dbVer);
-					return en;
-				},enumName);
+				ret = helper.getSingleResult(q, rs -> rs2Enum(rs, dbVer), enumName);
 				if (ret == null)
 				{
 					warning("No such enum '" + enumName + "'");
@@ -432,29 +438,24 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 				args.add(dbEnum.getUniqueName());
 				args.add(dbEnum.getDefault());
 				args.add(dbEnum.getDescription());
-					/*+ id + ", " + sqlString(dbenum.getUniqueName())
-					+ ", " + sqlString(dbenum.getDefault()) 
-					+ ", " + sqlString(dbenum.getDescription()) + ")";*/
 			}
 			cache.put(dbEnum);
 		}
 		
 		Connection conn = tx.connection(Connection.class)
 							.orElseThrow(() -> new OpenDcsDataException("Unable to get JDBC connection to perform DbEnum Save."));		
-		try /* alternatively we would have to require that all connections return implement AutoClosable.
-				Not difficult to do with the interface design.
-		      */
+		try (DaoHelper helper = new DaoHelper(this.db, q, conn))
 		{
-			doModify(/*conn,*/ q,args.toArray());
+			helper.doModify(q,args.toArray());
 
 			// Delete all enum values. They'll be re-added below.
 			//info("writeEnum deleting values from enum '" + dbenum.enumName + "'");
 			q = "DELETE FROM EnumValue WHERE enumId = ?";
-			doModify(/*conn,*/q,dbEnum.getId().getValue());
+			helper.doModify(q, dbEnum.getId().getValue());
 			
 			for (Iterator<EnumValue> it = dbEnum.iterator(); it.hasNext(); )
 			{
-				writeEnumValue(/*conn,*/ it.next());
+				writeEnumValue(helper, it.next());
 			}
 			return dbEnum;
 		}
