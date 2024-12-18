@@ -36,6 +36,7 @@ import decodes.tsdb.DbIoException;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import opendcs.util.sql.WrappedConnection;
+import oracle.jdbc.datasource.impl.OracleDataSource;
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceFactory;
 import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
@@ -171,12 +172,15 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             info.getLoginInfo().getUrl().replace("?","\\?").replace(":","-"),
             info.getLoginInfo().getUser());
         PoolDataSource ds = PoolDataSourceFactory.getPoolDataSource();
+        OracleDataSource.registerMBean();
+        ds.setConnectionFactoryClassName("oracle.jdbc.datasource.impl.OracleDataSource");
         ds.setURL(info.getLoginInfo().getUrl());
         ds.setUser(info.getLoginInfo().getUser());
         ds.setPassword(info.getLoginInfo().getPassword());
         ds.setInitialPoolSize(2);
         ds.setMinIdle(2);
         ds.setMaxPoolSize(10);
+        ds.setValidateConnectionOnBorrow(true);
         ds.setAbandonedConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(10));
         ds.setConnectionPoolName(poolName);
         ds.setMaxConnectionReuseTime(TimeUnit.HOURS.toSeconds(2));
@@ -336,7 +340,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             connectionsFreed++;
             Connection rc = ((WrappedConnection)conn).getRealConnection();
             rc.close();
-            //CwmsDbConnectionPool.close(rc);
+            connectionsOut.remove(conn);
         }
         else
         {
