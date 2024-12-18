@@ -5,6 +5,9 @@ import java.util.Optional;
 
 import org.opendcs.settings.api.OpenDcsSettings;
 
+/**
+ * Basic interface of an "OpenDCS Database interface.""
+ */
 public interface OpenDcsDatabase
 {
     /**
@@ -12,7 +15,9 @@ public interface OpenDcsDatabase
      * @param <T> Type of Legacy Database. `decodes.sql.Database` or `TimeSeriesDb` or one of its derivatives.
      * @param legacyDatabaseType class reference to the desired database type.
      * @return Optional&lt;T&gt; that contains the Instance, or empty if not available.
+     * @deprecated This is provided for transition, new implementations should return an empty optional.
      */
+    @Deprecated
     <T> Optional<T> getLegacyDatabase(Class<T> legacyDatabaseType);
     
     /**
@@ -30,5 +35,12 @@ public interface OpenDcsDatabase
      */
     DataTransaction newTransaction() throws OpenDcsDataException;
 
+    /**
+     * Retrieve Settings of a given type. All implementations must provide "DecodesSettings".
+     * Implementations may determine if a given set of settings are immutable at runtime.
+     * @param <T> Type of settings. Currently implemented is "DecodesSettings"
+     * @param settingsClass type of settings to get
+     * @return Optional&lt;T&gt; Settings if available, otherwise empty.
+     */
     <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass);
 }
