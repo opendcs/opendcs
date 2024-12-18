@@ -5,5 +5,4 @@ package org.opendcs.settings.api;
  */
 public interface OpenDcsSettings
 {
-   
 }
