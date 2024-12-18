@@ -45,7 +45,6 @@ testcontainers = "1.18.1"
 hec-testcontainers-cwms = "1.0.7"
 jdbi = "3.38.2"
 flywaydb = "9.8.1"
-hikaricp = "4.0.3"
 
 [libraries]
 oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
@@ -80,7 +79,6 @@ javax-servlet = { module = "javax.servlet:javax.servlet-api", version.ref="servl
 javax-javaee-api = { module = "javax:javaee-api", version.ref="javax-javaee-api" }
 jersey-containers = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref="jersey" }
 jersey-inject = { module ="org.glassfish.jersey.inject:jersey-hk2", version.ref="jersey" }
-hikaricp = { module = "com.zaxxer:HikariCP", version.ref="hikaricp" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }

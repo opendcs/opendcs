@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -28,9 +29,6 @@ import org.opendcs.jmx.ConnectionPoolMXBean;
 import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.utils.sql.SqlSettings;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
 import decodes.db.Constants;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadConnectException;
@@ -38,6 +36,8 @@ import decodes.tsdb.DbIoException;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import opendcs.util.sql.WrappedConnection;
+import oracle.ucp.jdbc.PoolDataSource;
+import oracle.ucp.jdbc.PoolDataSourceFactory;
 import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
 
@@ -161,29 +161,32 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      * @param info info object with baseline info (URL,user,password). Additional information will be added.
      * @param conn a valid open connection from the CwmsDbConnectionPool
      * @throws BadConnectException Unable to lookup baseline information or set VPD context.
-     * @throws SQLException Anything wrong with a query/connection
-     * @throws DbIoException Unable to retrieve general database contents.
+     * @throws SQLException Anything wrong with configuring the UCP Pool
      */
-    private CwmsConnectionPool(CwmsConnectionInfo info)
+    private CwmsConnectionPool(CwmsConnectionInfo info) throws SQLException
     {
         this.info = info;
         final String poolName =
             String.format("CwmsConnectionPool(%s/%s)",
             info.getLoginInfo().getUrl().replace("?","\\?").replace(":","-"),
             info.getLoginInfo().getUser());
-        final HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(info.getLoginInfo().getUrl());
-        config.setUsername(info.getLoginInfo().getUser());
-        config.setPassword(info.getLoginInfo().getPassword());
-        config.setConnectionTimeout(10000);
-        config.setMaximumPoolSize(10);
-        config.setIdleTimeout(60000);
-        config.setPoolName(poolName);
-        config.setRegisterMbeans(true);
-        config.setMaxLifetime(TimeUnit.HOURS.toMillis(2));
-        this.pool = new HikariDataSource(config);
+        PoolDataSource ds = PoolDataSourceFactory.getPoolDataSource();
+        ds.setURL(info.getLoginInfo().getUrl());
+        ds.setUser(info.getLoginInfo().getUser());
+        ds.setPassword(info.getLoginInfo().getPassword());
+        ds.setInitialPoolSize(2);
+        ds.setMinIdle(2);
+        ds.setMaxPoolSize(10);
+        ds.setAbandonedConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(10));
+        ds.setConnectionPoolName(poolName);
+        ds.setMaxConnectionReuseTime(TimeUnit.HOURS.toSeconds(2));
+        ds.setInactiveConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(1));
+        ds.setConnectionWaitDuration(Duration.ofSeconds(5));
+        ds.setMaxIdleTime((int)TimeUnit.MINUTES.toSeconds(1));
+        this.pool = ds; 
+
         try
-		{
+		{            
 			ManagementFactory.getPlatformMBeanServer()
 							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+poolName+"\",hashCode=" + this.hashCode()));
 		}
