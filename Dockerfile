@@ -3,13 +3,13 @@ FROM openjdk:8-jdk-bullseye as builder
 
 RUN --mount=type=cache,target=/var/cache/apt \ 
     apt-get update && apt-get -y upgrade && \
-    apt-get install -y --no-install-recommends ant
+    apt-get install -y python3-venv python3-pip
 WORKDIR /app
 
 COPY . .
 
 RUN --mount=type=cache,target=/root \
-    ant stage -Dno.docs=true
+    ./gradlew installDist -Dno.docs=true
 # end initial build
 
 FROM eclipse-temurin:11-jre-alpine as opendcs_base
@@ -20,7 +20,7 @@ RUN apk add --no-cache \
 RUN addgroup opendcs && \
     adduser -D opendcs -G opendcs
 WORKDIR /opt/opendcs
-COPY --from=builder /app/stage /opt/opendcs
+COPY --from=builder /app/install/build/install/opendcs/ /opt/opendcs
 COPY docker_scripts/env.sh /opt/opendcs/
 WORKDIR /opt/opendcs/bin
 RUN rm *.bat && \

@@ -11,7 +11,7 @@ ganymed-ssh = "build210"
 apache-poi="5.0.0"
 jcalendar="1.3.2"
 jfree="1.0.13"
-jython="2.7.2"
+jython="2.7.4"
 jep="2.4.1"
 jama="1.0.2"
 dropwizard="4.1.0-rc2"
@@ -19,9 +19,9 @@ passay="1.3.1"
 sun-mailapi="1.6.2"
 jsch="0.1.55"
 aspectj="1.8.10"
-json="20200518"
+json="20231013"
 slf4j-api= { strictly = "2.0.12" }
-jetty = "9.4.53.v20231009"
+jetty = "9.4.56.v20240826"
 jetty-jsp = "9.2.30.v20200428"
 jersey = "2.40"
 servlet-api = "4.0.1"
@@ -32,19 +32,20 @@ cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
 monolith = { strictly = "2.0.2" }
 cwms-ratings = "1.1.0"
 nucleus = "1.1.1"
+# to upgrade past this version requires java 11 -->
+jdbi = "3.39.1"
+flywaydb = "9.8.1"
 
 #test deps
 junit = "5.10.2"
 commons-io = "2.11.0"
 derby = "10.14.2.0"
 webcompere = "2.0.2"
-jackson = "2.14.2"
+jackson = "2.18.2"
 
 # integration test deps
-testcontainers = "1.18.1"
-hec-testcontainers-cwms = "1.0.7"
-jdbi = "3.38.2"
-flywaydb = "9.8.1"
+testcontainers = "1.20.4"
+hec-testcontainers-cwms = "2.0.0"
 
 [libraries]
 oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
@@ -79,6 +80,11 @@ javax-servlet = { module = "javax.servlet:javax.servlet-api", version.ref="servl
 javax-javaee-api = { module = "javax:javaee-api", version.ref="javax-javaee-api" }
 jersey-containers = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref="jersey" }
 jersey-inject = { module ="org.glassfish.jersey.inject:jersey-hk2", version.ref="jersey" }
+org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
+org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
+org-jdbi3-oracle = { module = "org.jdbi:jdbi3-oracle12", version.ref = "jdbi" }
+org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
@@ -89,10 +95,6 @@ hec-db-jdbc = { module = "mil.army.usace.hec:hec-db-jdbc", version.ref = "cwms-d
 hec-monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "monolith" }
 hec-cwms-ratings-core = { module = "mil.army.usace.hec:hec-cwms-ratings-core", version.ref = "cwms-ratings" }
 hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata", version.ref = "nucleus" }
-org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
-org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
-org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
-org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
 
 # test deps
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
@@ -117,7 +119,7 @@ hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", v
 [bundles]
 junit = [ "junit-api", "junit-engine", "junit-params" ]
 junit-platform = [ "junit-platform-launcher", "junit-platform-engine", "junit-platform-commons" ]
-jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres" ]
+jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres", "org-jdbi3-oracle" ]
 oracle = [ "oracle-ojdbc8" , "oracle-ucp" ]
 jersey = [ "org-eclipse-jetty-jsp", "org-eclipse-jetty-annotations", "org-eclipse-jetty-server", 
             "org-eclipse-jetty-servlets", "org-eclipse-jetty-webapp", "javax-servlet",
