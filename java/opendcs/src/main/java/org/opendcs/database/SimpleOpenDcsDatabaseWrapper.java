@@ -15,6 +15,7 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.settings.api.OpenDcsSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,30 +92,32 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                         }
                     });
                 }
-
-                daoMakeMethod = findDaoMaker(timeSeriesDb.getClass(), dao);
-                if (!daoMakeMethod.isPresent())
+                if (timeSeriesDb != null)
                 {
-                    final Method m = daoMakeMethod.get();
-                    return new DaoWrapper<>(() ->
+                    daoMakeMethod = findDaoMaker(timeSeriesDb.getClass(), dao);
+                    if (!daoMakeMethod.isPresent())
                     {
-                        try
+                        final Method m = daoMakeMethod.get();
+                        return new DaoWrapper<>(() ->
                         {
-                            T ret = (T)m.invoke(timeSeriesDb);
-                            if (ret == null)
+                            try
                             {
-                                log.atError().log("retrieval of DAO returned null instead of the expected DAO." + timeSeriesDb + " " + m.toGenericString());
+                                T ret = (T)m.invoke(timeSeriesDb);
+                                if (ret == null)
+                                {
+                                    log.atError().log("retrieval of DAO returned null instead of the expected DAO." + timeSeriesDb + " " + m.toGenericString());
+                                }
+                                return ret;
                             }
-                            return ret;
-                        }
-                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
-                        {
-                            log.atError()
-                               .setCause(ex)
-                               .log("Unable to retrieve DAO we should be able to get.");
-                            return null;
-                        }
-                    });
+                            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
+                            {
+                                log.atError()
+                                .setCause(ex)
+                                .log("Unable to retrieve DAO we should be able to get.");
+                                return null;
+                            }
+                        });
+                    }
                 }
 
                 return new DaoWrapper<>(() -> null);
@@ -159,6 +162,20 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         public T create()
         {
             return daoSupplier.get();
+        }
+    }
+
+    @SuppressWarnings("unchecked") // Types are checked manually in this function
+    @Override
+    public <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass)
+    {
+        if (DecodesSettings.class.equals(settingsClass))
+        {
+            return Optional.of((T)settings);
+        }
+        else
+        {
+            return Optional.empty();
         }
     }
 }

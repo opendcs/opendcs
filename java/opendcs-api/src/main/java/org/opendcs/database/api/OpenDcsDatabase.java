@@ -3,6 +3,8 @@ package org.opendcs.database.api;
 
 import java.util.Optional;
 
+import org.opendcs.settings.api.OpenDcsSettings;
+
 public interface OpenDcsDatabase
 {
     /**
@@ -27,4 +29,6 @@ public interface OpenDcsDatabase
      * @throws OpenDcsDataException if any issues creating the transaction.
      */
     DataTransaction newTransaction() throws OpenDcsDataException;
+
+    <T extends OpenDcsSettings> Optional<T> getSettings(Class<T> settingsClass);
 }
