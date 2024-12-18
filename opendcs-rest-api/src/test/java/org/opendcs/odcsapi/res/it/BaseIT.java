@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Base64;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.filter.log.LogDetail;
@@ -121,6 +122,27 @@ class BaseIT
 				.log().ifValidationFails(LogDetail.ALL, true)
 			.assertThat()
 				.statusCode(is(HttpServletResponse.SC_OK))
+			;
+		}
+	}
+
+	void logout(SessionFilter sessionFilter)
+	{
+		if(DatabaseSetupExtension.getCurrentDbType() == DbType.OPEN_TSDB)
+		{
+			given()
+				.log().ifValidationFails(LogDetail.ALL, true)
+				.accept(MediaType.APPLICATION_JSON)
+				.header("Authorization", authHeader)
+				.filter(sessionFilter)
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.delete("logout")
+			.then()
+				.log().ifValidationFails(LogDetail.ALL, true)
+			.assertThat()
+				.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
 			;
 		}
 	}
