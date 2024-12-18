@@ -76,7 +76,7 @@ public class RtStat
 															LrgsConnection.encryptPassword(
 																password,
 																LrgsConnectionPanel.pwk),
-															null)
+															null, false)
 									);
 								}
 							}
