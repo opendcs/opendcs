@@ -32,4 +32,9 @@ public class DbException extends Exception
 	{
 		super(message, cause);
 	}
+
+	public DbException(String message)
+	{
+		super(message);
+	}
 }
