@@ -19,7 +19,7 @@ package decodes.cwms.resevapcalc;
  * Class holds data for Resevap cloud cover fraction and base height by type.
  * Three types are available, "High, Mid (or Med) and Low.
  */
-public class CloudCover
+final public class CloudCover
     {
     public double fractionCloudCover;
     public double height;

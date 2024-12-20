@@ -1,6 +1,6 @@
 package org.opendcs.units;
 
-public class Constants {
+final public class Constants {
 
     public static final double PI  = 3.141592654;
 
@@ -28,6 +28,12 @@ public class Constants {
 
     /* P0 is standard pressure in mb.*/
     public static final double p0 = 1013.25;
+
+    // Private constructor to prevent instantiation
+    private Constants()
+        {
+        throw new AssertionError("Constants class cannot be instantiated.");
+        }
 
 
 }

@@ -18,7 +18,7 @@ import java.util.Date;
  * including loading profiles from a database, setting profiles at a specific time step, and saving profiles.
  */
 
-public class WaterTempProfiles {
+final public class WaterTempProfiles {
 
     /**
      * The time series
@@ -31,19 +31,20 @@ public class WaterTempProfiles {
     /**
      * Constructor -- builds an empty collection with a null handle.
      */
-    public WaterTempProfiles(TimeSeriesDAI DAO, double start, double incr) {
+    public WaterTempProfiles(double start, double incr) {
         tseries = new DataCollection();
         startDepth = start;
         increment = incr;
     }
 
-    public WaterTempProfiles(ArrayList<CTimeSeries> profiles, TimeSeriesDAI DAO, double start, double incr) {
+    public WaterTempProfiles(ArrayList<CTimeSeries> profiles, double start, double incr) throws DuplicateTimeSeriesException
+        {
         tseries = new DataCollection();
         for (CTimeSeries data : profiles) {
             try {
                 tseries.addTimeSeries(data);
-            } catch (DuplicateTimeSeriesException e) {
-                throw new RuntimeException(e);
+            } catch (DuplicateTimeSeriesException ex) {
+                throw new DuplicateTimeSeriesException(ex.getMessage());
             }
         }
         startDepth = start;
@@ -51,14 +52,21 @@ public class WaterTempProfiles {
     }
 
     //Initialize WaterTempProfiles with profiles from time slice previous to Until in database DAO connection
-    public WaterTempProfiles(TimeSeriesDAI timeSeriesDAO, String resID, String wtpId, Date since, Date until, double start, double incr) throws DbIoException, NoSuchObjectException {
+    public WaterTempProfiles(TimeSeriesDAI timeSeriesDAO, String resID, String wtpId, Date since, Date until, double start, double incr) throws DbCompException, DbIoException
+        {
         tseries = new DataCollection();
         startDepth = start;
         increment = incr;
         boolean loading = true;
         double currentDepth = startDepth;
         TimeSeriesIdentifier tsid;
-        tsid = timeSeriesDAO.getTimeSeriesIdentifier(wtpId);
+        try
+            {
+            tsid = timeSeriesDAO.getTimeSeriesIdentifier(wtpId);
+            } catch (DbIoException | NoSuchObjectException ex)
+            {
+            throw new DbCompException("Failed to load timeSeries id: "+wtpId, ex);
+            }
 
         while (loading) {
             try {
@@ -81,18 +89,18 @@ public class WaterTempProfiles {
                     } else {
                         try {
                             tseries.addTimeSeries(cts);
-                        } catch (DuplicateTimeSeriesException e) {
-                            throw new RuntimeException(e);
+                        } catch (DuplicateTimeSeriesException ex) {
+                            throw new DbCompException(ex.getMessage());
                         }
                     }
                     currentDepth += increment;
                 } else if (check.getFailure() instanceof NoSuchObjectException) {
                     loading = false;
                 } else {
-                    throw new DbIoException("failed to load time series from database", check.getFailure());
+                    throw new DbIoException("failed to find time series from database with TSID: "+newtsid.getUniqueString(), check.getFailure());
                 }
-            } catch (BadTimeSeriesException ex) {
-                throw new DbIoException("error retrieving data for time series", ex);
+            } catch (BadTimeSeriesException | NoSuchObjectException ex) {
+                throw new DbIoException("error retrieving water temp profile data for time series", ex);
             }
         }
 
@@ -126,7 +134,7 @@ public class WaterTempProfiles {
                         timeSeriesDAO.createTimeSeries(newTSID);
                         CTProfile = new CTimeSeries(newTSID);
                     } else {
-                        throw new DbIoException("failed to load time series from database", check.getFailure());
+                        throw new DbIoException("Database failed when attempting to find TSID: "+ newTSID.getUniqueString(), check.getFailure());
                     }
 
                     TimedVariable newTV = new TimedVariable(new Variable(wtp[i]), CurrentTime);
@@ -134,7 +142,7 @@ public class WaterTempProfiles {
                     CTProfile.addSample(newTV);
                     tseries.addTimeSeries(CTProfile);
                 } catch (Exception ex) {
-                    throw new DbCompException("failed to create new timeSeriesID" + ex);
+                    throw new DbCompException("failed to create new timeSeriesID with ex: "+ ex, ex);
                 }
             } else {
                 CTimeSeries CTProfile = tseries.getTimeSeriesAt(i);

@@ -16,6 +16,7 @@
 package decodes.cwms.resevapcalc;
 
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DbCompException;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
@@ -37,7 +38,7 @@ import java.util.*;
  * conversion to Java by Richard Rachiele (RMA)
  * OpenDCS implementation by Oskar Hurst (HEC)
  */
-public class ResEvap
+final public class ResEvap
     {
     // Some global constant parameter vaiues set here
     public static final double EMITTANCE_H20 = 0.98;
@@ -51,10 +52,6 @@ public class ResEvap
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MetComputation.class.getName());
     public EvapReservoir reservoir;
     public EvapMetData metData;
-    NavigableMap<Integer, Integer> _timeMap;
-    CTimeSeries[] inputTimeSeries;
-    // FPart of output Ts
-    String versionName;
     // store Water temperature profile data
     // one profile for each hour
     double[] wtempProfiles;
@@ -65,7 +62,6 @@ public class ResEvap
     private double sensibleHeatTsc;
     private double latentHeatTsc;
     private double evapRateHourlyTsc;
-    private double evapDailyTsc;
     private double surfaceTempTsc;
     private File workDir;
 
@@ -73,7 +69,7 @@ public class ResEvap
         {
         }
 
-    public ResEvap(EvapReservoir reservoir, EvapMetData metData, Connection conn)
+    public ResEvap(EvapReservoir reservoir, EvapMetData metData, Connection conn) throws DbCompException
         {
         setReservoir(reservoir, conn);
         setMetData(metData);
@@ -99,7 +95,7 @@ public class ResEvap
      * @param reservoir
      * @return
      */
-    public boolean setReservoir(EvapReservoir reservoir, Connection conn)
+    public boolean setReservoir(EvapReservoir reservoir, Connection conn) throws DbCompException
         {
         this.reservoir = reservoir;
 
@@ -145,7 +141,7 @@ public class ResEvap
      * @return
      */
     public boolean compute(Date currentTime,
-                           double gmtOffset, Connection conn) throws ResEvapException
+                           double gmtOffset, Connection conn) throws DbCompException
         {
         if (reservoir == null)
             {

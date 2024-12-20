@@ -27,7 +27,7 @@ import java.util.Objects;
  * conversion to Java by Richard Rachiele (RMA)
  * OpenDCS implementation by Oskar Hurst (HEC)
  */
-public class DownwellingInfraRedFlux
+final public class DownwellingInfraRedFlux
     {
 
     private static final double[][] COEF11 =

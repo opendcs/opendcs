@@ -27,6 +27,7 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.slf4j.LoggerFactory;
 
 
 //AW:IMPORTS_END
@@ -41,9 +42,10 @@ import org.opendcs.annotations.algorithm.Output;
         description = "Preform Reservoir Evaporation calculation based on an algorithm developed by NWDM," +
                 " Which utilizes air temp, air speed, solar radiation, and water temperature profiles to return" +
                 " evaporation rates and total evaporation as flow")
-public class ResEvapAlgo
+final public class ResEvapAlgo
         extends AW_AlgorithmBase
     {
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(ResEvapAlgo.class.getName());
     //AW:INPUTS
     @Input
     public double windSpeed;        //AW:TYPECODE=i
@@ -93,15 +95,15 @@ public class ResEvapAlgo
     private CTimeSeries hourlyEvapTS = null;
     private CTimeSeries dailyEvapTS = null;
 
-    Site site;
-    CwmsRatingDao crd;
-    SiteDAI siteDAO;
-    Connection conn;
-    TimeSeriesDAI timeSeriesDAO;
-    WaterTempProfiles hourlyWTP;
-    WaterTempProfiles dailyWTP;
+    private Site site;
+    private CwmsRatingDao crd;
+    private SiteDAI siteDAO;
+    private Connection conn;
+    private TimeSeriesDAI timeSeriesDAO;
+    private WaterTempProfiles hourlyWTP;
+    private WaterTempProfiles dailyWTP;
 
-    EvapReservoir reservoir;
+    private EvapReservoir reservoir;
 
 //AW:LOCALVARS_END
 
@@ -182,19 +184,25 @@ public class ResEvapAlgo
         }
 
     //Initialized hourly water temperature profiles and return double[] of WTP of the previous timeSlice before base.
-    private double[] getProfiles(String WTPID) throws Exception
+    private double[] getProfiles(String WTPID) throws DbCompException
         {
         Date untilTime = new Date(baseTimes.first().getTime() + 86400000);
-        hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WTPID, baseTimes.first(), untilTime, startDepth, depthIncrement);
+        try
+            {
+            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WTPID, baseTimes.first(), untilTime, startDepth, depthIncrement);
+            } catch (DbIoException ex)
+            {
+            throw new DbCompException("Failed to generate Hourly Water temperature profiles" ,ex);
+            }
         double[] arrayWTP = new double[hourlyWTP.getTimeSeries().size()];
         for (int i = 0; i < hourlyWTP.getTimeSeries().size(); i++)
             {
             try
                 {
                 arrayWTP[i] = hourlyWTP.getTimeSeries().getTimeSeriesAt(i).findPrev(untilTime).getDoubleValue();
-                } catch (Exception ex)
+                } catch (RuntimeException | NoConversionException ex)
                 {
-                throw new Exception("failed to load data from WTP");
+                throw new DbCompException("failed to load data from WTP", ex);
                 }
             }
         return arrayWTP;
@@ -217,7 +225,7 @@ public class ResEvapAlgo
                 arrayWTP[i] = CTS.sampleAt(idx).getDoubleValue();
                 } catch (NoConversionException ex)
                 {
-                throw new DbCompException("Failed to load value from timeseries" + ex);
+                throw new DbCompException("Failed to load value from timeseries "+CTS.getNameString()+" at " + CurrentTime.toString() + ex, ex);
                 }
             i++;
             }
@@ -238,7 +246,7 @@ public class ResEvapAlgo
         converter = Database.getDb().unitConverterSet.get(euOld, euNew);
         if (converter == null)
             {
-            throw new NoConversionException("failed to load converter");
+            throw new NoConversionException("failed to load converter between"+currUnits+" to "+newUnits);
             }
         double newValue;
         try
@@ -246,14 +254,14 @@ public class ResEvapAlgo
             newValue = converter.convert(cts);
             } catch (DecodesException e)
             {
-            throw new DecodesException("failed to run converter");
+            throw new DecodesException("failed to preform conversion between"+currUnits+" to "+newUnits);
             }
 
         return newValue;
         }
 
     //Converts evaporation to meters then to flow  and save value to output
-    private void setAsFlow(Double TotalEvap, Date CurrentTime) throws NoConversionException, DecodesException, RatingException
+    private void setAsFlow(Double TotalEvap, Date CurrentTime) throws NoConversionException, DecodesException, RatingException, ResEvapException
         {
         double evap_to_meters = convertUnits(TotalEvap, dailyEvapTS.getUnitsAbbr(), "m");
 
@@ -264,7 +272,7 @@ public class ResEvapAlgo
             areaMetersSq = resEvap.reservoir.intArea(elev, conn);
             } catch (RatingException ex)
             {
-            throw new RatingException("failed to compute rating", ex);
+            throw new RatingException("failed to compute rating for evaporation to flow", ex);
             }
         double dailyEvapFlow = (areaMetersSq * evap_to_meters) / (86400.);
         setOutput(dailyEvapAsFlow, dailyEvapFlow, _timeSliceBaseTime);
@@ -337,9 +345,9 @@ public class ResEvapAlgo
                 {
                 DbKey siteID = siteDAO.lookupSiteID(reservoirId);
                 site = siteDAO.getSiteById(siteID);
-                } catch (DbIoException | NoSuchObjectException e)
+                } catch (DbIoException | NoSuchObjectException ex)
                 {
-                throw new RuntimeException("Failed to load Site data", e);
+                throw new DbCompException("Failed to load Site data", ex);
                 }
 
             //If missing data overwrite with site info
@@ -353,8 +361,8 @@ public class ResEvapAlgo
                 }
 
             //initialized Water Temperature Profiles
-            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, startDepth, depthIncrement);
-            dailyWTP = new WaterTempProfiles(timeSeriesDAO, startDepth, depthIncrement);
+            hourlyWTP = new WaterTempProfiles(startDepth, depthIncrement);
+            dailyWTP = new WaterTempProfiles(startDepth, depthIncrement);
 
             //initialized input timeseries
             hourlyEvapTS = getParmRef("hourlyEvap").timeSeries;
@@ -390,9 +398,9 @@ public class ResEvapAlgo
             try
                 {
                 reservoir.setWindShearMethod(WindShearMethod.fromString(windShear));
-                } catch (Throwable ex)
+                } catch (RuntimeException ex)
                 {
-                ex.printStackTrace();
+                    LOGGER.error(ex.toString());
                 }
 
             reservoir.setInputDataIsEnglish(true);
@@ -418,11 +426,17 @@ public class ResEvapAlgo
             try
                 {
                 initElev = elevTS.findPrev(baseTimes.first()).getDoubleValue();
-                } catch (Exception ex)
+                } catch (RuntimeException | NoConversionException ex)
                 {
-                throw new DbCompException("Failed to load initial Elevation");
+                throw new DbCompException("Failed to load initial elevation before time window of compute", ex);
                 }
-            reservoir.setElevation(initElev, conn);
+            try
+                {
+                reservoir.setElevation(initElev, conn);
+                } catch (RatingException ex)
+                {
+                throw new DbCompException("Failed to set the initial elevation" ,ex);
+                }
             reservoir.setZeroElevation(zeroElevation);
 
 
@@ -430,7 +444,7 @@ public class ResEvapAlgo
             resEvap = new ResEvap();
             if (!resEvap.setReservoir(reservoir, conn))
                 {
-                throw new DbCompException("Reservoir not in Database. Exiting Script.");
+                throw new DbCompException("Reservoir "+ reservoir.getName() + " not in Database. Exiting Script.");
                 }
 
             //get number of water temperature profiles
@@ -443,7 +457,7 @@ public class ResEvapAlgo
                 wtp = getProfiles(wtpTsId);
                 } catch (Exception ex)
                 {
-                throw new DbCompException("Failed to load profiles");
+                throw new DbCompException("Failed to load initial profiles "+wtpTsId+", exception occurred:" + ex, ex);
                 }
 
             // reverse array order
@@ -470,7 +484,7 @@ public class ResEvapAlgo
                 previousHourlyEvap = PrevTV.getDoubleValue();
                 } catch (Exception ex)
                 {
-                throw new DbCompException("Failed to initialize HourlyEvapRate");
+                throw new DbCompException("Failed to initialize HourlyEvapRate for Evaporate from compute time window", ex);
                 }
             }
 //AW:BEFORE_TIMESLICES_END
@@ -493,16 +507,17 @@ public class ResEvapAlgo
 //AW:TIMESLICE
         if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
             {
+            boolean noProblem;
             try
                 {
-                boolean noProblem = resEvap.compute(_timeSliceBaseTime, 0.0, conn);
-                if (!noProblem)
-                    {
-                    throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.");
-                    }
-                } catch (Exception ex)
+                noProblem = resEvap.compute(_timeSliceBaseTime, 0.0, conn);
+                } catch (ResEvapException ex)
                 {
                 throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.", ex);
+                }
+            if (!noProblem)
+                {
+                throw new DbCompException("ResEvap Compute Not Successful. Exiting Script.");
                 }
 
             List<Double> computedList = resEvap.getComputedMetTimeSeries();
@@ -536,9 +551,9 @@ public class ResEvapAlgo
             try
                 {
                 setAsFlow(tally, _timeSliceBaseTime);
-                } catch (RatingException | NoConversionException | DecodesException e)
+                } catch (RatingException | NoConversionException | DecodesException ex)
                 {
-                throw new RuntimeException(e);
+                throw new DbCompException("Failed to compute flow values from evap rate", ex);
                 }
             setDailyProfiles(_timeSliceBaseTime);
 

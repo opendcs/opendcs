@@ -126,8 +126,6 @@ public class EvapUtilities
 
         rhoAdc.d = rhoA;
         rhoVdc.d = rhoV;
-
-        return;
         }
 
     /**

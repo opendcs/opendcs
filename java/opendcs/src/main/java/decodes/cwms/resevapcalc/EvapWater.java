@@ -25,7 +25,7 @@ import org.opendcs.units.Constants;
  * Class used to compute and hold evaporation rate, latent and sensible heat
  * fluxes.
  */
-public class EvapWater
+final public class EvapWater
     {
     //these variables have package access
     double evap;

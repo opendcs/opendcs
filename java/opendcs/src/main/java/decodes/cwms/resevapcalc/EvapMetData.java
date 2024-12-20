@@ -17,37 +17,36 @@ package decodes.cwms.resevapcalc;
 
 import decodes.db.Constants;
 import decodes.tsdb.CTimeSeries;
+import ilex.var.NoConversionException;
 
 import java.util.Date;
 
 /**
  * EvapMetData holds meteorological time series data, such as wind-speed, air-temperature.
  */
-public class EvapMetData
+final public class EvapMetData
     {
     // input met data timeseries
-    CTimeSeries windspeedTsc;
-    CTimeSeries airTempTsc;
-    CTimeSeries relHumidityTsc;
-    CTimeSeries dewPointTsc;
-    CTimeSeries airPressureTsc;
-    CTimeSeries fractionLowClouds;
-    CTimeSeries altitudeLowClouds;
-    CTimeSeries fractionMedClouds;
-    CTimeSeries altitudeMedClouds;
-    CTimeSeries fractionHighClouds;
-    CTimeSeries altitudeHighClouds;
+    private CTimeSeries windspeedTsc;
+    private CTimeSeries airTempTsc;
+    private CTimeSeries relHumidityTsc;
+    private CTimeSeries dewPointTsc;
+    private CTimeSeries airPressureTsc;
+    private CTimeSeries fractionLowClouds;
+    private CTimeSeries altitudeLowClouds;
+    private CTimeSeries fractionMedClouds;
+    private CTimeSeries altitudeMedClouds;
+    private CTimeSeries fractionHighClouds;
+    private CTimeSeries altitudeHighClouds;
 
     // these variables hold last valid values
     //was originally RMA undefinedDouble = -FloatMax
-    double wsTempOld = Constants.undefinedDouble;
     double windSpeedOld = Constants.undefinedDouble;
     double airTempOld = Constants.undefinedDouble;
     double relHumidityOld = Constants.undefinedDouble;
     double airPressureOld = Constants.undefinedDouble;
 
-    // test variables hold the met values for the current time
-    double wsTempCurrent = Constants.undefinedDouble;
+    // variables hold the met values for the current time
     double windSpeedCurrent = Constants.undefinedDouble;
     double airTempCurrent = Constants.undefinedDouble;
     double relHumidityCurrent = Constants.undefinedDouble;
@@ -118,9 +117,9 @@ public class EvapMetData
         try
             {
             value = tsc.sampleAt(idx).getDoubleValue();
-            } catch (Exception ex)
+            } catch (NoConversionException ex)
             {
-            throw new ResEvapException("failed to load met value from timeseries", ex);
+            throw new ResEvapException("failed to load met value from timeseries "+tsc.getNameString()+ " at "+ time, ex);
             }
         return value;
         }

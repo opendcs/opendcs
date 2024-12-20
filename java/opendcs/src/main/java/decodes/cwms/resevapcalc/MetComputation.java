@@ -29,7 +29,7 @@ import java.util.GregorianCalendar;
  * @author richard
  * OpenDCS implementation by Oskar Hurst (HEC)
  */
-public class MetComputation
+final public class MetComputation
     {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MetComputation.class.getName());
     /**

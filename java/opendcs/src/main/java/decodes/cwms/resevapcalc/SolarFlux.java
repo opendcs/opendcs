@@ -28,7 +28,7 @@ import java.util.TimeZone;
  * conversion to Java by Richard Rachiele (RMA)
  * OpenDCS implementation by Oskar Hurst (HEC)
  */
-public class SolarFlux
+final public class SolarFlux
     {
     /* r1(4,4): = Cubic polynomial coefficients for Reflectivity
      *            for clear sky

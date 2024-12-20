@@ -16,19 +16,19 @@
 package decodes.cwms.resevapcalc;
 
 import org.opendcs.units.Constants;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static java.util.Arrays.fill;
+
 /**
  * Class used to compute reservoir temperature profile
  */
-public class ResWaterTemperatureCompute
+final public class ResWaterTemperatureCompute
     {
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(ResWaterTemperatureCompute.class.getName());
     BufferedWriter tout = null;
 
     // reservoir layers, segments.
@@ -45,6 +45,10 @@ public class ResWaterTemperatureCompute
     private double[] cpOrig;
     private double[] wtTmp;
     private double[] peMixOut;
+
+    // One vector of workspace, gam is needed.
+    final static private int NMAX = 500;
+    private double[] gam = new double[NMAX];
 
     public ResWaterTemperatureCompute(EvapReservoir reservoir)
         {
@@ -99,15 +103,15 @@ public class ResWaterTemperatureCompute
         double peMix, uH2OStar, KEStir;
 
         // zero working arrays
-        java.util.Arrays.fill(a, 0.);
-        java.util.Arrays.fill(b, 0.);
-        java.util.Arrays.fill(c, 0.);
-        java.util.Arrays.fill(r, 0.);
-        java.util.Arrays.fill(u, 0.);
-        java.util.Arrays.fill(rhowOrig, 0.);
-        java.util.Arrays.fill(cpOrig, 0.);
-        java.util.Arrays.fill(wtTmp, 0.);
-        java.util.Arrays.fill(peMixOut, 0.);
+        fill(a, 0.);
+        fill(b, 0.);
+        fill(c, 0.);
+        fill(r, 0.);
+        fill(u, 0.);
+        fill(rhowOrig, 0.);
+        fill(cpOrig, 0.);
+        fill(wtTmp, 0.);
+        fill(peMixOut, 0.);
 
         // Calculate the water density and heat capacity at each level. 
         // Determine average density of reservoir
@@ -546,7 +550,7 @@ public class ResWaterTemperatureCompute
         return true;
         }
 
-    protected double zcom(int itop, int ibottom,
+    private double zcom(int itop, int ibottom,
                           double xrhow)
         {
         double total, totalpvol, zrhow, zout;
@@ -589,11 +593,6 @@ public class ResWaterTemperatureCompute
             return 0.0;
             }
         }
-
-
-    // One vector of workspace, gam is needed.
-    final int NMAX = 500;
-    double[] gam = new double[NMAX];
 
     /**
      * Solves for a vector u(1:n) of length n the tridiagonal linear set given by equation (2.4.1).

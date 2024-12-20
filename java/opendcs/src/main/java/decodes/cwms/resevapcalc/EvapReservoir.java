@@ -17,9 +17,11 @@ package decodes.cwms.resevapcalc;
 
 import decodes.cwms.HecConstants;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.DbCompException;
 import decodes.util.DecodesException;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import ilex.var.NoConversionException;
 import org.opendcs.units.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +35,7 @@ import java.util.Date;
  * and the layers info for computing the
  * water temperature profile.
  */
-public class EvapReservoir
+final public class EvapReservoir
     {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EvapReservoir.class.getName());
@@ -155,23 +157,23 @@ public class EvapReservoir
      * Return elevation for time series if available, else
      * return the start time elevation.
      *
-     * @param hecTime
+     * @param time
      * @return the reservoir elevation at hecTime in meters
      */
-    public double getCurrentElevation(Date hecTime) throws DecodesException
+    public double getCurrentElevation(Date time) throws ResEvapException
         {
         if (elevationTsc == null)
             {
             return elev;
             }
-        int elevIdx = elevationTsc.findNextIdx(hecTime);
+        int elevIdx = elevationTsc.findNextIdx(time);
         double elev;
         try
             {
             elev = elevationTsc.sampleAt(elevIdx).getDoubleValue();
-            } catch (Exception ex)
+            } catch (NoConversionException ex)
             {
-            throw new DecodesException("failed to load current elevation", ex);
+            throw new ResEvapException("failed to load elevation at time "+time, ex);
             }
         if (!HecConstants.isValidValue(elev))
             {
@@ -284,16 +286,16 @@ public class EvapReservoir
      * @param elev
      * @return
      */
-    public boolean setElevation(double elev, Connection conn)
+    public boolean setElevation(double elev, Connection conn) throws RatingException
         {
         this.elev = elev;
         double surfArea = 0;
         try
             {
             surfArea = intArea(this.elev, conn);
-            } catch (RatingException e)
+            } catch (RatingException ex)
             {
-            throw new RuntimeException(e);
+            throw new RatingException("Surface area rating calculation failed", ex);
             }
         this.surfArea = surfArea / (1000. * 1000.);
 
@@ -348,7 +350,7 @@ public class EvapReservoir
      *
      * @return
      */
-    public boolean initRes(Connection conn)
+    public boolean initRes(Connection conn) throws DbCompException
         {
 
         // Set wsel to entered elevation
@@ -374,9 +376,9 @@ public class EvapReservoir
         try
             {
             surfArea = intArea(elev, conn);
-            } catch (RatingException e)
+            } catch (RatingException ex)
             {
-            throw new RuntimeException(e);
+            throw new DbCompException("Surface area rating calculation failed", ex);
             }
         this.surfArea = surfArea / (1000. * 1000.);
 
@@ -388,12 +390,12 @@ public class EvapReservoir
         return resj;
         }
 
-    public boolean resSetup(Connection conn)
+    public boolean resSetup(Connection conn) throws DbCompException
         {
         return resSetup(false, conn);
         }
 
-    public boolean resSetup(boolean updateDepth, Connection conn)
+    public boolean resSetup(boolean updateDepth, Connection conn) throws DbCompException
         {
         double[] zdx, delzx, ztop_depth;
         double[] zelevx, zareax, zvolx;
@@ -426,9 +428,9 @@ public class EvapReservoir
             try
                 {
                 zareax[j] = intArea(zelevx[j], conn);
-                } catch (RatingException e)
+                } catch (RatingException ex)
                 {
-                throw new RuntimeException(e);
+                throw new DbCompException("zareax Surface area rating calculation failed at elevation "+zelevx[j], ex);
                 }
             j++;
             }
@@ -447,9 +449,9 @@ public class EvapReservoir
             try
                 {
                 zareax[resj] = intArea(zelevx[resj], conn);
-                } catch (RatingException e)
+                } catch (RatingException ex)
                 {
-                throw new RuntimeException(e);
+                throw new DbCompException("zareax Surface area rating calculation failed at elevation "+zelevx[resj], ex);
                 }
             }
 
@@ -489,14 +491,15 @@ public class EvapReservoir
      */
     public double intArea(double el, Connection conn) throws RatingException
         {
+        double ftElvation=0;
         try
             {
-            double ftElvation = el / Constants.FT_TO_M;
+            ftElvation = el / Constants.FT_TO_M;
             double ftSquared = ratingAreaElev.rate(conn, ftElvation);
             return ftSquared * Math.pow(Constants.FT_TO_M, 2);
             } catch (RatingException ex)
             {
-            throw new RatingException("failed to compute rating", ex);
+            throw new RatingException("failed to compute rating at elevation "+ftElvation+ " ft", ex);
             }
         }
 
