@@ -1,4 +1,5 @@
 @Kiwi.Plan(DbEdit)
+@Kiwi.Priority(Medium)
 Feature: Platform List Tab
 
     Background: Basic Setup

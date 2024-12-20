@@ -1,4 +1,5 @@
 @Kiwi.Plan(DbEdit)
+@Kiwi.Priority(Medium)
 Feature: Site List Sorting on the Sites Tab
 
     Background: Basic Setup

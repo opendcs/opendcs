@@ -1,4 +1,5 @@
 @Kiwi.Plan(DbEdit)
+@Kiwi.Priority(Medium)
 Feature: Routing Spec
   
     Background: Basic Setup

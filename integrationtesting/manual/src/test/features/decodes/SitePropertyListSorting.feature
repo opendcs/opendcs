@@ -1,4 +1,5 @@
 @Kiwi.Plan(DbEdit)
+@Kiwi.Priority(Medium)
 Feature: Property selection in a Site
   
   Background: Basic Setup

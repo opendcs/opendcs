@@ -4,10 +4,6 @@ buildscript {
         gradlePluginPortal()
         mavenCentral()
     }
-
-    dependencies {
-        classpath(libs.gherkin.kiwi)
-    }
 }
 plugins {
    id 'opendcs.deps-conventions'

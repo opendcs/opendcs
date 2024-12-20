@@ -48,7 +48,7 @@ testcontainers = "1.20.4"
 hec-testcontainers-cwms = "2.0.0"
 
 # manual test deps
-gherkin-kiwi = "1.0.0-M10"
+gherkin-kiwi = "1.0.0-M11"
 
 [libraries]
 gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }

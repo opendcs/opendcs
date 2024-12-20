@@ -1,4 +1,5 @@
 @Kiwi.Plan(Launcher)
+@Kiwi.Priority(Medium)
 Feature: Launcher Application
 
     Scenario: Launcher with no profiles, only user.properties
