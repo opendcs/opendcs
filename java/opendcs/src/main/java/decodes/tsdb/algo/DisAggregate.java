@@ -2,93 +2,68 @@ package decodes.tsdb.algo;
 
 import java.util.Date;
 
-import ilex.util.TextUtil;
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalIncrement;
-import decodes.tsdb.VarFlags;
 
-//AW:IMPORTS
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.ParmRef;
-import ilex.var.TimedVariable;
-import ilex.var.NoConversionException;
-//AW:IMPORTS_END
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-Dis-aggregates by spreading out the input values to the outputs in various
-ways (fill, split).
-The interval of the input should always be equal to, or longer than, the output.
-Example: Input is daily, output is hour. 24 output values are written covering
-the period of each input.
-The 'method' property determines how each output period is determined:
-<ul>
-  <li>fill (default) - Each output is the same as the input covering the period.
-      </li>
-  <li>split - Divide the input equally between the outputs for the period.</li>
-</ul>
- */
-//AW:JAVADOC_END
-public class DisAggregate
-	extends AW_AlgorithmBase
+@Algorithm(description = "Dis-aggregates by spreading out the input values to the outputs in various\n" +
+		"ways (fill, split).\n" +
+		"The interval of the input should always be equal to, or longer than, the output.\n" +
+		"Example: Input is daily, output is hour. 24 output values are written covering\n" +
+		"the period of each input.\n" +
+		"The 'method' property determines how each output period is determined:\n" +
+		"<ul>\n" +
+		"  <li>fill (default) - Each output is the same as the input covering the period.\n" +
+		"      </li>\n" +
+		"  <li>split - Divide the input equally between the outputs for the period.</li>\n" +
+		"</ul>")
+
+public class DisAggregate extends AW_AlgorithmBase
 {
-//AW:INPUTS
+	private static final String OUTPUTSTRING = "output";
+	@Input
 	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
 	ParmRef iref = null;
 	String iintv = null;
 	IntervalIncrement iintvii = null;
 	ParmRef oref = null;
 	String ointv = null;
 	IntervalIncrement ointvii = null;
-	double prevInputV = 0.0;
-	long prevInputT = 0;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
-	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
+	@Output
+	public NamedVariable output = new NamedVariable(OUTPUTSTRING, 0);
 
-//AW:PROPERTIES
+	@PropertySpec(value = "fill")
 	public String method = "fill";
-	String _propertyNames[] = { "method" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
-
 		// Get interval of input
 		iref = getParmRef("input");
 		if (iref == null)
@@ -101,7 +76,7 @@ public class DisAggregate
 			   "Cannot DisAggregate from 'input' with instantaneous interval.");
 
 		// Get interval of output
-		oref = getParmRef("output");
+		oref = getParmRef(OUTPUTSTRING);
 		if (oref == null)
 			throw new DbCompException("Cannot determine period of 'output'");
 		ointv = oref.compParm.getInterval();
@@ -117,13 +92,10 @@ public class DisAggregate
 		// Normally for disagg, output units will be the same as input.
 		String inUnits = getInputUnitsAbbr("input");
 		if (inUnits != null && inUnits.length() > 0)
-			setOutputUnitsAbbr("output", inUnits);
+			setOutputUnitsAbbr(OUTPUTSTRING, inUnits);
 
-info("input intv=" + iintvii.toString()
-	+ ", output intv=" + ointvii.toString());
-
-		
-//AW:BEFORE_TIMESLICES_END
+		info("input intv=" + iintvii.toString()
+			+ ", output intv=" + ointvii.toString());
 	}
 
 	/**
@@ -136,11 +108,10 @@ info("input intv=" + iintvii.toString()
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
-
 		// if interval of output >= interval of input then output a single 
 		// value at the input time.
 
@@ -164,9 +135,9 @@ info("input intv=" + iintvii.toString()
 		Date endT = aggCal.getTime();
 		aggCal.setTime(startT);
 
-info("baseTime=" + debugSdf.format(_timeSliceBaseTime) + ", startT=" + debugSdf.format(startT)
-+ ", endT=" + debugSdf.format(endT)
-+ ", method=" + method + ", v=" + input);
+		info("baseTime=" + debugSdf.format(_timeSliceBaseTime) + ", startT=" + debugSdf.format(startT)
+		+ ", endT=" + debugSdf.format(endT)
+		+ ", method=" + method + ", v=" + input);
 		if (method.equalsIgnoreCase("fill"))
 		{
 			for(Date t = startT; t.before(endT);
@@ -197,42 +168,14 @@ info("baseTime=" + debugSdf.format(_timeSliceBaseTime) + ", startT=" + debugSdf.
 				setOutput(output, v, t);
 			}
 		}
-
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-		setOutputUnitsAbbr("output", getInputUnitsAbbr("input"));
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
+		setOutputUnitsAbbr(OUTPUTSTRING, getInputUnitsAbbr("input"));
 	}
 }

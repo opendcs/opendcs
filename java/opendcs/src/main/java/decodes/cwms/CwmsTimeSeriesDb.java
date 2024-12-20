@@ -1526,7 +1526,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 			Logger.instance().warning("Unable to close returned connection: " + ex.getLocalizedMessage());
 		}
 	}
-	
+
 	@Override
 	public void postConInit(Connection conn) throws SQLException
 	{
@@ -1593,4 +1593,38 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 			}
 		}
 	}	
+	/**
+     * Given a unique time-series identifier string, make a CTimeSeries
+     * object, populated with meta-data from the database.
+     * @param tsidStr the unique string identifying this time series.
+     * @return The CTimeSeries object
+     * @throws DbIoException on database I/O error
+     * @throws NoSuchObjectException if no such time series exists in the database.
+     */
+	@Override
+    public CTimeSeries makeTimeSeries(String tsidStr)
+        throws DbIoException, NoSuchObjectException
+    {
+        try (TimeSeriesDAI timeSeriesDAO = this.makeTimeSeriesDAO())
+        {
+            FailableResult<TimeSeriesIdentifier,TsdbException> tsid = timeSeriesDAO.findTimeSeriesIdentifier(tsidStr, true);
+			if (tsid.isSuccess())
+			{
+				TimeSeriesIdentifier tsId = tsid.getSuccess();
+				// There is an odd situation that happens were a TimeSeries ID has been loaded, but never had the storage units attached.
+				// Several downstream components depend on the storage units being present and this ensures that the value is available.
+				// This is likely due to the more aggressive cache usages that CWMS is using to speed up various operations.
+				if (tsId.getStorageUnits() == null )
+				{
+					tsId.setStorageUnits(this.getStorageUnitsForDataType(tsId.getDataType()));
+				}
+				return makeTimeSeries(tsId);
+			}
+            else
+			{
+				return ExceptionHelpers.throwDbIoNoSuchObject(tsid.getFailure());
+			}
+        }
+    }
+	
 }

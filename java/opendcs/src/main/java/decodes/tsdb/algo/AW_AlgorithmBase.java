@@ -450,6 +450,9 @@ public abstract class AW_AlgorithmBase
 				}
 			}
 		}
+		catch(RuntimeException ex){
+			throw new DbCompException("RunTime Error: "+ex+"\nAt: "+ex.getStackTrace()[0].toString(), ex);
+		}
 		finally
 		{
 			Logger.instance().setMinLogPriority(defLogPriority);

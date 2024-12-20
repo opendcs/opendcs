@@ -33,6 +33,7 @@ import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.configuration.ConfigurationProvider;
+import org.slf4j.LoggerFactory;
 
 import decodes.db.Database;
 import decodes.tsdb.TimeSeriesDb;
@@ -48,7 +49,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
 
 public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, TestExecutionListener
 {
-    private static final Logger logger = Logger.getLogger(OpenDCSTestConfigExtension.class.getName());
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(OpenDCSTestConfigExtension.class);
 
     private static Configuration configuration = null;
     private static Map<String,BackgroundTsDbApp<? extends TsdbAppTemplate>> runningApps = new HashMap<>();
@@ -56,6 +57,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
     private SystemExit exit = null;
     private EnvironmentVariables environment = null;
     private SystemProperties properties = null;
+    private boolean configError = false;
 
     @Override
     public void beforeEach(ExtensionContext ctx) throws Exception
@@ -110,9 +112,24 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
      */
     private void applyPerInstanceConfig(ExtensionContext ctx) throws Exception
     {
-        if (!configuration.isRunning())
+        if (!configuration.isRunning() && !configError)
         {
-            configuration.start(exit, environment, properties);
+            try
+            {
+                configuration.start(exit, environment, properties);
+            }
+            catch(Throwable t)
+            {
+                logger.atError()
+                      .setCause(t)
+                      .log("Unable to initialize configuration.");
+                configError = true;
+                throw t;
+            }
+        }
+        else if (configError)
+        {
+            logger.warn("Skipping 2nd attempt to start database.");
         }
 
         logger.info("Initializing decodes.");
@@ -343,9 +360,9 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
         {
             throw new PreconditionViolationException("Unable to set required base parameters", ex);
         }
-        if(configuration == null)
+        if (configuration == null)
         {
-            logger.warning("CREATING CONFIGURATION");
+            logger.warn("CREATING CONFIGURATION");
             String engine = System.getProperty("opendcs.test.engine");
             if (engine == null)
             {
@@ -371,6 +388,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                     File tmp = Files.createTempDirectory("configs-"+configProvider.getImplementation()).toFile();
                     configuration = configProvider.getConfig(tmp);
                     ilex.util.Logger.setLogger(new FileLogger("test", new File(tmp,"log.txt").getAbsolutePath(),200*1024*1024));
+                    ilex.util.Logger.instance().setMinLogPriority(ilex.util.Logger.E_DEFAULT_MIN_LOG_PRIORITY);
                 }
                 catch (Exception ex)
                 {

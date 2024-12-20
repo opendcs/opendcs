@@ -94,6 +94,9 @@ package decodes.db;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import opendcs.dao.CachableDbObject;
 
 import decodes.sql.DbKey;
@@ -110,6 +113,7 @@ public class DbEnum
     implements CachableDbObject, Serializable
 {
     private static final long serialVersionUID = -7534343805851676281L;
+    private static final Logger logger = LoggerFactory.getLogger(DbEnum.class);
 
     /** The name of this enumeration. */
     public String enumName;
@@ -391,4 +395,3 @@ public class DbEnum
         return sb.toString();
     }
 }
-

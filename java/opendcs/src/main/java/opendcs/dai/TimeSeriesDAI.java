@@ -42,10 +42,11 @@ public interface TimeSeriesDAI extends DaiBase, OpenDcsDao
 	 * @throws DbIoException if SQL exception occurs during operation
 	 * @throws NoSuchObjectException if no matching time series exists.
 	 */
-	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString)
-		throws DbIoException, NoSuchObjectException;
+	public TimeSeriesIdentifier getTimeSeriesIdentifier(String uniqueString) throws DbIoException, NoSuchObjectException;
 
 	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString);
+
+	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime);
 		
 	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(DbKey key);
 	/**

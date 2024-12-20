@@ -18,6 +18,7 @@ import decodes.db.DatabaseIO;
 import decodes.launcher.Profile;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
+import decodes.xml.CreatePlatformXref;
 import ilex.util.Pair;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -66,7 +67,7 @@ public class XmlConfiguration implements Configuration
     @Override
     public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception
     {
-        if (started == true)
+        if (started)
         {
             return;
         }
