@@ -1,5 +1,5 @@
 @Kiwi.Plan(DbEdit)
-Feature:  Property selection in a Site
+Feature: Property selection in a Site
   
   Background: Basic Setup
         Given A database with sites available the have more than 1 extra property. Create additional properties on a site if necessary.

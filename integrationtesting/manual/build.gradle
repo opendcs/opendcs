@@ -2,12 +2,17 @@ buildscript {
     repositories {
         mavenLocal()
         gradlePluginPortal()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath(libs.gherkin.kiwi)
     }
 }
 plugins {
    id 'opendcs.deps-conventions'
    id 'base'
-   id 'org.opendcs.testing.gradle-gherkin-kiwi'
+   id 'org.opendcs.testing.gradle-plugin'
 }
 
 
@@ -16,7 +21,7 @@ kiwi {
     product = "OpenDCS"
     
     plans {
-        DdbEdit {
+        DbEdit {
             planName = "Decodes Database Editor"
             type = "Acceptance"
         }

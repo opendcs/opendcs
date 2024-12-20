@@ -48,9 +48,10 @@ testcontainers = "1.20.4"
 hec-testcontainers-cwms = "2.0.0"
 
 # manual test deps
-gherkin-kiwi = "1.0.0-M11"
+gherkin-kiwi = "1.0.0-M10"
 
 [libraries]
+gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }
 oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
 oracle-ucp = { module = "com.oracle.database.jdbc:ucp", version.ref = "oracle" }
 postgresql = { module ="org.postgresql:postgresql", version.ref = "postgres"}
