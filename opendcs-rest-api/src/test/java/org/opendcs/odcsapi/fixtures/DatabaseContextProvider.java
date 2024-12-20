@@ -44,7 +44,7 @@ public class DatabaseContextProvider implements TestTemplateInvocationContextPro
 	public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(ExtensionContext context)
 	{
 		return Arrays.stream(DbType.values())
-				.filter(d -> !Boolean.getBoolean("opendcs.test.integration." + d + ".disabled"))
+				.filter(d -> System.getProperty("opendcs.test.integration.db").equals(d.toString()))
 				.map(DatabaseInvocationContext::new);
 	}
 

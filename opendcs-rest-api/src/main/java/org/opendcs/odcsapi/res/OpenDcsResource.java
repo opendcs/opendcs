@@ -81,7 +81,6 @@ class OpenDcsResource
 			{
 				throw new IllegalStateException("Error connecting to the database via JNDI", ex);
 			}
-//			throw new IllegalStateException("Error connecting to the database via JNDI", e);
 		}
 	}
 }

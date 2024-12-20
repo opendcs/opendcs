@@ -127,7 +127,9 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonarqube {
         properties {
             property 'sonar.exclusions', 'src/main/resources/swaggerui/**'
-            property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml,${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReport/integrationTestReport.xml"
+            property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml," +
+                    "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
+                    "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
         }
     }
 }
@@ -148,10 +150,11 @@ tasks.register('generateConfig', Copy) {
     outputs.dir layout.buildDirectory.file("tomcat/conf")
 }
 
-tasks.register('integrationTest', Test) {
+tasks.register('integrationTestOpenTSDB', Test) {
     group "verification"
     useJUnitPlatform {
         includeTags "integration"
+        includeTags "integration-opentsdb-only"
     }
     doFirst {
         classpath = classpath.filter {
@@ -166,10 +169,36 @@ tasks.register('integrationTest', Test) {
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/test/resources/logging.properties"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
-    jvmArgs += "-Dopendcs.test.integration.CWMS-Oracle.disabled=true"
+    jvmArgs += "-Dopendcs.test.integration.db=OpenDCS-Postgres"
     def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
     systemProperties.put("DCSTOOL_HOME", outputDir)
-    finalizedBy integrationTestReport
+    finalizedBy integrationTestReportOpenTSDB
+}
+
+tasks.register('integrationTestCWMS', Test) {
+    group "verification"
+    useJUnitPlatform {
+        includeTags "integration"
+        includeTags "integration-cwms-only"
+    }
+    doFirst {
+        classpath = classpath.filter {
+            !it.name.endsWith('opendcs-7.0.13.jar')
+        }
+    }
+    shouldRunAfter test
+    dependsOn war
+    dependsOn generateConfig
+    dependsOn downloadAndUnzipInstaller
+    jvmArgs += "-DwarContext=/opendcs-rest-api"
+    jvmArgs += "-Djava.util.logging.config.file=$projectDir/test/resources/logging.properties"
+    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
+    jvmArgs += "-Dopendcs.test.integration.db=CWMS-Oracle"
+    jvmArgs += "-Dopendcs.cwms.oracle.image=registry-public.hecdev.net/cwms/database-ready-ora-23.5:24.12.04-RC3"
+    def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
+    systemProperties.put("DCSTOOL_HOME", outputDir)
+    finalizedBy integrationTestReportCWMS
 }
 
 
@@ -200,13 +229,26 @@ task downloadAndUnzipInstaller {
 test {
     useJUnitPlatform {
         excludeTags "integration"
+        excludeTags "integration-opentsdb-only"
+        excludeTags "integration-cwms-only"
     }
 }
 
-tasks.register('integrationTestReport', JacocoReport) {
+tasks.register('integrationTestReportCWMS', JacocoReport) {
     group = "verification"
-    dependsOn tasks.named('integrationTest')
-    executionData = files(layout.buildDirectory.dir("jacoco").get().file("integrationTest.exec"))
+    dependsOn tasks.named('integrationTestCWMS')
+    executionData = files(layout.buildDirectory.dir("jacoco").get().file("integrationTestCWMS.exec"))
+    sourceDirectories.setFrom(files("src/main/java"))
+    classDirectories.setFrom(files(layout.buildDirectory.dir("classes/java/main").get().getAsFile()))
+    reports {
+        xml.required.set(true)
+    }
+}
+
+tasks.register('integrationTestReportOpenTSDB', JacocoReport) {
+    group = "verification"
+    dependsOn tasks.named('integrationTestOpenTSDB')
+    executionData = files(layout.buildDirectory.dir("jacoco").get().file("integrationTestOpenTSDB.exec"))
     sourceDirectories.setFrom(files("src/main/java"))
     classDirectories.setFrom(files(layout.buildDirectory.dir("classes/java/main").get().getAsFile()))
     reports {

@@ -30,7 +30,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-@Tag("integration")
+@Tag("integration-opentsdb-only")
 @ExtendWith(DatabaseContextProvider.class)
 final class BasicAuthIT
 {

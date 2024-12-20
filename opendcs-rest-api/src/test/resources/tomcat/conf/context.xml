@@ -21,7 +21,7 @@
               factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
               username="${DB_USERNAME}"
               password="${DB_PASSWORD}"
-              driverClassName="org.postgresql.Driver"
+              driverClassName="${DB_DRIVER_CLASS}"
               url="${DB_URL}"
               validationQuery="select 1"
               maxActive="10"

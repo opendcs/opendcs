@@ -78,6 +78,14 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		SystemProperties properties = new SystemProperties();
 		config.start(exit, environment, properties);
 		environment.getVariables().forEach(System::setProperty);
+		if(dbType == DbType.CWMS)
+		{
+			System.setProperty("DB_DRIVER_CLASS", "oracle.jdbc.driver.OracleDriver");
+		}
+		else
+		{
+			System.setProperty("DB_DRIVER_CLASS", "org.postgresql.Driver");
+		}
 		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, warContext);
 		tomcat.start();
 		RestAssured.baseURI = "http://localhost";
