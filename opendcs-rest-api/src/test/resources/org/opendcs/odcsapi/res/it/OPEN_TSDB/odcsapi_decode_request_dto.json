@@ -1,0 +1,64 @@
+{
+  "rawmsg" : {
+    "flags" : 0,
+    "platformId" : null,
+    "sequenceNum" : null,
+    "localRecvTime" : null,
+    "carrierStart" : null,
+    "carrierStop" : null,
+    "baud" : null,
+    "goodPhasePct" : null,
+    "freqOffset" : null,
+    "signalStrength" : null,
+    "phaseNoise" : null,
+    "xmitTime" : 1609459200000,
+    "momsn" : null,
+    "mtmsn" : null,
+    "cdrReference" : null,
+    "sessionStatus" : null,
+    "base64" : "YmFzZTY0X2VuY29kZWRfc3RyaW5n"
+  },
+  "config" : {
+    "configId" : 486121,
+    "name" : "name",
+    "numPlatforms" : 15,
+    "description" : "description",
+    "configSensors" : [ {
+      "sensorNumber" : 15546,
+      "sensorName" : "sensorName",
+      "recordingMode" : "U",
+      "recordingInterval" : 3600,
+      "timeOfFirstSample" : 0,
+      "absoluteMin" : 0.0,
+      "absoluteMax" : 100.0,
+      "properties" : { },
+      "dataTypes" : { },
+      "usgsStatCode" : null
+    } ],
+    "scripts" : [ {
+      "name" : "scriptName",
+      "dataOrder" : "U",
+      "headerType" : null,
+      "scriptSensors" : [ {
+        "sensorNumber" : 0,
+        "unitConverter" : {
+          "ucId" : null,
+          "fromAbbr" : "m",
+          "toAbbr" : "ft",
+          "algorithm" : "Poly-5",
+          "a" : 1.0,
+          "b" : 10.0,
+          "c" : 100.0,
+          "d" : 1000.0,
+          "e" : 11.0,
+          "f" : 12.0
+        }
+      } ],
+      "formatStatements" : [ {
+        "sequenceNum" : 0,
+        "label" : "formatter",
+        "format" : "10X"
+      }]
+    } ]
+  }
+}

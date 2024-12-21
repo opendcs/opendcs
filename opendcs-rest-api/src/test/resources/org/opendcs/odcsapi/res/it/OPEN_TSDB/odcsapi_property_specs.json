@@ -1,0 +1,38 @@
+[
+  {
+    "name": "directoryUrl",
+    "type": "s",
+    "description": "(required) URL of the directory that lists the file names containing messages",
+    "dynamic": false
+  },
+  {
+    "name": "urlFieldDelimiter",
+    "type": "s",
+    "description": "(default = underscore) Delimiter for fields within the filenames.",
+    "dynamic": false
+  },
+  {
+    "name": "urlTimePos",
+    "type": "i",
+    "description": "(default=3) Position of time within the delimited file name (1=first pos)",
+    "dynamic": false
+  },
+  {
+    "name": "urlIdPos",
+    "type": "i",
+    "description": "(default=5) Position of the transport medium ID within the file name (1=first pos)",
+    "dynamic": false
+  },
+  {
+    "name": "urlTimeFormat",
+    "type": "s",
+    "description": "(default = HHmmss) SimpleDateFormat format string for time in the filename",
+    "dynamic": false
+  },
+  {
+    "name": "urlTimeZone",
+    "type": "s",
+    "description": "(default = UTC) Time Zone for the time within the directory and file names",
+    "dynamic": false
+  }
+]

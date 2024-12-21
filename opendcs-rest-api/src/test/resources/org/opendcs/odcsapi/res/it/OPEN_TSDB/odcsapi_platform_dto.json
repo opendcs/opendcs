@@ -1,0 +1,32 @@
+{
+  "platformId" : null,
+  "name" : "Platform1",
+  "siteId" : null,
+  "agency" : null,
+  "configId" : null,
+  "description" : "A test platform",
+  "designator" : null,
+  "lastModified" : null,
+  "production" : false,
+  "properties" : { },
+  "platformSensors" : [ ],
+  "transportMedia" : [ {
+    "mediumType" : "Stream",
+    "mediumId" : "15823",
+    "scriptName" : "script1",
+    "channelNum" : 142,
+    "assignedTime" : null,
+    "transportWindow" : null,
+    "transportInterval" : null,
+    "timeAdjustment" : 0,
+    "timezone" : null,
+    "loggerType" : null,
+    "baud" : null,
+    "stopBits" : null,
+    "parity" : null,
+    "dataBits" : null,
+    "doLogin" : null,
+    "username" : null,
+    "password" : null
+  } ]
+}
