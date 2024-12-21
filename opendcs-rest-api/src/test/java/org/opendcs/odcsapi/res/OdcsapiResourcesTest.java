@@ -154,7 +154,4 @@ final class OdcsapiResourcesTest
 			i++;
 		}
 	}
-
-
-
 }

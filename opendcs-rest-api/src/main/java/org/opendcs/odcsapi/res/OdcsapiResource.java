@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.res;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Properties;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
@@ -42,6 +43,7 @@ import decodes.decoder.DecodedMessage;
 import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
 import decodes.sql.DbKey;
+import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.PropertySpec;
 import ilex.var.NoConversionException;
@@ -77,12 +79,12 @@ public class OdcsapiResource extends OpenDcsResource
 			tsdb.readTsdbProperties(tsdb.getConnection());
 
 			Properties props = new Properties();
-			while (tsdb.getPropertyNames().hasMoreElements())
+			for (Enumeration<String> propertiesEnumeration = tsdb.getPropertyNames();
+				 propertiesEnumeration.hasMoreElements();)
 			{
-				String key = (String) tsdb.getPropertyNames().nextElement();
+				String key = propertiesEnumeration.nextElement();
 				props.setProperty(key, tsdb.getProperty(key));
 			}
-
 			return Response.status(HttpServletResponse.SC_OK).entity(props).build();
 		}
 		catch(SQLException e)
@@ -96,12 +98,16 @@ public class OdcsapiResource extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
-	public Response postTsdbProperties(Properties props)
+	public Response postTsdbProperties(Properties props) throws DbException
 	{
-		TimeSeriesDb tsdb = getLegacyTimeseriesDB();
-		for (String key : props.stringPropertyNames())
+		try
 		{
-			tsdb.setProperty(key, props.getProperty(key));
+			TimeSeriesDb tsdb = getLegacyTimeseriesDB();
+			tsdb.writeTsdbProperties(props);
+		}
+		catch (DbIoException e)
+		{
+			throw new DbException("Error writing timeseries properties", e);
 		}
 		return Response.status(HttpServletResponse.SC_OK).entity(props).build();
 	}
