@@ -717,7 +717,7 @@ public class DbImport
 					for(Iterator<EnumValue> evit = stageOb.iterator(); evit.hasNext(); )
 					{
 						EnumValue ev = evit.next();
-						log.info("    {} - {}", ev.getValue(), ev.getDescription());
+						log.info("  Value  {} - {}", ev.getValue(), ev.getDescription());
 					}
 				}
 				else
@@ -728,6 +728,7 @@ public class DbImport
 						for(Iterator<EnumValue> evit = stageOb.iterator();evit.hasNext();)
 						{
 							EnumValue ev = evit.next();
+							log.info("  DbEnum:AddingOrReplacing  {} - {}", ev.getValue(), ev.getDescription());
 							oldOb.replaceValue(
 								ev.getValue(), ev.getDescription(),
 								ev.getExecClassName(), ev.getEditClassName());

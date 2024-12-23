@@ -50,24 +50,36 @@ can be scary we would like to encourage you to join us anyways.
 
 # Compiling
 
-- Installing Ant and adding to your PATH
-  - Follow the instructions listed [here](https://ant.apache.org/manual/install.html)
-  - Ant version 1.10.12 or higher is required.
-- OpenDCS 7.x targets Java 8. A JDK 8 is recommended for build though 11 and 17 will work, except for the generating the installer.
-- Our runtime target is Java 8, however we will support 11 and 17 at runtime (NOTE: the installer doesn't currently work with 17)
+- OpenDCS is compiled using the gradle wrapper 'gradlew'
+- OpenDCS 7.x targets Java 8. A JDK 8 is recommended for build though 11 and 17 will work
+- Our runtime target is Java 8, however we will support 11 and 17 at runtime
+
+in the following examples replace `./gradlew` with `gradlew` if you are using windows.
+
+To build the file opendcs.jar run the following command:
+
+`./gradlew :opendcs:jar` 
+
+output is here:
+
+java/opendcs/build/libs/opendcs-main.99.main-SNAPSHOT.jar
 
 
-To build the file opendcs.jar run the following:
+If you want to build a distribution run:
 
-`ant jar`
+`./gradlew distZip`
 
-If you want to build the installer run:
+or
 
-`ant opendcs`
+`./gradlew distTar`
+
+output is here:
+
+opendcs/install/build/distributions/opendcs-main.99.main-SNAPSHOT.zip
 
 To get a simple baseline environment going:
 
-`ant run`
+`./gradlew runApp --info`
 
 This will start the "launcher_start" application and do an initial setup of an XML database suitable for DECODES operations
 going that you can use for manual and exploratory testing.
@@ -84,15 +96,15 @@ ant test
 # programmed script the task may return failure.
 
 # Test the GUI (NOTE: leave your hands off the keyboard and mouse or the runner gets confused.)
-ant gui-test -Dno.docs=true
+./gradlew test -Pno.docs=true
 
 # Tests of a "live" system.
-ant integration-test -Dno.docs=true -Dopendcs.test.engine=OpenDCS-XML
+./gradlew testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-XML
 # and if you have docker
-ant integration-test -Dno.docs=true -Dopendcs.test.engine=OpenDCS-Postgres
+./gradlew testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-Postgres
 
 #To test the LRGS
-ant lrgs-test -Dno.docs=true
+gradlew testing:lrgs:test -Pno.docs=true
 ```
 
 This will run all of the various tests and let you know you have everything setup such that you can start development.
@@ -104,7 +116,7 @@ This is a current limitation of the ant build.
 To run a specific test only use:
 
 ```
-ant <test target> -Dtests=<Test class name>
+./gradlew <test target> --tests # See [gradle documentation ](https://docs.gradle.org/current/userguide/java_testing.html#simple_name_pattern) for more detail
 ```
 
 It is possible a file glob will work in the tests parameter above but we have not tested this.
@@ -121,10 +133,16 @@ If you wish to help in this way please created additional targets and required f
 
 To create the appropriate project files for VS Code or Eclipse you can run the following task:
 
-`ant eclipse-ide-files`
+`./gradlew opendcs:eclipse`
+
+Or you can use the VS Code gradle integration.
 
 This will create the appropriate .project and .classpath files for intellisense to behave correctly.
 
 ## Intellij
 
-See https://github.com/opendcs/opendcs/wiki/Coding-OpenDCS-with-IntelliJ for guidance in setting up intellij.
+Intellij detects the gradle project and has a Gradle tool window.
+
+Some gradle tasks require a python environment.  Here is an example that launches inteliJ from a conda environment to have python enabled.
+(base) C:\>conda activate karl
+(karl) C:\project\opendcs>C:\Programs\ideaIC-2022.1.win\bin\idea64.exe

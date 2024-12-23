@@ -5,8 +5,6 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
         properties {
             property "sonar.sources", "src/main/java"
             property "sonar.tests", "src/test/java"
-            property 'sonar.coverage.jacoco.xmlReportPaths', project.layout.buildDirectory.dir("/reports/jacoco/test/jacocoTestReport.xml")
         }
     }
-
 }

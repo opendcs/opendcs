@@ -1492,6 +1492,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
     {
         TimeSeriesIdentifier tsId = this.makeEmptyTsId();
         tsId.setUniqueString(uniqueString);
+        tsId.setStorageUnits(this.getStorageUnitsForDataType(tsId.getDataType()));
         return tsId;
     }
 
