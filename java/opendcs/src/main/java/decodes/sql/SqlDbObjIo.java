@@ -334,7 +334,14 @@ public class SqlDbObjIo
 		if (connection == null)
 		{
 			warning(this.getClass().getName() + " using connection without initializing the DbIo object first!");
-			connection = _dbio.getConnection();
+			try
+			{
+				connection = _dbio.getConnection();
+			}
+			catch (SQLException ex)
+			{
+				throw new RuntimeException("Unable to get connection.", ex);
+			}
 		}
 		return new WrappedConnection(connection, c -> {});
 	}

@@ -66,6 +66,7 @@ package decodes.cwms;
 import ilex.util.AuthException;
 import ilex.util.EnvExpander;
 import ilex.util.Logger;
+import ilex.util.Pair;
 import ilex.util.PropertiesUtil;
 
 import java.io.File;
@@ -82,6 +83,8 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.DatabaseService;
+import org.opendcs.database.api.OpenDcsDatabase;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -93,6 +96,7 @@ import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Database;
+import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
 import decodes.db.EngineeringUnit;
 import decodes.db.Platform;
@@ -109,8 +113,10 @@ import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbCompLock;
+import decodes.util.DecodesSettings;
 import decodes.util.PropertySpec;
 import decodes.util.TSUtil;
 
@@ -241,19 +247,25 @@ public class CwmsConsumer extends DataConsumer
 		// Get the Oracle Data Source & open a connection.
 		try
 		{
-			cwmsTsdb = new CwmsTimeSeriesDb();
-			cwmsTsdb.requireCcpTables = false;
-			cwmsTsdb.setDbUri(cwmsCfg.getDbUri());
+			DecodesSettings settings = DecodesSettings.instance().asCopy();
+			settings.editDatabaseTypeCode = DecodesSettings.DB_CWMS;
+			settings.editDatabaseType = "CWMS";
+			settings.editDatabaseLocation = cwmsCfg.getDbAuthFile();
+			settings.DbAuthFile = cwmsCfg.DbAuthFile;
+			settings.CwmsOfficeId = cwmsCfg.cwmsOfficeId;
+			settings.editTimeZone = cwmsCfg.timeZone;
+			OpenDcsDatabase databases = DatabaseService.getDatabaseFor("decodes", settings, credentials);
+			// We set the settings here to CWMS and know we're getting a CWMS TsDb
+			cwmsTsdb = databases.getLegacyDatabase(CwmsTimeSeriesDb.class).get();
 			
-			DbKey appId = cwmsTsdb.connect("decodes", credentials);
 			Logger.instance().info(module + " Connected to CWMS database at "
 				+ cwmsCfg.getDbUri() + " as user " + credentials.getProperty("username"));
 		}
-		catch (BadConnectException ex)
+		catch (DatabaseException ex)
 		{
 			String msg = module + " " + ex;
 			Logger.instance().fatal(msg);
-			throw new DataConsumerException(msg);
+			throw new DataConsumerException(msg, ex);
 		}
 
 		// Open and load the SHEF to CWMS Param properties file. This file
@@ -286,12 +298,7 @@ public class CwmsConsumer extends DataConsumer
 				loadingAppDAO.close();
 			}
 		}
-
-		if (cwmsTsdb != null)
-		{
-			cwmsTsdb.closeConnection();
-			cwmsTsdb = null;
-		}
+		cwmsTsdb = null;
 	}
 
 	/**
