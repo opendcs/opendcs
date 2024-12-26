@@ -29,13 +29,16 @@ task prepVenv(type: Exec) {
 
 task installReqs(type: Exec) {
     dependsOn prepVenv
-
-    executable venvPath+"/pip"
+    def theArgs = osWin ? ["/c","pip"]
+                        : []
+    def cmd = osWin ? "cmd" : venvPath+"/pip"
+    executable cmd
     workingDir projectDir
+    args += theArgs
     args += "install"
     args += "-r"
     args += "${docsDir}/requirements.txt"
-    environment "PATH", venvPath
+    environment "PATH": "${venvPath}:${System.getenv('PATH')}"
     environment "VENV_PATH", venvPath
 }
 
