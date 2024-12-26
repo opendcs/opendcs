@@ -30,7 +30,7 @@ task prepVenv(type: Exec) {
 task installReqs(type: Exec) {
     dependsOn prepVenv
 
-    executable "pip"
+    executable venvPath+"/pip"
     workingDir projectDir
     args += "install"
     args += "-r"
