@@ -132,7 +132,7 @@ task runApp(type: Exec) {
     }
 
     if (debugPort > 0) {
-        decjOpts += " -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${debugPort} "
+        decjOpts += " -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort} "
     }
 
     if (useJfr && (javaVersion >= 11)) {
