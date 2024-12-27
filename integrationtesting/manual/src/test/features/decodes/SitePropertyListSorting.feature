@@ -3,14 +3,14 @@
 Feature: Property selection in a Site
   
   Background: Basic Setup
-        Given A database with sites available the have more than 1 extra property. Create additional properties on a site if necessary.
+        Given A database with sites is available that have more than one extra property. Create additional properties on a site if necessary.
           And The user is on the Sites tab
 
     Scenario Outline: User sorts properties by <column>
 
         Given The user opens a Site.
           And The user sorts the site properties by <column>
-         When The user select a row and edits the Property
+         When The user selects a row and edits the Property
          Then A dialog with the correct property name and valume are shown.
 
          When The user hovers the mouse over a property

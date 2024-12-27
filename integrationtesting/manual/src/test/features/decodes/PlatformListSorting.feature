@@ -9,7 +9,7 @@ Feature: Platform List Tab
 
         Given The list is sorted by any column
         When The user double clicks a row
-        Then The selected platform is returned
+        Then The selected platform is opened
 
         When The user selects a row and clicked open
         Then The selected platform is opened
@@ -22,11 +22,11 @@ Feature: Platform List Tab
         Then The correct platform is opened
         
         Given The user filters the platform list by <filter>
-        When The user selects a row and clicks open.
+        When The user selects a row and clicks open
         Then The correct platform is opened
 
     Examples:
-        | filter     |
+        |filter     |
         |platform    |
         |Agency      |
         |Transport-ID|

@@ -3,7 +3,8 @@
 Feature: Routing Spec
   
     Background: Basic Setup
-        Given A database with many platforms in available. Routing Spec can exist, or be created.
+        Given A database with many platforms is available. 
+        And A Routing Spec has been opened or created.
 
     Scenario: Adding Individual Platforms to a Routing Spec
         Given The user clicks "Select Platform"

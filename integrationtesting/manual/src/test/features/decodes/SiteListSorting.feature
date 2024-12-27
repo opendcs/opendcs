@@ -10,12 +10,12 @@ Feature: Site List Sorting on the Sites Tab
 
             Given The list is sorted by <column>
 
-            When The user <open method>
+            When The user opens a site with <open method>
 
             Then The correct site is opened
 
         Examples:
-            | open method             | column      |
+            |open method             | column      |
             |Select Row -> Click edit | local       |
             |Double Click Row         | local       |
             |Select Row -> Click edit | description |

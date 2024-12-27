@@ -9,14 +9,14 @@ Feature: Launcher Application
          When The User starts the launcher
          Then The Profile combo box is present with one entry
 
-         When The user clicks Setup
+         When The user clicks the Setup button
          Then The correct properties for the user.properties is rendered.
 
          When The user clicks the button (...) next to the Profile
          Then The Profile manager panel is opened.
 
-         When the user select the default profile, clicks copy, provides a name and closes the window
-         Then the Profile combo contains two entries.
+         When The user select the default profile (in the Profile Manager), clicks copy, provides a name and closes the window
+         Then The Profile combo contains two entries.
 
     Scenario: Launcher with multiple profiles
 
