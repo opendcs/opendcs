@@ -162,6 +162,30 @@ public class EnumXmlDao implements EnumDAI
                                 curEnum.setDescription(event.asCharacters().getData());
                             }
                         }
+                        else if ("ExecClass".equals(elementName))
+                        {
+                            event = reader.nextEvent();
+                            if (curValue != null && event.isCharacters())
+                            {
+                                curValue.setExecClassName(event.asCharacters().getData());
+                            }
+                        }
+                        else if ("EditClass".equals(elementName))
+                        {
+                            event = reader.nextEvent();
+                            if (curValue != null && event.isCharacters())
+                            {
+                                curValue.setEditClassName(event.asCharacters().getData());
+                            }
+                        }
+                        else if ("EnumDefaultValue".equals(elementName))
+                        {
+                            event = reader.nextEvent();
+                            if (curEnum != null && event.isCharacters())
+                            {
+                                curEnum.setDefault(event.asCharacters().getData());
+                            }
+                        }
                     }
                     else if (event.isEndElement())
                     {
@@ -227,33 +251,60 @@ public class EnumXmlDao implements EnumDAI
             /**
              * NOTE: at this time we're intentionally not worrying about the need to read this list back first.
              */
+            Collection<DbEnum> existing = getEnums(tx);
+            for (DbEnum curEnum: existing)
+            {
+                if (curEnum.enumName.equalsIgnoreCase(dbEnum.enumName))
+                {
+                    existing.remove(curEnum);
+                    break; // we've invalidated the collection for this iteration.
+                }
+            }
+            existing.add(dbEnum);
             File xmlFile = new File(conn.getDirectory(), "enum/EnumList.xml");
             try (OutputStream outStream = new FileOutputStream(xmlFile))
             {
                 XMLStreamWriter writer = f.createXMLStreamWriter(outStream);
                 writer.writeStartDocument("UTF-8", "1.0");
                 writer.writeStartElement("EnumList");
-                    writer.writeStartElement("Enum");
-                        writer.writeAttribute("Name", dbEnum.enumName);
-                        writer.writeStartElement("Description");
-                            writer.writeCharacters(dbEnum.getDescription());
+                    for (DbEnum curDbEnum: existing)
+                    {
+                        writer.writeStartElement("Enum");
+                            writer.writeAttribute("Name", curDbEnum.enumName);
+                            if (curDbEnum.getDefault() != null)
+                            {
+                                writer.writeStartElement("EnumDefaultValue");
+                                writer.writeCharacters(curDbEnum.getDefault());
+                                writer.writeEndElement();
+                            }
+                            Iterator<EnumValue> it = curDbEnum.iterator();
+                            while(it.hasNext())
+                            {
+                                EnumValue curVal = it.next();
+                                writer.writeStartElement("EnumValue");
+                                    writer.writeAttribute("EnumValue", curVal.getValue());
+                                    writer.writeStartElement("Description");
+                                    writer.writeCharacters(curVal.getDescription());
+                                    writer.writeEndElement();
+                                    writer.writeStartElement("SortNumber");
+                                        writer.writeCharacters(""+curVal.getSortNumber());
+                                    writer.writeEndElement();
+                                    if (curVal.getExecClassName() != null)
+                                    {
+                                        writer.writeStartElement("ExecClass");
+                                        writer.writeCharacters(curVal.getExecClassName());
+                                        writer.writeEndElement();
+                                    }
+                                    if (curVal.getEditClassName() != null)
+                                    {
+                                        writer.writeStartElement("EditClass");
+                                        writer.writeCharacters(curVal.getEditClassName());
+                                        writer.writeEndElement();
+                                    }
+                                writer.writeEndElement();
+                            }
                         writer.writeEndElement();
-                        Iterator<EnumValue> it = dbEnum.iterator();
-                        while(it.hasNext())
-                        {
-                            EnumValue curVal = it.next();
-                            writer.writeStartElement("EnumValue");
-                                writer.writeAttribute("EnumValue", curVal.getValue());
-                                writer.writeStartElement("Description");
-                                writer.writeCharacters(curVal.getDescription());
-                                writer.writeEndElement();
-                                writer.writeStartElement("SortNumber");
-                                    writer.writeCharacters(""+curVal.getSortNumber());
-                                writer.writeEndElement();
-                            
-                            writer.writeEndElement();
-                        }
-                    writer.writeEndElement();
+                    }
                 writer.writeEndElement();
                 writer.writeEndDocument();
                 return dbEnum;
