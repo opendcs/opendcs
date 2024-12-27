@@ -748,6 +748,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(CwmsTimeSeriesDb.class);
 
 	private final String dbOfficeId;
+	private final DbKey dbOfficeCode;
 
 	private String[] currentlyUsedVersions = { "" };
 	GregorianCalendar saveTsCal = new GregorianCalendar(
@@ -762,9 +763,6 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 	private BaseParam baseParam = new BaseParam();
 	private PreparedStatement getMinStmt = null, getTaskListStmt;
 	String getMinStmtQuery = null, getTaskListStmtQuery = null;
-	
-	/** Set after first connect, reused by getConnection() called from DAOs */
-	private CwmsConnectionInfo conInfo = null;
 
 	/**
 	 * Constructs a CwmsTimeSeriesDb object with the specified parameters.
@@ -780,6 +778,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 
 		Site.explicitList = true;
 		this.dbOfficeId = settings.CwmsOfficeId;
+
 		// CWMS uses ts_code as a unique identifier of a time-series
 		// Internally our SDI (site datatype id) is equivalent to CWMS ts_code
 		sdiIsUnique = true;
@@ -787,7 +786,17 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 		curTimeName = "sysdate";
 		maxCompRetryTimeFrmt = "%d*1/24";
 		module = "CwmsTimeSeriesDb";
-		
+		try (Connection conn = this.getConnection();
+			 DaoHelper dao = new DaoHelper(this, appName, conn);
+		)
+		{
+			this.dbOfficeCode = dao.getSingleResult("select office_code from cwms_v_office where office_id = ?", rs -> DbKey.createDbKey(rs, 1), dbOfficeId);
+			baseParam.load(this);
+		}
+		catch (DbIoException | SQLException ex)
+		{
+			throw new DatabaseException("Failed to load base parameters", ex);
+		}
 	}
 
 	public static Connection getDbConnection(final CwmsConnectionInfo info) throws BadConnectException
@@ -1383,7 +1392,7 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 
 	public DbKey getDbOfficeCode()
 	{
-		return conInfo.getDbOfficeCode();
+		return dbOfficeCode;
 	}
 
 	public BaseParam getBaseParam()
