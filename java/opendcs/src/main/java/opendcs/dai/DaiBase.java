@@ -4,27 +4,61 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
+
 import decodes.tsdb.DbIoException;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DaoHelper;
 import opendcs.util.functional.DaoConsumer;
 
-public interface DaiBase
-	extends AutoCloseable
+public interface DaiBase extends AutoCloseable
 {
-	public ResultSet doQuery(String q)
-		throws DbIoException;
+    /**
+     * 
+     * @param q
+     * @return
+     * @throws DbIoException
+     * @deprecated This function should not be as is don't not handled the user of bind variables
+     */
+    @Deprecated
+	public ResultSet doQuery(String q) throws DbIoException;
 	
-	public ResultSet doQuery2(String q) 
-		throws DbIoException;
+    /**
+     * 
+     * @param q
+     * @return
+     * @throws DbIoException
+     * @deprecated This function should not be as is don't not handled the user of bind variables
+     */
+    @Deprecated
+	public ResultSet doQuery2(String q) throws DbIoException;
 
-	public int doModify(String q)
-		throws DbIoException;
+    /**
+     * 
+     * @param q
+     * @return
+     * @throws DbIoException
+     * @deprecated This function should not be as is don't not handled the user of bind variables
+     */
+    @Deprecated
+	public int doModify(String q) throws DbIoException;
 
 	public void close();
 	
 	public void setManualConnection(Connection conn);
 
+    /**
+     * This method should never be called from outside the DAO instance.
+     *
+     * @deprecated This function exists to support migration to a stateless model. Once
+     *             all usages of the DAOs pass in the transaction this will be removed.
+     */
+    @Deprecated
+    default DataTransaction getTransaction() throws OpenDcsDataException
+    {
+        return null;
+    }
 
 	/**
      * When used within the transaction block of another Dao allow this to assume the same connection.
