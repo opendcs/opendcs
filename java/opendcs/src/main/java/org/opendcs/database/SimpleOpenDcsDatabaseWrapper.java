@@ -67,35 +67,11 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         DaoWrapper<?> wrapper =
             daoMap.computeIfAbsent(dao, daoDesired ->
             {
-                DatabaseIO dbIo = this.decodesDb.getDbIo();
-                Optional<Method> daoMakeMethod = findDaoMaker(dbIo.getClass(), dao);
-                if (daoMakeMethod.isPresent())
-                {
-                    final Method m = daoMakeMethod.get();
-                    return new DaoWrapper<>(() ->
-                    {
-                        try
-                        {
-                            T ret = (T)m.invoke(this.decodesDb.getDbIo());
-                            if (ret == null)
-                            {
-                                log.atError().log("retrieval of DAO returned null instead of the expected DAO." + this.decodesDb.getDbIo() + " " + m.toGenericString());
-                            }
-                            return ret;
-                        }
-                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
-                        {
-                            log.atError()
-                               .setCause(ex)
-                               .log("Unable to retrieve DAO we should be able to get.");
-                            return null;
-                        }
-                    });
-                }
+                Optional<Method> daoMakeMethod;
                 if (timeSeriesDb != null)
                 {
                     daoMakeMethod = findDaoMaker(timeSeriesDb.getClass(), dao);
-                    if (!daoMakeMethod.isPresent())
+                    if (daoMakeMethod.isPresent())
                     {
                         final Method m = daoMakeMethod.get();
                         return new DaoWrapper<>(() ->
@@ -119,7 +95,31 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
                         });
                     }
                 }
-
+                DatabaseIO dbIo = this.decodesDb.getDbIo();
+                daoMakeMethod = findDaoMaker(dbIo.getClass(), dao);
+                if (daoMakeMethod.isPresent())
+                {
+                    final Method m = daoMakeMethod.get();
+                    return new DaoWrapper<>(() ->
+                    {
+                        try
+                        {
+                            T ret = (T)m.invoke(this.decodesDb.getDbIo());
+                            if (ret == null)
+                            {
+                                log.atError().log("retrieval of DAO returned null instead of the expected DAO." + this.decodesDb.getDbIo() + " " + m.toGenericString());
+                            }
+                            return ret;
+                        }
+                        catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex)
+                        {
+                            log.atError()
+                               .setCause(ex)
+                               .log("Unable to retrieve DAO we should be able to get.");
+                            return null;
+                        }
+                    });
+                }
                 return new DaoWrapper<>(() -> null);
             });
         return Optional.ofNullable((T)wrapper.create());
