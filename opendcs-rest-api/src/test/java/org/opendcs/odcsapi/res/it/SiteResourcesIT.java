@@ -1,14 +1,13 @@
 package org.opendcs.odcsapi.res.it;
 
-import java.sql.Date;
-import java.time.Instant;
-import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
@@ -20,10 +19,13 @@ import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@Tag("integration")
+@Tag("integration-opentsdb-only")
 @ExtendWith(DatabaseContextProvider.class)
 final class SiteResourcesIT extends BaseIT
 {
@@ -39,25 +41,7 @@ final class SiteResourcesIT extends BaseIT
 		setUpCreds();
 		authenticate(sessionFilter);
 
-		ApiSite site = new ApiSite();
-		site.setPublicName("Pump Site");
-		site.setElevUnits("m");
-		site.setCountry("US");
-		site.setLatitude("0.0");
-		site.setLocationtype("PUMP");
-		site.setLongitude("0.0");
-		site.setActive(true);
-		site.setDescription("Pump located in NM, USA");
-		site.setElevation(56.3);
-		site.setLastModified(Date.from(Instant.parse("2021-01-01T15:45:10Z")));
-		site.setNearestCity("Albuquerque");
-		site.setState("NM");
-		site.setTimezone("UTC");
-		HashMap<String, String> siteNames = new HashMap<>();
-		siteNames.put("PUMP", "Pump Site");
-		site.setSitenames(siteNames);
-
-		String siteJson = OBJECT_MAPPER.writeValueAsString(site);
+		String siteJson = getJsonFromResource("site_setup_dto.json");
 
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
@@ -105,6 +89,8 @@ final class SiteResourcesIT extends BaseIT
 	@TestTemplate
 	void testGetSiteRefs()
 	{
+		JsonPath expected = getJsonPathFromResource("site_get_refs_expected.json");
+
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -120,12 +106,17 @@ final class SiteResourcesIT extends BaseIT
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_OK))
 			.body("size()", greaterThan(0))
+			.body("sitenames", equalTo(expected.get("sitenames")))
+			.body("public-name", equalTo(expected.get("public-name")))
+			.body("description", equalTo(expected.get("description")))
 		;
 	}
 
 	@TestTemplate
 	void testGetSite()
 	{
+		JsonPath expected = getJsonPathFromResource("site_get_expected.json");
+
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -140,31 +131,34 @@ final class SiteResourcesIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_OK))
+			.body("sitenames", equalTo(expected.get("sitenames")))
+			.body("publicName", equalTo(expected.get("publicName")))
+			.body("description", equalTo(expected.get("description")))
+			.body("country", equalTo(expected.get("country")))
+			.body("elevation", equalTo(expected.get("elevation")))
+			.body("elevUnits", equalTo(expected.get("elevUnits")))
+			.body("latitude", equalTo(expected.get("latitude")))
+			.body("longitude", equalTo(expected.get("longitude")))
+			.body("state", equalTo(expected.get("state")))
+			.body("properties.pumpType", equalTo(expected.get("properties.pumpType")))
+			.body("properties.pumpSize", equalTo(expected.get("properties.pumpSize")))
+			.body("properties.pumpModel", equalTo(expected.get("properties.pumpModel")))
+			.body("properties.pumpSerial", equalTo(expected.get("properties.pumpSerial")))
+			.body("properties.pumpManufacturer", equalTo(expected.get("properties.pumpManufacturer")))
+			.body("properties.pumpInstallDate", equalTo(expected.get("properties.pumpInstallDate").toString()))
+			.body("properties.pumpLastMaintDate", equalTo(expected.get("properties.pumpLastMaintDate").toString()))
+			.body("properties.pumpMaintInterval", equalTo(expected.get("properties.pumpMaintInterval").toString()))
+			.body("properties.pumpMaintNotes", equalTo(expected.get("properties.pumpMaintNotes")))
+			.body("properties.pumpMaintIntervalUnits", equalTo(expected.get("properties.pumpMaintIntervalUnits")))
+			.body("active", equalTo(expected.get("active")))
 		;
 	}
 
 	@TestTemplate
 	void testPostAndDeleteSite() throws Exception
 	{
-		ApiSite site = new ApiSite();
-		site.setPublicName("Pool Site");
-		site.setElevUnits("m");
-		site.setCountry("US");
-		site.setLatitude("38.56");
-		site.setLongitude("-121.72");
-		site.setLocationtype("LOCK");
-		site.setActive(true);
-		site.setDescription("LOCK Site");
-		site.setElevation(56.3);
-		site.setLastModified(Date.from(Instant.parse("2021-02-01T15:45:10Z")));
-		site.setNearestCity("Davis");
-		site.setTimezone("UTC");
-		site.setState("CA");
-		HashMap<String, String> siteNames = new HashMap<>();
-		siteNames.put("en", "Test Lock");
-		site.setSitenames(siteNames);
-		site.setSiteId(18817L);
-
+		ApiSite site = getDtoFromResource("site_post_delete_dto.json", ApiSite.class);
+		assertNotNull(site);
 		String siteJson = OBJECT_MAPPER.writeValueAsString(site);
 
 		ExtractableResponse<Response> response = given()
@@ -187,6 +181,10 @@ final class SiteResourcesIT extends BaseIT
 
 		Long id = response.body().jsonPath().getLong("siteId");
 
+		ApiSite returnedSite = OBJECT_MAPPER.readValue(siteJson, ApiSite.class);
+
+		assertSiteMatch(site, returnedSite);
+
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -203,5 +201,29 @@ final class SiteResourcesIT extends BaseIT
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_OK))
 		;
+	}
+
+	private void assertSiteMatch(ApiSite expected, ApiSite actual)
+	{
+		// Do not compare the siteId, since it is generated by the db
+		assertEquals(expected.getCountry(), actual.getCountry());
+		assertEquals(expected.getDescription(), actual.getDescription());
+		assertEquals(expected.getElevation(), actual.getElevation());
+		assertEquals(expected.getLatitude(), actual.getLatitude());
+		assertEquals(expected.getLongitude(), actual.getLongitude());
+		assertEquals(expected.getState(), actual.getState());
+		assertEquals(expected.getLastModified(), actual.getLastModified());
+		assertEquals(expected.getPublicName(), actual.getPublicName());
+		assertEquals(expected.getProperties(), actual.getProperties());
+		assertEquals(expected.getElevUnits(), actual.getElevUnits());
+		assertEquals(expected.getRegion(), actual.getRegion());
+		assertEquals(expected.getTimezone(), actual.getTimezone());
+		assertEquals(expected.isActive(), actual.isActive());
+		assertEquals(expected.getLocationType(), actual.getLocationType());
+		assertEquals(expected.getNearestCity(), actual.getNearestCity());
+		for (Map.Entry<Object, Object> entry : expected.getProperties().entrySet())
+		{
+			assertEquals(entry.getValue(), actual.getProperties().get(entry.getKey()));
+		}
 	}
 }

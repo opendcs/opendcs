@@ -1,0 +1,32 @@
+{
+  "siteId" : null,
+  "sitenames" : {
+    "PUMP" : "Pump Site"
+  },
+  "description" : "Pump located in NM, USA",
+  "latitude" : "0.0",
+  "longitude" : "0.0",
+  "elevation" : 56.3,
+  "elevUnits" : "m",
+  "nearestCity" : "Albuquerque",
+  "timezone" : "UTC",
+  "state" : "NM",
+  "country" : "US",
+  "region" : null,
+  "active" : true,
+  "locationType" : "PUMP",
+  "publicName" : "Pump Site",
+  "properties" : {
+    "pumpType" : "Centrifugal",
+    "pumpSize" : "1000 gpm",
+    "pumpModel" : "ABC-123",
+    "pumpSerial" : "123456",
+    "pumpManufacturer" : "PumpCo",
+    "pumpInstallDate" : 1612194310000,
+    "pumpLastMaintDate" : 1612194310000,
+    "pumpMaintInterval" : 365,
+    "pumpMaintIntervalUnits" : "days",
+    "pumpMaintNotes" : "This is a test pump"
+  },
+  "lastModified" : 1609515910000
+}
