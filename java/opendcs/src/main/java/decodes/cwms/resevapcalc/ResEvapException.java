@@ -26,7 +26,7 @@ import decodes.tsdb.DbCompException;
  */
 
 public class ResEvapException extends DbCompException
-    {
+{
 
     /**
      * Constructs a new <code>ResEvapException</code> and copies the
@@ -35,9 +35,9 @@ public class ResEvapException extends DbCompException
      * @param e a <code>java.lang.Exception</code>.
      */
     public ResEvapException(Exception e)
-        {
+    {
         super(e.toString());
-        }
+    }
 
     /**
      * Constructs an <code>ResEvapException</code> with the specified
@@ -46,13 +46,13 @@ public class ResEvapException extends DbCompException
      * @param message the detail message.
      */
     public ResEvapException(String message)
-        {
+    {
         super(message);
-        }
+    }
 
     public ResEvapException(String message, Throwable cause)
-        {
+    {
         super(message, cause);
-        }
-
     }
+
+}

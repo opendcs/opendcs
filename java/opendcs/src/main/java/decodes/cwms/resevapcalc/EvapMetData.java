@@ -25,7 +25,7 @@ import java.util.Date;
  * EvapMetData holds meteorological time series data, such as wind-speed, air-temperature.
  */
 final public class EvapMetData
-    {
+{
     // input met data timeseries
     private CTimeSeries windspeedTsc;
     private CTimeSeries airTempTsc;
@@ -53,29 +53,29 @@ final public class EvapMetData
     double airPressureCurrent = Constants.undefinedDouble;
 
     public double getWindSpeed(Date time) throws ResEvapException
-        {
+    {
         return getMetValue(windspeedTsc, time);
-        }
+    }
 
     public double getAirTemp(Date time) throws ResEvapException
-        {
+    {
         return getMetValue(airTempTsc, time);
-        }
+    }
 
     public double getRelHumidity(Date time) throws ResEvapException
-        {
+    {
         return getMetValue(relHumidityTsc, time);
-        }
+    }
 
     public double getDewPoint(Date time) throws ResEvapException
-        {
+    {
         return getMetValue(dewPointTsc, time);
-        }
+    }
 
     public double getAirPressure(Date time) throws ResEvapException
-        {
+    {
         return getMetValue(airPressureTsc, time);
-        }
+    }
 
     /**
      * Get CloudCover array for current time
@@ -87,7 +87,7 @@ final public class EvapMetData
      * @return
      */
     public CloudCover[] getCloudCover(Date time) throws ResEvapException
-        {
+    {
         CloudCover[] cloudCover = new CloudCover[3];
         double fractionCC = getMetValue(fractionLowClouds, time);
         double altitude = getMetValue(altitudeLowClouds, time);
@@ -108,58 +108,58 @@ final public class EvapMetData
                 altitude, CloudCover.CloudHeightType.HEIGHT_HIGH);
 
         return cloudCover;
-        }
+    }
 
     private double getMetValue(CTimeSeries tsc, Date time) throws ResEvapException
-        {
+    {
         int idx = tsc.findNextIdx(time);
         double value;
         try
-            {
+        {
             value = tsc.sampleAt(idx).getDoubleValue();
-            } catch (NoConversionException ex)
-            {
-            throw new ResEvapException("failed to load met value from timeseries "+tsc.getNameString()+ " at "+ time, ex);
-            }
-        return value;
+        } catch (NoConversionException ex)
+        {
+            throw new ResEvapException("failed to load met value from timeseries " + tsc.getNameString() + " at " + time, ex);
         }
+        return value;
+    }
 
     public void setAirTempTs(CTimeSeries tsc)
-        {
+    {
         airTempTsc = tsc;
-        }
+    }
 
     public void setAirPressureTs(CTimeSeries tsc)
-        {
+    {
         airPressureTsc = tsc;
-        }
+    }
 
     public void setRelHumidityTs(CTimeSeries tsc)
-        {
+    {
         relHumidityTsc = tsc;
-        }
+    }
 
     public void setWindSpeedTs(CTimeSeries tsc)
-        {
+    {
         windspeedTsc = tsc;
-        }
+    }
 
     public void setHighCloudTs(CTimeSeries tscFrac, CTimeSeries tscHeight)
-        {
+    {
         fractionHighClouds = tscFrac;
         altitudeHighClouds = tscHeight;
-        }
+    }
 
     public void setMedCloudTs(CTimeSeries tscFrac, CTimeSeries tscHeight)
-        {
+    {
         fractionMedClouds = tscFrac;
         altitudeMedClouds = tscHeight;
-        }
+    }
 
     public void setLowCloudTs(CTimeSeries tscFrac, CTimeSeries tscHeight)
-        {
+    {
         fractionLowClouds = tscFrac;
         altitudeLowClouds = tscHeight;
-        }
-
     }
+
+}

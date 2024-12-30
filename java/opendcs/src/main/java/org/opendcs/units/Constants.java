@@ -1,8 +1,9 @@
 package org.opendcs.units;
 
-final public class Constants {
+final public class Constants
+{
 
-    public static final double PI  = 3.141592654;
+    public static final double PI = 3.141592654;
 
     /*  K is the von Karman constant. */
     public static final double CONST_K = 0.4;
@@ -17,7 +18,7 @@ final public class Constants {
 
     public static final double FT_TO_M = 0.3048;
 
-   /* TK is 0 degrees C in kelvins.*/
+    /* TK is 0 degrees C in kelvins.*/
     public static final double tK = 273.15;
 
     /* MW is the molecular weight of water in kg/mole.*/
@@ -31,9 +32,9 @@ final public class Constants {
 
     // Private constructor to prevent instantiation
     private Constants()
-        {
+    {
         throw new AssertionError("Constants class cannot be instantiated.");
-        }
+    }
 
 
 }

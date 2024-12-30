@@ -26,7 +26,7 @@ import org.opendcs.units.Constants;
  * fluxes.
  */
 final public class EvapWater
-    {
+{
     //these variables have package access
     double evap;
     double hs;
@@ -64,7 +64,7 @@ final public class EvapWater
                            double airTemp, double relHumidity,
                            double windspeed, double airPressure,
                            double rt, double ru, double rq)
-        {
+    {
         // S is salinity of the surface water
         // IFLAG means to compute vapor variables for water saturation.
         // R10 is the standard reference height, 10 m.
@@ -109,18 +109,18 @@ final public class EvapWater
         // check for missing data.
         if (ur < err_lim || tr < err_lim || rh < err_lim
                 || p < err_lim)
-            {
+        {
             return;
-            }
+        }
 
         // Compute potential temperature.
         thetar = tr + (Constants.CONST_G / EvapUtilities.computeSpecHeatAir(tr) * rt);
 
         // Do not want subfreezing surface temperature in a model that assumes open water
         if (ts < 0.0)
-            {
+        {
             ts = 0.0;
-            }
+        }
 
         //   Compute necessary meteorological variables.
 
@@ -202,7 +202,7 @@ final public class EvapWater
         // **** loop to continue iterations.  ****************************
         int maxiter = 20;
         for (its = 2; its <= maxiter; its++)
-            {
+        {
 
             // save previous values for comparison.
             ustar_old = ustar;
@@ -252,28 +252,28 @@ final public class EvapWater
 
             // avoid dividing by zero
             if (tstar != 0.)
-                {
+            {
                 testt = Math.abs((tstar - tstar_old) / tstar);
-                } else
-                {
+            } else
+            {
                 testt = Math.abs(tstar - tstar_old);
-                }
+            }
 
             // avoid dividing by zero
             if (qstar != 0.)
-                {
+            {
                 testq = Math.abs((qstar - qstar_old) / qstar);
-                } else
-                {
+            } else
+            {
                 testq = Math.abs(qstar - qstar_old);
-                }
+            }
 
             // quit if all parameters converged.
             if (testu < conv && testt < conv && testq < conv)
-                {
+            {
                 break;
-                }
             }
+        }
         // **** end iteration loop  ****************************
 
         // compute the fluxes.
@@ -300,5 +300,5 @@ final public class EvapWater
         this.rstar = rstar;
         obukhovLen = l;
 
-        }
     }
+}

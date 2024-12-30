@@ -28,7 +28,7 @@ import static java.util.Arrays.fill;
  * Class used to compute reservoir temperature profile
  */
 final public class ResWaterTemperatureCompute
-    {
+{
     BufferedWriter tout = null;
 
     // reservoir layers, segments.
@@ -51,7 +51,7 @@ final public class ResWaterTemperatureCompute
     private double[] gam = new double[NMAX];
 
     public ResWaterTemperatureCompute(EvapReservoir reservoir)
-        {
+    {
         this.reservoir = reservoir;
 
         // dimension working arrays
@@ -64,7 +64,7 @@ final public class ResWaterTemperatureCompute
         cpOrig = new double[EvapReservoir.NLAYERS];
         wtTmp = new double[EvapReservoir.NLAYERS];
         peMixOut = new double[EvapReservoir.NLAYERS];
-        }
+    }
 
     /**
      * set output writer for diagnostic text output for reservoir
@@ -73,9 +73,9 @@ final public class ResWaterTemperatureCompute
      * @param tout
      */
     public void setOutfile(BufferedWriter tout)
-        {
+    {
         this.tout = tout;
-        }
+    }
 
     /**
      * Compute the updated reservoir temperature profile
@@ -89,7 +89,7 @@ final public class ResWaterTemperatureCompute
     public boolean computeReservoirTemp(Date currentTime,
                                         MetComputation metComputation,
                                         double delT)
-        {
+    {
         double avgRhow, totalVol, sFreq, kzx, surfAreaX;
         double fi, fiCheck, sumEnergyIn, smlDelz, sumEnergyDiff;
         double sumEnergyMix, delRhow, origWt1, origWt2;
@@ -167,33 +167,33 @@ final public class ResWaterTemperatureCompute
 
         // Reset water temperatures if wsel has changed enough to increase the number of layers
         if (resj != resjOld)
-            {
+        {
             for (int j = 0; j < resjOld; j++)
-                {
+            {
                 wtTmp[j] = wt[j];
-                }
+            }
 
             int i = resj;
             int j = resjOld;
 
             while (i >= 0 && j >= 0)
-                {
+            {
                 wt[i] = wtTmp[j];
                 i = i - 1;
                 j = j - 1;
-                }
+            }
             if (resj > resjOld)
-                {
+            {
                 for (int k = i; k >= 0; k--)
-                    {
+                {
                     wt[k] = wtTmp[0];
-                    }
                 }
             }
+        }
 
 
         for (int i = 0; i <= resj; i++)
-            {
+        {
             // Prevent supercooling
             if (wt[i] < 0.) wt[i] = 0.;
 
@@ -202,87 +202,87 @@ final public class ResWaterTemperatureCompute
             avgRhow = avgRhow + rhow[i] * zvol[i];
             totalVol = totalVol + zvol[i];
             sumEnergyIn = sumEnergyIn + rhow[i] * cp[i] * zvol[i] * wt[i];
-            }
+        }
 
         avgRhow = avgRhow / totalVol;
 
         // Calculate Stability Frequency and then Diffusion coefficient
 
         for (int i = resj; i >= 1; i--)  //TODO check
-            {
+        {
             if ((rhow[i] - rhow[i - 1]) != 0.)
-                {
+            {
                 sFreq = grav / avgRhow * Math.abs(rhow[i] - rhow[i - 1]) /
                         (zd[i - 1] - zd[i]);
-                } else
-                {
+            } else
+            {
                 sFreq = 0.00007;
-                }
+            }
 
             if (sFreq < 0.00007) sFreq = 0.00007;
 
             surfAreaX = surfArea;
             if (surfArea < 350.)
-                {
+            {
                 surfAreaX = surfArea;
-                } else
-                {
+            } else
+            {
                 surfAreaX = 350.;
-                }
+            }
 
             kzx = .000817 * Math.pow(surfAreaX, 0.56) *
                     Math.pow((Math.abs(sFreq)), (-0.43)); // cm^2/s
             kzx = .0001 * kzx;                                // m^2/s
             kz[i] = thermalDiffusivityCoefficient * kzx * cp[i] * rhow[i]; // j/(s m C) factor to arbitrarly reduce diffusion
-            }
+        }
 
         // Perform diffusion calculation
         // Develop the elements of the tridiagonal equation
 
         for (int i = 0; i <= resj; i++)
-            {
+        {
             // Calculate areas
             if (i == 0)
-                {
+            {
                 au = zarea[i];
                 abar = 0.5 * zarea[i];
                 al = 0.0;
-                } else
-                {
+            } else
+            {
                 au = zarea[i];
                 abar = 0.5 * (zarea[i] + zarea[i - 1]);
                 al = zarea[i - 1];
-                }
+            }
 
             if (i < resj)
-                {
+            {
                 delZu = 0.5 * (delz[i + 1] + delz[i]);
                 dhatZu = (kz[i + 1] / (cp[i + 1] * rhow[i + 1]) * delz[i + 1] +
                         kz[i] / (cp[i] * rhow[i]) * delz[i]) / (delz[i + 1] + delz[i]);
-                } else
-                {
+            } else
+            {
                 dhatZu = 0.;
                 delZu = 1.0;
-                }
+            }
 
             if (i > 0)
-                {
+            {
                 delZl = 0.5 * (delz[i - 1] + delz[i]);
                 dhatZl = (kz[i - 1] / (cp[i - 1] * rhow[i - 1]) * delz[i - 1] +
                         kz[i] / (cp[i] * rhow[i]) * delz[i]) / (delz[i - 1] + delz[i]);
-                } else
-                {
+            } else
+            {
                 dhatZl = 0.;
                 delZl = 1.0;
-                }
+            }
             if (i > 0)
-                {
+            {
                 a[i] = (-1. * delT / delz[i] * dhatZl / delZl * theta *
                         al / abar);
-                } else
-                {
+            } else
+            {
                 a[i] = 0.;
-                }
+            }
 
             b[i] = (1. + delT / delz[i] * dhatZu / delZu * theta *
                     au / abar +
@@ -290,32 +290,32 @@ final public class ResWaterTemperatureCompute
                             al / abar);
 
             if (i < resj)
-                {
+            {
                 c[i] = (-1. * delT / delz[i] * dhatZu / delZu * theta * au / abar);
-                } else
-                {
+            } else
+            {
                 c[i] = 0.;
-                }
+            }
 
             if (i == 0)
-                {
+            {
                 r[i] = wt[i] + delT / delz[i] * au / abar * (dhatZu / delZu *
                         (1. - theta) * (wt[i + 1] - wt[i]));
-                }
+            }
 
             if (i > 0 && i < resj)
-                {
+            {
                 r[i] = wt[i] + delT / delz[i] * au / abar * (dhatZu / delZu *
                         (1. - theta) * (wt[i + 1] - wt[i]) -
                         dhatZl / delZl * al / abar *
                                 (1. - theta) * (wt[i] - wt[i - 1]));
-                }
+            }
             if (i == resj)
-                {
+            {
                 r[i] = wt[i] + delT / delz[i] * al / abar * (dhatZl / delZl *
                         (1. - theta) * (wt[i] - wt[i - 1]));
-                }
             }
+        }
 
         // Estimate internal heat source due to shortwave radiation
 
@@ -323,7 +323,7 @@ final public class ResWaterTemperatureCompute
         solarTot = 0.;
 
         for (int i = resj; i > 1; i--)
-            {
+        {
             bottomDepth = topDepth + delz[i];
 
             fi = SOLAR * penfrac * (1. - albedo) *
@@ -336,7 +336,7 @@ final public class ResWaterTemperatureCompute
             r[i] = r[i] + fi * delT / (cp[i] * rhow[i]);
 
             topDepth = bottomDepth;
-            }
+        }
 
         // Add shortwave, IR, sensible, and latent heat fluxes to top
         fi = (SOLAR * (1. - penfrac) * (1. - albedo) +
@@ -361,7 +361,7 @@ final public class ResWaterTemperatureCompute
         sumEnergyDiff = 0.;
 
         for (int i = resj; i >= 0; i--)  //TODO check
-            {
+        {
             wt[i] = u[i];
             rhow[i] = EvapUtilities.calcDensityH2o(wt[i]);
             rhowOrig[i] = rhow[i];
@@ -371,10 +371,10 @@ final public class ResWaterTemperatureCompute
                     wt[i] * cp[i] * rhow[i] * zvol[i];
 
             if (i > 0)
-                {
+            {
                 tempDepth = tempDepth + .5 * (delz[i] + delz[i - 1]);
-                }
             }
+        }
 
         // Perform mixing due to Potential energy and wind mixing
 
@@ -398,7 +398,7 @@ final public class ResWaterTemperatureCompute
         int iend = 1;
 
         while (i >= 2 && iend == 1)
-            {
+        {
             rhow[i] = EvapUtilities.calcDensityH2o(wt[i]);
             cp[i] = EvapUtilities.calcHeatCapacityH2o(wt[i]);
 
@@ -428,34 +428,34 @@ final public class ResWaterTemperatureCompute
 
             // Density causes mixing
             if (peMix < 0.)
-                {
+            {
                 sml = i - 1;
                 smlDelz = smlDelz + delz[i - 1];
                 smlVol = smlVol + zvol[i - 1];
                 for (int j = i - 1; j <= resj; j++)  //TODO check
-                    {
+                {
                     wt[j] = wtMix;
-                    }
                 }
+            }
 
             //Density profile is stable
             else
-                {
+            {
                 // First time, estimate convective and wind stirring energy available
                 //TKE = 0.;  // java wants this initialized
 
                 if (smlFlag == 1)
-                    {
+                {
                     smlFlag = 0;
                     origPE = 0.;
                     newPE = 0.;
 
                     for (int j = sml; j <= resj; j++)
-                        {
+                    {
                         origPE = origPE + rhowOrig[j] * delz[j] *
                                 (ztop[j] + ztop[i - 1]) / 2.;
                         newPE = newPE + rhowOrig[j] * delz[j];
-                        }
+                    }
 
                     newPE = newPE * (ztop[resj] + ztop[sml - 1]) / 2.;
                     w3 = grav / (rhow[resj] * delT) * (origPE - newPE);
@@ -465,7 +465,7 @@ final public class ResWaterTemperatureCompute
                     // Calculate wind stirring
                     uH2OStar = 0.; //TODO init for msg
                     if (ur > windCritic)
-                        {
+                    {
                         IFLAG = 1;   // saturation over water
                         Salinity = 0.;
 
@@ -473,21 +473,21 @@ final public class ResWaterTemperatureCompute
                                 rhoAdc, rhoVdc, spHumdc, IFLAG);
 
                         if (WindShearMethod.DONELAN.equals(windShearMethod))
-                            {
+                        {
                             uH2OStar = EvapUtilities.computeDonelanUStar(ur, rhoAdc.d, rhow[resj]);
-                            } else
-                            {
-                            uH2OStar = EvapUtilities.computeFischerUStar(ur, rhoAdc.d, rhow[resj]);
-                            }
-                        KEStir = etaStirring * rhow[resj] *
-                                zarea[resj] * Math.pow(uH2OStar, 3.) * delT;
                         } else
                         {
-                        KEStir = 0.;
+                            uH2OStar = EvapUtilities.computeFischerUStar(ur, rhoAdc.d, rhow[resj]);
                         }
+                        KEStir = etaStirring * rhow[resj] *
+                                zarea[resj] * Math.pow(uH2OStar, 3.) * delT;
+                    } else
+                    {
+                        KEStir = 0.;
+                    }
 
                     if (KEStir < 0.0)
-                        {
+                    {
                         //TODO throw execption
                         String msg = "KEStir < 0.0 " +
                                 "\netaStirring =" + etaStirring +
@@ -498,47 +498,47 @@ final public class ResWaterTemperatureCompute
                         Logger.getLogger(ResWaterTemperatureCompute.class.getName()).log(Level.SEVERE, msg);
 
                         return false;
-                        }
+                    }
 
                     TKE = KEStir + KEConv;
-                    }
+                }
 
                 // Mix layers if sufficient energy
 
                 if (TKE >= peMix)
-                    {
+                {
                     sml = i - 1;
                     smlDelz = smlDelz + delz[i - 1];
                     smlVol = smlVol + zvol[i - 1];
                     for (int j = i - 1; j <= resj; j++)
-                        {
+                    {
                         wt[j] = wtMix;
-                        }
+                    }
 
                     TKE = TKE - peMix;
-                    } else
-                    {
+                } else
+                {
                     // End calculations for this time step as not sufficient energy to mix
                     iend = 0;
-                    }
                 }
+            }
 
             // Move downward to next layer
             i = i - 1;
 
 
-            }     // end of while loop
+        }     // end of while loop
 
 
         sumEnergyMix = 0.;
 
         for (i = resj; i >= 0; i--)
-            {
+        {
             rhow[i] = EvapUtilities.calcDensityH2o(wt[i]);
             cp[i] = EvapUtilities.calcHeatCapacityH2o(wt[i]);
             sumEnergyMix = sumEnergyMix +
                     wt[i] * cp[i] * rhow[i] * zvol[i];
-            }
+        }
         wtMix = wt[resj];
 
 
@@ -548,11 +548,11 @@ final public class ResWaterTemperatureCompute
 
 
         return true;
-        }
+    }
 
     private double zcom(int itop, int ibottom,
-                          double xrhow)
-        {
+                        double xrhow)
+    {
         double total, totalpvol, zrhow, zout;
 
         double[] rhow = reservoir.rhow;
@@ -563,36 +563,36 @@ final public class ResWaterTemperatureCompute
         double[] ztop = reservoir.ztop;
 
         for (int j = ibottom; j <= itop; j++)
-            {
+        {
 
             if (xrhow == -1.)
-                {
-                zrhow = rhow[j];
-                } else
-                {
-                zrhow = xrhow;
-                }
-
-            if (j > 0)
-                {
-                total = total + zrhow * zvol[j] *
-                        (ztop[j] + ztop[j - 1]) / 2.;
-                } else
-                {
-                total = total + zrhow * zvol[j] *
-                        (ztop[j] + 0.) / 2.;
-                }
-            totalpvol = totalpvol + zrhow * zvol[j];
-            }
-        if (totalpvol != 0.0)
             {
-            zout = total / totalpvol;
-            return zout;
+                zrhow = rhow[j];
             } else
             {
-            return 0.0;
+                zrhow = xrhow;
             }
+
+            if (j > 0)
+            {
+                total = total + zrhow * zvol[j] *
+                        (ztop[j] + ztop[j - 1]) / 2.;
+            } else
+            {
+                total = total + zrhow * zvol[j] *
+                        (ztop[j] + 0.) / 2.;
+            }
+            totalpvol = totalpvol + zrhow * zvol[j];
         }
+        if (totalpvol != 0.0)
+        {
+            zout = total / totalpvol;
+            return zout;
+        } else
+        {
+            return 0.0;
+        }
+    }
 
     /**
      * Solves for a vector u(1:n) of length n the tridiagonal linear set given by equation (2.4.1).
@@ -601,14 +601,14 @@ final public class ResWaterTemperatureCompute
      */
     private boolean tridag(double[] a, double[] b, double[] c,
                            double[] r, double[] u, int n)
-        {
+    {
         double bet;
         if (b[0] == 0.)
-            {
+        {
             //TODO error message system (throw exception?)
             Logger.getLogger(ResWaterTemperatureCompute.class.getName()).log(Level.SEVERE, "tridag: rewrite equations");
             return false;
-            }
+        }
         // If this happens then you should rewrite your equations as a set of order N - 1, with u2
         // trivially eliminated.
 
@@ -616,25 +616,25 @@ final public class ResWaterTemperatureCompute
         u[0] = r[0] / bet;
 
         for (int j = 1; j < n; j++)    // Decomposition and forward substitution.
-            {
+        {
             gam[j] = c[j - 1] / bet;
             bet = b[j] - a[j] * gam[j];
             if (bet == 0.0)
-                {
+            {
                 //TODO error message system (throw exception?)
                 Logger.getLogger(ResWaterTemperatureCompute.class.getName()).log(Level.SEVERE, " tridag failed");  // !Algorithm fails; see below.
                 return false;
-                }
+            }
             u[j] = (r[j] - a[j] * u[j - 1]) / bet;
-            }
-
-        for (int j = n - 2; j >= 0; j--)    // Backsubstitution.
-            {
-            u[j] = u[j] - gam[j + 1] * u[j + 1];
-            }
-
-        return true;
         }
 
+        for (int j = n - 2; j >= 0; j--)    // Backsubstitution.
+        {
+            u[j] = u[j] - gam[j + 1] * u[j + 1];
+        }
 
+        return true;
     }
+
+
+}

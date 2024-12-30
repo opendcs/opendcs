@@ -20,7 +20,7 @@ package decodes.cwms.resevapcalc;
  * used for the meteorological computations.
  */
 final public class ReservoirLocationInfo
-    {
+{
     // package access to these variables
     public final double latitude;
     public final double longitude;
@@ -32,7 +32,7 @@ final public class ReservoirLocationInfo
     public final double rq; //sensor relHeight
 
     public ReservoirLocationInfo(double latitude, double longitude, double instrumentHeight, double gmtOffset, double ru, double rt, double rq)
-        {
+    {
         this.latitude = latitude;
         this.longitude = longitude;
         this.instrumentHeight = instrumentHeight;
@@ -40,5 +40,5 @@ final public class ReservoirLocationInfo
         this.rt = rt;
         this.ru = ru;
         this.rq = rq;
-        }
     }
+}
