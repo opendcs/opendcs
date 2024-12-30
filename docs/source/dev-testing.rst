@@ -80,7 +80,7 @@ TestsPlans are defined in the build.gradle.
     }
 
 
-In the above `DbEdit` is an ID field with no spaces that can be referenced in a feature file, described next.
+In the above `DbEdit` is an ID field with no spaces that can be referenced in a feature file, described nex
 
 .. WARNING:: 
 
