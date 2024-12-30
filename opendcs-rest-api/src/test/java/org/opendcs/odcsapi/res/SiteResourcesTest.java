@@ -106,7 +106,7 @@ final class SiteResourcesTest
 	void testApiSiteMap()
 	{
 		Site site = siteBuilder("Albuquerque");
-		ApiSite apiSite = SiteResources.map(site);
+		ApiSite apiSite = SiteResources.map(site, site.getProperties());
 
 		assertNotNull(apiSite);
 		assertEquals(site.getDescription(), apiSite.getDescription());

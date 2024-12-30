@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
@@ -42,6 +43,7 @@ import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
+import opendcs.dai.PropertiesDAI;
 import opendcs.dai.SiteDAI;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.beans.ApiSiteRef;
@@ -117,11 +119,15 @@ public class SiteResources extends OpenDcsResource
 					"Missing required siteid parameter.");
 		}
 
-		try (SiteDAI dai = getLegacyTimeseriesDB().makeSiteDAO())
+		try (SiteDAI dai = getLegacyTimeseriesDB().makeSiteDAO();
+			 PropertiesDAI propsDai = getLegacyTimeseriesDB().makePropertiesDAO())
 		{
-			Site returnedSite = dai.getSiteById(DbKey.createDbKey(siteId));
+			DbKey siteKey = DbKey.createDbKey(siteId);
+			Site returnedSite = dai.getSiteById(siteKey);
+			Properties props = new Properties();
+			propsDai.readProperties("SITE_PROPERTY", "SITE_ID", siteKey, props);
 			return Response.status(HttpServletResponse.SC_OK)
-					.entity(map(returnedSite)).build();
+					.entity(map(returnedSite, props)).build();
 		}
 		catch (NoSuchObjectException e)
 		{
@@ -134,7 +140,7 @@ public class SiteResources extends OpenDcsResource
 		}
 	}
 
-	static ApiSite map(Site site)
+	static ApiSite map(Site site, Properties properties)
 	{
 		ApiSite returnSite = new ApiSite();
 		if (site.getId() != null)
@@ -153,6 +159,7 @@ public class SiteResources extends OpenDcsResource
 		returnSite.setLastModified(site.getLastModifyTime());
 		returnSite.setCountry(site.country);
 		returnSite.setState(site.state);
+		returnSite.setProperties(properties);
 		returnSite.setNearestCity(site.nearestCity);
 		returnSite.setLatitude(site.latitude);
 		returnSite.setLongitude(site.longitude);
@@ -177,7 +184,8 @@ public class SiteResources extends OpenDcsResource
 	public Response postSite(ApiSite site)
 			throws DbException, WebAppException
 	{
-		try (SiteDAI dai = getLegacyTimeseriesDB().makeSiteDAO())
+		try (SiteDAI dai = getLegacyTimeseriesDB().makeSiteDAO();
+			 PropertiesDAI propsDai = getLegacyTimeseriesDB().makePropertiesDAO())
 		{
 			if (site == null)
 			{
@@ -185,7 +193,9 @@ public class SiteResources extends OpenDcsResource
 			}
 			Site dbSite = map(site);
 			dai.writeSite(dbSite);
-			site.setSiteId(dbSite.getId().getValue());
+			DbKey siteKey = dbSite.getId();
+			propsDai.writeProperties("SITE_PROPERTY", "SITE_ID", siteKey, site.getProperties());
+			site.setSiteId(siteKey.getValue());
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(site).build();
 		}
