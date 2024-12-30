@@ -80,11 +80,11 @@ TestsPlans are defined in the build.gradle.
     }
 
 
-In the above `DbEdit` is an ID field with no spaces that can be referenced in a feature file, described nex
+In the above `DbEdit` is an ID field with no spaces that can be referenced in a feature file, described next
 
 .. WARNING:: 
 
-    As the was written it was noticed that the opening section of this configuration block is "kiwi"
+    As this was written it was noticed that the opening section of this configuration block is "kiwi"
     This should be something generic like "tcms" and will be changed in a future release of the plugin.
 
 
