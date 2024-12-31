@@ -59,6 +59,8 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 
+import org.slf4j.LoggerFactory;
+
 import decodes.gui.GuiDialog;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -677,8 +679,9 @@ class TsGroupsSelectColumnizer
 	}
 }
 
-class TsGroupsColumnComparator implements Comparator
+class TsGroupsColumnComparator implements Comparator<TsGroup>
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(TsGroupsColumnComparator.class);
 	int col;
 
 	TsGroupsColumnComparator(int col)
@@ -686,26 +689,29 @@ class TsGroupsColumnComparator implements Comparator
 		this.col = col;
 	}
 
-	public int compare(Object tsG1, Object tsG2)
+	public int compare(TsGroup tsG1, TsGroup tsG2)
 	{
 		if (tsG1 == tsG2)
+		{
 			return 0;
-		TsGroup g1 = (TsGroup) tsG1;
-		TsGroup g2 = (TsGroup) tsG2;
-		if (col == 0)// sort integers assendingly
+		}
+		
+		if (col == 0)// sort Longs ascending
 		{
 			try
 			{
-				int i1 = Integer.parseInt(TsGroupsSelectColumnizer.getColumn(
-						g1, col).trim());
-				int i2 = Integer.parseInt(TsGroupsSelectColumnizer.getColumn(
-						g2, col).trim());
-				return i1 - i2;
-			} catch (Exception ex)
+				long i1 = Long.parseLong(TsGroupsSelectColumnizer.getColumn(tsG1, col).trim());
+				long i2 = Long.parseLong(TsGroupsSelectColumnizer.getColumn(tsG2, col).trim());
+				return Long.compare(i1, i2);
+			}
+			catch (Exception ex)
 			{
+				log.atError().setCause(ex).log("Error parsing column value as long.");
 			}
 		}
-		return TsGroupsSelectColumnizer.getColumn(g1, col).compareToIgnoreCase(
-				TsGroupsSelectColumnizer.getColumn(g2, col));
+		return TsGroupsSelectColumnizer.getColumn(tsG1, col)
+									   .compareToIgnoreCase(
+										  TsGroupsSelectColumnizer.getColumn(tsG2, col)
+									   );
 	}
 }

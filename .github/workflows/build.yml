@@ -83,9 +83,9 @@ jobs:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
-      - name: Analyze
+      - name: Upload Coverage
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonar --info -Dorg.gradle.jvmargs=-Xmx4096M
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: coverage
+          path: ./**/build/**/jacoco*.xml
