@@ -18,6 +18,7 @@ package org.opendcs.odcsapi.res;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -94,7 +95,7 @@ public class SiteResources extends OpenDcsResource
 			}
 			siteRef.setPublicName(site.getPublicName());
 			siteRef.setDescription(site.getDescription());
-			HashMap<String, String> siteNames = new HashMap<>();
+			HashMap<String, String> siteNames = new LinkedHashMap<>();
 			for(Iterator<SiteName> iter = site.getNames(); iter.hasNext(); )
 			{
 				final SiteName sn = iter.next();
