@@ -117,7 +117,8 @@ final public class EvapMetData
         try
         {
             value = tsc.sampleAt(idx).getDoubleValue();
-        } catch (NoConversionException ex)
+        }
+        catch (NoConversionException ex)
         {
             throw new ResEvapException("failed to load met value from timeseries " + tsc.getNameString() + " at " + time, ex);
         }

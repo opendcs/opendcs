@@ -24,7 +24,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Connection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 
 /**
@@ -189,9 +191,10 @@ final public class ResEvap
             {
                 tout = new BufferedWriter(new FileWriter(toutfil));
                 resWtCompute.setOutfile(tout);
-            } catch (IOException ex)
+            }
+            catch (IOException ex)
             {
-                LOGGER.info("Unable to read {}", toutfil.getAbsolutePath(), ex);
+                LOGGER.atInfo().setCause(ex).log("Unable to read {}", toutfil.getAbsolutePath());
             }
         }
 
@@ -203,9 +206,10 @@ final public class ResEvap
             {
                 xout = new BufferedWriter(new FileWriter(xoutfil));
                 reservoir.setDebugFile(xout);
-            } catch (IOException ex)
+            }
+            catch (IOException ex)
             {
-                LOGGER.info("Unable to read {}", xoutfil.getAbsolutePath(), ex);
+                LOGGER.atInfo().setCause(ex).log("Unable to read {}", xoutfil.getAbsolutePath());
             }
         }
 
@@ -216,9 +220,10 @@ final public class ResEvap
             try
             {
                 out = new BufferedWriter(new FileWriter(outfil));
-            } catch (IOException ex)
+            }
+            catch (IOException ex)
             {
-                LOGGER.info("Unable to read {}", outfil.getAbsolutePath(), ex);
+                LOGGER.atInfo().setCause(ex).log("Unable to read {}", outfil.getAbsolutePath());
             }
         }
 
@@ -242,9 +247,10 @@ final public class ResEvap
                     metout.write(heading);
                     metout.newLine();
                 }
-            } catch (IOException ex)
+            }
+            catch (IOException ex)
             {
-                LOGGER.info("Unable to read {}", metoutfil.getAbsolutePath(), ex);
+                LOGGER.atInfo().setCause(ex).log("Unable to read {}", metoutfil.getAbsolutePath());
             }
         }
 
@@ -271,6 +277,8 @@ final public class ResEvap
             boolean useElevTS = false;  //TODO make an option
             double wselCurrent = reservoir.getElevation();
 
+            //TODO this seems like a necessary feature to be added in the future.
+            // elevation never updated per timestep
 //            if ( useElevTS )
 //            {
 //                double newElev = reservoir.getCurrentElevation(currentTime);
@@ -322,17 +330,13 @@ final public class ResEvap
                     wtempProfiles[ilyr] = reservoir.wt[numLayers - 1 - ilyr];
                 }
             }
-            try
-            {
-                if (out != null) out.close();
-                if (metout != null) metout.close();
-                if (tout != null) tout.close();
-                if (xout != null) xout.close();
-            } catch (IOException ioe)
-            {
-                LOGGER.error("IOException occurred while closing files", ioe);
-            }
-        } catch (RuntimeException ex)
+        }
+        catch (RuntimeException ex)
+        {
+            LOGGER.error("Error within computation", ex);
+            throw new ResEvapException(ex);
+        }
+        finally
         {
             try
             {
@@ -340,12 +344,11 @@ final public class ResEvap
                 if (metout != null) metout.close();
                 if (tout != null) tout.close();
                 if (xout != null) xout.close();
-            } catch (IOException ioe)
+            }
+            catch (IOException ioe)
             {
                 LOGGER.error("IOException occurred while closing files", ioe);
             }
-            LOGGER.error("Error within computation", ex);
-            throw new ResEvapException(ex);
         }
 
         return true;

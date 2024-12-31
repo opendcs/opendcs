@@ -18,7 +18,6 @@ package decodes.cwms.resevapcalc;
 import decodes.cwms.HecConstants;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
-import decodes.util.DecodesException;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import ilex.var.NoConversionException;
@@ -39,37 +38,29 @@ final public class EvapReservoir
 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(EvapReservoir.class.getName());
-    public static final int MAX_RES_AREAS = 50000;
     public static final int NLAYERS = 1000;
 
     // package access to these variables
-    public int numberLayers;    //TODO, not current set
-    public double secchiDepth;
+    private double secchiDepth;
     public double attenuationConst;
-    public double zeroElevaton = -1;
-    public double latitude;
-    public double longitude;
+    private double zeroElevaton = -1;
+    private double latitude;
+    private double longitude;
     public WindShearMethod windShearMethod = WindShearMethod.DONELAN;
     public double thermalDiffusivityCoefficient = 1.2;
 
     // instrument height
-    protected double ru;
-    protected double rt;
-    protected double rq;
+    private double ru;
+    private double rt;
+    private double rq;
 
     double gmtOffset;
-    String tzString;
     public double elev;
     public double instrumentHeight;
 
     public RatingSet ratingAreaElev;
 
-    public double[] elevA;
-    public double[] surfA;
-    public int nSurfArea;
-    public int nResBottom;
     public double depth;
-    // public double _wsel;	// this is a copy of _elev used for layering setup
     public double surfArea;
 
     // reservoir layers
@@ -93,11 +84,7 @@ final public class EvapReservoir
     int resj;
     int resjOld;
 
-    int resj1;
     boolean isEnglish = true;
-    boolean isDewpoint = false;
-
-    boolean elevTS_flag = false; //TODO
 
     String name;
     BufferedWriter debugout = null;
@@ -122,25 +109,10 @@ final public class EvapReservoir
         return name;
     }
 
-    public void setTimeZoneString(String tzStr)
-    {
-        tzString = tzStr;
-    }
-
     public void setLatLon(double lat, double lon)
     {
         this.latitude = lat;
         longitude = lon;
-    }
-
-    public void setGmtOffset(double gmtOffset)
-    {
-        this.gmtOffset = gmtOffset;
-    }
-
-    public double getGmtOffset()
-    {
-        return gmtOffset;
     }
 
     /**
@@ -171,7 +143,8 @@ final public class EvapReservoir
         try
         {
             elev = elevationTsc.sampleAt(elevIdx).getDoubleValue();
-        } catch (NoConversionException ex)
+        }
+        catch (NoConversionException ex)
         {
             throw new ResEvapException("failed to load elevation at time " + time, ex);
         }
@@ -293,24 +266,13 @@ final public class EvapReservoir
         try
         {
             surfArea = intArea(this.elev, conn);
-        } catch (RatingException ex)
+        }
+        catch (RatingException ex)
         {
             throw new RatingException("Surface area rating calculation failed", ex);
         }
         this.surfArea = surfArea / (1000. * 1000.);
 
-        return true;
-    }
-
-    /**
-     * User knows the elevation value is in meters
-     *
-     * @param elev
-     * @return
-     */
-    public boolean setElevationMeters(double elev)
-    {
-        this.elev = elev;
         return true;
     }
 
@@ -376,7 +338,8 @@ final public class EvapReservoir
         try
         {
             surfArea = intArea(elev, conn);
-        } catch (RatingException ex)
+        }
+        catch (RatingException ex)
         {
             throw new DbCompException("Surface area rating calculation failed", ex);
         }
@@ -428,7 +391,8 @@ final public class EvapReservoir
             try
             {
                 zareax[j] = intArea(zelevx[j], conn);
-            } catch (RatingException ex)
+            }
+            catch (RatingException ex)
             {
                 throw new DbCompException("zareax Surface area rating calculation failed at elevation " + zelevx[j], ex);
             }
@@ -449,7 +413,8 @@ final public class EvapReservoir
             try
             {
                 zareax[resj] = intArea(zelevx[resj], conn);
-            } catch (RatingException ex)
+            }
+            catch (RatingException ex)
             {
                 throw new DbCompException("zareax Surface area rating calculation failed at elevation " + zelevx[resj], ex);
             }
@@ -497,7 +462,8 @@ final public class EvapReservoir
             ftElvation = el / Constants.FT_TO_M;
             double ftSquared = ratingAreaElev.rate(conn, ftElvation);
             return ftSquared * Math.pow(Constants.FT_TO_M, 2);
-        } catch (RatingException ex)
+        }
+        catch (RatingException ex)
         {
             throw new RatingException("failed to compute rating at elevation " + ftElvation + " ft", ex);
         }

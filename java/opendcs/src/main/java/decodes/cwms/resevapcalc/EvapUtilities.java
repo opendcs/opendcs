@@ -107,6 +107,8 @@ public class EvapUtilities
         double t = tempC + Constants.tK;
 
         // Density of dry air in kg/m**3
+        // 1.2923 represents the density of air at standard conditions (1013.25 mbar, 0°C).
+        // https://en.wikipedia.org/wiki/Density_of_air
         double rhoD = 1.2923 * (Constants.tK / (tempC + Constants.tK)) * (baroPres / Constants.p0);
 
         // This computes saturation vapor pressure ESAT in hPa
@@ -166,7 +168,8 @@ public class EvapUtilities
             {
                 k = 1;
             }
-        } else if (iflag == 2)
+        }
+        else if (iflag == 2)
         {
             // choose saturation over ice 
             k = 1;
@@ -262,11 +265,13 @@ public class EvapUtilities
             double x = Math.pow((1. - 16.0 * zeta), .25);
             return 2.0 * Math.log(0.5 * (1.0 + x)) + Math.log(0.5 * (1 + x * x))
                     - 2.0 * Math.atan(x) + 1.570796;
-        } else if (zeta == 0.0)
+        }
+        else if (zeta == 0.0)
         {
             //  Neutral stratification.
             return 0.0;
-        } else
+        }
+        else
         {
             // Stable stratification (Dutch formulation).
             double term1 = 0.0;
@@ -299,11 +304,13 @@ public class EvapUtilities
             //  Unstable stratification (Paulson, 1970).
             double x = Math.pow((1. - 16.0 * zeta), .25);
             return 2.0 * Math.log(0.5 * (1 + x * x));
-        } else if (zeta == 0.0)
+        }
+        else if (zeta == 0.0)
         {
             //  Neutral stratification.
             return 0.0;
-        } else
+        }
+        else
         {
             // Stable stratification (Dutch formulation).
             double term1 = 0.0;
@@ -403,13 +410,17 @@ public class EvapUtilities
         final double[] rs = {0.135, 2.5, 1000.};
 
         final double[][] bt =
-                {{1.250, 0.0, 0.0},
+                {
+                        {1.250, 0.0, 0.0},
                         {0.149, -0.550, 0.0},
-                        {0.317, -0.565, -0.183}};
+                        {0.317, -0.565, -0.183}
+                };
         final double[][] bq =
-                {{1.610, 0.0, 0.0},
+                {
+                        {1.610, 0.0, 0.0},
                         {0.351, -0.628, 0.0},
-                        {0.396, -0.512, -0.180}};
+                        {0.396, -0.512, -0.180}
+                };
 
         // find rstar range
         int ind_rs = 2;
@@ -474,7 +485,8 @@ public class EvapUtilities
             psim = 0.0;
             psiht = 0.0;
             psihq = 0.0;
-        } else
+        }
+        else
         {
             if (1 == 0.0)
             {
@@ -499,10 +511,12 @@ public class EvapUtilities
         if (ur <= 5)
         {
             cd = .001;
-        } else if (ur >= 15)
+        }
+        else if (ur >= 15)
         {
             cd = .0015;
-        } else
+        }
+        else
         {
             cd = .001 + .0005 * ((ur - 5) / 10);
         }
@@ -570,7 +584,8 @@ public class EvapUtilities
             double wstar = ustar * (Math.pow(-zi / (Constants.CONST_K * l), .333333));
             double spd = Math.sqrt((ur * ur) + (beta * wstar) * (beta * wstar));
             return spd;
-        } else
+        }
+        else
         {
             // Windless coefficient.
             double spd = ur + w0;
@@ -636,7 +651,8 @@ public class EvapUtilities
         if (px < 0.0)
         {
             tx = 0.0;
-        } else
+        }
+        else
         {
             tx = px;
         }

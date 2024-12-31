@@ -124,19 +124,15 @@ final public class SolarFlux
             };
 
 
-    //double gmt_offset;
-    double diffuse;
-    double direct;
-    double sdown;
+    private double sdown;
 
-    double ZEN;
     double SOLAR;
 
     public void solflx(Date currentTime, double gmtOffset,
                        double longitude,
                        double latitude, CloudCover[] cloudCover)
     {
-        EvapUtilities.DoubleContainer solzen = new EvapUtilities.DoubleContainer();
+        EvapUtilities.DoubleContainer solzenith = new EvapUtilities.DoubleContainer();
         EvapUtilities.DoubleContainer sdowndc = new EvapUtilities.DoubleContainer();
         EvapUtilities.DoubleContainer cosz = new EvapUtilities.DoubleContainer();
         double frad, dhr;
@@ -163,16 +159,17 @@ final public class SolarFlux
 
 
         zenith(doy, dhr, gmtOffset,
-                latitude, longitude, solzen, cosz);
+                latitude, longitude, solzenith, cosz);
 
 
-        if (solzen.d >= 90.)
+        if (solzenith.d >= 90.)
         {
             // still dark set flux to zero and return
             sdown = 0.0;
             direct = 0.0;
             diffuse = 0.0;
-        } else
+        }
+        else
         {
             // Calculate the total, direct and diffuse flux on a horizontal
             // surface for each hour. In the future this should be
@@ -185,7 +182,6 @@ final public class SolarFlux
         }
 
         SOLAR = sdown;
-        ZEN = solzen.d;
     }
 
     /**
@@ -318,7 +314,8 @@ final public class SolarFlux
             sdown = 0.0;
             direct = 0.0;
             diffuse = 0.0;
-        } else
+        }
+        else
         {
             // Direct component of insolation 
             direct = tdk[0] * tdk[1] * tdk[2] * sdown0;
@@ -328,8 +325,6 @@ final public class SolarFlux
         }
 
         this.sdown = sdown;
-        this.direct = direct;
-        this.diffuse = diffuse;
     }
 
 
@@ -383,15 +378,18 @@ final public class SolarFlux
         if (sinz == 0.)
         {
             saz = xpi;
-        } else if (sind - Math.sin(zlatr) * cosz <= 0.)
+        }
+        else if (sind - Math.sin(zlatr) * cosz <= 0.)
         {
             az = (cosd * Math.sin(hr) / sinz);
             if (az < -1.0) az = -1.0;      // Otherwise, will have a math error.
             saz = Math.asin(az) + xpi;
-        } else if (hr > 0.0)
+        }
+        else if (hr > 0.0)
         {
             saz = 2 * xpi - Math.asin(cosd * Math.sin(hr) / sinz);
-        } else
+        }
+        else
         {
             saz = -Math.asin(cosd * Math.sin(hr) / sinz);
         }

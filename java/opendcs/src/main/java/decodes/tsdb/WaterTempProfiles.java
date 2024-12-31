@@ -1,5 +1,6 @@
 package decodes.tsdb;
 
+import decodes.cwms.resevapcalc.MetComputation;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -7,6 +8,7 @@ import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.utils.FailableResult;
+import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -29,6 +31,8 @@ final public class WaterTempProfiles
     private double startDepth;
     private double increment;
 
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(WaterTempProfiles.class.getName());
+
     /**
      * Constructor -- builds an empty collection with a null handle.
      */
@@ -44,13 +48,7 @@ final public class WaterTempProfiles
         tseries = new DataCollection();
         for (CTimeSeries data : profiles)
         {
-            try
-            {
-                tseries.addTimeSeries(data);
-            } catch (DuplicateTimeSeriesException ex)
-            {
-                throw new DuplicateTimeSeriesException(ex.getMessage());
-            }
+            tseries.addTimeSeries(data);
         }
         startDepth = start;
         increment = incr;
@@ -68,7 +66,8 @@ final public class WaterTempProfiles
         try
         {
             tsid = timeSeriesDAO.getTimeSeriesIdentifier(wtpId);
-        } catch (DbIoException | NoSuchObjectException ex)
+        }
+        catch (DbIoException | NoSuchObjectException ex)
         {
             throw new DbCompException("Failed to load timeSeries id: " + wtpId, ex);
         }
@@ -95,25 +94,30 @@ final public class WaterTempProfiles
                     if (n == 0)
                     {
                         loading = false;
-                    } else
+                    }
+                    else
                     {
                         try
                         {
                             tseries.addTimeSeries(cts);
-                        } catch (DuplicateTimeSeriesException ex)
+                        }
+                        catch (DuplicateTimeSeriesException ex)
                         {
-                            throw new DbCompException(ex.getMessage());
+                            throw new DbCompException(ex.getMessage(), ex);
                         }
                     }
                     currentDepth += increment;
-                } else if (check.getFailure() instanceof NoSuchObjectException)
+                }
+                else if (check.getFailure() instanceof NoSuchObjectException)
                 {
                     loading = false;
-                } else
+                }
+                else
                 {
                     throw new DbIoException("failed to find time series from database with TSID: " + newtsid.getUniqueString(), check.getFailure());
                 }
-            } catch (BadTimeSeriesException | NoSuchObjectException ex)
+            }
+            catch (BadTimeSeriesException | NoSuchObjectException ex)
             {
                 throw new DbIoException("error retrieving water temp profile data for time series", ex);
             }
@@ -150,11 +154,13 @@ final public class WaterTempProfiles
                     if (check.isSuccess())
                     {
                         CTProfile = timeSeriesDAO.makeTimeSeries(check.getSuccess());
-                    } else if (check.getFailure() instanceof NoSuchObjectException)
+                    }
+                    else if (check.getFailure() instanceof NoSuchObjectException)
                     {
                         timeSeriesDAO.createTimeSeries(newTSID);
                         CTProfile = new CTimeSeries(newTSID);
-                    } else
+                    }
+                    else
                     {
                         throw new DbIoException("Database failed when attempting to find TSID: " + newTSID.getUniqueString(), check.getFailure());
                     }
@@ -163,11 +169,13 @@ final public class WaterTempProfiles
                     newTV.setFlags(VarFlags.TO_WRITE);
                     CTProfile.addSample(newTV);
                     tseries.addTimeSeries(CTProfile);
-                } catch (Exception ex)
-                {
-                    throw new DbCompException("failed to create new timeSeriesID with ex: " + ex, ex);
                 }
-            } else
+                catch (Exception ex)
+                {
+                    throw new DbCompException("failed to create new timeSeriesID " + wtpTsId + " at depth Meters:" + currentDepth, ex);
+                }
+            }
+            else
             {
                 CTimeSeries CTProfile = tseries.getTimeSeriesAt(i);
                 TimedVariable newTV = new TimedVariable(new Variable(wtp[i]), CurrentTime);
@@ -185,11 +193,10 @@ final public class WaterTempProfiles
             try
             {
                 timeSeriesDAO.saveTimeSeries(tsery);
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
-                String msg = "Error saving water temperature profile data: " + ex;
-                System.err.print(msg);
-                ex.printStackTrace(System.err);
+                LOGGER.error("Error saving water temperature profile data", ex);
             }
         }
     }

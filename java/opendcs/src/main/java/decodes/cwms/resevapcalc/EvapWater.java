@@ -254,7 +254,8 @@ final public class EvapWater
             if (tstar != 0.)
             {
                 testt = Math.abs((tstar - tstar_old) / tstar);
-            } else
+            }
+            else
             {
                 testt = Math.abs(tstar - tstar_old);
             }
@@ -263,7 +264,8 @@ final public class EvapWater
             if (qstar != 0.)
             {
                 testq = Math.abs((qstar - qstar_old) / qstar);
-            } else
+            }
+            else
             {
                 testq = Math.abs(qstar - qstar_old);
             }

@@ -152,7 +152,8 @@ final public class MetComputation
         if (!HecConstants.isValidValue(windSpeed))
         {
             windSpeed = metData.windSpeedOld;
-        } else
+        }
+        else
         {
             metData.windSpeedOld = windSpeed;
         }
@@ -160,7 +161,8 @@ final public class MetComputation
         if (!HecConstants.isValidValue(airTemp))
         {
             airTemp = metData.airTempOld;
-        } else
+        }
+        else
         {
             metData.airTempOld = airTemp;
         }
@@ -168,7 +170,8 @@ final public class MetComputation
         if (!HecConstants.isValidValue(relHumidity))
         {
             relHumidity = metData.relHumidityOld;
-        } else
+        }
+        else
         {
             metData.relHumidityOld = relHumidity;
         }
@@ -176,7 +179,8 @@ final public class MetComputation
         if (!HecConstants.isValidValue(airPressure))
         {
             airPressure = metData.airPressureOld;
-        } else
+        }
+        else
         {
             metData.airPressureOld = airPressure;
         }
@@ -276,8 +280,6 @@ final public class MetComputation
                 * Math.pow(ws_temp, 4.);
 
         this.flxirOut = flxir_out;
-
-        return;
 
     }
 

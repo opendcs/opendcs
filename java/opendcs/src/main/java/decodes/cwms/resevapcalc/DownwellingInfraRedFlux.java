@@ -164,7 +164,8 @@ final public class DownwellingInfraRedFlux
             c = COEF[isean][ilat][0][2];
             d = COEF[isean][ilat][0][3];
             zlcld = a - b * (1.0 - Math.abs(Math.cos(c * (lat - d))));
-        } else
+        }
+        else
         {
             zlcld = lcldbse;
         }
@@ -177,7 +178,8 @@ final public class DownwellingInfraRedFlux
             c = COEF[isean][ilat][1][2];
             d = COEF[isean][ilat][1][3];
             zmcld = a - b * (1.0 - Math.abs(Math.cos(c * (lat - d))));
-        } else
+        }
+        else
         {
             zmcld = mcldbse;
         }
@@ -190,7 +192,8 @@ final public class DownwellingInfraRedFlux
             c = COEF[isean][ilat][2][2];
             d = COEF[isean][ilat][2][3];
             zhcld = a - b * (1.0 - Math.abs(Math.cos(c * (lat - d))));
-        } else
+        }
+        else
         {
             zhcld = hcldbse;
         }

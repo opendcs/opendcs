@@ -33,7 +33,6 @@ final public class ResWaterTemperatureCompute
 
     // reservoir layers, segments.
     EvapReservoir reservoir;
-    //int resjOld = -1;
 
     // working arrays
     private double[] a;
@@ -48,7 +47,6 @@ final public class ResWaterTemperatureCompute
 
     // One vector of workspace, gam is needed.
     final static private int NMAX = 500;
-    private double[] gam = new double[NMAX];
 
     public ResWaterTemperatureCompute(EvapReservoir reservoir)
     {
@@ -214,7 +212,8 @@ final public class ResWaterTemperatureCompute
             {
                 sFreq = grav / avgRhow * Math.abs(rhow[i] - rhow[i - 1]) /
                         (zd[i - 1] - zd[i]);
-            } else
+            }
+            else
             {
                 sFreq = 0.00007;
             }
@@ -225,7 +224,8 @@ final public class ResWaterTemperatureCompute
             if (surfArea < 350.)
             {
                 surfAreaX = surfArea;
-            } else
+            }
+            else
             {
                 surfAreaX = 350.;
             }
@@ -247,7 +247,8 @@ final public class ResWaterTemperatureCompute
                 au = zarea[i];
                 abar = 0.5 * zarea[i];
                 al = 0.0;
-            } else
+            }
+            else
             {
                 au = zarea[i];
                 abar = 0.5 * (zarea[i] + zarea[i - 1]);
@@ -259,7 +260,8 @@ final public class ResWaterTemperatureCompute
                 delZu = 0.5 * (delz[i + 1] + delz[i]);
                 dhatZu = (kz[i + 1] / (cp[i + 1] * rhow[i + 1]) * delz[i + 1] +
                         kz[i] / (cp[i] * rhow[i]) * delz[i]) / (delz[i + 1] + delz[i]);
-            } else
+            }
+            else
             {
                 dhatZu = 0.;
                 delZu = 1.0;
@@ -270,7 +272,8 @@ final public class ResWaterTemperatureCompute
                 delZl = 0.5 * (delz[i - 1] + delz[i]);
                 dhatZl = (kz[i - 1] / (cp[i - 1] * rhow[i - 1]) * delz[i - 1] +
                         kz[i] / (cp[i] * rhow[i]) * delz[i]) / (delz[i - 1] + delz[i]);
-            } else
+            }
+            else
             {
                 dhatZl = 0.;
                 delZl = 1.0;
@@ -279,7 +282,8 @@ final public class ResWaterTemperatureCompute
             {
                 a[i] = (-1. * delT / delz[i] * dhatZl / delZl * theta *
                         al / abar);
-            } else
+            }
+            else
             {
                 a[i] = 0.;
             }
@@ -292,7 +296,8 @@ final public class ResWaterTemperatureCompute
             if (i < resj)
             {
                 c[i] = (-1. * delT / delz[i] * dhatZu / delZu * theta * au / abar);
-            } else
+            }
+            else
             {
                 c[i] = 0.;
             }
@@ -475,13 +480,15 @@ final public class ResWaterTemperatureCompute
                         if (WindShearMethod.DONELAN.equals(windShearMethod))
                         {
                             uH2OStar = EvapUtilities.computeDonelanUStar(ur, rhoAdc.d, rhow[resj]);
-                        } else
+                        }
+                        else
                         {
                             uH2OStar = EvapUtilities.computeFischerUStar(ur, rhoAdc.d, rhow[resj]);
                         }
                         KEStir = etaStirring * rhow[resj] *
                                 zarea[resj] * Math.pow(uH2OStar, 3.) * delT;
-                    } else
+                    }
+                    else
                     {
                         KEStir = 0.;
                     }
@@ -516,7 +523,8 @@ final public class ResWaterTemperatureCompute
                     }
 
                     TKE = TKE - peMix;
-                } else
+                }
+                else
                 {
                     // End calculations for this time step as not sufficient energy to mix
                     iend = 0;
@@ -568,7 +576,8 @@ final public class ResWaterTemperatureCompute
             if (xrhow == -1.)
             {
                 zrhow = rhow[j];
-            } else
+            }
+            else
             {
                 zrhow = xrhow;
             }
@@ -577,7 +586,8 @@ final public class ResWaterTemperatureCompute
             {
                 total = total + zrhow * zvol[j] *
                         (ztop[j] + ztop[j - 1]) / 2.;
-            } else
+            }
+            else
             {
                 total = total + zrhow * zvol[j] *
                         (ztop[j] + 0.) / 2.;
@@ -588,7 +598,8 @@ final public class ResWaterTemperatureCompute
         {
             zout = total / totalpvol;
             return zout;
-        } else
+        }
+        else
         {
             return 0.0;
         }
@@ -603,6 +614,7 @@ final public class ResWaterTemperatureCompute
                            double[] r, double[] u, int n)
     {
         double bet;
+        double[] gam = new double[NMAX];
         if (b[0] == 0.)
         {
             //TODO error message system (throw exception?)
