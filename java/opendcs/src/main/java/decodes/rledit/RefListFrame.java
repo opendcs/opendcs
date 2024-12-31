@@ -120,6 +120,12 @@ public class RefListFrame extends JFrame
     {
         this.database = database;
 
+		/**
+		 * NOTE: this *should* be off the GUI thread but the performance impact for 
+		 * enums is minimal and this shows a good demostration of the getLegacyDatabase.
+		 * 
+		 * TODO: Correct before merge.
+		 */
         ArrayList<DbEnum> v = new ArrayList<>();
         for(Iterator<DbEnum> enumIt = database.getLegacyDatabase(Database.class).get().enumList.iterator();
             enumIt.hasNext(); )
