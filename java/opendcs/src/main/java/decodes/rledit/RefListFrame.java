@@ -936,105 +936,93 @@ public class RefListFrame extends JFrame
      */
     void mi_saveToDb_actionPerformed(ActionEvent e)
     {
-        Database db = Database.getDb();
+		final TraceDialog dlg = new TraceDialog(this, true);
+		final String CLOSE_MSG = "Saving Changes.";
+		dlg.setCloseText(CLOSE_MSG);
+		final AtomicBoolean result = new AtomicBoolean(false);
+		final Collection<DbEnum> changedEnums = EnumTab.getChanged();
+		SwingWorker<Boolean,String> worker = new SwingWorker<Boolean,String>()
+		{
+			@Override
+			protected Boolean doInBackground() throws Exception
+			{
+				Database db = Database.getDb();
+				if (seasonsChanged)
+				{
+					publish("Writing Seasons");
+					seasonListTableModel.storeBackToEnum();
+					db.enumList.write();
+					seasonsChanged = false;
+				}
+				if (EnumTab.enumsChanged())
+				{
+					publish("Writing Enumerations");
+					try(DataTransaction tx = database.newTransaction();
+						EnumDAI enumDao = database.getDao(EnumDAI.class).get();)
+					{
+						for (DbEnum curEnum: changedEnums)
+						{
+							publish("\t" + curEnum.enumName);
+							enumDao.writeEnum(tx, curEnum);
+						}
+					}
+				}
+				if (unitsChanged || convertersChanged)
+				{
+					publish("Engineering Units");
+					db.engineeringUnitList.write();
+					unitsChanged = convertersChanged = false;
+				}
+				if (dtsChanged)
+				{
+					publish("Data Types");
+					db.dataTypeSet.write();
+					dtsChanged = false;
+				}
+				return true;
+			}
 
-        String what = "";
-        try
-        {
-            if (seasonsChanged)
-            {
-                seasonListTableModel.storeBackToEnum();
-                db.enumList.write();
-                seasonsChanged = false;
-            }
-            if (EnumTab.enumsChanged())
-            {
-                what = "Enumerations";
-                final TraceDialog dlg = new TraceDialog(this, true);
-                final String CLOSE_MSG = "Saving Enumerations.";
-                dlg.setCloseText(CLOSE_MSG);
-                final AtomicBoolean result = new AtomicBoolean(false);
-                final Collection<DbEnum> changedEnums = EnumTab.getChanged();
-                SwingWorker<Boolean,String> worker = new SwingWorker<Boolean,String>()
-                {
-                    @Override
-                    protected Boolean doInBackground() throws Exception
-                    {
-                        publish("Writing Enumerations");
-                        try(DataTransaction tx = database.newTransaction();
-                            EnumDAI enumDao = database.getDao(EnumDAI.class).get();)
-                        {
-                            for (DbEnum curEnum: changedEnums)
-                            {
-                                publish("\t" + curEnum.enumName);
-                                enumDao.writeEnum(tx, curEnum);
-                            }
-                        }
-                        return true;
-                    }
+			@Override
+			protected void process(List<String> chunks)
+			{
+				for (String text: chunks)
+				{
+					dlg.addText(text);
+				}
+			}
 
-                    @Override
-                    protected void process(List<String> chunks)
-                    {
-                        for (String text: chunks)
-                        {
-                            dlg.addText(text);
-                        }
-                    }
-
-                    @Override
-                    protected void done()
-                    {
-                        try
-                        {
-                            if (get())
-                            {
-                                result.set(true);
-                                dlg.addText(CLOSE_MSG);
-                                EnumTab.resetChanged();
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            final String msg =
-                                LoadResourceBundle.sprintf(genericLabels.getString("cannotSave"), "Enumeration", ex.toString());
-                            log.atError()
-                               .setCause(ex)
-                               .log(msg);
-                            StringWriter sw = new StringWriter();
-                            PrintWriter pw = new PrintWriter(sw);
-                            pw.println();
-                            pw.println(msg);
-                            ex.printStackTrace(pw);
-                            dlg.addText(sw.toString());
-                        }
-                    }
-                };
-                worker.execute();
-                dlg.setVisible(true);
-            }
-            if (unitsChanged || convertersChanged)
-            {
-                what = "Engineering Units";
-                db.engineeringUnitList.write();
-                unitsChanged = convertersChanged = false;
-            }
-            if (dtsChanged)
-            {
-                what = "Data Types";
-                db.dataTypeSet.write();
-                dtsChanged = false;
-            }
-
-            JOptionPane.showConfirmDialog(this, labels.getString("RefListFrame.changesWritten"),
-                "Info", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
-        }
-        catch(DatabaseException ex)
-        {
-            showError(LoadResourceBundle.sprintf(labels.getString(
-                    "RefListFrame.writingErr"),what) + ex);
-            ex.printStackTrace();
-        }
+			@Override
+			protected void done()
+			{
+				try
+				{
+					if (get())
+					{
+						result.set(true);
+						dlg.addText(CLOSE_MSG);
+						EnumTab.resetChanged();
+						JOptionPane.showConfirmDialog(RefListFrame.this, labels.getString("RefListFrame.changesWritten"),
+					"Info", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
+					}
+				}
+				catch (Exception ex)
+				{
+					final String msg =
+						LoadResourceBundle.sprintf(genericLabels.getString("cannotSave"), "Enumeration", ex.toString());
+					log.atError()
+						.setCause(ex)
+						.log(msg);
+					StringWriter sw = new StringWriter();
+					PrintWriter pw = new PrintWriter(sw);
+					pw.println();
+					pw.println(msg);
+					ex.printStackTrace(pw);
+					dlg.addText(sw.toString());
+				}
+			}
+		};
+		worker.execute();
+		dlg.setVisible(true);
     }
 
     /**
