@@ -95,13 +95,7 @@ public class SiteResources extends OpenDcsResource
 			}
 			siteRef.setPublicName(site.getPublicName());
 			siteRef.setDescription(site.getDescription());
-			HashMap<String, String> siteNames = new LinkedHashMap<>();
-			for(Iterator<SiteName> iter = site.getNames(); iter.hasNext(); )
-			{
-				final SiteName sn = iter.next();
-				siteNames.put(sn.getNameType(), sn.getNameValue());
-			}
-			siteRef.setSitenames(siteNames);
+			siteRef.setSitenames(map(site));
 			retList.add(siteRef);
 		}
 		return retList;
@@ -167,14 +161,19 @@ public class SiteResources extends OpenDcsResource
 		returnSite.setTimezone(site.timeZoneAbbr);
 		returnSite.setRegion(site.region);
 		returnSite.setPublicName(site.getPublicName());
-		HashMap<String, String> siteNames = new HashMap<>();
+		returnSite.setSitenames(map(site));
+		return returnSite;
+	}
+
+	static HashMap<String, String> map(Site site)
+	{
+		HashMap<String, String> siteNames = new LinkedHashMap<>();
 		for(Iterator<SiteName> iter = site.getNames(); iter.hasNext(); )
 		{
 			final SiteName sn = iter.next();
 			siteNames.put(sn.getNameType(), sn.getNameValue());
 		}
-		returnSite.setSitenames(siteNames);
-		return returnSite;
+		return siteNames;
 	}
 
 	@POST

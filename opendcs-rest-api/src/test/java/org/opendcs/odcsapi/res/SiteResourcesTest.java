@@ -128,6 +128,19 @@ final class SiteResourcesTest
 		}
 	}
 
+	@Test
+	void testSiteNamesMap()
+	{
+		Site site = siteBuilder("Albuquerque");
+		Map<String, String> names = map(site);
+		assertNotNull(names);
+		for (Iterator<SiteName> it = site.getNames(); it.hasNext(); )
+		{
+			SiteName sn = it.next();
+			assertEquals(sn.getNameValue(), names.get(sn.getNameType()));
+		}
+	}
+
 	private static Site siteBuilder(String name)
 	{
 		Site site = new Site();
