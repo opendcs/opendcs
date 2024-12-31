@@ -5,16 +5,26 @@ package decodes.rledit;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import javax.swing.*;
 import javax.swing.border.*;
 
+import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import ilex.util.*;
+import opendcs.dai.EnumDAI;
 import decodes.db.*;
+import decodes.dbeditor.TraceDialog;
+import decodes.dbeditor.routing.RSListTableModel;
 import decodes.decoder.Season;
 import decodes.gui.SortingListTable;
 import decodes.rledit.panels.EnumerationPanel;
@@ -27,6 +37,7 @@ units, EU conversions and data type equivalencies.
 @SuppressWarnings("serial")
 public class RefListFrame extends JFrame
 {
+    private static final Logger log = LoggerFactory.getLogger(RefListFrame.class);
     private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
     private static ResourceBundle labels = RefListEditor.getLabels();
     private JPanel contentPane;
@@ -108,7 +119,26 @@ public class RefListFrame extends JFrame
     public RefListFrame(OpenDcsDatabase database)
     {
         this.database = database;
-        this.EnumTab = new EnumerationPanel(database);
+
+        ArrayList<DbEnum> v = new ArrayList<>();
+        for(Iterator<DbEnum> enumIt = database.getLegacyDatabase(Database.class).get().enumList.iterator();
+            enumIt.hasNext(); )
+        {
+            decodes.db.DbEnum en = enumIt.next();
+            /*if (en.enumName.equalsIgnoreCase("EquationScope")
+             || en.enumName.equalsIgnoreCase("DataOrder")
+             || en.enumName.equalsIgnoreCase("UnitFamily")
+             || en.enumName.equalsIgnoreCase("LookupAlgorithm")
+             || en.enumName.equalsIgnoreCase("RecordingMode")
+             || en.enumName.equalsIgnoreCase("EquipmentType")
+             || en.enumName.equalsIgnoreCase("Season"))
+                continue;
+            String s = TextUtil.capsExpand(en.enumName);*/
+            v.add(en);
+        }
+        Collections.sort(v, (a,b) -> a.enumName.compareTo(b.enumName));
+
+        this.EnumTab = new EnumerationPanel(v);
         enableEvents(AWTEvent.WINDOW_EVENT_MASK);
         try
         {
@@ -236,10 +266,6 @@ public class RefListFrame extends JFrame
         undoDelEuCnvtButton.setText(labels.getString("RefListFrame.undoDelete"));
         undoDelEuCnvtButton.addActionListener(new RefListFrame_undoDelEuCnvtButton_actionAdapter(this));
 
-
-
-
-
         addDTEButton.setMaximumSize(new Dimension(122, 23));
         addDTEButton.setMinimumSize(new Dimension(122, 23));
         addDTEButton.setPreferredSize(new Dimension(122, 23));
@@ -261,8 +287,8 @@ public class RefListFrame extends JFrame
         undoDeleteDTEButton.addActionListener(new RefListFrame_undoDeleteDTEButton_actionAdapter(this));
 
         contentPane.setFont(new java.awt.Font("Dialog", 0, 14));
-    EuCnvtTab.setBorder(BorderFactory.createEmptyBorder());
-    jMenuFile.add(mi_saveToDb);
+        EuCnvtTab.setBorder(BorderFactory.createEmptyBorder());
+        jMenuFile.add(mi_saveToDb);
         jMenuFile.add(jMenuFileExit);
         jMenuHelp.add(jMenuHelpAbout);
         jMenuBar1.add(jMenuFile);
@@ -532,7 +558,7 @@ public class RefListFrame extends JFrame
      */
     public void jMenuFileExit_actionPerformed(ActionEvent e)
     {
-        if (/*enumsChanged || */ unitsChanged || convertersChanged || dtsChanged || seasonsChanged)
+        if (EnumTab.enumsChanged() || unitsChanged || convertersChanged || dtsChanged || seasonsChanged)
         {
             int r = JOptionPane.showConfirmDialog(this,
                 labels.getString("RefListFrame.unsavedChangesQues"),
@@ -918,13 +944,74 @@ public class RefListFrame extends JFrame
             if (seasonsChanged)
             {
                 seasonListTableModel.storeBackToEnum();
-                //enumsChanged = true;
+                db.enumList.write();
+                seasonsChanged = false;
             }
             if (EnumTab.enumsChanged())
             {
                 what = "Enumerations";
-                db.enumList.write();
-                //enumsChanged = seasonsChanged = false;
+                final TraceDialog dlg = new TraceDialog(this, true);
+                final String CLOSE_MSG = "Saving Enumerations.";
+                dlg.setCloseText(CLOSE_MSG);
+                final AtomicBoolean result = new AtomicBoolean(false);
+                final Collection<DbEnum> changedEnums = EnumTab.getChanged();
+                SwingWorker<Boolean,String> worker = new SwingWorker<Boolean,String>()
+                {
+                    @Override
+                    protected Boolean doInBackground() throws Exception
+                    {
+                        publish("Writing Enumerations");
+                        try(DataTransaction tx = database.newTransaction();
+                            EnumDAI enumDao = database.getDao(EnumDAI.class).get();)
+                        {
+                            for (DbEnum curEnum: changedEnums)
+                            {
+                                publish("\t" + curEnum.enumName);
+                                enumDao.writeEnum(tx, curEnum);
+                            }
+                        }
+                        return true;
+                    }
+
+                    @Override
+                    protected void process(List<String> chunks)
+                    {
+                        for (String text: chunks)
+                        {
+                            dlg.addText(text);
+                        }
+                    }
+
+                    @Override
+                    protected void done()
+                    {
+                        try
+                        {
+                            if (get())
+                            {
+                                result.set(true);
+                                dlg.addText(CLOSE_MSG);
+                                EnumTab.resetChanged();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            final String msg =
+                                LoadResourceBundle.sprintf(genericLabels.getString("cannotSave"), "Enumeration", ex.toString());
+                            log.atError()
+                               .setCause(ex)
+                               .log(msg);
+                            StringWriter sw = new StringWriter();
+                            PrintWriter pw = new PrintWriter(sw);
+                            pw.println();
+                            pw.println(msg);
+                            ex.printStackTrace(pw);
+                            dlg.addText(sw.toString());
+                        }
+                    }
+                };
+                worker.execute();
+                dlg.setVisible(true);
             }
             if (unitsChanged || convertersChanged)
             {

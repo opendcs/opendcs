@@ -9,10 +9,12 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.ResourceBundle;
+import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -65,19 +67,18 @@ public class EnumerationPanel extends JPanel
     private JPanel jPanel2 = new JPanel();
     private FlowLayout flowLayout1 = new FlowLayout();
     private JLabel jLabel1 = new JLabel();
-    private JComboBox enumComboBox = new JComboBox();
+    private final JComboBox<DbEnum> enumComboBox;
 
     private Border border5;
 
-    private OpenDcsDatabase database;
     private boolean enumsChanged = false;
     private EnumValue deletedEnumValue = null;
 
-    public EnumerationPanel(OpenDcsDatabase database)
+    public EnumerationPanel(Collection<DbEnum> dbEnums)
     {
+        enumComboBox = new JComboBox<>(new Vector<>(dbEnums));
         try
         {
-            this.database = database;
             jbInit();
         }
         catch (Exception ex)
@@ -139,28 +140,12 @@ public class EnumerationPanel extends JPanel
         enumComboBox.setMinimumSize(new Dimension(160, 19));
         enumComboBox.setPreferredSize(new Dimension(160, 19));
         enumComboBox.addActionListener(new RefListFrame_enumComboBox_actionAdapter(this));
+        if (enumComboBox.getModel().getSize() > 0)
+        {
+            enumComboBox.setSelectedIndex(0);
+        }
         border5 = BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED,Color.white,Color.white,new Color(124, 124, 124),new Color(178, 178, 178)),BorderFactory.createEmptyBorder(6,6,6,6));
-        ArrayList<String> v = new ArrayList<String>();
-        for(Iterator<DbEnum> enumIt = Database.getDb().enumList.iterator();
-            enumIt.hasNext(); )
-        {
-            decodes.db.DbEnum en = enumIt.next();
-            if (en.enumName.equalsIgnoreCase("EquationScope")
-             || en.enumName.equalsIgnoreCase("DataOrder")
-             || en.enumName.equalsIgnoreCase("UnitFamily")
-             || en.enumName.equalsIgnoreCase("LookupAlgorithm")
-             || en.enumName.equalsIgnoreCase("RecordingMode")
-             || en.enumName.equalsIgnoreCase("EquipmentType")
-             || en.enumName.equalsIgnoreCase("Season"))
-                continue;
-            String s = TextUtil.capsExpand(en.enumName);
-            v.add(s);
-        }
-        Collections.sort(v);
-        for(int i=0; i<v.size(); i++)
-        {
-            enumComboBox.addItem(v.get(i));
-        }
+
         enumTable.setRowHeight(20);
         enumTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -204,9 +189,8 @@ public class EnumerationPanel extends JPanel
     void enumComboBox_actionPerformed(ActionEvent e)
     {
         // todo: Populate table from selected enum.
-        String s = (String)enumComboBox.getSelectedItem();
-        s = TextUtil.removeAllSpace(s);
-        enumTableModel.setEnum(s);
+        DbEnum dbEnum = (DbEnum)enumComboBox.getSelectedItem();
+        enumTableModel.setEnum(dbEnum);
         deletedEnumValue = null;
         undoDeleteEnumValButton.setEnabled(false);
     }
@@ -220,9 +204,7 @@ public class EnumerationPanel extends JPanel
      */
     void addEnumValButton_actionPerformed(ActionEvent e)
     {
-        String s = TextUtil.removeAllSpace(
-            (String)enumComboBox.getSelectedItem());
-        decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
+        decodes.db.DbEnum en = (DbEnum)enumComboBox.getSelectedItem();
 
         EnumValueDialog evd = new EnumValueDialog();
         EnumValue ev = new EnumValue(en, "", "", "", "");
@@ -252,9 +234,7 @@ public class EnumerationPanel extends JPanel
             return;
         }
 
-        String s = TextUtil.removeAllSpace(
-            (String)enumComboBox.getSelectedItem());
-        decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
+        decodes.db.DbEnum en = (DbEnum)enumComboBox.getSelectedItem();
         EnumValue ev = enumTableModel.getEnumValueAt(row);
         EnumValueDialog evd = new EnumValueDialog();
         evd.fillValues(ev);
@@ -281,9 +261,7 @@ public class EnumerationPanel extends JPanel
             return;
         }
 
-        String s = TextUtil.removeAllSpace(
-            (String)enumComboBox.getSelectedItem());
-        decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
+        decodes.db.DbEnum en = (DbEnum)enumComboBox.getSelectedItem();
         deletedEnumValue = enumTableModel.getEnumValueAt(row);
         en.removeValue(deletedEnumValue.getValue());
         enumTableModel.fireTableDataChanged();
@@ -300,9 +278,7 @@ public class EnumerationPanel extends JPanel
     {
         if (deletedEnumValue != null)
         {
-            String s = TextUtil.removeAllSpace(
-                (String)enumComboBox.getSelectedItem());
-            decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
+            decodes.db.DbEnum en = (DbEnum)enumComboBox.getSelectedItem();
             en.replaceValue(deletedEnumValue.getValue(),
                 deletedEnumValue.getDescription(),
                 deletedEnumValue.getExecClassName(), "");
@@ -326,9 +302,7 @@ public class EnumerationPanel extends JPanel
             return;
         }
 
-        String s = TextUtil.removeAllSpace(
-            (String)enumComboBox.getSelectedItem());
-        decodes.db.DbEnum en = Database.getDb().getDbEnum(s);
+        decodes.db.DbEnum en = (DbEnum)enumComboBox.getSelectedItem();
         EnumValue ev = enumTableModel.getEnumValueAt(row);
         enumTableModel.fireTableDataChanged();
         en.setDefault(ev.getValue());
@@ -351,7 +325,9 @@ public class EnumerationPanel extends JPanel
             return;
         }
         if (enumTableModel.moveUp(row))
+        {
             enumTable.setRowSelectionInterval(row-1, row-1);
+        }
         enumsChanged = true;
     }
 
@@ -412,4 +388,20 @@ public class EnumerationPanel extends JPanel
             adaptee.enumComboBox_actionPerformed(e);
         }
 }
+
+
+    public Collection<DbEnum> getChanged()
+    {
+        ArrayList<DbEnum> enums = new ArrayList<>();
+        for (int i = 0; i < enumComboBox.getItemCount(); i++)
+        {
+            enums.add(enumComboBox.getItemAt(i));
+        }
+        return enums;
+    }
+
+    public void resetChanged()
+    {
+        this.enumsChanged = false;
+    }
 }
