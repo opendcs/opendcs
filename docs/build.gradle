@@ -9,17 +9,18 @@ def venvPath = (osWin ? "${docsVenv}/Scripts" : "${docsVenv}/bin")
 def noDocs = project.findProperty("no.docs") ?: false
 def havePython = checkPython(pythonExe)
 
-def checkPython(executableStr) {
+def checkPython(pythonStr) {
     def result = exec {
         ignoreExitValue = true
         if (osWin) {
             executable "cmd"
             args += "/c"
+            args += pythonStr
         } else {
-            executable executableStr
+            executable pythonStr
         }
         args += "-c"
-        args += "import sys; sys.exit(0)"
+        args += "import sys; print('checking for python'); sys.exit(0)"
     }
     return result.getExitValue() == 0
 }
