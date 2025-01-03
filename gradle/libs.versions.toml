@@ -87,7 +87,6 @@ org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" 
 org-jdbi3-oracle = { module = "org.jdbi:jdbi3-oracle12", version.ref = "jdbi" }
 org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
 
-
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
 cwms-db-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen", version.ref = "cwms-db-codegen" }
