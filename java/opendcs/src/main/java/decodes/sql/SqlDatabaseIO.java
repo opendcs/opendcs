@@ -69,7 +69,6 @@ import decodes.db.*;
 import decodes.hdb.HdbSqlDatabaseIO;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -142,7 +141,7 @@ public class SqlDatabaseIO
     extends DatabaseIO
     implements DatabaseConnectionOwner
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
     /**
      * The "location" of the SQL database, as passed into the constructor.
      * This is the full string from either the "DatabaseLocation" or the
@@ -514,6 +513,25 @@ public class SqlDatabaseIO
         try (DataTypeDAI dtdao = this.makeDataTypeDAO())
         {
             dtdao.readDataTypeSet(dts);
+        }
+        catch(DbIoException ex)
+        {
+            throw new DatabaseException("Failed to read site datatype set", ex);
+        }
+    }
+
+    /**
+     * Reads the set of known data-type objects in this database.
+     * Objects in this collection are complete.
+     * @param dts the object to populate from the database.
+     */
+    @Override
+    public synchronized void readDataTypeSet(DataTypeSet dts, String standard)
+            throws DatabaseException
+    {
+        try (DataTypeDAI dtdao = this.makeDataTypeDAO())
+        {
+            dtdao.readDataTypeSet(dts, standard);
         }
         catch(DbIoException ex)
         {
@@ -908,6 +926,62 @@ public class SqlDatabaseIO
     public synchronized void readUnitConverterSet(UnitConverterSet ucs)
         throws DatabaseException
     {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            _unitConverterIO.read(ucs);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("readUnitConverterSet: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized void writeUnitConverterSet(UnitConverterSet ucs)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            _unitConverterIO.write(ucs);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("writeUnitConverterSet: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized void deleteUnitConverterSet(Long ucId)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            UnitConverterDb ucd = new UnitConverterDb(null, null);
+            ucd.setId(DbKey.createDbKey(ucId));
+            _unitConverterIO.delete(ucd);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deleteUnitConverterSet: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
     }
 
 

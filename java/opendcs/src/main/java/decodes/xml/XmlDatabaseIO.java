@@ -33,6 +33,7 @@
 */
 package decodes.xml;
 
+import decodes.db.DataType;
 import ilex.util.Counter;
 import ilex.util.FileCounter;
 import ilex.util.Logger;
@@ -574,6 +575,51 @@ public class XmlDatabaseIO extends DatabaseIO
 				is = getInputStream(DataTypeDir, DataTypeEquivFile);
 				myParser.parse(is, dts);
 				dts.setTimeLastRead();
+			}
+		}
+		catch(Exception e)
+		{
+			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (is != null)
+				try { is.close(); } catch(Exception e) {}
+			Database.setDb(oldDb);
+		}
+	}
+
+	/**
+	 * Reads the set of known data-type objects in this database. Filters by standard.
+	 * Objects in this collection are complete.
+	 * @param dts object in which to store data
+	 * @param standard the data type standard to filter by
+	 * @throws DatabaseException
+	 */
+	public void readDataTypeSet( DataTypeSet dts, String standard ) throws DatabaseException
+	{
+		Database oldDb = Database.getDb();
+		// Make sure correct database is in effect.
+		Database.setDb(dts.getDatabase());
+		InputStream is = null;
+		try
+		{
+			long lmt = getLastModifyTime(DataTypeDir, DataTypeEquivFile);
+			if (dts.getTimeLastRead() < lmt)
+			{
+				DataTypeSet allDts = new DataTypeSet();
+				is = getInputStream(DataTypeDir, DataTypeEquivFile);
+				myParser.parse(is, allDts);
+				dts.setTimeLastRead();
+
+				for(Iterator<DataType> dtit = allDts.iterator(); dtit.hasNext(); )
+				{
+					DataType dt = dtit.next();
+					if (dt.getStandard().equalsIgnoreCase(standard))
+					{
+						dts.add(dt);
+					}
+				}
 			}
 		}
 		catch(Exception e)
@@ -1137,6 +1183,16 @@ e.printStackTrace();
 		// EU list file. Hence loading the EU list will also load
 		// the conversions.
 		readEngineeringUnitList(ucs.getDatabase().engineeringUnitList);
+	}
+
+	public void deleteUnitConverterSet( Long ucId ) throws DatabaseException
+	{
+		// TODO: Implement this deletion
+	}
+
+	public void writeUnitConverterSet( UnitConverterSet ucs ) throws DatabaseException
+	{
+		writeEngineeringUnitList(ucs.getDatabase().engineeringUnitList);
 	}
 
 
