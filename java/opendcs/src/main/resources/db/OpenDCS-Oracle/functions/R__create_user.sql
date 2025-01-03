@@ -39,14 +39,13 @@ is
 begin
     l_sql_no_quotes := remove_quotes(p_sql);
     if regexp_instr(l_sql_no_quotes, '([''";]|--|/\*)') > 0 then
-        raise VALUE_ERROR,'UNSAFE DYNAMIC SQL : '||p_sql;
+        raise_application_error(-20000,'UNSAFE DYNAMIC SQL : '||p_sql);
     end if;
 end check_dynamic_sql;
 /
 
 create or replace procedure create_user(username varchar2, password varchar2)
 is
-declare
     l_sql varchar2(512);
 begin
     l_sql := 'create user ' || username || ' identified by "' || password || '"';
@@ -56,9 +55,7 @@ end;
 /
 
 create or replace procedure assign_role(username varchar2, role varchar2)
-language plpgsql
 is
-declare
     l_sql varchar2(512);
 begin
     l_sql := 'grant "' || role || '" to ' || username;

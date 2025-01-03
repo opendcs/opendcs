@@ -65,7 +65,7 @@ public class OpenDCSOracleConfiguration implements Configuration
 
     // FUTURE work: allow passing of override values to bypass the test container creation
     // ... OR setup a separate testcontainer library like USACE did for CWMS.
-    private static final String DATABASE_NAME = "dcs";
+    private static final String DATABASE_NAME = "FREEPDB1";
     private static final String SCHEMA_OWNING_USER = "otsdb_adm";
     private static final String SCHEMA_OWNING_USER_PASSWORD = "dcs_owner_password";
     private static final String DCS_ADMIN_USER = "dcs_admin";
@@ -126,8 +126,9 @@ public class OpenDCSOracleConfiguration implements Configuration
         {
             db = new OracleContainer("gvenzl/oracle-free:full-faststart")
                     .withUsername(SCHEMA_OWNING_USER)
-                    .withDatabaseName(DATABASE_NAME)
+                    //.withDatabaseName(DATABASE_NAME)
                     .withPassword(SCHEMA_OWNING_USER_PASSWORD)
+                    .withStartupTimeoutSeconds(300)
                     ;
         }
 
@@ -297,7 +298,8 @@ public class OpenDCSOracleConfiguration implements Configuration
                             + "CREATE ROLE, CREATE USER"
                             + " TO " + user);
             stmt.executeQuery("GRANT CREATE SESSION,RESOURCE,CONNECT"
-                            + " TO " + user);
+                            + " TO " + user + " ");
+            stmt.executeQuery("ALTER USER " + user + " DEFAULT ROLE ALL");
         }
     }
 }
