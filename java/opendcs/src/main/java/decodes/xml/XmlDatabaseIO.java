@@ -1156,12 +1156,12 @@ e.printStackTrace();
 
 	public void deleteUnitConverterSet( Long ucId ) throws DatabaseException
 	{
-		// TODO: Implement this deletion
+		throw new UnsupportedOperationException("deleteUnitConverterSet not yet implemented for XML");
 	}
 
-	public void writeUnitConverterSet( UnitConverterSet ucs ) throws DatabaseException
+	public void writeUnitConverterSet( UnitConverterSet ucs )
 	{
-		writeEngineeringUnitList(ucs.getDatabase().engineeringUnitList);
+		throw new UnsupportedOperationException("writeUnitConverterSet not yet implemented for XML");
 	}
 
 

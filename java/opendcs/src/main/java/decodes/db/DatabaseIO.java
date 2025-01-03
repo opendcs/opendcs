@@ -21,6 +21,7 @@ import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 import decodes.xml.XmlDatabaseIO;
+import org.xml.sax.SAXException;
 
 /**
 This is the base class for both XmlDatabaseIO and SqlDatabaseIO.
