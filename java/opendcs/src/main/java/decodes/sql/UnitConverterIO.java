@@ -295,7 +295,7 @@ public class UnitConverterIO extends SqlDbObjIo
 	public void delete(UnitConverterDb ucdb)
 		throws DatabaseException, SQLException
 	{
-		String q = "DELETE FROM UnitConverter WHERE ID = " + ucdb.getId();
+		String q = "DELETE FROM UnitConverter WHERE ID = " + ucdb.getId().getValue();
 		executeUpdate(q);
 	}
 
