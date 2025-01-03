@@ -116,7 +116,7 @@ public class TraceDialog extends JDialog
 	 * Text which if seen in addText will automatically close the dialog.
 	 * @param text exact text to check for.
 	 */
-	void setCloseText(String text)
+	public void setCloseText(String text)
 	{
 		this.closeText = text;
 	}
