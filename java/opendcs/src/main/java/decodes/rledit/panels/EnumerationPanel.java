@@ -31,6 +31,8 @@ import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import decodes.db.Database;
 import decodes.db.DbEnum;
@@ -45,7 +47,7 @@ import ilex.util.TextUtil;
 
 public class EnumerationPanel extends JPanel
 {
-
+    private static final Logger log = LoggerFactory.getLogger(EnumerationPanel.class);
     private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
     private static ResourceBundle labels = RefListEditor.getLabels();
 
@@ -84,7 +86,9 @@ public class EnumerationPanel extends JPanel
         catch (Exception ex)
         {
 
-            ex.printStackTrace();
+            log.atError()
+				.setCause(ex)
+				.log("Error creating EnumerationPanel");
         }
     }
 
@@ -366,12 +370,12 @@ public class EnumerationPanel extends JPanel
     }
 
     /**
-     * Shows an error message in a JOptionPane and prints it to stderr.
+     * Shows an error message in a JOptionPane and prints it to the error log
      * @param msg the error message.
      */
     public void showError(String msg)
     {
-        System.err.println(msg);
+        log.error(msg);
         JOptionPane.showMessageDialog(this,
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }
