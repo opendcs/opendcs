@@ -101,6 +101,8 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.fasterxml.jackson.databind)
+    testImplementation(libs.greenmail)  
+  
 }
 
 test
