@@ -25,7 +25,7 @@ public class AlarmMailerTest {
 	private AlarmMailer alarmMailer;
 	private Properties props;
     private final String fromAddr = "karl@example.org";
-    private final static String fromName = "Karl";
+    private final String fromName = "Karl";
     private final String toAddr = "mike@example.org";
 
 	@BeforeAll
