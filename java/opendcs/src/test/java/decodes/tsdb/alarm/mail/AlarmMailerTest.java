@@ -24,9 +24,9 @@ public class AlarmMailerTest {
 	private static GreenMail smtpServer;
 	private AlarmMailer alarmMailer;
 	private Properties props;
-    private final String fromAddr = "karl@opendcs.org";
+    private final String fromAddr = "karl@example.org";
     private final static String fromName = "Karl";
-    private final String toAddr = "mike@opendcs.org";
+    private final String toAddr = "mike@example.org";
 
 	@BeforeAll
 	public static void startSmtpServer() {
