@@ -228,6 +228,68 @@ public class DataTypeDAO
 			throw new DbIoException(msg);
 		}
 	}
+
+	@Override
+	public void readDataTypeSet(DataTypeSet dts, String standard)
+			throws DbIoException
+	{
+		String q = "select " + columns + " from DataType";
+		if (standard != null)
+			q = q + " where STANDARD = " + sqlString(standard);
+		ResultSet rs = doQuery(q);
+		try
+		{
+			while (rs != null && rs.next())
+			{
+				DbKey id = DbKey.createDbKey(rs, 1);
+				String standardName = rs.getString(2);
+				String code = rs.getString(3);
+				DataType dt = new DataType(standardName, code);
+				dt.forceSetId(id);
+				if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+					dt.setDisplayName(rs.getString(4));
+				dts.add(dt);
+			}
+
+			ArrayList<Pair> equivs = readDtEquivalences();
+			for(Pair equiv : equivs)
+			{
+				DbKey id0 = (DbKey)equiv.first;
+				DbKey id1 = (DbKey)equiv.second;
+
+				DataType dt0 = dts.getById(id0);
+				DataType dt1 = dts.getById(id1);
+
+				if (dt0 == null || dt1 == null)
+				{
+					warning("Bad datatype equivalence ids (" + id0 + "," + id1
+							+ ") -- ignored");
+					continue;
+				}
+
+				dt0.assertEquivalence(dt1);
+			}
+
+			if (db.isHdb())
+			{
+				q = "select datatype_id, datatype_common_name from hdb_datatype";
+				rs = doQuery(q);
+				while(rs != null && rs.next())
+				{
+					DataType dt = dts.getById(DbKey.createDbKey(rs, 1));
+					if (dt != null)
+						dt.setDisplayName(rs.getString(2));
+				}
+			}
+		}
+		catch(SQLException ex)
+		{
+			String msg = "Error reading data type set: " + ex;
+			System.err.println(msg);
+			ex.printStackTrace(System.err);
+			throw new DbIoException(msg);
+		}
+	}
 	
 	/**
 	 * Read all equivalences and return an arraylist of Pairs where the pairs
