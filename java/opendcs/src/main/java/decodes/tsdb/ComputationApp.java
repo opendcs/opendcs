@@ -525,7 +525,7 @@ public class ComputationApp
 			shutdownFlag = true;
 			databaseFailed = true;
 		}
-		catch(Exception ex)
+		catch(Throwable ex)
 		{
 			String msg = "Unexpected exception while " + action + ": " + ex;
 			warning(msg);
@@ -1063,7 +1063,7 @@ public class ComputationApp
 			{
 				// Use the resolver's method to avoid duplicates (multiple TSIDs in the group that 
 				// result in the same set of computation params.)
-				DbComputation concreteClone = DbCompResolver.makeConcrete(theDb, tsid, tc, true);
+				DbComputation concreteClone = DbCompResolver.makeConcrete(theDb, timeSeriesDAO, tsid, tc, true);
 				resolver.addToResults(executeList, concreteClone, null);
 				
 				// Special case for timed GroupAdder. Only create a single clone. It will expand its
