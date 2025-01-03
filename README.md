@@ -90,10 +90,13 @@ To verify everything can work on your system run the following:
 
 ```
 # General tests
-ant test
+./gradlew test
+
 # NOTE: this will flash a few interfaces onto your display, let the task finish or the tests get stuck. 
 # However, you can just run through the GUIs to finish the tests. Though be aware if you don't follow the 
 # programmed script the task may return failure.
+
+a report of tests is stored here: opendcs/java/opendcs/build/reports/tests/test
 
 # Test the GUI (NOTE: leave your hands off the keyboard and mouse or the runner gets confused.)
 ./gradlew test -Pno.docs=true
@@ -117,6 +120,11 @@ To run a specific test only use:
 
 ```
 ./gradlew <test target> --tests # See [gradle documentation ](https://docs.gradle.org/current/userguide/java_testing.html#simple_name_pattern) for more detail
+
+example:
+
+gradlew test --tests AlarmMailerTest
+
 ```
 
 It is possible a file glob will work in the tests parameter above but we have not tested this.
