@@ -81,7 +81,9 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import ilex.util.AuthException;
 import ilex.util.EnvExpander;
+import opendcs.util.sql.WrappedConnection;
 import org.opendcs.authentication.AuthSourceService;
 
 import org.slf4j.LoggerFactory;
@@ -119,8 +121,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.util.sql.WrappedConnection;
-import ilex.util.AuthException;
 import ilex.util.Logger;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
@@ -142,7 +142,7 @@ public class SqlDatabaseIO
     extends DatabaseIO
     implements DatabaseConnectionOwner
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
     /**
      * The "location" of the SQL database, as passed into the constructor.
      * This is the full string from either the "DatabaseLocation" or the
@@ -666,6 +666,25 @@ public class SqlDatabaseIO
     }
 
     /**
+     * Reads the set of known data-type objects in this database.
+     * Objects in this collection are complete.
+     * @param dts the object to populate from the database.
+     */
+    @Override
+    public synchronized void readDataTypeSet(DataTypeSet dts, String standard)
+            throws DatabaseException
+    {
+        try (DataTypeDAI dtdao = this.makeDataTypeDAO())
+        {
+            dtdao.readDataTypeSet(dts, standard);
+        }
+        catch(DbIoException ex)
+        {
+            throw new DatabaseException("Failed to read site datatype set", ex);
+        }
+    }
+
+    /**
       Reads a single data-type object given its numeric key.
       @return data type or null if not found
     */
@@ -1090,6 +1109,62 @@ public class SqlDatabaseIO
     public synchronized void readUnitConverterSet(UnitConverterSet ucs)
         throws DatabaseException
     {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            _unitConverterIO.read(ucs);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("readUnitConverterSet: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized void insertUnitConverter(UnitConverterDb uc)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            _unitConverterIO.addNew(uc);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("insertUnitConverter: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized void deleteUnitConverter(Long ucId)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            UnitConverterDb ucd = new UnitConverterDb(null, null);
+            ucd.setId(DbKey.createDbKey(ucId));
+            _unitConverterIO.delete(ucd);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deleteUnitConverterSet: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
     }
 
 
@@ -1973,6 +2048,30 @@ public class SqlDatabaseIO
             {
                 freeConnection(conn);
             }
+            _dataSourceListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * Deletes an EngineeringUnit from the database by its abbreviation.
+     * @param eu object with the abbreviation set.
+     * @throws DatabaseException if a database error occurs.
+     */
+    @Override
+    public synchronized void deleteEngineeringUnit(EngineeringUnit eu)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _engineeringUnitIO.setConnection(conn);
+            _engineeringUnitIO.delete(eu);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deleteDataSource.", ex);
+        }
+        finally
+        {
             _dataSourceListIO.setConnection(null);
         }
     }
