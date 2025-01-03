@@ -1,6 +1,3 @@
-/*
-*  $Id$
-*/
 package decodes.rledit;
 
 import java.awt.*;
@@ -15,6 +12,8 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.oracle.jrockit.jfr.DataType;
 
 import java.util.*;
 import java.util.List;
@@ -114,7 +113,7 @@ public class RefListFrame extends JFrame
     private final OpenDcsDatabase database;
 
     /**
-     * No args constructor for JBuilder.
+     * constructor for RefListFrame
      */
     public RefListFrame(OpenDcsDatabase database)
     {
@@ -131,15 +130,6 @@ public class RefListFrame extends JFrame
             enumIt.hasNext(); )
         {
             decodes.db.DbEnum en = enumIt.next();
-            /*if (en.enumName.equalsIgnoreCase("EquationScope")
-             || en.enumName.equalsIgnoreCase("DataOrder")
-             || en.enumName.equalsIgnoreCase("UnitFamily")
-             || en.enumName.equalsIgnoreCase("LookupAlgorithm")
-             || en.enumName.equalsIgnoreCase("RecordingMode")
-             || en.enumName.equalsIgnoreCase("EquipmentType")
-             || en.enumName.equalsIgnoreCase("Season"))
-                continue;
-            String s = TextUtil.capsExpand(en.enumName);*/
             v.add(en);
         }
         Collections.sort(v, (a,b) -> a.enumName.compareTo(b.enumName));
@@ -1044,12 +1034,12 @@ public class RefListFrame extends JFrame
     }
 
     /**
-     * Shows an error message in a JOptionPane and prints it to stderr.
+     * Shows an error message in a JOptionPane and prints it to the error log
      * @param msg the error message.
      */
     public void showError(String msg)
     {
-        System.err.println(msg);
+        log.logMsg(Logger.ERROR, msg);
         JOptionPane.showMessageDialog(this,
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }
