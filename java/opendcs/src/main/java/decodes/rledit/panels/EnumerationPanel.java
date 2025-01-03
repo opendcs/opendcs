@@ -47,7 +47,7 @@ import ilex.util.TextUtil;
 
 public class EnumerationPanel extends JPanel
 {
-    private static final com.sun.media.jfxmedia.logging.Logger log = LoggerFactory.getLogger(EnumerationPanel.class);
+    private static final Logger log = LoggerFactory.getLogger(EnumerationPanel.class);
     private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
     private static ResourceBundle labels = RefListEditor.getLabels();
 
@@ -375,7 +375,7 @@ public class EnumerationPanel extends JPanel
      */
     public void showError(String msg)
     {
-        log.logMsg(Logger.ERROR, msg);
+        log.error(msg);
         JOptionPane.showMessageDialog(this,
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }

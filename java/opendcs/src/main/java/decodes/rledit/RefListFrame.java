@@ -13,8 +13,6 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.oracle.jrockit.jfr.DataType;
-
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1039,7 +1037,7 @@ public class RefListFrame extends JFrame
      */
     public void showError(String msg)
     {
-        log.logMsg(Logger.ERROR, msg);
+        log.error(ERROR, msg);
         JOptionPane.showMessageDialog(this,
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }
