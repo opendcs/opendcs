@@ -1,19 +1,25 @@
 package opendcs.dao;
 
+import decodes.tsdb.IntervalCodes;
 import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Date;
+import java.util.TimeZone;
+
+import javax.servlet.http.HttpSession;
 
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.DacqEventDAI;
+import opendcs.dai.IntervalDAI;
+import opendcs.opentsdb.Interval;
 
 public class DacqEventDAO extends DaoBase implements DacqEventDAI
 {
@@ -23,6 +29,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 		+ "EVENT_PRIORITY, SUBSYSTEM, MSG_RECV_TIME, EVENT_TEXT";
 	public static String dacqEventColumns = columnsBase;
 	private static Boolean hasAppId = null;
+	private static final String LAST_DACQ_ATTRIBUTE = "last-dacq-event-id";
 	
 
 	public DacqEventDAO(DatabaseConnectionOwner tsdb)
@@ -235,6 +242,86 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 		q = q + " order by DACQ_EVENT_ID";
 		return queryForEvents(q, evtList, parameters);
 	}
+
+	@Override
+	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, String backlog, HttpSession httpSession)
+			throws DbIoException
+	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+		{
+			return 0;
+		}
+		List<Object> parameters = new ArrayList<>();
+		String q = "SELECT " + dacqEventColumns + ", LOADING_APPLICATION_ID FROM " + dacqEventTableName;
+		String c = "WHERE";
+		if (appId != null)
+		{
+			q = q + " " + c + " LOADING_APPLICATION_ID = ?";
+			c = "AND";
+			parameters.add(appId);
+		}
+		if (routingExecId != null)
+		{
+			q = q + " " + c + " SCHEDULE_ENTRY_STATUS_ID = ?";
+			c = "AND";
+			parameters.add(routingExecId);
+		}
+		if (platformId != null)
+		{
+			q = q + " " + c + " PLATFORM_ID = ?";
+			c = "AND";
+			parameters.add(platformId);
+		}
+		if (backlog != null && !backlog.trim().isEmpty())
+		{
+			if (backlog.equalsIgnoreCase("last"))
+			{
+				Object lastDacqEventId = httpSession.getAttribute(LAST_DACQ_ATTRIBUTE);
+				if (lastDacqEventId != null)
+				{
+					q = q + " " + c + " DACQ_EVENT_ID > ?";
+					parameters.add(lastDacqEventId);
+				}
+			}
+			else
+			{
+				try (IntervalDAI dai = db.makeIntervalDAO())
+				{
+					dai.loadAllIntervals();
+					String[] intervalCodes = dai.getValidIntervalCodes();
+					for (String interval : intervalCodes)
+					{
+						Interval intv = IntervalCodes.getInterval(interval);
+						if (intv == null)
+						{
+							Logger.instance().log(Logger.E_WARNING, "Interval code '" + interval + "' not recognized.");
+							continue;
+						}
+						if (backlog.equalsIgnoreCase(intv.getName()))
+						{
+							Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+							cal.setTimeInMillis(System.currentTimeMillis());
+							int calConstant = intv.getCalConstant();
+							if (calConstant != -1)
+							{
+								cal.add(calConstant, -intv.getCalMultiplier());
+								q = q + " " + c + " EVENT_TIME >= ?";
+								parameters.add(cal.getTimeInMillis());
+								httpSession.removeAttribute(LAST_DACQ_ATTRIBUTE);
+							}
+
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		q = q + " order by DACQ_EVENT_ID";
+
+		return queryForEvents(q, evtList, parameters);
+	}
+
 
 	@Override
 	public void deleteEventsForPlatform(DbKey platformId) throws DbIoException

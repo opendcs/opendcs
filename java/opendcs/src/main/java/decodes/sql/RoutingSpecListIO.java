@@ -5,7 +5,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.slf4j.LoggerFactory;
 
@@ -213,6 +212,11 @@ public class RoutingSpecListIO extends SqlDbObjIo
 
             // There will be only one row in the result set.
             resultSet.next();
+            if (resultSet.getRow() == 0)
+            {
+                throw new DatabaseException(String.format("No RoutingSpec found with id %d",
+                        routingSpec.getId().getValue()));
+            }
             routingSpec.setName(resultSet.getString(2));
 
             DbKey dataSourceId = DbKey.createDbKey(resultSet, 3);
