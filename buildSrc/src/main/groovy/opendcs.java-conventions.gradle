@@ -24,7 +24,9 @@ java {
 
 tasks.withType(JavaCompile).configureEach {
     javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(8)
+        languageVersion = JavaLanguageVersion.of(
+            JavaVersion.current().majorVersion.toInteger()
+        )
     }
 }
 
