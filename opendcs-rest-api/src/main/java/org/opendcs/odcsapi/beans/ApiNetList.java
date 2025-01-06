@@ -18,6 +18,7 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author mmaloney
@@ -46,7 +47,7 @@ public class ApiNetList
 	 * being used as a key in this HashMap.
 	 * This data member is never null.
 	 */
-	private HashMap<String, ApiNetListItem> items = new HashMap<String, ApiNetListItem>();
+	private Map<String, ApiNetListItem> items = new HashMap<>();
 
 	/**
 	 * Default ctor required for POST method.
@@ -98,12 +99,12 @@ public class ApiNetList
 		this.lastModifyTime = lastModifyTime;
 	}
 
-	public HashMap<String, ApiNetListItem> getItems()
+	public Map<String, ApiNetListItem> getItems()
 	{
 		return items;
 	}
 
-	public void setItems(HashMap<String, ApiNetListItem> items)
+	public void setItems(Map<String, ApiNetListItem> items)
 	{
 		this.items = items;
 	}

@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class ApiDataSource
@@ -25,7 +26,7 @@ public class ApiDataSource
 	private String type = null;
 	private int usedBy = 0;
 	private Properties props = null;
-	private ArrayList<ApiDataSourceGroupMember> groupMembers = new ArrayList<ApiDataSourceGroupMember>();
+	private List<ApiDataSourceGroupMember> groupMembers = new ArrayList<>();
 	
 	public Long getDataSourceId()
 	{
@@ -67,11 +68,11 @@ public class ApiDataSource
 	{
 		this.props = props;
 	}
-	public ArrayList<ApiDataSourceGroupMember> getGroupMembers()
+	public List<ApiDataSourceGroupMember> getGroupMembers()
 	{
 		return groupMembers;
 	}
-	public void setGroupMembers(ArrayList<ApiDataSourceGroupMember> groupMembers)
+	public void setGroupMembers(List<ApiDataSourceGroupMember> groupMembers)
 	{
 		this.groupMembers = groupMembers;
 	}

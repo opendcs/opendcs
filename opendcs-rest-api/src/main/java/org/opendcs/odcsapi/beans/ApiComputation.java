@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 
 public class ApiComputation
@@ -58,7 +59,7 @@ public class ApiComputation
 	private String algorithmName = null;
 	
 	/** A list of this computation's parameters. */
-	private ArrayList<ApiCompParm> parmList = new ArrayList<ApiCompParm>();
+	private List<ApiCompParm> parmList = new ArrayList<>();
 
 	/**
 	 * Properties from the meta-data CompProperty records.
@@ -196,11 +197,11 @@ public class ApiComputation
 	{
 		this.algorithmName = algorithmName;
 	}
-	public ArrayList<ApiCompParm> getParmList()
+	public List<ApiCompParm> getParmList()
 	{
 		return parmList;
 	}
-	public void setParmList(ArrayList<ApiCompParm> parmList)
+	public void setParmList(List<ApiCompParm> parmList)
 	{
 		this.parmList = parmList;
 	}

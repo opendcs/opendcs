@@ -16,13 +16,14 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ApiDecodesTimeSeries
 {
 	private int sensorNum = 0;
 	private String sensorName = null;
 	private String units = null;
-	private ArrayList<ApiDecodesTSValue> values = new ArrayList<ApiDecodesTSValue>();
+	private List<ApiDecodesTSValue> values = new ArrayList<>();
 	public int getSensorNum()
 	{
 		return sensorNum;
@@ -31,11 +32,11 @@ public class ApiDecodesTimeSeries
 	{
 		this.sensorNum = sensorNum;
 	}
-	public ArrayList<ApiDecodesTSValue> getValues()
+	public List<ApiDecodesTSValue> getValues()
 	{
 		return values;
 	}
-	public void setValues(ArrayList<ApiDecodesTSValue> values)
+	public void setValues(List<ApiDecodesTSValue> values)
 	{
 		this.values = values;
 	}

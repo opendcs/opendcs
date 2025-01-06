@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ApiTsGroup
 {
@@ -24,22 +25,22 @@ public class ApiTsGroup
 	private String groupType = null;
 	private String description = null;
 	
-	private ArrayList<ApiTimeSeriesIdentifier> tsIds = new ArrayList<ApiTimeSeriesIdentifier>();
-	private ArrayList<ApiTsGroupRef> includeGroups = new ArrayList<ApiTsGroupRef>();
-	private ArrayList<ApiTsGroupRef> excludeGroups = new ArrayList<ApiTsGroupRef>();
-	private ArrayList<ApiTsGroupRef> intersectGroups = new ArrayList<ApiTsGroupRef>();
+	private List<ApiTimeSeriesIdentifier> tsIds = new ArrayList<>();
+	private List<ApiTsGroupRef> includeGroups = new ArrayList<>();
+	private List<ApiTsGroupRef> excludeGroups = new ArrayList<>();
+	private List<ApiTsGroupRef> intersectGroups = new ArrayList<>();
 	
 	// list of name=value pairs, where name is one of BaseLocation, SubLocation,
 	// BaseParam, SubParam, ParamType, Interval, Duration, Version, BaseVersion, SubVersion
 	// Interval, Duration, Version
 	// NOTE: Location and Param are handled by groupSites, and groupDataTypes below
-	private ArrayList<String> groupAttrs = new ArrayList<String>();
+	private List<String> groupAttrs = new ArrayList<>();
 	
 	// Explicit Location (aka Site) specs:
-	private ArrayList<ApiSiteRef> groupSites = new ArrayList<ApiSiteRef>();
+	private List<ApiSiteRef> groupSites = new ArrayList<>();
 	
 	// Explicit DataType (aka Param) specs:
-	private ArrayList<ApiDataType> groupDataTypes = new ArrayList<ApiDataType>();
+	private List<ApiDataType> groupDataTypes = new ArrayList<>();
 	
 	public Long getGroupId()
 	{
@@ -73,31 +74,31 @@ public class ApiTsGroup
 	{
 		this.description = description;
 	}
-	public ArrayList<ApiTimeSeriesIdentifier> getTsIds()
+	public List<ApiTimeSeriesIdentifier> getTsIds()
 	{
 		return tsIds;
 	}
-	public ArrayList<ApiTsGroupRef> getIncludeGroups()
+	public List<ApiTsGroupRef> getIncludeGroups()
 	{
 		return includeGroups;
 	}
-	public ArrayList<ApiTsGroupRef> getExcludeGroups()
+	public List<ApiTsGroupRef> getExcludeGroups()
 	{
 		return excludeGroups;
 	}
-	public ArrayList<ApiTsGroupRef> getIntersectGroups()
+	public List<ApiTsGroupRef> getIntersectGroups()
 	{
 		return intersectGroups;
 	}
-	public ArrayList<String> getGroupAttrs()
+	public List<String> getGroupAttrs()
 	{
 		return groupAttrs;
 	}
-	public ArrayList<ApiSiteRef> getGroupSites()
+	public List<ApiSiteRef> getGroupSites()
 	{
 		return groupSites;
 	}
-	public ArrayList<ApiDataType> getGroupDataTypes()
+	public List<ApiDataType> getGroupDataTypes()
 	{
 		return groupDataTypes;
 	}

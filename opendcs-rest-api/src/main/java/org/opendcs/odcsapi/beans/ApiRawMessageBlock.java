@@ -16,19 +16,20 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ApiRawMessageBlock
 {
-	private ArrayList<ApiRawMessage> messages = new ArrayList<ApiRawMessage>();
+	private List<ApiRawMessage> messages = new ArrayList<>();
 	
 	private boolean moreToFollow = true;
 
-	public ArrayList<ApiRawMessage> getMessages()
+	public List<ApiRawMessage> getMessages()
 	{
 		return messages;
 	}
 
-	public void setMessages(ArrayList<ApiRawMessage> messages)
+	public void setMessages(List<ApiRawMessage> messages)
 	{
 		this.messages = messages;
 	}

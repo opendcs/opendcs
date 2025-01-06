@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ApiConfigScript
 {
@@ -26,11 +27,11 @@ public class ApiConfigScript
 	
 	private String headerType = null;
 	
-	private ArrayList<ApiConfigScriptSensor> scriptSensors = 
-		new ArrayList<ApiConfigScriptSensor>();
+	private List<ApiConfigScriptSensor> scriptSensors =
+		new ArrayList<>();
 	
-	private ArrayList<ApiScriptFormatStatement> formatStatements =
-		new ArrayList<ApiScriptFormatStatement>();
+	private List<ApiScriptFormatStatement> formatStatements =
+		new ArrayList<>();
 
 	public String getName()
 	{
@@ -62,22 +63,22 @@ public class ApiConfigScript
 		this.headerType = headerType;
 	}
 
-	public ArrayList<ApiConfigScriptSensor> getScriptSensors()
+	public List<ApiConfigScriptSensor> getScriptSensors()
 	{
 		return scriptSensors;
 	}
 
-	public void setScriptSensors(ArrayList<ApiConfigScriptSensor> scriptSensors)
+	public void setScriptSensors(List<ApiConfigScriptSensor> scriptSensors)
 	{
 		this.scriptSensors = scriptSensors;
 	}
 
-	public ArrayList<ApiScriptFormatStatement> getFormatStatements()
+	public List<ApiScriptFormatStatement> getFormatStatements()
 	{
 		return formatStatements;
 	}
 
-	public void setFormatStatements(ArrayList<ApiScriptFormatStatement> formatStatements)
+	public void setFormatStatements(List<ApiScriptFormatStatement> formatStatements)
 	{
 		this.formatStatements = formatStatements;
 	}

@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 public class ApiConfigSensor
@@ -38,7 +39,7 @@ public class ApiConfigSensor
 
 	private Properties properties = new Properties();
 
-	private HashMap<String, String> dataTypes = new HashMap<String, String>();
+	private Map<String, String> dataTypes = new HashMap<>();
 
 	private String usgsStatCode = null;
 
@@ -122,12 +123,12 @@ public class ApiConfigSensor
 		this.properties = properties;
 	}
 
-	public HashMap<String, String> getDataTypes()
+	public Map<String, String> getDataTypes()
 	{
 		return dataTypes;
 	}
 
-	public void setDataTypes(HashMap<String, String> dataTypes)
+	public void setDataTypes(Map<String, String> dataTypes)
 	{
 		this.dataTypes = dataTypes;
 	}

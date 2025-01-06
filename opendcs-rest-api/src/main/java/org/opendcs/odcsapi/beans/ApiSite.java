@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 public class ApiSite
@@ -24,7 +25,7 @@ public class ApiSite
 	private Long siteId = null;
 	
 	/** nametype - namevalue */
-	private HashMap<String, String> sitenames = new HashMap<String, String>();
+	private Map<String, String> sitenames = new HashMap<>();
 	
 	private String description = null;
 	
@@ -60,12 +61,12 @@ public class ApiSite
 		this.siteId = siteId;
 	}
 
-	public HashMap<String, String> getSitenames()
+	public Map<String, String> getSitenames()
 	{
 		return sitenames;
 	}
 
-	public void setSitenames(HashMap<String, String> sitenames)
+	public void setSitenames(Map<String, String> sitenames)
 	{
 		this.sitenames = sitenames;
 	}

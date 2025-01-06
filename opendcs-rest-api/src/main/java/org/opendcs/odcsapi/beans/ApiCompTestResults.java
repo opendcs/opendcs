@@ -16,25 +16,26 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ApiCompTestResults
 {
-	private ArrayList<ApiCompParmData> compParmData = new ArrayList<ApiCompParmData>();
-	private ArrayList<ApiLogMessage> logMessages = new ArrayList<ApiLogMessage>();
+	private List<ApiCompParmData> compParmData = new ArrayList<>();
+	private List<ApiLogMessage> logMessages = new ArrayList<>();
 	
-	public ArrayList<ApiCompParmData> getCompParmData()
+	public List<ApiCompParmData> getCompParmData()
 	{
 		return compParmData;
 	}
-	public void setCompParmData(ArrayList<ApiCompParmData> compParmData)
+	public void setCompParmData(List<ApiCompParmData> compParmData)
 	{
 		this.compParmData = compParmData;
 	}
-	public ArrayList<ApiLogMessage> getLogMessages()
+	public List<ApiLogMessage> getLogMessages()
 	{
 		return logMessages;
 	}
-	public void setLogMessages(ArrayList<ApiLogMessage> logMessages)
+	public void setLogMessages(List<ApiLogMessage> logMessages)
 	{
 		this.logMessages = logMessages;
 	}

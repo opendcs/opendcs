@@ -16,12 +16,13 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ApiTimeSeriesData
 {
 	private ApiTimeSeriesIdentifier tsid = null;
 	
-	private ArrayList<ApiTimeSeriesValue> values = new ArrayList<ApiTimeSeriesValue>();
+	private List<ApiTimeSeriesValue> values = new ArrayList<>();
 
 	public ApiTimeSeriesIdentifier getTsid()
 	{
@@ -33,12 +34,12 @@ public class ApiTimeSeriesData
 		this.tsid = tsid;
 	}
 
-	public ArrayList<ApiTimeSeriesValue> getValues()
+	public List<ApiTimeSeriesValue> getValues()
 	{
 		return values;
 	}
 
-	public void setValues(ArrayList<ApiTimeSeriesValue> values)
+	public void setValues(List<ApiTimeSeriesValue> values)
 	{
 		this.values = values;
 	}

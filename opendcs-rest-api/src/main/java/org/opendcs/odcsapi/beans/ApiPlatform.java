@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 
 public class ApiPlatform
@@ -32,8 +33,8 @@ public class ApiPlatform
 	private boolean production = false;
 	private Properties properties = new Properties();
 	
-	private ArrayList<ApiPlatformSensor> platformSensors = new ArrayList<ApiPlatformSensor>();
-	private ArrayList<ApiTransportMedium> transportMedia = new ArrayList<ApiTransportMedium>();
+	private List<ApiPlatformSensor> platformSensors = new ArrayList<>();
+	private List<ApiTransportMedium> transportMedia = new ArrayList<>();
 	public Long getPlatformId()
 	{
 		return platformId;
@@ -106,19 +107,19 @@ public class ApiPlatform
 	{
 		this.production = production;
 	}
-	public ArrayList<ApiPlatformSensor> getPlatformSensors()
+	public List<ApiPlatformSensor> getPlatformSensors()
 	{
 		return platformSensors;
 	}
-	public void setPlatformSensors(ArrayList<ApiPlatformSensor> platformSensors)
+	public void setPlatformSensors(List<ApiPlatformSensor> platformSensors)
 	{
 		this.platformSensors = platformSensors;
 	}
-	public ArrayList<ApiTransportMedium> getTransportMedia()
+	public List<ApiTransportMedium> getTransportMedia()
 	{
 		return transportMedia;
 	}
-	public void setTransportMedia(ArrayList<ApiTransportMedium> transportMedia)
+	public void setTransportMedia(List<ApiTransportMedium> transportMedia)
 	{
 		this.transportMedia = transportMedia;
 	}

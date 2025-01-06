@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ApiPlatformConfig
 {
@@ -27,11 +28,11 @@ public class ApiPlatformConfig
 	
 	private String description = null;
 	
-	private ArrayList<ApiConfigSensor> configSensors = 
-		new ArrayList<ApiConfigSensor>();
+	private List<ApiConfigSensor> configSensors =
+		new ArrayList<>();
 	
-	private ArrayList<ApiConfigScript> scripts = 
-		new ArrayList<ApiConfigScript>();
+	private List<ApiConfigScript> scripts =
+		new ArrayList<>();
 
 	public Long getConfigId()
 	{
@@ -73,22 +74,22 @@ public class ApiPlatformConfig
 		this.description = description;
 	}
 
-	public ArrayList<ApiConfigSensor> getConfigSensors()
+	public List<ApiConfigSensor> getConfigSensors()
 	{
 		return configSensors;
 	}
 	
-	public void setConfigSensors(ArrayList<ApiConfigSensor> configSensors)
+	public void setConfigSensors(List<ApiConfigSensor> configSensors)
 	{
 		this.configSensors = configSensors;
 	}
 
-	public ArrayList<ApiConfigScript> getScripts()
+	public List<ApiConfigScript> getScripts()
 	{
 		return scripts;
 	}
 
-	public void setScripts(ArrayList<ApiConfigScript> scripts)
+	public void setScripts(List<ApiConfigScript> scripts)
 	{
 		this.scripts = scripts;
 	}

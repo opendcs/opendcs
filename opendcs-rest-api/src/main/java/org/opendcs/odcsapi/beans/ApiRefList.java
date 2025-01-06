@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.beans;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author mmaloney
@@ -25,7 +26,7 @@ public class ApiRefList
 {
 	private Long reflistId = null;
 	private String enumName = null;
-	private HashMap<String, ApiRefListItem> items = new HashMap<String, ApiRefListItem>();
+	private Map<String, ApiRefListItem> items = new HashMap<>();
 	private String defaultValue = null;
 	private String description = null;
 	
@@ -39,7 +40,7 @@ public class ApiRefList
 		this.enumName = enumName;
 	}
 
-	public HashMap<String, ApiRefListItem> getItems()
+	public Map<String, ApiRefListItem> getItems()
 	{
 		return items;
 	}
@@ -74,7 +75,7 @@ public class ApiRefList
 		this.reflistId = reflistId;
 	}
 
-	public void setItems(HashMap<String, ApiRefListItem> items)
+	public void setItems(Map<String, ApiRefListItem> items)
 	{
 		this.items = items;
 	}

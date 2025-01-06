@@ -17,19 +17,20 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class ApiDecodedMessage
 {
 	private Date messageTime = null;
-	private ArrayList<ApiLogMessage> logMessages = new ArrayList<ApiLogMessage>();
-	private ArrayList<ApiDecodesTimeSeries> timeSeries = new ArrayList<ApiDecodesTimeSeries>();
+	private List<ApiLogMessage> logMessages = new ArrayList<>();
+	private List<ApiDecodesTimeSeries> timeSeries = new ArrayList<>();
 
-	public ArrayList<ApiLogMessage> getLogMessages()
+	public List<ApiLogMessage> getLogMessages()
 	{
 		return logMessages;
 	}
 
-	public void setLogMessages(ArrayList<ApiLogMessage> logMessages)
+	public void setLogMessages(List<ApiLogMessage> logMessages)
 	{
 		this.logMessages = logMessages;
 	}
@@ -44,12 +45,12 @@ public class ApiDecodedMessage
 		this.messageTime = messageTime;
 	}
 
-	public ArrayList<ApiDecodesTimeSeries> getTimeSeries()
+	public List<ApiDecodesTimeSeries> getTimeSeries()
 	{
 		return timeSeries;
 	}
 
-	public void setTimeSeries(ArrayList<ApiDecodesTimeSeries> timeSeries)
+	public void setTimeSeries(List<ApiDecodesTimeSeries> timeSeries)
 	{
 		this.timeSeries = timeSeries;
 	}

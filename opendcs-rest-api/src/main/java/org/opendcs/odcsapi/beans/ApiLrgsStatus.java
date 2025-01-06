@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class ApiLrgsStatus
 {
@@ -36,8 +37,8 @@ public class ApiLrgsStatus
 	private Date arcOldestMsgTime = null;
 	private Long arcLastSeqNum = null;
 	
-	private ArrayList<ApiLrgsProcStatus> procStatus = new ArrayList<ApiLrgsProcStatus>();
-	private ArrayList<ApiLrgsDownlinkStatus> downlinkStatus = new ArrayList<ApiLrgsDownlinkStatus>();
+	private List<ApiLrgsProcStatus> procStatus = new ArrayList<>();
+	private List<ApiLrgsDownlinkStatus> downlinkStatus = new ArrayList<>();
 	
 	private ApiLrgsHourlyQuality[] hourlyArchiveQuality = null;
 	
@@ -156,19 +157,19 @@ public class ApiLrgsStatus
 	{
 		this.arcLastSeqNum = arcLastSeqNum;
 	}
-	public ArrayList<ApiLrgsProcStatus> getProcStatus()
+	public List<ApiLrgsProcStatus> getProcStatus()
 	{
 		return procStatus;
 	}
-	public void setProcStatus(ArrayList<ApiLrgsProcStatus> procStatus)
+	public void setProcStatus(List<ApiLrgsProcStatus> procStatus)
 	{
 		this.procStatus = procStatus;
 	}
-	public ArrayList<ApiLrgsDownlinkStatus> getDownlinkStatus()
+	public List<ApiLrgsDownlinkStatus> getDownlinkStatus()
 	{
 		return downlinkStatus;
 	}
-	public void setDownlinkStatus(ArrayList<ApiLrgsDownlinkStatus> downlinkStatus)
+	public void setDownlinkStatus(List<ApiLrgsDownlinkStatus> downlinkStatus)
 	{
 		this.downlinkStatus = downlinkStatus;
 	}

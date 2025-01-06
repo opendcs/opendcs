@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.beans;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ApiSearchCrit implements Serializable
 {
@@ -26,10 +27,10 @@ public class ApiSearchCrit implements Serializable
 	private String since = null;
 	private String until = null;
 	private boolean settlingTimeDelay = false;
-	private ArrayList<String> platformIds = new ArrayList<String>();
-	private ArrayList<String> platformNames = new ArrayList<String>();
-	private ArrayList<String> netlistNames = new ArrayList<String>();
-	private ArrayList<Integer> goesChannels = new ArrayList<Integer>();
+	private List<String> platformIds = new ArrayList<>();
+	private List<String> platformNames = new ArrayList<>();
+	private List<String> netlistNames = new ArrayList<>();
+	private List<Integer> goesChannels = new ArrayList<>();
 	private boolean goesSelfTimed = false;
 	private boolean goesRandom = false;
 	private boolean networkDCP = false;
@@ -63,35 +64,35 @@ public class ApiSearchCrit implements Serializable
 	{
 		this.settlingTimeDelay = settlingTimeDelay;
 	}
-	public ArrayList<String> getPlatformIds()
+	public List<String> getPlatformIds()
 	{
 		return platformIds;
 	}
-	public void setPlatformIds(ArrayList<String> platformIds)
+	public void setPlatformIds(List<String> platformIds)
 	{
 		this.platformIds = platformIds;
 	}
-	public ArrayList<String> getPlatformNames()
+	public List<String> getPlatformNames()
 	{
 		return platformNames;
 	}
-	public void setPlatformNames(ArrayList<String> platformNames)
+	public void setPlatformNames(List<String> platformNames)
 	{
 		this.platformNames = platformNames;
 	}
-	public ArrayList<String> getNetlistNames()
+	public List<String> getNetlistNames()
 	{
 		return netlistNames;
 	}
-	public void setNetlistNames(ArrayList<String> netlistNames)
+	public void setNetlistNames(List<String> netlistNames)
 	{
 		this.netlistNames = netlistNames;
 	}
-	public ArrayList<Integer> getGoesChannels()
+	public List<Integer> getGoesChannels()
 	{
 		return goesChannels;
 	}
-	public void setGoesChannels(ArrayList<Integer> goesChannels)
+	public void setGoesChannels(List<Integer> goesChannels)
 	{
 		this.goesChannels = goesChannels;
 	}
