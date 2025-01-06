@@ -1852,7 +1852,7 @@ declare
 begin
 	for i in 1..${NUM_TS_TABLES}
 	loop
-		table_name := to_char(i,'fm09');
+		table_name := to_char(i,'fm0009');
 		stmt := 'CREATE TABLE TS_NUM_' || table_name || q'[(
 			TS_ID INT NOT NULL,
 			SAMPLE_TIME NUMBER(19) NOT NULL,
@@ -1865,6 +1865,9 @@ begin
 		) ${TABLE_SPACE_SPEC}]';
 
 		execute immediate stmt;
+
+		stmt := 'insert into storage_table_list values(:tbl,''N'', 0, 0)';
+		execute immediate stmt using in i;
 
 		stmt := 'ALTER TABLE TS_NUM_' || table_name
 			 || ' ADD CONSTRAINT TS_NUM_' || table_name || '_FKSR'
@@ -1890,7 +1893,7 @@ begin
 
 	for i in 1..${NUM_TEXT_TABLES}
 	loop
-		table_name := to_char(i,'fm09');
+		table_name := to_char(i,'fm0009');
 		stmt := 'CREATE TABLE TS_STRING_' || table_name || q'[(
 					TS_ID INT NOT NULL,
 					SAMPLE_TIME NUMBER(19) NOT NULL,
@@ -1921,6 +1924,9 @@ begin
 
 		execute immediate stmt;
 
+
+		stmt := 'insert into storage_table_list values(:tbl,''S'', 0, 0)';
+		execute immediate stmt using in i;
 	end loop;
 end;
 /
