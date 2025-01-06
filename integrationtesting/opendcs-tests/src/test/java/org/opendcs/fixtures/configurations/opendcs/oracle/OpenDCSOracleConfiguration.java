@@ -34,6 +34,7 @@ import org.testcontainers.oracle.OracleContainer;
 
 import decodes.db.Database;
 import decodes.launcher.Profile;
+import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
@@ -151,6 +152,7 @@ public class OpenDCSOracleConfiguration implements Configuration
         List<String> roles = new ArrayList<>();
         roles.add("OTSDB_ADMIN");
         roles.add("OTSDB_MGR");
+        roles.add("OTSDB_COMP_EXEC");
         mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
         log.info("Setting authentication environment vars.");
         ilex.util.Logger originalLog = ilex.util.Logger.instance();
@@ -196,6 +198,7 @@ public class OpenDCSOracleConfiguration implements Configuration
             configBuilder.withEditDatabaseType("OPENTSDB");
             configBuilder.withDatabaseDriver("org.postgresql.Driver");
             configBuilder.withSiteNameTypePreference("CWMS");
+            configBuilder.withSqlKeyGenerator(OracleSequenceKeyGenerator.class);
             configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
             configBuilder.build(out);
         }
@@ -298,8 +301,10 @@ public class OpenDCSOracleConfiguration implements Configuration
                             + "CREATE ROLE, CREATE USER"
                             + " TO " + user);
             stmt.executeQuery("GRANT CREATE SESSION,RESOURCE,CONNECT"
-                            + " TO " + user + " ");
+                            + " TO " + user + " WITH ADMIN OPTION");
             stmt.executeQuery("ALTER USER " + user + " DEFAULT ROLE ALL");
+            //stmt.executeQuery("CREATE ROLE OTSDB_USER GRANTED BY " + user);
+            //stmt.executeQuery("GRANT CREATE SESSION,RESOURCE,CONNECT to \"OTSDB_USER\"");
         }
     }
 }

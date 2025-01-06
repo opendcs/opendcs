@@ -1,6 +1,6 @@
 -- ROLE "OTSDB_USER" IS 'Read access to all Open TSDB Tables';
 CREATE ROLE OTSDB_USER;
-
+GRANT CREATE SESSION,RESOURCE,CONNECT to OTSDB_USER;
 -- ROLE "OTSDB_DATA_ACQ" IS 'Data Acquisition - write access to time series tables.';
 -- In Postgres, this is a login role
 CREATE ROLE OTSDB_DATA_ACQ;
