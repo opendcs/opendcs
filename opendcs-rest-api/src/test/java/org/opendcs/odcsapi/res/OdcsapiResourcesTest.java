@@ -18,6 +18,7 @@ import org.opendcs.odcsapi.beans.ApiDecodedMessage;
 import org.opendcs.odcsapi.beans.ApiDecodesTSValue;
 import org.opendcs.odcsapi.beans.ApiDecodesTimeSeries;
 import org.opendcs.odcsapi.beans.ApiLogMessage;
+import org.opendcs.odcsapi.beans.ApiPlatformConfig;
 import org.opendcs.odcsapi.beans.ApiRawMessage;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
 
