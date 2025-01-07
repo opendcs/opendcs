@@ -48,20 +48,21 @@ import org.opendcs.annotations.algorithm.Output;
 "so each hour's output is the average of values at [t-23h ... t]." )
 public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	@Input public double input;	//AW:TYPECODE=i
-	@Input String _inputNames[] = { "input" };
+	@Input
+	public double input;	//AW:TYPECODE=i
 
 	double tally;
 	int count;
 	Date lastTimeSlice = null;
 
 
-	@Output public NamedVariable average = new NamedVariable("average", 0);
-	@Output String _outputNames[] = { "average" };
+	@Output(type = Double.class)
+	public NamedVariable average = new NamedVariable("average", 0);
 
-	@PropertySpec public long minSamplesNeeded = 1;
-	@PropertySpec public boolean outputFutureData = false;
-	@PropertySpec String _propertyNames[] = { "minSamplesNeeded", "outputFutureData" };
+	@PropertySpec(value = "1")
+	public long minSamplesNeeded = 1;
+	@PropertySpec(value = "false")
+	public boolean outputFutureData = false;
 
 	public RunningAverageAlgorithm()
 	{

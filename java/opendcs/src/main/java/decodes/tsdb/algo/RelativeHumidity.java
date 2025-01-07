@@ -12,10 +12,13 @@ import org.opendcs.annotations.algorithm.Output;
 public class RelativeHumidity extends AW_AlgorithmBase
 {
 
-	@Input public double temperature;
-	@Input public double dewPoint;
+	@Input
+	public double temperature;
+	@Input
+	public double dewPoint;
 
-	@Output public NamedVariable output = new NamedVariable("output", 0);
+	@Output(type = Double.class)
+	public NamedVariable output = new NamedVariable("output", 0);
 
 
 	// Allow javac to generate a no-args constructor.

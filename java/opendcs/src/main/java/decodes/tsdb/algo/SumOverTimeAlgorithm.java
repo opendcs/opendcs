@@ -19,17 +19,17 @@ import org.opendcs.annotations.algorithm.Output;
 "parameter.")
 public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	@Input public double input;	//AW:TYPECODE=i
-	@Input String _inputNames[] = { "input" };
+	@Input
+	public double input;	//AW:TYPECODE=i
 
 	double tally;
 	int count;
 
-	@Output public NamedVariable sum = new NamedVariable("sum", 0);
-	@Output String _outputNames[] = { "sum" };
+	@Output(type = Double.class)
+	public NamedVariable sum = new NamedVariable("sum", 0);
 
-	@PropertySpec public long minSamplesNeeded = 1;
-	@PropertySpec String _propertyNames[] = { "minSamplesNeeded" };
+	@PropertySpec(value = "1")
+	public long minSamplesNeeded = 1;
 
 	// Allow javac to generate a no-args constructor.
 	/**

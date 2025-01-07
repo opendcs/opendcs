@@ -21,17 +21,16 @@ import org.opendcs.annotations.algorithm.Output;
 public class UsgsEquation
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	@Input public double input;	//AW:TYPECODE=i
-	@Input String _inputNames[] = { "input" };
+	@Input
+	public double input;	//AW:TYPECODE=i
 
-	@Output public NamedVariable output = new NamedVariable("output", 0);
-	@Output String _outputNames[] = { "output" };
+	@Output(type = Double.class)
+	public NamedVariable output = new NamedVariable("output", 0);
 
-	@PropertySpec public double A = 1;
-	@PropertySpec public double B = 0;
-	@PropertySpec public double C = 1;
-	@PropertySpec public double D = 0;
-	@PropertySpec String _propertyNames[] = { "A", "B", "C", "D" };
+	@PropertySpec(value = "1") public double A = 1;
+	@PropertySpec(value = "0") public double B = 0;
+	@PropertySpec(value = "1") public double C = 1;
+	@PropertySpec(value = "0") public double D = 0;
 
 	// Allow javac to generate a no-args constructor.
 

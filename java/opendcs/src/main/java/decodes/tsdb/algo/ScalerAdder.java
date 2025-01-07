@@ -32,36 +32,29 @@ public class ScalerAdder extends AW_AlgorithmBase
 	@Input public double input8;	//AW:TYPECODE=i
 	@Input public double input9;	//AW:TYPECODE=i
 	@Input public double input10;//AW:TYPECODE=i
-	@Input String _inputNames[] = { "input1", "input2", "input3", "input4", "input5", 
-			"input6", "input7", "input8", "input9", "input10" };
 
-	@Output public NamedVariable output = new NamedVariable("output", 0);
-	@Output String _outputNames[] = { "output" };
+	@Output(type = Double.class) public NamedVariable output = new NamedVariable("output", 0);
 
-	@PropertySpec public double coeff1 = 1.0;
-	@PropertySpec public double coeff2 = 1.0;
-	@PropertySpec public double coeff3 = 1.0;
-	@PropertySpec public double coeff4 = 1.0;
-	@PropertySpec public double coeff5 = 1.0;
-	@PropertySpec public double coeff6 = 1.0;
-	@PropertySpec public double coeff7 = 1.0;
-	@PropertySpec public double coeff8 = 1.0;
-	@PropertySpec public double coeff9 = 1.0;
-	@PropertySpec public double coeff10 = 1.0;
-	@PropertySpec public String input1_MISSING = "ignore";
-	@PropertySpec public String input2_MISSING = "ignore";
-	@PropertySpec public String input3_MISSING = "ignore";
-	@PropertySpec public String input4_MISSING = "ignore";
-	@PropertySpec public String input5_MISSING = "ignore";
-	@PropertySpec public String input6_MISSING = "ignore";
-	@PropertySpec public String input7_MISSING = "ignore";
-	@PropertySpec public String input8_MISSING = "ignore";
-	@PropertySpec public String input9_MISSING = "ignore";
-	@PropertySpec public String input10_MISSING = "ignore";
-	@PropertySpec String _propertyNames[] = { "coeff1", "coeff2", "coeff3", "coeff4", "coeff5", 
-			"coeff6", "coeff7", "coeff8", "coeff9", "coeff10",
-			"input1_MISSING", "input2_MISSING", "input3_MISSING", "input4_MISSING", "input5_MISSING",
-			"input6_MISSING", "input7_MISSING", "input8_MISSING", "input9_MISSING", "input10_MISSING" };
+	@PropertySpec(value = "1.0") public double coeff1 = 1.0;
+	@PropertySpec(value = "1.0") public double coeff2 = 1.0;
+	@PropertySpec(value = "1.0") public double coeff3 = 1.0;
+	@PropertySpec(value = "1.0") public double coeff4 = 1.0;
+	@PropertySpec(value = "1.0") public double coeff5 = 1.0;
+	@PropertySpec(value = "1.0") public double coeff6 = 1.0;
+	@PropertySpec(value = "1.0") public double coeff7 = 1.0;
+	@PropertySpec(value = "1.0") public double coeff8 = 1.0;
+	@PropertySpec(value = "1.0") public double coeff9 = 1.0;
+	@PropertySpec(value = "1.0") public double coeff10 = 1.0;
+	@PropertySpec(value = "ignore") public String input1_MISSING = "ignore";
+	@PropertySpec(value = "ignore") public String input2_MISSING = "ignore";
+	@PropertySpec(value = "ignore") public String input3_MISSING = "ignore";
+	@PropertySpec(value = "ignore") public String input4_MISSING = "ignore";
+	@PropertySpec(value = "ignore") public String input5_MISSING = "ignore";
+	@PropertySpec(value = "ignore") public String input6_MISSING = "ignore";
+	@PropertySpec(value = "ignore") public String input7_MISSING = "ignore";
+	@PropertySpec(value = "ignore") public String input8_MISSING = "ignore";
+	@PropertySpec(value = "ignore") public String input9_MISSING = "ignore";
+	@PropertySpec(value = "ignore") public String input10_MISSING = "ignore";
 
 	// Allow javac to generate a no-args constructor.
 

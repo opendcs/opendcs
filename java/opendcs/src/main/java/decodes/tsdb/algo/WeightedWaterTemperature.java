@@ -13,7 +13,6 @@ import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
 import decodes.tsdb.TimeSeriesIdentifier;
-import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
@@ -28,10 +27,8 @@ public class WeightedWaterTemperature
 	@Input public double input3;	//AW:TYPECODE=i
 	@Input public double input4;	//AW:TYPECODE=i
 
-	@Output public NamedVariable output = new NamedVariable("output", 0);
-	@Output String _outputNames[] = { "output" };
-
-	@PropertySpec String _propertyNames[] = {  };
+	@Output(type = Double.class) 
+	public NamedVariable output = new NamedVariable("output", 0);
 
 	// Allow javac to generate a no-args constructor.
 

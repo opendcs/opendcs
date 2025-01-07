@@ -28,19 +28,19 @@ import org.opendcs.annotations.algorithm.Output;\
 public class Resample
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	@Input public double input;	//AW:TYPECODE=i
-	@Input String _inputNames[] = { "input" };
+	@Input 
+	public double input;	//AW:TYPECODE=i
 
 	private Date nextOutputTime = null;
 	private Date lastOutputTime = null;
 	private IntervalIncrement outputIncr = null;
 	private Date lastTimeSlice = null;
 
-	@Output public NamedVariable output = new NamedVariable("output", 0);
-	@Output String _outputNames[] = { "output" };
+	@Output(type = Double.class)
+	public NamedVariable output = new NamedVariable("output", 0);
 
-	@PropertySpec public String method = "interp";
-	@PropertySpec String _propertyNames[] = { "method" };
+	@PropertySpec(value = "interp")
+	public String method = "interp";
 
 	// Allow javac to generate a no-args constructor.
 
