@@ -123,7 +123,7 @@ public class OdcsapiResource extends OpenDcsResource
 			throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST, "Missing required class argument.");
 		}
 
-		return Response.status(HttpServletResponse.SC_OK).entity(map(PropSpecHelper.getPropSpecs(className))).build();
+		return Response.status(HttpServletResponse.SC_OK).entity(PropSpecHelper.getPropSpecs(className)).build();
 	}
 
 	static PropertySpec[] map(ApiPropSpec[] specs)
