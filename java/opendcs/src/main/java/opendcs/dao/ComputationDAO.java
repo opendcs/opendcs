@@ -595,10 +595,10 @@ public class ComputationDAO
 	 * @return List of computations
 	 */
 	@Override
-	public List<DbComputation> listCompRefsForREST(CompRefFilter filter)
+	public List<DbComputation> listCompRefsMatching(CompRefFilter filter)
 			throws DbIoException
 	{
-		debug1("listCompRefsForREST " + filter);
+		debug1("listCompRefs " + filter);
 
 		if (compCache.size() == 0)
 		{
@@ -609,53 +609,10 @@ public class ComputationDAO
 		for (DbObjectCache<DbComputation>.CacheIterator it = compCache.iterator(); it.hasNext(); )
 		{
 			DbComputation comp = it.next();
-			String process = filter.getProcess() == null ? null : filter.getProcess();
-			if (process != null && !process.isEmpty() && !process.equalsIgnoreCase(comp.getApplicationName()))
+			if (filter.validComputation.test(comp))
 			{
-				continue;
+				ret.add(comp);
 			}
-
-			String algorithm = filter.getAlgorithm();
-			if (algorithm != null && !algorithm.isEmpty() && !algorithm.equalsIgnoreCase(comp.getAlgorithmName()))
-			{
-				continue;
-			}
-
-			if (filter.isEnabledOnly() && !comp.isEnabled())
-			{
-				continue;
-			}
-
-			if (filter.getGroup() != null && !filter.getGroup().isEmpty() && !filter.getGroup().equalsIgnoreCase(comp.getGroupName()))
-			{
-				continue;
-			}
-
-			if (filter.getSite() != null && !filter.getSite().isEmpty()
-					&& comp.getParmList()
-					.stream()
-					.noneMatch(item -> item.getInterval().equalsIgnoreCase(filter.getIntervalCode())))
-			{
-				continue;
-			}
-
-			if (filter.getIntervalCode() != null && !filter.getIntervalCode().isEmpty()
-					&& comp.getParmList()
-					.stream()
-					.noneMatch(item -> item.getInterval().equalsIgnoreCase(filter.getIntervalCode())))
-			{
-				continue;
-			}
-
-			if (filter.getDataType() != null && !filter.getDataType().isEmpty()
-					&& comp.getParmList()
-					.stream()
-					.noneMatch(item -> item.getDataType().getDisplayName().equalsIgnoreCase(filter.getDataType())))
-			{
-				continue;
-			}
-
-			ret.add(comp);
 		}
 		return ret;
 	}
