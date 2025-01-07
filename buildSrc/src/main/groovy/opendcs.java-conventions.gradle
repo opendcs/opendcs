@@ -22,12 +22,9 @@ java {
     withJavadocJar()
 }
 
-tasks.withType(JavaCompile).configureEach {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(
-            JavaVersion.current().majorVersion.toInteger()
-        )
-    }
+tasks.withType(JavaCompile) {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
 }
 
 configurations {
