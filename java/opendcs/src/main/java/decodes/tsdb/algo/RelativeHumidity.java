@@ -12,13 +12,10 @@ import org.opendcs.annotations.algorithm.Output;
 public class RelativeHumidity extends AW_AlgorithmBase
 {
 
-	@Input
-	public double temperature;
-	@Input
-	public double dewPoint;
+	@Input public double temperature;
+	@Input public double dewPoint;
 
-	@Output
-	public NamedVariable output = new NamedVariable("output", 0);
+	@Output public NamedVariable output = new NamedVariable("output", 0);
 
 
 	// Allow javac to generate a no-args constructor.
@@ -26,20 +23,16 @@ public class RelativeHumidity extends AW_AlgorithmBase
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm() throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices() throws DbCompException
 	{
 		
@@ -68,6 +61,7 @@ public class RelativeHumidity extends AW_AlgorithmBase
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice() throws DbCompException
 	{
 		if (isMissing(temperature) || isMissing(dewPoint))
@@ -97,6 +91,7 @@ public class RelativeHumidity extends AW_AlgorithmBase
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices() throws DbCompException
 	{
 
