@@ -3,18 +3,17 @@ package org.opendcs.odcsapi.res;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import decodes.datasource.RawMessage;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
-import decodes.util.PropertySpec;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiDecodedMessage;
 import org.opendcs.odcsapi.beans.ApiDecodesTSValue;
 import org.opendcs.odcsapi.beans.ApiDecodesTimeSeries;
 import org.opendcs.odcsapi.beans.ApiLogMessage;
-import org.opendcs.odcsapi.beans.ApiPropSpec;
 import org.opendcs.odcsapi.beans.ApiRawMessage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,23 +22,6 @@ import static org.opendcs.odcsapi.res.OdcsapiResource.map;
 
 final class OdcsapiResourcesTest
 {
-	@Test
-	void testPropertyMap()
-	{
-		ApiPropSpec[] apiPropSpecs = new ApiPropSpec[1];
-		ApiPropSpec apiPropSpec
-				= new ApiPropSpec("Specification", "Property", "A property specification");
-		apiPropSpecs[0] = apiPropSpec;
-
-		PropertySpec[] propertySpecs = map(apiPropSpecs);
-		assertNotNull(propertySpecs);
-		PropertySpec propertySpec = propertySpecs[0];
-		assertNotNull(propertySpec);
-		assertEquals(apiPropSpec.getDescription(), propertySpec.getDescription());
-		assertEquals(apiPropSpec.getName(), propertySpec.getName());
-		assertEquals(apiPropSpec.getType(), propertySpec.getType());
-	}
-
 	@Test
 	void testDecodedMessageMap() throws Exception
 	{
@@ -136,7 +118,7 @@ final class OdcsapiResourcesTest
 		decodesTimeSeries.setValues(values);
 		timeSeries.add(decodesTimeSeries);
 
-		ArrayList<TimeSeries> decodedTimeSeries = map(timeSeries);
+		List<TimeSeries> decodedTimeSeries = map(timeSeries);
 
 		assertNotNull(decodedTimeSeries);
 		assertEquals(timeSeries.size(), decodedTimeSeries.size());

@@ -18,6 +18,7 @@ package org.opendcs.odcsapi.res;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
@@ -45,14 +46,12 @@ import decodes.decoder.TimeSeries;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
-import decodes.util.PropertySpec;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.beans.ApiDecodedMessage;
 import org.opendcs.odcsapi.beans.ApiDecodesTimeSeries;
-import org.opendcs.odcsapi.beans.ApiPropSpec;
 import org.opendcs.odcsapi.beans.ApiRawMessage;
 import org.opendcs.odcsapi.beans.DecodeRequest;
 import org.opendcs.odcsapi.dao.DbException;
@@ -126,18 +125,6 @@ public class OdcsapiResource extends OpenDcsResource
 		return Response.status(HttpServletResponse.SC_OK).entity(PropSpecHelper.getPropSpecs(className)).build();
 	}
 
-	static PropertySpec[] map(ApiPropSpec[] specs)
-	{
-		PropertySpec[] ret = new PropertySpec[specs.length];
-
-		for (int i = 0; i < specs.length; i++)
-		{
-			ret[i] = new PropertySpec(specs[i].getName(), specs[i].getType(), specs[i].getDescription());
-		}
-
-		return ret;
-	}
-
 	@POST
 	@Path("decode")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -169,7 +156,7 @@ public class OdcsapiResource extends OpenDcsResource
 		RawMessage raw = map(rawMessage);
 		DecodedMessage ret = new DecodedMessage(raw, false);
 		ret.setMessageTime(message.getMessageTime());
-		ArrayList<TimeSeries> timeSeries = map(message.getTimeSeries());
+		List<TimeSeries> timeSeries = map(message.getTimeSeries());
 		for (TimeSeries ts : timeSeries)
 		{
 			ret.addTimeSeries(ts);
@@ -199,9 +186,9 @@ public class OdcsapiResource extends OpenDcsResource
 		return retMessage;
 	}
 
-	static ArrayList<TimeSeries> map(ArrayList<ApiDecodesTimeSeries> timeSeries) throws DbException
+	static List<TimeSeries> map(List<ApiDecodesTimeSeries> timeSeries) throws DbException
 	{
-		ArrayList<TimeSeries> ret = new ArrayList<>();
+		List<TimeSeries> ret = new ArrayList<>();
 		for (ApiDecodesTimeSeries ts : timeSeries)
 		{
 			TimeSeries tsVal = new TimeSeries(ts.getSensorNum());
