@@ -17,7 +17,7 @@ package org.opendcs.odcsapi.res;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Enumeration;
+import java.util.Collections;
 import java.util.Properties;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
@@ -79,17 +79,16 @@ public class OdcsapiResource extends OpenDcsResource
 			tsdb.readTsdbProperties(tsdb.getConnection());
 
 			Properties props = new Properties();
-			for (Enumeration<String> propertiesEnumeration = tsdb.getPropertyNames();
-				 propertiesEnumeration.hasMoreElements();)
+			for (Object keyObj : Collections.list(tsdb.getPropertyNames()))
 			{
-				String key = propertiesEnumeration.nextElement();
+				String key = (String) keyObj;
 				props.setProperty(key, tsdb.getProperty(key));
 			}
 			return Response.status(HttpServletResponse.SC_OK).entity(props).build();
 		}
 		catch(SQLException e)
 		{
-			throw new DbException("Error reading timeseries properties: " + e);
+			throw new DbException("Error reading timeseries properties", e);
 		}
 	}
 
@@ -160,7 +159,7 @@ public class OdcsapiResource extends OpenDcsResource
 		}
 		catch (UnknownPlatformException | DatabaseException e)
 		{
-			throw new DbException("Unknown platform: " + e.getMessage());
+			throw new DbException("Unknown platform", e);
 		}
 	}
 
