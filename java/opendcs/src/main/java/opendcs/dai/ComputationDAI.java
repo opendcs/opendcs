@@ -9,12 +9,11 @@
 package opendcs.dai;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import decodes.db.Site;
-import decodes.db.SiteList;
-import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompFilter;
+import decodes.tsdb.CompRefFilter;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
@@ -58,6 +57,15 @@ public interface ComputationDAI
 	 */
 	public ArrayList<DbComputation> listCompsForGUI(CompFilter filter)
 		throws DbIoException;
+
+	/**
+	 * This queries computations and does the filtering by app ID and
+	 * algorithm ID only. The application further filters by parameters.
+	 * @param filter the computation filter containing app and algorithm IDs
+	 * @return List of computations
+	 */
+	List<DbComputation> listCompRefsForREST(CompRefFilter filter)
+			throws DbIoException;
 	
 	/**
 	 * Writes a computation to the database.

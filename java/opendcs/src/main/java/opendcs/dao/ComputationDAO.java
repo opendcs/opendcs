@@ -58,11 +58,10 @@
 */
 package opendcs.dao;
 
+import decodes.tsdb.CompRefFilter;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -71,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
@@ -582,6 +582,77 @@ public class ComputationDAO
 			 && comp.getAlgorithm() != null
 			 && !TextUtil.strEqual(filter.getExecClassName(), comp.getAlgorithm().getExecClass()))
 				continue;
+
+			ret.add(comp);
+		}
+		return ret;
+	}
+
+	/**
+	 * Apply the filter to the cached computations.
+	 * @param filter the computation filter containing site, algorithm, datatype, interval, process, and group names
+	 * @return List of computations
+	 */
+	@Override
+	public List<DbComputation> listCompRefsForREST(CompRefFilter filter)
+			throws DbIoException
+	{
+		debug1("listCompRefsForREST " + filter);
+
+		if (compCache.size() == 0)
+		{
+			fillCache();
+		}
+
+		List<DbComputation> ret = new ArrayList<>();
+		for (DbObjectCache<DbComputation>.CacheIterator it = compCache.iterator(); it.hasNext(); )
+		{
+			DbComputation comp = it.next();
+			String process = filter.getProcess() == null ? null : filter.getProcess();
+			if (process != null && !process.isEmpty() && !process.equalsIgnoreCase(comp.getApplicationName()))
+			{
+				continue;
+			}
+
+			String algorithm = filter.getAlgorithm();
+			if (algorithm != null && !algorithm.isEmpty() && !algorithm.equalsIgnoreCase(comp.getAlgorithmName()))
+			{
+				continue;
+			}
+
+			if (filter.isEnabledOnly() && !comp.isEnabled())
+			{
+				continue;
+			}
+
+			if (filter.getGroup() != null && !filter.getGroup().isEmpty() && !filter.getGroup().equalsIgnoreCase(comp.getGroupName()))
+			{
+				continue;
+			}
+
+			if (filter.getSite() != null && !filter.getSite().isEmpty()
+					&& comp.getParmList()
+					.stream()
+					.noneMatch(item -> item.getInterval().equalsIgnoreCase(filter.getIntervalCode())))
+			{
+				continue;
+			}
+
+			if (filter.getIntervalCode() != null && !filter.getIntervalCode().isEmpty()
+					&& comp.getParmList()
+					.stream()
+					.noneMatch(item -> item.getInterval().equalsIgnoreCase(filter.getIntervalCode())))
+			{
+				continue;
+			}
+
+			if (filter.getDataType() != null && !filter.getDataType().isEmpty()
+					&& comp.getParmList()
+					.stream()
+					.noneMatch(item -> item.getDataType().getDisplayName().equalsIgnoreCase(filter.getDataType())))
+			{
+				continue;
+			}
 
 			ret.add(comp);
 		}
