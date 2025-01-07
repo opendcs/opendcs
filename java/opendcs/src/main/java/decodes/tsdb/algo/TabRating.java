@@ -60,8 +60,8 @@ public class TabRating
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 	implements decodes.comp.HasLookupTable
 {
-	@Input public double indep;	//AW:TYPECODE=i
-	@Input String _inputNames[] = { "indep" };
+	@Input
+	public double indep;	//AW:TYPECODE=i
 
 	LookupTable lookupTable = null;
 	LookupTable shiftTable = null;
@@ -97,18 +97,16 @@ public class TabRating
 		lookupTable.clear();
 	}
 
-	@Output public NamedVariable dep = new NamedVariable("dep", 0);
-	@Output String _outputNames[] = { "dep" };
+	@Output(type = Double.class)
+	public NamedVariable dep = new NamedVariable("dep", 0);
 
-	@PropertySpec public boolean exceedLowerBound = false;
-	@PropertySpec public String tableDir = "$DECODES_INSTALL_DIR/tab-files";
-	@PropertySpec public String tableName = "";
-	@PropertySpec public boolean exceedUpperBound = false;
-	@PropertySpec public String tableNameSuffix = ".tab";
-	@PropertySpec String interp = "log"; // possibilities are log and linear
-	@PropertySpec public String nametype = "";
-	@PropertySpec public String _propertyNames[] = { "exceedLowerBound", "tableDir", "tableName", 
-			"exceedUpperBound", "tableNameSuffix", "interp", "nametype" };
+	@PropertySpec(value = "false") public boolean exceedLowerBound = false;
+	@PropertySpec(value = "$DECODES_INSTALL_DIR/tab-files") public String tableDir = "$DECODES_INSTALL_DIR/tab-files";
+	@PropertySpec(value = "") public String tableName = "";
+	@PropertySpec(value = "false") public boolean exceedUpperBound = false;
+	@PropertySpec(value = ".tab") public String tableNameSuffix = ".tab";
+	@PropertySpec(value = "log") String interp = "log"; // possibilities are log and linear
+	@PropertySpec(value = "") public String nametype = "";
 
 	// Allow javac to generate a no-args constructor.
 

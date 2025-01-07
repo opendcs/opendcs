@@ -68,8 +68,8 @@ import org.opendcs.annotations.algorithm.Output;
 public class SubSample
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	@Input public double inputShortInterval;	//AW:TYPECODE=i
-	@Input String _inputNames[] = { "inputShortInterval" };
+	@Input
+	public double inputShortInterval;	//AW:TYPECODE=i
 
 	private IntervalIncrement outputIncr = null;
 	private GregorianCalendar outputCal = null;
@@ -85,8 +85,8 @@ public class SubSample
 		return subsampPropertySpecs;
 	}
 
-	@Output public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval", 0);
-	@Output String _outputNames[] = { "outputLongInterval" };
+	@Output(type = Double.class)
+	public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval", 0);
 
 //	public boolean aggLowerBoundClosed = true;
 //	public boolean aggUpperBoundClosed = false;

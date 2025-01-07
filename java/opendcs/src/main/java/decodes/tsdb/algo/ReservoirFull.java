@@ -19,15 +19,16 @@ import org.opendcs.annotations.algorithm.Output;
 public class ReservoirFull
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	@Input public double storage;	//AW:TYPECODE=i
-	@Input String _inputNames[] = { "storage" };
+	@Input
+	public double storage;	//AW:TYPECODE=i
 
-	@Output public NamedVariable percentFull = new NamedVariable("percentFull", 0);
-	@Output public NamedVariable storageRemaining = new NamedVariable("storageRemaining", 0);
-	@Output String _outputNames[] = { "percentFull", "storageRemaining" };
+	@Output(type = Double.class)
+	public NamedVariable percentFull = new NamedVariable("percentFull", 0);
+	@Output(type = Double.class)
+	public NamedVariable storageRemaining = new NamedVariable("storageRemaining", 0);
 
-	@PropertySpec public double capacity = 1;
-	@PropertySpec String _propertyNames[] = { "capacity" };
+	@PropertySpec(value = "1")
+	public double capacity = 1;
 
 	// Allow javac to generate a no-args constructor.
 

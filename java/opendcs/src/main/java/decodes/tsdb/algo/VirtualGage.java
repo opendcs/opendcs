@@ -23,20 +23,20 @@ import org.opendcs.annotations.algorithm.Output;
 public class VirtualGage
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	@Input public double upstreamGage;	//AW:TYPECODE=i
-	@Input public double downstreamGage;	//AW:TYPECODE=i
-	@Input String _inputNames[] = { "upstreamGage", "downstreamGage" };
+	@Input
+	public double upstreamGage;	//AW:TYPECODE=i
+	@Input
+	public double downstreamGage;	//AW:TYPECODE=i
 
-	@Output public NamedVariable virtualGage = new NamedVariable("virtualGage", 0);
-	@Output String _outputNames[] = { "virtualGage" };
+	@Output(type = Double.class)
+	public NamedVariable virtualGage = new NamedVariable("virtualGage", 0);
 
-	@PropertySpec public double upstreamPosition = 0;
-	@PropertySpec public double downstreamPosition = 10;
-	@PropertySpec public double virtualPosition = 5;
-	@PropertySpec public double upstreamGageZero = 0;
-	@PropertySpec public double downstreamGageZero = 0;
-	@PropertySpec public double virtualGageZero = 0;
-	@PropertySpec String _propertyNames[] = { "upstreamPosition", "downstreamPosition", "virtualPosition", "upstreamGageZero", "downstreamGageZero", "virtualGageZero" };
+	@PropertySpec(value = "0")  public double upstreamPosition = 0;
+	@PropertySpec(value = "10")  public double downstreamPosition = 10;
+	@PropertySpec(value = "5")  public double virtualPosition = 5;
+	@PropertySpec(value = "0")  public double upstreamGageZero = 0;
+	@PropertySpec(value = "0")  public double downstreamGageZero = 0;
+	@PropertySpec(value = "0")  public double virtualGageZero = 0;
 
 	// Allow javac to generate a no-args constructor.
 
