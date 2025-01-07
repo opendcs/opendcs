@@ -8,6 +8,7 @@
 package decodes.tsdb;
 
 import java.util.Iterator;
+import java.util.function.Predicate;
 import decodes.util.DecodesSettings;
 
 /**
@@ -23,25 +24,54 @@ public class CompRefFilter
 	protected String intervalCode = null;
 	protected String process;
 	protected String algorithm;
-	public static boolean doIntervalCheck = true;
 	protected boolean enabledOnly = false;
 	protected String group;
+
+	// internal string validation
+	private final Predicate<String> validString = s -> (s != null) && !s.isEmpty();
+	private final Predicate<DbComputation> validSite = comp -> site != null
+			&& !site.isEmpty()
+			&& comp.getParmList()
+			.stream()
+			.noneMatch(item -> item.getSiteName().getNameValue().equalsIgnoreCase(site));
+	private final Predicate<DbComputation> validDataType = comp -> dataType != null
+			&& !dataType.isEmpty()
+			&& comp.getParmList()
+			.stream()
+			.noneMatch(item -> item.getInterval().equalsIgnoreCase(intervalCode));
+	private final Predicate<DbComputation> validInterval = comp -> intervalCode != null
+			&& !intervalCode.isEmpty()
+			&& comp.getParmList()
+			.stream()
+			.noneMatch(item -> item.getInterval().equalsIgnoreCase(intervalCode));
+
+	// external value validation
+	public final Predicate<String> validProcess = match -> process != null && !process.isEmpty() && process.equalsIgnoreCase(match);
+	public final Predicate<String> validAlgorithm = match -> algorithm != null && !algorithm.isEmpty() && algorithm.equalsIgnoreCase(match);
+	public final Predicate<String> validGroup = match -> group != null && !group.isEmpty() && group.equalsIgnoreCase(match);
+	public final Predicate<Boolean> enabled = match -> enabledOnly && match;
+	public final Predicate<DbComputation> validComputation = comp -> validProcess.test(comp.getApplicationName())
+				&& validAlgorithm.test(comp.getAlgorithmName())
+				&& enabled.test(!comp.isEnabled())
+				&& validGroup.test(comp.getGroupName())
+				&& validSite.test(comp)
+				&& validDataType.test(comp)
+				&& validInterval.test(comp);
 
 	public String toString()
 	{
 		StringBuilder sb = new StringBuilder("CompFilter: ");
-		if ((site != null) && !site.isEmpty())
+		if (validString.test(site))
 			sb.append("siteId=" + site + " ");
-		if ((dataType != null) && !dataType.isEmpty())
+		if (validString.test(dataType))
 			sb.append("dataTypeId=" + dataType + " ");
-		if ((intervalCode != null) &&!intervalCode.isEmpty())
+		if (validString.test(intervalCode))
 			sb.append("intervalCode=" + intervalCode + " ");
-		if ((process != null) && !process.isEmpty())
+		if (validString.test(process))
 			sb.append("processId=" + process + " ");
-		if ((algorithm != null) && !algorithm.isEmpty())
+		if (validString.test(algorithm))
 			sb.append("algoId=" + algorithm + " ");
-		sb.append("doIntervalCheck=" + doIntervalCheck + " ");
-		if ((group != null) && !group.isEmpty())
+		if (validString.test(group))
 			sb.append("groupId=" + group + " ");
 
 		return sb.toString();
@@ -79,7 +109,7 @@ public class CompRefFilter
 			return false;
 		}
 
-		if (!intervalCode.isEmpty() && doIntervalCheck)
+		if (validString.test(intervalCode))
 		{
 			boolean passes = false;
 			for(Iterator<DbCompParm> pit = dbComp.getParms(); pit.hasNext(); )
@@ -97,7 +127,7 @@ public class CompRefFilter
 			}
 		}
 
-		if (!site.isEmpty())
+		if (validString.test(site))
 		{
 			boolean passes = false;
 			for(Iterator<DbCompParm> pit = dbComp.getParms(); pit.hasNext(); )
@@ -115,7 +145,7 @@ public class CompRefFilter
 			}
 		}
 
-		if (!dataType.isEmpty())
+		if (validString.test(dataType))
 		{
 			boolean passes = false;
 			for(Iterator<DbCompParm> pit = dbComp.getParms(); pit.hasNext(); )

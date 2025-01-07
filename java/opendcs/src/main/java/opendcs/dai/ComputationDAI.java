@@ -64,7 +64,7 @@ public interface ComputationDAI
 	 * @param filter the computation filter containing app and algorithm IDs
 	 * @return List of computations
 	 */
-	List<DbComputation> listCompRefsForREST(CompRefFilter filter)
+	List<DbComputation> listCompRefsMatching(CompRefFilter filter)
 			throws DbIoException;
 	
 	/**
