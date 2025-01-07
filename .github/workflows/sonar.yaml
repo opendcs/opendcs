@@ -1,0 +1,60 @@
+name: SonarCloud Scan
+on:
+  workflow_run:
+    workflows: ["OpenDCS Build and unit tests"]
+    type: [completed]
+
+jobs:
+  Sonar:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run && github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Set up JDK
+        uses: actions/setup-java@v4.4.0
+        with:
+          java-version: 17
+          distribution: temurin
+      - uses: actions/setup-python@v5.1.0
+        with:
+          python-version: "3.8"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4.1.0
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.workflow_run.head_repository.full_name }}
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
+    # perform the analaysis now
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
+          restore-keys: ${{ runner.os }}-gradle
+      - name: Download Coverage
+        uses: actions/download-artifact@v4.1.8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: ./
+          merge-multiple: true
+      - name: Show jacoco files
+        run : |
+          find . -name "jacoco*.xml" -type f
+      - name: Analyze
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+         ./gradlew sonar --info -Dorg.gradle.jvmargs=-Xmx4096M \
+            -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }} \
+            -Dsonar.pullrequest.key=${{ github.event.workflow_run.pull_requests[0].number }} \
+            -Dsonar.pullrequest.branch=${{ github.event.workflow_run.pull_requests[0].head.ref }} \
+            -Dsonar.pullrequest.base=${{ github.event.workflow_run.pull_requests[0].base.ref }}

@@ -523,6 +523,7 @@ public class DaoBase
                 }
                 else
                 {
+                    //this.db.getDatabaseTimezone()
                     stmt.setDate(index,new java.sql.Date(((Date)param).getTime()));
                 }
             }

@@ -94,6 +94,11 @@ public class AlarmGroup
 		return emailAddrs;
 	}
 
+	public void setEmailAddrs(ArrayList<EmailAddr> emailAddrs)
+	{
+		this.emailAddrs = emailAddrs;
+	}
+
 	public ArrayList<FileMonitor> getFileMonitors()
 	{
 		return fileMonitors;

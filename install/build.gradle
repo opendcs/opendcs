@@ -110,7 +110,7 @@ task runApp(type: Exec) {
     def useJfr = project.findProperty("opendcs.jfr") ? true : false
     def debugPort = Integer.parseInt(project.findProperty("opendcs.debug") ?: "0")
 
-    var decjOpts = ""
+    var decjOpts = "-Dopendcs.connection.pool.trace=true" // always trace connections during dev
     println("Using app ${app}")
     if (osWin) {
         executable "cmd"
@@ -132,7 +132,7 @@ task runApp(type: Exec) {
     }
 
     if (debugPort > 0) {
-        decjOpts += " -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${debugPort} "
+        decjOpts += " -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort} "
     }
 
     if (useJfr && (javaVersion >= 11)) {

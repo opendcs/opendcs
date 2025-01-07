@@ -153,6 +153,7 @@ public class CompRunGuiFrame extends TopFrame
 
 	private ComputationsTable mytable;
 	private Vector<CTimeSeries> myoutputs = new Vector<>();
+	private Vector<CTimeSeries> myinputs = new Vector<>();
 	private TimeSeriesDb theDb = null;
 	private DateTimeCalendar fromDTCal;
 	private DateTimeCalendar toDTCal;
@@ -225,6 +226,71 @@ public class CompRunGuiFrame extends TopFrame
 			}
 		});
 		exitOnClose = true;
+
+	}
+
+	/**
+	 * Constructor
+	 *
+	 * @param standAloneMode
+	 *            True if running from launcher or tester. False if running
+	 *            inside compedit.
+	 * @param dbComps
+	 * 	          List of comps to fill computation table initially.
+	 * @param since
+	 * 	          From Date to fill fromDTcal initially.
+	 * @param until
+	 * 	          To Date to fill toDTcal initially.
+	 */
+	public CompRunGuiFrame(boolean standAloneMode, Vector<DbComputation> dbComps, Date since, Date until)
+	{
+		super();
+
+		this.standAloneMode = standAloneMode;
+
+		labels = RunComputationsFrameTester.getLabels();
+		genericLabels = RunComputationsFrameTester.getGenericLabels();
+		timeZoneStr = DecodesSettings.instance().sqlTimeZone;
+		timeZoneStr = timeZoneStr == null ? "UTC" : timeZoneStr;
+		setAllLabels();
+		chartXLabel = "Time";
+
+		JPanel mycontent = (JPanel)this.getContentPane();
+		mycontent.setLayout(new BoxLayout(mycontent, BoxLayout.Y_AXIS));
+
+		this.setTitle(labels.getString("RunComputationsFrame.frameTitle"));
+		this.trackChanges("runcomps");
+		traceDialog = new TraceDialog(this, false);
+		traceDialog.setTraceType("Computation Run");
+		mycontent.add(listPanel());
+		mycontent.add(timePanel());
+		mycontent.add(getChart());
+		mycontent.add(getTable());
+		mycontent.add(closePanel());
+		pack();
+
+		// Default operation is to do nothing when user hits 'X' in
+		// upper right to close the window. We will catch the closing
+		// event and do the same thing as if user had hit close.
+		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+		addWindowListener(new WindowAdapter()
+		{
+			public void windowClosing(WindowEvent e)
+			{
+				doClose();
+			}
+		});
+		exitOnClose = true;
+
+		if(since!=null){
+			fromDTCal.setDate(since);
+		}
+		if(until!=null) {
+			toDTCal.setDate(until);
+		}
+
+		mytable.fill(dbComps);
+
 
 	}
 
@@ -1018,32 +1084,46 @@ public class CompRunGuiFrame extends TopFrame
 
 				ArrayList<DbComputation> concreteGroupComps = new ArrayList<DbComputation>();
 				StringBuilder errorMsgs = new StringBuilder();
-				for (Iterator<DbComputation> compit = compVector.iterator(); compit.hasNext();)
+				try (TimeSeriesDAI txDAI = theDb.makeTimeSeriesDAO())
 				{
-					comp = compit.next();
-					if (!comp.hasGroupInput())
+					txDAI.inTransaction(dao ->
 					{
-						continue;
-					}
-
-					// This is a group computation. Use resolver to make
-					// a concrete copy, and then add it to concreteGroupComps.
-					// First call compit.remote() to remove the abstract copy.
-					compit.remove();
-
-					for (TimeSeriesIdentifier tsid : groupTsIds)
-					{
-						try
+						try (TimeSeriesDAI inTxDai = theDb.makeTimeSeriesDAO())
 						{
-							DbComputation concrete = DbCompResolver.makeConcrete(theDb, tsid, comp, true);
-							concreteGroupComps.add(concrete);
+							inTxDai.inTransactionOf(dao);
+							for (Iterator<DbComputation> compit = compVector.iterator(); compit.hasNext();)
+							{
+								DbComputation localComp = compit.next();
+								if (!localComp.hasGroupInput())
+								{
+									continue;
+								}
+
+								// This is a group computation. Use resolver to make
+								// a concrete copy, and then add it to concreteGroupComps.
+								// First call compit.remote() to remove the abstract copy.
+								compit.remove();
+
+								for (TimeSeriesIdentifier tsid : groupTsIds)
+								{
+									try
+									{
+										DbComputation concrete = DbCompResolver.makeConcrete(theDb, txDAI, tsid, localComp, true);
+										concreteGroupComps.add(concrete);
+									}
+									catch (NoSuchObjectException ex)
+									{
+										errorMsgs.append("Cannot execute '" + comp.getName() + "' for time series '"
+											+ tsid.getUniqueString() + "': " + ex.getMessage() + "\r\n");
+									}
+								}
+							}
 						}
-						catch (NoSuchObjectException ex)
-						{
-							errorMsgs.append("Cannot execute '" + comp.getName() + "' for time series '"
-								+ tsid.getUniqueString() + "': " + ex.getMessage() + "\r\n");
-						}
-					}
+					});
+				}
+				catch (Exception ex)
+				{
+					throw new DbIoException("Unable to create concrete group comps.", ex);
 				}
 				compVector.addAll(concreteGroupComps);
 			}
@@ -1070,6 +1150,8 @@ public class CompRunGuiFrame extends TopFrame
 		// Create the trace logger here and put in pipe with tee logger.
 		// Put trace dialog reference in trace logger.
 		myoutputs.clear();
+		myinputs.clear();
+		myinputs.addAll(inputs);
 		compExecutionWorker = new SwingWorker<List<CTimeSeries>,CTimeSeries>() {
 			@Override
 			public List<CTimeSeries> doInBackground()
@@ -1134,7 +1216,7 @@ public class CompRunGuiFrame extends TopFrame
 							try
 							{
 								runme.addTimeSeries(ts);
-								inputs.add(ts);
+								myinputs.add(ts);
 							}
 							catch (DuplicateTimeSeriesException e)
 							{
@@ -1234,7 +1316,7 @@ public class CompRunGuiFrame extends TopFrame
 			@Override
 			protected void process(List<CTimeSeries> chunks)
 			{
-				for (CTimeSeries cts : inputs)
+				for (CTimeSeries cts : myinputs)
 				{
 					if (!both.contains(cts))
 					{
@@ -1282,8 +1364,8 @@ public class CompRunGuiFrame extends TopFrame
 					}
 
 					both.add(cts);
-					plotDataOnChart(both, inputs.size());
-					timeSeriesTable.setInOut(inputs, myoutputs);
+					plotDataOnChart(both, myinputs.size());
+					timeSeriesTable.setInOut(myinputs, myoutputs);
 				}
 			}
 
@@ -1297,8 +1379,8 @@ public class CompRunGuiFrame extends TopFrame
 				Logger.setLogger(originalLogger);
 				cancelExecutionButton.setEnabled(false);
 				saveButton.setEnabled(true);
-				plotDataOnChart(both, inputs.size());
-				timeSeriesTable.setInOut(inputs, myoutputs);
+				plotDataOnChart(both, myinputs.size());
+				timeSeriesTable.setInOut(myinputs, myoutputs);
 			}
 		};
 		compExecutionWorker.addPropertyChangeListener(event -> updateProgress(event));
@@ -1470,6 +1552,7 @@ public class CompRunGuiFrame extends TopFrame
 					Logger.instance().failure(msg);
 				}
 			}
+			timeSeriesTable.setInOut(myinputs, myoutputs);
 		}
 		finally
 		{
