@@ -1,6 +1,7 @@
 package org.opendcs.odcsapi.res.it;
 
 
+import java.util.Map;
 import java.util.Properties;
 
 import javax.servlet.http.HttpServletResponse;
@@ -9,6 +10,7 @@ import javax.ws.rs.core.MediaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
@@ -104,7 +106,8 @@ final class OdcsapiResourceIT extends BaseIT
 	@TestTemplate
 	void testGetPropertySpecs()
 	{
-		given()
+		JsonPath expected = getJsonPathFromResource("odcsapi_property_specs.json");
+		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
@@ -118,8 +121,18 @@ final class OdcsapiResourceIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_OK))
-			.body("", equalTo(getJsonPathFromResource("odcsapi_property_specs.json").getList("")))
+			.extract()
 		;
+
+		JsonPath actual = response.jsonPath();
+		for (int i = 0; i < expected.getList("").size(); i++)
+		{
+			Map<String, Object> actualItem = actual.get("[" + i + "]");
+			Map<String, Object> expectedItem = expected.get("[" + i + "]");
+			assertEquals(expectedItem.get("name"), actualItem.get("name"));
+			assertEquals(expectedItem.get("type"), actualItem.get("type"));
+			assertEquals(expectedItem.get("description"), actualItem.get("description"));
+		}
 	}
 
 	// TODO: Finish this test and add expected response data once the new site controller is implemented.
