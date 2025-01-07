@@ -3,9 +3,7 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-            classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:4.4.1.3373"
-        }
+        classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:4.4.1.3373"
     }
 }
 
@@ -13,9 +11,9 @@ plugins {
     id "com.palantir.git-version" version "3.1.0"
 }
 
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    apply plugin: "org.sonarqube"
-}
+
+apply plugin: "org.sonarqube"
+
 
 
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -39,24 +37,24 @@ allprojects {
 
 
 
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    sonar {
-        properties {
-            property "sonar.projectKey", "opendcs_opendcs"
-            property "sonar.organization", "opendcs"
-            property "sonar.host.url", "https://sonarcloud.io"
-            property "sonar.pullrequest.provider", "GitHub"
-            property "sonar.pullrequest.github.repository", "opendcs/opendcs"
-            property "sonar.coverage.jacoco.xmlReportPaths", "./**/jacoco*.xml"
-            property "sonar.projectVersion", sonarVersion()
-            // TODO: just remove the C files that are no longer used. However, they are still
-            // called in some of the java
-            property "sonar.c.file.suffixes", "-"
-            property "sonar.cpp.file.suffixes", "-"
-            property "sonar.objc.file.suffixes", "-"
-        }
+
+sonar {
+    properties {
+        property "sonar.projectKey", "opendcs_opendcs"
+        property "sonar.organization", "opendcs"
+        property "sonar.host.url", "https://sonarcloud.io"
+        property "sonar.pullrequest.provider", "GitHub"
+        property "sonar.pullrequest.github.repository", "opendcs/opendcs"
+        property "sonar.coverage.jacoco.xmlReportPaths", "./**/jacoco*.xml"
+        property "sonar.projectVersion", sonarVersion()
+        // TODO: just remove the C files that are no longer used. However, they are still
+        // called in some of the java
+        property "sonar.c.file.suffixes", "-"
+        property "sonar.cpp.file.suffixes", "-"
+        property "sonar.objc.file.suffixes", "-"
     }
 }
+
 
 ext.sonarVersion = {
     def stdout = new ByteArrayOutputStream()

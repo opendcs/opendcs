@@ -8,18 +8,16 @@ signing {
     useGpgCmd()    
 }
 
-if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    plugins.apply('dev.sigstore.sign')
-    sigstoreSign {
-        oidcClient {
-            gitHub {
-                audience.set("sigstore")
-            }
+plugins.apply('dev.sigstore.sign')
+sigstoreSign {
+    oidcClient {
+        gitHub {
+            audience.set("sigstore")
+        }
 
-            web {
-                clientId.set("sigstore")
-                issuer.set("https://oauth2.sigstore.dev/auth")
-            }
+        web {
+            clientId.set("sigstore")
+            issuer.set("https://oauth2.sigstore.dev/auth")
         }
     }
 }

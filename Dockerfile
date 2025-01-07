@@ -1,5 +1,5 @@
 # Depends on having buildx available for the --mount feature
-FROM openjdk:8-jdk-bullseye as builder
+FROM openjdk:17-jdk-bullseye as builder
 
 RUN --mount=type=cache,target=/var/cache/apt \ 
     apt-get update && apt-get -y upgrade && \
@@ -12,7 +12,7 @@ RUN --mount=type=cache,target=/root \
     ./gradlew installDist -Dno.docs=true
 # end initial build
 
-FROM eclipse-temurin:11-jre-alpine as opendcs_base
+FROM eclipse-temurin:17-jre-alpine as opendcs_base
 
 RUN apk upgrade --no-cache
 RUN apk add --no-cache \
