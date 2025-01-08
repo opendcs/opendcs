@@ -21,7 +21,7 @@ import decodes.tsdb.algo.AWAlgoType;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
-import org.opendcs.annotations.algorithm.Output;\
+import org.opendcs.annotations.algorithm.Output;
 
 
 @Algorithm(description ="Resample an input to an output with a different interval. Output must not be irregular. Input may be irregular or any interval greater than or less than the output." )
