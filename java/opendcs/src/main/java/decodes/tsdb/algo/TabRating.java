@@ -100,13 +100,20 @@ public class TabRating
 	@Output(type = Double.class)
 	public NamedVariable dep = new NamedVariable("dep", 0);
 
-	@PropertySpec(value = "false") public boolean exceedLowerBound = false;
-	@PropertySpec(value = "$DECODES_INSTALL_DIR/tab-files") public String tableDir = "$DECODES_INSTALL_DIR/tab-files";
-	@PropertySpec(value = "") public String tableName = "";
-	@PropertySpec(value = "false") public boolean exceedUpperBound = false;
-	@PropertySpec(value = ".tab") public String tableNameSuffix = ".tab";
-	@PropertySpec(value = "log") String interp = "log"; // possibilities are log and linear
-	@PropertySpec(value = "") public String nametype = "";
+	@PropertySpec(value = "false") 
+	public boolean exceedLowerBound = false;
+	@PropertySpec(value = "$DECODES_INSTALL_DIR/tab-files") 
+	public String tableDir = "$DECODES_INSTALL_DIR/tab-files";
+	@PropertySpec(value = "") 
+	public String tableName = "";
+	@PropertySpec(value = "false") 
+	public boolean exceedUpperBound = false;
+	@PropertySpec(value = ".tab") 
+	public String tableNameSuffix = ".tab";
+	@PropertySpec(value = "log") 
+	String interp = "log"; // possibilities are log and linear
+	@PropertySpec(value = "") 
+	public String nametype = "";
 
 	// Allow javac to generate a no-args constructor.
 

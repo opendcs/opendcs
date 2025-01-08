@@ -91,8 +91,8 @@ public class SubSample
 //	public boolean aggLowerBoundClosed = true;
 //	public boolean aggUpperBoundClosed = false;
 //	String _propertyNames[] = { "aggLowerBoundClosed", "aggUpperBoundClosed" };
-	@PropertySpec public String samplingTimeOffset = "";
-	@PropertySpec String _propertyNames[] = { "samplingTimeOffset" };
+	@PropertySpec 
+	public String samplingTimeOffset = "";
 
 	// Allow javac to generate a no-args constructor.
 
