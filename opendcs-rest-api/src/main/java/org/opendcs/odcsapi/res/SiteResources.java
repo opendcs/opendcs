@@ -127,7 +127,7 @@ public class SiteResources extends OpenDcsResource
 		catch (NoSuchObjectException e)
 		{
 			return Response.status(HttpServletResponse.SC_NOT_FOUND)
-					.entity("Requested app with matching ID not found").build();
+					.entity("Requested site with matching ID not found").build();
 		}
 		catch(DbIoException e)
 		{
