@@ -44,7 +44,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -59,6 +58,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.xml.sax.SAXException;
 
 import decodes.db.Constants;
@@ -747,6 +747,18 @@ public class XmlDatabaseIO extends DatabaseIO
 			}
 		}
 		catch(java.io.IOException e) { }
+	}
+
+	/**
+	 * Returns the list of NetworkList objects defined in this database.
+	 * Objects in this list may be only partially populated (key values
+	 * and primary display attributes only).
+	 * @param nll object in which to store data
+	 * @param tmType the transport medium type to filter on.
+	 */
+	public void readNetworkListList( NetworkListList nll, String tmType)
+	{
+		throw new NotImplementedException("XmlDatabaseIO.readNetworkListList with filter not implemented for XML.");
 	}
 	
 	/**
