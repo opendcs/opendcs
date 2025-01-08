@@ -81,9 +81,10 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import ilex.util.AuthException;
 import ilex.util.EnvExpander;
+import opendcs.util.sql.WrappedConnection;
 import org.opendcs.authentication.AuthSourceService;
-
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.AlarmDAI;
@@ -119,8 +120,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.util.sql.WrappedConnection;
-import ilex.util.AuthException;
 import ilex.util.Logger;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
@@ -764,6 +763,32 @@ public class SqlDatabaseIO
         {
             _networkListListIO.setConnection(conn);
             _networkListListIO.read(nlList);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read network lists", ex);
+        }
+        finally
+        {
+            _networkListListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * Returns the list of NetworkList objects defined in this database.
+     * Objects in this list may be only partially populated (key values
+     * and primary display attributes only).
+     * @param nlList the object to populate from the database.
+     * @param tmType the time series medium type to filter on.
+     */
+    @Override
+    public synchronized void readNetworkListList(NetworkListList nlList, String tmType)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _networkListListIO.setConnection(conn);
+            _networkListListIO.read(nlList, tmType);
         }
         catch (SQLException ex)
         {

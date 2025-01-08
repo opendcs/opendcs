@@ -44,7 +44,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -61,6 +60,7 @@ import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
 import org.slf4j.LoggerFactory;
+import org.apache.commons.lang.NotImplementedException;
 import org.xml.sax.SAXException;
 
 import decodes.db.Constants;
@@ -191,7 +191,7 @@ public class XmlDatabaseIO extends DatabaseIO
 				{
 					if (!xmlTop.mkdirs())
 					{
-						throw new DatabaseException(" Top directory '" + xmldir 
+						throw new DatabaseException(" Top directory '" + xmldir
 							+ "' does not exist and cannot be created. Check permissions and location.");
 					}
 				}
@@ -200,13 +200,13 @@ public class XmlDatabaseIO extends DatabaseIO
 					File entdir = new File(xmlTop, subdir);
 					if (!entdir.isDirectory() && !entdir.mkdir())
 					{
-						throw new DatabaseException("Entity directory '" + entdir.getPath() 
+						throw new DatabaseException("Entity directory '" + entdir.getPath()
 							+ "' does not exist and cannot be created. Check permissions and location.");
 					}
 				}
 			}
 		}
-	
+
 		catch (ParserConfigurationException | SAXException ex)
 		{
 			throw new DatabaseException("Unable to setup SAXParser.", ex);
@@ -767,7 +767,19 @@ public class XmlDatabaseIO extends DatabaseIO
 		}
 		catch(java.io.IOException e) { }
 	}
-	
+
+	/**
+	 * Returns the list of NetworkList objects defined in this database.
+	 * Objects in this list may be only partially populated (key values
+	 * and primary display attributes only).
+	 * @param nll object in which to store data
+	 * @param tmType the transport medium type to filter on.
+	 */
+	public void readNetworkListList( NetworkListList nll, String tmType)
+	{
+		throw new NotImplementedException("XmlDatabaseIO.readNetworkListList with filter not implemented for XML.");
+	}
+
 	/**
 	 * Non-cached, stand-alone method to read the list of network list 
 	 * specs currently defined in the database.

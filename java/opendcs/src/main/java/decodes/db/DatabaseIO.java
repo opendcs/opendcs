@@ -3,7 +3,6 @@
 */
 package decodes.db;
 
-import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -59,7 +58,7 @@ public abstract class DatabaseIO
 	}
 
 	/**
-	 
+
 	 * @param settings
 	 * @return
 	 * @throws DatabaseException
@@ -72,7 +71,7 @@ public abstract class DatabaseIO
 	}
 
 	/**
-	 * 
+	 *
 	 * @param settings
 	 * @param locOverride
 	 * @return
@@ -106,7 +105,7 @@ public abstract class DatabaseIO
 		{
 			throw new DatabaseException("Unable to authenticate against the database.", ex);
 		}
-		
+
 	}
 
 	//========== Identification methods ==========================
@@ -226,6 +225,17 @@ public abstract class DatabaseIO
 	*/
 	public abstract void readNetworkListList(NetworkListList nll)
 		throws DatabaseException;
+
+	/**
+	 Populates the list of NetworkList objects defined in this database.
+	 Objects in this list may be only partially populated (key values
+	 and primary display attributes only).
+	 @param nll the list to populate
+	 @param tmType the transport medium type to filter by
+	 */
+	public abstract void readNetworkListList(NetworkListList nll, String tmType)
+			throws DatabaseException;
+
 
 	/**
 	Populates the list of Platform objects defined in this database.
@@ -442,7 +452,7 @@ public abstract class DatabaseIO
 	 * Returns the most recent data that the platform list was modified, this
 	 * will be the time of the most-recent platform mod.
 	 * @return the most recent data that the platform list was modified.
-	 * @throws DatabaseException 
+	 * @throws DatabaseException
 	 */
 	public abstract Date getPlatformListLMT();
 
