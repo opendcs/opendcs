@@ -1,0 +1,12 @@
+{
+  "messageTime": "2025-01-08T00:22:01.747Z[UTC]",
+  "logMessages": [],
+  "timeSeries": [
+    {
+      "sensorNum": 15546,
+      "sensorName": "sensorName",
+      "units": "unknown",
+      "values": []
+    }
+  ]
+}

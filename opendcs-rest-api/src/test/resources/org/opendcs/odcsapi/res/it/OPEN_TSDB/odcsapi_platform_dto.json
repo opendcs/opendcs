@@ -19,14 +19,14 @@
     "transportWindow" : null,
     "transportInterval" : null,
     "timeAdjustment" : 0,
-    "timezone" : null,
-    "loggerType" : null,
-    "baud" : null,
-    "stopBits" : null,
-    "parity" : null,
-    "dataBits" : null,
-    "doLogin" : null,
-    "username" : null,
-    "password" : null
+    "timezone" : "UTC",
+    "loggerType" : "Simple",
+    "baud" : 9600,
+    "stopBits" : 8,
+    "parity" : "N",
+    "dataBits" : 2,
+    "doLogin" : true,
+    "username" : "SomeUser",
+    "password" : "SomePassword"
   } ]
 }

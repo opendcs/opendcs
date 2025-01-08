@@ -1,6 +1,7 @@
 package org.opendcs.odcsapi.res.it;
 
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -24,8 +25,8 @@ import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 @ExtendWith(DatabaseContextProvider.class)
@@ -135,7 +136,6 @@ final class OdcsapiResourceIT extends BaseIT
 		}
 	}
 
-	// TODO: Finish this test and add expected response data once the new site controller is implemented.
 	@TestTemplate
 	void testPostDecode() throws Exception
 	{
@@ -144,8 +144,9 @@ final class OdcsapiResourceIT extends BaseIT
 		request.getRawmsg().setPlatformId(String.valueOf(storePlatform()));
 
 		String decodeJson = MAPPER.writeValueAsString(request);
+		JsonPath expected = getJsonPathFromResource("odcsapi_decode_response.json");
 
-		given()
+		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
@@ -161,8 +162,17 @@ final class OdcsapiResourceIT extends BaseIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_OK))
-			.body("", equalTo(getJsonPathFromResource("odcsapi_decode_response.json").getList("")))
-		;
+			.extract();
+
+		JsonPath actual = response.jsonPath();
+		assertEquals(expected.getList("logMessages"), actual.getList("logMessages"));
+		List<Map<String, Object>> tsList = actual.getList("timeSeries");
+		Map<String, Object> ts = tsList.get(0);
+		assertNotNull(ts);
+		assertEquals(expected.getInt("timeSeries[0].sensorNum"), (Integer) ts.get("sensorNum"));
+		assertEquals(expected.getString("timeSeries[0].sensorName"), ts.get("sensorName"));
+		assertEquals(expected.getString("timeSeries[0].units"), ts.get("units"));
+		assertEquals(expected.getList("timeSeries[0].values"), ts.get("values"));
 	}
 
 	private void assertPropertiesInDB(Properties properties)
@@ -240,8 +250,6 @@ final class OdcsapiResourceIT extends BaseIT
 			.extract()
 		;
 
-		// TODO: This will not work until the new site controller is in place,
-		//  since the id is not currently returned in the response.
 		return response.body().jsonPath().getLong("siteId");
 	}
 }
