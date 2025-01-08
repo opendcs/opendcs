@@ -35,6 +35,8 @@ final class OdcsapiResourceIT extends BaseIT
 	private static SessionFilter sessionFilter;
 	private static final ObjectMapper MAPPER = new ObjectMapper();
 	private Properties props;
+	private Long platformId;
+	private Long siteId;
 
 
 	@BeforeEach
@@ -77,6 +79,15 @@ final class OdcsapiResourceIT extends BaseIT
 	@AfterEach
 	void tearDown()
 	{
+		if (platformId != null)
+		{
+			deletePlatform(platformId);
+		}
+		if (siteId != null)
+		{
+			deleteSite(siteId);
+		}
+
 		logout(sessionFilter);
 	}
 
@@ -141,7 +152,9 @@ final class OdcsapiResourceIT extends BaseIT
 	{
 		DecodeRequest request = getDtoFromResource("odcsapi_decode_request_dto.json", DecodeRequest.class);
 
-		request.getRawmsg().setPlatformId(String.valueOf(storePlatform()));
+		platformId = storePlatform();
+
+		request.getRawmsg().setPlatformId(String.valueOf(platformId));
 
 		String decodeJson = MAPPER.writeValueAsString(request);
 		JsonPath expected = getJsonPathFromResource("odcsapi_decode_response.json");
@@ -203,7 +216,8 @@ final class OdcsapiResourceIT extends BaseIT
 
 		ApiPlatform platform = getDtoFromResource("odcsapi_platform_dto.json", ApiPlatform.class);
 
-		platform.setSiteId(storeSite());
+		siteId = storeSite();
+		platform.setSiteId(siteId);
 
 		String platformJson = MAPPER.writeValueAsString(platform);
 
@@ -226,6 +240,25 @@ final class OdcsapiResourceIT extends BaseIT
 		;
 
 		return response.body().jsonPath().getLong("platformId");
+	}
+
+	private void deletePlatform(Long platformId)
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.filter(sessionFilter)
+			.queryParam("platformid", platformId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("platform")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_OK))
+		;
 	}
 
 	private Long storeSite() throws Exception
@@ -251,5 +284,24 @@ final class OdcsapiResourceIT extends BaseIT
 		;
 
 		return response.body().jsonPath().getLong("siteId");
+	}
+
+	private void deleteSite(Long siteId)
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.filter(sessionFilter)
+			.queryParam("siteid", siteId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("site")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_OK))
+		;
 	}
 }
