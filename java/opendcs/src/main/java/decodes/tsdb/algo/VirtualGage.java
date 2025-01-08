@@ -31,12 +31,18 @@ public class VirtualGage
 	@Output(type = Double.class)
 	public NamedVariable virtualGage = new NamedVariable("virtualGage", 0);
 
-	@PropertySpec(value = "0")  public double upstreamPosition = 0;
-	@PropertySpec(value = "10")  public double downstreamPosition = 10;
-	@PropertySpec(value = "5")  public double virtualPosition = 5;
-	@PropertySpec(value = "0")  public double upstreamGageZero = 0;
-	@PropertySpec(value = "0")  public double downstreamGageZero = 0;
-	@PropertySpec(value = "0")  public double virtualGageZero = 0;
+	@PropertySpec(value = "0") 
+	public double upstreamPosition = 0;
+	@PropertySpec(value = "10") 
+	public double downstreamPosition = 10;
+	@PropertySpec(value = "5")
+	public double virtualPosition = 5;
+	@PropertySpec(value = "0")
+	public double upstreamGageZero = 0;
+	@PropertySpec(value = "0") 
+	public double downstreamGageZero = 0;
+	@PropertySpec(value = "0") 
+	public double virtualGageZero = 0;
 
 	// Allow javac to generate a no-args constructor.
 
