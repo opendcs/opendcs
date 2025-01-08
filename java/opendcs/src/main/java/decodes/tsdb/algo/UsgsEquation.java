@@ -27,10 +27,14 @@ public class UsgsEquation
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
 
-	@PropertySpec(value = "1") public double A = 1;
-	@PropertySpec(value = "0") public double B = 0;
-	@PropertySpec(value = "1") public double C = 1;
-	@PropertySpec(value = "0") public double D = 0;
+	@PropertySpec(value = "1") 
+	public double A = 1;
+	@PropertySpec(value = "0") 
+	public double B = 0;
+	@PropertySpec(value = "1") 
+	public double C = 1;
+	@PropertySpec(value = "0") 
+	public double D = 0;
 
 	// Allow javac to generate a no-args constructor.
 

@@ -173,7 +173,7 @@ public class PythonAlgorithm
 	private static PythonAlgorithm runningInstance = null;
 	
 	/** 
-	 * This method is called from Python code to get the current running instance.
+	 * This method is called from Jython code to get the current running instance.
 	 * This gives it access to all of the infrastructure methods.
 	 */
 	public static PythonAlgorithm getRunningInstance() { return runningInstance; }
