@@ -154,34 +154,26 @@ import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
 import static decodes.db.DecodesScript.logger;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-Implements the Jython Python interpreter.
-
- */
-//AW:JAVADOC_END
+@Algorithm(description ="Implements the Jython Python interpreter." )
 public class PythonAlgorithm
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 //	implements DynamicPropertiesOwner
 {
-//AW:INPUTS
+	@Input
 	public double dummyin;	//AW:TYPECODE=i
-	String _inputNames[] = { "dummyin" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
-	// Enter any local class variables needed by the algorithm.
 	private static PythonAlgorithm runningInstance = null;
 	
 	/** 
-	 * This method is called from Jython code to get the current running instance.
+	 * This method is called from Python code to get the current running instance.
 	 * This gives it access to all of the infrastructure methods.
 	 */
 	public static PythonAlgorithm getRunningInstance() { return runningInstance; }
@@ -199,29 +191,23 @@ public class PythonAlgorithm
 	private double missingValue = -9000000000000.;
 	private double missingLimit = -8999999999900.;
 	private int aggregateCount = 0;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable dummyout = new NamedVariable("dummyout", 0);
-	String _outputNames[] = { "dummyout" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+
+	@PropertySpec(value = "123.456")
 	public double dummyprop = 123.456;
-	String _propertyNames[] = { "dummyprop" };
-//AW:PROPERTIES_END
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
 
-//AW:USERINIT
 		
 		// Code here will be run once, after the algorithm object is created.
 		pyNumFmt.setGroupingUsed(false);
@@ -287,16 +273,15 @@ public class PythonAlgorithm
 				break;
 			}
 
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		debug3("beforeTimeSlices()");
 		// on the first call of beforeTimeSlices after initAWAlgorithm...
 		if (firstTsGroup)
@@ -327,9 +312,8 @@ public class PythonAlgorithm
 			}
 		}
 		
-//AW:BEFORE_TIMESLICES_END
 	}
-	
+	@Override
 	public void firstBeforeTimeSlices()
 		throws DbCompException
 	{
@@ -507,10 +491,10 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		setTSBT();
 		
 		// The setTimeSliceInput method below was called by AW_AlgorithmBase
@@ -541,16 +525,15 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			}
 		}
 
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
@@ -578,32 +561,6 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				throw new DbCompException(msg);
 			}
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 	
 	/**
@@ -611,6 +568,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	 * Set the variables value in the algorithm's namespace
 	 * @param nv null means there's no value at this time slice.
 	 */
+	@Override
 	public void setTimeSliceInput(String varName, NamedVariable nv)
 	{
 		String expr = null;
