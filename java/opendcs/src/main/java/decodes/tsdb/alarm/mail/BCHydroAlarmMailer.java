@@ -2,10 +2,10 @@ package decodes.tsdb.alarm.mail;
 
 import java.util.ArrayList;
 
-import javax.mail.Message;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.Message;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.EmailAddr;

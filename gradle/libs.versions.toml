@@ -16,7 +16,7 @@ jep="2.4.1"
 jama="1.0.2"
 dropwizard="4.1.0-rc2"
 passay="1.3.1"
-sun-mailapi="1.6.2"
+jakartamail="2.0.1"
 jsch="0.1.55"
 aspectj="1.8.10"
 json="20231013"
@@ -67,7 +67,7 @@ scijava-jep = { module = "org.scijava:jep", version.ref="jep" }
 jama = { module = "gov.nist.math:jama", version.ref="jama" }
 dropwizard-metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref="dropwizard" }
 passay = { module = "org.passay:passay", version.ref="passay" }
-sun-mailapi = { module = "com.sun.mail:mailapi", version.ref="sun-mailapi" }
+jakartamail = { module = "com.sun.mail:jakarta.mail", version.ref="jakartamail" }
 org-jcraft-jsch = { module = "com.jcraft:jsch", version.ref="jsch" }
 org-aspectj-aspectjrt = { module = "org.aspectj:aspectjrt", version.ref="aspectj" }
 org-json-json = { module = "org.json:json", version.ref="json" }

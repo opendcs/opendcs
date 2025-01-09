@@ -40,7 +40,7 @@ dependencies {
     implementation(libs.jama)
     implementation(libs.dropwizard.metrics.core)
     implementation(libs.passay)
-    implementation(libs.sun.mailapi)
+    implementation(libs.jakartamail)
     implementation(libs.org.jcraft.jsch)
     implementation(libs.org.aspectj.aspectjrt)
     implementation(libs.org.json.json)

@@ -1,22 +1,3 @@
-/*
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:53:01  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.4  2017/10/03 19:10:35  mmaloney
- * bug fix
- *
- * Revision 1.3  2017/10/03 12:27:43  mmaloney
- * Allow unauthenticated connections to SMTP
- *
- * Revision 1.2  2017/05/17 20:37:12  mmaloney
- * First working version.
- *
- */
 package decodes.tsdb.alarm.mail;
 
 import ilex.util.Logger;
@@ -25,12 +6,15 @@ import ilex.util.PropertiesUtil;
 import java.util.ArrayList;
 import java.util.Properties;
 
-import javax.mail.Message;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
+
+
+import jakarta.mail.Message;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Authenticator;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.EmailAddr;
@@ -110,7 +94,7 @@ public class AlarmMailer
 		if (username != null && password != null)
 		{
 			session = Session.getInstance(mailProps,
-				new javax.mail.Authenticator() 
+				new Authenticator() 
 				{
 					protected PasswordAuthentication getPasswordAuthentication()
 					{
