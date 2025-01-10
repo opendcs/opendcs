@@ -69,7 +69,6 @@ import decodes.db.*;
 import decodes.hdb.HdbSqlDatabaseIO;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -516,6 +515,26 @@ public class SqlDatabaseIO
             dtdao.readDataTypeSet(dts);
         }
         catch(DbIoException ex)
+        {
+            throw new DatabaseException("Failed to read site datatype set", ex);
+        }
+    }
+
+    /**
+     Performs a lookup for a matching data-type object based on the data type code.
+     @param dtCode the data type code to look up
+     @return the data type object or null if not found
+     */
+    @Override
+    public synchronized DataType lookupDataType(String dtCode)
+            throws DatabaseException
+    {
+
+        try (DataTypeDAI dtdao = this.makeDataTypeDAO())
+        {
+            return dtdao.lookupDataType(dtCode);
+        }
+        catch(DbIoException | NoSuchObjectException ex)
         {
             throw new DatabaseException("Failed to read site datatype set", ex);
         }
