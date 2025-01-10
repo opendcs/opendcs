@@ -14,7 +14,6 @@ import opendcs.dai.ScheduleEntryDAI;
 
 import org.xml.sax.SAXException;
 
-import ilex.util.Counter;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
@@ -142,6 +141,14 @@ public abstract class DatabaseIO
 	{
 		return null;
 	}
+
+	/**
+	 Performs a lookup for a matching data-type object based on the data type code.
+	 @param dtCode the data type code to look up
+	 @return the data type object or null if not found
+	 */
+	public abstract DataType lookupDataType(String dtCode)
+			throws DatabaseException;
 
 	/**
 	  Writes the data type set to the database.
@@ -398,6 +405,17 @@ public abstract class DatabaseIO
 	*/
 	public abstract Date getPresentationGroupLMT(PresentationGroup pg)
 		throws DatabaseException;
+
+	/**
+	 * If the presentation group referenced by groupId is used by one or more routing
+	 * specs, return a list of routing spec IDs and names. If groupId is not used,
+	 * return null.
+	 * @param groupId the ID of the presentation group to check
+	 * @return string concatenated list of routing spec IDs and names, or null if not used.
+	 * @throws SQLException if an error is encountered
+	 */
+	public abstract String routeSpecsUsing(long groupId)
+			throws DatabaseException;
 
 	/**
 	  Reads a routing spec completely into memory.
