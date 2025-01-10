@@ -521,6 +521,26 @@ public class SqlDatabaseIO
     }
 
     /**
+     Performs a lookup for a matching data-type object based on the data type code.
+     @param dtCode the data type code to look up
+     @return the data type object or null if not found
+     */
+    @Override
+    public synchronized DataType lookupDataType(String dtCode)
+            throws DatabaseException
+    {
+
+        try (DataTypeDAI dtdao = this.makeDataTypeDAO())
+        {
+            return dtdao.lookupDataType(dtCode);
+        }
+        catch(DbIoException | NoSuchObjectException ex)
+        {
+            throw new DatabaseException("Failed to read site datatype set", ex);
+        }
+    }
+
+    /**
       Reads a single data-type object given its numeric key.
       @return data type or null if not found
     */
@@ -1474,6 +1494,33 @@ public class SqlDatabaseIO
         catch (SQLException ex)
         {
             throw new DatabaseException("Unable to get Presentation group last modified time.", ex);
+        }
+        finally
+        {
+            _presentationGroupListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * If the presentation group referenced by groupId is used by one or more routing
+     * specs, return a list of routing spec IDs and names. If groupId is not used,
+     * return null.
+     * @param groupId the ID of the presentation group to check.
+     * @return string concatenated list of routing spec IDs and names, or null if not used.
+     * @throws DatabaseException if a database error occurs.
+     */
+    @Override
+    public synchronized String routeSpecsUsing(long groupId)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _presentationGroupListIO.setConnection(conn);
+            return _presentationGroupListIO.routeSpecsUsing(groupId);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deletePresentationGroup.", ex);
         }
         finally
         {
