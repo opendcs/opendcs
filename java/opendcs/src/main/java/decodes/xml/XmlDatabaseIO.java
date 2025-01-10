@@ -36,6 +36,7 @@ package decodes.xml;
 import decodes.db.DataType;
 import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverterDb;
+import decodes.db.TransportMedium;
 import ilex.util.Counter;
 import ilex.util.FileCounter;
 import ilex.util.Logger;
@@ -1389,6 +1390,61 @@ e.printStackTrace();
 		}
 		throw new DatabaseException(
 			"Cannot read platform from file '" + fn + "'");
+	}
+
+	/**
+	 * Reads a complete platform from the database.
+	 * This uses this object's platformId member to
+	 * uniquely identify the record in the database.
+	 * <p>
+	 * The resulting platform object will be populated with links to sites,
+	 * platform configs, platform sensors, and transport media.
+	 * </p>
+	 * @param pl object in which to store data
+	 * @param tmType the transport medium type to filter on
+	 */
+	public synchronized void readPlatformList(PlatformList pl, String tmType)
+			throws DatabaseException
+	{
+		Database oldDb = Database.getDb();
+		// Make sure correct database is in effect.
+		Database.setDb(pl.getDatabase());
+		InputStream is = null;
+		try
+		{
+			long lmt = getLastModifyTime(PlatformDir, PlatformListFile);
+			if (pl.getTimeLastRead() < lmt)
+			{
+				is = getInputStream(PlatformDir, PlatformListFile);
+				myParser.parse(is, pl);
+				pl.setTimeLastRead();
+
+				// Now filter out the platforms that don't have the specified transport medium type.
+				for(Iterator<Platform> pit = pl.iterator(); pit.hasNext(); )
+				{
+					Platform p = pit.next();
+					for(TransportMedium tm : p.transportMedia)
+					{
+						if(!tm.getMediumType().equalsIgnoreCase(tmType))
+						{
+							pit.remove();
+							break;
+						}
+					}
+				}
+			}
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace(System.err);
+			throw new DatabaseException(e.toString());
+		}
+		finally
+		{
+			if (is != null)
+				try { is.close(); } catch(Exception e) {}
+			Database.setDb(oldDb);
+		}
 	}
 
 
