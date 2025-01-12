@@ -33,14 +33,14 @@ monolith = { strictly = "2.0.2" }
 cwms-ratings = "1.1.0"
 nucleus = "1.1.1"
 # to upgrade past this version requires java 11 -->
-jdbi = "3.39.1"
-flywaydb = "9.8.1"
+jdbi = "3.47.0"
+flywaydb = "11.1.1"
 
 #test deps
 junit = "5.10.2"
 commons-io = "2.11.0"
 derby = "10.14.2.0"
-webcompere = "2.0.2"
+webcompere = "2.1.7"
 jackson = "2.18.2"
 greenmail = "1.6.5"
 
