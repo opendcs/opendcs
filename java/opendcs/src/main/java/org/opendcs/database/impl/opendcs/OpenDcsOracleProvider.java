@@ -27,7 +27,7 @@ import ilex.util.EnvExpander;
 import opendcs.opentsdb.OpenTsdb;
 
 /**
- * OpenDCSPgProvider provides support for handling installation and updates of the OpenDCS-Postgres
+ * OpenDcsOracleProvider provides support for handling installation and updates of the OpenDCS-Oracle
  * schema.
  */
 public class OpenDcsOracleProvider implements MigrationProvider

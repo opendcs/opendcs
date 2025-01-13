@@ -95,24 +95,7 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        /*
-        jdbi.useTransaction(h ->
-        {
-
-            try(Call createUser = h.createCall("call create_user(:user,:pw)");
-                Call assignRole = h.createCall("call assign_role(:user,:role)");)
-            {
-                createUser.bind("user",username)
-                          .bind("pw", password)
-                          .invoke();
-                for(String role: roles)
-                {
-                    assignRole.bind("user",username)
-                              .bind("role",role)
-                              .invoke();
-                }
-            }
-        });*/
+        log.warn("Create User ignored. CWMS Users are managed externally.");
     }
 
     @Override
@@ -154,6 +137,9 @@ public class CwmsOracleProvider implements MigrationProvider
         return files;
     }
 
+    /**
+        for the input array of fileNames[] expand and store the absolute paths of files (that are usable) in the List<File>files  argument.
+    */
     private void fillFiles(List<File> files, String fileNames[], String suffix)
     {
         for (String filename: fileNames)

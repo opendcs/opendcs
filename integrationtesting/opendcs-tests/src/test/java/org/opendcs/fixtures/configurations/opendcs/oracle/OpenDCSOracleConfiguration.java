@@ -127,7 +127,6 @@ public class OpenDCSOracleConfiguration implements Configuration
         {
             db = new OracleContainer("gvenzl/oracle-free:full-faststart")
                     .withUsername(SCHEMA_OWNING_USER)
-                    //.withDatabaseName(DATABASE_NAME)
                     .withPassword(SCHEMA_OWNING_USER_PASSWORD)
                     .withStartupTimeoutSeconds(300)
                     ;
@@ -303,8 +302,6 @@ public class OpenDCSOracleConfiguration implements Configuration
             stmt.executeQuery("GRANT CREATE SESSION,RESOURCE,CONNECT"
                             + " TO " + user + " WITH ADMIN OPTION");
             stmt.executeQuery("ALTER USER " + user + " DEFAULT ROLE ALL");
-            //stmt.executeQuery("CREATE ROLE OTSDB_USER GRANTED BY " + user);
-            //stmt.executeQuery("GRANT CREATE SESSION,RESOURCE,CONNECT to \"OTSDB_USER\"");
         }
     }
 }
