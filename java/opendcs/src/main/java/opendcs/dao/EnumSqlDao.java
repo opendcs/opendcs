@@ -34,6 +34,8 @@ import org.opendcs.database.api.OpenDcsDataException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import decodes.db.ValueNotFoundException;
+import decodes.decoder.Season;
 import opendcs.dai.EnumDAI;
 
 import decodes.db.DbEnum;
@@ -69,7 +71,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			throw new OpenDcsDataException("Unable to get connection.", ex);
 		}
 	}
-	
+
 	private String getEnumColumns(int dbVer)
 	{
 		return "id, name"
@@ -224,6 +226,186 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	}
 
 	@Override
+	public void deleteEnumList(DbKey refListId)
+		throws DbIoException
+	{
+		try
+		{
+			info("deleteEnum Deleting enums with id '" + refListId.getValue() + "'");
+			String q = "DELETE FROM EnumValue WHERE enumId = ?";
+			doModify(q, refListId.getValue());
+			q = "delete from enum where id = ?";
+			doModify(q, refListId.getValue());
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("Failed to delete enum list with id " + refListId.getValue(), ex);
+		}
+	}
+
+	@Override
+	public Season getSeason(String abbr)
+			throws DbIoException
+	{
+		try
+		{
+			Long seasonRefListId = getSeasonRefListId();
+			Season ret = new Season();
+
+			String abbrLower = abbr.toLowerCase();
+			String q = "select enumValue, description, editClass from EnumValue "
+				+ "where enumId = ? and lower(enumValue) = ?";
+
+			doQuery(q, rs ->
+			{
+				ret.setAbbr(rs.getString(1));
+				ret.setName(rs.getString(2));
+				String[] startEndTz = rs.getString(3).split(" ");
+				if(startEndTz.length >= 1)
+				{
+					ret.setStart(startEndTz[0]);
+				}
+				if(startEndTz.length >= 2)
+				{
+					ret.setEnd(startEndTz[1]);
+				}
+				if (startEndTz.length >= 3)
+				{
+					ret.setTz(startEndTz[2]);
+				}
+			}, seasonRefListId, abbrLower);
+
+			if (ret.getAbbr() == null || ret.getAbbr().isEmpty())
+			{
+				Throwable notFound = new ValueNotFoundException("No season with abbreviation '" + abbr + "'");
+				throw new DbIoException(String.format("No season with abbreviation '%s'", abbr), notFound);
+			}
+			return ret;
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException(String.format("Failed to get season with abbreviation %s", abbr), ex);
+		}
+	}
+
+	@Override
+	public void deleteSeason(String abbr)
+		throws DbIoException
+	{
+		try
+		{
+			Long seasonRefListId = getSeasonRefListId();
+			String q = "DELETE FROM EnumValue WHERE enumId = ? and lower(enumValue) = ?";
+			doModify(q, seasonRefListId, abbr.toLowerCase());
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("Failed to delete season with abbreviation " + abbr, ex);
+		}
+	}
+
+	@Override
+	public void writeSeason(Season season, String fromAbbr, int sortNum)
+		throws DbIoException
+	{
+		try
+		{
+			DbKey seasonRefListId = getOrCreateSeasonRefListId();
+
+			Season existing = checkExistence(season.getAbbr());
+
+			Season fromExisting = checkExistence(fromAbbr);
+
+			String startEndTz = String.format("%s %s", season.getStart(), season.getEnd());
+			if (season.getTz() != null)
+			{
+				startEndTz = startEndTz + " " + season.getTz();
+			}
+
+			String q;
+			if (fromExisting != null)
+			{
+				if (existing != null)
+				{
+					throw new DbIoException(
+							String.format("Cannot update season from %s to %s. The season '%s' already exists",
+									fromAbbr, season.getAbbr(), season.getAbbr()));
+				}
+				q = "update enumvalue set enumvalue = ?, description = ?, editclass = ?, sortnumber = ? "
+						+ "where enumid = ? and lower(enumvalue) = ?";
+				doModify(q, season.getAbbr(), season.getName(), startEndTz, fromAbbr.toLowerCase(), sortNum);
+			}
+			else if ((fromAbbr == null || fromAbbr.isEmpty()) && existing == null)
+			{
+				q = "insert into enumvalue(enumid, enumvalue, description, editclass, sortnumber) values(?,?,?,?,?)";
+				doModify(q, seasonRefListId, season.getAbbr(), season.getName(), startEndTz, sortNum);
+			}
+			else if (fromAbbr == null || fromAbbr.isEmpty())
+			{
+				q = "update enumvalue set enumvalue = ?, description = ?, editclass = ?, sortnumber = ? "
+						+ "where enumid = ? and lower(enumvalue) = ?";
+				doModify(q, season.getAbbr(), season.getName(), startEndTz,
+						sortNum, seasonRefListId, season.getAbbr().toLowerCase());
+			}
+			else
+			{
+				Throwable cause = new ValueNotFoundException(String.format("No such season with abbr '%s'.", fromAbbr));
+				throw new DbIoException(String.format("No such season with abbr '%s'.", fromAbbr), cause);
+			}
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("Failed to write season with abbreviation " + season.getAbbr(), ex);
+		}
+	}
+
+	private Season checkExistence(String abbr) throws DbIoException
+	{
+		try
+		{
+			return getSeason(abbr);
+		}
+		catch(DbIoException ex)
+		{
+			if (ex.getCause() instanceof ValueNotFoundException)
+			{
+				throw ex;
+			}
+			return null;
+		}
+	}
+
+	private DbKey getOrCreateSeasonRefListId()
+		throws DbIoException, SQLException
+	{
+		try
+		{
+			return DbKey.createDbKey(getSeasonRefListId());
+		}
+		catch(DbIoException ex)
+		{
+			DbKey id = getKey("Enum");
+			String q = "INSERT INTO Enum(id, name, defaultvalue, description) VALUES(?,?,?,?)";
+			doModify(q, id.getValue(), "season", null, "Seasons for conditional processing");
+			return id;
+		}
+	}
+
+	private Long getSeasonRefListId()
+			throws DbIoException
+	{
+		String q = "SELECT id FROM Enum WHERE name = 'season'";
+		try
+		{
+			return getSingleResult(q, rs -> rs.getLong(1));
+		}
+		catch(SQLException ex)
+		{
+			throw new DbIoException("Failed to get season ref list id", ex);
+		}
+	}
+
+	@Override
 	public void writeEnum(DbEnum dbenum) throws DbIoException
 	{
 		try (DataTransaction tx = this.getTransaction())
@@ -233,9 +415,9 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		catch (OpenDcsDataException ex)
 		{
 			throw new DbIoException("Unable to save DbEnum", ex);
-		}	
+		}
 	}
-	
+
 	private void readValues(DbEnum dbenum)throws SQLException, DbIoException
 	{
 		readValues(this, dbenum);
@@ -348,7 +530,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			{
 				return Optional.of(ret);
 			}
-			
+
 			int dbVer = db.getDecodesDatabaseVersion();
 			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
 			q = q + " where lower(name) = lower(?)";// + sqlString(enumName.toLowerCase());
@@ -367,7 +549,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 					readValues(helper, ret);
 					cache.put(ret);
 					return Optional.of(ret);
-				}		
+				}
 			}
 			catch (DbIoException | SQLException ex)
 			{
@@ -390,7 +572,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		String q = "";
 		ArrayList<Object> args = new ArrayList<>();
 		if (dbEnum.idIsSet())
-		{			
+		{
 			args.add(dbEnum.getUniqueName());
 			q = "update enum set name = ?";// + sqlString(dbenum.getUniqueName());
 			if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
@@ -419,7 +601,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			q = "insert into enum";
 			if (dbVer < DecodesDatabaseVersion.DECODES_DB_6)
 			{
-				q = q + "(id, name) values (?,?)"; 
+				q = q + "(id, name) values (?,?)";
 					//+ id + ", " + sqlString(dbenum.getUniqueName()) + ")";
 				args.add(id.getValue());
 				args.add(dbEnum.getUniqueName());
@@ -441,9 +623,9 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			}
 			cache.put(dbEnum);
 		}
-		
+
 		Connection conn = tx.connection(Connection.class)
-							.orElseThrow(() -> new OpenDcsDataException("Unable to get JDBC connection to perform DbEnum Save."));		
+							.orElseThrow(() -> new OpenDcsDataException("Unable to get JDBC connection to perform DbEnum Save."));
 		try (DaoHelper helper = new DaoHelper(this.db, q, conn))
 		{
 			helper.doModify(q,args.toArray());
@@ -452,7 +634,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			//info("writeEnum deleting values from enum '" + dbenum.enumName + "'");
 			q = "DELETE FROM EnumValue WHERE enumId = ?";
 			helper.doModify(q, dbEnum.getId().getValue());
-			
+
 			for (Iterator<EnumValue> it = dbEnum.iterator(); it.hasNext(); )
 			{
 				writeEnumValue(helper, it.next());
