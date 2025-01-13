@@ -80,7 +80,7 @@ Important Notes:
 |           +------------------+----------------------------------------------+
 |           |secchi            |Average secchi depth of reservoir in feet     |
 |           +------------------+----------------------------------------------+
-|           |zeroElevation    |Streambed elevation of reservoir in feet      |
+|           |zeroElevation     |Streambed elevation of reservoir in feet      |
 |           +------------------+----------------------------------------------+
 |           |latitude          |Latitude of reservoir                         |
 |           +------------------+----------------------------------------------+
@@ -110,4 +110,3 @@ Reservoir Evaporation Legacy Documentation
    :caption: Legacy ResEvap
 
    Legacy ResEvap <./legacy-resevap-computation.rst>
-
