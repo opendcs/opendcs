@@ -7,6 +7,8 @@ package opendcs.dai;
 
 import decodes.db.DbEnum;
 import decodes.db.EnumList;
+import decodes.decoder.Season;
+import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
 /**
@@ -16,17 +18,29 @@ import decodes.tsdb.DbIoException;
 public interface EnumDAI
 	extends AutoCloseable
 {
-	public DbEnum getEnum(String enumName)
+	DbEnum getEnum(String enumName)
 		throws DbIoException;
 
-	public void readEnumList(EnumList top)
+	void readEnumList(EnumList top)
 		throws DbIoException;
 	
-	public void writeEnumList(EnumList enumList)
+	void writeEnumList(EnumList enumList)
 		throws DbIoException;
 	
-	public void writeEnum(DbEnum dbenum)
+	void writeEnum(DbEnum dbenum)
+		throws DbIoException;
+
+	void deleteEnumList(DbKey refListId)
+		throws DbIoException;
+
+	Season getSeason(String abbr)
+		throws DbIoException;
+
+	void deleteSeason(String abbr)
+		throws DbIoException;
+
+	void writeSeason(Season season, String fromAbbr, int sortNum)
 		throws DbIoException;
 	
-	public void close();
+	void close();
 }
