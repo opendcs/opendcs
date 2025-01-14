@@ -83,9 +83,8 @@ jobs:
         env:
             GH_TOKEN: "${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}"
         run: |
-          VERSION=`./gradlew properties -q | grep "^version:" | awk '{ print $2}'`
-          gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.tar#opendcs-${VERSION}-nightly.tar --clobber
-          gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip#opendcs-${VERSION}-nightly.zip --clobber
+          gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.tar#opendcs-${VERSION}.tar --clobber
+          gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip#opendcs-${VERSION}.zip --clobber
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
