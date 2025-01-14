@@ -105,8 +105,6 @@ public class RefListEditor
         DecodesInterface.setGUI(true);
         OpenDcsDatabase database = DatabaseService.getDatabaseFor("RefListEditor", settings);
         database.getLegacyDatabase(Database.class).get().initializeForEditing();
-        // Construct the database and the interface specified by properties.
-        Database db = new decodes.db.Database();
         new RefListEditor(database);
     }
 }
