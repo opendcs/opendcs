@@ -1,0 +1,23 @@
+---
+name: Tagged Release
+on:
+  push:
+    tags:
+      - '7.0.[0-9]*'
+      - '7.0.[0-9]*-RC[0-9]*'
+      - '8.0.0-M[0-9]*'
+jobs:
+  release:
+    permissions:
+      id-token: write
+      contents: read
+    uses: ./.github/workflows/release.yml
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+      signingKey: ${{ secrets.SIGNING_KEY }}
+      signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
+      ossrhPassword: ${{ secrets.OSSRH_PASSWORD }}
+    with:
+      branch: ${{github.ref_name}}
+      nightly: false

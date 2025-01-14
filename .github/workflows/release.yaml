@@ -1,0 +1,101 @@
+---
+name: Release
+on:
+  workflow_call:
+    inputs:
+      branch:
+       type: string
+       required: true
+      nightly:
+        type: boolean
+        required: true
+    secrets:
+      token:
+       required: false
+      signingKey:
+        required: true
+      signingKeyPassword:
+        required: true
+      ossrhUsername:
+        required: true
+      ossrhPassword:
+        required: true
+  workflow_dispatch:
+    inputs:
+      branch:
+        type: choice
+        required: true
+        description: Which Branch to make the build from
+        options:
+          - "main"
+          - "7.0"
+      nightly:
+        type: boolean
+        required: true
+        description: Is this part of a "nightly" workflow?
+        default: true
+      
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+        id-token: write
+        contents: read
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{inputs.branch}}
+      - name: setup java
+        uses: actions/setup-java@v4.5.0
+        with:
+          distribution: 'temurin'
+          # 17 is used as it still supports targeting Java 8 for the build 
+          # but allows us to update the build and use the more advanced signing tools.
+          java-version: '17'
+          cache: 'gradle'
+      - name: Set Version
+        if: inputs.nightly      
+        run: echo "VERSION=${{inputs.branch}}-nightly" >> $GITHUB_ENV
+      - name: Set Version
+        if: inputs.nightly == false
+        run: echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV
+      - name: show version
+        run: echo ${VERSION}
+      - name: Push to central
+        # We don't publish to maven central for the nightly builds
+        if: inputs.nightly == false
+        run: |
+          ./gradlew publish --info -Psign=true \
+             -PversionOverride=$VERSION \
+             -PsigningKeyPassword="${{ secrets.signingKeyPassword != null && secrets.signingKeyPassword || secrets.SIGNING_KEY_PASSWORD }}" \
+             -PossrhUsername=${{ secrets.ossrhUsername != null && secrets.ossrhUsername || secrets.OSSRH_USERNAME }} \
+             -PossrhPassword=${{ secrets.ossrhPassword != null && secrets.ossrhPassword || secrets.OSSRH_PASSWORD }} \
+             -PsigningKey="${{ secrets.signingKey != null && secrets.signingKey || secrets.SIGNING_KEY }}"
+      - name: Create distributions
+        run: |
+          ./gradlew distTar distZip
+      - name: create docker images
+        run: |
+          REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
+          ./build_docker.sh ghcr.io/${REPO} ${VERSION}
+      - name: upload Release
+        env:
+            GH_TOKEN: "${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}"
+        run: |
+          VERSION=`./gradlew properties -q | grep "^version:" | awk '{ print $2}'`
+          gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.tar#opendcs-${VERSION}-nightly.tar --clobber
+          gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip#opendcs-${VERSION}-nightly.zip --clobber
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}
+      - name: Push images
+        run: |
+          REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
+          docker push ghcr.io/${REPO}/lrgs:${VERSION}
+          docker push ghcr.io/${REPO}/routingscheduler:${VERSION}
+          docker push ghcr.io/${REPO}/compdepends:${VERSION}
+          docker push ghcr.io/${REPO}/compproc:${VERSION}
