@@ -226,6 +226,10 @@ public class EnumSqlDao
 	public Season getSeason(String abbr)
 			throws DbIoException
 	{
+		if (abbr == null || abbr.isEmpty())
+		{
+			throw new DbIoException("Must provide a season abbreviation to retrieve a season");
+		}
 		try
 		{
 			Long seasonRefListId = getSeasonRefListId();
@@ -293,7 +297,11 @@ public class EnumSqlDao
 
 			Season existing = checkExistence(season.getAbbr());
 
-			Season fromExisting = checkExistence(fromAbbr);
+			Season fromExisting = null;
+			if (fromAbbr != null && !fromAbbr.isEmpty())
+			{
+				fromExisting = checkExistence(fromAbbr);
+			}
 
 			String startEndTz = String.format("%s %s", season.getStart(), season.getEnd());
 			if (season.getTz() != null)
@@ -348,9 +356,9 @@ public class EnumSqlDao
 		{
 			if (ex.getCause() instanceof ValueNotFoundException)
 			{
-				throw ex;
+				return null;
 			}
-			return null;
+			throw ex;
 		}
 	}
 
@@ -359,7 +367,15 @@ public class EnumSqlDao
 	{
 		try
 		{
-			return DbKey.createDbKey(getSeasonRefListId());
+			Long id = getSeasonRefListId();
+			if (id != null)
+			{
+				return DbKey.createDbKey(id);
+			}
+			else
+			{
+				throw new DbIoException("Failed to get season ref list id");
+			}
 		}
 		catch(DbIoException ex)
 		{
