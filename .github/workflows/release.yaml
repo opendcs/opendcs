@@ -74,7 +74,7 @@ jobs:
              -PsigningKey="${{ secrets.signingKey != null && secrets.signingKey || secrets.SIGNING_KEY }}"
       - name: Create distributions
         run: |
-          ./gradlew distTar distZip
+          ./gradlew distTar distZip -PversionOverride=$VERSION
       - name: create docker images
         run: |
           REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
