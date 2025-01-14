@@ -93,7 +93,7 @@ dependencies {
         exclude group: "mil.army.usace.hec", module: "hec-monolith"
     }
     implementation(libs.hec.nucleus.metadata)
-    implementation(libs.org.slf4j.api)
+    api(libs.org.slf4j.api)
     implementation(libs.bundles.jersey)
     implementation(libs.bundles.jdbi)
     implementation(libs.org.flywaydb.flyway.core)
@@ -103,6 +103,8 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.fasterxml.jackson.databind)
+    testImplementation(libs.greenmail)
+  
 }
 
 test
@@ -158,6 +160,11 @@ publishing {
         maven(MavenPublication) {
             artifactId = 'opendcs'
             from components.java
+
+            pom {
+                name = 'OpenDCS Core Library'
+                description = 'Contains built-in opendcs components and interfaces.'
+            }
         }
     }
 }
