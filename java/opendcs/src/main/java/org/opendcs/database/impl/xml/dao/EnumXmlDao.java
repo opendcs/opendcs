@@ -128,6 +128,7 @@ public class EnumXmlDao implements EnumDAI
 
             Collection<DbEnum> enumList = new HashSet<>();
             XMLInputFactory f = XMLInputFactory.newInstance();
+            f.setProperty(XMLInputFactory.SUPPORT_DTD, false);
             File xmlFile = new File(conn.getDirectory(), "enum/EnumList.xml");
             
             try (InputStream stream = new FileInputStream(xmlFile))

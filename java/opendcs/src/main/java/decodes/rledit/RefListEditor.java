@@ -1,6 +1,10 @@
 package decodes.rledit;
 
 import javax.swing.UIManager;
+
+import org.opendcs.database.DatabaseService;
+import org.opendcs.database.api.OpenDcsDatabase;
+
 import java.util.*;
 
 import ilex.gui.WindowUtility;
@@ -18,11 +22,13 @@ public class RefListEditor
     private static ResourceBundle genericLabels = null;
     private static ResourceBundle labels = null;
     boolean packFrame = false;
+    final private OpenDcsDatabase database;
 
     /** Construct the application. */
-    public RefListEditor() 
+    public RefListEditor(OpenDcsDatabase database)
     {
-        RefListFrame frame = new RefListFrame();
+        this.database = database;
+        RefListFrame frame = new RefListFrame(database);
         //Validate frames that have preset sizes
         //Pack frames that have useful preferred size info, e.g. from their layout
         if (packFrame) {
@@ -97,19 +103,8 @@ public class RefListEditor
 
         DecodesSettings settings = DecodesSettings.instance();
         DecodesInterface.setGUI(true);
-
-        // Construct the database and the interface specified by properties.
-        Database db = new decodes.db.Database();
-        
-        Database.setDb(db);
-        DatabaseIO dbio = 
-            DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-            settings.editDatabaseLocation);
-        db.setDbIo(dbio);
-        db.enumList.read();
-        db.dataTypeSet.read();
-        db.engineeringUnitList.read();
-        
-        new RefListEditor();
+        OpenDcsDatabase database = DatabaseService.getDatabaseFor("RefListEditor", settings);
+        database.getLegacyDatabase(Database.class).get().initializeForEditing();
+        new RefListEditor(database);
     }
 }
