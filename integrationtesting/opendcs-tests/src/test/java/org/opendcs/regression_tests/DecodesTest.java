@@ -21,7 +21,7 @@ import uk.org.webcompere.systemstubs.SystemStubs;
 @DecodesConfigurationRequired({
         "shared/test-sites.xml",
         "shared/ROWI4.xml",
-        "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
+        "shared/cwms-import.xml",
         "shared/presgrp-regtest.xml",
         "HydroJsonTest/HydroJSON-rs.xml",
         "SimpleDecodesTest/site-OKVI4.xml",
