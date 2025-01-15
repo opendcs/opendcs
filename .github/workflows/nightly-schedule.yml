@@ -13,6 +13,7 @@ jobs:
       token: ${{ secrets.GITHUB_TOKEN }}
     with:
       branch: "main"
+      nightly: true
   v7_0:
     permissions:
       packages: write
@@ -22,3 +23,4 @@ jobs:
       token: ${{ secrets.GITHUB_TOKEN }}
     with:
       branch: "7.0"
+      nightly: true
