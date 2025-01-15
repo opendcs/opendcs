@@ -105,8 +105,7 @@ See the legacy documentation below to better understand how the algorithm behave
 Reservoir Evaporation Legacy Documentation
 ******************************************
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Legacy ResEvap
+.. note::
 
-   Legacy ResEvap <./legacy-resevap-computation.rst>
+   See https://github.com/opendcs/opendcs/blob/main/docs/source/legacy-resevap-computation.rst
+   Documentation is not directly included due to errors with processing the embedded formulas.
