@@ -41,6 +41,7 @@ jobs:
     permissions:
         id-token: write
         contents: write
+        packages: write
     steps:
       - name: checkout code
         uses: actions/checkout@v4.2.2
