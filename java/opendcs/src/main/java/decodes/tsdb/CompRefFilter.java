@@ -7,7 +7,6 @@
 
 package decodes.tsdb;
 
-import java.util.Iterator;
 import java.util.function.Predicate;
 import decodes.util.DecodesSettings;
 
@@ -29,30 +28,141 @@ public class CompRefFilter
 
 	// internal string validation
 	private final Predicate<String> validString = s -> (s != null) && !s.isEmpty();
-	private final Predicate<DbComputation> validSite = comp -> site != null
-			&& !site.isEmpty()
-			&& comp.getParmList()
-			.stream()
-			.noneMatch(item -> item.getSiteName().getNameValue().equalsIgnoreCase(site));
-	private final Predicate<DbComputation> validDataType = comp -> dataType != null
-			&& !dataType.isEmpty()
-			&& comp.getParmList()
-			.stream()
-			.noneMatch(item -> item.getInterval().equalsIgnoreCase(intervalCode));
-	private final Predicate<DbComputation> validInterval = comp -> intervalCode != null
-			&& !intervalCode.isEmpty()
-			&& comp.getParmList()
-			.stream()
-			.noneMatch(item -> item.getInterval().equalsIgnoreCase(intervalCode));
+	private final Predicate<DbComputation> validSite = comp -> {
+		if (site != null && !site.isEmpty())
+		{
+			if (comp.getParmList() == null || comp.getParmList().isEmpty())
+			{
+				return false;
+			}
+			else
+			{
+				return comp.getParmList()
+					.stream()
+					.anyMatch(item -> {
+						if (item.getSiteName() == null
+								|| item.getSiteName().getNameValue() == null
+								|| item.getSiteName().getNameValue().isEmpty())
+						{
+							return false;
+						}
+						else
+						{
+							return item.getSiteName().getNameValue().equalsIgnoreCase(site);
+						}
+					});
+			}
+		}
+		else
+		{
+			return true;
+		}
+	};
+	private final Predicate<DbComputation> validDataType = comp ->
+	{
+		if (dataType != null
+				&& !dataType.isEmpty())
+		{
+			if (comp.getParmList() == null || comp.getParmList().isEmpty())
+			{
+				return false;
+			}
+			return comp.getParmList()
+				.stream()
+				.anyMatch(item -> {
+					if (item.getDataType() == null
+							|| item.getDataType().getDisplayName() == null
+							|| item.getDataType().getDisplayName().isEmpty())
+					{
+						return false;
+					}
+					else
+					{
+						return item.getDataType().getDisplayName().equalsIgnoreCase(dataType);
+					}
+				});
+		}
+		else
+		{
+			return true;
+		}
+	};
+	private final Predicate<DbComputation> validInterval = comp -> {
+		if (intervalCode != null
+				&& !intervalCode.isEmpty())
+		{
+			if (comp.getParmList() == null || comp.getParmList().isEmpty())
+			{
+				return false;
+			}
+			else
+			{
+				return comp.getParmList()
+					.stream()
+					.anyMatch(item ->
+					{
+						if (item.getInterval() == null)
+						{
+							return false;
+						}
+						else
+						{
+							return item.getInterval().equalsIgnoreCase(intervalCode);
+						}
+					});
+			}
+		}
+		else
+		{
+			return true;
+		}
+	};
 
 	// external value validation
-	public final Predicate<String> validProcess = match -> process != null && !process.isEmpty() && process.equalsIgnoreCase(match);
-	public final Predicate<String> validAlgorithm = match -> algorithm != null && !algorithm.isEmpty() && algorithm.equalsIgnoreCase(match);
-	public final Predicate<String> validGroup = match -> group != null && !group.isEmpty() && group.equalsIgnoreCase(match);
-	public final Predicate<Boolean> enabled = match -> enabledOnly && match;
+	private final Predicate<String> validProcess = match ->
+	{
+		if (process == null || process.isEmpty())
+		{
+			return true;
+		}
+		else
+		{
+			return process.equalsIgnoreCase(match);
+		}
+	};
+	private final Predicate<String> validAlgorithm = match -> {
+		if (algorithm == null || algorithm.isEmpty())
+		{
+			return true;
+		}
+		else
+		{
+			return algorithm.equalsIgnoreCase(match);
+		}
+	};
+	private final Predicate<String> validGroup = match -> {
+		if (group == null || group.isEmpty())
+		{
+			return true;
+		}
+		else
+		{
+			return group.equalsIgnoreCase(match);
+		}
+	};
+	private final Predicate<Boolean> enabled = match -> {
+		if (enabledOnly)
+		{
+			return match;
+		}
+		else
+		{
+			return true;
+		}
+	};
 	public final Predicate<DbComputation> validComputation = comp -> validProcess.test(comp.getApplicationName())
 				&& validAlgorithm.test(comp.getAlgorithmName())
-				&& enabled.test(!comp.isEnabled())
+				&& enabled.test(comp.isEnabled())
 				&& validGroup.test(comp.getGroupName())
 				&& validSite.test(comp)
 				&& validDataType.test(comp)
@@ -84,87 +194,6 @@ public class CompRefFilter
 		//the minCompId property which is used to determine the computations
 		//that will be displayed on the list
 		minCompId = DecodesSettings.instance().minCompId;
-	}
-
-	/**
-	 * Used to determine if a given computation will be displayed on
-	 * the Computation List or not. If the DbComputation id is greater
-	 * or equal to the minCompId read from the tsdb.conf file, this Db
-	 * Computation will show up in the list, otherwise it won't.
-	 * It also tests the 'intervalCode' if one is specified.
-	 *
-	 * @param dbComp
-	 * @return true if DbComputation will show up in the list, false
-	 * otherwise
-	 */
-	public boolean passes(DbComputation dbComp)
-	{
-		if (dbComp == null)
-		{
-			return false;
-		}
-
-		if (dbComp.getId().getValue() < minCompId)
-		{
-			return false;
-		}
-
-		if (validString.test(intervalCode))
-		{
-			boolean passes = false;
-			for(Iterator<DbCompParm> pit = dbComp.getParms(); pit.hasNext(); )
-			{
-				DbCompParm dcp = pit.next();
-				if (intervalCode.equalsIgnoreCase(dcp.getInterval()))
-				{
-					passes = true;
-					break;
-				}
-			}
-			if (!passes)
-			{
-				return false;
-			}
-		}
-
-		if (validString.test(site))
-		{
-			boolean passes = false;
-			for(Iterator<DbCompParm> pit = dbComp.getParms(); pit.hasNext(); )
-			{
-				DbCompParm dcp = pit.next();
-				if (site.equalsIgnoreCase(dcp.getSiteName().getNameValue()))
-				{
-					passes = true;
-					break;
-				}
-			}
-			if (!passes)
-			{
-				return false;
-			}
-		}
-
-		if (validString.test(dataType))
-		{
-			boolean passes = false;
-			for(Iterator<DbCompParm> pit = dbComp.getParms(); pit.hasNext(); )
-			{
-				DbCompParm dcp = pit.next();
-				if (dataType.equalsIgnoreCase(dcp.getDataType().getDisplayName()))
-				{
-					passes = true;
-					break;
-				}
-			}
-			if (!passes)
-				return false;
-		}
-
-		if (enabledOnly && !dbComp.isEnabled())
-			return false;
-
-		return group.isEmpty() || group.equalsIgnoreCase(dbComp.getGroup().getGroupName());
 	}
 
 	public void setSite(String x)
