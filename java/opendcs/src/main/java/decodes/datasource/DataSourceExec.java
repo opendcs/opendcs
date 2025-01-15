@@ -96,8 +96,14 @@
 */
 package decodes.datasource;
 
+import java.util.Iterator;
 import java.util.Properties;
+import java.util.Spliterators;
 import java.util.Vector;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import org.opendcs.utils.FailableResult;
 
 import ilex.util.Logger;
 import decodes.db.DataSource;
@@ -269,6 +275,42 @@ public abstract class DataSourceExec
 	*/
 	public abstract RawMessage getRawMessage()
 		throws DataSourceException;
+
+	public Stream<FailableResult<RawMessage,DataSourceException>> getRawMessages() throws DataSourceException
+	{
+		return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<FailableResult<RawMessage,DataSourceException>>()
+		{
+			private FailableResult<RawMessage,DataSourceException> nextMessage = null;
+			@Override
+			public boolean hasNext() 
+			{
+				try
+				{
+					nextMessage = FailableResult.success(getRawMessage());
+					if (nextMessage != null)
+					{
+						return true;
+					}
+				}
+				catch (DataSourceException ex)
+				{
+					if (!(ex instanceof DataSourceEndException))
+					{
+						nextMessage =FailableResult.failure(ex);
+						return true;
+					}
+				}
+				return false;
+			}
+
+			@Override
+			public FailableResult<RawMessage,DataSourceException> next()
+			{
+				return nextMessage;
+			}
+
+		}, 0), false );
+	}
 
 	/**
 	  Find the matching transport medium for this platform.
