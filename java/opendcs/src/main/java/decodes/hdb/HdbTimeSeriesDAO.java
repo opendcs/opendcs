@@ -1068,6 +1068,27 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	}
 
 	@Override
+	public ArrayList<TimeSeriesIdentifier> listTimeSeriesActiveFilter(boolean activeOnly)
+			throws DbIoException
+	{
+		if (System.currentTimeMillis() - lastCacheRefresh > cacheReloadMS)
+		{
+			reloadTsIdCache();
+		}
+
+		ArrayList<TimeSeriesIdentifier> ret = new ArrayList<>();
+		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext(); )
+		{
+			TimeSeriesIdentifier tsid = tsidit.next();
+			if (!activeOnly || tsid.getSite().isActive())
+			{
+				ret.add(tsid);
+			}
+		}
+		return ret;
+	}
+
+	@Override
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries(boolean forceRefresh)
 		throws DbIoException
 	{

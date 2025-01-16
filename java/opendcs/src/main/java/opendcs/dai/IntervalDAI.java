@@ -1,5 +1,8 @@
 package opendcs.dai;
 
+import java.util.List;
+
+import decodes.sql.DbKey;
 import opendcs.opentsdb.Interval;
 import decodes.tsdb.DbIoException;
 
@@ -15,11 +18,27 @@ public interface IntervalDAI
 		throws DbIoException;
 
 	/**
+	 * Read the interval codes from the database and return them
+	 * in a list.
+	 * @throws DbIoException on database error
+	 */
+	List<Interval> getAllIntervals()
+		throws DbIoException;
+
+	/**
 	 * Write an Interval record to the database
 	 * @param intv The interval to write
 	 * @throws DbIoException on any error
 	 */
 	public void writeInterval(Interval intv)
+		throws DbIoException;
+
+	/**
+	 * Delete an interval from the database by its ID.
+	 * @param intervalId the database key of the interval to delete
+	 * @throws DbIoException on any error
+	 */
+	void deleteInterval(DbKey intervalId)
 		throws DbIoException;
 
 	/**

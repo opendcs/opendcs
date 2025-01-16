@@ -1085,6 +1085,31 @@ public class CwmsTimeSeriesDAO
     }
 
     @Override
+    public ArrayList<TimeSeriesIdentifier> listTimeSeriesActiveFilter(boolean activeOnly)
+            throws DbIoException
+    {
+        if (System.currentTimeMillis() - lastCacheReload > cacheReloadMS)
+        {
+            reloadTsIdCache();
+        }
+
+        ArrayList<TimeSeriesIdentifier> ret = new ArrayList<>();
+        synchronized(cache)
+        {
+            for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext();)
+            {
+                TimeSeriesIdentifier tsid = tsidit.next();
+                if (!activeOnly || tsid.getSite().isActive())
+                {
+                    ret.add(tsid);
+                }
+            }
+        }
+        return ret;
+    }
+
+
+    @Override
     public ArrayList<TimeSeriesIdentifier> listTimeSeries(boolean forceRefresh)
         throws DbIoException
     {

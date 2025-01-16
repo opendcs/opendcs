@@ -5,7 +5,7 @@ import ilex.var.TimedVariable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Optional;
+import java.util.List;
 
 import org.opendcs.utils.FailableResult;
 
@@ -185,6 +185,14 @@ public interface TimeSeriesDAI extends DaiBase
 	 * @throws DbIoException on error
 	 */
 	public ArrayList<TimeSeriesIdentifier> listTimeSeries()
+		throws DbIoException;
+
+	/**
+	 * @return a list of all time series defined in the database.
+	 * @param activeOnly if true, only return active time series.
+	 * @throws DbIoException on error
+	 */
+	List<TimeSeriesIdentifier> listTimeSeriesActiveFilter(boolean activeOnly)
 		throws DbIoException;
 
 	/**

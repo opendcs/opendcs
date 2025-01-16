@@ -4,7 +4,9 @@ import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 import decodes.db.IntervalList;
 import decodes.sql.DbKey;
@@ -77,6 +79,63 @@ public class OpenTsdbIntervalDAO
 		for(Interval intv : IntervalList.instance().getList())
 			validIntervals[i++] = intv.getName();
 	}
+
+	@Override
+	public List<Interval> getAllIntervals()
+			throws DbIoException
+	{
+		List<Interval> ret = new ArrayList<>();
+
+		String q = "select INTERVAL_ID, NAME, CAL_CONSTANT, CAL_MULTIPLIER "
+				+ "from INTERVAL_CODE";
+		try
+		{
+			ResultSet rs = doQuery(q);
+			while(rs != null && rs.next())
+			{
+				int calconst = str2const(rs.getString(3));
+				if (calconst == -1)
+					warning("Invalid calendar constant '" + rs.getString(3) + "' -- skipped.");
+				Interval intv = new Interval(DbKey.createDbKey(rs, 1),
+						rs.getString(2), calconst, rs.getInt(4));
+				ret.add(intv);
+			}
+
+			// "0" needs to be a built-in interval because it's used often for duration.
+			Interval zeroInt = IntervalList.instance().getByName("0");
+			if (zeroInt == null)
+			{
+				Logger.instance().debug1("After loading intervals, there is no '0' interval. Will add.");
+				zeroInt = new Interval(DbKey.NullKey, "0", Calendar.MINUTE, 0);
+				if (db.getKeyGenerator() != null)
+				{
+					writeInterval(zeroInt);
+					ret.add(zeroInt);
+				}
+			}
+			else
+			{
+				Logger.instance().info("After loading intervals, '0' interval has key=" + zeroInt.getKey());
+			}
+		}
+		catch (Exception ex)
+		{
+			String msg = "Cannot read INTERVAL_CODE table: " + ex;
+			warning(msg);
+			Logger.instance().log(Logger.E_WARNING, msg);
+			throw new DbIoException(msg);
+		}
+
+		// All intervals, including built-ins are valid in OpenTSDB.
+		validIntervals = new String[IntervalList.instance().getList().size()];
+		int i=0;
+		for(Interval intv : IntervalList.instance().getList())
+		{
+			validIntervals[i++] = intv.getName();
+		}
+
+		return ret;
+	}
 	
 	@Override
 	public void writeInterval(Interval intv)
@@ -120,6 +179,21 @@ public class OpenTsdbIntervalDAO
 		}
 		doModify(q);
 		IntervalList.instance().add(intv);
+	}
+
+	@Override
+	public void deleteInterval(DbKey intervalId)
+			throws DbIoException
+	{
+		if (DbKey.isNull(intervalId))
+		{
+			throw new DbIoException("Cannot delete interval with null key.");
+		}
+		else
+		{
+			String q = String.format("delete from INTERVAL_CODE where INTERVAL_ID = %d", intervalId.getValue());
+			doModify(q);
+		}
 	}
 	
 	private int str2const(String s)
