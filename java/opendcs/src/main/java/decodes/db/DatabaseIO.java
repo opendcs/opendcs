@@ -367,7 +367,7 @@ public abstract class DatabaseIO
 	* </p>
 	  @param pc the PlatformConfig to read
 	*/
-	public abstract void readConfig( PlatformConfig pc )
+	public abstract PlatformConfig readConfig( PlatformConfig pc )
 		throws DatabaseException;
 
 	/**

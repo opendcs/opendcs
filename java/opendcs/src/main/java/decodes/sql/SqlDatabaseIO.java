@@ -271,7 +271,7 @@ public class SqlDatabaseIO
         commitAfterSelect = false;
         try (Connection conn = dataSource.getConnection())
         {
-            determineVersion(conn);        
+            determineVersion(conn);
             setDBDatetimeFormat(conn);
         }
         catch (SQLException ex)
@@ -559,7 +559,7 @@ public class SqlDatabaseIO
     @Override
     public synchronized void readEngineeringUnitList(EngineeringUnitList euList) throws DatabaseException
     {
-        
+
 
         try (Connection conn = getConnection())
         {
@@ -1240,13 +1240,13 @@ public class SqlDatabaseIO
     */
     // MJM NOT Synchronized because it can be called from the SQL Platform Helper
     @Override
-    public void readConfig(PlatformConfig pc)
+    public PlatformConfig readConfig(PlatformConfig pc)
         throws DatabaseException
     {
         try (Connection conn = getConnection())
         {
             _configListIO.setConnection(conn);
-            _configListIO.readConfig(pc.getId());
+            return _configListIO.readConfig(pc.getId());
         }
         catch (SQLException ex)
         {
@@ -1494,7 +1494,7 @@ public class SqlDatabaseIO
         throws DatabaseException
     {
         try (Connection conn = getConnection())
-        {            
+        {
             _routingSpecListIO.setConnection(conn);
             _routingSpecListIO.readRoutingSpec(rs);
         }
@@ -1582,7 +1582,7 @@ public class SqlDatabaseIO
     @Override
     public synchronized void readDataSource(DataSource ds) throws DatabaseException
     {
-        
+
         try (Connection conn = getConnection())
         {
             _dataSourceListIO.setConnection(conn);

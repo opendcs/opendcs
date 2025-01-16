@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
+import decodes.db.ValueNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -364,11 +365,14 @@ public class ConfigListIO extends SqlDbObjIo
             ResultSet rs = stmt.executeQuery(q);
 
             if (rs == null || !rs.next())
-                throw new DatabaseException(
+            {
+                Throwable thr = new ValueNotFoundException(
                     "No PlatformConfig found with ID " + id);
+                throw new DatabaseException(
+                        "No PlatformConfig found with ID " + id, thr);
+            }
 
-            PlatformConfig ret = putConfig(id, rs);
-            return ret;
+            return putConfig(id, rs);
         }
         finally
         {

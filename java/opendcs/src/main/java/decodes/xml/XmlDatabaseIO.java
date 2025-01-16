@@ -1436,13 +1436,14 @@ e.printStackTrace();
 	 * @param pc object in which to store data
 	 * @throws DatabaseException
 	 */
-	public void readConfig( PlatformConfig pc ) throws DatabaseException
+	public PlatformConfig readConfig( PlatformConfig pc ) throws DatabaseException
 	{
 		String fn = "";
 		try
 		{
 			fn = makePath(PlatformConfigDir, pc.makeFileName());
 			myParser.parse(new File(fn), pc);
+			return pc;
 		}
 		catch(Exception e)
 		{
