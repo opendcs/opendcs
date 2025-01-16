@@ -11,6 +11,10 @@ jobs:
     uses: ./.github/workflows/release.yaml
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
+      signingKey: ${{ secrets.SIGNING_KEY }}
+      signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
+      ossrhPassword: ${{ secrets.OSSRH_PASSWORD }}
     with:
       branch: "main"
       nightly: true
@@ -21,6 +25,10 @@ jobs:
     uses: ./.github/workflows/release.yaml
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
+      signingKey: ${{ secrets.SIGNING_KEY }}
+      signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
+      ossrhPassword: ${{ secrets.OSSRH_PASSWORD }}
     with:
       branch: "7.0"
       nightly: true
