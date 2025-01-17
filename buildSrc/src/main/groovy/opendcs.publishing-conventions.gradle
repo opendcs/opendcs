@@ -3,23 +3,76 @@ plugins {
     id 'maven-publish'
 }
 
-
-signing {
-    useGpgCmd()    
-}
+ext.shouldSign = (project.findProperty("sign") ?: "false") == "true"
 
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-    plugins.apply('dev.sigstore.sign')
-    sigstoreSign {
-        oidcClient {
-            gitHub {
-                audience.set("sigstore")
-            }
+    if (shouldSign) {
+        plugins.apply('dev.sigstore.sign')
 
-            web {
-                clientId.set("sigstore")
-                issuer.set("https://oauth2.sigstore.dev/auth")
+        sigstoreSign {
+            oidcClient {
+                gitHub {
+                    audience.set("sigstore")
+                }
+
+                web {
+                    clientId.set("sigstore")
+                    issuer.set("https://oauth2.sigstore.dev/auth")
+                }
             }
+        }
+
+        signing {
+            def signingKey = project.getProperty("signingKey").trim().replace("\n","")
+            def signingPassword = project.getProperty("signingKeyPassword")
+            useInMemoryPgpKeys(signingKey, signingPassword)
+    }
+    }
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                pom {
+                    url = 'https://github.com/opendcs/opendcs'
+
+                    scm {
+                        connection = 'scm:git:https://github.com/opendcs/opendcs.git'
+                        developerConnection = 'scm:git:ssh://git@github.com:opendcs/opendcs.git'
+                        url = 'https://github.com/opendcs/opendcs'
+                    }
+
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'opendcs'
+                            name = 'The OpenDCS Team'
+                            email = 'https://github.com/opendcs'
+                        }
+                    }
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                def releaseUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+                def snapshotUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                def user = project.findProperty("ossrhUsername")
+                def passwd = project.findProperty("ossrhPassword")
+                name = 'MavenCentral'
+                url = version.endsWith('SNAPSHOT') ? snapshotUrl : releaseUrl
+                credentials {
+                    username = user
+                    password = passwd
+                }
+            }
+            mavenLocal()
         }
     }
 }

@@ -1,4 +1,4 @@
-package decodes.cwms.database;
+package org.opendcs.database.impl.opendcs;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,22 +18,22 @@ import org.opendcs.spi.database.MigrationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import ilex.util.EnvExpander;
+import opendcs.opentsdb.OpenTsdb;
 
 /**
- * CwmsOracleProvider provides support for handling installation and updates of the OpenDCS-CWMS-Oracle
+ * OpenDcsOracleProvider provides support for handling installation and updates of the OpenDCS-Oracle
  * schema.
  */
-public class CwmsOracleProvider implements MigrationProvider
+public class OpenDcsOracleProvider implements MigrationProvider
 {
-    private static final Logger log = LoggerFactory.getLogger(CwmsOracleProvider.class);
-    public static final String NAME = "CWMS-Oracle";
+    private static final Logger log = LoggerFactory.getLogger(OpenDcsOracleProvider.class);
+    public static final String NAME = "OpenDCS-Oracle";
 
     private Map<String,String> placeholders = new HashMap<>();
     private static final List<MigrationProvider.MigrationProperty> properties = new ArrayList<>();
@@ -42,24 +42,16 @@ public class CwmsOracleProvider implements MigrationProvider
     {
         properties.add(
             new MigrationProperty(
-                "CWMS_SCHEMA", String.class,
+                "NUM_TS_TABLES", Integer.class,
                 "How many tables should be used to partition numeric timeseries data."));
         properties.add(
             new MigrationProperty(
-                "CCP_SCHEMA", String.class,
+                "NUM_TEXT_TABLES", Integer.class,
                 "How many tables should be used to balance text timeseries data."));
         properties.add(
-            new MigrationProperty(
-                "DEFAULT_OFFICE_CODE", Integer.class,
-                ""));
-        properties.add(
-            new MigrationProperty(
-                "DEFAULT_OFFICE", String.class,
-                ""));
-        properties.add(
-            new MigrationProperty(
-                "TABLE_SPACE_SPEC", String.class,
-                ""));
+            new MigrationProperty("TABLES_SPACE_SPEC", String.class, "")
+        );
+        properties.add(new MigrationProperty("TSDB_ADM_SCHEMA", String.class,""));
     }
 
     @Override
@@ -83,7 +75,7 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void registerJdbiPlugins(Jdbi jdbi)
     {
-        //jdbi.installPlugin(new OraclePlugin());
+        
     }
 
     @Override
@@ -95,22 +87,34 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        log.warn("Create User ignored. CWMS Users are managed externally.");
+        jdbi.useTransaction(h ->
+        {
+            try(Call createUser = h.createCall("call create_user(:user,:pw)");
+                Call assignRole = h.createCall("call assign_role(:user,:role)");)
+            {
+                createUser.bind("user",username)
+                          .bind("pw", password)
+                          .invoke();
+                for(String role: roles)
+                {
+                    assignRole.bind("user",username)
+                              .bind("role",role)
+                              .invoke();
+                }
+            }
+        });
     }
 
     @Override
     public List<File> getDecodesData()
     {
         List<File> files = new ArrayList<>();
-        String decodesData[] =
-        {
+        String decodesData[] = {
             "${DCSTOOL_HOME}/edit-db/enum",
             "${DCSTOOL_HOME}/edit-db/eu/EngineeringUnitList.xml",
             "${DCSTOOL_HOME}/edit-db/datatype/DataTypeEquivalenceList.xml",
             "${DCSTOOL_HOME}/edit-db/presentation",
-            "${DCSTOOL_HOME}/edit-db/loading-app"
-        };
-
+            "${DCSTOOL_HOME}/edit-db/loading-app"};
         fillFiles(files, decodesData, ".xml");
         if (log.isTraceEnabled())
         {
@@ -126,20 +130,15 @@ public class CwmsOracleProvider implements MigrationProvider
     public List<File> getComputationData()
     {
         List<File> files = new ArrayList<>();
-        String computationData[] =
-        {
+        String computationData[] = {
             "${DCSTOOL_HOME}/imports/comp-standard/algorithms.xml",
             "${DCSTOOL_HOME}/imports/comp-standard/Division.xml",
-            "${DCSTOOL_HOME}/imports/comp-standard/Multiplication.xml",
-            "${DCSTOOL_HOME}/schema/cwms/cwms-comps.xml"
-        };
+            "${DCSTOOL_HOME}/imports/comp-standard/Multiplication.xml"
+            };
         fillFiles(files, computationData, ".xml");
         return files;
     }
 
-    /**
-        for the input array of fileNames[] expand and store the absolute paths of files (that are usable) in the List<File>files  argument.
-    */
     private void fillFiles(List<File> files, String fileNames[], String suffix)
     {
         for (String filename: fileNames)
@@ -197,6 +196,7 @@ public class CwmsOracleProvider implements MigrationProvider
             DecodesSettings settings = DecodesSettings.fromProfile(profile);
             settings.DbAuthFile="java-auth-source:password=DCS_PASS,username=DCS_USER";
             settings.saveToProfile(tmpProfile);
+
             if (!decodesFiles.isEmpty())
             {
                 List<String> fileNames = decodesFiles.stream()
@@ -215,8 +215,7 @@ public class CwmsOracleProvider implements MigrationProvider
                                                      .map(f -> f.getAbsolutePath())
                                                      .collect(Collectors.toList());
                 log.info("Loading baseline computation data.");
-
-                TimeSeriesDb tsDb = new CwmsTimeSeriesDb();
+                TimeSeriesDb tsDb = new OpenTsdb();
 
                 tsDb.connect("utility", creds);
 
@@ -241,7 +240,7 @@ public class CwmsOracleProvider implements MigrationProvider
     public List<String> schemas()
     {
         ArrayList<String> theSchemas = new ArrayList<>();
-        theSchemas.add("CCP");
+        theSchemas.add("OTSDB_ADM");
         return theSchemas;
     }
 }

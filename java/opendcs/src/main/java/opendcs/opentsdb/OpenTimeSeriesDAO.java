@@ -904,7 +904,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				ArrayList<Object> parameters = new ArrayList<>();
 				String q = "delete from " + tableName
 					+ " where ts_id = ?"
-					+ " and flags & ? = 0 ";
+					+ (db.isOracle() ? " and bitand(flags,?) = 0" : " and flags & ? = 0 ");
 				parameters.add(ctsid.getKey());
 				parameters.add(CwmsFlags.PROTECTED);
 				if (from != null)
@@ -964,7 +964,7 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					String tableName = makeDataTableName(ctsid);
 					String q = "delete from " + tableName
 						+ " where ts_id = ?"
-						+ " and flags & ? = 0 ";
+						+ ( db.isOracle() ? " and bitand(flags,?) = 0" : " and flags & ? = 0 ");
 					dao.doModify(q, ctsid.getKey(), CwmsFlags.PROTECTED);
 					dao.doModify("delete from ts_property where ts_id = ?", ctsid.getKey());
 					compDependsDAO.deleteCompDependsForTsKey(ctsid.getKey());

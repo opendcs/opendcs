@@ -7,7 +7,7 @@
     <Site>
       <Latitude>0</Latitude>
       <Longitude>0</Longitude>
-      <Elevation>1.7976931348623157E308</Elevation>
+      <Elevation>1.0</Elevation>
       <ElevationUnits>m</ElevationUnits>
       <Timezone>EST5EDT</Timezone>
       <Country>UNITED STATES</Country>
@@ -28,7 +28,7 @@
     <Site>
       <Latitude>0</Latitude>
       <Longitude>0</Longitude>
-      <Elevation>1.7976931348623157E308</Elevation>
+      <Elevation>10.0</Elevation>
       <ElevationUnits>m</ElevationUnits>
       <Timezone>EST5EDT</Timezone>
       <Country>UNITED STATES</Country>
@@ -50,7 +50,8 @@
     <Site>
       <Latitude>0</Latitude>
       <Longitude>0</Longitude>
-      <Elevation>1.7976931348623157E308</Elevation>
+      <Elevation>100.0</Elevation>
+                 
       <ElevationUnits>m</ElevationUnits>
       <Country>UNITED STATES</Country>
       <Description>Site used for Regression Testing</Description>
@@ -70,7 +71,7 @@
     <Site>
       <Latitude>0</Latitude>
       <Longitude>0</Longitude>
-      <Elevation>1.7976931348623157E308</Elevation>
+      <Elevation>200.0</Elevation>
       <ElevationUnits>m</ElevationUnits>
       <Country>UNITED STATES</Country>
       <Description>Site used for Regression Testing</Description>
@@ -90,7 +91,7 @@
     <Site>
       <Latitude>0</Latitude>
       <Longitude>0</Longitude>
-      <Elevation>1.7976931348623157E308</Elevation>
+      <Elevation>300.0</Elevation>
       <ElevationUnits>m</ElevationUnits>
       <Country>UNITED STATES</Country>
       <Description>Site used for Regression Testing</Description>
@@ -109,7 +110,7 @@
     <Site>
       <Latitude>0</Latitude>
       <Longitude>0</Longitude>
-      <Elevation>1.7976931348623157E308</Elevation>
+      <Elevation>500.0</Elevation>
       <ElevationUnits>m</ElevationUnits>
       <Country>UNITED STATES</Country>
       <Description>Site used for Regression Testing</Description>

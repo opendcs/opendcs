@@ -118,6 +118,7 @@ greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
 
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref="testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref="testcontainers" }
+testcontainers-oracle-free = { module = "org.testcontainers:oracle-free", version.ref="testcontainers" }
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
 
 [bundles]

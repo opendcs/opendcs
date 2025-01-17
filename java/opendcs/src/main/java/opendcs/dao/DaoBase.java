@@ -461,6 +461,18 @@ public class DaoBase
             {
                 stmt.setInt(index,(Integer)param);
             }
+            else if (param instanceof Double)
+            {
+                Double value = (Double)param;
+                if (value == Double.MAX_VALUE && db.isOpenTSDB() && db.isOracle())
+                {
+                    stmt.setNull(index, Types.NULL);
+                }
+                else
+                {
+                    stmt.setDouble(index, value);
+                }
+            }
             else if (param instanceof Boolean)
             {
                 Boolean v = (Boolean)param;
