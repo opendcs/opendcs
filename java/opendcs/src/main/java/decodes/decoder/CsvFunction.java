@@ -133,7 +133,7 @@ public class CsvFunction
 		if (sensorNumber < 0)
 			return;
 		trace("Processing column " + col + " value='" + sample + "'");
-		if (sample.length() == 0 || sample.startsWith("M") || sample.startsWith("/"))
+		if (sample.length() == 0 || formatStatement.getDecodesScript().isMissingSymbol(sample)|| sample.startsWith("/"))
 		{
 			Variable v = new Variable("m");
 			v.setFlags(v.getFlags() | IFlags.IS_MISSING);
