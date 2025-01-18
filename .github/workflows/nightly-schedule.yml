@@ -9,8 +9,17 @@ jobs:
     permissions:
       packages: write
       contents: write
-    uses: ./.github/workflows/nightly.yml
+    uses: ./.github/workflows/release.yml
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
     with:
       branch: "main"
+  v7_0:
+    permissions:
+      packages: write
+      contents: write
+    uses: ./.github/workflows/release.yml
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      branch: "7.0"
