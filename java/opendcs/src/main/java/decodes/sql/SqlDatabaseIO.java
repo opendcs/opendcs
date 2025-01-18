@@ -653,13 +653,13 @@ public class SqlDatabaseIO
      *  @param tmType the transport medium type to filter on.
      */
     @Override
-    public synchronized void readPlatformList(PlatformList pl, String tmType)
+    public synchronized PlatformList readPlatformList(PlatformList pl, String tmType)
             throws DatabaseException
     {
         try (Connection conn = getConnection())
         {
             _platformListIO.setConnection(conn);
-            _platformListIO.read(pl, tmType);
+            return _platformListIO.read(pl, tmType);
         }
         catch (SQLException ex)
         {
@@ -1141,13 +1141,13 @@ public class SqlDatabaseIO
       @param p the object to populate from the database.
     */
     @Override
-    public synchronized void readPlatform(Platform p)
+    public synchronized Platform readPlatform(Platform p)
         throws DatabaseException
     {
         try (Connection conn = getConnection())
         {
             _platformListIO.setConnection(conn);
-            _platformListIO.readPlatform(p);
+            return _platformListIO.readPlatform(p);
         }
         catch (SQLException ex)
         {
