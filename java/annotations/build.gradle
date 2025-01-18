@@ -16,7 +16,5 @@ publishing {
             artifactId = 'opendcs-annotations'
             from components.java
         }
-
-
     }
 }

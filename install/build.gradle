@@ -1,7 +1,6 @@
 plugins
 {
     id 'opendcs.deps-conventions'
-    id 'opendcs.publishing-conventions'
     id 'distribution'
 }
 
