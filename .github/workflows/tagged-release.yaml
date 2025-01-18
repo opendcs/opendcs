@@ -6,6 +6,8 @@ on:
       - '7.0.[0-9]+'
       - '7.0.[0-9]+-RC[0-9]+'
       - '8.0.0-M[0-9]+'
+  release:
+    types: [published,prerelease]
 jobs:
   release-from-tag:
     permissions:
