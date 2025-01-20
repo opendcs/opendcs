@@ -3,7 +3,6 @@
 */
 package decodes.db;
 
-import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -14,7 +13,6 @@ import opendcs.dai.ScheduleEntryDAI;
 
 import org.xml.sax.SAXException;
 
-import ilex.util.Counter;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
@@ -42,17 +40,17 @@ public abstract class DatabaseIO
 	{
 		ResourceFactory.instance().initDbResources();
 		
-		try 
+		try
 		{
 			if (type == DecodesSettings.DB_XML)
 				return new XmlDatabaseIO(location);
 		}
-		catch (SAXException se) 
+		catch (SAXException se)
 		{
 			throw new DatabaseException("Caught a SAXException while " +
 				"attempting to create an XmlDatabaseIO object");
 		}
-		catch (ParserConfigurationException pce) 
+		catch (ParserConfigurationException pce)
 		{
 			throw new DatabaseException("Caught a " +
 				"ParserConfigurationException while " +
@@ -67,16 +65,15 @@ public abstract class DatabaseIO
 
 		if (type == DecodesSettings.DB_OPENTSDB)
 			return new opendcs.opentsdb.OpenTsdbSqlDbIO(location);
-		
+
 		if (type == DecodesSettings.DB_HDB)
 			return new decodes.hdb.HdbSqlDatabaseIO(location);
-		
+
 		// Add other database interface types (URL) here...
 
 		throw new DatabaseException(
 			"No database defined (fix properties file)");
 	}
-
 
 	//========== Identification methods ==========================
 
@@ -220,8 +217,18 @@ public abstract class DatabaseIO
 	and primary display attributes only).
 	  @param rsl the list to populate
 	*/
-	public abstract void readRoutingSpecList(RoutingSpecList rsl)
+	public abstract RoutingSpecList readRoutingSpecList(RoutingSpecList rsl)
 		throws DatabaseException;
+
+	/**
+	 Retrieves the list of RoutingStatus objects defined in this database.
+	 */
+	public abstract List<RoutingStatus> readRoutingSpecStatus() throws DatabaseException;
+
+	/**
+	 Retrieves the list of RoutingExecStatus objects defined in this database.
+	 */
+	public abstract List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException;
 
 	/**
 	Populates the list of Site objects defined in this database.

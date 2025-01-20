@@ -33,6 +33,8 @@
 */
 package decodes.xml;
 
+import decodes.db.RoutingExecStatus;
+import decodes.db.RoutingStatus;
 import ilex.util.Counter;
 import ilex.util.FileCounter;
 import ilex.util.Logger;
@@ -44,7 +46,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -52,6 +53,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -156,10 +158,10 @@ public class XmlDatabaseIO extends DatabaseIO
 	 * @throws SAXException if can't initialize XML parsers
 	 * @throws ParserConfigurationException if can't configure XML parsers
 	 */
-	public XmlDatabaseIO( String xmldir ) 
+	public XmlDatabaseIO( String xmldir )
 		throws SAXException, ParserConfigurationException
 	{
-		Logger.instance().log(Logger.E_DEBUG1, 
+		Logger.instance().log(Logger.E_DEBUG1,
 			"Creating XmlDatabaseIO for directory '" + xmldir + "'");
 		this.xmldir = xmldir;
 		myParser = new TopLevelParser();
@@ -179,7 +181,7 @@ public class XmlDatabaseIO extends DatabaseIO
 			{
 				if (!xmlTop.mkdirs())
 				{
-					Logger.instance().warning(module + " Top directory '" + xmldir 
+					Logger.instance().warning(module + " Top directory '" + xmldir
 						+ "' does not exist and cannot be created. Check permissions and location.");
 					return;
 				}
@@ -188,7 +190,7 @@ public class XmlDatabaseIO extends DatabaseIO
 			{
 				File entdir = new File(xmlTop, subdir);
 				if (!entdir.isDirectory() && !entdir.mkdir())
-					Logger.instance().warning(module + " Entity directory '" + entdir.getPath() 
+					Logger.instance().warning(module + " Entity directory '" + entdir.getPath()
 						+ "' does not exist and cannot be created. Check permissions and location.");
 			}
 		}
@@ -991,6 +993,24 @@ e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Returns the list of RoutingSpec statuses for the routing specs
+	 * stored to the database. XML implementation is not yet available.
+	 * @throws DatabaseException upon error
+	 */
+	public List<RoutingStatus> readRoutingSpecStatus()
+	{
+		throw new UnsupportedOperationException("readRoutingSpecStatus");
+	}
+
+	/**
+	 * Returns the list of RoutingExecStatus objects defined in this database.
+	 * @throws DatabaseException upon error
+	 */
+	public List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId)
+	{
+		throw new UnsupportedOperationException("readRoutingExecStatus");
+	}
 
 	/**
 	 * Returns the list of RoutingSpec objects defined in this database.
@@ -999,13 +1019,13 @@ e.printStackTrace();
 	 * @param rsl object in which to store data
 	 * @throws DatabaseException
 	 */
-	public void readRoutingSpecList( RoutingSpecList rsl ) throws DatabaseException
+	public RoutingSpecList readRoutingSpecList( RoutingSpecList rsl ) throws DatabaseException
 	{
 		try
 		{
 			String ls[] = listDirectory(RoutingSpecDir);
 			if (ls == null)
-				return;
+				return null;
 			for(int i=0; i<ls.length; i++)
 			{
 				InputStream is = null;
@@ -1027,6 +1047,7 @@ e.printStackTrace();
 						try { is.close(); } catch(Exception e) {}
 				}
 			}
+			return rsl;
 		}
 		catch(Exception e)
 		{

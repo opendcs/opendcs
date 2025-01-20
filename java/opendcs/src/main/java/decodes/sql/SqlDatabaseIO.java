@@ -78,12 +78,14 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import ilex.util.AuthException;
 import ilex.util.EnvExpander;
+import opendcs.util.sql.WrappedConnection;
 import org.opendcs.authentication.AuthSourceService;
-
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.AlarmDAI;
@@ -119,8 +121,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.util.sql.WrappedConnection;
-import ilex.util.AuthException;
 import ilex.util.Logger;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
@@ -878,7 +878,7 @@ public class SqlDatabaseIO
     * @param rsList the object to populate from the database.
     */
     @Override
-    public synchronized void readRoutingSpecList(RoutingSpecList rsList)
+    public synchronized RoutingSpecList readRoutingSpecList(RoutingSpecList rsList)
         throws DatabaseException
     {
         Connection conn = null;
@@ -887,7 +887,7 @@ public class SqlDatabaseIO
         {
             conn = getConnection();
             _routingSpecListIO.setConnection(conn);
-            _routingSpecListIO.read(rsList);
+            return _routingSpecListIO.read(rsList);
         }
         catch (SQLException ex)
         {
@@ -903,6 +903,45 @@ public class SqlDatabaseIO
             _routingSpecListIO.setConnection(null);
         }
     }
+
+    @Override
+    public synchronized List<RoutingStatus> readRoutingSpecStatus() throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _routingSpecListIO.setConnection(conn);
+           return _routingSpecListIO.readRoutingSpecStatus(makeLoadingAppDAO());
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read routing spec status list.", ex);
+            throw new DatabaseException("Unable to read routing spec status list", ex);
+        }
+        finally
+        {
+            _routingSpecListIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _routingSpecListIO.setConnection(conn);
+           return _routingSpecListIO.readRoutingExecStatus(scheduleEntryId);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read routing exec status list.", ex);
+            throw new DatabaseException("Unable to read routing exec status list", ex);
+        }
+        finally
+        {
+            _routingSpecListIO.setConnection(null);
+        }
+    }
+
 
     /**
     * Returns the list of DataSource objects defined in this database.
