@@ -34,6 +34,8 @@
 package decodes.xml;
 
 import decodes.db.DataType;
+import decodes.db.EngineeringUnit;
+import decodes.db.UnitConverterDb;
 import ilex.util.Counter;
 import ilex.util.FileCounter;
 import ilex.util.Logger;
@@ -598,40 +600,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	 */
 	public void readDataTypeSet( DataTypeSet dts, String standard ) throws DatabaseException
 	{
-		Database oldDb = Database.getDb();
-		// Make sure correct database is in effect.
-		Database.setDb(dts.getDatabase());
-		InputStream is = null;
-		try
-		{
-			long lmt = getLastModifyTime(DataTypeDir, DataTypeEquivFile);
-			if (dts.getTimeLastRead() < lmt)
-			{
-				DataTypeSet allDts = new DataTypeSet();
-				is = getInputStream(DataTypeDir, DataTypeEquivFile);
-				myParser.parse(is, allDts);
-				dts.setTimeLastRead();
-
-				for(Iterator<DataType> dtit = allDts.iterator(); dtit.hasNext(); )
-				{
-					DataType dt = dtit.next();
-					if (dt.getStandard().equalsIgnoreCase(standard))
-					{
-						dts.add(dt);
-					}
-				}
-			}
-		}
-		catch(Exception e)
-		{
-			throw new DatabaseException(e.toString());
-		}
-		finally
-		{
-			if (is != null)
-				try { is.close(); } catch(Exception e) {}
-			Database.setDb(oldDb);
-		}
+		throw new NotImplementedException("XmlDatabaseIO.readDataTypeSet(standard)");
 	}
 
 	/**
@@ -940,10 +909,10 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 	{
 		try
 		{
-			String ls[] = listDirectory(PlatformDir);
+			String[] ls = listDirectory(PlatformDir);
 			if (ls == null)
 				return;
-			for(int i=0; i<ls.length; i++)
+			for (int i=0; i<ls.length; i++)
 			{
 				InputStream is = null;
 				try
