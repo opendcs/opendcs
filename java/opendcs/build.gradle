@@ -152,3 +152,12 @@ sourceSets {
 }
 
 compileJava.dependsOn(versionFile)
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs'
+            from components.java
+        }
+    }
+}

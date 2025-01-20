@@ -1,4 +1,4 @@
-package org.opendcs.fixtures.configurations.xml;
+package org.opendcs.fixtures.configuration.xml;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -10,8 +10,6 @@ import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.fixtures.UserPropertiesBuilder;
-import org.opendcs.spi.configuration.Configuration;
 
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
@@ -20,6 +18,8 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import decodes.xml.CreatePlatformXref;
 import ilex.util.Pair;
+import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.fixtures.configuration.UserPropertiesBuilder;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
