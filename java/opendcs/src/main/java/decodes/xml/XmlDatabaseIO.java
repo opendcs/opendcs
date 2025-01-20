@@ -1404,48 +1404,8 @@ e.printStackTrace();
 	 * @param tmType the transport medium type to filter on
 	 */
 	public synchronized PlatformList readPlatformList(PlatformList pl, String tmType)
-			throws DatabaseException
 	{
-		Database oldDb = Database.getDb();
-		// Make sure correct database is in effect.
-		Database.setDb(pl.getDatabase());
-		InputStream is = null;
-		try
-		{
-			long lmt = getLastModifyTime(PlatformDir, PlatformListFile);
-			if (pl.getTimeLastRead() < lmt)
-			{
-				is = getInputStream(PlatformDir, PlatformListFile);
-				myParser.parse(is, pl);
-				pl.setTimeLastRead();
-
-				// Now filter out the platforms that don't have the specified transport medium type.
-				for(Iterator<Platform> pit = pl.iterator(); pit.hasNext(); )
-				{
-					Platform p = pit.next();
-					for(TransportMedium tm : p.transportMedia)
-					{
-						if(!tm.getMediumType().equalsIgnoreCase(tmType))
-						{
-							pit.remove();
-							break;
-						}
-					}
-				}
-			}
-			return pl;
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace(System.err);
-			throw new DatabaseException(e.toString());
-		}
-		finally
-		{
-			if (is != null)
-				try { is.close(); } catch(Exception e) {}
-			Database.setDb(oldDb);
-		}
+		throw new NotImplementedException("XmlDatabaseIO.readPlatformList(tmType)");
 	}
 
 
