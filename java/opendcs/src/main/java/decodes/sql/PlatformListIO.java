@@ -285,7 +285,7 @@ public class PlatformListIO extends SqlDbObjIo
                 }
                 else
                 {
-                    filter = "'goes'";
+                    filter = String.format("'%s'", tmType);
                 }
 
                 q = q + " where exists(select PLATFORMID from TRANSPORTMEDIUM where lower(MEDIUMTYPE) IN ("
@@ -317,6 +317,10 @@ public class PlatformListIO extends SqlDbObjIo
 
                         DbKey siteId = DbKey.createDbKey(rs, 4);
                         if (!rs.wasNull()) {
+                            if (p.getDatabase().siteList.size() == 0)
+                            {
+                                p.getDatabase().siteList.read();
+                            }
                             p.setSite(p.getDatabase().siteList.getSiteById(siteId));
                         }
 
