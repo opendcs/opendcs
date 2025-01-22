@@ -1,3 +1,0 @@
-org.opendcs.fixtures.configurations.xml.XmlConfigurationProvider
-org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfigurationProvider
-org.opendcs.fixtures.configurations.cwms.CwmsOracleConfigurationProvider

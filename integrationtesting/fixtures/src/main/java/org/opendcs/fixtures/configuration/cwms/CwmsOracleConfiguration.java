@@ -1,4 +1,4 @@
-package org.opendcs.fixtures.configurations.cwms;
+package org.opendcs.fixtures.configuration.cwms;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -14,9 +14,9 @@ import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.fixtures.UserPropertiesBuilder;
-import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.fixtures.configuration.UserPropertiesBuilder;
+import org.opendcs.fixtures.configuration.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.output.OutputFrame;
 
@@ -56,6 +56,7 @@ public class CwmsOracleConfiguration implements Configuration
     private File propertiesFile;
     private boolean started = false;
     private HashMap<Object,Object> environmentVars = new HashMap<>();
+    private String dcsOffice = null;
     private String dcsUser = null;
     private String dcsUserPassword = null;
     private Profile profile = null;
@@ -71,10 +72,11 @@ public class CwmsOracleConfiguration implements Configuration
     {
         if (!started)
         {
+            dcsOffice = "SPK";
             cwmsDb = CwmsDatabaseContainers.createDatabaseContainer(CWMS_ORACLE_IMAGE)
                             .withSchemaImage(CWMS_SCHEMA_IMAGE)
                             .withVolumeName(CWMS_ORACLE_VOLUME)
-                            .withOfficeId("SPK")
+                            .withOfficeId(dcsOffice)
                             .withOfficeEroc("l2")
                             .withLogConsumer(line -> {
                                 log.info(((OutputFrame)line).getUtf8String());
@@ -160,8 +162,12 @@ public class CwmsOracleConfiguration implements Configuration
 
         environment.set("DB_USERNAME",dcsUser);
         environment.set("DB_PASSWORD",dcsUserPassword);
+        environment.set("DB_OFFICE", dcsOffice);
+        environment.set("DB_URL", dbUrl);
         environmentVars.put("DB_USERNAME",dcsUser);
         environmentVars.put("DB_PASSWORD",dcsUserPassword);
+        environmentVars.put("DB_OFFICE", dcsOffice);
+        environmentVars.put("DB_URL", dbUrl);
 
         started = true;
     }

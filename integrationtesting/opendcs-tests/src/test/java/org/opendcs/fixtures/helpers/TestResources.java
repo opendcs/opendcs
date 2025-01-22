@@ -5,7 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.configuration.Configuration;
 
 import ilex.util.EnvExpander;
 
