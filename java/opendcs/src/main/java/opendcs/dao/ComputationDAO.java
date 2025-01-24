@@ -58,11 +58,10 @@
 */
 package opendcs.dao;
 
+import decodes.tsdb.CompRefFilter;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -71,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
@@ -585,6 +585,34 @@ public class ComputationDAO
 				continue;
 
 			ret.add(comp);
+		}
+		return ret;
+	}
+
+	/**
+	 * Apply the filter to the cached computations.
+	 * @param filter the computation filter containing site, algorithm, datatype, interval, process, and group names
+	 * @return List of computations
+	 */
+	@Override
+	public List<DbComputation> listCompRefsMatching(CompRefFilter filter)
+			throws DbIoException
+	{
+		debug1("listCompRefs " + filter);
+
+		if (compCache.size() == 0)
+		{
+			fillCache();
+		}
+
+		List<DbComputation> ret = new ArrayList<>();
+		for (DbObjectCache<DbComputation>.CacheIterator it = compCache.iterator(); it.hasNext(); )
+		{
+			DbComputation comp = it.next();
+			if (filter.validComputation.test(comp))
+			{
+				ret.add(comp);
+			}
 		}
 		return ret;
 	}
