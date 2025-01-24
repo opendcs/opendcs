@@ -24,14 +24,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
+import decodes.db.EnumValue;
 import decodes.db.ValueNotFoundException;
-import decodes.decoder.Season;
 import opendcs.dai.EnumDAI;
 
 import decodes.db.DbEnum;
 import decodes.db.EnumList;
-import decodes.db.EnumValue;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
@@ -109,6 +109,47 @@ public class EnumSqlDao
 					cache.put(ret);
 					return ret;
 				}		
+			}
+			catch (SQLException ex)
+			{
+				String msg = "Error in query '" + q + "': " + ex;
+				warning(msg);
+				throw new DbIoException(msg,ex);
+			}
+		}
+	}
+
+	@Override
+	public DbKey getEnumId(String enumName)
+			throws DbIoException
+	{
+		synchronized(cache)
+		{
+			DbKey ret = cache.getByUniqueName(enumName).getKey();
+			if (ret != null)
+			{
+				return ret;
+			}
+
+			int dbVer = db.getDecodesDatabaseVersion();
+			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
+			q = q + " where lower(name) = lower(?)";
+
+			try
+			{
+				ret = getSingleResult(q, rs -> {
+					DbEnum en = rs2Enum(rs, dbVer);
+					return en.getKey();
+				},enumName);
+				if (ret == null)
+				{
+					warning("No such enum '" + enumName + "'");
+					return null;
+				}
+				else
+				{
+					return ret;
+				}
 			}
 			catch (SQLException ex)
 			{
@@ -222,92 +263,80 @@ public class EnumSqlDao
 		}
 	}
 
-	@Override
-	public Season getSeason(String abbr)
+	public EnumValue getEnumValue(DbKey id, String enumVal)
 			throws DbIoException
 	{
-		if (abbr == null || abbr.isEmpty())
+		if (enumVal == null || enumVal.isEmpty())
 		{
-			throw new DbIoException("Must provide a season abbreviation to retrieve a season");
+			throw new DbIoException("Must provide an EnumValue abbreviation to retrieve an EnumValue");
 		}
 		try
 		{
-			Long seasonRefListId = getSeasonRefListId();
-			Season ret = new Season();
+			DbEnum dbenum = getEnum(enumVal);
+			 List<EnumValue> retList = new ArrayList<>();
 
-			String abbrLower = abbr.toLowerCase();
-			String q = "select enumValue, description, editClass from EnumValue "
+			String enumValLower = enumVal.toLowerCase();
+			String q = "select enumValue, description, editClass, sortNumber from EnumValue "
 				+ "where enumId = ? and lower(enumValue) = ?";
 
 			doQuery(q, rs ->
 			{
-				ret.setAbbr(rs.getString(1));
-				ret.setName(rs.getString(2));
-				String[] startEndTz = rs.getString(3).split(" ");
-				if(startEndTz.length >= 1)
-				{
-					ret.setStart(startEndTz[0]);
-				}
-				if(startEndTz.length >= 2)
-				{
-					ret.setEnd(startEndTz[1]);
-				}
-				if (startEndTz.length >= 3)
-				{
-					ret.setTz(startEndTz[2]);
-				}
-			}, seasonRefListId, abbrLower);
+				EnumValue ret = new EnumValue(dbenum, enumVal);
+				ret.setValue(rs.getString(1));
+				ret.setDescription(rs.getString(2));
+				ret.setEditClassName(rs.getString(3));
+				ret.setSortNumber(rs.getInt(4));
+				retList.add(ret);
+			}, id.getValue(), enumValLower);
 
-			if (ret.getAbbr() == null || ret.getAbbr().isEmpty())
+			if (retList.isEmpty() || retList.get(0).getValue() == null || retList.get(0).getValue().isEmpty())
 			{
-				Throwable notFound = new ValueNotFoundException("No season with abbreviation '" + abbr + "'");
-				throw new DbIoException(String.format("No season with abbreviation '%s'", abbr), notFound);
+				Throwable notFound = new ValueNotFoundException("No EnumValue with abbreviation '" + enumVal + "'");
+				throw new DbIoException(String.format("No EnumValue with abbreviation '%s'", enumVal), notFound);
 			}
-			return ret;
+			if (retList.size() > 1)
+			{
+				throw new DbIoException(String.format("Multiple values found for EnumValue with abbreviation '%s'", enumVal));
+			}
+			return retList.get(0);
 		}
 		catch(SQLException ex)
 		{
-			throw new DbIoException(String.format("Failed to get season with abbreviation %s", abbr), ex);
+			throw new DbIoException(String.format("Failed to get EnumValue with abbreviation %s", enumVal), ex);
 		}
 	}
 
 	@Override
-	public void deleteSeason(String abbr)
+	public void deleteEnumValue(DbKey id, String enumVal)
 		throws DbIoException
 	{
 		try
 		{
-			Long seasonRefListId = getSeasonRefListId();
 			String q = "DELETE FROM EnumValue WHERE enumId = ? and lower(enumValue) = ?";
-			doModify(q, seasonRefListId, abbr.toLowerCase());
+			doModify(q, id.getValue(), enumVal.toLowerCase());
 		}
 		catch(SQLException ex)
 		{
-			throw new DbIoException("Failed to delete season with abbreviation " + abbr, ex);
+			throw new DbIoException("Failed to delete EnumValue with abbreviation " + enumVal, ex);
 		}
 	}
 
 	@Override
-	public void writeSeason(Season season, String fromAbbr, int sortNum)
+	public void writeEnumValue(DbKey enumId, EnumValue enumVal, String fromEnumVal, int sortNum)
 		throws DbIoException
 	{
 		try
 		{
-			DbKey seasonRefListId = getOrCreateSeasonRefListId();
+			EnumValue existing = checkExistingEnumValue(enumId, enumVal.getValue());
 
-			Season existing = checkExistence(season.getAbbr());
-
-			Season fromExisting = null;
-			if (fromAbbr != null && !fromAbbr.isEmpty())
+			// fromEnumVal is the existing enumVal that this one is updating.
+			EnumValue fromExisting = null;
+			if (fromEnumVal != null && !fromEnumVal.isEmpty())
 			{
-				fromExisting = checkExistence(fromAbbr);
+				fromExisting = checkExistingEnumValue(enumId, fromEnumVal);
 			}
 
-			String startEndTz = String.format("%s %s", season.getStart(), season.getEnd());
-			if (season.getTz() != null)
-			{
-				startEndTz = startEndTz + " " + season.getTz();
-			}
+			String startEndTz = enumVal.getEditClassName();
 
 			String q;
 			if (fromExisting != null)
@@ -315,88 +344,46 @@ public class EnumSqlDao
 				if (existing != null)
 				{
 					throw new DbIoException(
-							String.format("Cannot update season from %s to %s. The season '%s' already exists",
-									fromAbbr, season.getAbbr(), season.getAbbr()));
+							String.format("Cannot update EnumValue from %s to %s. The EnumValue '%s' already exists",
+									fromEnumVal, enumVal.getValue(), enumVal.getValue()));
 				}
 				q = "update enumvalue set enumvalue = ?, description = ?, editclass = ?, sortnumber = ? "
 						+ "where enumid = ? and lower(enumvalue) = ?";
-				doModify(q, season.getAbbr(), season.getName(), startEndTz, fromAbbr.toLowerCase(), sortNum);
+				doModify(q, enumVal.getValue(), enumVal.getDescription(), startEndTz, fromEnumVal.toLowerCase(), sortNum);
 			}
-			else if ((fromAbbr == null || fromAbbr.isEmpty()) && existing == null)
+			else if ((fromEnumVal == null || fromEnumVal.isEmpty()) && existing == null)
 			{
 				q = "insert into enumvalue(enumid, enumvalue, description, editclass, sortnumber) values(?,?,?,?,?)";
-				doModify(q, seasonRefListId, season.getAbbr(), season.getName(), startEndTz, sortNum);
+				doModify(q, enumId.getValue(), enumVal.getValue(), enumVal.getDescription(), startEndTz, sortNum);
 			}
-			else if (fromAbbr == null || fromAbbr.isEmpty())
+			else if (fromEnumVal == null || fromEnumVal.isEmpty())
 			{
 				q = "update enumvalue set enumvalue = ?, description = ?, editclass = ?, sortnumber = ? "
 						+ "where enumid = ? and lower(enumvalue) = ?";
-				doModify(q, season.getAbbr(), season.getName(), startEndTz,
-						sortNum, seasonRefListId, season.getAbbr().toLowerCase());
+				doModify(q, enumVal.getValue(), enumVal.getDescription(), startEndTz,
+						sortNum, enumId.getValue(), fromEnumVal);
 			}
 			else
 			{
-				Throwable cause = new ValueNotFoundException(String.format("No such season with abbr '%s'.", fromAbbr));
-				throw new DbIoException(String.format("No such season with abbr '%s'.", fromAbbr), cause);
+				Throwable cause = new ValueNotFoundException(String.format("No such EnumValue with abbr '%s'.", fromEnumVal));
+				throw new DbIoException(String.format("No such EnumValue with abbr '%s'.", fromEnumVal), cause);
 			}
 		}
 		catch(SQLException ex)
 		{
-			throw new DbIoException("Failed to write season with abbreviation " + season.getAbbr(), ex);
+			throw new DbIoException("Failed to write EnumValue with abbreviation " + enumVal.getValue(), ex);
 		}
 	}
 
-	private Season checkExistence(String abbr) throws DbIoException
+	private EnumValue checkExistingEnumValue(DbKey id, String abbr)
 	{
 		try
 		{
-			return getSeason(abbr);
+			return getEnumValue(id, abbr);
 		}
-		catch(DbIoException ex)
+		catch (DbIoException e)
 		{
-			if (ex.getCause() instanceof ValueNotFoundException)
-			{
-				return null;
-			}
-			throw ex;
-		}
-	}
-
-	private DbKey getOrCreateSeasonRefListId()
-		throws DbIoException, SQLException
-	{
-		try
-		{
-			Long id = getSeasonRefListId();
-			if (id != null)
-			{
-				return DbKey.createDbKey(id);
-			}
-			else
-			{
-				throw new DbIoException("Failed to get season ref list id");
-			}
-		}
-		catch(DbIoException ex)
-		{
-			DbKey id = getKey("Enum");
-			String q = "INSERT INTO Enum(id, name, defaultvalue, description) VALUES(?,?,?,?)";
-			doModify(q, id.getValue(), "season", null, "Seasons for conditional processing");
-			return id;
-		}
-	}
-
-	private Long getSeasonRefListId()
-			throws DbIoException
-	{
-		String q = "SELECT id FROM Enum WHERE name = 'season'";
-		try
-		{
-			return getSingleResult(q, rs -> rs.getLong(1));
-		}
-		catch(SQLException ex)
-		{
-			throw new DbIoException("Failed to get season ref list id", ex);
+			return null;
 		}
 	}
 
@@ -465,7 +452,7 @@ public class EnumSqlDao
 			q = "DELETE FROM EnumValue WHERE enumId = ?";// + dbenum.getId();
 			doModify(q,dbenum.getId().getValue());
 			
-			for (Iterator<EnumValue> it = dbenum.iterator(); it.hasNext(); )
+			for (Iterator<decodes.db.EnumValue> it = dbenum.iterator(); it.hasNext(); )
 			{
 				writeEnumValue(it.next());
 			}

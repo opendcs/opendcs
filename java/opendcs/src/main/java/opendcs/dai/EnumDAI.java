@@ -7,7 +7,7 @@ package opendcs.dai;
 
 import decodes.db.DbEnum;
 import decodes.db.EnumList;
-import decodes.decoder.Season;
+import decodes.db.EnumValue;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
@@ -30,16 +30,19 @@ public interface EnumDAI
 	void writeEnum(DbEnum dbenum)
 		throws DbIoException;
 
+	DbKey getEnumId(String enumName)
+		throws DbIoException;
+
 	void deleteEnumList(DbKey refListId)
 		throws DbIoException;
 
-	Season getSeason(String abbr)
+	EnumValue getEnumValue(DbKey id, String enumVal)
 		throws DbIoException;
 
-	void deleteSeason(String abbr)
+	void deleteEnumValue(DbKey id, String enumVal)
 		throws DbIoException;
 
-	void writeSeason(Season season, String fromAbbr, int sortNum)
+	void writeEnumValue(DbKey enumId, EnumValue enumVal, String fromAbbr, int sortNum)
 		throws DbIoException;
 	
 	void close();
