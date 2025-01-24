@@ -26,7 +26,8 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             def signingKey = project.getProperty("signingKey").trim().replace("\n","")
             def signingPassword = project.getProperty("signingKeyPassword")
             useInMemoryPgpKeys(signingKey, signingPassword)
-    }
+            sign publishing.publications
+        }
     }
 
     publishing {
