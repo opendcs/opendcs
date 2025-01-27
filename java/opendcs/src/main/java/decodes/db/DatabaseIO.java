@@ -181,14 +181,6 @@ public abstract class DatabaseIO
 	}
 
 	/**
-	 Performs a lookup for a matching data-type object based on the data type code.
-	 @param dtCode the data type code to look up
-	 @return the data type object or null if not found
-	 */
-	public abstract DataType lookupDataType(String dtCode)
-			throws DatabaseException;
-
-	/**
 	  Writes the data type set to the database.
 	  @param dts the data type set
 	*/
