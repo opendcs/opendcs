@@ -4,8 +4,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
+import decodes.db.RoutingSpec;
 import decodes.db.ValueNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -189,10 +192,10 @@ public class PresentationGroupListIO extends SqlDbObjIo
      * specs, return a list of routing spec IDs and names. If groupId is not used,
      * return null.
      * @param groupId the presentation group ID to check
-     * @return string concatenated list of routing spec IDs and names, or null if not used.
+     * @return List<RoutingSpec> list of routing spec IDs and names, or null if not used.
      * @throws SQLException if an error is encountered
      */
-    public String routeSpecsUsing(long groupId)
+    public List<RoutingSpec> routeSpecsUsing(long groupId)
             throws DatabaseException
     {
         String q = "select rs.id, rs.name"
@@ -203,14 +206,21 @@ public class PresentationGroupListIO extends SqlDbObjIo
         try (Connection conn = getConnection();
             DaoBase dao = new DaoBase(this._dbio,"Presentation",conn))
         {
-            StringBuilder ret = new StringBuilder();
 
+            List<RoutingSpec> specs = new ArrayList<>();
             dao.doQuery(q, rs -> {
-                    if (ret.length() > 0)
-                        ret.append(", ");
-                    ret.append(String.format("%d:%s", rs.getLong(1), rs.getString(2)));
+                    try
+                    {
+                        RoutingSpec spec = new RoutingSpec();
+                        spec.setId(DbKey.createDbKey(rs.getLong(1)));
+                        spec.setName(rs.getString(2));
+                    }
+                    catch(DatabaseException ex)
+                    {
+                        throw new SQLException("Unable to create routing spec object.", ex);
+                    }
                 }, groupId);
-            return ret.length() == 0 ? null : ret.toString();
+            return specs;
         }
         catch (SQLException ex)
         {

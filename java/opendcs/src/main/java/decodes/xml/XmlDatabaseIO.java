@@ -33,7 +33,6 @@
 */
 package decodes.xml;
 
-import decodes.db.DataType;
 import ilex.util.Counter;
 import ilex.util.FileCounter;
 import ilex.util.Logger;
@@ -53,6 +52,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -1070,7 +1070,7 @@ e.printStackTrace();
 	 * @return list of routing spec IDs and names, or null if not used.
 	 * @throws DatabaseException upon error
 	 */
-	public synchronized String routeSpecsUsing(long groupId)
+	public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
 			throws DatabaseException
 	{
 		throw new NotImplementedException("routeSpecsUsing not implemented for XML.");
