@@ -1,0 +1,3 @@
+col_header: /, >datetime
+datetime: setMissing(T), F(D,A,10,1), x, >data
+data: setMissing(T), csv(2,3,4), /, >datetime
