@@ -1478,7 +1478,8 @@ public class SqlDatabaseIO
         {
             conn = getConnection();
             _configListIO.setConnection(conn);
-            return _configListIO.readConfig(pc.getId());
+            _configListIO.readConfig(pc);
+            return pc;
         }
         catch (SQLException ex)
         {
