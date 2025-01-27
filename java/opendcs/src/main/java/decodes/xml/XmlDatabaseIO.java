@@ -588,18 +588,6 @@ public class XmlDatabaseIO extends DatabaseIO
 		}
 	}
 
-
-	/**
-	 * Performs a lookup for a matching data-type object based on the data type code.
-	 * @param dtCode the data type code to look up
-	 * @return the data type object or null if not found
-	 * @throws DatabaseException if an error occurs
-	 */
-	public DataType lookupDataType( String dtCode) throws DatabaseException
-	{
-		throw new NotImplementedException("lookupDataType not implemented for XML database.");
-	}
-
 	/**
 	 * Writes the DataTypeSet to the database.
 	 * @param dts set to write
