@@ -78,6 +78,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -1772,7 +1773,7 @@ public class SqlDatabaseIO
      * @throws DatabaseException if a database error occurs.
      */
     @Override
-    public synchronized String routeSpecsUsing(long groupId)
+    public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
             throws DatabaseException
     {
         try (Connection conn = getConnection())
