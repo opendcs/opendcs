@@ -10,10 +10,10 @@ package opendcs.dai;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompFilter;
-import decodes.tsdb.CompRefFilter;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbComputation;
 import decodes.tsdb.DbIoException;
@@ -27,6 +27,8 @@ import decodes.tsdb.compedit.ComputationInList;
 public interface ComputationDAI
 	extends DaiBase
 {
+	Predicate<DbComputation> defaultFilter = comp -> true;
+
 	/**
 	 * Returns the computation with given ID. The computation is filled
 	 * with all of its property, parameter, and algorithm links.
@@ -64,7 +66,7 @@ public interface ComputationDAI
 	 * @param filter the computation filter containing app and algorithm IDs
 	 * @return List of computations
 	 */
-	List<DbComputation> listCompRefsMatching(CompRefFilter filter)
+	List<DbComputation> listComps(Predicate<DbComputation> filter)
 			throws DbIoException;
 	
 	/**
