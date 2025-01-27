@@ -58,7 +58,6 @@
 */
 package opendcs.dao;
 
-import decodes.tsdb.CompRefFilter;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
@@ -71,6 +70,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.slf4j.LoggerFactory;
 
@@ -595,10 +595,10 @@ public class ComputationDAO
 	 * @return List of computations
 	 */
 	@Override
-	public List<DbComputation> listCompRefsMatching(CompRefFilter filter)
+	public List<DbComputation> listComps(Predicate<DbComputation> filter)
 			throws DbIoException
 	{
-		debug1("listCompRefs " + filter);
+		debug1("listComps " + filter);
 
 		if (compCache.size() == 0)
 		{
@@ -609,7 +609,7 @@ public class ComputationDAO
 		for (DbObjectCache<DbComputation>.CacheIterator it = compCache.iterator(); it.hasNext(); )
 		{
 			DbComputation comp = it.next();
-			if (filter.validComputation.test(comp))
+			if (filter.test(comp))
 			{
 				ret.add(comp);
 			}
