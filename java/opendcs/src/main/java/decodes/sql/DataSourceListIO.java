@@ -205,9 +205,8 @@ public class DataSourceListIO extends SqlDbObjIo
 			// There should be only one row in the result set
 			if (rs == null || !rs.next())
 			{
-				Throwable throwable = new ValueNotFoundException("No DataSource found with id " + id);
-				throw new DatabaseException(
-						String.format("No DataSource found with id %s", id), throwable);
+				throw new ValueNotFoundException(
+						String.format("No DataSource found with id %s", id));
 			}
 
 			DataSource ret = rs2ds(rs);
