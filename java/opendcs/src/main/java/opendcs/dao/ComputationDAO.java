@@ -116,6 +116,8 @@ public class ComputationDAO
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(ComputationDAO.class);
 	protected static DbObjectCache<DbComputation> compCache =
 		new DbObjectCache<DbComputation>(60 * 60 * 1000L, false);
+	private static long lastCacheFill = 0L;
+	public static final long CACHE_TIME_LIMIT = 20 * 60 * 1000L;
 
 	protected PropertiesDAI propsDao = null;
 	protected AlgorithmDAI algorithmDAO = null;
@@ -253,6 +255,8 @@ public class ComputationDAO
 			   .setCause(ex)
 			   .log("Exception filling computation hash.");
 		}
+
+		lastCacheFill = System.currentTimeMillis();
 	}
 
 	@Override
@@ -556,15 +560,16 @@ public class ComputationDAO
 	 * @return List of computations
 	 */
 	public ArrayList<DbComputation> listCompsForGUI(CompFilter filter)
-		throws DbIoException
 	{
 		debug1("listCompsForGUI " + filter);
 
-		if (compCache.size() == 0)
+		if (System.currentTimeMillis() - lastCacheFill > CACHE_TIME_LIMIT)
+		{
 			fillCache();
+		}
 
-		ArrayList<DbComputation> ret = new ArrayList<DbComputation>();
-		for(CacheIterator it = compCache.iterator(); it.hasNext(); )
+		ArrayList<DbComputation> ret = new ArrayList<>();
+		for (CacheIterator it = compCache.iterator(); it.hasNext(); )
 		{
 			DbComputation comp = (DbComputation)it.next();
 			DbKey procId = filter.getProcessId();
@@ -599,7 +604,7 @@ public class ComputationDAO
 	{
 		debug1("listComps " + filter);
 
-		if (compCache.size() == 0)
+		if (System.currentTimeMillis() - lastCacheFill > CACHE_TIME_LIMIT)
 		{
 			fillCache();
 		}

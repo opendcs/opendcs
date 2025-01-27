@@ -120,7 +120,7 @@ final class CompDependsDaoTestIT extends AppTestBase
             final DbComputation compInDb = compDAI.getComputationByName("stage_flow_tmp");
 
             // retrieve with default filter
-            List<DbComputation> comps = compDAI.listComps(ComputationDAI.defaultFilter);
+            List<DbComputation> comps = compDAI.listComps(item -> true);
             assertTrue(comps.stream().anyMatch(c -> c.getKey().equals(compInDb.getKey())));
 
             // retrieve with filter
