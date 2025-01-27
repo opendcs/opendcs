@@ -347,9 +347,9 @@ public class ConfigListIO extends SqlDbObjIo
     * ancillary data (ConfigSensors, etc.)  If a PlatformConfig with the
     * desired ID number is already in memory, this re-reads its data.
     * This returns a reference to the PlatformConfig.
-    * @param id the database ID
+    * @param pc the database ID
     */
-    public PlatformConfig readConfig(DbKey id)
+    public void readConfig(PlatformConfig pc)
         throws DatabaseException, SQLException
     {
         Statement stmt = null;
@@ -359,7 +359,7 @@ public class ConfigListIO extends SqlDbObjIo
             stmt = createStatement();
 
             String q = "SELECT id, name, description, equipmentId " +
-                       "FROM PlatformConfig WHERE ID = " + id;
+                       "FROM PlatformConfig WHERE ID = " + pc.getId();
 
             log.trace("Executing '{}'", q);
             ResultSet rs = stmt.executeQuery(q);
@@ -367,12 +367,13 @@ public class ConfigListIO extends SqlDbObjIo
             if (rs == null || !rs.next())
             {
                 Throwable thr = new ValueNotFoundException(
-                    "No PlatformConfig found with ID " + id);
+                    "No PlatformConfig found with ID " + pc.getId());
                 throw new DatabaseException(
-                        "No PlatformConfig found with ID " + id, thr);
+                        "No PlatformConfig found with ID " + pc.getId(), thr);
             }
 
-            return putConfig(id, rs);
+            PlatformConfig ret = putConfig(pc.getId(), rs);
+            pc.copyFrom(ret);
         }
         finally
         {
@@ -398,7 +399,10 @@ public class ConfigListIO extends SqlDbObjIo
         if (pc != null)
             return pc;
 
-        return readConfig(id);
+        pc = new PlatformConfig();
+        pc.setId(id);
+        readConfig(pc);
+        return pc;
     }
 
     /**
@@ -796,7 +800,6 @@ public class ConfigListIO extends SqlDbObjIo
     /**
     * This "ingests" the information about a DecodesScript from one row
     * of a ResultSet.
-    * @param pcId the platform config ID
     * @param rs  the JDBC result set
     * @param pc the PlatformConfig that owns the script
     */
