@@ -750,11 +750,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	}
 
 	/**
-	 * Populates the passed object with the list of network lists. Not implemented for XML.
-	 * Objects in this list may be only partially populated (key values
-	 * and primary display attributes only).
-	 * @param nll object in which to store data
-	 * @param tmType the transport medium type to filter on.
+	 * Not implemented for XML.
 	 */
 	public void readNetworkListList( NetworkListList nll, String tmType)
 	{
