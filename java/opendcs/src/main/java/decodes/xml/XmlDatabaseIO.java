@@ -750,7 +750,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	}
 
 	/**
-	 * Returns the list of NetworkList objects defined in this database.
+	 * Populates the passed object with the list of network lists. Not implemented for XML.
 	 * Objects in this list may be only partially populated (key values
 	 * and primary display attributes only).
 	 * @param nll object in which to store data
