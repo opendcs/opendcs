@@ -132,6 +132,47 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
         }
     }
 
+	@Override
+	public ScheduleEntry readScheduleEntry(DbKey id) throws DbIoException
+	{
+		String q = "select " + seColumns + " from " + seTables
+				+ " where " + seJoinClause
+				+ " and a.SCHEDULE_ENTRY_ID = ?";
+		try
+		{
+			final ScheduleEntry ret = getSingleResultOr(q, rs ->
+					{
+						ScheduleEntry tmp = new ScheduleEntry(DbKey.createDbKey(rs,1));
+						rs2scheduleEntry(rs, tmp);
+						return tmp;
+					},
+					null,
+					id.getValue());
+			if (ret != null && !ret.getLoadingAppId().isNull())
+			{
+				try (LoadingAppDAI loadingAppDao = db.makeLoadingAppDAO())
+				{
+					loadingAppDao.inTransactionOf(this);
+					CompAppInfo appInfo = loadingAppDao.getComputationApp(ret.getLoadingAppId());
+					if (appInfo != null)
+					{
+						ret.setLoadingAppName(appInfo.getAppName());
+					}
+				}
+			}
+
+			return ret;
+		}
+		catch(Exception ex)
+		{
+			String msg = "Error in query '" + q + "'";
+			log.atWarn()
+					.setCause(ex)
+					.log(msg);
+			throw new DbIoException(msg, ex);
+		}
+	}
+
     @Override
     public ArrayList<ScheduleEntry> listScheduleEntries(CompAppInfo app)throws DbIoException
     {

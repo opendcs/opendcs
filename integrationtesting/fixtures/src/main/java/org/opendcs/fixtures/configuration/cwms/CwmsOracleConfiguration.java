@@ -9,12 +9,19 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
+import decodes.db.PlatformStatus;
+import decodes.db.ScheduleEntryStatus;
+import opendcs.dai.PlatformStatusDAI;
+import opendcs.dai.ScheduleEntryDAI;
 import org.apache.commons.io.FileUtils;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.fixtures.configuration.Programs;
 import org.opendcs.fixtures.configuration.UserPropertiesBuilder;
 import org.opendcs.fixtures.configuration.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.spi.database.MigrationProvider;
@@ -332,6 +339,58 @@ public class CwmsOracleConfiguration implements Configuration
                 buildDatabases();
             }
             return databases;
+        }
+    }
+
+    @Override
+    public void loadXMLData(String[] files, SystemExit exit, SystemProperties properties) throws Exception
+    {
+        File logFile = new File(userDir, "cwms-oracle-db-import.log");
+        EnvironmentVariables envVars = new EnvironmentVariables(envMapper());
+        Programs.DbImport(logFile, this.propertiesFile, envVars, exit, properties, files);
+    }
+
+    private Map<String, String> envMapper()
+    {
+        Map<String, String> env = new HashMap<>();
+        for (Map.Entry<Object, Object> entry : this.environmentVars.entrySet())
+        {
+            env.put(entry.getKey().toString(), entry.getValue().toString());
+        }
+        return env;
+    }
+
+    @Override
+    public void storeScheduleEntryStatus(ScheduleEntryStatus status) throws DatabaseException
+    {
+        try
+        {
+            DatabaseIO dbIo = getDecodesDatabase().getDbIo();
+            try(ScheduleEntryDAI dai = dbIo.makeScheduleEntryDAO())
+            {
+                dai.writeScheduleStatus(status);
+            }
+        }
+        catch(Throwable e)
+        {
+            throw new DatabaseException("Error storing schedule entry status", e);
+        }
+    }
+
+    @Override
+    public void storePlatformStatus(PlatformStatus status) throws DatabaseException
+    {
+        try
+        {
+            DatabaseIO dbIo = getDecodesDatabase().getDbIo();
+            try(PlatformStatusDAI dai = dbIo.makePlatformStatusDAO())
+            {
+                dai.writePlatformStatus(status);
+            }
+        }
+        catch(Throwable e)
+        {
+            throw new DatabaseException("Error storing platform status", e);
         }
     }
 }

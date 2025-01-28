@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import decodes.db.DatabaseException;
+import decodes.db.PlatformStatus;
+import decodes.db.ScheduleEntryStatus;
 import org.apache.commons.io.FileUtils;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -124,5 +127,23 @@ public class XmlConfiguration implements Configuration
             }
             return databases;
         }
+    }
+
+    @Override
+    public void loadXMLData(String[] files, SystemExit exit, SystemProperties properties)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void storeScheduleEntryStatus(ScheduleEntryStatus status)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void storePlatformStatus(PlatformStatus status) throws DatabaseException
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

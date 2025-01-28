@@ -1,7 +1,5 @@
 package org.opendcs.fixtures.configuration.opendcs.pg;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -16,6 +14,12 @@ import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
+import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
+import decodes.db.PlatformStatus;
+import decodes.db.ScheduleEntryStatus;
+import opendcs.dai.PlatformStatusDAI;
+import opendcs.dai.ScheduleEntryDAI;
 import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.DatabaseService;
@@ -24,6 +28,7 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.fixtures.configuration.Programs;
 import org.opendcs.fixtures.configuration.UserPropertiesBuilder;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -50,7 +55,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
  */
 public class OpenDCSPGConfiguration implements Configuration
 {
-    private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
+    private static final Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
 
     public static final String NAME = "OpenDCS-Postgres";
 
@@ -288,6 +293,58 @@ public class OpenDCSPGConfiguration implements Configuration
                 buildDatabases();
             }
             return databases;
+        }
+    }
+
+    @Override
+    public void loadXMLData(String[] files, SystemExit exit, SystemProperties properties) throws Exception
+    {
+        File logFile = new File(userDir, "opentsdb-db-import.log");
+        EnvironmentVariables envVars = new EnvironmentVariables(envMapper());
+        Programs.DbImport(logFile, this.propertiesFile, envVars, exit, properties, files);
+    }
+
+    private Map<String, String> envMapper()
+    {
+        Map<String, String> env = new HashMap<>();
+        for (Map.Entry<Object, Object> entry : this.environmentVars.entrySet())
+        {
+            env.put(entry.getKey().toString(), entry.getValue().toString());
+        }
+        return env;
+    }
+
+    @Override
+    public void storeScheduleEntryStatus(ScheduleEntryStatus status) throws DatabaseException
+    {
+        try
+        {
+            DatabaseIO dbIo = getDecodesDatabase().getDbIo();
+            try(ScheduleEntryDAI dai = dbIo.makeScheduleEntryDAO())
+            {
+                dai.writeScheduleStatus(status);
+            }
+        }
+        catch(Throwable e)
+        {
+            throw new DatabaseException("Error storing schedule entry status", e);
+        }
+    }
+
+    @Override
+    public void storePlatformStatus(PlatformStatus status) throws DatabaseException
+    {
+        try
+        {
+            DatabaseIO dbIo = getDecodesDatabase().getDbIo();
+            try(PlatformStatusDAI dai = dbIo.makePlatformStatusDAO())
+            {
+                dai.writePlatformStatus(status);
+            }
+        }
+        catch(Throwable e)
+        {
+            throw new DatabaseException("Error storing platform status", e);
         }
     }
 }

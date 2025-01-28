@@ -122,6 +122,19 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		return null;
 	}
 
+	@Override
+	public ScheduleEntry readScheduleEntry(DbKey id) throws DbIoException
+	{
+		ArrayList<ScheduleEntry> ses = listScheduleEntries(null);
+		for(ScheduleEntry se : ses)
+		{
+			if(se.getId().equals(id))
+			{
+				return se;
+			}
+		}
+		return null;
+	}
 
 	@Override
 	public boolean checkScheduleEntry(ScheduleEntry scheduleEntry)
