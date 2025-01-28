@@ -185,7 +185,7 @@ public class NetworkListListIO extends SqlDbObjIo
 				qtmt = "'" + tmType + "'";
 			}
 
-			q = q + " WHERE lower(transportMediumType) IN (" + qtmt + ")";
+			q = q + " WHERE lower(transportMediumType) IN (" + qtmt.toLowerCase() + ")";
 		}
 
 		Statement stmt = createStatement();
@@ -225,9 +225,17 @@ public class NetworkListListIO extends SqlDbObjIo
 					+ id + ", ignored.");
 				continue;
 			}
-			if (tmType != null && !nl.transportMediumType.equalsIgnoreCase(tmType))
+			if (tmType != null)
 			{
-				continue;
+				if (tmType.equalsIgnoreCase("goes"))
+				{
+					if (!nl.transportMediumType.equalsIgnoreCase("goes")
+					 && !nl.transportMediumType.equalsIgnoreCase("goes-self-times")
+					 && !nl.transportMediumType.equalsIgnoreCase("goes-random"))
+						continue;
+				}
+				else if (!nl.transportMediumType.equalsIgnoreCase(tmType))
+					continue;
 			}
 			NetworkListEntry nle = new NetworkListEntry(
 				nl, transportId);
