@@ -3,7 +3,6 @@
 */
 package decodes.db;
 
-import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -14,7 +13,6 @@ import opendcs.dai.ScheduleEntryDAI;
 
 import org.xml.sax.SAXException;
 
-import ilex.util.Counter;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
@@ -326,7 +324,7 @@ public abstract class DatabaseIO
 	* </p>
 	  @param pc the PlatformConfig to read
 	*/
-	public abstract void readConfig( PlatformConfig pc )
+	public abstract PlatformConfig readConfig( PlatformConfig pc )
 		throws DatabaseException;
 
 	/**
