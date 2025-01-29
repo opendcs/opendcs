@@ -1037,7 +1037,7 @@ public class RefListFrame extends JFrame
      */
     public void showError(String msg)
     {
-        log.error(ERROR, msg);
+        log.error(msg);
         JOptionPane.showMessageDialog(this,
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }

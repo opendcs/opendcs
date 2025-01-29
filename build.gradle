@@ -34,7 +34,7 @@ def static versionLabel(gitInfo) {
 
 allprojects {
     group = 'org.opendcs'
-    version = versionLabel(gitDetails)
+    version = project.findProperty("versionOverride") ?: versionLabel(versionDetails())
 }
 
 

@@ -11,7 +11,7 @@ plugins {
 publishing {
     publications {
         maven(MavenPublication) {
-            artifactId = 'opendcs-annotations'
+            artifactId = 'opendcs-api'
             from components.java
         }
     }

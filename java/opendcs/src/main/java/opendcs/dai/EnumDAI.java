@@ -21,7 +21,7 @@ import decodes.tsdb.DbIoException;
  * Data Access Interface for database-resident enumerations
  * @author mmaloney Mike Maloney
  */
-public interface EnumDAI extends DaiBase, OpenDcsDao
+public interface EnumDAI extends DaiBase
 {
 	@Deprecated
 	public DbEnum getEnum(String enumName) throws DbIoException;
@@ -71,5 +71,5 @@ public interface EnumDAI extends DaiBase, OpenDcsDao
 	 * @return DbEnum with additional information filled in.
 	 * @throws OpenDcsDataException
 	 */
-	public DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException;	
+	public DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException;
 }

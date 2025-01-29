@@ -2,6 +2,7 @@ plugins
 {
     id 'opendcs.deps-conventions'
     id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
     id 'java-library'
 }
 
@@ -102,6 +103,8 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.fasterxml.jackson.databind)
+    testImplementation(libs.greenmail)
+  
 }
 
 test
@@ -151,3 +154,17 @@ sourceSets {
 }
 
 compileJava.dependsOn(versionFile)
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs'
+            from components.java
+
+            pom {
+                name = 'OpenDCS Core Library'
+                description = 'Contains built-in opendcs components and interfaces.'
+            }
+        }
+    }
+}

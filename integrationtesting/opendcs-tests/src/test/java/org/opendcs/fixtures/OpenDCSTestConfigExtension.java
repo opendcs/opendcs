@@ -28,11 +28,11 @@ import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
+import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.fixtures.configuration.ConfigurationProvider;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.fixtures.helpers.TestResources;
-import org.opendcs.spi.configuration.Configuration;
-import org.opendcs.spi.configuration.ConfigurationProvider;
 import org.slf4j.LoggerFactory;
 
 import decodes.db.Database;
@@ -120,9 +120,7 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
             }
             catch(Throwable t)
             {
-                logger.atError()
-                      .setCause(t)
-                      .log("Unable to initialize configuration.");
+                logger.error("Unable to initialize configuration.", t);
                 configError = true;
                 throw t;
             }
