@@ -28,6 +28,7 @@ import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+import decodes.db.Database;
 import decodes.launcher.Profile;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SequenceKeyGenerator;
