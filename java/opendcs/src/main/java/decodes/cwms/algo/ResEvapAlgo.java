@@ -22,6 +22,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -348,17 +349,22 @@ final public class ResEvapAlgo
             siteDAO = tsdb.makeSiteDAO();
             timeSeriesDAO = tsdb.makeTimeSeriesDAO();
             crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
-            conn = tsdb.getConnection();
+            
 
             //Get site Data from Database
             try
             {
+                conn = tsdb.getConnection();
                 DbKey siteID = siteDAO.lookupSiteID(reservoirId);
                 site = siteDAO.getSiteById(siteID);
             }
             catch (DbIoException | NoSuchObjectException ex)
             {
                 throw new DbCompException("Failed to load Site data", ex);
+            }
+            catch (SQLException ex)
+            {
+                throw new DbCompException("Unable to acquire required connection.", ex);
             }
 
             //If missing data overwrite with site info
@@ -560,31 +566,36 @@ final public class ResEvapAlgo
     protected void afterTimeSlices()
             throws DbCompException
     {
-        if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
+        try
         {
-            setOutput(dailyEvap, tally, _timeSliceBaseTime);
-            try
+            if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
             {
-                setAsFlow(tally, _timeSliceBaseTime);
+                setOutput(dailyEvap, tally, _timeSliceBaseTime);
+                try
+                {
+                    setAsFlow(tally, _timeSliceBaseTime);
+                }
+                catch (RatingException | NoConversionException | DecodesException ex)
+                {
+                    throw new DbCompException("Failed to compute flow values from evap rate", ex);
+                }
+                setDailyProfiles(_timeSliceBaseTime);
+
+                //TODO save HourlyWTP
+                //		hourlyWTP.SaveProfiles(timeSeriesDAO);
+                dailyWTP.SaveProfiles(timeSeriesDAO);
             }
-            catch (RatingException | NoConversionException | DecodesException ex)
+            else
             {
-                throw new DbCompException("Failed to compute flow values from evap rate", ex);
+                warning("There are less than 24 hourly samples, can not compute daily sums");
             }
-            setDailyProfiles(_timeSliceBaseTime);
-
-            //TODO save HourlyWTP
-            //		hourlyWTP.SaveProfiles(timeSeriesDAO);
-            dailyWTP.SaveProfiles(timeSeriesDAO);
-
+        }
+        finally
+        {
             tsdb.freeConnection(conn);
             crd.close();
             siteDAO.close();
             timeSeriesDAO.close();
-        }
-        else
-        {
-            warning("There are less than 24 hourly samples, can not compute daily sums");
         }
 //AW:AFTER_TIMESLICES
 //AW:AFTER_TIMESLICES_END
