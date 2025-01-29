@@ -3,7 +3,6 @@
 */
 package decodes.db;
 
-import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -401,10 +400,10 @@ public abstract class DatabaseIO
 	/**
 	 * If the presentation group referenced by groupId is used by one or more routing
 	 * specs, return a list of routing specs populated with only IDs and names. If groupId is not used,
-	 * return null.
+	 * return an empty collection.
 	 * @param groupId the ID of the presentation group to check
-	 * @return List<RoutingSpec> list of routing specs populated with only IDs and names, or null if not used.
-	 * @throws SQLException if an error is encountered
+	 * @return List<RoutingSpec> list of routing specs populated with only IDs and names.
+	 * @throws DatabaseException if an error is encountered
 	 */
 	public abstract List<RoutingSpec> routeSpecsUsing(long groupId)
 			throws DatabaseException;

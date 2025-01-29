@@ -1036,11 +1036,9 @@ e.printStackTrace();
 	}
 
 	/**
-	 * If the presentation group referenced by groupId is used by one or more routing
-	 * specs, return a list of routing spec IDs and names. If groupId is not used,
-	 * return null.
+	 * Not implemented for XML.
 	 * @param groupId the group ID to check
-	 * @return list of routing spec IDs and names, or null if not used.
+	 * @return list of routing spec IDs and names, or empty list if not used.
 	 * @throws DatabaseException upon error
 	 */
 	public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
