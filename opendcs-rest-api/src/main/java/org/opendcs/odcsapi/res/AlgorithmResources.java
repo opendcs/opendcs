@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiAlgorithmRef;
 import org.opendcs.odcsapi.beans.ApiAlgorithmScript;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
-import org.opendcs.odcsapi.sec.AuthorizationCheck;
+import org.opendcs.odcsapi.util.ApiConstants;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
@@ -57,7 +57,7 @@ public class AlgorithmResources extends OpenDcsResource
 	@GET
 	@Path("algorithmrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed(AuthorizationCheck.ODCS_API_GUEST)
+	@RolesAllowed(ApiConstants.ODCS_API_GUEST)
 	public Response getAlgorithmRefs() throws DbIoException
 	{
 		try(AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
@@ -86,7 +86,7 @@ public class AlgorithmResources extends OpenDcsResource
 	@GET
 	@Path("algorithm")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed(AuthorizationCheck.ODCS_API_GUEST)
+	@RolesAllowed(ApiConstants.ODCS_API_GUEST)
 	public Response getAlgorithm(@QueryParam("algorithmid") Long algoId)
 			throws WebAppException, DbIoException
 	{
@@ -152,7 +152,7 @@ public class AlgorithmResources extends OpenDcsResource
 	@Path("algorithm")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response postAlgorithm(ApiAlgorithm algo) throws DbIoException
 	{
 		try(AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
@@ -195,7 +195,7 @@ public class AlgorithmResources extends OpenDcsResource
 	@Path("algorithm")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response deleteAlgorithm(@QueryParam("algorithmid") Long algorithmId) throws TsdbException
 	{
 		try(AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())

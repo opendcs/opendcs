@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@ package org.opendcs.odcsapi.dao;
 
 import java.util.Set;
 
+import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 
-public interface ApiAuthorizationDAI extends ApiDaiBase
+public interface ApiAuthorizationDAI extends OpenDcsDao, AutoCloseable
 {
 	Set<OpenDcsApiRoles> getRoles(String username) throws DbException;
 }

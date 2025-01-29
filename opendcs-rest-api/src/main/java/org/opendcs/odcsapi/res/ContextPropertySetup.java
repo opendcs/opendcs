@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -33,12 +33,12 @@ public final class ContextPropertySetup implements ServletContextListener
 		ServletContext servletContext = sce.getServletContext();
 		//Move this information to the database. https://github.com/opendcs/rest_api/issues/191
 		String officeId = servletContext.getInitParameter("opendcs.rest.api.cwms.office");
-		if(officeId != null)
+		if(officeId != null && !officeId.isEmpty())
 		{
 			DbInterface.decodesProperties.setProperty("CwmsOfficeId", officeId);
 		}
 		String databaseType = servletContext.getInitParameter("editDatabaseType");
-		if(databaseType != null)
+		if(databaseType != null && !databaseType.isEmpty())
 		{
 			try
 			{
@@ -50,22 +50,22 @@ public final class ContextPropertySetup implements ServletContextListener
 			}
 		}
 		String authCheck = servletContext.getInitParameter("opendcs.rest.api.authorization.type");
-		if(authCheck != null)
+		if(authCheck != null && !authCheck.isEmpty())
 		{
 			DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.type", authCheck);
 		}
 		String expireDuration = servletContext.getInitParameter("opendcs.rest.api.authorization.expiration.duration");
-		if(expireDuration != null)
+		if(expireDuration != null && !expireDuration.isEmpty())
 		{
 			DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.expiration.duration", expireDuration);
 		}
 		String openIdJwkSetUrl = servletContext.getInitParameter("opendcs.rest.api.authorization.jwt.jwkset.url");
-		if(openIdJwkSetUrl != null)
+		if(openIdJwkSetUrl != null && !openIdJwkSetUrl.isEmpty())
 		{
 			DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.jwt.jwkset.url", openIdJwkSetUrl);
 		}
 		String openIdIssuerUrl = servletContext.getInitParameter("opendcs.rest.api.authorization.jwt.issuer.url");
-		if(openIdIssuerUrl != null)
+		if(openIdIssuerUrl != null && !openIdIssuerUrl.isEmpty())
 		{
 			DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.jwt.issuer.url", openIdIssuerUrl);
 		}

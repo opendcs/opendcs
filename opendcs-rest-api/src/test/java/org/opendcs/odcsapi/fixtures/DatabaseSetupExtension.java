@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
 
 package org.opendcs.odcsapi.fixtures;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
 
 import io.restassured.RestAssured;
@@ -22,6 +26,7 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.PreconditionViolationException;
 import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -76,16 +81,37 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		SystemExit exit = new SystemExit();
 		EnvironmentVariables environment = new EnvironmentVariables();
 		SystemProperties properties = new SystemProperties();
-		config.start(exit, environment, properties);
+		try
+		{
+			config.start(exit, environment, properties);
+		}
+		catch(Exception ex)
+		{
+			if(System.getProperty("testcontainer.cwms.bypass.url") == null)
+			{
+				throw ex;
+			}
+		}
 		environment.getVariables().forEach(System::setProperty);
 		if(dbType == DbType.CWMS)
 		{
+			DbInterface.isCwms = true;
 			System.setProperty("DB_DRIVER_CLASS", "oracle.jdbc.driver.OracleDriver");
+			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			String dbOffice = System.getProperty("DB_OFFICE");
+			String initScript = String.format("BEGIN cwms_ccp_vpd.set_ccp_session_ctx(cwms_util.get_office_code('%s'), 2, '%s' ); END;", dbOffice, dbOffice);
+			System.setProperty("DB_CONNECTION_INIT", initScript);
+			DbInterface.decodesProperties.setProperty("CwmsOfficeId", dbOffice);
+			DbInterface.setDatabaseType("cwms");
 		}
 		else
 		{
+			DbInterface.isCwms = false;
 			System.setProperty("DB_DRIVER_CLASS", "org.postgresql.Driver");
+			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			System.setProperty("DB_CONNECTION_INIT", "SELECT 1");
 		}
+		setupClientUser();
 		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, warContext);
 		tomcat.start();
 		RestAssured.baseURI = "http://localhost";
@@ -121,6 +147,33 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		if(attempts == maxAttempts)
 		{
 			throw new PreconditionViolationException("Server didn't start in time...");
+		}
+	}
+
+	private void setupClientUser()
+	{
+		if(dbType == DbType.CWMS)
+		{
+			String userPermissions = "begin execute immediate 'grant web_user to " + System.getProperty("DB_USERNAME") + "'; end;";
+			String dbOffice = System.getProperty("DB_OFFICE");
+			String setWebUserPermissions = "begin\n" +
+					"   cwms_sec.add_user_to_group(?, 'CWMS User Admins',?) ;\n" +
+					"   commit;\n" +
+					"end;";
+			try(Connection connection = DriverManager.getConnection(System.getProperty("DB_URL"), "CWMS_20",
+					System.getProperty("DB_PASSWORD"));
+				PreparedStatement stmt1 = connection.prepareStatement(userPermissions);
+				PreparedStatement stmt2 = connection.prepareStatement(setWebUserPermissions))
+			{
+				stmt1.executeQuery();
+				stmt2.setString(1, System.getProperty("DB_USERNAME"));
+				stmt2.setString(2, dbOffice);
+				stmt2.executeQuery();
+			}
+			catch(SQLException e)
+			{
+				throw new RuntimeException(e);
+			}
 		}
 	}
 }

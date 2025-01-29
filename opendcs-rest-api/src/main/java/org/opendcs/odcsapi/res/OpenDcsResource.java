@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import decodes.cwms.CwmsDatabaseProvider;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
+import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 import opendcs.opentsdb.OpenTsdbProvider;
@@ -37,22 +38,28 @@ import org.slf4j.LoggerFactory;
 
 import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
 
-class OpenDcsResource
+public class OpenDcsResource
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(OpenDcsResource.class);
 	private static final String UNSUPPORTED_OPERATION_MESSAGE = "Endpoint is unsupported by the OpenDCS REST API.";
 
+	private static OpenDcsDatabase database;
+
 	@Context
 	private ServletContext context;
 
-	final <T extends OpenDcsDao> T getDao(Class<T> daoClass)
+	protected final <T extends OpenDcsDao> T getDao(Class<T> daoClass)
 	{
 		return createDb().getDao(daoClass)
 				.orElseThrow(() -> new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE));
 	}
 
-	final OpenDcsDatabase createDb()
+	protected final synchronized OpenDcsDatabase createDb()
 	{
+		if(database != null)
+		{
+			return database;
+		}
 		DataSource dataSource = (DataSource) context.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
 		try
 		{
@@ -60,13 +67,14 @@ class OpenDcsResource
 			{
 				throw new IllegalStateException("No data source defined in context.xml");
 			}
-			return DatabaseService.getDatabaseFor(dataSource);
+			database = DatabaseService.getDatabaseFor(dataSource);
 		}
 		catch(DatabaseException e)
 		{
 			//Temporary workaround until database_properties table is implemented in the schema
 			LOGGER.atWarn().setCause(e).log("Temporary solution forcing OpenTSDB");
 			DecodesSettings decodesSettings = new DecodesSettings();
+			decodesSettings.CwmsOfficeId = System.getProperty("DB_OFFICE");
 			try(Connection connection = dataSource.getConnection())
 			{
 				DatabaseProvider databaseProvider;
@@ -74,18 +82,20 @@ class OpenDcsResource
 				if(databaseProductName.toLowerCase().startsWith("oracle"))
 				{
 					databaseProvider = new CwmsDatabaseProvider();
+					decodesSettings.sqlKeyGenerator = OracleSequenceKeyGenerator.class.getName();
 				}
 				else
 				{
 					databaseProvider = new OpenTsdbProvider();
 				}
-				return databaseProvider.createDatabase(dataSource, decodesSettings);
+				database = databaseProvider.createDatabase(dataSource, decodesSettings);
 			}
 			catch(DatabaseException | SQLException ex)
 			{
 				throw new IllegalStateException("Error connecting to the database via JNDI", ex);
 			}
 		}
+		return database;
 	}
 
 	DatabaseIO getLegacyDatabase()

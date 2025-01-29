@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.sec.cwms;
 
 import java.util.EnumSet;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
@@ -55,7 +56,7 @@ final class ServletSsoAuthIT
 
 	private static void setupSession()
 	{
-		String username = System.getProperty("opendcs.db.username");
+		String username = System.getProperty("DB_USERNAME");
 		TomcatServer tomcat = DatabaseSetupExtension.getCurrentTomcat();
 		StandardSession session = (StandardSession) tomcat.getTestSessionManager()
 				.createSession(COOKIE);
@@ -83,7 +84,7 @@ final class ServletSsoAuthIT
 		//Initial session should be unauthorized
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
@@ -100,7 +101,7 @@ final class ServletSsoAuthIT
 		//Check while passing in cookie
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 			.cookie("JSESSIONIDSSO", COOKIE)
 		.when()
@@ -116,7 +117,7 @@ final class ServletSsoAuthIT
 		//Session should be cached even without cookie
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
@@ -131,7 +132,7 @@ final class ServletSsoAuthIT
 		//Logout and clear session
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
@@ -146,7 +147,7 @@ final class ServletSsoAuthIT
 		//Session should now be cleared
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)

@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -19,7 +19,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
-
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -40,7 +39,6 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
@@ -52,7 +50,7 @@ public class PlatformResources
 	@GET
 	@Path("platformrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response gePlatformRefs(@QueryParam("tmtype") String tmtype)
 		throws DbException, SQLException
 	{
@@ -72,7 +70,7 @@ public class PlatformResources
 	@GET
 	@Path("platform")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getPlatform(@QueryParam("platformid") Long platformId)
 		throws WebAppException, DbException, SQLException
 	{
@@ -92,7 +90,7 @@ public class PlatformResources
 	@Path("platform")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response postPlatform(ApiPlatform platform)
 		throws WebAppException, DbException, SQLException
 	{
@@ -111,7 +109,7 @@ public class PlatformResources
 	@Path("platform")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response deletePlatform(@QueryParam("platformid") Long platformId)
 		throws WebAppException, DbException
 	{
@@ -130,7 +128,7 @@ public class PlatformResources
 	@GET
 	@Path("platformstat")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response gePlatformStats(@QueryParam("netlistid") Long netlistId)
 		throws DbException, SQLException
 	{

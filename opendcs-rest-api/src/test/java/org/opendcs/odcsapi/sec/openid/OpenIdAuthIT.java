@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.UUID;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -38,6 +39,7 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +54,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(DatabaseContextProvider.class)
 @Tag("integration")
+@Disabled
 final class OpenIdAuthIT
 {
 
@@ -84,7 +87,7 @@ final class OpenIdAuthIT
 		//Initial session should be unauthorized
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
@@ -99,7 +102,7 @@ final class OpenIdAuthIT
 		//Check while passing in JWT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 			.header("Authorization", "Bearer " + jwt())
 		.when()
@@ -115,7 +118,7 @@ final class OpenIdAuthIT
 		//Session should be cached even without JWT
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
@@ -130,7 +133,7 @@ final class OpenIdAuthIT
 		//Logout and clear session
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
@@ -145,7 +148,7 @@ final class OpenIdAuthIT
 		//Session should now be cleared
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)

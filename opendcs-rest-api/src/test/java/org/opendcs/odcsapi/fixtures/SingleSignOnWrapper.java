@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -23,15 +23,18 @@ import org.apache.catalina.authenticator.SingleSignOn;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 
-public class SingleSignOnWrapper extends SingleSignOn{
-    public void wrappedRegister(String ssoId, Principal principal, String authType,
-    String username, String password) {
-        this.register(ssoId, principal, authType, username, password);
-    }
+public class SingleSignOnWrapper extends SingleSignOn
+{
+	public void wrappedRegister(String ssoId, Principal principal, String authType,
+			String username, String password)
+	{
+		this.register(ssoId, principal, authType, username, password);
+	}
 
-    @Override
-    public void invoke(Request request, Response response)
-        throws IOException, ServletException {
-            super.invoke(request, response);
-        }
+	@Override
+	public void invoke(Request request, Response response)
+			throws IOException, ServletException
+	{
+		super.invoke(request, response);
+	}
 }

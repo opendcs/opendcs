@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package org.opendcs.odcsapi.res;
 
 import java.awt.image.BufferedImage;
@@ -19,7 +34,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.opendcs.odcsapi.sec.AuthorizationCheck;
+import org.opendcs.odcsapi.util.ApiConstants;
 
 @Path("/")
 public class SwaggerResources
@@ -29,7 +44,7 @@ public class SwaggerResources
     @GET
     @Produces(MediaType.TEXT_HTML)
     @Path("swaggerui")
-    @RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+    @RolesAllowed({ApiConstants.ODCS_API_GUEST})
     public Response getSwagger() throws IOException
     {
         String result = this.getSwaggerTextResource("index.html");
@@ -37,7 +52,7 @@ public class SwaggerResources
     }
     @GET
     @Path("{fileName: .*\\.(css|js)$ }")
-    @RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+    @RolesAllowed({ApiConstants.ODCS_API_GUEST})
     public Response getTextFile(@PathParam("fileName") String fileName) throws IOException
     {
         String result = this.getSwaggerTextResource(fileName);
@@ -47,7 +62,7 @@ public class SwaggerResources
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{fileName: .*\\.(json)$ }")
-    @RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+    @RolesAllowed({ApiConstants.ODCS_API_GUEST})
     public Response getJsonFile(@PathParam("fileName") String fileName) throws IOException
     {
         String result = this.getSwaggerTextResource(fileName);
@@ -57,7 +72,7 @@ public class SwaggerResources
     @GET
     @Produces("image/png")
     @Path("{fileName: .*\\.(png|jpeg)$ }")
-    @RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+    @RolesAllowed({ApiConstants.ODCS_API_GUEST})
     public Response getImageFile(@PathParam("fileName") String fileName) throws IOException
     {
         byte[] imageData = getSwaggerImageResource(fileName);

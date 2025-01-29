@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -18,7 +18,6 @@ package org.opendcs.odcsapi.res;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.logging.Logger;
-
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -32,6 +31,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import ilex.util.IDateFormat;
 import org.opendcs.odcsapi.beans.ApiInterval;
 import org.opendcs.odcsapi.beans.ApiTsGroup;
 import org.opendcs.odcsapi.dao.ApiRefListDAO;
@@ -40,11 +40,8 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
-
-import ilex.util.IDateFormat;
 
 /**
  * HTTP resources relating to Time Series data and descriptors
@@ -59,7 +56,7 @@ public class TimeSeriesResources
 	@GET
 	@Path("tsrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getTimeSeriesRefs(@QueryParam("active") Boolean activeOnly) throws DbException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("getTimeSeriesRefs");
@@ -73,7 +70,7 @@ public class TimeSeriesResources
 	@GET
 	@Path("tsspec")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response getTimeSeriesSpec(@QueryParam("key") Long tsKey) throws WebAppException, DbException
 	{
 		if (tsKey == null)
@@ -91,7 +88,7 @@ public class TimeSeriesResources
 	@GET
 	@Path("tsdata")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getTimeSeriesData(@QueryParam("key") Long tsKey, @QueryParam("start") String start,
 		@QueryParam("end") String end)
 		throws WebAppException, DbException
@@ -134,7 +131,7 @@ public class TimeSeriesResources
 	@GET
 	@Path("intervals")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getIntervals()
 		throws DbException
 	{
@@ -151,7 +148,7 @@ public class TimeSeriesResources
 	@Path("interval")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response postInterval(ApiInterval intv)
 		throws DbException
 	{
@@ -169,7 +166,7 @@ public class TimeSeriesResources
 	@Path("interval")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response deleteInterval(@QueryParam("intvid") Long intvId) throws DbException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("deleteInterval id=" + intvId);
@@ -186,7 +183,7 @@ public class TimeSeriesResources
 	@GET
 	@Path("tsgrouprefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getTsGroupRefs() throws DbException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("getTsGroupRefs");
@@ -200,7 +197,7 @@ public class TimeSeriesResources
 	@GET
 	@Path("tsgroup")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getTsGroupRefs(@QueryParam("groupid") Long groupId) throws WebAppException, DbException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("getTsGroup");
@@ -215,7 +212,7 @@ public class TimeSeriesResources
 	@Path("tsgroup")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response postTsGroup(ApiTsGroup grp) throws WebAppException, DbException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("postTsGroup");
@@ -232,7 +229,7 @@ public class TimeSeriesResources
 	@Path("tsgroup")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response deleteTsGroup(@QueryParam("groupid") Long groupId) throws WebAppException, DbException
 	{
 		Logger.getLogger(ApiConstants.loggerName).fine("delete tsgroup id=" + groupId);

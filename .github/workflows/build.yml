@@ -35,9 +35,8 @@ jobs:
           dependency-graph: generate-and-submit
       - name: Build
         run: ./gradlew build
-#        Disabled for now. Need test fixture updated to install the CCP schema
-#      - name: Integration Tests CWMS
-#        run: ./gradlew integrationTestCWMS --stacktrace --info
+      - name: Integration Tests CWMS
+        run: ./gradlew integrationTestCWMS --stacktrace --info
       - name: Integration Tests OpenTSDB
         run: ./gradlew integrationTestOpenTSDB --stacktrace --info
       - name: Analyze

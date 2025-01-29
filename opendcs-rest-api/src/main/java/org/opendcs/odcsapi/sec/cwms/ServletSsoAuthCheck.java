@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.opendcs.odcsapi.sec.cwms;
 import java.security.Principal;
 import java.util.Map;
 import java.util.Set;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.ServerErrorException;
@@ -27,29 +28,26 @@ import javax.ws.rs.core.Response;
 
 import com.google.auto.service.AutoService;
 import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
-import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
 import org.opendcs.odcsapi.sec.OpenDcsSecurityContext;
 
 @AutoService(AuthorizationCheck.class)
-public final class ServletSsoAuthCheck implements AuthorizationCheck
+public final class ServletSsoAuthCheck extends AuthorizationCheck
 {
 	static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";
 
 	@Override
-	public OpenDcsSecurityContext authorize(ContainerRequestContext requestContext, HttpServletRequest httpServletRequest)
+	public OpenDcsSecurityContext authorize(ContainerRequestContext requestContext, HttpServletRequest httpServletRequest, ServletContext servletContext)
 	{
-		hasSessionCookie(requestContext);
 		//User Principal is set by the single sign-on (e.g. CWMS AAA) web app for the servlet container (e.g. Tomcat)
 		Principal userPrincipal = requestContext.getSecurityContext().getUserPrincipal();
 		if(userPrincipal == null)
 		{
 			throw new NotAuthorizedException("User has not established a Single Sign-On session.");
 		}
-		try(DbInterface dbInterface = new DbInterface();
-			ApiAuthorizationDAI authorizationDao = dbInterface.getDao(ApiAuthorizationDAI.class))
+		try(ApiAuthorizationDAI authorizationDao = getAuthDao(servletContext))
 		{
 			Set<OpenDcsApiRoles> roles = authorizationDao.getRoles(userPrincipal.getName());
 			OpenDcsPrincipal openDcsPrincipal = new OpenDcsPrincipal(userPrincipal.getName(), roles);

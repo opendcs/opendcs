@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.opendcs_dep.PropSpecHelper;
 import org.opendcs.odcsapi.opendcs_dep.TestDecoder;
-import org.opendcs.odcsapi.sec.AuthorizationCheck;
+import org.opendcs.odcsapi.util.ApiConstants;
 
 
 @Path("/")
@@ -50,7 +50,7 @@ public class OdcsapiResource extends OpenDcsResource
 	@GET
 	@Path("tsdb_properties")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getTsdbProperties() throws DbException
 	{
 		try
@@ -76,7 +76,7 @@ public class OdcsapiResource extends OpenDcsResource
 	@Path("tsdb_properties")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response postTsdbProperties(Properties props) throws DbException
 	{
 		try
@@ -94,7 +94,7 @@ public class OdcsapiResource extends OpenDcsResource
 	@GET
 	@Path("propspecs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getPropSpecs(@QueryParam("class") String className)
 			throws WebAppException
 	{
@@ -110,7 +110,7 @@ public class OdcsapiResource extends OpenDcsResource
 	@Path("decode")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response postDecode(@QueryParam("script") String scriptName, DecodeRequest request)
 			throws WebAppException, DbException
 	{

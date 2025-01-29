@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ class SessionResourceTest extends JerseyTest
 						httpSession = mock(HttpSession.class);
 						AuthorizationCheck authCheck = mock(AuthorizationCheck.class);
 						securityContext = mock(SecurityContext.class);
-						when(authCheck.authorize(any(), any())).thenReturn(securityContext);
+						when(authCheck.authorize(any(), any(), any())).thenReturn(securityContext);
 						mockRequest = mock(HttpServletRequest.class);
 						when(mockRequest.getSession(true)).thenReturn(httpSession);
 						bind(mockRequest).to(HttpServletRequest.class);

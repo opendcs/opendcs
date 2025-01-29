@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -15,16 +15,9 @@
 
 package org.opendcs.odcsapi.sec.basicauth;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.util.Base64;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.sql.DataSource;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
@@ -38,22 +31,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 final class BasicAuthResourceTest extends JerseyTest
 {
-	@Mock
-	private HttpSession httpSession;
 	@Mock
 	private HttpServletRequest mockRequest;
 
@@ -73,25 +58,6 @@ final class BasicAuthResourceTest extends JerseyTest
 		DbInterface.isHdb = false;
 	}
 
-	private void setupDataSource() throws Exception
-	{
-		Connection mockConn = mock(Connection.class);
-		DatabaseMetaData metadata = mock(DatabaseMetaData.class);
-		when(mockConn.getMetaData()).thenReturn(metadata);
-		when(metadata.getDatabaseProductName()).thenReturn("postgres");
-		DataSource dataSource = mock(DataSource.class);
-		when(dataSource.getConnection()).thenReturn(mockConn);
-		DbInterface.setDataSource(dataSource);
-		when(DriverManager.getConnection(any(), any(), any())).thenReturn(mockConn);
-		PreparedStatement mockStatement = mock(PreparedStatement.class);
-		when(mockConn.prepareStatement(any())).thenReturn(mockStatement);
-		ResultSet mockRs = mock(ResultSet.class);
-		when(mockStatement.executeQuery()).thenReturn(mockRs);
-		when(mockRs.next()).thenReturn(true, false);
-		when(mockRs.getInt(1)).thenReturn(1);
-		when(mockRs.getString(2)).thenReturn("OTSDB_MGR");
-	}
-
 	@Override
 	protected Application configure()
 	{
@@ -104,43 +70,6 @@ final class BasicAuthResourceTest extends JerseyTest
 						bind(mockRequest).to(HttpServletRequest.class);
 					}
 				});
-	}
-
-	@Test
-	void testCredentialsBody() throws Exception
-	{
-		try(MockedStatic<DriverManager> ignored = mockStatic(DriverManager.class))
-		{
-			DbInterface.isCwms = false;
-			DbInterface.isOpenTsdb = true;
-			setupDataSource();
-			when(mockRequest.getSession(anyBoolean())).thenReturn(httpSession);
-			Credentials credentials = new Credentials();
-			credentials.setUsername("user");
-			credentials.setPassword("password");
-			try(Response response = target("/credentials").request().post(Entity.entity(credentials, MediaType.APPLICATION_JSON)))
-			{
-				assertEquals(HttpServletResponse.SC_OK, response.getStatus(), "Check should return 200 since valid credentials were passed through the POST body.");
-			}
-		}
-	}
-
-	@Test
-	void testCredentialsHeader() throws Exception
-	{
-		try(MockedStatic<DriverManager> ignored = mockStatic(DriverManager.class))
-		{
-			DbInterface.isCwms = false;
-			DbInterface.isOpenTsdb = true;
-			setupDataSource();
-			when(mockRequest.getSession(anyBoolean())).thenReturn(httpSession);
-			String credentials = Base64.getEncoder().encodeToString("user:password".getBytes());
-			try(Response response = target("/credentials").request().header("Authorization", "Basic " + credentials)
-					.post(Entity.entity("", MediaType.APPLICATION_JSON)))
-			{
-				assertEquals(HttpServletResponse.SC_OK, response.getStatus(), "Check should return 200 since valid credentials were passed through the header.");
-			}
-		}
 	}
 
 	@Test

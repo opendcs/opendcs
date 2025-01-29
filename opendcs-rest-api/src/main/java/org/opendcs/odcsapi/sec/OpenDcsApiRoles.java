@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
 
 package org.opendcs.odcsapi.sec;
 
+import org.opendcs.odcsapi.util.ApiConstants;
+
 public enum OpenDcsApiRoles
 {
 
-	ODCS_API_GUEST(AuthorizationCheck.ODCS_API_GUEST),
-	ODCS_API_USER(AuthorizationCheck.ODCS_API_USER),
-	ODCS_API_ADMIN(AuthorizationCheck.ODCS_API_ADMIN);
+	ODCS_API_GUEST(ApiConstants.ODCS_API_GUEST),
+	ODCS_API_USER(ApiConstants.ODCS_API_USER),
+	ODCS_API_ADMIN(ApiConstants.ODCS_API_ADMIN);
 
 	private final String role;
 

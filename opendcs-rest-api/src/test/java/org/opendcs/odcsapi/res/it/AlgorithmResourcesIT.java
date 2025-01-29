@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.res.it;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
@@ -40,7 +41,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		SessionFilter sessionFilter = new SessionFilter();
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
@@ -65,8 +66,8 @@ final class AlgorithmResourcesIT extends BaseIT
 		//Assert algorithm can be stored. Update with the new id
 		dto = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
-			.contentType("application/json")
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 		.when()
 			.redirects().follow(true)
@@ -85,7 +86,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		//Assert algorithm now exists
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 			.queryParam("algorithmid", dto.getAlgorithmId())
 		.when()
@@ -101,7 +102,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		//Assert algorithm can be deleted
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 			.queryParam("algorithmid", dto.getAlgorithmId())
 		.when()
@@ -117,7 +118,7 @@ final class AlgorithmResourcesIT extends BaseIT
 		//Assert algorithm no longer exists
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept("application/json")
+			.accept(MediaType.APPLICATION_JSON)
 			.filter(sessionFilter)
 			.queryParam("algorithmid", dto.getAlgorithmId())
 		.when()

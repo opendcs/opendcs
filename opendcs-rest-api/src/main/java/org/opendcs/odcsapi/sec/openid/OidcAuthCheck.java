@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.Set;
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.ServerErrorException;
@@ -42,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @AutoService(AuthorizationCheck.class)
-public final class OidcAuthCheck implements AuthorizationCheck
+public final class OidcAuthCheck extends AuthorizationCheck
 {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OidcAuthCheck.class);
@@ -88,7 +89,7 @@ public final class OidcAuthCheck implements AuthorizationCheck
 	}
 
 	@Override
-	public OpenDcsSecurityContext authorize(ContainerRequestContext requestContext, HttpServletRequest httpServletRequest)
+	public OpenDcsSecurityContext authorize(ContainerRequestContext requestContext, HttpServletRequest httpServletRequest, ServletContext servletContext)
 	{
 		String authorizationHeader = requestContext.getHeaderString(AUTHORIZATION_HEADER);
 		try
@@ -96,7 +97,7 @@ public final class OidcAuthCheck implements AuthorizationCheck
 			String token = authorizationHeader.substring(BEARER_PREFIX.length());
 			JWTClaimsSet claimsSet = JwtVerifier.getInstance().getClaimsSet(keySource, token);
 			String username = claimsSet.getStringClaim("preferred_username");
-			OpenDcsPrincipal principal = createPrincipalFromSubject(username);
+			OpenDcsPrincipal principal = createPrincipalFromSubject(username, servletContext);
 			return new OpenDcsSecurityContext(principal, httpServletRequest.isSecure(), BEARER_PREFIX);
 		}
 		catch(ParseException | JOSEException | BadJOSEException e)
@@ -106,10 +107,9 @@ public final class OidcAuthCheck implements AuthorizationCheck
 		}
 	}
 
-	private static OpenDcsPrincipal createPrincipalFromSubject(String subject)
+	private OpenDcsPrincipal createPrincipalFromSubject(String subject, ServletContext servletContext)
 	{
-		try(DbInterface dbInterface = new DbInterface();
-			ApiAuthorizationDAI authorizationDao = dbInterface.getDao(ApiAuthorizationDAI.class))
+		try(ApiAuthorizationDAI authorizationDao = getAuthDao(servletContext))
 		{
 			Set<OpenDcsApiRoles> roles = authorizationDao.getRoles(subject);
 			return new OpenDcsPrincipal(subject, roles);

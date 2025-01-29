@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.lrgsclient.ClientConnectionCache;
-import org.opendcs.odcsapi.sec.AuthorizationCheck;
+import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiEnvExpander;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
@@ -68,7 +68,7 @@ public class AppResources
 	@GET
 	@Path("apprefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getAppRefs() throws DbException
 	{
 		LOGGER.trace("Getting App Refs.");
@@ -84,7 +84,7 @@ public class AppResources
 	@GET
 	@Path("app")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
  	public Response getApp(@QueryParam("appid") Long appId)
 		throws WebAppException, DbException, SQLException
 	{
@@ -103,7 +103,7 @@ public class AppResources
 	@Path("app")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response postApp(ApiLoadingApp app)
 		throws WebAppException, DbException, SQLException
 	{
@@ -120,7 +120,7 @@ public class AppResources
 	@Path("app")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response deletApp(@QueryParam("appid") Long appId)
 		throws WebAppException, DbException, SQLException
 	{
@@ -138,7 +138,7 @@ public class AppResources
 	@GET
 	@Path("appstat")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
  	public Response getAppStat() throws DbException
 	{
 		LOGGER.debug("Getting app stats");
@@ -153,7 +153,7 @@ public class AppResources
 	@GET
 	@Path("appevents")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
  	public Response getAppEvents(@QueryParam("appid") Long appId)
 		throws WebAppException, DbException, SQLException
 	{
@@ -227,7 +227,7 @@ public class AppResources
 	@Path("appstart")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response postAppStart(@QueryParam("appid") Long appId)
 		throws WebAppException, DbException, SQLException
 	{
@@ -278,7 +278,7 @@ public class AppResources
 	@Path("appstop")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({AuthorizationCheck.ODCS_API_ADMIN, AuthorizationCheck.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response postAppStop(@QueryParam("appid") Long appId)
 		throws WebAppException, DbException, SQLException
 	{

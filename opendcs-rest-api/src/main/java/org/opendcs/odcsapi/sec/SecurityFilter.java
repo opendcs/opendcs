@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Provider
-@Priority(Priorities.AUTHENTICATION)
+@Priority(Priorities.AUTHORIZATION)
 public final class SecurityFilter implements ContainerRequestFilter
 {
 
@@ -117,7 +117,7 @@ public final class SecurityFilter implements ContainerRequestFilter
 
 	private void authorizeSession(ContainerRequestContext requestContext, HttpSession session)
 	{
-		SecurityContext securityContext = lookupAuthCheck(requestContext).authorize(requestContext, httpServletRequest);
+		SecurityContext securityContext = lookupAuthCheck(requestContext).authorize(requestContext, httpServletRequest, servletContext);
 		requestContext.setSecurityContext(securityContext);
 		Principal principal = securityContext.getUserPrincipal();
 		session.setAttribute(OpenDcsPrincipal.USER_PRINCIPAL_SESSION_ATTRIBUTE, principal);//NOSONAR impl is Serializable
