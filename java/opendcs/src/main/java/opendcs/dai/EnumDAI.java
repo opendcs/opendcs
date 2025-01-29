@@ -86,6 +86,9 @@ public interface EnumDAI extends DaiBase
 
 	void writeEnumValue(DbKey enumId, EnumValue enumVal, String fromAbbr, int sortNum)
 		throws DbIoException;
+
+	DbEnum getEnumById(DbKey enumId)
+			throws DbIoException;
 	
 	void close();
 }
