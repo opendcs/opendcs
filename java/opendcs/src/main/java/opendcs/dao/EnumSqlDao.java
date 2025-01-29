@@ -120,6 +120,54 @@ public class EnumSqlDao
 	}
 
 	@Override
+	public DbEnum getEnumById(DbKey enumId)
+			throws DbIoException
+	{
+		return getEnumById(enumId, false);
+	}
+
+	private DbEnum getEnumById(DbKey enumId, boolean skipCache)
+			throws DbIoException
+	{
+		synchronized(cache)
+		{
+			DbEnum ret;
+			if (!skipCache)
+			{
+				ret = cache.getByKey(enumId);
+				if (ret != null)
+					return ret;
+			}
+
+			int dbVer = db.getDecodesDatabaseVersion();
+			String q = "SELECT " + getEnumColumns(dbVer) + " FROM Enum";
+			q = q + " where id = ?";
+
+			try
+			{
+				ret = getSingleResult(q, rs -> rs2Enum(rs, dbVer), enumId.getValue());
+				if (ret == null)
+				{
+					warning("No such enum with id '" + enumId.getValue() + "'");
+					return null;
+				}
+				else
+				{
+					readValues(ret);
+					cache.put(ret);
+					return ret;
+				}
+			}
+			catch (SQLException ex)
+			{
+				String msg = "Error in query '" + q + "': " + ex;
+				warning(msg);
+				throw new DbIoException(msg,ex);
+			}
+		}
+	}
+
+	@Override
 	public DbKey getEnumId(String enumName)
 			throws DbIoException
 	{
@@ -189,6 +237,7 @@ public class EnumSqlDao
 					DbEnum dbEnum = cache.getByKey(key);
 					if (dbEnum != null)
 						rs2EnumValue(rs, dbEnum);
+					top.addEnum(dbEnum);
 				});				
 			}
 		}
@@ -246,20 +295,21 @@ public class EnumSqlDao
 	}
 
 	@Override
-	public void deleteEnumList(DbKey refListId)
+	public void deleteEnumList(DbKey enumId)
 		throws DbIoException
 	{
 		try
 		{
-			info("deleteEnum Deleting enums with id '" + refListId.getValue() + "'");
+			info("deleteEnum Deleting enums with id '" + enumId.getValue() + "'");
 			String q = "DELETE FROM EnumValue WHERE enumId = ?";
-			doModify(q, refListId.getValue());
+			doModify(q, enumId.getValue());
 			q = "delete from enum where id = ?";
-			doModify(q, refListId.getValue());
+			doModify(q, enumId.getValue());
+			cache.remove(enumId);
 		}
 		catch(SQLException ex)
 		{
-			throw new DbIoException("Failed to delete enum list with id " + refListId.getValue(), ex);
+			throw new DbIoException("Failed to delete enum list with id " + enumId.getValue(), ex);
 		}
 	}
 
@@ -272,7 +322,7 @@ public class EnumSqlDao
 		}
 		try
 		{
-			DbEnum dbenum = getEnum(enumVal);
+			DbEnum dbenum = getEnumById(id);
 			 List<EnumValue> retList = new ArrayList<>();
 
 			String enumValLower = enumVal.toLowerCase();
@@ -327,13 +377,33 @@ public class EnumSqlDao
 	{
 		try
 		{
-			EnumValue existing = checkExistingEnumValue(enumId, enumVal.getValue());
+			EnumValue existing = this.checkExistingEnumValue(enumId, enumVal.getValue());
+
+			// This checks whether the enum exists in the database.
+			// If it is only in the cache, it will be written to the database.
+			DbEnum en = this.getEnumById(enumId, true);
+			if (en == null)
+			{
+				en = this.getEnumById(enumId);
+				if (en == null)
+				{
+					throw new DbIoException(String.format("No such Enum with id '%s'.", enumId));
+				}
+				cache.remove(enumId);
+				en.forceSetId(DbKey.NullKey);
+				this.writeEnum(en);
+				cache.put(en);
+				enumId = en.getId();
+				DbEnum internalEnum = enumVal.getDbenum();
+				internalEnum.forceSetId(enumId);
+				enumVal.setDbenum(internalEnum);
+			}
 
 			// fromEnumVal is the existing enumVal that this one is updating.
 			EnumValue fromExisting = null;
 			if (fromEnumVal != null && !fromEnumVal.isEmpty())
 			{
-				fromExisting = checkExistingEnumValue(enumId, fromEnumVal);
+				fromExisting = this.checkExistingEnumValue(enumId, fromEnumVal);
 			}
 
 			String startEndTz = enumVal.getEditClassName();
@@ -354,7 +424,7 @@ public class EnumSqlDao
 			else if ((fromEnumVal == null || fromEnumVal.isEmpty()) && existing == null)
 			{
 				q = "insert into enumvalue(enumid, enumvalue, description, editclass, sortnumber) values(?,?,?,?,?)";
-				doModify(q, enumId.getValue(), enumVal.getValue(), enumVal.getDescription(), startEndTz, sortNum);
+				doModify(q, enumId, enumVal.getValue(), enumVal.getDescription(), startEndTz, sortNum);
 			}
 			else if (fromEnumVal == null || fromEnumVal.isEmpty())
 			{
