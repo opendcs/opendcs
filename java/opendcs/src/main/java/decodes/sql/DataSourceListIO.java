@@ -71,6 +71,7 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Vector;
 
+import decodes.db.ValueNotFoundException;
 import ilex.util.Logger;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseObject;
@@ -203,8 +204,10 @@ public class DataSourceListIO extends SqlDbObjIo
 
 			// There should be only one row in the result set
 			if (rs == null || !rs.next())
-				throw new DatabaseException(
-					"No DataSource found with id " + id);
+			{
+				throw new ValueNotFoundException(
+						String.format("No DataSource found with id %s", id));
+			}
 
 			DataSource ret = rs2ds(rs);
 			if (_dsList != null)
