@@ -1,6 +1,7 @@
 package opendcs.dai;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import decodes.db.PlatformStatus;
 import decodes.sql.DbKey;
@@ -16,6 +17,15 @@ public interface PlatformStatusDAI extends AutoCloseable
 	 */
 	public PlatformStatus readPlatformStatus(DbKey platformId)
 		throws DbIoException;
+
+	/**
+	 * Read the status records for a given netlist
+	 * @param netlistId the netlist ID
+	 * @return the PlatformStatus records, or null if none currently stored
+	 * @throws DbIoException on any I/O error
+	 */
+	List<PlatformStatus> readPlatformStatusList(DbKey netlistId)
+			throws DbIoException;
 	
 	/**
 	 * Write a platform status record.

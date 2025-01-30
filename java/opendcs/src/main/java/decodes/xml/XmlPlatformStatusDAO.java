@@ -1,10 +1,14 @@
 package decodes.xml;
 
+import decodes.db.NetworkList;
+import decodes.db.NetworkListEntry;
 import ilex.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import org.xml.sax.SAXException;
 
@@ -20,11 +24,15 @@ public class XmlPlatformStatusDAO
 {
 	private XmlDatabaseIO parent = null;
 	private File psDir = null;
+	private File netlistDir = null;
 
 	public XmlPlatformStatusDAO(XmlDatabaseIO parent)
 	{
 		this.parent = parent;
 		psDir = new File(parent.xmldir, XmlDatabaseIO.PlatformStatusDir);
+		netlistDir = new File(parent.xmldir, XmlDatabaseIO.NetworkListDir);
+		if (!netlistDir.isDirectory())
+			netlistDir.mkdirs();
 		if (!psDir.isDirectory())
 			psDir.mkdirs();
 	}
@@ -47,6 +55,74 @@ public class XmlPlatformStatusDAO
 			Logger.instance().warning("Error reading '" + f.getPath() + "': " + ex);
 		}
 		return null;
+	}
+
+	@Override
+	public List<PlatformStatus> readPlatformStatusList(DbKey netlistId)
+			throws DbIoException
+	{
+		try
+		{
+			ArrayList<PlatformStatus> ret = new ArrayList<>();
+			File[] files = netlistDir.listFiles();
+			File[] platformFiles = psDir.listFiles();
+			for(File f : files)
+			{
+				if (!f.isFile())
+					continue;
+				try
+				{
+					DatabaseObject dbo = parent.getParser().parse(f);
+					if (dbo instanceof NetworkList)
+					{
+						NetworkList netList = (NetworkList) dbo;
+						for (Map.Entry<String, NetworkListEntry> entry : netList.networkListEntries.entrySet())
+						{
+							for (File pf : platformFiles)
+							{
+								if (!pf.isFile())
+									continue;
+								try
+								{
+									DatabaseObject dbo2 = parent.getParser().parse(pf);
+									if (dbo2 instanceof PlatformStatus)
+									{
+										PlatformStatus ps = (PlatformStatus) dbo2;
+										if (entry.getValue().getPlatformName().equals(ps.getPlatformName()))
+										{
+											ret.add(ps);
+										}
+									}
+									else
+									{
+										Logger.instance().warning("Ignoring non-PlatformStatus "
+												+ "in file '" + pf.getPath() + "'");
+									}
+								}
+								catch (SAXException ex)
+								{
+									Logger.instance().warning("Error parsing '" + pf.getPath() + "': " + ex);
+								}
+							}
+						}
+					}
+					else
+					{
+						Logger.instance().warning("Ignoring non-PlatformStatus "
+								+ "in file '" + f.getPath() + "'");
+					}
+				}
+				catch (SAXException ex)
+				{
+					Logger.instance().warning("Error parsing '" + f.getPath() + "': " + ex);
+				}
+			}
+			return ret;
+		}
+		catch (IOException ex)
+		{
+			throw new DbIoException("Cannot list '" + psDir.getPath() + "' xml directory: " + ex);
+		}
 	}
 	
 	private String makeFileName(DbKey platformId)

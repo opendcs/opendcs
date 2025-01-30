@@ -44,7 +44,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -1322,6 +1321,17 @@ e.printStackTrace();
 		}
 		throw new DatabaseException(
 			"Cannot read platform from file '" + fn + "'");
+	}
+
+	/**
+	 * Not implemented for XML.
+	 * @param pl object in which to store data
+	 * @param tmType the transport medium type to filter on
+	 */
+	public synchronized void readPlatformList(PlatformList pl, String tmType)
+	{
+		throw new UnsupportedOperationException(
+				"XmlDatabaseIO.readPlatformList(PlatformList, tmType) is not implemented for XML.");
 	}
 
 

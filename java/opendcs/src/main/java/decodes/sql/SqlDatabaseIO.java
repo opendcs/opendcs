@@ -81,7 +81,9 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import ilex.util.AuthException;
 import ilex.util.EnvExpander;
+import opendcs.util.sql.WrappedConnection;
 import org.opendcs.authentication.AuthSourceService;
 
 import org.slf4j.LoggerFactory;
@@ -119,8 +121,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.util.sql.WrappedConnection;
-import ilex.util.AuthException;
 import ilex.util.Logger;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
@@ -777,6 +777,32 @@ public class SqlDatabaseIO
             {
                 freeConnection(conn);
             }
+            _platformListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * Read the platform list cross reference file and populate the passed
+     * PlatformList object.
+     * @param pl the object to populate from the database.
+     *  @param tmType the transport medium type to filter on.
+     */
+    @Override
+    public synchronized void readPlatformList(PlatformList pl, String tmType)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _platformListIO.setConnection(conn);
+            _platformListIO.read(pl, tmType);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read platform list", ex);
+            throw new DatabaseException("Unable to read platform list", ex);
+        }
+        finally
+        {
             _platformListIO.setConnection(null);
         }
     }
