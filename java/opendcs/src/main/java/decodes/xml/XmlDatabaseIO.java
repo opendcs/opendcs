@@ -592,15 +592,14 @@ public class XmlDatabaseIO extends DatabaseIO
 	}
 
 	/**
-	 * Reads the set of known data-type objects in this database. Filters by standard.
-	 * Objects in this collection are complete.
+	 * Not supported for XML database.
 	 * @param dts object in which to store data
 	 * @param standard the data type standard to filter by
 	 * @throws DatabaseException
 	 */
 	public void readDataTypeSet( DataTypeSet dts, String standard ) throws DatabaseException
 	{
-		throw new NotImplementedException("XmlDatabaseIO.readDataTypeSet(standard)");
+		throw new UnsupportedOperationException("readDataTypeSet with standard not supported for XML database.");
 	}
 
 	/**
