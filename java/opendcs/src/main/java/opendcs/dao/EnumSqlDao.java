@@ -300,7 +300,7 @@ public class EnumSqlDao
 	}
 
 	@Override
-	public void deleteEnumList(DbKey refListId)
+	public void deleteEnumList(DbKey enumId)
 		throws DbIoException
 	{
 		try

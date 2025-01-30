@@ -346,4 +346,10 @@ public class EnumXmlDao implements EnumDAI
     {
         throw new UnsupportedOperationException("Unimplemented method 'writeEnumValue'");
     }
+
+    @Override
+    public DbEnum getEnumById(DbKey enumId) throws DbIoException
+    {
+        throw new UnsupportedOperationException("Unimplemented method 'getEnumById'");
+    }
 }
