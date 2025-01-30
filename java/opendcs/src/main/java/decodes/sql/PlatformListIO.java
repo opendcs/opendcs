@@ -306,7 +306,9 @@ public class PlatformListIO extends SqlDbObjIo
                         // Refreshing will not affect previously read/used platforms.
                         Platform p = _pList.getById(platformId);
                         if (p != null)
+                        {
                             continue;
+                        }
 
                         p = new Platform(platformId);
                         _pList.add(p);
@@ -314,32 +316,37 @@ public class PlatformListIO extends SqlDbObjIo
                         p.agency = rs.getString(2);
 
                         DbKey siteId = DbKey.createDbKey(rs, 4);
-                        if (!rs.wasNull()) {
+                        if (!rs.wasNull())
+                        {
                             p.setSite(p.getDatabase().siteList.getSiteById(siteId));
                         }
 
                         DbKey configId = DbKey.createDbKey(rs, 5);
                         if (!rs.wasNull())
                         {
-                            PlatformConfig pc =
-                                    platformList.getDatabase().platformConfigList.getById(
-                                            configId);
+                            PlatformConfig pc = platformList.getDatabase().platformConfigList.getById(configId);
                             if (pc == null)
+                            {
                                 pc = _configListIO.getConfig(configId);
+                            }
                             p.setConfigName(pc.configName);
                             p.setConfig(pc);
                         }
 
                         String desc = rs.getString(6);
                         if (!rs.wasNull())
+                        {
                             p.setDescription(desc);
+                        }
 
                         p.lastModifyTime = getTimeStamp(rs, 7, null);
 
                         p.expiration = getTimeStamp(rs, 8, p.expiration);
 
                         if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+                        {
                             p.setPlatformDesignator(rs.getString(9));
+                        }
                     }
                 }
             }
