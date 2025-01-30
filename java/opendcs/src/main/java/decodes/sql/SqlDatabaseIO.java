@@ -521,26 +521,6 @@ public class SqlDatabaseIO
     }
 
     /**
-     Performs a lookup for a matching data-type object based on the data type code.
-     @param dtCode the data type code to look up
-     @return the data type object or null if not found
-     */
-    @Override
-    public synchronized DataType lookupDataType(String dtCode)
-            throws DatabaseException
-    {
-
-        try (DataTypeDAI dtdao = this.makeDataTypeDAO())
-        {
-            return dtdao.lookupDataType(dtCode);
-        }
-        catch(DbIoException | NoSuchObjectException ex)
-        {
-            throw new DatabaseException("Failed to read site datatype set", ex);
-        }
-    }
-
-    /**
      * Reads the set of known data-type objects in this database.
      * Objects in this collection are complete.
      * @param dts the object to populate from the database.
