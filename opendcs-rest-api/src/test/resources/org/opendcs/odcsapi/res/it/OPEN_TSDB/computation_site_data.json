@@ -1,0 +1,24 @@
+{
+  "siteId" : null,
+  "sitenames" : {
+    "Site" : "Test Site"
+  },
+  "description" : "A site for computations",
+  "latitude" : "131.6",
+  "longitude" : "-78.4",
+  "elevation" : 25.0,
+  "elevUnits" : "m",
+  "nearestCity" : "Lincoln",
+  "timezone" : "CST",
+  "state" : "NE",
+  "country" : "US",
+  "region" : "Midwest",
+  "active" : true,
+  "locationType" : "Site",
+  "publicName" : "Test Site",
+  "properties" : {
+    "siteRainfall" : "13.0",
+    "siteRainfallUnits" : "in"
+  },
+  "lastModified" : null
+}

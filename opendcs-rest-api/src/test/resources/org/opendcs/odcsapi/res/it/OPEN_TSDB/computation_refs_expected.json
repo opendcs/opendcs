@@ -1,0 +1,48 @@
+{
+  "computationId": null,
+  "name": "Flow Computation",
+  "comment": "Performs flow computations",
+  "appId": -1,
+  "applicationName": "Computational App",
+  "lastModified": "2025-01-06T22:27:25.554Z[UTC]",
+  "enabled": true,
+  "effectiveStartType": "No Limit",
+  "effectiveStartDate": "2025-01-06T21:44:04.670Z[UTC]",
+  "effectiveStartInterval": null,
+  "effectiveEndType": "No Limit",
+  "effectiveEndDate": "2025-01-06T21:44:04.670Z[UTC]",
+  "effectiveEndInterval": null,
+  "algorithmId": -1,
+  "algorithmName": "Test Algorithm",
+  "parmList": [
+    {
+      "algoParmType": null,
+      "algoRoleName": "input",
+      "tsKey": null,
+      "dataTypeId": null,
+      "dataType": null,
+      "interval": "hourly",
+      "deltaT": 2,
+      "deltaTUnits": "Seconds",
+      "unitsAbbr": null,
+      "siteId": -1,
+      "siteName": null,
+      "tableSelector": "",
+      "modelId": -1,
+      "paramType": "",
+      "duration": "1 month",
+      "version": "1.2.3",
+      "ifMissing": null
+    }
+  ],
+  "props": {
+    "computationType": "Flow",
+    "computationMethod": "Flow",
+    "computationUnits": "cfs",
+    "computationDuration": "1 week",
+    "computationVersion": "1.1.0",
+    "computationIfMissing": "Do not compute"
+  },
+  "groupId": -1,
+  "groupName": null
+}
