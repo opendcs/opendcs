@@ -68,24 +68,15 @@ public class PlatformStatusDAO
 	}
 
 	@Override
-	public List<PlatformStatus> readPlatformStatusList(DbKey netlistId)
+	public List<PlatformStatus> readPlatformStatusList(DbKey netlistId) throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 			return new ArrayList<>();
-
-		String q = "select distinct ps.platform_id, ps.last_contact_time, ps.last_message_time,"
-			+ " ps.last_failure_codes, ps.last_error_time, ps.last_schedule_entry_status_id,"
-			+ " ps.annotation, rs.name"
-			+ " from platform_status ps, schedule_entry_status ses, schedule_entry se,"
-			+ " routingspec rs"
-			+ " where ps.last_schedule_entry_status_id = ses.schedule_entry_status_id"
-			+ " and ses.schedule_entry_id = se.schedule_entry_id"
-			+ " and se.routingspec_id = rs.id";
 		if (netlistId != null)
 		{
-			q = "select distinct ps.platform_id, ps.last_contact_time, ps.last_message_time,"
+			String q = "select distinct ps.platform_id, ps.last_contact_time, ps.last_message_time,"
 				+ " ps.last_failure_codes, ps.last_error_time, ps.last_schedule_entry_status_id,"
-				+ " ps.annotation, rs.name"
+				+ " ps.annotation"
 				+ " from platform_status ps, schedule_entry_status ses, schedule_entry se,"
 				+ " routingspec rs, transportmedium tm, networklistentry nle"
 				+ " where ps.last_schedule_entry_status_id = ses.schedule_entry_status_id"
@@ -94,18 +85,21 @@ public class PlatformStatusDAO
 				+ " and tm.platformid = ps.platform_id"
 				+ " and lower(nle.transportid) = lower(tm.mediumid)"
 				+ " and nle.networklistid = ?";
-		}
-
-		try
+			try
+			{
+				return getResults(q, this::rs2ps, netlistId);
+			}
+			catch (SQLException ex)
+			{
+				String msg = "Cannot parse rs for '" + q + "': " + ex;
+				warning(msg);
+			}
+				return new ArrayList<>();
+			}
+		else
 		{
-			return getResults(q, this::rs2ps, netlistId);
+			return listPlatformStatus();
 		}
-		catch (SQLException ex)
-		{
-			String msg = "Cannot parse rs for '" + q + "': " + ex;
-			warning(msg);
-		}
-		return new ArrayList<>();
 	}
 	
 	private PlatformStatus rs2ps(ResultSet rs)
