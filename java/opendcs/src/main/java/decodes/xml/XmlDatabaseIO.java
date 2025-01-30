@@ -44,7 +44,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -59,6 +58,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.xml.sax.SAXException;
 
 import decodes.db.Constants;
@@ -747,6 +747,14 @@ public class XmlDatabaseIO extends DatabaseIO
 			}
 		}
 		catch(java.io.IOException e) { }
+	}
+
+	/**
+	 * Not implemented for XML.
+	 */
+	public void readNetworkListList( NetworkListList nll, String tmType)
+	{
+		throw new NotImplementedException("XmlDatabaseIO.readNetworkListList with filter not implemented for XML.");
 	}
 	
 	/**

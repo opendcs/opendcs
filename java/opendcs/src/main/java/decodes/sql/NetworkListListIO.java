@@ -162,8 +162,9 @@ public class NetworkListListIO extends SqlDbObjIo
 	/** 
 	  Reads the NetworkList and NetworkListEntry tables.  
 	  @param nll the list of network lists
+	  @param tmType the transport medium type to filter by, or null for all.
 	*/
-	public void read(NetworkListList nll)
+	public void read(NetworkListList nll, String tmType)
 		throws SQLException, DatabaseException
 	{
 		Logger.instance().log(Logger.E_DEBUG1,"Reading NetworkLists...");
@@ -171,7 +172,22 @@ public class NetworkListListIO extends SqlDbObjIo
 		initDb(nll.getDatabase());
 
 		String q = "SELECT * FROM NetworkList";
-		
+
+		if (tmType != null)
+		{
+			String qtmt;
+			if (tmType.equalsIgnoreCase("goes"))
+			{
+				qtmt = "'goes', 'goes-self-times', 'goes-random'";
+			}
+			else
+			{
+				qtmt = "'" + tmType + "'";
+			}
+
+			q = q + " WHERE lower(transportMediumType) IN (" + qtmt.toLowerCase() + ")";
+		}
+
 		Statement stmt = createStatement();
 		ResultSet rs = stmt.executeQuery( q );
 
@@ -209,6 +225,18 @@ public class NetworkListListIO extends SqlDbObjIo
 					+ id + ", ignored.");
 				continue;
 			}
+			if (tmType != null)
+			{
+				if (tmType.equalsIgnoreCase("goes"))
+				{
+					if (!nl.transportMediumType.equalsIgnoreCase("goes")
+					 && !nl.transportMediumType.equalsIgnoreCase("goes-self-times")
+					 && !nl.transportMediumType.equalsIgnoreCase("goes-random"))
+						continue;
+				}
+				else if (!nl.transportMediumType.equalsIgnoreCase(tmType))
+					continue;
+			}
 			NetworkListEntry nle = new NetworkListEntry(
 				nl, transportId);
 			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
@@ -242,7 +270,18 @@ public class NetworkListListIO extends SqlDbObjIo
 				}
 			}
 			nl.addEntry(nle);
+			nll.add(nl);
 		}
+	}
+
+	/**
+	 Reads the NetworkList and NetworkListEntry tables.
+	 @param nll the list of network lists
+	 */
+	public void read(NetworkListList nll)
+			throws SQLException, DatabaseException
+	{
+		read(nll, null);
 	}
 	
 	/**
