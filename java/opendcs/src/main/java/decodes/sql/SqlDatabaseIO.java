@@ -1768,6 +1768,8 @@ public class SqlDatabaseIO
      * If the presentation group referenced by groupId is used by one or more routing
      * specs, return a list of routing spec IDs and names. If groupId is not used,
      * return null.
+     * Objects in this list will be only partially populated (key values
+     * and names only).
      * @param groupId the ID of the presentation group to check.
      * @return string concatenated list of routing spec IDs and names, or null if not used.
      * @throws DatabaseException if a database error occurs.

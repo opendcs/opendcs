@@ -190,6 +190,8 @@ public class PresentationGroupListIO extends SqlDbObjIo
     /**
      * If the presentation group referenced by groupId is used by one or more routing
      * specs, return a list of routing spec IDs and names. If not used, return an empty list.
+     * Objects in this list may be only partially populated (key values
+     * and primary display attributes only).
      * @param groupId the presentation group ID to check
      * @return List<RoutingSpec> list of routing spec IDs and names, or null if not used.
      * @throws SQLException if an error is encountered
