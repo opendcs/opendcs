@@ -1,0 +1,45 @@
+{
+  "configId" : null,
+  "name" : "Test Platform",
+  "numPlatforms" : 0,
+  "description" : "Test Platform",
+  "configSensors" : [
+    {
+      "sensorNumber" : 0,
+      "sensorName" : "Test Sensor",
+      "recordingMode" : "U",
+      "recordingInterval" : 1500,
+      "timeOfFirstSample" : 0,
+      "absoluteMin" : 0.0,
+      "absoluteMax" : 100.0,
+      "properties" : {
+        "site" : "Test Site"
+      },
+      "dataTypes" : {},
+      "usgsStatCode" : null
+    }
+  ],
+  "scripts" : [
+    {
+      "name" : "Test Script",
+      "dataOrder" : "U",
+      "headerType" : null,
+      "scriptSensors" : [ {
+        "sensorNumber" : 0,
+        "unitConverter" : {
+          "ucId" : null,
+          "fromAbbr" : "C",
+          "toAbbr" : "F",
+          "algorithm" : "Linear",
+          "a" : 100.0,
+          "b" : 32.0,
+          "c" : null,
+          "d" : null,
+          "e" : null,
+          "f" : null
+        }
+      }
+    ],
+    "formatStatements" : [ ]
+  } ]
+}
