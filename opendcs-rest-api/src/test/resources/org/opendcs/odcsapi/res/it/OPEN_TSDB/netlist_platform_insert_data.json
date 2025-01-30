@@ -1,0 +1,32 @@
+{
+  "platformId" : null,
+  "name" : "Stream Platform",
+  "siteId" : null,
+  "agency" : null,
+  "configId" : null,
+  "description" : "Test Platform Description",
+  "designator" : null,
+  "lastModified" : null,
+  "production" : false,
+  "properties" : { },
+  "platformSensors" : [ ],
+  "transportMedia" : [ {
+    "mediumType" : "GOES",
+    "mediumId" : "6698948",
+    "scriptName" : "test script",
+    "channelNum" : 21,
+    "assignedTime" : 1736361778,
+    "transportWindow" : 20,
+    "transportInterval" : 2,
+    "timeAdjustment" : 0,
+    "timezone" : "UTC",
+    "loggerType" : "None",
+    "baud" : 9600,
+    "stopBits" : 2,
+    "parity" : "N",
+    "dataBits" : 8,
+    "doLogin" : true,
+    "username" : "aTestUser",
+    "password" : "aBadTestPass123"
+  } ]
+}
