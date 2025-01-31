@@ -540,25 +540,6 @@ public class SqlDatabaseIO
     }
 
     /**
-     * Reads the set of known data-type objects in this database.
-     * Objects in this collection are complete.
-     * @param dts the object to populate from the database.
-     */
-    @Override
-    public synchronized void readDataTypeSet(DataTypeSet dts, String standard)
-            throws DatabaseException
-    {
-        try (DataTypeDAI dtdao = this.makeDataTypeDAO())
-        {
-            dtdao.readDataTypeSet(dts, standard);
-        }
-        catch(DbIoException ex)
-        {
-            throw new DatabaseException("Failed to read site datatype set", ex);
-        }
-    }
-
-    /**
       Reads a single data-type object given its numeric key.
       @return data type or null if not found
     */
@@ -1022,20 +1003,6 @@ public class SqlDatabaseIO
         catch (SQLException ex)
         {
             throw new DatabaseException("deleteUnitConverterSet: ", ex);
-        }
-        finally
-        {
-            _unitConverterIO.setConnection(null);
-        }
-        try (Connection conn = getConnection())
-        {
-            _unitConverterIO.setConnection(conn);
-
-            _unitConverterIO.read(ucs);
-        }
-        catch (SQLException ex)
-        {
-            throw new DatabaseException("readUnitConverterSet: ", ex);
         }
         finally
         {
