@@ -162,15 +162,6 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
-	 Reads the set of known data-type objects in this database. Filters by standard.
-	 Objects in this collection are complete.
-	 @param dts the list to populate
-	 @param standard the data type standard to filter by
-	 */
-	public abstract void readDataTypeSet(DataTypeSet dts, String standard)
-		throws DatabaseException;
-
-	/**
 	  Reads a single data-type object given its numeric key.
 	  @return data type or null if not found
 	*/

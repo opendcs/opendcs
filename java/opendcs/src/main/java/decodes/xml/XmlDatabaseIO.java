@@ -594,17 +594,6 @@ public class XmlDatabaseIO extends DatabaseIO
 	}
 
 	/**
-	 * Not supported for XML database.
-	 * @param dts object in which to store data
-	 * @param standard the data type standard to filter by
-	 * @throws DatabaseException
-	 */
-	public void readDataTypeSet( DataTypeSet dts, String standard ) throws DatabaseException
-	{
-		throw new UnsupportedOperationException("readDataTypeSet with standard not supported for XML database.");
-	}
-
-	/**
 	 * Writes the DataTypeSet to the database.
 	 * @param dts set to write
 	 * @throws DatabaseException
@@ -1169,7 +1158,6 @@ e.printStackTrace();
 	{
 		throw new UnsupportedOperationException("deleteUnitConverterSet not supported in XML");
 	}
-
 
 	/**
 	 * Writes the entire collection of engineering units to the database.
