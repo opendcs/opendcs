@@ -248,7 +248,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
             while(rs.next())
             {
                 RoutingStatus rstat = new RoutingStatus(DbKey.createDbKey(rs.getLong(1)));
-
+                rstat.setRoutingSpecId(DbKey.createDbKey(rs.getLong(1)));
                 rstat.setName(rs.getString(2));
                 ret.add(rstat);
             }
@@ -299,7 +299,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
                 Long seid = resultSet.getLong(1);
                 for(RoutingStatus ars : ret)
                 {
-                    if (seid.equals(ars.getScheduleEntryId()))
+                    if (seid == ars.getScheduleEntryId().getValue())
                     {
                         long x = resultSet.getLong(2);
                         if (!resultSet.wasNull())

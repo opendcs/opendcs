@@ -17,7 +17,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.xml.sax.SAXException;
 
 import decodes.db.DatabaseObject;
@@ -126,7 +125,7 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 	@Override
 	public ScheduleEntry readScheduleEntry(DbKey id) throws DbIoException
 	{
-		throw new NotImplementedException("readScheduleEntry by ID not implemented for XML.");
+		throw new UnsupportedOperationException("readScheduleEntry by ID not implemented for XML.");
 	}
 
 

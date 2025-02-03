@@ -7,14 +7,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import decodes.db.ScheduleEntryStatus;
+import decodes.polling.DacqEvent;
+import decodes.sql.DbKey;
 import org.apache.commons.io.FileUtils;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
 
-import decodes.db.Database;
-import decodes.db.DatabaseIO;
-import decodes.util.DecodesSettings;
-import decodes.xml.CreatePlatformXref;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -27,6 +26,7 @@ public class XmlConfiguration implements Configuration
     private static final Logger logger = Logger.getLogger(XmlConfiguration.class.getName());
 
     public static final String NAME = "OpenDCS-XML";
+    private static final String NOT_SUPPORTED = "Not supported by the XML database.";
 
     File userDir;
     File propertiesFile;
@@ -94,5 +94,29 @@ public class XmlConfiguration implements Configuration
     public String getName()
     {
         return NAME;
+    }
+
+    @Override
+    public void storeScheduleEntryStatus(ScheduleEntryStatus status)
+    {
+        throw new UnsupportedOperationException(NOT_SUPPORTED);
+    }
+
+    @Override
+    public void deleteScheduleEntryStatus(DbKey scheduleEntryId)
+    {
+        throw new UnsupportedOperationException(NOT_SUPPORTED);
+    }
+
+    @Override
+    public void storeDacqEvent(DacqEvent event)
+    {
+        throw new UnsupportedOperationException(NOT_SUPPORTED);
+    }
+
+    @Override
+    public void deleteDacqEventForPlatform(DbKey platformId)
+    {
+        throw new UnsupportedOperationException(NOT_SUPPORTED);
     }
 }
