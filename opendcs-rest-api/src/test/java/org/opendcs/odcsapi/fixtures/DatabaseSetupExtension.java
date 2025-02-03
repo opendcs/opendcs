@@ -21,6 +21,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
 
+import decodes.db.PlatformStatus;
+import decodes.db.ScheduleEntryStatus;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -40,6 +42,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseSetupExtension.class);
 	private static DbType currentDbType;
+	private static Configuration currentConfig;
 	private static TomcatServer currentTomcat;
 	private final Configuration config;
 	private final DbType dbType;
@@ -49,6 +52,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 	{
 		this.config = config;
 		this.dbType = dbType;
+		currentConfig = config;
 	}
 
 	public static DbType getCurrentDbType()
@@ -148,6 +152,29 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		{
 			throw new PreconditionViolationException("Server didn't start in time...");
 		}
+	}
+
+	public static void loadXMLDataIntoDb(String[] files) throws Exception
+	{
+		String[] filePaths = new String[files.length];
+		for (int i = 0; i < files.length; i++)
+		{
+			filePaths[i] = String.format("%s%s%s",
+					System.getProperty("user.dir"),
+					"/src/test/resources/org/opendcs/odcsapi/res/it/",
+					files[i]);
+		}
+		currentConfig.loadXMLData(filePaths, new SystemExit(), new SystemProperties());
+	}
+
+	public static void storeScheduleEntryStatus(ScheduleEntryStatus status) throws Exception
+	{
+		currentConfig.storeScheduleEntryStatus(status);
+	}
+
+	public static void storePlatformStatus(PlatformStatus status) throws Exception
+	{
+		currentConfig.storePlatformStatus(status);
 	}
 
 	private void setupClientUser()

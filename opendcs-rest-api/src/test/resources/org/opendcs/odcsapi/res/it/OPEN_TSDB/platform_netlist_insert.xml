@@ -1,0 +1,8 @@
+<NetworkList Name="PlatformTest">
+	<TransportMediumType>GOES</TransportMediumType>
+	<SiteNameTypePreference>TEST</SiteNameTypePreference>
+	<NetworkListEntry TransportId="Ident">
+		<PlatformName>Platform 10</PlatformName>
+		<Description>Platform 10 description</Description>
+	</NetworkListEntry>
+</NetworkList>

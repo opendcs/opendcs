@@ -1,0 +1,32 @@
+{
+  "platformId" : null,
+  "name" : "Platform 10",
+  "siteId" : "[SITE_ID]",
+  "agency" : "USGS",
+  "configId" : null,
+  "description" : "Platform 10 description",
+  "designator" : "Platform Designator",
+  "lastModified" : 1625140800000,
+  "production" : true,
+  "properties" : { },
+  "platformSensors" : [ ],
+  "transportMedia" : [ {
+    "mediumType" : "goes",
+    "mediumId" : "Ident",
+    "scriptName" : "Script",
+    "channelNum" : 1,
+    "assignedTime" : 123456789,
+    "transportWindow" : 2,
+    "transportInterval" : 1,
+    "timeAdjustment" : 0,
+    "timezone" : "UTC",
+    "loggerType" : null,
+    "baud" : 9600,
+    "stopBits" : 1,
+    "parity" : "None",
+    "dataBits" : 8,
+    "doLogin" : false,
+    "username" : "User",
+    "password" : "Pass"
+  } ]
+}

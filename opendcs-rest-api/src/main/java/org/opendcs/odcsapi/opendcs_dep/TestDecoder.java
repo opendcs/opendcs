@@ -43,6 +43,7 @@ import decodes.decoder.DecodedMessage;
 import decodes.decoder.DecodedSample;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
+import decodes.tsdb.TimeSeriesDb;
 import ilex.util.Logger;
 import ilex.var.TimedVariable;
 import opendcs.dai.DataTypeDAI;
@@ -359,10 +360,9 @@ public class TestDecoder
 		if (decodes.db.Database.getDb() == null)
 			decodes.db.Database.setDb(new decodes.db.Database());
 
-		try (DataTypeDAI dtDAO = db.getDao(DataTypeDAI.class)
-				.orElseThrow(() -> new UnsupportedOperationException("TestDecodes is not supported"));
-			 EnumDAI enumDAO = db.getDao(EnumDAI.class)
-					 .orElseThrow(() -> new UnsupportedOperationException("TestDecodes is not supported")))
+		try (DataTypeDAI dtDAO = db.getLegacyDatabase(TimeSeriesDb.class)
+				.orElseThrow(() -> new UnsupportedOperationException("TestDecodes is not supported")).makeDataTypeDAO();
+			 EnumDAI enumDAO = db.getLegacyDatabase(TimeSeriesDb.class).orElseThrow(() -> new UnsupportedOperationException("TestDecodes is not supported")).makeEnumDAO())
 		{
 			enumDAO.readEnumList(decodes.db.Database.getDb().enumList);
 			dtDAO.readDataTypeSet(decodes.db.Database.getDb().dataTypeSet);
