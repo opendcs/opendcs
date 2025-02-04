@@ -4,8 +4,8 @@
     "Stream" : "Stream test site"
   },
   "description" : "A stream site",
-  "latitude" : "76.3",
-  "longitude" : "-121.8",
+  "latitude" : "38.575764",
+  "longitude" : "-121.478851",
   "elevation" : 150.0,
   "elevUnits" : "ft",
   "nearestCity" : "Sacramento",

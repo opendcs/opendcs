@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package org.opendcs.odcsapi.res.it;
 
 import java.util.List;
@@ -27,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("integration-opentsdb-only")
+@Tag("integration")
 @ExtendWith(DatabaseContextProvider.class)
 final class NetlistResourcesIT extends BaseIT
 {
@@ -47,11 +62,33 @@ final class NetlistResourcesIT extends BaseIT
 
 		siteId = storeSite("netlist_site_insert_data.json");
 
+		String configJson = getJsonFromResource("config_input_data.json");
+		ExtractableResponse<Response> response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.filter(sessionFilter)
+			.body(configJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("config")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.extract()
+		;
+
+		long configId = response.body().jsonPath().getLong("configId");
+
 		ApiPlatform platform = getDtoFromResource("netlist_platform_insert_data.json", ApiPlatform.class);
 		platform.setSiteId(siteId);
+		platform.setConfigId(configId);
 		String platformJson = mapper.writeValueAsString(platform);
 
-		ExtractableResponse<Response> response = given()
+		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.contentType(MediaType.APPLICATION_JSON)
