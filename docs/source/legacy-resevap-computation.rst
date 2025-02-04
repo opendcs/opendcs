@@ -1092,28 +1092,25 @@ As a result of developing this document, a list of recommendations regarding Res
 References
 ==========
 
-.. raw:: html
+| Crawford, T.M, C.E. Duchon (1999) An Improved Parameterization for Estimating Effective
+|             Atmospheric Emissivity for Use in Calculating Daytime Downwelling Longwave Radiation.
+|             Journal of Applied Meteorology, Volume 38, Issue 4 (April 1999) pp 474-480.
 
-    <div class="reference-list">
-        <p>Crawford, T.M, C.E. Duchon (1999) An Improved Parameterization for Estimating Effective
-        Atmospheric Emissivity for Use in Calculating Daytime Downwelling Longwave Radiation.
-        Journal of Applied Meteorology, Volume 38, Issue 4 (April 1999) pp 474-480.</p>
+| Daly, S. F. (2005), Reservoir Evaporation, U.S. Army Engineering Research and
+|             Development Center, November 2015
 
-        <p>Daly, S. F. (2005), Reservoir Evaporation, U.S. Army Engineering Research and
-        Development Center, November 2015</p>
+| Fairall, C.W., E.F. Bradley, D.P. Rogers, J.B. Edson, and G.S. Young, 1996: Bulk
+|             parameterization of air-sea fluxes for Tropical Ocean-Global Atmosphere Coupled-Ocean
+|             Atmosphere Response Experiment. J. Geophys. Res., 101, 3747–3764.
 
-        <p>Fairall, C.W., E.F. Bradley, D.P. Rogers, J.B. Edson, and G.S. Young, 1996: Bulk
-        parameterization of air-sea fluxes for Tropical Ocean-Global Atmosphere Coupled-Ocean
-        Atmosphere Response Experiment. J. Geophys. Res., 101, 3747–3764.</p>
+| Hondzo, M., and H. Stefan (1993) Lake Water Temperature Simulation Model. Journal of
+|             Hydraulic Engineering, Vol. 119, No. 11, November, 1993 pp 1251-1273
 
-        <p>Hondzo, M., and H. Stefan (1993) Lake Water Temperature Simulation Model. Journal of
-        Hydraulic Engineering, Vol. 119, No. 11, November, 1993 pp 1251-1273</p>
+| Shapiro, R. (1987) A simple model for the calculation of the flux of direct and diffuse
+|             solar radiation through the atmosphere. Air Force Geophysics Laboratory,
+|             Hanscom AFB MA 01731 AFGL-TR-87-0200
 
-        <p>Shapiro, R. (1987) A simple model for the calculation of the flux of direct and diffuse
-        solar radiation through the atmosphere. Air Force Geophysics Laboratory,
-        Hanscom AFB MA 01731 AFGL-TR-87-0200</p>
+| Woolf, H. M. (1968) On the computation of solar elevation angles and the determination
+|             of sunrise and sunset times. NASA TM X-1646, National Aeronautics and Space
+|             Administration, Washington, D. C. September 1968
 
-        <p>Woolf, H. M. (1968) On the computation of solar elevation angles and the determination
-        of sunrise and sunset times. NASA TM X-1646, National Aeronautics and Space
-        Administration, Washington, D. C. September 1968</p>
-    </div>
