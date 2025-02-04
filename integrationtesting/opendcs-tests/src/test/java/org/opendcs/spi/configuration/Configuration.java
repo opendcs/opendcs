@@ -5,7 +5,9 @@ import java.util.Map;
 
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
+import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
 import opendcs.dao.DaoBase;
@@ -50,7 +52,7 @@ public interface Configuration
     public File getPropertiesFile();
     public File getUserDir();
     public boolean isSql();
-    default public boolean isTsdb()
+    public default boolean isTsdb()
     {
         return false;
     }
@@ -68,13 +70,13 @@ public interface Configuration
      * @return The timeseries database if it can be made.
      * @throws Throwable any issue with the creation of the TimeSeriesDb object
      */
-    default public TimeSeriesDb getTsdb() throws Throwable
+    public default TimeSeriesDb getTsdb() throws Throwable
     {
         return null;
     }
 
     /**
-     * Returns an independent instance of the {@decodes.db.Database} Decodes Database for this configuration.
+     * Returns an independent instance of the {@link decodes.db.Database} Decodes Database for this configuration.
      *
      * @return Instance of the Decodes Database for this run/test.
      * @throws Throwable
@@ -90,7 +92,7 @@ public interface Configuration
         return db;
     }
 
-    default public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
+    public default boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
     {
         return false;
     }
@@ -100,13 +102,17 @@ public interface Configuration
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
      * @return
      */
-    default public boolean supportsDao(Class<? extends DaoBase> dao)
+    public default boolean supportsDao(Class<? extends DaoBase> dao)
     {
         return false;
-    };
+    }
 
     /* The name of this configuration
     * @return
     */
     public String getName();
+
+    void storeTimeSeries(CTimeSeries timeSeries) throws Exception;
+
+    void deleteTimeSeries(TimeSeriesIdentifier timeSeriesId) throws Exception;
 }

@@ -1,7 +1,5 @@
 package org.opendcs.fixtures.configurations.opendcs.pg;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -16,6 +14,10 @@ import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
+import decodes.db.DatabaseException;
+import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.TimeSeriesIdentifier;
+import opendcs.dai.TimeSeriesDAI;
 import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.MigrationManager;
@@ -258,5 +260,31 @@ public class OpenDCSPGConfiguration implements Configuration
     public String getName()
     {
         return NAME;
+    }
+
+    @Override
+    public void storeTimeSeries(CTimeSeries timeSeries) throws Exception
+    {
+        try (TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
+        {
+            dai.saveTimeSeries(timeSeries);
+        }
+        catch(Throwable e)
+        {
+            throw new DatabaseException("Failed to store time series", e);
+        }
+    }
+
+    @Override
+    public void deleteTimeSeries(TimeSeriesIdentifier timeSeriesId) throws Exception
+    {
+        try (TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
+        {
+            dai.deleteTimeSeries(timeSeriesId);
+        }
+        catch(Throwable e)
+        {
+            throw new DatabaseException("Failed to delete time series", e);
+        }
     }
 }

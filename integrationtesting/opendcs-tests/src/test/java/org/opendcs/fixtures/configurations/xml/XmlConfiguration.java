@@ -7,14 +7,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import decodes.db.DatabaseException;
+import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.TimeSeriesIdentifier;
+import opendcs.dai.TimeSeriesDAI;
 import org.apache.commons.io.FileUtils;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
 
-import decodes.db.Database;
-import decodes.db.DatabaseIO;
-import decodes.util.DecodesSettings;
-import decodes.xml.CreatePlatformXref;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -94,5 +94,31 @@ public class XmlConfiguration implements Configuration
     public String getName()
     {
         return NAME;
+    }
+
+    @Override
+    public void storeTimeSeries(CTimeSeries timeSeries) throws Exception
+    {
+        try (TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
+        {
+            dai.saveTimeSeries(timeSeries);
+        }
+        catch(Throwable e)
+        {
+            throw new DatabaseException("Failed to store time series", e);
+        }
+    }
+
+    @Override
+    public void deleteTimeSeries(TimeSeriesIdentifier timeSeriesId) throws Exception
+    {
+        try (TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
+        {
+            dai.deleteTimeSeries(timeSeriesId);
+        }
+        catch(Throwable e)
+        {
+            throw new DatabaseException("Failed to delete time series", e);
+        }
     }
 }

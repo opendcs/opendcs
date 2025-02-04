@@ -1022,6 +1022,8 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				{
 					throw new Exception("Unable to create comp depends notification.", ex);
 				}
+
+				cache.remove(ctsid.getKey());
 			});
 		}
 		catch (Exception ex)
@@ -1354,7 +1356,15 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 		for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext();)
 		{
 			TimeSeriesIdentifier tsid = tsidit.next();
-			if (!activeOnly || tsid.getSite().isActive())
+			if (tsid instanceof CwmsTsId)
+			{
+				CwmsTsId ctsid = (CwmsTsId) tsid;
+				if (!activeOnly || ctsid.isActive())
+				{
+					ret.add(tsid);
+				}
+			}
+			else if (!activeOnly || tsid.getSite().isActive())
 			{
 				ret.add(tsid);
 			}
