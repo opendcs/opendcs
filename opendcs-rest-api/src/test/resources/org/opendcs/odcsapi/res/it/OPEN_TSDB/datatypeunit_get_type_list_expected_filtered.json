@@ -1,0 +1,260 @@
+[
+  {
+    "id": 1,
+    "standard": "CWMS",
+    "code": "Height",
+    "displayName": "CWMS:Height"
+  },
+  {
+    "id": 2,
+    "standard": "CWMS",
+    "code": "Opening-Tainters",
+    "displayName": "CWMS:Opening-Tainters"
+  },
+  {
+    "id": 9,
+    "standard": "CWMS",
+    "code": "Power",
+    "displayName": "CWMS:Power"
+  },
+  {
+    "id": 16,
+    "standard": "CWMS",
+    "code": "Speed-Wind",
+    "displayName": "CWMS:Speed-Wind"
+  },
+  {
+    "id": 22,
+    "standard": "CWMS",
+    "code": "Opening-East",
+    "displayName": "CWMS:Opening-East"
+  },
+  {
+    "id": 33,
+    "standard": "CWMS",
+    "code": "Turb",
+    "displayName": "CWMS:Turb"
+  },
+  {
+    "id": 42,
+    "standard": "CWMS",
+    "code": "Flow-Out",
+    "displayName": "CWMS:Flow-Out"
+  },
+  {
+    "id": 53,
+    "standard": "CWMS",
+    "code": "Thick-Ice",
+    "displayName": "CWMS:Thick-Ice"
+  },
+  {
+    "id": 62,
+    "standard": "CWMS",
+    "code": "pH",
+    "displayName": "CWMS:pH"
+  },
+  {
+    "id": 63,
+    "standard": "CWMS",
+    "code": "Elev-Pool",
+    "displayName": "CWMS:Elev-Pool"
+  },
+  {
+    "id": 64,
+    "standard": "CWMS",
+    "code": "Rad",
+    "displayName": "CWMS:Rad"
+  },
+  {
+    "id": 79,
+    "standard": "CWMS",
+    "code": "Timing",
+    "displayName": "CWMS:Timing"
+  },
+  {
+    "id": 85,
+    "standard": "CWMS",
+    "code": "Temp-Air",
+    "displayName": "CWMS:Temp-Air"
+  },
+  {
+    "id": 99,
+    "standard": "CWMS",
+    "code": "Stage",
+    "displayName": "CWMS:Stage"
+  },
+  {
+    "id": 103,
+    "standard": "CWMS",
+    "code": "Opening-Rollers",
+    "displayName": "CWMS:Opening-Rollers"
+  },
+  {
+    "id": 104,
+    "standard": "CWMS",
+    "code": "Flow",
+    "displayName": "CWMS:Flow"
+  },
+  {
+    "id": 108,
+    "standard": "CWMS",
+    "code": "Flow-In",
+    "displayName": "CWMS:Flow-In"
+  },
+  {
+    "id": 113,
+    "standard": "CWMS",
+    "code": "Depth-Snowwater",
+    "displayName": "CWMS:Depth-Snowwater"
+  },
+  {
+    "id": 127,
+    "standard": "CWMS",
+    "code": "Ratio",
+    "displayName": "CWMS:Ratio"
+  },
+  {
+    "id": 138,
+    "standard": "CWMS",
+    "code": "Rotation",
+    "displayName": "CWMS:Rotation"
+  },
+  {
+    "id": 155,
+    "standard": "CWMS",
+    "code": "SpinRate",
+    "displayName": "CWMS:SpinRate"
+  },
+  {
+    "id": 166,
+    "standard": "CWMS",
+    "code": "Travel",
+    "displayName": "CWMS:Travel"
+  },
+  {
+    "id": 176,
+    "standard": "CWMS",
+    "code": "TurbF",
+    "displayName": "CWMS:TurbF"
+  },
+  {
+    "id": 178,
+    "standard": "CWMS",
+    "code": "Temp",
+    "displayName": "CWMS:Temp"
+  },
+  {
+    "id": 181,
+    "standard": "CWMS",
+    "code": "TurbJ",
+    "displayName": "CWMS:TurbJ"
+  },
+  {
+    "id": 182,
+    "standard": "CWMS",
+    "code": "Depth-Snow",
+    "displayName": "CWMS:Depth-Snow"
+  },
+  {
+    "id": 183,
+    "standard": "CWMS",
+    "code": "TurbN",
+    "displayName": "CWMS:TurbN"
+  },
+  {
+    "id": 185,
+    "standard": "CWMS",
+    "code": "Speed-Water",
+    "displayName": "CWMS:Speed-Water"
+  },
+  {
+    "id": 196,
+    "standard": "CWMS",
+    "code": "Speed",
+    "displayName": "CWMS:Speed"
+  },
+  {
+    "id": 202,
+    "standard": "CWMS",
+    "code": "Volume",
+    "displayName": "CWMS:Volume"
+  },
+  {
+    "id": 205,
+    "standard": "CWMS",
+    "code": "Volt",
+    "displayName": "CWMS:Volt"
+  },
+  {
+    "id": 207,
+    "standard": "CWMS",
+    "code": "Stor",
+    "displayName": "CWMS:Stor"
+  },
+  {
+    "id": 215,
+    "standard": "CWMS",
+    "code": "Thick",
+    "displayName": "CWMS:Thick"
+  },
+  {
+    "id": 217,
+    "standard": "CWMS",
+    "code": "Opening",
+    "displayName": "CWMS:Opening"
+  },
+  {
+    "id": 218,
+    "standard": "CWMS",
+    "code": "Opening-Wickets",
+    "displayName": "CWMS:Opening-Wickets"
+  },
+  {
+    "id": 224,
+    "standard": "CWMS",
+    "code": "Elev-Tail",
+    "displayName": "CWMS:Elev-Tail"
+  },
+  {
+    "id": 229,
+    "standard": "CWMS",
+    "code": "Temp-Water",
+    "displayName": "CWMS:Temp-Water"
+  },
+  {
+    "id": 241,
+    "standard": "CWMS",
+    "code": "Precip",
+    "displayName": "CWMS:Precip"
+  },
+  {
+    "id": 259,
+    "standard": "CWMS",
+    "code": "Opening-West",
+    "displayName": "CWMS:Opening-West"
+  },
+  {
+    "id": 262,
+    "standard": "CWMS",
+    "code": "Stage-Tail",
+    "displayName": "CWMS:Stage-Tail"
+  },
+  {
+    "id": 284,
+    "standard": "CWMS",
+    "code": "Irrad",
+    "displayName": "CWMS:Irrad"
+  },
+  {
+    "id": 288,
+    "standard": "CWMS",
+    "code": "Stage-Pool",
+    "displayName": "CWMS:Stage-Pool"
+  },
+  {
+    "id": 294,
+    "standard": "CWMS",
+    "code": "Pres",
+    "displayName": "CWMS:Pres"
+  }
+]
