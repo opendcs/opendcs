@@ -81,6 +81,8 @@
 
 package decodes.sql;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -173,29 +175,37 @@ public class NetworkListListIO extends SqlDbObjIo
 
 		String q = "SELECT * FROM NetworkList";
 
+		String qtmt = null;
 		if (tmType != null)
 		{
-			String qtmt;
+
 			if (tmType.equalsIgnoreCase("goes"))
 			{
 				qtmt = "'goes', 'goes-self-times', 'goes-random'";
 			}
 			else
 			{
-				qtmt = "'" + tmType + "'";
+				qtmt = "'" + tmType.toLowerCase() + "'";
 			}
 
-			q = q + " WHERE lower(transportMediumType) IN (" + qtmt.toLowerCase() + ")";
+			q = q + " WHERE lower(transportMediumType) IN (?)";
 		}
 
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery( q );
-
-		if (rs != null) 
+		try (Connection conn = connection();
+			 PreparedStatement stmt = conn.prepareStatement(q))
 		{
-			while (rs.next()) 
+			if (tmType != null)
 			{
-				putNetworkList(DbKey.createDbKey(rs, 1), rs);
+				stmt.setString(1, qtmt);
+			}
+			ResultSet rs = stmt.executeQuery();
+
+			if (rs != null)
+			{
+				while (rs.next())
+				{
+					putNetworkList(DbKey.createDbKey(rs, 1), rs);
+				}
 			}
 		}
 
@@ -204,73 +214,80 @@ public class NetworkListListIO extends SqlDbObjIo
 		// join does nothing, but does no harm.
 		String nleColumns = "a.networkListId, a.transportId";
 		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
-			nleColumns += ", a.platform_name, a.description";
-		
-		q = "SELECT " + nleColumns
-		  + " FROM NetworkListEntry a, NetworkList b "
-		  + "WHERE a.networkListId = b.id ";
-		
-		ResultSet rs_nle = stmt.executeQuery( q );
-
-		while (rs_nle != null && rs_nle.next()) 
 		{
-			DbKey id = DbKey.createDbKey(rs_nle, 1);
-			String transportId = rs_nle.getString(2);
+			nleColumns += ", a.platform_name, a.description";
+		}
 
-			NetworkList nl = _networkListList.getById(id);
-			if (nl == null)
+		q = "SELECT " + nleColumns
+			+ " FROM NetworkListEntry a, NetworkList b "
+			+ "WHERE a.networkListId = b.id ";
+
+		try (Statement stmt = createStatement())
+		{
+			ResultSet rs_nle = stmt.executeQuery(q);
+
+			while(rs_nle != null && rs_nle.next())
 			{
-				Logger.instance().log(Logger.E_WARNING,
-				  "Orphan network list entry with invalid network list ID "
-					+ id + ", ignored.");
-				continue;
-			}
-			if (tmType != null)
-			{
-				if (tmType.equalsIgnoreCase("goes"))
+				DbKey id = DbKey.createDbKey(rs_nle, 1);
+				String transportId = rs_nle.getString(2);
+
+				NetworkList nl = _networkListList.getById(id);
+				if(nl == null)
 				{
-					if (!nl.transportMediumType.equalsIgnoreCase("goes")
-					 && !nl.transportMediumType.equalsIgnoreCase("goes-self-times")
-					 && !nl.transportMediumType.equalsIgnoreCase("goes-random"))
-						continue;
-				}
-				else if (!nl.transportMediumType.equalsIgnoreCase(tmType))
+					Logger.instance().log(Logger.E_WARNING,
+							"Orphan network list entry with invalid network list ID "
+									+ id + ", ignored.");
 					continue;
-			}
-			NetworkListEntry nle = new NetworkListEntry(
-				nl, transportId);
-			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
-			{
-				nle.setPlatformName(rs_nle.getString(3));
-				nle.setDescription(rs_nle.getString(4));
-			}
-			else // Pre version 11 derived name and description from platform & site.
-			{
-				Platform p = _platformList.findPlatform(
-					nl.transportMediumType, transportId, new Date());
-
-				if (p != null)
-				{
-					//Find the right site name for this network list site
-					//name type preference
-					Site pSite = p.getSite();
-					if (pSite != null)
-					{
-						SiteName sn = pSite.getName(nl.siteNameTypePref);
-						if (sn != null)
-							nle.setPlatformName(sn.getNameValue());
-						else
-							nle.setPlatformName(p.getSiteName(false));
-					}
-					else
-					{
-						nle.setPlatformName(p.getSiteName(false));
-					}
-					nle.setDescription(p.description);
 				}
+				if(tmType != null)
+				{
+					if(tmType.equalsIgnoreCase("goes"))
+					{
+						if(!nl.transportMediumType.equalsIgnoreCase("goes")
+								&& !nl.transportMediumType.equalsIgnoreCase("goes-self-times")
+								&& !nl.transportMediumType.equalsIgnoreCase("goes-random"))
+							continue;
+					}
+					else if(!nl.transportMediumType.equalsIgnoreCase(tmType))
+					{
+						continue;
+					}
+				}
+				NetworkListEntry nle = new NetworkListEntry(
+						nl, transportId);
+				if(getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+				{
+					nle.setPlatformName(rs_nle.getString(3));
+					nle.setDescription(rs_nle.getString(4));
+				}
+				else // Pre version 11 derived name and description from platform & site.
+				{
+					Platform p = _platformList.findPlatform(
+							nl.transportMediumType, transportId, new Date());
+
+					if(p != null)
+					{
+						//Find the right site name for this network list site
+						//name type preference
+						Site pSite = p.getSite();
+						if(pSite != null)
+						{
+							SiteName sn = pSite.getName(nl.siteNameTypePref);
+							if(sn != null)
+								nle.setPlatformName(sn.getNameValue());
+							else
+								nle.setPlatformName(p.getSiteName(false));
+						}
+						else
+						{
+							nle.setPlatformName(p.getSiteName(false));
+						}
+						nle.setDescription(p.description);
+					}
+				}
+				nl.addEntry(nle);
+				nll.add(nl);
 			}
-			nl.addEntry(nle);
-			nll.add(nl);
 		}
 	}
 
