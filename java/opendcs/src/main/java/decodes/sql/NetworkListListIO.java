@@ -192,101 +192,105 @@ public class NetworkListListIO extends SqlDbObjIo
 		}
 
 		try (Connection conn = connection();
-			 PreparedStatement stmt = conn.prepareStatement(q))
+			 PreparedStatement pStmt = conn.prepareStatement(q))
 		{
-			if (tmType != null)
+			if(tmType != null)
 			{
-				stmt.setString(1, qtmt);
+				pStmt.setString(1, qtmt);
 			}
-			ResultSet rs = stmt.executeQuery();
-
-			if (rs != null)
+			try(ResultSet rs = pStmt.executeQuery())
 			{
-				while (rs.next())
+				if(rs != null)
 				{
-					putNetworkList(DbKey.createDbKey(rs, 1), rs);
-				}
-			}
-		}
-
-		// For CWMS, by joining with NetworkList, VPD will automatically
-		// add the predicate to filter by office id. For other DBs, the
-		// join does nothing, but does no harm.
-		String nleColumns = "a.networkListId, a.transportId";
-		if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
-		{
-			nleColumns += ", a.platform_name, a.description";
-		}
-
-		q = "SELECT " + nleColumns
-			+ " FROM NetworkListEntry a, NetworkList b "
-			+ "WHERE a.networkListId = b.id ";
-
-		try (Statement stmt = createStatement())
-		{
-			ResultSet rs_nle = stmt.executeQuery(q);
-
-			while(rs_nle != null && rs_nle.next())
-			{
-				DbKey id = DbKey.createDbKey(rs_nle, 1);
-				String transportId = rs_nle.getString(2);
-
-				NetworkList nl = _networkListList.getById(id);
-				if(nl == null)
-				{
-					Logger.instance().log(Logger.E_WARNING,
-							"Orphan network list entry with invalid network list ID "
-									+ id + ", ignored.");
-					continue;
-				}
-				if(tmType != null)
-				{
-					if(tmType.equalsIgnoreCase("goes"))
+					while(rs.next())
 					{
-						if(!nl.transportMediumType.equalsIgnoreCase("goes")
-								&& !nl.transportMediumType.equalsIgnoreCase("goes-self-times")
-								&& !nl.transportMediumType.equalsIgnoreCase("goes-random"))
-							continue;
+						putNetworkList(DbKey.createDbKey(rs, 1), rs);
 					}
-					else if(!nl.transportMediumType.equalsIgnoreCase(tmType))
+				}
+			}
+
+			// For CWMS, by joining with NetworkList, VPD will automatically
+			// add the predicate to filter by office id. For other DBs, the
+			// join does nothing, but does no harm.
+			String nleColumns = "a.networkListId, a.transportId";
+			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+			{
+				nleColumns += ", a.platform_name, a.description";
+			}
+
+			q = "SELECT " + nleColumns
+					+ " FROM NetworkListEntry a, NetworkList b "
+					+ "WHERE a.networkListId = b.id ";
+
+			try (Statement stmt = conn.createStatement();
+				 ResultSet rs_nle = stmt.executeQuery(q))
+			{
+				while (rs_nle != null && rs_nle.next())
+				{
+					DbKey id = DbKey.createDbKey(rs_nle, 1);
+					String transportId = rs_nle.getString(2);
+
+					NetworkList nl = _networkListList.getById(id);
+					if(nl == null)
 					{
+						Logger.instance().log(Logger.E_WARNING,
+								"Orphan network list entry with invalid network list ID "
+										+ id + ", ignored.");
 						continue;
 					}
-				}
-				NetworkListEntry nle = new NetworkListEntry(
-						nl, transportId);
-				if(getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
-				{
-					nle.setPlatformName(rs_nle.getString(3));
-					nle.setDescription(rs_nle.getString(4));
-				}
-				else // Pre version 11 derived name and description from platform & site.
-				{
-					Platform p = _platformList.findPlatform(
-							nl.transportMediumType, transportId, new Date());
-
-					if(p != null)
+					if (tmType != null)
 					{
-						//Find the right site name for this network list site
-						//name type preference
-						Site pSite = p.getSite();
-						if(pSite != null)
+						if (tmType.equalsIgnoreCase("goes"))
 						{
-							SiteName sn = pSite.getName(nl.siteNameTypePref);
-							if(sn != null)
-								nle.setPlatformName(sn.getNameValue());
-							else
-								nle.setPlatformName(p.getSiteName(false));
+							if (!nl.transportMediumType.equalsIgnoreCase("goes")
+									&& !nl.transportMediumType.equalsIgnoreCase("goes-self-times")
+									&& !nl.transportMediumType.equalsIgnoreCase("goes-random"))
+								continue;
 						}
-						else
+						else if (!nl.transportMediumType.equalsIgnoreCase(tmType))
 						{
-							nle.setPlatformName(p.getSiteName(false));
+							continue;
 						}
-						nle.setDescription(p.description);
 					}
+					NetworkListEntry nle = new NetworkListEntry(
+							nl, transportId);
+					if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
+					{
+						nle.setPlatformName(rs_nle.getString(3));
+						nle.setDescription(rs_nle.getString(4));
+					}
+					else // Pre version 11 derived name and description from platform & site.
+					{
+						Platform p = _platformList.findPlatform(
+								nl.transportMediumType, transportId, new Date());
+
+						if (p != null)
+						{
+							//Find the right site name for this network list site
+							//name type preference
+							Site pSite = p.getSite();
+							if (pSite != null)
+							{
+								SiteName sn = pSite.getName(nl.siteNameTypePref);
+								if (sn != null)
+								{
+									nle.setPlatformName(sn.getNameValue());
+								}
+								else
+								{
+									nle.setPlatformName(p.getSiteName(false));
+								}
+							}
+							else
+							{
+								nle.setPlatformName(p.getSiteName(false));
+							}
+							nle.setDescription(p.description);
+						}
+					}
+					nl.addEntry(nle);
+					nll.add(nl);
 				}
-				nl.addEntry(nle);
-				nll.add(nl);
 			}
 		}
 	}
@@ -339,71 +343,6 @@ public class NetworkListListIO extends SqlDbObjIo
 		}
 		return ret;
 	}
-
-
-//	/**
-//	* Retrieve a NetworkList by ID number.
-//	* If the desired NetworkList is not in memory, this attempts to read it
-//	* from the Database.
-//	* @param dbObj exists to allow this method to get the correct Database.
-//	* @param id the database ID
-//	* @throws DatabaseException  if no NetworkList corresponding to the
-//	* indicated id number is found.
-//	*/
-//	public NetworkList getNetworkList(DatabaseObject dbObj, DbKey id)
-//		throws DatabaseException, SQLException
-//	{
-//		initDb(dbObj);
-//		NetworkList nl = _networkListList.getById(id);
-//		if (nl != null)
-//			return nl;
-//
-//		return readNetworkList(id);
-//	}
-
-//	/**
-//	* This reads one NetworkList from the database, including all its
-//	* ancillary data (NetworkListEntry (and others?)).
-//	* If a NetworkList with the
-//	* desired ID number is already in memory, this re-reads its data.
-//	* This returns a reference to the NetworkList.
-//	* @param id the database ID
-//	* @throws DatabaseException if no object with the indicated ID exists
-//	* in the database.
-//	*/
-//	public NetworkList readNetworkList(DbKey id)
-//		throws DatabaseException, SQLException
-//	{
-//		if (DbKey.isNull(id))
-//			throw new DatabaseException("NetworkList cannot have null key.");
-//		
-//		Statement stmt = null;
-//		ResultSet rs = null;
-//		NetworkList nList = null;
-//		
-//		try
-//		{
-//			stmt = createStatement();
-//			String q = "SELECT * FROM NetworkList WHERE id = " + id;
-//			rs = stmt.executeQuery( q );
-//			if (rs == null || !rs.next())
-//				throw new DatabaseException(
-//					"No NetworkList found with ID " + id);
-//	
-//			nList = putNetworkList(id, rs);
-//		}
-//		finally
-//		{
-//			if (rs != null)
-//				try { rs.close(); } catch(Exception ex) {}
-//			if (stmt != null)
-//				try { stmt.close(); } catch(Exception ex) {}
-//		}
-//		readNetworkListEntries(nList);
-//		
-//
-//		return nList;
-//	}
 
 	/**
 	  Reads a network list from the database into the passed object.
