@@ -53,7 +53,7 @@ import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 
 @Path("/")
-public class SiteResources extends OpenDcsResource
+public final class SiteResources extends OpenDcsResource
 {
 	@Context HttpHeaders httpHeaders;
 

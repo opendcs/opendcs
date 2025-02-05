@@ -20,7 +20,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -54,7 +53,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 
 
 @Path("/")
-public class NetlistResources extends OpenDcsResource
+public final class NetlistResources extends OpenDcsResource
 {
 	@Context HttpHeaders httpHeaders;
 

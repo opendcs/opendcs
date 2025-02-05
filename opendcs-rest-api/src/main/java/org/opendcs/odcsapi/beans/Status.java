@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package org.opendcs.odcsapi.beans;
 
 import java.io.Serializable;
 
-public class Status implements Serializable
+public final class Status implements Serializable
 {
 	private static final long serialVersionUID = -9130603850117689481L;
 	private String message;

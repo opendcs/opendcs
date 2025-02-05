@@ -63,7 +63,7 @@ import org.opendcs.odcsapi.util.ApiPropertiesUtil;
  * Resources for interacting with an LRGS for DCP messages and status.
  */
 @Path("/")
-public class LrgsResources
+public final class LrgsResources
 {
 	@Context private HttpServletRequest request;
 	@Context private HttpHeaders httpHeaders;

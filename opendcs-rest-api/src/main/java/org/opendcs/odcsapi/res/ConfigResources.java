@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -68,7 +67,7 @@ import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 
 @Path("/")
-public class ConfigResources extends OpenDcsResource
+public final class ConfigResources extends OpenDcsResource
 {
 	@Context HttpHeaders httpHeaders;
 

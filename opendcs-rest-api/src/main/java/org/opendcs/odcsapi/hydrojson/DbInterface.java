@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -21,14 +21,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.Properties;
-import java.util.ServiceLoader;
 import java.util.logging.Logger;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import org.opendcs.odcsapi.dao.DAOProvider;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.start.StartException;
 import org.opendcs.odcsapi.util.ApiConstants;
@@ -46,7 +44,6 @@ public final class DbInterface implements AutoCloseable
 	public static final String CWMS = "CWMS";
 	public static final String OPENTSDB = "OPENTSDB";
 	static final String module = "DbInterface";
-	public static String dbType = "opentsdb";
 	public static boolean isCwms = false;
 	public static boolean isHdb = false;
 	public static boolean isOpenTsdb = true;
@@ -96,11 +93,6 @@ public final class DbInterface implements AutoCloseable
 			+ ", isOpenTsdb=" + isOpenTsdb + ", isOracle=" + isOracle);
 	}
 
-	public static String getOidcAuthenticatedUrl()
-	{
-		throw new UnsupportedOperationException("Authentication URL for OIDC not yet implemented.");
-	}
-
 	public static void setDataSource(DataSource dataSource)
 	{
 		DbInterface.dataSource = dataSource;
@@ -109,11 +101,6 @@ public final class DbInterface implements AutoCloseable
 	public Connection getConnection()
 	{
 		return connection;
-	}
-
-	public static DataSource getDataSource()
-	{
-		return dataSource;
 	}
 
 	public void close()
@@ -158,7 +145,6 @@ public final class DbInterface implements AutoCloseable
 	public static void setDatabaseType(String dbType)
 		throws StartException
 	{
-		DbInterface.dbType = dbType;
 		isHdb = isOpenTsdb = isCwms = false;
 		if (dbType.equalsIgnoreCase("xml"))
 			throw new StartException("API cannot run over an XML database.");
@@ -205,34 +191,6 @@ public final class DbInterface implements AutoCloseable
 		if (d == null)
 			return null;
 		return d.getTime();
-	}
-
-	public <T> T getDao(Class<T> daoType)
-	{
-		String databaseType;
-		if(isCwms)
-		{
-			databaseType = CWMS;
-		}
-		else if(isOpenTsdb)
-		{
-			databaseType = OPENTSDB;
-		}
-		else
-		{
-			throw new UnsupportedOperationException("DAO Lookup currently only supported by OpenTSDB and CWMS");
-		}
-
-		ServiceLoader<DAOProvider> serviceLoader = ServiceLoader.load(DAOProvider.class);
-		for(DAOProvider daoProvider : serviceLoader)
-		{
-			if(daoProvider.provides(daoType, databaseType))
-			{
-				//noinspection unchecked
-				return (T) daoProvider.createDAO(this);
-			}
-		}
-		throw new UnsupportedOperationException("DAO Lookup for " + databaseType + " not supported for type " + daoType);
 	}
 
 	/*

@@ -51,7 +51,7 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
 @Path("/")
-public class AlgorithmResources extends OpenDcsResource
+public final class AlgorithmResources extends OpenDcsResource
 {
 
 	@GET

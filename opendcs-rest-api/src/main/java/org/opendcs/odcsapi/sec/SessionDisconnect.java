@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import javax.servlet.http.HttpSessionListener;
 import org.opendcs.odcsapi.lrgsclient.ClientConnectionCache;
 
 @WebListener
-public class SessionDisconnect implements HttpSessionListener
+public final class SessionDisconnect implements HttpSessionListener
 {
 
 	@Override

@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -20,20 +20,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.opendcs.odcsapi.beans.ApiSiteName;
 import org.opendcs.odcsapi.beans.ApiSite;
+import org.opendcs.odcsapi.beans.ApiSiteName;
 import org.opendcs.odcsapi.beans.ApiSiteRef;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiTextUtil;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ApiSiteDAO extends ApiDaoBase
 {
@@ -197,53 +195,6 @@ public class ApiSiteDAO extends ApiDaoBase
 			throw new DbException(module, ex, msg);
 		}
 	}
-	
-	public void writeSite(ApiSite site)
-		throws DbException, WebAppException
-	{
-		site.setLastModified(new Date());
-		
-		String q = "";
-		try
-		{
-			Connection conn = null;
-			String desc = site.getDescription();
-			if (desc != null && desc.length() > 800)
-				site.setDescription(desc.substring(0,799));
-
-			// If this is a NEW site, check for name clashes.
-			if (site.getSiteId() == null)
-			{
-				for(Object key : site.getSitenames().keySet())
-				{
-					String nameType = (String)key;
-					String nameValue = site.getSitenames().get(nameType);
-					
-					q = "select SITEID from SITENAME where NAMETYPE = ? and SITENAME = ?";
-					ResultSet rs = doQueryPs(conn, q, nameType, nameValue);
-					if (rs.next())
-					{
-						throw new WebAppException(ErrorCodes.NOT_ALLOWED,
-							"Cannot write new site because "
-							+ "an existing site with ID=" + rs.getLong(1) + " has the SITENAME "
-							+ nameType + ":" + nameValue);
-					}
-				}
-				//this.closePrepConn();
-				// Allocate new ID
-				site.setSiteId(getKey(DbInterface.Sequences.SITE));
-				insert(site);
-			}
-			else
-				update(site);
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error in query '" + q + "': " + ex;
-			throw new DbException(module, ex, msg);
-		}	
-	}
-
 
 	protected void update(ApiSite newSite)
 		throws DbException, WebAppException
@@ -412,71 +363,6 @@ public class ApiSiteDAO extends ApiDaoBase
 				// An old prop exists that was removed in the new site
 				doModifyV("delete from SITE_PROPERTY where SITE_ID = ? and PROP_NAME = ?", newSite.getSiteId(), propname);
 			}
-		}
-	}
-
-	public void deleteSite(Long siteId) 
-		throws DbException, WebAppException
-	{
-		String q = "select count(*) from CP_COMP_TS_PARM where SITE_ID = ?";
-		try
-		{
-			Connection conn = null;
-			ResultSet rs = doQueryPs(conn, q, siteId);
-			rs.next();
-			int n = rs.getInt(1);
-			if (n > 0)
-				throw new WebAppException(ErrorCodes.NOT_ALLOWED,
-					"Cannot delete site because it is used by " 
-					+ n + " computation parameters.");
-			
-			q = "select count(*) from TSDB_GROUP_MEMBER_SITE where SITE_ID = ?";
-			rs = doQueryPs(conn, q, siteId);
-			rs.next();
-			n = rs.getInt(1);
-			if (n > 0)
-				throw new WebAppException(ErrorCodes.NOT_ALLOWED, 
-					"Cannot delete site because it is used by " 
-					+ n + " time series groups.");
-
-			if (DbInterface.isOpenTsdb)
-			{
-				q = "select count(*) from TS_SPEC where SITE_ID = ?";
-				rs = doQueryPs(conn, q, siteId);
-				rs.next();
-				n = rs.getInt(1);
-				if (n > 0)
-					throw new WebAppException(ErrorCodes.NOT_ALLOWED,
-						"Cannot delete site because it is used by " 
-						+ n + " time series identifiers.");
-			}
-
-			q = "select count(*) from PLATFORM where SITEID = ?";
-			rs = doQueryPs(conn, q, siteId);
-			rs.next();
-			n = rs.getInt(1);
-			if (n > 0)
-				throw new WebAppException(ErrorCodes.NOT_ALLOWED,
-					"Cannot delete site because it is used by " 
-					+ n + " platforms.");
-
-			q = "select count(*) from PLATFORMSENSOR where SITEID = ?";
-			rs = doQueryPs(conn, q, siteId);
-			rs.next();
-			n = rs.getInt(1);
-			if (n > 0)
-				throw new WebAppException(ErrorCodes.NOT_ALLOWED,
-					"Cannot delete site because it is used by " 
-					+ n + " platform sensor records.");
-			
-			doModifyV("delete from sitename where siteid = ?", siteId);
-			doModifyV("delete from site_property where site_id = ?", siteId);
-			doModifyV("delete from site where id = ?", siteId);
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error in query '" + q + "': " + ex;
-			throw new DbException(module, ex, msg);
 		}
 	}
 	

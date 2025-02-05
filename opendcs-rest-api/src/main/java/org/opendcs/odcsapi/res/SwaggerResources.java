@@ -37,7 +37,7 @@ import javax.ws.rs.core.Response;
 import org.opendcs.odcsapi.util.ApiConstants;
 
 @Path("/")
-public class SwaggerResources
+public final class SwaggerResources
 {
     @Context ServletContext servletContext;
 

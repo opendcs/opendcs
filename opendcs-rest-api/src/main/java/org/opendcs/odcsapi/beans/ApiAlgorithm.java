@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-public class ApiAlgorithm
+public final class ApiAlgorithm
 {
 	/** Surrogate key for this algorithm in the time series database.  */
 	private Long algorithmId = null;

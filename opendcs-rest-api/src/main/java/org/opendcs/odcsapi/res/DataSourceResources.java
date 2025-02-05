@@ -40,7 +40,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
 @Path("/")
-public class DataSourceResources
+public final class DataSourceResources
 {
 	@Context HttpHeaders httpHeaders;
 

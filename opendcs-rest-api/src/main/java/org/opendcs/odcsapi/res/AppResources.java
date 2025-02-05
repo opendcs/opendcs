@@ -59,7 +59,7 @@ import org.slf4j.LoggerFactory;
  * Resources for editing, monitoring, stopping, and starting processes.
  */
 @Path("/")
-public class AppResources
+public final class AppResources
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AppResources.class);
 	@Context private HttpServletRequest request;

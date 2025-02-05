@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -38,7 +37,6 @@ import org.opendcs.odcsapi.beans.ApiTsGroupRef;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.util.ApiPropertiesUtil;
 import org.opendcs.odcsapi.util.ApiTextUtil;
 
 public class ApiTsDAO
@@ -64,65 +62,6 @@ public class ApiTsDAO
 				ret.setProperty(rs.getString(1), rs.getString(2));
 			}
 			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error in query '" + q + "': " + ex;
-			throw new DbException(module, ex, msg);
-		}
-	}
-	
-	/**
-	 * Note call with null value to delete the property
-	 * @param props
-	 */
-	public void setTsdbProperties(Properties props)
-		throws DbException
-	{
-		String q = "";
-		try
-		{
-			q = "select prop_name, prop_value from tsdb_property";
-			ResultSet rs = doQuery(q);
-			Properties origProps = new Properties();
-			while(rs.next())
-			{
-				String n = rs.getString(1);
-				String v = rs.getString(2);
-				origProps.setProperty(n, v);
-			}
-			
-			for (Enumeration<?>  pen = props.propertyNames(); pen.hasMoreElements(); )
-			{
-				String name = (String)pen.nextElement();
-				String value = props.getProperty(name);
-				
-				String oldValue = ApiPropertiesUtil.getIgnoreCase(origProps, name);
-				if (oldValue != null)
-				{
-					ApiPropertiesUtil.rmIgnoreCase(origProps, name);
-					if (!oldValue.equals(value))
-					{
-						q = "update tsdb_property set prop_value = ?"
-							+ " where lower(prop_name) = ?";
-						doModifyV(q, value, name.toLowerCase());
-					}
-					// Else the values are the same -- leave it alone.
-				}
-				else // this is a new property. Insert it.
-				{
-					q = "insert into tsdb_property(prop_name, prop_value) values (?, ?)";
-					doModifyV(q, name, value);
-				}
-			}
-			// We are left with origProps that was NOT in the passed set. Delete them.
-			for (Enumeration<?>  pen = origProps.propertyNames(); pen.hasMoreElements(); )
-			{
-				String name = (String)pen.nextElement();
-				q = "delete from tsdb_property where prop_name = ?";
-				doModifyV(q, name);
-			}
-
 		}
 		catch(SQLException ex)
 		{
@@ -356,7 +295,7 @@ public class ApiTsDAO
 			throw new DbException(module, ex, msg);
 		}	
 	}
-	
+
 	public ApiTimeSeriesData getTsData(long tsKey, Date start, Date end)
 		throws DbException, WebAppException
 	{

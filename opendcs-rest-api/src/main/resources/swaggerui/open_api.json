@@ -186,7 +186,7 @@
         "description": "The ‘check’ GET method can be called with a token argument.  \nExample:  \n\n    http://localhost:8080/odcsapi/check?token=6d34fa0e3bb72fcd",
         "responses": {
           "200": {
-            "description": "If the token is valid, the token JSON object will be returned in the same format as the /credintials request for authentication.",
+            "description": "If the token is valid, the token JSON object will be returned in the same format as the /credentials request for authentication."
           },
           "410": {
             "description": "If the token is not valid, HTTP 410 is returned. The body of the response is JSON in the form:  \n{\"errMessage\":\"Token '6d34fa0e3bb72fcd' does not exist.\",\"status\":410}",

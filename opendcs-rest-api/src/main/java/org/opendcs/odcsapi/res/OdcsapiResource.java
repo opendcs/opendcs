@@ -43,7 +43,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 
 
 @Path("/")
-public class OdcsapiResource extends OpenDcsResource
+public final class OdcsapiResource extends OpenDcsResource
 {
 	@Context HttpHeaders httpHeaders;
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 package org.opendcs.odcsapi.sec.basicauth;
 
-public class Credentials
+public final class Credentials
 {
 	private String username = null;
 	private String password = null;

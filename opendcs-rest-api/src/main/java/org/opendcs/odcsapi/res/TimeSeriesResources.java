@@ -49,7 +49,7 @@ import org.opendcs.odcsapi.util.ApiHttpUtil;
  *
  */
 @Path("/")
-public class TimeSeriesResources
+public final class TimeSeriesResources
 {
 	@Context HttpHeaders httpHeaders;
 

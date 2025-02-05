@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -27,7 +27,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.TimeZone;
-
 import javax.servlet.http.HttpSession;
 
 import org.opendcs.odcsapi.beans.ApiAppRef;
@@ -35,9 +34,9 @@ import org.opendcs.odcsapi.beans.ApiDacqEvent;
 import org.opendcs.odcsapi.beans.ApiInterval;
 import org.opendcs.odcsapi.beans.ApiRouting;
 import org.opendcs.odcsapi.beans.ApiRoutingExecStatus;
-import org.opendcs.odcsapi.beans.ApiScheduleEntry;
 import org.opendcs.odcsapi.beans.ApiRoutingRef;
 import org.opendcs.odcsapi.beans.ApiRoutingStatus;
+import org.opendcs.odcsapi.beans.ApiScheduleEntry;
 import org.opendcs.odcsapi.beans.ApiScheduleEntryRef;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
@@ -82,26 +81,6 @@ public class ApiRoutingDAO
 				ret.add(ref);
 			}
 			return ret;
-		}
-		catch(SQLException ex)
-		{
-			String msg = "Error in query '" + q + "': " + ex;
-			throw new DbException(module, ex, msg);
-		}
-	}
-	
-	public Long getRoutingId(String routingName)
-		throws DbException, SQLException
-	{
-		String q = "select rs.ID from ROUTINGSPEC rs where lower(rs.NAME) = ?"; 
-		Connection conn = null;
-		ResultSet rs = doQueryPs(conn, q, routingName.toLowerCase());
-		try
-		{
-			if (rs.next())
-				return rs.getLong(1);
-			else
-				return null;
 		}
 		catch(SQLException ex)
 		{

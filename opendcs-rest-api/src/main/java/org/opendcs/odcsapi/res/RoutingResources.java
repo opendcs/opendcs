@@ -43,7 +43,7 @@ import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
 
 @Path("/")
-public class RoutingResources
+public final class RoutingResources
 {
 	@Context private HttpServletRequest request;
 	@Context private HttpHeaders httpHeaders;

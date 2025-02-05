@@ -18,7 +18,6 @@ package org.opendcs.odcsapi.res;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
-
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -55,7 +54,7 @@ import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 
 @Path("/")
-public class PresentationResources extends OpenDcsResource
+public final class PresentationResources extends OpenDcsResource
 {
 	@Context HttpHeaders httpHeaders;
 
