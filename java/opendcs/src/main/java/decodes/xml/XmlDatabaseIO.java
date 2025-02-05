@@ -1,4 +1,19 @@
 /*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+/*
 *  $Id$
 *  
 *  Open Source Software
@@ -998,6 +1013,7 @@ e.printStackTrace();
 	 * stored to the database. XML implementation is not yet available.
 	 * @throws DatabaseException upon error
 	 */
+	@Override
 	public List<RoutingStatus> readRoutingSpecStatus()
 	{
 		throw new UnsupportedOperationException("readRoutingSpecStatus");
@@ -1007,6 +1023,7 @@ e.printStackTrace();
 	 * Returns the list of RoutingExecStatus objects defined in this database.
 	 * @throws DatabaseException upon error
 	 */
+	@Override
 	public List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId)
 	{
 		throw new UnsupportedOperationException("readRoutingExecStatus");
@@ -1019,13 +1036,14 @@ e.printStackTrace();
 	 * @param rsl object in which to store data
 	 * @throws DatabaseException
 	 */
-	public RoutingSpecList readRoutingSpecList( RoutingSpecList rsl ) throws DatabaseException
+	@Override
+	public void readRoutingSpecList( RoutingSpecList rsl ) throws DatabaseException
 	{
 		try
 		{
 			String ls[] = listDirectory(RoutingSpecDir);
 			if (ls == null)
-				return null;
+				return;
 			for(int i=0; i<ls.length; i++)
 			{
 				InputStream is = null;
@@ -1047,7 +1065,6 @@ e.printStackTrace();
 						try { is.close(); } catch(Exception e) {}
 				}
 			}
-			return rsl;
 		}
 		catch(Exception e)
 		{
@@ -1615,6 +1632,7 @@ e.printStackTrace();
 	 * Reads a routing spec from the database.
 	 * @param ob object in which to store data
 	 */
+	@Override
 	public void readRoutingSpec( RoutingSpec ob ) throws DatabaseException
 	{
 		String fn = "";

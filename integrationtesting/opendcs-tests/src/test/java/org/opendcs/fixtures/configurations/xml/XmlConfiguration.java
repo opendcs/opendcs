@@ -1,3 +1,18 @@
+/*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package org.opendcs.fixtures.configurations.xml;
 
 import java.io.File;
@@ -7,9 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import decodes.db.ScheduleEntryStatus;
-import decodes.polling.DacqEvent;
-import decodes.sql.DbKey;
 import org.apache.commons.io.FileUtils;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.spi.configuration.Configuration;
@@ -26,7 +38,6 @@ public class XmlConfiguration implements Configuration
     private static final Logger logger = Logger.getLogger(XmlConfiguration.class.getName());
 
     public static final String NAME = "OpenDCS-XML";
-    private static final String NOT_SUPPORTED = "Not supported by the XML database.";
 
     File userDir;
     File propertiesFile;
@@ -52,12 +63,14 @@ public class XmlConfiguration implements Configuration
     }
 
     @Override
-    public File getUserDir() {
+    public File getUserDir()
+    {
         return this.userDir;
     }
 
     @Override
-    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception {
+    public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception
+	{
         if (started)
         {
             return;
@@ -94,29 +107,5 @@ public class XmlConfiguration implements Configuration
     public String getName()
     {
         return NAME;
-    }
-
-    @Override
-    public void storeScheduleEntryStatus(ScheduleEntryStatus status)
-    {
-        throw new UnsupportedOperationException(NOT_SUPPORTED);
-    }
-
-    @Override
-    public void deleteScheduleEntryStatus(DbKey scheduleEntryId)
-    {
-        throw new UnsupportedOperationException(NOT_SUPPORTED);
-    }
-
-    @Override
-    public void storeDacqEvent(DacqEvent event)
-    {
-        throw new UnsupportedOperationException(NOT_SUPPORTED);
-    }
-
-    @Override
-    public void deleteDacqEventForPlatform(DbKey platformId)
-    {
-        throw new UnsupportedOperationException(NOT_SUPPORTED);
     }
 }

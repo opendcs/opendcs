@@ -1,3 +1,18 @@
+/*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package org.opendcs.fixtures.configurations.opendcs.pg;
 
 import java.io.File;
@@ -14,14 +29,6 @@ import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
-import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
-import decodes.db.ScheduleEntry;
-import decodes.db.ScheduleEntryStatus;
-import decodes.polling.DacqEvent;
-import decodes.sql.DbKey;
-import opendcs.dai.DacqEventDAI;
-import opendcs.dai.ScheduleEntryDAI;
 import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.MigrationManager;
@@ -264,74 +271,5 @@ public class OpenDCSPGConfiguration implements Configuration
     public String getName()
     {
         return NAME;
-    }
-
-    @Override
-    public void storeScheduleEntryStatus(ScheduleEntryStatus status) throws DatabaseException
-    {
-        try
-        {
-            DatabaseIO dbIo = getDecodesDatabase().getDbIo();
-            try(ScheduleEntryDAI dai = dbIo.makeScheduleEntryDAO())
-            {
-                dai.writeScheduleStatus(status);
-            }
-        }
-        catch(Throwable e)
-        {
-            throw new DatabaseException("Error storing schedule entry status", e);
-        }
-    }
-
-    @Override
-    public void deleteScheduleEntryStatus(DbKey scheduleEntryId) throws DatabaseException
-    {
-        try
-        {
-            DatabaseIO dbIo = getDecodesDatabase().getDbIo();
-            try(ScheduleEntryDAI dai = dbIo.makeScheduleEntryDAO())
-            {
-                ScheduleEntry se = new ScheduleEntry(scheduleEntryId);
-                dai.deleteScheduleStatusFor(se);
-            }
-        }
-        catch(Throwable e)
-        {
-            throw new DatabaseException("Error deleting schedule entry status", e);
-        }
-    }
-
-    @Override
-    public void storeDacqEvent(DacqEvent event) throws DatabaseException
-    {
-        try
-        {
-            TimeSeriesDb db = getTsdb();
-            try(DacqEventDAI dai = db.makeDacqEventDAO())
-            {
-                dai.writeEvent(event);
-            }
-        }
-        catch(Throwable e)
-        {
-            throw new DatabaseException("Error storing dacq event", e);
-        }
-    }
-
-    @Override
-    public void deleteDacqEventForPlatform(DbKey platformId) throws DatabaseException
-    {
-        try
-        {
-            TimeSeriesDb tsDB = getTsdb();
-            try(DacqEventDAI dai = tsDB.makeDacqEventDAO())
-            {
-                dai.deleteEventsForPlatform(platformId);
-            }
-        }
-        catch(Throwable e)
-        {
-            throw new DatabaseException("Error deleting dacq event", e);
-        }
     }
 }

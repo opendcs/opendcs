@@ -1,6 +1,22 @@
+/*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package decodes.sql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -13,7 +29,7 @@ import decodes.tsdb.CompAppInfo;
 import opendcs.dai.LoadingAppDAI;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -94,7 +110,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
     * For each RoutingSpec, this also reads the associated records in the
     * RoutingSpecNetworkList table and the RoutingSpecProperty table.
     */
-    public RoutingSpecList read(RoutingSpecList rsList)
+    public void read(RoutingSpecList rsList)
         throws SQLException, DatabaseException
     {
         log.debug("Reading RoutingSpecs...");
@@ -182,7 +198,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
                 rsList.add(routingSpec);
             }
         }
-        return rsList;
     }
 
     public List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException
@@ -198,12 +213,15 @@ public class RoutingSpecListIO extends SqlDbObjIo
                 + " from ROUTINGSPEC rs, SCHEDULE_ENTRY_STATUS ses, SCHEDULE_ENTRY se"
                 + " where ses.SCHEDULE_ENTRY_ID = se.SCHEDULE_ENTRY_ID"
                 + " and se.ROUTINGSPEC_ID = rs.ID"
-                + " and se.SCHEDULE_ENTRY_ID = " + scheduleEntryId.getValue()
+                + " and se.SCHEDULE_ENTRY_ID = ?"
                 + " order by ses.RUN_START_TIME desc";
 
-        try (Statement stmt = createStatement();
-             ResultSet rs = stmt.executeQuery( q ))
+        try (Connection conn = connection();
+             PreparedStatement ps = conn.prepareStatement(q))
         {
+            ps.setLong(1, scheduleEntryId.getValue());
+            ResultSet rs = ps.executeQuery();
+
             while(rs.next())
             {
                 RoutingExecStatus res = new RoutingExecStatus();
@@ -256,67 +274,71 @@ public class RoutingSpecListIO extends SqlDbObjIo
                     + "se.RUN_INTERVAL, se.ENABLED, se.NAME "
                     + "from SCHEDULE_ENTRY se";
 
-            ResultSet resultSet = stmt.executeQuery( q );
-            while(resultSet.next())
-            {
-                long rsId = resultSet.getLong(3);
-                String seName = resultSet.getString(6);
-                RoutingStatus ars = null;
-                if (seName.endsWith("-manual"))
-                {
-                    ars = new RoutingStatus(DbKey.createDbKey(rsId));
-                    ars.setManual(true);
-                    ret.add(ars);
-                }
-                else
-                    for(RoutingStatus tars : ret)
-                    {
-                        if (rsId == tars.getRoutingSpecId().getValue())
-                        {
-                            ars = tars;
-                            break;
-                        }
-                    }
-                if (ars != null)
-                {
-                    ars.setName(seName);
-                    ars.setScheduleEntryId(DbKey.createDbKey(resultSet.getLong(1)));
-                    ars.setAppId(DbKey.createDbKey(resultSet.getLong(2)));
-                    ars.setRunInterval(resultSet.getString(4));
-                    ars.setEnabled(TextUtil.str2boolean(resultSet.getString(5)));
-                }
-            }
+           try (ResultSet resultSet = stmt.executeQuery( q ))
+           {
+               while(resultSet.next())
+               {
+                   long rsId = resultSet.getLong(3);
+                   String seName = resultSet.getString(6);
+                   RoutingStatus ars = null;
+                   if(seName.endsWith("-manual"))
+                   {
+                       ars = new RoutingStatus(DbKey.createDbKey(rsId));
+                       ars.setManual(true);
+                       ret.add(ars);
+                   }
+                   else
+                       for(RoutingStatus tars : ret)
+                       {
+                           if(rsId == tars.getRoutingSpecId().getValue())
+                           {
+                               ars = tars;
+                               break;
+                           }
+                       }
+                   if(ars != null)
+                   {
+                       ars.setName(seName);
+                       ars.setScheduleEntryId(DbKey.createDbKey(resultSet.getLong(1)));
+                       ars.setAppId(DbKey.createDbKey(resultSet.getLong(2)));
+                       ars.setRunInterval(resultSet.getString(4));
+                       ars.setEnabled(TextUtil.str2boolean(resultSet.getString(5)));
+                   }
+               }
+           }
+           q = "select se.SCHEDULE_ENTRY_ID, ses.LAST_MODIFIED, ses.NUM_MESSAGES, ses.NUM_DECODE_ERRORS, ses.LAST_MESSAGE_TIME"
+                   + " from SCHEDULE_ENTRY se, SCHEDULE_ENTRY_STATUS ses"
+                   + " where se.SCHEDULE_ENTRY_ID = ses.SCHEDULE_ENTRY_ID"
+                   + " and ses.SCHEDULE_ENTRY_STATUS_ID = "
+                   + "  (select max(SCHEDULE_ENTRY_STATUS_ID) from SCHEDULE_ENTRY_STATUS "
+                   + "   where SCHEDULE_ENTRY_ID = se.SCHEDULE_ENTRY_ID)";
+           try (ResultSet resultSet = stmt.executeQuery(q))
+           {
+               while(resultSet.next())
+               {
+                   Long seid = resultSet.getLong(1);
+                   for(RoutingStatus ars : ret)
+                   {
+                       if(seid == ars.getScheduleEntryId().getValue())
+                       {
+                           long x = resultSet.getLong(2);
+                           if(!resultSet.wasNull())
+                           {
+                               ars.setLastActivityTime(new Date(x));
+                           }
+                           ars.setNumMessages(resultSet.getInt(3));
+                           ars.setNumDecodesErrors(resultSet.getInt(4));
+                           x = resultSet.getLong(5);
+                           if(!resultSet.wasNull())
+                           {
+                               ars.setLastMessageTime(new Date(x));
+                           }
+                           break;
+                       }
+                   }
+               }
+           }
 
-            q = "select se.SCHEDULE_ENTRY_ID, ses.LAST_MODIFIED, ses.NUM_MESSAGES, ses.NUM_DECODE_ERRORS, ses.LAST_MESSAGE_TIME"
-                    + " from SCHEDULE_ENTRY se, SCHEDULE_ENTRY_STATUS ses"
-                    + " where se.SCHEDULE_ENTRY_ID = ses.SCHEDULE_ENTRY_ID"
-                    + " and ses.SCHEDULE_ENTRY_STATUS_ID = "
-                    + "  (select max(SCHEDULE_ENTRY_STATUS_ID) from SCHEDULE_ENTRY_STATUS "
-                    + "   where SCHEDULE_ENTRY_ID = se.SCHEDULE_ENTRY_ID)";
-            resultSet = stmt.executeQuery( q );
-            while(resultSet.next())
-            {
-                Long seid = resultSet.getLong(1);
-                for(RoutingStatus ars : ret)
-                {
-                    if (seid == ars.getScheduleEntryId().getValue())
-                    {
-                        long x = resultSet.getLong(2);
-                        if (!resultSet.wasNull())
-                        {
-                            ars.setLastActivityTime(new Date(x));
-                        }
-                        ars.setNumMessages(resultSet.getInt(3));
-                        ars.setNumDecodesErrors(resultSet.getInt(4));
-                        x = resultSet.getLong(5);
-                        if (!resultSet.wasNull())
-                        {
-                            ars.setLastMessageTime(new Date(x));
-                        }
-                        break;
-                    }
-                }
-            }
 
             try
             {
@@ -335,14 +357,10 @@ public class RoutingSpecListIO extends SqlDbObjIo
                 throw new DatabaseException("Cannot list computation apps", ex);
             }
 
-            Collections.sort(ret,
-					(o1, o2) ->
-					{
-						long did = o1.getRoutingSpecId().getValue() - o2.getRoutingSpecId().getValue();
-						return did < 0 ? -1 :
-								did > 0 ? 1 :
-										o1.getName().compareTo(o2.getName());
-					});
+            Comparator<RoutingStatus> routingStatusComparator = Comparator.comparing(RoutingStatus::getRoutingSpecId)
+                    .thenComparing(RoutingStatus::getName);
+
+            ret.sort(routingStatusComparator);
 
             return ret;
         }
@@ -379,20 +397,21 @@ public class RoutingSpecListIO extends SqlDbObjIo
 
         log.trace("RoutingSpecListIO.readroutingSpec: " + q);
         try (Statement stmt = createStatement();
-             ResultSet resultSet = stmt.executeQuery(q);)
+             ResultSet resultSet = stmt.executeQuery(q))
         {
-            Throwable thr = new ValueNotFoundException("No RoutingSpec found with id " + routingSpec.getId());
+            String msg = String.format("No RoutingSpec found with id %d", routingSpec.getId().getValue());
             if (resultSet == null)
             {
-                throw new DatabaseException("No RoutingSpec found with id " + routingSpec.getId(), thr);
+                Throwable thr = new ValueNotFoundException(msg);
+                throw new DatabaseException(msg, thr);
             }
 
             // There will be only one row in the result set.
             resultSet.next();
             if (resultSet.getRow() == 0)
             {
-                throw new DatabaseException(String.format("No RoutingSpec found with id %d",
-                        routingSpec.getId().getValue()), thr);
+                Throwable thr = new ValueNotFoundException(msg);
+                throw new DatabaseException(msg, thr);
             }
             routingSpec.setName(resultSet.getString(2));
 
