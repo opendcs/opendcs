@@ -225,7 +225,7 @@ public class NetworkListListIO extends SqlDbObjIo
 			try (Statement stmt = conn.createStatement();
 				 ResultSet rs_nle = stmt.executeQuery(q))
 			{
-				while (rs_nle != null && rs_nle.next())
+				while (rs_nle.next())
 				{
 					DbKey id = DbKey.createDbKey(rs_nle, 1);
 					String transportId = rs_nle.getString(2);
@@ -245,7 +245,9 @@ public class NetworkListListIO extends SqlDbObjIo
 							if (!nl.transportMediumType.equalsIgnoreCase("goes")
 									&& !nl.transportMediumType.equalsIgnoreCase("goes-self-times")
 									&& !nl.transportMediumType.equalsIgnoreCase("goes-random"))
+							{
 								continue;
+							}
 						}
 						else if (!nl.transportMediumType.equalsIgnoreCase(tmType))
 						{
