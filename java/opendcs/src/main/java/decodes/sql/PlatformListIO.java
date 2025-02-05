@@ -1,6 +1,7 @@
 package decodes.sql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -155,26 +156,78 @@ public class PlatformListIO extends SqlDbObjIo
     public void read(PlatformList platformList)
         throws SQLException, DatabaseException
     {
+        read(platformList, null);
+    }
+
+    /**
+     * Read the PlatformList.
+     * This reads partial data from the Platform and TransportMedium tables.
+     * This corresponds to reading the platform/PlatformList.xml file of
+     * the XML database.
+     * The partial data of the Platform table are the following fields:
+     * <ul>
+     *   <li>platformId</li>
+     *   <li>description</li>
+     *   <li>agency</li>
+     *   <li>expiration</li>
+     *   <li>configName</li>
+     *   <li>site</li>
+     *   <li>transportMedia - partial data</li>
+     *   <li>isReadComplete - should be false</li>
+     * </ul>
+     * The partial data of the TransportMedium table are the MediumType and
+     * MediumId fields.
+     * @param platformList the PlatformList object to populate
+     * @param tmType the transport medium type to filter on
+     */
+    public void read(PlatformList platformList, String tmType)
+            throws SQLException, DatabaseException
+    {
         log.debug("Reading PlatformList...");
 
         _pList = platformList;
 
-        try (Statement stmt = createStatement();)
+        try (Connection conn = connection())
         {
             String q =
-                (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7) ?
-                    ("SELECT ID, Agency, IsProduction, " +
-                    "SiteId, ConfigId, Description, " +
-                    "LastModifyTime, Expiration, platformDesignator " +
-                    "FROM Platform")
-                :
-                    ("SELECT ID, Agency, IsProduction, " +
-                    "SiteId, ConfigId, Description, " +
-                    "LastModifyTime, Expiration " +
-                    "FROM Platform");
+                    (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7) ?
+                            ("SELECT ID, Agency, IsProduction, " +
+                                    "SiteId, ConfigId, Description, " +
+                                    "LastModifyTime, Expiration, platformDesignator " +
+                                    "FROM Platform")
+                            :
+                            ("SELECT ID, Agency, IsProduction, " +
+                                    "SiteId, ConfigId, Description, " +
+                                    "LastModifyTime, Expiration " +
+                                    "FROM Platform");
+
+            String filter = null;
+            if (tmType != null)
+            {
+
+                // Note: "goes" matches goes, goes-self-timed or goes-random
+                tmType = tmType.toLowerCase();
+                if (tmType.equals("goes"))
+                {
+                    filter = "goes, goes-self-timed, goes-random";
+                }
+                else
+                {
+                    filter = "goes";
+                }
+
+                q = q + " where exists(select PLATFORMID from TRANSPORTMEDIUM" +
+                        " where lower(MEDIUMTYPE) IN (?) and PLATFORM.ID = PLATFORMID)";
+            }
+
+            PreparedStatement stmt = conn.prepareStatement(q);
+            if (tmType != null && filter != null)
+            {
+                stmt.setString(1, tmType);
+            }
 
             log.debug("Executing query '{}'", q );
-            try (ResultSet rs = stmt.executeQuery(q))
+            try (ResultSet rs = stmt.executeQuery())
             {
                 if (rs != null)
                 {
@@ -189,7 +242,9 @@ public class PlatformListIO extends SqlDbObjIo
                         // Refreshing will not affect previously read/used platforms.
                         Platform p = _pList.getById(platformId);
                         if (p != null)
+                        {
                             continue;
+                        }
 
                         p = new Platform(platformId);
                         _pList.add(p);
@@ -197,32 +252,37 @@ public class PlatformListIO extends SqlDbObjIo
                         p.agency = rs.getString(2);
 
                         DbKey siteId = DbKey.createDbKey(rs, 4);
-                        if (!rs.wasNull()) {
+                        if (!rs.wasNull())
+                        {
                             p.setSite(p.getDatabase().siteList.getSiteById(siteId));
                         }
 
                         DbKey configId = DbKey.createDbKey(rs, 5);
                         if (!rs.wasNull())
                         {
-                            PlatformConfig pc =
-                                platformList.getDatabase().platformConfigList.getById(
-                                    configId);
+                            PlatformConfig pc = platformList.getDatabase().platformConfigList.getById(configId);
                             if (pc == null)
+                            {
                                 pc = _configListIO.getConfig(configId);
+                            }
                             p.setConfigName(pc.configName);
                             p.setConfig(pc);
                         }
 
                         String desc = rs.getString(6);
                         if (!rs.wasNull())
+                        {
                             p.setDescription(desc);
+                        }
 
                         p.lastModifyTime = getTimeStamp(rs, 7, null);
 
                         p.expiration = getTimeStamp(rs, 8, p.expiration);
 
                         if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+                        {
                             p.setPlatformDesignator(rs.getString(9));
+                        }
                     }
                 }
             }
