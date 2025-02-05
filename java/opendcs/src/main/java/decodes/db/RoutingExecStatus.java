@@ -18,10 +18,10 @@ import java.util.Date;
 
 /**
  * This bean holds the status info for a single execution of a routing spec.
+ * This data comes from the database, whereas the RoutingSpecStatus bean
+ * 		holds data pulled from the file system.
  *
  * This is used by the REST API.
- *
- * @author zack-rma, Zack Olson, GEI Consultants Inc.
  */
 public class RoutingExecStatus {
 	/** Corresponds to SCHEDULE_ENTRY_STATUS.SCHEDULE_ENTRY_STATUS_ID */
