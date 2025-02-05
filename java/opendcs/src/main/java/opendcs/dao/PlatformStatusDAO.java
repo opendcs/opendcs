@@ -71,7 +71,9 @@ public class PlatformStatusDAO
 	public List<PlatformStatus> readPlatformStatusList(DbKey netlistId) throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+		{
 			return new ArrayList<>();
+		}
 		if (netlistId != null)
 		{
 			String q = "select distinct ps.platform_id, ps.last_contact_time, ps.last_message_time,"
@@ -98,7 +100,31 @@ public class PlatformStatusDAO
 			}
 		else
 		{
-			return listPlatformStatus();
+			String q = "select " + ps_attrs + " from platform_status";
+			// For CWMS, join with TransportMedium so we get the VPD filtering
+			// by db_office_code.
+			if (db.isCwms())
+				q = q + " where platform_id in (select distinct a.id from platform a, "
+						+ "transportmedium b where a.id = b.platformid)";
+
+			ArrayList<PlatformStatus> ret = new ArrayList<PlatformStatus>();
+
+			if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+				return ret;
+
+			ResultSet rs = doQuery(q);
+			try
+			{
+				while (rs != null && rs.next())
+					ret.add(rs2ps(rs));
+			}
+			catch (SQLException ex)
+			{
+				String msg = "Error in query '" + q + "': " + ex;
+				warning(msg);
+			}
+
+			return ret;
 		}
 	}
 	
@@ -199,31 +225,7 @@ public class PlatformStatusDAO
 	@Override
 	public ArrayList<PlatformStatus> listPlatformStatus() throws DbIoException
 	{
-		String q = "select " + ps_attrs + " from platform_status";
-		// For CWMS, join with TransportMedium so we get the VPD filtering
-		// by db_office_code.
-		if (db.isCwms())
-			q = q + " where platform_id in (select distinct a.id from platform a, "
-			+ "transportmedium b where a.id = b.platformid)";
-
-		ArrayList<PlatformStatus> ret = new ArrayList<PlatformStatus>();
-		
-		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
-			return ret;
-
-		ResultSet rs = doQuery(q);
-		try
-		{
-			while (rs != null && rs.next())
-				ret.add(rs2ps(rs));
-		}
-		catch (SQLException ex)
-		{
-			String msg = "Error in query '" + q + "': " + ex;
-			warning(msg);
-		}
-
-		return ret;
+		return new ArrayList<>(readPlatformStatusList(null));
 	}
 
 	@Override

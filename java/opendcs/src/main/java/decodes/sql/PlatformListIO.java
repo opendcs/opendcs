@@ -1,6 +1,7 @@
 package decodes.sql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -186,7 +187,7 @@ public class PlatformListIO extends SqlDbObjIo
 
         _pList = platformList;
 
-        try (Statement stmt = createStatement())
+        try (Connection conn = connection())
         {
             String q =
                     (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7) ?
@@ -200,9 +201,10 @@ public class PlatformListIO extends SqlDbObjIo
                                     "LastModifyTime, Expiration " +
                                     "FROM Platform");
 
+            String filter = null;
             if (tmType != null)
             {
-                String filter;
+
                 // Note: "goes" matches goes, goes-self-timed or goes-random
                 tmType = tmType.toLowerCase();
                 if (tmType.equals("goes"))
@@ -214,12 +216,18 @@ public class PlatformListIO extends SqlDbObjIo
                     filter = "goes";
                 }
 
-                q = q + " where exists(select PLATFORMID from TRANSPORTMEDIUM where lower(MEDIUMTYPE) IN ("
-                        + filter + ") and PLATFORM.ID = PLATFORMID)";
+                q = q + " where exists(select PLATFORMID from TRANSPORTMEDIUM" +
+                        " where lower(MEDIUMTYPE) IN (?) and PLATFORM.ID = PLATFORMID)";
+            }
+
+            PreparedStatement stmt = conn.prepareStatement(q);
+            if (tmType != null && filter != null)
+            {
+                stmt.setString(1, tmType);
             }
 
             log.debug("Executing query '{}'", q );
-            try (ResultSet rs = stmt.executeQuery(q))
+            try (ResultSet rs = stmt.executeQuery())
             {
                 if (rs != null)
                 {
