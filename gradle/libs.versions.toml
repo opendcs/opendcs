@@ -8,6 +8,11 @@ servlet-api = "4.0.1" #Updating this further will require a change to the jakart
 slf4j = "2.0.12"
 jersey = "2.40"
 postgresql = "42.7.4"
+oracle = "23.6.0.24.10"
+cwms-db = "9.3.5"
+cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
+cwms-ratings = "1.1.0"
+monolith = { strictly = "2.0.2" }
 
 swagger = "2.2.24"
 swagger-ui = "5.17.14"
@@ -33,6 +38,7 @@ derby = "10.14.2.0"
 webcompere = "2.0.2"
 jdbi = "3.38.2"
 flywaydb = "9.8.1"
+commons-lang = "2.5"
 
 [libraries]
 opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
@@ -43,6 +49,12 @@ jetty-server = { module = "org.eclipse.jetty:jetty-server", version.ref = "jetty
 jetty-servlets = { module = "org.eclipse.jetty:jetty-servlets", version.ref = "jetty" }
 jetty-servlet = { module = "org.eclipse.jetty:jetty-servlet", version.ref = "jetty" }
 jetty-webapp = { module = "org.eclipse.jetty:jetty-webapp", version.ref = "jetty" }
+cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
+cwms-db-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen", version.ref = "cwms-db-codegen" }
+cwms-db-aspects = { module = "mil.army.usace.hec:cwms-db-aspects", version.ref = "cwms-db" }
+cwms-db-dao = { module = "mil.army.usace.hec:cwms-db-dao", version.ref = "cwms-db" }
+hec-cwms-ratings-core = { module = "mil.army.usace.hec:hec-cwms-ratings-core", version.ref = "cwms-ratings" }
+hec-monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "monolith" }
 
 javax-validation = { module = "javax.validation:validation-api", version.ref = "javax-validation" }
 
@@ -55,6 +67,8 @@ jersey-container-servlet = { module = "org.glassfish.jersey.containers:jersey-co
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
 
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+oracle-jdbc = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
+oracle-ucp = { module = "com.oracle.database.jdbc:ucp", version.ref = "oracle" }
 swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2-jakarta", version.ref = "swagger" }
 jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "glassfish-jaxb" }
 websocket = { module = "javax.websocket:javax.websocket-api", version.ref = "websocket" }
@@ -91,6 +105,7 @@ org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
 org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
 org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
 org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
+commons-lang = { module = "commons-lang:commons-lang", version.ref = "commons-lang" }
 
 [bundles]
 tomcat = ["tomcat-embedded-core", "tomcat-embedded-jasper", "tomcat-jdbc"]

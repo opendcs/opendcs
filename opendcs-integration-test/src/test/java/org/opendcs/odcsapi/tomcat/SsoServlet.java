@@ -13,10 +13,22 @@
  *  limitations under the License.
  */
 
-rootProject.name = "opendcs_rest_api"
+package org.opendcs.odcsapi.tomcat;
 
-include "opendcs-rest-api"
-include "opendcs-rest-api-jetty"
-include "opendcs-web-client"
-include "opendcs-web-client-jetty"
-include "opendcs-integration-test"
+import java.io.IOException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+/**
+ * This servlet only handles redirecting to parameterized original location to mock sso event
+ */
+final class SsoServlet extends HttpServlet
+{
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException
+	{
+		String originalLocation = req.getParameter("OriginalLocation");
+		resp.sendRedirect(originalLocation);
+	}
+}

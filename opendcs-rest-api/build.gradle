@@ -33,7 +33,7 @@ dependencies {
     //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
     //Hacky workaround to still get transitive dependencies for runtime, but use
     //branched code
-    api(libs.opendcs) {
+    implementation(libs.opendcs) {
         exclude group: "org.opendcs", module: "opendcs"
         exclude group: "org.opendcs", module: "opendcs-annotations"
         exclude group: "javax.media", module: "jai_core"
@@ -47,7 +47,7 @@ dependencies {
         exclude group: "com.sun.media", module: "jai_imageio"
         exclude group: "com.mrsid", module: "mrsidreader"
     }
-//    api(libs.opendcs.api)
+//    implementation(libs.opendcs.api)
 
     implementation(libs.servlet.api)
     implementation(libs.json.jackson)
@@ -74,10 +74,10 @@ dependencies {
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.hec.testcontainers.cwms)
     testImplementation(libs.bundles.jdbi)
-    implementation(libs.org.flywaydb.flyway.core)
+    testImplementation(libs.org.flywaydb.flyway.core)
 
     //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
-    implementation(files("temp-deps/opendcs-integrationtesting-fixtures.jar"))
+    testImplementation(files("temp-deps/opendcs-integrationtesting-fixtures.jar"))
 
 
 //    implementation(libs.opendcs.integrationtesting.fixtures)

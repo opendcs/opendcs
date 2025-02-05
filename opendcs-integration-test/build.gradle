@@ -1,0 +1,145 @@
+/*
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License")
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+plugins {
+    id "opendcs-rest-api.java-conventions"
+    id "opendcs-rest-api.deps-conventions"
+}
+
+dependencies {
+    testRuntimeOnly(libs.byte.buddy)
+    testRuntimeOnly(libs.postgresql)
+    testImplementation(libs.bundles.tomcat)
+    testImplementation(libs.commons.io)
+    testImplementation(libs.apache.derby)
+    testImplementation(libs.webcompere.system.stubs.jupiter)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.hec.testcontainers.cwms)
+    testImplementation(libs.bundles.jdbi)
+    testImplementation(libs.org.flywaydb.flyway.core)
+    testImplementation(files("../opendcs-rest-api/temp-deps/opendcs.jar"))
+    testImplementation(files("../opendcs-rest-api/temp-deps/opendcs-api.jar"))
+    testImplementation(libs.commons.lang)
+    testImplementation(libs.slf4j.jdk)
+    testRuntimeOnly(libs.oracle.jdbc)
+    testRuntimeOnly(libs.oracle.ucp)
+    testRuntimeOnly(libs.cwms.db.jooq) {
+        exclude group: "com.oracle.database.jdbc"
+    }
+    testRuntimeOnly(libs.cwms.db.codegen) {
+        exclude group: "com.oracle.database.jdbc"
+    }
+    testRuntimeOnly(libs.cwms.db.aspects)
+    testRuntimeOnly(libs.cwms.db.dao)
+    testRuntimeOnly(libs.hec.cwms.ratings.core)
+    testRuntimeOnly(libs.hec.monolith) {
+        exclude group: "org.jdom"
+        exclude group: "org.bouncycastle"
+        exclude group: "org.eclipse.jetty.aggregate"
+        exclude group: "javax.servlet"
+        exclude group: "mil.army.usace.hec.swingx"
+        exclude group: "com.fifesoft"
+        exclude group: "org.python"
+        exclude group: "com.vividsolutions"
+        exclude group: "mil.army.usace.hec", module: "context-specific-help"
+        exclude group: "mil.army.usace.hec", module: "hec-geojson"
+        exclude group: "javax.mail"
+        exclude group: "org.apache.poi"
+        exclude group: "net.java.dev.jna"
+        exclude group: "org.apache-commons", module: "common-vfs2"
+        exclude group: "org.jfree"
+    }
+
+    //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
+    testImplementation(files("../opendcs-rest-api/temp-deps/opendcs-integrationtesting-fixtures.jar"))
+}
+
+configurations.all {
+    exclude group: 'org.eclipse.jetty', module: 'jetty-jsp'
+    exclude group: "com.oracle.database.jdbc", module: "jmscommon"
+    exclude group: "org.jooq.pro", module: "jooq-meta"
+    exclude group: "org.jooq.pro", module: "jooq-codegen"
+    exclude group: "com.mrsid"
+    exclude group: "javax.help"
+    exclude group: "javax.media"
+    exclude group: "com.sun.media"
+}
+
+
+tasks.register('generateConfig', Copy) {
+    doFirst {
+        project.delete layout.buildDirectory.file("tomcat/")
+        project.mkdir layout.buildDirectory.file("tomcat/logs")
+    }
+    from 'src/test/resources/tomcat'
+    into layout.buildDirectory.file("tomcat")
+    rename "tomcat-server.xml", "server.xml"
+    inputs.dir "src/test/resources"
+    outputs.dir layout.buildDirectory.file("tomcat/conf")
+}
+
+tasks.register('run', JavaExec) {
+    def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    def guiWar = project(':opendcs-web-client').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    group "application"
+    doFirst {
+        classpath = classpath.filter {
+            !it.name.endsWith('opendcs-7.0.13.jar')
+        }
+    }
+    dependsOn(':opendcs-rest-api:war', ':opendcs-web-client:war')
+    dependsOn generateConfig
+    dependsOn downloadAndUnzipInstaller
+
+
+    mainClass = "org.opendcs.odcsapi.tomcat.TomcatServer"
+    classpath += sourceSets.test.runtimeClasspath
+    classpath += configurations.testRuntimeClasspath
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainers") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
+    systemProperties.put("org.apache.tomcat.util.digester.PROPERTY_SOURCE", "org.apache.tomcat.util.digester.EnvironmentPropertySource")
+    def port = project.findProperty("opendcs.tomcat.port") ?: "7000"
+    def databaseType = project.findProperty("opendcs.test.integration.db") ?: "OpenDCS-Postgres"
+    def tomcatDir = layout.buildDirectory.file("tomcat").get()
+    args tomcatDir, port, restWar, guiWar, databaseType
+    def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
+    systemProperties.put("DCSTOOL_HOME", outputDir)
+}
+
+
+tasks.register('downloadAndUnzipInstaller') {
+    def zipUrl = 'https://github.com/opendcs/opendcs/releases/download/7.0.14/opendcs-7.0.14.zip'
+    def outputDir = file("${buildDir}/opendcs-install")
+    def zipFile = file("${buildDir}/download/opendcs-install.zip")
+
+    outputs.dir(new File(outputDir, "opendcs-7.0.14"))
+
+    doLast {
+        if (!zipFile.exists()) {
+            outputDir.mkdirs()
+            zipFile.parentFile.mkdirs()
+            new URL(zipUrl).withInputStream { inp ->
+                zipFile.withOutputStream { out -> out << inp }
+            }
+            copy {
+                //Skip the root dir as it is contains the version number which makes it hard
+                //to work with through automation
+                from zipTree(zipFile)
+                into outputDir
+            }
+        }
+    }
+}

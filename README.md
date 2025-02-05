@@ -13,6 +13,7 @@ OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embed
 ./opendcs-rest-api-jetty - contains build scripts for generating a standalone Jetty installer for the OPENDCS REST API   
 ./opendcs-web-client - contains source files for the OpenDCS Web Application Client
 ./opendcs-web-client-jetty - contains build scripts for generating a standalone Jetty installer for the web client
+./opendcs-integration-test - contains scripts for running embedded tomcat to deploy the REST API and Web Client wars for testing.
 
 
 # Installation and Configuration
