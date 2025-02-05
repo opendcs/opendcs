@@ -4,7 +4,7 @@
 W9123819P0073–2 ResEvap Computation
 ####################################
 
-*Author an engineering and software requirements document detailing ResEvap*
+*A document detailing the engineering and software requirements for ResEvap*
 
 **March 27, 2020**
 
@@ -31,50 +31,122 @@ Background
 Scope of Work
 -------------
 
-ResEvap is an Omaha District application which was ported to JAVA and was modified to be able to interact with the CWMS database through usage of the REGI database APIs. The documentation will cover:
+ResEvap is an Omaha District application which was ported to JAVA and was
+modified to be able to interact with the CWMS database through usage of the REGI
+database APIs. The documentation will cover:
 
-• Reviewing the ResEvap source code and examining the application at runtime by debugging with an IDE.
+-  Reviewing the ResEvap source code and examining the application at runtime by
+   debugging with an IDE.
 
-• Develop a clear understanding of the computations from an engineering perspective.
+-  Develop a clear understanding of the computations from an engineering
+   perspective.
 
-• Author a document that describes ResEvap. Note potential improvements to ResEvap and incorrect behavior discovered during the analysis.
+-  Author a document that describes ResEvap. Note potential improvements to
+   ResEvap and incorrect behavior discovered during the analysis.
 
 Technical Exhibit
 -----------------
-Task Item 2: Author an engineering and software requirements document detailing the ResEvap computation.
+Task Item 2: Author an engineering and software requirements document detailing
+the ResEvap computation.
 
-Background: ResEvap is an Omaha Corps office application for computing reservoir evaporation. This application was originally developed in Fortran. The Omaha Corps office contracted RMA in 2015 to port ResEvap from Fortran to Java and Jython, as is without changing the computational logic. ResEvap was modified to be able to interact with the CWMS database through usage of the REGI database APIs. ResEvap’s algorithms, computations, work flow, and database interactions need to be documented in detail to ensure that the computational procedure is as expected.
+Background: ResEvap is an Omaha Corps office application for computing reservoir
+evaporation. This application was originally developed in Fortran. The Omaha
+Corps office contracted RMA in 2015 to port ResEvap from Fortran to Java and
+Jython, as is without changing the computational logic. ResEvap was modified to
+be able to interact with the CWMS database through usage of the REGI database
+APIs. ResEvap’s algorithms, computations, work flow, and database interactions
+need to be documented in detail to ensure that the computational procedure is
+as expected.
 
-Documentation will entail detailed descriptions of the computations performed within ResEvap. Since there is currently no documentation of the computational procedure, this will require:
+Documentation will entail detailed descriptions of the computations performed
+within ResEvap. Since there is currently no documentation of the computational
+procedure, this will require:
 
-1. Reviewing the ResEvap source code and examining the application at runtime by debugging with an IDE.
+1. Reviewing the ResEvap source code and examining the application at runtime
+   by debugging with an IDE.
 
-2. Developing a clear understanding of the computations from an engineering perspective. This might require communications with the Omaha office for clarifications on expected behavior.
+2. Developing a clear understanding of the computations from an engineering
+   perspective. This might require communications with the Omaha office for
+   clarifications on expected behavior.
 
-3. Authoring a document that describes ResEvap. Noted in this document will be both potential improvements to ResEvap and incorrect behavior discovered during the analysis. Recommended solutions for improvements and incorrect behavior will be documented.
+3. Authoring a document that describes ResEvap. Noted in this document will be
+   both potential improvements to ResEvap and incorrect behavior discovered
+   during the analysis. Recommended solutions for improvements and incorrect
+   behavior will be documented.
 
-A draft version of the document will be delivered to the Corps suitable for review. The contractor will revise the document based on the Corps review.
+A draft version of the document will be delivered to the Corps suitable for
+review. The contractor will revise the document based on the Corps review.
 
-Deliverables for this task shall include the document detailing the current behavior and computations done with ResEvap, and recommendations for its improvement.
-
+Deliverables for this task shall include the document detailing the current
+behavior and computations done with ResEvap, and recommendations for its
+improvement.
 
 Introduction
 ==============
 
-ResEvap is a reservoir evaporation computational utility developed for the reservoirs in the Missouri River basin. Development of ResEvap was motivated by the need for accurate estimates of evaporation to properly manage reservoirs, in conjunction with the known limitation of evaporation observations (e.g. Evaporation Pans). The underlying algorithm was developed with state-of-the-art evaporation and water temperature modeling techniques, and was subsequently written in Fortran by the USACE (Daly 2005). In order to improve the usability of ResEvap throughout the USACE, the model was converted to Java and Jython/Python by RMA. At the time of the original conversion, the desired outcome was a direct translation of the computation logic from Fortran to Java with Jython/Python scripting used to orchestrate the computations. Since that time, a need for documentation of the computational routines within ResEvap has developed, motivating the production of this document.
+ResEvap is a reservoir evaporation computational utility developed for the
+reservoirs in the Missouri River basin. Development of ResEvap was motivated
+by the need for accurate estimates of evaporation to properly manage reservoirs,
+in conjunction with the known limitation of evaporation observations
+(e.g. Evaporation Pans). The underlying algorithm was developed with
+state-of-the-art evaporation and water temperature modeling techniques, and was
+subsequently written in Fortran by the USACE (Daly 2005). In order to improve
+the usability of ResEvap throughout the USACE, the model was converted to Java
+and Jython/Python by RMA. At the time of the original conversion, the desired
+outcome was a direct translation of the computation logic from Fortran to Java
+with Jython/Python scripting used to orchestrate the computations. Since that
+time, a need for documentation of the computational routines within ResEvap has
+developed, motivating the production of this document.
 
-This documentation is intended to describe both the core computational functionality, as well as the entry points to the computational routines currently used by the USACE. The existing entry point for the ResEvap computations is the Jython Processor, described in the next section. Next, the computations, including the evaporation, radiation and vertical temperature profile models are described. Descriptions of the computations are supported in `Appendix 1`_ and `Appendix 2`_, which contain variable definitions and constant value listings. `Appendix 3`_ provides example input files. `Appendix 4`_ provides recommendations for the existing ResEvap model, and last there is a list of references.
+This documentation is intended to describe both the core computational
+functionality, as well as the entry points to the computational routines
+currently used by the USACE. The existing entry point for the ResEvap
+computations is the Jython Processor, described in the next section. Next, the
+computations, including the evaporation, radiation and vertical temperature
+profile models are described. Descriptions of the computations are supported
+in `Appendix 1`_ and `Appendix 2`_, which contain variable definitions and
+constant value listings. `Appendix 3`_ provides example input files.
+`Appendix 4`_ provides recommendations for the existing ResEvap model,
+and last there is a list of references.
 
 ResEvap Software Distribution and USAGE
 ========================================
 
-ResEvap is currently distributed as an archive that is deployed onto the CWMS Solaris system. The ResEvap archive is self-contained with only dependencies onto to the CWMS_HOME configuration area, mainly for database connectivity. The ResEvap archive has a combination of embedded Java jars, along with a Solaris JRE, to ensure that it can be independently versioned from CWMS. Independent versioning is necessary due to the independent release cycles of ResEvap and CWMS. ResEvap Java computations are orchestrated using a combination of Jython and shell scripting. The ResEvap shell script, resevap.csh, starts the Java JRE using Jython’s main class and the ResEvap Jython script. When running the ResEvap Jython script, additional parameterization is specified for the reservoir name and the start and end date/times.
+ResEvap is currently distributed as an archive that is deployed onto the CWMS
+Solaris system. The ResEvap archive is self-contained with only dependencies
+onto to the CWMS_HOME configuration area, mainly for database connectivity.
+The ResEvap archive has a combination of embedded Java jars, along with a
+Solaris JRE, to ensure that it can be independently versioned from CWMS.
+Independent versioning is necessary due to the independent release cycles of
+ResEvap and CWMS. ResEvap Java computations are orchestrated using a combination
+of Jython and shell scripting. The ResEvap shell script, resevap.csh, starts the
+Java JRE using Jython’s main class and the ResEvap Jython script. When running
+the ResEvap Jython script, additional parameterization is specified for the
+reservoir name and the start and end date/times.
 
-In operation, Omaha will be running ResEvap using a cron job that calls the ResEvap shell script. The cron job script will iterate through the all of the reservoirs calling into the ResEvap shell script with a time window that is from 5 days back from current day to the current day. This cron job will be run on a daily basis. ResEvap will also be run manually for a given project using a variety of time windows, for a month, a season, or a year for example. There are no plans to run ResEvap into the future as a forecasting model, it will only be run using observed data.
+In operation, Omaha will be running ResEvap using a cron job that calls the
+ResEvap shell script. The cron job script will iterate through the all of the
+reservoirs calling into the ResEvap shell script with a time window that is from
+5 days back from current day to the current day. This cron job will be run on a
+daily basis. ResEvap will also be run manually for a given project using a
+variety of time windows, for a month, a season, or a year for example. There are
+no plans to run ResEvap into the future as a forecasting model, it will only be
+run using observed data.
 
-The Java ResEvap computational model is independent of the I/O layer that retrieves and stores data to the CWMS database. ResEvap utilizes a Jython script to perform I/O and database access. This includes the business of extracting information from the CWMS database, orchestrating the calls into the computational code, and posting results back to the CWMS database. The Jython scripting language was primarily chosen to allow the Omaha district office to maintain and enhance ResEvap. Coding in Jython provides the benefit of strongly separating the API between the Java computations and the orchestration layer above the computations. Additionally, the use of Jython allows for development of ResEvap implementations that are backed by databases other than CWMS Oracle. For example, DSS or sourcing data from external agency web sources.
+The Java ResEvap computational model is independent of the I/O layer that
+retrieves and stores data to the CWMS database. ResEvap utilizes a Jython script
+to perform I/O and database access. This includes the business of extracting
+information from the CWMS database, orchestrating the calls into the
+computational code, and posting results back to the CWMS database. The Jython
+scripting language was primarily chosen to allow the Omaha district office to
+maintain and enhance ResEvap. Coding in Jython provides the benefit of strongly
+separating the API between the Java computations and the orchestration layer
+above the computations. Additionally, the use of Jython allows for development
+of ResEvap implementations that are backed by databases other than CWMS Oracle.
+For example, DSS or sourcing data from external agency web sources.
 
-Arguments passed to ResEvap by the shell script consist of both Java Virtual Machine (JVM) arguments and Jython arguments. The JVM arguments are described in Table 1.
+Arguments passed to ResEvap by the shell script consist of both Java Virtual
+Machine (JVM) arguments and Jython arguments. The JVM arguments are described in Table 1.
 
 .. _Table 1:
 
@@ -102,18 +174,78 @@ Arguments passed to ResEvap by the shell script consist of both Java Virtual Mac
 | database.name                 | Name of the database                                   |
 +-------------------------------+--------------------------------------------------------+
 
-| The Jython script requires additional arguments beyond the JVM arguments. These arguments are the reservoir id (e.g. RES= PA18), the start time (e.g. START=2019-04-23T00:00:00) and the end time (e.g. END=2019-04-30T00:00:00). The start and end time should be specified in ISO 8601 format, https://www.iso.org/iso-8601-date-and-time-format.html.
+The Jython script requires additional arguments beyond the JVM arguments.
+These arguments are the reservoir id (e.g. RES= PA18), the start time
+(e.g. START=2019-04-23T00:00:00) and the end time (e.g. END=2019-04-30T00:00:00).
+The start and end time should be specified in ISO 8601 format,
+https://www.iso.org/iso-8601-date-and-time-format.html.
 
-In addition to these arguments, the Jython processor requires the ResEvap properties file to be located in the current working directory, and to be named “resevap.properties”. This file contains the version name (used for building the output time series identifier), the working directory that should be used when running ResEvap, and the location level identifiers for obtaining the maximum temperature depth and secchi depth. An example of this file is presented in `Appendix 4`_. Additionally, a file containing the Reservoir Information must be provided, an example of which is shown in `Appendix 4`_. Note that this file should have an identical name to the RES python argument. This file contains the latitude, longitude, time zone, rating curve, and input data time series identifiers. Although the file contains latitude, longitude and time zone information, these parameters are overridden by the location information in the CWMS database. The current release of ResEvap requires that there be a synchronization between the maximum temperature depth location level, the number of water temperature profile time series, and the elevation extents of the elevation;area rating curve. The maximum temperature depth determines the number of required water temperature profiles. The elevation;area curve’s elevation extents must cover the all of the valid elevations that might occur given variance in pool elevation. This must currently be manually configured through setting the level value, establishing and identifiying the profile time series in the database and the reservoir file, then editing the database rating curve as needed. A recommendation has been made to calculate the number water temperature profile time series using the depth level, this is covered in `Appendix 4`_: Recommendations.
+In addition to these arguments, the Jython processor requires the ResEvap
+properties file to be located in the current working directory, and to be named
+“resevap.properties”. This file contains the version name (used for building the
+output time series identifier), the working directory that should be used when
+running ResEvap, and the location level identifiers for obtaining the maximum
+temperature depth and secchi depth. An example of this file is presented in
+`Appendix 4`_. Additionally, a file containing the Reservoir Information must
+be provided, an example of which is shown in `Appendix 4`_. Note that this file
+should have an identical name to the RES python argument. This file contains the
+latitude, longitude, time zone, rating curve, and input data time series
+identifiers. Although the file contains latitude, longitude and time zone
+information, these parameters are overridden by the location information in the
+CWMS database. The current release of ResEvap requires that there be a
+synchronization between the maximum temperature depth location level, the number
+of water temperature profile time series, and the elevation extents of the
+elevation;area rating curve. The maximum temperature depth determines the number
+of required water temperature profiles. The elevation;area curve’s elevation
+extents must cover the all of the valid elevations that might occur given
+variance in pool elevation. This must currently be manually configured through
+setting the level value, establishing and identifiying the profile time series
+in the database and the reservoir file, then editing the database rating curve
+as needed. A recommendation has been made to calculate the number water
+temperature profile time series using the depth level, this is covered in
+`Appendix 4`_: Recommendations.
 
 ResEvap Jython Sequence of Operations
 ======================================
 
-Based on the information provided, the Jython processor populates the ResEvap compute objects with the necessary parameters and meteorological data to compute the evaporation, energy balance and water temperature profile. This includes parsing the input files, loading time series, location levels, and rating curves from the CWMS database, and building the necessary compute objects. The Jython processor allows specification of nearly all of the compute parameters, but the reservoir layer thickness and meteorological measurement heights are hard-coded to be 0.5m and 10m, respectively. An exception to the reservoir layers being hard coded to be 0.5m is the layer at the specified maximum depth, this bottom layer will most likely be thinner than 0.5m to avoid exceeding the maximum depth. An example of this would be a maximum depth of 40.3m. The last layer would be 0.3m instead of 0.5m.
+Based on the information provided, the Jython processor populates the ResEvap
+compute objects with the necessary parameters and meteorological data to compute
+the evaporation, energy balance and water temperature profile. This includes
+parsing the input files, loading time series, location levels, and rating curves
+from the CWMS database, and building the necessary compute objects. The Jython
+processor allows specification of nearly all of the compute parameters, but the
+reservoir layer thickness and meteorological measurement heights are hard-coded
+to be 0.5m and 10m, respectively. An exception to the reservoir layers being
+hard coded to be 0.5m is the layer at the specified maximum depth, this bottom
+layer will most likely be thinner than 0.5m to avoid exceeding the maximum
+depth. An example of this would be a maximum depth of 40.3m. The last layer
+would be 0.3m instead of 0.5m.
 
-An important note is that the Jython processor attempts to retrieve a value for each water temperature profile that is at the starting time. In the event that it cannot retrieve a value from the time series, the Jython processor will adjust the retrieval time to utilize the time series’ interval offset, and again attempt to retrieve the initial profile temperatures. If initial values are not retrieved by either method, the compute will fail.
+An important note is that the Jython processor attempts to retrieve a value for
+each water temperature profile that is at the starting time. In the event that
+it cannot retrieve a value from the time series, the Jython processor will
+adjust the retrieval time to utilize the time series’ interval offset, and again
+attempt to retrieve the initial profile temperatures. If initial values are not
+retrieved by either method, the compute will fail.
 
-The Jython processor runs the compute with the information specified above. After the ResEvap computations complete, the output time series are parsed from the ResEvap compute objects. Although ResEvap creates output data files, these are not accessed by the Jython processor. The resulting time series are converted from Time Series Containers to CWMS DataSetTx objects, and then stored to the CWMS database. The Time Series Containers produced by ResEvap contain a DSS pathname, which is transformed into the CWMS time series identifier when storing to the database. This allows ResEvap to control the identifier for each output time series, with only the office identifier, location and version being customizable. The parameter, parameter type, time step, and units are all pre-determined within ResEvap. The output time series include hourly water surface temperature, sensible heat flux, latent heat flux, solar radiation, downwelling longwave radiation, upwelling longwave radiation, and evaporation, daily evaporation, evaporation as flow, and daily water profile temperatures. Note that the water temperature profile values are computed at an hourly time step, but only saved to the CWMS database as a daily time series. After storing these time series to the CWMS database, the database connection is closed, and the script is completed.
+The Jython processor runs the compute with the information specified above.
+After the ResEvap computations complete, the output time series are parsed from
+the ResEvap compute objects. Although ResEvap creates output data files, these
+are not accessed by the Jython processor. The resulting time series are
+converted from Time Series Containers to CWMS DataSetTx objects, and then stored
+to the CWMS database. The Time Series Containers produced by ResEvap contain a
+DSS pathname, which is transformed into the CWMS time series identifier when
+storing to the database. This allows ResEvap to control the identifier for each
+output time series, with only the office identifier, location and version being
+customizable. The parameter, parameter type, time step, and units are all
+pre-determined within ResEvap. The output time series include hourly water
+surface temperature, sensible heat flux, latent heat flux, solar radiation,
+downwelling longwave radiation, upwelling longwave radiation, and evaporation,
+daily evaporation, evaporation as flow, and daily water profile temperatures.
+Note that the water temperature profile values are computed at an hourly time
+step, but only saved to the CWMS database as a daily time series. After storing
+these time series to the CWMS database, the database connection is closed, and
+the script is completed.
 
 Java Compute Routines
 =====================
@@ -121,16 +253,44 @@ Java Compute Routines
 Core Routines
 --------------
 
-The Java entry point is a class called ResEvap. This class is tasked with building the necessary compute objects, looping through each hourly time step, organizing the results, and creating legacy text-based results files. The ResEvap compute object is constructed by the Jython processor, and subsequently provided with meteorological data and reservoir information. Based on this information, ResEvap runs the compute, at an hourly time-step, and then writes the output time series to text files.
+The Java entry point is a class called ResEvap. This class is tasked with
+building the necessary compute objects, looping through each hourly time step,
+organizing the results, and creating legacy text-based results files.
+The ResEvap compute object is constructed by the Jython processor, and
+subsequently provided with meteorological data and reservoir information.
+Based on this information, ResEvap runs the compute, at an hourly time-step,
+and then writes the output time series to text files.
 
-Computation of evaporation within ResEvap is a two-part process. These computations are broken into the reservoir surface temperature computations, through a full temperature profile model, and the evaporation from the water surface. The temperature at the surface of the reservoir is a key variable in estimating evaporation, but it is rarely measured. Therefore, ResEvap must compute the temperature profile within the reservoir, based on initial conditions and meteorological observations. Temperature profile modeling in ResEvap assumes that the vertical temperature profile is governed by the energy transfer through the water surface, which requires that the inflows and outflows are negligible components of the energy balance. This is appropriate for the Missouri River watershed (Daly 2005), which ResEvap was designed for, but this assumption should be carefully analyzed when applying to new watersheds. Four heat transfer modes are computed: sensible, latent, shortwave radiation and longwave radiation. Computation of these fluxes are described in the “Evaporation Computations” and “Radiation Computations” sections of this document. Based on these fluxes, and the initial water temperature at each layer in the profile, the temperatures are updated as described in the “Vertical Temperature Profile Computations” section.
+Computation of evaporation within ResEvap is a two-part process. These
+computations are broken into the reservoir surface temperature computations,
+through a full temperature profile model, and the evaporation from the water
+surface. The temperature at the surface of the reservoir is a key variable in
+estimating evaporation, but it is rarely measured. Therefore, ResEvap must
+compute the temperature profile within the reservoir, based on initial
+conditions and meteorological observations. Temperature profile modeling in
+ResEvap assumes that the vertical temperature profile is governed by the energy
+transfer through the water surface, which requires that the inflows and outflows
+are negligible components of the energy balance. This is appropriate for the
+Missouri River watershed (Daly 2005), which ResEvap was designed for, but this
+assumption should be carefully analyzed when applying to new watersheds. Four
+heat transfer modes are computed: sensible, latent, shortwave radiation and
+longwave radiation. Computation of these fluxes are described in the
+“Evaporation Computations” and “Radiation Computations” sections of this
+document. Based on these fluxes, and the initial water temperature at each layer
+in the profile, the temperatures are updated as described in the “Vertical
+Temperature Profile Computations” section.
 
-**Note:** `Appendix 1`_ **has a definition of all variables in the computations, and** `Appendix 2`_ **has a definition of all the constants used.**
+**Note:** `Appendix 1`_ **has a definition of all variables in the computations,
+and** `Appendix 2`_ **has a definition of all the constants used.**
 
 Input Data
 ~~~~~~~~~~
 
-Input data for ResEvap includes a combination of meteorological observations and reservoir physical parameters. The time series observations are provided in time series form, and are summarized in Table 2. In this table, note that the cloud heights are estimated by ResEvap if not provided, making them an optional parameter.
+Input data for ResEvap includes a combination of meteorological observations and
+reservoir physical parameters. The time series observations are provided in time
+series form, and are summarized in Table 2. In this table, note that the cloud
+heights are estimated by ResEvap if not provided, making them an optional
+parameter.
 
 .. _Table 2:
 
@@ -164,12 +324,18 @@ Input data for ResEvap includes a combination of meteorological observations and
 | Water Temperature (Each Layer) | Instantaneous        | 1Day          | .. math:: {^\circ}C   |
 +--------------------------------+----------------------+---------------+-----------------------+
 
-In addition to time series data, ResEvap requires the start date, end date, GMT offset, version name, latitude, longitude, observation heights for wind speed, air temperature and relative humidity, and the elevation-area rating curve. Note that ResEvap is not aware of vertical datum info. All elevation input data must be supplied in the same vertical datum.
+In addition to time series data, ResEvap requires the start date, end date,
+GMT offset, version name, latitude, longitude, observation heights for wind
+speed, air temperature and relative humidity, and the elevation-area rating
+curve. Note that ResEvap is not aware of vertical datum info. All elevation
+input data must be supplied in the same vertical datum.
 
 Output Data
 ~~~~~~~~~~~
 
-ResEvap produces both meteorological and water temperature information, which is written to text files and returned to the Jython processor for storage into the CWMS database. Table 3 summarizes the time series data produced by ResEvap.
+ResEvap produces both meteorological and water temperature information, which is
+written to text files and returned to the Jython processor for storage into the
+CWMS database. Table 3 summarizes the time series data produced by ResEvap.
 
 Table 3-Output data produced by ResEvap
 
@@ -195,22 +361,68 @@ Table 3-Output data produced by ResEvap
 | Water Temperature (Each Layer) | Instantaneous             | 1Hour         | .. math:: {^\circ}C       |
 +--------------------------------+---------------------------+---------------+---------------------------+
 
-ResEvap builds these output time series based on the input time window, location and version name. As the compute progresses in time, the hourly time series are filled with compute results. At the end of the simulation, the evaporation is accumulated to daily, and then the evaporation as flow is computed from the daily evaporation, and the reservoir surface area. This is converted based on the following equation:
+ResEvap builds these output time series based on the input time window, location
+and version name. As the compute progresses in time, the hourly time series are
+filled with compute results. At the end of the simulation, the evaporation is
+accumulated to daily, and then the evaporation as flow is computed from the
+daily evaporation, and the reservoir surface area. This is converted based on
+the following equation:
 
 :math:`{E_{f_t}} = E_{t}{A_{s_t}}`
 
-Where :math:`E_{f_t}` is the evaporation as flow at time :math:`t`, :math:`E_{t}` is the evaporation rate at time :math:`t`, and :math:`A_{s_t}` is the reservoir surface area at time :math:`t`.
+Where :math:`E_{f_t}` is the evaporation as flow at time :math:`t`, :math:`E_{t}`
+is the evaporation rate at time :math:`t`, and :math:`A_{s_t}` is the reservoir
+surface area at time :math:`t`.
 
-Time series data is saved to text files as well. Time series data is reported in text files named "testtout_java.dat", "wtout_java.dat", reporting the meteorological/surface flux and water temperature time series information, respectively. The meteorological/surface flux results file reports values at every hour for the wind speed, air temperature, relative humidity, air pressure, water surface temperature, :math:`u_{*}`, :math:`{R_{e}}^{*}`, Obhukov Length, sensible heat flux, latent heat flux, solar radiation flux, downwelling longwave radiation flux, upwelling longwave radiation flux, and evaporation. The water temperature results file reports the temperature of every layer, for every hour computed, in :math:`℃`.
+Time series data is saved to text files as well. Time series data is reported in
+text files named "testtout_java.dat", "wtout_java.dat", reporting the
+meteorological/surface flux and water temperature time series information,
+respectively. The meteorological/surface flux results file reports values at
+every hour for the wind speed, air temperature, relative humidity, air pressure,
+water surface temperature, :math:`u_{*}`, :math:`{R_{e}}^{*}`, Obhukov Length,
+sensible heat flux, latent heat flux, solar radiation flux, downwelling longwave
+radiation flux, upwelling longwave radiation flux, and evaporation. The water
+temperature results file reports the temperature of every layer, for every hour
+computed, in :math:`℃`.
 
-ResEvap also saves diagnostic information to text files, which can be used for debugging purposes. Reservoir profile and energy balance reports are provided in files named "xout_java.dat" and "xout2_java.dat", respectively. The reservoir profile information includes the depth to each layer, the thickness of each layer, the area of each layer, the elevation of each layer, and the volume of each layer. The energy balance report contains the water surface elevation, total thermal energy, the change in total thermal energy, the total thermal energy input, the total thermal energy at the end of the time step, the relative difference between the change in thermal energy and the total (net) energy input (should be ~0), and the reservoir surface area.
+ResEvap also saves diagnostic information to text files, which can be used for
+debugging purposes. Reservoir profile and energy balance reports are provided in
+files named "xout_java.dat" and "xout2_java.dat", respectively. The reservoir
+profile information includes the depth to each layer, the thickness of each
+layer, the area of each layer, the elevation of each layer, and the volume of
+each layer. The energy balance report contains the water surface elevation,
+total thermal energy, the change in total thermal energy, the total thermal
+energy input, the total thermal energy at the end of the time step, the relative
+difference between the change in thermal energy and the total (net) energy input
+(should be ~0), and the reservoir surface area.
 
-A recommendation has been added to `Appendix 4`_: Recommendations, to prevent the generation of these files unless ResEvap is being run in a debug mode.
+A recommendation has been added to `Appendix 4`_: Recommendations, to prevent
+the generation of these files unless ResEvap is being run in a debug mode.
 
 Evaporation Computations
 ------------------------
 
-Evaporation computations are performed in the EvapWater class. The evaporation computations rely on 8 input variables, water surface temperature (:math:`T_{s}`), air temperature measurement :math:`(\widehat{T_{a}})`, reference height of the air temperature measurements (:math:`h_{T}`), relative humidity measurement (:math:`\widehat{RH}`), reference height of the relative humidity measurements (:math:`h_{q}`), wind speed measurement (:math:`\hat{u}`), reference height of the wind speed measurements (:math:`h_{u}`), the measured air pressure (:math:`\widehat{p_{a}}`) and latent heat of vaporization (:math:`l_{v}`). Note that all variables are described in `Appendix 1`_, and all variables with a :math:`\widehat{\ }` accent are observed data. From these variables, an iterative computation is performed to produce the output variables: sensible heat (:math:`H_{s}`), latent heat (:math:`H_{l}`), and evaporation (:math:`E`). Iterations are required due to the implicit definition of the turbulent transfer coefficients, where the exchanges of momentum, energy and mass are codependent with the Obukhov length (:math:`l_{o}`). Therefore, the computations setup initial estimates of the transfer coefficients (:math:`C_{D}` for wind, :math:`C_{T}` for temperature and :math:`C_{q}` for humidity) then estimate the Obukhov length, and iteratively recompute the turbulent exchange scales (:math:`u_{*}` for wind, :math:`t_{*}` for temperature and :math:`q_{*}` for humidity) until convergence. Based on the turbulent exchange values, the resulting evaporation, sensible heat and latent heat may be computed as follows:
+Evaporation computations are performed in the EvapWater class. The evaporation
+computations rely on 8 input variables, water surface temperature (:math:`T_{s}`),
+air temperature measurement :math:`(\widehat{T_{a}})`, reference height of the
+air temperature measurements (:math:`h_{T}`), relative humidity measurement
+(:math:`\widehat{RH}`), reference height of the relative humidity measurements
+(:math:`h_{q}`), wind speed measurement (:math:`\hat{u}`), reference height of
+the wind speed measurements (:math:`h_{u}`), the measured air pressure
+(:math:`\widehat{p_{a}}`) and latent heat of vaporization (:math:`l_{v}`).
+Note that all variables are described in `Appendix 1`_, and all variables with
+a :math:`\widehat{\ }` accent are observed data. From these variables, an
+iterative computation is performed to produce the output variables: sensible
+heat (:math:`H_{s}`), latent heat (:math:`H_{l}`), and evaporation (:math:`E`).
+Iterations are required due to the implicit definition of the turbulent transfer
+coefficients, where the exchanges of momentum, energy and mass are codependent
+with the Obukhov length (:math:`l_{o}`). Therefore, the computations setup
+initial estimates of the transfer coefficients
+(:math:`C_{D}` for wind, :math:`C_{T}` for temperature and :math:`C_{q}` for humidity)
+then estimate the Obukhov length, and iteratively recompute the turbulent
+exchange scales (:math:`u_{*}` for wind, :math:`t_{*}` for temperature and :math:`q_{*}` for humidity)
+until convergence. Based on the turbulent exchange values, the resulting
+evaporation, sensible heat and latent heat may be computed as follows:
 
 :math:`H_{l} = - \rho_{a}l_{v}u_{*}q_{*}`
 
@@ -221,7 +433,16 @@ Evaporation computations are performed in the EvapWater class. The evaporation c
 Static Variables
 ~~~~~~~~~~~~~~~~
 
-Evaporation computations start by computing several values that are static across the iterative algorithm. These include the vertically averaged air temperature :math:`(\overline{T_{a}})`, the potential temperature :math:`(\theta_{r})`, the vertically averaged specific humidity :math:`(\overline{q})`, the density of the air :math:`(\rho_{a})`, and the kinematic viscosity :math:`(\nu_{s})`. Additionally, the :math:`\mathrm{\Delta}_{t}` and :math:`\mathrm{\Delta}_{q}` terms are computed, which represent differences in temperature and specific humidity required for computing the Monin-Obukhov similarity scaling parameters. These initial computations are described in the equations below:
+Evaporation computations start by computing several values that are static
+across the iterative algorithm. These include the vertically averaged air
+temperature :math:`(\overline{T_{a}})`, the potential temperature
+:math:`(\theta_{r})`, the vertically averaged specific humidity
+:math:`(\overline{q})`, the density of the air :math:`(\rho_{a})`,
+and the kinematic viscosity :math:`(\nu_{s})`. Additionally, the
+:math:`\mathrm{\Delta}_{t}` and :math:`\mathrm{\Delta}_{q}` terms are
+computed, which represent differences in temperature and specific humidity
+required for computing the Monin-Obukhov similarity scaling parameters.
+These initial computations are described in the equations below:
 
 :math:`\overline{T_{a}} = .5\left( T_{s} - \widehat{T_{a}} \right)`
 
@@ -233,7 +454,11 @@ Where :math:`\theta_{r}` is the potential temperature, as computed below:
 
 :math:`c_{p}^{T} = 1005.60\  + (T - T_{FP})(0.017211\  + \ 0.000392(T - T_{FP}))`
 
-Where :math:`g` is the gravitational acceleration, :math:`T_{FP}` is the freezing point in Kelvin, and :math:`c_{p}^{T}` is the specific heat of air based on reference temperature :math:`T`. In the above formulation :math:`c_{p}^{T}` is only valid for the range :math:`- 233.15K < T < 313.15K`, which is will only rarely be exceeded for surface reservoirs within the USA.
+Where :math:`g` is the gravitational acceleration, :math:`T_{FP}` is the freezing
+point in Kelvin, and :math:`c_{p}^{T}` is the specific heat of air based on
+reference temperature :math:`T`. In the above formulation :math:`c_{p}^{T}` is
+only valid for the range :math:`- 233.15K < T < 313.15K`, which is will only
+rarely be exceeded for surface reservoirs within the USA.
 
 :math:`\mathrm{\Delta}_{q} = q_{s} - q_{r}`
 
@@ -241,7 +466,13 @@ Where :math:`g` is the gravitational acceleration, :math:`T_{FP}` is the freezin
 
 :math:`\rho_{a} = \rho_{d} + \rho_{v} = \dfrac{100e(1 - 0.000537*S)m_{w}}{R_{g}T_{a}} + 1.2923\left(\dfrac{T_{FP}}{T_{a}}\right)\left(\dfrac{\widehat{p_{a}}}{1013.25}\right)`
 
-Where :math:`\rho_{a}` is the density of the air at the water surface, :math:`\rho_{d}` is the density of dry air, :math:`\rho_{v}` is the water vapor density, :math:`R_{g}` is the ideal gas constant, :math:`e` is the vapor pressure, :math:`S` is the salinity (assumed to be zero), :math:`m_{w}` is the molecular weight of water, and :math:`q_{s}` is solved by setting :math:`T_{a} = T_{s}` and :math:`RH = 1`, and :math:`q_{r}` is computed by setting :math:`T_{a} = \widehat{T_{a}}` and :math:`RH = \widehat{RH}`.
+Where :math:`\rho_{a}` is the density of the air at the water surface,
+:math:`\rho_{d}` is the density of dry air, :math:`\rho_{v}` is the water vapor
+density, :math:`R_{g}` is the ideal gas constant, :math:`e` is the vapor
+pressure, :math:`S` is the salinity (assumed to be zero), :math:`m_{w}` is the
+molecular weight of water, and :math:`q_{s}` is solved by setting
+:math:`T_{a} = T_{s}` and :math:`RH = 1`, and :math:`q_{r}` is computed by
+setting :math:`T_{a} = \widehat{T_{a}}` and :math:`RH = \widehat{RH}`.
 
 :math:`e_{s} = \left\{
 \begin{matrix}
@@ -252,13 +483,16 @@ Where :math:`\rho_{a}` is the density of the air at the water surface, :math:`\r
 
 :math:`e = \widehat{\dfrac{RH}{100}}e_{s}`
 
-Where :math:`e_{s}` is the saturation vapor pressure, and :math:`e` is the actual vapor pressure.
+Where :math:`e_{s}` is the saturation vapor pressure, and :math:`e` is the
+actual vapor pressure.
 
-Additionally, the following computations require the kinematic viscosity of the air at the water surface, which is described below.
+Additionally, the following computations require the kinematic viscosity of the
+air at the water surface, which is described below.
 
 :math:`\nu_{s} = 0.00001326(1.0 + T_{s}*(0.006542 + T_{s}*(0.000008301 - 0.00000000484T_{s})))`
 
-Finally, the latent heat of vaporization or sublimation is needed for computing the latent heat flux, which is described below.
+Finally, the latent heat of vaporization or sublimation is needed for computing
+the latent heat flux, which is described below.
 
 :math:`l_{v} = \left\{
 \begin{matrix}
@@ -272,7 +506,13 @@ Based on these static variables, the iterative solution of the evaporation can b
 Iterative Computations
 ~~~~~~~~~~~~~~~~~~~~~~
 
-After computation of the initial variables, an initial iteration is performed to estimate the Monin-Obukhov similarity (MOS) scaling parameters (:math:`u_{*}`, :math:`T_{*}` and\ :math:`\ q_{*}`), which represent the turbulent exchanges of latent and sensible heat (:math:`H_{l}` and :math:`H_{s}`). These initial estimates assume neutral stratification (i.e :math:`\frac{h_{u}}{l_{o}} = 0`). Estimating these parameters requires an initial estimate of the wind friction velocity (:math:`u_{*}`), as shown below:
+After computation of the initial variables, an initial iteration is performed to
+estimate the Monin-Obukhov similarity (MOS) scaling parameters
+(:math:`u_{*}`, :math:`T_{*}` and\ :math:`\ q_{*}`), which represent the
+turbulent exchanges of latent and sensible heat (:math:`H_{l}` and :math:`H_{s}`).
+These initial estimates assume neutral stratification (i.e :math:`\frac{h_{u}}{l_{o}} = 0`).
+Estimating these parameters requires an initial estimate of the wind
+friction velocity (:math:`u_{*}`), as shown below:
 
 :math:`u_{*} = \hat{u}\sqrt{C_{d}}`
 
@@ -280,7 +520,10 @@ Where the drag coefficient (:math:`C_{d}`) is initially estimated as:
 
 :math:`{C_{d}}_{0} = (0.37\  + \ 0.137\hat{u})10^{- 3}`
 
-Note that the shear velocity is not allowed to drop below 0.01. The remaining computations require roughness lengths for momentum (:math:`z_{u}`), temperature (:math:`z_{T}`) and humidity (:math:`z_{q}`), which are estimated by the COARE algorithm (Fairall et al., 1996).
+Note that the shear velocity is not allowed to drop below 0.01. The remaining
+computations require roughness lengths for momentum
+(:math:`z_{u}`), temperature (:math:`z_{T}`) and humidity (:math:`z_{q}`),
+which are estimated by the COARE algorithm :ref:`(Fairall et al., 1996) <References>`.
 
 :math:`z_{u} = h_{u}e^{\frac{- \kappa\ }{\sqrt{C_{d}}}} + C_{s}\dfrac{\nu_{s}}{\ u_{*}}`
 
@@ -288,7 +531,11 @@ Note that the shear velocity is not allowed to drop below 0.01. The remaining co
 
 :math:`z_{q} = a_{q}\dfrac{\nu_{s}}{u_{*}}{{R_{e}}^{*}}^{b_{q}}`
 
-Where :math:`C_{s}` is the smooth surface coefficient, *𝜅* is the von Karman constant, :math:`{R_{e}}^{*}` is the roughness Reynolds number defined below, and the COARE algorithm coefficients (:math:`a_{t},\ b_{t},\ a_{q},\ b_{q}`) are performed with a table lookup based on :math:`{R_{e}}^{*}` (see Table 4).
+Where :math:`C_{s}` is the smooth surface coefficient, *𝜅* is the von Karman
+constant, :math:`{R_{e}}^{*}` is the roughness Reynolds number defined below,
+
+and the COARE algorithm coefficients (:math:`a_{t},\ b_{t},\ a_{q},\ b_{q}`)
+are performed with a table lookup based on :math:`{R_{e}}^{*}` (see Table 4).
 
 :math:`{R_{e}}^{*} = \dfrac{\ u_{*}z_{u}}{\nu_{s}}`
 
@@ -345,7 +592,8 @@ where
 
 :math:`{x = (1 - \ 16\zeta)}^{.25}`
 
-Where :math:`\psi_{m} = 0` for the initial iteration. From the above equations, the initial MOS scaling parameters can be computed as follows:
+Where :math:`\psi_{m} = 0` for the initial iteration. From the above equations,
+the initial MOS scaling parameters can be computed as follows:
 
 :math:`t_{*} = - \dfrac{C_{T}\hat{u}\mathrm{\Delta}_{T}}{u_{*}}`
 
@@ -355,11 +603,18 @@ The final step in the first iteration is to compute the Obukhov length (:math:`l
 
 :math:`l_{o} = \dfrac{\dfrac{\overline{T_{a}}u_{*}\ }{kg}}{t_{*} + \left(\dfrac{0.61\overline{T_{a}}q_{*}}{1 + 0.61\overline{q}}\right)}`
 
-With these initial estimates, the evaporation routine will begin iteratively estimating the MOS similarity scales, where a maximum of 20 iterations will be performed. The stopping criteria of the process is when
+With these initial estimates, the evaporation routine will begin iteratively
+estimating the MOS similarity scales, where a maximum of 20 iterations will be
+performed. The stopping criteria of the process is when
 
 :math:`\dfrac{\left| {u_{*}}_{i} - {u_{*}}_{i - 1} \right|}{{u_{*}}_{i}} < 0.001 \text{  and  } \dfrac{\left| {t_{*}}_{i} - {t_{*}}_{i - 1} \right|}{{t_{*}}_{i}} < 0.001 \text{  and  } \dfrac{\left| {q_{*}}_{i} - {q_{*}}_{i - 1} \right|}{{q_{*}}_{i}} < 0.001`
 
-Where :math:`i` denotes the iteration number. The iterations proceed as follows. Compute the transfer coefficients (:math:`C_{D}`, :math:`C_{T}` and :math:`C_{q}`) with :math:`h_{u} = 10m`, and current estimates of :math:`l_{o}`, :math:`z_{u}`, :math:`z_{T}` and :math:`z_{q}`, and subsequently estimate the MOS similarity scales. Recompute the transfer coefficients based on the current MOS similarity scales and the actual :math:`h_{u}`. Modify wind speed to account for gustiness as shown below.
+Where :math:`i` denotes the iteration number. The iterations proceed as follows.
+Compute the transfer coefficients (:math:`C_{D}`, :math:`C_{T}` and :math:`C_{q}`)
+with :math:`h_{u} = 10m`, and current estimates of :math:`l_{o}`, :math:`z_{u}`, :math:`z_{T}` and :math:`z_{q}`,
+and subsequently estimate the MOS similarity scales. Recompute the transfer
+coefficients based on the current MOS similarity scales and the actual :math:`h_{u}`.
+Modify wind speed to account for gustiness as shown below.
 
 :math:`u = \left\{
 \begin{matrix}
@@ -369,7 +624,9 @@ Where :math:`i` denotes the iteration number. The iterations proceed as follows.
 \end{matrix}
 \right.\ `
 
-Finally recompute the MOS similarity scales and the Obukhov length, then apply the convergence test. After the interative process is completed, compute the sensible heat, latent heat and evaporative fluxes.
+Finally recompute the MOS similarity scales and the Obukhov length, then apply
+the convergence test. After the interative process is completed, compute the
+sensible heat, latent heat and evaporative fluxes.
 
 Radiation Computations
 ----------------------
@@ -377,11 +634,21 @@ Radiation Computations
 Shortwave Radiation
 ~~~~~~~~~~~~~~~~~~~
 
-Solar radiation provides energy to the water surface during daylight hours, and is therefore a key component of the energy balance. The intensity of solar radiation reaching the water surface is a function of both the zenith angle of the sun, and the extent to which the atmosphere obscures radiation. The zenith angle is affected by both seasonal and diurnal cycles, as well as the latitude (:math:`\varphi`) of the reservoir. All computations of solar angles are based on Woolf (1968). Seasonal affects on the solar radiation are represented by the declination angle (:math:`\delta`), which ranges from -23.44 to 23.44. Computations of the declination angle requires the below equation, which converts the day of year to an angle:
+Solar radiation provides energy to the water surface during daylight hours, and
+is therefore a key component of the energy balance. The intensity of solar
+radiation reaching the water surface is a function of both the zenith angle of
+the sun, and the extent to which the atmosphere obscures radiation. The zenith
+angle is affected by both seasonal and diurnal cycles, as well as the latitude
+(:math:`\varphi`) of the reservoir. All computations of solar angles are based
+on :ref:`Woolf (1968) <References>`. Seasonal affects on the solar radiation are
+represented by the declination angle (:math:`\delta`), which ranges
+from -23.44 to 23.44. Computations of the declination angle requires the below
+equation, which converts the day of year to an angle:
 
 :math:`d = \frac{360}{365.242}(JD - 1)`
 
-Where :math:`JD` is the Julian day, with :math:`JD = 1` on January 1\ :sup:`st`. This can be converted to the declination angle below:
+Where :math:`JD` is the Julian day, with :math:`JD = 1` on January 1\ :sup:`st`.
+This can be converted to the declination angle below:
 
 :math:`\left.
 \begin{array}{l}
@@ -393,7 +660,8 @@ The diurnal fluctuations of solar radiation are represented by the Hour Angle (:
 
 :math:`h_{s} = 15\left( h_{gmt} - M \right) - lon`
 
-Where :math:`h_{gmt}` is the hour of the day in GMT, :math:`lon` is the longitude, and :math:`M` is the time of meridian passage computed below.
+Where :math:`h_{gmt}` is the hour of the day in GMT, :math:`lon` is the
+longitude, and :math:`M` is the time of meridian passage computed below:
 
 :math:`\left.
 \begin{array}{l}
@@ -407,11 +675,22 @@ Based on the declination, the latitude and the hour angle, the zenith angle may 
 
 :math:`\theta_{s} = \cos^{- 1}(\cos\left( \theta_{s} \right))`
 
-Based on the zenith angle, and the cloud cover fraction at the low, middle and high layers of the atmosphere, the solar radiation reaching the water surface is computed based on Shapiro (1987). In this document, the derivation of the general case to the 3-layer implementation is not provided, due to it’s complexity. For information on this derivation, see Shapiro (1987) This is strictly the equation for the 3-layer case used in ResEvap.
+Based on the zenith angle, and the cloud cover fraction at the low, middle and
+high layers of the atmosphere, the solar radiation reaching the water surface
+is computed based on Shapiro (1987). In this document, the derivation of the
+general case to the 3-layer implementation is not provided, due to it’s
+complexity. For information on this derivation, see Shapiro (1987) This is
+strictly the equation for the 3-layer case used in ResEvap.
 
 :math:`I_{s \downarrow} = \dfrac{S_{e}T_{l}T_{m}T_{h}}{d_{l}\left( d_{h}d_{m} - R_{h}R_{l}{T_{m}}^{2} \right) - d_{h}R_{m}R_{w}{T_{l}}^{2} - R_{h}R_{w}{T_{m}}^{2}{T_{l}}^{2}}`
 
-Where :math:`I_{s \downarrow}` is the incoming solar radiation at the water surface, :math:`T_{l}`, :math:`T_{m}`, and :math:`T_{h}` are the transmissivities of the low, middle and high atmospheric layers, :math:`R_{l}`, :math:`R_{m}`, and :math:`R_{h}` are the reflectance of the low middle and high atmospheric layers, :math:`d_{l}`, :math:`d_{m}`, and :math:`d_{h}` are the interactions between the different layers and :math:`S_{e}` is the extraterrestrial solar radiation on a horizontal plane in :math:`\frac{W}{m^{2}}`.
+Where :math:`I_{s \downarrow}` is the incoming solar radiation at the water
+surface, :math:`T_{l}`, :math:`T_{m}`, and :math:`T_{h}` are the
+transmissivities of the low, middle and high atmospheric layers,
+:math:`R_{l}`, :math:`R_{m}`, and :math:`R_{h}` are the reflectance of the low
+middle and high atmospheric layers, :math:`d_{l}`, :math:`d_{m}`, and :math:`d_{h}`
+are the interactions between the different layers and :math:`S_{e}` is the
+extraterrestrial solar radiation on a horizontal plane in :math:`\frac{W}{m^{2}}`.
 
 :math:`d_{h} = 1 - R_{h}R_{m}`
 
@@ -421,7 +700,12 @@ Where :math:`I_{s \downarrow}` is the incoming solar radiation at the water surf
 
 :math:`S_{e} = 1369.2\Biggl( 1.0001399 + 0.0167261cos\left(\dfrac{2\pi(JD - 2)}{365.242}\right) \Biggr)^{2} \cos( \theta_{s})`
 
-In the above equations, :math:`R_{k}` and :math:`T_{k}` are a composite of the overcast (:math:`R_{k}^{o}`,\ :math:`\ T_{k}^{o}`) and clear sky (:math:`R_{k}^{c}`, :math:`T_{k}^{c}`) values, where a weight is determined based on the zenith angle and the fractional cloud cover (:math:`{f_{c}}_{k}`) in e ach layer :math:`k`, and coefficients from `Table 5`_, `Table 6`_, `Table 7`_, `Table 8`_, `Table 9`_.
+In the above equations, :math:`R_{k}` and :math:`T_{k}` are a composite of the
+overcast (:math:`R_{k}^{o}`,\ :math:`\ T_{k}^{o}`) and clear sky
+(:math:`R_{k}^{c}`, :math:`T_{k}^{c}`) values, where a weight is determined
+based on the zenith angle and the fractional cloud cover (:math:`{f_{c}}_{k}`)
+in each layer :math:`k`, and coefficients from
+`Table 5`_, `Table 6`_, `Table 7`_, `Table 8`_, `Table 9`_.
 
 :math:`R_{k} = W_{k}R_{k}^{o} + \left( 1 - W_{k} \right)R_{k}^{c}`
 
@@ -517,39 +801,63 @@ In the above equations, :math:`R_{k}` and :math:`T_{k}` are a composite of the o
 Longwave Radiation
 ~~~~~~~~~~~~~~~~~~
 
-Longwave radiation both adds and removes energy from the reservoir. Outgoing longwave radiation (:math:`I_{l \uparrow})` is the energy emitted by the reservoir, representing a loss of energy, and :math:`T_{s}` is a function of the water surface temperature, as shown in the equation below:
+Longwave radiation both adds and removes energy from the reservoir. Outgoing
+longwave radiation (:math:`I_{l \uparrow})` is the energy emitted by the reservoir,
+representing a loss of energy, and :math:`T_{s}` is a function of the water
+surface temperature, as shown in the equation below:
 
 :math:`I_{l \uparrow} = \varepsilon_{w}\sigma{T_{s}}^{4}`
 
-Where :math:`\sigma` is the Stefan-Boltzmann constant and :math:`\varepsilon_{w}` is the emissivity of water.
+Where :math:`\sigma` is the Stefan-Boltzmann constant and :math:`\varepsilon_{w}`
+is the emissivity of water.
 
-Incoming longwave radiation :math:`\left(I_{l \downarrow}\right)` is radiation emitted by the atmosphere that reaches the water surface. Within ResEvap, the incoming longwave radiation is computed as the sum of the clear sky component :math:`\left({I_{l \downarrow}}_{clear}\right)` and the cloud component :math:`\left({I_{l \downarrow}}_{cloud}\right)`.
+Incoming longwave radiation :math:`\left(I_{l \downarrow}\right)` is radiation
+emitted by the atmosphere that reaches the water surface. Within ResEvap, the
+incoming longwave radiation is computed as the sum of the clear sky component
+:math:`\left({I_{l \downarrow}}_{clear}\right)` and the cloud component
+:math:`\left({I_{l \downarrow}}_{cloud}\right)`.
 
 :math:`I_{l \downarrow} = {I_{l \downarrow}}_{clear} + {I_{l \downarrow}}_{cloud}`
 
-The clear sky component is a function of the emissivity of the atmosphere :math:`\left(\varepsilon_{atm}\right)`, and the measured air temperature:
+The clear sky component is a function of the emissivity of the atmosphere
+:math:`\left(\varepsilon_{atm}\right)`, and the measured air temperature:
 
 :math:`{I_{l \downarrow}}_{clear} = \varepsilon_{atm}\sigma{\widehat{T_{a}}}^{4}`
 
-Where the emissivity of the atmosphere is a function of the vapor pressure of the atmosphere (:math:`e_{a}`) and measured air temperature, based on :ref:`Crawford et al. (1999) <References>`:
+Where the emissivity of the atmosphere is a function of the vapor pressure of
+the atmosphere (:math:`e_{a}`) and measured air temperature, based
+on :ref:`Crawford et al. (1999) <References>`:
 
 :math:`\varepsilon_{atm} = 1.24\left( \frac{{\ e}_{a}}{\widehat{T_{a}}} \right)^{\frac{1}{7}}`
 
-Similar to the evaporation computations, the vapor pressure is a function of the saturation vapor pressure and the relative humidity:
+Similar to the evaporation computations, the vapor pressure is a function of the
+saturation vapor pressure and the relative humidity:
 
 :math:`{\ e}_{a} = \widehat{RH}*e_{s}`
 
-Unlike the evaporation computations, the saturation vapor pressure is computed with the Clausius-Clapeyron equation:
+Unlike the evaporation computations, the saturation vapor pressure is computed
+with the Clausius-Clapeyron equation:
 
 :math:`e_{s} = 6.13e^{\frac{l_{v}}{R_{v}}\left( \frac{1}{T_{k}} - \frac{1}{\widehat{\widehat{T_{a}}}} \right)}`
 
-Where :math:`l_{v}` is the latent heat of vaporization, :math:`R_{v}` is the gas constant for water vapor 461 :math:`\left(\frac{J}{kg*K}\right)`. Note that this is different than the formulation of saturation vapor pressure used in the evaporation computations. This difference is likely a result of the radiation model not using air pressure, but the differing computations is expected to have negligible effects on the resulting longwave radiation computations.
+Where :math:`l_{v}` is the latent heat of vaporization, :math:`R_{v}` is the gas
+constant for water vapor 461 :math:`\left(\frac{J}{kg*K}\right)`. Note that this
+is different than the formulation of saturation vapor pressure used in the
+evaporation computations. This difference is likely a result of the radiation
+model not using air pressure, but the differing computations is expected to have
+negligible effects on the resulting longwave radiation computations.
 
 :math:`l_{v} = \left( 3.166659 - .00243\widehat{T_{a}} \right)10^{6}`
 
-Similar to :math:`e_{s}`, the formulation of :math:`l_{v}` is different than in the evaporation computations. To be numerically equivalent, the equation would be :math:`l_{v} = \left( 3.1211431 - .002274\widehat{T_{a}} \right)10^{6}`. Although different, this is still expected to have negligible impacts on the resulting longwave radiation computations.
+Similar to :math:`e_{s}`, the formulation of :math:`l_{v}` is different than in
+the evaporation computations. To be numerically equivalent, the equation would be
+:math:`l_{v} = \left( 3.1211431 - .002274\widehat{T_{a}} \right)10^{6}`.
+Although different, this is still expected to have negligible impacts on the
+resulting longwave radiation computations.
 
-The incoming longwave radiation from the cloud component of the atmosphere is a function of the cloud cover in each layer :math:`\left({f_{c}}_{k}\right)` and the height of the clouds in each layer :math:`\left({h_{c}}_{k}\right)`, as shown below:
+The incoming longwave radiation from the cloud component of the atmosphere is a
+function of the cloud cover in each layer :math:`\left({f_{c}}_{k}\right)` and
+the height of the clouds in each layer :math:`\left({h_{c}}_{k}\right)`, as shown below:
 
 :math:`\left.
 \begin{array}{l}
@@ -562,7 +870,8 @@ The incoming longwave radiation from the cloud component of the atmosphere is a 
 a\  - \ b*\Bigl( 1.0\  - \left| \ cos\bigl(c*(lat\  - \ d)\bigr) \right|\Bigr) & otherwise
 \end{matrix} \right.\ `
 
-Table 10, Table 11, Table 12, Table 13 provide the coefficients for computing the cloud heights in the absence of observations.
+Table 10, Table 11, Table 12, Table 13 provide the coefficients for computing
+the cloud heights in the absence of observations.
 
 .. _Table 10:
 
@@ -623,17 +932,33 @@ Table 10, Table 11, Table 12, Table 13 provide the coefficients for computing th
 Vertical Temperature Profile Computations
 -----------------------------------------
 
-Vertical transfer of heat within a reservoir is assumed to be a one-dimensional process, where the reservoir is assumed to be laterally homogeneous. This allows for ignoring effects of reservoir inflows and outflows. In the event that there is a large lateral variation in temperature (i.e. long run-of-the-river reservoirs), these computations will be unreliable. Based on this assumption, vertical transfer of heat is modeled first by assuming stable reservoir stratification, accounting for diffusion of heat, and then accounting for any convective or turbulent mixing that occurs in the reservoir profile. Vertical diffusion of heat within a one-dimensional reservoir is governed by the equation below (Hondzo and Stefan 1993).
+Vertical transfer of heat within a reservoir is assumed to be a one-dimensional
+process, where the reservoir is assumed to be laterally homogeneous. This allows
+for ignoring effects of reservoir inflows and outflows. In the event that there
+is a large lateral variation in temperature (i.e. long run-of-the-river reservoirs),
+these computations will be unreliable. Based on this assumption, vertical transfer
+of heat is modeled first by assuming stable reservoir stratification, accounting
+for diffusion of heat, and then accounting for any convective or turbulent mixing
+that occurs in the reservoir profile. Vertical diffusion of heat within a
+one-dimensional reservoir is governed by the equation below
+:ref:`(Hondzo and Stefan 1993) <References>`.
 
 :math:`\dfrac{dT_{w}}{dt} = \dfrac{1}{A}\dfrac{d}{dz}\left( K_{z}A\dfrac{dT_{w}}{dz} \right) + \dfrac{I_{z}}{\rho_{w}c_{p}}`
 
-:math:`T_{w}` is the water temperature in K, :math:`A` is the area through which the heat is transferred, :math:`K_{z}` is the thermal diffusivity, :math:`z` is the depth, :math:`I_{z}` is the net radiation, :math:`\rho_{w}` is the density or water, and :math:`c_{p}` is the heat capacity. In order to initialize the computations, the density and heat capacity must be updated for each layer.
+:math:`T_{w}` is the water temperature in K, :math:`A` is the area through which
+the heat is transferred, :math:`K_{z}` is the thermal diffusivity,
+:math:`z` is the depth, :math:`I_{z}` is the net radiation, :math:`\rho_{w}` is
+the density or water, and :math:`c_{p}` is the heat capacity. In order to
+initialize the computations, the density and heat capacity must be updated for
+each layer.
 
 :math:`{\rho_{w_i}} = 1000 - 0.019549\left| {T_{w_i}} - 277.15 \right|^{1.68}`
 
 :math:`{c_{p_i}} = 4174.9 + 1.6659\left( e^\left({\frac{307.65 - {T_{w_i}}}{10.6}}\right) + e^\left({- \frac{307.65 - {T_{w_i}}}{10.6}}\right) \right)`
 
-In the above equations, :math:`i` is the index of the layer, where :math:`i = 1` is the bottom layer of the temperature profile. Next the thermal diffusivity is computed for each layer as follows.
+In the above equations, :math:`i` is the index of the layer, where :math:`i = 1`
+is the bottom layer of the temperature profile. Next the thermal diffusivity is
+computed for each layer as follows.
 
 :math:`{K_{z_i}} = 0.00012\left( 0.000817{A_{s}}^{0.56}\left( {N_{i}}^{2} \right)^{- 0.43} \right)`
 
@@ -641,7 +966,12 @@ In the above equations, :math:`i` is the index of the layer, where :math:`i = 1`
 
 :math:`\overline{\rho_{w}} = \dfrac{\sum_{i = 1}^{N}{{\rho_{w_i}}V_{i}}}{\sum_{i = 1}^{N}V_{i}}`
 
-Where :math:`\overline{\rho_{w}}` is the average density over the entire water column, :math:`z_{i}` is the depth of the top of layer :math:`i`, :math:`N_{i}` is the stability frequency of layer :math:`i`, and :math:`A_{s}` is the water surface area. Note that :math:`\overline{\rho_{w}}` is computed as a volumetric average, but should be the vertical average since this is a one-dimensional model. Additionally, the net radiation of layer :math:`i` is computed as follows.
+Where :math:`\overline{\rho_{w}}` is the average density over the entire water
+column, :math:`z_{i}` is the depth of the top of layer :math:`i`, :math:`N_{i}`
+is the stability frequency of layer :math:`i`, and :math:`A_{s}` is the water
+surface area. Note that :math:`\overline{\rho_{w}}` is computed as a volumetric
+average, but should be the vertical average since this is a one-dimensional model.
+Additionally, the net radiation of layer :math:`i` is computed as follows.
 
 :math:`{I_{z_i}} = \left\{ \begin{matrix}
 \left( I_{s \downarrow}\beta(1 - \alpha) + I_{l \downarrow} - I_{l \uparrow} - H_{l} - H_{s} \right)\frac{A_{i}}{V_{i}} & Surface\ Layer \\
@@ -650,19 +980,39 @@ I_{s \downarrow}\beta(1 - \alpha)\frac{\left( e^\left({- \kappa_{a}z_{i}}\right)
 
 :math:`\kappa_{a} = \dfrac{1.7}{SD}`
 
-Where :math:`I_{s \downarrow}` is the incoming shortwave radiation, :math:`\beta` is the fraction of shortwave radiation that penetrates the water surface (:math:`\beta = 0.4` is assumed), :math:`\alpha` is the albedo (:math:`\alpha = 0.08` is assumed for water), :math:`A_{i}^{u}` is the area of the top of layer :math:`i`, :math:`\kappa_{a}` is the bulk extinction coefficient for shortwave radiation, :math:`SD` is the secchi depth, :math:`I_{l \downarrow}` is the incoming longwave radiation, :math:`I_{l \uparrow}` is the outgoing longwave radiation, :math:`H_{l}` is the latent heat flux and :math:`H_{s}` is the sensible heat flux. The assumed values for :math:`\beta` and :math:`\alpha` are reasonable for this application, and can range from 0 to 1. Radiation computations and heat fluxes are described in previous sections. The necessary areas for diffusion computations are described below.
+Where :math:`I_{s \downarrow}` is the incoming shortwave radiation, :math:`\beta`
+is the fraction of shortwave radiation that penetrates the water surface
+(:math:`\beta = 0.4` is assumed), :math:`\alpha` is the albedo
+(:math:`\alpha = 0.08` is assumed for water), :math:`A_{i}^{u}` is the area of
+the top of layer :math:`i`, :math:`\kappa_{a}` is the bulk extinction coefficient
+for shortwave radiation, :math:`SD` is the secchi depth, :math:`I_{l \downarrow}`
+is the incoming longwave radiation, :math:`I_{l \uparrow}` is the outgoing
+longwave radiation, :math:`H_{l}` is the latent heat flux and :math:`H_{s}` is
+the sensible heat flux. The assumed values for :math:`\beta` and :math:`\alpha`
+are reasonable for this application, and can range from 0 to 1. Radiation
+computations and heat fluxes are described in previous sections. The necessary
+areas for diffusion computations are described below.
 
 :math:`A_{i} = f_{rating}\left( z_{i} \right)`
 
 :math:`\overline{A_{l}} = \dfrac{A_{i} - A_{i - 1}}{2}`
 
-In the above equations, :math:`f_{rating}` is the elevation-area rating function, :math:`A_{i}`\ is the area of the top of layer :math:`i`, and :math:`\overline{A_{l}}` is the average area of layer :math:`i`. Based on the known information, ResEvap applies a discretized form of the vertical heat diffusion equation. Discretization of the vertical diffusion equation is performed below, using the theta method.
+In the above equations, :math:`f_{rating}` is the elevation-area rating function,
+:math:`A_{i}`\ is the area of the top of layer :math:`i`, and
+:math:`\overline{A_{l}}` is the average area of layer :math:`i`. Based on the
+known information, ResEvap applies a discretized form of the vertical heat
+diffusion equation. Discretization of the vertical diffusion equation is
+performed below, using the theta method.
 
 :math:`\dfrac{{T_{w}}_{i}^{t + 1} - {T_{w}}_{i}^{t}\ }{\mathrm{\Delta}t} = \dfrac{1}{\overline{A_{l}}}\dfrac{1}{\mathrm{\Delta}z}\left\lbrack {K_{z_i}}A_{i}\dfrac{{T_{w}}_{i + 1}^{t + \theta} - {T_{w}}_{i}^{t + \theta}}{\mathrm{\Delta}z} \right\rbrack + \dfrac{{I_{z_i}}}{{\rho_{w_i}}{c_{p_i}}}`
 
 :math:`{T_{w}}_{i}^{t + \theta} = \theta{T_{w}}_{i}^{t + 1} + (1 - \theta){T_{w}}_{i}^{t}`
 
-Where :math:`{T_{w}}_{i}^{t}` is the temperature at the start of the timestep for layer :math:`i`, :math:`{T_{w}}_{i}^{t + 1}` is the temperature at the end of the time step for layer :math:`i`, :math:`A_{i}` is the area through which the heat is transferred, and :math:`\theta` is the implicitness factor, which typically ranges from :math:`0.5 \leq \theta \leq 1`.
+Where :math:`{T_{w}}_{i}^{t}` is the temperature at the start of the timestep
+for layer :math:`i`, :math:`{T_{w}}_{i}^{t + 1}` is the temperature at the end
+of the time step for layer :math:`i`, :math:`A_{i}` is the area through which
+the heat is transferred, and :math:`\theta` is the implicitness factor, which
+typically ranges from :math:`0.5 \leq \theta \leq 1`.
 
 The solution for this equation follows the form below.
 
@@ -678,9 +1028,21 @@ The solution for this equation follows the form below.
 
 :math:`c_{i} = - {\theta x}^{u}`
 
-In the above equations, ResEvap assumes :math:`\theta = 1`, which makes it a fully implicit solution. The provided equation is solved with the tridiagonal algorithm, where :math:`a_{i}`, :math:`b_{i}` and :math:`c_{i}` are the diagonal vectors, and the vector :math:`{T_{w}}_{1:N}^{t + 1}` is being solved.
+In the above equations, ResEvap assumes :math:`\theta = 1`, which makes it a
+fully implicit solution. The provided equation is solved with the tridiagonal
+algorithm, where :math:`a_{i}`, :math:`b_{i}` and :math:`c_{i}` are the diagonal
+vectors, and the vector :math:`{T_{w}}_{1:N}^{t + 1}` is being solved.
 
-At this point, the full surface profile has been modeled, assuming diffusion is the primary mode of heat transfer within the reservoir. This assumption will fail if the stratification in the reservoir has become unstable, forcing convective mixing between layers, or if the wind over the reservoir creates turbulent mixing. Modeling the effects of convective and turbulent mixing is performed by progressively mixing downward from the surface, until there is insufficient kinetic energy to mix deeper into the reservoir. The combined depth of the layers affected by mixing is referred to as the surface mixing layer (SML). Working downward from the surface, the potential energy of the SML, assuming layer :math:`i` is included, is evaluated as follows:
+At this point, the full surface profile has been modeled, assuming diffusion is
+the primary mode of heat transfer within the reservoir. This assumption will
+fail if the stratification in the reservoir has become unstable, forcing
+convective mixing between layers, or if the wind over the reservoir creates
+turbulent mixing. Modeling the effects of convective and turbulent mixing is
+performed by progressively mixing downward from the surface, until there is
+insufficient kinetic energy to mix deeper into the reservoir. The combined
+depth of the layers affected by mixing is referred to as the surface mixing
+layer (SML). Working downward from the surface, the potential energy of the SML,
+assuming layer :math:`i` is included, is evaluated as follows:
 
 :math:`\left.
 \begin{array}{l}
@@ -698,7 +1060,21 @@ At this point, the full surface profile has been modeled, assuming diffusion is 
 
 :math:`z^{com}_{i:j} = \sum_{k = i}^{j}\frac{\rho_{k}V_{k}( z_{k} + z_{k - 1} )}{2}`
 
-Where :math:`{\rho_{SML_i}}` is the density of the SML with layer :math:`i` included, :math:`{T_{SML_i}}` is the temperature of the SML with layer :math:`i` included, :math:`{z_{SML}^{com}}_{i}` is the center of mass of the SML with layer :math:`i` included, and :math:`{z^{com}}_{i:j}\ ` is the center of mass of layers :math:`i` through :math:`j`. :math:`PE_{SML_i}` is the difference in potential energy of the SML with layer :math:`i` included and excluded from the mixed layer. If :math:`PE_{SML_i} < 0`, then there is sufficient energy due to density instability to force mixing of layers :math:`i - 1\!:\!N`. In this case, the temperature of layers :math:`i - 1\!:\!N` is set to :math:`T_{w_{i:N}}`, and the :math:`PE_{SML_{i - 1}}` is subsequently checked. Once a layer is identified where :math:`PE_{SML_i} \geq 0`, the density profile is considered stable. At this point, it is still possible deeper layers are in the SML, due to the combined convective and wind driven turbulent energy. Therefore, the turbulent kinetic energy (TKE) must be computed, and compared against the potential energy.
+Where :math:`{\rho_{SML_i}}` is the density of the SML with layer :math:`i`
+included, :math:`{T_{SML_i}}` is the temperature of the SML with layer
+:math:`i` included, :math:`{z_{SML}^{com}}_{i}` is the center of mass of the SML
+with layer :math:`i` included, and :math:`{z^{com}}_{i:j}\ ` is the center of
+mass of layers :math:`i` through :math:`j`. :math:`PE_{SML_i}` is the difference
+in potential energy of the SML with layer :math:`i` included and excluded from
+the mixed layer. If :math:`PE_{SML_i} < 0`, then there is sufficient energy due
+to density instability to force mixing of layers :math:`i - 1\!:\!N`. In this
+case, the temperature of layers :math:`i - 1\!:\!N` is set to :math:`T_{w_{i:N}}`,
+and the :math:`PE_{SML_{i - 1}}` is subsequently checked. Once a layer is
+identified where :math:`PE_{SML_i} \geq 0`, the density profile is considered
+stable. At this point, it is still possible deeper layers are in the SML, due to
+the combined convective and wind driven turbulent energy. Therefore, the
+turbulent kinetic energy (TKE) must be computed, and compared against the
+potential energy.
 
 :math:`{TKE}_{i:N} = Ke_{c_{i:N}} + Ke_{u_{i:N}}`
 
@@ -708,7 +1084,15 @@ Where :math:`{\rho_{SML_i}}` is the density of the SML with layer :math:`i` incl
 
 :math:`u_{*}^{w} = u_{*}\sqrt{\frac{\rho_{a}}{\rho_{N}}}`
 
-Where :math:`Ke_{c_{i:N}}` is the kinetic energy of the SML with layer :math:`i` included and :math:`Ke_{u_{i:N}}` is the kinetic energy from wind with layer :math:`i` included. If :math:`TKE_{i:N} \geq PE_{mix_i}`, then layer :math:`i` is considered in the SML, and the computations checks the deeper layer. If :math:`{TKE}_{i:N} > {{PE}_{mix}}_{i}`, then the computation of vertical temperature profile is complete. At this point, the reservoir surface temperature computations have comple ted, and ResEvap moves on to the next time step. After the final time step, ResEvap reports data in the output reports and returns the results to the Jython processor.
+Where :math:`Ke_{c_{i:N}}` is the kinetic energy of the SML with layer
+:math:`i` included and :math:`Ke_{u_{i:N}}` is the kinetic energy from wind
+with layer :math:`i` included. If :math:`TKE_{i:N} \geq PE_{mix_i}`, then layer
+:math:`i` is considered in the SML, and the computations checks the deeper layer.
+If :math:`{TKE}_{i:N} > {{PE}_{mix}}_{i}`, then the computation of vertical
+temperature profile is complete. At this point, the reservoir surface
+temperature computations have comple ted, and ResEvap moves on to the next
+time step. After the final time step, ResEvap reports data in the output reports
+and returns the results to the Jython processor.
 
 .. _Appendix 1:
 
@@ -951,7 +1335,9 @@ Appendix 2: Constant Values
 | .. math:: \theta          | theta method factor          | .. math:: 1             | unitless                       |
 +---------------------------+------------------------------+-------------------------+--------------------------------+
 
-NOTE: The Stefan-Boltzman constant is :math:`5.669*10^{- 8}` in the computation of the incoming longwave radiation, which is slightly different than the rest of the computations. This is considered an insignificant difference.
+NOTE: The Stefan-Boltzman constant is :math:`5.669*10^{- 8}` in the computation
+of the incoming longwave radiation, which is slightly different than the rest
+of the computations. This is considered an insignificant difference.
 
 .. _Appendix 3:
 
@@ -1043,49 +1429,139 @@ Reservoir Information
 Appendix 4: Recommendations
 ===========================
 
-As a result of developing this document, a list of recommendations regarding ResEvap have been developed:
+As a result of developing this document, a list of recommendations regarding
+ResEvap have been developed:
 
 1. Implement Automated Testing
-    As a purely computational tool, ResEvap would benefit from having an automated test procedure. Such an automated test process should include running the ResEvap for multiple different datasets, and comparing against expected results. By implementing automated testing, there are benefits in the QA and the development processes. For QA, it removes the need to have staff review results when new versions of ResEvap are created. For development, an automated test system allows developers to quickly test that changes do not have unintended consequence, allowing for the identification of bugs earlier in the development process. Both of these benefits have the potential to reduce costs and improve speed of developing new ResEvap builds.
+    As a purely computational tool, ResEvap would benefit from having an
+    automated test procedure. Such an automated test process should include
+    running the ResEvap for multiple different datasets, and comparing against
+    expected results. By implementing automated testing, there are benefits in
+    the QA and the development processes. For QA, it removes the need to have
+    staff review results when new versions of ResEvap are created. For development,
+    an automated test system allows developers to quickly test that changes do
+    not have unintended consequence, allowing for the identification of bugs
+    earlier in the development process. Both of these benefits have the potential
+    to reduce costs and improve speed of developing new ResEvap builds.
 
 2. Simplify ResEvap input/output variable configuration
-    Currently, ResEvap has the output time series version established in resevap.properties and all input data including reservoir information, rating curves, and time series identifiers specified in the reservoir configuration file. Recommended is that the configuration of ResEvap be simplified allowing re-use of variables defined in resevap.properties as keyword replacement patterns in the reservoir file. Additionally, the reservoir file content should be examined to more clearly indicate default (ordinarily supplied by the database) versus required fields. ResEvap should be updated to perform a validation of its input data to generate warnings and/or failure states up to terminating the application when input is not correctly defined. ResEvap does not generate a warning or failure state if the input time series and output time series do not match. Suggested is that the application fail and log a severe error state if the time series do not match.
+    Currently, ResEvap has the output time series version established in
+    resevap.properties and all input data including reservoir information,
+    rating curves, and time series identifiers specified in the reservoir
+    configuration file. Recommended is that the configuration of ResEvap be
+    simplified allowing re-use of variables defined in resevap.properties as
+    keyword replacement patterns in the reservoir file. Additionally, the
+    reservoir file content should be examined to more clearly indicate default
+    (ordinarily supplied by the database) versus required fields. ResEvap should
+    be updated to perform a validation of its input data to generate warnings
+    and/or failure states up to terminating the application when input is not
+    correctly defined. ResEvap does not generate a warning or failure state if
+    the input time series and output time series do not match. Suggested is that
+    the application fail and log a severe error state if the time series do not match.
 
 3. ResEvap initialization process
-    At the start of the year, the water temperature profiles for all reservoirs are initialized using a separate jython script named, Evap_Initialization.py. This script is coded to be run under a Windows environment as it has UI elements. Recommended is that a similar operation be added to ResEvap that is able to establish initial water temperatures for the profiles. Given the environment, this operation would need to be developed as command line arguments to ResEvap or as a separate shell script from ResEvap.
+    At the start of the year, the water temperature profiles for all reservoirs
+    are initialized using a separate jython script named, Evap_Initialization.py.
+    This script is coded to be run under a Windows environment as it has UI
+    elements. Recommended is that a similar operation be added to ResEvap that
+    is able to establish initial water temperatures for the profiles. Given the
+    environment, this operation would need to be developed as command line
+    arguments to ResEvap or as a separate shell script from ResEvap.
 
 4. Compare ResEvap against other water temperature models
-    ResEvap has a complex water temperature profile model. This model is similar, but has distinct differences from other water temperature models. Therefore, it is suggested that ResEvap be compared against other water temperature profile models to compare accuracy and efficiency. This comparison has the potential to identify deficiencies in the existing ResEvap program, and to identify it’s strengths over other strategies.
+    ResEvap has a complex water temperature profile model. This model is similar,
+    but has distinct differences from other water temperature models. Therefore,
+    it is suggested that ResEvap be compared against other water temperature
+    profile models to compare accuracy and efficiency. This comparison has the
+    potential to identify deficiencies in the existing ResEvap program, and to
+    identify it’s strengths over other strategies.
 
 5. Change program name
-    ResEvap does much more than simply compute reservoir evaporation, which the name suggests. It’s a fully integrated reservoir energy balance model. Renaming the program to reflect the sophistication within the program may be helpful as other districts consider its use.
+    ResEvap does much more than simply compute reservoir evaporation, which the
+    name suggests. It’s a fully integrated reservoir energy balance model.
+    Renaming the program to reflect the sophistication within the program may be
+    helpful as other districts consider its use.
 
 6. Add additional user configuration
-    A few values are hard-coded within ResEvap that could be user configurable. Measurement heights, water temperature layer thickness and the theta parameter for discretization are all forced to be specific values. For measurement heights, the height at which wind speed, air temperature and relative humidity are measured are all forced to be 10m. These measurements likely occur at different heights, and the computations can support changing these values. For water temperature layer thickness, the layers are forced to be 0.5 meters, but this could be altered if the user desired finer or coarser vertical resolution. One important note is that changing the layer thickness could lead to model instability. One potential remedy for instability is changing the model time-step. Finally, the discretization of the vertical heat diffusion equation is performed with the theta method, but forces theta to be 1, representing a fully implicit solution. ResEvap actually supports theta ranging from 0 to 1, and therefore this parameter should be adjustable by the user.
+    A few values are hard-coded within ResEvap that could be user configurable.
+    Measurement heights, water temperature layer thickness and the theta
+    parameter for discretization are all forced to be specific values. For
+    measurement heights, the height at which wind speed, air temperature and
+    relative humidity are measured are all forced to be 10m. These measurements
+    likely occur at different heights, and the computations can support changing
+    these values. For water temperature layer thickness, the layers are forced
+    to be 0.5 meters, but this could be altered if the user desired finer or
+    coarser vertical resolution. One important note is that changing the layer
+    thickness could lead to model instability. One potential remedy for
+    instability is changing the model time-step. Finally, the discretization of
+    the vertical heat diffusion equation is performed with the theta method, but
+    forces theta to be 1, representing a fully implicit solution. ResEvap
+    actually supports theta ranging from 0 to 1, and therefore this parameter
+    should be adjustable by the user.
 
 7. Add vertical datum support
-    Vertical datums are ignored within ResEvap, but are critical for ensuring proper application of the elevation-area rating curve. This is because the elevation measurements and rating curve can have different vertical datums, and would therefore lead to incorrect area computations without datum adjustments. Therefore, it is recommended that vertical datum support be added to the ResEvap computations.
+    Vertical datums are ignored within ResEvap, but are critical for ensuring
+    proper application of the elevation-area rating curve. This is because the
+    elevation measurements and rating curve can have different vertical datums,
+    and would therefore lead to incorrect area computations without datum
+    adjustments. Therefore, it is recommended that vertical datum support be
+    added to the ResEvap computations.
 
 8. Add frustum computation
-    Evaporation as flow is computed by assuming that the reservoir banks are vertical at each time step. This generally leads to an over-estimation of flow, as the reservoir area becomes smaller as the pool elevation decreases. In order to improve the accuracy of evaporation as flow computations, it is recommended that the frustum computations be implemented.
+    Evaporation as flow is computed by assuming that the reservoir banks are
+    vertical at each time step. This generally leads to an over-estimation of
+    flow, as the reservoir area becomes smaller as the pool elevation decreases.
+    In order to improve the accuracy of evaporation as flow computations, it
+    is recommended that the frustum computations be implemented.
 
 9. Add support for solar radiation observations
-    Currently, ResEvap requires cloud fractions and heights for three different atmospheric layers, meaning there are six time series used for computing the radiation balance. Within the radiation balance, the solar radiation is the dominant variable, and therefore the inputs could be greatly simplified by replacing cloud cover fractions with solar radiation observations. This would require additional considerations for longwave radiation, which are typically performed by backing out effective cloud cover from the difference between the observed and computed clear sky solar radiation.
+    Currently, ResEvap requires cloud fractions and heights for three different
+    atmospheric layers, meaning there are six time series used for computing
+    the radiation balance. Within the radiation balance, the solar radiation
+    is the dominant variable, and therefore the inputs could be greatly
+    simplified by replacing cloud cover fractions with solar radiation
+    observations. This would require additional considerations for longwave
+    radiation, which are typically performed by backing out effective cloud
+    cover from the difference between the observed and computed clear sky
+    solar radiation.
 
 10. Fix vertically averaged density computations
-     The vertically averaged density, within the vertical temperature profile computation, is computed as a volumetric average. Since the model is 1-dimensional, the vertical averages should not be volumetric. By computing as a volumetric average, the densities become inconsistent with the vertically integrated temperatures. The average density should replace the volume average with a depth average, which ensures consistency between model variables.
+     The vertically averaged density, within the vertical temperature profile
+    computation, is computed as a volumetric average. Since the model is
+    1-dimensional, the vertical averages should not be volumetric. By computing
+    as a volumetric average, the densities become inconsistent with the
+    vertically integrated temperatures. The average density should replace
+    the volume average with a depth average, which ensures consistency between
+    model variables.
 
 11. Allow for storage of hourly temperature profiles
-     Although ResEvap computes hourly temperature profiles, only daily time series are saved to the CWMS database. ResEvap should be saving the most granular time series available, which would provide the maximum information possible. This would have the benefit of avoiding daylight savings considerations when saving, and allow for initialization at times other than midnight. Alternatively, if daily time series is preferred, ResEvap should transition to using Local Regular Time Series to ensure proper accounting of daylight savings time.
+     Although ResEvap computes hourly temperature profiles, only daily time
+    series are saved to the CWMS database. ResEvap should be saving the most
+    granular time series available, which would provide the maximum information
+    possible. This would have the benefit of avoiding daylight savings
+    considerations when saving, and allow for initialization at times other
+    than midnight. Alternatively, if daily time series is preferred, ResEvap
+    should transition to using Local Regular Time Series to ensure proper
+    accounting of daylight savings time.
 
 12. Re-code the ResEvap shell script as a bash script
-     The ResEvap script was originally coded as a CSH script as required by the Corps. CWMS has adopted BASH as the standard shell scripting language. The ResEvap script should be migrated to BASH for ease in maintenance and staying in parity with CWMS.
+     The ResEvap script was originally coded as a CSH script as required by
+    the Corps. CWMS has adopted BASH as the standard shell scripting language.
+    The ResEvap script should be migrated to BASH for ease in maintenance
+    and staying in parity with CWMS.
 
 13. Cleanup unused file production
-     ResEvap creates text report files that are not used by NWO, which are described in section 5.1.2. Since these files are unused currently, it is recommended that flags be added to suppress these files, so that they are not generated. Once these flags are developed, update the Jython code to leverage those flags to prevent creation of these files.
+     ResEvap creates text report files that are not used by NWO, which are
+    described in section 5.1.2. Since these files are unused currently, it is
+    recommended that flags be added to suppress these files, so that they are
+    not generated. Once these flags are developed, update the Jython code to
+    leverage those flags to prevent creation of these files.
 
 14. Allow for use of fog/smoke layer computations
-     The parameters for the fog/smoke layer effects on shortwave radiation exist in ResEvap, but these are never used. The program should be updated to allow for use of these parameters, which would allow for direct assessment of fog/smoke effects on the incoming solar radiation.
+     The parameters for the fog/smoke layer effects on shortwave radiation
+    exist in ResEvap, but these are never used. The program should be updated
+    to allow for use of these parameters, which would allow for direct assessment
+    of fog/smoke effects on the incoming solar radiation.
 
 .. _References:
 
