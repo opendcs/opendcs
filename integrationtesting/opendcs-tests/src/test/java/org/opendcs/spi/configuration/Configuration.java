@@ -1,29 +1,13 @@
-/*
- * Copyright 2025 OpenDCS Consortium and its Contributors
- * Licensed under the Apache License, Version 2.0 (the "License")
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- */
-
 package org.opendcs.spi.configuration;
 
 import java.io.File;
 import java.util.Map;
 
-import decodes.db.DatabaseIO;
-import decodes.util.DecodesSettings;
-
 import decodes.db.Database;
+import decodes.db.DatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.DecodesSettings;
 import opendcs.dao.DaoBase;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -66,7 +50,7 @@ public interface Configuration
     public File getPropertiesFile();
     public File getUserDir();
     public boolean isSql();
-    public default boolean isTsdb()
+    default public boolean isTsdb()
     {
         return false;
     }
@@ -84,13 +68,13 @@ public interface Configuration
      * @return The timeseries database if it can be made.
      * @throws Throwable any issue with the creation of the TimeSeriesDb object
      */
-    public default TimeSeriesDb getTsdb() throws Throwable
+    default public TimeSeriesDb getTsdb() throws Throwable
     {
         return null;
     }
 
     /**
-     * Returns an independent instance of the {@link decodes.db.Database} Decodes Database for this configuration.
+     * Returns an independent instance of the {@decodes.db.Database} Decodes Database for this configuration.
      *
      * @return Instance of the Decodes Database for this run/test.
      * @throws Throwable
@@ -106,7 +90,7 @@ public interface Configuration
         return db;
     }
 
-    public default boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
+    default public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
     {
         return false;
     }
@@ -119,7 +103,7 @@ public interface Configuration
     default public boolean supportsDao(Class<? extends DaoBase> dao)
     {
         return false;
-    }
+    };
 
     /* The name of this configuration
     * @return
