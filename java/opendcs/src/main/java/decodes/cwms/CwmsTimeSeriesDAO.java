@@ -1099,6 +1099,14 @@ public class CwmsTimeSeriesDAO
             for (Iterator<TimeSeriesIdentifier> tsidit = cache.iterator(); tsidit.hasNext();)
             {
                 TimeSeriesIdentifier tsid = tsidit.next();
+                if (tsid instanceof CwmsTsId)
+                {
+                    CwmsTsId ctsid = (CwmsTsId)tsid;
+                    if (!activeOnly || ctsid.isActive())
+                    {
+                        ret.add(tsid);
+                    }
+                }
                 if (!activeOnly || tsid.getSite().isActive())
                 {
                     ret.add(tsid);
