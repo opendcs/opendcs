@@ -23,6 +23,8 @@ package opendcs.dai;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.servlet.http.HttpSession;
+
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
@@ -93,6 +95,22 @@ public interface DacqEventDAI
 	 */
 	public int readEventsForPlatform(DbKey platformId, ArrayList<DacqEvent> evtList)
 		throws DbIoException;
+
+	/**
+	 * Read events for a specific DACQ Event matching the specified criteria.
+	 * Events are added to the end of the passed array in time order.
+	 * If evtList is not empty, only events after the last in the array are read.
+	 * @param evtList the list to add events to
+	 * @param appId the application ID
+	 * @param routingExecId the routing execution ID
+	 * @param platformId the platform ID
+	 * @param backlog the backlog
+	 * @param httpSession the HTTP session
+	 * @return number of events added to the list
+	 * @throws DbIoException
+	 */
+	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, String backlog, HttpSession httpSession)
+			throws DbIoException;
 	
 	
 	/**
