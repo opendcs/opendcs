@@ -5,9 +5,25 @@ plugins {
 def pythonExe = osWin ? "python.exe" : "python3"
 def docsVenv = "$buildDir/sphinx"
 def docsDir = projectDir
-def venvPath = (osWin ? "${docsVenv}/Scipts" : "${docsVenv}/bin")
+def venvPath = (osWin ? "${docsVenv}/Scripts" : "${docsVenv}/bin")
+def noDocs = project.findProperty("no.docs") ?: false
+def havePython = checkPython(pythonExe)
 
-
+def checkPython(pythonStr) {
+    def result = exec {
+        ignoreExitValue = true
+        if (osWin) {
+            executable "cmd"
+            args += "/c"
+            args += pythonStr
+        } else {
+            executable pythonStr
+        }
+        args += "-c"
+        args += "import sys; print('checking for python'); sys.exit(0)"
+    }
+    return result.getExitValue() == 0
+}
 
 configurations {
     docs {
@@ -15,7 +31,6 @@ configurations {
         canBeResolved = false        
     }
 }
-
 
 task prepVenv(type: Exec) {
     executable pythonExe
@@ -29,37 +44,50 @@ task prepVenv(type: Exec) {
 
 task installReqs(type: Exec) {
     dependsOn prepVenv
-
-    executable "pip"
+    def theArgs = osWin ? ["/c","pip"]
+                        : []
+    def cmd = osWin ? "cmd" : venvPath+"/pip"
+    executable cmd
     workingDir projectDir
+    args += theArgs
     args += "install"
     args += "-r"
     args += "${docsDir}/requirements.txt"
-    environment "PATH", venvPath
+    environment "PATH": "${venvPath}:${System.getenv('PATH')}"
     environment "VENV_PATH", venvPath
 }
 
 
-tasks.addRule("Pattern: buidDocs<ID>") { String taskName ->
+tasks.addRule("Pattern: buildDocs<ID>") { String taskName ->
     def builder = taskName.toLowerCase().replace("builddocs","")
     if (taskName.startsWith("buildDocs")) {
+        if (!noDocs && havePython) {
         def theArgs = osWin ? ["/c","make.bat",builder]
                          : [builder]
         def cmd = osWin ? "cmd" : "make"
-        task(taskName, type: Exec) {
-            dependsOn installReqs
+            task(taskName, type: Exec) {
+                dependsOn installReqs
 
-            executable cmd
-            workingDir projectDir
-            args = theArgs
-            environment "PATH": "${venvPath}:${System.getenv('PATH')}"
+                executable cmd
+                workingDir projectDir
+                args = theArgs
+                environment "PATH": "${venvPath}:${System.getenv('PATH')}"
 
-            inputs.files(fileTree('source'))
-                  .withPropertyName('sourceFiles')
-                  .withPathSensitivity(PathSensitivity.RELATIVE)
-    
-            outputs.dir("${buildDir}/${builder}")
-                   .withPropertyName('outputDir')
+                inputs.files(fileTree('source'))
+                    .withPropertyName('sourceFiles')
+                    .withPathSensitivity(PathSensitivity.RELATIVE)
+                outputs.dir("${buildDir}/${builder}")
+                       .withPropertyName('outputDir')
+            }
+        } else {
+            task(taskName) {
+                // Register outputs so downstream usages still behave correctly.
+                outputs.dir("${buildDir}/${builder}")
+                       .withPropertyName('outputDir')
+                doLast {
+                    println('Doc Generation was skipped.')
+                }
+            }
         }
     }
 }
@@ -67,8 +95,12 @@ tasks.addRule("Pattern: buidDocs<ID>") { String taskName ->
 task buildDocs {
     dependsOn 'buildDocsHtml' 
     // work on PDF later,'buildDocsLatexpdf'
+    doFirst {
+        if (!havePython) {
+            logger.warn("Python was not found, the documentation will not be built.")
+        }
+    }
 }
-
 
 artifacts {
     docs(file("${buildDir}/html")) {

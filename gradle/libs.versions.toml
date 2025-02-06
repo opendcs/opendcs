@@ -16,7 +16,6 @@ jep="2.4.1"
 jama="1.0.2"
 dropwizard="4.1.0-rc2"
 passay="1.3.1"
-sun-mailapi="1.6.2"
 jsch="0.1.55"
 aspectj="1.8.10"
 json="20231013"
@@ -35,6 +34,7 @@ nucleus = "1.1.1"
 # to upgrade past this version requires java 11 -->
 jdbi = "3.39.1"
 flywaydb = "9.8.1"
+sun-mailapi="1.6.7"
 
 #test deps
 junit = "5.10.2"
@@ -42,6 +42,7 @@ commons-io = "2.11.0"
 derby = "10.14.2.0"
 webcompere = "2.0.2"
 jackson = "2.18.2"
+greenmail = "1.6.5"
 
 # integration test deps
 testcontainers = "1.20.4"
@@ -70,7 +71,7 @@ scijava-jep = { module = "org.scijava:jep", version.ref="jep" }
 jama = { module = "gov.nist.math:jama", version.ref="jama" }
 dropwizard-metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref="dropwizard" }
 passay = { module = "org.passay:passay", version.ref="passay" }
-sun-mailapi = { module = "com.sun.mail:mailapi", version.ref="sun-mailapi" }
+sun-mailapi = { module = "com.sun.mail:jakarta.mail", version.ref="sun-mailapi" }
 org-jcraft-jsch = { module = "com.jcraft:jsch", version.ref="jsch" }
 org-aspectj-aspectjrt = { module = "org.aspectj:aspectjrt", version.ref="aspectj" }
 org-json-json = { module = "org.json:json", version.ref="json" }
@@ -89,7 +90,6 @@ org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi
 org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
 org-jdbi3-oracle = { module = "org.jdbi:jdbi3-oracle12", version.ref = "jdbi" }
 org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
-
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
@@ -114,11 +114,15 @@ commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
 fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
+
+
 
 #integration test deps
 
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref="testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref="testcontainers" }
+testcontainers-oracle-free = { module = "org.testcontainers:oracle-free", version.ref="testcontainers" }
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
 
 [bundles]

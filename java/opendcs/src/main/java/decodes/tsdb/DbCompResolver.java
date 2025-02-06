@@ -47,6 +47,7 @@ import java.util.Iterator;
 
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
+import opendcs.dai.TimeSeriesDAI;
 import ilex.util.Logger;
 import decodes.db.Constants;
 import decodes.sql.DbKey;
@@ -80,124 +81,128 @@ public class DbCompResolver
 		throws DbIoException
 	{
 		trimPythonWrittenQueue();
-		ComputationDAI computationDAO = theDb.makeComputationDAO();
-		try
+		final ArrayList<DbComputation> results = new ArrayList<>();
+		try (ComputationDAI txDAO = theDb.makeComputationDAO())
 		{
-			Vector<DbComputation> results = new Vector<DbComputation>();
-			for(CTimeSeries trigger : data.getAllTimeSeries())
-				if (trigger.hasAddedOrDeleted())
+			txDAO.inTransaction(dao ->
+			{
+				try (ComputationDAI computationDAO = theDb.makeComputationDAO();
+					 CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();
+					 TimeSeriesDAI tsDAI = theDb.makeTimeSeriesDAO();)
 				{
-					Logger.instance().debug3(module + "ts id=" + trigger.getTimeSeriesIdentifier().getUniqueString() 
-						+ "#comps = " + trigger.getDependentCompIds().size());
-					for(DbKey compId : trigger.getDependentCompIds())
+					computationDAO.inTransactionOf(dao);
+					compDependsDAO.inTransactionOf(dao);
+					tsDAI.inTransactionOf(dao);
+					for(CTimeSeries trigger : data.getAllTimeSeries())
 					{
-						Logger.instance().debug3(module + "\t\tdependent compId=" + compId);
-						if (isInPythonWrittenQueue(compId, trigger.getTimeSeriesIdentifier().getKey()))
+						if (trigger.hasAddedOrDeleted())
 						{
-							Logger.instance().debug3(module + 
-								"\t\t\t--Resolver Skipping because recently written by python.");
-							continue;
-						}
-						DbComputation origComp = null;
-						try
-						{
-							origComp = computationDAO.getComputationById(compId);
-						}
-						catch (NoSuchObjectException ex)
-						{
-							Logger.instance().warning(module + "Time Series " 
-								+ trigger.getDisplayName() + " uses compId " + compId
-								+ " which no longer exists in database.");
-							continue;
-						}
-						if (!origComp.hasGroupInput())
-						{
-							addToResults(results, origComp, trigger);
-							continue;
-						}
-						// Else this is a group computation.
-						// Group comps will have partial (abstract) params.
-						// Use the triggering time series to make the computation concrete.
-						try
-						{
-							DbComputation comp = 
-								makeConcrete(theDb, trigger.getTimeSeriesIdentifier(), origComp, true);
-							addToResults(results, comp, trigger);
-						}
-						catch(NoSuchObjectException ex)
-						{
-							if (!theDb.isCwms())
+							Logger.instance().debug3(module + "ts id=" + trigger.getTimeSeriesIdentifier().getUniqueString() 
+								+ "#comps = " + trigger.getDependentCompIds().size());
+							for(DbKey compId : trigger.getDependentCompIds())
 							{
-								Logger.instance().warning(module + "Failed to make clone for computation "
-									+ compId + ": " + origComp.getName() + " for time series " 
-									+ trigger.getTimeSeriesIdentifier().getUniqueString());
-								continue;
-							}
-							// The following handles the wildcards in CWMS sub-parts.
-							
-							// This means we failed to create a clone from the triggering TSID because one or
-							// more of its input parms did not exist.
-							// We have to try all of the other TSIDs that can trigger this computation
-							// to see if the result contains THIS trigger.
-							
-							// Use Case: Rating with 2 indeps: a common Elev and several Gate Openings.
-							// When triggered by Elev, the clone won't be able to create clones for
-							// the gate openings because each has a sublocation. 
-							// E.G:
-							//    indep1=BaseLoc.Elev.Inst.15Minutes.0.rev
-							//    indep2=BaseLoc-*.Opening.Inst.15Minutes.0.rev
-							// Potential Triggers:
-							//    BaseLoc.Elev.Inst.15Minutes.0.rev
-							//    BaseLoc-Spillway1-Gate1.Opening.Inst.15Minutes.0.rev
-							//    BaseLoc-Spillway1-Gate2.Opening.Inst.15Minutes.0.rev
-							//    BaseLoc-Spillway2-Gate1.Opening.Inst.15Minutes.0.rev
-					
-							CompDependsDAI compDependsDAO = theDb.makeCompDependsDAO();
-							try
-							{
-								ArrayList<TimeSeriesIdentifier> triggers = compDependsDAO.getTriggersFor(origComp.getId());
-Logger.instance().debug3(module + triggers.size() + " total triggers found:");
-								int nAdded = 0, nFailed = 0, nInapplicable = 0;
-								for(TimeSeriesIdentifier otherTrig : triggers)
+								Logger.instance().debug3(module + "\t\tdependent compId=" + compId);
+								if (isInPythonWrittenQueue(compId, trigger.getTimeSeriesIdentifier().getKey()))
 								{
-Logger.instance().debug3(module + otherTrig.getUniqueString());
-									if (otherTrig.equals(trigger.getTimeSeriesIdentifier()))
-										continue;
-									try
-									{
-										DbComputation comp = makeConcrete(theDb, otherTrig, origComp, true);
-										if (compContainsInput(comp, trigger.getTimeSeriesIdentifier()))
-										{
-											addToResults(results, comp, trigger);
-											nAdded++;
-										}
-										else
-											nInapplicable++;
-									}
-									catch (NoSuchObjectException e)
-									{
-										// Failed to create clone
-										nFailed++;
-									}
+									Logger.instance().debug3(module + 
+										"\t\t\t--Resolver Skipping because recently written by python.");
+									continue;
 								}
-								Logger.instance().debug1(module + "for extended group resolution: "
-									+ nAdded + " added from other triggers, " 
-									+ nInapplicable + " inapplicable from other triggers, "
-									+ nFailed + " failed from other triggers.");
-							}
-							finally
-							{
-								compDependsDAO.close();
+								DbComputation origComp = null;
+								try
+								{
+									origComp = computationDAO.getComputationById(compId);
+								}
+								catch (NoSuchObjectException ex)
+								{
+									Logger.instance().warning(module + "Time Series " 
+										+ trigger.getDisplayName() + " uses compId " + compId
+										+ " which no longer exists in database.");
+									continue;
+								}
+								if (!origComp.hasGroupInput())
+								{
+									addToResults(results, origComp, trigger);
+									continue;
+								}
+								// Else this is a group computation.
+								// Group comps will have partial (abstract) params.
+								// Use the triggering time series to make the computation concrete.
+								try
+								{
+									DbComputation comp = 
+										makeConcrete(theDb, tsDAI, trigger.getTimeSeriesIdentifier(), origComp, true);
+									addToResults(results, comp, trigger);
+								}
+								catch(NoSuchObjectException ex)
+								{
+									if (!theDb.isCwms())
+									{
+										Logger.instance().warning(module + "Failed to make clone for computation "
+											+ compId + ": " + origComp.getName() + " for time series " 
+											+ trigger.getTimeSeriesIdentifier().getUniqueString());
+										continue;
+									}
+									// The following handles the wildcards in CWMS sub-parts.
+									
+									// This means we failed to create a clone from the triggering TSID because one or
+									// more of its input parms did not exist.
+									// We have to try all of the other TSIDs that can trigger this computation
+									// to see if the result contains THIS trigger.
+									
+									// Use Case: Rating with 2 indeps: a common Elev and several Gate Openings.
+									// When triggered by Elev, the clone won't be able to create clones for
+									// the gate openings because each has a sublocation. 
+									// E.G:
+									//    indep1=BaseLoc.Elev.Inst.15Minutes.0.rev
+									//    indep2=BaseLoc-*.Opening.Inst.15Minutes.0.rev
+									// Potential Triggers:
+									//    BaseLoc.Elev.Inst.15Minutes.0.rev
+									//    BaseLoc-Spillway1-Gate1.Opening.Inst.15Minutes.0.rev
+									//    BaseLoc-Spillway1-Gate2.Opening.Inst.15Minutes.0.rev
+									//    BaseLoc-Spillway2-Gate1.Opening.Inst.15Minutes.0.rev
+									
+									ArrayList<TimeSeriesIdentifier> triggers = compDependsDAO.getTriggersFor(origComp.getId());
+									Logger.instance().debug3(module + triggers.size() + " total triggers found:");
+									int nAdded = 0, nFailed = 0, nInapplicable = 0;
+									for(TimeSeriesIdentifier otherTrig : triggers)
+									{
+										Logger.instance().debug3(module + otherTrig.getUniqueString());
+										if (otherTrig.equals(trigger.getTimeSeriesIdentifier()))
+											continue;
+										try
+										{
+											DbComputation comp = makeConcrete(theDb, tsDAI, otherTrig, origComp, true);
+											if (compContainsInput(comp, trigger.getTimeSeriesIdentifier()))
+											{
+												addToResults(results, comp, trigger);
+												nAdded++;
+											}
+											else
+												nInapplicable++;
+										}
+										catch (NoSuchObjectException e)
+										{
+											// Failed to create clone
+											nFailed++;
+										}
+									}
+									Logger.instance().debug1(module + "for extended group resolution: "
+										+ nAdded + " added from other triggers, " 
+										+ nInapplicable + " inapplicable from other triggers, "
+										+ nFailed + " failed from other triggers.");
+								
+								}
 							}
 						}
 					}
 				}
-			DbComputation[] r = new DbComputation[results.size()];
-			return results.toArray(r);
+			});
+			return results.toArray(new DbComputation[0]);
 		}
-		finally
+		catch (Exception ex)
 		{
-			computationDAO.close();
+			throw new DbIoException("Unable to resolve computations.", ex);
 		}
 	}
 
@@ -239,7 +244,7 @@ Logger.instance().debug3(module + otherTrig.getUniqueString());
 	 * @throws NoSuchObjectException
 	 * @throws DbIoException
 	 */
-	public static DbComputation makeConcrete(TimeSeriesDb theDb,
+	public static DbComputation makeConcrete(TimeSeriesDb theDb, TimeSeriesDAI tsDai,
 		TimeSeriesIdentifier tsid, DbComputation incomp, boolean createOutput)
 		throws NoSuchObjectException, DbIoException
 	{
@@ -247,8 +252,8 @@ Logger.instance().debug3(module + otherTrig.getUniqueString());
 		
 		// Has to have ID from original comp so we can detect duplicates.
 		comp.setId(incomp.getId());
-Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName()
-+ " for key=" + tsid.getKey() + ", '" + tsid.getUniqueString() + "', compid = " + comp.getId());
+		Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName()
+			+ " for key=" + tsid.getKey() + ", '" + tsid.getUniqueString() + "', compid = " + comp.getId());
 		String parmName = "";
 		try
 		{
@@ -261,7 +266,7 @@ Logger.instance().debug3(module + "makeConcrete of computation " + comp.getName(
 				String nm = comp.getProperty(dcp.getRoleName() + "_tsname");
 				String missing = comp.getProperty(parmName + "_MISSING");
 				TimeSeriesIdentifier parmTsid = 
-					theDb.transformTsidByCompParm(tsid, dcp, 
+					theDb.transformTsidByCompParm(tsDai, tsid, dcp, 
 						createOutput && dcp.isOutput(),    // Yes create TS if this is an output
 						true,                              // Yes update the DbCompParm object
 						nm);

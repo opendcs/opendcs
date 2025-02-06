@@ -44,7 +44,6 @@ import opendcs.dao.DaoBase;
  */
 @DecodesConfigurationRequired({
         "shared/test-sites.xml",
-        "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
         "shared/presgrp-regtest.xml"
     })
 @ComputationConfigurationRequired("shared/loading-apps.xml")

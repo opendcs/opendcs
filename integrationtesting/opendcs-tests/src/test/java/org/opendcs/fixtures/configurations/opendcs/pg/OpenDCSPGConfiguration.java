@@ -22,12 +22,10 @@ import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
-import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import decodes.db.Database;
 import decodes.launcher.Profile;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
