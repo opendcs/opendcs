@@ -15,8 +15,8 @@ Feature: Site List Sorting on the Sites Tab
             Then The correct site is opened
 
         Examples:
-            |open method             | column      |
-            |Select Row -> Click edit | local       |
-            |Double Click Row         | local       |
-            |Select Row -> Click edit | description |
-            |Double Click Row         | description |
+            |open method                   | column      |
+            |selects a row and clicks Open | local       |
+            |Double Click Row              | local       |
+            |selects a row and clicks Open | description |
+            |Double Click Row              | description |

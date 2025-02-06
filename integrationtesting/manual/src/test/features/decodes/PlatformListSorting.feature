@@ -11,7 +11,7 @@ Feature: Platform List Tab
         When The user double clicks a row
         Then The selected platform is opened
 
-        When The user selects a row and clicked open
+        When The user selects a row and clicks open
         Then The selected platform is opened
   
 
@@ -27,7 +27,7 @@ Feature: Platform List Tab
 
     Examples:
         |filter     |
-        |platform    |
+        |Platform    |
         |Agency      |
         |Transport-ID|
         |Config      |

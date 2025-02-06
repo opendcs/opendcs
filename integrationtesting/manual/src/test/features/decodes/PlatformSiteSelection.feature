@@ -18,6 +18,6 @@ Feature: Platform Site selection
         Then The selected site is shown in the "Site" text box.
 
     Examples:
-        | open method         |
-        |Select and click edit|
-        |Double-Click Row     |
+        | open method            |
+        |Select and clicking Open|
+        |Double-Click the row    |
