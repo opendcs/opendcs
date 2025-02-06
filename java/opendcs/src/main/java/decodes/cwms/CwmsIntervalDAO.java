@@ -299,13 +299,13 @@ public class CwmsIntervalDAO extends DaoBase implements IntervalDAI
 	@Override
 	public void writeInterval(Interval intv) throws DbIoException
 	{
-//		warning("Cannot write Intervals to CWMS");
+		throw new UnsupportedOperationException("Cannot write Intervals to CWMS");
 	}
 
 	@Override
 	public void deleteInterval(DbKey intervalId)
 	{
-		warning("Cannot delete Intervals from CWMS");
+		throw new UnsupportedOperationException("Cannot delete Intervals from CWMS");
 	}
 
 	@Override

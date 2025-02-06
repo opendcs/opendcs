@@ -103,7 +103,7 @@ public interface Configuration
     default public boolean supportsDao(Class<? extends DaoBase> dao)
     {
         return false;
-    }
+    };
 
     /* The name of this configuration
     * @return
