@@ -90,13 +90,13 @@ by the need for accurate estimates of evaporation to properly manage reservoirs,
 in conjunction with the known limitation of evaporation observations
 (e.g. Evaporation Pans). The underlying algorithm was developed with
 state-of-the-art evaporation and water temperature modeling techniques, and was
-subsequently written in Fortran by the USACE (Daly 2005). In order to improve
-the usability of ResEvap throughout the USACE, the model was converted to Java
-and Jython/Python by RMA. At the time of the original conversion, the desired
-outcome was a direct translation of the computation logic from Fortran to Java
-with Jython/Python scripting used to orchestrate the computations. Since that
-time, a need for documentation of the computational routines within ResEvap has
-developed, motivating the production of this document.
+subsequently written in Fortran by the USACE :ref:`(Daly 2005) <References>`.
+In order to improve the usability of ResEvap throughout the USACE, the model was
+converted to Java and Jython/Python by RMA. At the time of the original conversion,
+the desired outcome was a direct translation of the computation logic from
+Fortran to Java with Jython/Python scripting used to orchestrate the computations.
+Since that time, a need for documentation of the computational routines within
+ResEvap has developed, motivating the production of this document.
 
 This documentation is intended to describe both the core computational
 functionality, as well as the entry points to the computational routines
@@ -150,7 +150,7 @@ Machine (JVM) arguments and Jython arguments. The JVM arguments are described in
 
 .. _Table 1:
 
-*Table 1 - JVM arguments passed to the ResEvap Jython processor*
+*Table 1- JVM arguments passed to the ResEvap Jython processor*
 
 +-------------------------------+--------------------------------------------------------+
 | JVM Argument                  | Description                                            |
@@ -271,14 +271,14 @@ conditions and meteorological observations. Temperature profile modeling in
 ResEvap assumes that the vertical temperature profile is governed by the energy
 transfer through the water surface, which requires that the inflows and outflows
 are negligible components of the energy balance. This is appropriate for the
-Missouri River watershed (Daly 2005), which ResEvap was designed for, but this
-assumption should be carefully analyzed when applying to new watersheds. Four
-heat transfer modes are computed: sensible, latent, shortwave radiation and
-longwave radiation. Computation of these fluxes are described in the
-“Evaporation Computations” and “Radiation Computations” sections of this
-document. Based on these fluxes, and the initial water temperature at each layer
-in the profile, the temperatures are updated as described in the “Vertical
-Temperature Profile Computations” section.
+Missouri River watershed :ref:`(Daly 2005) <References>`, which ResEvap was
+designed for, but this assumption should be carefully analyzed when applying to
+new watersheds. Four heat transfer modes are computed: sensible, latent,
+shortwave radiation and longwave radiation. Computation of these fluxes are
+described in the “Evaporation Computations” and “Radiation Computations” sections
+of this document. Based on these fluxes, and the initial water temperature at
+each layer in the profile, the temperatures are updated as described in the
+“Vertical Temperature Profile Computations” section.
 
 **Note:** `Appendix 1`_ **has a definition of all variables in the computations,
 and** `Appendix 2`_ **has a definition of all the constants used.**
@@ -294,7 +294,7 @@ parameter.
 
 .. _Table 2:
 
-*Table 2-Time series input data required for ResEvap computations*
+*Table 2- Time series input data required for ResEvap computations*
 
 +--------------------------------+----------------------+---------------+-----------------------+
 | Parameter                      | Parameter Type       | Time Step     | Units                 |
@@ -420,9 +420,10 @@ with the Obukhov length (:math:`l_{o}`). Therefore, the computations setup
 initial estimates of the transfer coefficients
 (:math:`C_{D}` for wind, :math:`C_{T}` for temperature and :math:`C_{q}` for humidity)
 then estimate the Obukhov length, and iteratively recompute the turbulent
-exchange scales (:math:`u_{*}` for wind, :math:`t_{*}` for temperature and :math:`q_{*}` for humidity)
-until convergence. Based on the turbulent exchange values, the resulting
-evaporation, sensible heat and latent heat may be computed as follows:
+exchange scales (:math:`u_{*}` for wind, :math:`t_{*}` for temperature and
+:math:`q_{*}` for humidity) until convergence. Based on the turbulent exchange
+values, the resulting evaporation, sensible heat and latent heat may be
+computed as follows:
 
 :math:`H_{l} = - \rho_{a}l_{v}u_{*}q_{*}`
 
@@ -452,7 +453,7 @@ Where :math:`\theta_{r}` is the potential temperature, as computed below:
 
 :math:`\theta_{r} = \widehat{T_{a}} + \dfrac{g}{c_{p}^{\widehat{T_{a}}}}h_{t}`
 
-:math:`c_{p}^{T} = 1005.60\  + (T - T_{FP})(0.017211\  + \ 0.000392(T - T_{FP}))`
+:math:`c_{p}^{T} = 1005.60\  + (T - T_{FP}) \Bigl(0.017211\  + \ 0.000392(T - T_{FP})\Bigr)`
 
 Where :math:`g` is the gravitational acceleration, :math:`T_{FP}` is the freezing
 point in Kelvin, and :math:`c_{p}^{T}` is the specific heat of air based on
@@ -464,7 +465,8 @@ rarely be exceeded for surface reservoirs within the USA.
 
 :math:`q = \dfrac{\rho_{v}}{\rho_{a}}`
 
-:math:`\rho_{a} = \rho_{d} + \rho_{v} = \dfrac{100e(1 - 0.000537*S)m_{w}}{R_{g}T_{a}} + 1.2923\left(\dfrac{T_{FP}}{T_{a}}\right)\left(\dfrac{\widehat{p_{a}}}{1013.25}\right)`
+:math:`\rho_{a} = \rho_{d} + \rho_{v} = \dfrac{100e(1 - 0.000537*S)m_{w}}{R_{g}T_{a}} \
++ 1.2923\left(\dfrac{T_{FP}}{T_{a}}\right)\left(\dfrac{\widehat{p_{a}}}{1013.25}\right)`
 
 Where :math:`\rho_{a}` is the density of the air at the water surface,
 :math:`\rho_{d}` is the density of dry air, :math:`\rho_{v}` is the water vapor
@@ -476,8 +478,10 @@ setting :math:`T_{a} = \widehat{T_{a}}` and :math:`RH = \widehat{RH}`.
 
 :math:`e_{s} = \left\{
 \begin{matrix}
-{( 0.00000346\, \widehat{p_{a}} + 1.0007 )6.1121e}^{\left(\frac{17.502{(T}_{a} - T_{FP})}{240.97 + {(T}_{a} - T_{FP})} \right)} & \text{over water} \\
-{( 0.00000418\: \widehat{p_{a}} + 1.0003 )6.1115e}^{\left(\frac{22.452{(T}_{a} - T_{FP})}{272.55 + {(T}_{a} - T_{FP})} \right)} & \text{over ice}
+{( 0.00000346\, \widehat{p_{a}} + 1.0007 )6.1121e}^{\left(\frac{17.502{(T}_{a} - \
+T_{FP})}{240.97 + {(T}_{a} - T_{FP})} \right)} & \text{over water} \\
+{( 0.00000418\: \widehat{p_{a}} + 1.0003 )6.1115e}^{\left(\frac{22.452{(T}_{a} - \
+T_{FP})}{272.55 + {(T}_{a} - T_{FP})} \right)} & \text{over ice}
 \end{matrix}
 \right.\ `
 
@@ -487,17 +491,17 @@ Where :math:`e_{s}` is the saturation vapor pressure, and :math:`e` is the
 actual vapor pressure.
 
 Additionally, the following computations require the kinematic viscosity of the
-air at the water surface, which is described below.
+air at the water surface, which is described below:
 
 :math:`\nu_{s} = 0.00001326(1.0 + T_{s}*(0.006542 + T_{s}*(0.000008301 - 0.00000000484T_{s})))`
 
 Finally, the latent heat of vaporization or sublimation is needed for computing
-the latent heat flux, which is described below.
+the latent heat flux, which is described below:
 
 :math:`l_{v} = \left\{
 \begin{matrix}
-\left( 28.34 - 0.00149\left( T_{s} - T_{k} \right) \right) 10^{5} & T_{s} < T_{FP} \\
-\left( 25 - 0.02274\left( T_{s} - T_{k} \right) \right) 10^{5} & T_{s} \geq T_{FP}
+\bigl( 28.34 - 0.00149\left( T_{s} - T_{k} \right) \bigr) 10^{5} & T_{s} < T_{FP} \\
+\bigl( 25 - 0.02274\left( T_{s} - T_{k} \right) \bigr) 10^{5} & T_{s} \geq T_{FP}
 \end{matrix}
 \right.\ `
 
@@ -508,68 +512,69 @@ Iterative Computations
 
 After computation of the initial variables, an initial iteration is performed to
 estimate the Monin-Obukhov similarity (MOS) scaling parameters
-(:math:`u_{*}`, :math:`T_{*}` and\ :math:`\ q_{*}`), which represent the
-turbulent exchanges of latent and sensible heat (:math:`H_{l}` and :math:`H_{s}`).
-These initial estimates assume neutral stratification (i.e :math:`\frac{h_{u}}{l_{o}} = 0`).
+:math:`\left(u_*, T_*, \text{ and } q_* \right)`, which represent the turbulent
+exchanges of latent and sensible heat :math:`\left( H_l \text{ and } H_s \right)`.
+These initial estimates assume neutral stratification
+:math:`( \text{i.e } \frac{h_u}{l_o} = 0)`.
 Estimating these parameters requires an initial estimate of the wind
-friction velocity (:math:`u_{*}`), as shown below:
+friction velocity :math:`\left( u_{*}\right)`, as shown below:
 
 :math:`u_{*} = \hat{u}\sqrt{C_{d}}`
 
 Where the drag coefficient (:math:`C_{d}`) is initially estimated as:
 
-:math:`{C_{d}}_{0} = (0.37\  + \ 0.137\hat{u})10^{- 3}`
+:math:`C_{d_0} = (0.37 + 0.137\hat{u} )10^{- 3}`
 
 Note that the shear velocity is not allowed to drop below 0.01. The remaining
 computations require roughness lengths for momentum
-(:math:`z_{u}`), temperature (:math:`z_{T}`) and humidity (:math:`z_{q}`),
-which are estimated by the COARE algorithm :ref:`(Fairall et al., 1996) <References>`.
+:math:`(z_u)`, temperature :math:`(z_T)` and humidity :math:`(z_q)`, which are
+estimated by the COARE algorithm :ref:`(Fairall et al., 1996) <References>`.
 
-:math:`z_{u} = h_{u}e^{\frac{- \kappa\ }{\sqrt{C_{d}}}} + C_{s}\dfrac{\nu_{s}}{\ u_{*}}`
+:math:`z_{u} = h_{u}e^{\frac{- \kappa}{\sqrt{C_{d}}}} + C_{s}\dfrac{\nu_{s}}{\ u_{*}}`
 
 :math:`z_{T} = a_{t}\dfrac{\nu_{s}}{u_{*}}{{R_{e}}^{*}}^{b_{t}}`
 
 :math:`z_{q} = a_{q}\dfrac{\nu_{s}}{u_{*}}{{R_{e}}^{*}}^{b_{q}}`
 
 Where :math:`C_{s}` is the smooth surface coefficient, *𝜅* is the von Karman
-constant, :math:`{R_{e}}^{*}` is the roughness Reynolds number defined below,
-
-and the COARE algorithm coefficients (:math:`a_{t},\ b_{t},\ a_{q},\ b_{q}`)
-are performed with a table lookup based on :math:`{R_{e}}^{*}` (see Table 4).
+constant, :math:`{R_e}^{*}` is the roughness Reynolds number defined below,
+and the COARE algorithm coefficients :math:`(a_{t}, b_{t}, a_{q}, b_{q})`
+are performed with a table lookup based on :math:`{R_e}^{*}` (see Table 4).
 
 :math:`{R_{e}}^{*} = \dfrac{\ u_{*}z_{u}}{\nu_{s}}`
 
 .. _Table 4:
 
-*Table 4 - Coefficients for the COARE algorithm*
+*Table 4- Coefficients for the COARE algorithm*
 
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
-| .. math:: {\mathbf{R}_{\mathbf{e}}}^{\mathbf{*}}  | .. math:: \mathbf{a}_{\mathbf{t}}   | .. math:: \mathbf{b}_{\mathbf{t}}    | .. math:: \mathbf{a}_{\mathbf{q}}    | .. math:: \mathbf{b}_{\mathbf{q}}     |
-+===================================================+=====================================+======================================+======================================+=======================================+
-| 0.135                                             | 0.177                               | 0                                    | 0.292                                | 0                                     |
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
-| 0.16                                              | 1.376                               | 0.929                                | 1.808                                | 0.826                                 |
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
-| 1                                                 | 1.376                               | 0.929                                | 1.808                                | 0.826                                 |
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
-| 3                                                 | 1.026                               | -0.599                               | 1.393                                | -0.528                                |
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
-| 10                                                | 1.625                               | -1.018                               | 1.956                                | -0.87                                 |
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
-| 30                                                | 4.661                               | -1.475                               | 4.994                                | -1.297                                |
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
-| 100                                               | 34.904                              | -2.067                               | 30.709                               | -1.845                                |
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
-| 300                                               | 1667.19                             | -2.907                               | 1448.68                              | -2.682                                |
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
-| 1000                                              | 5.88E+05                            | -3.935                               | 2.98E+05                             | -3.616                                |
-+---------------------------------------------------+-------------------------------------+--------------------------------------+--------------------------------------+---------------------------------------+
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
+| .. math:: \mathbf{{R_e}^{*}}  | .. math:: \mathbf{a_t}  | .. math:: \mathbf{b_t}  | .. math:: \mathbf{a_q}   | .. math:: \mathbf{b_q}  |
++===============================+=========================+=========================+==========================+=========================+
+| 0.135                         | 0.177                   | 0.0                     | 0.292                    | 0.0                     |
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
+| 0.16                          | 1.376                   | 0.929                   | 1.808                    | 0.826                   |
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
+| 1                             | 1.376                   | 0.929                   | 1.808                    | 0.826                   |
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
+| 3                             | 1.026                   | -0.599                  | 1.393                    | -0.528                  |
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
+| 10                            | 1.625                   | -1.018                  | 1.956                    | -0.87                   |
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
+| 30                            | 4.661                   | -1.475                  | 4.994                    | -1.297                  |
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
+| 100                           | 34.904                  | -2.067                  | 30.709                   | -1.845                  |
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
+| 300                           | 1667.19                 | -2.907                  | 1448.68                  | -2.682                  |
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
+| 1000                          | 5.88E+05                | -3.935                  | 2.98E+05                 | -3.616                  |
++-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
 
 Based on the roughness lengths, the transfer coefficients can be computed as follows:
 
-:math:`C_{m} = \dfrac{{\kappa\ }^{2}}{\left( \ln\left( \frac{h_{u}}{h_{m}} \right) - \psi_{m} \right) \left(\ln\left( \frac{z_{0}}{z_{m}} \right) - \psi_{m}\right)}`
+:math:`C_{m} = \dfrac{{\kappa\ }^{2}}{\left( \ln\left( \frac{h_{u}}{h_{m}} \right) - \
+\psi_{m} \right) \left(\ln\left( \frac{z_{0}}{z_{m}} \right) - \psi_{m}\right)}`
 
-where
+where:
 
 :math:`h_{m} = h_{u}, z_{m} = z_{u}, \psi_{m} = \psi_{u} \text{ for } C_{D}`
 
@@ -580,45 +585,50 @@ where
 
 :math:`\psi_{m} = \left\{
 \begin{array}{cl}
-2\ln( 0.5( 1 + x )) + 2\ln( 0.5 * ( 1 + x^{2} )) -2\tan^{-1} (x) + 1.570796  & \zeta < 0 \qquad m = u \\
-2\ln( 0.5(1 + x^{2} ))                                                       & \zeta < 0 \qquad m = T \text{ or } q \\
-0                                                                            & \zeta = 0      \\
--(0.7\zeta + 0.75(\zeta - 14.3)e^{- .35\zeta} + 10.7)                        & \zeta \leq 250  \\
--(0.7\zeta + 10.7)                                                           & \zeta > 250
+2\ln\bigl( 0.5( 1 + x )\bigr) + 2\ln\bigl( 0.5 * ( 1 + x^{2} )\bigr) -2\tan^{-1} (x) + 1.570796  & \zeta < 0 \quad m = u \\
+2\ln\bigl( 0.5(1 + x^{2} )\bigr)                                                                 & \zeta < 0 \quad m = T \text{ or } q \\
+0                                                                                                & \hspace{.8cm} \zeta = 0      \\
+-\bigl(0.7\zeta + 0.75(\zeta - 14.3)e^{-0.35\zeta} + 10.7\bigl)                                  & \hspace{.6cm} \zeta \leq 250  \\
+-(0.7\zeta + 10.7)                                                                               & \hspace{.6cm} \zeta > 250
 \end{array}
 \right.\ `
 
 :math:`\zeta = \dfrac{h_{m}}{l_{o}}`
 
-:math:`{x = (1 - \ 16\zeta)}^{.25}`
+:math:`{x = (1 - \ 16\zeta)}^{0.25}`
 
-Where :math:`\psi_{m} = 0` for the initial iteration. From the above equations,
-the initial MOS scaling parameters can be computed as follows:
+Where :math:`\psi_{m} = 0` for the initial iteration.
+From the above equations, the initial MOS scaling parameters can be computed as follows:
 
-:math:`t_{*} = - \dfrac{C_{T}\hat{u}\mathrm{\Delta}_{T}}{u_{*}}`
+:math:`t_{*} = - \left(\dfrac{C_{T}\hat{u}\mathrm{\Delta}_{T}}{u_{*}}\right)`
 
-:math:`q_{*} = - \dfrac{C_{q}\hat{u}\mathrm{\Delta}_{q}}{u_{*}}`
+:math:`q_{*} = - \left(\dfrac{C_{q}\hat{u}\mathrm{\Delta}_{q}}{u_{*}}\right)`
 
-The final step in the first iteration is to compute the Obukhov length (:math:`l_{o}`) as follows:
+The final step in the first iteration is to compute the Obukhov length :math:`(l_o)` as follows:
 
-:math:`l_{o} = \dfrac{\dfrac{\overline{T_{a}}u_{*}\ }{kg}}{t_{*} + \left(\dfrac{0.61\overline{T_{a}}q_{*}}{1 + 0.61\overline{q}}\right)}`
+:math:`l_{o} = \dfrac{\dfrac{\overline{T_{a}}u_{*}\ }{kg}}{t_{*} + \
+\left(\dfrac{0.61\overline{T_{a}}q_{*}}{1 + 0.61\overline{q}}\right)}`
 
 With these initial estimates, the evaporation routine will begin iteratively
 estimating the MOS similarity scales, where a maximum of 20 iterations will be
-performed. The stopping criteria of the process is when
+performed. The stopping criteria of the process is when:
 
-:math:`\dfrac{\left| {u_{*}}_{i} - {u_{*}}_{i - 1} \right|}{{u_{*}}_{i}} < 0.001 \text{  and  } \dfrac{\left| {t_{*}}_{i} - {t_{*}}_{i - 1} \right|}{{t_{*}}_{i}} < 0.001 \text{  and  } \dfrac{\left| {q_{*}}_{i} - {q_{*}}_{i - 1} \right|}{{q_{*}}_{i}} < 0.001`
+:math:`\dfrac{\left| u_{*_i} - {u_{{*}_{i - 1}}} \right|}{u_{*_i}} < 0.001 \text{  and  } \
+\dfrac{\left| t_{*_i} - {t_{{*}_{i - 1}}} \right|}{t_{*_i}} < 0.001 \text{  and  } \
+\dfrac{\left| q_{*_i} - {q_{{*}_{i - 1}}} \right|}{q_{*_i}} < 0.001`
 
 Where :math:`i` denotes the iteration number. The iterations proceed as follows.
-Compute the transfer coefficients (:math:`C_{D}`, :math:`C_{T}` and :math:`C_{q}`)
-with :math:`h_{u} = 10m`, and current estimates of :math:`l_{o}`, :math:`z_{u}`, :math:`z_{T}` and :math:`z_{q}`,
-and subsequently estimate the MOS similarity scales. Recompute the transfer
-coefficients based on the current MOS similarity scales and the actual :math:`h_{u}`.
-Modify wind speed to account for gustiness as shown below.
+Compute the transfer coefficients :math:`(C_{D}, C_{T}\text{ and } C_{q})`
+with :math:`h_{u} = 10m`, and current estimates of :math:`l_{o}`, :math:`z_{u}`,
+:math:`z_{T}` and :math:`z_{q}`, and subsequently estimate the MOS similarity
+scales. Recompute the transfer coefficients based on the current MOS similarity
+scales and the actual :math:`h_{u}`. Modify wind speed to account for gustiness
+as shown below:
 
 :math:`u = \left\{
 \begin{matrix}
-{ \sqrt{ \hat{u}^{2} + 1.25^{2} \left( u_{*}\left( \frac{- 600.0}{\kappa\ l_{o}} \right)^{\frac{1}{3}} \right)^{2} } } & \text{ unstable stratification } (l_{o} < 0) \\
+{ \sqrt{ \hat{u}^{2} + 1.25^{2} \left( u_{*}\left( \frac{- 600.0}{\kappa\ l_{o}} \
+\right)^{\frac{1}{3}} \right)^{2} } } & \text{ unstable stratification } (l_{o} < 0) \\
 {\hat{u} + 0.5} & \text{ stable stratification } (0 \leq l_{o} < 1000) \\
 {\hat{u}} & \text{ neutral stratification } (l_{o} \leq 1000)
 \end{matrix}
@@ -652,11 +662,12 @@ This can be converted to the declination angle below:
 
 :math:`\left.
 \begin{array}{l}
-\sin(\delta) = \sin(23.44) \sin(279.9348 + d + 1.914827\sin(d) - 0.079525\cos(d) + \\
-\qquad\qquad\! 0.019938(2\sin(d)\cos(d)) - 0.001639(2\cos^{2}(d) - 1)
+\sin(\delta) = \sin(23.44) \sin\Bigl(279.9348 + d + 1.914827\sin(d) - 0.079525\cos(d) \; + \\
+\hspace{5cm} 0.019938(2\sin(d)\cos(d)\Bigr) - 0.001639(2\cos^{2}(d) - 1)
 \end{array} \right.`
 
-The diurnal fluctuations of solar radiation are represented by the Hour Angle (:math:`h_{s}`), as computed below:
+The diurnal fluctuations of solar radiation are represented by the Hour Angle
+:math:`(h_{s})`, as computed below:
 
 :math:`h_{s} = 15\left( h_{gmt} - M \right) - lon`
 
@@ -665,7 +676,7 @@ longitude, and :math:`M` is the time of meridian passage computed below:
 
 :math:`\left.
 \begin{array}{l}
-M = 12 + 0.12357\sin(d) - 0.004289\cos(d) + 0.153809\left( 2\sin(d)\cos(d) \right) + \\
+M = 12 + 0.12357\sin(d) - 0.004289\cos(d) + 0.153809\bigl( 2\sin(d)\cos(d) \bigr) + \\
 \qquad\;\ 0.060783(2\cos^{2}(d) - 1)
 \end{array} \right.`
 
@@ -673,16 +684,18 @@ Based on the declination, the latitude and the hour angle, the zenith angle may 
 
 :math:`\cos\left( \theta_{s} \right) = \sin(\varphi)\sin(\delta) + cos(\varphi)\cos{(\delta)cos(h_{s}})`
 
-:math:`\theta_{s} = \cos^{- 1}(\cos\left( \theta_{s} \right))`
+:math:`\theta_{s} = \cos^{- 1}\bigl(\cos( \theta_{s} )\bigr)`
 
-Based on the zenith angle, and the cloud cover fraction at the low, middle and
+Based on the zenith angle, and the cloud cover fraction at the low, middle, and
 high layers of the atmosphere, the solar radiation reaching the water surface
-is computed based on Shapiro (1987). In this document, the derivation of the
-general case to the 3-layer implementation is not provided, due to it’s
-complexity. For information on this derivation, see Shapiro (1987) This is
-strictly the equation for the 3-layer case used in ResEvap.
+is computed based on :ref:`Shapiro (1987) <References>`. In this document,
+the derivation of the general case to the 3-layer implementation is not provided,
+due to it’s complexity. For information on this derivation, see
+:ref:`Shapiro (1987) <References>`. This is strictly the equation for the
+3-layer case used in ResEvap:
 
-:math:`I_{s \downarrow} = \dfrac{S_{e}T_{l}T_{m}T_{h}}{d_{l}\left( d_{h}d_{m} - R_{h}R_{l}{T_{m}}^{2} \right) - d_{h}R_{m}R_{w}{T_{l}}^{2} - R_{h}R_{w}{T_{m}}^{2}{T_{l}}^{2}}`
+:math:`I_{s \downarrow} = \dfrac{S_{e}T_{l}T_{m}T_{h}}{d_{l}\left( d_{h}d_{m} - \
+R_{h}R_{l}{T_{m}}^{2} \right) - d_{h}R_{m}R_{w}{T_{l}}^{2} - R_{h}R_{w}{T_{m}}^{2}{T_{l}}^{2}}`
 
 Where :math:`I_{s \downarrow}` is the incoming solar radiation at the water
 surface, :math:`T_{l}`, :math:`T_{m}`, and :math:`T_{h}` are the
@@ -698,104 +711,108 @@ extraterrestrial solar radiation on a horizontal plane in :math:`\frac{W}{m^{2}}
 
 :math:`d_{l} = 1 - R_{l}R_{g}`
 
-:math:`S_{e} = 1369.2\Biggl( 1.0001399 + 0.0167261cos\left(\dfrac{2\pi(JD - 2)}{365.242}\right) \Biggr)^{2} \cos( \theta_{s})`
+:math:`S_{e} = 1369.2\Biggl( 1.0001399 + 0.0167261cos\left(\dfrac{2\pi(JD - 2)}{365.242}\right) \
+\Biggr)^{2} \cos( \theta_{s})`
 
 In the above equations, :math:`R_{k}` and :math:`T_{k}` are a composite of the
-overcast (:math:`R_{k}^{o}`,\ :math:`\ T_{k}^{o}`) and clear sky
-(:math:`R_{k}^{c}`, :math:`T_{k}^{c}`) values, where a weight is determined
-based on the zenith angle and the fractional cloud cover (:math:`{f_{c}}_{k}`)
-in each layer :math:`k`, and coefficients from
-`Table 5`_, `Table 6`_, `Table 7`_, `Table 8`_, `Table 9`_.
+overcast :math:`\left( R_{k}^{o}, T_{k}^{o} \right)` and clear sky
+:math:`\left( R_{k}^{c} , T_{k}^{c} \right)` values, where a weight is determined
+based on the zenith angle and the fractional cloud cover :math:`\left(f_{c_k}\right)`
+in each layer :math:`k`, and coefficients from Table 5, Table 6, Table 7,
+Table 8, Table 9.
 
 :math:`R_{k} = W_{k}R_{k}^{o} + \left( 1 - W_{k} \right)R_{k}^{c}`
 
 :math:`T_{k} = W_{k}T_{k}^{o} + \left( 1 - W_{k} \right)T_{k}^{c}`
 
-:math:`R_{k}^{c} = {r^{c}_{k_0}} + {r^{c}_{k_1}}\cos\left( \theta_{s} \right) + {r^{c}_{k_2}}{\cos\left( \theta_{s} \right)}^{2} + {r^{c}_{k_3}}{\cos\left( \theta_{s} \right)}^{3}`
+:math:`R_{k}^{c} = {r^{c}_{k_0}} + {r^{c}_{k_1}}\cos( \theta_{s} ) + \
+{r^{c}_{k_2}}{\cos( \theta_{s} )}^{2} + {r^{c}_{k_3}}{\cos( \theta_{s} )}^{3}`
 
-:math:`R_{k}^{o} = {r^{o}_{k_0}} + {r^{o}_{k_1}}\cos\left( \theta_{s} \right) + {r^{o}_{k_2}}{\cos\left( \theta_{s} \right)}^{2} + {r^{o}_{k_3}}{\cos\left( \theta_{s} \right)}^{3}`
+:math:`R_{k}^{o} = {r^{o}_{k_0}} + {r^{o}_{k_1}}\cos( \theta_{s} ) + \
+{r^{o}_{k_2}}{\cos( \theta_{s} )}^{2} + {r^{o}_{k_3}}{\cos( \theta_{s} )}^{3}`
 
-:math:`T_{k}^{c} = {t^{c}_{k_0}} + {t^{c}_{k_1}}\cos\left( \theta_{s} \right) + {t^{c}_{k_2}}{\cos\left( \theta_{s} \right)}^{2} + {t^{c}_{k_3}}{\cos\left( \theta_{s} \right)}^{3}`
+:math:`T_{k}^{c} = {t^{c}_{k_0}} + {t^{c}_{k_1}}\cos( \theta_{s} ) + \
+{t^{c}_{k_2}}{\cos( \theta_{s} )}^{2} + {t^{c}_{k_3}}{\cos( \theta_{s} )}^{3}`
 
-:math:`T_{k}^{o} = {t^{o}_{k_0}} + {t^{o}_{k_1}}\cos\left( \theta_{s} \right) + {t^{o}_{k_2}}{\cos\left( \theta_{s} \right)}^{2} + {t^{o}_{k_3}}{\cos\left( \theta_{s} \right)}^{3}`
-
-:math:`{c_{k_2}}{f_{c_k}}`
+:math:`T_{k}^{o} = {t^{o}_{k_0}} + {t^{o}_{k_1}}\cos( \theta_{s} ) + \
+{t^{o}_{k_2}}{\cos( \theta_{s} )}^{2} + {t^{o}_{k_3}}{\cos( \theta_{s} )}^{3}`
 
 :math:`W_{k} = \left\{ \begin{matrix}
 0 & f_{c} < 0.05 \\
 1 & f_{c} > 0.95 \\
-{c_{k_o}} + {c_{k_1}}\cos\left( \theta_{s} \right) + {c_{k_2}}{f_{c_k}} + {c_{k_3}}\cos\left( \theta_{s} \right){f_{c_k}} + {c_{k_4}}{\cos\left( \theta_{s} \right)}^{2} + {c_{k_5}}{f_{c_k}}^{2} & otherwise
+{c_{k_o}} + {c_{k_1}}\cos( \theta_{s} ) + {c_{k_2}}{f_{c_k}} + {c_{k_3}}\cos( \theta_{s} ){f_{c_k}} \
++ {c_{k_4}}{\cos( \theta_{s} )}^{2} + {c_{k_5}}{f_{c_k}}^{2} & otherwise
 \end{matrix} \right.\ `
 
 .. _Table 5:
 
-*Table 5-Coefficients for clear sky reflectivity computations*
+*Table 5- Coefficients for clear sky reflectivity computations*
 
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-|              | .. math:: \mathbf{r^{c}_{k_0}}     | .. math:: \mathbf{r^{c}_{k_1}}     | .. math:: \mathbf{r^{c}_{k_2}}     | .. math:: \mathbf{r^{c}_{k_3}}     |
-+==============+====================================+====================================+====================================+====================================+
-| Low          | 0.15946                            | -0.42185                           | 0.48800                            | -0.18492                           |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| Mid          | 0.15325                            | -0.39620                           | 0.42095                            | -0.14200                           |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| High         | 0.12395                            | -0.34765                           | 0.39478                            | -0.14627                           |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
+|       | .. math:: \mathbf{r^{c}_{k_0}} | .. math:: \mathbf{r^{c}_{k_1}} | .. math:: \mathbf{r^{c}_{k_2}} | .. math:: \mathbf{r^{c}_{k_3}} |
++=======+================================+================================+================================+================================+
+| Low   | 0.15946                        | -0.42185                       | 0.48800                        | -0.18492                       |
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
+| Mid   | 0.15325                        | -0.39620                       | 0.42095                        | -0.14200                       |
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
+| High  | 0.12395                        | -0.34765                       | 0.39478                        | -0.14627                       |
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
 
 .. _Table 6:
 
-*Table 6-Coefficients for the clear sky transmissivity computations*
+*Table 6- Coefficients for the clear sky transmissivity computations*
 
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-|              | .. math:: \mathbf{t^{c}_{k_0}}     | .. math:: \mathbf{t^{c}_{k_1}}     | .. math:: \mathbf{t^{c}_{k_2}}     | .. math:: \mathbf{t^{c}_{k_3}}     |
-+==============+====================================+====================================+====================================+====================================+
-| Low          | 0.68679                            | 0.71012                            | -0.71463                           | 0.22339                            |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| Mid          | 0.69318                            | 0.68227                            | -0.64289                           | 0.17910                            |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| High         | 0.76977                            | 0.49407                            | -0.44647                           | 0.11558                            |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
+|       | .. math:: \mathbf{t^{c}_{k_0}} | .. math:: \mathbf{t^{c}_{k_1}} | .. math:: \mathbf{t^{c}_{k_2}} | .. math:: \mathbf{t^{c}_{k_3}} |
++=======+================================+================================+================================+================================+
+| Low   | 0.68679                        | 0.71012                        | -0.71463                       | 0.22339                        |
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
+| Mid   | 0.69318                        | 0.68227                        | -0.64289                       | 0.17910                        |
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
+| High  | 0.76977                        | 0.49407                        | -0.44647                       | 0.11558                        |
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
 
 .. _Table 7:
 
-*Table 7-Coefficients for the overcast reflectivity computations*
+*Table 7- Coefficients for the overcast reflectivity computations*
 
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-|              | .. math:: \mathbf{r^{o}_{k_0}}     | .. math:: \mathbf{r^{o}_{k_1}}     | .. math:: \mathbf{r^{o}_{k_2}}     | .. math:: \mathbf{r^{o}_{k_3}}     |
-+==============+====================================+====================================+====================================+====================================+
-| Low          | 0.69143                            | -0.14419                           | -0.05100                           | 0.06682                            |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| Mid          | 0.61394                            | -0.01469                           | -0.17400                           | 0.14215                            |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| High         | 0.42111                            | -0.04002                           | -0.51833                           | 0.40540                            |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
+|       | .. math:: \mathbf{r^{o}_{k_0}} | .. math:: \mathbf{r^{o}_{k_1}} | .. math:: \mathbf{r^{o}_{k_2}} | .. math:: \mathbf{r^{o}_{k_3}} |
++=======+================================+================================+================================+================================+
+| Low   | 0.69143                        | -0.14419                       | -0.05100                       | 0.06682                        |
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
+| Mid   | 0.61394                        | -0.01469                       | -0.17400                       | 0.14215                        |
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
+| High  | 0.42111                        | -0.04002                       | -0.51833                       | 0.40540                        |
++-------+--------------------------------+--------------------------------+--------------------------------+--------------------------------+
 
 .. _Table 8:
 
-*Table 8-Coefficients for the overcast transmissivity computations*
+*Table 8- Coefficients for the overcast transmissivity computations*
 
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-|              | .. math:: \mathbf{t^{o}_{k_0}}     | .. math:: \mathbf{t^{o}_{k_1}}     | .. math:: \mathbf{t^{o}_{k_2}}     | .. math:: \mathbf{t^{o}_{k_3}}     |
-+==============+====================================+====================================+====================================+====================================+
-| Low          | 0.15785                            | 0.32410                            | -0.14458                           | 0.01457                            |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| Mid          | 0.23865                            | 0.20143                            | -0.01183                           | -0.07892                           |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| High         | 0.43562                            | 0.26094                            | 0.36428                            | -0.38556                           |
-+--------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
++-------+--------------------------------+--------------------------------+---------------------------------+--------------------------------+
+|       | .. math:: \mathbf{t^{o}_{k_0}} | .. math:: \mathbf{t^{o}_{k_1}} | .. math:: \mathbf{t^{o}_{k_2}}  | .. math:: \mathbf{t^{o}_{k_3}} |
++=======+================================+================================+=================================+================================+
+| Low   | 0.15785                        | 0.32410                        | -0.14458                        |  0.01457                       |
++-------+--------------------------------+--------------------------------+---------------------------------+--------------------------------+
+| Mid   | 0.23865                        | 0.20143                        | -0.01183                        | -0.07892                       |
++-------+--------------------------------+--------------------------------+---------------------------------+--------------------------------+
+| High  | 0.43562                        | 0.26094                        |  0.36428                        | -0.38556                       |
++-------+--------------------------------+--------------------------------+---------------------------------+--------------------------------+
 
 .. _Table 9:
 
-*Table 9-Coefficients for the clear sky and overcast weighting computations*
+*Table 9- Coefficients for the clear sky and overcast weighting computations*
 
-+----------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-|          | .. math:: \mathbf{c_{k_0}}         | .. math:: \mathbf{c_{k_1}}         | .. math:: \mathbf{c_{k_2}}         | .. math:: \mathbf{c_{k_3}}         | .. math:: \mathbf{c_{k_4}}         | .. math:: \mathbf{c_{k_5}}         |
-+==========+====================================+====================================+====================================+====================================+====================================+====================================+
-| Low      | 1.512                              | -1.176                             | -2.160                             | 1.420                              | -0.032                             | 1.422                              |
-+----------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| Mid      | 1.429                              | -1.207                             | -2.008                             | 0.853                              | 0.324                              | 1.582                              |
-+----------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
-| High     | 1.552                              | -1.957                             | -1.762                             | 2.067                              | 0.448                              | 0.932                              |
-+----------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+------------------------------------+
++-------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+----------------------------+
+|       | .. math:: \mathbf{c_{k_0}}  | .. math:: \mathbf{c_{k_1}}  | .. math:: \mathbf{c_{k_2}}  | .. math:: \mathbf{c_{k_3}}  | .. math:: \mathbf{c_{k_4}}  | .. math:: \mathbf{c_{k_5}} |
++=======+=============================+=============================+=============================+=============================+=============================+============================+
+| Low   | 1.512                       | -1.176                      | -2.160                      | 1.420                       | -0.032                      | 1.422                      |
++-------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+----------------------------+
+| Mid   | 1.429                       | -1.207                      | -2.008                      | 0.853                       |  0.324                      | 1.582                      |
++-------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+----------------------------+
+| High  | 1.552                       | -1.957                      | -1.762                      | 2.067                       |  0.448                      | 0.932                      |
++-------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+-----------------------------+----------------------------+
 
 
 Longwave Radiation
@@ -841,33 +858,36 @@ with the Clausius-Clapeyron equation:
 :math:`e_{s} = 6.13e^{\frac{l_{v}}{R_{v}}\left( \frac{1}{T_{k}} - \frac{1}{\widehat{\widehat{T_{a}}}} \right)}`
 
 Where :math:`l_{v}` is the latent heat of vaporization, :math:`R_{v}` is the gas
-constant for water vapor 461 :math:`\left(\frac{J}{kg*K}\right)`. Note that this
+constant for water vapor :math:`\left(461 \frac{J}{kg*K}\right)`. Note that this
 is different than the formulation of saturation vapor pressure used in the
 evaporation computations. This difference is likely a result of the radiation
 model not using air pressure, but the differing computations is expected to have
 negligible effects on the resulting longwave radiation computations.
 
-:math:`l_{v} = \left( 3.166659 - .00243\widehat{T_{a}} \right)10^{6}`
+:math:`l_{v} = \left( 3.166659 - 0.00243\widehat{T_{a}} \right)10^{6}`
 
 Similar to :math:`e_{s}`, the formulation of :math:`l_{v}` is different than in
 the evaporation computations. To be numerically equivalent, the equation would be
-:math:`l_{v} = \left( 3.1211431 - .002274\widehat{T_{a}} \right)10^{6}`.
+:math:`l_{v} = \left( 3.1211431 - 0.002274\widehat{T_{a}} \right)10^{6}`.
 Although different, this is still expected to have negligible impacts on the
 resulting longwave radiation computations.
 
 The incoming longwave radiation from the cloud component of the atmosphere is a
-function of the cloud cover in each layer :math:`\left({f_{c}}_{k}\right)` and
-the height of the clouds in each layer :math:`\left({h_{c}}_{k}\right)`, as shown below:
+function of the cloud cover in each layer :math:`(f_{c_k})` and
+the height of the clouds in each layer :math:`(h_{c_k})`, as shown below:
 
 :math:`\left.
 \begin{array}{l}
-{I_{l \downarrow}}_{cloud} = {f_{c_l}}( 94\  - \ 5.8{h_{c_l}} ) + {f_{c_m}}(1 - {f_{c_l}})( 94\  - \ 5.8{h_{c_m}} ) \;+ \\
-\qquad\qquad {f_{c_h}}(1 - {f_{c_m}})(1 - {f_{c_l}})( 94\  - \ 5.8{h_{c_h}})
+{I_{l \downarrow}}_{cloud} = {f_{c_l}}( 94 - 5.8{h_{c_l}} ) + \
+{f_{c_m}}(1 - {f_{c_l}})( 94 - 5.8{h_{c_m}} ) \;+ \\
+\hspace{2.5cm}{f_{c_h}}(1 - {f_{c_m}})(1 - {f_{c_l}})( 94 - 5.8{h_{c_h}})
 \end{array} \right.`
 
+:math:`\qquad`
+
 :math:`{h_{c_k}} = \left( \begin{matrix}
-{h_{c_k}}\ (observed) & observed\ height\ available \\
-a\  - \ b*\Bigl( 1.0\  - \left| \ cos\bigl(c*(lat\  - \ d)\bigr) \right|\Bigr) & otherwise
+{h_{c_k}} (\text{observed}) & \text{observed height available} \\
+a\  - \ b*\Bigl( 1.0 - \Bigl| cos\bigl(c*(lat - d) \bigr) \Bigr|\Bigr) & \text{otherwise}
 \end{matrix} \right.\ `
 
 Table 10, Table 11, Table 12, Table 13 provide the coefficients for computing
@@ -875,7 +895,7 @@ the cloud heights in the absence of observations.
 
 .. _Table 10:
 
-*Table 10-Cloud height coefficients for winter and latitude<25*
+*Table 10 - Cloud height coefficients for winter and latitude < 25*
 
 +--------------+--------------+--------------+--------------+---------------+
 |              | a            | b            | c            | d             |
@@ -889,7 +909,7 @@ the cloud heights in the absence of observations.
 
 .. _Table 11:
 
-*Table 11-Cloud height coefficients for winter and latitude>25*
+*Table 11 - Cloud height coefficients for winter and latitude > 25*
 
 +--------------+--------------+--------------+--------------+---------------+
 |              | a            | b            | c            | d             |
@@ -903,7 +923,7 @@ the cloud heights in the absence of observations.
 
 .. _Table 12:
 
-*Table 12-Cloud height coefficients for not winter season and latitude<25*
+*Table 12 - Cloud height coefficients for not winter season and latitude < 25*
 
 +--------------+--------------+--------------+--------------+---------------+
 |              | a            | b            | c            | d             |
@@ -917,7 +937,7 @@ the cloud heights in the absence of observations.
 
 .. _Table 13:
 
-*Table 13-Cloud height coefficients for non-winter season and latitude>25*
+*Table 13 - Cloud height coefficients for non-winter season and latitude > 25*
 
 +--------------+--------------+--------------+--------------+---------------+
 |              | a            | b            | c            | d             |
@@ -943,9 +963,10 @@ that occurs in the reservoir profile. Vertical diffusion of heat within a
 one-dimensional reservoir is governed by the equation below
 :ref:`(Hondzo and Stefan 1993) <References>`.
 
-:math:`\dfrac{dT_{w}}{dt} = \dfrac{1}{A}\dfrac{d}{dz}\left( K_{z}A\dfrac{dT_{w}}{dz} \right) + \dfrac{I_{z}}{\rho_{w}c_{p}}`
+:math:`\dfrac{dT_{w}}{dt} = \dfrac{1}{A}\dfrac{d}{dz}\left( K_{z}A\dfrac{dT_{w}}{dz} \right) + \
+\dfrac{I_{z}}{\rho_{w}c_{p}}`
 
-:math:`T_{w}` is the water temperature in K, :math:`A` is the area through which
+:math:`T_{w}` is the water temperature in :math:`K, A` is the area through which
 the heat is transferred, :math:`K_{z}` is the thermal diffusivity,
 :math:`z` is the depth, :math:`I_{z}` is the net radiation, :math:`\rho_{w}` is
 the density or water, and :math:`c_{p}` is the heat capacity. In order to
@@ -954,15 +975,17 @@ each layer.
 
 :math:`{\rho_{w_i}} = 1000 - 0.019549\left| {T_{w_i}} - 277.15 \right|^{1.68}`
 
-:math:`{c_{p_i}} = 4174.9 + 1.6659\left( e^\left({\frac{307.65 - {T_{w_i}}}{10.6}}\right) + e^\left({- \frac{307.65 - {T_{w_i}}}{10.6}}\right) \right)`
+:math:`{c_{p_i}} = 4174.9 + 1.6659\left( e^\left({\frac{307.65 - {T_{w_i}}}{10.6}}\right) + \
+e^ {-\left({\frac{307.65 - {T_{w_i}}}{10.6}}\right)} \right)`
 
 In the above equations, :math:`i` is the index of the layer, where :math:`i = 1`
 is the bottom layer of the temperature profile. Next the thermal diffusivity is
-computed for each layer as follows.
+computed for each layer as follows:
 
 :math:`{K_{z_i}} = 0.00012\left( 0.000817{A_{s}}^{0.56}\left( {N_{i}}^{2} \right)^{- 0.43} \right)`
 
-:math:`{N_{i}}^{2} = max\left(0.00007,\ \dfrac{g}{\overline{\rho_{w}}}\dfrac{{\rho_{w}}_{i} - {\rho_{w}}_{i - 1}}{z_{i} - z_{i - 1}}\right)`
+:math:`{N_{i}}^{2} = max\left(0.00007,\ \dfrac{g}{\overline{\rho_{w}}} \, \dfrac{{\rho_{w}}_{i} - \
+{\rho_{w}}_{i - 1}}{z_{i} - z_{i - 1}}\right)`
 
 :math:`\overline{\rho_{w}} = \dfrac{\sum_{i = 1}^{N}{{\rho_{w_i}}V_{i}}}{\sum_{i = 1}^{N}V_{i}}`
 
@@ -971,11 +994,13 @@ column, :math:`z_{i}` is the depth of the top of layer :math:`i`, :math:`N_{i}`
 is the stability frequency of layer :math:`i`, and :math:`A_{s}` is the water
 surface area. Note that :math:`\overline{\rho_{w}}` is computed as a volumetric
 average, but should be the vertical average since this is a one-dimensional model.
-Additionally, the net radiation of layer :math:`i` is computed as follows.
+Additionally, the net radiation of layer :math:`i` is computed as follows:
 
 :math:`{I_{z_i}} = \left\{ \begin{matrix}
-\left( I_{s \downarrow}\beta(1 - \alpha) + I_{l \downarrow} - I_{l \uparrow} - H_{l} - H_{s} \right)\frac{A_{i}}{V_{i}} & Surface\ Layer \\
-I_{s \downarrow}\beta(1 - \alpha)\frac{\left( e^\left({- \kappa_{a}z_{i}}\right) A_{i} - e^\left({- \kappa_{a}z_{i - 1}}\right) A_{i - 1} \right)}{V_{i}} & otherwise
+\Bigl( I_{s \downarrow}\beta(1 - \alpha) + I_{l \downarrow} - I_{l \uparrow} - H_{l} - H_{s} \Bigr) \
+\frac{A_{i}}{V_{i}} & \text{Surface Layer} \\
+I_{s \downarrow}\beta(1 - \alpha)\frac{\left( e^\left({- \kappa_{a}z_{i}}\right) A_{i} - \
+e^\left({- \kappa_{a}z_{i - 1}}\right) A_{i - 1} \right)}{V_{i}} & \text{otherwise}
 \end{matrix} \right.\ `
 
 :math:`\kappa_{a} = \dfrac{1.7}{SD}`
@@ -991,7 +1016,7 @@ longwave radiation, :math:`H_{l}` is the latent heat flux and :math:`H_{s}` is
 the sensible heat flux. The assumed values for :math:`\beta` and :math:`\alpha`
 are reasonable for this application, and can range from 0 to 1. Radiation
 computations and heat fluxes are described in previous sections. The necessary
-areas for diffusion computations are described below.
+areas for diffusion computations are described below:
 
 :math:`A_{i} = f_{rating}\left( z_{i} \right)`
 
@@ -1004,7 +1029,10 @@ known information, ResEvap applies a discretized form of the vertical heat
 diffusion equation. Discretization of the vertical diffusion equation is
 performed below, using the theta method.
 
-:math:`\dfrac{{T_{w}}_{i}^{t + 1} - {T_{w}}_{i}^{t}\ }{\mathrm{\Delta}t} = \dfrac{1}{\overline{A_{l}}}\dfrac{1}{\mathrm{\Delta}z}\left\lbrack {K_{z_i}}A_{i}\dfrac{{T_{w}}_{i + 1}^{t + \theta} - {T_{w}}_{i}^{t + \theta}}{\mathrm{\Delta}z} \right\rbrack + \dfrac{{I_{z_i}}}{{\rho_{w_i}}{c_{p_i}}}`
+:math:`\dfrac{{T_{w}}_{i}^{t + 1} - {T_{w}}_{i}^{t}\ }{\mathrm{\Delta}t} = \
+\dfrac{1}{\overline{A_{l}}}\,\dfrac{1}{\mathrm{\Delta}z}\left\lbrack {K_{z_i}}A_{i} \
+\dfrac{{T_{w}}_{i + 1}^{t + \theta} - {T_{w}}_{i}^{t + \theta}}{\mathrm{\Delta}z} \right\rbrack \
++ \dfrac{{I_{z_i}}}{{\rho_{w_i}}{c_{p_i}}}`
 
 :math:`{T_{w}}_{i}^{t + \theta} = \theta{T_{w}}_{i}^{t + 1} + (1 - \theta){T_{w}}_{i}^{t}`
 
@@ -1014,13 +1042,26 @@ of the time step for layer :math:`i`, :math:`A_{i}` is the area through which
 the heat is transferred, and :math:`\theta` is the implicitness factor, which
 typically ranges from :math:`0.5 \leq \theta \leq 1`.
 
-The solution for this equation follows the form below.
+The solution for this equation follows the form below:
 
-:math:`a_{i}{T_{w}}_{i - 1}^{t + 1} + b_{i}{T_{w}}_{i}^{t + 1} + c_{i}{T_{w}}_{i + 1}^{t + 1} = {T_{w}}_{i}^{t} + (1 - \theta)\left( x^{u}( {T_{w}}_{i + 1}^{t} - {T_{w}}_{i}^{t} ) - x^{l}( {T_{w}}_{i}^{t} - {T_{w}}_{i - 1}^{t} ) \right) + \dfrac{{I_{z_i}}}{{\rho_{w_i}}{c_{p_i}}}`
+:math:`\left.
+\begin{array}{l}
+a_i{T_{w}}_{i - 1}^{t + 1} + b_i{T_{w}}_{i}^{t + 1} + c_i{T_w}_{i + 1}^{t + 1} = \\
+\hspace{4.3cm} {T_w}_{i}^{t} + (1 - \theta)\Bigl( x^{u}( {T_w}_{i + 1}^{t} - {T_w}_{i}^{t} ) - x^{l}( {T_w}_{i}^{t} - \
+{T_w}_{i - 1}^{t} ) \Bigr) + \dfrac{{I_{z_i}}}{{\rho_{w_i}}{c_{p_i}}}
+\end{array} \right.`
 
-:math:`x^{u} = \dfrac{\mathrm{\Delta}tA_{i}^{u}} {{\mathrm{\Delta}z}_{i}\overline{A_{l}}} \dfrac{ \frac{{K_{z_{i + 1}}} {\mathrm{\Delta}z}_{i + 1}} {{\rho_{w}}_{i + 1} {c_{p}}_{i + 1}} + \frac{{K_{z_i}} {\mathrm{\Delta}z}_{i}} { {\rho_{w_i}} {c_{p_i}}} } {0.5\left( {\mathrm{\Delta}z}_{i + 1} + {\mathrm{\Delta}z}_{i} \right)^{2}}`
+:math:`x^{u} = \dfrac{\mathrm{\Delta}tA_{i}^{u}} {{\mathrm{\Delta}z}_{i}\overline{A_{l}}} \
+\dfrac{ \frac{{K_{z_{i + 1}}} {\mathrm{\Delta}z}_{i + 1}} {{\rho_{w}}_{i + 1} {c_{p}}_{i + 1}} + \
+\frac{{K_{z_i}} {\mathrm{\Delta}z}_{i}} { {\rho_{w_i}} {c_{p_i}}} } {0.5\left( {\mathrm{\Delta}z}_{i + 1} + \
+{\mathrm{\Delta}z}_{i} \right)^{2}}`
 
-:math:`x^{l} = \dfrac{\mathrm{\Delta}tA_{i}^{l}} {{\mathrm{\Delta}z}_{i}\overline{A_{l}}} \dfrac{ \frac{{K_{z_{i - 1}}} {\mathrm{\Delta}z}_{i - 1}} {{\rho_{w}}_{i - 1} {c_{p}}_{i - 1}} + \frac{{K_{z_i}} {\mathrm{\Delta}z}_{i}} { {\rho_{w_i}} {c_{p_i}}} } {0.5\left( {\mathrm{\Delta}z}_{i - 1} + {\mathrm{\Delta}z}_{i} \right)^{2}}`
+:math:`x^{l} = \dfrac{\mathrm{\Delta}tA_{i}^{l}} {{\mathrm{\Delta}z}_{i}\overline{A_{l}}} \
+\dfrac{ \frac{{K_{z_{i - 1}}} {\mathrm{\Delta}z}_{i - 1}} {{\rho_{w}}_{i - 1} {c_{p}}_{i - 1}} + \
+\frac{{K_{z_i}} {\mathrm{\Delta}z}_{i}} { {\rho_{w_i}} {c_{p_i}}} } {0.5\left( {\mathrm{\Delta}z}_{i - 1} + \
+{\mathrm{\Delta}z}_{i} \right)^{2}}`
+
+
 
 :math:`a_{i} = - {\theta x}^{l}`
 
@@ -1030,7 +1071,7 @@ The solution for this equation follows the form below.
 
 In the above equations, ResEvap assumes :math:`\theta = 1`, which makes it a
 fully implicit solution. The provided equation is solved with the tridiagonal
-algorithm, where :math:`a_{i}`, :math:`b_{i}` and :math:`c_{i}` are the diagonal
+algorithm, where :math:`a_{i}, b_{i}, \text{ and } c_{i}` are the diagonal
 vectors, and the vector :math:`{T_{w}}_{1:N}^{t + 1}` is being solved.
 
 At this point, the full surface profile has been modeled, assuming diffusion is
@@ -1046,15 +1087,16 @@ assuming layer :math:`i` is included, is evaluated as follows:
 
 :math:`\left.
 \begin{array}{l}
-{PE_{SML_i}} = g \Bigl( {\rho_{SML_{i - 1}}} V_{i - 1:N} ( {z_{SML}^{com}}_{i - 1} - z_{i - 2} ) - \bigl( \rho_{i} V_{i:N} ( {z^{com}}_{i:N} - z_{i - 2}) \:+ \\
-\hspace{12cm} \rho_{i - 1}V_{i - 1} ( {z^{com}}_{i:i} - z_{i - 2} ) \bigr) \Bigr)
+{PE_{SML_i}} = g \biggl( {\rho_{SML_{i - 1}}} V_{i - 1:N} ( {z_{SML}^{com}}_{i - 1} - z_{i - 2} ) \; - \\
+\hspace{4cm} \Bigl( \rho_{i} V_{i:N} ( {z^{com}}_{i:N} - z_{i - 2} ) + \rho_{i - 1}V_{i - 1} \
+( {z^{com}}_{i:i} - z_{i - 2} ) \Bigr) \biggr)
 \end{array} \right.`
 
 :math:`V_{i:N} = \sum_{k = i}^{N}V_{k}`
 
 :math:`{T_{SML_i}} = \dfrac{\sum_{k = i}^{N}{{T_{w_k}}V_{k}{c_{p_k}}}}{\sum_{k = i}^{N}{V_{k}{c_{p_k}}}}`
 
-:math:`{\rho_{SML_i}} = 1000 - 0.019549\left| {T_{SML_i}} - 277.15 \right|^{1.68}`
+:math:`{\rho_{SML_i}} = 1000 - 0.019549 \bigl| {T_{SML_i}} - 277.15 \bigr|^{1.68}`
 
 :math:`z^{com}_{SML_i} = \rho_{SML_{i:N}}\sum_{k = i}^{N}\frac{V_{k}( z_{k} + z_{k - 1} )}{2}`
 
@@ -1078,7 +1120,9 @@ potential energy.
 
 :math:`{TKE}_{i:N} = Ke_{c_{i:N}} + Ke_{u_{i:N}}`
 
-:math:`Ke_{c_{i:N}} = \dfrac{\varepsilon_{c}g}{\rho_{N}\mathrm{\Delta}t} \Bigl( \sum_{k = i}^{N} \bigl( \rho_{k} ( z_{k} - z_{k - 1} ) \frac{( z_{k} + z_{k - 1} )}{2} \bigr) - \frac{( z_{N} + z_{i - 1} )}{2} \sum_{k = i}^{N} \bigl( \rho_{k}( z_{k} - z_{k - 1} ) \bigr) \Bigr)`
+:math:`Ke_{c_{i:N}} = \dfrac{\varepsilon_{c}g}{\rho_{N}\mathrm{\Delta}t} \biggl( \sum_{k = i}^{N} \Bigl( \rho_{k} \
+( z_{k} - z_{k - 1} ) \frac{( z_{k} + z_{k - 1} )}{2} \Bigr) - \frac{( z_{N} + z_{i - 1} )}{2} \sum_{k = i}^{N} \
+\Bigl( \rho_{k}( z_{k} - z_{k - 1} ) \Bigr) \biggr)`
 
 :math:`Ke_{u_{i:N}} = \varepsilon_{u}\rho_{N}A_{N}{u_{*}^{w}}^{3}\mathrm{\Delta}t`
 
@@ -1086,9 +1130,9 @@ potential energy.
 
 Where :math:`Ke_{c_{i:N}}` is the kinetic energy of the SML with layer
 :math:`i` included and :math:`Ke_{u_{i:N}}` is the kinetic energy from wind
-with layer :math:`i` included. If :math:`TKE_{i:N} \geq PE_{mix_i}`, then layer
+with layer :math:`i` included. If :math:`TKE_{i:N} \geq PE_{mix_i}` , then layer
 :math:`i` is considered in the SML, and the computations checks the deeper layer.
-If :math:`{TKE}_{i:N} > {{PE}_{mix}}_{i}`, then the computation of vertical
+If :math:`TKE_{i:N} > PE_{mix_i}` , then the computation of vertical
 temperature profile is complete. At this point, the reservoir surface
 temperature computations have comple ted, and ResEvap moves on to the next
 time step. After the final time step, ResEvap reports data in the output reports
@@ -1527,41 +1571,41 @@ ResEvap have been developed:
 
 10. Fix vertically averaged density computations
      The vertically averaged density, within the vertical temperature profile
-    computation, is computed as a volumetric average. Since the model is
-    1-dimensional, the vertical averages should not be volumetric. By computing
-    as a volumetric average, the densities become inconsistent with the
-    vertically integrated temperatures. The average density should replace
-    the volume average with a depth average, which ensures consistency between
-    model variables.
+     computation, is computed as a volumetric average. Since the model is
+     1-dimensional, the vertical averages should not be volumetric. By computing
+     as a volumetric average, the densities become inconsistent with the
+     vertically integrated temperatures. The average density should replace
+     the volume average with a depth average, which ensures consistency between
+     model variables.
 
 11. Allow for storage of hourly temperature profiles
      Although ResEvap computes hourly temperature profiles, only daily time
-    series are saved to the CWMS database. ResEvap should be saving the most
-    granular time series available, which would provide the maximum information
-    possible. This would have the benefit of avoiding daylight savings
-    considerations when saving, and allow for initialization at times other
-    than midnight. Alternatively, if daily time series is preferred, ResEvap
-    should transition to using Local Regular Time Series to ensure proper
-    accounting of daylight savings time.
+     series are saved to the CWMS database. ResEvap should be saving the most
+     granular time series available, which would provide the maximum information
+     possible. This would have the benefit of avoiding daylight savings
+     considerations when saving, and allow for initialization at times other
+     than midnight. Alternatively, if daily time series is preferred, ResEvap
+     should transition to using Local Regular Time Series to ensure proper
+     accounting of daylight savings time.
 
 12. Re-code the ResEvap shell script as a bash script
      The ResEvap script was originally coded as a CSH script as required by
-    the Corps. CWMS has adopted BASH as the standard shell scripting language.
-    The ResEvap script should be migrated to BASH for ease in maintenance
-    and staying in parity with CWMS.
+     the Corps. CWMS has adopted BASH as the standard shell scripting language.
+     The ResEvap script should be migrated to BASH for ease in maintenance
+     and staying in parity with CWMS.
 
 13. Cleanup unused file production
      ResEvap creates text report files that are not used by NWO, which are
-    described in section 5.1.2. Since these files are unused currently, it is
-    recommended that flags be added to suppress these files, so that they are
-    not generated. Once these flags are developed, update the Jython code to
-    leverage those flags to prevent creation of these files.
+     described in section 5.1.2. Since these files are unused currently, it is
+     recommended that flags be added to suppress these files, so that they are
+     not generated. Once these flags are developed, update the Jython code to
+     leverage those flags to prevent creation of these files.
 
 14. Allow for use of fog/smoke layer computations
      The parameters for the fog/smoke layer effects on shortwave radiation
-    exist in ResEvap, but these are never used. The program should be updated
-    to allow for use of these parameters, which would allow for direct assessment
-    of fog/smoke effects on the incoming solar radiation.
+     exist in ResEvap, but these are never used. The program should be updated
+     to allow for use of these parameters, which would allow for direct assessment
+     of fog/smoke effects on the incoming solar radiation.
 
 .. _References:
 
