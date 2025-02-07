@@ -1,0 +1,7 @@
+{
+  "dataSourceId": 8,
+  "name": "Sensor Data",
+  "type": "Sensor",
+  "arguments": "country=CAN",
+  "usedBy": 0
+}

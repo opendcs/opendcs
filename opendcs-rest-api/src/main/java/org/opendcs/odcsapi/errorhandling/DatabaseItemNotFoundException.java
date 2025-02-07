@@ -28,6 +28,12 @@ public final class DatabaseItemNotFoundException extends WebAppException
     this.errMessage = errMessage;
   }
 
+  public DatabaseItemNotFoundException(String errMessage, Throwable cause)
+  {
+    super(HttpServletResponse.SC_NOT_FOUND, errMessage, cause);
+    this.errMessage = errMessage;
+  }
+
   @Override
   public int getStatus()
   {

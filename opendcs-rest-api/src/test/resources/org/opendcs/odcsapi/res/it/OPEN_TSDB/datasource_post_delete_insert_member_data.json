@@ -1,0 +1,10 @@
+{
+  "dataSourceId" : null,
+  "name" : "Satellite Data Value",
+  "type" : "Satellite",
+  "usedBy" : 0,
+  "props" : {
+    "country" : "USA"
+  },
+  "groupMembers" : [ ]
+}
