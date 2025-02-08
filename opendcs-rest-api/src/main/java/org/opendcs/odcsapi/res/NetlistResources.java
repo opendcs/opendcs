@@ -65,10 +65,9 @@ public final class NetlistResources extends OpenDcsResource
 	public Response getNetlistRefs(@QueryParam("tmtype") String tmtype)
 			throws DbException
 	{
-		DatabaseIO dbIo = null;
+		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{
-			dbIo = getLegacyDatabase();
 			NetworkListList nlList = new NetworkListList();
 			if (tmtype == null)
 			{
@@ -86,10 +85,7 @@ public final class NetlistResources extends OpenDcsResource
 		}
 		finally
 		{
-			if (dbIo != null)
-			{
-				dbIo.close();
-			}
+			dbIo.close();
 		}
 	}
 
@@ -128,10 +124,9 @@ public final class NetlistResources extends OpenDcsResource
 			throw new MissingParameterException("Missing required netlistid parameter.");
 		}
 
-		DatabaseIO dbIo = null;
+		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{
-			dbIo = getLegacyDatabase();
 			NetworkListList nlList = new NetworkListList();
 			dbIo.readNetworkListList(nlList);
 			NetworkList nl = nlList.getById(DbKey.createDbKey(netlistId));
@@ -148,10 +143,7 @@ public final class NetlistResources extends OpenDcsResource
 		}
 		finally
 		{
-			if (dbIo != null)
-			{
-				dbIo.close();
-			}
+			dbIo.close();
 		}
 	}
 
@@ -189,14 +181,13 @@ public final class NetlistResources extends OpenDcsResource
 	public Response  postNetlist(ApiNetList netList)
 			throws DbException, WebAppException
 	{
-		DatabaseIO dbIo = null;
+		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{
 			if (netList == null)
 			{
 				throw new MissingParameterException("Missing required request body.");
 			}
-			dbIo = getLegacyDatabase();
 			NetworkList nlList = map(netList);
 			dbIo.writeNetworkList(nlList);
 			return Response.status(HttpServletResponse.SC_CREATED).entity(map(nlList)).build();
@@ -207,10 +198,7 @@ public final class NetlistResources extends OpenDcsResource
 		}
 		finally
 		{
-			if (dbIo != null)
-			{
-				dbIo.close();
-			}
+			dbIo.close();
 		}
 	}
 
@@ -253,10 +241,9 @@ public final class NetlistResources extends OpenDcsResource
 			throw new MissingParameterException("Missing required netlistid parameter.");
 		}
 
-		DatabaseIO dbIo = null;
+		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{
-			dbIo = getLegacyDatabase();
 			NetworkListList nlList = new NetworkListList();
 			dbIo.readNetworkListList(nlList);
 			NetworkList nl = nlList.getById(DbKey.createDbKey(netlistId));
@@ -298,10 +285,7 @@ public final class NetlistResources extends OpenDcsResource
 		}
 		finally
 		{
-			if (dbIo != null)
-			{
-				dbIo.close();
-			}
+			dbIo.close();
 		}
 	}
 
