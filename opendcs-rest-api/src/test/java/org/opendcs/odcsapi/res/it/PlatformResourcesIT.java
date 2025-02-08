@@ -7,6 +7,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
+import decodes.db.DatabaseException;
 import decodes.db.PlatformStatus;
 import decodes.db.ScheduleEntryStatus;
 import decodes.sql.DbKey;
@@ -39,6 +40,8 @@ final class PlatformResourcesIT extends BaseIT
 	private static Long platformId;
 	private static Long siteId;
 	private static Long netListId;
+	private static Long scheduleId;
+	private static Long platformStatusId;
 	private static Boolean dataLoaded;
 
 	@BeforeEach
@@ -48,7 +51,7 @@ final class PlatformResourcesIT extends BaseIT
 		sessionFilter = new SessionFilter();
 		authenticate(sessionFilter);
 
-		long scheduleId = DbKey.NullKey.getValue();
+		scheduleId = DbKey.NullKey.getValue();
 
 		if (dataLoaded == null || !dataLoaded)
 		{
@@ -138,7 +141,7 @@ final class PlatformResourcesIT extends BaseIT
 
 			// Store schedule entry status via extension, since no endpoint for this exists
 			// 		and the DbImport class does not accept the ScheduleEntryStatus object
-			DatabaseSetupExtension.storeScheduleEntryStatus(scheduleEntryStatus);
+			storeScheduleEntryStatus(scheduleEntryStatus);
 		}
 
 		String siteJson = getJsonFromResource("platform_insert_data.json");
@@ -181,14 +184,18 @@ final class PlatformResourcesIT extends BaseIT
 			status.setLastContactTime(Date.from(Instant.parse("2021-01-01T00:00:00Z")));
 			status.setLastMessageTime(Date.from(Instant.parse("2021-01-02T00:00:00Z")));
 
-			DatabaseSetupExtension.storePlatformStatus(status);
+			storePlatformStatus(status);
+			platformStatusId = status.getId().getValue();
 			dataLoaded = true;
 		}
 	}
 
 	@AfterEach
-	void tearDown()
+	void tearDown() throws DatabaseException
 	{
+		deletePlatformStatus(DbKey.createDbKey(platformStatusId));
+		deleteScheduleEntryStatus(DbKey.createDbKey(scheduleId));
+
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)

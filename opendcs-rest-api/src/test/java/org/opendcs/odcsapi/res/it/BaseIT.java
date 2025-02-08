@@ -25,10 +25,18 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import decodes.db.DatabaseException;
+import decodes.db.PlatformStatus;
+import decodes.db.ScheduleEntry;
+import decodes.db.ScheduleEntryStatus;
+import decodes.sql.DbKey;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
+import opendcs.dai.PlatformStatusDAI;
+import opendcs.dai.ScheduleEntryDAI;
 import org.apache.catalina.session.StandardSession;
+import org.opendcs.fixtures.configuration.Configuration;
 import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
 import org.opendcs.odcsapi.fixtures.DbType;
 import org.opendcs.odcsapi.fixtures.TomcatServer;
@@ -173,5 +181,58 @@ class BaseIT
 		String credentialsJson = Base64.getEncoder()
 				.encodeToString(String.format("%s:%s", adminCreds.getUsername(), adminCreds.getPassword()).getBytes());
 		authHeader = authHeaderPrefix + credentialsJson;
+	}
+
+	public static void storeScheduleEntryStatus(ScheduleEntryStatus status) throws DatabaseException
+	{
+		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
+		try (ScheduleEntryDAI dai = currentConfig.getTsdb().makeScheduleEntryDAO())
+		{
+			dai.writeScheduleStatus(status);
+		}
+		catch (Throwable ex)
+		{
+			throw new DatabaseException("Error storing schedule entry status", ex);
+		}
+	}
+
+	public static void deleteScheduleEntryStatus(DbKey statusId) throws DatabaseException
+	{
+		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
+		try (ScheduleEntryDAI dai = currentConfig.getTsdb().makeScheduleEntryDAO())
+		{
+			ScheduleEntry entry = new ScheduleEntry(statusId);
+			dai.deleteScheduleStatusFor(entry);
+		}
+		catch (Throwable ex)
+		{
+			throw new DatabaseException("Error deleting schedule entry status", ex);
+		}
+	}
+
+	public static void storePlatformStatus(PlatformStatus status) throws DatabaseException
+	{
+		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
+		try (PlatformStatusDAI dai = currentConfig.getTsdb().makePlatformStatusDAO())
+		{
+			dai.writePlatformStatus(status);
+		}
+		catch (Throwable ex)
+		{
+			throw new DatabaseException("Error storing platform status", ex);
+		}
+	}
+
+	public static void deletePlatformStatus(DbKey statusId) throws DatabaseException
+	{
+		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
+		try (PlatformStatusDAI dai = currentConfig.getTsdb().makePlatformStatusDAO())
+		{
+			dai.deletePlatformStatus(statusId);
+		}
+		catch (Throwable ex)
+		{
+			throw new DatabaseException("Error deleting platform status", ex);
+		}
 	}
 }

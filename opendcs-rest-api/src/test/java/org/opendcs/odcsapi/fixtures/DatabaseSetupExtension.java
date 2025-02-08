@@ -21,8 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
 
-import decodes.db.PlatformStatus;
-import decodes.db.ScheduleEntryStatus;
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -58,6 +56,11 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 	public static DbType getCurrentDbType()
 	{
 		return currentDbType;
+	}
+
+	public static Configuration getCurrentConfig()
+	{
+		return currentConfig;
 	}
 
 	public static TomcatServer getCurrentTomcat()
@@ -165,16 +168,6 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 					files[i]);
 		}
 		currentConfig.loadXMLData(filePaths, new SystemExit(), new SystemProperties());
-	}
-
-	public static void storeScheduleEntryStatus(ScheduleEntryStatus status) throws Exception
-	{
-		currentConfig.storeScheduleEntryStatus(status);
-	}
-
-	public static void storePlatformStatus(PlatformStatus status) throws Exception
-	{
-		currentConfig.storePlatformStatus(status);
 	}
 
 	private void setupClientUser()
