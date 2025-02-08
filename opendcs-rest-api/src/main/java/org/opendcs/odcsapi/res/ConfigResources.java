@@ -135,11 +135,15 @@ public final class ConfigResources extends OpenDcsResource
 			config = dbIo.readConfig(config);
 			return Response.status(HttpServletResponse.SC_OK).entity(map(config)).build();
 		}
+		catch (ValueNotFoundException ex)
+		{
+			throw new DatabaseItemNotFoundException("Config with ID " + configId + " not found", ex);
+		}
 		catch (DatabaseException ex)
 		{
 			if (ex.getCause() instanceof ValueNotFoundException)
 			{
-				throw new DatabaseItemNotFoundException("Config with ID " + configId + " not found");
+				throw new DatabaseItemNotFoundException("Config with ID " + configId + " not found", ex);
 			}
 			throw new DbException("Error reading config", ex);
 		}

@@ -18,7 +18,6 @@ package org.opendcs.odcsapi.res;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -291,7 +290,7 @@ public final class ReflistResources extends OpenDcsResource
 		{
 			if (e.getCause() instanceof ValueNotFoundException)
 			{
-				throw new DatabaseItemNotFoundException("Unable to retrieve season: matching season not found");
+				throw new DatabaseItemNotFoundException("Unable to retrieve season: matching season not found", e);
 			}
 			throw new DbException(String.format("Unable to retrieve season with abbreviation: %s", abbr), e);
 		}

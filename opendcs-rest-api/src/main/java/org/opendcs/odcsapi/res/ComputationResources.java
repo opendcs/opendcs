@@ -175,7 +175,7 @@ public final class ComputationResources extends OpenDcsResource
 		}
 		catch (NoSuchObjectException e)
 		{
-			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", compId));
+			throw new DatabaseItemNotFoundException(String.format("Computation with ID %s not found", compId), e);
 		}
 	}
 
