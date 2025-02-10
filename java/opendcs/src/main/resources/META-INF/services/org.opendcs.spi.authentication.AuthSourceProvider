@@ -3,3 +3,4 @@ org.opendcs.authentication.impl.EnvironmentAuthSourceProvider
 org.opendcs.authentication.impl.PropertyAuthSourceProvider
 org.opendcs.authentication.impl.GuiAuthSourceProvider
 org.opendcs.authentication.impl.SecretsFileAuthSourceProvider
+org.opendcs.authentication.impl.NoOpAuthSourceProvider
