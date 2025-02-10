@@ -4,8 +4,8 @@
     "Site" : "Test Site"
   },
   "description" : "A site for computations",
-  "latitude" : "131.6",
-  "longitude" : "-78.4",
+  "latitude" : "40.8",
+  "longitude" : "-96.77",
   "elevation" : 25.0,
   "elevUnits" : "m",
   "nearestCity" : "Lincoln",

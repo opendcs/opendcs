@@ -16,9 +16,8 @@
 package org.opendcs.odcsapi.beans;
 
 
-import java.util.function.Predicate;
-
 import decodes.tsdb.DbComputation;
+import java.util.function.Predicate;
 
 /**
  * A filter used by the Comp Ref retrieval method of the REST API. This filter is used

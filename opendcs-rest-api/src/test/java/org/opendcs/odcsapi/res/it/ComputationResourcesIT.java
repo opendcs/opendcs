@@ -28,7 +28,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@Tag("integration-opentsdb-only")
+@Tag("integration")
 @ExtendWith(DatabaseContextProvider.class)
 final class ComputationResourcesIT extends BaseIT
 {
