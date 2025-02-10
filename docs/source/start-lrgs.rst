@@ -53,77 +53,23 @@ Install Java
 The minimum Java is 8. However, we recommend a Java 11 Runtime to take advantage of performance
 improvements to java.
 
+The following example uses the "main-nightly" release. This release will include any new features
+but may be unstable. Substitute for a specific release, such as 7.0.14 in any environments that require
+stability
+
 .. code-block:: bash
     
     sudo dnf install java-11-openjdk-headless
 
-Download and install OpenDCS
+Download and extract OpenDCS
 ----------------------------
 
 .. code-block:: bash
 
-    curl -O -L https://github.com/opendcs/opendcs/releases/download/7.0.12/opendcs-installer-7.0.12.jar
-    sudo java -jar opendcs-installer-7.0.12.jar
-    # /opt/opendcs/<version> is the recommend installation directory
-
-Example:
-
-.. code-block:: bash
-
-    [rocky@localhost ~]$ sudo java -jar opendcs-installer-7.0.12.jar
-    Welcome to the installation of OPENDCS Open Data Collection System 7.0.12!
-    - OpenDCS Team <https://github.com/opendcs/opendcs>
-    - Cove Software, LLC <info@covesw.com>
-    - U.S. Army Corps of Engineers <Webmaster-HEC@usace.army.mil>
-    - U.S. Bureau of Reclamation <hdbsupport@precisionwre.com>
-    The homepage is at: https://github.com/opendcs/opendcs
-    press 1 to continue, 2 to quit, 3 to redisplay
-    1
-    Select target path [/home/rocky]
-    /opt/opendcs/7.0.12
-    press 1 to continue, 2 to quit, 3 to redisplay
-    1
-
-    Select the packs you want to install:
-
-    [<required>] OpenDCS Base (OPENDCS Java Archive (jar) and scripts necessary for all installations. This will not modify your existing database or configuration files.
-    IMPORTANT: For a new installation, you should also select the Template Database.)
-    [x] XML Database Template (Initial Empty Database This is required for a new install. This will not overwrite any existing files.)
-    input 1 to select, 0 to deselect:
-
-    [x] Docs (PDF and HTML Documentation to go in the 'doc' subdirectory.)
-    input 1 to select, 0 to deselect:
-
-    [x] TSDB Computation Components (Time Series and Computation Database Components)
-    input 1 to select, 0 to deselect:
-
-    [x] Open Time Series Database Schema and Components (Scripts and DDL for building Open TSDB Database)
-    input 1 to select, 0 to deselect:
-
-    [ ] Corps Water Management System (CWMS) Components (Schema, Scripts, and Jars for CWMS)
-    input 1 to select, 0 to deselect:
-
-    [ ] Bureau of Reclamation Hydrologic Database (HDB) Components (Schema, Scripts, and Jars for HDB)
-    input 1 to select, 0 to deselect:
-
-    [x] LRGS (Open LRGS (Local Readout Ground Station) supplies raw data acquisition functions.)
-    input 1 to select, 0 to deselect:
-
-
-    ...pack selection done.
-    press 1 to continue, 2 to quit, 3 to redisplay
-    1
-    [ Starting to unpack ]
-    [ Processing package: OpenDCS Base (1/6) ]
-    [ Processing package: XML Database Template (2/6) ]
-    [ Processing package: Docs (3/6) ]
-    [ Processing package: TSDB Computation Components (4/6) ]
-    [ Processing package: Open Time Series Database Schema and Components (5/6) ]
-    [ Processing package: LRGS (6/6) ]
-    [ Unpacking finished ]
-    Install was successful
-    application installed on /opt/opendcs/7.0.12
-    [ Console installation done ]
+    mkdir -p /opt/opendcs/main-nightly
+    cd /opt/opendcs/main-nightly
+    curl -O -L https://github.com/opendcs/opendcs/releases/download/main-nightly/opendcs-main-nightly.tar
+    tar -xf opendcs-main-nightly.tar
 
 Initial Setup
 -------------
@@ -138,11 +84,11 @@ appropriate directories.
     mkdir -p .opendcs/lrgs
     # Now copy the initial configuration
     cd .opendcs/lrgs
-    cp /opt/opendcs/7.0.12/lrgs.conf .
-    cp /opt/opendcs/7.0.12/ddsrecv.conf .
-    cp /opt/opendcs/7.0.12/drgsconf.xml .
-    cp -r /opt/opendcs/7.0.12/netlist .
-    cp -r /opt/opendcs/7.0.12/users .
+    cp /opt/opendcs/main-nightly/lrgs.conf .
+    cp /opt/opendcs/main-nightly/ddsrecv.conf .
+    cp /opt/opendcs/main-nightly/drgsconf.xml .
+    cp -r /opt/opendcs/main-nightly/netlist .
+    cp -r /opt/opendcs/main-nightly/users .
     # The Rocky Linux 9 Raspberry Pi image has a firewall on by default.
     # OpenDCS does not recommend turning the firewall off. Allow Port 16003
     # to be used.
@@ -153,7 +99,7 @@ You will need to set your environment. Add the following to .bashrc, if using ba
 
 .. code-block:: bash
 
-    export PATH=$PATH:/opt/opendcs/7.0.12/bin
+    export PATH=$PATH:/opt/opendcs/main-nightly/bin
     export DCSTOOL_USERDIR=$HOME/.opendcs
     export LRGSHOME=$DCSTOOL_USERDIR/lrgs
 
@@ -225,13 +171,13 @@ Installation - docker
 
 .. code-block:: bash
 
-    docker pull ghcr.io/opendcs/opendcs/lrgs:7.0.13-rc05
+    docker pull ghcr.io/opendcs/opendcs/lrgs:main-nightly
     
     docker volume create lrgs_home
     # A default password will be generated and in the logs
-    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home ghcr.io/opendcs/opendcs/lrgs:7.0.13-rc05
+    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home ghcr.io/opendcs/opendcs/lrgs:main-nightly
     # or if you wish to manually set the password
-    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home -e LRGS_ADMIN_PASSWORD="<password>" ghcr.io/opendcs/opendcs/lrgs:7.0.13-rc05
+    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home -e LRGS_ADMIN_PASSWORD="<password>" ghcr.io/opendcs/opendcs/lrgs:main-nightly
 
 Connecting
 ##########
