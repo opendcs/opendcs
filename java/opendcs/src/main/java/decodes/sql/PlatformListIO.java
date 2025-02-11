@@ -220,68 +220,70 @@ public class PlatformListIO extends SqlDbObjIo
                         " where lower(MEDIUMTYPE) IN (?) and PLATFORM.ID = PLATFORMID)";
             }
 
-            PreparedStatement stmt = conn.prepareStatement(q);
-            if (tmType != null && filter != null)
+            try (PreparedStatement stmt = conn.prepareStatement(q))
             {
-                stmt.setString(1, tmType);
-            }
-
-            log.debug("Executing query '{}'", q );
-            try (ResultSet rs = stmt.executeQuery())
-            {
-                if (rs != null)
+                if(tmType != null && filter != null)
                 {
-                    while (rs.next())
+                    stmt.setString(1, tmType);
+                }
+
+                log.debug("Executing query '{}'", q);
+                try (ResultSet rs = stmt.executeQuery())
+                {
+                    if (rs != null)
                     {
-                        DbKey platformId = DbKey.createDbKey(rs, 1);
-
-                        // MJM 20041027 Check to see if this ID is already in the
-                        // cached platform list and ignore if so. That way, I can
-                        // periodically refresh the platform list to get any newly
-                        // created platforms after the start of the routing spec.
-                        // Refreshing will not affect previously read/used platforms.
-                        Platform p = _pList.getById(platformId);
-                        if (p != null)
+                        while (rs.next())
                         {
-                            continue;
-                        }
+                            DbKey platformId = DbKey.createDbKey(rs, 1);
 
-                        p = new Platform(platformId);
-                        _pList.add(p);
-
-                        p.agency = rs.getString(2);
-
-                        DbKey siteId = DbKey.createDbKey(rs, 4);
-                        if (!rs.wasNull())
-                        {
-                            p.setSite(p.getDatabase().siteList.getSiteById(siteId));
-                        }
-
-                        DbKey configId = DbKey.createDbKey(rs, 5);
-                        if (!rs.wasNull())
-                        {
-                            PlatformConfig pc = platformList.getDatabase().platformConfigList.getById(configId);
-                            if (pc == null)
+                            // MJM 20041027 Check to see if this ID is already in the
+                            // cached platform list and ignore if so. That way, I can
+                            // periodically refresh the platform list to get any newly
+                            // created platforms after the start of the routing spec.
+                            // Refreshing will not affect previously read/used platforms.
+                            Platform p = _pList.getById(platformId);
+                            if (p != null)
                             {
-                                pc = _configListIO.getConfig(configId);
+                                continue;
                             }
-                            p.setConfigName(pc.configName);
-                            p.setConfig(pc);
-                        }
 
-                        String desc = rs.getString(6);
-                        if (!rs.wasNull())
-                        {
-                            p.setDescription(desc);
-                        }
+                            p = new Platform(platformId);
+                            _pList.add(p);
 
-                        p.lastModifyTime = getTimeStamp(rs, 7, null);
+                            p.agency = rs.getString(2);
 
-                        p.expiration = getTimeStamp(rs, 8, p.expiration);
+                            DbKey siteId = DbKey.createDbKey(rs, 4);
+                            if (!rs.wasNull())
+                            {
+                                p.setSite(p.getDatabase().siteList.getSiteById(siteId));
+                            }
 
-                        if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
-                        {
-                            p.setPlatformDesignator(rs.getString(9));
+                            DbKey configId = DbKey.createDbKey(rs, 5);
+                            if (!rs.wasNull())
+                            {
+                                PlatformConfig pc = platformList.getDatabase().platformConfigList.getById(configId);
+                                if (pc == null)
+                                {
+                                    pc = _configListIO.getConfig(configId);
+                                }
+                                p.setConfigName(pc.configName);
+                                p.setConfig(pc);
+                            }
+
+                            String desc = rs.getString(6);
+                            if (!rs.wasNull())
+                            {
+                                p.setDescription(desc);
+                            }
+
+                            p.lastModifyTime = getTimeStamp(rs, 7, null);
+
+                            p.expiration = getTimeStamp(rs, 8, p.expiration);
+
+                            if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+                            {
+                                p.setPlatformDesignator(rs.getString(9));
+                            }
                         }
                     }
                 }

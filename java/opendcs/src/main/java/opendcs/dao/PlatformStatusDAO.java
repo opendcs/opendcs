@@ -107,13 +107,12 @@ public class PlatformStatusDAO
 				q = q + " where platform_id in (select distinct a.id from platform a, "
 						+ "transportmedium b where a.id = b.platformid)";
 
-			ArrayList<PlatformStatus> ret = new ArrayList<PlatformStatus>();
+			ArrayList<PlatformStatus> ret = new ArrayList<>();
 
 			if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
 				return ret;
 
-			ResultSet rs = doQuery(q);
-			try
+			try (ResultSet rs = doQuery(q))
 			{
 				while (rs != null && rs.next())
 					ret.add(rs2ps(rs));
