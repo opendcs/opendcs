@@ -195,7 +195,7 @@ public final class SiteResources extends OpenDcsResource
 			DbKey siteKey = dbSite.getId();
 			propsDai.writeProperties("SITE_PROPERTY", "SITE_ID", siteKey, site.getProperties());
 			site.setSiteId(siteKey.getValue());
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.status(HttpServletResponse.SC_CREATED)
 					.entity(site).build();
 		}
 		catch(DatabaseException | DbIoException e)
@@ -256,7 +256,7 @@ public final class SiteResources extends OpenDcsResource
 						"Missing required siteid parameter.");
 			}
 			dai.deleteSite(DbKey.createDbKey(siteId));
-			return Response.status(HttpServletResponse.SC_OK)
+			return Response.status(HttpServletResponse.SC_NO_CONTENT)
 					.entity("ID " + siteId + " deleted").build();
 		}
 		catch(DbIoException | WebAppException e)

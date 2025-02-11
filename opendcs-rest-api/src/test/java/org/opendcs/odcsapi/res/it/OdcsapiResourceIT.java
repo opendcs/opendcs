@@ -276,14 +276,14 @@ final class OdcsapiResourceIT extends BaseIT
 			.extract()
 		;
 
-		Long platformId = response.body().jsonPath().getLong("platformId");
+		Long newPlatformId = response.body().jsonPath().getLong("platformId");
 
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
 			.filter(sessionFilter)
-			.queryParam("platformid", platformId)
+			.queryParam("platformid", newPlatformId)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -294,7 +294,7 @@ final class OdcsapiResourceIT extends BaseIT
 			.statusCode(is(HttpServletResponse.SC_OK))
 		;
 
-		return platformId;
+		return newPlatformId;
 	}
 
 	private void deletePlatform(Long platformId)
@@ -334,7 +334,7 @@ final class OdcsapiResourceIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(HttpServletResponse.SC_CREATED))
 			.extract()
 		;
 
@@ -356,7 +356,7 @@ final class OdcsapiResourceIT extends BaseIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
+			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
 		;
 	}
 }
