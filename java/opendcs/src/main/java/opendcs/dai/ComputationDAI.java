@@ -9,10 +9,9 @@
 package opendcs.dai;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
 
-import decodes.db.Site;
-import decodes.db.SiteList;
-import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompFilter;
 import decodes.tsdb.ConstraintException;
@@ -36,7 +35,7 @@ public interface ComputationDAI
 	 * @throws DbIoException on Database IO error.
 	 * @throws NoSuchObjectException if named computation doesn't exist.
 	 */
-	public DbComputation getComputationById(DbKey compId)
+	DbComputation getComputationById(DbKey compId)
 		throws DbIoException, NoSuchObjectException;
 
 	/**
@@ -47,7 +46,7 @@ public interface ComputationDAI
 	 * @throws DbIoException on Database IO error.
 	 * @throws NoSuchObjectException if named computation doesn't exist.
 	 */
-	public DbComputation getComputationByName(String name)
+	DbComputation getComputationByName(String name)
 		throws DbIoException, NoSuchObjectException;
 	
 	/**
@@ -56,15 +55,24 @@ public interface ComputationDAI
 	 * @param filter the computation filter containing app and algorithm IDs
 	 * @return List of computations
 	 */
-	public ArrayList<DbComputation> listCompsForGUI(CompFilter filter)
+	ArrayList<DbComputation> listCompsForGUI(CompFilter filter)
 		throws DbIoException;
+
+	/**
+	 * This queries computations and does the filtering by app ID and
+	 * algorithm ID only. The application further filters by parameters.
+	 * @param filter the computation filter containing app and algorithm IDs
+	 * @return List of computations
+	 */
+	List<DbComputation> listComps(Predicate<DbComputation> filter)
+			throws DbIoException;
 	
 	/**
 	 * Writes a computation to the database.
 	 * Note: Does not write the subordinate algorithm record.
 	 * @throws DbIoException on Database IO error.
 	 */
-	public void writeComputation( DbComputation comp )
+	void writeComputation( DbComputation comp )
 		throws DbIoException;
 	
 	/**
@@ -73,7 +81,7 @@ public interface ComputationDAI
 	 * @return the id
 	 * @throws NoSuchObjectException if no match found
 	 */
-	public DbKey getComputationId(String name)
+	DbKey getComputationId(String name)
 		throws DbIoException, NoSuchObjectException;
 
 	/**
@@ -84,13 +92,13 @@ public interface ComputationDAI
 	 * @throws ConstraintException if this comp cannot be deleted because
 	 *  other records in the DB (like data) depend on it.
 	 */
-	public void deleteComputation(DbKey id)
+	void deleteComputation(DbKey id)
 		throws DbIoException, ConstraintException;
 
 	/**
 	 * Closes any resources opened by the DAO
 	 */
-	public void close();
+	void close();
 
 	/**
 	 * New 6.2 List computations for GUI method.
@@ -98,5 +106,5 @@ public interface ComputationDAI
 	 * @return
 	 * @throws DbIoException
 	 */
-	public ArrayList<ComputationInList> compEditList(CompFilter filter) throws DbIoException;
+	ArrayList<ComputationInList> compEditList(CompFilter filter) throws DbIoException;
 }
