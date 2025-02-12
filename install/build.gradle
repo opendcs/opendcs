@@ -1,6 +1,7 @@
 plugins
 {
     id 'opendcs.deps-conventions'
+    id 'opendcs.publishing-conventions'
     id 'distribution'
 }
 
@@ -88,6 +89,18 @@ distributions
                 from "${rootDir}/schema"
             }
         }
+    }
+}
+
+if (shouldSign) {
+    signing {
+        sign distZip
+        sign distTar
+    }
+
+    task signDist {
+        dependsOn signDistTar
+        dependsOn signDistZip
     }
 }
 
