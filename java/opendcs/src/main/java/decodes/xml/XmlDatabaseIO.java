@@ -44,7 +44,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -1409,13 +1408,14 @@ e.printStackTrace();
 	 * @param pc object in which to store data
 	 * @throws DatabaseException
 	 */
-	public void readConfig( PlatformConfig pc ) throws DatabaseException
+	public PlatformConfig readConfig( PlatformConfig pc ) throws DatabaseException
 	{
 		String fn = "";
 		try
 		{
 			fn = makePath(PlatformConfigDir, pc.makeFileName());
 			myParser.parse(new File(fn), pc);
+			return pc;
 		}
 		catch(Exception e)
 		{
