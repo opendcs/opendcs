@@ -44,7 +44,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -52,6 +51,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -59,6 +59,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.xml.sax.SAXException;
 
 import decodes.db.Constants;
@@ -1032,6 +1033,18 @@ e.printStackTrace();
 		{
 			throw new DatabaseException(e.toString());
 		}
+	}
+
+	/**
+	 * Not implemented for XML.
+	 * @param groupId the group ID to check
+	 * @return list of routing spec IDs and names, or empty list if not used.
+	 * @throws DatabaseException upon error
+	 */
+	public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
+			throws DatabaseException
+	{
+		throw new NotImplementedException("routeSpecsUsing not implemented for XML.");
 	}
 
 

@@ -4,8 +4,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
+import decodes.db.RoutingSpec;
+import decodes.db.ValueNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,6 +188,51 @@ public class PresentationGroupListIO extends SqlDbObjIo
     }
 
     /**
+     * If the presentation group referenced by groupId is used by one or more routing
+     * specs, return a list of routing spec IDs and names. If not used, return an empty list.
+     * Objects in this list may be only partially populated (key values
+     * and primary display attributes only).
+     * @param groupId the presentation group ID to check
+     * @return List<RoutingSpec> list of routing spec IDs and names, or null if not used.
+     * @throws SQLException if an error is encountered
+     */
+    public List<RoutingSpec> routeSpecsUsing(long groupId)
+            throws DatabaseException
+    {
+        String q = "select rs.id, rs.name"
+            + " from routingspec rs, presentationgroup pg"
+            + " where lower(rs.presentationgroupname) = lower(pg.name)"
+            + " and pg.id = ?";
+
+        try (Connection conn = getConnection();
+            DaoBase dao = new DaoBase(this._dbio,"Presentation",conn))
+        {
+
+            List<RoutingSpec> specs = new ArrayList<>();
+            dao.doQuery(q, rs -> {
+                    try
+                    {
+                        RoutingSpec spec = new RoutingSpec();
+                        spec.setId(DbKey.createDbKey(rs.getLong(1)));
+                        spec.setName(rs.getString(2));
+                        specs.add(spec);
+                    }
+                    catch(DatabaseException ex)
+                    {
+                        throw new SQLException("Unable to create routing spec object.", ex);
+                    }
+                }, groupId);
+            return specs;
+        }
+        catch (SQLException ex)
+        {
+            String msg = "Error in query '" + q + "'";
+            throw new DatabaseException(
+                    String.format("Unable to get routing specs using presentation group. %s", msg), ex);
+        }
+    }
+
+    /**
       * Passed a partially read PresentationGroup, read the entire contents
       * from the database and fill-in the passed object.
       * @param conn connection to use for this request
@@ -234,6 +283,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
                         {
                             PresentationGroup inheritsFrom = get(conn, pg, inheritsFromId);
                             pg.inheritsFrom = inheritsFrom.groupName;
+                            pg.parent = inheritsFrom;
                         }
                         catch (DatabaseException ex)
                         {
@@ -248,9 +298,10 @@ public class PresentationGroupListIO extends SqlDbObjIo
                 return true;
             }, pg.getId());
 
-            if (found != true)
+            if (found == null || !found)
             {
-                throw new DatabaseException("No PresentationGroup found with id " + pg.getId());
+                throw new DatabaseException("No PresentationGroup found with id " + pg.getId(),
+                        new ValueNotFoundException("No PresentationGroup found with id " + pg.getId()));
             }
         }
         catch (SQLException sqle)
@@ -270,7 +321,6 @@ public class PresentationGroupListIO extends SqlDbObjIo
     * resolve any inheritances.
     * @param rs  the JDBC result set
       @param resolveInh if true, resolve inheritance also
-      @param readDPs if true, read the data presentation elements.
     */
     private PresentationGroup makePG(ResultSet rs, boolean resolveInh) throws DatabaseException, SQLException
     {

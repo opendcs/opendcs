@@ -78,10 +78,13 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import ilex.util.AuthException;
 import ilex.util.EnvExpander;
+import opendcs.util.sql.WrappedConnection;
 import org.opendcs.authentication.AuthSourceService;
 
 import org.slf4j.LoggerFactory;
@@ -119,8 +122,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.util.sql.WrappedConnection;
-import ilex.util.AuthException;
 import ilex.util.Logger;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
@@ -1759,6 +1760,35 @@ public class SqlDatabaseIO
             {
                 freeConnection(conn);
             }
+            _presentationGroupListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * If the presentation group referenced by groupId is used by one or more routing
+     * specs, return a list of routing spec IDs and names. If groupId is not used,
+     * return null.
+     * Objects in this list will be only partially populated (key values
+     * and names only).
+     * @param groupId the ID of the presentation group to check.
+     * @return string concatenated list of routing spec IDs and names, or null if not used.
+     * @throws DatabaseException if a database error occurs.
+     */
+    @Override
+    public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _presentationGroupListIO.setConnection(conn);
+            return _presentationGroupListIO.routeSpecsUsing(groupId);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deletePresentationGroup.", ex);
+        }
+        finally
+        {
             _presentationGroupListIO.setConnection(null);
         }
     }
