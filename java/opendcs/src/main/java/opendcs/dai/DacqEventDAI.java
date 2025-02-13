@@ -23,8 +23,6 @@ package opendcs.dai;
 import java.util.ArrayList;
 import java.util.Date;
 
-import javax.servlet.http.HttpSession;
-
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
@@ -105,13 +103,12 @@ public interface DacqEventDAI
 	 * @param routingExecId the routing execution ID
 	 * @param platformId the platform ID
 	 * @param backlog the backlog
-	 * @param httpSession the HTTP session
+	 * @param lastDacqEventId the last dacq event ID attribute from the HTTP session
 	 * @return number of events added to the list
 	 * @throws DbIoException
 	 */
-	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, String backlog, HttpSession httpSession)
+	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, String backlog, DacqEventAttr lastDacqEventId)
 			throws DbIoException;
-	
 	
 	/**
 	 * Delete any events for the specified platform ID.
@@ -150,4 +147,29 @@ public interface DacqEventDAI
 		throws DbIoException;
 
 
+	class DacqEventAttr
+	{
+		private final Object value;
+		private boolean toRemove = false;
+
+		public DacqEventAttr(Object value)
+		{
+			this.value = value;
+		}
+
+		public Object getValue()
+		{
+			return value;
+		}
+
+		public void setRemove()
+		{
+			toRemove = true;
+		}
+
+		public boolean isToRemove()
+		{
+			return toRemove;
+		}
+	}
 }

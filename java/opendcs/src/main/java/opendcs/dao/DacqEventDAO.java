@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Date;
 import java.util.TimeZone;
 
-import javax.servlet.http.HttpSession;
-
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
@@ -44,8 +42,6 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 		+ "EVENT_PRIORITY, SUBSYSTEM, MSG_RECV_TIME, EVENT_TEXT";
 	public static String dacqEventColumns = columnsBase;
 	private static Boolean hasAppId = null;
-	private static final String LAST_DACQ_ATTRIBUTE = "last-dacq-event-id";
-	
 
 	public DacqEventDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -259,7 +255,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 	}
 
 	@Override
-	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, String backlog, HttpSession httpSession)
+	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, String backlog, DacqEventAttr lastDacqEventId)
 			throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
@@ -291,11 +287,10 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 		{
 			if (backlog.equalsIgnoreCase("last"))
 			{
-				Object lastDacqEventId = httpSession.getAttribute(LAST_DACQ_ATTRIBUTE);
-				if (lastDacqEventId != null)
+				if (lastDacqEventId.getValue() != null)
 				{
 					q = q + " " + c + " DACQ_EVENT_ID > ?";
-					parameters.add(lastDacqEventId);
+					parameters.add(lastDacqEventId.getValue());
 				}
 			}
 			else
@@ -322,7 +317,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 								cal.add(calConstant, -intv.getCalMultiplier());
 								q = q + " " + c + " EVENT_TIME >= ?";
 								parameters.add(cal.getTimeInMillis());
-								httpSession.removeAttribute(LAST_DACQ_ATTRIBUTE);
+								lastDacqEventId.setRemove();
 							}
 
 							break;
