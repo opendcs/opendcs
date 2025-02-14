@@ -1081,139 +1081,75 @@ environment.
 
 **Install the OPENDCS Package**
 
-We recommend a temporary/test installation *on* the database server. We
-installed as user ‘oracle’ on the database server and allowed it to
-create a subdirectory $HOME/OPENDCS. As you run the installer GUI,
-select all packages to install and be sure to follow the installation
-all the way through to the end.
-
-Following installation, add this to your environment::
-
-   DCSTOOL_HOME=$HOME/OPENDCS
-   export DCSTOOL_HOME
-
-If you installed in a different location, modify the setting
-appropriately. You can add these lines to your .bash_profile (assuming
-you’re using bash) so that they are automatically added to your
-environment.
-
 **Create the Oracle Database Instance**
 
-Create the database instance with Oracle’s Database Creation Assistant
-tool. In the following examples, we will create a database with SID
-(a.k.a. TNS Name “aesrddec”.
+Create the database instance with Oracle’s Database In accordance with your organizations rules.
 
-Start the Database Creation Assistant with the command “dbca”. The
-following answers will give you a working DECODES database. Advanced
-Oracle administrators may want to customize their answers for their
-specific environment:
+OpenDCS is tested with the https://hub.docker.com/r/gvenzl/oracle-free images. 
+No futures beyond Oracle 19c are currently used.
 
--  Step 1: Select “Create a Database”
+Create a user to own the schema, ostdb_adm is recommended, some script may not correctly substitute the name at this time.
 
--  Step 2: Select “General Purpose of Transaction Processing”.
+Apply, or have your DBA's apply the following SQL to this user
 
--  Step 3: For both Global Database Name and SID, type “aesrddec”
+.. code-block:: sql
 
--  Step 4: We will uncheck “Configure Enterprise Manager” (you can use
-   that tool if desired.)
+   GRANT ALTER ANY TABLE,CREATE ANY TABLE,CREATE ANY INDEX,CREATE ANY SEQUENCE,
+         CREATE ANY VIEW,CREATE ANY PROCEDURE,CREATE ANY TRIGGER,CREATE ANY JOB,
+         REATE ANY SYNONYM,DROP ANY SYNONYM,CREATE PUBLIC SYNONYM,DROP PUBLIC SYNONYM,
+         CREATE ROLE, CREATE USER TO ostdb_adm;
+   GRANT CREATE SESSION,RESOURCE,CONNECT TO ostdb_adm WITH ADMIN OPTION;
+   ALTER USER ostdb_adm DEFAULT ROLE ALL;
 
--  Step 5: Click “Use the Same Administrative Password for All
-   Accounts”. Then type and confirm a good password. Remember it!
+.. WARNING:: 
 
--  Step 6: For Storage Type, select “File System”. For Storage
-   Locations, select “Use Database File Locations from Template”.
+   DBAs will likely complain about the requirement to grant create user. This can be removed; the 
+   create user step from the manageDatabase script will not complete. This permission is only
+   required during the initial setup, and may be removed afterwards.
 
--  Step 7: Accept defaults for recovery configuration
+   If your DBAs refuse, allow that step to fail, the schema installation will complete and you
+   will need to create any users by your organization process. At least one user needs the "OTSDB_ADMIN" role. 
 
--  Step 8: Do *not* check Sample schemas. Also, include no Custom
-   Scripts.
+.. NOTE::
 
--  Step 9: Accept defaults for all initialization parameters.
+   As OpenDCS introduces the rest_api (https://github.com/opendcs/rest_api) we will be getting away
+   from a model of creating actual database users.
 
--  Step 10: Accept defaults for Database Storage
+Now that you have:
 
--  Step 11: Check “Create Database”. Then click “Finish” at the bottom.
+1. A user to own the schema (this user should *NOT* be the application user.)
+2. Database name  (e.g. DCS)
+3. The credentials for said user.
+4. The fully-qualified hostname of the database (e.g. mydb.example.local)
 
-DBCA will then create and configure your database.
+Create a `decodes.properties`, `user.properties`, or `<name>.profile` in the appropriate directory.
 
-Set an environment variable ORACLE_SID with the name of your database.
-E.g.::
+set the following properties:
 
-   ORACLE_SID=aesrddec
-   export ORACLE_SID
+.. code-block:: properties
 
-To verify that the database creation worked, start SQLPLUS and enter the
-commands shown in red below::
+   editDatabaseType: OPENTSDB
+   editDatabaseLocation: jdbc:oracle:thin://mydb.example.local:1521/DCS
+   editDatabaseDriver: oracle.jdbc.driver.OracleDriver
+   sqlKeyGenerater: decodes.sql.OracleSequenceKeyGenerator
 
-   [oracle@coveoracle ~]$ **echo $ORACLE_SID**
-   aesrddec
-   [oracle@coveoracle ~]$ **sqlplus / as sysdba**
-   SQL*Plus: Release 11.2.0.1.0 Production on Tue Feb 18 14:51:59 2014
-   Copyright (c) 1982, 2009, Oracle. All rights reserved.
-   Connected to:
-   Oracle Database 11g Enterprise Edition Release 11.2.0.1.0 - 64bit
-   Production
-   With the Partitioning, OLAP, Data Mining and Real Application Testing
-   options
-   SQL> **select \* from global_name;**
-   GLOBAL_NAME
-   --------------------------------------------------------------------------------
-   AESRDDEC
-   SQL> quit
-   Disconnected from Oracle Database 11g Enterprise Edition Release
-   11.2.0.1.0 - 64bit Production
-   With the Partitioning, OLAP, Data Mining and Real Application Testing
-   options
-   [oracle@coveoracle ~]$
-   Make sure you see the single global name corresponding to your SID (but
-   converted to all capitals).
 
-**Edit Definitions for DECODES Database Creation**
+.. NOTE::
 
-Now you are ready to run the OPENDCS DECODES Database Creation Script.
-This is found in the subdirectory “schema/opendcs-oracle”, under your
-OPENDCS installation.
+   Example assumes a pluggable database, set the JDBC url as appropriate to your
+   database setup.
 
-CD to this directory and edit the file “defines.sh” with your favorite
-text editor::
+Set other settings as appropriate to your environment and needs.
 
-   #!/bin/bash
-   #
-   # Modify the definitions below before creating the database
-   #
-   #
-   # SYS_SCHEMA is a system administrator account for the oracle server.
-   # It is used to create users, roles, and tablespaces.
-   # Set SYS_PASSWD before executing and remove it afterward.
-   #
-   export DBSUPER=SYS
-   export DBSUPER_PASSWD=xxxxxxxx
-   # Hostname & port where the database is running
-   export DBHOST=localhost
-   export DBPORT=1521
-   # Logfile for installation scripts.
-   export LOG=createdb.log
-   # Schema Owner Account and password
-   export TSDB_ADM_SCHEMA=tsdb_adm
-   export TSDB_ADM_PASSWD=xxxxxxxx
-   # SID (a.k.a. TNS Name)
-   export DB_TNSNAME=aesrddec
-   # Oracle tablespace name and temporary tablespace name
-   export TBL_SPACE_DIR=/home/oracle/app/oradata/$DB_TNSNAME
-   export TBL_SPACE_DATA=aesrddec_data
-   export TBL_SPACE_TEMP=aesrddec_temp
-   # Number of numeric and string storage tables to create
-   export NUM_TABLES=10
-   export STRING_TABLES=5
+To start the initial schema installation:
 
-You must enter the actual passwords in this file temporarily. You can
-delete them after database creation is complete. The DBSUPER_PASSWD at
-the top is what you entered in dbca in step 5.
+.. code-block:: bash
 
-The specified schema account will be created with the specified password
-and will be granted full administrative privileges to all DECODES
-database objects. The above settings are for a small database with
-default Oracle settings.
+   manageDatabase -I OpenDCS-Oracle -P full_path_to.properties
+   # enter the Schema owner username and password when prompted.
+   # You will be prompted for the number of numeric and text time series tables
+   # enter appropriate values for you're expected data volume.
+   # On a fresh install the schema installation will just happen.
 
 **Configure the DCS Toolkit**
 
@@ -1221,66 +1157,17 @@ Part of the installation will be to run an XML importer to initialize
 various lists within the database. For this reason you must configure
 OpenDCS for the new database before running the schema creation script.
 
+If running background processes, make sure the "Decodes" User is set.
+
+.. code-block:: bash
+
+   setDecodesuser $DCSTOOL_USERDIR/.decodes.auth
+   # Use a user with OTSDB_PROC permissions.
+
 Start OpenDCS with the command::
 
    launcher_start &
 
-Then click on the setup button. Make the following changes:
-
--  Database Type: OPENTSDB
-
--  Database Location:
-   jdbc:oracle:thin:@\ **HOSTNAME**:1521:**DB_TNSNAME**
-
-   -  where HOSTNAME is you system hostname, or localhost if you are
-      running on the same machine as the DBMS.
-
-   -  DB_TNSSAME is the SID or TNS Name you used in DBCA step 3.
-
--  Click the DB Password Button and enter the administrative user
-   account and password that you entered in defines.sh for
-   “TSDB_ADM_SCHEMA”.
-
--  For jdbcDriverClass, enter: oracle.jdbc.driver.OracleDriver
-
--  For sqlKeyGenerater, enter: decodes.sql.OracleSequenceKeyGenerator
-
-When finished, click “Save Changes”. Then exit completely out of the
-OPENDCS GUI.
-
-.. image:: ./media/legacy/install-guide/im-18-main-menu-and-properties.png
-   :alt: Macintosh HD:Users:mmaloney:Desktop:Screen Shot 2014-02-18 at 3.35.51 PM.png
-   :width: 6.49444in
-   :height: 5.07847in
-
-**Run the Database Creation Script**
-
-Finally you are ready to run the script to create the database schema
-and users::
-
-   cd $DCSTOOL_HOME/schema/opendcs-oracle
-   ./createDb.sh
-
-Following script completion you can view a log of all actions taken in
-the file “createdb.log”.
-
-If any errors have occurred, the log will contain an explanation. After
-fixing the problem you will want to run the complete script again. To
-drop the entire schema before restarting, start sqlplus as administrator
-and issue the command:
-
-drop user **TSDB_ADM_SCHEMA** cascade;
-
-... where **TSDB_ADM_SCHEMA** is as you defined it in the file
-“defines.sh”.
-
-**Make the Database Start when the Server is Booted**
-
-Edit /etc/oratab. Find the line corresponding to the database you just
-created. Change the final field from ‘N’ to ‘Y’. On our system the line
-reads as follows::
-
-   aesrddec:/home/oracle/app/product/11.2.0/dbhome_1:Y
 
 Using OPENDCS with CWMS
 ------------------------
@@ -1390,10 +1277,12 @@ Toolkit:
 
 Set an environment variable DCSTOOL_HOME pointing to the installation.
 Then add the OpenDCS bin directory to your path. For example, in your
-.bash_profile::
+.bash_profile
 
-   export DCSTOOL_HOME=/home/opendcs/OPENDCS
-   PATH=$DCSTOOL_HOME/bin:$PATH
+.. code-block:: bash
+
+   export DCSTOOL_HOME=<Install path>
+   export PATH=$DCSTOOL_HOME/bin:$PATH
    Start the launch menu:
    launcher_start&
 
