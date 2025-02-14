@@ -15,24 +15,19 @@
 
 package opendcs.dao;
 
-import decodes.tsdb.IntervalCodes;
 import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Date;
-import java.util.TimeZone;
 
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.tsdb.DbIoException;
 import opendcs.dai.DacqEventDAI;
-import opendcs.dai.IntervalDAI;
-import opendcs.opentsdb.Interval;
 
 public class DacqEventDAO extends DaoBase implements DacqEventDAI
 {
@@ -255,7 +250,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 	}
 
 	@Override
-	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, String backlog, DacqEventAttr lastDacqEventId)
+	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, boolean backlogValid, Long lastDacqEventId, Long timeInMillis)
 			throws DbIoException
 	{
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
@@ -283,47 +278,17 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 			c = " AND ";
 			parameters.add(platformId);
 		}
-		if (backlog != null && !backlog.trim().isEmpty())
+		if (backlogValid)
 		{
-			if (backlog.equalsIgnoreCase("last"))
+			if (lastDacqEventId != null)
 			{
-				if (lastDacqEventId.getValue() != null)
-				{
-					q = q + " " + c + " DACQ_EVENT_ID > ?";
-					parameters.add(lastDacqEventId.getValue());
-				}
+				q = q + " " + c + " DACQ_EVENT_ID > ?";
+				parameters.add(lastDacqEventId);
 			}
-			else
+			else if (timeInMillis != null)
 			{
-				try (IntervalDAI dai = db.makeIntervalDAO())
-				{
-					dai.loadAllIntervals();
-					String[] intervalCodes = dai.getValidIntervalCodes();
-					for (String interval : intervalCodes)
-					{
-						Interval intv = IntervalCodes.getInterval(interval);
-						if (intv == null)
-						{
-							Logger.instance().log(Logger.E_WARNING, "Interval code '" + interval + "' not recognized.");
-							continue;
-						}
-						if (backlog.equalsIgnoreCase(intv.getName()))
-						{
-							Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-							cal.setTimeInMillis(System.currentTimeMillis());
-							int calConstant = intv.getCalConstant();
-							if (calConstant != -1)
-							{
-								cal.add(calConstant, -intv.getCalMultiplier());
-								q = q + " " + c + " EVENT_TIME >= ?";
-								parameters.add(cal.getTimeInMillis());
-								lastDacqEventId.setRemove();
-							}
-
-							break;
-						}
-					}
-				}
+				q = q + " " + c + " EVENT_TIME >= ?";
+				parameters.add(timeInMillis);
 			}
 		}
 

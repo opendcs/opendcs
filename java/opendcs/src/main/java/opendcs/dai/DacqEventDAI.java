@@ -102,12 +102,13 @@ public interface DacqEventDAI
 	 * @param appId the application ID
 	 * @param routingExecId the routing execution ID
 	 * @param platformId the platform ID
-	 * @param backlog the backlog
+	 * @param backlogValid whether the backlog is valid (not null)
 	 * @param lastDacqEventId the last dacq event ID attribute from the HTTP session
+	 * @param timeInMillis the time in milliseconds if the interval was invalid
 	 * @return number of events added to the list
-	 * @throws DbIoException
+	 * @throws DbIoException on any SQL error
 	 */
-	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, String backlog, DacqEventAttr lastDacqEventId)
+	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, boolean backlogValid, Long lastDacqEventId, Long timeInMillis)
 			throws DbIoException;
 	
 	/**
@@ -145,31 +146,4 @@ public interface DacqEventDAI
 	 */
 	public int readEventsAfter(DbKey eventId, ArrayList<DacqEvent> evtList)
 		throws DbIoException;
-
-
-	class DacqEventAttr
-	{
-		private final Object value;
-		private boolean toRemove = false;
-
-		public DacqEventAttr(Object value)
-		{
-			this.value = value;
-		}
-
-		public Object getValue()
-		{
-			return value;
-		}
-
-		public void setRemove()
-		{
-			toRemove = true;
-		}
-
-		public boolean isToRemove()
-		{
-			return toRemove;
-		}
-	}
 }
