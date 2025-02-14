@@ -75,7 +75,12 @@ jobs:
              -PsigningKey="${{ secrets.signingKey != null && secrets.signingKey || secrets.SIGNING_KEY }}"
       - name: Create distributions
         run: |
-          ./gradlew distTar distZip
+          ./gradlew signDist -Psign=true \
+             -PversionOverride=$VERSION \
+             -PsigningKeyPassword="${{ secrets.signingKeyPassword != null && secrets.signingKeyPassword || secrets.SIGNING_KEY_PASSWORD }}" \
+             -PossrhUsername=${{ secrets.ossrhUsername != null && secrets.ossrhUsername || secrets.OSSRH_USERNAME }} \
+             -PossrhPassword=${{ secrets.ossrhPassword != null && secrets.ossrhPassword || secrets.OSSRH_PASSWORD }} \
+             -PsigningKey="${{ secrets.signingKey != null && secrets.signingKey || secrets.SIGNING_KEY }}"
       - name: create docker images
         run: |
           REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
@@ -86,7 +91,9 @@ jobs:
         run: |
           VERSION=`./gradlew properties -q | grep "^version:" | awk '{ print $2}'`
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.tar#opendcs-${VERSION}.tar --clobber
+          gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.tar.asc#opendcs-${VERSION}.tar.asc --clobber
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip#opendcs-${VERSION}.zip --clobber
+          gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip.asc#opendcs-${VERSION}.zip.asc --clobber
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
