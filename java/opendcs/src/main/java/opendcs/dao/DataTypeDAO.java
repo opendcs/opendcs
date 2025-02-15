@@ -173,7 +173,18 @@ public class DataTypeDAO
 	public void readDataTypeSet(DataTypeSet dts) 
 		throws DbIoException
 	{
+		readDataTypeSet(dts, null);
+	}
+
+	@Override
+	public void readDataTypeSet(DataTypeSet dts, String standard)
+			throws DbIoException
+	{
 		String q = "select " + columns + " from DataType";
+		if (standard != null)
+		{
+			q = q + " where STANDARD = " + sqlString(standard);
+		}
 		ResultSet rs = doQuery(q);
 		try
 		{
@@ -185,7 +196,9 @@ public class DataTypeDAO
 				DataType dt = new DataType(standardName, code);
 				dt.forceSetId(id);
 				if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+				{
 					dt.setDisplayName(rs.getString(4));
+				}
 				dts.add(dt);
 			}
 	
@@ -201,7 +214,7 @@ public class DataTypeDAO
 				if (dt0 == null || dt1 == null)
 				{
 					warning("Bad datatype equivalence ids (" + id0 + "," + id1
-						+ ") -- ignored");
+							+ ") -- ignored");
 					continue;
 				}
 			
@@ -216,7 +229,9 @@ public class DataTypeDAO
 				{
 					DataType dt = dts.getById(DbKey.createDbKey(rs, 1));
 					if (dt != null)
+					{
 						dt.setDisplayName(rs.getString(2));
+					}
 				}
 			}
 		}
