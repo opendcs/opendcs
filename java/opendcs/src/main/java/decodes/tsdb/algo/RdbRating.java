@@ -76,14 +76,22 @@ public class RdbRating
     NamedVariable dep = new NamedVariable("dep", 0);
 
 
-    @PropertySpec(value = "false")boolean exceedLowerBound = false;
-    @PropertySpec(value = "$DECODES_INSTALL_DIR/rdb")String tableDir = "$DECODES_INSTALL_DIR/rdb";
-    @PropertySpec(value = "false")boolean exceedUpperBound = false;
-    @PropertySpec(value = "false")boolean applyShifts = false;
-    @PropertySpec(value = "false")boolean failIfNoTable = false;
-    @PropertySpec(value = "log")String interp = "log"; // possibilities are log and linear
-    @PropertySpec(value = "")String filePrefix = "";
-    @PropertySpec(value = ".rdb")String fileSuffix = ".rdb";
+     @PropertySpec(value = "false") 
+    boolean exceedLowerBound = false;
+    @PropertySpec(value = "$DECODES_INSTALL_DIR/rdb") 
+    String tableDir = "$DECODES_INSTALL_DIR/rdb";
+    @PropertySpec(value = "false") 
+    boolean exceedUpperBound = false;
+    @PropertySpec(value = "false") 
+    boolean applyShifts = false;
+    @PropertySpec(value = "false") 
+    boolean failIfNoTable = false;
+    @PropertySpec(value = "log") 
+    String interp = "log"; // possibilities are log and linear
+    @PropertySpec(value = "") 
+    String filePrefix = "";
+    @PropertySpec(value = ".rdb") 
+    String fileSuffix = ".rdb";
 
 
     // Allow javac to generate a no-args constructor.

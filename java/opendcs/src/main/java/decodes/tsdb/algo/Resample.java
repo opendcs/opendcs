@@ -18,68 +18,51 @@ import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Resample an input to an output with a different interval.
-Output must not be irregular.
-Input may be irregular or any interval greater than or less than the output.
- */
-//AW:JAVADOC_END
+@Algorithm(description ="Resample an input to an output with a different interval. Output must not be irregular. Input may be 
+irregular or any interval greater than or less than the output." )
 public class Resample
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
 	/** The next output time */
 	private Date nextOutputTime = null;
 	private Date lastOutputTime = null;
 	private IntervalIncrement outputIncr = null;
 	private Date lastTimeSlice = null;
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec
 	public String method = "interp";
-	String _propertyNames[] = { "method" };
-//AW:PROPERTIES_END
+
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// output must be a regular interval time-series!
 		ParmRef outputParmRef = getParmRef("output");
 		outputIncr = IntervalCodes.getIntervalCalIncr(
@@ -195,7 +178,6 @@ public class Resample
 			+ "*Calendar." + outputIncr.getCalConstant());
 		debug1("first input time: " + debugSdf.format(firstInputT)
 			+ ", last: " + debugSdf.format(lastInputT));
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -208,13 +190,12 @@ public class Resample
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		tryProduceOutput(_timeSliceBaseTime, input);
 		lastTimeSlice = _timeSliceBaseTime;
-//AW:TIMESLICE_END
 	}
 
 	private void tryProduceOutput(Date t, double v)
@@ -264,10 +245,10 @@ public class Resample
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// Find the first input with time >= the last output, and
 		// execute it like it is a time-slice.
 		if (lastTimeSlice != null && lastOutputTime.after(lastTimeSlice))
@@ -286,31 +267,5 @@ public class Resample
 				}
 			}
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
