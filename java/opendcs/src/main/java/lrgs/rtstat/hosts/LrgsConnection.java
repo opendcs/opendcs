@@ -136,25 +136,9 @@ public final class LrgsConnection
     {
         final String parts[] = input.split("\\s+");
         final int port = Integer.parseInt(parts[0]);
-        String username = "<set_me>";
-        long lastUsed = 0;
-        String password = "<set_me>";
-        // Some older files only container the host portion.
-        // this allows them to be successfully loaded and saved
-        // while informing the user which values need
-        // updating.
-        if (parts.length > 1)
-        {
-            username = parts[1];
-        }
-        if (parts.length > 2)
-        {
-            lastUsed = Long.parseLong(parts[2]);
-        }
-        if (parts.length > 3)
-        {
-            password = parts[3];    
-        }
+        final String username = parts[1];
+        final Long lastUsed = Long.parseLong(parts[2]);
+        final String password = parts[3];
 
         return new LrgsConnection(host, port,
                                   username, password, new Date(lastUsed));
