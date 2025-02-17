@@ -76,6 +76,7 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.xml.sax.SAXException;
 
 import decodes.db.Constants;
@@ -1070,6 +1071,18 @@ e.printStackTrace();
 		{
 			throw new DatabaseException(e.toString());
 		}
+	}
+
+	/**
+	 * Not implemented for XML.
+	 * @param groupId the group ID to check
+	 * @return list of routing spec IDs and names, or empty list if not used.
+	 * @throws DatabaseException upon error
+	 */
+	public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
+			throws DatabaseException
+	{
+		throw new NotImplementedException("routeSpecsUsing not implemented for XML.");
 	}
 
 

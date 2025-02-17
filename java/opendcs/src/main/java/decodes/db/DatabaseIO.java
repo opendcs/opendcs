@@ -3,7 +3,6 @@
 */
 package decodes.db;
 
-import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -14,7 +13,6 @@ import opendcs.dai.ScheduleEntryDAI;
 
 import org.xml.sax.SAXException;
 
-import ilex.util.Counter;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
@@ -408,6 +406,17 @@ public abstract class DatabaseIO
 	*/
 	public abstract Date getPresentationGroupLMT(PresentationGroup pg)
 		throws DatabaseException;
+
+	/**
+	 * If the presentation group referenced by groupId is used by one or more routing
+	 * specs, return a list of routing specs populated with only IDs and names. If groupId is not used,
+	 * return an empty collection.
+	 * @param groupId the ID of the presentation group to check
+	 * @return List<RoutingSpec> list of routing specs populated with only IDs and names.
+	 * @throws DatabaseException if an error is encountered
+	 */
+	public abstract List<RoutingSpec> routeSpecsUsing(long groupId)
+			throws DatabaseException;
 
 	/**
 	  Reads a routing spec completely into memory.
