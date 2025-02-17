@@ -14,8 +14,8 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 
-@Algorithm(description ="Given reservoir storage (output of rating computation), and a property 'capacity', output the percent 
-full and storage remaining." )
+@Algorithm(description ="Given reservoir storage (output of rating computation), and a property 'capacity', output the percent\n" + 
+"full and storage remaining." )
 public class ReservoirFull
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
