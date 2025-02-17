@@ -30,7 +30,7 @@ public class WeightedWaterTemperature
 	@Input
 	public double input4;	//AW:TYPECODE=i
 
-	@Output
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
 
 	// Allow javac to generate a no-args constructor.

@@ -25,7 +25,7 @@ public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	int count;
 
 
-	@Output
+	@Output(type = Double.class)
 	public NamedVariable sum = new NamedVariable("sum", 0);
 
 	@PropertySpec

@@ -22,9 +22,9 @@ public class ReservoirFull
 	@Input 
 	public double storage;	//AW:TYPECODE=i
 
-	@Output
+	@Output(type = Double.class)
 	public NamedVariable percentFull = new NamedVariable("percentFull", 0);
-	@Output
+	@Output(type = Double.class)
 	public NamedVariable storageRemaining = new NamedVariable("storageRemaining", 0);
 
 	@PropertySpec

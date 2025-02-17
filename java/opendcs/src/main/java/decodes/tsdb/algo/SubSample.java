@@ -83,7 +83,7 @@ public class SubSample
 		return subsampPropertySpecs;
 	}
 
-@Output
+@Output(type = Double.class)
 public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval", 0);
 
 //	public boolean aggLowerBoundClosed = true;

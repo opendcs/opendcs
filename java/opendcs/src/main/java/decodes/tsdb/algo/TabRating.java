@@ -95,22 +95,22 @@ public class TabRating
 		lookupTable.clear();
 	}
 
-	@Output
+	@Output(type = Double.class)
 	public NamedVariable dep = new NamedVariable("dep", 0);
 
-	@PropertySpec
+	@PropertySpec(value = "false") 
 	public boolean exceedLowerBound = false;
-	@PropertySpec
+	@PropertySpec(value = "$DECODES_INSTALL_DIR/tab-files") 
 	public String tableDir = "$DECODES_INSTALL_DIR/tab-files";
-	@PropertySpec
+	@PropertySpec(value = "") 
 	public String tableName = "";
-	@PropertySpec
+	@PropertySpec(value = "false") 
 	public boolean exceedUpperBound = false;
-	@PropertySpec
+	@PropertySpec(value = ".tab") 
 	public String tableNameSuffix = ".tab";
-	@PropertySpec
+	@PropertySpec(value = "log") 
 	String interp = "log"; // possibilities are log and linear
-	@PropertySpec
+	@PropertySpec(value = "") 
 	public String nametype = "";
 
 	// Allow javac to generate a no-args constructor.

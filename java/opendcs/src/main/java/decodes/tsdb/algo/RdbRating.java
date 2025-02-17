@@ -76,7 +76,7 @@ public class RdbRating
     NamedVariable dep = new NamedVariable("dep", 0);
 
 
-     @PropertySpec(value = "false") 
+    @PropertySpec(value = "false") 
     boolean exceedLowerBound = false;
     @PropertySpec(value = "$DECODES_INSTALL_DIR/rdb") 
     String tableDir = "$DECODES_INSTALL_DIR/rdb";

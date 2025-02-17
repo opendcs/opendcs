@@ -37,7 +37,7 @@ public class Resample
 	private IntervalIncrement outputIncr = null;
 	private Date lastTimeSlice = null;
 
-	@Output
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
 
 	@PropertySpec

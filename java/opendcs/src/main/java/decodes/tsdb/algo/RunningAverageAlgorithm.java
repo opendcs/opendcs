@@ -55,7 +55,7 @@ public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	int count;
 	Date lastTimeSlice = null;
 
-	@Output
+	@Output(type = Double.class)
 	public NamedVariable average = new NamedVariable("average", 0);
 
 	@PropertySpec

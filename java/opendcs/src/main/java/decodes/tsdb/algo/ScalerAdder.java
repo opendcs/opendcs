@@ -33,7 +33,7 @@ public class ScalerAdder extends AW_AlgorithmBase
 	@Input public double input9;	//AW:TYPECODE=i
 	@Input public double input10;//AW:TYPECODE=i
 
-	@Output
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
 
 	@PropertySpec public double coeff1 = 1.0;
