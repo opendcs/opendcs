@@ -8,42 +8,31 @@ import ilex.var.NamedVariable;
 import ilex.util.EnvExpander;
 import decodes.tsdb.DbCompException;
 
-//AW:IMPORTS
 import decodes.comp.LookupTable;
 import decodes.comp.RdbRatingReader;
 import decodes.comp.TableBoundsException;
 import decodes.comp.ComputationParseException;
 import decodes.db.Constants;
 import decodes.util.DecodesSettings;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
 import java.util.Properties;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-Implements rating table computations.
-Holds the lookup table & shift values.
-Independent (e.g. STAGE) value is called "indep".
-Dependent (e.g. FLOW) is called "dep".
-<p>Properties include:
-<ul>
-  <li>applyShifts - true if you want algorithm to apply shifts.
-      Usually unnecessary because RDB files are expanded.
-  </li>
-  <li>tableDir - Directory containing table files.</li>
-</ul>
- */
-//AW:JAVADOC_END
+
+@Algorithm(description ="Implements rating table computations. Holds the lookup table & shift values.\n" +
+"Independent (e.g. STAGE) value is called \"indep\". Dependent (e.g. FLOW) is called \"dep\"." +
+"Properties include:\n" +
+"applyShifts - true if you want algorithm to apply shifts.\n" +
+"Usually unnecessary because RDB files are expanded." )
 public class RdbRating
     extends decodes.tsdb.algo.AW_AlgorithmBase
     implements decodes.comp.HasLookupTable
 {
-//AW:INPUTS
+   @Input
     double indep;    //AW:TYPECODE=i
-    String _inputNames[] = { "indep" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
     LookupTable lookupTable = null;
     LookupTable shiftTable = null;
     RdbRatingReader tableReader = null;
@@ -81,50 +70,40 @@ public class RdbRating
     }
     public Properties getTableProps() { return tableProps; }
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+    @Output(type = Double.class)
     NamedVariable dep = new NamedVariable("dep", 0);
-    String _outputNames[] = { "dep" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
-    boolean exceedLowerBound = false;
-    String tableDir = "$DECODES_INSTALL_DIR/rdb";
-    boolean exceedUpperBound = false;
-    boolean applyShifts = false;
-    boolean failIfNoTable = false;
-    String interp = "log"; // possibilities are log and linear
-    String filePrefix = "";
-    String fileSuffix = ".rdb";
-    String _propertyNames[] = { "exceedLowerBound", "tableDir", "exceedUpperBound",
-        "applyShifts", "interp",
-        "filePrefix", "fileSuffix", "failIfNoTable" };
-//AW:PROPERTIES_END
+
+    @PropertySpec(value = "false")boolean exceedLowerBound = false;
+    @PropertySpec(value = "$DECODES_INSTALL_DIR/rdb")String tableDir = "$DECODES_INSTALL_DIR/rdb";
+    @PropertySpec(value = "false")boolean exceedUpperBound = false;
+    @PropertySpec(value = "false")boolean applyShifts = false;
+    @PropertySpec(value = "false")boolean failIfNoTable = false;
+    @PropertySpec(value = "log")String interp = "log"; // possibilities are log and linear
+    @PropertySpec(value = "")String filePrefix = "";
+    @PropertySpec(value = ".rdb")String fileSuffix = ".rdb";
+
 
     // Allow javac to generate a no-args constructor.
 
     /**
      * Algorithm-specific initialization provided by the subclass.
      */
+    @Override
     protected void initAWAlgorithm( )
         throws DbCompException
     {
-//AW:INIT
         _awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
     }
 
     /**
      * This method is called once before iterating all time slices.
      */
+    @Override
     protected void beforeTimeSlices()
         throws DbCompException
     {
-//AW:BEFORE_TIMESLICES
         // Find the name for the input parameter.
         tableReader = null;
         String siteName = getSiteName("indep", Constants.snt_USGS);
@@ -209,7 +188,6 @@ public class RdbRating
             warning(msg);
             throw new DbCompException(msg);
         }
-//AW:BEFORE_TIMESLICES_END
     }
 
     /**
@@ -222,10 +200,10 @@ public class RdbRating
      * @throws DbCompException (or subclass thereof) if execution of this
      *        algorithm is to be aborted.
      */
+    @Override
     protected void doAWTimeSlice()
         throws DbCompException
     {
-//AW:TIMESLICE
         if (tableReader == null)
             return;
         try
@@ -244,44 +222,17 @@ public class RdbRating
 /*
         setOutputUnitsAbbr("dep", depUnits);
 */
-//AW:TIMESLICE_END
     }
 
     /**
      * This method is called once after iterating all time slices.
      */
+    @Override
     protected void afterTimeSlices()
     {
-//AW:AFTER_TIMESLICES
         // This code will be executed once after each group of time slices.
         // For TimeSlice algorithms this is done once after all slices.
         lookupTable = null;
         //shiftTable = null;
-//AW:AFTER_TIMESLICES_END
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
-    }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
     }
 }
