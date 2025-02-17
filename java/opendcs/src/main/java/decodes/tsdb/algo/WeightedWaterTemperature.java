@@ -13,63 +13,45 @@ import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
 import decodes.tsdb.TimeSeriesIdentifier;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Calculate Weighted Water Temperature using: (((input1/input2)*input3) + ((1 - (input1/input2))*input4))
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Calculate Weighted Water Temperature using: (((input1/input2)*input3) + ((1 - (input1/input2))*input4))")
 public class WeightedWaterTemperature
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double input1;	//AW:TYPECODE=i
+	@Input
 	public double input2;	//AW:TYPECODE=i
+	@Input
 	public double input3;	//AW:TYPECODE=i
+	@Input
 	public double input4;	//AW:TYPECODE=i
-	String _inputNames[] = { "input1", "input2","input3","input4" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
-
-//AW:PROPERTIES
-	String _propertyNames[] = {  };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -82,49 +64,22 @@ public class WeightedWaterTemperature
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if(input2 > 0) 
 			setOutput(output,(((input1/input2)*input3) + ((1 - (input1/input2))*input4)));
 		//else
 			//setOutput(output,undefined);
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

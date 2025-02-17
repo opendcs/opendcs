@@ -32,7 +32,6 @@ import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
 
-//AW:IMPORTS
 import decodes.comp.LookupTable;
 import decodes.comp.RatingTableReader;
 import decodes.comp.TabRatingReader;
@@ -40,34 +39,28 @@ import decodes.comp.TableBoundsException;
 import decodes.comp.ComputationParseException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.algo.AWAlgoType;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import java.io.File;
 
 import java.util.Date;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-Implements rating table computations.
-Holds the lookup table & shift values.
-Independent (e.g. STAGE) value is called "indep".
-Dependent (e.g. FLOW) is called "dep".
-<p>Properties include:
-<ul>
-  <li>tableDir - Directory containing table files</li>
-  <li>tableName - Overrides sitename.tab default</li>
-</ul>
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Implements rating table computations.\n" +
+"Holds the lookup table & shift values.\n" +
+"Independent (e.g. STAGE) value is called \"indep\".\n" +
+"Dependent (e.g. FLOW) is called \"dep\".\n" +
+"Properties include:\n" +
+"tableDir - Directory containing table files\n" +
+">tableName - Overrides sitename.tab default")
 public class TabRating
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 	implements decodes.comp.HasLookupTable
 {
-//AW:INPUTS
+	@Input
 	public double indep;	//AW:TYPECODE=i
-	String _inputNames[] = { "indep" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
 	LookupTable lookupTable = null;
 	LookupTable shiftTable = null;
 	TabRatingReader tableReader = null;
@@ -101,48 +94,44 @@ public class TabRating
 	{
 		lookupTable.clear();
 	}
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable dep = new NamedVariable("dep", 0);
-	String _outputNames[] = { "dep" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec
 	public boolean exceedLowerBound = false;
+	@PropertySpec
 	public String tableDir = "$DECODES_INSTALL_DIR/tab-files";
+	@PropertySpec
 	public String tableName = "";
+	@PropertySpec
 	public boolean exceedUpperBound = false;
+	@PropertySpec
 	public String tableNameSuffix = ".tab";
+	@PropertySpec
 	String interp = "log"; // possibilities are log and linear
+	@PropertySpec
 	public String nametype = "";
-	public String _propertyNames[] = { "exceedLowerBound", "tableDir", "tableName", 
-			"exceedUpperBound", "tableNameSuffix", "interp", "nametype" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// Find the name for the input parameter.
 		if (tableName.length() == 0)
 		{
@@ -194,7 +183,6 @@ public class TabRating
 			warning(msg);
 			throw new DbCompException(msg);
 		}
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -207,10 +195,10 @@ public class TabRating
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if (tableReader == null)
 			return;
 		try { setOutput(dep, lookupTable.lookup(indep)); }
@@ -221,44 +209,17 @@ public class TabRating
 				+ debugSdf.format(_timeSliceBaseTime) + ", indep units="
 				+ this.getParmRef("indep").timeSeries.getUnitsAbbr());
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		lookupTable = null;
 		//shiftTable = null;
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
