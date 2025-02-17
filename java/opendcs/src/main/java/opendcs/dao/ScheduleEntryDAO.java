@@ -137,7 +137,7 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
 	{
 		String q = "select " + seColumns + " from " + seTables
 				+ " where " + seJoinClause
-				+ " and a.SCHEDULE_ENTRY_ID = ?";
+				+ " and a.schedule_entry_id = ?";
 		try
 		{
 			final ScheduleEntry ret = getSingleResultOr(q, rs ->

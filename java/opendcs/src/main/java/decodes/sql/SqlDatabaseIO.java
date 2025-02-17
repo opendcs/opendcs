@@ -1,4 +1,19 @@
 /*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+/*
  * $Id: SqlDatabaseIO.java,v 1.15 2020/02/14 15:13:44 mmaloney Exp $
  *
  * Open Source Software
@@ -748,6 +763,46 @@ public class SqlDatabaseIO
             _routingSpecListIO.setConnection(null);
         }
     }
+
+    @Override
+    public synchronized List<RoutingStatus> readRoutingSpecStatus() throws DatabaseException
+    {
+        try (Connection conn = getConnection();
+            LoadingAppDAI loadingAppDAO = makeLoadingAppDAO())
+        {
+            _routingSpecListIO.setConnection(conn);
+           return _routingSpecListIO.readRoutingSpecStatus(loadingAppDAO);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read routing spec status list.", ex);
+            throw new DatabaseException("Unable to read routing spec status list", ex);
+        }
+        finally
+        {
+            _routingSpecListIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _routingSpecListIO.setConnection(conn);
+           return _routingSpecListIO.readRoutingExecStatus(scheduleEntryId);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read routing exec status list.", ex);
+            throw new DatabaseException("Unable to read routing exec status list", ex);
+        }
+        finally
+        {
+            _routingSpecListIO.setConnection(null);
+        }
+    }
+
 
     /**
     * Returns the list of DataSource objects defined in this database.
