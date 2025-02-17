@@ -93,7 +93,23 @@ public interface DacqEventDAI
 	 */
 	public int readEventsForPlatform(DbKey platformId, ArrayList<DacqEvent> evtList)
 		throws DbIoException;
-	
+
+	/**
+	 * Read events for a specific DACQ Event matching the specified criteria.
+	 * Events are added to the end of the passed array in time order.
+	 * If evtList is not empty, only events after the last in the array are read.
+	 * @param evtList the list to add events to
+	 * @param appId the application ID
+	 * @param routingExecId the routing execution ID
+	 * @param platformId the platform ID
+	 * @param backlogValid whether the backlog is valid (not null)
+	 * @param lastDacqEventId the last dacq event ID attribute from the HTTP session
+	 * @param timeInMillis the time in milliseconds if the interval was invalid
+	 * @return number of events added to the list
+	 * @throws DbIoException on any SQL error
+	 */
+	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, boolean backlogValid, Long lastDacqEventId, Long timeInMillis)
+			throws DbIoException;
 	
 	/**
 	 * Delete any events for the specified platform ID.
@@ -130,6 +146,4 @@ public interface DacqEventDAI
 	 */
 	public int readEventsAfter(DbKey eventId, ArrayList<DacqEvent> evtList)
 		throws DbIoException;
-
-
 }
