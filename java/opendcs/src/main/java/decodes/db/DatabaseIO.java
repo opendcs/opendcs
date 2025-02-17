@@ -3,7 +3,6 @@
 */
 package decodes.db;
 
-import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -14,7 +13,6 @@ import opendcs.dai.ScheduleEntryDAI;
 
 import org.xml.sax.SAXException;
 
-import ilex.util.Counter;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
@@ -42,17 +40,17 @@ public abstract class DatabaseIO
 	{
 		ResourceFactory.instance().initDbResources();
 		
-		try 
+		try
 		{
 			if (type == DecodesSettings.DB_XML)
 				return new XmlDatabaseIO(location);
 		}
-		catch (SAXException se) 
+		catch (SAXException se)
 		{
 			throw new DatabaseException("Caught a SAXException while " +
 				"attempting to create an XmlDatabaseIO object");
 		}
-		catch (ParserConfigurationException pce) 
+		catch (ParserConfigurationException pce)
 		{
 			throw new DatabaseException("Caught a " +
 				"ParserConfigurationException while " +
@@ -67,10 +65,10 @@ public abstract class DatabaseIO
 
 		if (type == DecodesSettings.DB_OPENTSDB)
 			return new opendcs.opentsdb.OpenTsdbSqlDbIO(location);
-		
+
 		if (type == DecodesSettings.DB_HDB)
 			return new decodes.hdb.HdbSqlDatabaseIO(location);
-		
+
 		// Add other database interface types (URL) here...
 
 		throw new DatabaseException(
@@ -197,6 +195,17 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
+	 Populates the list of NetworkList objects defined in this database.
+	 Objects in this list may be only partially populated (key values
+	 and primary display attributes only).
+	 @param nll the list to populate
+	 @param tmType the transport medium type to filter by
+	 */
+	public abstract void readNetworkListList(NetworkListList nll, String tmType)
+			throws DatabaseException;
+
+
+	/**
 	Populates the list of Platform objects defined in this database.
 	Objects in this list may be only partially populated (key values
 	and primary display attributes only).
@@ -222,6 +231,16 @@ public abstract class DatabaseIO
 	*/
 	public abstract void readRoutingSpecList(RoutingSpecList rsl)
 		throws DatabaseException;
+
+	/**
+	 Retrieves the list of RoutingStatus objects defined in this database.
+	 */
+	public abstract List<RoutingStatus> readRoutingSpecStatus() throws DatabaseException;
+
+	/**
+	 Retrieves the list of RoutingExecStatus objects defined in this database.
+	 */
+	public abstract List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException;
 
 	/**
 	Populates the list of Site objects defined in this database.
@@ -398,6 +417,17 @@ public abstract class DatabaseIO
 	*/
 	public abstract Date getPresentationGroupLMT(PresentationGroup pg)
 		throws DatabaseException;
+
+	/**
+	 * If the presentation group referenced by groupId is used by one or more routing
+	 * specs, return a list of routing specs populated with only IDs and names. If groupId is not used,
+	 * return an empty collection.
+	 * @param groupId the ID of the presentation group to check
+	 * @return List<RoutingSpec> list of routing specs populated with only IDs and names.
+	 * @throws DatabaseException if an error is encountered
+	 */
+	public abstract List<RoutingSpec> routeSpecsUsing(long groupId)
+			throws DatabaseException;
 
 	/**
 	  Reads a routing spec completely into memory.
