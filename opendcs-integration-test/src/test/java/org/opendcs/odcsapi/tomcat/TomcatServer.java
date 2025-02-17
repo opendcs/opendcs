@@ -81,6 +81,7 @@ public final class TomcatServer
 		restApiContext.getPipeline().addValve(new TestSingleSignOn());
 		restApiContext.setReloadable(true);
 		restApiContext.setPrivileged(true);
+		restApiContext.removeParameter("opendcs.rest.api.cwms.office");
 		restApiContext.addParameter("opendcs.rest.api.cwms.office", System.getProperty("DB_OFFICE"));
 
 		StandardContext guiContext = (StandardContext) tomcatInstance.addWebapp("/", guiWar);
@@ -217,7 +218,8 @@ public final class TomcatServer
 
 	private static boolean isBypass()
 	{
-		return System.getProperty("testcontainer.cwms.bypass.url") == null;
+		return System.getProperty("testcontainer.cwms.bypass.url") != null
+				|| System.getProperty("testcontainer.opentsdb.bypass.url") != null;
 	}
 
 	private static ConfigurationProvider getProvider(String dbType)
