@@ -57,7 +57,6 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.VarFlags;
 import decodes.util.PropertySpec;
-import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
@@ -90,7 +89,7 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 //	public boolean aggLowerBoundClosed = true;
 //	public boolean aggUpperBoundClosed = false;
 //	String _propertyNames[] = { "aggLowerBoundClosed", "aggUpperBoundClosed" };
-	@PropertySpec
+
 	public String samplingTimeOffset = "";
 
 	// Allow javac to generate a no-args constructor.
