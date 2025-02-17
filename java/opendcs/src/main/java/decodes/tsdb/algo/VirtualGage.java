@@ -18,8 +18,7 @@ import org.opendcs.annotations.algorithm.Output;
 "Inputs are the upstream and downstream elevation,\n" +
 "Properties specify Upstream position (e.g. Mile number), Downstream position, and Virtual Gage position.\n" +
 "The positions are required to do proper interpolation. Default values place the virtual gage halfway between up & downstream gages.\n" +
-"If provided, you may set gagezero properties for each of the locations, thus the output can be in gage height or elevation.
-")
+"If provided, you may set gagezero properties for each of the locations, thus the output can be in gage height or elevation.")
 public class VirtualGage
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
