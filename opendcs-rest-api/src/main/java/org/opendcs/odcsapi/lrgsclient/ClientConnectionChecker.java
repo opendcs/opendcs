@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -73,6 +73,10 @@ public class ClientConnectionChecker implements ServletContextListener
 
 	private void checkApiEventClients() throws DbException
 	{
+		if(!ClientConnectionCache.getInstance().hasApiEventClients())
+		{
+			return;
+		}
 		ArrayList<ApiAppStatus> appStatii;
 		try(DbInterface dbi = new DbInterface();
 			ApiAppDAO appDao = new ApiAppDAO(dbi))

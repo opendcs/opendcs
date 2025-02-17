@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.lrgsclient;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -116,6 +117,16 @@ public final class ClientConnectionCache
 		return cacheRecord.getApiEventClients().stream()
 				.filter(a -> Objects.equals(a.getAppId(), appId))
 				.findAny();
+	}
+
+	boolean hasApiEventClients()
+	{
+		return cache.values()
+				.stream()
+				.map(CacheRecord::getApiEventClients)
+				.flatMap(Collection::stream)
+				.findAny()
+				.isPresent();
 	}
 
 	void removeExpiredApiEventClients(ArrayList<ApiAppStatus> appStatii)

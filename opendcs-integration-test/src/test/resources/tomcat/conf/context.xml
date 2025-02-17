@@ -24,7 +24,8 @@
               driverClassName="${DB_DRIVER_CLASS}"
               initSQL="${DB_CONNECTION_INIT}"
               url="${DB_URL}"
-              validationQuery="select 1"
+              logValidationErrors="true"
+              validationQuery="${DB_VALIDATION_QUERY}"
               maxActive="10"
               maxIdle="4"
               minIdle="1"/>

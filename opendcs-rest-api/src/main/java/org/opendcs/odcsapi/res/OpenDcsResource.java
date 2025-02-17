@@ -15,35 +15,22 @@
 
 package org.opendcs.odcsapi.res;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import javax.servlet.ServletContext;
 import javax.sql.DataSource;
 import javax.ws.rs.core.Context;
 
-import decodes.cwms.CwmsDatabaseProvider;
 import decodes.db.Database;
-import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
-import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.TimeSeriesDb;
-import decodes.util.DecodesSettings;
-import opendcs.opentsdb.OpenTsdbProvider;
-import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.spi.database.DatabaseProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.odcsapi.dao.OpenDcsDatabaseFactory;
 
 import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
 
 public class OpenDcsResource
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(OpenDcsResource.class);
 	private static final String UNSUPPORTED_OPERATION_MESSAGE = "Endpoint is unsupported by the OpenDCS REST API.";
-
-	private static OpenDcsDatabase database;
 
 	@Context
 	private ServletContext context;
@@ -56,46 +43,8 @@ public class OpenDcsResource
 
 	protected final synchronized OpenDcsDatabase createDb()
 	{
-		if(database != null)
-		{
-			return database;
-		}
 		DataSource dataSource = (DataSource) context.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
-		try
-		{
-			if(dataSource == null)
-			{
-				throw new IllegalStateException("No data source defined in context.xml");
-			}
-			database = DatabaseService.getDatabaseFor(dataSource);
-		}
-		catch(DatabaseException e)
-		{
-			//Temporary workaround until database_properties table is implemented in the schema
-			LOGGER.atWarn().setCause(e).log("Temporary solution forcing OpenTSDB");
-			DecodesSettings decodesSettings = new DecodesSettings();
-			decodesSettings.CwmsOfficeId = System.getProperty("DB_OFFICE");
-			try(Connection connection = dataSource.getConnection())
-			{
-				DatabaseProvider databaseProvider;
-				String databaseProductName = connection.getMetaData().getDatabaseProductName();
-				if(databaseProductName.toLowerCase().startsWith("oracle"))
-				{
-					databaseProvider = new CwmsDatabaseProvider();
-					decodesSettings.sqlKeyGenerator = OracleSequenceKeyGenerator.class.getName();
-				}
-				else
-				{
-					databaseProvider = new OpenTsdbProvider();
-				}
-				database = databaseProvider.createDatabase(dataSource, decodesSettings);
-			}
-			catch(DatabaseException | SQLException ex)
-			{
-				throw new IllegalStateException("Error connecting to the database via JNDI", ex);
-			}
-		}
-		return database;
+		return OpenDcsDatabaseFactory.createDb(dataSource);
 	}
 
 	DatabaseIO getLegacyDatabase()

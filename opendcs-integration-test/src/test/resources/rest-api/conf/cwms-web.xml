@@ -39,8 +39,4 @@
         <param-name>opendcs.rest.api.authorization.expiration.duration</param-name>
         <param-value>PT15M</param-value>
     </context-param>
-    <context-param>
-        <param-name>opendcs.rest.api.cwms.office</param-name>
-        <param-value>SPK</param-value>
-    </context-param>
 </web-app>

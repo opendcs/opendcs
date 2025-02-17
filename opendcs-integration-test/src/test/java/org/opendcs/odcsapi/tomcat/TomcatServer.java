@@ -81,6 +81,7 @@ public final class TomcatServer
 		restApiContext.getPipeline().addValve(new TestSingleSignOn());
 		restApiContext.setReloadable(true);
 		restApiContext.setPrivileged(true);
+		restApiContext.addParameter("opendcs.rest.api.cwms.office", System.getProperty("DB_OFFICE"));
 
 		StandardContext guiContext = (StandardContext) tomcatInstance.addWebapp("/", guiWar);
 		guiContext.setDelegate(true);
@@ -171,12 +172,52 @@ public final class TomcatServer
 		{
 			File tmp = Files.createTempDirectory("configs-" + provider.getImplementation()).toFile();
 			Configuration config = provider.getConfig(tmp);
-			startDb(config, dbType);
+			if(isBypass())
+			{
+				setupDbForBypass(dbType);
+			}
+			else
+			{
+				startDbContainer(config, dbType);
+			}
 		}
 		catch(Exception ex)
 		{
 			throw new PreconditionViolationException("Error creating configuration for db: " + dbType, ex);
 		}
+	}
+
+	private static void setupDbForBypass(String dbType)
+	{
+		if(CwmsOracleConfiguration.NAME.equals(dbType))
+		{
+			System.setProperty("DB_DRIVER_CLASS", "oracle.jdbc.driver.OracleDriver");
+			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			String dbOffice = System.getProperty("testcontainer.cwms.bypass.office.id");
+			String initScript = String.format("BEGIN cwms_ccp_vpd.set_ccp_session_ctx(cwms_util.get_office_code('%s'), 2, '%s' ); END;", dbOffice, dbOffice);
+			System.setProperty("DB_OFFICE", dbOffice);
+			System.setProperty("DB_CONNECTION_INIT", initScript);
+			System.setProperty("DB_VALIDATION_QUERY", "SELECT 1 FROM dual");
+			System.setProperty("DB_URL", System.getProperty("testcontainer.cwms.bypass.url"));
+			System.setProperty("DB_USERNAME", System.getProperty("testcontainer.cwms.bypass.office.eroc") + "WEBTEST");
+			System.setProperty("DB_PASSWORD", System.getProperty("testcontainer.cwms.bypass.cwms.pass"));
+		}
+		else
+		{
+
+			System.setProperty("DB_DRIVER_CLASS", "org.postgresql.Driver");
+			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			System.setProperty("DB_CONNECTION_INIT", "SELECT 1");
+			System.setProperty("DB_VALIDATION_QUERY", "SELECT 1");
+			System.setProperty("DB_URL", System.getProperty("testcontainer.opentsdb.bypass.url"));
+			System.setProperty("DB_USERNAME", System.getProperty("testcontainer.opentsdb.bypass.username"));
+			System.setProperty("DB_PASSWORD", System.getProperty("testcontainer.opentsdb.bypass.pass"));
+		}
+	}
+
+	private static boolean isBypass()
+	{
+		return System.getProperty("testcontainer.cwms.bypass.url") == null;
 	}
 
 	private static ConfigurationProvider getProvider(String dbType)
@@ -200,22 +241,12 @@ public final class TomcatServer
 		return configProvider;
 	}
 
-	private static void startDb(Configuration config, String dbType) throws Exception
+	private static void startDbContainer(Configuration config, String dbType) throws Exception
 	{
 		SystemExit exit = new SystemExit();
 		EnvironmentVariables environment = new EnvironmentVariables();
 		SystemProperties properties = new SystemProperties();
-		try
-		{
-			config.start(exit, environment, properties);
-		}
-		catch(Exception ex)
-		{
-			if(System.getProperty("testcontainer.cwms.bypass.url") == null)
-			{
-				throw ex;
-			}
-		}
+		config.start(exit, environment, properties);
 		environment.getVariables().forEach(System::setProperty);
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
@@ -224,12 +255,14 @@ public final class TomcatServer
 			String dbOffice = System.getProperty("DB_OFFICE");
 			String initScript = String.format("BEGIN cwms_ccp_vpd.set_ccp_session_ctx(cwms_util.get_office_code('%s'), 2, '%s' ); END;", dbOffice, dbOffice);
 			System.setProperty("DB_CONNECTION_INIT", initScript);
+			System.setProperty("DB_VALIDATION_QUERY", "SELECT 1 FROM dual");
 		}
 		else
 		{
 			System.setProperty("DB_DRIVER_CLASS", "org.postgresql.Driver");
 			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
 			System.setProperty("DB_CONNECTION_INIT", "SELECT 1");
+			System.setProperty("DB_VALIDATION_QUERY", "SELECT 1");
 		}
 		setupClientUser(dbType);
 	}
@@ -257,7 +290,7 @@ public final class TomcatServer
 			}
 			catch(SQLException e)
 			{
-				throw new RuntimeException(e);
+				//No-op
 			}
 		}
 	}

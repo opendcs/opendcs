@@ -108,7 +108,7 @@ tasks.register('run', JavaExec) {
     mainClass = "org.opendcs.odcsapi.tomcat.TomcatServer"
     classpath += sourceSets.test.runtimeClasspath
     classpath += configurations.testRuntimeClasspath
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainers") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
     systemProperties.put("org.apache.tomcat.util.digester.PROPERTY_SOURCE", "org.apache.tomcat.util.digester.EnvironmentPropertySource")
     def port = project.findProperty("opendcs.tomcat.port") ?: "7000"
