@@ -40,6 +40,7 @@ import decodes.tsdb.VarFlags;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 
 @Algorithm(description ="RunningAverageAlgorithm averages single 'input' parameter to a single 'average'\n" + 
 "parameter. A separate aggPeriodInterval property should be supplied.\n" +
