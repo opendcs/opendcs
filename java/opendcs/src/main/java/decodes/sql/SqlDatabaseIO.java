@@ -1025,6 +1025,32 @@ public class SqlDatabaseIO
     }
 
     /**
+     * Returns the list of NetworkList objects defined in this database.
+     * Objects in this list may be only partially populated (key values
+     * and primary display attributes only).
+     * @param nlList the object to populate from the database.
+     * @param tmType the time series medium type to filter on.
+     */
+    @Override
+    public synchronized void readNetworkListList(NetworkListList nlList, String tmType)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _networkListListIO.setConnection(conn);
+            _networkListListIO.read(nlList, tmType);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read network lists", ex);
+        }
+        finally
+        {
+            _networkListListIO.setConnection(null);
+        }
+    }
+
+    /**
      * Non-cached method to read the list of network list specs currently
      * defined in the database.
      * @return ArrayList of currently defined network list specs.

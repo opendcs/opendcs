@@ -195,6 +195,17 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
+	 Populates the list of NetworkList objects defined in this database.
+	 Objects in this list may be only partially populated (key values
+	 and primary display attributes only).
+	 @param nll the list to populate
+	 @param tmType the transport medium type to filter by
+	 */
+	public abstract void readNetworkListList(NetworkListList nll, String tmType)
+			throws DatabaseException;
+
+
+	/**
 	Populates the list of Platform objects defined in this database.
 	Objects in this list may be only partially populated (key values
 	and primary display attributes only).

@@ -766,6 +766,14 @@ public class XmlDatabaseIO extends DatabaseIO
 		}
 		catch(java.io.IOException e) { }
 	}
+
+	/**
+	 * Not implemented for XML.
+	 */
+	public void readNetworkListList( NetworkListList nll, String tmType)
+	{
+		throw new NotImplementedException("XmlDatabaseIO.readNetworkListList with filter not implemented for XML.");
+	}
 	
 	/**
 	 * Non-cached, stand-alone method to read the list of network list 
