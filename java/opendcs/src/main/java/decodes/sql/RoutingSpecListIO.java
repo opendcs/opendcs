@@ -1,15 +1,37 @@
+/*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package decodes.sql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Iterator;
 
+import decodes.db.RoutingExecStatus;
+import decodes.db.RoutingStatus;
+import decodes.db.ValueNotFoundException;
+import decodes.tsdb.CompAppInfo;
+import opendcs.dai.LoadingAppDAI;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.ScheduleEntryDAI;
@@ -178,6 +200,177 @@ public class RoutingSpecListIO extends SqlDbObjIo
         }
     }
 
+    public List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException
+    {
+        List<RoutingExecStatus> ret = new ArrayList<>();
+
+        String q = "select rs.ID, se.NAME, se.SCHEDULE_ENTRY_ID,"
+                + " ses.SCHEDULE_ENTRY_STATUS_ID, ses.RUN_START_TIME,"
+                + " ses.RUN_COMPLETE_TIME, ses.LAST_MESSAGE_TIME, ses.HOSTNAME,"
+                + " ses.RUN_STATUS, ses.NUM_MESSAGES, ses.NUM_DECODE_ERRORS,"
+                + " ses.NUM_PLATFORMS, ses.LAST_SOURCE, ses.LAST_CONSUMER,"
+                + " ses.LAST_MODIFIED"
+                + " from ROUTINGSPEC rs, SCHEDULE_ENTRY_STATUS ses, SCHEDULE_ENTRY se"
+                + " where ses.SCHEDULE_ENTRY_ID = se.SCHEDULE_ENTRY_ID"
+                + " and se.ROUTINGSPEC_ID = rs.ID"
+                + " and se.SCHEDULE_ENTRY_ID = ?"
+                + " order by ses.RUN_START_TIME desc";
+
+        try (Connection conn = connection();
+             PreparedStatement ps = conn.prepareStatement(q))
+        {
+            ps.setLong(1, scheduleEntryId.getValue());
+            ResultSet rs = ps.executeQuery();
+
+            while(rs.next())
+            {
+                RoutingExecStatus res = new RoutingExecStatus();
+                res.setRoutingSpecId(rs.getLong(1));
+                res.setScheduleEntryId(rs.getLong(3));
+                res.setRoutingExecId(rs.getLong(4));
+                res.setRunStart(new Date(rs.getLong(5)));
+                long x = rs.getLong(6);
+                if (!rs.wasNull())
+                    res.setRunStop(new Date(x));
+                x = rs.getLong(7);
+                if (!rs.wasNull())
+                    res.setLastMsgTime(new Date(x));
+                res.setHostname(rs.getString(8));
+                res.setRunStatus(rs.getString(9));
+                res.setNumMessages(rs.getInt(10));
+                res.setNumErrors(rs.getInt(11));
+                res.setNumPlatforms(rs.getInt(12));
+                res.setLastInput(rs.getString(13));
+                res.setLastOutput(rs.getString(14));
+                res.setLastActivity(new Date(rs.getLong(15)));
+                ret.add(res);
+            }
+        }
+        catch(SQLException ex)
+        {
+            String msg = "Error in query '" + q + "': " + ex;
+            throw new DatabaseException(msg, ex);
+        }
+
+        return ret;
+    }
+
+    public List<RoutingStatus> readRoutingSpecStatus(LoadingAppDAI dai) throws DatabaseException
+    {
+        ArrayList<RoutingStatus> ret = new ArrayList<>();
+
+        String q = "select rs.ID, rs.NAME from ROUTINGSPEC rs";
+        try (Statement stmt = createStatement();
+             ResultSet rs = stmt.executeQuery( q ))
+        {
+            while(rs.next())
+            {
+                RoutingStatus rstat = new RoutingStatus(DbKey.createDbKey(rs.getLong(1)));
+                rstat.setRoutingSpecId(DbKey.createDbKey(rs.getLong(1)));
+                rstat.setName(rs.getString(2));
+                ret.add(rstat);
+            }
+            q = "select se.SCHEDULE_ENTRY_ID, se.LOADING_APPLICATION_ID, se.ROUTINGSPEC_ID, "
+                    + "se.RUN_INTERVAL, se.ENABLED, se.NAME "
+                    + "from SCHEDULE_ENTRY se";
+
+           try (ResultSet resultSet = stmt.executeQuery( q ))
+           {
+               while(resultSet.next())
+               {
+                   long rsId = resultSet.getLong(3);
+                   String seName = resultSet.getString(6);
+                   RoutingStatus ars = null;
+                   if(seName.endsWith("-manual"))
+                   {
+                       ars = new RoutingStatus(DbKey.createDbKey(rsId));
+                       ars.setManual(true);
+                       ret.add(ars);
+                   }
+                   else
+                       for(RoutingStatus tars : ret)
+                       {
+                           if(rsId == tars.getRoutingSpecId().getValue())
+                           {
+                               ars = tars;
+                               break;
+                           }
+                       }
+                   if(ars != null)
+                   {
+                       ars.setName(seName);
+                       ars.setScheduleEntryId(DbKey.createDbKey(resultSet.getLong(1)));
+                       ars.setAppId(DbKey.createDbKey(resultSet.getLong(2)));
+                       ars.setRunInterval(resultSet.getString(4));
+                       ars.setEnabled(TextUtil.str2boolean(resultSet.getString(5)));
+                   }
+               }
+           }
+           q = "select se.SCHEDULE_ENTRY_ID, ses.LAST_MODIFIED, ses.NUM_MESSAGES, ses.NUM_DECODE_ERRORS, ses.LAST_MESSAGE_TIME"
+                   + " from SCHEDULE_ENTRY se, SCHEDULE_ENTRY_STATUS ses"
+                   + " where se.SCHEDULE_ENTRY_ID = ses.SCHEDULE_ENTRY_ID"
+                   + " and ses.SCHEDULE_ENTRY_STATUS_ID = "
+                   + "  (select max(SCHEDULE_ENTRY_STATUS_ID) from SCHEDULE_ENTRY_STATUS "
+                   + "   where SCHEDULE_ENTRY_ID = se.SCHEDULE_ENTRY_ID)";
+           try (ResultSet resultSet = stmt.executeQuery(q))
+           {
+               while(resultSet.next())
+               {
+                   Long seid = resultSet.getLong(1);
+                   for(RoutingStatus ars : ret)
+                   {
+                       if(seid == ars.getScheduleEntryId().getValue())
+                       {
+                           long x = resultSet.getLong(2);
+                           if(!resultSet.wasNull())
+                           {
+                               ars.setLastActivityTime(new Date(x));
+                           }
+                           ars.setNumMessages(resultSet.getInt(3));
+                           ars.setNumDecodesErrors(resultSet.getInt(4));
+                           x = resultSet.getLong(5);
+                           if(!resultSet.wasNull())
+                           {
+                               ars.setLastMessageTime(new Date(x));
+                           }
+                           break;
+                       }
+                   }
+               }
+           }
+
+
+            try
+            {
+                List<CompAppInfo> appRefs = dai.listComputationApps(false);
+                for(RoutingStatus ars : ret)
+                    if(ars.getAppId() != null)
+                        for(CompAppInfo appRef : appRefs)
+                            if(ars.getAppId().equals(appRef.getAppId()))
+                            {
+                                ars.setAppName(appRef.getAppName());
+                                break;
+                            }
+            }
+            catch (DbIoException ex)
+            {
+                throw new DatabaseException("Cannot list computation apps", ex);
+            }
+
+            Comparator<RoutingStatus> routingStatusComparator = Comparator.comparing(RoutingStatus::getRoutingSpecId)
+                    .thenComparing(RoutingStatus::getName);
+
+            ret.sort(routingStatusComparator);
+
+            return ret;
+        }
+        catch(SQLException ex)
+        {
+            String msg = "RoutingSpecListIO: Error in query '" + q + "': " + ex;
+            throw new DatabaseException(msg, ex);
+        }
+    }
+
     /**
       Reads an existing routing spec into memory.
       The passed object is filled-in.
@@ -204,15 +397,22 @@ public class RoutingSpecListIO extends SqlDbObjIo
 
         log.trace("RoutingSpecListIO.readroutingSpec: " + q);
         try (Statement stmt = createStatement();
-             ResultSet resultSet = stmt.executeQuery(q);)
+             ResultSet resultSet = stmt.executeQuery(q))
         {
+            String msg = String.format("No RoutingSpec found with id %d", routingSpec.getId().getValue());
             if (resultSet == null)
             {
-                throw new DatabaseException("No RoutingSpec found with id "    + routingSpec.getId());
+                Throwable thr = new ValueNotFoundException(msg);
+                throw new DatabaseException(msg, thr);
             }
 
             // There will be only one row in the result set.
             resultSet.next();
+            if (resultSet.getRow() == 0)
+            {
+                Throwable thr = new ValueNotFoundException(msg);
+                throw new DatabaseException(msg, thr);
+            }
             routingSpec.setName(resultSet.getString(2));
 
             DbKey dataSourceId = DbKey.createDbKey(resultSet, 3);
