@@ -1,4 +1,19 @@
 /*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+/*
  * $Id: SqlDatabaseIO.java,v 1.15 2020/02/14 15:13:44 mmaloney Exp $
  *
  * Open Source Software
@@ -78,9 +93,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
-
 
 import ilex.util.AuthException;
 import ilex.util.EnvExpander;
@@ -782,6 +797,32 @@ public class SqlDatabaseIO
     }
 
     /**
+     * Read the platform list cross reference file and populate the passed
+     * PlatformList object.
+     * @param pl the object to populate from the database.
+     *  @param tmType the transport medium type to filter on.
+     */
+    @Override
+    public synchronized void readPlatformList(PlatformList pl, String tmType)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _platformListIO.setConnection(conn);
+            _platformListIO.read(pl, tmType);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read platform list", ex);
+            throw new DatabaseException("Unable to read platform list", ex);
+        }
+        finally
+        {
+            _platformListIO.setConnection(null);
+        }
+    }
+
+    /**
     * Reads the list of PlatformConfig objects defined in this database.
     * @param pcList the object to populate from the database.
     * @throws DatabaseException if there's an error.
@@ -904,6 +945,46 @@ public class SqlDatabaseIO
         }
     }
 
+    @Override
+    public synchronized List<RoutingStatus> readRoutingSpecStatus() throws DatabaseException
+    {
+        try (Connection conn = getConnection();
+            LoadingAppDAI loadingAppDAO = makeLoadingAppDAO())
+        {
+            _routingSpecListIO.setConnection(conn);
+           return _routingSpecListIO.readRoutingSpecStatus(loadingAppDAO);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read routing spec status list.", ex);
+            throw new DatabaseException("Unable to read routing spec status list", ex);
+        }
+        finally
+        {
+            _routingSpecListIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _routingSpecListIO.setConnection(conn);
+           return _routingSpecListIO.readRoutingExecStatus(scheduleEntryId);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read routing exec status list.", ex);
+            throw new DatabaseException("Unable to read routing exec status list", ex);
+        }
+        finally
+        {
+            _routingSpecListIO.setConnection(null);
+        }
+    }
+
+
     /**
     * Returns the list of DataSource objects defined in this database.
     * Objects in this list may be only partially populated (key values
@@ -965,6 +1046,32 @@ public class SqlDatabaseIO
             {
                 freeConnection(conn);
             }
+            _networkListListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * Returns the list of NetworkList objects defined in this database.
+     * Objects in this list may be only partially populated (key values
+     * and primary display attributes only).
+     * @param nlList the object to populate from the database.
+     * @param tmType the time series medium type to filter on.
+     */
+    @Override
+    public synchronized void readNetworkListList(NetworkListList nlList, String tmType)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _networkListListIO.setConnection(conn);
+            _networkListListIO.read(nlList, tmType);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read network lists", ex);
+        }
+        finally
+        {
             _networkListListIO.setConnection(null);
         }
     }
@@ -1760,6 +1867,35 @@ public class SqlDatabaseIO
             {
                 freeConnection(conn);
             }
+            _presentationGroupListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * If the presentation group referenced by groupId is used by one or more routing
+     * specs, return a list of routing spec IDs and names. If groupId is not used,
+     * return null.
+     * Objects in this list will be only partially populated (key values
+     * and names only).
+     * @param groupId the ID of the presentation group to check.
+     * @return string concatenated list of routing spec IDs and names, or null if not used.
+     * @throws DatabaseException if a database error occurs.
+     */
+    @Override
+    public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _presentationGroupListIO.setConnection(conn);
+            return _presentationGroupListIO.routeSpecsUsing(groupId);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deletePresentationGroup.", ex);
+        }
+        finally
+        {
             _presentationGroupListIO.setConnection(null);
         }
     }
