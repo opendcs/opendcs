@@ -1086,7 +1086,7 @@ environment.
 Create the database instance with Oracle’s Database In accordance with your organizations rules.
 
 OpenDCS is tested with the https://hub.docker.com/r/gvenzl/oracle-free images. 
-No futures beyond Oracle 19c are currently used.
+No features beyond Oracle 19c are currently used.
 
 Create a user to own the schema, ostdb_adm is recommended, some script may not correctly substitute the name at this time.
 

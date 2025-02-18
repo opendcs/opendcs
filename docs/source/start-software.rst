@@ -175,7 +175,7 @@ From the main github site click on the header "Releases" in the image below.
    :width: 800
 
 
-Alternatively the following link goes straight to the releasese page: https://github.com/opendcs/opendcs/releases 
+Alternatively the following link goes straight to the releases page: https://github.com/opendcs/opendcs/releases 
 For each release, there is a drop down menu "Assets", and in that section download the (opendcs-installer-#.#.#.jar).
 
 .. image:: ./media/start/software/im-02-releases.png
@@ -203,7 +203,7 @@ Windows
 -------
 
 For windows:
-1. Create an approrpiate directory, such as `C:\programs\opendcs\main-nightly`
+1. Create an appropriate directory, such as `C:\programs\opendcs\main-nightly`
 2. Extract the contents of the archive to this directory.
 
 
@@ -211,7 +211,8 @@ For windows:
 
    OpenDCS does not support or recommend "updates-in-place". `main-nightly` is used here for convenience.
    If you will be regularly testing nightly builds either name the folder with the current date or
-   simply delete the existing folder. Configuration is now stored automatically in the user directory.
+   simply delete the existing folder. Configuration is stored in the user directory, separate from 
+   the install directory.
 
 What do I need to edit/configure for my set-up?
 ===============================================
