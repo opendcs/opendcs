@@ -215,6 +215,17 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
+	 Populates the list of Platform objects defined in this database.
+	 Objects in this list may be only partially populated (key values
+	 and primary display attributes only).
+	 @param pl the list to populate
+	 @param tmType the transport medium type to filter on
+	 */
+	public abstract void readPlatformList(PlatformList pl, String tmType)
+			throws DatabaseException;
+
+
+	/**
 	Populates the list of PresentationGroup objects defined in this database.
 	Objects in this list may be only partially populated (key values
 	and primary display attributes only).
