@@ -152,7 +152,7 @@ public class CwmsOracleConfiguration implements Configuration
             this.dcsUser = cwmsDb.getUsername();
             this.dcsUserPassword = cwmsDb.getPassword();
             createPropertiesFile(configBuilder, this.propertiesFile);
-            final Profile profile = Profile.getProfile(this.propertiesFile);
+            profile = Profile.getProfile(this.propertiesFile);
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
         }
 
