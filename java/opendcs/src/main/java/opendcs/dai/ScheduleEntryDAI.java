@@ -5,6 +5,7 @@ import java.util.Date;
 
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
+import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
@@ -43,6 +44,16 @@ public interface ScheduleEntryDAI
 	 */
 	public ScheduleEntry readScheduleEntry(String name)
 		throws DbIoException;
+
+	/**
+	 * Read a single schedule entry by its id
+	 * @param id
+	 * @return ScheduleEntry or null if no match found.
+	 * @throws DbIoException
+	 * @throws NoSuchObjectException
+	 */
+	public ScheduleEntry readScheduleEntry(DbKey id)
+			throws DbIoException;
 
 	/**
 	 * Write the schedule entry to the database.
