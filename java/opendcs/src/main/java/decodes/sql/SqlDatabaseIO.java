@@ -1576,7 +1576,7 @@ public class SqlDatabaseIO
     */
     // MJM NOT Synchronized because it can be called from the SQL Platform Helper
     @Override
-    public PlatformConfig readConfig(PlatformConfig pc)
+    public void readConfig(PlatformConfig pc)
         throws DatabaseException
     {
         Connection conn = null;
@@ -1586,7 +1586,6 @@ public class SqlDatabaseIO
             conn = getConnection();
             _configListIO.setConnection(conn);
             _configListIO.readConfig(pc);
-            return pc;
         }
         catch (SQLException ex)
         {
