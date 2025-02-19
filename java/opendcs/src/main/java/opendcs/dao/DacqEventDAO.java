@@ -19,6 +19,7 @@ import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
@@ -288,7 +289,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 			else if (timeInMillis != null)
 			{
 				q = q + " " + c + " EVENT_TIME >= ?";
-				parameters.add(timeInMillis);
+				parameters.add(Date.from(Instant.ofEpochMilli(timeInMillis)));
 			}
 		}
 
