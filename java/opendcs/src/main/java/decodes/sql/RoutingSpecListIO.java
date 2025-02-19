@@ -16,6 +16,7 @@
 package decodes.sql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -265,17 +266,39 @@ public class RoutingSpecListIO extends SqlDbObjIo
                    {
                        if(seid == ars.getScheduleEntryId().getValue())
                        {
-                           Date x = getDateFromRS(resultSet, 2);
-                           if(x != null)
+                           if (super._dbio.isCwms())
                            {
-                                ars.setLastActivityTime(x);
+                               Date x = rs.getDate(2);
+                               if (!rs.wasNull())
+                               {
+                                   ars.setLastActivityTime(x);
+                               }
+                           }
+                           else
+                           {
+                                 Long x = rs.getLong(2);
+                                 if(!rs.wasNull())
+                                 {
+                                      ars.setLastActivityTime(new Date(x));
+                                 }
                            }
                            ars.setNumMessages(resultSet.getInt(3));
                            ars.setNumDecodesErrors(resultSet.getInt(4));
-                           x = getDateFromRS(resultSet, 5);
-                           if(x != null)
+                           if (super._dbio.isCwms())
                            {
-                                ars.setLastMessageTime(x);
+                               Date x = rs.getDate(5);
+                               if (!rs.wasNull())
+                               {
+                                   ars.setLastMessageTime(x);
+                               }
+                           }
+                           else
+                           {
+                               Long x = rs.getLong(5);
+                               if(!rs.wasNull())
+                               {
+                                   ars.setLastMessageTime(new Date(x));
+                               }
                            }
                            break;
                        }
@@ -315,27 +338,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
         }
     }
 
-    private Date getDateFromRS(ResultSet rs, int idx) throws SQLException
-    {
-        try
-        {
-            Date x = rs.getDate(idx);
-            if (!rs.wasNull())
-            {
-                return x;
-            }
-        }
-        catch (ArrayIndexOutOfBoundsException exception)
-        {
-            Long x = rs.getLong(idx);
-            if (!rs.wasNull())
-            {
-                return new Date(x);
-            }
-        }
-        return null;
-    }
-
     public List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException
     {
         List<RoutingExecStatus> ret = new ArrayList<>();
@@ -349,34 +351,38 @@ public class RoutingSpecListIO extends SqlDbObjIo
                 + " from ROUTINGSPEC rs, SCHEDULE_ENTRY_STATUS ses, SCHEDULE_ENTRY se"
                 + " where ses.SCHEDULE_ENTRY_ID = se.SCHEDULE_ENTRY_ID"
                 + " and se.ROUTINGSPEC_ID = rs.ID"
-                + " and se.SCHEDULE_ENTRY_ID = " + scheduleEntryId.getValue()
+                + " and se.SCHEDULE_ENTRY_ID = ?"
                 + " order by ses.RUN_START_TIME desc";
 
-        try (Statement stmt = createStatement();
-             ResultSet rs = stmt.executeQuery( q ))
+        try (Connection conn = connection();
+             PreparedStatement stmt = conn.prepareStatement(q))
         {
-            while(rs.next())
+            stmt.setLong(1, scheduleEntryId.getValue());
+            try (ResultSet rs = stmt.executeQuery())
             {
-                RoutingExecStatus res = new RoutingExecStatus();
-                res.setRoutingSpecId(rs.getLong(1));
-                res.setScheduleEntryId(rs.getLong(3));
-                res.setRoutingExecId(rs.getLong(4));
-                res.setRunStart(rs.getDate(5));
-                Date x = rs.getDate(6);
-                if (!rs.wasNull())
-                    res.setRunStop(x);
-                x = rs.getDate(7);
-                if (!rs.wasNull())
-                    res.setLastMsgTime(x);
-                res.setHostname(rs.getString(8));
-                res.setRunStatus(rs.getString(9));
-                res.setNumMessages(rs.getInt(10));
-                res.setNumErrors(rs.getInt(11));
-                res.setNumPlatforms(rs.getInt(12));
-                res.setLastInput(rs.getString(13));
-                res.setLastOutput(rs.getString(14));
-                res.setLastActivity(rs.getDate(15));
-                ret.add(res);
+                while(rs.next())
+                {
+                    RoutingExecStatus res = new RoutingExecStatus();
+                    res.setRoutingSpecId(rs.getLong(1));
+                    res.setScheduleEntryId(rs.getLong(3));
+                    res.setRoutingExecId(rs.getLong(4));
+                    res.setRunStart(rs.getDate(5));
+                    Date x = rs.getDate(6);
+                    if(!rs.wasNull())
+                        res.setRunStop(x);
+                    x = rs.getDate(7);
+                    if(!rs.wasNull())
+                        res.setLastMsgTime(x);
+                    res.setHostname(rs.getString(8));
+                    res.setRunStatus(rs.getString(9));
+                    res.setNumMessages(rs.getInt(10));
+                    res.setNumErrors(rs.getInt(11));
+                    res.setNumPlatforms(rs.getInt(12));
+                    res.setLastInput(rs.getString(13));
+                    res.setLastOutput(rs.getString(14));
+                    res.setLastActivity(rs.getDate(15));
+                    ret.add(res);
+                }
             }
         }
         catch(SQLException ex)
