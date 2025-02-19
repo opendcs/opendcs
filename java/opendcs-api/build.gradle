@@ -1,0 +1,18 @@
+plugins {
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
+    id 'java-library'
+}
+
+/* any dependencies here beyond slf4j-api should be thoroughly discussed
+ */
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs-annotations'
+            from components.java
+        }
+    }
+}

@@ -95,6 +95,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -1439,8 +1440,16 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		}
 	}
 
-	public Connection getConnection(){
-		return tsdb.getConnection();
+	public Connection getConnection()
+	{
+		try
+		{
+			return tsdb.getConnection();
+		}
+		catch (SQLException ex)
+		{
+			throw new RuntimeException("Unable to get SQL Connection.", ex);
+		}
 	}
 	
 	public void trace(String msg)
