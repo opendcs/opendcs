@@ -21,6 +21,7 @@ import javax.sql.DataSource;
 
 import decodes.cwms.CwmsDatabaseProvider;
 import decodes.db.DatabaseException;
+import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.util.DecodesSettings;
 import opendcs.opentsdb.OpenTsdbProvider;
 import org.opendcs.database.DatabaseService;
@@ -66,6 +67,7 @@ public final class OpenDcsDatabaseFactory
 				if(databaseProductName.toLowerCase().startsWith("oracle"))
 				{
 					databaseProvider = new CwmsDatabaseProvider();
+					decodesSettings.sqlKeyGenerator = OracleSequenceKeyGenerator.class.getName();
 				}
 				else
 				{
