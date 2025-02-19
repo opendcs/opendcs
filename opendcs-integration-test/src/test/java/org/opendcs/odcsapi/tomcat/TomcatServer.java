@@ -26,6 +26,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.ServiceLoader;
+import java.util.logging.Level;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
@@ -34,6 +35,7 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.io.FileUtils;
+import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.junit.platform.commons.PreconditionViolationException;
 import org.opendcs.fixtures.configuration.Configuration;
 import org.opendcs.fixtures.configuration.ConfigurationProvider;
@@ -62,6 +64,8 @@ public final class TomcatServer
 	 */
 	public TomcatServer(String baseDir, String port, String restWar, String guiWar) throws IOException
 	{
+		//Tries to scan files in gradle cache that don't exist (like internationalization)
+		java.util.logging.Logger.getLogger(StandardJarScanner.class.getName()).setLevel(Level.SEVERE);
 		tomcatInstance = new Tomcat();
 		tomcatInstance.setBaseDir(baseDir);
 		Host host = tomcatInstance.getHost();
@@ -82,7 +86,10 @@ public final class TomcatServer
 		restApiContext.setReloadable(true);
 		restApiContext.setPrivileged(true);
 		restApiContext.removeParameter("opendcs.rest.api.cwms.office");
-		restApiContext.addParameter("opendcs.rest.api.cwms.office", System.getProperty("DB_OFFICE"));
+		if(System.getProperty("DB_OFFICE") != null)
+		{
+			restApiContext.addParameter("opendcs.rest.api.cwms.office", System.getProperty("DB_OFFICE"));
+		}
 
 		StandardContext guiContext = (StandardContext) tomcatInstance.addWebapp("/", guiWar);
 		guiContext.setDelegate(true);

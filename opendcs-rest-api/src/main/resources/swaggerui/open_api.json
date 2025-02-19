@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "OpenDCS - Swagger",
-    "description": "OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation).\nOpenDCS Rest API is intended to run as a stand-alone Java program. It uses embedded JETTY to implement the web services.\nIt was developed for the U. S. Army Corps of Engineers. Source and documentation may be found here:\n[Github Documentation](https://github.com/opendcs/odcsapi)\n\nNOTE: THE PROJECT IS NOT YET UPLOADED TO GITHUB. THE 'odcsapi.tgz' tarball contains the source image.",
+    "description": "OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation).\nOpenDCS Rest API is intended to run as a stand-alone Java program. It uses embedded JETTY to implement the web services.\nIt was developed for the U. S. Army Corps of Engineers. Source and documentation may be found here:\n[Github Documentation](https://github.com/opendcs/rest_api)",
     "version": "0.0.3"
   },
   "servers": [

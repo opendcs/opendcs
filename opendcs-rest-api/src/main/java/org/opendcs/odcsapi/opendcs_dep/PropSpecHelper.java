@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -15,23 +15,13 @@
 
 package org.opendcs.odcsapi.opendcs_dep;
 
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.StringReader;
-import java.util.ArrayList;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import decodes.util.PropertiesOwner;
+import decodes.util.PropertySpec;
 import org.opendcs.odcsapi.beans.ApiPropSpec;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
-import org.opendcs.odcsapi.util.ApiConstants;
-import org.opendcs.odcsapi.util.ProcWaiterThread;
-
-import decodes.util.PropertiesOwner;
-import decodes.util.PropertySpec;
-import ilex.util.EnvExpander;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PropSpecHelper
 {
@@ -179,7 +169,6 @@ public class PropSpecHelper
 				};
 			return specs;
 		}
-
 		// The above special cases failed. Try to instantiate an object and ask it for
 		// its prop specs.
 		PropertiesOwner pw = null;
@@ -194,43 +183,11 @@ public class PropSpecHelper
 				Class<?> c = Class.forName(className);
 				pw = (PropertiesOwner)c.newInstance();
 			}
-			PropertySpec[] ret = pw.getSupportedProps();
-			return ret;
+			return pw.getSupportedProps();
 		}
 		catch (Exception ex)
 		{
-			LOGGER.warn("Cannot get props DIRECTLY from '{}' -- will try opendcs util.", className);
-			
-			ArrayList<PropertySpec> psa = new ArrayList<PropertySpec>();
-			try
-			{
-				String specs = ProcWaiterThread.runForeground(
-					EnvExpander.expand("$DCSTOOL_HOME/bin/decj") + " decodes.util.PropertySpecPrint " + className,
-					"PropertySpecPrint");
-				LineNumberReader lnr = new LineNumberReader(new StringReader(specs));
-				String line;
-				while((line = lnr.readLine()) != null)
-				{
-					int sc = line.indexOf(';');
-					if (sc <= 0)
-						continue;
-					String name = line.substring(0, sc);
-					line = line.substring(sc+1);
-					sc = line.indexOf(';');
-					String type = line.substring(0, sc);
-					String desc = line.substring(sc+1);
-					psa.add(new PropertySpec(name, type, desc));
-				}
-				PropertySpec[] ret = new PropertySpec[psa.size()];
-				for(int i=0; i<ret.length; i++)
-					ret[i] = psa.get(i);
-				return ret;
-			}
-			catch (IOException e)
-			{
-				throw new WebAppException(ErrorCodes.IO_ERROR, "Cannot get property specs for '" + className
-					+ "': " + e);
-			}
+			throw new WebAppException(ErrorCodes.IO_ERROR, "Cannot get property specs for '" + className, ex);
 		}
 	}
 }
