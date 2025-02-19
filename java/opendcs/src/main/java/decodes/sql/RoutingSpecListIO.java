@@ -268,34 +268,34 @@ public class RoutingSpecListIO extends SqlDbObjIo
                        {
                            if (super._dbio.isCwms())
                            {
-                               Date x = rs.getDate(2);
-                               if (!rs.wasNull())
+                               Date x = resultSet.getDate(2);
+                               if (!resultSet.wasNull())
                                {
                                    ars.setLastActivityTime(x);
                                }
                            }
                            else
                            {
-                                 Long x = rs.getLong(2);
-                                 if(!rs.wasNull())
-                                 {
-                                      ars.setLastActivityTime(new Date(x));
-                                 }
+                             Long x = resultSet.getLong(2);
+                             if(!resultSet.wasNull())
+                             {
+                                  ars.setLastActivityTime(new Date(x));
+                             }
                            }
                            ars.setNumMessages(resultSet.getInt(3));
                            ars.setNumDecodesErrors(resultSet.getInt(4));
                            if (super._dbio.isCwms())
                            {
-                               Date x = rs.getDate(5);
-                               if (!rs.wasNull())
+                               Date x = resultSet.getDate(5);
+                               if (!resultSet.wasNull())
                                {
                                    ars.setLastMessageTime(x);
                                }
                            }
                            else
                            {
-                               Long x = rs.getLong(5);
-                               if(!rs.wasNull())
+                               Long x = resultSet.getLong(5);
+                               if(!resultSet.wasNull())
                                {
                                    ars.setLastMessageTime(new Date(x));
                                }
