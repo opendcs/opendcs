@@ -1,6 +1,7 @@
 package decodes.sql;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -352,33 +353,27 @@ public class ConfigListIO extends SqlDbObjIo
     public void readConfig(PlatformConfig pc)
         throws DatabaseException, SQLException
     {
-        Statement stmt = null;
+        String q = "SELECT id, name, description, equipmentId " +
+                "FROM PlatformConfig WHERE ID = (?)";
 
-        try
+        log.trace("Executing '{}'", q);
+
+        try (PreparedStatement ps = connection.prepareStatement(q))
         {
-            stmt = createStatement();
-
-            String q = "SELECT id, name, description, equipmentId " +
-                       "FROM PlatformConfig WHERE ID = " + pc.getId();
-
-            log.trace("Executing '{}'", q);
-            ResultSet rs = stmt.executeQuery(q);
-
-            if (rs == null || !rs.next())
+            ps.setLong(1, pc.getId().getValue());
+            try (ResultSet rs = ps.executeQuery(q))
             {
-                Throwable thr = new ValueNotFoundException(
-                    "No PlatformConfig found with ID " + pc.getId());
-                throw new DatabaseException(
-                        "No PlatformConfig found with ID " + pc.getId(), thr);
-            }
+                if(rs == null || !rs.next())
+                {
+                    Throwable thr = new ValueNotFoundException(
+                            String.format("No PlatformConfig found with ID %d", pc.getId().getValue()));
+                    throw new DatabaseException(
+                            String.format("No PlatformConfig found with ID %d", pc.getId().getValue()), thr);
+                }
 
-            PlatformConfig ret = putConfig(pc.getId(), rs);
-            pc.copyFrom(ret);
-        }
-        finally
-        {
-            if (stmt != null)
-                try { stmt.close(); } catch(Exception ex) {}
+                PlatformConfig ret = putConfig(pc.getId(), rs);
+                pc.copyFrom(ret);
+            }
         }
     }
 
