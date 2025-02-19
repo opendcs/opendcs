@@ -28,6 +28,7 @@ import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -143,6 +144,7 @@ final class PresentationResourcesIT extends BaseIT
 		logout(sessionFilter);
 	}
 
+	@Disabled("Will get fixed with PR: https://github.com/opendcs/opendcs/pull/928")
 	@TestTemplate
 	void testGetPresentationRefs()
 	{
@@ -225,6 +227,7 @@ final class PresentationResourcesIT extends BaseIT
 		assertMatch(expected, actual);
 	}
 
+	@Disabled("Will get fixed with PR: https://github.com/opendcs/opendcs/pull/928")
 	@TestTemplate
 	void testPostAndDeletePresentation() throws Exception
 	{
