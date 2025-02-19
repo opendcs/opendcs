@@ -14,6 +14,7 @@ import org.opendcs.database.api.OpenDcsDataException;
 
 import decodes.db.DbEnum;
 import decodes.db.EnumList;
+import decodes.db.EnumValue;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 
@@ -23,27 +24,68 @@ import decodes.tsdb.DbIoException;
  */
 public interface EnumDAI extends DaiBase, OpenDcsDao
 {
-	@Deprecated
-	public DbEnum getEnum(String enumName) throws DbIoException;
+	DbKey getEnumId(String enumName) throws DbIoException;
 
-	@Deprecated
-	public void readEnumList(EnumList top) throws DbIoException;
-	
-	@Deprecated
-	public void writeEnumList(EnumList enumList) throws DbIoException;
-	
-	@Deprecated
-	public void writeEnum(DbEnum dbenum) throws DbIoException;
-	
-	public void close();
+	void deleteEnumList(DbKey refListId) throws DbIoException;
+
+	EnumValue getEnumValue(DbKey id, String enumVal) throws DbIoException;
+
+	void deleteEnumValue(DbKey id, String enumVal) throws DbIoException;
+
+	void writeEnumValue(DbKey enumId, EnumValue enumVal, String fromAbbr, int sortNum) throws DbIoException;
+
+	DbEnum getEnumById(DbKey enumId) throws DbIoException;
+
 
 	/**
+	 * 
+	 * @param enumName
+	 * @return
+	 * @throws DbIoException
+	 * @deprecated new code should use the DataTransaction based methods method
+	 */
+	@Deprecated
+	DbEnum getEnum(String enumName) throws DbIoException;
+
+	/**
+	 * 
+	 * @param enumName
+	 * @return
+	 * @throws DbIoException
+	 * @deprecated new code should use the DataTransaction based methods method
+	 */
+	@Deprecated
+	void readEnumList(EnumList top) throws DbIoException;
+	
+	/**
+	 * 
+	 * @param enumName
+	 * @return
+	 * @throws DbIoException
+	 * @deprecated new code should use the DataTransaction based methods method
+	 */
+	@Deprecated
+	void writeEnumList(EnumList enumList) throws DbIoException;
+
+	/**
+	 * 
+	 * @param enumName
+	 * @return
+	 * @throws DbIoException
+	 * @deprecated new code should use the DataTransaction based methods method
+	 */
+	@Deprecated
+	void writeEnum(DbEnum dbenum) throws DbIoException;
+	
+	void close();
+
+		/**
 	 * Get all enums
 	 * @param tx
 	 * @return
 	 * @throws OpenDcsDataException
 	 */
-	public Collection<DbEnum> getEnums(DataTransaction tx) throws OpenDcsDataException;
+	Collection<DbEnum> getEnums(DataTransaction tx) throws OpenDcsDataException;
 
 	/**
 	 * Get Enum by name
@@ -52,7 +94,7 @@ public interface EnumDAI extends DaiBase, OpenDcsDao
 	 * @return The enum if found, empty otherwise
 	 * @throws OpenDcsDataException
 	 */
-	public Optional<DbEnum> getEnum(DataTransaction tx, String enumName) throws OpenDcsDataException;
+	Optional<DbEnum> getEnum(DataTransaction tx, String enumName) throws OpenDcsDataException;
 	/**
 	 * Get Enum by DbKey
 	 * @param tx trancation used to actually retrieve data
@@ -60,7 +102,7 @@ public interface EnumDAI extends DaiBase, OpenDcsDao
 	 * @return The enum if found ,empty otherwise
 	 * @throws OpenDcsDataException
 	 */
-	public Optional<DbEnum> getEnum(DataTransaction tx, DbKey id) throws OpenDcsDataException;
+	Optional<DbEnum> getEnum(DataTransaction tx, DbKey id) throws OpenDcsDataException;
 
 
 	/**
@@ -71,5 +113,5 @@ public interface EnumDAI extends DaiBase, OpenDcsDao
 	 * @return DbEnum with additional information filled in.
 	 * @throws OpenDcsDataException
 	 */
-	public DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException;	
+	DbEnum writeEnum(DataTransaction tx, DbEnum dbEnum) throws OpenDcsDataException;	
 }

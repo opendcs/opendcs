@@ -316,4 +316,46 @@ public class EnumXmlDao implements EnumDAI
             throw new OpenDcsDataException("Unable to write enum to XML database.",ex);
         }
     }
+
+
+    @Override
+    public DbKey getEnumId(String enumName) throws DbIoException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getEnumId'");
+    }
+
+
+    @Override
+    public void deleteEnumList(DbKey refListId) throws DbIoException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'deleteEnumList'");
+    }
+
+
+    @Override
+    public EnumValue getEnumValue(DbKey id, String enumVal) throws DbIoException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getEnumValue'");
+    }
+
+
+    @Override
+    public void deleteEnumValue(DbKey id, String enumVal) throws DbIoException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'deleteEnumValue'");
+    }
+
+
+    @Override
+    public void writeEnumValue(DbKey enumId, EnumValue enumVal, String fromAbbr, int sortNum) throws DbIoException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'writeEnumValue'");
+    }
+
+
+    @Override
+    public DbEnum getEnumById(DbKey enumId) throws DbIoException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getEnumById'");
+    }
 }
