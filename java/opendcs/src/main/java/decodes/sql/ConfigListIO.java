@@ -361,7 +361,7 @@ public class ConfigListIO extends SqlDbObjIo
         try (PreparedStatement ps = connection.prepareStatement(q))
         {
             ps.setLong(1, pc.getId().getValue());
-            try (ResultSet rs = ps.executeQuery(q))
+            try (ResultSet rs = ps.executeQuery())
             {
                 if(rs == null || !rs.next())
                 {
