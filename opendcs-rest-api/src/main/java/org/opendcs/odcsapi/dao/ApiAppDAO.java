@@ -1,7 +1,7 @@
 /*
- *  Copyright 2023 OpenDCS Consortium
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *       http://www.apache.org/licenses/LICENSE-2.0
@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
-import java.util.logging.Logger;
 
 import org.opendcs.odcsapi.beans.ApiAppRef;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
@@ -32,7 +31,6 @@ import org.opendcs.odcsapi.beans.ApiLoadingApp;
 import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
 import org.opendcs.odcsapi.util.ApiTextUtil;
 
@@ -349,84 +347,6 @@ public class ApiAppDAO
 		}
 		
 		return ret;
-	}
-
-	/**
-	 * Get status for a single app.
-	 * @param appId
-	 * @return
-	 * @throws DbException
-	 * @throws WebAppException
-	 * @throws SQLException 
-	 */
-	public ApiAppStatus getAppStatus(Long appId)
-		throws DbException, WebAppException, SQLException
-	{
-		ApiLoadingApp app = getApp(appId); // Will throw NO_SUCH_OBJECT if not found.
-		
-		ApiAppStatus ret = new ApiAppStatus();
-		ret.setAppId(appId);
-		ret.setAppName(app.getAppName());
-		ret.setAppType(app.getAppType());
-		
-		String q = "select PID, HOSTNAME, HEARTBEAT, CUR_STATUS "
-			+ "from CP_COMP_PROC_LOCK "
-			+ "where LOADING_APPLICATION_ID = ?";
-		try
-		{
-			Connection conn = null;
-			ResultSet rs = doQueryPs(conn, q, appId);
-			
-			if (!rs.next())
-				return ret; // PID and hostname will be null, status will be "inactive"
-			
-			ret.setPid(rs.getLong(1));
-			ret.setHostname(rs.getString(2));
-			Long x = rs.getLong(3);
-			if (!rs.wasNull())
-				ret.setHeartbeat(new Date(x));
-			ret.setStatus(rs.getString(4));
-			ret.setEventPort(determineEventPort(app, ret.getPid()));
-		}
-		catch(SQLException ex)
-		{
-			throw new DbException(module, ex, "Error in query '" + q + "'");
-		}
-		
-		return ret;
-	}
-	
-	/**
-	 * return the event port this process is using or null if it's not running.
-	 * @param app
-	 * @param pid
-	 * @return
-	 */
-	private Integer determineEventPort(ApiLoadingApp app, Long pid)
-	{
-		Integer port = null;
-		// If EventPort is specified, use it.
-		String evtPorts = ApiPropertiesUtil.getIgnoreCase(app.getProperties(), "eventport");
-		
-		if (evtPorts != null)
-		{
-			try { port = Integer.parseInt(evtPorts.trim()); }
-			catch(NumberFormatException ex)
-			{
-				warning("Bad EventPort property '" + evtPorts
-					+ "' must be integer -- will derive from PID");
-			}
-		}
-		if (port == null && pid != null)
-			port = 20000 + (pid.intValue() % 10000);
-		return port;
-	}
-
-	public void terminateApp(Long appId)
-		throws DbException
-	{
-		String q = "delete from cp_comp_proc_lock where loading_application_id = ?";
-		doModifyV(q, appId);
 	}
 
 }

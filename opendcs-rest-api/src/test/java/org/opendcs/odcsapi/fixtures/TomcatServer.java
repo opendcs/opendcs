@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
-import org.opendcs.odcsapi.lrgsclient.ClientConnectionChecker;
 import org.opendcs.odcsapi.res.ContextPropertySetup;
 import org.opendcs.odcsapi.res.DataSourceContextCreator;
 import org.slf4j.Logger;
@@ -80,7 +79,6 @@ public final class TomcatServer
 		pipeline.addValve(ssoValve);
 		context = (StandardContext) tomcatInstance.addWebapp(contextName, Paths.get("src/main/webapp").toAbsolutePath().toString());
 		context.addApplicationListener(DataSourceContextCreator.class.getName());
-		context.addApplicationListener(ClientConnectionChecker.class.getName());
 		context.addApplicationListener(ContextPropertySetup.class.getName());
 	}
 
