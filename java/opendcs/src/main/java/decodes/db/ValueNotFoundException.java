@@ -23,7 +23,7 @@ package decodes.db;
 /**
 Exception thrown when a needed record cannot be found.
 */
-public class ValueNotFoundException extends decodes.util.DecodesException
+public class ValueNotFoundException extends DatabaseException
 {
 	/**
 	  Construct with message
