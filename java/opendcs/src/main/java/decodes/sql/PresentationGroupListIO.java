@@ -720,13 +720,10 @@ public class PresentationGroupListIO extends SqlDbObjIo
         q = "DELETE FROM PresentationGroup WHERE ID = " + id;
         executeUpdate(q);
 
-        if (pg.getDatabase().getDbIo() != null)
+        PresentationGroup group = _pgList.getById(id);
+        if (group != null)
         {
-            PresentationGroup group = pg.getDatabase().presentationGroupList.getById(id);
-            if (group != null)
-            {
-                pg.getDatabase().presentationGroupList.remove(group);
-            }
+            _pgList.remove(group);
         }
     }
 
