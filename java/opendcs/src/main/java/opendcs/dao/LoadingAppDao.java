@@ -76,7 +76,6 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbCompLock;
-import decodes.util.DecodesSettings;
 
 /**
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
@@ -445,7 +444,8 @@ public class LoadingAppDao
                         + "assigned to it.");
             }
 
-            if (!db.isCwms() && db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_68)
+            if ((db.isCwms() && db.getDecodesDatabaseVersion() > DecodesDatabaseVersion.DECODES_DB_68)
+                    || (!db.isCwms() && db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_68))
             {
                 q = "select count(*) from ALARM_SCREENING where LOADING_APPLICATION_ID = ?";
                 int numAlarms = getSingleResult(q, rs -> rs.getInt(1), app.getKey());
