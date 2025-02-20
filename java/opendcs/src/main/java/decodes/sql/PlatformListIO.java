@@ -502,14 +502,15 @@ public class PlatformListIO extends SqlDbObjIo
 
                             if (pc == null)
                             {
+                                pc = new PlatformConfig();
+                                pc.setId(configId);
                                 // Not in database's list yet? Add it.
-                                pc = _configListIO.readConfig(configId);
-                                if (pc != null)
-                                    p.getDatabase().platformConfigList.add(pc);
+                                _configListIO.readConfig(pc);
+                                p.getDatabase().platformConfigList.add(pc);
                             }
                             // Already in list. Check to see if it's current.
                             else
-                                _configListIO.readConfig(pc.getId());
+                                _configListIO.readConfig(pc);
                         }
                         catch(DatabaseException e)
                         {
