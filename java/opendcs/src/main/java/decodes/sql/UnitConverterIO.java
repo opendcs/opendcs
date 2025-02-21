@@ -19,6 +19,8 @@
  */
 package decodes.sql;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -325,10 +327,16 @@ public class UnitConverterIO extends SqlDbObjIo
 	* @param ucdb the object to delete
 	*/
 	public void delete(UnitConverterDb ucdb)
-		throws DatabaseException, SQLException
+		throws SQLException
 	{
-		String q = "DELETE FROM UnitConverter WHERE ID = " + ucdb.getId().getValue();
-		executeUpdate(q);
+		String q = "DELETE FROM UnitConverter WHERE ID = ?";
+
+		try (Connection conn = connection();
+			 PreparedStatement ps = conn.prepareStatement(q))
+		{
+			ps.setLong(1, ucdb.getId().getValue());
+			ps.execute();
+		}
 	}
 
 	public void setContext(String context)

@@ -53,6 +53,8 @@
  */
 package decodes.sql;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.Iterator;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -209,9 +211,14 @@ debug3(q);
 	 */
 	public void delete(EngineeringUnit eu) throws SQLException
 	{
-		String q = "delete from engineeringunit where lower(unitabbr) = "
-			+ sqlString(eu.getAbbr().toLowerCase());
-		tryUpdate(q);
+		String q = "delete from engineeringunit where lower(unitabbr) = ?";
+
+		try (Connection conn = connection();
+			 PreparedStatement ps = conn.prepareStatement(q))
+		{
+			ps.setString(1, eu.getAbbr().toLowerCase());
+			ps.execute();
+		}
 	}
 
 }
