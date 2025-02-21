@@ -354,7 +354,7 @@ public class ConfigListIO extends SqlDbObjIo
         throws DatabaseException, SQLException
     {
         String q = "SELECT id, name, description, equipmentId " +
-                "FROM PlatformConfig WHERE ID = (?)";
+                "FROM PlatformConfig WHERE ID = ?";
 
         log.trace("Executing '{}'", q);
 
