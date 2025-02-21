@@ -37,39 +37,31 @@ import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 
-//AW:JAVADOC
-/**
-RunningAverageAlgorithm averages single 'input' parameter to a single 'average' 
-parameter. A separate aggPeriodInterval property should be supplied.
-Example, input=Hourly Water Level, output=Daily Running Average, computed hourly,
-so each hour's output is the average of values at [t-23h ... t].
- */
-//AW:JAVADOC_END
+@Algorithm(description ="RunningAverageAlgorithm averages single 'input' parameter to a single 'average'\n" + 
+"parameter. A separate aggPeriodInterval property should be supplied.\n" +
+"Example, input=Hourly Water Level, output=Daily Running Average, computed hourly,\n" +
+"so each hour's output is the average of values at [t-23h ... t].")
 public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
 	double tally;
 	int count;
 	Date lastTimeSlice = null;
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable average = new NamedVariable("average", 0);
-	String _outputNames[] = { "average" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec
 	public long minSamplesNeeded = 1;
+	@PropertySpec
 	public boolean outputFutureData = false;
-	String _propertyNames[] = { "minSamplesNeeded", "outputFutureData" };
-//AW:PROPERTIES_END
 
 	public RunningAverageAlgorithm()
 	{
@@ -82,24 +74,19 @@ public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.RUNNING_AGGREGATE;
 		_aggPeriodVarRoleName = "average";
-//AW:INIT_END
-
-//AW:USERINIT
-		// No one-time init required.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
 		// Zero out the tally & count for this agg period.
 		tally = 0.0;
 		count = 0;
@@ -109,7 +96,6 @@ public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		String inUnits = getInputUnitsAbbr("input");
 		if (inUnits != null && inUnits.length() > 0)
 			setOutputUnitsAbbr("average", inUnits);
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -122,10 +108,10 @@ public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 //		debug2("AverageAlgorithm:doAWTimeSlice, input=" + input);
 		if (!isMissing(input))
 		{
@@ -133,15 +119,14 @@ public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			count++;
 			lastTimeSlice = _timeSliceBaseTime;
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 debug1("RunningAverageAlgorithm:afterTimeSlices, count=" + count
 + ", lastTimeSlice=" + 
 (lastTimeSlice==null ? "null" : debugSdf.format(lastTimeSlice)));
@@ -168,31 +153,5 @@ debug1("RunningAverageAlgorithm:afterTimeSlices, count=" + count
 			if (_aggInputsDeleted)
 				deleteOutput(average);
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
