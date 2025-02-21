@@ -109,6 +109,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 			String initScript = String.format("BEGIN cwms_ccp_vpd.set_ccp_session_ctx(cwms_util.get_office_code('%s'), 2, '%s' ); END;", dbOffice, dbOffice);
 			System.setProperty("DB_CONNECTION_INIT", initScript);
 			DbInterface.decodesProperties.setProperty("CwmsOfficeId", dbOffice);
+			System.setProperty("KEYGENERATOR", "decodes.sql.OracleSequenceKeyGenerator");
 			DbInterface.setDatabaseType("cwms");
 		}
 		else
@@ -117,6 +118,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 			System.setProperty("DB_DRIVER_CLASS", "org.postgresql.Driver");
 			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
 			System.setProperty("DB_CONNECTION_INIT", "SELECT 1");
+			System.setProperty("KEYGENERATOR", "decodes.sql.SequenceKeyGenerator");
 		}
 		setupClientUser();
 		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, warContext);

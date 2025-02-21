@@ -240,12 +240,12 @@ public final class PresentationResources extends OpenDcsResource
 		}
 		group.isProduction = presGrp.isProduction();
 		group.inheritsFrom = presGrp.getInheritsFrom();
-		PresentationGroup apiGroup = new PresentationGroup();
 		if (presGrp.getInheritsFromId() != null)
 		{
-			apiGroup.groupName = presGrp.getInheritsFrom();
-			apiGroup.setId(DbKey.createDbKey(presGrp.getInheritsFromId()));
-			group.parent = apiGroup;
+			PresentationGroup parentGroup = new PresentationGroup();
+			parentGroup.groupName = presGrp.getInheritsFrom();
+			parentGroup.setId(DbKey.createDbKey(presGrp.getInheritsFromId()));
+			group.parent = parentGroup;
 		}
 		group.dataPresentations = map(dai, presGrp.getElements(), group);
 
