@@ -797,6 +797,32 @@ public class SqlDatabaseIO
     }
 
     /**
+     * Read the platform list cross reference file and populate the passed
+     * PlatformList object.
+     * @param pl the object to populate from the database.
+     *  @param tmType the transport medium type to filter on.
+     */
+    @Override
+    public synchronized void readPlatformList(PlatformList pl, String tmType)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _platformListIO.setConnection(conn);
+            _platformListIO.read(pl, tmType);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read platform list", ex);
+            throw new DatabaseException("Unable to read platform list", ex);
+        }
+        finally
+        {
+            _platformListIO.setConnection(null);
+        }
+    }
+
+    /**
     * Reads the list of PlatformConfig objects defined in this database.
     * @param pcList the object to populate from the database.
     * @throws DatabaseException if there's an error.
