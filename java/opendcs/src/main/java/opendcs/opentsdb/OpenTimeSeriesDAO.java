@@ -1023,6 +1023,8 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				{
 					throw new Exception("Unable to create comp depends notification.", ex);
 				}
+
+				cache.remove(ctsid.getKey());
 			});
 		}
 		catch (Exception ex)
