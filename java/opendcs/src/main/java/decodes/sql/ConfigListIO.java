@@ -358,7 +358,8 @@ public class ConfigListIO extends SqlDbObjIo
 
         log.trace("Executing '{}'", q);
 
-        try (PreparedStatement ps = connection.prepareStatement(q))
+        try (Connection conn = connection();
+             PreparedStatement ps = conn.prepareStatement(q))
         {
             ps.setLong(1, pc.getId().getValue());
             try (ResultSet rs = ps.executeQuery())
@@ -371,8 +372,7 @@ public class ConfigListIO extends SqlDbObjIo
                             String.format("No PlatformConfig found with ID %d", pc.getId().getValue()), thr);
                 }
 
-                PlatformConfig ret = putConfig(pc.getId(), rs);
-                pc.copyFrom(ret);
+                putConfig(pc.getId(), rs);
             }
         }
     }
