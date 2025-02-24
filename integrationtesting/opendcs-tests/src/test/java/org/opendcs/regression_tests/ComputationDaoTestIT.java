@@ -16,6 +16,7 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,6 +33,7 @@ final class ComputationDaoTestIT extends AppTestBase
 	@ConfiguredField
 	private Database decodesDb;
 
+	@EnableIfTsDb
 	@Test
 	void testComputationFilter() throws Exception
 	{
