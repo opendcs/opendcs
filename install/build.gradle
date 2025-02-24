@@ -30,7 +30,6 @@ distributions
             into('bin')
             {
                 from ('src/main/dist/scripts')
-                
                 filePermissions
                 {
                     user
