@@ -70,24 +70,24 @@ class TimeSeriesDaoIT extends AppTestBase
                 tsDao.saveTimeSeries(tsIn);
                 // Retrieve the TimeSeriesIdentifier that shouldn't been saved to the database.
                 // This will also fill in required metadata so that the retrieval operations are handled correctly.
-                FailableResult<TimeSeriesIdentifier,TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
+                FailableResult<TimeSeriesIdentifier, TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
                 assertTrue(tsIdSavedResult.isSuccess(), "Time series was not correctly saved.");
                 final TimeSeriesIdentifier tsIdSaved = tsIdSavedResult.getSuccess();
                 final CTimeSeries result = tsDao.makeTimeSeries(tsIdSaved);
                 result.setUnitsAbbr(tsIn.getUnitsAbbr());
                 log.info("Created CTimeseries {}", result);
                 tsDao.fillTimeSeries(result,
-                                     tsIn.sampleAt(0).getTime(), 
-                                     tsIn.sampleAt(tsIn.size()-1).getTime(),
-                                      true, true, false);
+                        tsIn.sampleAt(0).getTime(),
+                        tsIn.sampleAt(tsIn.size() - 1).getTime(),
+                        true, true, false);
                 log.info("Data loaded.");
                 assertEquals(tsIn, result, "Timeseries round trip did not work.");
                 tsDao.deleteTimeSeries(tsIn.getTimeSeriesIdentifier()); // This will also delete the timeseries identifier.
                 final CTimeSeries result2 = tsDao.makeTimeSeries(tsIn.getTimeSeriesIdentifier());
                 assertThrows(BadTimeSeriesException.class, () -> tsDao.fillTimeSeries(result2,
-                                     tsIn.sampleAt(0).getTime(), 
-                                     tsIn.sampleAt(tsIn.size()-1).getTime(),
-                                      true, true, false));
+                         tsIn.sampleAt(0).getTime(),
+                         tsIn.sampleAt(tsIn.size()-1).getTime(),
+                          true, true, false));
             }
         }
     }
