@@ -25,6 +25,7 @@ public class SearchCriteriaTest
         sc.DcpNames = new ArrayList<>();
         sc.DcpNames.add("TEST1");
         sc.DcpNames.add("TEST2");
+        sc.DcpNames.add("Test with spaces");
         sc.spacecraft = SearchCriteria.SC_EAST;
     }
 

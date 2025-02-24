@@ -655,7 +655,7 @@ public class SearchCriteria implements Serializable
                         throw new SearchSyntaxException("Expected DCP name.",
                             LrgsErrorCode.DBADDCPNAME);
                     }
-                    addDcpName(st.nextToken());
+                    addDcpName(ln.substring(kw.length()).trim());
                 }
                 else if (kw.equalsIgnoreCase("DCP_ADDRESS:")
                       || kw.equalsIgnoreCase("DCPADDRESS:"))
