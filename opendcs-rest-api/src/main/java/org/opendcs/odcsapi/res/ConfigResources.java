@@ -132,7 +132,7 @@ public final class ConfigResources extends OpenDcsResource
 		{
 			PlatformConfig config = new PlatformConfig();
 			config.setId(DbKey.createDbKey(configId));
-			config = dbIo.readConfig(config);
+			dbIo.readConfig(config);
 			return Response.status(HttpServletResponse.SC_OK).entity(map(config)).build();
 		}
 		catch (ValueNotFoundException ex)
