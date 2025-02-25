@@ -25,7 +25,7 @@ import java.text.SimpleDateFormat;
 Takes up to 5 input values labeled input1 ... input5.
 the callproc property will have all the proper procedure call elements already established
 so all this program has to do is call the procedure
-the <<input1>>... <<input5>> and <<,tsbt>> can be used if you want to use the procedure call dynamic
+the <input1>... <input5> and <,tsbt> can be used if you want to use the procedure call dynamic
  */
 //AW:JAVADOC_END
 public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
