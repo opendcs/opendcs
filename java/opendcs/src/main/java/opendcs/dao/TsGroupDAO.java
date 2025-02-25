@@ -460,6 +460,8 @@ public class TsGroupDAO
 
 		q = "DELETE from tsdb_group WHERE group_id = " + groupId;
 		doModify(q);
+
+		cache.remove(groupId);
 	}
 
 	@Override
