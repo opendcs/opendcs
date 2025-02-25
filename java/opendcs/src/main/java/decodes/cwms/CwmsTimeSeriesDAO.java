@@ -372,6 +372,11 @@ public class CwmsTimeSeriesDAO
             }
         }
 
+        if (tsid == null)
+        {
+            throw new BadTimeSeriesException("Could not retrieve timeseries meta data. TimeSeriesIdentifier is not present.");
+        }
+
         // Part of the contract is to honor the units already specified
         // in the CTimeSeries.
         UnitConverter unitConverter = db.makeUnitConverterForRead(cts);
@@ -1058,8 +1063,15 @@ public class CwmsTimeSeriesDAO
         DbKey sdi = tsid.getKey();
         CTimeSeries ret = new CTimeSeries(sdi, tsid.getInterval(),
             tsid.getTableSelector());
-        ret.setTimeSeriesIdentifier(tsid);
-        ret.setDisplayName(tsid.getDisplayName());
+        try
+        {
+            fillTimeSeriesMetadata(ret);
+            ret.setDisplayName(tsid.getDisplayName());
+        }
+        catch(BadTimeSeriesException ex)
+        {
+            throw new NoSuchObjectException(ex.getMessage());
+        }
         return ret;
     }
 
