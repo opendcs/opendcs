@@ -35,8 +35,12 @@ final class TestSingleSignOn extends SingleSignOn
 	public void invoke(Request request, Response response) throws IOException, ServletException
 	{
 		String value = "ABCD";
-		request.addCookie(new Cookie(Constants.SINGLE_SIGN_ON_COOKIE, value));
-		response.addCookie(new Cookie(Constants.SINGLE_SIGN_ON_COOKIE, value));
+		Cookie cookie = new Cookie(Constants.SINGLE_SIGN_ON_COOKIE, value);
+		cookie.setSecure(true);
+		cookie.setHttpOnly(true);
+		cookie.setComment("OpenDCS Dev Environment Only");
+		request.addCookie(cookie);
+		response.addCookie(cookie);
 		cache.put(value, new SingleSignOnEntry(() -> System.getProperty("DB_USERNAME"), "test",
 				System.getProperty("DB_USERNAME"), System.getProperty("DB_PASSWORD")));
 		super.invoke(request, response);

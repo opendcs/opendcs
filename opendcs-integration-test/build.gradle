@@ -92,6 +92,7 @@ tasks.register('generateConfig', Copy) {
 }
 
 tasks.register('run', JavaExec) {
+    dependsOn build
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     def guiWar = project(':opendcs-web-client').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     group "application"
@@ -112,6 +113,35 @@ tasks.register('run', JavaExec) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
     systemProperties.put("org.apache.tomcat.util.digester.PROPERTY_SOURCE", "org.apache.tomcat.util.digester.EnvironmentPropertySource")
     def port = project.findProperty("opendcs.tomcat.port") ?: "7000"
+    def databaseType = project.findProperty("opendcs.test.integration.db") ?: "OpenDCS-Postgres"
+    def tomcatDir = layout.buildDirectory.file("tomcat").get()
+    args tomcatDir, port, restWar, guiWar, databaseType
+    def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
+    systemProperties.put("DCSTOOL_HOME", outputDir)
+}
+
+tasks.register('owaspZap', JavaExec) {
+    dependsOn build
+    def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    def guiWar = project(':opendcs-web-client').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    group "application"
+    doFirst {
+        classpath = classpath.filter {
+            !it.name.endsWith('opendcs-7.0.13.jar')
+        }
+    }
+    dependsOn(':opendcs-rest-api:war', ':opendcs-web-client:war')
+    dependsOn generateConfig
+    dependsOn downloadAndUnzipInstaller
+
+
+    mainClass = "org.opendcs.odcsapi.owasp.OwaspZap"
+    classpath += sourceSets.test.runtimeClasspath
+    classpath += configurations.testRuntimeClasspath
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
+    systemProperties.put("org.apache.tomcat.util.digester.PROPERTY_SOURCE", "org.apache.tomcat.util.digester.EnvironmentPropertySource")
+    def port = project.findProperty("opendcs.tomcat.port") ?: "8910"
     def databaseType = project.findProperty("opendcs.test.integration.db") ?: "OpenDCS-Postgres"
     def tomcatDir = layout.buildDirectory.file("tomcat").get()
     args tomcatDir, port, restWar, guiWar, databaseType

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -178,37 +178,5 @@ tasks.register('startJettyOdcsApi', JavaExec) { ->
             environment 'OPENDCS_USERNAME', project.findProperty("postgresdb.username")
             environment 'OPENDCS_PASSWORD', project.findProperty("postgresdb.password")
         }
-    }
-}
-
-tasks.register('renameTarball', Copy) {
-    dependsOn 'bundle'
-
-    from bundle.getArchiveFile().get().getAsFile()
-    into bundle.getArchiveFile().get().getAsFile().getParent()
-    rename { 'opendcs-rest-api-jetty.tgz' }
-}
-
-tasks.register('buildDockerImages', Exec) {
-    group = 'build'
-    dependsOn renameTarball
-    dependsOn downloadOpenDcsInstaller
-    doFirst {
-        commandLine 'docker-compose', 'build', 'opendcs-api'
-    }
-}
-
-tasks.register('runOwaspZap', Exec) {
-    group = 'run'
-    dependsOn buildDockerImages
-    doFirst {
-        commandLine 'docker-compose', 'up', '--abort-on-container-exit', 'zap'
-    }
-}
-
-tasks.register('stopOwaspZap', Exec) {
-    group = 'run'
-    doFirst {
-        commandLine 'docker-compose', 'down'
     }
 }

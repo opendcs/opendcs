@@ -51,7 +51,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
  * Tomcat server for ./gradle run and
  * Integration tests
  */
-public final class TomcatServer
+public final class TomcatServer implements AutoCloseable
 {
 	private static final Logger logger = LoggerFactory.getLogger(TomcatServer.class);
 	private final Tomcat tomcatInstance;
@@ -59,8 +59,8 @@ public final class TomcatServer
 	/**
 	 * Setups the baseline for tomcat to run.
 	 *
-	 * @param baseDir     set to the CATALINA_BASE directory the build has set up
-	 * @param port        Network port to listen on
+	 * @param baseDir set to the CATALINA_BASE directory the build has set up
+	 * @param port    Network port to listen on
 	 */
 	public TomcatServer(String baseDir, String port, String restWar, String guiWar) throws IOException
 	{
@@ -68,15 +68,17 @@ public final class TomcatServer
 		java.util.logging.Logger.getLogger(StandardJarScanner.class.getName()).setLevel(Level.SEVERE);
 		tomcatInstance = new Tomcat();
 		tomcatInstance.setBaseDir(baseDir);
+		Connector connector = new Connector();
+		connector.setSecure(true);
+		connector.setScheme("https");
+		connector.setPort(Integer.parseInt(port));
+		tomcatInstance.setConnector(connector);
 		Host host = tomcatInstance.getHost();
 		host.setAppBase("webapps");
 		String catalinaBase = tomcatInstance.getServer().getCatalinaBase().toString();
 		Files.createDirectories(Paths.get(catalinaBase, "temp"));
 		Files.createDirectories(Paths.get(catalinaBase, "webapps"));
 		tomcatInstance.setPort(Integer.parseInt(port));
-		Connector connector = tomcatInstance.getConnector();
-		connector.setSecure(true);
-		connector.setScheme("https");
 		tomcatInstance.setSilent(false);
 		tomcatInstance.enableNaming();
 		StandardContext restApiContext = (StandardContext) tomcatInstance.addWebapp("/odcsapi", restWar);
@@ -85,9 +87,9 @@ public final class TomcatServer
 		restApiContext.getPipeline().addValve(new TestSingleSignOn());
 		restApiContext.setReloadable(true);
 		restApiContext.setPrivileged(true);
-		restApiContext.removeParameter("opendcs.rest.api.cwms.office");
 		if(System.getProperty("DB_OFFICE") != null)
 		{
+			restApiContext.removeParameter("opendcs.rest.api.cwms.office");
 			restApiContext.addParameter("opendcs.rest.api.cwms.office", System.getProperty("DB_OFFICE"));
 		}
 
@@ -102,7 +104,7 @@ public final class TomcatServer
 		context.addServletMappingDecoded("/*", "sso");
 	}
 
-	private void start(String dbType) throws Exception
+	public void start(String dbType) throws Exception
 	{
 		tomcatInstance.start();
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
@@ -126,6 +128,11 @@ public final class TomcatServer
 		logger.info("Tomcat listening at http://localhost:{}", tomcatInstance.getConnector().getLocalPort());
 	}
 
+	public int getPort()
+	{
+		return tomcatInstance.getConnector().getLocalPort();
+	}
+
 	/**
 	 * Used for the ./gradlew run command.
 	 * Unit tests only need to call start and move on.
@@ -140,7 +147,8 @@ public final class TomcatServer
 	 *
 	 * @throws LifecycleException any error in the stop sequence
 	 */
-	public void stop() throws LifecycleException
+	@Override
+	public void close() throws LifecycleException
 	{
 		tomcatInstance.stop();
 	}
@@ -173,7 +181,7 @@ public final class TomcatServer
 		}
 	}
 
-	private static void setupDb(String dbType)
+	public static void setupDb(String dbType)
 	{
 		ConfigurationProvider provider = getProvider(dbType);
 		try
@@ -238,7 +246,7 @@ public final class TomcatServer
 		while(configs.hasNext())
 		{
 			ConfigurationProvider configProviderTmp = configs.next();
-			if (configProviderTmp.getImplementation().equals(dbType))
+			if(configProviderTmp.getImplementation().equals(dbType))
 			{
 				configProvider = configProviderTmp;
 			}
