@@ -259,7 +259,7 @@ public abstract class DatabaseIO
 	 @param pl the list to populate
 	 @param tmType the transport medium type to filter on
 	 */
-	public abstract PlatformList readPlatformList(PlatformList pl, String tmType)
+	public abstract void readPlatformList(PlatformList pl, String tmType)
 			throws DatabaseException;
 
 
@@ -280,6 +280,16 @@ public abstract class DatabaseIO
 	*/
 	public abstract void readRoutingSpecList(RoutingSpecList rsl)
 		throws DatabaseException;
+
+	/**
+	 Retrieves the list of RoutingStatus objects defined in this database.
+	 */
+	public abstract List<RoutingStatus> readRoutingSpecStatus() throws DatabaseException;
+
+	/**
+	 Retrieves the list of RoutingExecStatus objects defined in this database.
+	 */
+	public abstract List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException;
 
 	/**
 	Populates the list of Site objects defined in this database.
@@ -371,7 +381,7 @@ public abstract class DatabaseIO
 	* </p>
 	  @param p the platform to read
 	*/
-	public abstract Platform readPlatform( Platform p )
+	public abstract void readPlatform( Platform p )
 		throws DatabaseException;
 
 	/**
@@ -410,7 +420,7 @@ public abstract class DatabaseIO
 	* </p>
 	  @param pc the PlatformConfig to read
 	*/
-	public abstract PlatformConfig readConfig( PlatformConfig pc )
+	public abstract void readConfig( PlatformConfig pc )
 		throws DatabaseException;
 
 	/**
@@ -486,10 +496,10 @@ public abstract class DatabaseIO
 	/**
 	 * If the presentation group referenced by groupId is used by one or more routing
 	 * specs, return a list of routing specs populated with only IDs and names. If groupId is not used,
-	 * return null.
+	 * return an empty collection.
 	 * @param groupId the ID of the presentation group to check
-	 * @return List<RoutingSpec> list of routing specs populated with only IDs and names, or null if not used.
-	 * @throws SQLException if an error is encountered
+	 * @return List<RoutingSpec> list of routing specs populated with only IDs and names.
+	 * @throws DatabaseException if an error is encountered
 	 */
 	public abstract List<RoutingSpec> routeSpecsUsing(long groupId)
 			throws DatabaseException;
@@ -506,7 +516,6 @@ public abstract class DatabaseIO
 	 * Returns the most recent data that the platform list was modified, this
 	 * will be the time of the most-recent platform mod.
 	 * @return the most recent data that the platform list was modified.
-	 * @throws DatabaseException
 	 */
 	public abstract Date getPlatformListLMT();
 

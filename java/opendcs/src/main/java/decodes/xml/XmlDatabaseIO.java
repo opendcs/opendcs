@@ -1404,7 +1404,7 @@ e.printStackTrace();
 	 * </p>
 	 * @param p object in which to store data
 	 */
-	public Platform readPlatform( Platform p ) throws DatabaseException
+	public void readPlatform( Platform p ) throws DatabaseException
 	{
 		String fn = makePath(PlatformDir,
 			"p" + platIdFormat.format(p.getId().getValue()));
@@ -1427,7 +1427,7 @@ e.printStackTrace();
 			Logger.instance().debug1("XML readPlatform, fileLMT="
 				+ myParser.getFileLMT() + ", platformLMT=" + p.lastModifyTime);
 
-			return p;
+			return;
 		}
 		throw new DatabaseException(
 			"Cannot read platform from file '" + fn + "'");
@@ -1444,9 +1444,10 @@ e.printStackTrace();
 	 * @param pl object in which to store data
 	 * @param tmType the transport medium type to filter on
 	 */
-	public synchronized PlatformList readPlatformList(PlatformList pl, String tmType)
+	public synchronized void readPlatformList(PlatformList pl, String tmType)
 	{
-		throw new NotImplementedException("XmlDatabaseIO.readPlatformList(tmType)");
+		throw new UnsupportedOperationException(
+				"XmlDatabaseIO.readPlatformList(PlatformList, tmType) is not implemented for XML.");
 	}
 
 
@@ -1534,14 +1535,13 @@ e.printStackTrace();
 	 * @param pc object in which to store data
 	 * @throws DatabaseException
 	 */
-	public PlatformConfig readConfig( PlatformConfig pc ) throws DatabaseException
+	public void readConfig( PlatformConfig pc ) throws DatabaseException
 	{
 		String fn = "";
 		try
 		{
 			fn = makePath(PlatformConfigDir, pc.makeFileName());
 			myParser.parse(new File(fn), pc);
-			return pc;
 		}
 		catch(Exception e)
 		{
