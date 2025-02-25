@@ -157,7 +157,7 @@ public class SqlDatabaseIO
     extends DatabaseIO
     implements DatabaseConnectionOwner
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
     /**
      * The "location" of the SQL database, as passed into the constructor.
      * This is the full string from either the "DatabaseLocation" or the
@@ -1197,6 +1197,62 @@ public class SqlDatabaseIO
     public synchronized void readUnitConverterSet(UnitConverterSet ucs)
         throws DatabaseException
     {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            _unitConverterIO.read(ucs);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("readUnitConverterSet: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized void insertUnitConverter(UnitConverterDb uc)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            _unitConverterIO.addNew(uc);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("insertUnitConverter: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized void deleteUnitConverter(Long ucId)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            UnitConverterDb ucd = new UnitConverterDb(null, null);
+            ucd.setId(DbKey.createDbKey(ucId));
+            _unitConverterIO.delete(ucd);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deleteUnitConverterSet: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
     }
 
 
@@ -2109,6 +2165,30 @@ public class SqlDatabaseIO
             {
                 freeConnection(conn);
             }
+            _dataSourceListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * Deletes an EngineeringUnit from the database by its abbreviation.
+     * @param eu object with the abbreviation set.
+     * @throws DatabaseException if a database error occurs.
+     */
+    @Override
+    public synchronized void deleteEngineeringUnit(EngineeringUnit eu)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _engineeringUnitIO.setConnection(conn);
+            _engineeringUnitIO.delete(eu);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deleteDataSource.", ex);
+        }
+        finally
+        {
             _dataSourceListIO.setConnection(null);
         }
     }
