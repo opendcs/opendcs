@@ -1,15 +1,13 @@
 package org.opendcs.dao;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
-import static org.opendcs.fixtures.helpers.TestResources.getResource;
 
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.TimeZone;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.fixtures.AppTestBase;
@@ -32,26 +30,26 @@ import opendcs.dai.TimeSeriesDAI;
 
 @DecodesConfigurationRequired({
     "shared/test-sites.xml"})
-public class TimeSeriesDaoIT extends AppTestBase
+class TimeSeriesDaoIT extends AppTestBase
 {
-    private Logger log = LoggerFactory.getLogger(TimeSeriesDaoIT.class);
+    private final Logger log = LoggerFactory.getLogger(TimeSeriesDaoIT.class);
 
     @ConfiguredField
     private TimeSeriesDb tsDb;
 
     /**
      * This just tests that timeseries can be saved to the database, retrieved, and totally deleted.
-     * @param inputFile
-     * @throws Exception
+     * @param inputFile The input file containing the timeseries data to import.
+     * @throws Exception If there is an error importing the timeseries data.
      */
     @ParameterizedTest
     @CsvSource({
         "timeseries/${impl}/regular_ts.tsimport"
     })
     @EnableIfTsDb
-    public void test_timeseries_operations(String inputFile) throws Exception
+    void test_timeseries_operations(String inputFile) throws Exception
     {
-        TsImporter importer = new TsImporter(TimeZone.getTimeZone("UTC"), null, (tsIdStr) -> 
+        TsImporter importer = new TsImporter(TimeZone.getTimeZone("UTC"), null, tsIdStr ->
         {
             try
             {
@@ -72,25 +70,24 @@ public class TimeSeriesDaoIT extends AppTestBase
                 tsDao.saveTimeSeries(tsIn);
                 // Retrieve the TimeSeriesIdentifier that shouldn't been saved to the database.
                 // This will also fill in required metadata so that the retrieval operations are handled correctly.
-                FailableResult<TimeSeriesIdentifier,TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
+                FailableResult<TimeSeriesIdentifier, TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
                 assertTrue(tsIdSavedResult.isSuccess(), "Time series was not correctly saved.");
                 final TimeSeriesIdentifier tsIdSaved = tsIdSavedResult.getSuccess();
                 final CTimeSeries result = tsDao.makeTimeSeries(tsIdSaved);
                 result.setUnitsAbbr(tsIn.getUnitsAbbr());
                 log.info("Created CTimeseries {}", result);
                 tsDao.fillTimeSeries(result,
-                                     tsIn.sampleAt(0).getTime(), 
-                                     tsIn.sampleAt(tsIn.size()-1).getTime(),
-                                      true, true, false);
+                        tsIn.sampleAt(0).getTime(),
+                        tsIn.sampleAt(tsIn.size() - 1).getTime(),
+                        true, true, false);
                 log.info("Data loaded.");
                 assertEquals(tsIn, result, "Timeseries round trip did not work.");
-                tsDao.deleteTimeSeries(tsIn.getTimeSeriesIdentifier());
+                tsDao.deleteTimeSeries(tsIn.getTimeSeriesIdentifier()); // This will also delete the timeseries identifier.
                 final CTimeSeries result2 = tsDao.makeTimeSeries(tsIn.getTimeSeriesIdentifier());
-                tsDao.fillTimeSeries(result2,
-                                     tsIn.sampleAt(0).getTime(), 
-                                     tsIn.sampleAt(tsIn.size()-1).getTime(),
-                                      true, true, false);
-                assertTrue(result2.size() == 0, "Time series elements were left in the database.");
+                assertThrows(BadTimeSeriesException.class, () -> tsDao.fillTimeSeries(result2,
+                         tsIn.sampleAt(0).getTime(),
+                         tsIn.sampleAt(tsIn.size()-1).getTime(),
+                          true, true, false));
             }
         }
     }
