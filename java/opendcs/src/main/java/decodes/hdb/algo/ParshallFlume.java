@@ -38,7 +38,7 @@ import java.lang.Math;
    Output variables: flow (Calculated as determined above)
 
    Programmed by A. Gilmore July 2008;
-   modified by  M. Bogner  April 2009 to calculate for widths <= 9.0;
+   modified by  M. Bogner  April 2009 to calculate for widths &lt;= 9.0;
 
  */
 //AW:JAVADOC_END
