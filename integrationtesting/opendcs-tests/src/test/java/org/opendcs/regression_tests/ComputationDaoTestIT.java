@@ -42,8 +42,8 @@ final class ComputationDaoTestIT extends AppTestBase
 		{
 			TimeSeriesIdentifier tsIdInput = db.makeEmptyTsId();
 			TimeSeriesIdentifier tsIdOutput = db.makeEmptyTsId();
-			tsIdInput.setUniqueString("TESTSITE1.Stage.Inst.15Minutes.0.raw");
-			tsIdOutput.setUniqueString("TESTSITE1.Flow.Inst.15Minutes.0.raw");
+			tsIdInput.setUniqueString("TESTSITE1.Stage.Inst.30Minutes.0.raw");
+			tsIdOutput.setUniqueString("TESTSITE1.Flow.Inst.30Minutes.0.raw");
 			DbKey inputKey = tsDAI.createTimeSeries(tsIdInput);
 			DbKey outputKey = tsDAI.createTimeSeries(tsIdOutput);
 
