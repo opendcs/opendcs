@@ -10,9 +10,7 @@ OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embed
 
 # Structure
 ./opendcs-rest-api - contains source files for the OpenDCS REST API
-./opendcs-rest-api-jetty - contains build scripts for generating a standalone Jetty installer for the OPENDCS REST API   
 ./opendcs-web-client - contains source files for the OpenDCS Web Application Client
-./opendcs-web-client-jetty - contains build scripts for generating a standalone Jetty installer for the web client
 ./opendcs-integration-test - contains scripts for running embedded tomcat to deploy the REST API and Web Client wars for testing.
 
 
@@ -38,59 +36,6 @@ properties that should be configured for your system.
 
 ## OPENDCS Web Client
 The gradle task `./gradlew :opendcs-web-client:war` will create a war file in the `build/libs` directory.
-
-##	OPENDCS API Jetty Standalone Installer
-
-The Root URL for the service is specified using the command line arguments when the JETTY server is started. If the defaults are used, you can access the service from the local machine with:
-http://localhost:8080/odcsapi/function-call
-
-For example, to get a list of platform references:
-http://localhost:8080/odcsapi/platformrefs
-
-The gradle task `./gradlew :opendcs-rest-api-jetty:bundle` will create a tar ball in the `build/distributions` directory.  
-This tar ball can be extracted and run with the `start.sh` script.  
-The `start.sh` script can be configured with the following arguments:
-
--	Create a shell script, to run start.sh with some extra configurations.
-     - Example shell script:
-        ```
-        export DCSTOOL_HOME=/home/opendcs/OPENDCS
-        export DCSTOOL_USERDIR=/home/opendcs
-        export JAVA_OPTS="-DDCSTOOL_HOME=$DCSTOOL_HOME -DDCSTOOL_USERDIR=$DCSTOOL_USERDIR"
-        export JAVA_ARGS="-p 8081 -c odcsapi -cors /home/testuser/OPENDCS/opendcs_web_cors.cfg"
-        ./start.sh
-        ```
-- The java args help configure the server
-     - -cors
-          -	A cors file that helps configure the cors settings of the server.  Below is an example of text in a cors file.
-          ```
-          Access-Control-Allow-Origin:*
-          Access-Control-Allow-Headers:X-Requested-With,Content-Type,Accept,Origin,authorization
-          Access-Control-Allow-Methods:GET,POST,HEAD,OPTIONS,DELETE
-          ```
-     - -c
-       - The context (relative url path) of the API.
-  - -p
-      - HTTP port number
-  - -sp
-    - HTTPS port number.  Requires a key and a key password to work.
-  - -key
-    - Path to a key that can be accessed by the webserver.
-  - -kp
-    - Key Password (the password that was used to generate the key).
-  - -P
-    - Decodes Properties file path (by default it’s at $DCSTOOL_HOME/decodes.properties.
-
-Additionally, the build can run from a developer environment using the gradle task `./gradlew :opendcs-rest-api-jetty:startJetty`.
-Properties read from gradle.properties will be used to configure the server.
-
-##	OPENDCS Web Client Jetty Standalone Installer
-The gradle task `./gradlew :opendcs-web-client-jetty:bundle` will create a tar ball in the `build/distributions` directory.  
-This tar ball can be extracted and run with the `start.sh` script.  
-The `start.sh` script can be configured with the following arguments:
-
-Additionally, the build can run from a developer environment using the gradle task `./gradlew :opendcs-web-client-jetty:startJetty`.
-Properties read from gradle.properties will be used to configure the server.
 
 # CI/CD
 The GitHub Action workflow [default.yml](./.github/workflows/default.yml) contains the primary CI/CD pipeline for the project.

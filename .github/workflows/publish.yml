@@ -30,13 +30,3 @@ jobs:
           gh release upload ${{ github.event.release.tag_name }} opendcs-web-client/build/libs/opendcs-web-client-${{ github.event.release.tag_name }}.war --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Attach OpenDCS REST API Jetty Tarball file
-        run: |
-          gh release upload ${{ github.event.release.tag_name }} opendcs-rest-api-jetty/build/distributions/opendcs-rest-api-jetty-${{ github.event.release.tag_name }}.tar.gz --repo ${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Attach OpenDCS Web Client Jetty Tarball file
-        run: |
-          gh release upload ${{ github.event.release.tag_name }} opendcs-web-client-jetty/build/distributions/opendcs-web-client-jetty-${{ github.event.release.tag_name }}.tar.gz --repo ${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

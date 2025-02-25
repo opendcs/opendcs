@@ -16,7 +16,5 @@
 rootProject.name = "opendcs_rest_api"
 
 include "opendcs-rest-api"
-include "opendcs-rest-api-jetty"
 include "opendcs-web-client"
-include "opendcs-web-client-jetty"
 include "opendcs-integration-test"

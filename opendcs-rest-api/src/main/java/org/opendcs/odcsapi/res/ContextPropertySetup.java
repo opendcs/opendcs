@@ -21,7 +21,6 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 
 import org.opendcs.odcsapi.hydrojson.DbInterface;
-import org.opendcs.odcsapi.start.StartException;
 
 @WebListener
 public final class ContextPropertySetup implements ServletContextListener
@@ -40,14 +39,7 @@ public final class ContextPropertySetup implements ServletContextListener
 		String databaseType = servletContext.getInitParameter("editDatabaseType");
 		if(databaseType != null && !databaseType.isEmpty())
 		{
-			try
-			{
-				DbInterface.setDatabaseType(databaseType);
-			}
-			catch(StartException e)
-			{
-				throw new IllegalStateException("Error setting database type: " + databaseType, e);
-			}
+			DbInterface.setDatabaseType(databaseType);
 		}
 		String authCheck = servletContext.getInitParameter("opendcs.rest.api.authorization.type");
 		if(authCheck != null && !authCheck.isEmpty())

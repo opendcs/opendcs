@@ -28,7 +28,6 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.start.StartException;
 import org.opendcs.odcsapi.util.ApiConstants;
 
 /**
@@ -143,11 +142,10 @@ public final class DbInterface implements AutoCloseable
 	}
 
 	public static void setDatabaseType(String dbType)
-		throws StartException
 	{
 		isHdb = isOpenTsdb = isCwms = false;
 		if (dbType.equalsIgnoreCase("xml"))
-			throw new StartException("API cannot run over an XML database.");
+			throw new IllegalArgumentException("API cannot run over an XML database.");
 		else if (dbType.equalsIgnoreCase("url") || dbType.equalsIgnoreCase("sql"))
 		{
 			isHdb = isOpenTsdb = isCwms = false;
