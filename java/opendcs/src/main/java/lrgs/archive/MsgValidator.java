@@ -100,7 +100,7 @@ public class MsgValidator
 	/**
 	 * Validate a message, issuing callbacks for any problems found.
 	 * @param msg The message to validate
-	 * @param origAddr From a DRGS this is original address, null for other apps.
+	 * @param src from a DRGS this is original address, null for other apps.
 	 * @param localRecvTime message local receive-time
 	 */
 	public synchronized void validateMsg(DcpMsg msg, 
@@ -393,7 +393,7 @@ public class MsgValidator
 	}
 
 	/**
-	 * Call before application exit to release resources & stop the missing-
+	 * Call before application exit to release resources and stop the missing-
 	 * message check thread.
 	 */
 	public synchronized void shutdown()

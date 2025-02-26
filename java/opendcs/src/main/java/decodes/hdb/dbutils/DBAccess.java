@@ -47,8 +47,7 @@ public class DBAccess
 	 * Schema Identifier: (eg. USERNAME=cust_docs) 4. Schema Password: (eg.
 	 * PASSWORD=cust_docs)
 	 * 
-	 * @author Mark A. Bogner
-	 * @version 1.0
+	 * Mark A. Bogner
 	 * @return Returns a Connection to the database. Date: 09-April-2001
 	 */
 	public Connection getConnection(DataObject do1)
@@ -113,8 +112,7 @@ public class DBAccess
 	 * DML statemants That do inserts, updates deletes and DDL statements can be
 	 * used here
 	 * 
-	 * @author Mark A. Bogner
-	 * @version 1.0
+	 * Mark A. Bogner
 	 * @param query
 	 *            the Actual sql formatted query that is to be performed. Date:
 	 *            15-JANUARY-2003
@@ -155,8 +153,7 @@ public class DBAccess
 	 * multiple rows then the values are placed into the dataobject as a String,
 	 * ArrayList pair.
 	 * 
-	 * @author Mark A. Bogner
-	 * @version 1.0
+	 * Mark A. Bogner
 	 * @param query
 	 *            the Actual sql formatted query that is to be performed.
 	 * @param do1
@@ -319,15 +316,13 @@ public class DBAccess
 	 * each row. An Arraylist is then generated and returned for all rows
 	 * gathered.
 	 * 
-	 * @author Mark A. Bogner
-	 * @version 1.0
+	 * Mark A. Bogner
 	 * @param query
 	 *            the Actual sql formatted query that is to be performed.
-	 * @param db_object
+	 * @param do1
 	 *            the object that will contain the info necessary to query the
 	 *            database
-	 * @param do_list
-	 *            The arraylist the query results rows/dataobject will be placed
+	 * @return   The arraylist the query results rows/dataobject will be placed
 	 *            into. Date: 06-May-2004
 	 */
 	public ArrayList get_arraylist_query(String query, DataObject do1)
@@ -460,8 +455,8 @@ public class DBAccess
 	 * Public method closeConnection closes the database connection if the
 	 * instance variable conn is not null.
 	 * 
-	 * @author Mark A. Bogner
-	 * @version 1.0 Date: 09-April-2001
+	 * Mark A. Bogner
+	 * Date: 09-April-2001
 	 */
 	public void closeConnection()
 	{
@@ -486,7 +481,7 @@ public class DBAccess
 	 * is called with the _field input paramter and the returned String is
 	 * placed into the passed in DataObject.
 	 * 
-	 * @author Mark A. Bogner
+	 * Mark A. Bogner
 	 * @param _procname
 	 *            The procedure to be run with entire signature
 	 * 
@@ -520,7 +515,7 @@ public class DBAccess
 	 * procedure is called with the _field input paramter and the returned
 	 * String is placed into the passed in DataObject.
 	 * 
-	 * @author Mark A. Bogner
+	 * Mark A. Bogner
 	 * @param _field
 	 *            The merge field that is being requested data for
 	 * @param do1
@@ -568,7 +563,7 @@ public class DBAccess
 	 * procedure call knows what contract, database language etc.. the document
 	 * is related to.
 	 * 
-	 * @author Mark A. Bogner
+	 * Mark A. Bogner
 	 * @param do1
 	 *            The dataobject that will contain the data items this procedure
 	 *            needs

@@ -35,6 +35,10 @@ public interface DataTypeDAI
 	/** Fill the data type set with all known data types */
 	public void readDataTypeSet(DataTypeSet dts)
 		throws DbIoException;
+
+	/** Fill the data type set with all known data types, filtering by data type standard */
+	public void readDataTypeSet(DataTypeSet dts, String standard)
+			throws DbIoException;
 	
 	/** Write the entire data type set including all equivalencies to database 
 	 * @throws SQLException */
