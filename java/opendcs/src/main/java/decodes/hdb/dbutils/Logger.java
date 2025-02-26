@@ -27,41 +27,8 @@ public class Logger
   private        SimpleDateFormat  sdf = new SimpleDateFormat ("yyyy.MM.dd hh:mm:ss a z");
   private static Logger logger = null; 
 
-/*
-  static
-  {
-     try
-     {
-     defOut = new PrintWriter(new FileOutputStream("log_file.out",true));
-     } 
-     catch (FileNotFoundException e)
-     {
-     System.out.println("File not Found");
-     }
-  } // end of static initializer
-
-  // empty constructor
-  public Logger()
-  {
-   this(null);
-  }
-*/
 
  
-/** This constructor is used to log the class that calls it inorder
-    that the class name will appear in the log file
-
-    @param obj The class that calls it -- usually one would initialize
-    the logger like this Logger log = new Logger(this);
-*/
- /*
-  public Logger (Object obj)
-  {
-    if (obj != null) className = obj.getClass().getName();
-    if (out == null) out = defOut;
-  }
-*/
-
  
 /** This constructor is used to log the class that calls it inorder
     that the class name will appear in the user specified log file
@@ -101,7 +68,7 @@ public class Logger
        msg to the Logger classes output FileOutputStream.  This method will 
        write out the class name, the date and time and the supplied message.
 
-       @author Mark A. Bogner
+       Mark A. Bogner
        @param msg  The message that is to be written to the log file
     
        Date: 18-April-2001
@@ -138,7 +105,7 @@ public class Logger
    /** public method setDTFormat allows the user to redefine the loggers 
     date/time format if they prefer another
 
-    @author Mark A. Bogner
+    Mark A. Bogner
     @param _fmt The supplied SimpleDateFormat the user prefers to use
     
     Date: 18-April-2001
