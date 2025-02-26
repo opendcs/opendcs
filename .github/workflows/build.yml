@@ -35,14 +35,14 @@ jobs:
           dependency-graph: generate-and-submit
       - name: Build
         run: ./gradlew build
-        continue-on-error: true  # Allow Sonar analysis to run even if the build fails
       - name: Integration Tests CWMS
+        if: always()
         run: ./gradlew integrationTestCWMS --stacktrace --info
-        continue-on-error: true  # Allow Sonar analysis to run even if the build fails
       - name: Integration Tests OpenTSDB
+        if: always()
         run: ./gradlew integrationTestOpenTSDB --stacktrace --info
-        continue-on-error: true  # Allow Sonar analysis to run even if the build fails
       - name: Analyze
+        if: always()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
