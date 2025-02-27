@@ -665,8 +665,7 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
     }
     /**
      * Calculates the net long wave radiation (Hourly Time Step)
-     * @param T_k_max   max temperature in Kelvin
-     * @param T_k_min   min       "      "    "
+     * @param T_hr      temperature
      * @param r_s       measured short wave radiation
      * @param r_so      estimated clear sky radiation
      * @param e_a       actual vapor pressure

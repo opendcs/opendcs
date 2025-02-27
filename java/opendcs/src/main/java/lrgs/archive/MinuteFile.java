@@ -40,7 +40,7 @@ import java.io.BufferedOutputStream;
 import ilex.util.Logger;
 
 /**
-This class contains static methods for reading & writing a day file's
+This class contains static methods for reading and writing a day file's
 minute-index. The file is a binary array of 1440 MsgIndexMinute objects.
 */
 public class MinuteFile
