@@ -1,0 +1,12 @@
+{
+  "eventId": 1,
+  "routingExecId": 1,
+  "platformId": 1,
+  "eventTime": "2025-01-31T00:00:00.000Z[UTC]",
+  "priority": "DBG2   ",
+  "appId": 8,
+  "appName": null,
+  "subsystem": "Routing",
+  "msgRecvTime": "2025-01-31T00:30:00.000Z[UTC]",
+  "eventText": "Test event"
+}

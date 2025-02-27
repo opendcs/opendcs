@@ -1,0 +1,44 @@
+{
+  "routingId": null,
+  "name": "Application Routing",
+  "dataSourceId": 4,
+  "dataSourceName": "Routing Test Data Source",
+  "destinationType": "Test consumer",
+  "destinationArg": "Test consumer arg",
+  "enableEquations": true,
+  "outputFormat": "MM/DD/YYYY HH24:MI:SS",
+  "outputTZ": "UTC",
+  "presGroupName": "Group2",
+  "lastModified": "2024-01-03T18:57:53.613Z[UTC]",
+  "since": "2020-07-15T00:00:00Z",
+  "until": "2026-07-16T00:00:00Z",
+  "settlingTimeDelay": false,
+  "applyTimeTo": "Local Receive Time",
+  "ascendingTime": false,
+  "platformIds": [
+
+  ],
+  "platformNames": [
+
+  ],
+  "netlistNames": [
+
+  ],
+  "goesChannels": [
+
+  ],
+  "properties": {
+    "goesSelfTimed": "false",
+    "goesChannel": "1"
+  },
+  "goesSelfTimed": false,
+  "goesRandom": false,
+  "networkDCP": false,
+  "iridium": false,
+  "qualityNotifications": false,
+  "goesSpacecraftCheck": false,
+  "goesSpacecraftSelection": "East",
+  "parityCheck": false,
+  "paritySelection": "Good",
+  "production": false
+}

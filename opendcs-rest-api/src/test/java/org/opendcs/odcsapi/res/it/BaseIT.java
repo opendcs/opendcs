@@ -29,6 +29,7 @@ import decodes.db.DatabaseException;
 import decodes.db.PlatformStatus;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
+import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -189,7 +190,7 @@ class BaseIT
 	public static void storeScheduleEntryStatus(ScheduleEntryStatus status) throws DatabaseException
 	{
 		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (ScheduleEntryDAI dai = currentConfig.getTsdb().makeScheduleEntryDAO())
+		try (ScheduleEntryDAI dai = currentConfig.getDecodesDatabase().getDbIo().makeScheduleEntryDAO())
 		{
 			dai.writeScheduleStatus(status);
 		}
@@ -202,7 +203,7 @@ class BaseIT
 	public static void deleteScheduleEntryStatus(DbKey statusId) throws DatabaseException
 	{
 		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (ScheduleEntryDAI dai = currentConfig.getTsdb().makeScheduleEntryDAO())
+		try (ScheduleEntryDAI dai = currentConfig.getDecodesDatabase().getDbIo().makeScheduleEntryDAO())
 		{
 			ScheduleEntry entry = new ScheduleEntry(statusId);
 			dai.deleteScheduleStatusFor(entry);
