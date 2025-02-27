@@ -106,7 +106,7 @@ public class LqmInterfaceServer extends BasicServer
 	}
 
 	/**
-	  Starts a listening thread & calls this server's listen method.
+	  Starts a listening thread and calls this server's listen method.
 	*/
 	public void startListeningThread()
 	{

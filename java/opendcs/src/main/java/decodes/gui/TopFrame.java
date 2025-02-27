@@ -199,9 +199,6 @@ public class TopFrame extends JFrame
 	/** @return the panel for TS Groups */
 	public JPanel getTsGroupsListPanel() { return null; }
 	
-	/** @return the data type standard */
-//	public static String getDataTypeStandard() { return null; }
-	
 	public void setExitOnClose(boolean tf)
 	{
 		exitOnClose = tf;

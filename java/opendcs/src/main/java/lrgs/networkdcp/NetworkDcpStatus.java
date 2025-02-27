@@ -133,7 +133,7 @@ public class NetworkDcpStatus
     }
 
 	/**
-     * @param numPolls the numPolls to set
+     * @param numGoodPolls the numGoodPolls to set
      */
     public void setNumGoodPolls(long numGoodPolls)
     {

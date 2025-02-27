@@ -176,8 +176,8 @@ public class LritDcsDirMonitor extends DirectoryMonitorThread
 	}
 
 	/**
-	 * Overeloaded from FilenameFilter, return true if this file is to be
-	 * processed, according to the prefix & suffix supplied in the config.
+	 * Overloaded from FilenameFilter, return true if this file is to be
+	 * processed, according to the prefix and suffix supplied in the config.
 	 * @param dir the directory containing the file (ignored)
 	 * @param name the file name.
 	 */
