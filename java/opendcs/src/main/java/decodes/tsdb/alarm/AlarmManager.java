@@ -422,7 +422,7 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 	 * enqueued for the thread running in the background. (We don't want to burden the compproc
 	 * main thread with sending email.)
 	 * @param tsid
-	 * @param tLimitSet
+	 * @param limitSet
 	 * @param t
 	 * @param value
 	 * @param delta
