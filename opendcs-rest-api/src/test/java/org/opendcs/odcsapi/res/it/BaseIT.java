@@ -30,11 +30,14 @@ import decodes.db.PlatformStatus;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
 import decodes.sql.DbKey;
+import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.TimeSeriesIdentifier;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
+import opendcs.dai.TimeSeriesDAI;
 import org.apache.catalina.session.StandardSession;
 import org.opendcs.fixtures.configuration.Configuration;
 import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
@@ -233,6 +236,32 @@ class BaseIT
 		catch (Throwable ex)
 		{
 			throw new DatabaseException("Error deleting platform status", ex);
+		}
+	}
+
+	public static void storeTimeSeries(CTimeSeries ts) throws Exception
+	{
+		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
+		try (TimeSeriesDAI dai = currentConfig.getTsdb().makeTimeSeriesDAO())
+		{
+			dai.saveTimeSeries(ts);
+		}
+		catch (Throwable ex)
+		{
+			throw new DatabaseException("Error storing time series", ex);
+		}
+	}
+
+	public static void deleteTimeSeries(TimeSeriesIdentifier id) throws Exception
+	{
+		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
+		try (TimeSeriesDAI dai = currentConfig.getTsdb().makeTimeSeriesDAO())
+		{
+			dai.deleteTimeSeries(id);
+		}
+		catch (Throwable ex)
+		{
+			throw new DatabaseException("Error deleting time series", ex);
 		}
 	}
 }

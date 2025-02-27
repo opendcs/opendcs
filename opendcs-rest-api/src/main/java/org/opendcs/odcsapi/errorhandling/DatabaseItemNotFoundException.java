@@ -19,31 +19,31 @@ import javax.servlet.http.HttpServletResponse;
 
 public final class DatabaseItemNotFoundException extends WebAppException
 {
-  /** detailed error msg */
-  private String errMessage = "";
+	/** detailed error msg */
+	private String errMessage = "";
 
-  public DatabaseItemNotFoundException(String errMessage)
-  {
-    super(HttpServletResponse.SC_NOT_FOUND, errMessage);
-    this.errMessage = errMessage;
-  }
-  
-  public DatabaseItemNotFoundException(String errMessage, Throwable cause)
-  {
-    super(HttpServletResponse.SC_NOT_FOUND, errMessage, cause);
-    this.errMessage = errMessage;
-  }
+	public DatabaseItemNotFoundException(String errMessage)
+	{
+		super(HttpServletResponse.SC_NOT_FOUND, errMessage);
+		this.errMessage = errMessage;
+	}
 
-  @Override
-  public int getStatus()
-  {
-    return HttpServletResponse.SC_NOT_FOUND;
-  }
+	public DatabaseItemNotFoundException(String errMessage, Throwable cause)
+	{
+		super(HttpServletResponse.SC_NOT_FOUND, errMessage, cause);
+		this.errMessage = errMessage;
+	}
 
-  @Override
-  public String getErrMessage()
-  {
-    return errMessage;
-  }
+	@Override
+	public int getStatus()
+	{
+		return HttpServletResponse.SC_NOT_FOUND;
+	}
+
+	@Override
+	public String getErrMessage()
+	{
+		return errMessage;
+	}
 
 }

@@ -163,40 +163,35 @@ final class ReflistResourcesIT extends BaseIT
 
 		JsonPath actual = response.body().jsonPath();
 		Map<String, Object> actualMap = actual.getMap("");
-		Map<String, Object> expectedMap = expected.getMap("");
-
+		Map<String, Object> expectedObj = expected.getMap("monthsEnum");
+		boolean found = false;
 		for (Map.Entry<String, Object> item : actualMap.entrySet())
 		{
-			boolean found = false;
-			for (Map.Entry<String, Object> expItem : expectedMap.entrySet())
+			Map<String, Object> actualObj = (Map<String, Object>) item.getValue();
+			if (item.getKey().equalsIgnoreCase(expectedObj.get("enumName").toString()))
 			{
-				Map<String, Object> expectedObj = (Map<String, Object>) expItem.getValue();
-				Map<String, Object> actualObj = (Map<String, Object>) item.getValue();
-				if (item.getKey().equalsIgnoreCase(expectedObj.get("enumName").toString()))
+				assertEquals(expectedObj.get("defaultValue"), actualObj.get("defaultValue"));
+				assertEquals(expectedObj.get("description"), actualObj.get("description"));
+				Map<String, Object> actualItem = (Map<String, Object>) actualObj.get("items");
+				Map<String, Object> expectedItem = (Map<String, Object>) expectedObj.get("items");
+				assertEquals(expectedItem.size(), actualItem.size());
+				if (!actualItem.isEmpty())
 				{
-					assertEquals(expectedObj.get("defaultValue"), actualObj.get("defaultValue"));
-					assertEquals(expectedObj.get("description"), actualObj.get("description"));
-					Map<String, Object> actualItem = (Map<String, Object>) actualObj.get("items");
-					Map<String, Object> expectedItem = (Map<String, Object>) expectedObj.get("items");
-					assertEquals(expectedItem.size(), actualItem.size());
-					if (!actualItem.isEmpty())
+					for (Map.Entry<String, Object> entry : actualItem.entrySet())
 					{
-						for (Map.Entry<String, Object> entry : actualItem.entrySet())
-						{
-							Map<String, Object> actualVal = (Map<String, Object>) entry.getValue();
-							Map<String, Object> expectedVal = (Map<String, Object>) expectedItem.get(entry.getKey());
-							assertEquals(expectedVal.get("value"), actualVal.get("value"));
-							assertEquals(expectedVal.get("description"), actualVal.get("description"));
-							assertEquals(expectedVal.get("execClassName"), actualVal.get("execClassName"));
-							assertEquals(expectedVal.get("editClassName"), actualVal.get("editClassName"));
-							assertEquals(expectedVal.get("sortNumber"), actualVal.get("sortNumber"));
-						}
+						Map<String, Object> actualVal = (Map<String, Object>) entry.getValue();
+						Map<String, Object> expectedVal = (Map<String, Object>) expectedItem.get(entry.getKey());
+						assertEquals(expectedVal.get("value"), actualVal.get("value"));
+						assertEquals(expectedVal.get("description"), actualVal.get("description"));
+						assertEquals(expectedVal.get("execClassName"), actualVal.get("execClassName"));
+						assertEquals(expectedVal.get("editClassName"), actualVal.get("editClassName"));
+						assertEquals(expectedVal.get("sortNumber"), actualVal.get("sortNumber"));
 					}
-					found = true;
 				}
+				found = true;
 			}
-			assertTrue(found);
 		}
+		assertTrue(found);
 	}
 
 	@TestTemplate
