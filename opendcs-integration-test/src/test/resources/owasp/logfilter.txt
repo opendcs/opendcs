@@ -13,5 +13,8 @@
 #  limitations under the License.
 #
 
-handlers = org.slf4j.bridge.SLF4JBridgeHandler
-.level = INFO
+#We don't want to capture any error logs from OWASP ZAP scan
+org.opendcs.odcsapi.res.AppExceptionMapper
+
+#Tomcat jar scan is noisy
+org.apache.tomcat.util.scan.StandardJarScanner

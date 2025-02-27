@@ -60,7 +60,6 @@ public final class OpenDcsDatabaseFactory
 			LOGGER.atWarn().setCause(e).log("Temporary solution forcing OpenTSDB");
 			DecodesSettings decodesSettings = new DecodesSettings();
 			decodesSettings.CwmsOfficeId = System.getProperty("DB_OFFICE");
-			decodesSettings.sqlKeyGenerator = System.getProperty("KEYGENERATOR");
 			try(Connection connection = dataSource.getConnection())
 			{
 				DatabaseProvider databaseProvider;

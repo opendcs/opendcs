@@ -18,7 +18,6 @@ package org.opendcs.odcsapi.fixtures;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.logging.Level;
 
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
@@ -29,7 +28,6 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.HostConfig;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.opendcs.odcsapi.res.ContextPropertySetup;
 import org.opendcs.odcsapi.res.DataSourceContextCreator;
 import org.slf4j.Logger;
@@ -57,7 +55,6 @@ public final class TomcatServer
 	 */
 	public TomcatServer(String baseDir, int port, String contextName) throws IOException
 	{
-		java.util.logging.Logger.getLogger(StandardJarScanner.class.getName()).setLevel(Level.SEVERE);
 		tomcatInstance = new Tomcat();
 		tomcatInstance.setBaseDir(baseDir);
 		Host host = tomcatInstance.getHost();

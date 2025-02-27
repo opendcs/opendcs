@@ -94,6 +94,7 @@ org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi
 org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
 org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
 commons-lang = { module = "commons-lang:commons-lang", version.ref = "commons-lang" }
+jul-to-slf4j = { module = "org.slf4j:jul-to-slf4j", version = "2.0.16"}
 
 [bundles]
 tomcat = ["tomcat-embedded-core", "tomcat-embedded-jasper", "tomcat-jdbc"]

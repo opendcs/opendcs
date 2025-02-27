@@ -26,7 +26,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import java.util.logging.Level;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
@@ -35,13 +34,13 @@ import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.io.FileUtils;
-import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.junit.platform.commons.PreconditionViolationException;
 import org.opendcs.fixtures.configuration.Configuration;
 import org.opendcs.fixtures.configuration.ConfigurationProvider;
 import org.opendcs.fixtures.configuration.cwms.CwmsOracleConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -64,8 +63,6 @@ public final class TomcatServer implements AutoCloseable
 	 */
 	public TomcatServer(String baseDir, String port, String restWar, String guiWar) throws IOException
 	{
-		//Tries to scan files in gradle cache that don't exist (like internationalization)
-		java.util.logging.Logger.getLogger(StandardJarScanner.class.getName()).setLevel(Level.SEVERE);
 		tomcatInstance = new Tomcat();
 		tomcatInstance.setBaseDir(baseDir);
 		Connector connector = new Connector();
@@ -164,6 +161,8 @@ public final class TomcatServer implements AutoCloseable
 	{
 		try
 		{
+			SLF4JBridgeHandler.removeHandlersForRootLogger();
+			SLF4JBridgeHandler.install();
 			String baseDir = args[0];
 			String port = args[1];
 			String restWar = args[2];

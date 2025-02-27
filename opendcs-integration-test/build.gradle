@@ -65,6 +65,7 @@ dependencies {
 
     //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
     testImplementation(files("../opendcs-rest-api/temp-deps/opendcs-integrationtesting-fixtures.jar"))
+    testImplementation(libs.jul.to.slf4j)
 }
 
 configurations.all {
@@ -112,6 +113,8 @@ tasks.register('run', JavaExec) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
     systemProperties.put("org.apache.tomcat.util.digester.PROPERTY_SOURCE", "org.apache.tomcat.util.digester.EnvironmentPropertySource")
+    systemProperties.put("DCSTOOL_USERDIR", "build/resources/test/tomcat/conf")
+
     def port = project.findProperty("opendcs.tomcat.port") ?: "7000"
     def databaseType = project.findProperty("opendcs.test.integration.db") ?: "OpenDCS-Postgres"
     def tomcatDir = layout.buildDirectory.file("tomcat").get()
@@ -141,6 +144,7 @@ tasks.register('owaspZap', JavaExec) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("opendcs") }
     systemProperties.put("org.apache.tomcat.util.digester.PROPERTY_SOURCE", "org.apache.tomcat.util.digester.EnvironmentPropertySource")
+    systemProperties.put("DCSTOOL_USERDIR", "build/resources/test/owasp")
     def port = project.findProperty("opendcs.tomcat.port") ?: "8910"
     def databaseType = project.findProperty("opendcs.test.integration.db") ?: "OpenDCS-Postgres"
     def tomcatDir = layout.buildDirectory.file("tomcat").get()

@@ -75,6 +75,7 @@ dependencies {
     testImplementation(libs.hec.testcontainers.cwms)
     testImplementation(libs.bundles.jdbi)
     testImplementation(libs.org.flywaydb.flyway.core)
+    testRuntimeOnly(libs.jul.to.slf4j)
 
     //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
     testImplementation(files("temp-deps/opendcs-integrationtesting-fixtures.jar"))
@@ -166,12 +167,13 @@ tasks.register('integrationTestOpenTSDB', Test) {
     dependsOn generateConfig
     dependsOn downloadAndUnzipInstaller
     jvmArgs += "-DwarContext=/opendcs-rest-api"
-    jvmArgs += "-Djava.util.logging.config.file=$projectDir/test/resources/logging.properties"
+    jvmArgs += "-Djava.util.logging.config.file=src/test/resources/logging.properties"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
     jvmArgs += "-Dopendcs.test.integration.db=OpenDCS-Postgres"
     def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
     systemProperties.put("DCSTOOL_HOME", outputDir)
+    systemProperties.put("DCSTOOL_USERDIR", "build/resources/test/tomcat/conf")
     finalizedBy integrationTestReportOpenTSDB
 }
 
@@ -197,6 +199,7 @@ tasks.register('integrationTestCWMS', Test) {
     jvmArgs += "-Dopendcs.test.integration.db=CWMS-Oracle"
     def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
     systemProperties.put("DCSTOOL_HOME", outputDir)
+    systemProperties.put("DCSTOOL_USERDIR", "build/resources/test/tomcat/conf")
     finalizedBy integrationTestReportCWMS
 }
 
