@@ -1683,7 +1683,7 @@ The replaceValueWith(find, replace) function configures values to be replaced. C
 
 For example, if your CSV data uses the letter 'T' to indicate trace precipitation, this function can replace 'T' with a specified value. The image above demonstrates replacing 'T' with 0.0.
 
-
+status: replaceValueWith is only supported inside the csv() function.
 
 
 Check Operation - C(*,*label*\)
