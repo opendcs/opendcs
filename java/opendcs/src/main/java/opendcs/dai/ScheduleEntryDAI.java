@@ -84,12 +84,12 @@ public interface ScheduleEntryDAI
 		throws DbIoException;
 
 	/**
-	 * Read a single schedule entry status by its ID
+	 * Read a single schedule entry by an associated status ID
 	 * @param scheduleEntryStatusId the database key of the status entry
-	 * @return ScheduleEntryStatus or null if no match found.
+	 * @return ScheduleEntry or null if no match found.
 	 * @throws DbIoException on database error
 	 */
-	ScheduleEntryStatus readScheduleStatusById(DbKey scheduleEntryStatusId) throws DbIoException;
+	ScheduleEntry readScheduleEntryByStatusId(DbKey scheduleEntryStatusId) throws DbIoException;
 
 	/**
 	 * Write the passed schedule status to the database. This may be an

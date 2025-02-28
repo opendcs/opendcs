@@ -151,6 +151,12 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		return null;
 	}
 
+	@Override
+	public ScheduleEntry readScheduleEntryByStatusId(DbKey statusId)
+	{
+		throw new UnsupportedOperationException("XML Database does not support this operation.");
+	}
+
 
 	@Override
 	public boolean checkScheduleEntry(ScheduleEntry scheduleEntry)

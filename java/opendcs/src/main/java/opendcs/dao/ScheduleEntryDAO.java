@@ -55,6 +55,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -467,44 +468,47 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
     }
 
 	/**
-	 * Read a single schedule entry status by its ID
+	 * Read a single schedule entry by an associated status ID
 	 * @param scheduleEntryStatusId the database key of the status entry
 	 * @return ScheduleEntryStatus or null if no match found.
 	 * @throws DbIoException on database error
 	 */
 	@Override
-	public ScheduleEntryStatus readScheduleStatusById(DbKey scheduleEntryStatusId) throws DbIoException
+	public ScheduleEntry readScheduleEntryByStatusId(DbKey scheduleEntryStatusId) throws DbIoException
 	{
-		ArrayList<ScheduleEntryStatus> ret = new ArrayList<>();
+		if (scheduleEntryStatusId == null || scheduleEntryStatusId.isNull())
+		{
+			throw new DbIoException("ScheduleEntryStatus ID is null");
+		}
+		List<DbKey> ret = new ArrayList<>();
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
 		{
 			return null;
 		}
 
-		String q = "select " + sesColumns + " from " + sesTables + " where " + sesJoinClause;
-		ArrayList<Object> parameters = new ArrayList<>();
-		if (scheduleEntryStatusId != null && scheduleEntryStatusId != DbKey.NullKey)
-		{
-			q = q + " and a.schedule_entry_status_id = ?";
-			parameters.add(scheduleEntryStatusId.getValue());
-		}
-		q = q + " order by a.run_start_time desc";
+		String q = "select a.schedule_entry_id from " + sesTables + " where " + sesJoinClause
+				+ " and a.schedule_entry_status_id = ? order by a.run_start_time desc";
 
 		try
 		{
 			doQuery(q, rs ->
-					{
-						ScheduleEntryStatus ses = new ScheduleEntryStatus(DbKey.createDbKey(rs, 1));
-						rs2scheduleEntryStatus(rs, ses);
-						ret.add(ses);
-					},
-					parameters.toArray(new Object[0]));
+					ret.add(DbKey.createDbKey(rs, 1)),
+				scheduleEntryStatusId.getValue());
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("Error in query '" + q + "'", ex);
 		}
-		return ret.get(0);
+		if (ret.isEmpty())
+		{
+			return null;
+		}
+		else if (ret.size() > 1)
+		{
+			throw new DbIoException(String.format("Multiple schedule entry statuses found for single status ID %d",
+					scheduleEntryStatusId.getValue()));
+		}
+		return readScheduleEntry(ret.get(0));
 	}
 
     /**
