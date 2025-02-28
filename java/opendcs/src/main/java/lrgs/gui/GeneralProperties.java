@@ -114,14 +114,6 @@ public class GeneralProperties
 		GuiApp.rmProperty("SearchCritEditor.Help");
 
 	}
-
-	/** @return the URL for the root of the help directory. */
-	public static String getHelpRootUrl()
-	{
-		String version = LrgsBuild.version;
-		return "https://opendcs-env.readthedocs.io/en/latest/"+version;
-	}
-
 }
 
 
