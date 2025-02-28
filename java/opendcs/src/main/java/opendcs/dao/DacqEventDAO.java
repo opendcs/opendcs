@@ -288,7 +288,7 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 			else if (timeInMillis != null)
 			{
 				q = q + " " + c + " EVENT_TIME >= ?";
-				parameters.add(timeInMillis);
+				parameters.add(new Date(timeInMillis));
 			}
 		}
 
