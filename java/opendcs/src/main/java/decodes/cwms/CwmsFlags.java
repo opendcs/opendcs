@@ -103,7 +103,7 @@ public class CwmsFlags
 	/**
 	 * Passed the integer CWMS quality code flag, return the
 	 * integer flags value for the timed-variable.
-	 * @param val single-character validation flag to write to HDB.
+	 * @param cqc cwms quality code.
 	 * @return flag the flag value from the timed variable.
 	 */
 	public static int cwmsQuality2flag(long cqc)

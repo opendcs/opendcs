@@ -72,7 +72,7 @@ public class MsgArchive
 	public static final String lrgs6namePrefix = "arch-";
 	public static final String lrgs7namePrefix = "archv-";
 
-	/** Used to format & parse the date suffixes for archive files. */
+	/** Used to format and parse the date suffixes for archive files. */
 	public static SimpleDateFormat nameDateFormat
 		= new SimpleDateFormat("yyyyMMdd");
 	static
@@ -154,7 +154,7 @@ public class MsgArchive
 	}
 
 	/**
-	 * Sets number of periods & period duration
+	 * Sets number of periods and period duration
 	 * @param numPeriods number of periods (default = 31).
 	 */
 	public void setPeriodParams(int numPeriods)
@@ -382,7 +382,6 @@ public class MsgArchive
 	 * Archive a DCP message.
 	 * @param msg the message.
 	 * @param src the input device that generated the msg.
-	 * @return true if message was archived, false if it was discarded.
 	 */
 	public synchronized void archiveMsg( DcpMsg msg, LrgsInputInterface src)
 	{
@@ -738,7 +737,7 @@ public class MsgArchive
 	}
 
 	/**
-	 * Initialize a search & return a new handle.
+	 * Initialize a search and return a new handle.
 	 * There are two algorithms:
 	 * <p>
 	 * 1. SM_INDEXSEARCH: seek to starting minute in the period specified
@@ -1043,7 +1042,8 @@ public class MsgArchive
 
 	/**
 	 * Retrieve messages by DOMSAT sequence number range.
-	 * @param approxDomsatTime approximate domsat time of outage.
+	 * @param fromDomsatTime approximate domsat from time
+	 * @param untilDomsatTime approximate domsat until time 
 	 * @param seqStart first missing sequence number
 	 * @param seqEnd last missing sequence number
 	 * @param msgs return messages by storing them here
