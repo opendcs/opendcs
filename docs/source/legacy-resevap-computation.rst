@@ -1,85 +1,8 @@
 .. _legacy-resevap-computation:
 
-####################################
-W9123819P0073–2 ResEvap Computation
-####################################
-
-*A document detailing the engineering and software requirements for ResEvap*
-
-**March 27, 2020**
-
-**Prepared For:**
-    | U.S. Army Corps of Engineers
-**Contractor:**
-    | Resource Management Associates
-    | 1756 Picasso Avenue, Suite G
-    | Davis, CA 95618
-**Contact:**
-    | John F. DeGeorge
-    | Peter Morris
-    | \(530) 564-7043
-**Author:**
-    | Caleb DeChant
-    | Steve Andrews
-
-.. sectnum::
-    :depth: 4
-
-Background
-===========
-
-Scope of Work
--------------
-
-ResEvap is an Omaha District application which was ported to JAVA and was
-modified to be able to interact with the CWMS database through usage of the REGI
-database APIs. The documentation will cover:
-
--  Reviewing the ResEvap source code and examining the application at runtime by
-   debugging with an IDE.
-
--  Develop a clear understanding of the computations from an engineering
-   perspective.
-
--  Author a document that describes ResEvap. Note potential improvements to
-   ResEvap and incorrect behavior discovered during the analysis.
-
-Technical Exhibit
------------------
-Task Item 2: Author an engineering and software requirements document detailing
-the ResEvap computation.
-
-Background: ResEvap is an Omaha Corps office application for computing reservoir
-evaporation. This application was originally developed in Fortran. The Omaha
-Corps office contracted RMA in 2015 to port ResEvap from Fortran to Java and
-Jython, as is without changing the computational logic. ResEvap was modified to
-be able to interact with the CWMS database through usage of the REGI database
-APIs. ResEvap’s algorithms, computations, work flow, and database interactions
-need to be documented in detail to ensure that the computational procedure is
-as expected.
-
-Documentation will entail detailed descriptions of the computations performed
-within ResEvap. Since there is currently no documentation of the computational
-procedure, this will require:
-
-1. Reviewing the ResEvap source code and examining the application at runtime
-   by debugging with an IDE.
-
-2. Developing a clear understanding of the computations from an engineering
-   perspective. This might require communications with the Omaha office for
-   clarifications on expected behavior.
-
-3. Authoring a document that describes ResEvap. Noted in this document will be
-   both potential improvements to ResEvap and incorrect behavior discovered
-   during the analysis. Recommended solutions for improvements and incorrect
-   behavior will be documented.
-
-A draft version of the document will be delivered to the Corps suitable for
-review. The contractor will revise the document based on the Corps review.
-
-Deliverables for this task shall include the document detailing the current
-behavior and computations done with ResEvap, and recommendations for its
-improvement.
+##############################
+ResEvap Legacy Documentation
+##############################
 
 Introduction
 ==============
@@ -574,7 +497,7 @@ Based on the roughness lengths, the transfer coefficients can be computed as fol
 :math:`C_{m} = \dfrac{{\kappa\ }^{2}}{\left( \ln\left( \frac{h_{u}}{h_{m}} \right) - \
 \psi_{m} \right) \left(\ln\left( \frac{z_{0}}{z_{m}} \right) - \psi_{m}\right)}`
 
-where:
+Where:
 
 :math:`h_{m} = h_{u}, z_{m} = z_{u}, \psi_{m} = \psi_{u} \text{ for } C_{D}`
 
@@ -1005,15 +928,20 @@ e^\left({- \kappa_{a}z_{i - 1}}\right) A_{i - 1} \right)}{V_{i}} & \text{otherwi
 
 :math:`\kappa_{a} = \dfrac{1.7}{SD}`
 
-Where :math:`I_{s \downarrow}` is the incoming shortwave radiation, :math:`\beta`
-is the fraction of shortwave radiation that penetrates the water surface
-(:math:`\beta = 0.4` is assumed), :math:`\alpha` is the albedo
-(:math:`\alpha = 0.08` is assumed for water), :math:`A_{i}^{u}` is the area of
-the top of layer :math:`i`, :math:`\kappa_{a}` is the bulk extinction coefficient
-for shortwave radiation, :math:`SD` is the secchi depth, :math:`I_{l \downarrow}`
-is the incoming longwave radiation, :math:`I_{l \uparrow}` is the outgoing
-longwave radiation, :math:`H_{l}` is the latent heat flux and :math:`H_{s}` is
-the sensible heat flux. The assumed values for :math:`\beta` and :math:`\alpha`
+Where:
+
+    | :math:`I_{s \downarrow}` is the incoming shortwave radiation
+    | :math:`\beta` is the fraction of shortwave radiation that penetrates the water surface. :math:`(\beta = 0.4` is assumed)
+    | :math:`\alpha` is the albedo. (:math:`\alpha = 0.08` is assumed for water)
+    | :math:`A_{i}^{u}` is the area of the top of layer :math:`i`
+    | :math:`\kappa_{a}` is the bulk extinction coefficient for shortwave radiation
+    | :math:`SD` is the secchi depth
+    | :math:`I_{l \downarrow}` is the incoming longwave radiation
+    | :math:`I_{l \uparrow}` is the outgoing longwave radiation
+    | :math:`H_{l}` is the latent heat flux
+    | :math:`H_{s}` is the sensible heat flux
+
+The assumed values for :math:`\beta` and :math:`\alpha`
 are reasonable for this application, and can range from 0 to 1. Radiation
 computations and heat fluxes are described in previous sections. The necessary
 areas for diffusion computations are described below:
@@ -1047,7 +975,7 @@ The solution for this equation follows the form below:
 :math:`\left.
 \begin{array}{l}
 a_i{T_{w}}_{i - 1}^{t + 1} + b_i{T_{w}}_{i}^{t + 1} + c_i{T_w}_{i + 1}^{t + 1} = \\
-\hspace{4.3cm} {T_w}_{i}^{t} + (1 - \theta)\Bigl( x^{u}( {T_w}_{i + 1}^{t} - {T_w}_{i}^{t} ) - x^{l}( {T_w}_{i}^{t} - \
+\hspace{4.6cm} {T_w}_{i}^{t} + (1 - \theta)\Bigl( x^{u}( {T_w}_{i + 1}^{t} - {T_w}_{i}^{t} ) - x^{l}( {T_w}_{i}^{t} - \
 {T_w}_{i - 1}^{t} ) \Bigr) + \dfrac{{I_{z_i}}}{{\rho_{w_i}}{c_{p_i}}}
 \end{array} \right.`
 
@@ -1060,8 +988,6 @@ a_i{T_{w}}_{i - 1}^{t + 1} + b_i{T_{w}}_{i}^{t + 1} + c_i{T_w}_{i + 1}^{t + 1} =
 \dfrac{ \frac{{K_{z_{i - 1}}} {\mathrm{\Delta}z}_{i - 1}} {{\rho_{w}}_{i - 1} {c_{p}}_{i - 1}} + \
 \frac{{K_{z_i}} {\mathrm{\Delta}z}_{i}} { {\rho_{w_i}} {c_{p_i}}} } {0.5\left( {\mathrm{\Delta}z}_{i - 1} + \
 {\mathrm{\Delta}z}_{i} \right)^{2}}`
-
-
 
 :math:`a_{i} = - {\theta x}^{l}`
 
@@ -1102,13 +1028,16 @@ assuming layer :math:`i` is included, is evaluated as follows:
 
 :math:`z^{com}_{i:j} = \sum_{k = i}^{j}\frac{\rho_{k}V_{k}( z_{k} + z_{k - 1} )}{2}`
 
-Where :math:`{\rho_{SML_i}}` is the density of the SML with layer :math:`i`
-included, :math:`{T_{SML_i}}` is the temperature of the SML with layer
-:math:`i` included, :math:`{z_{SML}^{com}}_{i}` is the center of mass of the SML
-with layer :math:`i` included, and :math:`{z^{com}}_{i:j}\ ` is the center of
-mass of layers :math:`i` through :math:`j`. :math:`PE_{SML_i}` is the difference
-in potential energy of the SML with layer :math:`i` included and excluded from
-the mixed layer. If :math:`PE_{SML_i} < 0`, then there is sufficient energy due
+Where:
+
+    | :math:`{\rho_{SML_i}}` is the density of the SML with layer :math:`i` included
+    | :math:`{T_{SML_i}}` is the temperature of the SML with layer :math:`i` included
+    | :math:`{z_{SML}^{com}}_{i}` is the center of mass of the SML with layer :math:`i` included
+    | :math:`{z^{com}}_{i:j}\ ` is the center of mass of layers :math:`i` through :math:`j`
+    | :math:`PE_{SML_i}` is the difference in potential energy of the SML with layer \
+      :math:`i` included and excluded from the mixed layer.
+
+If :math:`PE_{SML_i} < 0`, then there is sufficient energy due
 to density instability to force mixing of layers :math:`i - 1\!:\!N`. In this
 case, the temperature of layers :math:`i - 1\!:\!N` is set to :math:`T_{w_{i:N}}`,
 and the :math:`PE_{SML_{i - 1}}` is subsequently checked. Once a layer is
