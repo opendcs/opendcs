@@ -133,7 +133,7 @@ public class CsvFunction
 		int sensorNumber = sensorNumbers.get(col);
 		if (sensorNumber < 0)
 			return;
-		warning("Processing column " + col + " value='" + sample + "'");
+		trace("Processing column " + col + " value='" + sample + "'");
 		boolean isMissing =script.isMissingSymbol(sample) || sample.startsWith("M");
 		if (sample.length() == 0 || isMissing || sample.startsWith("/"))
 		{
@@ -157,7 +157,7 @@ public class CsvFunction
 		try
 		{
 			String real = script.getReplacement(sample);
-			Logger.instance().info("Turning " + sample + " -> " + real);
+			trace("Turning " + sample + " -> " + real);
 			double x = Double.parseDouble(real); 
 			Variable v = new Variable(x);
 			TimedVariable tv = decmsg.addSample(sensorNumber, v, linenum);

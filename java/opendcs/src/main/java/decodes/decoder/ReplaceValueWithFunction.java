@@ -4,26 +4,24 @@ import ilex.util.Logger;
 
 import java.util.StringTokenizer;
 
-import org.python.antlr.PythonParser.atom_return;
-
 import decodes.db.DecodesScript;
 
 /**
  * Decodes function used to replace a symbol with another value.
- * example:  replaceValue(T,0.0)   # replaces 'T' with 0.0  
+ * example:  replaceValueWith(T,0.0)   # replaces 'T' with 0.0  
  */
-public class ReplaceValueFunction extends DecodesFunction
+public class ReplaceValueWithFunction extends DecodesFunction
 {
-	public static final String module = "replaceWith";
+	public static final String module = "replaceValueWith";
 	
-	public ReplaceValueFunction()
+	public ReplaceValueWithFunction()
 	{
 	}
 
 	@Override
 	public DecodesFunction makeCopy()
 	{
-		return new ReplaceValueFunction();
+		return new ReplaceValueWithFunction();
 	}
 
 	@Override

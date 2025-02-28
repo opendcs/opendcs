@@ -1,4 +1,4 @@
-init: replaceWith(T,123.45)
+init: replaceValueWith(T,123.45) >col_header
 col_header: /, >datetime
 datetime: F(D,A,10,1), x, >data
 data: csv(2,3,4), /, >datetime
