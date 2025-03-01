@@ -2,10 +2,10 @@ package ilex.gui;
 
 import javax.swing.*;
 import java.awt.Desktop;
+import java.io.File;
 import java.net.URI;
 import org.slf4j.LoggerFactory;
 
-import lrgs.gui.LrgsBuild;
 
 public class Help
 {
@@ -14,28 +14,26 @@ public class Help
 
     private static String getUrl()
     {
-        return HELP_URL;
-        // // "7.0.15-RC02";
-        // String version = LrgsBuild.version;
-        // Boolean rc = version.toLowerCase().contains("rc");
-        // String mainVersion = version.split(".")[0];
-
-        // if(rc)
-        //     {
-        //       return HELP_URL+ "en/7.0.14/";
-        //     }
-
-        // return HELP_URL+ "en/"+version+"/";
-        }
+        String localURL =System.getenv("DECODES_INSTALL_DIR");
+        localURL +="/doc/index.html";
+        return localURL;
+    }
 
     public static void open(){
         String url = getUrl();
         try {
             if(  Desktop.isDesktopSupported())
             {
-
+                if( url.startsWith("http"))
+                {
                 Desktop.getDesktop().browse(new URI(url));
+                }
+            else
+            {
+               File file = new File(url);
+               Desktop.getDesktop().browse(file.toURI());
             }
+        }
         }
         catch( Throwable e) {
             if(  Desktop.isDesktopSupported()){
