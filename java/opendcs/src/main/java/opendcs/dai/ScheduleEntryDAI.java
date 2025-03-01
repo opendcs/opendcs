@@ -82,7 +82,15 @@ public interface ScheduleEntryDAI
 	public ArrayList<ScheduleEntryStatus> 
 		readScheduleStatus(ScheduleEntry scheduleEntry)
 		throws DbIoException;
-	
+
+	/**
+	 * Read a single schedule entry by an associated status ID
+	 * @param scheduleEntryStatusId the database key of the status entry
+	 * @return ScheduleEntry or null if no match found.
+	 * @throws DbIoException on database error
+	 */
+	ScheduleEntry readScheduleEntryByStatusId(DbKey scheduleEntryStatusId) throws DbIoException;
+
 	/**
 	 * Write the passed schedule status to the database. This may be an
 	 * update of a previously written status.
