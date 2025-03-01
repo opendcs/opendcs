@@ -21,7 +21,7 @@ public interface PropertyValueProvider {
      * @param value actual value to decipher.
      *
      * @param properties Properties to use for the given request.
-     * @param environment Environment map to use for the given request.
+     * @param env Environment map to use for the given request.
      *
      * @return the real value, or null if not found.
      */

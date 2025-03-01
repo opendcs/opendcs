@@ -217,7 +217,7 @@ public class IntervalCodes
 	 *    interval
 	 *    interval * count
 	 * Where 'interval' is a valid interval string in the underlying database
-	 * and count is an integer > 0.
+	 * and count is an integer &gt; 0.
 	 * Return IntervalIncrement containing Calendar constant and increment
 	 * corresponding to the interval. 
 	 * @param interval the interval name defined herein.

@@ -172,7 +172,7 @@ public class PdtSched
 	}
 
 	/**
-	 * This is for testing only -- to iterate & print out the list.
+	 * This is for testing only -- to iterate and print out the list.
 	 */
 	public Iterator iterator()
 	{

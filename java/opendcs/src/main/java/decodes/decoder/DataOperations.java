@@ -556,7 +556,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 
 	/**
 	 * Provides default isBinary = false.
-	 * @see getField(int length, String delim, boolean isBinary)
+	 * @see getField(int length, String delim, boolean isBinary,boolean isString)
 	 */
 	public byte[] getField(int length, String delim)
 	throws EndOfDataException

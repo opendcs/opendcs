@@ -15,7 +15,9 @@ public interface PasswordChecker
 	/**
 	 * Check the password for length, complexity, history, etc.
 	 * Silently return if password is ok. If not, throw BadPasswordException
-	 * @param password the password
+	 * @param username the username
+	 * @param newPassword the password
+	 * @param newPwHash hash of the newPassword
 	 * @throws BadPasswordException containing message if password is not ok.
 	 */
 	public void checkPassword(String username, String newPassword, String newPwHash)

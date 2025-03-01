@@ -43,7 +43,7 @@ public class EUSelectDialog extends GuiDialog
 
 	/** 
 	  Construct new dialog.
-	  @param ctl the owner of this dialog to receive a call-back when a 
+	  @param parent the owner of this dialog to receive a call-back when a
 	  selection has been made.
 	*/
     public EUSelectDialog(JFrame parent)
@@ -54,7 +54,7 @@ public class EUSelectDialog extends GuiDialog
 
 	/** 
 	  Construct new dialog with dialog parent.
-	  @param ctl the owner of this dialog to receive a call-back when a 
+	  @param parent the owner of this dialog to receive a call-back when a
 	  selection has been made.
 	*/
     public EUSelectDialog(JDialog parent)

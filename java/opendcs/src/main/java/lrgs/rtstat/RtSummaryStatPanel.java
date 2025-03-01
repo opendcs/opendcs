@@ -81,7 +81,7 @@ public class RtSummaryStatPanel
 
 	/**
 	 * Updates the on-screen status.
-	 * @param htmlstat the status as a block of HTML.
+	 * @param url the url
 	 */
 	public void updateStatus(String url)
 		throws IOException

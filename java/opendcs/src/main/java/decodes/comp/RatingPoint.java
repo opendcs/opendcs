@@ -57,7 +57,7 @@ public class RatingPoint implements Comparable<RatingPoint>
 
 	/**
 	  From Comparable interface, used to sort the LookupTable
-	  @param o the other point
+	  @param rhs the other point
 	  @return 0 if equal, 1 or -1 if not.
 	*/
 	public int compareTo (RatingPoint rhs)

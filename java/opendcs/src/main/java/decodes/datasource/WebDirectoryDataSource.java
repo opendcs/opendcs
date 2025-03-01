@@ -94,8 +94,8 @@ public class WebDirectoryDataSource extends DataSourceExec
 	/**
 	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
 	 *
-	 * @param dataSource
-	 * @param decodesDatabase
+	 * @param source data source
+	 * @param db database
 	 */
 	public WebDirectoryDataSource(DataSource source, Database db) {
 		super(source, db);

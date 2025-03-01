@@ -462,7 +462,7 @@ public class CTimeSeries
 
     /**
      * Attempt to interpolate a value at the specified time by looking at
-     * the previous & next values.
+     * the previous and next values.
      * @param sec the time.
      * @return the interpolated value, or null if can't compute.
      */

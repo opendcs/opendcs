@@ -14,29 +14,30 @@ package decodes.util;
 /**
  * This AppDWEMessages is used for the application displaying, warning, and error messages.
  *
- * The message syntax is defined as <msg-name>(<msg-code>, <msg-module>, <msg-description>).
+ * The message syntax is defined as &lt;msg-name&gt;(&lt;msg-code&gt;, &lt;msg-module&gt;, &lt;msg-description&gt;).
  * 
  * The message output format is defined as the following for 
- *   warning and error messages: "<msg-module>-<msg-code>: <msg-description>"
- *   displaying messages       : "<msg-description>" 
+ *   warning and error messages: "&lt;msg-module&gt;-&lt;msg-code&gt;: &lt;msg-description&gt;"
+ *   displaying messages       : "&lt;msg-description&gt;" 
  *
- * The <msg-name> represents the message name with using the following convention
- *   <msg-module>_XXXXXXXXXXXXXXXXX
+ * The &lt;msg-name&gt; represents the message name with using the following convention
+ *   &lt;msg-module&gt;_XXXXXXXXXXXXXXXXX
  * for example, sys_FailReadCfgFile, db_DBConnFail, or decd_DuplicatedData
  * 
- * The <msg-code> is consists of 6 digits
- *   msg-code -->    XXXXXX
- *   position -->    123456
- * where position 1 and 2 for <msg-module>, and position 3-6 for <msg-description>. 999999 is reserved for UNKNOWN message.
+ * The &lt;msg-code&gt; is consists of 6 digits
+ *   msg-code --&gt;    XXXXXX
+ *   position --&gt;    123456
+ * where position 1 and 2 for &lt;msg-module&gt;, and position 3-6 for &lt;msg-description&gt;. 999999 is reserved for UNKNOWN message.
  * 
- * The <msg-module> is briefly categorized as system level (SYS, DB, DEBG, UTIL) and application level (DECD, COMP, LRGS).
- * The <msg-module> is defined as the following
+ * The &lt;msg-module&gt; is briefly categorized as system level (SYS, DB, DEBG, UTIL) and application level (DECD, COMP, LRGS).
+ * The &lt;msg-module&gt; is defined as the following
  *   00-09: reserved;
  *      10: reserved; 11: SYS;  12: DB;   13: UTIL; 19: DEBG; etc.
  *      20: reserved; 21: DECD; 22: DCFG; 
  *      30: reserved; 31: COMP;
  *      40: reserved; 41: LRGS; 
  */
+
 public enum AppMessages
 {
   /**

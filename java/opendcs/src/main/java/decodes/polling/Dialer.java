@@ -29,8 +29,8 @@ public abstract class Dialer
 	/**
 	 * Dials the station using the passed IOPort.
 	 * Responsible for making an end-to end connection.
-	 * @param port the IOPort to use
-	 * @param tm the TransportMedium containing dailing information
+	 * @param ioPort the IOPort to use
+	 * @param tm the TransportMedium containing dialing information
 	 * @throws DialException if failed to connect to remote station
 	 */
 	public abstract void connect(IOPort ioPort, TransportMedium tm, PollingThread pollingThread)

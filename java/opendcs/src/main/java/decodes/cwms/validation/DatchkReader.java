@@ -89,7 +89,7 @@ public class DatchkReader
 	
 	/**
 	 * For DatchkExport, allow creation with an alternate config file.
-	 * @param cfgFile the config file name.
+	 * @param cfgFileName the config file name.
 	 */
 	public DatchkReader(String cfgFileName)
 	{

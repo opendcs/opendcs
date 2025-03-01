@@ -20,7 +20,7 @@ public class JavaPropertiesValueProvider implements PropertyValueProvider
      * Retrieve property from the provided property map
      * @param value actual value to decipher.
      *
-     * @param properties Properties to use for the given request.
+     * @param props Properties to use for the given request.
      * @param environment ignored in this implementation.
      *
      * @return the real value, or null if not found.

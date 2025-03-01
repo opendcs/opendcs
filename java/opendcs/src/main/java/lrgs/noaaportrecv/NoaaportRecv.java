@@ -56,16 +56,16 @@ Parsing strategy:
    process. Default to "KWAL".
 2. Property for port number on which to listen to connectsion from the noaaport.
 3. State Machine with the following States:
-	HUNT: Look for SOH, when found --> PROPHEAD
+	HUNT: Look for SOH, when found --&gt; PROPHEAD
 	PROPHEAD: buffer until I hit \0x1E, When I do ...
 		WMO header must begin with an 'S' and office ID must be on my list.
-		if not, --> HUNT, else --> DCPMSG
+		if not, --&gt; HUNT, else --&gt; DCPMSG
 	DCPMSG: buffer until ETX, when found:
-		Get DCP Address & date/time from header
-			Assume current year but if (doy < currentDOY && currentDOY>=364) ++
+		Get DCP Address and date/time from header
+			Assume current year but if (doy &lt; currentDOY &amp;&amp; currentDOY&gt;=364) ++
 		Backup from end and parse trailer: SS, FF, NN, CCCs
-		Construct DcpMsg object & call archive
-		--> HUNT
+		Construct DcpMsg object and call archive
+		--&gt; HUNT
 */
 public class NoaaportRecv
 	implements LrgsInputInterface

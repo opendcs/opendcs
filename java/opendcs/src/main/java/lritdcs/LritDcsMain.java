@@ -761,7 +761,8 @@ public class LritDcsMain implements ServerLockable
 	}
 
 	/**
-	 * @param domain2AStatus the domain2AStatus to set
+	 * @param domain2Status the domain2AStatus to set
+	 * @param domain2 'a', 'b', or 'c'
 	 */
 	public void setDomain2Status(String domain2Status, char domain2) {
 		switch (domain2) {

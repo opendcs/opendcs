@@ -337,7 +337,6 @@ public class EvapUtilities
      * @param ustar -  is the friction velocity in m/s.
      * @param zt
      * @param zq
-     * @return
      */
     public static void coare(double rstar, double gnu, double ustar,
                              DoubleContainer zt, DoubleContainer zq)

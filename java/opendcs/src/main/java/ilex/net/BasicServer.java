@@ -124,7 +124,7 @@ public abstract class BasicServer
 
 	/**
 	* The constructor will throw IllegalArgumentException if port is
-	* <= 0. It will throw an IOException if it cannot create a listening
+	* &lt;= 0. It will throw an IOException if it cannot create a listening
 	* socket on the specified port.
 	* @param port the port to listen on
 	*/

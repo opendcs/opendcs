@@ -50,7 +50,7 @@ public class JTextFieldDateEditor extends JFormattedTextField
 	
 	/** 
 	 * Constructor that sets the timezone of the JCalendar
-	 * @param TimeZone used to display the date (is required)
+	 * @param tzObjIn used to display the date (is required)
 	 **/	
 	public JTextFieldDateEditor(TimeZone tzObjIn) 
 	{		

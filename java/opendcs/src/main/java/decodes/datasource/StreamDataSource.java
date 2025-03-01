@@ -190,8 +190,8 @@ public abstract class StreamDataSource extends DataSourceExec
     /**
      * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
      *
-     * @param dataSource
-     * @param decodesDatabase
+     * @param ds data source
+     * @param db database
      */
     public StreamDataSource(DataSource ds, Database db)
     {

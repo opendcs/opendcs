@@ -26,7 +26,7 @@ public @interface Input
 {
     /**
      * Leave the name blank will use the name of the field.
-     * @return
+     * @return the name of the field
      */
     String name() default "";
     Class<?> type() default Double.class;

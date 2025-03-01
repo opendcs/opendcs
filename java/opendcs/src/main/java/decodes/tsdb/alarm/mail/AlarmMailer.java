@@ -56,7 +56,6 @@ public class AlarmMailer
 	 *   <li>fromName</li>
 	 *  </ul> 
 	 *   
-	 * @param props
 	 * @throws MailerException
 	 */
 	public AlarmMailer()

@@ -707,7 +707,7 @@ public class TsGroupDefinitionPanel
 
 	/**
 	 * Set the group to be edited
-	 * @param tsGroup the group to be edited
+	 * @param tsGroupIn the group to be edited
 	 */
 	public void setTsGroup(TsGroup tsGroupIn)
 	{
@@ -1193,8 +1193,6 @@ public class TsGroupDefinitionPanel
 	/**
 	 * User Presses Sub Group Members Delete button
 	 * 
-	 * @param e
-	 *            ActionEvent
 	 */
 	public void deleteSubgroupPressed()
 	{

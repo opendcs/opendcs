@@ -57,7 +57,7 @@ public class UsbrDrotFeed extends GetDcpMessages
 
 	/**
 	  The program should never exit. If the super.run() method exits,
-	  it means that the DDS session has failed. We just pause here &
+	  it means that the DDS session has failed. We just pause here and
 	  retry later.
 	*/
 	public void run()

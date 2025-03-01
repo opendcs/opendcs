@@ -181,7 +181,7 @@ public class DrgsStats
 
 	/**
 	  Called from parent when this connection has been reconfigured.
-	  @param the connection configuration for this DRGS
+	  @param cfg connection configuration for this DRGS
 	*/
 	public void configure(DrgsConnectCfg cfg)
 	{

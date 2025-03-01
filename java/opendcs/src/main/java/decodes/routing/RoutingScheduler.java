@@ -120,7 +120,7 @@ public class RoutingScheduler
 	static BooleanToken windowsSvcArg = new BooleanToken("w", "Run as Windows Service", "", 
 		TokenOptions.optSwitch, false);
 
-	/** Holds app name, id, & description. */
+	/** Holds app name, id, and description. */
 	protected CompAppInfo appInfo;
 
 	/** My lock */

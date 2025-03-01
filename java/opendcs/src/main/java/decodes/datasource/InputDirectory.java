@@ -50,8 +50,8 @@ public class InputDirectory
 	/**
 	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
 	 *
-	 * @param dataSource
-	 * @param decodesDatabase
+	 * @param ds data source
+	 * @param db database
 	 */
 	public InputDirectory(DataSource ds, Database db)
 	{

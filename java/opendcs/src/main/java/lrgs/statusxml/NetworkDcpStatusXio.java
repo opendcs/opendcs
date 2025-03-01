@@ -41,7 +41,7 @@ public class NetworkDcpStatusXio
 
 	/**
 	  Construct parser.
-	  @param ap the AttachedProcess to populate from XML data
+	  @param nds the network Dcp Status object
 	*/
 	public NetworkDcpStatusXio(NetworkDcpStatus nds)
 	{

@@ -22,7 +22,7 @@ public class EnvironmentPropertyValueProvider implements PropertyValueProvider
      * Retrieve property from the provided envrionment map
      * @param value actual value to decipher.
      *
-     * @param properties ignored in this implementation.
+     * @param props ignored in this implementation.
      * @param environment Environment to use for the given request.
      *
      * @return the real value, or null if not found.

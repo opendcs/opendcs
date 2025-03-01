@@ -234,7 +234,7 @@ final public class DownwellingInfraRedFlux
      * Clapeyrin equation.
      * <p>
      * A new atmospheric emissivity formulation has been implemented based on
-     * Todd M. Crawford & Claude E. Duchon, Am Improved parameterization for estimating
+     * Todd M. Crawford amp; Claude E. Duchon, Am Improved parameterization for estimating
      * effective atmospheric emissivity for use in calculating daytime downwelling longwave
      * radiation, Jour of Applied meteorology, vol 18 april 1999, 474-480
      * <p>

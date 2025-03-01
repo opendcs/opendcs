@@ -251,8 +251,6 @@ public class PlatformMonitorFrame
 	 * read from the database. Merge the info into the model and update
 	 * the screen in the Swing thread.
 	 * @param psList
-	 * @param seList 
-	 * @param seList 
 	 */
 	public synchronized void updateFromDb(ArrayList<PlatformStatus> psList)
 	{

@@ -146,7 +146,7 @@ public class CwmsTsId
 	 * @param path the 6-part CWMS path identifier
 	 * @param description the description
 	 * @param versionFlag true if this TS is versioned
-	 * @param intervalUtcOffset the intervalUtcOffset
+	 * @param utcOffset the Utc Offset
 	 * @param storageUnits the storage units for this TS
 	 */
 	public CwmsTsId(DbKey tsCode, String path, DataType dataType, 

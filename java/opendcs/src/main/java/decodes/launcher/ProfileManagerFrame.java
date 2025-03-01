@@ -43,7 +43,7 @@ import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 
 /**
- * This GUI allows the user to create & delete alternative "profiles" which are
+ * This GUI allows the user to create and delete alternative "profiles" which are
  * Decodes Configurations.
  */
 @SuppressWarnings("serial")

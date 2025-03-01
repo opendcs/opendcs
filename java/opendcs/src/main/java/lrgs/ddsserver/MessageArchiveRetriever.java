@@ -126,7 +126,7 @@ public class MessageArchiveRetriever
 	}
 	
 	/**
-	 * If only DapsSince is specified use it, assume DapsTime <= LrgsTime.
+	 * If only DapsSince is specified use it, assume DapsTime &lt;= LrgsTime.
 	 * DapsSince is a Date attribute in the base class.
 	 * @return since time for initializing the archive's retrieval.
 	 */
@@ -161,7 +161,7 @@ public class MessageArchiveRetriever
 	}
 	
 	/**
-	 * Call super.init() to read netlists, addresses, & time ranges.
+	 * Call super.init() to read netlists, addresses, and time ranges.
 	 * Get searchHandle from Message Archive.
 	 */
 	public void init( )
@@ -189,7 +189,7 @@ public class MessageArchiveRetriever
 
 	  @throws ArchiveUnavailableException on internal archiving error
 	  @throws UntilReachedException if specified until time was reached
-	  @throws SearchTimeoutException if stopSearchMsec reached & no msg rcv'd
+	  @throws SearchTimeoutException if stopSearchMsec reached and no msg rcv'd
 	   (this essentially means 'try again')
 	  @throws EndOfArchivException if all indexes have been checked with no
 	   match.
@@ -374,7 +374,7 @@ public class MessageArchiveRetriever
 
 	/**
 	  Set this process's status.
-	  @param stat the status string
+	  @param status the status string
 	*/
 	public void setStatus(String status)
 	{

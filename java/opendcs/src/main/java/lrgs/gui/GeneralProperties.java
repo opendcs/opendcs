@@ -89,7 +89,6 @@ public class GeneralProperties
 	 * Loads the LRGS properties file (either specified with -P argument or
 	 * from the default) and initializes the general properties required by
 	 * all GUI apps.
-	 * @param the command line arguments
 	 */
 	public static void init()
 	{
