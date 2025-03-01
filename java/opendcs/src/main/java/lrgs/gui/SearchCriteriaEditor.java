@@ -125,9 +125,6 @@ public class SearchCriteriaEditor extends MenuFrame
 
 	private static void initProperties()
 	{
-//		GuiApp.getProperty("SearchCritEditor.Help",
-//			"http://www.ilexeng.com/"
-//			+ LrgsApp.SubDir + "/help/SearchCritEditor.html");
 	}
 
 	private void init()

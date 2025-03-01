@@ -422,7 +422,6 @@ class ViewHelpAction extends AbstractAction
 	ViewHelpAction( String filename, String text )
 	{
 		super(text);
-		//this.url = url;
 		this.filename = filename;
 		this.text = text;
 	}
@@ -432,18 +431,7 @@ class ViewHelpAction extends AbstractAction
 	*/
 	public void actionPerformed( ActionEvent e )
 	{
-		String helpUrl = GuiApp.getProperty("General.HelpRoot");
-		if (!helpUrl.endsWith("/"))
-			helpUrl = helpUrl + "/";
-		helpUrl = helpUrl + filename;
-
-		String cmd = GuiApp.getProperty("General.Browser", "mozilla")
-			+ " " + helpUrl;
-		try { Runtime.getRuntime().exec(cmd); }
-		catch(Exception ex)
-		{
-			System.err.println("Could not execute command '" + cmd + "':" + ex);
-		}
+		Help.open();
 	}
 }
 
