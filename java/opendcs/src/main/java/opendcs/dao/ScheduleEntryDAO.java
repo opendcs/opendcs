@@ -480,7 +480,7 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
 		{
 			throw new DbIoException("ScheduleEntryStatus ID is null");
 		}
-		List<DbKey> ret = new ArrayList<>();
+
 		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
 		{
 			return null;
@@ -488,27 +488,22 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
 
 		String q = "select a.schedule_entry_id from " + sesTables + " where " + sesJoinClause
 				+ " and a.schedule_entry_status_id = ? order by a.run_start_time desc";
+		DbKey ret;
 
 		try
 		{
-			doQuery(q, rs ->
-					ret.add(DbKey.createDbKey(rs, 1)),
-				scheduleEntryStatusId.getValue());
+			ret = getSingleResultOr(q, rs -> DbKey.createDbKey(rs, 1), DbKey.NullKey,
+					scheduleEntryStatusId.getValue());
+			if (ret.isNull())
+			{
+				return null;
+			}
+			return readScheduleEntry(ret);
 		}
 		catch (SQLException ex)
 		{
 			throw new DbIoException("Error in query '" + q + "'", ex);
 		}
-		if (ret.isEmpty())
-		{
-			return null;
-		}
-		else if (ret.size() > 1)
-		{
-			throw new DbIoException(String.format("Multiple schedule entry statuses found for single status ID %d",
-					scheduleEntryStatusId.getValue()));
-		}
-		return readScheduleEntry(ret.get(0));
 	}
 
     /**

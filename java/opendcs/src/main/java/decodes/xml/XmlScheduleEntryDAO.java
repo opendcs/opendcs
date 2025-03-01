@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 import org.xml.sax.SAXException;
 
@@ -152,9 +153,18 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 	}
 
 	@Override
-	public ScheduleEntry readScheduleEntryByStatusId(DbKey statusId)
+	public ScheduleEntry readScheduleEntryByStatusId(DbKey statusId) throws DbIoException
 	{
-		throw new UnsupportedOperationException("XML Database does not support this operation.");
+		List<ScheduleEntryStatus> statusList = readScheduleStatus(null);
+
+		for (ScheduleEntryStatus status : statusList)
+		{
+			if (status.getKey().equals(statusId))
+			{
+				return readScheduleEntry(status.getScheduleEntryId());
+			}
+		}
+		return null;
 	}
 
 
