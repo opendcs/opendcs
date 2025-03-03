@@ -55,6 +55,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -465,6 +466,45 @@ public class ScheduleEntryDAO extends DaoBase implements ScheduleEntryDAI
         }
         return ret;
     }
+
+	/**
+	 * Read a single schedule entry by an associated status ID
+	 * @param scheduleEntryStatusId the database key of the status entry
+	 * @return ScheduleEntryStatus or null if no match found.
+	 * @throws DbIoException on database error
+	 */
+	@Override
+	public ScheduleEntry readScheduleEntryByStatusId(DbKey scheduleEntryStatusId) throws DbIoException
+	{
+		if (scheduleEntryStatusId == null || scheduleEntryStatusId.isNull())
+		{
+			throw new DbIoException("ScheduleEntryStatus ID is null");
+		}
+
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_10)
+		{
+			return null;
+		}
+
+		String q = "select a.schedule_entry_id from " + sesTables + " where " + sesJoinClause
+				+ " and a.schedule_entry_status_id = ? order by a.run_start_time desc";
+		DbKey ret;
+
+		try
+		{
+			ret = getSingleResultOr(q, rs -> DbKey.createDbKey(rs, 1), DbKey.NullKey,
+					scheduleEntryStatusId.getValue());
+			if (ret.isNull())
+			{
+				return null;
+			}
+			return readScheduleEntry(ret);
+		}
+		catch (SQLException ex)
+		{
+			throw new DbIoException("Error in query '" + q + "'", ex);
+		}
+	}
 
     /**
      * Fill a schedule entry status from a result set. SSE should already contain the key
