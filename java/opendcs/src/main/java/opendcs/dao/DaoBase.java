@@ -724,7 +724,7 @@ public class DaoBase
      * @param <R> The return type
      * @param query query that may return more than 1 result
      * @param consumer function to take the ResultSet and process it into a Object of type R (or null)
-     * @param defaultvalue value to provide if no query results
+     * @param defaultValue value to provide if no query results
      * @param parameters variables to bind into the query.
      * @return The value from the query, or the defaultValue if the query returns nothing
      * @throws SQLException

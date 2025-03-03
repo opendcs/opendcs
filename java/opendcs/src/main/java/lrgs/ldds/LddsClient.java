@@ -29,7 +29,7 @@ import decodes.db.TransportMedium;
   This class encapsulates the communication between a client process
   and the LRGS DCP Data Server (LDDS). Construct the LddsClient object
   with a host name and optionally a port number. The LddsClient object
-  contains methods for all of messages & responses supported by the
+  contains methods for all of messages and responses supported by the
   server.
 */
 public class LddsClient extends BasicClient
@@ -154,7 +154,7 @@ public class LddsClient extends BasicClient
 
     /**
       Disconnects from the server.
-      Close input & output streams and release all socket resources.
+      Close input and output streams and release all socket resources.
 
       This function should be called when any of the other methods throws
       an exception. You can then call connect() again to reconnect to the

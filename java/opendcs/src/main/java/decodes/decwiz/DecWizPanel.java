@@ -41,7 +41,7 @@ public abstract class DecWizPanel
 
 	/**
 	 * Launches a dialog, centered in the frame.
-	 * @param msg the message to display.
+	 * @param dlg the dialog to display.
 	 */
 	public void launchDialog(JDialog dlg)
 	{

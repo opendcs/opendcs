@@ -33,7 +33,7 @@ inputs in the computation's defined equation and the equation is then
 submitted to ORACLE to be evaluated.  The equation specification is simple 
 yet must be an acceptable ORACLE statement.
 
-ie  the three times the input1 squared equation is:   3*power(<<input1>>,2) 
+ie  the three times the input1 squared equation is:   3*power(<input1>,2) 
  */
 //AW:JAVADOC_END
 public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase

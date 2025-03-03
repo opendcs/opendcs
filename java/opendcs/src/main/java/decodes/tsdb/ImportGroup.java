@@ -37,9 +37,6 @@ public class ImportGroup extends TsdbAppTemplate
 	
 	private enum LookupObjectType {TsUniqStr, SiteId, InclSubgrp, ExclSubgrp};
 
-	/**
-	 * @param logname
-	 */
 	public ImportGroup()
 	{
 		super("util.log");

@@ -117,7 +117,7 @@ import decodes.tsdb.TimeSeriesDb;
  * Properties used by HdbConsumer include:
  * </p>
  * <ul>
- * <li>list property names, meaning, & default values here.</li>
+ * <li>list property names, meaning, and default values here.</li>
  * </ul>
  */
 public class HdbConsumer extends DataConsumer

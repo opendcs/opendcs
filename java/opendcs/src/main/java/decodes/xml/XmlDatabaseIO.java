@@ -48,6 +48,8 @@
 */
 package decodes.xml;
 
+import decodes.db.EngineeringUnit;
+import decodes.db.UnitConverterDb;
 import decodes.db.RoutingExecStatus;
 import decodes.db.RoutingStatus;
 import ilex.util.Counter;
@@ -911,10 +913,10 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 	{
 		try
 		{
-			String ls[] = listDirectory(PlatformDir);
+			String[] ls = listDirectory(PlatformDir);
 			if (ls == null)
 				return;
-			for(int i=0; i<ls.length; i++)
+			for (int i=0; i<ls.length; i++)
 			{
 				InputStream is = null;
 				try
@@ -1175,6 +1177,10 @@ e.printStackTrace();
 		readEngineeringUnitList(ucs.getDatabase().engineeringUnitList);
 	}
 
+	public void deleteUnitConverter( Long ucId )
+	{
+		throw new UnsupportedOperationException("deleteUnitConverterSet not supported in XML");
+	}
 
 	/**
 	 * Writes the entire collection of engineering units to the database.
@@ -1202,6 +1208,16 @@ e.printStackTrace();
 		{
 			Database.setDb(oldDb);
 		}
+	}
+
+	/**
+	 Stores the provided list of UnitConverter objects into the database.
+	 @param ucs the list to store
+	 */
+	@Override
+	public void insertUnitConverter( UnitConverterDb ucs )
+	{
+		throw new UnsupportedOperationException("XmlDatabaseIO.insertUnitConverter");
 	}
 
 	//=============== Object-level Read/Write Functions ============
@@ -1785,6 +1801,16 @@ e.printStackTrace();
 		String fn = xmldir + File.separator + DataSourceDir
 					+ File.separator + ob.makeFileName();
 		tryDelete(fn);
+	}
+
+	/**
+	 * Deletes an EngineeringUnit from the database by its abbreviation.
+	 * @param eu object with the abbreviation set.
+	 */
+	@Override
+	public void deleteEngineeringUnit(EngineeringUnit eu)
+	{
+		throw new UnsupportedOperationException("deleteEngineeringUnit");
 	}
 
 	/**

@@ -12,7 +12,7 @@ import java.util.Properties;
 
 /**  Public class DataObject is intended to hold in a hashtable hash 
      all the data that is pertinent to this instance of this class.
-     This class is intented to be utilized to store any type of data
+     This class is intended to be utilized to store any type of data
      that the user may need.  Simple key, value pairs, property files,
      and key, Object types can be stored in this object.
 
@@ -40,8 +40,7 @@ public class DataObject
 /** DataObject Constructor that takes a hashtable as an input
     and will be used as the basis of the new DataObject
     
-    @author Mark A. Bogner
-    @version 1.0
+    Mark A. Bogner
     @param _hash  The input Hashtable object that will be used to populat
      the new internal hashtable of this new object
 
@@ -58,9 +57,8 @@ public class DataObject
         of input parameters _key and _value.  The _key is stored in the
         Hashtable hash in uppercase.  The value object is stored as is.
 
-    @author  Mark A. Bogner
-    @version 1.0
-    @param _key  The input String variable _key is used as the key in the 
+    Mark A. Bogner
+    @param _key  The input String variable _key is used as the key in the
     hastable put function.  The _key input variable is used in uppercase so the
     user can specify this key in either upper or lower case.
     @param _value Input Parameter _value is the object that will be stored in
@@ -82,8 +80,7 @@ public class DataObject
         in the Hashtable with the key in uppercase so the get method uses
         an uppercase of the input parameter.
 
-    @author  Mark A. Bogner
-    @version 1.0
+    Mark A. Bogner
     @param _key  The input variable _key is used as the key in the hastable get
     function.  The _key input variable is used in uppercase so the user can
     specify this key in either upper or lower case.
@@ -101,8 +98,7 @@ public class DataObject
 
     /** Method addPropertyFile adds properties from a file to the existing 
         
-     @author  Mark A. Bogner
-     @version 1.0
+     Mark A. Bogner
      Date:   03-April-2001
      @param  _propertyFile  The input string that is the file that will be
      loaded into a Properties object and then transfered into the Hashtable
@@ -137,8 +133,7 @@ public class DataObject
     /** Method toString return the contents of the DataObjects hashtable hash by
         utilizing the toString method of a Hashtable object
         
-     @author  Mark A. Bogner
-     @version 1.0
+     Mark A. Bogner
      @return Returns the String representation of the whole classes hashtable hash
      Date:   03-April-2001
 
@@ -154,8 +149,7 @@ public class DataObject
 
     /** Method getTable returns the DataObjects hashtable hash 
         
-     @author  Mark A. Bogner
-     @version 1.0
+     Mark A. Bogner
      @return Returns the String representation of the whole classes hashtable hash
      Date:   16-April-2001
 

@@ -488,9 +488,8 @@ public class HdbTimeSeriesDb extends TimeSeriesDb
 	/**
 	 * HDB stores coefficients in the 'stat' tables. Example:
 	 * Hourly Real Stat Table is R_HOURSTAT. This method returns the
-	 * coefficent for the specified SDI in the specified table, for the
+	 * coefficient for the specified SDI in the specified table, for the
 	 * specified time-period.
-	 * @see decodes.tsdb.TimeSeriesDb#getCoeff(int, java.lang.String, java.lang.String, java.util.Date)
 	 */
 	public double getCoeff(DbKey sdi, String ts, String interval, Date date)
 		throws DbIoException, DbCompException

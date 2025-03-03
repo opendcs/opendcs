@@ -65,7 +65,7 @@ public class CmdUser extends LddsCommand
 			- Respond OK or Error
 		list
 			- Must be logged in as a user with admin permissions on this system.
-			- Respond with nl-separated list of user names & permissions
+			- Respond with nl-separated list of user names and permissions
 		rm name
 			- Must be logged in as a user with admin permissions on this system.
 			- Respond OK or Error

@@ -19,6 +19,8 @@
  */
 package decodes.sql;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -27,9 +29,6 @@ import java.util.Iterator;
 
 import ilex.util.Logger;
 import decodes.db.DatabaseException;
-import decodes.db.DatabaseIO;
-import decodes.db.EngineeringUnit;
-import decodes.db.EngineeringUnitList;
 import decodes.db.UnitConverterDb;
 import decodes.db.UnitConverterSet;
 
@@ -129,38 +128,6 @@ public class UnitConverterIO extends SqlDbObjIo
 
 	}
 
-//	/**
-//	* Reads a particular unit converter from the database, by ID.
-//	* @param id the UC ID
-//	* @return UnitConverterDb or null if no match
-//	*/
-//	public UnitConverterDb readUnitConverter(DbKey id)
-//		throws DatabaseException
-//	{
-//		Statement stmt = null;
-//		try 
-//		{
-//			stmt = createStatement();
-//			
-//			String q = "SELECT " + columns + " FROM UnitConverter WHERE id = " + id;
-//			
-//			debug3("Query:" + q);
-//			ResultSet rs = stmt.executeQuery(q);
-//
-//			if (rs != null && rs.next())
-//				return rs2Uc(rs);
-//		}
-//		catch (SQLException e)
-//		{
-//			throw new DatabaseException(e.toString());
-//		}
-//		finally
-//		{
-//			if (stmt != null)
-//				try {stmt.close();} catch(Exception ex) {}
-//		}
-//		return null;
-//	}
 	
 	private UnitConverterDb rs2Uc(ResultSet rs)
 		throws SQLException
@@ -321,18 +288,24 @@ public class UnitConverterIO extends SqlDbObjIo
 		executeUpdate(q);
 	}
 
-//	/**
-//	* This deletes a single UnitConverterDb from the database, and unsets
-//	* the object's ID.  The argument must have had its SQL database ID
-//	* already set.
-//	* @param ucdb the object to delete
-//	*/
-//	public void delete(UnitConverterDb ucdb)
-//		throws DatabaseException, SQLException
-//	{
-//		String q = "DELETE FROM UnitConverter WHERE ID = " + ucdb.getId();
-//		executeUpdate(q);
-//	}
+	/**
+	* This deletes a single UnitConverterDb from the database, and unsets
+	* the object's ID.  The argument must have had its SQL database ID
+	* already set.
+	* @param ucdb the object to delete
+	*/
+	public void delete(UnitConverterDb ucdb)
+		throws SQLException
+	{
+		String q = "DELETE FROM UnitConverter WHERE ID = ?";
+
+		try (Connection conn = connection();
+			 PreparedStatement ps = conn.prepareStatement(q))
+		{
+			ps.setLong(1, ucdb.getId().getValue());
+			ps.execute();
+		}
+	}
 
 	public void setContext(String context)
 	{

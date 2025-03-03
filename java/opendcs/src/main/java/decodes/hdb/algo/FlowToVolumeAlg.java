@@ -47,7 +47,7 @@ import decodes.hdb.dbutils.RBASEUtils;
  * for calculation to succeed Value 0 means ALL interval observations must exist
  * 
  * MIN_VALUES_DESIRED: Number: will set flag field for result if # of inputs are
- * <= this value
+ * &lt;= this value
  * 
  * VALIDATION_FLAG: set the validation flag on output record
  * 

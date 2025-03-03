@@ -739,7 +739,7 @@ public class DcpMsg
     }
 
 	/**
-     * @param platformId the platformId to set
+     * @param dcpAddress the dcpAddress to set
      */
     public void setDcpAddress(DcpAddress dcpAddress)
     {
@@ -747,7 +747,7 @@ public class DcpMsg
     }
 
 	/**
-     * @return the platformId
+     * @return the dcpAddress
      */
     public DcpAddress getDcpAddress()
     {

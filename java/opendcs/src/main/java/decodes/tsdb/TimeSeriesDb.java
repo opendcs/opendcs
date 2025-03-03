@@ -794,7 +794,7 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
 
     /**
      * Looks up the SDI for and sets it within a DbCompParm.
-     * Called from GUI when making assignment from site ID & data type.
+     * Called from GUI when making assignment from site ID and data type.
      * @param parm the DbCompParm object
      * @param siteId the site ID
      * @param dtcode the data type code
