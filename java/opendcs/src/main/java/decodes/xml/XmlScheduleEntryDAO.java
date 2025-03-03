@@ -161,7 +161,7 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 		{
 			if (status.getKey().equals(statusId))
 			{
-				return readScheduleEntry(status.getScheduleEntryId());
+				return readScheduleEntry(status.getScheduleEntryName());
 			}
 		}
 		return null;

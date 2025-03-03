@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -77,7 +78,7 @@ class ScheduledEntryTest extends AppTestBase
             se.setEnabled(false);
             se.setLoadingAppName("compproc-regtest");
             se.setRoutingSpecName("OKVI4-input");
-            se.setStartTime(new Date());
+            se.setStartTime(Date.from(Instant.parse("2024-07-03T00:00:00Z")));
             se.setRunInterval("1h");
             dao.writeScheduleEntry(se);
 
@@ -85,7 +86,7 @@ class ScheduledEntryTest extends AppTestBase
             ses.setScheduleEntryName(se.getName());
             ses.setScheduleEntryId(se.getId());
             ses.setHostname("bleh");
-            ses.setRunStart(new Date());
+            ses.setRunStart(Date.from(Instant.parse("2024-07-02T00:00:00Z")));
             ses.setRunStatus("Working");
             dao.writeScheduleStatus(ses);
 
@@ -93,7 +94,7 @@ class ScheduledEntryTest extends AppTestBase
             ses2.setScheduleEntryName(se.getName());
             ses2.setScheduleEntryId(se.getId());
             ses2.setHostname("localhost");
-            ses2.setRunStart(new Date());
+            ses2.setRunStart(Date.from(Instant.parse("2024-07-01T00:00:00Z")));
             ses2.setRunStatus("Running");
             dao.writeScheduleStatus(ses2);
 
@@ -108,7 +109,7 @@ class ScheduledEntryTest extends AppTestBase
 
             // loading application name is not retrieved as part of the entry record
             assertEquals(se.getName(), retrievedEntry.getName(), "Retrieved entry name does not match.");
-            assertEquals(se.getStartTime(), retrievedEntry.getStartTime(), "Retrieved entry start time does not match.");
+            assertEquals(se.getStartTime().getTime(), retrievedEntry.getStartTime().getTime(), "Retrieved entry start time does not match.");
             assertEquals(se.getRunInterval(), retrievedEntry.getRunInterval(), "Retrieved entry run interval does not match.");
             assertEquals(se.getRoutingSpecName(), retrievedEntry.getRoutingSpecName(), "Retrieved entry routing spec name does not match.");
             assertEquals(se.isEnabled(), retrievedEntry.isEnabled(), "Retrieved entry enabled status does not match.");
