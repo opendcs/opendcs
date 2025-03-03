@@ -246,7 +246,6 @@ System.out.println("Executing: " + cmds);
 	 * Called from within the GUI thread after a new status XML block has been
 	 * received and parsed. The passed string is the formatted HTML to be
 	 * displayed in the window.
-	 * @param htmlstat the status as a block of HTML.
 	 */
 	public void updateStatus()
 	{

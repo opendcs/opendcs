@@ -139,9 +139,8 @@ public class DrgsRecvMsgThread
 
 	/**
 	  Constructor.
-	  @param connection msgArchive the object that manages the archive.
-	  @param pdtSched the PDT Schedule object for validation.
-	  @param channelMap the CDT Map object for validation.
+	  @param msgArchive the object that manages the archive.
+	  @param lrgsMain the Lrgs
 	*/
 	public DrgsRecvMsgThread(MsgArchive msgArchive, LrgsMain lrgsMain)
 	{
@@ -308,7 +307,7 @@ Logger.instance().info(module + " " + myName + " starting"
 
 	/**
 	  Called from parent when this connection has been reconfigured.
-	  @param the connection configuration for this DRGS
+	  @param cfg connection configuration for this DRGS
 	*/
 	public void configure(DrgsConnectCfg cfg)
 	{

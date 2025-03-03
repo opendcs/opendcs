@@ -22,8 +22,10 @@ import javax.sql.DataSource;
 
 import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
+import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.SimpleDataSource;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.helpers.Programs;
@@ -38,6 +40,7 @@ import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
+import decodes.util.DecodesSettings;
 import ilex.util.FileLogger;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
@@ -63,6 +66,8 @@ public class OpenDCSOracleConfiguration implements Configuration
     private File propertiesFile;
     private static AtomicBoolean started = new AtomicBoolean(false);
     private HashMap<Object,Object> environmentVars = new HashMap<>();
+    private Profile profile = null;
+    private OpenDcsDatabase databases = null;
 
     // FUTURE work: allow passing of override values to bypass the test container creation
     // ... OR setup a separate testcontainer library like USACE did for CWMS.
@@ -135,7 +140,7 @@ public class OpenDCSOracleConfiguration implements Configuration
         db.start();
         schemaSetup(db, db.getUsername());
         createPropertiesFile(configBuilder, this.propertiesFile);
-        final Profile profile = Profile.getProfile(this.propertiesFile);
+        profile = Profile.getProfile(this.propertiesFile);
         DataSource ds = new SimpleDataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword());
 
         MigrationManager mm = new MigrationManager(ds,OpenDcsOracleProvider.NAME);
@@ -223,12 +228,21 @@ public class OpenDCSOracleConfiguration implements Configuration
     @Override
     public TimeSeriesDb getTsdb() throws Throwable
     {
-        OpenTsdb db = new OpenTsdb();
+        return getOpenDcsDatabase().getLegacyDatabase(TimeSeriesDb.class).get();
+    }
+
+    @Override
+    public Database getDecodesDatabase() throws Throwable
+    {
+        return getOpenDcsDatabase().getLegacyDatabase(Database.class).get();
+    }
+
+    private void buildDatabases() throws Exception
+    {
         Properties credentials = new Properties();
         credentials.put("username",DCS_ADMIN_USER);
         credentials.put("password",DCS_ADMIN_USER_PASSWORD);
-        db.connect("utility",credentials);
-        return db;
+        databases = DatabaseService.getDatabaseFor("utility", DecodesSettings.fromProfile(profile), credentials);
     }
 
     @Override
@@ -302,6 +316,19 @@ public class OpenDCSOracleConfiguration implements Configuration
             stmt.executeQuery("GRANT CREATE SESSION,RESOURCE,CONNECT"
                             + " TO " + user + " WITH ADMIN OPTION");
             stmt.executeQuery("ALTER USER " + user + " DEFAULT ROLE ALL");
+        }
+    }
+
+    @Override
+    public OpenDcsDatabase getOpenDcsDatabase() throws Throwable
+    {
+        synchronized(this)
+        {
+            if (databases == null)
+            {
+                buildDatabases();
+            }
+            return databases;
         }
     }
 }

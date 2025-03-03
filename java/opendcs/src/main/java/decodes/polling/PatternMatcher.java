@@ -35,7 +35,6 @@ public class PatternMatcher
 	/**
 	 * constructor
 	 * @param pattern The pattern to search for
-	 * @param processIdx The location in the session buffer from which to start
 	 */
 	public PatternMatcher(byte[] pattern)
 	{
