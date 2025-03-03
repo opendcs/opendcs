@@ -7,14 +7,14 @@ import java.net.*;
 import java.io.*;
 
 /**
-Connect to a server at specified host & port & send a file. Then hangup.
+Connect to a server at specified host and port, and send a file. Then hangup.
 */
 public class FileSendClient
 {
 	private static boolean jerky = false;
 	
 	/**
-	 * Send a file's contents to a named host & port.
+	 * Send a file's contents to a named host and port.
 	 * @param filename the file to send
 	 * @param host the host to send to
 	 * @param port the port to connect to on the host

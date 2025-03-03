@@ -74,8 +74,8 @@ public class SftpDataSource
 	/**
 	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
 	 *
-	 * @param dataSource
-	 * @param decodesDatabase
+	 * @param source data source
+	 * @param db database
 	 */
 	public SftpDataSource(DataSource source, Database db) {
 		super(source, db);

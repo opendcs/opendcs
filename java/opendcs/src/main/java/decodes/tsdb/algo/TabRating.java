@@ -48,7 +48,7 @@ import java.util.Date;
 //AW:JAVADOC
 /**
 Implements rating table computations.
-Holds the lookup table & shift values.
+Holds the lookup table and shift values.
 Independent (e.g. STAGE) value is called "indep".
 Dependent (e.g. FLOW) is called "dep".
 <p>Properties include:

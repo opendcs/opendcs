@@ -61,8 +61,6 @@ package opendcs.dao;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -71,6 +69,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Predicate;
 
 import org.slf4j.LoggerFactory;
 
@@ -117,6 +117,8 @@ public class ComputationDAO
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(ComputationDAO.class);
 	protected static DbObjectCache<DbComputation> compCache =
 		new DbObjectCache<DbComputation>(60 * 60 * 1000L, false);
+	private static long lastCacheFill = 0L;
+	public static final long CACHE_TIME_LIMIT = 20 * 60 * 1000L;
 
 	protected PropertiesDAI propsDao = null;
 	protected AlgorithmDAI algorithmDAO = null;
@@ -171,6 +173,11 @@ public class ComputationDAO
 
 	private void fillCache()
 	{
+		if (System.currentTimeMillis() - lastCacheFill < CACHE_TIME_LIMIT)
+		{
+			return;
+		}
+
 		debug1("ComputationDAO.fillCache()");
 
 		String q = "select " + compTableColumns + " from CP_COMPUTATION ";
@@ -198,18 +205,18 @@ public class ComputationDAO
 			// Associate comps with groups, apps & algorithms.
 			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
 			{
-				DbComputation comp = (DbComputation)it.next();
-				if (!DbKey.isNull(comp.getGroupId()))
+				DbComputation comp = (DbComputation) it.next();
+				if(!DbKey.isNull(comp.getGroupId()))
 					comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
 
-				if (!DbKey.isNull(comp.getAppId()))
+				if(!DbKey.isNull(comp.getAppId()))
 					for(CompAppInfo cai : apps)
-						if (comp.getAppId().equals(cai.getAppId()))
+						if(comp.getAppId().equals(cai.getAppId()))
 							comp.setApplicationName(cai.getAppName());
 
-				if (!DbKey.isNull(comp.getAlgorithmId()))
+				if(!DbKey.isNull(comp.getAlgorithmId()))
 					for(DbCompAlgorithm algo : algos)
-						if (comp.getAlgorithmId().equals(algo.getId()))
+						if(comp.getAlgorithmId().equals(algo.getId()))
 						{
 							comp.setAlgorithm(algo);
 							comp.setAlgorithmName(algo.getName());
@@ -218,13 +225,13 @@ public class ComputationDAO
 
 			// Note the parms rely on the algorithms being in place. So get them now.
 			q = "select a.* from CP_COMP_TS_PARM a, CP_COMPUTATION b "
-				+ "where a.COMPUTATION_ID = b.COMPUTATION_ID";
+					+ "where a.COMPUTATION_ID = b.COMPUTATION_ID";
 			n[0] = 0;
 			doQuery(q, rs ->
 			{
 				DbKey compId = DbKey.createDbKey(rs, 1);
 				DbComputation comp = compCache.getByKey(compId);
-				if (comp == null)
+				if(comp == null)
 				{
 					log.warn("CP_COMP_TS_PARM with comp id={} with no matching computation.", compId);
 				}
@@ -238,22 +245,29 @@ public class ComputationDAO
 
 			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
 			{
-				DbComputation comp = (DbComputation)it.next();
+				DbComputation comp = (DbComputation) it.next();
 
 				// Make sure site IDs and datatype IDs are set in the parms
 				for(DbCompParm parm : comp.getParmList())
-					if (!parm.getSiteDataTypeId().isNull())
-						try { db.expandSDI(parm); }
-						catch (NoSuchObjectException e) {}
+					if(!parm.getSiteDataTypeId().isNull())
+						try
+						{
+							db.expandSDI(parm);
+						}
+						catch(NoSuchObjectException e)
+						{
+						}
 			}
 			log.debug("fillCache finished, {} computations cached.", compCache.size());
 		}
 		catch(Exception ex)
 		{
 			log.atWarn()
-			   .setCause(ex)
-			   .log("Exception filling computation hash.");
+					.setCause(ex)
+					.log("Exception filling computation hash.");
 		}
+
+		lastCacheFill = System.currentTimeMillis();
 	}
 
 	@Override
@@ -557,15 +571,13 @@ public class ComputationDAO
 	 * @return List of computations
 	 */
 	public ArrayList<DbComputation> listCompsForGUI(CompFilter filter)
-		throws DbIoException
 	{
 		debug1("listCompsForGUI " + filter);
 
-		if (compCache.size() == 0)
-			fillCache();
+		fillCache();
 
-		ArrayList<DbComputation> ret = new ArrayList<DbComputation>();
-		for(CacheIterator it = compCache.iterator(); it.hasNext(); )
+		ArrayList<DbComputation> ret = new ArrayList<>();
+		for (CacheIterator it = compCache.iterator(); it.hasNext(); )
 		{
 			DbComputation comp = (DbComputation)it.next();
 			DbKey procId = filter.getProcessId();
@@ -585,6 +597,31 @@ public class ComputationDAO
 				continue;
 
 			ret.add(comp);
+		}
+		return ret;
+	}
+
+	/**
+	 * Apply the filter to the cached computations.
+	 * @param filter the computation filter containing site, algorithm, datatype, interval, process, and group names
+	 * @return List of computations
+	 */
+	@Override
+	public List<DbComputation> listComps(Predicate<DbComputation> filter)
+			throws DbIoException
+	{
+		debug1("listComps " + filter);
+
+		fillCache();
+
+		List<DbComputation> ret = new ArrayList<>();
+		for (DbObjectCache<DbComputation>.CacheIterator it = compCache.iterator(); it.hasNext(); )
+		{
+			DbComputation comp = it.next();
+			if (filter.test(comp))
+			{
+				ret.add(comp);
+			}
 		}
 		return ret;
 	}

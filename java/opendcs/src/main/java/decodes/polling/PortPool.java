@@ -45,8 +45,9 @@ public abstract class PortPool
 	
 	/**
 	 * Releases a previously allocated port and returns it to the pool.
+	 * @param ioPort the port previously returned from allocatePort.
 	 * @param finalState TODO
-	 * @param port the port previously returned from allocatePort.
+	 * @param wasConnectException 
 	 */
 	public abstract void releasePort(IOPort ioPort, PollingThreadState finalState,
 		boolean wasConnectException);

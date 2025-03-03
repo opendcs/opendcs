@@ -81,8 +81,8 @@ public class ScpDataSource
 	/**
 	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
 	 *
-	 * @param dataSource
-	 * @param decodesDatabase
+	 * @param ds data source
+	 * @param db database
 	 */
 	public ScpDataSource(DataSource ds, Database db)
 	{
