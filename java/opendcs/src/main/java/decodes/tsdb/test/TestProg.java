@@ -179,18 +179,9 @@ public abstract class TestProg
 
 		// Connect to the database!
 		TestProg app;
-		try
-		{
-			appId = theDb.connect(appNameArg.getValue(), props);
-			Logger.instance().info("Connected with appId=" + appId);
-		}
-		catch(BadConnectException ex)
-		{
-			String msg = "Cannot connect to DB: " + ex.getMessage();
-			System.err.println(msg);
-			Logger.instance().fatal(msg);
-			throw ex;
-		}
+		/*
+		 * Yes I am trying to just remove this class.
+		 */
 	}
 
 	public void initDecodes()

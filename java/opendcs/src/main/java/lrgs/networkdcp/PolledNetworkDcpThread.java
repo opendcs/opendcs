@@ -52,7 +52,7 @@ public class PolledNetworkDcpThread
 	/**
 	 * Thread run method
 	 * Algorithm is:
-	 * 	- Try to get a config off the queue. Sleep & try again if none 
+	 * 	- Try to get a config off the queue. Sleep and try again if none 
 	 *    available.
 	 *  - Once you have a config, call configure, they behave similarly to 
 	 *    super class, but once you get a timeout or NONE, update the poll 

@@ -148,9 +148,9 @@ public class LrgsSummaryStatPanel extends JPanel
 	/**
 	 * Sets the status fields according to the passed data.
 	 * 
-	 * @param status
+	 * @param currentStatus
 	 *            the status snapshot received from the server.
-	 * @param numAlarm
+	 * @param numAlarms
 	 *            the number of alarms asserted on this server.
 	 * @param src
 	 *            the source for this server 'u'plink or 'd'ownlink.

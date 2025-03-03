@@ -91,7 +91,8 @@ public class AsciiSelfDescFunction
 	
 	/**
 	 * Parse the passed message.
-	 * @param msg the message in a single string
+	 * @param msgData the message in a single string
+	 * @param decmsg decoded message
 	 * @return the index after the final character that was parsed.
 	 */
 	public int parse(String msgData, DecodedMessage decmsg)

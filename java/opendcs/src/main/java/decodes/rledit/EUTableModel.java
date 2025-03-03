@@ -108,7 +108,7 @@ public class EUTableModel extends AbstractTableModel
 	/**
 	 * Columnizes an EU object.
 	 * @param eu the EngineeringUnit
-	 * @param the column to get
+	 * @param column to get
 	 * @return String value for the table display
 	 */
 	public static String getEuColumn(EngineeringUnit eu, int column)

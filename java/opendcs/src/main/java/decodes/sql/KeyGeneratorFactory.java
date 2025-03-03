@@ -46,7 +46,7 @@ given a class name.
 public class KeyGeneratorFactory
 {
 	/**
-	 * Makes & returns a key generator, given a class name.
+	 * Makes and returns a key generator, given a class name.
 	 * Also calls the generator's init method with the passed connection object.
 	 * @param clsname the class name.
 	 * @return the key generator object.

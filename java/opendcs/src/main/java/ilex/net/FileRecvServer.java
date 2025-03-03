@@ -32,7 +32,6 @@ public class FileRecvServer extends BasicServer
 	/**
 	* Constructor
 	* @param port the port number
-	* @param filename the file to send
 	*/
 	public FileRecvServer( int port) 
 			throws IllegalArgumentException, IOException
