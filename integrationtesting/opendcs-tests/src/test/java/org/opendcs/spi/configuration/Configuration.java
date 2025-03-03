@@ -3,6 +3,8 @@ package org.opendcs.spi.configuration;
 import java.io.File;
 import java.util.Map;
 
+import org.opendcs.database.api.OpenDcsDatabase;
+
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
@@ -79,16 +81,7 @@ public interface Configuration
      * @return Instance of the Decodes Database for this run/test.
      * @throws Throwable
      */
-    default public Database getDecodesDatabase() throws Throwable
-    {
-        DecodesSettings settings = DecodesSettings.instance();
-        Database db = new Database(true);
-        DatabaseIO dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-        db.setDbIo(dbio);
-        db.read();
-        Database.setDb(db);
-        return db;
-    }
+    public Database getDecodesDatabase() throws Throwable;    
 
     default public boolean implementsSupportFor(Class<? extends TsdbAppTemplate> appClass)
     {
@@ -109,4 +102,6 @@ public interface Configuration
     * @return
     */
     public String getName();
+
+    public OpenDcsDatabase getOpenDcsDatabase() throws Throwable;
 }
