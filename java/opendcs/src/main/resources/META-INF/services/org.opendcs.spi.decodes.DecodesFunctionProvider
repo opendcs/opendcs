@@ -6,3 +6,4 @@ org.opendcs.decodes.functions.NosHourlyProvider
 org.opendcs.decodes.functions.RegexFunctionProvider
 org.opendcs.decodes.functions.SetMissingFunctionProvider
 org.opendcs.decodes.functions.ShefProcessProvider
+org.opendcs.decodes.functions.ReplaceValueWithFunctionProvider

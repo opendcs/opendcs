@@ -478,8 +478,8 @@ public class OpenTsdbConsumer extends DataConsumer
 	 * This method builds the Cwms Time Series ID descriptor. It
 	 * has  six parts: location.param.paramtype.interval.duration.version
 	 * 
-	 * @param TimeSeries the time series object containing current data
-	 * @param Site current site
+	 * @param ts the time series object containing current data
+	 * @param platformSite the site
 	 * @return String timeseries descriptor or null if can not build the
 	 * 			param part
 	 */

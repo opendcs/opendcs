@@ -6,7 +6,7 @@ public interface LoadableLrgsInputInterface extends LrgsInputInterface
 {
 	/**
 	 * The interface is assigned a unique name in the config file:
-	 * LrgsInput.<InterfaceName>.class=<fully-qualified java class name>
+	 * LrgsInput.&lt;InterfaceName&gt;.class=&lt;fully-qualified java class name&gt;
 	 * @param name
 	 */
 	public void setInterfaceName(String name);

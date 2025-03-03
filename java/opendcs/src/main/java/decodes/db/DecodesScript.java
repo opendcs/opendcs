@@ -18,10 +18,12 @@ import ilex.var.Variable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 import java.util.function.Supplier;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -53,7 +55,7 @@ public class DecodesScript extends IdDatabaseObject
     */
     public Vector<ScriptSensor> scriptSensors;
 
-    /** The format statments that make up the executable script.*/
+    /** The format statements that make up the executable script.*/
     private Vector<FormatStatement> formatStatements;
 
     /**
@@ -80,6 +82,8 @@ public class DecodesScript extends IdDatabaseObject
      * to signify a missing value. Example Campbell CX3000 sometimes uses 6998.
      */
     private HashSet<String> missingSymbols = new HashSet<String>();
+
+    private Map<String,String> replaceSymbols = new HashMap<>();
 
     private ArrayList<String> includePMs = null;
 
@@ -554,6 +558,16 @@ public class DecodesScript extends IdDatabaseObject
         return missingSymbols.contains(symbol);
     }
 
+    public void addReplace(String find, String replace)
+    {
+        replaceSymbols.put(find, replace);
+    }
+
+    public String getReplacement(String value)
+    {
+        return replaceSymbols.getOrDefault(value, value);
+    }
+    
     public void setIncludePMs(ArrayList<String> includePMs)
     {
         this.includePMs = includePMs;
