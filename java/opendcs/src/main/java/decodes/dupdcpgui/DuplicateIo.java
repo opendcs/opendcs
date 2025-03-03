@@ -35,8 +35,8 @@ public class DuplicateIo
 		new HashMap<DcpAddress,ControllingDistrict>();
 	
 	/**
-	 * Construct the IO with dir name & district file name.
-	 * @param mergeDirName The merg directory
+	 * Construct the IO with dir name and district file name.
+	 * @param mergeDirName The merge directory
 	 * @param distFileName the district filename within the merge directory
 	 */
 	public DuplicateIo(String mergeDirName, String distFileName)
@@ -45,7 +45,7 @@ public class DuplicateIo
 	}	
 	
 	/**
-	 * Initialize or Re-initialize the IO with dir name & district file name.
+	 * Initialize or Re-initialize the IO with dir name and district file name.
 	 * @param mergeDirName The merge directory
 	 * @param distFileName the district filename within the merge directory
 	 */
@@ -63,7 +63,7 @@ public class DuplicateIo
 	/**
 	 * Read all Controlling Districts from the controlling
 	 * District file. The ControllingDistrict file is composed
-	 * of dcpAddress and Distrcit Name. The format is:
+	 * of dcpAddress and District Name. The format is:
 	 * 		dcpAddress:District
 	 * 
 	 * @return true if file read successfully, false if not.
@@ -112,7 +112,6 @@ public class DuplicateIo
 	 * into the controlling-districts.txt file located on 
 	 * DECODES INSTALL DIR/dcptoimport directory.
 	 * 
-	 * @param cd
 	 */
 	public boolean writeControllingDist()
 	{
@@ -156,7 +155,7 @@ public class DuplicateIo
 	/**
 	 * Create a <distrcit>-TOIMPORT.nl file under the Merge Directory.
 	 * 
-	 * @param buffer
+	 * @param strBuffer
 	 * @param districtName
 	 * @return
 	 */

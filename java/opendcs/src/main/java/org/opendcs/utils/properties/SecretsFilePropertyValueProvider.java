@@ -24,7 +24,7 @@ public class SecretsFilePropertyValueProvider implements PropertyValueProvider
      * Retrieve property file named within the value.
      * @param value actual value to decipher.
      *
-     * @param properties ignored in this implementation.
+     * @param props ignored in this implementation.
      * @param environment ignored in this implementation.
      *
      * @return the real value, or null if not found.

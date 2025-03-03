@@ -58,7 +58,7 @@ public class Season
 	
 	/**
 	 * Return true if the passed Date is within this season.
-	 * That is, it is >= the start and < the end.
+	 * That is, it is &gt;= the start and &lt; the end.
 	 * @param d
 	 * @return true if the passed Date is within this season
 	 */
