@@ -455,7 +455,7 @@ public class LoadingAppDao
             else if (db.isOracle())
             {
                 columnQuery = "select count(*) from all_tab_cols where " +
-                        "upper(table_name) = 'ALARM_SCREENING' and upper(column_name) = 'LOADING_APPLICATION_ID')";
+                        "upper(table_name) = 'ALARM_SCREENING' and upper(column_name) = 'LOADING_APPLICATION_ID'";
                 columnExists = getSingleResult(columnQuery, rs -> rs.getInt(1) > 0);
             }
 
