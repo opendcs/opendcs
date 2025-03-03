@@ -76,7 +76,6 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbCompLock;
-import decodes.util.DecodesSettings;
 
 /**
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
@@ -445,7 +444,22 @@ public class LoadingAppDao
                         + "assigned to it.");
             }
 
-            if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_68)
+            String columnQuery;
+            boolean columnExists = false;
+            if (db.isOpenTSDB())
+            {
+                columnQuery = "select exists(select 1 from information_schema.columns " +
+                        "where upper(table_name) = 'ALARM_SCREENING' and upper(column_name) = 'LOADING_APPLICATION_ID')";
+                columnExists = getSingleResult(columnQuery, rs -> rs.getBoolean(1));
+            }
+            else if (db.isOracle())
+            {
+                columnQuery = "select count(*) from all_tab_cols where " +
+                        "upper(table_name) = 'ALARM_SCREENING' and upper(column_name) = 'LOADING_APPLICATION_ID'";
+                columnExists = getSingleResult(columnQuery, rs -> rs.getInt(1) > 0);
+            }
+
+            if (columnExists)
             {
                 q = "select count(*) from ALARM_SCREENING where LOADING_APPLICATION_ID = ?";
                 int numAlarms = getSingleResult(q, rs -> rs.getInt(1), app.getKey());
