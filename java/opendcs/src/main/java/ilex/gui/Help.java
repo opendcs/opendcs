@@ -14,14 +14,24 @@ public class Help
 
     private static String getUrl()
     {
-        String localURL =System.getenv("DECODES_INSTALL_DIR");
+        String localURL =System.getenv("DCSTOOL_HOME");
         localURL +="/doc/index.html";
-        return localURL;
+
+        File f = new File(localURL);
+        if(f.exists())
+        {
+            return localURL;
+        }
+        else
+        {
+            return HELP_URL;
+        }
     }
 
     public static void open(){
-        String url = getUrl();
+        String url="";
         try {
+            url = getUrl();
             if(  Desktop.isDesktopSupported())
             {
                 if( url.startsWith("http"))
@@ -39,7 +49,7 @@ public class Help
             if(  Desktop.isDesktopSupported()){
                 JOptionPane.showMessageDialog(null, "Error opening " + url, "Error", JOptionPane.ERROR_MESSAGE);
             }
-            log.error("Error opening '{}' ",HELP_URL,e);
+            log.error("Error opening '{}' ",url,e);
         }
     }
 
