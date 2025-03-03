@@ -14,7 +14,7 @@ public class Help
 
     private static String getUrl()
     {
-        String localURL =System.getenv("DCSTOOL_HOME");
+        String localURL =System.getProperty("DCSTOOL_HOME");
         localURL +="/doc/index.html";
 
         File f = new File(localURL);
@@ -28,9 +28,11 @@ public class Help
         }
     }
 
-    public static void open(){
+    public static void open()
+    {
         String url="";
-        try {
+        try 
+        {
             url = getUrl();
             if(  Desktop.isDesktopSupported())
             {
@@ -38,20 +40,20 @@ public class Help
                 {
                 Desktop.getDesktop().browse(new URI(url));
                 }
-            else
+                else
+                {
+                File file = new File(url);
+                Desktop.getDesktop().browse(file.toURI());
+                }
+            }  
+        }
+        catch( Throwable e) 
+        {
+            if(  Desktop.isDesktopSupported())
             {
-               File file = new File(url);
-               Desktop.getDesktop().browse(file.toURI());
-            }
-        }
-        }
-        catch( Throwable e) {
-            if(  Desktop.isDesktopSupported()){
                 JOptionPane.showMessageDialog(null, "Error opening " + url, "Error", JOptionPane.ERROR_MESSAGE);
             }
             log.error("Error opening '{}' ",url,e);
         }
     }
-
-
 }
