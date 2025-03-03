@@ -1,4 +1,4 @@
-package org.opendcs.fixtures.helpers;
+package org.opendcs.fixtures;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

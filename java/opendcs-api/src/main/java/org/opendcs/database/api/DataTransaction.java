@@ -27,9 +27,9 @@ public interface DataTransaction extends AutoCloseable {
      * an HTTP client.
      * @param <T> Requested connection type. Implementations should implement support
      *            for the connections they use.
-     * @param connectionType
+     * @param connectionType class of connection type
      * @return optional with the instance of the connection type, if available.
-     * @throws OpenDCSDataException any issues with the connection, if implementations check validity.
+     * @throws OpenDcsDataException any issues with the connection, if implementations check validity.
      */
     <T> Optional<T> connection(Class<T> connectionType) throws OpenDcsDataException;
 
