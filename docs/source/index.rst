@@ -109,6 +109,7 @@ Reminder - legacy PDFs are no longer being updated.
    :caption: Developer Documentation
    
    Developer Documentation <./dev-docs.rst>
+   Testing <./dev-testing.rst>
    
 .. toctree:: 
    :maxdepth: 1
