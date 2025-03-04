@@ -718,6 +718,11 @@ public class ConfigListIO extends SqlDbObjIo
         String q =
             "DELETE FROM PlatformConfig WHERE ID = " + pc.getId();
         executeUpdate(q);
+        PlatformConfig pc2 = _pcList.getById(pc.getId());
+        if (pc2 != null)
+        {
+            _pcList.remove(pc2);
+        }
     }
 
     /**
