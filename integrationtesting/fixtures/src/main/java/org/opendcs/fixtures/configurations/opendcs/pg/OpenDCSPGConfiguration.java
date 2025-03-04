@@ -1,14 +1,10 @@
-package org.opendcs.fixtures.configurations.opendcs.oracle;
+package org.opendcs.fixtures.configurations.opendcs.pg;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,19 +20,17 @@ import org.apache.commons.io.FileUtils;
 import org.jdbi.v3.core.Jdbi;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
-import org.opendcs.database.SimpleDataSource;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.impl.opendcs.OpenDcsOracleProvider;
+import org.opendcs.database.SimpleDataSource;
+import org.opendcs.database.impl.opendcs.OpenDcsPgProvider;
 import org.opendcs.fixtures.UserPropertiesBuilder;
-import org.opendcs.fixtures.helpers.Programs;
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
-import org.testcontainers.containers.JdbcDatabaseContainer.NoDriverFoundException;
-import org.testcontainers.oracle.OracleContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import decodes.db.Database;
 import decodes.launcher.Profile;
-import decodes.sql.OracleSequenceKeyGenerator;
+import decodes.sql.SequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
@@ -46,22 +40,21 @@ import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import opendcs.dao.LoadingAppDao;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.opentsdb.OpenTsdb;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 /**
- * Handles setup of an OpenDCS Oracle SQL Database instance.
+ * Handles setup of an OpenDCS Postgres SQL Database instance.
  *
  */
-public class OpenDCSOracleConfiguration implements Configuration
+public class OpenDCSPGConfiguration implements Configuration
 {
-    private static Logger log = Logger.getLogger(OpenDCSOracleConfiguration.class.getName());
+    private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
 
-    public static final String NAME = "OpenDCS-Oracle";
+    public static final String NAME = "OpenDCS-Postgres";
 
-    private static OracleContainer db = null;
+    private static PostgreSQLContainer<?> db = null;
     private File userDir;
     private File propertiesFile;
     private static AtomicBoolean started = new AtomicBoolean(false);
@@ -71,13 +64,13 @@ public class OpenDCSOracleConfiguration implements Configuration
 
     // FUTURE work: allow passing of override values to bypass the test container creation
     // ... OR setup a separate testcontainer library like USACE did for CWMS.
-    private static final String DATABASE_NAME = "FREEPDB1";
-    private static final String SCHEMA_OWNING_USER = "otsdb_adm";
+    private static final String DATABASE_NAME = "dcs";
+    private static final String SCHEMA_OWNING_USER = "dcs_owner";
     private static final String SCHEMA_OWNING_USER_PASSWORD = "dcs_owner_password";
     private static final String DCS_ADMIN_USER = "dcs_admin";
     private static final String DCS_ADMIN_USER_PASSWORD = "dcs_admin_password";
 
-    public OpenDCSOracleConfiguration(File userDir) throws Exception
+    public OpenDCSPGConfiguration(File userDir) throws Exception
     {
         this.userDir = userDir;
         this.propertiesFile = new File(userDir,"/user.properties");
@@ -128,35 +121,31 @@ public class OpenDCSOracleConfiguration implements Configuration
         {
             return;
         }
-        if(db == null)
+        if (db == null)
         {
-            db = new OracleContainer("gvenzl/oracle-free:full-faststart")
+            db = new PostgreSQLContainer<>("postgres:15.3")
                     .withUsername(SCHEMA_OWNING_USER)
-                    .withPassword(SCHEMA_OWNING_USER_PASSWORD)
-                    .withStartupTimeoutSeconds(300)
-                    ;
+                    .withDatabaseName(DATABASE_NAME)
+                    .withPassword(SCHEMA_OWNING_USER_PASSWORD);
         }
 
         db.start();
-        schemaSetup(db, db.getUsername());
+        environmentVars.put("DB_URL", db.getJdbcUrl());
+        environment.set("DB_URL", db.getJdbcUrl());
         createPropertiesFile(configBuilder, this.propertiesFile);
         profile = Profile.getProfile(this.propertiesFile);
         DataSource ds = new SimpleDataSource(db.getJdbcUrl(),db.getUsername(),db.getPassword());
 
-        MigrationManager mm = new MigrationManager(ds,OpenDcsOracleProvider.NAME);
+        MigrationManager mm = new MigrationManager(ds,OpenDcsPgProvider.NAME);
         MigrationProvider mp = mm.getMigrationProvider();
         mp.setPlaceholderValue("NUM_TS_TABLES", "1");
         mp.setPlaceholderValue("NUM_TEXT_TABLES","1");
-        mp.setPlaceholderValue("TSDB_ADM_SCHEMA",SCHEMA_OWNING_USER);
-        mp.setPlaceholderValue("TSDB_ADM_PASSWORD",SCHEMA_OWNING_USER_PASSWORD);
-        mp.setPlaceholderValue("TABLE_SPACE_SPEC","");
         mm.migrate();
         Jdbi jdbi = mm.getJdbiHandle();
         log.info("Creating application user.");
         List<String> roles = new ArrayList<>();
         roles.add("OTSDB_ADMIN");
         roles.add("OTSDB_MGR");
-        roles.add("OTSDB_COMP_EXEC");
         mp.createUser(jdbi, DCS_ADMIN_USER, DCS_ADMIN_USER_PASSWORD, roles);
         log.info("Setting authentication environment vars.");
         ilex.util.Logger originalLog = ilex.util.Logger.instance();
@@ -202,7 +191,7 @@ public class OpenDCSOracleConfiguration implements Configuration
             configBuilder.withEditDatabaseType("OPENTSDB");
             configBuilder.withDatabaseDriver("org.postgresql.Driver");
             configBuilder.withSiteNameTypePreference("CWMS");
-            configBuilder.withSqlKeyGenerator(OracleSequenceKeyGenerator.class);
+            configBuilder.withSqlKeyGenerator(SequenceKeyGenerator.class);
             configBuilder.withDecodesAuth("env-auth-source:username=DB_USERNAME,password=DB_PASSWORD");
             configBuilder.build(out);
         }
@@ -287,36 +276,6 @@ public class OpenDCSOracleConfiguration implements Configuration
     public String getName()
     {
         return NAME;
-    }
-
-    private static void schemaSetup(OracleContainer db, String user) throws SQLException
-    {
-        Driver driverInstance;
-        try
-        {
-            driverInstance = (Driver)Class.forName(db.getDriverClassName()).newInstance();
-        }
-        catch (InstantiationException | IllegalAccessException | ClassNotFoundException ex)
-        {
-            throw new SQLException("Unable to initialize schema user.", ex);
-        }
-
-        Properties info = new Properties();
-        info.put("user", "sys");        
-        info.put("internal_logon","sysdba");
-        info.put("password", db.getPassword());
-        try (Connection conn =  driverInstance.connect(db.getJdbcUrl(),info);
-             Statement stmt = conn.createStatement();)
-        {
-            stmt.executeQuery("GRANT ALTER ANY TABLE,CREATE ANY TABLE,CREATE ANY INDEX,CREATE ANY SEQUENCE,"
-                            + "CREATE ANY VIEW,CREATE ANY PROCEDURE,CREATE ANY TRIGGER,CREATE ANY JOB,"
-                            + "CREATE ANY SYNONYM,DROP ANY SYNONYM,CREATE PUBLIC SYNONYM,DROP PUBLIC SYNONYM,"
-                            + "CREATE ROLE, CREATE USER"
-                            + " TO " + user);
-            stmt.executeQuery("GRANT CREATE SESSION,RESOURCE,CONNECT"
-                            + " TO " + user + " WITH ADMIN OPTION");
-            stmt.executeQuery("ALTER USER " + user + " DEFAULT ROLE ALL");
-        }
     }
 
     @Override

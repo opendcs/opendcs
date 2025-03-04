@@ -1,4 +1,4 @@
-package org.opendcs.spi.configuration;
+package org.opendcs.fixtures.spi;
 
 import java.io.File;
 import java.util.Map;
@@ -6,10 +6,8 @@ import java.util.Map;
 import org.opendcs.database.api.OpenDcsDatabase;
 
 import decodes.db.Database;
-import decodes.db.DatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
-import decodes.util.DecodesSettings;
 import opendcs.dao.DaoBase;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -76,7 +74,7 @@ public interface Configuration
     }
 
     /**
-     * Returns an independent instance of the {@decodes.db.Database} Decodes Database for this configuration.
+     * Returns an independent instance of the {@link decodes.db.Database} Decodes Database for this configuration.
      *
      * @return Instance of the Decodes Database for this run/test.
      * @throws Throwable
