@@ -41,6 +41,20 @@ public class Pair<FirstType,SecondType>
 	}
 
 	/**
+	 * Create a pair
+	 *
+	 * @param <FirstType>
+	 * @param <SecondType>
+	 * @param f
+	 * @param s
+	 * @return
+	 */
+	public static <FirstType,SecondType> Pair<FirstType,SecondType> of(FirstType f, SecondType s)
+	{
+		return new Pair<>(f,s);
+	}
+
+	/**
 	* @return a hashcode incorporating the hashcodes from both constituents.
 	*/
 	public int hashCode( )

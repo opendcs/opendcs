@@ -129,11 +129,13 @@ public class CsvFunction
 	private void processColumn(int col, String sample, DecodedMessage decmsg, int linenum,
 		int fieldStart, DataOperations dd)
 	{
+		final DecodesScript script = formatStatement.getDecodesScript();
 		int sensorNumber = sensorNumbers.get(col);
 		if (sensorNumber < 0)
 			return;
 		trace("Processing column " + col + " value='" + sample + "'");
-		if (sample.length() == 0 || sample.startsWith("M") || sample.startsWith("/"))
+		boolean isMissing =script.isMissingSymbol(sample) || sample.startsWith("M");
+		if (sample.length() == 0 || isMissing || sample.startsWith("/"))
 		{
 			Variable v = new Variable("m");
 			v.setFlags(v.getFlags() | IFlags.IS_MISSING);
@@ -145,7 +147,7 @@ public class CsvFunction
 					DecodedSample ds = new DecodedSample(this, 
 						fieldStart, dd.getBytePos(),
 						tv, decmsg.getTimeSeries(sensorNumber));
-					formatStatement.getDecodesScript().addDecodedSample(ds);
+					script.addDecodedSample(ds);
 				}
 			}
 			else
@@ -154,7 +156,9 @@ public class CsvFunction
 		}
 		try
 		{
-			double x = Double.parseDouble(sample); 
+			String real = script.getReplacement(sample);
+			trace("Turning " + sample + " -> " + real);
+			double x = Double.parseDouble(real); 
 			Variable v = new Variable(x);
 			TimedVariable tv = decmsg.addSample(sensorNumber, v, linenum);
 			if (tv != null && DecodesScript.trackDecoding)
@@ -162,7 +166,7 @@ public class CsvFunction
 				DecodedSample ds = new DecodedSample(this, 
 					fieldStart, dd.getBytePos(),
 					tv, decmsg.getTimeSeries(sensorNumber));
-				formatStatement.getDecodesScript().addDecodedSample(ds);
+				script.addDecodedSample(ds);
 			}
 			trace("    Added value " + x);
 		}

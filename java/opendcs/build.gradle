@@ -2,6 +2,7 @@ plugins
 {
     id 'opendcs.deps-conventions'
     id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
     id 'java-library'
 }
 
@@ -20,6 +21,7 @@ configurations {
 dependencies {
     annotationProcessor(project(":opendcs-annotations"))
     api(project(":opendcs-annotations"))
+    api(project(":opendcs-api"))
     implementation(libs.bundles.oracle)
     implementation(libs.postgresql)
     implementation(libs.asm)
@@ -152,3 +154,17 @@ sourceSets {
 }
 
 compileJava.dependsOn(versionFile)
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs'
+            from components.java
+
+            pom {
+                name = 'OpenDCS Core Library'
+                description = 'Contains built-in opendcs components and interfaces.'
+            }
+        }
+    }
+}

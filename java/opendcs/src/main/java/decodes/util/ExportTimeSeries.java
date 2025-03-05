@@ -1,6 +1,7 @@
 /*
  * $Id: ExportTimeSeries.java,v 1.3 2020/02/20 15:29:13 mmaloney Exp $
  *
+ *
  * $Log: ExportTimeSeries.java,v $
  * Revision 1.3  2020/02/20 15:29:13  mmaloney
  * Added all and group options.
@@ -10,6 +11,7 @@
  *
  * Revision 1.1  2017/08/22 19:49:55  mmaloney
  * Refactor
+ *
  *
  *
  * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.

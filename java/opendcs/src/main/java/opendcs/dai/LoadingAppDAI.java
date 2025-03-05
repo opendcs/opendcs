@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.opendcs.database.api.OpenDcsDao;
+
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.ConstraintException;
@@ -27,8 +29,7 @@ import decodes.tsdb.TsdbCompLock;
  * Defines public interface for reading/writing loading application and locks.
  * @author mmaloney - Mike Maloney, Cove Software, LLC
  */
-public interface LoadingAppDAI
-	extends DaiBase
+public interface LoadingAppDAI extends DaiBase, OpenDcsDao
 {
 	/**
 	 * Return a list of computations assigned to a given application.

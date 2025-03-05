@@ -5,6 +5,7 @@ import java.util.Date;
 
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
+import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
@@ -45,6 +46,16 @@ public interface ScheduleEntryDAI
 		throws DbIoException;
 
 	/**
+	 * Read a single schedule entry by its id
+	 * @param id
+	 * @return ScheduleEntry or null if no match found.
+	 * @throws DbIoException
+	 * @throws NoSuchObjectException
+	 */
+	public ScheduleEntry readScheduleEntry(DbKey id)
+			throws DbIoException;
+
+	/**
 	 * Write the schedule entry to the database.
 	 * @param scheduleEntry
 	 * @throws DbIoException on database error
@@ -71,7 +82,15 @@ public interface ScheduleEntryDAI
 	public ArrayList<ScheduleEntryStatus> 
 		readScheduleStatus(ScheduleEntry scheduleEntry)
 		throws DbIoException;
-	
+
+	/**
+	 * Read a single schedule entry by an associated status ID
+	 * @param scheduleEntryStatusId the database key of the status entry
+	 * @return ScheduleEntry or null if no match found.
+	 * @throws DbIoException on database error
+	 */
+	ScheduleEntry readScheduleEntryByStatusId(DbKey scheduleEntryStatusId) throws DbIoException;
+
 	/**
 	 * Write the passed schedule status to the database. This may be an
 	 * update of a previously written status.

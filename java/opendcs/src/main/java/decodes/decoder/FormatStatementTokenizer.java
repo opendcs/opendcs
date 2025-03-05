@@ -24,7 +24,7 @@ public class FormatStatementTokenizer
 
 	/**
 	  Constructor.
-	  @param  s the complete format statement.
+	  @param  fmtStatement the complete format statement.
 	  @param  ds the DecodesScript that this belongs to
 	*/
 	public FormatStatementTokenizer(String fmtStatement, DecodesScript ds,

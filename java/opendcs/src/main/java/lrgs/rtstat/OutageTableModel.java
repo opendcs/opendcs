@@ -89,7 +89,7 @@ public class OutageTableModel extends AbstractTableModel
 	/**
 	 * Columnizes an object.
 	 * @param ob the object
-	 * @param the column to get
+	 * @param column to get
 	 * @return String value for the table display
 	 */
 	public static String getObColumn(Outage ob, int column)

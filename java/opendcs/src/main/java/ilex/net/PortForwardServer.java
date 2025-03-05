@@ -13,7 +13,7 @@ import java.net.Socket;
 /**
  * Opens listening socket for control and another for forwarding.
  * Control port accepts lines formatted as hostname_or_ip:port
- * Subsequent connects to forwarding port are forwarded to the specified hostname & ip.
+ * Subsequent connects to forwarding port are forwarded to the specified hostname and ip.
  * @author mmaloney
  *
  */

@@ -106,7 +106,7 @@ public class MergeFilter
 	 * Determine if this message should be saved, and whether a duplicate
 	 * should be overwritten (i.e. marked as deleted.)
 	 * <p>If the result indicates that this message should be discarded
-	 * because it is a duplicate, the 'origPtr' will contain the day &
+	 * because it is a duplicate, the 'origPtr' will contain the day and
 	 * index number of the original copy of the message being retained.
 	 * @param msg the newly arrived message.
 	 * @param lastPtr hash entry pointing to last entry for this DCP.

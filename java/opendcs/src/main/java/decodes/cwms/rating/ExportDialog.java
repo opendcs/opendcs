@@ -79,8 +79,9 @@ public class ExportDialog extends GuiDialog
 	
 	/**
 	 * Constructor.
-	 * @param owner the db editor top-frame.
-	 * @param title
+	 * @param parent the db editor top-frame.
+	 * @param tsdb time-series database
+	 * @param cwmsRatingRef rating reference
 	 */
 	public ExportDialog(TopFrame parent, TimeSeriesDb tsdb, CwmsRatingRef cwmsRatingRef)
 	{

@@ -24,15 +24,13 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.CompDependsDAO;
-import opendcs.dao.CompDependsNotifyDAO;
 
 @DecodesConfigurationRequired({
     "shared/test-sites.xml",
-    "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
     "shared/presgrp-regtest.xml"
 })
 @ComputationConfigurationRequired({"shared/loading-apps.xml"})
-public class CompDependsDaoTestIT extends AppTestBase
+final class CompDependsDaoTestIT extends AppTestBase
 {
     @ConfiguredField
     private TimeSeriesDb db;
@@ -42,12 +40,11 @@ public class CompDependsDaoTestIT extends AppTestBase
 
     @Test
     @EnableIfDaoSupported(CompDependsDAO.class)
-    public void test_compdepends_operations() throws Exception
+    void test_compdepends_operations() throws Exception
     {
         try(CompDependsDAO cd = (CompDependsDAO)db.makeCompDependsDAO();
-            CompDependsNotifyDAO cdnDao = (CompDependsNotifyDAO)db.makeCompDependsNotifyDAO();
             TimeSeriesDAI tsDAI = db.makeTimeSeriesDAO();
-            ComputationDAI compDAI = db.makeComputationDAO();)
+            ComputationDAI compDAI = db.makeComputationDAO())
         {
             cd.clearScratchpad();
             cd.doModify("delete from cp_depends_notify", new Object[0]);
@@ -77,7 +74,7 @@ public class CompDependsDaoTestIT extends AppTestBase
                                             "compdepends",
                                             configuration.getPropertiesFile(),
                                             new File(configuration.getUserDir(),"cdn-test.log"),
-                                            environment);)
+                                            environment))
             {
                 assertTrue(app.isRunning(), "App did not start correctly.");
                 Waiting.assertResultWithinTimeFrame(

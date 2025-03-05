@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.helpers.TestResources;
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.spi.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -21,7 +21,7 @@ import uk.org.webcompere.systemstubs.SystemStubs;
 @DecodesConfigurationRequired({
         "shared/test-sites.xml",
         "shared/ROWI4.xml",
-        "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
+        "shared/cwms-import.xml",
         "shared/presgrp-regtest.xml",
         "HydroJsonTest/HydroJSON-rs.xml",
         "SimpleDecodesTest/site-OKVI4.xml",

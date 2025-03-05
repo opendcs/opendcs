@@ -97,8 +97,8 @@ public class DrgsRecv
 
 	/**
 	  Constructor called from main.
-	  @param args command line arguments.
-	  @see DrgsCmdLineArgs for details on command line arguments.
+	  @param lrgsMain main LRGS process
+	  @param msgArchive message archive
 	*/
 	public DrgsRecv(LrgsMain lrgsMain, MsgArchive msgArchive)
 	{

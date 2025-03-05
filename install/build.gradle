@@ -92,6 +92,18 @@ distributions
     }
 }
 
+if (shouldSign) {
+    signing {
+        sign distZip
+        sign distTar
+    }
+
+    task signDist {
+        dependsOn signDistTar
+        dependsOn signDistZip
+    }
+}
+
 def javaVersion = Double.parseDouble(project.findProperty("org.gradle.java.version") ?: "1.8" )
 
 task runApp(type: Exec) {

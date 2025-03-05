@@ -1,0 +1,3 @@
+#sensor number, time (ISO8601), expected value (double or string), precision, message
+1,2024-07-12T00:00:00Z,m, 0.0, Expected missing (m) sensor 1
+2,2024-07-12T00:00:00Z,15, 0.0, Expected 15 for sensor 2
