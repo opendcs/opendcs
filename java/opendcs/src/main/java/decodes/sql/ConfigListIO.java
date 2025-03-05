@@ -372,7 +372,8 @@ public class ConfigListIO extends SqlDbObjIo
                             String.format("No PlatformConfig found with ID %d", pc.getId().getValue()), thr);
                 }
 
-                putConfig(pc.getId(), rs);
+                PlatformConfig config = putConfig(pc.getId(), rs);
+                pc.copyFrom(config);
             }
         }
     }

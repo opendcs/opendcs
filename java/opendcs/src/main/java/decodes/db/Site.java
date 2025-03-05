@@ -139,6 +139,11 @@ public class Site extends IdDatabaseObject
 	 */
 	public synchronized void copyFrom(Site rhs)
 	{
+		//This and input parameter could be the same reference if accessed via cache
+		if (rhs == this)
+		{
+			return;
+		}
 		latitude = rhs.latitude;
 		longitude = rhs.longitude;
 		nearestCity = rhs.nearestCity;

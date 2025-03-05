@@ -388,6 +388,11 @@ public class PlatformConfig extends IdDatabaseObject
 	 */
 	public void copyFrom(PlatformConfig rhs)
 	{
+		//This and input parameter could be the same reference if accessed via cache
+		if (rhs == this)
+		{
+			return;
+		}
 		this.configName = rhs.configName;
 		this.description = rhs.description;
 		this.numPlatformsUsing = rhs.numPlatformsUsing;
@@ -395,16 +400,14 @@ public class PlatformConfig extends IdDatabaseObject
 		this.equipmentModel = rhs.equipmentModel;
 
 		this.configSensors.clear();
-		for(Iterator<ConfigSensor> it = rhs.configSensors.iterator(); it.hasNext(); )
+		for(ConfigSensor cs : rhs.configSensors)
 		{
-			ConfigSensor cs = it.next();
 			this.configSensors.add(cs.copy(this));
 		}
 
 		this.decodesScripts.clear();
-		for(Iterator<DecodesScript> it = rhs.decodesScripts.iterator(); it.hasNext(); )
+		for(DecodesScript ds : rhs.decodesScripts)
 		{
-			DecodesScript ds = it.next();
 			this.addScript(ds.copy(this));
 		}
 	}

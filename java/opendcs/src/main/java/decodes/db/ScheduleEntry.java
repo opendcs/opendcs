@@ -235,6 +235,11 @@ public class ScheduleEntry extends IdDatabaseObject
 	 */
 	public void copyFrom(ScheduleEntry rhs)
 	{
+		//This and input parameter could be the same reference if accessed via cache
+		if (rhs == this)
+		{
+			return;
+		}
 		this.name = rhs.name;
 		this.loadingAppId = rhs.loadingAppId;
 		this.routingSpecId = rhs.routingSpecId;

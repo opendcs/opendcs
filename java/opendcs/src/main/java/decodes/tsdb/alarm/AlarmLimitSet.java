@@ -433,6 +433,11 @@ public class AlarmLimitSet
 	 */
 	public void copyFrom(AlarmLimitSet als)
 	{
+		//This and input parameter could be the same reference if accessed via cache
+		if (als == this)
+		{
+			return;
+		}
 		this.limitSetId = als.limitSetId;
 		this.seasonName = als.seasonName;
 		this.rejectHigh = als.rejectHigh;
