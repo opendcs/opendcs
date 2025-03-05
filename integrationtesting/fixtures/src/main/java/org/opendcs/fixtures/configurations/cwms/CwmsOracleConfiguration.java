@@ -16,11 +16,10 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.output.OutputFrame;
 
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Database;
 import decodes.launcher.Profile;
 import decodes.sql.OracleSequenceKeyGenerator;
@@ -28,7 +27,6 @@ import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesSettings;
-import ilex.util.Pair;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainers;
 import opendcs.dao.CompDependsDAO;
@@ -41,7 +39,7 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
 
 public class CwmsOracleConfiguration implements Configuration
 {
-    private static Logger log = Logger.getLogger(OpenDCSPGConfiguration.class.getName());
+    private static Logger log = Logger.getLogger(CwmsOracleConfiguration.class.getName());
 
     private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev");
     private static final String CWMS_ORACLE_VOLUME = System.getProperty("opendcs.cwms.oracle.volume","cwms_opendcs_volume");
@@ -68,6 +66,7 @@ public class CwmsOracleConfiguration implements Configuration
 
     private void installDb(SystemExit exit,EnvironmentVariables environment, UserPropertiesBuilder configBuilder) throws Exception
     {
+
         if (!started)
         {
             cwmsDb = CwmsDatabaseContainers.createDatabaseContainer(CWMS_ORACLE_IMAGE)
@@ -161,6 +160,8 @@ public class CwmsOracleConfiguration implements Configuration
         environment.set("DB_PASSWORD",dcsUserPassword);
         environmentVars.put("DB_USERNAME",dcsUser);
         environmentVars.put("DB_PASSWORD",dcsUserPassword);
+        environmentVars.put("DB_OFFICE", cwmsDb.getOfficeId());
+        environmentVars.put("DB_URL", cwmsDb.getJdbcUrl());
 
         started = true;
     }

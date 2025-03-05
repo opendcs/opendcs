@@ -2,8 +2,8 @@ package org.opendcs.fixtures.configurations.xml;
 
 import java.io.File;
 
-import org.opendcs.spi.configuration.Configuration;
-import org.opendcs.spi.configuration.ConfigurationProvider;
+import org.opendcs.fixtures.spi.Configuration;
+import org.opendcs.fixtures.spi.ConfigurationProvider;
 
 public class XmlConfigurationProvider implements ConfigurationProvider
 {
