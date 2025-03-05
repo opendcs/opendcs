@@ -212,6 +212,11 @@ public class DcpMsgIndex implements Comparable
 	 */
 	public void copyFrom(DcpMsgIndex rhs)
 	{
+		//This and input parameter could be the same reference if accessed via cache
+		if (rhs == this)
+		{
+			return;
+		}
 		if (rhs.getLocalRecvTime() != null)
 			setLocalRecvTime(rhs.getLocalRecvTime());
 		setXmitTime(rhs.getXmitTime());
