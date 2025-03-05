@@ -28,8 +28,7 @@ public class DownloadThread extends Thread
 	/**
 	  Add a file to the queue to be read.
 	  @param relpath the path relative to HUB_HOME URL.
-	  @param listener to call back when download is complete or error.
-	  @param obj Object to callback the listener with
+	  @param reader to use when the download is complete or error.
 	*/
 	public synchronized void enqueue(String relpath, DownloadReader reader)
 	{

@@ -3,7 +3,6 @@
 */
 package decodes.db;
 
-import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -12,8 +11,12 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
+import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.SimpleDataSource;
+import org.opendcs.spi.authentication.AuthSource;
 import org.xml.sax.SAXException;
 
+import ilex.util.AuthException;
 import ilex.util.Counter;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
@@ -29,6 +32,16 @@ of the IO methods for reading/writing the DECODES database.
 */
 public abstract class DatabaseIO
 {
+
+	protected final javax.sql.DataSource dataSource;
+	protected final DecodesSettings settings;
+
+	public DatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
+	{
+		this.dataSource = dataSource;
+		this.settings = settings;
+	}
+
 	/**
 	  Creates a concrete IO class as specified by type and location
 	  arguments.
@@ -36,47 +49,64 @@ public abstract class DatabaseIO
 	  @param location Interpration varies depending on type.
 	  @return the DatabaseIO object
 	  @throws DatabaseException if type unrecognized or location is invalid.
+	  @deprecated DatabaseService should be used to create database instances
 	*/
-	public static final DatabaseIO makeDatabaseIO(int type, String location)
-		throws DatabaseException
+	@Deprecated
+	public static final DatabaseIO makeDatabaseIO(int type, String location) throws DatabaseException
+	{
+		return null;
+	}
+
+	/**
+	 
+	 * @param settings
+	 * @return
+	 * @throws DatabaseException
+	 * @deprecated DatabaseService should be used to create database instances
+	 */
+	@Deprecated
+	public static final DatabaseIO makeDatabaseIO(DecodesSettings settings) throws DatabaseException
+	{
+		return makeDatabaseIO(settings, settings.editDatabaseLocation);
+	}
+
+	/**
+	 * 
+	 * @param settings
+	 * @param locOverride
+	 * @return
+	 * @throws DatabaseException
+	 * @deprecated DatabaseService should be used to create database instances
+	 */
+	@Deprecated
+	public static final DatabaseIO makeDatabaseIO(DecodesSettings settings, String locOverride) throws DatabaseException
 	{
 		ResourceFactory.instance().initDbResources();
 		
-		try 
+		try
 		{
-			if (type == DecodesSettings.DB_XML)
-				return new XmlDatabaseIO(location);
+			final String location = locOverride.startsWith("jdbc:") ? locOverride : "jdbc:xml:" + locOverride;
+			final int type = settings.editDatabaseTypeCode;
+
+			AuthSource auth = AuthSourceService.getFromString(settings.DbAuthFile);
+			Properties credentials = auth.getCredentials();
+			SimpleDataSource dataSource = new SimpleDataSource(location, credentials);
+			switch (type)
+			{
+				case DecodesSettings.DB_XML:  		return new XmlDatabaseIO(dataSource, settings);
+				case DecodesSettings.DB_SQL:  		return new SqlDatabaseIO(dataSource, settings);
+				case DecodesSettings.DB_CWMS:     	return new decodes.cwms.CwmsSqlDatabaseIO(dataSource, settings);
+				case DecodesSettings.DB_OPENTSDB:	return new opendcs.opentsdb.OpenTsdbSqlDbIO(dataSource, settings);
+				case DecodesSettings.DB_HDB:		return new decodes.hdb.HdbSqlDatabaseIO(dataSource, settings);
+				default: throw new DatabaseException("No database defined (fix properties file)");
+			}
 		}
-		catch (SAXException se) 
+		catch (AuthException ex)
 		{
-			throw new DatabaseException("Caught a SAXException while " +
-				"attempting to create an XmlDatabaseIO object");
+			throw new DatabaseException("Unable to authenticate against the database.", ex);
 		}
-		catch (ParserConfigurationException pce) 
-		{
-			throw new DatabaseException("Caught a " +
-				"ParserConfigurationException while " +
-				"attempting to create an XmlDatabaseIO object");
-		}
-
-		if (type == DecodesSettings.DB_SQL)
-			return new SqlDatabaseIO(location);
-
-		if (type == DecodesSettings.DB_CWMS)
-			return new decodes.cwms.CwmsSqlDatabaseIO(location);
-
-		if (type == DecodesSettings.DB_OPENTSDB)
-			return new opendcs.opentsdb.OpenTsdbSqlDbIO(location);
 		
-		if (type == DecodesSettings.DB_HDB)
-			return new decodes.hdb.HdbSqlDatabaseIO(location);
-		
-		// Add other database interface types (URL) here...
-
-		throw new DatabaseException(
-			"No database defined (fix properties file)");
 	}
-
 
 	//========== Identification methods ==========================
 
@@ -166,6 +196,14 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
+	 * Deletes an EngineeringUnit from the database by its abbreviation.
+	 * @param eu object with the abbreviation set.
+	 * @throws DatabaseException if a database error occurs.
+	 */
+	public abstract void deleteEngineeringUnit(EngineeringUnit eu)
+		throws DatabaseException;
+
+	/**
 	Populates the set of known enumeration objects in this database.
 	  @param el the list to populate
 	*/
@@ -197,6 +235,17 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
+	 Populates the list of NetworkList objects defined in this database.
+	 Objects in this list may be only partially populated (key values
+	 and primary display attributes only).
+	 @param nll the list to populate
+	 @param tmType the transport medium type to filter by
+	 */
+	public abstract void readNetworkListList(NetworkListList nll, String tmType)
+			throws DatabaseException;
+
+
+	/**
 	Populates the list of Platform objects defined in this database.
 	Objects in this list may be only partially populated (key values
 	and primary display attributes only).
@@ -204,6 +253,17 @@ public abstract class DatabaseIO
 	*/
 	public abstract void readPlatformList(PlatformList pl)
 		throws DatabaseException;
+
+	/**
+	 Populates the list of Platform objects defined in this database.
+	 Objects in this list may be only partially populated (key values
+	 and primary display attributes only).
+	 @param pl the list to populate
+	 @param tmType the transport medium type to filter on
+	 */
+	public abstract void readPlatformList(PlatformList pl, String tmType)
+			throws DatabaseException;
+
 
 	/**
 	Populates the list of PresentationGroup objects defined in this database.
@@ -222,6 +282,16 @@ public abstract class DatabaseIO
 	*/
 	public abstract void readRoutingSpecList(RoutingSpecList rsl)
 		throws DatabaseException;
+
+	/**
+	 Retrieves the list of RoutingStatus objects defined in this database.
+	 */
+	public abstract List<RoutingStatus> readRoutingSpecStatus() throws DatabaseException;
+
+	/**
+	 Retrieves the list of RoutingExecStatus objects defined in this database.
+	 */
+	public abstract List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException;
 
 	/**
 	Populates the list of Site objects defined in this database.
@@ -255,6 +325,19 @@ public abstract class DatabaseIO
 	public abstract void readUnitConverterSet(UnitConverterSet ucs)
 		throws DatabaseException;
 
+	/**
+	 Stores the provided UnitConverterDb object into the database.
+	 @param uc the converter to store
+	 */
+	public abstract void insertUnitConverter(UnitConverterDb uc)
+			throws DatabaseException;
+
+	/**
+	 Deletes the specified UnitConverter from the database if it exists.
+	 @param ucId the database key of the UnitConverter to delete
+	 */
+	public abstract void deleteUnitConverter(Long ucId)
+			throws DatabaseException;
 
 	//=============== Object-level Read/Write Functions ============
 
@@ -400,6 +483,17 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
+	 * If the presentation group referenced by groupId is used by one or more routing
+	 * specs, return a list of routing specs populated with only IDs and names. If groupId is not used,
+	 * return an empty collection.
+	 * @param groupId the ID of the presentation group to check
+	 * @return List<RoutingSpec> list of routing specs populated with only IDs and names.
+	 * @throws DatabaseException if an error is encountered
+	 */
+	public abstract List<RoutingSpec> routeSpecsUsing(long groupId)
+			throws DatabaseException;
+
+	/**
 	  Reads a routing spec completely into memory.
 	  Prior to this call perhaps only the key values were retrieved.
 	  @param rs the RoutingSpec to read.
@@ -411,6 +505,7 @@ public abstract class DatabaseIO
 	 * Returns the most recent data that the platform list was modified, this
 	 * will be the time of the most-recent platform mod.
 	 * @return the most recent data that the platform list was modified.
+	 * @throws DatabaseException 
 	 */
 	public abstract Date getPlatformListLMT();
 

@@ -89,7 +89,6 @@ public class GeneralProperties
 	 * Loads the LRGS properties file (either specified with -P argument or
 	 * from the default) and initializes the general properties required by
 	 * all GUI apps.
-	 * @param the command line arguments
 	 */
 	public static void init()
 	{
@@ -113,53 +112,6 @@ public class GeneralProperties
 		GuiApp.rmProperty("RealTimeStatus.Help");
 		GuiApp.rmProperty("SearchCritEditor.Help");
 
-		// Init help root URL & set default if necessary.
-		String s = getHelpRootUrl();  
-		if (s.equals("http://www.ilexeng.com/LRGS-3.2/help/"))
-			GuiApp.setProperty(prefix+"HelpRoot",
-				"http://www.ilexeng.com/" + LrgsApp.SubDir + "/help/");
-
-		String OSName = System.getProperty("os.name");
-		if (OSName.startsWith("Windows"))
-		{
-			GuiApp.getProperty(prefix+"TextEditor","notepad.exe");
-			GuiApp.getProperty(prefix+"Browser",
-				"C:\\Program Files\\Netscape\\Communicator\\Program\\Netscape.exe");
-		}
-		else
-		{
-			GuiApp.getProperty(prefix+"Browser","mozilla");
-			if (OSName.startsWith("Linux"))
-				GuiApp.getProperty(prefix+"TextEditor","gedit");
-			else
-				GuiApp.getProperty(prefix+"TextEditor","xedit");
-		}
-	}
-
-//	/** @return true if we're running on a windoze box. */
-//	public static boolean isWindows()
-//	{
-//		String OSName = System.getProperty("os.name");
-//		return OSName.startsWith("Win");
-//	}
-
-	/** @return the URL for the root of the help directory. */
-	public static String getHelpRootUrl()
-	{
-		return GuiApp.getProperty(prefix+"HelpRoot",
-			"http://www.covesw.com/" + DecodesVersion.getAbbr() + "/help/");
-	}
-
-	/** @return the URL for the "contents" help page. */
-	public static String getHelpContentsUrl()
-	{
-		return getHelpRootUrl() + "contents.html";
-	}
-
-	/** @return the URL for the "about" help page. */
-	public static String getHelpAboutUrl()
-	{
-		return getHelpRootUrl() + "about.html";
 	}
 }
 

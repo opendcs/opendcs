@@ -2,6 +2,8 @@ package decodes.util;
 
 import java.util.Properties;
 
+import org.opendcs.settings.api.OpenDcsSettings;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -25,8 +27,7 @@ import decodes.launcher.Profile;
  * <p>
  * Singleton access can be gained through the instance() method.
  */
-public class DecodesSettings
-    implements PropertiesOwner
+public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
 {
     private static DecodesSettings _instance = null;
 
@@ -821,5 +822,14 @@ public class DecodesSettings
         settings.loadFromProperties(props);
         settings.setSourceFile(propFile);
         return settings;
+    }
+
+    public DecodesSettings asCopy()
+    {
+        Properties props = new Properties();
+        this.saveToProps(props);
+        DecodesSettings newSettings = new DecodesSettings();
+        newSettings.loadFromProperties(props);
+        return newSettings;
     }
 }

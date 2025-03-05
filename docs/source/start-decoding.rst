@@ -1671,6 +1671,21 @@ Please consult regular expression documentation for more details.  There are exc
                   </tr>
 
 
+
+ReplaceValueWith Function - replaceValueWith(find,replace)
+===========================================================
+
+.. image:: ./media/start/decoding/im-35-replacevaluewith-decodes-function.JPG
+   :alt:  decoding example showing usage of replacevaluewith function
+   :width: 550
+
+The replaceValueWith(find, replace) function configures values to be replaced. Call this function once for each set of (find, replace) that you need to occur. The text in the find argument is converted to the replace argument. Conversion to a numeric value occurs after the replacement. 
+
+For example, if your CSV data uses the letter 'T' to indicate trace precipitation, this function can replace 'T' with a specified value. The image above demonstrates replacing 'T' with 0.0.
+
+status: replaceValueWith is only supported inside the csv() function.
+
+
 Check Operation - C(*,*label*\)
 ===============================
 

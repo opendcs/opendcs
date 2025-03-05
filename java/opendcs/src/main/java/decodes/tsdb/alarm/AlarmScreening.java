@@ -219,6 +219,11 @@ public class AlarmScreening
 	 */
 	public void copyFrom(AlarmScreening scrn)
 	{
+		//This and input parameter could be the same reference if accessed via cache
+		if (scrn == this)
+		{
+			return;
+		}
 		this.screeningName = scrn.screeningName;
 		this.siteId = scrn.siteId;
 		this.datatypeId = scrn.datatypeId;

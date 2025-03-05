@@ -1,13 +1,34 @@
 plugins {
     id 'opendcs.java-conventions'
     id 'opendcs.deps-conventions'
+    id 'opendcs.publishing-conventions'
 }
 
 dependencies {
-    api project(":opendcs")
-    api enforcedPlatform(libs.junit.bom)
+    api(project(":opendcs"))
+    api(enforcedPlatform(libs.junit.bom))
     api(libs.bundles.junit)
     api(libs.commons.io)
     api(libs.apache.derby)
     api(libs.webcompere.system.stubs.jupiter)
+    api(libs.testcontainers.core)
+    api(libs.testcontainers.postgresql)
+    api(libs.testcontainers.oracle.free)
+    api(libs.hec.testcontainers.cwms)
+    api(libs.bundles.jdbi)
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'opendcs-integrationtesting-fixtures'
+            from components.java
+        }
+    }
+}
+
+tasks.withType(GenerateModuleMetadata).configureEach {
+    // The value 'enforced-platform' is provided in the validation
+    // error message you got
+    suppressedValidationErrors.add('enforced-platform')
 }

@@ -4,7 +4,6 @@ plugins {
     id 'checkstyle'
     id 'eclipse'
     // NOTE: external plugin version is specified in implementation dependency artifact of the project's build file
-    id 'com.github.spotbugs'
     id 'jacoco'
 }
 
@@ -59,26 +58,38 @@ checkstyle {
     sourceSets = []
 }
 
-spotbugs {
-    ignoreFailures = true
-    toolVersion = '4.7.3'
-    reportsDir = file("$buildDir/reports/spotbugs")
-    effort = 'max'
-    excludeFilter = file("${rootDir}/spotbugs-filter.xml")
-}
 
-spotbugsMain {
-    reports {
-        xml {
-            required = true
-            outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.xml")
-            //withMessages = true
+if (JavaVersion.current() >= JavaVersion.VERSION_11) {
+    plugins.apply('com.github.spotbugs')
+    spotbugs {
+        ignoreFailures = true
+        toolVersion = '4.9.1'
+        reportsDir = file("$buildDir/reports/spotbugs")
+        effort = com.github.spotbugs.snom.Effort.MAX
+        excludeFilter = file("${rootDir}/spotbugs-filter.xml")
+    }
+
+    spotbugsMain {
+        reports {
+            xml {
+                required = true
+                outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.xml")
+                //withMessages = true
+            }
+            html {
+                //withMessages = true
+                required = true
+                outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+                stylesheet = 'fancy-hist.xsl'
+            }
         }
-        html {
-            //withMessages = true
-            required = true
-            outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
-            stylesheet = 'fancy-hist.xsl'
+    }
+
+}
+else {
+    task spotbugsMain {
+        doFirst {
+            logger.lifecycle("spotbugsMain requires Java 11 or higher")
         }
     }
 }

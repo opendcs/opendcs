@@ -96,6 +96,12 @@ public class EquipmentModel extends IdDatabaseObject
 	 */
 	public void copyFrom(EquipmentModel rhs)
 	{
+		//This and input parameter could be the same reference if accessed via cache
+		if (rhs == this)
+		{
+			return;
+		}
+
 		this.name = rhs.name;
 		this.equipmentType = rhs.equipmentType;
 		this.company = rhs.company;

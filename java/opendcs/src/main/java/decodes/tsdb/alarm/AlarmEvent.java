@@ -88,7 +88,7 @@ public class AlarmEvent
 	 * Return true if the event matches the priority and one of the patterns in this
 	 * definition. Special case is if there are no patterns, then any
 	 * event with matching priority matches.
-	 * @param evtText
+	 * @param evt the event
 	 * @return true if matches one of the patterns, false if not.
 	 */
 	public boolean matches(DacqEvent evt)
