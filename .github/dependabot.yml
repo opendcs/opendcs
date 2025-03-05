@@ -20,11 +20,6 @@ updates:
           - "*"
         update-types:
           - "patch"
-      dependencies-security:
-        patterns:
-          - "*"
-        update-types:
-          - "security"
     reviewers:
       - "@opendcs/opendcs-core-devs"
   - package-ecosystem: "github-actions"
