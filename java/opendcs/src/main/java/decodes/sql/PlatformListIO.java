@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import decodes.db.ValueNotFoundException;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
@@ -209,11 +211,11 @@ public class PlatformListIO extends SqlDbObjIo
                 tmType = tmType.toLowerCase();
                 if (tmType.equals("goes"))
                 {
-                    filter = "goes, goes-self-timed, goes-random";
+                    filter = "'goes', 'goes-self-timed', 'goes-random'";
                 }
                 else
                 {
-                    filter = "goes";
+                    filter = String.format("'%s'", tmType.toLowerCase());
                 }
 
                 q = q + " where exists(select PLATFORMID from TRANSPORTMEDIUM" +
@@ -430,16 +432,17 @@ public class PlatformListIO extends SqlDbObjIo
 
     /**
     * This reads the "complete" data for the given Platform.
-    * @param p the Platform
+    * @param p the Platform object to populate, must have its ID set
     */
     public void readPlatform(Platform p)
         throws SQLException, DatabaseException
     {
-
+        final AtomicBoolean resultsExist = new AtomicBoolean(false);
             String q = "SELECT " + getColTpl() + " FROM Platform WHERE ID = ?";
             log.debug("readPlatform() Executing '{}'", q );
             getDaoHelper().doQuery(q, rs ->
             {
+                resultsExist.set(true);
                 // Can only be 1 platform with a given ID.
                 {
                     p.setAgency(rs.getString(2));
@@ -555,7 +558,11 @@ public class PlatformListIO extends SqlDbObjIo
                     }
                 }
             },p.getId());
-
+        if (!resultsExist.get())
+        {
+            String msg = "Platform with ID " + p.getId() + " not found.";
+            throw new DatabaseException(msg, new ValueNotFoundException(msg));
+        }
         readPlatformSensors(p);
     }
 
