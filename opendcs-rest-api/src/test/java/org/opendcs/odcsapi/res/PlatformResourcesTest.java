@@ -464,7 +464,7 @@ final class PlatformResourcesTest
 
 		// Test with dbIo mocked to return a ScheduleEntry
 		when(dbIo.makeScheduleEntryDAO()).thenReturn(scheduleEntryDAO);
-		when(scheduleEntryDAO.readScheduleEntry(scheduleEntryStatusId)).thenReturn(entry);
+		when(scheduleEntryDAO.readScheduleEntryByStatusId(scheduleEntryStatusId)).thenReturn(entry);
 		doAnswer(invocation -> {
 			RoutingSpec rs = invocation.getArgument(0);
 			assertEquals(routingSpecId, rs.getId());

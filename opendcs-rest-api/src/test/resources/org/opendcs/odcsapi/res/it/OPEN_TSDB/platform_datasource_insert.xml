@@ -1,3 +1,0 @@
-<DataSource Name="TestDataSource" Type="TestDataSourceType">
-	<DataSourceArg>TestDataSourceArg</DataSourceArg>
-</DataSource>

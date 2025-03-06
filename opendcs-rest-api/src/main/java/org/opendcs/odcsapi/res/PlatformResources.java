@@ -421,17 +421,20 @@ public final class PlatformResources extends OpenDcsResource
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getPlatformStats(@QueryParam("netlistid") Long netlistId)
-			throws DbException, WebAppException
+			throws DbException
 	{
-		if (netlistId == null)
-		{
-			throw new MissingParameterException("Missing required netlistid parameter.");
-		}
-
 		DatabaseIO dbIo = getLegacyDatabase();
 		try (PlatformStatusDAI dao = dbIo.makePlatformStatusDAO())
 		{
-			List<PlatformStatus> statuses = dao.readPlatformStatusList(DbKey.createDbKey(netlistId));
+			List<PlatformStatus> statuses;
+			if (netlistId != null)
+			{
+				statuses = dao.readPlatformStatusList(DbKey.createDbKey(netlistId));
+			}
+			else
+			{
+				statuses = dao.readPlatformStatusList(null);
+			}
 			return Response.status(HttpServletResponse.SC_OK).entity(statusListMap(dbIo, statuses)).build();
 		}
 		catch (DbIoException | DatabaseException ex)
@@ -471,12 +474,15 @@ public final class PlatformResources extends OpenDcsResource
 			{
 				try (ScheduleEntryDAI dai = dbIo.makeScheduleEntryDAO())
 				{
-					ScheduleEntry scheduleEntry = dai.readScheduleEntry(status.getLastScheduleEntryStatusId());
-					long routingId = scheduleEntry.getRoutingSpecId().getValue();
-					RoutingSpec rs = new RoutingSpec();
-					rs.setId(DbKey.createDbKey(routingId));
-					dbIo.readRoutingSpec(rs);
-					ps.setRoutingSpecName(rs.getName());
+					ScheduleEntry scheduleEntry = dai.readScheduleEntryByStatusId(status.getLastScheduleEntryStatusId());
+					if(scheduleEntry != null && scheduleEntry.getRoutingSpecId() != null)
+					{
+						long routingId = scheduleEntry.getRoutingSpecId().getValue();
+						RoutingSpec rs = new RoutingSpec();
+						rs.setId(DbKey.createDbKey(routingId));
+						dbIo.readRoutingSpec(rs);
+						ps.setRoutingSpecName(rs.getName());
+					}
 				}
 				catch (DbIoException ex)
 				{

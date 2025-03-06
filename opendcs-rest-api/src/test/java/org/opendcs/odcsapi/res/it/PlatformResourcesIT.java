@@ -16,13 +16,13 @@ import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
-import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Tag("integration-opentsdb-only")
+@Tag("integration")
 @ExtendWith(DatabaseContextProvider.class)
 final class PlatformResourcesIT extends BaseIT
 {
@@ -41,8 +41,11 @@ final class PlatformResourcesIT extends BaseIT
 	private static Long siteId;
 	private static Long netListId;
 	private static Long scheduleId;
+	private static Long scheduleStatusId;
+	private static Long dataSourceId;
+	private static Long routingSpecId;
 	private static Long platformStatusId;
-	private static Boolean dataLoaded;
+	private static Long configId;
 
 	@BeforeEach
 	void setUp() throws Exception
@@ -51,98 +54,29 @@ final class PlatformResourcesIT extends BaseIT
 		sessionFilter = new SessionFilter();
 		authenticate(sessionFilter);
 
-		scheduleId = DbKey.NullKey.getValue();
+		// Insert platform config
+		String configJson = getJsonFromResource("platform_config_insert_data.json");
+		assertNotNull(configJson);
 
-		if (dataLoaded == null || !dataLoaded)
-		{
-			String[] files = new String[]{
-					"OPEN_TSDB/platform_netlist_insert.xml",
-					"OPEN_TSDB/platform_datasource_insert.xml",
-					"OPEN_TSDB/platform_routingspec_insert.xml",
-					"OPEN_TSDB/platform_schedule_entry_insert.xml",
-			};
-			DatabaseSetupExtension.loadXMLDataIntoDb(files);
+		ExtractableResponse<Response> response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.contentType(MediaType.APPLICATION_JSON)
+			.filter(sessionFilter)
+			.body(configJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("config")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.extract()
+		;
 
-			// get netlistId
-			ExtractableResponse<Response> resp = given()
-				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(MediaType.APPLICATION_JSON)
-				.header("Authorization", authHeader)
-				.filter(sessionFilter)
-			.when()
-				.redirects().follow(true)
-				.redirects().max(3)
-				.get("netlistrefs")
-			.then()
-				.log().ifValidationFails(LogDetail.ALL, true)
-			.assertThat()
-				.statusCode(is(HttpServletResponse.SC_OK))
-				.extract();
-
-			JsonPath jsonPath = resp.body().jsonPath();
-
-			List<Map<String, Object>> netLists = jsonPath.getList("");
-			assertFalse(netLists.isEmpty());
-			boolean found = false;
-			for(Map<String, Object> entry : netLists)
-			{
-				if(entry.get("name").equals("PlatformTest"))
-				{
-					netListId = Long.parseLong(entry.get("netlistId").toString());
-					found = true;
-					break;
-				}
-			}
-			assertTrue(found);
-
-			// get schedule entry id
-			resp = given()
-				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(MediaType.APPLICATION_JSON)
-				.header("Authorization", authHeader)
-				.filter(sessionFilter)
-			.when()
-				.redirects().follow(true)
-				.redirects().max(3)
-				.get("schedulerefs")
-			.then()
-				.log().ifValidationFails(LogDetail.ALL, true)
-			.assertThat()
-				.statusCode(is(HttpServletResponse.SC_OK))
-				.extract()
-			;
-
-			jsonPath = resp.body().jsonPath();
-			assertNotNull(jsonPath);
-			List<Map<String, Object>> scheduleEntries = jsonPath.getList("");
-			assertNotNull(scheduleEntries);
-			scheduleId = DbKey.NullKey.getValue();
-
-			ScheduleEntryStatus scheduleEntryStatus = new ScheduleEntryStatus(DbKey.NullKey);
-			scheduleEntryStatus.setHostname("localhost");
-			scheduleEntryStatus.setLastMessageTime(Date.from(Instant.parse("2021-01-02T00:00:00Z")));
-			scheduleEntryStatus.setScheduleEntryName("Test Schedule Entry");
-			scheduleEntryStatus.setNumMessages(12);
-			scheduleEntryStatus.setRunStart(Date.from(Instant.parse("2021-01-01T00:00:00Z")));
-			scheduleEntryStatus.setRunStop(Date.from(Instant.parse("2021-01-02T00:00:00Z")));
-			scheduleEntryStatus.setRunStatus("Test Status");
-			scheduleEntryStatus.setLastModified(Date.from(Instant.parse("2021-01-03T00:00:00Z")));
-
-			for(Map<String, Object> entry : scheduleEntries)
-			{
-				if(entry.get("name").equals(scheduleEntryStatus.getScheduleEntryName()))
-				{
-					scheduleId = Long.parseLong(entry.get("schedEntryId").toString());
-					break;
-				}
-			}
-
-			scheduleEntryStatus.setScheduleEntryId(DbKey.createDbKey(scheduleId));
-
-			// Store schedule entry status via extension, since no endpoint for this exists
-			// 		and the DbImport class does not accept the ScheduleEntryStatus object
-			storeScheduleEntryStatus(scheduleEntryStatus);
-		}
+		configId = response.body().jsonPath().getLong("configId");
 
 		String siteJson = getJsonFromResource("platform_insert_data.json");
 		assertNotNull(siteJson);
@@ -151,8 +85,9 @@ final class PlatformResourcesIT extends BaseIT
 		assertNotNull(siteId);
 
 		String platformJson = siteJson.replace("\"[SITE_ID]\"", siteId.toString());
+		platformJson = platformJson.replace("\"[CONFIG_ID]\"", configId.toString());
 
-		ExtractableResponse<Response> response = given()
+		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
@@ -172,29 +107,184 @@ final class PlatformResourcesIT extends BaseIT
 
 		platformId = response.body().jsonPath().getLong("platformId");
 
-		if (dataLoaded == null || !dataLoaded)
-		{
-			PlatformStatus status = new PlatformStatus(DbKey.createDbKey(platformId));
-			status.setSiteName("Platform 10");
-			status.setLastRoutingSpecName("TestRoutingSpec");
-			status.setLastScheduleEntryStatusId(DbKey.createDbKey(scheduleId));
-			status.setLastErrorTime(Date.from(Instant.parse("2021-01-03T00:00:00Z")));
-			status.setLastMessageTime(Date.from(Instant.parse("2021-01-02T00:00:00Z")));
-			status.setAnnotation("Test Annotation");
-			status.setLastContactTime(Date.from(Instant.parse("2021-01-01T00:00:00Z")));
-			status.setLastMessageTime(Date.from(Instant.parse("2021-01-02T00:00:00Z")));
+		// Insert netlist
+		String netlistJson = getJsonFromResource("platform_netlist_insert_data.json");
+		assertNotNull(netlistJson);
 
-			storePlatformStatus(status);
-			platformStatusId = status.getId().getValue();
-			dataLoaded = true;
-		}
+		response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.contentType(MediaType.APPLICATION_JSON)
+			.filter(sessionFilter)
+			.body(netlistJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("netlist")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.extract()
+		;
+
+		netListId = response.body().jsonPath().getLong("netlistId");
+
+		// Insert data source
+		String dataSourceJson = getJsonFromResource("platform_datasource_insert_data.json");
+		assertNotNull(dataSourceJson);
+
+		response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.contentType(MediaType.APPLICATION_JSON)
+			.filter(sessionFilter)
+			.body(dataSourceJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("datasource")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.extract()
+		;
+
+		dataSourceId = response.body().jsonPath().getLong("dataSourceId");
+
+		// Insert routing spec
+		String routingSpecJson = getJsonFromResource("platform_routingspec_insert_data.json");
+		assertNotNull(routingSpecJson);
+
+		routingSpecJson = routingSpecJson.replace("\"[DATA_SOURCE_ID]\"", dataSourceId.toString());
+		routingSpecJson = routingSpecJson.replace("[NETLIST_NAME]", "PlatformTest");
+		routingSpecJson = routingSpecJson.replace("\"[PLATFORM_ID]\"", platformId.toString());
+
+		response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.contentType(MediaType.APPLICATION_JSON)
+			.filter(sessionFilter)
+			.body(routingSpecJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("routing")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.extract()
+		;
+
+		routingSpecId = response.body().jsonPath().getLong("routingId");
+
+		// Insert schedule entry
+		String scheduleEntryJson = getJsonFromResource("platform_schedule_entry_insert_data.json");
+		assertNotNull(scheduleEntryJson);
+
+		scheduleEntryJson = scheduleEntryJson.replace("\"[ROUTING_SPEC_ID]\"", routingSpecId.toString());
+
+		response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.contentType(MediaType.APPLICATION_JSON)
+			.filter(sessionFilter)
+			.body(scheduleEntryJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("schedule")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.extract()
+		;
+
+		scheduleId = response.body().jsonPath().getLong("schedEntryId");
 	}
 
 	@AfterEach
 	void tearDown() throws DatabaseException
 	{
-		deletePlatformStatus(DbKey.createDbKey(platformStatusId));
-		deleteScheduleEntryStatus(DbKey.createDbKey(scheduleId));
+		if (scheduleStatusId != null)
+		{
+			deleteScheduleEntryStatus(DbKey.createDbKey(scheduleStatusId));
+		}
+		if (platformStatusId != null)
+		{
+			deletePlatformStatus(DbKey.createDbKey(platformStatusId));
+		}
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.queryParam("scheduleid", scheduleId)
+			.filter(sessionFilter)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("schedule")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+		;
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.queryParam("routingid", routingSpecId)
+			.filter(sessionFilter)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("routing")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+		;
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.queryParam("datasourceid", dataSourceId)
+			.filter(sessionFilter)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("datasource")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+		;
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.queryParam("netlistid", netListId)
+			.filter(sessionFilter)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("netlist")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+		;
 
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
@@ -212,6 +302,26 @@ final class PlatformResourcesIT extends BaseIT
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
 		;
 
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.queryParam("configid", configId)
+			.filter(sessionFilter)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("config")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+		;
+	}
+
+	@AfterAll
+	static void tearDownAll()
+	{
 		tearDownSite(siteId);
 
 		logout(sessionFilter);
@@ -243,11 +353,12 @@ final class PlatformResourcesIT extends BaseIT
 		assertNotNull(actual);
 		Map<String, Object> actualMap = actual.getMap("");
 		actualMap = (Map<String, Object>) actualMap.get(expected.getString("name")); // Name of platform is not stored in Platform object, could cause issues with collision
+		assertNotNull(actualMap);
 		assertEquals(expected.get("description"), actualMap.get("description"));
 		assertEquals(expected.get("agency"), actualMap.get("agency"));
 		assertEquals(expected.get("designator"), actualMap.get("designator"));
 		assertEquals(expected.get("production"), actualMap.get("production"));
-		assertEquals(expected.get("configId"), actualMap.get("configId"));
+		assertEquals(configId, ((Integer) actualMap.get("configId")).longValue());
 
 		// Retrieve with a tmtype filter
 		response = given()
@@ -270,11 +381,12 @@ final class PlatformResourcesIT extends BaseIT
 		actual = response.body().jsonPath();
 		actualMap = actual.getMap("");
 		actualMap = (Map<String, Object>) actualMap.get(expected.getString("name")); // Name of platform is not stored in Platform object, could cause issues with collision
+		assertNotNull(actualMap);
 		assertEquals(expected.get("description"), actualMap.get("description"));
 		assertEquals(expected.get("agency"), actualMap.get("agency"));
 		assertEquals(expected.get("designator"), actualMap.get("designator"));
 		assertEquals(expected.get("production"), actualMap.get("production"));
-		assertEquals(expected.get("configId"), actualMap.get("configId"));
+		assertEquals(configId, ((Integer) actualMap.get("configId")).longValue());
 
 		// Retrieve with an invalid tmtype to check filtering
 		response = given()
@@ -334,13 +446,38 @@ final class PlatformResourcesIT extends BaseIT
 	@TestTemplate
 	void testPostAndDeletePlatform() throws Exception
 	{
+		// Create platform config
+		String platformConfigJson = getJsonFromResource("platform_create_delete_config_insert_data.json");
+		assertNotNull(platformConfigJson);
+
+		ExtractableResponse<Response> response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.contentType(MediaType.APPLICATION_JSON)
+			.filter(sessionFilter)
+			.body(platformConfigJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("config")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.extract()
+		;
+
+		Long newConfigId = response.body().jsonPath().getLong("configId");
+
 		String platformJson = getJsonFromResource("platform_post_delete_insert_data.json");
 		Long newSiteId = storeSite("platform_site_post_delete_data.json");
 		assertNotNull(newSiteId);
 		platformJson = platformJson.replace("\"[SITE_ID]\"", newSiteId.toString());
+		platformJson = platformJson.replace("\"[CONFIG_ID]\"", newConfigId.toString());
 
 		// Create a new platform
-		ExtractableResponse<Response> response = given()
+		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
@@ -419,15 +556,88 @@ final class PlatformResourcesIT extends BaseIT
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
 		;
+
+		// Delete the config
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.contentType(MediaType.APPLICATION_JSON)
+			.filter(sessionFilter)
+			.queryParam("configid", newConfigId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("config")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.extract()
+		;
+
+		// Delete the site
+		tearDownSite(newSiteId);
 	}
 
 	@TestTemplate
-	void testGetPlatformStats()
+	void testGetPlatformStats() throws Exception
 	{
+		ScheduleEntryStatus scheduleEntryStatus = new ScheduleEntryStatus(DbKey.NullKey);
+		scheduleEntryStatus.setHostname("localhost");
+		scheduleEntryStatus.setLastMessageTime(Date.from(Instant.parse("2021-01-02T00:00:00Z")));
+		scheduleEntryStatus.setScheduleEntryName("Test Schedule Entry");
+		scheduleEntryStatus.setNumMessages(12);
+		scheduleEntryStatus.setRunStart(Date.from(Instant.parse("2021-01-01T00:00:00Z")));
+		scheduleEntryStatus.setRunStop(Date.from(Instant.parse("2021-01-02T00:00:00Z")));
+		scheduleEntryStatus.setRunStatus("Test Status");
+		scheduleEntryStatus.setLastModified(Date.from(Instant.parse("2021-01-03T00:00:00Z")));
+		scheduleEntryStatus.setScheduleEntryId(DbKey.createDbKey(scheduleId));
+
+		// Store schedule entry status via extension, since no endpoint for this exists
+		// 		and the DbImport class does not accept the ScheduleEntryStatus object
+		storeScheduleEntryStatus(scheduleEntryStatus);
+
+		ExtractableResponse<Response> response = given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.filter(sessionFilter)
+			.queryParam("scheduleentryid", scheduleId)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("routingexecstatus")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.extract()
+		;
+
+		List<Map<String, Object>> responseList = response.body().jsonPath().getList("");
+		assertFalse(responseList.isEmpty());
+		scheduleStatusId = Long.parseLong(responseList.get(0).get("routingExecId").toString());
+
+		PlatformStatus status = new PlatformStatus(DbKey.createDbKey(platformId));
+		status.setSiteName("Platform 10");
+		status.forceSetId(DbKey.NullKey);
+		status.setPlatformId(DbKey.createDbKey(platformId));
+		status.setLastRoutingSpecName("TestRoutingSpec");
+		status.setLastScheduleEntryStatusId(DbKey.createDbKey(scheduleStatusId));
+		status.setLastErrorTime(Date.from(Instant.parse("2021-01-03T00:00:00Z")));
+		status.setLastMessageTime(Date.from(Instant.parse("2021-01-02T00:00:00Z")));
+		status.setAnnotation("Test Annotation");
+		status.setLastContactTime(Date.from(Instant.parse("2021-01-01T00:00:00Z")));
+		status.setLastMessageTime(Date.from(Instant.parse("2021-01-02T00:00:00Z")));
+
+		storePlatformStatus(status);
+		platformStatusId = status.getId().getValue();
+
 		JsonPath expected = getJsonPathFromResource("platform_get_stats_expected.json");
 		assertNotNull(expected.getString(""));
 
-		ExtractableResponse<Response> response = given()
+		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
@@ -492,7 +702,7 @@ final class PlatformResourcesIT extends BaseIT
 		return response.body().jsonPath().getLong("siteId");
 	}
 
-	private void tearDownSite(Long siteId)
+	private static void tearDownSite(Long siteId)
 	{
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)

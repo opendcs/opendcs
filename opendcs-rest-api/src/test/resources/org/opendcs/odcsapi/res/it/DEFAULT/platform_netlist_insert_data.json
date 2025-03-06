@@ -1,0 +1,14 @@
+{
+  "netlistId" : null,
+  "name" : "PlatformTest",
+  "transportMediumType" : "GOES",
+  "siteNameTypePref" : "TEST",
+  "lastModifyTime" : null,
+  "items" : {
+    "Ident" : {
+      "transportId" : "Ident",
+      "platformName" : "Platform 10",
+      "description" : "Platform 10 Description"
+    }
+  }
+}

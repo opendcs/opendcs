@@ -154,7 +154,7 @@ class BaseIT
 		;
 	}
 
-	void logout(SessionFilter sessionFilter)
+	static void logout(SessionFilter sessionFilter)
 	{
 		if (DatabaseSetupExtension.getCurrentDbType() == DbType.OPEN_TSDB)
 		{

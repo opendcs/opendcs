@@ -1,6 +1,0 @@
-<ScheduleEntry Name="Test Schedule Entry">
-	<RoutingSpecName>TestRoutingSpec</RoutingSpecName>
-	<Enabled>true</Enabled>
-	<TimeZone>UTC</TimeZone>
-	<LastModifyTime>01/28/2025 01:01:58</LastModifyTime>
-</ScheduleEntry>

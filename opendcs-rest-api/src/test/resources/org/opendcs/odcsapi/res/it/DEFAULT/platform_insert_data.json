@@ -3,7 +3,7 @@
   "name" : "Platform 10",
   "siteId" : "[SITE_ID]",
   "agency" : "USGS",
-  "configId" : null,
+  "configId" : "[CONFIG_ID]",
   "description" : "Platform 10 description",
   "designator" : "Platform Designator",
   "lastModified" : 1625140800000,
