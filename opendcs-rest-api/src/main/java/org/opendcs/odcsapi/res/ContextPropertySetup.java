@@ -36,11 +36,6 @@ public final class ContextPropertySetup implements ServletContextListener
 		{
 			DbInterface.decodesProperties.setProperty("CwmsOfficeId", officeId);
 		}
-		String databaseType = servletContext.getInitParameter("editDatabaseType");
-		if(databaseType != null && !databaseType.isEmpty())
-		{
-			DbInterface.setDatabaseType(databaseType);
-		}
 		String authCheck = servletContext.getInitParameter("opendcs.rest.api.authorization.type");
 		if(authCheck != null && !authCheck.isEmpty())
 		{

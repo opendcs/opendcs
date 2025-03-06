@@ -160,7 +160,7 @@ public final class SecurityFilter implements ContainerRequestFilter
 		{
 			for(AuthorizationCheck authType : serviceLoader)
 			{
-				if(authType.supports(type, requestContext))
+				if(authType.supports(type, requestContext, httpServletRequest))
 				{
 					return authType;
 				}

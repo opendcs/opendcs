@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -65,11 +65,15 @@ import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
-import org.opendcs.odcsapi.util.ApiTextUtil;
 
-public class TestDecoder
+public final class TestDecoder
 {
 	private static long lastDecodesInitMsec = 0L;
+
+	private TestDecoder()
+	{
+		throw new AssertionError("Utility class, do not instantiate.");
+	}
 
 	/**
 	 * Do a test decode of the passed message data using the named script within the
@@ -214,13 +218,13 @@ public class TestDecoder
 		return ret;
 	}
 	
-	public static boolean isGoes(byte[] msgData)
+	private static boolean isGoes(byte[] msgData)
 	{
 		Logger.instance().debug1("isGoes(" + new String(msgData) + ")");
 
 		if (msgData.length < 37)
 			return false;
-		if (!ApiTextUtil.isHexString(new String(msgData, 0, 8)))
+		if (!isHexString(new String(msgData, 0, 8)))
 			return false;
 		for(int i=8; i<8+11; i++)
 			if (!Character.isDigit((char)msgData[i]))
@@ -228,7 +232,7 @@ public class TestDecoder
 		return true;
 	}
 	
-	public static boolean isIridium(byte[] msgData)
+	private static boolean isIridium(byte[] msgData)
 	{
 		return (new String(msgData,0,3)).startsWith("ID=");
 	}
@@ -371,5 +375,80 @@ public class TestDecoder
 		{
 			throw new DbException("Error initializing decodes for test decoding", ex);
 		}
+	}
+
+	/**
+	 * @return true if passed string is a hex number.
+	 */
+	private static boolean isHexString(String s)
+	{
+		int len = s.length();
+		for(int i = 0; i < len; i++)
+		{
+			if(!isHexChar((byte) s.charAt(i)))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Converts hex char to in in the range 0...15
+	 *
+	 * @param c the hex char
+	 * @return the int
+	 */
+	private static int fromHexChar(char c)
+	{
+		int retval;
+		if(Character.isDigit(c))
+		{
+			retval = c - '0';
+		}
+		else
+		{
+			switch(c)
+			{
+				case 'a':
+				case 'A':
+					retval = 10;
+					break;
+				case 'b':
+				case 'B':
+					retval = 11;
+					break;
+				case 'c':
+				case 'C':
+					retval = 12;
+					break;
+				case 'd':
+				case 'D':
+					retval = 13;
+					break;
+				case 'e':
+				case 'E':
+					retval = 14;
+					break;
+				case 'f':
+				case 'F':
+					retval = 15;
+					break;
+				default:
+					retval = -1;
+					break;
+			}
+		}
+		return retval;
+	}
+
+	/**
+	 * @param c the char
+	 * @return true if the character is a hex char.
+	 */
+	private static boolean isHexChar(byte c)
+	{
+		int i = fromHexChar((char) c);
+		return i != -1;
 	}
 }

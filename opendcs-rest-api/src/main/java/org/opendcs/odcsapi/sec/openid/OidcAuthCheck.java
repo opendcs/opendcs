@@ -122,7 +122,7 @@ public final class OidcAuthCheck extends AuthorizationCheck
 	}
 
 	@Override
-	public boolean supports(String type, ContainerRequestContext requestContext)
+	public boolean supports(String type, ContainerRequestContext requestContext, HttpServletRequest ignored)
 	{
 		String authorizationHeader = requestContext.getHeaderString(AUTHORIZATION_HEADER);
 		return keySource != null && "openid".equals(type) && authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX);

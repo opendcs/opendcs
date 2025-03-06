@@ -107,18 +107,15 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		config.getEnvironment().entrySet().forEach(e -> System.setProperty(e.getKey().toString(), e.getValue().toString()));
 		if(dbType == DbType.CWMS)
 		{
-			DbInterface.isCwms = true;
 			System.setProperty("DB_DRIVER_CLASS", "oracle.jdbc.driver.OracleDriver");
 			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
 			String dbOffice = System.getProperty("DB_OFFICE");
 			String initScript = String.format("BEGIN cwms_ccp_vpd.set_ccp_session_ctx(cwms_util.get_office_code('%s'), 2, '%s' ); END;", dbOffice, dbOffice);
 			System.setProperty("DB_CONNECTION_INIT", initScript);
 			DbInterface.decodesProperties.setProperty("CwmsOfficeId", dbOffice);
-			DbInterface.setDatabaseType("cwms");
 		}
 		else
 		{
-			DbInterface.isCwms = false;
 			System.setProperty("DB_DRIVER_CLASS", "org.postgresql.Driver");
 			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
 			System.setProperty("DB_CONNECTION_INIT", "SELECT 1");

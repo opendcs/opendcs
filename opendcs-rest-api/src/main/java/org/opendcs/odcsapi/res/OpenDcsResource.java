@@ -22,7 +22,6 @@ import javax.ws.rs.core.Context;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
-import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.dao.OpenDcsDatabaseFactory;
 
@@ -33,13 +32,7 @@ public class OpenDcsResource
 	private static final String UNSUPPORTED_OPERATION_MESSAGE = "Endpoint is unsupported by the OpenDCS REST API.";
 
 	@Context
-	private ServletContext context;
-
-	protected final <T extends OpenDcsDao> T getDao(Class<T> daoClass)
-	{
-		return createDb().getDao(daoClass)
-				.orElseThrow(() -> new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE));
-	}
+	protected ServletContext context;
 
 	protected final synchronized OpenDcsDatabase createDb()
 	{
@@ -47,13 +40,14 @@ public class OpenDcsResource
 		return OpenDcsDatabaseFactory.createDb(dataSource);
 	}
 
-	DatabaseIO getLegacyDatabase()
+	protected DatabaseIO getLegacyDatabase()
 	{
-		return createDb().getLegacyDatabase(Database.class).map(Database::getDbIo)
+		return createDb().getLegacyDatabase(Database.class)
+				.map(Database::getDbIo)
 				.orElseThrow(() -> new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE));
 	}
 
-	TimeSeriesDb getLegacyTimeseriesDB()
+	protected TimeSeriesDb getLegacyTimeseriesDB()
 	{
 		return createDb().getLegacyDatabase(TimeSeriesDb.class)
 				.orElseThrow(() -> new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE));

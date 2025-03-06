@@ -19,17 +19,22 @@ import java.util.Set;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.sql.DataSource;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.SecurityContext;
 
 import com.google.auto.service.AutoService;
+import decodes.tsdb.TimeSeriesDb;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.dao.ApiAuthorizationDAI;
-import org.opendcs.odcsapi.hydrojson.DbInterface;
+import org.opendcs.odcsapi.dao.OpenDcsDatabaseFactory;
 import org.opendcs.odcsapi.sec.AuthorizationCheck;
 import org.opendcs.odcsapi.sec.OpenDcsApiRoles;
 import org.opendcs.odcsapi.sec.OpenDcsPrincipal;
 import org.opendcs.odcsapi.sec.OpenDcsSecurityContext;
+
+import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
 
 @AutoService(AuthorizationCheck.class)
 public final class BasicAuthCheck extends AuthorizationCheck
@@ -56,9 +61,13 @@ public final class BasicAuthCheck extends AuthorizationCheck
 	}
 
 	@Override
-	public boolean supports(String type, ContainerRequestContext ignored)
+	public boolean supports(String type, ContainerRequestContext ignored, HttpServletRequest servletContext)
 	{
-		return "basic".equals(type) && DbInterface.isOpenTsdb;
+		DataSource dataSource = (DataSource) servletContext.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
+		OpenDcsDatabase db = OpenDcsDatabaseFactory.createDb(dataSource);
+		TimeSeriesDb timeSeriesDb = db.getLegacyDatabase(TimeSeriesDb.class)
+				.orElseThrow(() -> new UnsupportedOperationException("Endpoint is unsupported by the OpenDCS REST API."));
+		return "basic".equals(type) && timeSeriesDb.isOpenTSDB();
 	}
 
 	private Set<OpenDcsApiRoles> getUserRoles(String username, ServletContext servletContext)
