@@ -17,7 +17,6 @@ package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.Vector;
 
 import javax.annotation.security.RolesAllowed;
@@ -48,6 +47,10 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+
+import static ilex.util.PropertiesUtil.props2string;
+import static ilex.util.PropertiesUtil.string2props;
+
 
 @Path("/")
 public class DataSourceResources extends OpenDcsResource
@@ -96,7 +99,7 @@ public class DataSourceResources extends OpenDcsResource
 			adr.setUsedBy(ds.numUsedBy);
 			if (ds.getArguments() != null)
 			{
-				adr.setArguments(propsToString(ds.getArguments()));
+				adr.setArguments(props2string(ds.getArguments()));
 			}
 			else
 			{
@@ -105,21 +108,6 @@ public class DataSourceResources extends OpenDcsResource
 			ret.add(adr);
 		}
 		return ret;
-	}
-
-	static String propsToString(Properties props)
-	{
-		if (props == null || props.isEmpty())
-		{
-			return null;
-		}
-
-		StringBuilder retVal = new StringBuilder();
-		for (Object key : props.keySet())
-		{
-			retVal.append(key).append("=").append(props.getProperty((String) key)).append(",");
-		}
-		return retVal.substring(0, retVal.length() - 1);
 	}
 
 	@GET
@@ -189,7 +177,7 @@ public class DataSourceResources extends OpenDcsResource
 		}
 		else
 		{
-			ads.setProps(parseProps(ds.getDataSourceArg()));
+			ads.setProps(string2props(ds.getDataSourceArg()));
 		}
 		ads.setGroupMembers(map(ds.groupMembers));
 		ads.setUsedBy(ds.numUsedBy);
@@ -265,7 +253,10 @@ public class DataSourceResources extends OpenDcsResource
 		ds.setName(ads.getName());
 		ds.dataSourceType = ads.getType();
 		ds.arguments = ads.getProps();
-		ds.setDataSourceArg(propsToString(ads.getProps()));
+		if (ads.getProps() != null)
+		{
+			ds.setDataSourceArg(props2string(ads.getProps()));
+		}
 		ds.numUsedBy = ads.getUsedBy();
 		ds.groupMembers = map(ads.getGroupMembers());
 		return ds;
@@ -330,21 +321,5 @@ public class DataSourceResources extends OpenDcsResource
 		{
 			dbIo.close();
 		}
-	}
-
-	static Properties parseProps(String properties)
-	{
-		if (properties == null || properties.isEmpty())
-		{
-			return new Properties();
-		}
-		Properties props = new Properties();
-		String[] pairs = properties.split(",");
-		for (String pair : pairs)
-		{
-			String[] keyValue = pair.split("=");
-			props.setProperty(keyValue[0], keyValue[1]);
-		}
-		return props;
 	}
 }

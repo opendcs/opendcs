@@ -13,6 +13,8 @@ import org.opendcs.odcsapi.beans.ApiDataSource;
 import org.opendcs.odcsapi.beans.ApiDataSourceGroupMember;
 import org.opendcs.odcsapi.beans.ApiDataSourceRef;
 
+import static ilex.util.PropertiesUtil.props2string;
+import static ilex.util.PropertiesUtil.string2props;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -20,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.opendcs.odcsapi.res.DataSourceResources.map;
-import static org.opendcs.odcsapi.res.DataSourceResources.parseProps;
 
 final class DataSourceResourcesTest
 {
@@ -167,11 +168,11 @@ final class DataSourceResourcesTest
 		ApiDataSource apiData = new ApiDataSource();
 		apiData.setProps(props);
 
-		String result = DataSourceResources.propsToString(apiData.getProps());
+		String result = props2string(apiData.getProps());
 
 		assertNotNull(result);
-		String expected = "key=value,key2=value2";
-		String alternativeExpected = "key2=value2,key=value";
+		String expected = "key=value, key2=value2";
+		String alternativeExpected = "key2=value2, key=value";
 		assertThat(result, anyOf(is(expected), is(alternativeExpected)));
 	}
 
@@ -179,13 +180,13 @@ final class DataSourceResourcesTest
 	void testPropertyStringParser()
 	{
 		String propString = "key=value,key2=value2";
-		Properties result = parseProps(propString);
+		Properties result = string2props(propString);
 		assertEquals(2, result.size());
 		assertEquals("value", result.getProperty("key"));
 		assertEquals("value2", result.getProperty("key2"));
 
 		propString = "";
-		result = parseProps(propString);
+		result = string2props(propString);
 		assertEquals(0, result.size());
 	}
 }
