@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 OpenDCS Consortium and its Contributors
+ *  Copyright 2025 OpenDCS Consortium and its Contributors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License")
  *  you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 import org.junit.platform.commons.PreconditionViolationException;
-import org.opendcs.fixtures.configuration.Configuration;
-import org.opendcs.fixtures.configuration.ConfigurationProvider;
+import org.opendcs.fixtures.spi.Configuration;
+import org.opendcs.fixtures.spi.ConfigurationProvider;
 
 public class DatabaseContextProvider implements TestTemplateInvocationContextProvider
 {

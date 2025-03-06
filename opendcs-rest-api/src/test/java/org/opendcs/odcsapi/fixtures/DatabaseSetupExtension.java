@@ -15,17 +15,21 @@
 
 package org.opendcs.odcsapi.fixtures;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import io.restassured.RestAssured;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.PreconditionViolationException;
-import org.opendcs.fixtures.configuration.Configuration;
+import org.opendcs.fixtures.Programs;
+import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,6 +104,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 			}
 		}
 		environment.getVariables().forEach(System::setProperty);
+		config.getEnvironment().entrySet().forEach(e -> System.setProperty(e.getKey().toString(), e.getValue().toString()));
 		if(dbType == DbType.CWMS)
 		{
 			DbInterface.isCwms = true;
@@ -167,7 +172,24 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 					"/src/test/resources/org/opendcs/odcsapi/res/it/",
 					files[i]);
 		}
-		currentConfig.loadXMLData(filePaths, new SystemExit(), new SystemProperties());
+		loadXMLData(filePaths, new SystemExit(), new SystemProperties());
+	}
+
+	public static void loadXMLData(String[] files, SystemExit exit, SystemProperties properties) throws Exception
+	{
+		File logFile = new File(currentConfig.getUserDir(), currentConfig.getName() + "-db-import.log");
+		EnvironmentVariables envVars = new EnvironmentVariables(envMapper());
+		Programs.DbImport(logFile, currentConfig.getPropertiesFile(), envVars, exit, properties, files);
+	}
+
+	private static Map<String, String> envMapper()
+	{
+		Map<String, String> env = new HashMap<>();
+		for (Map.Entry<Object, Object> entry : currentConfig.getEnvironment().entrySet())
+		{
+			env.put(entry.getKey().toString(), entry.getValue().toString());
+		}
+		return env;
 	}
 
 	private void setupClientUser()
