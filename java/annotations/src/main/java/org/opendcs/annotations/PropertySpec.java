@@ -26,13 +26,13 @@ import java.lang.annotation.Target;
 public @interface PropertySpec
 {
     /**
-     * Leaving the name blank will use the name of the field.
-     * @return
+     * Leaving the name blank will use the name of the annotated field.
+     * @return the field name
      */
     String name() default "";
     /**
      * Regardless of actual type the default value is presented as a string
-     * @return
+     * @return the default property value as a string.
      */
     String value() default "";
     String propertySpecType() default "";

@@ -150,7 +150,7 @@ public class CompAppInfo
 	public void setNumComputations(int n) { numComputations = n; }
 
 	/**
-	 * Creates & returns a copy of this object, except for the database ID.
+	 * Creates and returns a copy of this object, except for the database ID.
 	 * @return a copy of this object, except for the database ID.
 	 */
 	public CompAppInfo copyNoId()

@@ -118,8 +118,8 @@ public class NetworkDcpRecv
 	
 	/**
 	  Constructor called from main.
-	  @param args command line arguments.
-	  @see DrgsCmdLineArgs for details on command line arguments.
+     * @param lrgsMain the program main object.
+     * @param msgArchive storage for messages.
 	*/
 	public NetworkDcpRecv(LrgsMain lrgsMain, MsgArchive msgArchive)
 	{

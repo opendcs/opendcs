@@ -200,61 +200,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
         }
     }
 
-    public List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException
-    {
-        List<RoutingExecStatus> ret = new ArrayList<>();
-
-        String q = "select rs.ID, se.NAME, se.SCHEDULE_ENTRY_ID,"
-                + " ses.SCHEDULE_ENTRY_STATUS_ID, ses.RUN_START_TIME,"
-                + " ses.RUN_COMPLETE_TIME, ses.LAST_MESSAGE_TIME, ses.HOSTNAME,"
-                + " ses.RUN_STATUS, ses.NUM_MESSAGES, ses.NUM_DECODE_ERRORS,"
-                + " ses.NUM_PLATFORMS, ses.LAST_SOURCE, ses.LAST_CONSUMER,"
-                + " ses.LAST_MODIFIED"
-                + " from ROUTINGSPEC rs, SCHEDULE_ENTRY_STATUS ses, SCHEDULE_ENTRY se"
-                + " where ses.SCHEDULE_ENTRY_ID = se.SCHEDULE_ENTRY_ID"
-                + " and se.ROUTINGSPEC_ID = rs.ID"
-                + " and se.SCHEDULE_ENTRY_ID = ?"
-                + " order by ses.RUN_START_TIME desc";
-
-        try (Connection conn = connection();
-             PreparedStatement ps = conn.prepareStatement(q))
-        {
-            ps.setLong(1, scheduleEntryId.getValue());
-            ResultSet rs = ps.executeQuery();
-
-            while(rs.next())
-            {
-                RoutingExecStatus res = new RoutingExecStatus();
-                res.setRoutingSpecId(rs.getLong(1));
-                res.setScheduleEntryId(rs.getLong(3));
-                res.setRoutingExecId(rs.getLong(4));
-                res.setRunStart(new Date(rs.getLong(5)));
-                long x = rs.getLong(6);
-                if (!rs.wasNull())
-                    res.setRunStop(new Date(x));
-                x = rs.getLong(7);
-                if (!rs.wasNull())
-                    res.setLastMsgTime(new Date(x));
-                res.setHostname(rs.getString(8));
-                res.setRunStatus(rs.getString(9));
-                res.setNumMessages(rs.getInt(10));
-                res.setNumErrors(rs.getInt(11));
-                res.setNumPlatforms(rs.getInt(12));
-                res.setLastInput(rs.getString(13));
-                res.setLastOutput(rs.getString(14));
-                res.setLastActivity(new Date(rs.getLong(15)));
-                ret.add(res);
-            }
-        }
-        catch(SQLException ex)
-        {
-            String msg = "Error in query '" + q + "': " + ex;
-            throw new DatabaseException(msg, ex);
-        }
-
-        return ret;
-    }
-
     public List<RoutingStatus> readRoutingSpecStatus(LoadingAppDAI dai) throws DatabaseException
     {
         ArrayList<RoutingStatus> ret = new ArrayList<>();
@@ -321,17 +266,39 @@ public class RoutingSpecListIO extends SqlDbObjIo
                    {
                        if(seid == ars.getScheduleEntryId().getValue())
                        {
-                           long x = resultSet.getLong(2);
-                           if(!resultSet.wasNull())
+                           if (super._dbio.isCwms())
                            {
-                               ars.setLastActivityTime(new Date(x));
+                               Date x = resultSet.getDate(2);
+                               if (!resultSet.wasNull())
+                               {
+                                   ars.setLastActivityTime(x);
+                               }
+                           }
+                           else
+                           {
+                             Long x = resultSet.getLong(2);
+                             if(!resultSet.wasNull())
+                             {
+                                  ars.setLastActivityTime(new Date(x));
+                             }
                            }
                            ars.setNumMessages(resultSet.getInt(3));
                            ars.setNumDecodesErrors(resultSet.getInt(4));
-                           x = resultSet.getLong(5);
-                           if(!resultSet.wasNull())
+                           if (super._dbio.isCwms())
                            {
-                               ars.setLastMessageTime(new Date(x));
+                               Date x = resultSet.getDate(5);
+                               if (!resultSet.wasNull())
+                               {
+                                   ars.setLastMessageTime(x);
+                               }
+                           }
+                           else
+                           {
+                               Long x = resultSet.getLong(5);
+                               if(!resultSet.wasNull())
+                               {
+                                   ars.setLastMessageTime(new Date(x));
+                               }
                            }
                            break;
                        }
@@ -369,6 +336,62 @@ public class RoutingSpecListIO extends SqlDbObjIo
             String msg = "RoutingSpecListIO: Error in query '" + q + "': " + ex;
             throw new DatabaseException(msg, ex);
         }
+    }
+
+    public List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException
+    {
+        List<RoutingExecStatus> ret = new ArrayList<>();
+
+        String q = "select rs.ID, se.NAME, se.SCHEDULE_ENTRY_ID,"
+                + " ses.SCHEDULE_ENTRY_STATUS_ID, ses.RUN_START_TIME,"
+                + " ses.RUN_COMPLETE_TIME, ses.LAST_MESSAGE_TIME, ses.HOSTNAME,"
+                + " ses.RUN_STATUS, ses.NUM_MESSAGES, ses.NUM_DECODE_ERRORS,"
+                + " ses.NUM_PLATFORMS, ses.LAST_SOURCE, ses.LAST_CONSUMER,"
+                + " ses.LAST_MODIFIED"
+                + " from ROUTINGSPEC rs, SCHEDULE_ENTRY_STATUS ses, SCHEDULE_ENTRY se"
+                + " where ses.SCHEDULE_ENTRY_ID = se.SCHEDULE_ENTRY_ID"
+                + " and se.ROUTINGSPEC_ID = rs.ID"
+                + " and se.SCHEDULE_ENTRY_ID = ?"
+                + " order by ses.RUN_START_TIME desc";
+
+        try (Connection conn = connection();
+             PreparedStatement stmt = conn.prepareStatement(q))
+        {
+            stmt.setLong(1, scheduleEntryId.getValue());
+            try (ResultSet rs = stmt.executeQuery())
+            {
+                while(rs.next())
+                {
+                    RoutingExecStatus res = new RoutingExecStatus();
+                    res.setRoutingSpecId(rs.getLong(1));
+                    res.setScheduleEntryId(rs.getLong(3));
+                    res.setRoutingExecId(rs.getLong(4));
+                    res.setRunStart(rs.getDate(5));
+                    Date x = rs.getDate(6);
+                    if(!rs.wasNull())
+                        res.setRunStop(x);
+                    x = rs.getDate(7);
+                    if(!rs.wasNull())
+                        res.setLastMsgTime(x);
+                    res.setHostname(rs.getString(8));
+                    res.setRunStatus(rs.getString(9));
+                    res.setNumMessages(rs.getInt(10));
+                    res.setNumErrors(rs.getInt(11));
+                    res.setNumPlatforms(rs.getInt(12));
+                    res.setLastInput(rs.getString(13));
+                    res.setLastOutput(rs.getString(14));
+                    res.setLastActivity(rs.getDate(15));
+                    ret.add(res);
+                }
+            }
+        }
+        catch(SQLException ex)
+        {
+            String msg = "Error in query '" + q + "': " + ex;
+            throw new DatabaseException(msg, ex);
+        }
+
+        return ret;
     }
 
     /**

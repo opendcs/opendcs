@@ -81,9 +81,10 @@ public class EnumTableModel extends AbstractTableModel
 	public int getRowCount()
 	{
 		if (currentEnum == null)
+		{
 			return 0;
-		Vector v = (Vector)currentEnum.values();
-		return v.size();
+		}
+		return currentEnum.values().size();
 	}
 
 	/** @return number of enum columns (constant). */
@@ -134,7 +135,7 @@ public class EnumTableModel extends AbstractTableModel
 	{
 		if (currentEnum == null)
 			return null;
-		Vector v = (Vector)currentEnum.values();
+		Vector<?> v = (Vector<EnumValue>)currentEnum.values();
 		if (row >= v.size())
 			return null;
 		return (EnumValue)v.elementAt(row);
@@ -155,12 +156,10 @@ public class EnumTableModel extends AbstractTableModel
 	 * contents of the table.
 	 * @param enumName name of the DECODES enumeration to display
 	 */
-	public void setEnum(String enumName)
+	public void setEnum(DbEnum en)
 	{
-		decodes.db.DbEnum en = Database.getDb().getDbEnum(enumName);
 		if (en == null)
 		{
-			System.err.println("Cannot find enum '" + enumName + "'");
 			return;
 		}
 		currentEnum = en;
@@ -192,10 +191,10 @@ public class EnumTableModel extends AbstractTableModel
 	 */
 	public boolean moveUp(int row)
 	{
-		Vector v = (Vector)currentEnum.values();
+		Vector<EnumValue> v = (Vector<EnumValue>)currentEnum.values();
 		if (row <= 0 || row >= v.size())
 			return false;
-		Object obj = v.elementAt(row);
+		EnumValue obj = v.elementAt(row);
 		v.removeElementAt(row);
 		v.insertElementAt(obj, row-1);
 		fireTableDataChanged();
@@ -208,10 +207,10 @@ public class EnumTableModel extends AbstractTableModel
 	 */
 	public boolean moveDown(int row)
 	{
-		Vector v = (Vector)currentEnum.values();
+		Vector<EnumValue> v = (Vector<EnumValue>)currentEnum.values();
 		if (row < 0 || row >= v.size()-1)
 			return false;
-		Object obj = v.elementAt(row);
+		EnumValue obj = v.elementAt(row);
 		v.removeElementAt(row);
 		v.insertElementAt(obj, row+1);
 		fireTableDataChanged();

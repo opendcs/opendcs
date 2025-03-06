@@ -36,7 +36,7 @@ import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
 
 /**
-This class contains methods for reading & writing the quality log file.
+This class contains methods for reading and writing the quality log file.
 */
 public class FileStatsFile
 {
@@ -50,7 +50,6 @@ public class FileStatsFile
 
 	/**
 	 * Constructor.
-	 * @param filename the file name
 	 */
 	public FileStatsFile()
 	{

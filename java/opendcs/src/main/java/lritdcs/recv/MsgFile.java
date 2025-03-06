@@ -14,7 +14,7 @@ import lrgs.common.DcpMsg;
 import ilex.util.Logger;
 
 /**
-IO Methods for reading & writing periodic files contining DCP messages.
+ * IO Methods for reading and writing periodic files containing DCP messages.
 */
 public class MsgFile
 {
@@ -50,7 +50,6 @@ public class MsgFile
 	 *	data (variable length byte array)
 	 *
 	 * @param msg the DcpMsg to archive.
-	 * @param recvTime the receive time as a unix time_t
 	 * @return byte location that message was saved at.
 	 */
 	public synchronized long archive( DcpMsg msg)

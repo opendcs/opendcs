@@ -904,7 +904,6 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 	/**
 	 * Set the TSID to be edited or created
 	 * @param tsid the time series ID
-	 * @param stats If this is an existing time series it will have first, last, min, max.
 	 */
 	public void setTsSpec(CwmsTsId tsid)
 	{

@@ -900,7 +900,7 @@ public class MessageBrowser extends MenuFrame
     /**
       Called when 'Next Message' button pressed at bottom of screen.
       If searchcrit needs to be sent, send it.
-      Tell the background msgOutputThread to start & retrieve 1 message.
+      Tell the background msgOutputThread to start and retrieve 1 message.
     */
     public void nextMessageButtonPress()
     {
@@ -1031,7 +1031,7 @@ public class MessageBrowser extends MenuFrame
 
     /**
       Called when Save To File button is pressed.
-      Starts a new MessageOutput dialog with the current connection &
+      Starts a new MessageOutput dialog with the current connection and
       search crit parameters.
     */
     public void saveToFileButtonPress()

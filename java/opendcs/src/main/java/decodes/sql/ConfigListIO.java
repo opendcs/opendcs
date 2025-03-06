@@ -372,7 +372,8 @@ public class ConfigListIO extends SqlDbObjIo
                             String.format("No PlatformConfig found with ID %d", pc.getId().getValue()), thr);
                 }
 
-                putConfig(pc.getId(), rs);
+                PlatformConfig config = putConfig(pc.getId(), rs);
+                pc.copyFrom(config);
             }
         }
     }
@@ -717,6 +718,11 @@ public class ConfigListIO extends SqlDbObjIo
         String q =
             "DELETE FROM PlatformConfig WHERE ID = " + pc.getId();
         executeUpdate(q);
+        PlatformConfig pc2 = _pcList.getById(pc.getId());
+        if (pc2 != null)
+        {
+            _pcList.remove(pc2);
+        }
     }
 
     /**

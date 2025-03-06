@@ -2,6 +2,7 @@ package decodes.cwms;
 
 import static opendcs.util.logging.JulUtils.*;
 
+import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -9,6 +10,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -49,7 +51,7 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
  * Additionally implements a JMX MBean for runtime diagnostics.
  * @since 2022-10-17
  */
-public final class CwmsConnectionPool implements ConnectionPoolMXBean
+public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql.DataSource
 {
     private static Logger log = Logger.getLogger(CwmsConnectionPool.class.getName());
 
@@ -334,7 +336,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      */
     public synchronized void returnConnection(Connection conn) throws SQLException
     {
-        if (connectionsOut.contains(conn))
+        if(connectionsOut.contains(conn))
         {
             // the lambda handler above handles the count
             connectionsFreed++;
@@ -346,16 +348,10 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         {
             log.warning("Unknown connection returned to my pool.");
             unknownConnReturned++;
-            if (SqlSettings.TRACE_CONNECTIONS && !(conn instanceof WrappedConnection))
+            if(SqlSettings.TRACE_CONNECTIONS)
             {            
                 log.warning("Connection is from");
                 logStackTrace(log,Level.WARNING,Thread.currentThread().getStackTrace(),BEFORE_CUR_THREAD_STACK_CALL+1);
-            }
-            else if (SqlSettings.TRACE_CONNECTIONS)
-            {
-                final WrappedConnection wc = (WrappedConnection)conn;
-                log.warning(() -> "Connection opened from: " + String.join(System.lineSeparator(), wc.getOpenStackTrace()));
-                log.warning(() -> "Connection closed at: " + String.join(System.lineSeparator(), wc.getClosedStackTrace()));
             }
         }
     }
@@ -567,5 +563,53 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         {
             throw new SQLException("Unable to set Session context with Info="+info,ex);
         }
+    }
+
+    @Override
+    public PrintWriter getLogWriter() throws SQLException
+    {
+        throw new UnsupportedOperationException("Unimplemented method 'getLogWriter'");
+    }
+
+    @Override
+    public void setLogWriter(PrintWriter out) throws SQLException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setLogWriter'");
+    }
+
+    @Override
+    public void setLoginTimeout(int seconds) throws SQLException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setLoginTimeout'");
+    }
+
+    @Override
+    public int getLoginTimeout() throws SQLException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getLoginTimeout'");
+    }
+
+    @Override
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getParentLogger'");
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> iface) throws SQLException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'unwrap'");
+    }
+
+    @Override
+    public boolean isWrapperFor(Class<?> iface) throws SQLException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'isWrapperFor'");
+    }
+
+    @Override
+    public Connection getConnection(String username, String password) throws SQLException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getConnection'");
     }
 }

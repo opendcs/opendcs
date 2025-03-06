@@ -5,12 +5,26 @@ updates:
     schedule:
       interval: "daily"
     groups:
-      alldependencies:
+      dependencies-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+      dependencies-minor:
         patterns:
           - "*"
         update-types:
           - "minor"
+      dependencies-patch:
+        patterns:
+          - "*"
+        update-types:
           - "patch"
+      dependencies-security:
+        patterns:
+          - "*"
+        update-types:
+          - "security"
     reviewers:
       - "@opendcs/opendcs-core-devs"
   - package-ecosystem: "github-actions"

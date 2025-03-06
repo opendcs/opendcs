@@ -29,6 +29,7 @@ on:
         options:
           - "main"
           - "7.0"
+          - "7.5"
       nightly:
         type: boolean
         required: true
@@ -94,7 +95,7 @@ jobs:
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip#opendcs-${VERSION}.zip --clobber
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip.asc#opendcs-${VERSION}.zip.asc --clobber
       - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        uses: docker/login-action@v3.3.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
