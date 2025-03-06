@@ -29,6 +29,7 @@ on:
         options:
           - "main"
           - "7.0"
+          - "7.5"
       nightly:
         type: boolean
         required: true

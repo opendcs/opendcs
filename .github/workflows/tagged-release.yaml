@@ -3,8 +3,8 @@ name: Tagged Release
 on:
   push:
     tags:
-      - '7.0.[0-9]+'
-      - '7.0.[0-9]+-RC[0-9]+'
+      - '7.[05].[0-9]+'
+      - '7.[05].[0-9]+-RC[0-9]+'
       - '8.0.0-M[0-9]+'
   release:
     types: [published,prerelease]
