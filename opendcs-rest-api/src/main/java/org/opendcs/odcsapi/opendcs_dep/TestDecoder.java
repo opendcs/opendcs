@@ -92,7 +92,7 @@ public final class TestDecoder
 		
 		// Capture the OpenDCS log messages to return to client.
 		Logger origLogger = Logger.instance();
-		Logger traceLogger = new TraceLogger(new ArrayList<>(ret.getLogMessages()));
+		Logger traceLogger = new TraceLogger();
 		traceLogger.setMinLogPriority(Logger.E_DEBUG3);
 		Logger.setLogger(traceLogger);
 

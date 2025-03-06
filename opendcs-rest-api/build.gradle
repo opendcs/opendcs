@@ -167,7 +167,6 @@ tasks.register('integrationTestOpenTSDB', Test) {
     dependsOn generateConfig
     dependsOn downloadAndUnzipInstaller
     jvmArgs += "-DwarContext=/opendcs-rest-api"
-    jvmArgs += "-Djava.util.logging.config.file=src/test/resources/logging.properties"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
     jvmArgs += "-Dopendcs.test.integration.db=OpenDCS-Postgres"
@@ -193,7 +192,6 @@ tasks.register('integrationTestCWMS', Test) {
     dependsOn generateConfig
     dependsOn downloadAndUnzipInstaller
     jvmArgs += "-DwarContext=/opendcs-rest-api"
-    jvmArgs += "-Djava.util.logging.config.file=$projectDir/test/resources/logging.properties"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
     jvmArgs += "-Dopendcs.test.integration.db=CWMS-Oracle"

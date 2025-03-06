@@ -15,43 +15,49 @@
 
 package org.opendcs.odcsapi.opendcs_dep;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.opendcs.odcsapi.beans.ApiLogMessage;
-import org.opendcs.odcsapi.util.ApiConstants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.spi.LoggingEventBuilder;
 
 final class TraceLogger extends ilex.util.Logger
 {
-	ArrayList<ApiLogMessage> log;
-	
-	public TraceLogger(ArrayList<ApiLogMessage> log)
+	private static final Logger LOGGER = LoggerFactory.getLogger(TraceLogger.class);
+
+	public TraceLogger()
 	{
 		super("trace");
-		this.log = log;
 	}
 
 	@Override
 	public void close()
 	{
+		//No-op - fascade to SLF4j
 	}
 
 	@Override
 	public void doLog(int priority, String msg)
 	{
-		String txt = standardMessage(priority, msg);
-		log.add(new ApiLogMessage(new Date(), priorityName[priority], txt));
-
 		// In addition to saving the message, write it to the API's log.
-		Level level = priority == ilex.util.Logger.E_DEBUG3 ? Level.FINEST :
-			priority == ilex.util.Logger.E_DEBUG2 ? Level.FINER :
-			priority == ilex.util.Logger.E_DEBUG1 ? Level.FINE :		
-			priority == ilex.util.Logger.E_INFORMATION ? Level.INFO :		
-			priority == ilex.util.Logger.E_WARNING ? Level.WARNING :		
-			priority == ilex.util.Logger.E_FAILURE ? Level.SEVERE :		
-			priority == ilex.util.Logger.E_FATAL ? Level.SEVERE : Level.INFO;	
-		Logger.getLogger(ApiConstants.loggerName).log(level, msg);
+		LoggingEventBuilder level;
+		switch(priority)
+		{
+			case ilex.util.Logger.E_DEBUG3:
+			case ilex.util.Logger.E_DEBUG2:
+				level = LOGGER.atTrace();
+				break;
+			case ilex.util.Logger.E_DEBUG1:
+				level = LOGGER.atDebug();
+				break;
+			case ilex.util.Logger.E_WARNING:
+				level = LOGGER.atWarn();
+				break;
+			case ilex.util.Logger.E_FATAL:
+				level = LOGGER.atError();
+				break;
+			case ilex.util.Logger.E_INFORMATION:
+			default:
+				level = LOGGER.atInfo();
+		}
+		level.log(msg);
 	}
 }
