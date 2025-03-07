@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Iterator;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
 
 import decodes.datasource.GoesPMParser;
@@ -61,7 +62,6 @@ import org.opendcs.odcsapi.beans.ApiScriptFormatStatement;
 import org.opendcs.odcsapi.beans.ApiTokenPosition;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
 import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
@@ -117,7 +117,7 @@ public final class TestDecoder
 		else if (platformConfig.getNumScripts() > 0)
 			script = platformConfig.decodesScripts.get(0);
 		if (script == null)
-			throw new WebAppException(ErrorCodes.BAD_CONFIG, "No such script '" + scriptName
+			throw new WebAppException(HttpServletResponse.SC_PRECONDITION_FAILED, "No such script '" + scriptName
 				+ "' within the passed configuration.");
 
 		String mediumType = script.getHeaderType();
@@ -143,7 +143,7 @@ public final class TestDecoder
 				PMParser pmParser = PMParser.getPMParser(mediumType);
 				if (pmParser == null)
 				{
-					throw new WebAppException(ErrorCodes.BAD_CONFIG, 
+					throw new WebAppException(HttpServletResponse.SC_PRECONDITION_FAILED,
 						"Cannot get pmParser for mediumType '" + mediumType + "'");
 				}
 				pmParser.parsePerformanceMeasurements(rawMessage);
@@ -176,7 +176,7 @@ public final class TestDecoder
 				}
 				catch (HeaderParseException ex2)
 				{
-					throw new WebAppException(ErrorCodes.MISSING_ID, 
+					throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST,
 						"Cannot parse message header as " + mediumType + " or edl: " + ex2);
 				}
 			}
@@ -208,7 +208,7 @@ public final class TestDecoder
 			}
 			catch (Exception ex)
 			{
-				throw new WebAppException(ErrorCodes.BAD_CONFIG, "Decoding failed: " + ex);
+				throw new WebAppException(HttpServletResponse.SC_PRECONDITION_FAILED, "Decoding failed: " + ex);
 			}
 		}
 		finally

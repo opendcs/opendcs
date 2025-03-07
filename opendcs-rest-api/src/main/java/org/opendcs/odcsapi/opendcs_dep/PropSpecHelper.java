@@ -15,10 +15,11 @@
 
 package org.opendcs.odcsapi.opendcs_dep;
 
+import javax.servlet.http.HttpServletResponse;
+
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 import org.opendcs.odcsapi.beans.ApiPropSpec;
-import org.opendcs.odcsapi.errorhandling.ErrorCodes;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,7 +188,7 @@ public class PropSpecHelper
 		}
 		catch (Exception ex)
 		{
-			throw new WebAppException(ErrorCodes.IO_ERROR, "Cannot get property specs for '" + className, ex);
+			throw new WebAppException(HttpServletResponse.SC_CONFLICT, "Cannot get property specs for '" + className, ex);
 		}
 	}
 }
