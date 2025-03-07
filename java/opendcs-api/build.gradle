@@ -13,6 +13,11 @@ publishing {
         maven(MavenPublication) {
             artifactId = 'opendcs-api'
             from components.java
+
+            pom {
+                name = 'OpenDCS API'
+                description = 'Core interfaces for Database interaction used by OpenDCS Components'
+            }
         }
     }
 }
