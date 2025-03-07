@@ -23,7 +23,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Duration;
 
-import org.opendcs.odcsapi.tomcat.TomcatServer;
+import org.opendcs.odcsapi.fixtures.TomcatServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -56,7 +56,7 @@ public final class OwaspZap
 		String dbType = args[4];
 		TomcatServer.setupDb(dbType);
 
-		try(TomcatServer tomcat = new TomcatServer(baseDir, port, restWar, guiWar))
+		try(TomcatServer tomcat = new TomcatServer(baseDir, Integer.parseInt(port), restWar, guiWar))
 		{
 			tomcat.start(dbType);
 			System.exit(runOwaspZap(tomcat).intValue());
@@ -116,7 +116,9 @@ public final class OwaspZap
 		}
 		catch(UnsupportedOperationException e)
 		{
-			LOGGER.atTrace().log("Unable to set permissions on report directory: " + reportDir + " likely due to Windows OS");
+			LOGGER.atTrace()
+					.setCause(e)
+					.log("Unable to set permissions on report directory: " + reportDir + " likely due to Windows OS");
 		}
 		assert Files.isWritable(reportDir);
 	}

@@ -14,8 +14,6 @@
  */
 package org.opendcs.odcsapi.fixtures;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -28,7 +26,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 import org.junit.platform.commons.PreconditionViolationException;
-import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
 
 public class DatabaseContextProvider implements TestTemplateInvocationContextProvider
@@ -44,7 +41,7 @@ public class DatabaseContextProvider implements TestTemplateInvocationContextPro
 	public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(ExtensionContext context)
 	{
 		return Arrays.stream(DbType.values())
-				.filter(d -> System.getProperty("opendcs.test.integration.db").equals(d.toString()))
+				.filter(d -> System.getProperty("opendcs.test.integration.db").contains(d.toString()))
 				.map(DatabaseInvocationContext::new);
 	}
 
@@ -69,12 +66,9 @@ public class DatabaseContextProvider implements TestTemplateInvocationContextPro
 		{
 			if(EXTENSIONS.isEmpty())
 			{
-				ConfigurationProvider provider = getProvider();
 				try
 				{
-					File tmp = Files.createTempDirectory("configs-" + provider.getImplementation()).toFile();
-					Configuration config = provider.getConfig(tmp);
-					EXTENSIONS.add(new DatabaseSetupExtension(config, dbType));
+					EXTENSIONS.add(new DatabaseSetupExtension(dbType));
 				}
 				catch(Exception ex)
 				{

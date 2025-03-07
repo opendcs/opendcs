@@ -69,11 +69,6 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             property "sonar.projectVersion", sonarVersion()
         }
     }
-    project(":opendcs-integration-test") {
-        sonar {
-            skipProject = true
-        }
-    }
 }
 
 ext.sonarVersion = {

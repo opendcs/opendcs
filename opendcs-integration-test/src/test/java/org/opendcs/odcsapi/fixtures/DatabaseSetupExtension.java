@@ -22,15 +22,16 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import javax.servlet.http.HttpServletResponse;
 
 import io.restassured.RestAssured;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.PreconditionViolationException;
 import org.opendcs.fixtures.Programs;
 import org.opendcs.fixtures.spi.Configuration;
-import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -38,7 +39,6 @@ import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.is;
 
 public class DatabaseSetupExtension implements BeforeEachCallback
 {
@@ -46,15 +46,13 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 	private static DbType currentDbType;
 	private static Configuration currentConfig;
 	private static TomcatServer currentTomcat;
-	private final Configuration config;
 	private final DbType dbType;
 	private TomcatServer tomcatServer;
+	private Configuration configuration;
 
-	public DatabaseSetupExtension(Configuration config, DbType dbType)
+	public DatabaseSetupExtension(DbType dbType)
 	{
-		this.config = config;
 		this.dbType = dbType;
-		currentConfig = config;
 	}
 
 	public static DbType getCurrentDbType()
@@ -75,58 +73,27 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 	@Override
 	public void beforeEach(ExtensionContext context) throws Exception
 	{
-		String warContext = System.getProperty("warContext", "odcsapi");
 		if(tomcatServer == null)
 		{
-			tomcatServer = startTomcat(warContext);
+			tomcatServer = startTomcat();
 		}
 		RestAssured.baseURI = "http://localhost";
 		RestAssured.port = tomcatServer.getPort();
-		RestAssured.basePath = warContext;
+		RestAssured.basePath = "odcsapi";
+		healthCheck();
 		currentDbType = dbType;
 		currentTomcat = tomcatServer;
+		currentConfig = configuration;
 	}
 
-	private TomcatServer startTomcat(String warContext) throws Exception
+	private TomcatServer startTomcat() throws Exception
 	{
-		SystemExit exit = new SystemExit();
-		EnvironmentVariables environment = new EnvironmentVariables();
-		SystemProperties properties = new SystemProperties();
-		try
-		{
-			config.start(exit, environment, properties);
-		}
-		catch(Exception ex)
-		{
-			if(System.getProperty("testcontainer.cwms.bypass.url") == null)
-			{
-				throw ex;
-			}
-		}
-		environment.getVariables().forEach(System::setProperty);
-		config.getEnvironment().entrySet().forEach(e -> System.setProperty(e.getKey().toString(), e.getValue().toString()));
-		if(dbType == DbType.CWMS)
-		{
-			System.setProperty("DB_DRIVER_CLASS", "oracle.jdbc.driver.OracleDriver");
-			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
-			String dbOffice = System.getProperty("DB_OFFICE");
-			String initScript = String.format("BEGIN cwms_ccp_vpd.set_ccp_session_ctx(cwms_util.get_office_code('%s'), 2, '%s' ); END;", dbOffice, dbOffice);
-			System.setProperty("DB_CONNECTION_INIT", initScript);
-			DbInterface.decodesProperties.setProperty("CwmsOfficeId", dbOffice);
-		}
-		else
-		{
-			System.setProperty("DB_DRIVER_CLASS", "org.postgresql.Driver");
-			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
-			System.setProperty("DB_CONNECTION_INIT", "SELECT 1");
-		}
+		configuration = TomcatServer.setupDb(dbType.toString());
 		setupClientUser();
-		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, warContext);
-		tomcat.start();
-		RestAssured.baseURI = "http://localhost";
-		RestAssured.port = tomcat.getPort();
-		RestAssured.basePath = warContext;
-		healthCheck();
+		String restWarFile = Objects.requireNonNull(System.getProperty("opendcs.restapi.warfile"), "opendcs.restapi.warfile is not set");
+		String guiWarFile = Objects.requireNonNull(System.getProperty("opendcs.gui.warfile"), "opendcs.gui.warfile is not set");
+		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, restWarFile, guiWarFile);
+		tomcat.start(dbType.toString());
 		return tomcat;
 	}
 
@@ -143,13 +110,13 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 						.delete("/logout")
 						.then()
 						.assertThat()
-						.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
-				LOGGER.atInfo().log("Server is up!");
+						.statusCode(Matchers.is(HttpServletResponse.SC_NO_CONTENT));
+				LOGGER.atDebug().log("Server is up!");
 				break;
 			}
 			catch(Throwable e)
 			{
-				LOGGER.atInfo().log("Waiting for the server to start...");
+				LOGGER.atDebug().log("Waiting for the server to start...");
 				Thread.sleep(100);//NOSONAR
 			}
 		}

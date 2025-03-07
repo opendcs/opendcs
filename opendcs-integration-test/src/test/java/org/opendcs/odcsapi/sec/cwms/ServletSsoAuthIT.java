@@ -73,7 +73,7 @@ final class ServletSsoAuthIT
 			LOGGER.atInfo().log("Session is: {}",event.getSession().toString());
 		});
 		tomcat.getSsoValve()
-				.wrappedRegister(COOKIE, mcup, "CLIENT-CERT", null,null);
+				.wrappedRegister(COOKIE, mcup, "CLIENT-CERT");
 	}
 
 	@TestTemplate

@@ -1,2 +1,0 @@
-#Tomcat jar scan is noisy
-org.apache.tomcat.util.scan.StandardJarScanner

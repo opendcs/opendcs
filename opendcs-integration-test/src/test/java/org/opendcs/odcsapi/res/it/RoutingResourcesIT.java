@@ -42,7 +42,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.odcsapi.beans.ApiDacqEvent;
 import org.opendcs.odcsapi.beans.ApiDataSource;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
@@ -51,7 +50,6 @@ import org.opendcs.odcsapi.beans.ApiRoutingStatus;
 import org.opendcs.odcsapi.beans.ApiScheduleEntry;
 import org.opendcs.odcsapi.beans.ApiScheduleEntryRef;
 import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
-import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.anyOf;
@@ -1211,8 +1209,7 @@ final class RoutingResourcesIT extends BaseIT
 
 	private static void storeDacqEvent(DacqEvent event) throws DatabaseException
 	{
-		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (DacqEventDAI dai = currentConfig.getTsdb().makeDacqEventDAO())
+		try (DacqEventDAI dai = getTsdb().makeDacqEventDAO())
 		{
 			dai.writeEvent(event);
 		}
@@ -1224,8 +1221,7 @@ final class RoutingResourcesIT extends BaseIT
 
 	private static void deleteEventsForPlatform(DbKey platformId) throws DatabaseException
 	{
-		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (DacqEventDAI dai = currentConfig.getTsdb().makeDacqEventDAO())
+		try (DacqEventDAI dai = getTsdb().makeDacqEventDAO())
 		{
 			dai.deleteEventsForPlatform(platformId);
 		}

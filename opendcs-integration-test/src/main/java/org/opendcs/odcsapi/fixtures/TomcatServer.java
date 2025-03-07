@@ -13,7 +13,7 @@
  *  limitations under the License.
  */
 
-package org.opendcs.odcsapi.tomcat;
+package org.opendcs.odcsapi.fixtures;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,15 +26,17 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.ServiceLoader;
+import java.util.function.Supplier;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.Manager;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.io.FileUtils;
-import org.junit.platform.commons.PreconditionViolationException;
+import org.apache.tomcat.jdbc.pool.DataSourceFactory;
 import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
@@ -52,8 +54,18 @@ import uk.org.webcompere.systemstubs.security.SystemExit;
  */
 public final class TomcatServer implements AutoCloseable
 {
-	private static final Logger logger = LoggerFactory.getLogger(TomcatServer.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TomcatServer.class);
+	public static final String DB_OFFICE = "DB_OFFICE";
+	public static final String DB_DRIVER_CLASS = "DB_DRIVER_CLASS";
+	public static final String DB_DATASOURCE_CLASS = "DB_DATASOURCE_CLASS";
+	public static final String DB_CONNECTION_INIT = "DB_CONNECTION_INIT";
+	public static final String DB_VALIDATION_QUERY = "DB_VALIDATION_QUERY";
+	public static final String DB_URL = "DB_URL";
+	public static final String DB_USERNAME = "DB_USERNAME";
+	public static final String DB_PASSWORD = "DB_PASSWORD";
 	private final Tomcat tomcatInstance;
+	private final TestSingleSignOn singleSignOn = new TestSingleSignOn();
+	private final Supplier<Manager> sessionManager;
 
 	/**
 	 * Setups the baseline for tomcat to run.
@@ -61,33 +73,36 @@ public final class TomcatServer implements AutoCloseable
 	 * @param baseDir set to the CATALINA_BASE directory the build has set up
 	 * @param port    Network port to listen on
 	 */
-	public TomcatServer(String baseDir, String port, String restWar, String guiWar) throws IOException
+	public TomcatServer(String baseDir, int port, String restWar, String guiWar) throws IOException
 	{
+		SLF4JBridgeHandler.removeHandlersForRootLogger();
+		SLF4JBridgeHandler.install();
 		tomcatInstance = new Tomcat();
 		tomcatInstance.setBaseDir(baseDir);
 		Connector connector = new Connector();
 		connector.setSecure(true);
 		connector.setScheme("https");
-		connector.setPort(Integer.parseInt(port));
+		connector.setPort(port);
 		tomcatInstance.setConnector(connector);
 		Host host = tomcatInstance.getHost();
 		host.setAppBase("webapps");
 		String catalinaBase = tomcatInstance.getServer().getCatalinaBase().toString();
 		Files.createDirectories(Paths.get(catalinaBase, "temp"));
 		Files.createDirectories(Paths.get(catalinaBase, "webapps"));
-		tomcatInstance.setPort(Integer.parseInt(port));
+		tomcatInstance.setPort(port);
 		tomcatInstance.setSilent(false);
 		tomcatInstance.enableNaming();
 		StandardContext restApiContext = (StandardContext) tomcatInstance.addWebapp("/odcsapi", restWar);
 		restApiContext.setDelegate(true);
 		restApiContext.setParentClassLoader(TomcatServer.class.getClassLoader());
-		restApiContext.getPipeline().addValve(new TestSingleSignOn());
+		restApiContext.getPipeline().addValve(singleSignOn);
 		restApiContext.setReloadable(true);
 		restApiContext.setPrivileged(true);
-		if(System.getProperty("DB_OFFICE") != null)
+		sessionManager = restApiContext::getManager;
+		if(System.getProperty(DB_OFFICE) != null)
 		{
 			restApiContext.removeParameter("opendcs.rest.api.cwms.office");
-			restApiContext.addParameter("opendcs.rest.api.cwms.office", System.getProperty("DB_OFFICE"));
+			restApiContext.addParameter("opendcs.rest.api.cwms.office", System.getProperty(DB_OFFICE));
 		}
 
 		StandardContext guiContext = (StandardContext) tomcatInstance.addWebapp("/", guiWar);
@@ -101,7 +116,7 @@ public final class TomcatServer implements AutoCloseable
 		context.addServletMappingDecoded("/*", "sso");
 	}
 
-	public void start(String dbType) throws Exception
+	public void start(String dbType) throws LifecycleException, IOException
 	{
 		tomcatInstance.start();
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
@@ -122,7 +137,7 @@ public final class TomcatServer implements AutoCloseable
 					Paths.get("build/tomcat/webapps/ROOT/WEB-INF/web.xml").toFile(),
 					StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 		}
-		logger.info("Tomcat listening at http://localhost:{}", tomcatInstance.getConnector().getLocalPort());
+		LOGGER.info("Tomcat listening at http://localhost:{}", tomcatInstance.getConnector().getLocalPort());
 	}
 
 	public int getPort()
@@ -161,26 +176,26 @@ public final class TomcatServer implements AutoCloseable
 	{
 		try
 		{
-			SLF4JBridgeHandler.removeHandlersForRootLogger();
-			SLF4JBridgeHandler.install();
 			String baseDir = args[0];
 			String port = args[1];
 			String restWar = args[2];
 			String guiWar = args[3];
 			String dbType = args[4];
 			setupDb(dbType);
-			TomcatServer tomcat = new TomcatServer(baseDir, port, restWar, guiWar);
-			tomcat.start(dbType);
-			tomcat.await();
+			try(TomcatServer tomcat = new TomcatServer(baseDir, Integer.parseInt(port), restWar, guiWar))
+			{
+				tomcat.start(dbType);
+				tomcat.await();
+			}
 		}
-		catch(Exception e)
+		catch(RuntimeException | LifecycleException | IOException e)
 		{
-			e.printStackTrace();
+			LOGGER.error("Error starting tomcat", e);
 			System.exit(-1);
 		}
 	}
 
-	public static void setupDb(String dbType)
+	public static Configuration setupDb(String dbType)
 	{
 		ConfigurationProvider provider = getProvider(dbType);
 		try
@@ -195,10 +210,11 @@ public final class TomcatServer implements AutoCloseable
 			{
 				startDbContainer(config, dbType);
 			}
+			return config;
 		}
 		catch(Exception ex)
 		{
-			throw new PreconditionViolationException("Error creating configuration for db: " + dbType, ex);
+			throw new IllegalStateException("Error creating configuration for db: " + dbType, ex);
 		}
 	}
 
@@ -206,27 +222,27 @@ public final class TomcatServer implements AutoCloseable
 	{
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
-			System.setProperty("DB_DRIVER_CLASS", "oracle.jdbc.driver.OracleDriver");
-			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			System.setProperty(DB_DRIVER_CLASS, "oracle.jdbc.driver.OracleDriver");
+			System.setProperty(DB_DATASOURCE_CLASS, DataSourceFactory.class.getName());
 			String dbOffice = System.getProperty("testcontainer.cwms.bypass.office.id");
 			String initScript = String.format("BEGIN cwms_ccp_vpd.set_ccp_session_ctx(cwms_util.get_office_code('%s'), 2, '%s' ); END;", dbOffice, dbOffice);
-			System.setProperty("DB_OFFICE", dbOffice);
-			System.setProperty("DB_CONNECTION_INIT", initScript);
-			System.setProperty("DB_VALIDATION_QUERY", "SELECT 1 FROM dual");
-			System.setProperty("DB_URL", System.getProperty("testcontainer.cwms.bypass.url"));
-			System.setProperty("DB_USERNAME", System.getProperty("testcontainer.cwms.bypass.office.eroc") + "WEBTEST");
-			System.setProperty("DB_PASSWORD", System.getProperty("testcontainer.cwms.bypass.cwms.pass"));
+			System.setProperty(DB_OFFICE, dbOffice);
+			System.setProperty(DB_CONNECTION_INIT, initScript);
+			System.setProperty(DB_VALIDATION_QUERY, "SELECT 1 FROM dual");
+			System.setProperty(DB_URL, System.getProperty("testcontainer.cwms.bypass.url"));
+			System.setProperty(DB_USERNAME, System.getProperty("testcontainer.cwms.bypass.office.eroc") + "WEBTEST");
+			System.setProperty(DB_PASSWORD, System.getProperty("testcontainer.cwms.bypass.cwms.pass"));
 		}
 		else
 		{
 
-			System.setProperty("DB_DRIVER_CLASS", "org.postgresql.Driver");
-			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
-			System.setProperty("DB_CONNECTION_INIT", "SELECT 1");
-			System.setProperty("DB_VALIDATION_QUERY", "SELECT 1");
-			System.setProperty("DB_URL", System.getProperty("testcontainer.opentsdb.bypass.url"));
-			System.setProperty("DB_USERNAME", System.getProperty("testcontainer.opentsdb.bypass.username"));
-			System.setProperty("DB_PASSWORD", System.getProperty("testcontainer.opentsdb.bypass.pass"));
+			System.setProperty(DB_DRIVER_CLASS, "org.postgresql.Driver");
+			System.setProperty(DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			System.setProperty(DB_CONNECTION_INIT, "SELECT 1");
+			System.setProperty(DB_VALIDATION_QUERY, "SELECT 1");
+			System.setProperty(DB_URL, System.getProperty("testcontainer.opentsdb.bypass.url"));
+			System.setProperty(DB_USERNAME, System.getProperty("testcontainer.opentsdb.bypass.username"));
+			System.setProperty(DB_PASSWORD, System.getProperty("testcontainer.opentsdb.bypass.pass"));
 		}
 	}
 
@@ -252,7 +268,7 @@ public final class TomcatServer implements AutoCloseable
 		}
 		if(configProvider == null)
 		{
-			throw new PreconditionViolationException("Invalid dbtype: " + dbType);
+			throw new IllegalArgumentException("Invalid dbtype: " + dbType);
 		}
 		return configProvider;
 	}
@@ -266,19 +282,19 @@ public final class TomcatServer implements AutoCloseable
 		environment.getVariables().forEach(System::setProperty);
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
-			System.setProperty("DB_DRIVER_CLASS", "oracle.jdbc.driver.OracleDriver");
-			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
-			String dbOffice = System.getProperty("DB_OFFICE");
+			System.setProperty(DB_DRIVER_CLASS, "oracle.jdbc.driver.OracleDriver");
+			System.setProperty(DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			String dbOffice = System.getProperty(DB_OFFICE);
 			String initScript = String.format("BEGIN cwms_ccp_vpd.set_ccp_session_ctx(cwms_util.get_office_code('%s'), 2, '%s' ); END;", dbOffice, dbOffice);
-			System.setProperty("DB_CONNECTION_INIT", initScript);
-			System.setProperty("DB_VALIDATION_QUERY", "SELECT 1 FROM dual");
+			System.setProperty(DB_CONNECTION_INIT, initScript);
+			System.setProperty(DB_VALIDATION_QUERY, "SELECT 1 FROM dual");
 		}
 		else
 		{
-			System.setProperty("DB_DRIVER_CLASS", "org.postgresql.Driver");
-			System.setProperty("DB_DATASOURCE_CLASS", "org.apache.tomcat.jdbc.pool.DataSourceFactory");
-			System.setProperty("DB_CONNECTION_INIT", "SELECT 1");
-			System.setProperty("DB_VALIDATION_QUERY", "SELECT 1");
+			System.setProperty(DB_DRIVER_CLASS, "org.postgresql.Driver");
+			System.setProperty(DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
+			System.setProperty(DB_CONNECTION_INIT, "SELECT 1");
+			System.setProperty(DB_VALIDATION_QUERY, "SELECT 1");
 		}
 		setupClientUser(dbType);
 	}
@@ -288,19 +304,19 @@ public final class TomcatServer implements AutoCloseable
 	{
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
-			String userPermissions = "begin execute immediate 'grant web_user to " + System.getProperty("DB_USERNAME") + "'; end;";
-			String dbOffice = System.getProperty("DB_OFFICE");
+			String userPermissions = "begin execute immediate 'grant web_user to " + System.getProperty(DB_USERNAME) + "'; end;";
+			String dbOffice = System.getProperty(DB_OFFICE);
 			String setWebUserPermissions = "begin\n" +
 					"   cwms_sec.add_user_to_group(?, 'CWMS User Admins',?) ;\n" +
 					"   commit;\n" +
 					"end;";
-			try(Connection connection = DriverManager.getConnection(System.getProperty("DB_URL"), "CWMS_20",
-					System.getProperty("DB_PASSWORD"));
+			try(Connection connection = DriverManager.getConnection(System.getProperty(DB_URL), "CWMS_20",
+					System.getProperty(DB_PASSWORD));
 				PreparedStatement stmt1 = connection.prepareStatement(userPermissions);
 				PreparedStatement stmt2 = connection.prepareStatement(setWebUserPermissions))
 			{
 				stmt1.executeQuery();
-				stmt2.setString(1, System.getProperty("DB_USERNAME"));
+				stmt2.setString(1, System.getProperty(DB_USERNAME));
 				stmt2.setString(2, dbOffice);
 				stmt2.executeQuery();
 			}
@@ -311,4 +327,13 @@ public final class TomcatServer implements AutoCloseable
 		}
 	}
 
+	public TestSingleSignOn getSsoValve()
+	{
+		return singleSignOn;
+	}
+
+	public Manager getTestSessionManager()
+	{
+		return sessionManager.get();
+	}
 }

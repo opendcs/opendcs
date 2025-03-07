@@ -19,21 +19,34 @@ plugins {
 }
 
 dependencies {
-    testRuntimeOnly(libs.byte.buddy)
-    testRuntimeOnly(libs.postgresql)
-    testImplementation(libs.bundles.tomcat)
-    testImplementation(libs.commons.io)
+    implementation(libs.testcontainers.core)
+    implementation(libs.rest.assured)
+    implementation(libs.slf4j.jdk)
+    implementation(libs.jersey.container.servlet)
+    implementation(libs.webcompere.system.stubs.jupiter)
+    implementation(libs.bundles.tomcat)
+    implementation(libs.commons.io)
+    implementation(libs.jul.to.slf4j)
+
+    //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
+    implementation(files("../opendcs-rest-api/temp-deps/opendcs-integrationtesting-fixtures.jar"))
+    implementation(files("../opendcs-rest-api/temp-deps/opendcs.jar"))
+    implementation(files("../opendcs-rest-api/temp-deps/opendcs-api.jar"))
+
+    testImplementation(project(":opendcs-rest-api"))
     testImplementation(libs.apache.derby)
-    testImplementation(libs.webcompere.system.stubs.jupiter)
-    testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.hec.testcontainers.cwms)
     testImplementation(libs.bundles.jdbi)
     testImplementation(libs.org.flywaydb.flyway.core)
-    testImplementation(files("../opendcs-rest-api/temp-deps/opendcs.jar"))
-    testImplementation(files("../opendcs-rest-api/temp-deps/opendcs-api.jar"))
     testImplementation(libs.commons.lang)
-    testImplementation(libs.slf4j.jdk)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.inline)
+    testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(libs.hamcrest)
+    testImplementation(libs.nimbus)
+    testImplementation(libs.jwt)
+
     testRuntimeOnly(libs.oracle.jdbc)
     testRuntimeOnly(libs.oracle.ucp)
     testRuntimeOnly(libs.cwms.db.jooq) {
@@ -63,9 +76,9 @@ dependencies {
         exclude group: "org.jfree"
     }
 
-    //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
-    testImplementation(files("../opendcs-rest-api/temp-deps/opendcs-integrationtesting-fixtures.jar"))
-    testImplementation(libs.jul.to.slf4j)
+    testRuntimeOnly(libs.byte.buddy)
+    testRuntimeOnly(libs.postgresql)
+    testRuntimeOnly(libs.byte.buddy)
 }
 
 configurations.all {
@@ -174,6 +187,106 @@ tasks.register('downloadAndUnzipInstaller') {
                 from zipTree(zipFile)
                 into outputDir
             }
+        }
+    }
+}
+
+tasks.register('integrationTestOpenTSDB', Test) {
+    group "verification"
+    useJUnitPlatform {
+        includeTags "integration"
+        includeTags "integration-opentsdb-only"
+    }
+    doFirst {
+        classpath = classpath.filter {
+            !it.name.endsWith('opendcs-7.0.13.jar')
+        }
+    }
+    shouldRunAfter test
+    dependsOn(':opendcs-rest-api:war')
+    dependsOn(':opendcs-web-client:war')
+    dependsOn generateConfig
+    dependsOn downloadAndUnzipInstaller
+    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
+    jvmArgs += "-Dopendcs.test.integration.db=OpenDCS-Postgres"
+    def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    def guiWar = project(':opendcs-web-client').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    jvmArgs += "-Dopendcs.restapi.warfile=${restWar}"
+    jvmArgs += "-Dopendcs.gui.warfile=${guiWar}"
+    def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
+    systemProperties.put("DCSTOOL_HOME", outputDir)
+    systemProperties.put("DCSTOOL_USERDIR", "build/resources/tomcat/conf")
+    finalizedBy integrationTestReportOpenTSDB
+}
+
+tasks.register('integrationTestCWMS', Test) {
+    group "verification"
+    useJUnitPlatform {
+        includeTags "integration"
+        includeTags "integration-cwms-only"
+    }
+    doFirst {
+        classpath = classpath.filter {
+            !it.name.endsWith('opendcs-7.0.13.jar')
+        }
+    }
+    shouldRunAfter test
+    dependsOn(':opendcs-rest-api:war')
+    dependsOn(':opendcs-web-client:war')
+    dependsOn generateConfig
+    dependsOn downloadAndUnzipInstaller
+    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dcatalina.base=${layout.buildDirectory.file("tomcat")}"
+    jvmArgs += "-Dopendcs.test.integration.db=CWMS-Oracle"
+    def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    def guiWar = project(':opendcs-web-client').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
+    jvmArgs += "-Dopendcs.restapi.warfile=${restWar}"
+    jvmArgs += "-Dopendcs.gui.warfile=${guiWar}"
+    def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
+    systemProperties.put("DCSTOOL_HOME", outputDir)
+    systemProperties.put("DCSTOOL_USERDIR", "build/resources/test/tomcat/conf")
+    finalizedBy integrationTestReportCWMS
+}
+
+
+tasks.register('integrationTestReportCWMS', JacocoReport) {
+    group = "verification"
+    dependsOn tasks.named('integrationTestCWMS')
+    executionData = files(layout.buildDirectory.dir("jacoco").get().file("integrationTestCWMS.exec"))
+    additionalSourceDirs.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
+    sourceDirectories.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(project(':opendcs-rest-api').sourceSets.main.output))
+    reports {
+        xml.required.set(true)
+    }
+}
+
+tasks.register('integrationTestReportOpenTSDB', JacocoReport) {
+    group = "verification"
+    dependsOn tasks.named('integrationTestOpenTSDB')
+    executionData = files(layout.buildDirectory.dir("jacoco").get().file("integrationTestOpenTSDB.exec"))
+    additionalSourceDirs.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
+    sourceDirectories.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(project(':opendcs-rest-api').sourceSets.main.output))
+    reports {
+        xml.required.set(true)
+    }
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags "integration"
+        excludeTags "integration-opentsdb-only"
+        excludeTags "integration-cwms-only"
+    }
+}
+
+if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
+    sonarqube {
+        properties {
+            property "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
+                    "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
         }
     }
 }

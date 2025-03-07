@@ -26,11 +26,13 @@ import javax.ws.rs.core.MediaType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
 import decodes.db.PlatformStatus;
 import decodes.db.ScheduleEntry;
 import decodes.db.ScheduleEntryStatus;
 import decodes.sql.DbKey;
 import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
@@ -39,7 +41,6 @@ import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.TimeSeriesDAI;
 import org.apache.catalina.session.StandardSession;
-import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.odcsapi.fixtures.DatabaseSetupExtension;
 import org.opendcs.odcsapi.fixtures.DbType;
 import org.opendcs.odcsapi.fixtures.TomcatServer;
@@ -134,7 +135,7 @@ class BaseIT
 		session.setPrincipal(mcup);
 		session.activate();
 		tomcat.getSsoValve()
-				.wrappedRegister(COOKIE, mcup, "CLIENT-CERT", null,null);
+				.wrappedRegister(COOKIE, mcup, "CLIENT-CERT");
 
 
 		//Check while passing in cookie
@@ -186,10 +187,19 @@ class BaseIT
 		authHeader = authHeaderPrefix + credentialsJson;
 	}
 
+	protected static TimeSeriesDb getTsdb() throws Throwable
+	{
+		return DatabaseSetupExtension.getCurrentConfig().getTsdb();
+	}
+
+	protected static DatabaseIO getDbIo() throws Throwable
+	{
+		return DatabaseSetupExtension.getCurrentConfig().getDecodesDatabase().getDbIo();
+	}
+
 	public static void storeScheduleEntryStatus(ScheduleEntryStatus status) throws DatabaseException
 	{
-		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (ScheduleEntryDAI dai = currentConfig.getDecodesDatabase().getDbIo().makeScheduleEntryDAO())
+		try (ScheduleEntryDAI dai = getDbIo().makeScheduleEntryDAO())
 		{
 			dai.writeScheduleStatus(status);
 		}
@@ -201,8 +211,7 @@ class BaseIT
 
 	public static void deleteScheduleEntryStatus(DbKey statusId) throws DatabaseException
 	{
-		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (ScheduleEntryDAI dai = currentConfig.getDecodesDatabase().getDbIo().makeScheduleEntryDAO())
+		try (ScheduleEntryDAI dai = getDbIo().makeScheduleEntryDAO())
 		{
 			ScheduleEntry entry = new ScheduleEntry(statusId);
 			dai.deleteScheduleStatusFor(entry);
@@ -215,8 +224,7 @@ class BaseIT
 
 	public static void storePlatformStatus(PlatformStatus status) throws DatabaseException
 	{
-		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (PlatformStatusDAI dai = currentConfig.getTsdb().makePlatformStatusDAO())
+		try (PlatformStatusDAI dai = getTsdb().makePlatformStatusDAO())
 		{
 			dai.writePlatformStatus(status);
 		}
@@ -228,8 +236,7 @@ class BaseIT
 
 	public static void deletePlatformStatus(DbKey statusId) throws DatabaseException
 	{
-		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (PlatformStatusDAI dai = currentConfig.getTsdb().makePlatformStatusDAO())
+		try (PlatformStatusDAI dai = getTsdb().makePlatformStatusDAO())
 		{
 			dai.deletePlatformStatus(statusId);
 		}
@@ -241,8 +248,7 @@ class BaseIT
 
 	public static void storeTimeSeries(CTimeSeries ts) throws Exception
 	{
-		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (TimeSeriesDAI dai = currentConfig.getTsdb().makeTimeSeriesDAO())
+		try (TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
 		{
 			dai.saveTimeSeries(ts);
 		}
@@ -254,8 +260,7 @@ class BaseIT
 
 	public static void deleteTimeSeries(TimeSeriesIdentifier id) throws Exception
 	{
-		Configuration currentConfig = DatabaseSetupExtension.getCurrentConfig();
-		try (TimeSeriesDAI dai = currentConfig.getTsdb().makeTimeSeriesDAO())
+		try (TimeSeriesDAI dai = getTsdb().makeTimeSeriesDAO())
 		{
 			dai.deleteTimeSeries(id);
 		}
