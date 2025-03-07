@@ -305,7 +305,7 @@ public final class RoutingResources extends OpenDcsResource
 			spec.setId(DbKey.createDbKey(routingId));
 			dbIo.deleteRoutingSpec(spec);
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)
-					.entity("RoutingSpec with ID " + routingId + " deleted").build();
+					.entity(String.format("RoutingSpec with ID: %d deleted", routingId)).build();
 		}
 		catch(DatabaseException e)
 		{

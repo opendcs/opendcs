@@ -279,6 +279,10 @@ public final class ReflistResources extends OpenDcsResource
 	public Response getSeason(@QueryParam("abbr") String abbr)
 			throws DbException, WebAppException
 	{
+		if (abbr == null)
+		{
+			throw new MissingParameterException("Missing required 'abbr' argument.");
+		}
 		try (EnumDAI dai  = getLegacyTimeseriesDB().makeEnumDAO())
 		{
 			DbKey seasonId = dai.getEnumId(SEASON_ENUM);

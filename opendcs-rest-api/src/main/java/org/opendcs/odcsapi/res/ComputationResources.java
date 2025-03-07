@@ -404,7 +404,7 @@ public final class ComputationResources extends OpenDcsResource
 		{
 			dai.deleteComputation(DbKey.createDbKey(computationId));
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)
-					.entity("Computation with ID " + computationId + " deleted").build();
+					.entity(String.format("Computation with ID: %d deleted", computationId)).build();
 		}
 		catch(DbIoException | ConstraintException e)
 		{

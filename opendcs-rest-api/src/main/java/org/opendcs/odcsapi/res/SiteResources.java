@@ -48,7 +48,8 @@ import opendcs.dai.SiteDAI;
 import org.opendcs.odcsapi.beans.ApiSite;
 import org.opendcs.odcsapi.beans.ApiSiteRef;
 import org.opendcs.odcsapi.dao.DbException;
-import org.opendcs.odcsapi.errorhandling.ErrorCodes;
+import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
+import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 
@@ -109,8 +110,7 @@ public final class SiteResources extends OpenDcsResource
 	{
 		if (siteId == null)
 		{
-			throw new WebAppException(ErrorCodes.MISSING_ID,
-					"Missing required siteid parameter.");
+			throw new MissingParameterException("Missing required siteid parameter.");
 		}
 
 		try (SiteDAI dai = getLegacyTimeseriesDB().makeSiteDAO();
@@ -125,8 +125,7 @@ public final class SiteResources extends OpenDcsResource
 		}
 		catch (NoSuchObjectException e)
 		{
-			return Response.status(HttpServletResponse.SC_NOT_FOUND)
-					.entity("Requested site with matching ID not found").build();
+			throw new DatabaseItemNotFoundException(String.format("Requested site with matching ID: %d not found", siteId), e);
 		}
 		catch(DbIoException e)
 		{
@@ -188,7 +187,7 @@ public final class SiteResources extends OpenDcsResource
 		{
 			if (site == null)
 			{
-				throw new WebAppException(ErrorCodes.MISSING_ID, "Missing required site parameter.");
+				throw new MissingParameterException("Missing required site parameter.");
 			}
 			Site dbSite = map(site);
 			dai.writeSite(dbSite);
@@ -252,8 +251,7 @@ public final class SiteResources extends OpenDcsResource
 		{
 			if (siteId == null)
 			{
-				throw new WebAppException(ErrorCodes.MISSING_ID,
-						"Missing required siteid parameter.");
+				throw new MissingParameterException("Missing required siteid parameter.");
 			}
 			dai.deleteSite(DbKey.createDbKey(siteId));
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)

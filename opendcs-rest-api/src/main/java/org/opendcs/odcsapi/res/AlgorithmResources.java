@@ -44,6 +44,8 @@ import org.opendcs.odcsapi.beans.ApiAlgoParm;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
 import org.opendcs.odcsapi.beans.ApiAlgorithmRef;
 import org.opendcs.odcsapi.beans.ApiAlgorithmScript;
+import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
+import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
 
@@ -92,8 +94,7 @@ public final class AlgorithmResources extends OpenDcsResource
 	{
 		if(algoId == null)
 		{
-			throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST,
-					"Missing required algorithmid parameter.");
+			throw new MissingParameterException("Missing required algorithmid parameter.");
 		}
 		try(AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
 		{
@@ -104,8 +105,7 @@ public final class AlgorithmResources extends OpenDcsResource
 		}
 		catch(NoSuchObjectException e)
 		{
-			throw new WebAppException(HttpServletResponse.SC_NOT_FOUND,
-					"No Computation Algorithm with id=" + algoId, e);
+			throw new DatabaseItemNotFoundException(String.format("No Computation Algorithm with id: %d", algoId), e);
 		}
 	}
 
@@ -196,8 +196,13 @@ public final class AlgorithmResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
-	public Response deleteAlgorithm(@QueryParam("algorithmid") Long algorithmId) throws TsdbException
+	public Response deleteAlgorithm(@QueryParam("algorithmid") Long algorithmId)
+			throws TsdbException, MissingParameterException
 	{
+		if (algorithmId == null)
+		{
+			throw new MissingParameterException("Missing required algorithmid parameter.");
+		}
 		try(AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
 		{
 			dai.deleteAlgorithm(DbKey.createDbKey(algorithmId));

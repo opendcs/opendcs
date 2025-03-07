@@ -167,7 +167,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 		}
 		catch (NoSuchObjectException e)
 		{
-			throw new DatabaseItemNotFoundException(String.format("Time series with key: %dnot found", tsKey));
+			throw new DatabaseItemNotFoundException(String.format("Time series with key: %d not found", tsKey), e);
 		}
 		catch (DbIoException ex)
 		{
@@ -545,6 +545,10 @@ public final class TimeSeriesResources extends OpenDcsResource
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
 	public Response getTsGroup(@QueryParam("groupid") Long groupId) throws DbException, WebAppException
 	{
+		if (groupId == null)
+		{
+			throw new MissingParameterException("Missing required groupid parameter.");
+		}
 		try (TsGroupDAI dai = getLegacyTimeseriesDB().makeTsGroupDAO())
 		{
 			TsGroup group = dai.getTsGroupById(DbKey.createDbKey(groupId));

@@ -36,6 +36,7 @@ import decodes.tsdb.TimeSeriesDb;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.beans.DecodeRequest;
 import org.opendcs.odcsapi.dao.DbException;
+import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.opendcs_dep.PropSpecHelper;
 import org.opendcs.odcsapi.opendcs_dep.TestDecoder;
@@ -100,7 +101,7 @@ public final class OdcsapiResource extends OpenDcsResource
 	{
 		if (className == null)
 		{
-			throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST, "Missing required class argument.");
+			throw new MissingParameterException("Missing required class argument.");
 		}
 
 		return Response.status(HttpServletResponse.SC_OK).entity(PropSpecHelper.getPropSpecs(className)).build();
@@ -116,7 +117,7 @@ public final class OdcsapiResource extends OpenDcsResource
 	{
 		if (scriptName == null)
 		{
-			throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST, "Missing required script argument.");
+			throw new MissingParameterException("Missing required script argument.");
 		}
 		OpenDcsDatabase db = createDb();
 

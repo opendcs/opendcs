@@ -213,13 +213,8 @@ public class DataSourceResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
-	public Response postDatasource(ApiDataSource datasource) throws DbException, MissingParameterException
+	public Response postDatasource(ApiDataSource datasource) throws DbException
 	{
-		if (datasource == null)
-		{
-			throw new MissingParameterException("Missing required data source object.");
-		}
-
 		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{

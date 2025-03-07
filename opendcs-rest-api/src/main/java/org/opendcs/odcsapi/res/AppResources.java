@@ -110,12 +110,11 @@ public final class AppResources extends OpenDcsResource
 		}
 		catch (NoSuchObjectException e)
 		{
-			return Response.status(HttpServletResponse.SC_NOT_FOUND)
-					.entity(String.format(NO_APP_FOUND, appId)).build();
+			throw new DatabaseItemNotFoundException(String.format(NO_APP_FOUND, appId), e);
 		}
 		catch (DbIoException ex)
 		{
-			throw new DbException(String.format(NO_APP_FOUND, appId), ex);
+			throw new DbException(String.format("Unable to retrieve requested app with id: %d", appId), ex);
 		}
 	}
 

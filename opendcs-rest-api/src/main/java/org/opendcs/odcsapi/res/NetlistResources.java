@@ -179,15 +179,11 @@ public final class NetlistResources extends OpenDcsResource
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
 	public Response  postNetlist(ApiNetList netList)
-			throws DbException, WebAppException
+			throws DbException
 	{
 		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{
-			if (netList == null)
-			{
-				throw new MissingParameterException("Missing required request body.");
-			}
 			NetworkList nlList = map(netList);
 			dbIo.writeNetworkList(nlList);
 			return Response.status(HttpServletResponse.SC_CREATED).entity(map(nlList)).build();
