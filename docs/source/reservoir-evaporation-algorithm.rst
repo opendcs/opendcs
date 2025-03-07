@@ -99,13 +99,6 @@ Important Notes:
 |           |                  |curve, Example: FTPK.Elev;Area.Linear.Step    |
 +-----------+------------------+----------------------------------------------+
 
-See the legacy documentation below to better understand how the algorithm behaves.
-
-
-Reservoir Evaporation Legacy Documentation
-******************************************
-
 .. note::
+   See :ref:`Reservoir Evaporation Legacy Documentation <legacy-resevap-computation>` to better understand how the algorithm behaves.
 
-   See https://github.com/opendcs/opendcs/blob/main/docs/source/legacy-resevap-computation.rst
-   Documentation is not directly included due to errors with processing the embedded formulas.
