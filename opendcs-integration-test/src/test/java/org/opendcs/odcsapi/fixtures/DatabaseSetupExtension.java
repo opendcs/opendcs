@@ -15,13 +15,10 @@
 
 package org.opendcs.odcsapi.fixtures;
 
-import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 import javax.servlet.http.HttpServletResponse;
 
@@ -30,13 +27,9 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.PreconditionViolationException;
-import org.opendcs.fixtures.Programs;
 import org.opendcs.fixtures.spi.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
-import uk.org.webcompere.systemstubs.properties.SystemProperties;
-import uk.org.webcompere.systemstubs.security.SystemExit;
 
 import static io.restassured.RestAssured.given;
 
@@ -124,36 +117,6 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		{
 			throw new PreconditionViolationException("Server didn't start in time...");
 		}
-	}
-
-	public static void loadXMLDataIntoDb(String[] files) throws Exception
-	{
-		String[] filePaths = new String[files.length];
-		for (int i = 0; i < files.length; i++)
-		{
-			filePaths[i] = String.format("%s%s%s",
-					System.getProperty("user.dir"),
-					"/src/test/resources/org/opendcs/odcsapi/res/it/",
-					files[i]);
-		}
-		loadXMLData(filePaths, new SystemExit(), new SystemProperties());
-	}
-
-	public static void loadXMLData(String[] files, SystemExit exit, SystemProperties properties) throws Exception
-	{
-		File logFile = new File(currentConfig.getUserDir(), currentConfig.getName() + "-db-import.log");
-		EnvironmentVariables envVars = new EnvironmentVariables(envMapper());
-		Programs.DbImport(logFile, currentConfig.getPropertiesFile(), envVars, exit, properties, files);
-	}
-
-	private static Map<String, String> envMapper()
-	{
-		Map<String, String> env = new HashMap<>();
-		for (Map.Entry<Object, Object> entry : currentConfig.getEnvironment().entrySet())
-		{
-			env.put(entry.getKey().toString(), entry.getValue().toString());
-		}
-		return env;
 	}
 
 	private void setupClientUser()

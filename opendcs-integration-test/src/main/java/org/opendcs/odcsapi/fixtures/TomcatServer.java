@@ -18,6 +18,7 @@ package org.opendcs.odcsapi.fixtures;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
@@ -119,23 +120,21 @@ public final class TomcatServer implements AutoCloseable
 	public void start(String dbType) throws LifecycleException, IOException
 	{
 		tomcatInstance.start();
+		Path rootWebXml = Paths.get("build/tomcat/webapps/ROOT/WEB-INF/web.xml");
+		Path restWebXml = Paths.get("build/tomcat/webapps/odcsapi/WEB-INF/web.xml");
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
 			FileUtils.copyFile(Paths.get("src/test/resources/rest-api/conf/cwms-web.xml").toFile(),
-					Paths.get("build/tomcat/webapps/odcsapi/WEB-INF/web.xml").toFile(),
-					StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+					restWebXml.toFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 			FileUtils.copyFile(Paths.get("src/test/resources/web-client/conf/cwms-web.xml").toFile(),
-					Paths.get("build/tomcat/webapps/ROOT/WEB-INF/web.xml").toFile(),
-					StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+					rootWebXml.toFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 		}
 		else
 		{
 			FileUtils.copyFile(Paths.get("src/test/resources/rest-api/conf/opentsdb-web.xml").toFile(),
-					Paths.get("build/tomcat/webapps/odcsapi/WEB-INF/web.xml").toFile(),
-					StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+					restWebXml.toFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 			FileUtils.copyFile(Paths.get("src/test/resources/web-client/conf/opentsdb-web.xml").toFile(),
-					Paths.get("build/tomcat/webapps/ROOT/WEB-INF/web.xml").toFile(),
-					StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+					rootWebXml.toFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 		}
 		LOGGER.info("Tomcat listening at http://localhost:{}", tomcatInstance.getConnector().getLocalPort());
 	}
@@ -200,7 +199,7 @@ public final class TomcatServer implements AutoCloseable
 		ConfigurationProvider provider = getProvider(dbType);
 		try
 		{
-			File tmp = Files.createTempDirectory("configs-" + provider.getImplementation()).toFile();
+			File tmp = Files.createTempDirectory("configs-" + provider.getImplementation()).toFile();//NOSONAR
 			Configuration config = provider.getConfig(tmp);
 			if(isBypass())
 			{
@@ -235,11 +234,11 @@ public final class TomcatServer implements AutoCloseable
 		}
 		else
 		{
-
+			String validationQuery = "SELECT 1";
 			System.setProperty(DB_DRIVER_CLASS, "org.postgresql.Driver");
-			System.setProperty(DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
-			System.setProperty(DB_CONNECTION_INIT, "SELECT 1");
-			System.setProperty(DB_VALIDATION_QUERY, "SELECT 1");
+			System.setProperty(DB_DATASOURCE_CLASS, DataSourceFactory.class.getName());
+			System.setProperty(DB_CONNECTION_INIT, validationQuery);
+			System.setProperty(DB_VALIDATION_QUERY, validationQuery);
 			System.setProperty(DB_URL, System.getProperty("testcontainer.opentsdb.bypass.url"));
 			System.setProperty(DB_USERNAME, System.getProperty("testcontainer.opentsdb.bypass.username"));
 			System.setProperty(DB_PASSWORD, System.getProperty("testcontainer.opentsdb.bypass.pass"));
@@ -280,6 +279,7 @@ public final class TomcatServer implements AutoCloseable
 		SystemProperties properties = new SystemProperties();
 		config.start(exit, environment, properties);
 		environment.getVariables().forEach(System::setProperty);
+		config.getEnvironment().forEach((key, value) -> System.setProperty(key.toString(), value.toString()));
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
 			System.setProperty(DB_DRIVER_CLASS, "oracle.jdbc.driver.OracleDriver");
@@ -291,20 +291,21 @@ public final class TomcatServer implements AutoCloseable
 		}
 		else
 		{
+			String validationQuery = "SELECT 1";
 			System.setProperty(DB_DRIVER_CLASS, "org.postgresql.Driver");
 			System.setProperty(DB_DATASOURCE_CLASS, "org.apache.tomcat.jdbc.pool.DataSourceFactory");
-			System.setProperty(DB_CONNECTION_INIT, "SELECT 1");
-			System.setProperty(DB_VALIDATION_QUERY, "SELECT 1");
+			System.setProperty(DB_CONNECTION_INIT, validationQuery);
+			System.setProperty(DB_VALIDATION_QUERY, validationQuery);
 		}
 		setupClientUser(dbType);
 	}
 
 
-	private static void setupClientUser(String dbType) throws Exception
+	private static void setupClientUser(String dbType)
 	{
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
 		{
-			String userPermissions = "begin execute immediate 'grant web_user to " + System.getProperty(DB_USERNAME) + "'; end;";
+			String userPermissions = "begin execute immediate 'grant web_user to ?'; end;";
 			String dbOffice = System.getProperty(DB_OFFICE);
 			String setWebUserPermissions = "begin\n" +
 					"   cwms_sec.add_user_to_group(?, 'CWMS User Admins',?) ;\n" +
@@ -315,6 +316,7 @@ public final class TomcatServer implements AutoCloseable
 				PreparedStatement stmt1 = connection.prepareStatement(userPermissions);
 				PreparedStatement stmt2 = connection.prepareStatement(setWebUserPermissions))
 			{
+				stmt1.setString(1, System.getProperty(DB_USERNAME));
 				stmt1.executeQuery();
 				stmt2.setString(1, System.getProperty(DB_USERNAME));
 				stmt2.setString(2, dbOffice);
@@ -322,7 +324,7 @@ public final class TomcatServer implements AutoCloseable
 			}
 			catch(SQLException e)
 			{
-				//No-op
+				LOGGER.atDebug().setCause(e).log("Error setting up client user");
 			}
 		}
 	}
