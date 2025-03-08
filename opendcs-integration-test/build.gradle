@@ -216,7 +216,7 @@ tasks.register('integrationTestOpenTSDB', Test) {
     jvmArgs += "-Dopendcs.gui.warfile=${guiWar}"
     def outputDir = downloadAndUnzipInstaller.outputs.files.singleFile
     systemProperties.put("DCSTOOL_HOME", outputDir)
-    systemProperties.put("DCSTOOL_USERDIR", "build/resources/tomcat/conf")
+    systemProperties.put("DCSTOOL_USERDIR", "build/resources/test/tomcat/conf")
     finalizedBy integrationTestReportOpenTSDB
 }
 
