@@ -18,10 +18,14 @@ package org.opendcs.odcsapi.util;
 /**
  * Various constants used by the API.
  */
-public class ApiConstants
+public final class ApiConstants
 {
-	public static String loggerName = "org.opendcs.odcsapi";
 	public static final String ODCS_API_GUEST = "ODCS_API_GUEST";
 	public static final String ODCS_API_USER = "ODCS_API_USER";
 	public static final String ODCS_API_ADMIN = "ODCS_API_ADMIN";
+
+	private ApiConstants()
+	{
+		throw new AssertionError("Utility class");
+	}
 }

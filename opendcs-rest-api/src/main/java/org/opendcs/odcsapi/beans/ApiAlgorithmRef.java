@@ -43,11 +43,6 @@ public final class ApiAlgorithmRef
 	private int numCompsUsing = 0;
 	private String description = "";
 	
-	public ApiAlgorithmRef()
-	{
-		
-	}
-	
 	public Long getAlgorithmId()
 	{
 		return algorithmId;

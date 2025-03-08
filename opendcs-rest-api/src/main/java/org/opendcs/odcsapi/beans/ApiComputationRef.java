@@ -28,8 +28,6 @@ public final class ApiComputationRef
 	private Long groupId = null;
 	private String groupName = null;
 	
-	public ApiComputationRef() {}
-	
 	public Long getComputationId()
 	{
 		return computationId;
