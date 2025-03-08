@@ -51,7 +51,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 	private static String euAbbr2;
 
 	@BeforeEach
-	public void setUp() throws Exception
+	void setUp() throws Exception
 	{
 		setUpCreds();
 		sessionFilter = new SessionFilter();
@@ -177,7 +177,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 	}
 
 	@AfterEach
-	public void tearDown()
+	void tearDown()
 	{
 		// Delete the EU Converter
 		given()

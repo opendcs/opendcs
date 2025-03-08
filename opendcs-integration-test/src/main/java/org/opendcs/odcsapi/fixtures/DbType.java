@@ -18,7 +18,8 @@ package org.opendcs.odcsapi.fixtures;
 import org.opendcs.fixtures.configurations.cwms.CwmsOracleConfiguration;
 import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 
-public enum DbType {
+public enum DbType
+{
 	CWMS(CwmsOracleConfiguration.NAME),
 	OPEN_TSDB(OpenDCSPGConfiguration.NAME);
 

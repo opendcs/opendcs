@@ -16,9 +16,7 @@ package org.opendcs.odcsapi.fixtures;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.extension.Extension;
@@ -26,7 +24,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 import org.junit.platform.commons.PreconditionViolationException;
-import org.opendcs.fixtures.spi.ConfigurationProvider;
 
 public class DatabaseContextProvider implements TestTemplateInvocationContextProvider
 {
@@ -76,27 +73,6 @@ public class DatabaseContextProvider implements TestTemplateInvocationContextPro
 				}
 			}
 			return EXTENSIONS;
-		}
-
-		private ConfigurationProvider getProvider()
-		{
-			ServiceLoader<ConfigurationProvider> loader = ServiceLoader.load(ConfigurationProvider.class);
-			Iterator<ConfigurationProvider> configs = loader.iterator();
-
-			ConfigurationProvider configProvider = null;
-			while(configs.hasNext())
-			{
-				ConfigurationProvider configProviderTmp = configs.next();
-				if (this.dbType.toString().equals(configProviderTmp.getImplementation()))
-				{
-					configProvider = configProviderTmp;
-				}
-			}
-			if(configProvider == null)
-			{
-				throw new PreconditionViolationException("Invalid dbtype: " + dbType);
-			}
-			return configProvider;
 		}
 	}
 }

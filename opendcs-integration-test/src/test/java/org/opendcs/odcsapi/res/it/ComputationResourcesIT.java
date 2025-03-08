@@ -55,7 +55,7 @@ final class ComputationResourcesIT extends BaseIT
 	private Long algId;
 
 	@BeforeEach
-	public void init() throws Exception
+	void init() throws Exception
 	{
 		setUpCreds();
 		sessionFilter = new SessionFilter();
@@ -170,7 +170,7 @@ final class ComputationResourcesIT extends BaseIT
 	}
 
 	@AfterEach
-	public void cleanup()
+	void cleanup()
 	{
 		// Delete the computation
 		given()

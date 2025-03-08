@@ -61,6 +61,12 @@ public final class OwaspZap
 			tomcat.start(dbType);
 			System.exit(runOwaspZap(tomcat).intValue());
 		}
+		catch(InterruptedException e)
+		{
+			Thread.currentThread().interrupt();
+			LOGGER.atError().setCause(e).log("Error running OWASP ZAP against OpenDCS REST API. Interrupted");
+			System.exit(-2);
+		}
 		catch(Exception e)
 		{
 			LOGGER.atError().setCause(e).log("Error running OWASP ZAP against OpenDCS REST API");
@@ -68,7 +74,7 @@ public final class OwaspZap
 		}
 	}
 
-	private static Long runOwaspZap(TomcatServer tomcat) throws Exception
+	private static Long runOwaspZap(TomcatServer tomcat) throws IOException, InterruptedException
 	{
 		Path reportDir = Paths.get("./build/test-results/owasp_zap").toAbsolutePath().normalize();
 		setupPermissions(reportDir);
@@ -112,7 +118,7 @@ public final class OwaspZap
 		Files.createDirectories(reportDir);
 		try
 		{
-			Files.setPosixFilePermissions(reportDir, PosixFilePermissions.fromString("rwxrwxrwx"));
+			Files.setPosixFilePermissions(reportDir, PosixFilePermissions.fromString("rwxrwxrwx"));//NOSONAR
 		}
 		catch(UnsupportedOperationException e)
 		{
