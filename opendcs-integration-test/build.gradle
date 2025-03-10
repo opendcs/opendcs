@@ -287,7 +287,7 @@ test {
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonarqube {
         properties {
-            property "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
+            property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
                     "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
         }
     }
