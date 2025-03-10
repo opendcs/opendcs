@@ -154,7 +154,7 @@ public class EnumTableModel extends AbstractTableModel
 	/**
 	 * Sets the enum being shown in the table. This will totally change the
 	 * contents of the table.
-	 * @param enumName name of the DECODES enumeration to display
+	 * @param en DECODES enumeration to display
 	 */
 	public void setEnum(DbEnum en)
 	{
