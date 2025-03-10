@@ -63,7 +63,7 @@ public class RoutingSpecThread
 	/** The object that is formatting data for output. */
 	protected OutputFormatter formatter;
 
-	/** The presentation group used to set units & rounding. */
+	/** The presentation group used to set units and rounding. */
 	protected PresentationGroup presentationGroup;
 
 	/** If true, apply sensor limits in config or platform sensor records. */
@@ -1201,7 +1201,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 
 	/**
 	  Checks to see if the routing spec has been modified since it was 
-	  started, and if so, reloads & re-initializes this executable.
+	  started, and if so, reloads and re-initializes this executable.
 
 	  @return true if spec was reloaded.
 	*/

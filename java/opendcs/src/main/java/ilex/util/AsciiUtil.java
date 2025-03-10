@@ -161,7 +161,7 @@ public class AsciiUtil
 	* Inserts newlines to cause a string to wrap at a specified width.
 	* @param ins the input string
 	* @param linelen the maximum line length
-	* @return String with newlines such that no line is > max.
+	* @return String with newlines such that no line is &gt; max.
 	*/
 	public static String wrapString( String ins, int linelen )
 	{
