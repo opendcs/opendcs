@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~  Copyright 2024 OpenDCS Consortium and its Contributors
+  ~  Copyright 2025 OpenDCS Consortium and its Contributors
   ~
   ~  Licensed under the Apache License, Version 2.0 (the "License")
   ~  you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@
         <param-name>opendcs.rest.api.authorization.expiration.duration</param-name>
         <param-value>PT15M</param-value>
     </context-param>
+    <!--
     <context-param>
         <param-name>opendcs.rest.api.cwms.office</param-name>
         <param-value></param-value>
@@ -51,4 +52,5 @@
         <param-name>opendcs.rest.api.authorization.jwt.issuer.url</param-name>
         <param-value></param-value>
     </context-param>
+    -->
 </web-app>
