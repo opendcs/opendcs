@@ -1,44 +1,41 @@
 package org.opendcs.utils.logging;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-public class LogFilter {
+final class LogFilter
+{
     /** NOTE: this class is used in the logger creation path. Do no logging. */
-    Set<String> logPathsToFilter = new HashSet<>();
+    private final Set<String> logPathsToFilter;
 
-    public LogFilter(String filterFile)
+    LogFilter(String filterFile)
     {
-
+        Set<String> filters = new HashSet<>();
         try 
         {
-            File f = new File(filterFile);
-            try (BufferedReader br = new BufferedReader(new FileReader(f));)
-            {
-                String line = null;
-                while((line = br.readLine()) != null)
-                {
-                    String tmp = line.trim();
-                    if (!tmp.startsWith("#"))
-                    logPathsToFilter.add(tmp);
-                }
-            }
+            filters = Files.readAllLines(Paths.get(filterFile)).stream()
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .filter(s -> !s.startsWith("#"))
+                    .collect(Collectors.toSet());
         }
-        catch (Exception ex)
+        catch (IOException | RuntimeException ex) //NOSONAR
         {
             /* do nothing, most likely file doesn't exist */
         }
+        logPathsToFilter = filters;
     }
 
     /**
      * Search to list excluded paths to see if the provided log name 
      * matches against a simple String::startsWith .
-     * 
+     * <p>
      * If a log names starts with one of the exclude string, we don't log 
-     * it's messages.
+     * its messages.
      */
     boolean canLog(String loggerName)
     {
