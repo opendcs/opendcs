@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     implementation project(":opendcs")
+    testRuntimeOnly project(":opendcs-slf4j-provider");
     implementation project(":testing:fixtures")
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
