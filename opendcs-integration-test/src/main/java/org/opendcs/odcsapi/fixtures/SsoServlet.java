@@ -20,17 +20,28 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * This servlet only handles redirecting to parameterized original location to mock sso event
  */
 final class SsoServlet extends HttpServlet
 {
 	private static final long serialVersionUID = -6571821058598596019L;
+	private static final Logger LOGGER = LoggerFactory.getLogger(SsoServlet.class);
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException
 	{
 		String originalLocation = req.getParameter("OriginalLocation");
-		resp.sendRedirect(originalLocation);
+		try
+		{
+			resp.sendRedirect(originalLocation);
+		}
+		catch(IOException e)
+		{
+			LOGGER.atWarn().setCause(e).log("Failed to redirect to original location");
+		}
 	}
 }

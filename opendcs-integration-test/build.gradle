@@ -255,10 +255,14 @@ tasks.register('integrationTestCWMS', Test) {
 tasks.register('integrationTestReportCWMS', JacocoReport) {
     group = "verification"
     dependsOn tasks.named('integrationTestCWMS')
-    executionData = files(layout.buildDirectory.dir("jacoco").get().file("integrationTestCWMS.exec"))
     additionalSourceDirs.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
-    sourceDirectories.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
-    classDirectories.setFrom(files(project(':opendcs-rest-api').sourceSets.main.output))
+    executionData = files(
+            layout.buildDirectory.dir("jacoco/test.exec")
+    )
+    classDirectories.setFrom(files(
+            project(':opendcs-rest-api').sourceSets.main.output,
+            sourceSets.main.output
+    ))
     reports {
         xml.required.set(true)
     }
@@ -267,10 +271,14 @@ tasks.register('integrationTestReportCWMS', JacocoReport) {
 tasks.register('integrationTestReportOpenTSDB', JacocoReport) {
     group = "verification"
     dependsOn tasks.named('integrationTestOpenTSDB')
-    executionData = files(layout.buildDirectory.dir("jacoco").get().file("integrationTestOpenTSDB.exec"))
     additionalSourceDirs.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
-    sourceDirectories.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
-    classDirectories.setFrom(files(project(':opendcs-rest-api').sourceSets.main.output))
+    executionData = files(
+            layout.buildDirectory.dir("jacoco/test.exec")
+    )
+    classDirectories.setFrom(files(
+            project(':opendcs-rest-api').sourceSets.main.output,
+            sourceSets.main.output
+    ))
     reports {
         xml.required.set(true)
     }
