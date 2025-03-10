@@ -28,7 +28,7 @@ public interface Configuration
      *             that may call System.exit.
      * @param environment The System.getenv environment to hold appropriate values.
      * @param properties The System.getProperty map to hold appropriate values.
-     * @throws Exception
+     * @throws Exception thrown if error occurs
      */
     public void start(SystemExit exit, EnvironmentVariables environment, SystemProperties properties) throws Exception;
 
@@ -40,7 +40,7 @@ public interface Configuration
 
     /**
      * Close files, shutdown databases, etc
-     * @throws Exception
+     * @throws Exception if error occurs
      */
     public default void stop() throws Throwable
     {
@@ -57,7 +57,7 @@ public interface Configuration
 
     /**
      * Additional environment variables this test configuration requires
-     * @return
+     * @return map of environment variables/values
      */
     public Map<Object,Object> getEnvironment();
 
@@ -77,7 +77,7 @@ public interface Configuration
      * Returns an independent instance of the {@link decodes.db.Database} Decodes Database for this configuration.
      *
      * @return Instance of the Decodes Database for this run/test.
-     * @throws Throwable
+     * @throws Throwable if an error occurs when getting the Database
      */
     public Database getDecodesDatabase() throws Throwable;    
 
@@ -89,7 +89,7 @@ public interface Configuration
     /**
      * Returns true if this Database implementation supports a given dataset.
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
-     * @return
+     * @return true if the Database implementation supports the given dataset, false otherwise.
      */
     default public boolean supportsDao(Class<? extends DaoBase> dao)
     {

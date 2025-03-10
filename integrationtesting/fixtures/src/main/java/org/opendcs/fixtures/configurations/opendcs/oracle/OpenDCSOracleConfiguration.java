@@ -258,7 +258,6 @@ public class OpenDCSOracleConfiguration implements Configuration
     /**
      * Returns true if this Database implementation supports a given dataset.
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
-     * @return
      */
     @Override
     public boolean supportsDao(Class<? extends DaoBase> dao)
