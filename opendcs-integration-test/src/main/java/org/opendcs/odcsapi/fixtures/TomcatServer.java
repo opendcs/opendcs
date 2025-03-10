@@ -119,6 +119,7 @@ public final class TomcatServer implements AutoCloseable
 
 	public void start(String dbType) throws LifecycleException, IOException
 	{
+		tomcatInstance.start();
 		Path rootWebXml = Paths.get("build/tomcat/webapps/ROOT/WEB-INF/web.xml");
 		Path restWebXml = Paths.get("build/tomcat/webapps/odcsapi/WEB-INF/web.xml");
 		if(CwmsOracleConfiguration.NAME.equals(dbType))
@@ -135,7 +136,6 @@ public final class TomcatServer implements AutoCloseable
 			FileUtils.copyFile(Paths.get("src/test/resources/web-client/conf/opentsdb-web.xml").toFile(),
 					rootWebXml.toFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
 		}
-		tomcatInstance.start();
 		LOGGER.info("Tomcat listening at http://localhost:{}", tomcatInstance.getConnector().getLocalPort());
 	}
 

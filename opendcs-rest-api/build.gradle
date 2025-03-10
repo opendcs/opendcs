@@ -55,7 +55,7 @@ dependencies {
     implementation(libs.nimbus)
     implementation(libs.jwt)
     implementation(libs.jersey.hk2)
-    implementation(libs.slf4j.jdk)
+    implementation(libs.slf4j.api)
     runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(libs.postgresql)
     webjars(libs.swagger.ui)

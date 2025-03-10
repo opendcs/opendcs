@@ -21,12 +21,14 @@ plugins {
 dependencies {
     implementation(libs.testcontainers.core)
     implementation(libs.rest.assured)
-    implementation(libs.slf4j.jdk)
     implementation(libs.jersey.container.servlet)
     implementation(libs.webcompere.system.stubs.jupiter)
     implementation(libs.bundles.tomcat)
     implementation(libs.commons.io)
-    implementation(libs.jul.to.slf4j)
+    implementation(libs.jul.to.slf4j) {
+        exclude group: 'org.slf4j', module: 'slf4j-jdk14'
+    }
+    implementation(libs.slf4j.api)
 
     //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
     implementation(files("../opendcs-rest-api/temp-deps/opendcs-integrationtesting-fixtures.jar"))
