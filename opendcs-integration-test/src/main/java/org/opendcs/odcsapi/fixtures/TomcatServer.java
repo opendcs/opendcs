@@ -29,7 +29,6 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
-import org.apache.catalina.Context;
 import org.apache.catalina.Host;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Manager;
@@ -106,15 +105,11 @@ public final class TomcatServer implements AutoCloseable
 			restApiContext.addParameter("opendcs.rest.api.cwms.office", System.getProperty(DB_OFFICE));
 		}
 
-		StandardContext guiContext = (StandardContext) tomcatInstance.addWebapp("/", guiWar);
+		StandardContext guiContext = (StandardContext) tomcatInstance.addWebapp("", guiWar);
 		guiContext.setDelegate(true);
 		guiContext.setParentClassLoader(TomcatServer.class.getClassLoader());
 		guiContext.setReloadable(true);
 		guiContext.setPrivileged(true);
-
-		Context context = tomcatInstance.addContext("/sso", new File(".").getAbsolutePath());
-		Tomcat.addServlet(context, "sso", new SsoServlet());
-		context.addServletMappingDecoded("/*", "sso");
 	}
 
 	public void start(String dbType) throws LifecycleException, IOException
