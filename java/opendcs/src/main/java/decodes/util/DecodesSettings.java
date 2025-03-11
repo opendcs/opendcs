@@ -73,7 +73,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
     /** Timezone for date/time stamps in the SQL database. */
     public String sqlTimeZone = "UTC";
 
-    /** Name of file containing encrypted username & password
+    /** Name of file containing encrypted username and password
      * defaults to null as it is not used in certain implementations, such as XML.
     */
     public String DbAuthFile = null;
@@ -123,7 +123,7 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
     /** Default dir to store routing spec status properties file: */
     public String routingStatusDir = "$DCSTOOL_USERDIR/routstat";
 
-    /** Default data type standard, used in DB-editor & some formatters. */
+    /** Default data type standard, used in DB-editor and some formatters. */
     public String dataTypeStdPreference = Constants.datatype_SHEF;
 
     /** Timezone used in Decoding Wizard */
@@ -156,7 +156,9 @@ public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
     /** Name of summary log file for decoding wizard. */
     public String decwizSummaryLog = "$HOME/summary.log";
 
-    /** Provide default designator ( <device-id>-<seqno> for new platforms ) */
+    /** 
+     * Provide default designator (&lt;device-id&gt;-&lt;seqno&gt;) for new platforms.
+     */
     public boolean setPlatformDesignatorName=false;
 
     /** @deprecated Set to true if the 1st line of site description contains long name. */

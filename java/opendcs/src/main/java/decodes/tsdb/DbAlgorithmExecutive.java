@@ -939,7 +939,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 	 * Gets all input data within a given base-time range.
 	 * That is, all data for all input time series where
 	 * <p>
-	 * (since  <=  sample-time  <=  until).
+	 * (since  &lt;=  sample-time  &gt;=  until).
 	 * <p>
 	 * This method is intended for use by aggregating algorithms like a 
 	 * periodic average or sum. The algorithm either knows the period 
