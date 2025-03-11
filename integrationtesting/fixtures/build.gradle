@@ -23,8 +23,8 @@ publishing {
         maven(MavenPublication) {
             artifactId = 'opendcs-integrationtesting-fixtures'
             from components.java
-        
-        pom {
+
+            pom {
                 name = 'OpenDCS Test Fixtures'
                 description = 'Database Framework, assertions, and other utilities required to implement integration tests against OpenDCS implementations.'
             }
