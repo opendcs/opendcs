@@ -15,6 +15,11 @@ publishing {
         maven(MavenPublication) {
             artifactId = 'opendcs-annotations'
             from components.java
+
+            pom {
+                name = 'OpenDCS Annotations'
+                description = 'Contains Annotations and Annotation Processors for OpenDCS configuration elements.'
+            }
         }
     }
 }
