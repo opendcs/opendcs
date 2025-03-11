@@ -2,15 +2,11 @@ name: OpenDCS Build and unit tests
 on:
   pull_request:
     branches:
-      - "main"
-      - "7.0"
-      - "8.0"
+      - "7.5"
     types: [opened, synchronize, reopened]
   push:
     branches:
-      - "main"
-      - "7.0"
-      - "8.0"
+      - "7.5"
 
 jobs:
   tests:
