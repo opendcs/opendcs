@@ -3,7 +3,7 @@
 oracle = { strictly = "23.5.0.24.07" }
 postgres = "42.7.4"
 asm = "3.3"
-cglib = "2.1_3"
+cglib = "3.3.0"
 commons-logging = "1.0.4"
 commons-net = "3.3"
 dom4j = { strictly = "2.1.4" }
