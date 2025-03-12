@@ -1,5 +1,6 @@
 package org.opendcs.database;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.sql.Connection;
@@ -64,11 +65,19 @@ public class SimpleDataSource implements DataSource, ConnectionPoolMXBean
         setupJmx();
     }
 
+ 
     private void setupJmx()
     {
         try
 		{
-            String name = String.format("SimpleDataSource(%s/%s)",url.replace("?","\\?"),properties.getProperty("username", properties.getProperty("user", "<no user>")));
+            File file = new File(url);
+            boolean urlIsValidPath =  file.exists() && file.isDirectory();
+            String normalizedUrl = url;
+            if ( urlIsValidPath )
+            {
+                normalizedUrl = file.getAbsolutePath().replace("\\", "/");
+            }
+            String name = String.format("SimpleDataSource(%s/%s)",normalizedUrl.replace("?","\\?"),properties.getProperty("username", properties.getProperty("user", "<no user>")));
 			ManagementFactory.getPlatformMBeanServer()
 							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+name+"\",hashCode=" + this.hashCode()));
 		}
