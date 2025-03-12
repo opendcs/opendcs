@@ -25,15 +25,14 @@ dependencies {
     implementation(libs.webcompere.system.stubs.jupiter)
     implementation(libs.bundles.tomcat)
     implementation(libs.commons.io)
-    implementation(libs.jul.to.slf4j) {
-        exclude group: 'org.slf4j', module: 'slf4j-jdk14'
-    }
+    implementation(libs.jul.to.slf4j)
     implementation(libs.slf4j.api)
-
-    //TODO - remove after https://github.com/opendcs/opendcs/pull/768 is merged
-    implementation(files("../opendcs-rest-api/temp-deps/opendcs-integrationtesting-fixtures.jar"))
-    implementation(files("../opendcs-rest-api/temp-deps/opendcs.jar"))
-    implementation(files("../opendcs-rest-api/temp-deps/opendcs-api.jar"))
+    implementation(libs.opendcs)
+    implementation(libs.opendcs.api)
+    implementation(libs.opendcs.integrationtesting.fixtures)
+    runtimeClasspath(libs.junit.api)
+    runtimeClasspath(libs.junit.engine)
+    runtimeClasspath(libs.junit.params)
 
     testImplementation(project(":opendcs-rest-api"))
     testImplementation(libs.apache.derby)
@@ -50,34 +49,6 @@ dependencies {
     testImplementation(libs.jwt)
 
     testRuntimeOnly(libs.oracle.jdbc)
-    testRuntimeOnly(libs.oracle.ucp)
-    testRuntimeOnly(libs.cwms.db.jooq) {
-        exclude group: "com.oracle.database.jdbc"
-    }
-    testRuntimeOnly(libs.cwms.db.codegen) {
-        exclude group: "com.oracle.database.jdbc"
-    }
-    testRuntimeOnly(libs.cwms.db.aspects)
-    testRuntimeOnly(libs.cwms.db.dao)
-    testRuntimeOnly(libs.hec.cwms.ratings.core)
-    testRuntimeOnly(libs.hec.monolith) {
-        exclude group: "org.jdom"
-        exclude group: "org.bouncycastle"
-        exclude group: "org.eclipse.jetty.aggregate"
-        exclude group: "javax.servlet"
-        exclude group: "mil.army.usace.hec.swingx"
-        exclude group: "com.fifesoft"
-        exclude group: "org.python"
-        exclude group: "com.vividsolutions"
-        exclude group: "mil.army.usace.hec", module: "context-specific-help"
-        exclude group: "mil.army.usace.hec", module: "hec-geojson"
-        exclude group: "javax.mail"
-        exclude group: "org.apache.poi"
-        exclude group: "net.java.dev.jna"
-        exclude group: "org.apache-commons", module: "common-vfs2"
-        exclude group: "org.jfree"
-    }
-
     testRuntimeOnly(libs.byte.buddy)
     testRuntimeOnly(libs.postgresql)
     testRuntimeOnly(libs.byte.buddy)
@@ -112,11 +83,6 @@ tasks.register('run', JavaExec) {
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     def guiWar = project(':opendcs-web-client').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     group "application"
-    doFirst {
-        classpath = classpath.filter {
-            !it.name.endsWith('opendcs-7.0.13.jar')
-        }
-    }
     dependsOn(':opendcs-rest-api:war', ':opendcs-web-client:war')
     dependsOn generateConfig
     dependsOn downloadAndUnzipInstaller
@@ -143,11 +109,6 @@ tasks.register('owaspZap', JavaExec) {
     def restWar = project(':opendcs-rest-api').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     def guiWar = project(':opendcs-web-client').tasks.named('war').get().archiveFile.get().asFile.getAbsolutePath()
     group "application"
-    doFirst {
-        classpath = classpath.filter {
-            !it.name.endsWith('opendcs-7.0.13.jar')
-        }
-    }
     dependsOn(':opendcs-rest-api:war', ':opendcs-web-client:war')
     dependsOn generateConfig
     dependsOn downloadAndUnzipInstaller
@@ -170,22 +131,20 @@ tasks.register('owaspZap', JavaExec) {
 
 
 tasks.register('downloadAndUnzipInstaller') {
-    def zipUrl = 'https://github.com/opendcs/opendcs/releases/download/7.0.14/opendcs-7.0.14.zip'
-    def outputDir = file("${buildDir}/opendcs-install")
-    def zipFile = file("${buildDir}/download/opendcs-install.zip")
+    def zipUrl = "https://github.com/opendcs/opendcs/releases/download/${libs.versions.opendcs.get()}/opendcs-${libs.versions.opendcs.get()}.zip"
+    def outputDir = project.layout.buildDirectory.dir("opendcs-install").get()
+    def zipFile = project.layout.buildDirectory.dir("download/opendcs-install.zip").get().getAsFile()
 
-    outputs.dir(new File(outputDir, "opendcs-7.0.14"))
+    outputs.dir(outputDir.dir("opendcs-${libs.versions.opendcs.get()}"))
 
     doLast {
         if (!zipFile.exists()) {
-            outputDir.mkdirs()
+            outputDir.getAsFile().mkdirs()
             zipFile.parentFile.mkdirs()
             new URL(zipUrl).withInputStream { inp ->
                 zipFile.withOutputStream { out -> out << inp }
             }
             copy {
-                //Skip the root dir as it is contains the version number which makes it hard
-                //to work with through automation
                 from zipTree(zipFile)
                 into outputDir
             }
@@ -198,11 +157,6 @@ tasks.register('integrationTestOpenTSDB', Test) {
     useJUnitPlatform {
         includeTags "integration"
         includeTags "integration-opentsdb-only"
-    }
-    doFirst {
-        classpath = classpath.filter {
-            !it.name.endsWith('opendcs-7.0.13.jar')
-        }
     }
     shouldRunAfter test
     dependsOn(':opendcs-rest-api:war')
@@ -227,11 +181,6 @@ tasks.register('integrationTestCWMS', Test) {
     useJUnitPlatform {
         includeTags "integration"
         includeTags "integration-cwms-only"
-    }
-    doFirst {
-        classpath = classpath.filter {
-            !it.name.endsWith('opendcs-7.0.13.jar')
-        }
     }
     shouldRunAfter test
     dependsOn(':opendcs-rest-api:war')

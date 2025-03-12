@@ -1,12 +1,12 @@
 [versions]
-opendcs = "7.0.13"
+opendcs = "7.5.1-RC02"
 
 jetty-jsp = "9.2.30.v20200428"
 servlet-api = "4.0.1" #Updating this further will require a change to the jakarta namespace.
-slf4j = "2.0.12"
+slf4j = { strictly = "2.0.12" }
 jersey = "2.40"
 postgresql = "42.7.4"
-oracle = "23.6.0.24.10"
+oracle = "23.5.0.24.07"
 cwms-db = "9.3.5"
 cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
 cwms-ratings = "1.1.0"
@@ -22,7 +22,7 @@ jwt = "4.4.0"
 auto-service = "1.1.1"
 
 #Test Dependencies
-junit = "5.11.1"
+junit = "5.10.2"
 mockito = "3.12.4"
 byte-buddy = "1.15.3"
 rest-assured = "5.5.0"
@@ -39,6 +39,7 @@ commons-lang = "2.5"
 
 [libraries]
 opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
+opendcs-api = { module = "org.opendcs:opendcs-api", version.ref = "opendcs" }
 jetty-jsp = { module = "org.eclipse.jetty:jetty-jsp", version.ref = "jetty-jsp" }
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
 cwms-db-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen", version.ref = "cwms-db-codegen" }
@@ -73,6 +74,7 @@ opendcs-integrationtesting-fixtures = { module = "org.opendcs:opendcs-integratio
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
+junit-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito" }
 byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
