@@ -363,9 +363,9 @@ public class MsgPeriodArchive
 	}
 
 	/**
-	 * Determine the 'minute' from recvTime & retrieve the 
-	 * MsgIndexMinute from the array. If the new dapsTime < the one
-	 * in the entry, update & save.
+	 * Determine the 'minute' from recvTime and retrieve the 
+	 * MsgIndexMinute from the array. If the new dapsTime &lt; the one
+	 * in the entry, update and save.
 	 * @param indexNum the new index number
 	 * @param recvTime the unix time_t that this message was received at.
 	 * @param dapsTime the DAPS (or platform) time.

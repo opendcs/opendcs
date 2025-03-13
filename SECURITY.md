@@ -6,6 +6,7 @@ The following versions are supported.
 
 | Version  | Supported          |
 | -------  | ------------------ |
+| 7.5.x    | :white_check_mark: - not production ready |
 | 7.0.x    | :white_check_mark: |
 | > 6.8.14 | :white_check_mark: |
 

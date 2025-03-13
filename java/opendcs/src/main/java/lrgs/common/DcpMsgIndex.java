@@ -166,8 +166,9 @@ public class DcpMsgIndex implements Comparable
          DrotTime, Addr, SequenceNum, DapsTime, FailureCode, Channel,
 	     Flag, Offset
 
-	   @return 0 if objects are equal, <0 if 'this' is less than the 
-		passed object. Return >0 if 'this is greater than the passed object.
+	   @return 0 if objects are equal, negative if 'this' is less than the 
+		passed object. Return positive if 'this is greater than the passed object.
+		return 1 if the passed object is null.
      */
 	public int compareTo(Object o)
 	{
@@ -211,6 +212,11 @@ public class DcpMsgIndex implements Comparable
 	 */
 	public void copyFrom(DcpMsgIndex rhs)
 	{
+		//This and input parameter could be the same reference if accessed via cache
+		if (rhs == this)
+		{
+			return;
+		}
 		if (rhs.getLocalRecvTime() != null)
 			setLocalRecvTime(rhs.getLocalRecvTime());
 		setXmitTime(rhs.getXmitTime());

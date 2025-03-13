@@ -325,11 +325,7 @@ public class CAPEdit
 	public void initDecodes()
 		throws DecodesException
 	{
-		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
-		System.out.println("Sites ");
-		Site.explicitList = true;
-		decodes.db.Database.getDb().siteList.read();
-		decodes.db.Database.getDb().presentationGroupList.read();
+		decodesDb.initializeForEditing();
 	}
 
 }

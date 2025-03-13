@@ -109,7 +109,7 @@ public class DecodesDatabaseVersion
 
 	/**
 	 * Version 17 schema corresponds to OpenDCS 6.6 - March, 2019
-	 * - CWMS VPD to use CWMS_ENV to store office id & code rather than CCP_ENV.
+	 * - CWMS VPD to use CWMS_ENV to store office id and code rather than CCP_ENV.
 	 * - Alarm Tables Added:
 	 * 		ALARM_GROUP
 	 * 		EMAIL_ADDR

@@ -85,7 +85,7 @@ public class IntervalIncrement
 	/**
 	 * Given a string like "h" "hour" "yr" "day" "min", return the
 	 * corresponding Calendar constant
-	 * @param s the string
+	 * @param x the string
 	 * @return the Calendar constant or -1 if no match
 	 */
 	public static int str2CalConst(String x)

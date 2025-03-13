@@ -58,7 +58,7 @@ public class CmdGetStatus extends LddsCommand
 
 	/**
 	  Executes the command.
-	  Construct status response & send to user.
+	  Construct status response and send to user.
 	  @param ldds the server thread object holding connection to client.
 	*/
 	public int execute(LddsThread ldds)

@@ -76,8 +76,9 @@ import decodes.tsdb.TsGroup;
 
 public interface DatabaseConnectionOwner
 {
-	/** @return a database connection */
-	public Connection getConnection();
+	/** @return a database connection 
+	 * @throws SQLException */
+	public Connection getConnection() throws SQLException;
 	
 	/** 
 	 * After usage, a DAO must call freeConnection.

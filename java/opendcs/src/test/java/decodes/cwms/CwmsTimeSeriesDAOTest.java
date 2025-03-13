@@ -5,6 +5,8 @@ import java.util.TimeZone;
 
 import org.junit.jupiter.api.Test;
 
+import fixtures.NonPoolingConnectionOwner;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,7 +15,7 @@ final class CwmsTimeSeriesDAOTest
 	@Test
 	public void testExceedsMaxTimeGap()
 	{
-		try(CwmsTimeSeriesDAO cwmsTimeSeriesDAO = new CwmsTimeSeriesDAO(new CwmsTimeSeriesDb(), "SWT"))
+		try(CwmsTimeSeriesDAO cwmsTimeSeriesDAO = new CwmsTimeSeriesDAO(new NonPoolingConnectionOwner(), "SWT"))
 		{
 			Calendar first = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 			first.set(2015, Calendar.JANUARY, 1, 0, 0, 0);
@@ -28,7 +30,7 @@ final class CwmsTimeSeriesDAOTest
 	@Test
 	public void testWithinMaxTimeGap()
 	{
-		try(CwmsTimeSeriesDAO cwmsTimeSeriesDAO = new CwmsTimeSeriesDAO(new CwmsTimeSeriesDb(), "SWT"))
+		try(CwmsTimeSeriesDAO cwmsTimeSeriesDAO = new CwmsTimeSeriesDAO(new NonPoolingConnectionOwner(), "SWT"))
 		{
 			Calendar first = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 			first.set(2015, Calendar.JANUARY, 1, 0, 0, 0);

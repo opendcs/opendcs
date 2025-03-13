@@ -82,7 +82,7 @@ public class ExportGroup extends TsdbAppTemplate
 	 * Sort the TS Group List with searching subgroups for each TS group and 
 	 * putting them in the front of each referring TS group.
 	 * 
-	 * @param tsGrpsList: a TsGroup array list for sorting
+	 * @param theTsGrpList: a TsGroup array list for sorting
 	 * @return ArrayList<TsGroup>: sorted TsGroup array list 
 	 */
 	protected ArrayList<TsGroup> sortTsGroupList(ArrayList<TsGroup> theTsGrpList)

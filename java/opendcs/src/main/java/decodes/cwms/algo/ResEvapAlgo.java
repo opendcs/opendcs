@@ -22,6 +22,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -348,17 +349,22 @@ final public class ResEvapAlgo
             siteDAO = tsdb.makeSiteDAO();
             timeSeriesDAO = tsdb.makeTimeSeriesDAO();
             crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
-            conn = tsdb.getConnection();
+            
 
             //Get site Data from Database
             try
             {
+                conn = tsdb.getConnection();
                 DbKey siteID = siteDAO.lookupSiteID(reservoirId);
                 site = siteDAO.getSiteById(siteID);
             }
             catch (DbIoException | NoSuchObjectException ex)
             {
                 throw new DbCompException("Failed to load Site data", ex);
+            }
+            catch (SQLException ex)
+            {
+                throw new DbCompException("Unable to acquire required connection.", ex);
             }
 
             //If missing data overwrite with site info

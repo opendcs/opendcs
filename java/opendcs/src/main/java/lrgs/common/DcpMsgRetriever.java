@@ -200,7 +200,7 @@ public class DcpMsgRetriever
 
 	  @throws ArchiveUnavailableException on internal archiving error
 	  @throws UntilReachedException if specified until time was reached
-	  @throws SearchTimeoutException if stopSearchMsec reached & no msg rcv'd
+	  @throws SearchTimeoutException if stopSearchMsec reached and no msg rcv'd
 	   (this essentially means 'try again')
 	  @throws EndOfArchivException if all indexes have been checked with no
 	   match.

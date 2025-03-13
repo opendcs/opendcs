@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.logging.Logger;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -23,15 +22,15 @@ import org.junit.platform.commons.PreconditionViolationException;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
-import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.fixtures.helpers.TestResources;
-import org.opendcs.spi.configuration.Configuration;
-import org.opendcs.spi.configuration.ConfigurationProvider;
+import org.opendcs.fixtures.spi.Configuration;
+import org.opendcs.fixtures.spi.ConfigurationProvider;
 import org.slf4j.LoggerFactory;
 
 import decodes.db.Database;
@@ -228,6 +227,11 @@ public class OpenDCSTestConfigExtension implements BeforeAllCallback, BeforeEach
                 {
                     f.setAccessible(true);
                     withEnvProps(() -> f.set(testInstance,configuration.getDecodesDatabase()));
+                }
+                else if (f.getType().equals(OpenDcsDatabase.class) && configuration.isRunning())
+                {
+                    f.setAccessible(true);
+                    withEnvProps(() -> f.set(testInstance,configuration.getOpenDcsDatabase()));
                 }
             }
             catch (Throwable ex)

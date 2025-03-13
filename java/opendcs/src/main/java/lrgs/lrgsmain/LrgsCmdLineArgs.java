@@ -94,7 +94,7 @@ public class LrgsCmdLineArgs extends ApplicationSettings
 	}
 
 	/**
-	  Parses command line arguments, sets internal variables, & sets up logging.
+	  Parses command line arguments, sets internal variables, and sets up logging.
 	  We will use a TeeLogger to fork log messages to a file and to an internal
 	  QueueLogger. The Queue will be used by DDS clients who want to retrieve
 	  log messages.

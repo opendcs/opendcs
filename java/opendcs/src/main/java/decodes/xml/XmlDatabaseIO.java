@@ -48,6 +48,8 @@
 */
 package decodes.xml;
 
+import decodes.db.EngineeringUnit;
+import decodes.db.UnitConverterDb;
 import decodes.db.RoutingExecStatus;
 import decodes.db.RoutingStatus;
 import ilex.util.Counter;
@@ -64,6 +66,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -77,6 +80,7 @@ import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import decodes.db.Constants;
@@ -109,6 +113,7 @@ import decodes.db.UnitConverterSet;
 import decodes.sql.DbKey;
 import decodes.tsdb.xml.XmlLoadingAppDAO;
 import decodes.util.DecodesSettings;
+import decodes.xml.jdbc.XmlConnection;
 
 /**
  * This class allows you to read database information from a
@@ -116,6 +121,7 @@ import decodes.util.DecodesSettings;
  */
 public class XmlDatabaseIO extends DatabaseIO
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(XmlDatabaseIO.class);
 	public static final String module = "XmlDatabaseIO";
 	// Directory Structure for the XML Files:
 	public static final String PlatformDir = "platform";
@@ -174,41 +180,56 @@ public class XmlDatabaseIO extends DatabaseIO
 	 * @throws SAXException if can't initialize XML parsers
 	 * @throws ParserConfigurationException if can't configure XML parsers
 	 */
-	public XmlDatabaseIO( String xmldir )
-		throws SAXException, ParserConfigurationException
+	public XmlDatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG1,
-			"Creating XmlDatabaseIO for directory '" + xmldir + "'");
-		this.xmldir = xmldir;
-		myParser = new TopLevelParser();
-
-		errorHandler = new LoggerErrorHandler();
-		errorHandler.stopOnWarnings(false);
-		errorHandler.stopOnErrors(false);
-		myParser.setErrorHandler(errorHandler);
-		platformIdCounter = null;
-
-		dtdUri = null;
-
-		if (xmldir != null && xmldir.length() > 0)
+		super(dataSource, settings);
+		try(XmlConnection con = dataSource.getConnection().unwrap(XmlConnection.class))
 		{
-			File xmlTop = new File(xmldir);
-			if (!xmlTop.isDirectory())
+			this.xmldir = con.getDirectory();
+		}
+		catch (SQLException ex)
+		{
+			throw new DatabaseException("Unable to retrieve directory", ex);
+		}
+		log.debug("Creating XmlDatabaseIO for directory '{}'", xmldir);
+		try
+		{
+			myParser = new TopLevelParser();
+
+			errorHandler = new LoggerErrorHandler();
+			errorHandler.stopOnWarnings(false);
+			errorHandler.stopOnErrors(false);
+			myParser.setErrorHandler(errorHandler);
+			platformIdCounter = null;
+
+			dtdUri = null;
+
+			if (xmldir != null && xmldir.length() > 0)
 			{
-				if (!xmlTop.mkdirs())
+				File xmlTop = new File(xmldir);
+				if (!xmlTop.isDirectory())
 				{
-					Logger.instance().warning(module + " Top directory '" + xmldir
-						+ "' does not exist and cannot be created. Check permissions and location.");
-					return;
+					if (!xmlTop.mkdirs())
+					{
+						throw new DatabaseException(" Top directory '" + xmldir 
+							+ "' does not exist and cannot be created. Check permissions and location.");
+					}
+				}
+				for(String subdir : subdirs)
+				{
+					File entdir = new File(xmlTop, subdir);
+					if (!entdir.isDirectory() && !entdir.mkdir())
+					{
+						throw new DatabaseException("Entity directory '" + entdir.getPath() 
+							+ "' does not exist and cannot be created. Check permissions and location.");
+					}
 				}
 			}
-			for(String subdir : subdirs)
-			{
-				File entdir = new File(xmlTop, subdir);
-				if (!entdir.isDirectory() && !entdir.mkdir())
-					Logger.instance().warning(module + " Entity directory '" + entdir.getPath()
-						+ "' does not exist and cannot be created. Check permissions and location.");
-			}
+		}
+	
+		catch (ParserConfigurationException | SAXException ex)
+		{
+			throw new DatabaseException("Unable to setup SAXParser.", ex);
 		}
 	}
 
@@ -892,10 +913,10 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 	{
 		try
 		{
-			String ls[] = listDirectory(PlatformDir);
+			String[] ls = listDirectory(PlatformDir);
 			if (ls == null)
 				return;
-			for(int i=0; i<ls.length; i++)
+			for (int i=0; i<ls.length; i++)
 			{
 				InputStream is = null;
 				try
@@ -1156,6 +1177,10 @@ e.printStackTrace();
 		readEngineeringUnitList(ucs.getDatabase().engineeringUnitList);
 	}
 
+	public void deleteUnitConverter( Long ucId )
+	{
+		throw new UnsupportedOperationException("deleteUnitConverterSet not supported in XML");
+	}
 
 	/**
 	 * Writes the entire collection of engineering units to the database.
@@ -1183,6 +1208,16 @@ e.printStackTrace();
 		{
 			Database.setDb(oldDb);
 		}
+	}
+
+	/**
+	 Stores the provided list of UnitConverter objects into the database.
+	 @param ucs the list to store
+	 */
+	@Override
+	public void insertUnitConverter( UnitConverterDb ucs )
+	{
+		throw new UnsupportedOperationException("XmlDatabaseIO.insertUnitConverter");
 	}
 
 	//=============== Object-level Read/Write Functions ============
@@ -1766,6 +1801,16 @@ e.printStackTrace();
 		String fn = xmldir + File.separator + DataSourceDir
 					+ File.separator + ob.makeFileName();
 		tryDelete(fn);
+	}
+
+	/**
+	 * Deletes an EngineeringUnit from the database by its abbreviation.
+	 * @param eu object with the abbreviation set.
+	 */
+	@Override
+	public void deleteEngineeringUnit(EngineeringUnit eu)
+	{
+		throw new UnsupportedOperationException("deleteEngineeringUnit");
 	}
 
 	/**

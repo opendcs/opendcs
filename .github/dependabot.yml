@@ -5,11 +5,20 @@ updates:
     schedule:
       interval: "daily"
     groups:
-      alldependencies:
+      dependencies-major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+      dependencies-minor:
         patterns:
           - "*"
         update-types:
           - "minor"
+      dependencies-patch:
+        patterns:
+          - "*"
+        update-types:
           - "patch"
     reviewers:
       - "@opendcs/opendcs-core-devs"
