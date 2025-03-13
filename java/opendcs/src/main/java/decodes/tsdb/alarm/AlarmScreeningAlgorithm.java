@@ -40,25 +40,17 @@ import ilex.var.TimedVariable;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.TimeSeriesDAI;
 import decodes.tsdb.TimeSeriesIdentifier;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Look for alarm screening records in the database and apply to input parameter.
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Look for alarm screening records in the database and apply to input parameter.")
 public class AlarmScreeningAlgorithm
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
 	// Will be set to true if input and output refer to the same time series.
 	boolean _inputIsOutput = false;
 	boolean _noOutput = false;
@@ -221,47 +213,37 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 
 
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "false")
 	public boolean noOutputOnReject = false;
+	@PropertySpec(value = "false")
 	public boolean noOverwrite = false;
+	@PropertySpec(value = "false")
 	public boolean setInputFlags = false;
+	PropertySpec(value = "false")
 	public boolean setDataFlags = true;
-	String _propertyNames[] = { "noOutputOnReject", "noOverwrite", "setInputFlags", "setDataFlags" };
-//AW:PROPERTIES_END
-
-	// Allow javac to generate a no-args constructor.
-	
 	
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		inputParm = getParmRef("input");
 		TimeSeriesIdentifier inputTsid = getParmTsId("input");
 		if (inputTsid == null)
@@ -397,7 +379,6 @@ debug3("\tFor t=" + debugSdf.format(tv.getTime()) + " getStuckDuration='" + tLim
 		
 		// Note: It is up to the user to make sure input and output are in the correct units.
 		
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	
@@ -411,10 +392,10 @@ debug3("\tFor t=" + debugSdf.format(tv.getTime()) + " getStuckDuration='" + tLim
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		Date t = this._timeSliceBaseTime;
 		
 		if (!initScreeningAndLimitSet(t))
@@ -568,7 +549,6 @@ Logger.instance().info("output different from input, noOutputOnReject=" + noOutp
 			}
 		}
 		
-//AW:TIMESLICE_END
 	}
 
 	private void checkAlarms(Date t, double value, double delta, double variance, int flags)
@@ -582,40 +562,14 @@ Logger.instance().info("output different from input, noOutputOnReject=" + noOutp
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
 		// period.
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 
 	public AlarmLimitSet gettLimitSet()
