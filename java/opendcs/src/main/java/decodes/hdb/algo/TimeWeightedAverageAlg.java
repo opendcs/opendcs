@@ -35,31 +35,24 @@ import decodes.hdb.dbutils.DataObject;
 import decodes.hdb.dbutils.RBASEUtils;
 import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-This algorithm does a time weighted average over the interval period
-
-Parameters:
-
-partial_calculations: boolean: default false: if current period partial calculations will be performed
-min_values_required: number: default 1: the minimum number of observations required to perform computation
-min_values_desired: number: default 0: the minimum number of observations desired to perform computation
-validation_flag: string: default empty: the validation flag value to be sent to the database
-
- */
-//AW:JAVADOC_END
+@Algorithm(description = "This algorithm does a time weighted average over the interval period\n\n" +
+"Parameters:\n\n" +
+"partial_calculations: boolean: default false: if current period partial calculations will be performed\n" +
+"min_values_required: number: default 1: the minimum number of observations required to perform computation\n" +
+"min_values_desired: number: default 0: the minimum number of observations desired to perform computation\n" +
+"validation_flag: string: default empty: the validation flag value to be sent to the database")
 public class TimeWeightedAverageAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
 // version 1.0.05 modification to fix date math for previous and next data window
 // version 1.0.06 modification to fix CP 3.0 Upgrade issues, by M. Bogner Aug 2012
@@ -81,48 +74,38 @@ public class TimeWeightedAverageAlg
         long mvr_count;
         long mvd_count;
 
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "false") 
 	public boolean partial_calculations = false;
+	@PropertySpec(value = "1") 
 	public long min_values_required = 1;
+	@PropertySpec(value = "0") 
 	public long min_values_desired = 0;
-        public String validation_flag = "";
-	String _propertyNames[] = { "partial_calculations", "min_values_required", "min_values_desired",
-	"validation_flag" };
-//AW:PROPERTIES_END
+	@PropertySpec(value = "") 
+    public String validation_flag = "";
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -135,7 +118,6 @@ public class TimeWeightedAverageAlg
 		tally = 0.0;
 		have_beginning_record = false;
 		index = 0;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -148,10 +130,10 @@ public class TimeWeightedAverageAlg
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
                 if ((total_count == 0) && (!isMissing(input)))
                 {
@@ -170,14 +152,12 @@ public class TimeWeightedAverageAlg
                   date_out [index] = _timeSliceBaseTime;
 		  debug3( "Index:  " + index + "  Value:  " + input + "  DATE: " + _timeSliceBaseTime);
 		}
- 
-
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
 //AW:AFTER_TIMESLICES
@@ -538,31 +518,5 @@ public class TimeWeightedAverageAlg
 		{
 		   deleteOutput(output);
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

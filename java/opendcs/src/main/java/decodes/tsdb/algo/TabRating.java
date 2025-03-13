@@ -40,6 +40,7 @@ import decodes.comp.ComputationParseException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.algo.AWAlgoType;
 import java.io.File;
+import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
