@@ -32,7 +32,6 @@ import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
 
-//AW:IMPORTS
 import decodes.comp.LookupTable;
 import decodes.comp.RatingTableReader;
 import decodes.comp.TabRatingReader;
@@ -41,18 +40,13 @@ import decodes.comp.ComputationParseException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.algo.AWAlgoType;
 import java.io.File;
-<<<<<<< HEAD
+
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
-import org.opendcs.annotations.algorithm.Output;
-=======
->>>>>>> parent of 1acab615 (Updated Tab Ratings)
 
 import java.util.Date;
-//AW:IMPORTS_END
 
-<<<<<<< HEAD
 @Algorithm(description = "Implements rating table computations.\n" + 
 "Holds the lookup table & shift values.\n" +
 "Independent (e.g. STAGE) value is called \"indep\"." +
@@ -62,31 +56,13 @@ import java.util.Date;
 "  <li>tableDir - Directory containing table files</li>\n" +
 "  <li>tableName - Overrides sitename.tab default</li>\n" +
 "</ul>")
-=======
-//AW:JAVADOC
-/**
-Implements rating table computations.
-Holds the lookup table & shift values.
-Independent (e.g. STAGE) value is called "indep".
-Dependent (e.g. FLOW) is called "dep".
-<p>Properties include:
-<ul>
-  <li>tableDir - Directory containing table files</li>
-  <li>tableName - Overrides sitename.tab default</li>
-</ul>
- */
-//AW:JAVADOC_END
->>>>>>> parent of 1acab615 (Updated Tab Ratings)
 public class TabRating
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 	implements decodes.comp.HasLookupTable
 {
-//AW:INPUTS
+	@Input
 	public double indep;	//AW:TYPECODE=i
-	String _inputNames[] = { "indep" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
 	LookupTable lookupTable = null;
 	LookupTable shiftTable = null;
 	TabRatingReader tableReader = null;
@@ -120,9 +96,8 @@ public class TabRating
 	{
 		lookupTable.clear();
 	}
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable dep = new NamedVariable("dep", 0);
 	String _outputNames[] = { "dep" };
 //AW:OUTPUTS_END
