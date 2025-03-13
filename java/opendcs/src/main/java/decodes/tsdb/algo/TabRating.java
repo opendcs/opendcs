@@ -47,10 +47,11 @@ import org.opendcs.annotations.algorithm.Output;
 
 import java.util.Date;
 
+
 @Algorithm(description = "Implements rating table computations.\n" + 
 "Holds the lookup table & shift values.\n" +
-"Independent (e.g. STAGE) value is called \"indep\"." +
-"Dependent (e.g. FLOW) is called \"dep\"." +
+"Independent (e.g. STAGE) value is called \"indep\".\n" +
+"Dependent (e.g. FLOW) is called \"dep\".\n" +
 "<p>Properties include:\n" +
 "<ul>\n" +
 "  <li>tableDir - Directory containing table files</li>\n" +
