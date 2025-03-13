@@ -16,7 +16,6 @@ import decodes.sql.DbKey;
 
 
 
-//AW:IMPORTS
 // Place an import statements you need here.
 import java.util.TimeZone;
 import java.util.Calendar;
@@ -34,37 +33,27 @@ import decodes.hdb.dbutils.DataObject;
 import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
 import decodes.hdb.dbutils.RBASEUtils;
-
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-VolumeToFlowAlg calculates average flows based on the sum of the inputs volumes for the given period	
-	
-Flow (cfs) = sum of volumes * 43560 sq ft per acre / # of days / 86400 seconds	
-	
-This algorithm assumes units are in cfs and acre-feet; if not a conversion is done to output the correct units
-	
-Parameters:	
-	
-partial_calculations: boolean: default false: if current period partial calculations will be performed	
-min_values_required: number: default 1: the minimum number of observations required to perform computation	
-min_values_desired: number: default 0: the minimum number of observations desired to perform computation	
-validation_flag: string: default empty: the validation flag value to be sent to the database
-flow_factor: Number: use as multiplier for volume to flow factor (.5,.5041) : Default: 43560/86400	
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
 
- */
-//AW:JAVADOC_END
+@Algorithm(description = "VolumeToFlowAlg calculates average flows based on the sum of the inputs volumes for the given period\n" +		
+"Flow (cfs) = sum of volumes * 43560 sq ft per acre / # of days / 86400 seconds\n" +	
+"This algorithm assumes units are in cfs and acre-feet; if not a conversion is done to output the correct units\n" +
+"Parameters:\n\n" +	
+"partial_calculations: boolean: default false: if current period partial calculations will be performed\n" +
+"min_values_required: number: default 1: the minimum number of observations required to perform computation\n" +
+"min_values_desired: number: default 0: the minimum number of observations desired to perform computation\n" +	
+"validation_flag: string: default empty: the validation flag value to be sent to the database\n" +
+"flow_factor: Number: use as multiplier for volume to flow factor (.5,.5041) : Default: 43560/86400") 	
 public class VolumeToFlowAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
 // mod 1.0.06 added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 // mod 1.0.07 added by M. Bogner March 2013 for the 5.3 CP upgrade project
@@ -81,47 +70,41 @@ public class VolumeToFlowAlg
 	long mvr_count;
 	long mvd_count;
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "false") 
 	public boolean partial_calculations = false;
+	@PropertySpec(value = "1") 
 	public long min_values_required = 1;
+	@PropertySpec(value = "0") 
 	public long min_values_desired = 0;
+	@PropertySpec(value = " 43560/86400 ") 
 	public String flow_factor = " 43560/86400 ";
+	@PropertySpec(value = "")
 	public String validation_flag = "";
-	String _propertyNames[] = { "partial_calculations", "min_values_required", "min_values_desired", "validation_flag", "flow_factor" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -133,7 +116,6 @@ public class VolumeToFlowAlg
 		conn = null;
 		date_out = null;
 		tally = 0.0;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -146,22 +128,22 @@ public class VolumeToFlowAlg
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
 		if (!isMissing(input))
 		{
 			tally += input;
 			total_count++;
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
 //AW:AFTER_TIMESLICES
@@ -343,31 +325,5 @@ public class VolumeToFlowAlg
 		{
 		   deleteOutput(output);
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
