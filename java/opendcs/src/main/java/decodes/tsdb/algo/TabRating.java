@@ -55,7 +55,7 @@ import java.util.Date;
 "<ul>\n" +
 "  <li>tableDir - Directory containing table files</li>\n" +
 "  <li>tableName - Overrides sitename.tab default</li>\n" +
-"</ul>" +)
+"</ul>")
 public class TabRating
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 	implements decodes.comp.HasLookupTable

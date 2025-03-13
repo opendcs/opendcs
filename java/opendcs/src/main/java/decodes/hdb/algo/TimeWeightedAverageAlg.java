@@ -16,7 +16,6 @@ import decodes.sql.DbKey;
 
 
 
-//AW:IMPORTS
 // Place an import statements you need here.
 import java.util.TimeZone;
 import java.util.Calendar;
@@ -157,10 +156,8 @@ public class TimeWeightedAverageAlg
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
-	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
