@@ -30,7 +30,7 @@ public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
     @Input
     public double windSpeed24hour;
     @Input
-    public double solarRadition24hour;
+    public double solarRadiation24hour;
     @Input
     public double relativeHumidity24hour;
     
@@ -41,8 +41,7 @@ public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
     private UnitConverter evapUc;
     
     @Override
-    protected void initAWAlgorithm( )
-            throws DbCompException
+    protected void initAWAlgorithm() throws DbCompException
     {
         _awAlgoType = AWAlgoType.TIME_SLICE;
     }
@@ -51,7 +50,7 @@ public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void beforeTimeSlices() throws DbCompException
     {
         EngineeringUnit eu = EngineeringUnit.getEngineeringUnit(getParmUnitsAbbr("tempAir24hour"));
-        if ( evapUc == null )
+        if (evapUc == null)
         {
             evapUc = decodes.db.CompositeConverter.build(EngineeringUnit.getEngineeringUnit("mm"), eu);
         }
@@ -75,11 +74,11 @@ public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
         //unit conversions
         double windSpeed24hourKmD  = windSpeed24hour * 24;  //convert from kilometers per hour to Kilometers per day
         //convert from watts/(m^2 * min) to Langley/day (a Langley is one thermochemical calorie per square centimeter). Known as Qs in eqn 2.13
-        solarRadition24hour = solarRadition24hour * (60.0 * 24.0)/698.0; 
+        solarRadiation24hour = solarRadiation24hour * (60.0 * 24.0)/698.0; 
         double xcompl = 1.0 - (relativeHumidity24hour/100.0);
 
         double TdC = tempAir24hour - //NOSONAR
-                        (
+                    (
                         (14.55 + (0.114*tempAir24hour))*xcompl +
                             Math.pow((2.5 + 0.007*tempAir24hour)*xcompl, 3.0) +
                             (15.9 + 0.117*tempAir24hour)*Math.pow(xcompl, 14.0)
@@ -87,10 +86,10 @@ public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
         double delLambda1 = Math.pow(1.0 + (0.66/Math.pow(0.00815*tempAir24hour+ 0.8912, 7.0)), -1.0);
 
         double delLambda2 = 1.0 - delLambda1;
-        double Qn = 0.00714*solarRadition24hour + //NOSONAR
-                    0.00000526*solarRadition24hour*Math.pow(tempAir24hour+17.8, 1.87) +
-                    0.00000394*Math.pow(solarRadition24hour, 2.0) - 
-                    0.00000000239*Math.pow(solarRadition24hour, 2.0)*Math.pow(tempAir24hour - 7.2, 2.0) - 1.02;
+        double Qn = 0.00714*solarRadiation24hour + //NOSONAR
+                    0.00000526*solarRadiation24hour*Math.pow(tempAir24hour+17.8, 1.87) +
+                    0.00000394*Math.pow(solarRadiation24hour, 2.0) - 
+                    0.00000000239*Math.pow(solarRadiation24hour, 2.0)*Math.pow(tempAir24hour - 7.2, 2.0) - 1.02;
         double es_ea = 33.86 * (Math.pow(0.00738*tempAir24hour + 0.8072, 8.0) - Math.pow(0.00738*TdC + 0.8072, 8.0)); //NOSONAR
         double Ea = Math.pow(es_ea, 0.88) * (0.42 + 0.0029*windSpeed24hourKmD); //NOSONAR
         double dailyEvapMilliMeters = (delLambda1*Qn + delLambda2*Ea);
@@ -114,6 +113,7 @@ public class EvapHamon extends decodes.tsdb.algo.AW_AlgorithmBase
     /**
      * This method is called once after iterating all time slices.
      */
+    @Override
     protected void afterTimeSlices()
             throws DbCompException
     {
