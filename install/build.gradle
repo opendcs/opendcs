@@ -17,6 +17,7 @@ dependencies
     annotations(project(":opendcs-annotations"))
     opendcs(project(":opendcs"))
     opendcs(project(":opendcs-slf4j-provider"))
+    opendcs(project(":lrgs-web"))
     docs(project(path: ":docs", configuration: 'docs'))
 }
 
