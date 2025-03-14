@@ -43,6 +43,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 
 @Algorithm(description = "Look for alarm screening records in the database and apply to input parameter.")
 public class AlarmScreeningAlgorithm
