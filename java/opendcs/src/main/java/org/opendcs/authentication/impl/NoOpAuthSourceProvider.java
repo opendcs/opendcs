@@ -13,10 +13,11 @@ import ilex.util.AuthException;
  */
 public class NoOpAuthSourceProvider implements AuthSourceProvider
 {
+    public static final String PROVIDER_NAME = "noop";
     @Override
     public String getType()
     {
-        return "noop";
+        return PROVIDER_NAME;
     }
 
     @Override
