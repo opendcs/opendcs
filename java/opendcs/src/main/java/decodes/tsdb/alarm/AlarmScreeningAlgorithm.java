@@ -224,7 +224,7 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 	public boolean noOverwrite = false;
 	@PropertySpec(value = "false")
 	public boolean setInputFlags = false;
-	PropertySpec(value = "false")
+	@PropertySpec(value = "true")
 	public boolean setDataFlags = true;
 	
 
