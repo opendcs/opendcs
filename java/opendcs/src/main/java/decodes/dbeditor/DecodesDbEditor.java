@@ -122,8 +122,9 @@ public class DecodesDbEditor
         settings.loadFromProfile(cmdLineArgs.getProfile());
         DecodesInterface.setGUI(true);
         OpenDcsDatabase databases = DatabaseService.getDatabaseFor(null, settings);
+        // not great, but saves us the hassle of having to update *every* GUI class and DAO right now.
         Database db = databases.getLegacyDatabase(Database.class).get();
-
+        Database.setDb(db);
         Platform.configSoftLink = true;
         db.initializeForEditing();
 

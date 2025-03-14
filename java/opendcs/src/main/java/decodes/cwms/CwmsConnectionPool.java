@@ -28,6 +28,7 @@ import javax.management.openmbean.OpenDataException;
 import javax.sql.DataSource;
 
 import org.opendcs.jmx.ConnectionPoolMXBean;
+import org.opendcs.jmx.JmxUtils;
 import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.utils.sql.SqlSettings;
 
@@ -189,12 +190,18 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql
         ds.setInactiveConnectionTimeout((int)TimeUnit.MINUTES.toSeconds(1));
         ds.setConnectionWaitDuration(Duration.ofSeconds(5));
         ds.setMaxIdleTime((int)TimeUnit.MINUTES.toSeconds(1));
-        this.pool = ds; 
+        this.pool = ds;
 
         try
-		{            
+		{
 			ManagementFactory.getPlatformMBeanServer()
-							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+poolName+"\",hashCode=" + this.hashCode()));
+							 .registerMBean(
+                                this,
+                                new ObjectName("org.opendcs:type=ConnectionPool,name=\"" +
+                                               JmxUtils.jmxSafeName(poolName) +
+                                               "\",hashCode=" + this.hashCode()
+                                )
+                            );
 		}
 		catch(JMException ex)
 		{
