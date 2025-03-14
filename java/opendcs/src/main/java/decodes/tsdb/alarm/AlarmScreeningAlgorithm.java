@@ -43,7 +43,6 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.opendcs.annotations.PropertySpec;
 
 @Algorithm(description = "Look for alarm screening records in the database and apply to input parameter.")
 public class AlarmScreeningAlgorithm
@@ -218,13 +217,9 @@ for(AlarmScreening as : screenings) debug1("   start = " + as.getStartDateTime()
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
 
-	@PropertySpec(value = "false")
 	public boolean noOutputOnReject = false;
-	@PropertySpec(value = "false")
 	public boolean noOverwrite = false;
-	@PropertySpec(value = "false")
 	public boolean setInputFlags = false;
-	@PropertySpec(value = "true")
 	public boolean setDataFlags = true;
 	
 

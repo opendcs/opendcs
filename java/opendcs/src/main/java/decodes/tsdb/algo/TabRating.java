@@ -44,7 +44,7 @@ import java.io.File;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
-import org.opendcs.annotations.Output;
+import org.opendcs.annotations.algorithm.Output;
 
 import java.util.Date;
 
