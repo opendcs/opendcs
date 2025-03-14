@@ -126,7 +126,7 @@ public class FileCounter implements Counter
 	* <ul>
 	* <li>g filename - Get next value from file and increment</li>
 	* <li>s filename value - Set next value of file to value</li>
-	* </ul
+	* </ul>
 	* @param args
 	* @throws IOException
 	*/
