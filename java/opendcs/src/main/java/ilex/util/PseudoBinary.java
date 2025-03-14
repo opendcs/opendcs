@@ -23,8 +23,7 @@ public class PseudoBinary
 	 * Convert int to 3-char pseudobinary.
 	 * The integer can be a signed number in the range (-131072 ... 131071)
 	 * or an unsigned number in the range (0 ... 262143)
-	 * @param v value to encode
-	 * @param rightDigits number of decimal points to encode
+	 * @param iv value to encode
 	 * @return 3-char pb string
 	 */
 	public static String encodePB(int iv)

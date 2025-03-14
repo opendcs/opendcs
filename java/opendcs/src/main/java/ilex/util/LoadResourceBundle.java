@@ -92,7 +92,7 @@ public class LoadResourceBundle
 	 * 'baseName' is a path to the file for the default class loader.
 	 * The full name will be: baseName_language_country.properties.
 	 * 
-	 * @param baseName path name to resource file w/o language & country.
+	 * @param baseName path name to resource file w/o language and country.
 	 * @param language language used to set the Java Locale
 	 * @return the resource bundle for the given base name
 	 */
