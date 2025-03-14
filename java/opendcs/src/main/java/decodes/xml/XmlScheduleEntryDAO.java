@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 import org.xml.sax.SAXException;
 
@@ -146,6 +147,21 @@ public class XmlScheduleEntryDAO implements ScheduleEntryDAI
 			if(se.getKey().equals(id))
 			{
 				return se;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public ScheduleEntry readScheduleEntryByStatusId(DbKey statusId) throws DbIoException
+	{
+		List<ScheduleEntryStatus> statusList = readScheduleStatus(null);
+
+		for (ScheduleEntryStatus status : statusList)
+		{
+			if (status.getKey().equals(statusId))
+			{
+				return readScheduleEntry(status.getScheduleEntryName());
 			}
 		}
 		return null;

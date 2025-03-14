@@ -21,6 +21,12 @@ jobs:
         jdk: [8, 11, 17]
     runs-on: ${{matrix.platform}}
     steps:
+      - name: Clean up disk space, so we don't run out.
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
       - uses: actions/checkout@v4.1.1
       - name: Set up JDK
         uses: actions/setup-java@v4.7.0

@@ -2,6 +2,8 @@ package decodes.util;
 
 import java.util.Properties;
 
+import org.opendcs.settings.api.OpenDcsSettings;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -25,8 +27,7 @@ import decodes.launcher.Profile;
  * <p>
  * Singleton access can be gained through the instance() method.
  */
-public class DecodesSettings
-    implements PropertiesOwner
+public class DecodesSettings implements PropertiesOwner, OpenDcsSettings
 {
     private static DecodesSettings _instance = null;
 
@@ -72,7 +73,7 @@ public class DecodesSettings
     /** Timezone for date/time stamps in the SQL database. */
     public String sqlTimeZone = "UTC";
 
-    /** Name of file containing encrypted username & password
+    /** Name of file containing encrypted username and password
      * defaults to null as it is not used in certain implementations, such as XML.
     */
     public String DbAuthFile = null;
@@ -122,7 +123,7 @@ public class DecodesSettings
     /** Default dir to store routing spec status properties file: */
     public String routingStatusDir = "$DCSTOOL_USERDIR/routstat";
 
-    /** Default data type standard, used in DB-editor & some formatters. */
+    /** Default data type standard, used in DB-editor and some formatters. */
     public String dataTypeStdPreference = Constants.datatype_SHEF;
 
     /** Timezone used in Decoding Wizard */
@@ -155,7 +156,9 @@ public class DecodesSettings
     /** Name of summary log file for decoding wizard. */
     public String decwizSummaryLog = "$HOME/summary.log";
 
-    /** Provide default designator ( <device-id>-<seqno> for new platforms ) */
+    /** 
+     * Provide default designator (&lt;device-id&gt;-&lt;seqno&gt;) for new platforms.
+     */
     public boolean setPlatformDesignatorName=false;
 
     /** @deprecated Set to true if the 1st line of site description contains long name. */
@@ -821,5 +824,14 @@ public class DecodesSettings
         settings.loadFromProperties(props);
         settings.setSourceFile(propFile);
         return settings;
+    }
+
+    public DecodesSettings asCopy()
+    {
+        Properties props = new Properties();
+        this.saveToProps(props);
+        DecodesSettings newSettings = new DecodesSettings();
+        newSettings.loadFromProperties(props);
+        return newSettings;
     }
 }

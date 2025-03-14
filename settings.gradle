@@ -9,6 +9,13 @@ project(":docs").projectDir=file("docs")
 include ":opendcs-annotations"
 project(":opendcs-annotations").projectDir=file("java/annotations")
 
+include ":opendcs-api"
+project(":opendcs-api").projectDir=file("java/opendcs-api")
+
+
+include ":opendcs-slf4j-provider"
+project(":opendcs-slf4j-provider").projectDir=file("java/opendcs-slf4j-provider")
+
 include ":opendcs"
 project(":opendcs").projectDir=file("java/opendcs")
 
@@ -23,3 +30,6 @@ project(":testing:fixtures").projectDir=file("integrationtesting/fixtures")
 
 include ":testing:opendcs-tests"
 project(":testing:opendcs-tests").projectDir=file("integrationtesting/opendcs-tests")
+
+include ":testing:manual"
+project(":testing:manual").projectDir=file("integrationtesting/manual")

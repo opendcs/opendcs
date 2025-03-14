@@ -111,8 +111,8 @@ public class FileDataSource
 	/**
 	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
 	 *
-	 * @param dataSource
-	 * @param decodesDatabase
+	 * @param ds data source
+	 * @param db database
 	 */
 	public FileDataSource(DataSource ds, Database db)
 	{

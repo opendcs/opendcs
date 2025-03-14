@@ -25,8 +25,8 @@ import java.lang.annotation.Target;
 public @interface Output
 {
     /**
-     * Leaveing the name blank will use the name of the field.
-     * @return
+     * Leaving the name blank will use the name of the field.
+     * @return the name
      */
     String name() default "";
     Class<?> type() default Double.class;

@@ -49,8 +49,8 @@ public class ProfileLauncherServer
 
     /**
      * Called from the GUI thread when a button has been pushed.
-     * @param profileName
-     * @return
+     * @param profileName profile name
+     * @param cmd command
      */
     public void sendCommandTo(String profileName, String cmd)
     {

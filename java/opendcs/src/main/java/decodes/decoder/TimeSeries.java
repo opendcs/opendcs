@@ -344,21 +344,8 @@ public class TimeSeries
 
 	public int size() { return samples.size(); }
 
-/*DO NOT USE - we don't set times this way anymore.
-	public void setTimeAt(int idx, Date timeStamp)
-	{
-		if (timeStamp.before(beginTime))
-			beginTime = timeStamp;
-		if (timeStamp.after(endTime))
-			endTime = timeStamp;
-
-		TimedVariable tv = sampleAt(idx);
-		tv.setTime(timeStamp);
-	}
-*/
-
 	/**
-	  Sorts samples by time & sets beginning & ending times.
+	  Sorts samples by time and sets beginning and ending times.
 	*/
 	public void sort()
 	{
@@ -481,7 +468,7 @@ public class TimeSeries
 	  Formats all samples in this time series according to presentation group.
 	  Samples are unit-converted according to the PG and then formatted
 	  into strings according to the rounding rules in the PG.
-	  @param pg the PresentationGroup
+	  @param dp the DataPresentation
 	*/
 	public void formatSamples(DataPresentation dp)
 	{

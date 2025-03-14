@@ -34,7 +34,8 @@ import decodes.util.PropertySpec;
  * for many kinds of data including SNOTEL and USGS data.
  * 
  * Here is an example URL:
- * {@link https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customMultiTimeSeriesGroupByStationReport/hourly/id="806"|name/-31,-7/BATT::value,TOBS::value}
+ *  <a href="https://wcc.sc.egov.usda.gov/reportGenerator/view_csv/customMultiTimeSeriesGroupByStationReport/hourly/id=&quot;806&quot;|name/-31,-7/BATT::value,TOBS::value">Link text</a>
+ *
  *
  * 
  * The data source uses a property to specify the interval ("hourly" in the above.)
@@ -94,8 +95,8 @@ public class NrcsDataSource
 	/**
 	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
 	 *
-	 * @param dataSource
-	 * @param decodesDatabase
+	 * @param ds data source
+	 * @param db database
 	 */
 	public NrcsDataSource(DataSource ds, Database db)
 	{

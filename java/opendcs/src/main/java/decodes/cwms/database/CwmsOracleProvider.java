@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Call;
 import org.jdbi.v3.postgres.PostgresPlugin;
+import org.opendcs.database.DatabaseService;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.spi.database.MigrationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -216,9 +218,8 @@ public class CwmsOracleProvider implements MigrationProvider
                                                      .collect(Collectors.toList());
                 log.info("Loading baseline computation data.");
 
-                TimeSeriesDb tsDb = new CwmsTimeSeriesDb();
-
-                tsDb.connect("utility", creds);
+                OpenDcsDatabase database = DatabaseService.getDatabaseFor("utility", settings);
+                TimeSeriesDb tsDb = database.getLegacyDatabase(TimeSeriesDb.class).get();
 
                 ImportComp compImport = new ImportComp(tsDb, false, false, fileNames);
                 compImport.runApp();

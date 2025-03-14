@@ -135,7 +135,8 @@ lastSeqNum = seqNum;
 
 	/**
 	 * Retrieve messages by DOMSAT sequence number range.
-	 * @param approxDomsatMsec approximate domsat time of outage.
+	 * @param fromDomsatMsec approximate domsat from time of outage.
+	 * @param toDomsatMsec approximate domsat to time
 	 * @param seqStart first missing sequence number
 	 * @param seqEnd last missing sequence number
 	 * @param msgs return messages by storing them here

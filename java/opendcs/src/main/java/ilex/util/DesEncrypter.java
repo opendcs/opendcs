@@ -33,7 +33,7 @@ public class DesEncrypter
 	private int iterationCount = 19;
 
 	/**
-	 * Construct an object to handle both encryption & decryption using DES
+	 * Construct an object to handle both encryption and decryption using DES
 	 * with the passed passPhrase.
 	 * @param passPhrase the secret pass phrase.
 	 * @throws AuthException if any errors occur in the underlying DES classes.

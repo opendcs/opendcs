@@ -19,7 +19,7 @@ import decodes.util.ResourceFactory;
  */
 public class DdsVersion
 {
-	/** Current version of servers & clients compiled with this code. */
+	/** Current version of servers and clients compiled with this code. */
 	public static final int DdsVersionNum = 14;
 	
 	/**

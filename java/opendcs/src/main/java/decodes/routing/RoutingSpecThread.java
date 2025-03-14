@@ -5,6 +5,7 @@ package decodes.routing;
 
 import java.util.*;
 
+import org.opendcs.database.DatabaseService;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
@@ -62,7 +63,7 @@ public class RoutingSpecThread
 	/** The object that is formatting data for output. */
 	protected OutputFormatter formatter;
 
-	/** The presentation group used to set units & rounding. */
+	/** The presentation group used to set units and rounding. */
 	protected PresentationGroup presentationGroup;
 
 	/** If true, apply sensor limits in config or platform sensor records. */
@@ -1200,7 +1201,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 
 	/**
 	  Checks to see if the routing spec has been modified since it was 
-	  started, and if so, reloads & re-initializes this executable.
+	  started, and if so, reloads and re-initializes this executable.
 
 	  @return true if spec was reloaded.
 	*/
@@ -1515,7 +1516,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 			System.exit(1);
 		}
 
-		DecodesSettings settings = DecodesSettings.instance();
+		DecodesSettings settings = DecodesSettings.fromProfile(cmdLineArgs.getProfile());
 
 		File routmonDir = new File(
 			EnvExpander.expand(settings.routingStatusDir));
@@ -1576,21 +1577,11 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 		
 		// Construct the database and the interface specified by properties.
 		ResourceFactory.instance();
-		Database db = new decodes.db.Database();
+		
+		Database db = DatabaseService.getDatabaseFor(null, settings)
+									 .getLegacyDatabase(Database.class)
+									 .get();
 		Database.setDb(db);
-
-		DatabaseIO dbio;
-		String dbloc = dbLocArg.getValue();
-		if (dbloc.length() > 0)
-		{
-			dbio = DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, dbloc);
-		}
-		else
-		{
-			dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-				settings.editDatabaseLocation);
-		}
-		db.setDbIo(dbio);
 
 		// Initialize standard collections:
 		db.enumList.read();
