@@ -6,14 +6,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Properties;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.JMException;
 import javax.management.ObjectName;
@@ -21,6 +19,7 @@ import javax.management.openmbean.OpenDataException;
 import javax.sql.DataSource;
 
 import org.opendcs.jmx.ConnectionPoolMXBean;
+import org.opendcs.jmx.JmxUtils;
 import org.opendcs.jmx.WrappedConnectionMBean;
 import org.opendcs.utils.sql.SqlSettings;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,6 @@ public class SimpleDataSource implements DataSource, ConnectionPoolMXBean
     final String url;
     final Properties properties;
     PrintWriter pw = null;
-    private Connection c = null;
     private Set<WrappedConnection> connections = Collections.synchronizedSet(new HashSet<>());
     private AtomicInteger requests = new AtomicInteger(0);
     private AtomicInteger freed = new AtomicInteger(0);
@@ -67,12 +65,23 @@ public class SimpleDataSource implements DataSource, ConnectionPoolMXBean
     private void setupJmx()
     {
         try
-		{
-            String name = String.format("SimpleDataSource(%s/%s)",url.replace("?","\\?"),properties.getProperty("username", properties.getProperty("user", "<no user>")));
-			ManagementFactory.getPlatformMBeanServer()
-							 .registerMBean(this, new ObjectName("org.opendcs:type=ConnectionPool,name=\""+name+"\",hashCode=" + this.hashCode()));
-		}
-		catch(JMException ex)
+        {
+            String name =
+                    String.format("SimpleDataSource(%s/%s)",
+                                  url,
+                                  properties.getProperty("username", properties.getProperty("user", "<no user>"))
+                                  );
+            log.warn("Registering Database: {}", name);
+            ManagementFactory.getPlatformMBeanServer()
+                             .registerMBean(
+                                this,
+                                new ObjectName("org.opendcs:type=ConnectionPool,name=\"" +
+                                    JmxUtils.jmxSafeName(name) +
+                                    "\",hashCode=" + this.hashCode()
+                                )
+                            );
+        }
+        catch(JMException ex)
 		{
             log.warn("Unable to register tracking bean.",ex);
 		}

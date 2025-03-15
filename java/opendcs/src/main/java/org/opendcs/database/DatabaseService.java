@@ -9,6 +9,7 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.authentication.impl.NoOpAuthSourceProvider;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.spi.authentication.AuthSource;
 import org.opendcs.spi.database.DatabaseProvider;
@@ -25,7 +26,10 @@ public class DatabaseService
     {
         try
         {
-            final AuthSource auth = AuthSourceService.getFromString(settings.DbAuthFile);
+            final String authSource = settings.DbAuthFile != null
+                                    ? settings.DbAuthFile
+                                    : (NoOpAuthSourceProvider.PROVIDER_NAME+":");
+            final AuthSource auth = AuthSourceService.getFromString(authSource);
             final Properties credentials = auth.getCredentials();
             return getDatabaseFor(appName, settings, credentials);
         }
