@@ -43,7 +43,7 @@ public class SimpleDisaggAlg
 	extends AW_AlgorithmBase
 {
 	@Input
-	public double input;	//AW:TYPECODE=i
+	public double input;
 
 	ParmRef iref = null;
 	String iintv = null;
