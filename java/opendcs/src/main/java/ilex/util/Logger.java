@@ -187,7 +187,7 @@ public abstract class Logger
 
 	/**
 	* Sets the time-zone used in message time-tags.
-	* @param tz the TimeZone object
+	* @param tZone the TimeZone object
 	*/
 	public void setTimeZone( TimeZone tZone )
 	{
