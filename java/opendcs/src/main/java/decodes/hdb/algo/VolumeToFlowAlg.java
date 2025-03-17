@@ -53,7 +53,7 @@ public class VolumeToFlowAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double input;	//AW:TYPECODE=i
+	public double input;
 
 	// Enter any local class variables needed by the algorithm.
 // mod 1.0.06 added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
