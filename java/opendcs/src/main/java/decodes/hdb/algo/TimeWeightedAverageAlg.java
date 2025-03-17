@@ -51,7 +51,7 @@ public class TimeWeightedAverageAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double input;	//AW:TYPECODE=i
+	public double input;
 
 	// Enter any local class variables needed by the algorithm.
 // version 1.0.05 modification to fix date math for previous and next data window
