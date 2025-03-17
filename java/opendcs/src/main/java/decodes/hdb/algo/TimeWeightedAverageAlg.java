@@ -83,7 +83,7 @@ public class TimeWeightedAverageAlg
 	@PropertySpec(value = "0") 
 	public long min_values_desired = 0;
 	@PropertySpec(value = "") 
-    public String validation_flag = "";
+        public String validation_flag = "";
 
 	// Allow javac to generate a no-args constructor.
 
