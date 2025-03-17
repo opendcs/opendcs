@@ -62,7 +62,7 @@ public class TabRating
 	implements decodes.comp.HasLookupTable
 {
 	@Input
-	public double indep;	//AW:TYPECODE=i
+	public double indep;
 
 	LookupTable lookupTable = null;
 	LookupTable shiftTable = null;
