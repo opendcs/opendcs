@@ -113,7 +113,7 @@ public class DesEncrypter
 	/**
 	 * Decrypts a string.
 	 * @param str BASE-64 encoding of the string to decrypt.
-	 * @param return the decrypted string.
+	 * @return the decrypted string.
 	 * @throws AuthException if any error occurs in the underlying DES classes.
 	 */
 	public String decrypt(String str) 
