@@ -84,6 +84,24 @@ To get a simple baseline environment going:
 This will start the "launcher_start" application and do an initial setup of an XML database suitable for DECODES operations
 going that you can use for manual and exploratory testing.
 
+The table below lists features of the runApp task.
+
+| Option | Default Value | Description |
+| --- | --- | --- |
+| `opendcs.app` | `launcher_start` | Application to run |
+| `opendcs.profile` | `default` | Profile to use |
+| `opendcs.lang` | - | Language to use |
+| `opendcs.arg` | - | Additional application arguments |
+| `opendcs.jfr` | `false` | Enable Java Flight Recorder |
+| `opendcs.debug` | `0` | Debug port number |
+
+Here is an example:
+
+```bat
+gradlew runApp -Popendcs.app=rs -Popendcs.profile="%appdata%\.opendcs\xml.profile" -Popendcs.arg=issue877 -Popendcs.debug=5005
+```
+
+
 # General Development
 
 To verify everything can work on your system run the following:
