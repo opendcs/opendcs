@@ -19,16 +19,19 @@ import decodes.hdb.HdbFlags;
 
 
 @Algorithm(description = "This algorithm is an Side Inflow mass balance calculation for inflow as:\n" +  
-"Delta Storage - Total Release Above + Total Release Below + evaporation\n\n" +  
+"Delta Storage - Total Release Above + Total Release Below + evaporation\n\n" + 
+
 "If inputs Delta Storage or Total Release Above or Total Release Below\n" + 
 "or  ithe Evap do not exist or have been deleted and the\n" + 
 "Delta_STORAGE_MISSING or the TOTAL_REL_ABOVE_MISSING or EVAP_MISSING,\n" + 
-"or TOTAL_REL_BELOW_MISSING properties are set to "fail" then the\n" +  
+"or TOTAL_REL_BELOW_MISSING properties are set to \"fail\" then the\n" +  
 "inflow will not be calculated and/or the inflow will be deleted.\n\n" + 
+
 "If all of the inputs do not exist because of a delete the inflow will\n" +  
 "be deleted if the output exists regardless of the property settings.\n\n" + 
+
 "This algorithm written by M. Bogner, August 2008\n" + 
-"Modified by M. Bogner May 2009 to add additional delete logic and version control\n")
+"Modified by M. Bogner May 2009 to add additional delete logic and version control")
 public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
