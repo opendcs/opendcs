@@ -27,7 +27,7 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.NamedNodeMap;
 
 /**
-* This class is a test of DOM. It can be used as a cut&paste model for
+* This class is a test of DOM. It can be used as a cut and paste model for
 * building DOM parsers.
 */
 public class DomTest

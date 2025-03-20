@@ -25,7 +25,7 @@ public class EnumListParser implements XmlObjectParser, XmlObjectWriter
 	  Note: Normally we would store a reference to the Java object that
 	  we're building, but since EnumList is a singleton with only static
 	  members, we don't need to do this.
-	  @param db The database to read & write.
+	  @param db The database to read and write.
 	*/
 	public EnumListParser(Database db)
 	{

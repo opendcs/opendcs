@@ -30,8 +30,8 @@ package ilex.util;
 public class TwoDigitYear
 {
 	/**
-	* >= cutoff: assume 1900
-	* <  cutoff: assume 2000
+	* &gt;= cutoff: assume 1900
+	* &lt;  cutoff: assume 2000
 	*/
 	public static int cutoff = 70;
 

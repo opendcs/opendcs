@@ -127,7 +127,7 @@ public abstract class DomHelper
 	* Pass your program module name (for log messages).
 	* Pass file name.
 	* @param moduleName the module name
-	* @param filename the file name
+	* @param strm the input stream
 	* @return @throws ErrorException
 	*/
 	public static Document readStream(String moduleName, InputStream strm) 
@@ -372,8 +372,8 @@ public abstract class DomHelper
 
 	/**
 	 * Returns an attribute by a case-INsensitive attriibute name.
-	 * @param attrname the attribute name
 	 * @param elem the Element.
+	 * @param name the attribute name to search for.
 	 * @return the attribute value or null if not found.
 	 */
 	public static String findAttr(Element elem, String name)

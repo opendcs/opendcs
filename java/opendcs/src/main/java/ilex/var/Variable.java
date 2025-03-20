@@ -665,7 +665,7 @@ public class Variable implements IVariable, IFlags
 	* @return @throws NoConversionException if the passed value cannot be converted
 	* to this Variable's native element type.
 	* @throws NotAnArrayException if this is not an array variable.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public byte getByteElement( int idx ) throws NoConversionException, NotAnArrayException, BadIndexException
 	{
@@ -680,7 +680,7 @@ public class Variable implements IVariable, IFlags
 	* @return @throws NoConversionException if the passed value cannot be converted
 	* to this Variable's native element type.
 	* @throws NotAnArrayException if this is not an array variable.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public boolean getBooleanElement( int idx ) throws NoConversionException, NotAnArrayException, BadIndexException
 	{
@@ -695,7 +695,7 @@ public class Variable implements IVariable, IFlags
 	* @return @throws NoConversionException if the passed value cannot be converted
 	* to this Variable's native element type.
 	* @throws NotAnArrayException if this is not an array variable.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public double getDoubleElement( int idx ) throws NoConversionException, NotAnArrayException, BadIndexException
 	{
@@ -710,7 +710,7 @@ public class Variable implements IVariable, IFlags
 	* @return @throws NoConversionException if the passed value cannot be converted
 	* to this Variable's native element type.
 	* @throws NotAnArrayException if this is not an array variable.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public float getFloatElement( int idx ) throws NoConversionException, NotAnArrayException, BadIndexException
 	{
@@ -725,7 +725,7 @@ public class Variable implements IVariable, IFlags
 	* @return @throws NoConversionException if the passed value cannot be converted
 	* to this Variable's native element type.
 	* @throws NotAnArrayException if this is not an array variable.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public int getIntElement( int idx ) throws NoConversionException, NotAnArrayException, BadIndexException
 	{
@@ -740,7 +740,7 @@ public class Variable implements IVariable, IFlags
 	* @return @throws NoConversionException if the passed value cannot be converted
 	* to this Variable's native element type.
 	* @throws NotAnArrayException if this is not an array variable.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public long getLongElement( int idx ) throws NoConversionException, NotAnArrayException, BadIndexException
 	{
@@ -755,7 +755,7 @@ public class Variable implements IVariable, IFlags
 	* @return @throws NoConversionException if the passed value cannot be converted
 	* to this Variable's native element type.
 	* @throws NotAnArrayException if this is not an array variable.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public String getStringElement( int idx ) throws NoConversionException, NotAnArrayException, BadIndexException
 	{
@@ -772,8 +772,8 @@ public class Variable implements IVariable, IFlags
 	* @param v the value
 	* @throws BadArgumentException if the passed value cannot be converted
 	* to this Variable's native element type.
-	* @throws NotAnArrayException if index>0 and this is not an array variable.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws NotAnArrayException if index&gt;0 and this is not an array variable.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public void setElement( int idx, byte v ) throws NotAnArrayException, BadArgumentException, BadIndexException
 	{
@@ -791,7 +791,7 @@ public class Variable implements IVariable, IFlags
 	* idx is anything other than 0,
 	* @throws BadArgumentException if the passed value cannot be converted
 	* to this Variable's native element type.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public void setElement( int idx, double v ) throws NotAnArrayException, BadArgumentException, BadIndexException
 	{
@@ -809,7 +809,7 @@ public class Variable implements IVariable, IFlags
 	* idx is anything other than 0,
 	* @throws BadArgumentException if the passed value cannot be converted
 	* to this Variable's native element type.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public void setElement( int idx, float v ) throws NotAnArrayException, BadArgumentException, BadIndexException
 	{
@@ -827,7 +827,7 @@ public class Variable implements IVariable, IFlags
 	* idx is anything other than 0,
 	* @throws BadArgumentException if the passed value cannot be converted
 	* to this Variable's native element type.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public void setElement( int idx, int v ) throws NotAnArrayException, BadArgumentException, BadIndexException
 	{
@@ -845,7 +845,7 @@ public class Variable implements IVariable, IFlags
 	* idx is anything other than 0,
 	* @throws BadArgumentException if the passed value cannot be converted
 	* to this Variable's native element type.
-	* @throws BadIndexException if index<0 or if index > array length.
+	* @throws BadIndexException if index&lt;0 or if index &gt; array length.
 	*/
 	public void setElement( int idx, long v ) throws NotAnArrayException, BadArgumentException, BadIndexException
 	{

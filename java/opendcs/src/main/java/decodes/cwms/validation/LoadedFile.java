@@ -19,7 +19,7 @@ public class LoadedFile
 	private long lastRead = 0L;
 
 	/**
-	 * @param theFile
+	 * @param path of file
 	 */
 	public LoadedFile(String path)
 	{
