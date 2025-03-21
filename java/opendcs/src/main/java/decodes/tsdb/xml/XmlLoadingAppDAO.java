@@ -13,10 +13,15 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
+
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
 
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
@@ -358,5 +363,80 @@ public class XmlLoadingAppDAO implements LoadingAppDAI
 	public void inTransaction(DaoConsumer consumer) throws Exception
 	{
 		throw new UnsupportedOperationException("XML Database does not support transactions.");
+	}
+
+	@Override
+	public List<String> listComputationsByApplicationId(DataTransaction tx, DbKey appId, boolean enabledOnly)
+			throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'listComputationsByApplicationId'");
+	}
+
+	@Override
+	public ArrayList<CompAppInfo> listComputationApps(DataTransaction tx, boolean usedOnly)
+			throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'listComputationApps'");
+	}
+
+	@Override
+	public Optional<CompAppInfo> getComputationApp(DataTransaction tx, DbKey id) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'getComputationApp'");
+	}
+
+	@Override
+	public Optional<CompAppInfo> getComputationApp(DataTransaction tx, String name) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'getComputationApp'");
+	}
+
+	@Override
+	public Optional<DbKey> lookupAppId(DataTransaction tx, String name) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'lookupAppId'");
+	}
+
+	@Override
+	public void writeComputationApp(DataTransaction tx, CompAppInfo app) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'writeComputationApp'");
+	}
+
+	@Override
+	public void deleteComputationApp(DataTransaction tx, CompAppInfo app) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'deleteComputationApp'");
+	}
+
+	@Override
+	public Optional<TsdbCompLock> obtainCompProcLock(DataTransaction tx, CompAppInfo appInfo, int pid, String host)
+			throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'obtainCompProcLock'");
+	}
+
+	@Override
+	public void releaseCompProcLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'releaseCompProcLock'");
+	}
+
+	@Override
+	public boolean checkCompProcLockBusy(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'checkCompProcLockBusy'");
+	}
+
+	@Override
+	public List<TsdbCompLock> getAllCompProcLocks(DataTransaction tx) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'getAllCompProcLocks'");
+	}
+
+	@Override
+	public Optional<ZonedDateTime> getLastModified(DataTransaction tx, DbKey appId) throws OpenDcsDataException {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'getLastModified'");
 	}
 }

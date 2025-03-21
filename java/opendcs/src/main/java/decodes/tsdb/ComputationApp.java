@@ -119,6 +119,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
+
+import org.opendcs.database.api.DataTransaction;
+
 import java.net.InetAddress;
 
 import opendcs.dai.ComputationDAI;
@@ -340,6 +343,7 @@ public class ComputationApp
 					TimeSeriesDAI timeSeriesDAO = db.getDao(TimeSeriesDAI.class).get();
 					LoadingAppDAI loadingAppDAO = db.getDao(LoadingAppDAI.class).get();
 					TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
+					DataTransaction tx = db.newTransaction();
 					)
 				{
 					long now = System.currentTimeMillis();
@@ -348,8 +352,18 @@ public class ComputationApp
 					if (myLock != null && now - lastLockCheck > 5000L)
 					{
 						setAppStatus("Cmps: " + compsTried + "/" + compErrors);
-						loadingAppDAO.checkCompProcLock(myLock);
-						lastLockCheck = now;
+
+						if (!loadingAppDAO.checkCompProcLockBusy(tx, myLock))
+						{
+							lastLockCheck = now;
+						}
+						else 
+						{
+							
+							Logger.instance().fatal("No Lock - Application exiting: ");
+							shutdownFlag = true;
+							continue;
+						}
 					}
 					
 					if (now - lastCacheMaintenance > 3600 * 2 * 1000L)
@@ -509,11 +523,6 @@ public class ComputationApp
 					}
 				}
 			}
-		}
-		catch(LockBusyException ex)
-		{
-			Logger.instance().fatal("No Lock - Application exiting: " + ex);
-			shutdownFlag = true;
 		}
 		catch(DbIoException ex)
 		{
