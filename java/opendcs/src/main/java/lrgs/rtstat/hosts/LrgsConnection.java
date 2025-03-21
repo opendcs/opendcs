@@ -174,17 +174,18 @@ public final class LrgsConnection
 
     public String toPropertyEntry()
     {
-        return String.format("%d %s%s %d %s",
-                                port, (tls ? "/TLS" : ""), username,
+        return String.format("%d %s %d %s%s",
+                                port, username,
                                 (lastUsed == null ? 0 : lastUsed.getTime()),
-                                password);
+                                password,
+                                (tls ? " TLS" : ""));
     }
 
 
     public static LrgsConnection fromDdsFile(String host, String input)
     {
         final String parts[] = input.split("\\s+");
-        final boolean tls = parts[0].endsWith("/TLS");
+        boolean tls = false;
         final int port = Integer.parseInt(parts[0].replace("/TLS", ""));
         String username = "<set_me>";
         long lastUsed = 0;
@@ -205,9 +206,12 @@ public final class LrgsConnection
         {
             password = parts[3];    
         }
+        if (parts.length > 4 && parts[4].equals("TLS"))
+        {
+            tls = true;
+        }
 
-        return new LrgsConnection(host, port,
-                                  username, password, new Date(lastUsed), tls);
+        return new LrgsConnection(host, port, username, password, new Date(lastUsed), tls);
     }
 
     public static String decryptPassword(LrgsConnection c, String key)
