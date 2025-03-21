@@ -15,7 +15,9 @@ package lrgs.lrgsmain;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.KeyStore;
 import java.io.FileInputStream;
+import java.util.Optional;
 import java.util.Properties;
 
 import lrgs.ldds.PasswordChecker;
@@ -281,6 +283,10 @@ public class LrgsConfig implements PropertiesOwner
     public int hritTimeoutSec = 120;
     public int hritFileMaxAgeSec = 7200;
 
+    /** SSL Settings */
+    public String keyStoreFile = null;
+    public String keyStorePassword = null;
+
     public static final boolean def_noaaportEnabled = false;
     public static final int def_noaaportPort = 18000;
     public static final String def_archiveDir = ".";
@@ -329,6 +335,7 @@ public class LrgsConfig implements PropertiesOwner
     public static final boolean def_enableDcpInterface = false;
     public static final boolean def_storeXmitRecords = false;
     public static final String def_dcpInterfaceXmlConfig = null;
+    public static final String def_keyStoreFile = null;
 
     /**
      * This contains the miscellaneous properties not represented on a custom
