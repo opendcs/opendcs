@@ -22,7 +22,7 @@ import decodes.hdb.HdbFlags;
 "Delta Storage - Total Release Above + Total Release Below + evaporation\n\n" + 
 
 "If inputs Delta Storage or Total Release Above or Total Release Below\n" + 
-"or  ithe Evap do not exist or have been deleted and the\n" + 
+"or  the Evap do not exist or have been deleted and the\n" + 
 "Delta_STORAGE_MISSING or the TOTAL_REL_ABOVE_MISSING or EVAP_MISSING,\n" + 
 "or TOTAL_REL_BELOW_MISSING properties are set to \"fail\" then the\n" +  
 "inflow will not be calculated and/or the inflow will be deleted.\n\n" + 
