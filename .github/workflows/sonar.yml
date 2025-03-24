@@ -41,6 +41,8 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: ./
           merge-multiple: true
+      - name: Build
+        run: ./gradlew build
       - name: Analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
