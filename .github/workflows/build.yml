@@ -15,16 +15,16 @@ jobs:
     name: Build, Test, and Analyze
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.1
+      - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Set up JDK 17
-        uses: actions/setup-java@v4.4.0
+        uses: actions/setup-java@v4.7.0
         with:
           java-version: 17
           distribution: 'temurin'
       - name: Cache SonarCloud packages
-        uses: actions/cache@v4.2.1
+        uses: actions/cache@v4.2.3
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
@@ -48,7 +48,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew sonar
       - name: Upload WAR files
-        uses: actions/upload-artifact@v4.4.3
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: warfile
           path: ./**/build/libs/*.war
