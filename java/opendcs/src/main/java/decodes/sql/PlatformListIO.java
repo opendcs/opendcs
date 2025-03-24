@@ -12,6 +12,7 @@ import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import decodes.db.ValueNotFoundException;
+import decodes.tsdb.NoSuchObjectException;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
@@ -257,7 +258,25 @@ public class PlatformListIO extends SqlDbObjIo
                             DbKey siteId = DbKey.createDbKey(rs, 4);
                             if (!rs.wasNull())
                             {
-                                p.setSite(p.getDatabase().siteList.getSiteById(siteId));
+                                // If site was previously loaded, use it.
+                                Site s = p.getDatabase().siteList.getSiteById(siteId);
+                                if (s == null)
+                                {
+                                    try (SiteDAI dao = _dbio.makeSiteDAO())
+                                    {
+                                        s = dao.getSiteById(siteId);
+                                    }
+                                    catch(DbIoException ex)
+                                    {
+                                        throw new DatabaseException(ex.getMessage(), ex);
+                                    }
+                                    catch(NoSuchObjectException ex)
+                                    {
+                                        log.warn("Platform {} id={} has invalid siteID {}",
+                                                p.getDisplayName(), p.getKey(), siteId);
+                                    }
+                                }
+                                p.setSite(s);
                             }
 
                             DbKey configId = DbKey.createDbKey(rs, 5);
