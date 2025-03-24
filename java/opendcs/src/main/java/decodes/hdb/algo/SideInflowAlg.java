@@ -28,10 +28,10 @@ import decodes.hdb.HdbFlags;
 "inflow will not be calculated and/or the inflow will be deleted.\n\n" + 
 
 "If all of the inputs do not exist because of a delete the inflow will\n" +  
-"be deleted if the output exists regardless of the property settings.\n\n" + 
+"be deleted if the output exists regardless of the property settings.")
 
-"This algorithm written by M. Bogner, August 2008\n" + 
-"Modified by M. Bogner May 2009 to add additional delete logic and version control")
+// This algorithm written by M. Bogner, August 2008
+// Modified by M. Bogner May 2009 to add additional delete logic and version control
 public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
@@ -59,7 +59,7 @@ public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	public String delta_storage_missing = "ignore";
 	@PropertySpec(value = "ignore") 
 	public String evap_missing = "ignore";
-	@PropertySpec(value = "") 
+		@PropertySpec(value = "") 
     public String validation_flag = "";
 
 	// Allow javac to generate a no-args constructor.

@@ -35,10 +35,10 @@ import java.lang.Math;
 
    "Required Inputs: stage (observed gauge height)\n\n" + 
 
-   "Output variables: flow (Calculated as determined above)\n\n" + 
+   "Output variables: flow (Calculated as determined above)")  
 
-   "Programmed by A. Gilmore July 2008;\n" + 
-   "modified by  M. Bogner  April 2009 to calculate for widths &lt;= 9.0;")
+   // Programmed by A. Gilmore July 2008
+   // modified by  M. Bogner  April 2009 to calculate for widths &lt;= 9.0
 public class ParshallFlume
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
