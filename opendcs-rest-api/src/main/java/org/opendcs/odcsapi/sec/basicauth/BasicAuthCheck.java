@@ -61,7 +61,7 @@ public final class BasicAuthCheck extends AuthorizationCheck
 	}
 
 	@Override
-	public boolean supports(String type, ContainerRequestContext ignored, HttpServletRequest servletContext)
+	public boolean supports(String type, ContainerRequestContext ignored, ServletContext servletContext)
 	{
 		DataSource dataSource = (DataSource) servletContext.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
 		OpenDcsDatabase db = OpenDcsDatabaseFactory.createDb(dataSource);

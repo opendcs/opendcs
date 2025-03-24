@@ -44,7 +44,7 @@ public abstract class AuthorizationCheck
 	public abstract SecurityContext authorize(ContainerRequestContext requestContext,
 			HttpServletRequest httpServletRequest, ServletContext servletContext);
 
-	public abstract boolean supports(String type, ContainerRequestContext requestContext, HttpServletRequest servletRequest);
+	public abstract boolean supports(String type, ContainerRequestContext requestContext, ServletContext servletContext);
 
 
 	protected final ApiAuthorizationDAI getAuthDao(ServletContext servletContext)

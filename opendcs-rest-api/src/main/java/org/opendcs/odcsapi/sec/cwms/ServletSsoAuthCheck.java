@@ -62,7 +62,7 @@ public final class ServletSsoAuthCheck extends AuthorizationCheck
 	}
 
 	@Override
-	public boolean supports(String type, ContainerRequestContext requestContext, HttpServletRequest ignored)
+	public boolean supports(String type, ContainerRequestContext requestContext, ServletContext ignored)
 	{
 		return "sso".equals(type) && hasSessionCookie(requestContext);
 	}
