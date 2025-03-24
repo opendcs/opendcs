@@ -549,7 +549,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         )
         {
             int privLevel =
-                dbOfficeId == null ? 0 :
+                dbOfficePrivilege == null ? 0 :
                 dbOfficePrivilege.toUpperCase().contains("MGR") ? 1 :
                 dbOfficePrivilege.toUpperCase().contains("PROC") ? 2 : 3;
 
