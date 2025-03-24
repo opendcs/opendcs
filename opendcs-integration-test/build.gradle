@@ -206,7 +206,7 @@ tasks.register('integrationTestReportCWMS', JacocoReport) {
     dependsOn tasks.named('integrationTestCWMS')
     additionalSourceDirs.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
     executionData = files(
-            layout.buildDirectory.dir("jacoco/test.exec")
+            layout.buildDirectory.dir("jacoco/integrationTestCWMS.exec")
     )
     classDirectories.setFrom(files(
             project(':opendcs-rest-api').sourceSets.main.output,
@@ -222,7 +222,7 @@ tasks.register('integrationTestReportOpenTSDB', JacocoReport) {
     dependsOn tasks.named('integrationTestOpenTSDB')
     additionalSourceDirs.setFrom(files(project(':opendcs-rest-api').sourceSets.main.allSource.srcDirs))
     executionData = files(
-            layout.buildDirectory.dir("jacoco/test.exec")
+            layout.buildDirectory.dir("jacoco/integrationTestOpenTSDB.exec")
     )
     classDirectories.setFrom(files(
             project(':opendcs-rest-api').sourceSets.main.output,
