@@ -18,8 +18,6 @@ jobs:
         uses: gradle/gradle-build-action@v3.5.0
       - name: Build
         run: ./gradlew build
-      - name: Bundle tarballs
-        run: ./gradlew bundle
       - name: Attach OpenDCS REST API WAR file
         run: |
           gh release upload ${{ github.event.release.tag_name }} opendcs-rest-api/build/libs/opendcs-rest-api-${{ github.event.release.tag_name }}.war --repo ${{ github.repository }}
