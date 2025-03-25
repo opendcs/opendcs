@@ -12,62 +12,52 @@ import decodes.tsdb.VarFlags;
 // surrogate keys where changed to a DbKey object instead of ject a long/
 import decodes.sql.DbKey;
 import decodes.tsdb.algo.AWAlgoType;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
 
-//AW:IMPORTS
 import java.lang.Math;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-   Computes flow through a Parshall Flume according to the 
-  width property value assigned to the calculation using this
-  algorithm and the logic:
+@Algorithm(description = "Computes flow through a Parshall Flume according to the\n" + 
+   "width property value assigned to the calculation using this\n" + 
+   "algorithm and the logic:\n\n" + 
 
-   If width is greater than 9.0 then:
-   Area = 3.6875 * width + 2.5
-   Flow = Area * (stage ^ 1.6)
+   "If width is greater than 9.0 then:\n" + 
+   "Area = 3.6875 * width + 2.5\n" + 
+   "Flow = Area * (stage ^ 1.6)\n\n" + 
 
-   If width is less than or equal to 9.0 then:
-   Flow = 4 * width * stage ^ (1.522 * (width ^ 0.026)) 
+   "If width is less than or equal to 9.0 then:\n" + 
+   "Flow = 4 * width * stage ^ (1.522 * (width ^ 0.026))\n\n" +  
 
-   Required Properties:  width (ie width=7.0 set in computation property)
+   "Required Properties:  width (ie width=7.0 set in computation property)\n\n" + 
 
-   Required Inputs: stage (observed gauge height)
+   "Required Inputs: stage (observed gauge height)\n\n" + 
 
-   Output variables: flow (Calculated as determined above)
+   "Output variables: flow (Calculated as determined above)")  
 
-   Programmed by A. Gilmore July 2008;
-   modified by  M. Bogner  April 2009 to calculate for widths &lt;= 9.0;
-
- */
-//AW:JAVADOC_END
+   // Programmed by A. Gilmore July 2008
+   // modified by  M. Bogner  April 2009 to calculate for widths &lt;= 9.0
 public class ParshallFlume
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double stage;	//AW:TYPECODE=i
-	String _inputNames[] = { "stage" };
-//AW:INPUTS_END
+	@Input	
+	public double stage;
 
-//AW:LOCALVARS
 	double area;
 // the algorithm version moded by M. Bogner March 2013 for the CP 5.3 project where
 // the surrogate keys were changed to a DbKey object
 	String alg_ver = "1.0.03";
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable flow = new NamedVariable("flow", 0);
-	String _outputNames[] = { "flow" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "25") 
 	public double width = 25;
+	@PropertySpec(value = "") 
 	public String validation_flag = "";
-	String _propertyNames[] = { "width", "validation_flag" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -77,13 +67,8 @@ public class ParshallFlume
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
 		area = 3.6875 * width + 2.5;
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -92,8 +77,6 @@ public class ParshallFlume
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -109,7 +92,6 @@ public class ParshallFlume
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		double result;
 		double algChange;
 		if (!isMissing(stage))
@@ -131,7 +113,6 @@ public class ParshallFlume
 		{
 			deleteOutput(flow);
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -140,32 +121,5 @@ public class ParshallFlume
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
