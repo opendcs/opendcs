@@ -60,7 +60,7 @@ public class ManageDatabaseApp
                 });
             }
             mm.migrate();
-            console.printf("An initial admin user that can import initial data and perform initial operations with the GUIs.%s",
+            console.printf("A default admin username will be created to allow initial data import and GUI configuration.%s",
                            System.lineSeparator());
             String user = console.readLine("username:");
 
