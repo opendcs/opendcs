@@ -34,33 +34,25 @@ import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
 //import decodes.tsdb.DbCompConfig;
 import decodes.hdb.dbutils.RBASEUtils;
-//AW:IMPORTS_END
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-PowerToEnergyALg - calculates Energy base on power readings converted
-to hourly Megawatt rates
-
-Parameters:
-
-partial_calculations: boolean: default false: if current period partial calculations will be performed
-min_values_required: number: default 1: the minimum number of observations required to perform computation
-min_values_desired: number: default 0: the minimum number of observations desired to perform computation
-validation_flag: string: default empty: the validation flag value to be sent to the database 
-
- */
-
-//AW:JAVADOC_END
+@Algorithm(description = "PowerToEnergyALg - calculates Energy base on power readings converted\n" +
+"to hourly Megawatt rates\n\n" +
+"Parameters:\n\n" +
+"partial_calculations: boolean: default false: if current period partial calculations will be performed\n" +
+"min_values_required: number: default 1: the minimum number of observations required to perform computation\n" +
+"min_values_desired: number: default 0: the minimum number of observations desired to perform computation\n" +
+"validation_flag: string: default empty: the validation flag value to be sent to the database\n")
 public class PowerToEnergyAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	@Input
+	public double input;
 
-//AW:LOCALVARS
-	// Enter any local class variables needed by the algorithm.
+// Enter any local class variables needed by the algorithm.
 // Version 1.0.04 resulted from mod for CP 3.0 Upgrade project by M. Bogner Aug 2012
 // Version 1.0.05 resulted from mod for CP 5.3 Upgrade project by M. Bogner March 2013
         String alg_ver = "1.0.05";
@@ -76,21 +68,17 @@ public class PowerToEnergyAlg
         long mvd_count;
 
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "false") 
 	public boolean partial_calculations = false;
+	@PropertySpec(value = "1") 
 	public long min_values_required = 1;
+	@PropertySpec(value = "0") 
 	public long min_values_desired = 0;
-        public String validation_flag = "";
-	String _propertyNames[] = { "partial_calculations", "min_values_required", "min_values_desired",
-	"validation_flag" };
-//AW:PROPERTIES_END
+	@PropertySpec(value = "") 
+    public String validation_flag = "";
 
 	// Allow javac to generate a no-args constructor.
 
@@ -100,14 +88,8 @@ public class PowerToEnergyAlg
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -116,7 +98,6 @@ public class PowerToEnergyAlg
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -128,7 +109,6 @@ public class PowerToEnergyAlg
 		conn = null;
 		date_out = null;
 		tally = 0.0;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -144,14 +124,12 @@ public class PowerToEnergyAlg
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
 		if (!isMissing(input))
 		{
 			tally += input;
 			total_count++;
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -159,7 +137,6 @@ public class PowerToEnergyAlg
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
@@ -365,31 +342,5 @@ public class PowerToEnergyAlg
 		{
 		   deleteOutput(output);
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
