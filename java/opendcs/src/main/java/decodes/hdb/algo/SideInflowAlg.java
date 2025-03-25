@@ -59,8 +59,8 @@ public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	public String delta_storage_missing = "ignore";
 	@PropertySpec(value = "ignore") 
 	public String evap_missing = "ignore";
-		@PropertySpec(value = "") 
-    public String validation_flag = "";
+	@PropertySpec(value = "") 
+	public String validation_flag = "";
 
 	// Allow javac to generate a no-args constructor.
 
