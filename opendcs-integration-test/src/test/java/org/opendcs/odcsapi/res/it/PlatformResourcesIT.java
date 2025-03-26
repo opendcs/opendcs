@@ -31,7 +31,6 @@ import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -93,13 +92,13 @@ final class PlatformResourcesIT extends BaseIT
 
 		configId = response.body().jsonPath().getLong("configId");
 
-		String siteJson = getJsonFromResource("platform_insert_data.json");
-		assertNotNull(siteJson);
+		String platformInsert = getJsonFromResource("platform_insert_data.json");
+		assertNotNull(platformInsert);
 
 		siteId = storeSite("platform_site_data.json");
 		assertNotNull(siteId);
 
-		String platformJson = siteJson.replace("\"[SITE_ID]\"", siteId.toString());
+		String platformJson = platformInsert.replace("\"[SITE_ID]\"", siteId.toString());
 		platformJson = platformJson.replace("\"[CONFIG_ID]\"", configId.toString());
 
 		response = given()
@@ -332,11 +331,7 @@ final class PlatformResourcesIT extends BaseIT
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
 		;
-	}
 
-	@AfterAll
-	static void tearDownAll()
-	{
 		tearDownSite(siteId);
 
 		logout(sessionFilter);
@@ -456,6 +451,23 @@ final class PlatformResourcesIT extends BaseIT
 		assertEquals(expected.getString("designator"), actual.getString("designator"));
 		assertEquals(expected.getString("production"), actual.getString("production"));
 		assertEquals(expected.getString("properties"), actual.getString("properties"));
+		assertEquals(expected.getString("transportMedia.mediumType"), actual.getString("transportMedia.mediumType"));
+		assertEquals(expected.getString("transportMedia.mediumId"), actual.getString("transportMedia.mediumId"));
+		assertEquals(expected.getString("transportMedia.scriptName"), actual.getString("transportMedia.scriptName"));
+		assertEquals(expected.getString("transportMedia.channelNum"), actual.getString("transportMedia.channelNum"));
+		assertEquals(expected.getString("transportMedia.assignedTime"), actual.getString("transportMedia.assignedTime"));
+		assertEquals(expected.getString("transportMedia.transportWindow"), actual.getString("transportMedia.transportWindow"));
+		assertEquals(expected.getString("transportMedia.transportInterval"), actual.getString("transportMedia.transportInterval"));
+		assertEquals(expected.getString("transportMedia.timeAdjustment"), actual.getString("transportMedia.timeAdjustment"));
+		assertEquals(expected.getString("transportMedia.timezone"), actual.getString("transportMedia.timezone"));
+		assertEquals(expected.getString("transportMedia.loggerType"), actual.getString("transportMedia.loggerType"));
+		assertEquals(expected.getString("transportMedia.baud"), actual.getString("transportMedia.baud"));
+		assertEquals(expected.getString("transportMedia.stopBits"), actual.getString("transportMedia.stopBits"));
+		assertEquals(expected.getString("transportMedia.dataBits"), actual.getString("transportMedia.dataBits"));
+		assertEquals(expected.getString("transportMedia.parity"), actual.getString("transportMedia.parity"));
+		assertEquals(expected.getString("transportMedia.doLogin"), actual.getString("transportMedia.doLogin"));
+		assertEquals(expected.getString("transportMedia.username"), actual.getString("transportMedia.username"));
+		assertEquals(expected.getString("transportMedia.password"), actual.getString("transportMedia.password"));
 	}
 
 	@TestTemplate

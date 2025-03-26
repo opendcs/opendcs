@@ -1,5 +1,5 @@
 [versions]
-opendcs = "7.5.1-RC02"
+opendcs = "7.5.1-RC03"
 
 jetty-jsp = "9.2.30.v20200428"
 servlet-api = "4.0.1" #Updating this further will require a change to the jakarta namespace.

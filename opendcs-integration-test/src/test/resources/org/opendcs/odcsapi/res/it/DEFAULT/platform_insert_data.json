@@ -12,7 +12,7 @@
   "platformSensors" : [ ],
   "transportMedia" : [ {
     "mediumType" : "goes",
-    "mediumId" : "Ident",
+    "mediumId" : "IDENT",
     "scriptName" : "Script",
     "channelNum" : 1,
     "assignedTime" : 123456789,
@@ -23,7 +23,7 @@
     "loggerType" : null,
     "baud" : 9600,
     "stopBits" : 1,
-    "parity" : "None",
+    "parity" : "N",
     "dataBits" : 8,
     "doLogin" : false,
     "username" : "User",

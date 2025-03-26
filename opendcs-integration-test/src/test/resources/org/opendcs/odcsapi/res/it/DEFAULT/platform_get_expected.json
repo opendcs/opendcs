@@ -10,5 +10,23 @@
   "production": true,
   "properties": {},
   "platformSensors": [],
-  "transportMedia": []
+  "transportMedia": [{
+    "mediumType" : "goes",
+    "mediumId" : "IDENT",
+    "scriptName" : "Script",
+    "channelNum" : 1,
+    "assignedTime" : 123456789,
+    "transportWindow" : 2,
+    "transportInterval" : 1,
+    "timeAdjustment" : 0,
+    "timezone" : "UTC",
+    "loggerType" : null,
+    "baud" : 9600,
+    "stopBits" : 1,
+    "parity" : "N",
+    "dataBits" : 8,
+    "doLogin" : false,
+    "username" : "User",
+    "password" : "Pass"
+  }]
 }
