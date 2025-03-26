@@ -15,20 +15,32 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * @author mmaloney
  */
+@Schema(description = "Represents an item in the network list including transport ID, platform name, and description.")
 public final class ApiNetListItem
 {
-	/** The Transport Medium ID (eg DCP Address). */
+	/**
+	 * The Transport Medium ID.
+	 */
+	@Schema(description = "The String representation of the Transport Medium ID.", example = "55785")
 	public String transportId;
 
-	/** The name of the platform (site name). */
+	/**
+	 * The name of the platform (site name).
+	 */
+	@Schema(description = "The name of the platform (site name).", example = "AGNO")
 	private String platformName = null;
 
-	/** A description */
+	/**
+	 * A description
+	 */
+	@Schema(description = "A description of the network list item.")
 	private String description = null;
-	
+
 	/**
 	 * Default ctor required for deserializing data in POST.
 	 */
@@ -73,7 +85,7 @@ public final class ApiNetListItem
 	{
 		this.description = description;
 	}
-	
+
 	public static ApiNetListItem fromString(String searchStr)
 	{
 			String addr = "";
@@ -83,7 +95,7 @@ public final class ApiNetListItem
 	    	int colon = searchStr.indexOf(':');
 	    	// no colon means line just has the address.
 	    	addr = colon > 0 ? searchStr.substring(0, colon) : searchStr;
-	    	
+
 	    	if (colon <= 0 || searchStr.length() <= colon+1)
 	    		return new ApiNetListItem(addr, name, description);
 
@@ -101,7 +113,7 @@ public final class ApiNetListItem
 
 			name = searchStr.substring(0, ws);
 			searchStr = searchStr.substring(ws).trim();
-		    
+
 			len = searchStr.length();
 			if (len > 0)
 				description = searchStr;

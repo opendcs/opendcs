@@ -17,17 +17,28 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a log message with a timestamp, priority level, and text content.")
 public final class ApiLogMessage
 {
+	@Schema(description = "The timestamp when the log message was created.", example = "2025-01-01T12:00:00.605[UTC]")
 	private Date timeStamp = new Date();
+
+	@Schema(description = "The priority level of the log message, e.g., INFO, WARN, or ERROR. Corresponds to Logger levels.",
+			example = "INFO")
 	private String priority = null;
+
+	@Schema(description = "The text content of the log message.", example = "System started successfully.")
 	private String text = null;
-	
-	/** No-args ctor for JSON */
+
+	/**
+	 * No-args ctor for JSON
+	 */
 	public ApiLogMessage()
 	{
 	}
-	
+
 	public ApiLogMessage(Date timeStamp, String priority, String text)
 	{
 		super();
@@ -40,22 +51,27 @@ public final class ApiLogMessage
 	{
 		return timeStamp;
 	}
+
 	public void setTimeStamp(Date timeStamp)
 	{
 		this.timeStamp = timeStamp;
 	}
+
 	public String getPriority()
 	{
 		return priority;
 	}
+
 	public void setPriority(String priority)
 	{
 		this.priority = priority;
 	}
+
 	public String getText()
 	{
 		return text;
 	}
+
 	public void setText(String text)
 	{
 		this.text = text;

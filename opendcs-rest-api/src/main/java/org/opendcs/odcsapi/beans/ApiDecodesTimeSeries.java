@@ -15,47 +15,65 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Schema(description = "Represents a decoded time series, including sensor details, units, and associated time series values.")
 public final class ApiDecodesTimeSeries
 {
+	@Schema(description = "The unique sensor number associated with this time series.", example = "20")
 	private int sensorNum = 0;
+
+	@Schema(description = "The name of the sensor associated with this time series.", example = "Stage")
 	private String sensorName = null;
+
+	@Schema(description = "The unit of measurement for this time series.", example = "m")
 	private String units = null;
+
+	@Schema(description = "List of time series values associated with this sensor.")
 	private List<ApiDecodesTSValue> values = new ArrayList<>();
+
 	public int getSensorNum()
 	{
 		return sensorNum;
 	}
+
 	public void setSensorNum(int sensorNum)
 	{
 		this.sensorNum = sensorNum;
 	}
+
 	public List<ApiDecodesTSValue> getValues()
 	{
 		return values;
 	}
+
 	public void setValues(List<ApiDecodesTSValue> values)
 	{
 		this.values = values;
 	}
+
 	public String getSensorName()
 	{
 		return sensorName;
 	}
+
 	public void setSensorName(String sensorName)
 	{
 		this.sensorName = sensorName;
 	}
+
 	public String getUnits()
 	{
 		return units;
 	}
+
 	public void setUnits(String units)
 	{
 		this.units = units;
 	}
-	
+
 
 }

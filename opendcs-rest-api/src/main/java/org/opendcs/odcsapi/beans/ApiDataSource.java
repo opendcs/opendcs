@@ -19,15 +19,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a data source including its ID, name, type, properties, usage information, and group membership details.")
 public final class ApiDataSource
 {
+	@Schema(description = "The unique numeric identifier of the data source.", example = "10")
 	private Long dataSourceId = null;
+	@Schema(description = "The name of the data source.", example = "USGS-Web")
 	private String name = null;
+	@Schema(description = "The type of the data source.", example = "USGS-backupgroup")
 	private String type = null;
+	@Schema(description = "The count of entities using this data source.", example = "3")
 	private int usedBy = 0;
+	@Schema(description = "Configuration properties associated with the data source.")
 	private Properties props = null;
+	@Schema(description = "A list of group memberships associated with the data source.")
 	private List<ApiDataSourceGroupMember> groupMembers = new ArrayList<>();
-	
+
 	public Long getDataSourceId()
 	{
 		return dataSourceId;

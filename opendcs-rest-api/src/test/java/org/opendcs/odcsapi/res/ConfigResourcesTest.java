@@ -76,7 +76,7 @@ final class ConfigResourcesTest
 		sensorConfig.absoluteMax = 100.0;
 		sensorConfig.absoluteMin = 0.0;
 		sensorConfig.recordingInterval = 15;
-		sensorConfig.recordingMode = 'C';
+		sensorConfig.recordingMode = 'V';
 		sensorConfig.sensorName = "Test sensor";
 		sensorConfig.setUsgsStatCode("00000");
 		config.addSensor(sensorConfig);
@@ -93,7 +93,7 @@ final class ConfigResourcesTest
 		assertEquals(config.getSensorVec().get(0).absoluteMax, apiConfig.getConfigSensors().get(0).getAbsoluteMax());
 		assertEquals(config.getSensorVec().get(0).absoluteMin, apiConfig.getConfigSensors().get(0).getAbsoluteMin());
 		assertEquals(config.getSensorVec().get(0).recordingInterval, apiConfig.getConfigSensors().get(0).getRecordingInterval());
-		assertEquals(config.getSensorVec().get(0).recordingMode, apiConfig.getConfigSensors().get(0).getRecordingMode());
+		assertEquals(config.getSensorVec().get(0).recordingMode, apiConfig.getConfigSensors().get(0).getRecordingMode().getCode());
 		assertEquals(config.getSensorVec().get(0).sensorName, apiConfig.getConfigSensors().get(0).getSensorName());
 	}
 
@@ -130,7 +130,7 @@ final class ConfigResourcesTest
 			assertEquals(apiConfig.getConfigSensors().get(0).getAbsoluteMax(), sensorConfig.absoluteMax);
 			assertEquals(apiConfig.getConfigSensors().get(0).getAbsoluteMin(), sensorConfig.absoluteMin);
 			assertEquals(apiConfig.getConfigSensors().get(0).getRecordingInterval(), sensorConfig.recordingInterval);
-			assertEquals(apiConfig.getConfigSensors().get(0).getRecordingMode(), sensorConfig.recordingMode);
+			assertEquals(apiConfig.getConfigSensors().get(0).getRecordingMode().getCode(), sensorConfig.recordingMode);
 			assertEquals(apiConfig.getConfigSensors().get(0).getSensorName(), sensorConfig.sensorName);
 			assertEquals(apiConfig.getConfigSensors().get(0).getSensorNumber(), sensorConfig.sensorNumber);
 			assertEquals(apiConfig.getConfigSensors().get(0).getUsgsStatCode(), sensorConfig.getUsgsStatCode());

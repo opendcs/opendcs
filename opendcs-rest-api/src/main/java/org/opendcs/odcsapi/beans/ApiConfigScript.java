@@ -18,20 +18,36 @@ package org.opendcs.odcsapi.beans;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a configuration script, including name, data order, header type, sensors, and format statements.")
 public final class ApiConfigScript
 {
+	@Schema(description = "The name of the configuration script.", example = "ST")
 	private String name = null;
-	
-	/** U=undefined, A=ascending, D=descending */
-	private char dataOrder = 'U';
-	
+
+	/**
+	 * U=undefined, A=ascending, D=descending
+	 */
+	@JsonProperty("dataOrder")
+	@Schema(description = "Defines the data order. Valid values from the DataOrder enum are: U (undefined), A (ascending), D (descending).",
+			example = "D")
+	private DataOrder dataOrder = DataOrder.UNDEFINED;
+
+	@Schema(description = "Specifies the type of header used in the configuration script.", example = "decodes:goes")
 	private String headerType = null;
-	
+
+	@Schema(description = "A list of sensors associated with the configuration script.",
+			implementation = ApiConfigScriptSensor.class)
 	private List<ApiConfigScriptSensor> scriptSensors =
-		new ArrayList<>();
-	
+			new ArrayList<>();
+
+	@Schema(description = "A list of format statements used by the configuration script.",
+			implementation = ApiScriptFormatStatement.class)
 	private List<ApiScriptFormatStatement> formatStatements =
-		new ArrayList<>();
+			new ArrayList<>();
 
 	public String getName()
 	{
@@ -43,12 +59,12 @@ public final class ApiConfigScript
 		this.name = name;
 	}
 
-	public char getDataOrder()
+	public DataOrder getDataOrder()
 	{
 		return dataOrder;
 	}
 
-	public void setDataOrder(char dataOrder)
+	public void setDataOrder(DataOrder dataOrder)
 	{
 		this.dataOrder = dataOrder;
 	}
@@ -82,5 +98,27 @@ public final class ApiConfigScript
 	{
 		this.formatStatements = formatStatements;
 	}
-	
+
+	public enum DataOrder
+	{
+		@JsonProperty("U")
+		UNDEFINED('U'),
+		@JsonProperty("A")
+		ASCENDING('A'),
+		@JsonProperty("D")
+		DESCENDING('D');
+
+		private final char code;
+
+		DataOrder(char code)
+		{
+			this.code = code;
+		}
+
+		@JsonValue
+		public char getCode()
+		{
+			return code;
+		}
+	}
 }

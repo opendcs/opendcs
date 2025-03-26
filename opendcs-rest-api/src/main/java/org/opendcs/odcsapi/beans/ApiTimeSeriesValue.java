@@ -17,10 +17,18 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a time series value, including timestamp, value, and flags.")
 public final class ApiTimeSeriesValue
 {
+	@Schema(description = "The time the value was sampled.", example = "2023-10-15T12:34:56Z")
 	private Date sampleTime = null;
+
+	@Schema(description = "The recorded value.", example = "123.45")
 	private double value = 0.0;
+
+	@Schema(description = "Flags associated with the value, encoded as a long integer.", example = "1")
 	private long flags = 0;
 
 	public ApiTimeSeriesValue()

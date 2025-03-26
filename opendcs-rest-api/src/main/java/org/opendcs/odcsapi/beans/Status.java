@@ -17,9 +17,13 @@ package org.opendcs.odcsapi.beans;
 
 import java.io.Serializable;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a status message response for API operations.")
 public final class Status implements Serializable
 {
 	private static final long serialVersionUID = -9130603850117689481L;
+	@Schema(description = "The status message providing additional details about the API operation.")
 	private String message;
 
 	public Status()

@@ -17,6 +17,7 @@ package org.opendcs.odcsapi.res;
 
 import javax.ws.rs.ApplicationPath;
 
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,5 +31,7 @@ public final class RestServices extends ResourceConfig
 	{
 		LOGGER.debug("Initializing odcsapi RestServices.");
 		packages("org.opendcs.odcsapi");
+
+		register(OpenApiResource.class);
 	}
 }

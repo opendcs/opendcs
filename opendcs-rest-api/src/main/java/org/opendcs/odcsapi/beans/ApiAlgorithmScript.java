@@ -15,6 +15,9 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a script associated with an algorithm, including its type and source text.")
 public final class ApiAlgorithmScript
 {
 	public static final char TYPE_INIT = 'I';
@@ -23,23 +26,31 @@ public final class ApiAlgorithmScript
 	public static final char TYPE_AFTER = 'A';
 	public static final char TYPE_TOOLTIP = 'P';
 	public static final char TYPE_UNDEFINED = 'U';
-	
+
+	@Schema(description = "The script's source code in text form.")
 	private String text = "";
+
+	@Schema(description = "The type of the script, represented by a character code. "
+				+ "Valid types are: I (init), B (before), T (timeslice), A (after), P (tooltip), U (undefined).",
+			example = "T")
 	private char scriptType = TYPE_UNDEFINED;
-	
-	
+
+
 	public String getText()
 	{
 		return text;
 	}
+
 	public void setText(String text)
 	{
 		this.text = text;
 	}
+
 	public char getScriptType()
 	{
 		return scriptType;
 	}
+
 	public void setScriptType(char scriptType)
 	{
 		this.scriptType = scriptType;

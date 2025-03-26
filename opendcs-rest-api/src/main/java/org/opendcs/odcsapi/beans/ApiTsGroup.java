@@ -18,30 +18,50 @@ package org.opendcs.odcsapi.beans;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a time series group with metadata like group type, description, and associated data.")
 public final class ApiTsGroup
 {
+	@Schema(description = "The unique numeric identifier of the time series group.", example = "1001")
 	private Long groupId = null;
+
+	@Schema(description = "The name of the time series group.", example = "Flow Data Group")
 	private String groupName = null;
+
+	@Schema(description = "The type of the group", example = "basin")
 	private String groupType = null;
+
+	@Schema(description = "A brief description of the group.", example = "This group contains flow data for river sites.")
 	private String description = null;
-	
+
+	@Schema(description = "List of time series identifiers associated with this group.")
 	private List<ApiTimeSeriesIdentifier> tsIds = new ArrayList<>();
+
+	@Schema(description = "List of groups that are included in this group.")
 	private List<ApiTsGroupRef> includeGroups = new ArrayList<>();
+
+	@Schema(description = "List of groups excluded from this group.")
 	private List<ApiTsGroupRef> excludeGroups = new ArrayList<>();
+
+	@Schema(description = "List of groups that intersect with this group.")
 	private List<ApiTsGroupRef> intersectGroups = new ArrayList<>();
-	
+
 	// list of name=value pairs, where name is one of BaseLocation, SubLocation,
 	// BaseParam, SubParam, ParamType, Interval, Duration, Version, BaseVersion, SubVersion
 	// Interval, Duration, Version
 	// NOTE: Location and Param are handled by groupSites, and groupDataTypes below
+	@Schema(description = "List of name=value pairs representing group attributes: BaseLocation, SubLocation," +
+			" BaseParam, SubParam, ParamType, Interval, Duration, Version, BaseVersion, SubVersion," +
+			" Interval, Duration, or Version.")
 	private List<String> groupAttrs = new ArrayList<>();
-	
-	// Explicit Location (aka Site) specs:
+
+	@Schema(description = "Explicit location (site) specifications for the group.")
 	private List<ApiSiteRef> groupSites = new ArrayList<>();
-	
-	// Explicit DataType (aka Param) specs:
+
+	@Schema(description = "Explicit data type (parameter) specifications for the group.")
 	private List<ApiDataType> groupDataTypes = new ArrayList<>();
-	
+
 	public Long getGroupId()
 	{
 		return groupId;

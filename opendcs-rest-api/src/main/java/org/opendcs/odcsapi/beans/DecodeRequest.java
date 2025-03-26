@@ -15,29 +15,38 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * Used for POST decode payload. Contains the ApiRawMessage and the ApiPlatformConfig
  * to use for decoding.
- * @author mmaloney
  *
+ * @author mmaloney
  */
+@Schema(description = "DTO for decoding requests. Contains raw message data and platform configuration used for decoding.")
 public final class DecodeRequest
 {
+	@Schema(description = "The raw message to decode.")
 	ApiRawMessage rawmsg = null;
+
+	@Schema(description = "The platform configuration to use during decoding.")
 	ApiPlatformConfig config = null;
-	
+
 	public ApiPlatformConfig getConfig()
 	{
 		return config;
 	}
+
 	public void setConfig(ApiPlatformConfig config)
 	{
 		this.config = config;
 	}
+
 	public ApiRawMessage getRawmsg()
 	{
 		return rawmsg;
 	}
+
 	public void setRawmsg(ApiRawMessage rawmsg)
 	{
 		this.rawmsg = rawmsg;

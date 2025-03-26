@@ -17,63 +17,94 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Properties;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a platform sensor, including configuration details like limits, site association, and custom properties.")
 public final class ApiPlatformSensor
 {
+	@Schema(description = "The unique sensor number for this platform sensor.", example = "5")
 	private int sensorNum = 0;
-	
-	/** Null means this sensor is at same site as Platform */
+
+	/**
+	 * Null means this sensor is at same site as Platform
+	 */
+	@Schema(description = "The unique numeric identifier of the site where this sensor is located. "
+			+ "Null indicates it's at the same site as the platform.", example = "12345")
 	private Long actualSiteId = null;
-	
-	/** Null means no limit is set */
+
+	/**
+	 * Null means no limit is set
+	 */
+	@Schema(description = "The minimum allowed value for this sensor. Null means no minimum limit is set.",
+			example = "0.0")
 	private Double min = null;
+
+	@Schema(description = "The maximum allowed value for this sensor. Null means no maximum limit is set.",
+			example = "100.0")
 	private Double max = null;
 
+	@Schema(description = "The USGS Data Descriptor number associated with this sensor. "
+			+ "Null or 0 indicates it's not defined.", example = "10")
 	private Integer usgsDdno = null;
+
+	@Schema(description = "Any additional properties associated with this sensor, stored as key-value pairs.")
 	private Properties sensorProps = new Properties();
+
 	public int getSensorNum()
 	{
 		return sensorNum;
 	}
+
 	public void setSensorNum(int sensorNum)
 	{
 		this.sensorNum = sensorNum;
 	}
+
 	public Long getActualSiteId()
 	{
 		return actualSiteId;
 	}
+
 	public void setActualSiteId(Long actualSiteId)
 	{
 		this.actualSiteId = actualSiteId;
 	}
+
 	public Double getMin()
 	{
 		return min;
 	}
+
 	public void setMin(Double min)
 	{
 		this.min = min;
 	}
+
 	public Double getMax()
 	{
 		return max;
 	}
+
 	public void setMax(Double max)
 	{
 		this.max = max;
 	}
+
 	public Integer getUsgsDdno()
 	{
 		return usgsDdno;
 	}
+
 	public void setUsgsDdno(Integer usgsDdno)
 	{
 		this.usgsDdno = usgsDdno;
 	}
+
 	public Properties getSensorProps()
 	{
 		return sensorProps;
 	}
+
 	public void setSensorProps(Properties sensorProps)
 	{
 		this.sensorProps = sensorProps;

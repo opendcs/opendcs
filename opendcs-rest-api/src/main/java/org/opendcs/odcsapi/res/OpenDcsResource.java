@@ -22,11 +22,23 @@ import javax.ws.rs.core.Context;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.tsdb.TimeSeriesDb;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.info.Info;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.dao.OpenDcsDatabaseFactory;
 
 import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
 
+@OpenAPIDefinition(
+		info = @Info(
+				title = "OpenDCS - Swagger",
+				description = "OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation).\n" +
+						"    OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embedded JETTY to implement the web services.\n" +
+						"    It was developed for the U. S. Army Corps of Engineers. Source and documentation may be found here:\n" +
+						"    [Github Documentation](https://github.com/opendcs/rest_api)",
+				version = "0.0.3"
+		)
+)
 public class OpenDcsResource
 {
 	private static final String UNSUPPORTED_OPERATION_MESSAGE = "Endpoint is unsupported by the OpenDCS REST API.";

@@ -20,55 +20,83 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a computation entity with details about its configuration and properties.")
 public final class ApiComputation
 {
+	@Schema(description = "The unique numeric identifier of the computation.", example = "45")
 	private Long computationId = null;
-	
+
+	@Schema(description = "The name of the computation.", example = "Daily Ave")
 	private String name = null;
-	
+
+	@Schema(description = "A comment or description for the computation.",
+			example = "Used for calculating daily average.")
 	private String comment = null;
 
+	@Schema(description = "The numeric identifier of the associated application.", example = "35")
 	private Long appId = null;
-	
+
+	@Schema(description = "The name of the associated application.", example = "compproc")
 	private String applicationName = null;
-	
+
+	@Schema(description = "The last modification timestamp of the computation.",
+			example = "2022-05-17T17:17:04.693Z[UTC]")
 	private Date lastModified = null;
-	
+
+	@Schema(description = "Flag indicating whether the computation is enabled.", example = "false")
 	private boolean enabled;
 
 	/** "No Limit", "Calendar" or "Now -" */
+	@Schema(description = "The type defining the computation effective start time. "
+			+ "Possible values: 'No Limit', 'Calendar', 'Now -'. Default is 'No Limit'.", example = "Calendar")
 	private String effectiveStartType = "No Limit";
-	
+
 	/** Use if effectiveStartType = "Calendar" */
+	@Schema(description = "The effective start date if effectiveStartType is set to 'Calendar'.",
+			example = "2022-05-17T17:17:04.693Z[UTC]")
 	private Date effectiveStartDate = null;
-	
+
 	/** Use if effectiveStartType = "Now -" */
+	@Schema(description = "The start interval if effectiveStartType is set to 'Now -'.")
 	private String effectiveStartInterval = null;
 
 	/** "No Limit", "Calendar" or "Now -", "Now +", or "Now" */
+	@Schema(description = "The type defining the computation effective end time. "
+			+ "Possible values: 'No Limit', 'Calendar', 'Now -', 'Now', or 'Now +'. Default is 'No Limit'.", example = "No Limit")
 	private String effectiveEndType = "No Limit";
-	
+
 	/** Use if effectiveStartType = "Calendar" */
+	@Schema(description = "The effective end date if effectiveEndType is set to 'Calendar'.",
+			example = "2022-05-17T17:17:04.693Z[UTC]")
 	private Date effectiveEndDate = null;
-	
+
 	/** Use if effectiveStartType = "Now -" */
+	@Schema(description = "The end interval if effectiveEndType is set to 'Now -', 'Now', or 'Now +'.")
 	private String effectiveEndInterval = null;
 
+	@Schema(description = "The unique numeric identifier of the algorithm used by this computation.", example = "9876")
 	private Long algorithmId = null;
-	
+
+	@Schema(description = "The name of the algorithm used by this computation.", example = "WaterFlowAlgorithm")
 	private String algorithmName = null;
-	
+
 	/** A list of this computation's parameters. */
+	@Schema(description = "The parameters used by the computation.")
 	private List<ApiCompParm> parmList = new ArrayList<>();
 
 	/**
 	 * Properties from the meta-data CompProperty records.
 	 */
+	@Schema(description = "Additional key-value pair properties or metadata associated with the computation.")
 	private Properties props = new Properties();
 
+	@Schema(description = "The unique numeric identifier of the computation group.", example = "2468")
 	private Long groupId = null;
+	@Schema(description = "The name of the computation group.", example = "AverageGroup")
 	private String groupName = null;
-	
+
 	public ApiCompParm findParm(String role)
 	{
 		for(ApiCompParm cp : parmList)

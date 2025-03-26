@@ -17,21 +17,38 @@ package org.opendcs.odcsapi.beans;
 
 
 import decodes.tsdb.DbComputation;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.util.function.Predicate;
 
 /**
  * A filter used by the Comp Ref retrieval method of the REST API. This filter is used
  * to filter the Db Computations that show up in the response.
  */
+@Schema(description = "A filter used by the Computation Reference retrieval method of the REST API. " +
+		"This filter is used to filter the Computations that show up in the response.")
 public final class DbCompFilter implements Predicate<DbComputation>
 {
-	protected String site;
-	protected String dataType;
-	protected String intervalCode = null;
-	protected String process;
-	protected String algorithm;
-	protected boolean enabledOnly = false;
-	protected String group;
+	@Schema(description = "The site to filter computations for.", example = "Site123", nullable = true)
+	private String site;
+
+	@Schema(description = "The data type to filter computations for.", example = "Temperature", nullable = true)
+	private String dataType;
+
+	@Schema(description = "The interval code to filter computations for.", example = "15MIN", nullable = true)
+	private String intervalCode = null;
+
+	@Schema(description = "The process to filter computations for.", example = "PROCESS_X", nullable = true)
+	private String process;
+
+	@Schema(description = "The algorithm to filter computations for.", example = "AlgorithmY", nullable = true)
+	private String algorithm;
+
+	@Schema(description = "If true, only enabled computations will be returned.", example = "false")
+	private boolean enabledOnly = false;
+
+	@Schema(description = "The group to filter computations for.", example = "GroupABC", nullable = true)
+	private String group;
 
 	// internal string validation
 	private final Predicate<String> validString = s -> (s != null) && !s.isEmpty();

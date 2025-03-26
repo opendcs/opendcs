@@ -15,15 +15,29 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a presentation element, including data type, units, and constraints.")
 public final class ApiPresentationElement
 {
+	@Schema(description = "The standard name of the data type.", example = "CWMS")
 	private String dataTypeStd = null;
+
+	@Schema(description = "The code representing the data type.", example = "Elev-Pool")
 	private String dataTypeCode = null;
+
+	@Schema(description = "The units of the data.", example = "ft")
 	private String units = null;
+
+	@Schema(description = "The number of fractional digits to use, default is 2.", example = "2")
 	private int fractionalDigits = 2;
+
+	@Schema(description = "The minimum allowable value for the data.", example = "0.0")
 	private Double min = null;
+
+	@Schema(description = "The maximum allowable value for the data.", example = "1000.0")
 	private Double max = null;
-	
+
 	public String getDataTypeStd()
 	{
 		return dataTypeStd;

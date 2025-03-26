@@ -18,10 +18,15 @@ package org.opendcs.odcsapi.beans;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents time series data, including its identifier and the associated data points.")
 public final class ApiTimeSeriesData
 {
+	@Schema(description = "Identifier for the time series. This field is required.")
 	private ApiTimeSeriesIdentifier tsid = null;
-	
+
+	@Schema(description = "A list of time series values representing the data points.")
 	private List<ApiTimeSeriesValue> values = new ArrayList<>();
 
 	public ApiTimeSeriesIdentifier getTsid()

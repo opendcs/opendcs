@@ -15,12 +15,22 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents an algorithm parameter with a role name and parameter type.")
 public final class ApiAlgoParm
 {
-	/** The role name -- must be unique within an algorithm. */
+	/**
+	 * The role name -- must be unique within an algorithm.
+	 */
+	@Schema(description = "The role name of the parameter, must be unique within an algorithm.", example = "input1")
 	private String roleName;
-	
-	/** The parameter type -- one of the constant codes defined herein. */
+
+	/**
+	 * The parameter type.
+	 */
+	@Schema(description = "The type of the parameter. Can be input (i), output (o), or can embed extra information.",
+			example = "i")
 	private String parmType;
 
 	public String getRoleName()

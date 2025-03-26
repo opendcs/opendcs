@@ -32,10 +32,21 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
 
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseIO;
@@ -73,7 +84,33 @@ public final class PlatformResources extends OpenDcsResource
 	@Path("platformrefs")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
-	public Response getPlatformRefs(@QueryParam("tmtype") String tmtype)
+	@Operation(
+			summary = "The GET platformrefs method returns a list of platforms",
+			description = "The GET platformrefs method returns a list of platforms, "
+					+ "optionally with a given Transport Medium type.  \n\n"
+					+ "It accepts the following arguments:  \n* **tmtype** – the transport medium type desired. "
+					+ "If not provided, all types are returned. The method will return any platform that has a "
+					+ "transport medium with the given type. The returned data structure will still contain all "
+					+ "of the transport media in the platform, but the list of platforms will be filtered to only "
+					+ "include platforms with a TM of the given type:\n  * **NOTE**: medium type 'goes' will match "
+					+ "either goes-self-timed or goes-random.\n\nData Structure TBD but will include  "
+					+ "\n* **name** – an index into the hashed set. Combination of site name and designator  "
+					+ "\n* **agency** – The agency that owns and/or maintains this platform  "
+					+ "\n* **configId** – Numeric surrogate key to the configuration record  \n* **description**  "
+					+ "\n* **platformId** - Numeric surrogate key to the platform record  "
+					+ "\n* **siteId** - Numeric surrogate key to the site record  "
+					+ "\n* **transportMedia** – a list of tmtype/tm id pairs.",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Successfully retrieved platform references",
+							content = @Content(array = @ArraySchema(schema = @Schema(implementation = ApiPlatformRef.class)),
+									mediaType = MediaType.APPLICATION_JSON)),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			},
+			tags = {"REST - DECODES Platform Records"}
+	)
+	public Response getPlatformRefs(@Parameter(description = "Transport medium type",
+			schema = @Schema(implementation = String.class, example = "goes"))
+		@QueryParam("tmtype") String tmtype)
 			throws DbException
 	{
 		DatabaseIO dbIo = getLegacyDatabase();
@@ -148,7 +185,26 @@ public final class PlatformResources extends OpenDcsResource
 	@Path("platform")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
-	public Response getPlatform(@QueryParam("platformid") Long platformId)
+	@Operation(
+			summary = "This method returns a JSON representation of a single, complete DECODES Platform record",
+			description = "Fetches detailed information about a specific platform using its unique ID. "
+					+ "Example: \n\n    http://localhost:8080/odcsapi/platform?platformid=5",
+			operationId = "getPlatform",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Platform details retrieved successfully",
+							content = @Content(schema = @Schema(implementation = ApiPlatform.class))),
+					@ApiResponse(responseCode = "400", description = "Missing or invalid platform ID"),
+					@ApiResponse(responseCode = "404", description = "Platform not found"),
+					@ApiResponse(responseCode = "500", description = "Database error occurred")
+			},
+			tags = {"REST - DECODES Platform Records"}
+	)
+	public Response getPlatform(
+			@Parameter(
+					description = "Platform ID",
+					required = true,
+					schema = @Schema(implementation = Long.class, example = "5"))
+			@QueryParam("platformid") Long platformId)
 			throws WebAppException, DbException
 	{
 		if (platformId == null)
@@ -251,6 +307,27 @@ public final class PlatformResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@Operation(
+			summary = "Create or Overwrite Existing Decodes Platform",
+			description = "The GET platform method takes a single DECODES Platform record in JSON format,"
+					+ " as described above for GET.  \n\n"
+					+ "For creating a new platform, leave platformId out of the passed data structure.  \n\n"
+					+ "For overwriting an existing one, include the platformId that was previously returned. "
+					+ "The platform in the database is replaced with the one sent.",
+			requestBody = @RequestBody(content = @Content(schema = @Schema(implementation = ApiPlatform.class),
+					mediaType = MediaType.APPLICATION_JSON,
+					examples = {
+							@ExampleObject(name = "Basic", value = ResourceExamples.PlatformExamples.BASIC),
+							@ExampleObject(name = "New", value = ResourceExamples.PlatformExamples.NEW),
+							@ExampleObject(name = "Update", value = ResourceExamples.PlatformExamples.UPDATE)
+					}), required = true, description = "Decodes Platform Object"),
+			responses = {
+					@ApiResponse(responseCode = "201", description = "Platform created successfully"),
+					@ApiResponse(responseCode = "500",
+							description = "Internal server error occurred while storing the platform")
+			},
+			tags = {"REST - DECODES Platform Records"}
+	)
 	public Response postPlatform(ApiPlatform platform)
 			throws DbException
 	{
@@ -388,7 +465,21 @@ public final class PlatformResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
-	public Response deletePlatform(@QueryParam("platformid") Long platformId)
+	@Operation(
+			summary = "Delete Existing Decodes Platform",
+			description = "Required argument platformid must be passed.",
+			responses = {
+					@ApiResponse(responseCode = "204", description = "Platform deleted successfully"),
+					@ApiResponse(responseCode = "400",
+							description = "Missing or invalid platform ID"),
+					@ApiResponse(responseCode = "500",
+							description = "Database error occurred while deleting the platform")
+			},
+			tags = {"REST - DECODES Platform Records"}
+	)
+	public Response deletePlatform(@Parameter(description = "Platform ID", required = true,
+			schema = @Schema(implementation = Long.class, example = "5"))
+		@QueryParam("platformid") Long platformId)
 			throws DbException, WebAppException
 	{
 		if (platformId == null)
@@ -420,7 +511,46 @@ public final class PlatformResources extends OpenDcsResource
 	@Path("platformstat")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
-	public Response getPlatformStats(@QueryParam("netlistid") Long netlistId)
+	@Operation(
+			summary = "Returned structure contains information about recent activity on each platform",
+			description = "Sample URL:\n  \n    http://localhost:8080/odcsapi/platformstat  \n  \n  \n"
+					+ "Optional argument 'netlistid' can be passed to only return platforms that have a "
+					+ "transport medium in the referenced network list.\n  \nThe returned data structure contains "
+					+ "information about recent activity on each platform:\n  \n```\n  [\n    {\n      "
+					+ "\"platformId\": 53,\n      \"platformName\": \"OKVI4\",\n      \"siteId\": 1,\n      "
+					+ "\"lastContact\": \"2023-06-09T18:30:53.086Z[UTC]\",\n      \"lastMessage\": "
+					+ "\"2023-06-09T18:30:53.086Z[UTC]\",\n      \"lastError\": null,\n      \"lastMsgQuality\": \"G\",\n"
+					+ "      \"annotation\": null,\n      \"lastRoutingExecId\": 609,\n      \"routingSpecName\": "
+					+ "\"periodic-10-minute\"\n    },\n    {\n      \"platformId\": 54,\n      \"platformName\": "
+					+ "\"MROI4\",\n      \"siteId\": 6,\n      \"lastContact\": \"2023-06-09T18:30:53.102Z[UTC]\",\n"
+					+ "      \"lastMessage\": \"2023-06-09T18:30:53.102Z[UTC]\",\n      \"lastError\": null,\n      "
+					+ "\"lastMsgQuality\": \"G\",\n      \"annotation\": null,\n      \"lastRoutingExecId\": 609,\n      "
+					+ "\"routingSpecName\": \"periodic-10-minute\"\n    },\n    {\n      \"platformId\": 55,\n      "
+					+ "\"platformName\": \"ROWI4\",\n      \"siteId\": 2,\n      "
+					+ "\"lastContact\": \"2023-06-09T18:30:53.013Z[UTC]\",\n      "
+					+ "\"lastMessage\": \"2023-06-09T18:30:53.013Z[UTC]\",\n      \"lastError\": null,\n      "
+					+ "\"lastMsgQuality\": \"G\",\n      \"annotation\": null,\n      \"lastRoutingExecId\": 609,\n      "
+					+ "\"routingSpecName\": \"periodic-10-minute\"\n    }\n  ]\n\n```\n  "
+					+ "\nThis may be used to populate a GUI similar to the Java 'Platform Monitor' GUI in OpenDCS. "
+					+ "A pulldown list of network list IDs and names is recommended.\n  \nNote the following:\n  "
+					+ "\n*  **lastContact** is the last time that any communication from this platform was received.\n  "
+					+ "\n*  **lastMessage** is the time stamp that the last message from this platform was received.\n  "
+					+ "\n*  **lastError** is the time that a decoding or communications error last occurred with "
+					+ "this platform.\n*  **lastRoutingExecId** indicates the specific execution of a routing spec "
+					+ "that was last used to process this platform. (See Routing Exec Status above.)\n  "
+					+ "\n*  **annotation** is the text of the last error message generated from this platform. "
+					+ "To retrieve a list of Data Acquisition events for a platform, you can use the GET dacqevent "
+					+ "method described in section 5.2.3, passing the 'platformid' argument.",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Successfully retrieved platform status",
+						content = @Content(array = @ArraySchema(schema = @Schema(implementation = ApiPlatformStatus.class)))),
+					@ApiResponse(responseCode = "500", description = "Database error occurred")
+			},
+			tags = {"OpenDCS Process Monitor and Control (Routing)"}
+	)
+	public Response getPlatformStats(@Parameter(description = "Only return platforms that have a transport medium "
+			+ "in the referenced network list.", schema = @Schema(implementation = Long.class, example = "1001"))
+		@QueryParam("netlistid") Long netlistId)
 			throws DbException
 	{
 		DatabaseIO dbIo = getLegacyDatabase();

@@ -9,3 +9,6 @@
 
 ### Needed for running the testcontainers
 org.gradle.jvmargs=-Xmx4096m
+
+## For Generating the OpenDCS API Documentation
+outputFormat=JSON

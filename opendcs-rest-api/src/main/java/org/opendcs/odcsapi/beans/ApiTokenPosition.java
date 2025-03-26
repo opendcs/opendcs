@@ -15,15 +15,21 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents the position of an API token, including its starting and ending points.")
 public final class ApiTokenPosition
 {
-	private int start=0;
-	private int end=0;
-	
+	@Schema(description = "The start position of the token.", example = "0")
+	private int start = 0;
+
+	@Schema(description = "The character position after the end of the token.", example = "10")
+	private int end = 0;
+
 	public ApiTokenPosition()
 	{
 	}
-	
+
 	public ApiTokenPosition(int start, int end)
 	{
 		this.start = start;
@@ -45,7 +51,7 @@ public final class ApiTokenPosition
 	{
 		return end;
 	}
-	
+
 	public void setStart(int start)
 	{
 		this.start = start;

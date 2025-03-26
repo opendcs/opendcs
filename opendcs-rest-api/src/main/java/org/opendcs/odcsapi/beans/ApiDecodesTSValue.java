@@ -17,13 +17,22 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a time-series value with its timestamp and raw data position.")
 public final class ApiDecodesTSValue
 {
+	@Schema(description = "The timestamp associated with the time-series value.",
+			example = "2025-01-01T00:00:00.000[UTC]")
 	private Date time = null;
+
+	@Schema(description = "The string representation of the time-series value.", example = "123.45")
 	private String value = null;
+
+	@Schema(description = "The raw data position in the source data for this value.")
 	private ApiTokenPosition rawDataPosition = null;
 
-	
+
 	public Date getTime()
 	{
 		return time;

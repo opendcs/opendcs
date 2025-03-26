@@ -249,7 +249,7 @@ public final class TestDecoder
 		{
 			ConfigSensor cs = new ConfigSensor(ret, acs.getSensorNumber());
 			cs.sensorName = acs.getSensorName();
-			cs.recordingMode = acs.getRecordingMode();
+			cs.recordingMode = acs.getRecordingMode().getCode();
 			cs.recordingInterval = acs.getRecordingInterval();
 			cs.timeOfFirstSample = acs.getTimeOfFirstSample();
 			if (acs.getAbsoluteMax() != null)
@@ -280,7 +280,7 @@ public final class TestDecoder
 				throw new WebApplicationException("Unable to process script", ex, 500);
 			}
 
-			ds.setDataOrder(apiScript.getDataOrder());
+			ds.setDataOrder(apiScript.getDataOrder().getCode());
 			ds.scriptType = Constants.scriptTypeDecodes;
 			if (apiScript.getHeaderType() != null)
 				ds.scriptType = ds.scriptType + ":" + apiScript.getHeaderType();

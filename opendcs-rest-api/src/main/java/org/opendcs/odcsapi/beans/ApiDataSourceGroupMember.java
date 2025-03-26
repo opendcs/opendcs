@@ -15,13 +15,18 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * represents a member of a group-type data source
  */
+@Schema(description = "Represents a member of a data source, including the data source's ID and name.")
 public final class ApiDataSourceGroupMember
 {
+	@Schema(description = "The unique numeric identifier of the data source.", example = "4")
 	private Long dataSourceId = null;
-	
+
+	@Schema(description = "The name of the data source.", example = "USGS-LRGS")
 	private String dataSourceName = null;
 
 	public Long getDataSourceId()
@@ -43,5 +48,5 @@ public final class ApiDataSourceGroupMember
 	{
 		this.dataSourceName = dataSourceName;
 	}
-	
+
 }

@@ -27,8 +27,14 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.opendcs.odcsapi.util.ApiConstants;
 import org.opendcs.odcsapi.util.ApiHttpUtil;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
 
 @Path("/")
 public final class SessionResource
@@ -41,16 +47,40 @@ public final class SessionResource
 	@Path("check")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@Operation(
+			summary = "Check if session authentication is valid",
+			description = "The ‘check’ GET method can be called with a configured session.",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "If the session is valid," +
+							" a successful response will be returned."),
+					@ApiResponse(
+							responseCode = "410",
+							description = "If the session is not valid, HTTP 410 is returned.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = String.class),
+								examples = @ExampleObject(value = "Session Valid"))
+					)
+			},
+			tags = {"REST - Authentication and Authorization"}
+	)
 	public Response checkSessionAuthorization()
 	{
 		//Security filters will ensure this method is only accessible via an authenticated client
-		return ApiHttpUtil.createResponse("Token Valid");
+		return ApiHttpUtil.createResponse("Session Valid");
 	}
 
 	@DELETE
 	@Path("logout")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@Operation(
+			summary = "Remove access tokens and clear the client's session.",
+			description = "Session variables for the client will be cleared. The auth token will be invalidated.",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Session was cleared.")
+			},
+			tags = {"REST - Authentication and Authorization"}
+	)
 	public Response logout()
 	{
 		HttpSession session = request.getSession(false);

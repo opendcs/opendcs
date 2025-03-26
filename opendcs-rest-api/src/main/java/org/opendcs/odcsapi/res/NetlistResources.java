@@ -15,6 +15,15 @@
 
 package org.opendcs.odcsapi.res;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -42,6 +51,7 @@ import decodes.db.NetworkListList;
 import decodes.db.RoutingSpec;
 import decodes.db.RoutingSpecList;
 import decodes.sql.DbKey;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.opendcs.odcsapi.beans.ApiNetList;
 import org.opendcs.odcsapi.beans.ApiNetListItem;
 import org.opendcs.odcsapi.beans.ApiNetlistRef;
@@ -62,7 +72,33 @@ public final class NetlistResources extends OpenDcsResource
 	@Path("netlistrefs")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
-	public Response getNetlistRefs(@QueryParam("tmtype") String tmtype)
+	@Operation(
+			summary = "The GET netlistrefs method returns references to network lists",
+			description = "The GET netlistrefs method is intended to populate a pick list of network lists and"
+					+ " does not contain all of the list elements.\n\nExamples:\n\n"
+					+ "    http://localhost:8080/odcsapi/netlistrefs\n\n"
+					+ "    http://localhost:8080/odcsapi/netlistrefs?tmtype=goes\n\nWith no arguments,"
+					+ " a list of network lists in the database is returned. The format is as follows:"
+					+ "\n```\n[\n  {\n    \"lastModifyTime\": \"2020-08-22T14:36:55.705Z[UTC]\",\n"
+					+ "    \"name\": \"BFD-BMD\",\n    \"netlistId\": 1,\n    \"numPlatforms\": 3,\n"
+					+ "    \"siteNameTypePref\": \"nwshb5\",\n    \"transportMediumType\": \"goes\"\n  },"
+					+ "\n  {\n    \"lastModifyTime\": \"2020-12-15T17:51:04.194Z[UTC]\",\n"
+					+ "    \"name\": \"goes2\",\n    \"netlistId\": 6,\n    \"numPlatforms\": 3,\n"
+					+ "    \"siteNameTypePref\": \"nwshb5\",\n    \"transportMediumType\": \"goes\"\n  }\n]"
+					+ "\n```\n\n**Note** that the list contents (i.e., the references to the platforms in the list)"
+					+ " is not included. Rather a count of platforms in the list is given."
+					+ " The 'netlistId' element is a unique key to be used for retrieving entire lists.",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Success",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									array = @ArraySchema(schema = @Schema(implementation = ApiNetlistRef.class)))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			},
+			tags = {"REST - Network Lists"}
+	)
+	public Response getNetlistRefs(@Parameter(description = "The transport medium type to filter by",
+			schema = @Schema(implementation = String.class))
+		@QueryParam("tmtype") String tmtype)
 			throws DbException
 	{
 		DatabaseIO dbIo = getLegacyDatabase();
@@ -116,7 +152,23 @@ public final class NetlistResources extends OpenDcsResource
 	@Path("netlist")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
-	public Response getNetList(@QueryParam("netlistid") Long netlistId)
+	@Operation(
+			summary = "The ‘netlists’ GET method will return a specific network list in its entirety.",
+			description = "Example:\n\n    http://localhost:8080/odcsapi/netlist?netlistid=1",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Success",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = ApiNetList.class))),
+					@ApiResponse(responseCode = "400",
+							description = "The required ‘netlistid’ parameter was missing in the URL."),
+					@ApiResponse(responseCode = "404", description = "Not Found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			},
+			tags = {"REST - Network Lists"}
+	)
+	public Response getNetList(@Parameter(description = "Unique identifier for the netlist to retrieve",
+			schema = @Schema(implementation = Long.class))
+		@QueryParam("netlistid") Long netlistId)
 			throws WebAppException, DbException
 	{
 		if (netlistId == null)
@@ -178,7 +230,37 @@ public final class NetlistResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
-	public Response  postNetlist(ApiNetList netList)
+	@Tag(name = "REST - Network Lists", description = "A Network List is simply a list of Platforms.")
+	@Operation(
+			summary = "Create or Overwrite Existing Netlist",
+			description = "The ‘netlist’ POST method takes a single network list in JSON format,"
+					+ " as described for the GET method:"
+					+ "\n```\n{\n  \"items\": {\n    \"14159500\": {\n      \"description\": \"\",\n      "
+					+ "\"platformName\": \"CGRO\",\n      \"transportId\": \"14159500\"\n    },\n    "
+					+ "\"14372300\": {\n      \"description\": \"\",\n      \"platformName\": \"AGNO\",\n      "
+					+ "\"transportId\": \"14372300\"\n    }\n  },\n  \"lastModifyTime\": \"2020-10-19T18:14:14.788Z[UTC]\","
+					+ "\n  \"name\": \"USGS-Sites\",\n  \"netlistId\": 4,\n  \"siteNameTypePref\": \"nwshb5\",\n  "
+					+ "\"transportMediumType\": \"other\"\n}\n```\n\nFor creating a new network list, "
+					+ "leave netlistId out of the passed data structure.\n\nFor overwriting an existing one, "
+					+ "include the netlistId that was previously returned. The network list in the database "
+					+ "is replaced with the one sent.",
+			requestBody = @RequestBody(required = true, content = @Content(mediaType = MediaType.APPLICATION_JSON,
+							schema = @Schema(implementation = ApiNetList.class),
+						examples = {
+								@ExampleObject(name = "Basic", value = ResourceExamples.NetlistExamples.BASIC),
+								@ExampleObject(name = "New", value = ResourceExamples.NetlistExamples.NEW),
+								@ExampleObject(name = "Update", value = ResourceExamples.NetlistExamples.UPDATE)
+						})),
+			responses = {
+					@ApiResponse(responseCode = "201", description = "Successfully created or updated network list",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = ApiNetList.class))),
+					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required request body"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error"),
+			},
+			tags = {"REST - Network Lists"}
+	)
+	public Response postNetlist(ApiNetList netList)
 			throws DbException
 	{
 		DatabaseIO dbIo = getLegacyDatabase();
@@ -229,7 +311,23 @@ public final class NetlistResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
-	public Response deleteNetlist(@QueryParam("netlistid") Long netlistId)
+	@Operation(
+			summary = "Delete Existing netlists",
+			description = "Required argument netlistid must be passed.\n\n" +
+					"Error 409 will be returned if network list is used by one or more " +
+					"routing specs and cannot be deleted. The body of the error will be " +
+					"a message containing the name of the routing specs using the referenced netlist.",
+			responses = {
+					@ApiResponse(responseCode = "204", description = "Successfully deleted network list"),
+					@ApiResponse(responseCode = "409",
+							description = "Conflict - Network list is used by one or more routing specs"),
+					@ApiResponse(responseCode = "400", description = "Missing required netlistid parameter"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			},
+			tags = {"REST - Network Lists"}
+	)
+	public Response deleteNetlist(@Parameter(schema = @Schema(implementation = Long.class))
+		@QueryParam("netlistid") Long netlistId)
 			throws DbException, WebAppException
 	{
 		if (netlistId == null)
@@ -290,6 +388,23 @@ public final class NetlistResources extends OpenDcsResource
 	@Consumes(MediaType.TEXT_PLAIN)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@Operation(
+			summary = "Convert Network List File",
+			description = "Parses a network list file (in text format) and converts it to an object representation.",
+			requestBody = @RequestBody(required = true, content = @Content(mediaType = MediaType.TEXT_PLAIN,
+					examples = {
+						@ExampleObject(value = "14159500 CGRO\n14372300 AGNO\n"),
+						@ExampleObject(value = "6698948: Stream_test_site platform associated with stream")
+					})),
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Network list successfully parsed",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = ApiNetList.class))),
+					@ApiResponse(responseCode = "406", description = "File parsing error or invalid format"),
+					@ApiResponse(responseCode = "500", description = "Server error occurred")
+			},
+			tags = {"REST - Network Lists"}
+	)
 	public Response cnvtANL(String nldata)
 			throws WebAppException
 	{

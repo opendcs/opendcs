@@ -15,23 +15,31 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a data type entity with details including an identifier, standard, code, and display name.")
 public final class ApiDataType
 {
+	@Schema(description = "The unique numeric identifier for the data type.")
 	private Long id = null;
-	
+
 	/**
-	* A string defining the data-type standard.
-	* This must match one of the DataTypeStandard enum values.
-	* Currently the allowable values are SHEF-PE, NOS-CODE, or EPA-CODE.
-	*/
+	 * A string defining the data-type standard.
+	 * This must match one of the DataTypeStandard enum values.
+	 * Currently the allowable values are SHEF-PE, NOS-CODE, or EPA-CODE.
+	 */
+	@Schema(description = "The data type standard. Allowable values are SHEF-PE, NOS-CODE, or EPA-CODE.",
+			example = "SHEF-PE")
 	private String standard = null;
 
 	/**
-	* This identifies the data type.  The form of this string depends on
-	* the standard.
-	*/
+	 * This identifies the data type.  The form of this string depends on
+	 * the standard.
+	 */
+	@Schema(description = "The identification of the data type, formatted according to the standard.", example = "Depth-Snow")
 	private String code = null;
-	
+
+	@Schema(description = "The display name of the data type.", example = "SHEF-PE:Depth-Snow")
 	private String displayName = null;
 
 	public Long getId()
@@ -73,6 +81,4 @@ public final class ApiDataType
 	{
 		this.displayName = displayName;
 	}
-
-
 }

@@ -20,33 +20,32 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * @author mmaloney
- *
  */
+@Schema(description = "Represents a network list, including its ID, name, type of transport medium, and other related metadata.")
 public final class ApiNetList
 {
-	/** Unique surrogate key ID of this network list */
+	@Schema(description = "Unique surrogate key identifier of this network list.", example = "34")
 	private Long netlistId = null;
 
-	/** Unique name of this network list. */
+	@Schema(description = "Unique name of this network list.", example = "USGS-Sites")
 	private String name;
 
-	/** Type of transport medium stored in this network list. */
+	@Schema(description = "Type of transport medium stored in this network list.", example = "other")
 	private String transportMediumType;
 
-	/** Preferred name type for this network list. */
+	@Schema(description = "Preferred name type for this network list.", example = "nwshb5")
 	private String siteNameTypePref;
 
-	/** Time that this network list was last modified in the database. */
+	@Schema(description = "Time that this network list was last modified in the database.",
+			example = "2020-10-19T18:14:14.788Z[UTC]")
 	private Date lastModifyTime;
 
-	/**
-	 * This HashMap stores the NetworkListEntry objects, indexed by their
-	 * transportId's.  The transportId's are converted to uppercase before
-	 * being used as a key in this HashMap.
-	 * This data member is never null.
-	 */
+	@Schema(description = "Stores the NetworkListItem objects, indexed by their transportId's, "
+			+ "converted to uppercase before being used as a key. Never null.")
 	private Map<String, ApiNetListItem> items = new HashMap<>();
 
 	/**
@@ -58,7 +57,7 @@ public final class ApiNetList
 		transportMediumType = null;
 		siteNameTypePref = null;
 	}
-	
+
 	public String getName()
 	{
 		return name;

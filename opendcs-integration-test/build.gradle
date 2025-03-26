@@ -50,6 +50,8 @@ dependencies {
 
     testRuntimeOnly(libs.oracle.jdbc)
     testRuntimeOnly(libs.byte.buddy)
+    testRuntimeOnly(libs.jackson)             // for swagger compatibility
+    testRuntimeOnly(libs.jackson.annotations) // for swagger compatibility
     testRuntimeOnly(libs.postgresql)
     testRuntimeOnly(libs.byte.buddy)
 }

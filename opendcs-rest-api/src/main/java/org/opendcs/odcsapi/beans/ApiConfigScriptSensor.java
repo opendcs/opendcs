@@ -15,38 +15,47 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents the configuration for a script sensor, including its sensor number and unit conversion details.")
 public final class ApiConfigScriptSensor
 {
+	@Schema(description = "The unique numeric identifier of the sensor.", example = "1")
 	private int sensorNumber = 0;
+
+	@Schema(description = "The unit conversion details for the sensor.")
 	private ApiUnitConverter unitConverter = null;
-	
+
 	public int getSensorNumber()
 	{
 		return sensorNumber;
 	}
+
 	public void setSensorNumber(int sensorNumber)
 	{
 		this.sensorNumber = sensorNumber;
 	}
+
 	public ApiUnitConverter getUnitConverter()
 	{
 		return unitConverter;
 	}
+
 	public void setUnitConverter(ApiUnitConverter unitConverter)
 	{
 		this.unitConverter = unitConverter;
 	}
-	
+
 	public String prettyPrint()
 	{
 		return "sensor[" + sensorNumber + "] unitConv=" + unitConverter.getFromAbbr()
-			+ "->" + unitConverter.getToAbbr() + " algo=" + unitConverter.getAlgorithm()
-			+ " A=" + unitConverter.getA()
-			+ " B=" + unitConverter.getB()
-			+ " C=" + unitConverter.getC()
-			+ " D=" + unitConverter.getD()
-			+ " E=" + unitConverter.getE()
-			+ " F=" + unitConverter.getF();
+				+ "->" + unitConverter.getToAbbr() + " algo=" + unitConverter.getAlgorithm()
+				+ " A=" + unitConverter.getA()
+				+ " B=" + unitConverter.getB()
+				+ " C=" + unitConverter.getC()
+				+ " D=" + unitConverter.getD()
+				+ " E=" + unitConverter.getE()
+				+ " F=" + unitConverter.getF();
 	}
 
 }

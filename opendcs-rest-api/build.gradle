@@ -18,6 +18,7 @@ plugins {
     id "opendcs-rest-api.deps-conventions"
     id "opendcs-rest-api.publishing-conventions"
     id "war"
+    id "io.swagger.core.v3.swagger-gradle-plugin" version "2.2.28"
 }
 
 configurations {
@@ -43,9 +44,12 @@ dependencies {
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
     implementation(libs.nimbus)
+    implementation(libs.swagger.jaxrs2)
     implementation(libs.jwt)
     implementation(libs.jersey.hk2)
     implementation(libs.slf4j.api)
+    implementation(libs.jackson)
+    runtimeOnly(libs.jackson.annotations) // updated for swagger compatibility
     runtimeOnly(libs.jaxb.runtime)
     runtimeOnly(libs.postgresql)
     webjars(libs.swagger.ui)
@@ -73,7 +77,7 @@ dependencies {
 task extractWebJars(type: Copy) {
     from zipTree(configurations.webjars.singleFile)
 
-    into file("${project.layout.getBuildDirectory().get().getAsFile().toString()}/resources/main/swaggerui")
+    into file("src/main/webapp/swaggerui")
     includeEmptyDirs false
     eachFile {
         path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
@@ -115,4 +119,20 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml"
         }
     }
+}
+
+// task to generate OpenAPI JSON file
+resolve {
+    classpath = sourceSets.main.runtimeClasspath
+    outputFileName = 'opendcs-openapi'
+    outputFormat = providers.gradleProperty('outputFormat').getOrElse('JSON')
+    prettyPrint = 'TRUE'
+    resourcePackages = ['org.opendcs.odcsapi.res', 'org.opendcs.odcsapi.beans', 'org.opendcs.odcsapi.sec']
+    outputDir = file('build/swagger/')
+}
+
+tasks.register('generateOpenAPI') {
+    group = "documentation"
+    description = "Generates the Swagger OpenAPI JSON file without running the application"
+    dependsOn('resolve')
 }

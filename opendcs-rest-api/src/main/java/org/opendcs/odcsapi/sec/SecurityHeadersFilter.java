@@ -24,7 +24,7 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
 
-import org.opendcs.odcsapi.res.SwaggerResources;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 
 
 @Provider
@@ -44,7 +44,7 @@ public final class SecurityHeadersFilter implements ContainerResponseFilter
 				.getMatchedResources()
 				.stream()
 				.map(Object::getClass)
-				.noneMatch(c -> c == SwaggerResources.class))
+				.noneMatch(c -> c == OpenApiResource.class))
 		{
 			response.getHeaders().putSingle("X-Content-Type-Options", "nosniff");
 			response.getHeaders().putSingle("Content-Type", MediaType.APPLICATION_JSON_TYPE);

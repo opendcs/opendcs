@@ -17,32 +17,67 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /** Used to encapsulate a raw message returned by GET message or sent to POST decode */
+@Schema(description = "Encapsulates a raw message, including metadata about the message and transmission details.")
 public final class ApiRawMessage
 {
 	// Attributes - always present:
+	@Schema(description = "Flags representing the status or state of the raw message.", example = "71765")
 	private long flags = 0L;
+
+	@Schema(description = "Unique numeric identifier for the platform associated with this message.", example = "221")
 	private String platformId = null;
-	
+
 	// GOES fields:
+	@Schema(description = "Sequence number of the message if applicable.", example = "25693")
 	private Integer sequenceNum = null;
+
+	@Schema(description = "Local time when the message was received.", example = "2025-01-01T12:34:59.000[UTC]")
 	private Date localRecvTime = null;
+
+	@Schema(description = "Start time of the carrier signal for this message.", example = "2025-01-01T12:34:56.000[UTC]")
 	private Date carrierStart = null;
+
+	@Schema(description = "Stop time of the carrier signal for this message.", example = "2025-01-01T12:35:56.000[UTC]")
 	private Date carrierStop = null;
+
+	@Schema(description = "Baud rate of the carrier signal.", example = "300")
 	private Integer baud = null;
+
+	@Schema(description = "Percentage of good phase signals received.", example = "99.6")
 	private Double goodPhasePct = null;
+
+	@Schema(description = "Frequency offset of the signal in Hz.", example = "0.5")
 	private Double freqOffset = null;
-	private Double signalStrength= null;
-	private Double phaseNoise = null;	
+
+	@Schema(description = "Strength of the signal received.", example = "44.8")
+	private Double signalStrength = null;
+
+	@Schema(description = "Phase noise level of the signal received.", example = "1.97")
+	private Double phaseNoise = null;
+
+	@Schema(description = "Timestamp when the message was transmitted.",
+			example = "2025-01-01T12:34:56.000[UTC]")
 	private Date xmitTime = null;
 
 	// Iridium fields:
+	@Schema(description = "Mobile Originating Message Sequence Number for Iridium messages.")
 	private Integer momsn = null;
+
+	@Schema(description = "Mobile Terminating Message Sequence Number for Iridium messages.")
 	private Integer mtmsn = null;
+
+	@Schema(description = "Call Data Record (CDR) reference number for tracking.")
 	private Long cdrReference = null;
+
+	@Schema(description = "Status of the Iridium session.")
 	private Integer sessionStatus = null;
 
 	// Base64 encoded binary message to preserve original whitespace
+	@Schema(description = "Base64-encoded representation of the raw binary message to preserve formatting and content.",
+			example = "Q0UzMUQwMzAyMzEyOTEyMzQ1NUc0NSswTk4xNjFFTjIwMDAyN2JCMURBTXRBTXRBTXRBTXM6WUIgMTMuNTkgIA==")
 	private String base64 = null;
 
 	public String getBase64()

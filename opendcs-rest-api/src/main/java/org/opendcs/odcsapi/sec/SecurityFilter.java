@@ -39,6 +39,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.ext.Provider;
 
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,19 +101,22 @@ public final class SecurityFilter implements ContainerRequestFilter
 		SecurityContext securityContext = requestContext.getSecurityContext();
 		RolesAllowed annotation = resourceInfo.getResourceMethod().getAnnotation(RolesAllowed.class);
 		String endpoint = requestContext.getMethod() + " " + requestContext.getUriInfo().getPath();
-		if(annotation == null)
+		if (!resourceInfo.getResourceClass().equals(OpenApiResource.class))
 		{
-			throw new InternalServerErrorException("Endpoint " + endpoint + " does not have the @RolesAllowed annotation");
-		}
-		String[] value = annotation.value();
-		for(String role : value)
-		{
-			if(securityContext.isUserInRole(role))
+			if(annotation == null)
 			{
-				return;
+				throw new InternalServerErrorException("Endpoint " + endpoint + " does not have the @RolesAllowed annotation");
 			}
+			String[] value = annotation.value();
+			for(String role : value)
+			{
+				if(securityContext.isUserInRole(role))
+				{
+					return;
+				}
+			}
+			throw new ForbiddenException("User does not have the correct roles for endpoint: " + endpoint);
 		}
-		throw new ForbiddenException("User does not have the correct roles for endpoint: " + endpoint);
 	}
 
 	private void authorizeSession(ContainerRequestContext requestContext, HttpSession session)
@@ -145,6 +149,10 @@ public final class SecurityFilter implements ContainerRequestFilter
 			{
 				retval = true;
 			}
+		}
+		else if (resourceInfo.getResourceClass().equals(OpenApiResource.class))
+		{
+			retval = true;
 		}
 		return retval;
 	}

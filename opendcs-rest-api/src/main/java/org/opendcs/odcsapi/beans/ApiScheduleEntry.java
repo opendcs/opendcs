@@ -17,20 +17,34 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a schedule entry, including its related application details, routing specification, and timing information.")
 public final class ApiScheduleEntry
 {
+	@Schema(description = "Unique numeric identifier of the schedule entry.", example = "14")
 	private Long schedEntryId = null;
+	@Schema(description = "Name of the schedule entry.", example = "something-else")
 	private String name = null;
+	@Schema(description = "Unique numeric identifier of the associated application.", example = "1234")
 	private Long appId = null;
+	@Schema(description = "Name of the associated application.", example = "RoutingScheduler")
 	private String appName = null;
+	@Schema(description = "Unique numeric identifier of the associated routing specification.", example = "5678")
 	private Long routingSpecId = null;
+	@Schema(description = "Name of the associated routing specification.", example = "goes1")
 	private String routingSpecName = null;
+	@Schema(description = "Flag indicating whether the schedule entry is enabled.", example = "true")
 	private boolean enabled = false;
+	@Schema(description = "Timestamp of the last modification.", example = "2022-03-28T18:02:18.659Z[UTC]")
 	private Date lastModified = null;
+	@Schema(description = "Start time of the schedule entry.", example = "2022-03-28T18:02:13.659Z[UTC]")
 	private Date startTime = null;
+	@Schema(description = "Time zone associated with the schedule entry.", example = "America/New_York")
 	private String timeZone = null;
+	@Schema(description = "Running interval for the schedule entry.", example = "15 Minutes")
 	private String runInterval = null;
-	
+
 	public Long getSchedEntryId()
 	{
 		return schedEntryId;

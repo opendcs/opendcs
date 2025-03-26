@@ -15,25 +15,46 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a transport medium with its communication and authentication details.")
 public final class ApiTransportMedium
 {
+	@Schema(description = "The type of the medium, defaulting to 'GOES'.", example = "GOES")
 	private String mediumType = "GOES";
+	@Schema(description = "The identifier of the medium.", example = "CE31D030")
 	private String mediumId = null;
+	@Schema(description = "The name of the associated script.", example = "Script1")
 	private String scriptName = null;
+	@Schema(description = "The channel number used for transmission.", example = "1")
 	private Integer channelNum = null;
+	@Schema(description = "The assigned time value in seconds.", example = "300")
 	private Integer assignedTime = null;
+	@Schema(description = "The transport window duration in seconds.", example = "600")
 	private Integer transportWindow = null;
+	@Schema(description = "The interval between transmissions in seconds.", example = "3600")
 	private Integer transportInterval = null;
+	@Schema(description = "The adjustment to the time in seconds.", example = "5")
 	private int timeAdjustment = 0;
+	@Schema(description = "The timezone of the transport medium.", example = "UTC")
 	private String timezone = null;
+	@Schema(description = "The type of the logger used, if applicable.", example = "Sutron Logger")
 	private String loggerType = null;
+	@Schema(description = "The baud rate for transmission.", example = "9600")
 	private Integer baud = null;
+	@Schema(description = "The number of stop bits for transmission.", example = "1")
 	private Integer stopBits = null;
+	@Schema(description = "The parity setting for transmission (e.g., none, even, odd).", example = "none")
 	private String parity = null;
+	@Schema(description = "The number of data bits used in communication.", example = "8")
 	private Integer dataBits = null;
+	@Schema(description = "Indicates whether login is required for the transport medium.", example = "true")
 	private Boolean doLogin = null;
+	@Schema(description = "The username for authentication, if applicable.", example = "user123")
 	private String username = null;
+	@Schema(description = "The password for authentication, if applicable.", example = "password123")
 	private String password = null;
+
 	public String getMediumType()
 	{
 		return mediumType;

@@ -17,23 +17,33 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a reference to a network list, including metadata such as Transport Medium Type, Site Name Type, and modification time.")
 public final class ApiNetlistRef
 {
 	/** Unique surrogate key ID of this network list */
+	@Schema(description = "Unique numeric identifier of this network list.", example = "881")
 	private Long netlistId = null;
-	
+
 	/** Unique name of this network list. */
+	@Schema(description = "Unique name of this network list.", example = "USGS-Sites")
 	private String name = null;
 
 	/** Type of transport medium stored in this network list. */
+	@Schema(description = "Type of transport medium stored in this network list.", example = "other")
 	private String transportMediumType = null;
 
 	/** Preferred name type for this network list. */
+	@Schema(description = "Preferred name type for this network list.", example = "nwshb5")
 	private String siteNameTypePref = null;
-	
+
 	/** Time that this network list was last modified in the database. */
+	@Schema(description = "Timestamp when this network list was last modified in the database.",
+			example = "2021-07-01T12:34:56.493[UTC]")
 	private Date lastModifyTime = null;
-	
+
+	@Schema(description = "Number of platforms associated with this network list.", example = "3")
 	private int numPlatforms = 0;
 
 	public Long getNetlistId()

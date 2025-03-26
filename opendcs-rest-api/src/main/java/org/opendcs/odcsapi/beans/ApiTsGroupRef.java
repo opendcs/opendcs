@@ -15,40 +15,59 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a time series group reference, including its ID, name, type, and description.")
 public final class ApiTsGroupRef
 {
+	@Schema(description = "Unique numeric identifier for the time series group.", example = "101")
 	private Long groupId = null;
+
+	@Schema(description = "Name of the time series group.", example = "topgroup")
 	private String groupName = null;
+
+	@Schema(description = "Type of the time series group", example = "basin")
 	private String groupType = null;
+
+	@Schema(description = "Description of the time series group.",
+			example = "Group that contains weather-related time series data.")
 	private String description = null;
+
 	public Long getGroupId()
 	{
 		return groupId;
 	}
+
 	public void setGroupId(Long groupId)
 	{
 		this.groupId = groupId;
 	}
+
 	public String getGroupName()
 	{
 		return groupName;
 	}
+
 	public void setGroupName(String groupName)
 	{
 		this.groupName = groupName;
 	}
+
 	public String getGroupType()
 	{
 		return groupType;
 	}
+
 	public void setGroupType(String groupType)
 	{
 		this.groupType = groupType;
 	}
+
 	public String getDescription()
 	{
 		return description;
 	}
+
 	public void setDescription(String description)
 	{
 		this.description = description;

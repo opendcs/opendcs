@@ -15,17 +15,47 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a unit conversion configuration, defining the source and target units, algorithm, and coefficients.")
 public final class ApiUnitConverter
 {
+	@Schema(description = "Unique numeric identifier for the unit converter.", example = "3689")
 	private Long ucId = null;
+
+	@Schema(description = "Abbreviation of the source unit.", example = "m^3/s")
 	private String fromAbbr = null;
+
+	@Schema(description = "Abbreviation of the target unit.", example = "cms")
 	private String toAbbr = null;
 
-	/** One of Constants.eucvt_none, eucvt_linear, eucvt_usgsstd, eucvt_poly5 */
+	/**
+	 * One of Constants.eucvt_none, eucvt_linear, eucvt_usgsstd, eucvt_poly5
+	 */
+	@Schema(description = "Algorithm used for the unit conversion. One of: Constants.eucvt_none," +
+			" eucvt_linear, eucvt_usgsstd, eucvt_poly5.", example = "none")
 	private String algorithm = "none";
-	
-	/** coefficients for use by algorithm code. */
-	private Double a=null, b=null, c=null, d=null, e=null, f=null;
+
+	/**
+	 * coefficients for use by algorithm code.
+	 */
+	@Schema(description = "Coefficient 'a' for the conversion algorithm.", example = "1.0")
+	private Double a = null;
+
+	@Schema(description = "Coefficient 'b' for the conversion algorithm.", example = "2.0")
+	private Double b = null;
+
+	@Schema(description = "Coefficient 'c' for the conversion algorithm.", example = "3.0")
+	private Double c = null;
+
+	@Schema(description = "Coefficient 'd' for the conversion algorithm.", example = "4.0")
+	private Double d = null;
+
+	@Schema(description = "Coefficient 'e' for the conversion algorithm.", example = "5.0")
+	private Double e = null;
+
+	@Schema(description = "Coefficient 'f' for the conversion algorithm.", example = "6.0")
+	private Double f = null;
 
 	public String getFromAbbr()
 	{

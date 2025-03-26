@@ -18,17 +18,27 @@ package org.opendcs.odcsapi.beans;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a reference to a site, including metadata such as IDs, names, and descriptions.")
 public final class ApiSiteRef
 {
+	@Schema(description = "Unique numeric identifier for the site.", example = "1")
 	private Long siteId = null;
-	
-	/** nametype - namevalue */
+
+	/**
+	 * nametype - namevalue
+	 */
+	@Schema(description = "Map containing site names where the key represents the name type and the value the actual name.",
+			example = "{\"CWMS\": \"OKVI4\", \"nwshb5\": \"OKVI4\"}")
 	private Map<String, String> sitenames = new HashMap<>();
-	
+
+	@Schema(description = "Public name for the site.", example = "Barre Falls Dam", nullable = true)
 	private String publicName = null;
-	
+
+	@Schema(description = "Description of the site.", example = "Iowa River at Oakville, IA (USGS)", nullable = true)
 	private String description = null;
-	
+
 	public Long getSiteId()
 	{
 		return siteId;

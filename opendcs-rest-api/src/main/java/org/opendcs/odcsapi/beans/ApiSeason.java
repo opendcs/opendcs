@@ -15,23 +15,47 @@
 
 package org.opendcs.odcsapi.beans;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a season with details like abbreviation, name, start/end dates, and time zone.")
 public final class ApiSeason
 {
-	/** one-word abbreviation for season */
+	/**
+	 * one-word abbreviation for season
+	 */
+	@Schema(description = "One-word abbreviation for the season.", example = "autumn")
 	private String abbr = null;
-	/** one-word abbreviation for season.  If this is set, it updates a previously saved season.  If this is not set, it creates a new one.*/
+	/**
+	 * one-word abbreviation for season.  If this is set, it updates a previously saved season.  If this is not set, it creates a new one.
+	 */
+	@Schema(description = "One-word abbreviation from an existing season. If set, it updates the existing season. Otherwise, it creates a new one.")
 	private String fromabbr = null;
-	/** multi-word more descriptive name */
+	/**
+	 * multi-word more descriptive name
+	 */
+	@Schema(description = "Multi-word descriptive name of the season.", example = "Autumn")
 	private String name = null;
-	/** String representation of season start */
+	/**
+	 * String representation of season start
+	 */
+	@Schema(description = "String representation of the season's start date.", example = "09/22-12:00")
 	private String start = null;
-	/** String representation of season end */
+	/**
+	 * String representation of season end
+	 */
+	@Schema(description = "String representation of the season's end date.", example = "12/21-12:00")
 	private String end = null;
-	/** Time Zone ID */
+	/**
+	 * Time Zone ID
+	 */
+	@Schema(description = "ID of the time zone associated with the season.", example = "EST5EDT")
 	private String tz = null;
-	/** Allows user to specify sort order of seasons for GUI display */
+	/**
+	 * Allows user to specify sort order of seasons for GUI display
+	 */
+	@Schema(description = "Specifies the sort order of seasons for GUI display.", example = "1")
 	private Integer sortNumber = null;
-	
+
 	public ApiSeason()
 	{	
 	}

@@ -17,14 +17,28 @@ package org.opendcs.odcsapi.beans;
 
 import java.util.Date;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Represents a reference to a computation process (application) with its details, "
+		+ "including type, name, and last modified date.")
 public final class ApiAppRef
 {
+	@Schema(description = "The unique identifier of the application.", example = "35")
 	private Long appId = null;
+
+	@Schema(description = "The name of the application.", example = "compproc")
 	private String appName = null;
+
+	@Schema(description = "The type of the application.", example = "computationprocess")
 	private String appType = null;
+
+	@Schema(description = "Additional comments about the application.", example = "Main Computation Process")
 	private String comment = null;
+
+	@Schema(description = "The last modified timestamp of the application record.",
+			example = "2022-03-30T20:49:44Z[UTC]")
 	private Date lastModified = null;
-	
+
 	public Long getAppId()
 	{
 		return appId;

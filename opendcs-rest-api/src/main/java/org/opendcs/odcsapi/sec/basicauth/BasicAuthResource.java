@@ -22,6 +22,16 @@ import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Set;
 import javax.annotation.security.RolesAllowed;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.StringToClassMapItem;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -51,6 +61,7 @@ import org.slf4j.LoggerFactory;
 import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRIBUTE_KEY;
 
 @Path("/")
+@Tag(name = "REST - Authentication and Authorization", description = "Endpoints for authentication and authorization.")
 public final class BasicAuthResource extends OpenDcsResource
 {
 
@@ -67,6 +78,59 @@ public final class BasicAuthResource extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@Operation(
+			summary = "The ‘credentials’ POST method is used to obtain a new token",
+			description = "The user name and password provided must be a valid login for the underlying database.   \n"
+					+ "Also, that user must be assigned either of the roles OTSDB_ADMIN or OTSDB_MGR.\n"
+					+ "--- \n\n\n"
+					+ "Starting in **API Version 0.0.3**, authentication credentials (username and password) "
+					+ "may be passed as shown above in the POST body.   \n"
+					+ "They may also be passed in a GET call to the 'credentials' method, "
+					+ "(e.g. '*http://localhost:8080/odcsapi/credentials*') containing an HTTP Authentication Basic "
+					+ "header in the form 'username:password'.  \n\nThe returned data to the GET call will be empty.",
+			requestBody = @RequestBody(
+					description = "Login Credentials",
+					required = true,
+					content = @Content(
+							mediaType = MediaType.APPLICATION_JSON,
+							schema = @Schema(implementation = Credentials.class)
+					)
+			),
+			responses = {
+					@ApiResponse(
+							responseCode = "200",
+							description = "Successful authentication."
+					),
+					@ApiResponse(
+							responseCode = "400",
+							description = "Bad request - null or otherwise invalid credentials.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(type = "object", implementation = StringToClassMapItem.class),
+									examples = @ExampleObject(value = "{\"status\":400," +
+											"\"message\": \"Neither username nor password may be null.\"}"))
+					),
+					@ApiResponse(
+							responseCode = "403",
+							description = "Invalid credentials or insufficient role.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(type = "object", implementation = StringToClassMapItem.class),
+									examples = @ExampleObject(value = "{\"status\":403," +
+											"\"message\":\"Failed to authorize user.\"}"))
+					),
+					@ApiResponse(
+							responseCode = "500",
+							description = "Internal Server Error"
+					),
+					@ApiResponse(
+							responseCode = "501",
+							description = "This authentication method is only supported by the OpenTSDB database.",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(type = "object", implementation = StringToClassMapItem.class),
+									examples = @ExampleObject(value = "{\"status\":501," +
+											"\"message\":\"Basic Auth is not supported.\"}"))
+					)
+			}
+	)
 	public Response postCredentials(Credentials credentials) throws WebAppException
 	{
 		TimeSeriesDb db = getLegacyTimeseriesDB();

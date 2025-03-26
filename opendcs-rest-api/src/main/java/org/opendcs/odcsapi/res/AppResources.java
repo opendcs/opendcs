@@ -40,6 +40,14 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbCompLock;
 import opendcs.dai.LoadingAppDAI;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.opendcs.odcsapi.beans.ApiAppRef;
 import org.opendcs.odcsapi.beans.ApiAppStatus;
 import org.opendcs.odcsapi.beans.ApiLoadingApp;
@@ -64,9 +72,20 @@ public final class AppResources extends OpenDcsResource
 	@Path("apprefs")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@Operation(
+			summary = "Retrieves a list of application references",
+			description = "Example:  \n\n    http://localhost:8080/odcsapi/apprefs",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Success",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									array = @ArraySchema(schema = @Schema(implementation = ApiAppRef.class)))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			},
+			tags = {"REST - Loading Application Records"}
+	)
 	public Response getAppRefs() throws DbException
 	{
-		try (LoadingAppDAI dai = getLegacyDatabase().makeLoadingAppDAO())
+		try(LoadingAppDAI dai = getLegacyDatabase().makeLoadingAppDAO())
 		{
 			List<ApiAppRef> ret = dai.listComputationApps(false)
 					.stream()
@@ -75,7 +94,7 @@ public final class AppResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(ret).build();
 		}
-		catch (DbIoException ex)
+		catch(DbIoException ex)
 		{
 			throw new DbException("Unable to retrieve apps", ex);
 		}
@@ -96,7 +115,22 @@ public final class AppResources extends OpenDcsResource
 	@Path("app")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
-	public Response getApp(@QueryParam("appid") Long appId)
+	@Operation(
+			summary = "Retrieve a Single Application by its ID",
+			description = "Example: \n\n    http://localhost:8080/odcsapi/app?appid=4  \n",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Success",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = ApiLoadingApp.class))),
+					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required appId parameter"),
+					@ApiResponse(responseCode = "404", description = "Not Found - No app found with the given ID"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			},
+			tags = {"REST - Loading Application Records"}
+	)
+	public Response getApp(@Parameter(description = "App ID", required = true, example = "4",
+			schema = @Schema(implementation = Long.class))
+		@QueryParam("appid") Long appId)
 			throws WebAppException, DbException
 	{
 		if (appId == null)
@@ -123,6 +157,32 @@ public final class AppResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@Operation(
+			summary = "Create or Overwrite Existing App",
+			description = "The App POST method takes a single DECODES Loading Application in JSON format, "
+					+ "as described above for GET.  \n\n"
+					+ "For creating a new record, leave appId out of the passed data structure.  \n\n"
+					+ "For overwriting an existing one, include the appId that was previously returned. "
+					+ "The app in the database is replaced with the one sent.",
+			requestBody = @RequestBody(
+					description = "Loading App",
+					required = true,
+					content = @Content(mediaType = MediaType.APPLICATION_JSON,
+							schema = @Schema(implementation = ApiLoadingApp.class),
+					examples = {
+							@ExampleObject(name = "Basic", value = ResourceExamples.AppExamples.BASIC),
+							@ExampleObject(name = "New", value = ResourceExamples.AppExamples.NEW),
+							@ExampleObject(name = "Update", value = ResourceExamples.AppExamples.UPDATE)
+					})
+			),
+			responses = {
+					@ApiResponse(responseCode = "201", description = "Successfully stored application",
+							content = @Content(schema = @Schema(implementation = ApiLoadingApp.class),
+									mediaType = MediaType.APPLICATION_JSON)),
+					@ApiResponse(responseCode = "500", description = "Database error occurred")
+			},
+			tags = {"REST - Loading Application Records"}
+	)
 	public Response postApp(ApiLoadingApp app)
 			throws DbException
 	{
@@ -169,8 +229,24 @@ public final class AppResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
-	public Response deleteApp(@QueryParam("appid") Long appId)
-			throws DbException, WebAppException
+	@Operation(
+			summary = "Delete Existing Loading App",
+			description = "Required argument appid must be passed in the URL.  \n\n"
+					+ "This operation will fail if the loading application is currently being used by any "
+					+ "computations or schedule entries, or if it is currently running and has "
+					+ "an active CP_COMP_PROC_LOCK record.",
+			responses = {
+					@ApiResponse(responseCode = "204", description = "Successfully deleted application"),
+					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required appId parameter"),
+					@ApiResponse(responseCode = "404", description = "Not Found - No app found with the given ID"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			},
+			tags = {"REST - Loading Application Records"}
+	)
+	public Response deleteApp(@Parameter(description = "App ID", required = true, example = "4",
+			schema = @Schema(implementation = Long.class))
+		@QueryParam("appid") Long appId)
+			throws WebAppException, DbException
 	{
 		if (appId == null)
 		{
@@ -202,7 +278,170 @@ public final class AppResources extends OpenDcsResource
 	@Path("appstat")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
-	public Response getAppStatus() throws DbException
+	@Operation(
+			summary = "Returns an array with one element for each application",
+			description = "REST - Loading Application Records describes API methods for retrieving and manipulating "
+					+ "'Loading Application' records. The concept of a 'Loading App' has been generalized to include "
+					+ "any application that is known by the OpenDCS software. \nApplications each have a set of properties. "
+					+ "The following properties are relevant to M&C: \n\n"
+					+ "•\tstartCmd – A string contains a command used to start the application on this server. "
+					+ "Most of the OpenDCS apps use lock records to ensure that only a single instance can run at a time.\n\n"
+					+ "•\tMonitor – A Boolean (true/false) value indicating whether this app should listen for "
+					+ "'event clients.' The API can act as an event client. Event clients can connect to the app "
+					+ "via a socket and pull a list of events generated by the app. This is typically used to provide "
+					+ "a scrolling event window.\n\n •\tEventPort – If set, this property determines the port that this "
+					+ "app will listen on for event clients. If not set (the usual case), the port is determined by "
+					+ "the formula: port = (pid % 10000) + 20000\n\n"
+					+ "Example:  \n\n"
+					+ "`http://localhost:8080/odcsapi/appstat`\n          \n          \n"
+					+ "The returned structure is an array with one element for each application returned by the "
+					+ "'GET apprefs' method described in the method GET /apprefs\n\n"
+					+ "If an application is currently running, the 'pid' will be the system process ID, "
+					+ "and 'heartbeat' will be a valid date/time. Also 'status' will be set to some relevant string "
+					+ "for that application. For example, the *compproc app* sets its status to the number of "
+					+ "computation runs and errors.\n\n"
+					+ "         [\n"
+					+ "            {\n"
+					+ "              \"appId\": 1,\n"
+					+ "              \"appName\": \"decodes\",\n"
+					+ "              \"appType\": null,\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 4,\n"
+					+ "              \"appName\": \"compproc\",\n"
+					+ "              \"appType\": \"computationprocess\",\n"
+					+ "              \"hostname\": \"mmaloney3.local\",\n"
+					+ "              \"pid\": 12176,\n"
+					+ "              \"heartbeat\": \"2023-05-25T16:34:18.073Z[UTC]\",\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Cmps: 0/0\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 5,\n"
+					+ "              \"appName\": \"compproc_regtest\",\n"
+					+ "              \"appType\": null,\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 8,\n"
+					+ "              \"appName\": \"utility\",\n"
+					+ "              \"appType\": \"utility\",\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 18,\n"
+					+ "              \"appName\": \"StaleDataChecker\",\n"
+					+ "              \"appType\": null,\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 19,\n"
+					+ "              \"appName\": \"compedit\",\n"
+					+ "              \"appType\": null,\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 20,\n"
+					+ "              \"appName\": \"corrections\",\n"
+					+ "              \"appType\": null,\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 21,\n"
+					+ "              \"appName\": \"limits\",\n"
+					+ "              \"appType\": null,\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 22,\n"
+					+ "              \"appName\": \"statmon\",\n"
+					+ "              \"appType\": null,\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 23,\n"
+					+ "              \"appName\": \"dcpmon\",\n"
+					+ "              \"appType\": null,\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 25,\n"
+					+ "              \"appName\": \"CompEdit\",\n"
+					+ "              \"appType\": \"gui\",\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 26,\n"
+					+ "              \"appName\": \"RoutingScheduler\",\n"
+					+ "              \"appType\": \"routingscheduler\",\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            },\n"
+					+ "            {\n"
+					+ "              \"appId\": 27,\n"
+					+ "              \"appName\": \"compdepends\",\n"
+					+ "              \"appType\": \"compdepends\",\n"
+					+ "              \"hostname\": null,\n"
+					+ "              \"pid\": null,\n"
+					+ "              \"heartbeat\": null,\n"
+					+ "              \"eventPort\": null,\n"
+					+ "              \"status\": \"Inactive\"\n"
+					+ "            }\n"
+					+ "          ]\n"
+					+ "\n",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Successfully retrieved application statistics",
+						content = @Content(mediaType = MediaType.APPLICATION_JSON,
+							array = @ArraySchema(schema = @Schema(implementation = ApiAppStatus.class)))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			},
+			tags = {"OpenDCS Process Monitor and Control (APP)"}
+	)
+	public Response getAppStat() throws DbException
 	{
 		List<ApiAppStatus> ret = new ArrayList<>();
 		try (LoadingAppDAI dai = getLegacyDatabase().makeLoadingAppDAO())

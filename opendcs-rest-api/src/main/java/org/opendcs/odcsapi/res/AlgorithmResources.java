@@ -39,6 +39,14 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ScriptType;
 import decodes.tsdb.TsdbException;
 import decodes.tsdb.compedit.AlgorithmInList;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import opendcs.dai.AlgorithmDAI;
 import org.opendcs.odcsapi.beans.ApiAlgoParm;
 import org.opendcs.odcsapi.beans.ApiAlgorithm;
@@ -60,6 +68,18 @@ public final class AlgorithmResources extends OpenDcsResource
 	@Path("algorithmrefs")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed(ApiConstants.ODCS_API_GUEST)
+	@Operation(
+			summary = "Retrieve all algorithm references",
+			description = "Example: \n\n    http://localhost:8080/odcsapi/algorithmrefs",
+			operationId = "getalgorithmrefs",
+			tags = {"REST - Algorithm Methods"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Success",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									array = @ArraySchema(schema = @Schema(implementation = ApiAlgorithmRef.class)))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
 	public Response getAlgorithmRefs() throws DbIoException
 	{
 		try(AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
@@ -89,7 +109,23 @@ public final class AlgorithmResources extends OpenDcsResource
 	@Path("algorithm")
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed(ApiConstants.ODCS_API_GUEST)
-	public Response getAlgorithm(@QueryParam("algorithmid") Long algoId)
+	@Operation(
+			summary = "Retrieve an algorithm by its ID",
+			description = "Example: \n\n    http://localhost:8080/odcsapi/algorithm?algorithmid=4",
+			operationId = "getalgorithm",
+			tags = {"REST - Algorithm Methods"},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Success",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = ApiAlgorithm.class))),
+					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required parameter"),
+					@ApiResponse(responseCode = "404", description = "Not Found"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response getAlgorithm(@Parameter(description = "Unique Algorithm ID", required = true,
+			schema = @Schema(implementation = Long.class, example = "4"))
+		@QueryParam("algorithmid") Long algoId)
 			throws WebAppException, DbIoException
 	{
 		if(algoId == null)
@@ -153,6 +189,30 @@ public final class AlgorithmResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@Operation(
+			summary = "Create or Overwrite Existing OpenDCS Algorithm",
+			description = "It takes a single OpenDCS Algorithm Record in JSON format, as described above for GET.   \n\n"
+					+ "For creating a new record, leave algorithmId out of the passed data structure.  \n\n"
+					+ "For overwriting an existing one, include the algorithmId that was previously returned. "
+					+ "The algorithm in the database is replaced with the one sent.",
+			operationId = "postAlgorithm",
+			tags = {"REST - Algorithm Methods"},
+			requestBody = @RequestBody(description = "OpenDcs Algorithm",
+					required = true,
+					content = @Content(mediaType = MediaType.APPLICATION_JSON,
+							schema = @Schema(implementation = ApiAlgorithm.class),
+					examples = {
+							@ExampleObject(name = "Basic", value = ResourceExamples.AlgorithmExamples.BASIC),
+							@ExampleObject(name = "New", value = ResourceExamples.AlgorithmExamples.NEW),
+							@ExampleObject(name = "Update", value = ResourceExamples.AlgorithmExamples.UPDATE)
+					})),
+			responses = {
+					@ApiResponse(responseCode = "201", description = "Successfully Created",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(implementation = ApiAlgorithm.class))),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
 	public Response postAlgorithm(ApiAlgorithm algo) throws DbIoException
 	{
 		try(AlgorithmDAI dai = getLegacyTimeseriesDB().makeAlgorithmDAO())
@@ -196,7 +256,21 @@ public final class AlgorithmResources extends OpenDcsResource
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
-	public Response deleteAlgorithm(@QueryParam("algorithmid") Long algorithmId)
+	@Operation(
+			summary = "Delete Existing OpenDCS Algorithm",
+			description = "Required argument algorithmid must be passed in the URL.  \n\n"
+					+ "This operation will fail if the algorithm is currently being used by any computation records.",
+			operationId = "deleteAlgorithm",
+			tags = {"REST - Algorithm Methods"},
+			responses = {
+					@ApiResponse(responseCode = "204", description = "Successfully deleted algorithm"),
+					@ApiResponse(responseCode = "400", description = "Bad Request - Missing required parameter"),
+					@ApiResponse(responseCode = "500", description = "Internal Server Error")
+			}
+	)
+	public Response deleteAlgorithm(@Parameter(description = "ID of the algorithm to delete", required = true,
+			schema = @Schema(implementation = Long.class, example = "4"))
+		@QueryParam("algorithmid") Long algorithmId)
 			throws TsdbException, MissingParameterException
 	{
 		if (algorithmId == null)
