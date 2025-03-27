@@ -17,6 +17,7 @@ package org.opendcs.annotations.algorithm;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.Element;
@@ -37,9 +38,11 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.opendcs.annotations.PropertySpec;
 
+import com.google.auto.service.AutoService;
 
 @javax.annotation.processing.SupportedAnnotationTypes("org.opendcs.annotations.algorithm.Algorithm")
 @javax.annotation.processing.SupportedSourceVersion(javax.lang.model.SourceVersion.RELEASE_8)
+@AutoService(Processor.class)
 final public class AlgorithmProcessor extends AbstractProcessor
 {
     private static final Logger log = Logger.getLogger(AlgorithmProcessor.class.getName());

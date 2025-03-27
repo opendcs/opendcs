@@ -28,6 +28,8 @@ import javax.swing.JTabbedPane;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
+import org.opendcs.annotations.applications.OpenDcsApplication;
+
 import lrgs.gui.DecodesInterface;
 import decodes.db.Site;
 import decodes.gui.TopFrame;
@@ -36,7 +38,7 @@ import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 
-
+@OpenDcsApplication
 public class CAPEdit 
 	extends TsdbAppTemplate
 {

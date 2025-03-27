@@ -48,6 +48,7 @@ hec-testcontainers-cwms = "2.0.0"
 
 # manual test deps
 gherkin-kiwi = "1.0.0-M11"
+auto-service = "1.1.1"
 
 [libraries]
 gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }
@@ -120,6 +121,10 @@ testcontainers-core = { module = "org.testcontainers:testcontainers", version.re
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref="testcontainers" }
 testcontainers-oracle-free = { module = "org.testcontainers:oracle-free", version.ref="testcontainers" }
 hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
+
+# build deps
+com-google-auto-service-annotations = { module = "com.google.auto.service:auto-service-annotations", version.ref ="auto-service" }
+com-google-auto-service = { module = "com.google.auto.service:auto-service", version.ref ="auto-service" }
 
 [bundles]
 junit = [ "junit-api", "junit-engine", "junit-params" ]

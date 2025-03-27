@@ -7,8 +7,11 @@ plugins
 }
 
 // NOTE: this project should not contain any runtime dependencies
-// Build dependencies, such as google autowire are acceptable.
-
+// Build dependencies, such as google autoservice are acceptable.
+dependencies {
+    compileOnly(libs.com.google.auto.service.annotations)
+    annotationProcessor(libs.com.google.auto.service)
+}
 
 publishing {
     publications {
