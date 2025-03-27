@@ -261,6 +261,10 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 						rs2EnumValue(rs, dbEnum);
 						top.addEnum(dbEnum);
 					}
+					else
+					{
+						log.warn("Enum not in cache for key {}. Orphaned enum value {}", key, rs.getString("enumValue"));
+					}
 				});				
 			}
 		}

@@ -1207,10 +1207,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                     throw new RuntimeException(ex);
                 }
             });
-
-
         }
-        catch (Throwable ex)
+        catch (RuntimeException | IOException ex)
         {
             throw new DecodesException("Unable to initialize decodes.", ex);
         }
