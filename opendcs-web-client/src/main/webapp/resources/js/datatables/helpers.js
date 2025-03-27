@@ -235,7 +235,7 @@ function deleteOpendcsObject_default(event, clickedLink, params)
 
         if (objectId != "")
         {
-            url += `&${urlIdName}=${objectId}`;
+            url += `?${urlIdName}=${objectId}`;
         }
         else
         {
