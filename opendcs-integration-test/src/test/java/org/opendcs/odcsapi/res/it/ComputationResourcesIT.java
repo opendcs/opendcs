@@ -270,36 +270,29 @@ final class ComputationResourcesIT extends BaseIT
 		assertEquals(expectedJson.getString("description"), actualItem.get("description"));
 		assertEquals(expectedJson.getBoolean("enabled"), actualItem.get("enabled"));
 		assertEquals(expectedJson.getString("groupName"), actualItem.get("groupName"));
-		assertEquals(expectedJson.getString("applicationName"), actualItem.get("applicationName"));
 		assertEquals(expectedJson.getString("algorithmName"), actualItem.get("algorithmName"));
-		assertEquals(expectedJson.getString("parmList[0].siteName"),
-				((Map<String, Object>) (((List) actualItem.get("parmList")).get(0))).get("siteName"));
-		assertEquals(expectedJson.getString("parmList[0].dataType"),
-				((Map<String, Object>) (((List) actualItem.get("parmList")).get(0))).get("dataType"));
-		assertEquals(expectedJson.getString("parmList[0].interval"),
-				((Map<String, Object>) (((List) actualItem.get("parmList")).get(0))).get("interval"));
-		assertEquals(expectedJson.getString("comment"), actualItem.get("comment"));
+		assertEquals(expectedJson.getString("processName"), actualItem.get("processName"));
 	}
 
 	@TestTemplate
 	void testGetComputationRefsWithFilters() throws Exception
 	{
-		ApiComputation expectedComp = getDtoFromResource("computation_refs_expected.json",
-				ApiComputation.class);
 		JsonPath expected = getJsonPathFromResource("computation_refs_expected.json");
+
+		ApiComputation comp = getDtoFromResource("computation_insert_data.json", ApiComputation.class);
 
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.filter(sessionFilter)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
-			.queryParam("site", expectedComp.getParmList().get(0).getSiteName())
-			.queryParam("datatype", expectedComp.getParmList().get(0).getDataType())
-			.queryParam("group", expectedComp.getGroupName())
-			.queryParam("algorithm", expectedComp.getAlgorithmName())
-			.queryParam("process", expectedComp.getApplicationName())
-			.queryParam("enabled", expectedComp.isEnabled())
-			.queryParam("interval", expectedComp.getParmList().get(0).getInterval())
+			.queryParam("site", siteId)
+			.queryParam("datatype", comp.getParmList().get(0).getDataTypeId())
+			.queryParam("group", comp.getGroupId())
+			.queryParam("algorithm", algId)
+			.queryParam("process", appId)
+			.queryParam("enabled", comp.isEnabled())
+			.queryParam("interval", comp.getParmList().get(0).getInterval())
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -318,35 +311,27 @@ final class ComputationResourcesIT extends BaseIT
 		assertEquals(expected.getString("description"), actualItem.get("description"));
 		assertEquals(expected.getBoolean("enabled"), actualItem.get("enabled"));
 		assertEquals(expected.getString("groupName"), actualItem.get("groupName"));
-		assertEquals(expected.getString("applicationName"), actualItem.get("applicationName"));
 		assertEquals(expected.getString("algorithmName"), actualItem.get("algorithmName"));
-		assertEquals(expected.getString("parmList[0].siteName"),
-				((Map<String, Object>) (((List) actualItem.get("parmList")).get(0))).get("siteName"));
-		assertEquals(expected.getString("parmList[0].dataType"),
-				((Map<String, Object>) (((List) actualItem.get("parmList")).get(0))).get("dataType"));
-		assertEquals(expected.getString("parmList[0].interval"),
-				((Map<String, Object>) (((List) actualItem.get("parmList")).get(0))).get("interval"));
-		assertEquals(expected.getString("comment"), actualItem.get("comment"));
+		assertEquals(expected.getString("processName"), actualItem.get("processName"));
 	}
 
 	@TestTemplate
 	void testGetComputationRefsWithNoMatchingFilters() throws Exception
 	{
-		ApiComputation expectedComp = getDtoFromResource("computation_refs_expected.json",
-				ApiComputation.class);
+		ApiComputation comp = getDtoFromResource("computation_insert_data.json", ApiComputation.class);
 
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.filter(sessionFilter)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
-			.queryParam("site", expectedComp.getParmList().get(0).getSiteName())
-			.queryParam("datatype", expectedComp.getParmList().get(0).getDataType())
+			.queryParam("site", comp.getParmList().get(0).getSiteName())
+			.queryParam("datatype", comp.getParmList().get(0).getDataType())
 			.queryParam("group", "test group")
-			.queryParam("algorithm", expectedComp.getAlgorithmName())
-			.queryParam("process", expectedComp.getApplicationName())
+			.queryParam("algorithm", comp.getAlgorithmName())
+			.queryParam("process", comp.getApplicationName())
 			.queryParam("enabled", false)
-			.queryParam("interval", expectedComp.getParmList().get(0).getInterval())
+			.queryParam("interval", comp.getParmList().get(0).getInterval())
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -362,12 +347,12 @@ final class ComputationResourcesIT extends BaseIT
 			.filter(sessionFilter)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
-			.queryParam("site", expectedComp.getParmList().get(0).getSiteName())
-			.queryParam("datatype", expectedComp.getParmList().get(0).getDataType())
-			.queryParam("group", expectedComp.getGroupName())
-			.queryParam("algorithm", expectedComp.getAlgorithmName())
-			.queryParam("process", expectedComp.getApplicationName())
-			.queryParam("enabled", expectedComp.isEnabled())
+			.queryParam("site", comp.getParmList().get(0).getSiteName())
+			.queryParam("datatype", comp.getParmList().get(0).getDataType())
+			.queryParam("group", comp.getGroupName())
+			.queryParam("algorithm", comp.getAlgorithmName())
+			.queryParam("process", comp.getApplicationName())
+			.queryParam("enabled", comp.isEnabled())
 			.queryParam("interval", "bi-annual")
 		.when()
 			.redirects().follow(true)
@@ -384,13 +369,13 @@ final class ComputationResourcesIT extends BaseIT
 			.filter(sessionFilter)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
-			.queryParam("site", expectedComp.getParmList().get(0).getSiteName())
-			.queryParam("datatype", expectedComp.getParmList().get(0).getDataType())
-			.queryParam("group", expectedComp.getGroupName())
+			.queryParam("site", comp.getParmList().get(0).getSiteName())
+			.queryParam("datatype", comp.getParmList().get(0).getDataType())
+			.queryParam("group", comp.getGroupName())
 			.queryParam("algorithm", "water pressure calc")
-			.queryParam("process", expectedComp.getApplicationName())
-			.queryParam("enabled", expectedComp.isEnabled())
-			.queryParam("interval", expectedComp.getParmList().get(0).getInterval())
+			.queryParam("process", comp.getApplicationName())
+			.queryParam("enabled", comp.isEnabled())
+			.queryParam("interval", comp.getParmList().get(0).getInterval())
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)

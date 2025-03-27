@@ -17,7 +17,6 @@ package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -35,6 +34,7 @@ import javax.ws.rs.core.Response;
 import decodes.db.DataType;
 import decodes.db.Site;
 import decodes.sql.DbKey;
+import decodes.tsdb.CompFilter;
 import decodes.tsdb.ConstraintException;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.DbCompParm;
@@ -55,12 +55,13 @@ import opendcs.dai.ComputationDAI;
 import org.opendcs.odcsapi.beans.ApiCompParm;
 import org.opendcs.odcsapi.beans.ApiComputation;
 import org.opendcs.odcsapi.beans.ApiComputationRef;
-import org.opendcs.odcsapi.beans.DbCompFilter;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+
+import static java.util.stream.Collectors.toList;
 
 @Path("/")
 public final class ComputationResources extends OpenDcsResource
@@ -82,57 +83,53 @@ public final class ComputationResources extends OpenDcsResource
 					@ApiResponse(responseCode = "404", description = "No computations found matching the filter criteria"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")
 			}
-	)
+		)
 	public Response getComputationRefs(
-			@Parameter(schema = @Schema(implementation = String.class)) @QueryParam("site") String site,
-			@Parameter(schema = @Schema(implementation = String.class)) @QueryParam("algorithm") String algorithm,
-			@Parameter(schema = @Schema(implementation = String.class)) @QueryParam("datatype") String datatype,
-			@Parameter(schema = @Schema(implementation = String.class)) @QueryParam("group") String group,
-			@Parameter(schema = @Schema(implementation = String.class)) @QueryParam("process") String process,
-			@Parameter(schema = @Schema(implementation = Boolean.class)) @QueryParam("enabled") Boolean enabled,
-			@Parameter(schema = @Schema(implementation = String.class)) @QueryParam("interval") String interval)
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Site ID to filter on") @QueryParam("site") Long siteId,
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Algorithm ID to filter on") @QueryParam("algorithm") Long algorithmId,
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Datatype ID to filter on") @QueryParam("datatype") Long dataTypeId,
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Group ID to filter on") @QueryParam("group") Long groupId,
+			@Parameter(schema = @Schema(implementation = Long.class),
+					description = "Process ID to filter on") @QueryParam("process") Long processId,
+			@Parameter(schema = @Schema(implementation = Boolean.class),
+					description = "Whether to filter only enabled computations") @QueryParam("enabled") Boolean enabled,
+			@Parameter(schema = @Schema(implementation = String.class),
+					description = "Interval code to filter on") @QueryParam("interval") String interval)
 			throws DbException, WebAppException
 	{
 		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
 		{
-			DbCompFilter refFilter = new DbCompFilter();
-			if (enabled != null)
+			CompFilter compFilter = new CompFilter();
+			if (dataTypeId != null)
 			{
-				refFilter.setEnabledOnly(enabled);
+				compFilter.setDataTypeId(DbKey.createDbKey(dataTypeId));
 			}
-			if (algorithm != null)
+			if (groupId != null)
 			{
-				refFilter.setAlgorithm(algorithm);
+				compFilter.setGroupId(DbKey.createDbKey(groupId));
 			}
-			if (datatype != null)
+			if (processId != null)
 			{
-				refFilter.setDataType(datatype);
+				compFilter.setProcessId(DbKey.createDbKey(processId));
 			}
-			if (group != null)
+			if (siteId != null)
 			{
-				refFilter.setGroup(group);
-			}
-			if (process != null)
-			{
-				refFilter.setProcess(process);
-			}
-			if (site != null)
-			{
-				refFilter.setSite(site);
+				compFilter.setSiteId(DbKey.createDbKey(siteId));
 			}
 			if (interval != null)
 			{
-				refFilter.setIntervalCode(interval);
+				compFilter.setIntervalCode(interval);
 			}
-			List<ApiComputation> comps = dai.listComps(refFilter)
-				.stream()
-				.map(ComputationResources::map)
-				.collect(Collectors.toList());
-			if (comps.isEmpty())
+			List<ApiComputationRef> computationRefs = map(dai.compEditList(compFilter));
+			if (computationRefs.isEmpty())
 			{
 				throw new DatabaseItemNotFoundException("No computations found matching the filter criteria");
 			}
-			return Response.status(HttpServletResponse.SC_OK).entity(comps).build();
+			return Response.status(HttpServletResponse.SC_OK).entity(computationRefs).build();
 		}
 		catch(DbIoException e)
 		{
@@ -263,7 +260,7 @@ public final class ComputationResources extends OpenDcsResource
 		ret.setParmList(new ArrayList<>(comp.getParmList()
 				.stream()
 				.map(ComputationResources::map)
-				.collect(Collectors.toList())));
+				.collect(toList())));
 		return ret;
 	}
 
