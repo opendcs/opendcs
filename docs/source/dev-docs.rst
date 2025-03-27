@@ -441,7 +441,7 @@ Implementations should derive from :code:`org.opendcs.fixtures.spi.configuration
 and implement any required setup. All `Configurations` are given a temporary directory to create the `DCSTOOL_USERDIR` contents.
 Application logs are all written into this directory.
 
-The Currently Implemented engines are demonstrated below.  OpenDCS-Postgres and OpenDCS-Oracle use the (Testcontainers)[https://java.testcontainers.org] library which requires docker. OpenDCS-XML only depends on the file system.
+The Currently Implemented engines are demonstrated below.  OpenDCS-Postgres, CWMS-Oracle, and OpenDCS-Oracle use the (Testcontainers)[https://java.testcontainers.org] library which requires docker. OpenDCS-XML only depends on the file system.
 
 To run use the following commands:
 
@@ -452,6 +452,8 @@ To run use the following commands:
     ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-Postgres
     # or 
     ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-Oracle
+    # or 
+    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=CWMS-Oracle
 
 Adding tests
 ------------
