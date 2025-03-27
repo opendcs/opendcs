@@ -3,11 +3,9 @@ on:
   push:
     branches:
       - main
-      - feature/task_cwms_support
   pull_request:
     branches:
       - main
-      - feature/task_cwms_support
 jobs:
   owasp-zap:
     name: Analyze with OWASP Zap API

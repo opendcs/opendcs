@@ -188,7 +188,7 @@ public class PropSpecHelper
 		}
 		catch (Exception ex)
 		{
-			throw new WebAppException(HttpServletResponse.SC_CONFLICT, "Cannot get property specs for '" + className, ex);
+			throw new WebAppException(HttpServletResponse.SC_CONFLICT, "Cannot get property specs for '" + className + "'", ex);
 		}
 	}
 }

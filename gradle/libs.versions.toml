@@ -1,22 +1,13 @@
 [versions]
 opendcs = "7.5.1-RC03"
 
-jetty-jsp = "9.2.30.v20200428"
 servlet-api = "4.0.1" #Updating this further will require a change to the jakarta namespace.
 slf4j = { strictly = "2.0.12" }
 jersey = "2.40"
-postgresql = "42.7.4"
-oracle = "23.5.0.24.07"
-cwms-db = "9.3.5"
-cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
-cwms-ratings = "1.1.0"
-monolith = { strictly = "2.0.2" }
 
 swagger = "2.2.28"
 swagger-ui = "5.18.3"
 jackson = "2.18.2"
-glassfish-jaxb = "2.3.3"
-websocket = "1.1"
 selenium = "3.141.59"
 nimbus = "9.41.1"
 jwt = "4.4.0"
@@ -24,30 +15,17 @@ auto-service = "1.1.1"
 
 #Test Dependencies
 junit = "5.10.2"
-mockito = "3.12.4"
+mockito = "4.11.0"
 byte-buddy = "1.15.3"
 rest-assured = "5.5.0"
 hamcrest = "3.0"
 tomcat = "9.0.91"
-testcontainers = "1.18.1"
-hec-testcontainers-cwms = "2.0.0"
 commons-io = "2.11.0"
-derby = "10.14.2.0"
-webcompere = "2.0.2"
-jdbi = "3.38.2"
-flywaydb = "9.8.1"
 commons-lang = "2.5"
 
 [libraries]
 opendcs = { module = "org.opendcs:opendcs", version.ref = "opendcs" }
 opendcs-api = { module = "org.opendcs:opendcs-api", version.ref = "opendcs" }
-jetty-jsp = { module = "org.eclipse.jetty:jetty-jsp", version.ref = "jetty-jsp" }
-cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
-cwms-db-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen", version.ref = "cwms-db-codegen" }
-cwms-db-aspects = { module = "mil.army.usace.hec:cwms-db-aspects", version.ref = "cwms-db" }
-cwms-db-dao = { module = "mil.army.usace.hec:cwms-db-dao", version.ref = "cwms-db" }
-hec-cwms-ratings-core = { module = "mil.army.usace.hec:hec-cwms-ratings-core", version.ref = "cwms-ratings" }
-hec-monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "monolith" }
 
 servlet-api = { module = "javax.servlet:javax.servlet-api", version.ref = "servlet-api" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -56,14 +34,11 @@ json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson"
 jersey-container-servlet = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref = "jersey" }
 jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
 
-postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
-oracle-jdbc = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
-oracle-ucp = { module = "com.oracle.database.jdbc:ucp", version.ref = "oracle" }
+jstl = { module = "javax.servlet:jstl", version = "1.2"}
 swagger-jaxrs2 = { module = "io.swagger.core.v3:swagger-jaxrs2", version.ref = "swagger" }
 jackson = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
-jaxb-runtime = { module = "org.glassfish.jaxb:jaxb-runtime", version.ref = "glassfish-jaxb" }
-websocket = { module = "javax.websocket:javax.websocket-api", version.ref = "websocket" }
+
 selenium = { module = "org.seleniumhq.selenium:selenium-java", version.ref = "selenium" }
 nimbus = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 jwt = { module = "com.auth0:java-jwt", version.ref = "jwt" }
@@ -76,7 +51,6 @@ junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
 junit-params = { module = "org.junit.jupiter:junit-jupiter-params" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
-mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito" }
 byte-buddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byte-buddy" }
 mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 jersey-test = { module = "org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory", version.ref = "jersey" }
@@ -85,22 +59,12 @@ hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
 tomcat-embedded-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat" }
 tomcat-embedded-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat" }
 tomcat-jdbc = { module = "org.apache.tomcat:tomcat-jdbc", version.ref = "tomcat" }
-testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
-apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
-webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref="testcontainers" }
-hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
-org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
-org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
-org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
-org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
 commons-lang = { module = "commons-lang:commons-lang", version.ref = "commons-lang" }
-jul-to-slf4j = { module = "org.slf4j:jul-to-slf4j", version = "2.0.16"}
+slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j"}
 
 # webjars
 swagger-ui = { module ="org.webjars:swagger-ui", version.ref = "swagger-ui" }
 
 [bundles]
 tomcat = ["tomcat-embedded-core", "tomcat-embedded-jasper", "tomcat-jdbc"]
-jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres" ]

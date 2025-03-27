@@ -26,7 +26,6 @@ import java.time.Duration;
 import org.opendcs.odcsapi.fixtures.TomcatServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
@@ -47,8 +46,6 @@ public final class OwaspZap
 	 */
 	public static void main(String[] args)
 	{
-		SLF4JBridgeHandler.removeHandlersForRootLogger();
-		SLF4JBridgeHandler.install();
 		String baseDir = args[0];
 		String port = args[1];
 		String restWar = args[2];
@@ -58,7 +55,7 @@ public final class OwaspZap
 
 		try(TomcatServer tomcat = new TomcatServer(baseDir, Integer.parseInt(port), restWar, guiWar))
 		{
-			tomcat.start(dbType);
+			tomcat.start();
 			System.exit(runOwaspZap(tomcat).intValue());
 		}
 		catch(InterruptedException e)

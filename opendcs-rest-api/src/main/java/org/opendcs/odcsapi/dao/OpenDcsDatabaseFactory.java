@@ -26,6 +26,7 @@ import decodes.util.DecodesSettings;
 import opendcs.opentsdb.OpenTsdbProvider;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.spi.database.DatabaseProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,7 @@ public final class OpenDcsDatabaseFactory
 			//Temporary workaround until database_properties table is implemented in the schema
 			LOGGER.atWarn().setCause(e).log("Temporary solution forcing OpenTSDB");
 			DecodesSettings decodesSettings = new DecodesSettings();
-			decodesSettings.CwmsOfficeId = System.getProperty("DB_OFFICE");
+			decodesSettings.CwmsOfficeId = DbInterface.decodesProperties.getProperty("CwmsOfficeId");
 			try(Connection connection = dataSource.getConnection())
 			{
 				DatabaseProvider databaseProvider;

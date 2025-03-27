@@ -26,6 +26,7 @@ import org.apache.catalina.authenticator.SingleSignOn;
 import org.apache.catalina.authenticator.SingleSignOnEntry;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
+import org.apache.catalina.realm.GenericPrincipal;
 
 /**
  * Adds the JSESSIONIDSSO cookie to request and response and caches a test user for
@@ -36,6 +37,7 @@ public final class TestSingleSignOn extends SingleSignOn
 	@Override
 	public void invoke(Request request, Response response) throws IOException, ServletException
 	{
+		request.setUserPrincipal(new GenericPrincipal(System.getProperty("DB_USERNAME"), null, null));
 		if(request.getCookies() == null || Arrays.stream(request.getCookies())
 				.noneMatch(c -> c.getName().equals(Constants.SINGLE_SIGN_ON_COOKIE)))
 		{

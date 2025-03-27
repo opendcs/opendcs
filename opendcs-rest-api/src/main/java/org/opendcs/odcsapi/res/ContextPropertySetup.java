@@ -31,30 +31,23 @@ public final class ContextPropertySetup implements ServletContextListener
 	{
 		ServletContext servletContext = sce.getServletContext();
 		//Move this information to the database. https://github.com/opendcs/rest_api/issues/191
-		String officeId = servletContext.getInitParameter("opendcs.rest.api.cwms.office");
-		if(officeId != null && !officeId.isEmpty())
+		initProp(servletContext, "opendcs.rest.api.cwms.office", "CwmsOfficeId", "OPENDCS_DB_OFFICE");
+		initProp(servletContext, "opendcs.rest.api.authorization.type", "opendcs.rest.api.authorization.type", "OPENDCS_AUTHORIZATION_TYPE");
+		initProp(servletContext, "opendcs.rest.api.authorization.expiration.duration", "opendcs.rest.api.authorization.expiration.duration", "OPENDCS_AUTHORIZATION_DURATION");
+		initProp(servletContext, "opendcs.rest.api.authorization.jwt.jwkset.url", "opendcs.rest.api.authorization.jwt.jwkset.url", "OPENDCS_AUTHORIZATION_JWK_SET_URL");
+		initProp(servletContext, "opendcs.rest.api.authorization.jwt.issuer.url", "opendcs.rest.api.authorization.jwt.issuer.url", "OPENDCS_AUTHORIZATION_JWK_ISSUER_URL");
+	}
+
+	private static void initProp(ServletContext servletContext, String sysParam, String decodesParam, String envParam)
+	{
+		String authCheck = servletContext.getInitParameter(sysParam);
+		if(authCheck == null || authCheck.trim().isEmpty())
 		{
-			DbInterface.decodesProperties.setProperty("CwmsOfficeId", officeId);
+			authCheck = System.getProperty(sysParam, System.getenv(envParam));
 		}
-		String authCheck = servletContext.getInitParameter("opendcs.rest.api.authorization.type");
 		if(authCheck != null && !authCheck.isEmpty())
 		{
-			DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.type", authCheck);
-		}
-		String expireDuration = servletContext.getInitParameter("opendcs.rest.api.authorization.expiration.duration");
-		if(expireDuration != null && !expireDuration.isEmpty())
-		{
-			DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.expiration.duration", expireDuration);
-		}
-		String openIdJwkSetUrl = servletContext.getInitParameter("opendcs.rest.api.authorization.jwt.jwkset.url");
-		if(openIdJwkSetUrl != null && !openIdJwkSetUrl.isEmpty())
-		{
-			DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.jwt.jwkset.url", openIdJwkSetUrl);
-		}
-		String openIdIssuerUrl = servletContext.getInitParameter("opendcs.rest.api.authorization.jwt.issuer.url");
-		if(openIdIssuerUrl != null && !openIdIssuerUrl.isEmpty())
-		{
-			DbInterface.decodesProperties.setProperty("opendcs.rest.api.authorization.jwt.issuer.url", openIdIssuerUrl);
+			DbInterface.decodesProperties.setProperty(decodesParam, authCheck);
 		}
 	}
 }

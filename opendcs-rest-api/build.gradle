@@ -37,9 +37,9 @@ dependencies {
         exclude group: "com.oracle.database.jdbc", module: "xdb"
         exclude group: "com.sun.media", module: "jai_imageio"
         exclude group: "com.mrsid", module: "mrsidreader"
+        exclude group: "org.eclipse.jetty", module: "jetty-annotations"
     }
     implementation(libs.opendcs.api)
-
     implementation(libs.servlet.api)
     implementation(libs.json.jackson)
     implementation(libs.jersey.container.servlet)
@@ -48,33 +48,18 @@ dependencies {
     implementation(libs.jwt)
     implementation(libs.jersey.hk2)
     implementation(libs.slf4j.api)
+    runtimeClasspath(libs.slf4j.jdk14)
     implementation(libs.jackson)
     runtimeOnly(libs.jackson.annotations) // updated for swagger compatibility
-    runtimeOnly(libs.jaxb.runtime)
-    runtimeOnly(libs.postgresql)
     webjars(libs.swagger.ui)
     testImplementation(libs.jersey.test)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.inline)
-    testRuntimeOnly(libs.byte.buddy)
     testImplementation(libs.mockito.junit.jupiter)
-    testImplementation(libs.rest.assured)
-    testImplementation(libs.hamcrest)
-    testImplementation(libs.bundles.tomcat)
-    testImplementation(libs.commons.io)
-    testImplementation(libs.apache.derby)
-    testImplementation(libs.webcompere.system.stubs.jupiter)
-    testImplementation(libs.testcontainers.core)
-    testImplementation(libs.testcontainers.postgresql)
-    testImplementation(libs.hec.testcontainers.cwms)
-    testImplementation(libs.bundles.jdbi)
-    testImplementation(libs.org.flywaydb.flyway.core)
-    testRuntimeOnly(libs.jul.to.slf4j)
     compileOnly(libs.auto.service)
     annotationProcessor(libs.auto.service)
 }
 
-task extractWebJars(type: Copy) {
+tasks.register('extractWebJars', Copy) {
     from zipTree(configurations.webjars.singleFile)
 
     into file("src/main/webapp/swaggerui")

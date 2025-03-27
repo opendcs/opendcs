@@ -86,7 +86,7 @@ public class DatabaseSetupExtension implements BeforeEachCallback
 		String restWarFile = Objects.requireNonNull(System.getProperty("opendcs.restapi.warfile"), "opendcs.restapi.warfile is not set");
 		String guiWarFile = Objects.requireNonNull(System.getProperty("opendcs.gui.warfile"), "opendcs.gui.warfile is not set");
 		TomcatServer tomcat = new TomcatServer("build/tomcat", 0, restWarFile, guiWarFile);
-		tomcat.start(dbType.toString());
+		tomcat.start();
 		return tomcat;
 	}
 

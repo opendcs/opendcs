@@ -42,7 +42,6 @@ import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.fixtures.spi.ConfigurationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.bridge.SLF4JBridgeHandler;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
@@ -75,8 +74,6 @@ public final class TomcatServer implements AutoCloseable
 	 */
 	public TomcatServer(String baseDir, int port, String restWar, String guiWar) throws IOException
 	{
-		SLF4JBridgeHandler.removeHandlersForRootLogger();
-		SLF4JBridgeHandler.install();
 		tomcatInstance = new Tomcat();
 		tomcatInstance.setBaseDir(baseDir);
 		Connector connector = new Connector();
@@ -112,25 +109,9 @@ public final class TomcatServer implements AutoCloseable
 		guiContext.setPrivileged(true);
 	}
 
-	public void start(String dbType) throws LifecycleException, IOException
+	public void start() throws LifecycleException
 	{
 		tomcatInstance.start();
-		Path rootWebXml = Paths.get("build/tomcat/webapps/ROOT/WEB-INF/web.xml");
-		Path restWebXml = Paths.get("build/tomcat/webapps/odcsapi/WEB-INF/web.xml");
-		if(CwmsOracleConfiguration.NAME.equals(dbType))
-		{
-			FileUtils.copyFile(Paths.get("src/test/resources/rest-api/conf/cwms-web.xml").toFile(),
-					restWebXml.toFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-			FileUtils.copyFile(Paths.get("src/test/resources/web-client/conf/cwms-web.xml").toFile(),
-					rootWebXml.toFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-		}
-		else
-		{
-			FileUtils.copyFile(Paths.get("src/test/resources/rest-api/conf/opentsdb-web.xml").toFile(),
-					restWebXml.toFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-			FileUtils.copyFile(Paths.get("src/test/resources/web-client/conf/opentsdb-web.xml").toFile(),
-					rootWebXml.toFile(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-		}
 		LOGGER.info("Tomcat listening at http://localhost:{}", tomcatInstance.getConnector().getLocalPort());
 	}
 
@@ -178,7 +159,7 @@ public final class TomcatServer implements AutoCloseable
 			setupDb(dbType);
 			try(TomcatServer tomcat = new TomcatServer(baseDir, Integer.parseInt(port), restWar, guiWar))
 			{
-				tomcat.start(dbType);
+				tomcat.start();
 				tomcat.await();
 			}
 		}

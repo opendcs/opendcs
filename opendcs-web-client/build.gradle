@@ -21,10 +21,10 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.jetty.jsp)
     implementation(libs.servlet.api)
-    implementation(libs.websocket)
     implementation(libs.slf4j.api)
+    runtimeClasspath(libs.jstl)
+    runtimeClasspath(libs.slf4j.jdk14)
 
     testImplementation(libs.selenium)
     testImplementation(libs.junit.api)
