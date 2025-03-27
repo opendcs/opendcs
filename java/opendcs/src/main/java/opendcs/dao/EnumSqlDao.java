@@ -257,8 +257,10 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 					DbKey key = DbKey.createDbKey(rs, 1);
 					DbEnum dbEnum = cache.getByKey(key);
 					if (dbEnum != null)
+					{
 						rs2EnumValue(rs, dbEnum);
-					top.addEnum(dbEnum);
+						top.addEnum(dbEnum);
+					}
 				});				
 			}
 		}

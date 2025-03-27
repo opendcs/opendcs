@@ -1193,11 +1193,24 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         try
         {
             // Load the DCS Tool Configuration
-            DecodesSettings settings = DecodesSettings.fromProfile(launchProfile);
+            final DecodesSettings settings = DecodesSettings.fromProfile(launchProfile);
             databases = DatabaseService.getDatabaseFor(null, settings);
+            databases.getLegacyDatabase(Database.class).ifPresent(db ->
+            {
+                try
+                {
+                    db.initMinimal(settings);
+                    Database.setDb(db);
+                }
+                catch (DecodesException ex)
+                {
+                    throw new RuntimeException(ex);
+                }
+            });
+
 
         }
-        catch (Exception ex)
+        catch (Throwable ex)
         {
             throw new DecodesException("Unable to initialize decodes.", ex);
         }
