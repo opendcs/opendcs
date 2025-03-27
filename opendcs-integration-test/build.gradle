@@ -26,6 +26,8 @@ dependencies {
     implementation(libs.opendcs.api)
     implementation(libs.opendcs.integrationtesting.fixtures)
     runtimeClasspath(libs.slf4j.jdk14)
+    runtimeClasspath(libs.jackson)             // for swagger compatibility
+    runtimeClasspath(libs.jackson.annotations) // for swagger compatibility
 
 
     testImplementation(project(":opendcs-rest-api"))
@@ -37,8 +39,6 @@ dependencies {
     testImplementation(libs.hamcrest)
     testImplementation(libs.nimbus)
     testImplementation(libs.jwt)
-    testRuntimeOnly(libs.jackson)             // for swagger compatibility
-    testRuntimeOnly(libs.jackson.annotations) // for swagger compatibility
     testRuntimeOnly(libs.byte.buddy)
     testRuntimeOnly(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)

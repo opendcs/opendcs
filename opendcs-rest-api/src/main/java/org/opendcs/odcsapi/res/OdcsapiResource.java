@@ -31,17 +31,16 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import decodes.tsdb.DbIoException;
+import decodes.tsdb.TimeSeriesDb;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
-
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.TimeSeriesDb;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.odcsapi.beans.ApiDecodedMessage;
@@ -199,64 +198,7 @@ public final class OdcsapiResource extends OpenDcsResource
 					+ "on how to retrieve reference lists.|\n| **h**|\tA host name or IP address|\n| **l**\t"
 					+ "| (That’s lower case L) indicates a long string that should be displayed in a "
 					+ "multi-line text area with an optional scroll bar. But be aware that most of the "
-					+ "property tables in the database limit a property value to 240 chars.|\n\n"
-					+ "The following class names currently support property specs. More may be added in the future:  \n\n"
-					+ "*\tdecodes.comp.AreaRatingCompResolver\n*\tdecodes.comp.RdbRatingCompResolver\n"
-					+ "*\tdecodes.comp.StationExcludeCompResolver\n*\tdecodes.comp.TabRatingCompResolver\n"
-					+ "*\tdecodes.consumer.DirectoryConsumer\n*\tdecodes.consumer.FileAppendConsumer\n"
-					+ "*\tdecodes.consumer.FileConsumer\n*\tdecodes.consumer.PipeConsumer\n"
-					+ "*\tdecodes.consumer.StringBufferConsumer\n*\tdecodes.consumer.TcpClientConsumer\n"
-					+ "*\tdecodes.consumer.AlbertaLoaderFormatter\n*\tcovesw.azul.consumer.CsvFormatter\n"
-					+ "*\tdecodes.consumer.EmitAsciiFormatter\n*\tdecodes.consumer.EmitOracleFormatter\n"
-					+ "*\tdecodes.consumer.HeaderFormatter\n*\tdecodes.consumer.HtmlFormatter\n"
-					+ "*\tdecodes.consumer.HumanReadableFormatter\n*\tdecodes.consumer.HydroJSONFormatter\n"
-					+ "*\tdecodes.consumer.KHydstraFormatter\n*\tdecodes.consumer.KistersFormatter\n"
-					+ "*\tdecodes.consumer.NullFormatter\n*\tdecodes.consumer.RawFormatter\n"
-					+ "*\tdecodes.consumer.ShefFormatter\n*\tdecodes.consumer.ShefitFormatter\n"
-					+ "*\tdecodes.consumer.TransmitMonitorFormatter\n*\tdecodes.consumer.TsImportFormatter\n"
-					+ "*\tdecodes.cwms.CwmsConsumer\n*\tdecodes.datasource.DirectoryDataSource\n"
-					+ "*\tdecodes.datasource.FtpDataSource\n*\tdecodes.datasource.HotBackupGroup\n"
-					+ "*\tdecodes.datasource.LrgsDataSource\n*\tdecodes.datasource.RoundRobinGroup\n"
-					+ "*\tdecodes.datasource.ScpDataSource\n*\tdecodes.datasource.SocketStreamDataSource\n"
-					+ "*\tdecodes.datasource.UsgsWebDataSource\n*\tdecodes.datasource.WebAbstractDataSource\n"
-					+ "*\tdecodes.datasource.WebDataSource\n*\tdecodes.datasource.WebDirectoryDataSource\n"
-					+ "*\tdecodes.polling.PollingDataSource\n*\tdecodes.db.Platform\n*\tdecodes.db.PlatformSensor\n"
-					+ "*\tdecodes.db.ConfigSensor\n*\tdecodes.routing.RoutingScheduler\n*\tdecodes.tsdb.CompAppInfo\n"
-					+ "*\tdecodes.tsdb.algo.HdbRating\n*\tdecodes.tsdb.algo.RunningAverageAlgorithm\n"
-					+ "*\tdecodes.tsdb.algo.AverageAlgorithm\n*\tdecodes.tsdb.algo.BigAdder\n"
-					+ "*\tdecodes.tsdb.algo.Multiplication\n*\tdecodes.tsdb.algo.SumOverTimeAlgorithm\n"
-					+ "*\tdecodes.tsdb.algo.ExpressionParserAlgorithm\n*\tdecodes.tsdb.algo.FillForward\n"
-					+ "*\tdecodes.tsdb.algo.HdbReservoirMassBalance\n*\tdecodes.tsdb.algo.AddToPrevious\n"
-					+ "*\tdecodes.tsdb.algo.Stat\n*\tdecodes.tsdb.algo.HdbEvaporation\n"
-					+ "*\tdecodes.tsdb.algo.EstimatedInflow\n*\tdecodes.tsdb.algo.GroupAdder\n"
-					+ "*\tdecodes.tsdb.algo.ReservoirFull\n*\tdecodes.tsdb.algo.ScalerAdder\n"
-					+ "*\tdecodes.tsdb.algo.HdbACAPSRating\n*\tdecodes.tsdb.algo.ChooseOne\n"
-					+ "*\tdecodes.tsdb.algo.BridgeClearance\n*\tdecodes.tsdb.algo.UsgsEquation\n"
-					+ "*\tdecodes.tsdb.algo.IncrementalPrecip\n*\tdecodes.tsdb.algo.FlowResIn\n"
-					+ "*\tdecodes.tsdb.algo.CopyAlgorithm\n*\tdecodes.tsdb.algo.DisAggregate\n"
-					+ "*\tdecodes.tsdb.algo.WeightedWaterTemperature\n*\tdecodes.tsdb.algo.PythonAlgorithm\n"
-					+ "*\tdecodes.tsdb.algo.Resample\n*\tdecodes.tsdb.algo.ShowAlgoProps\n"
-					+ "*\tdecodes.tsdb.algo.PeriodToDate\n*\tdecodes.tsdb.algo.CopyNoOverwrite\n"
-					+ "*\tdecodes.tsdb.algo.SubSample\n*\tdecodes.tsdb.algo.CentralRunningAverageAlgorithm\n"
-					+ "*\tdecodes.tsdb.algo.TabRating\n*\tdecodes.tsdb.algo.RdbRating\n"
-					+ "*\tdecodes.tsdb.algo.Division\n*\tdecodes.tsdb.algo.VirtualGage\n"
-					+ "*\tdecodes.tsdb.alarm.AlarmScreeningAlgorithm\n*\tdecodes.hdb.algo.InflowAdvancedAlg\n*"
-					+ "\tdecodes.hdb.algo.EquationSolverAlg\n*\tdecodes.hdb.algo.EstGLDAInflow\n"
-					+ "*\tdecodes.hdb.algo.BeginofPeriodAlg\n*\tdecodes.hdb.algo.DynamicAggregatesAlg\n"
-					+ "*\tdecodes.hdb.algo.HdbShiftRating\n*\tdecodes.hdb.algo.HdbLookupTimeShiftRating\n"
-					+ "*\tdecodes.hdb.algo.SideInflowAlg\n*\tdecodes.hdb.algo.VolumeToFlowAlg\n"
-					+ "*\tdecodes.hdb.algo.NVRNUnreg\n*\tdecodes.hdb.algo.PowerToEnergyAlg\n"
-					+ "*\tdecodes.hdb.algo.GLDAUnreg\n*\tdecodes.hdb.algo.CallProcAlg\n"
-					+ "*\tdecodes.hdb.algo.EndofPeriodAlg\n*\tdecodes.hdb.algo.GLDAEvap\n"
-					+ "*\tdecodes.hdb.algo.BMDCUnreg\n*\tdecodes.hdb.algo.CRRCUnreg\n"
-					+ "*\tdecodes.hdb.algo.ParshallFlume\n*\tdecodes.hdb.algo.FlowToVolumeAlg\n"
-					+ "*\tdecodes.hdb.algo.SimpleDisaggAlg\n*\tdecodes.hdb.algo.EOPInterpAlg\n"
-					+ "*\tdecodes.hdb.algo.TimeWeightedAverageAlg\n*\tdecodes.hdb.algo.InflowBasicAlg\n"
-					+ "*\tdecodes.hdb.algo.MPRCUnreg\n*\tdecodes.hdb.algo.GlenDeltaBSMBAlg\n"
-					+ "*\tdecodes.hdb.algo.FLGUUnreg\n*\tdecodes.cwms.rating.CwmsRatingSingleIndep\n"
-					+ "*\tdecodes.cwms.rating.CwmsRatingMultIndep\n*\tdecodes.cwms.validation.ScreeningAlgorithm\n"
-					+ "*\tdecodes.util.DecodesSettings\n*\tlrgs.lrgsmain.LrgsConfig\n"
-					+ "*\topendcs.opentsdb.OpenTsdbSettings",
+					+ "property tables in the database limit a property value to 240 chars.|",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Success. Property specifications retrieved.",
 						content = @Content(mediaType = MediaType.APPLICATION_JSON,
@@ -267,16 +209,20 @@ public final class OdcsapiResource extends OpenDcsResource
 			},
 			tags = {"REST - Retrieving Property Specs"}
 	)
-	public Response getPropSpecs(@Parameter(description = "Fully Qualified Class Name", required = true,
-			example = "decodes.db.Platform", schema = @Schema(implementation = String.class))
+	public Response getPropSpecs(@Parameter(description = "Fully Qualified Class Name",
+			required = true,
+			schema = @Schema(type = "string",
+					enumAsRef = true,
+					implementation = PropSpecHelper.ClassName.class
+			)
+	)
 		@QueryParam("class") String className)
 			throws WebAppException
 	{
 		if (className == null)
 		{
-			throw new MissingParameterException("Missing required class argument.");
+			throw new MissingParameterException("Missing required 'class' argument.");
 		}
-
 		return Response.status(HttpServletResponse.SC_OK).entity(PropSpecHelper.getPropSpecs(className)).build();
 	}
 
