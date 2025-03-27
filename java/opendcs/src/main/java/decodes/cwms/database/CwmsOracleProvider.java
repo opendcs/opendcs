@@ -45,23 +45,23 @@ public class CwmsOracleProvider implements MigrationProvider
         properties.add(
             new MigrationProperty(
                 "CWMS_SCHEMA", String.class,
-                "How many tables should be used to partition numeric timeseries data."));
+                "Name of the CWMS Schema to reference"));
         properties.add(
             new MigrationProperty(
                 "CCP_SCHEMA", String.class,
-                "How many tables should be used to balance text timeseries data."));
+                "Name of CCP schema to create."));
         properties.add(
             new MigrationProperty(
                 "DEFAULT_OFFICE_CODE", Integer.class,
-                ""));
+                "Integer value of the default office to assign"));
         properties.add(
             new MigrationProperty(
                 "DEFAULT_OFFICE", String.class,
-                ""));
+                "Ascii value of the default office to assign"));
         properties.add(
             new MigrationProperty(
                 "TABLE_SPACE_SPEC", String.class,
-                ""));
+                "If data will be on a separate table space indicate the line here."));
     }
 
     @Override
@@ -244,5 +244,10 @@ public class CwmsOracleProvider implements MigrationProvider
         ArrayList<String> theSchemas = new ArrayList<>();
         theSchemas.add("CCP");
         return theSchemas;
+    }
+
+    public boolean createSchemas()
+    {
+        return true;
     }
 }

@@ -44,21 +44,24 @@ public class ManageDatabaseApp
         Console console = System.console();
         DataSource ds = getDataSourceFromProfileAndUserInfo(profile,console);
         MigrationManager mm = new MigrationManager(ds, impl);
+        
+        final MigrationProvider mp = mm.getMigrationProvider();
+        List<MigrationProperty> requiredPlaceholders = mp.getPlaceHolderDescriptions();
+        if (!requiredPlaceholders.isEmpty())
+        {
+            console.writer().println("Please provide values for each of the presented properties.");
+            requiredPlaceholders.forEach(p ->
+            {
+                String value = console.readLine("%s (desc = %s) = ", p.name, p.description);
+                mp.setPlaceholderValue(p.name, value);
+            });
+        }
+
         MigrationInfo[] applied = mm.currentVersion();
         if (applied.length == 0)
         {
             console.writer().println("Installing fresh database");
-            final MigrationProvider mp = mm.getMigrationProvider();
-            List<MigrationProperty> requiredPlaceholders = mp.getPlaceHolderDescriptions();
-            if (!requiredPlaceholders.isEmpty())
-            {
-                console.writer().println("Please provide values for each of the presented properties.");
-                requiredPlaceholders.forEach(p ->
-                {
-                    String value = console.readLine("%s (desc = %s) = ", p.name, p.description);
-                    mp.setPlaceholderValue(p.name, value);
-                });
-            }
+            
             mm.migrate();
             console.printf("A default admin username will be created to allow initial data import and GUI configuration.%s",
                            System.lineSeparator());
