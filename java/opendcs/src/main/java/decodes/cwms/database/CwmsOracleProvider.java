@@ -61,7 +61,7 @@ public class CwmsOracleProvider implements MigrationProvider
         properties.add(
             new MigrationProperty(
                 "TABLE_SPACE_SPEC", String.class,
-                "Name of table space, leave blank if you don't need a separate table space"));
+                "If data will be on a separate table space indicate the line here."));
     }
 
     @Override
@@ -246,10 +246,8 @@ public class CwmsOracleProvider implements MigrationProvider
         return theSchemas;
     }
 
-    @Override
     public boolean createSchemas()
     {
         return true;
     }
-
 }
