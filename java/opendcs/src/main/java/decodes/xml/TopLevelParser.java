@@ -718,7 +718,7 @@ public class TopLevelParser implements XmlObjectParser
 	}
 
   	/**
-	 * Test main: Parses all files given on command line & prints them
+	 * Test main: Parses all files given on command line and prints them
 	 * to System.out.
 	 * By comparing the input and output, you can verify that both the parse
 	 * and print functioned properly.

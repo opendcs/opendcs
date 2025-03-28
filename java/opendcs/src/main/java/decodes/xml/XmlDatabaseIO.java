@@ -176,7 +176,8 @@ public class XmlDatabaseIO extends DatabaseIO
 
 	/**
 	 * Construct with a database directory location.
-	 * @param xmldir top of hierarchy of XML database
+	 * @param dataSource of XML database
+	 * @param settings DecodesSettings
 	 * @throws SAXException if can't initialize XML parsers
 	 * @throws ParserConfigurationException if can't configure XML parsers
 	 */
