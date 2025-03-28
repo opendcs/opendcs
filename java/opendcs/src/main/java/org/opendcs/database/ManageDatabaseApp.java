@@ -135,7 +135,7 @@ public class ManageDatabaseApp
     public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c) throws IOException, FileNotFoundException
     {
         DecodesSettings settings = DecodesSettings.fromProfile(p);
-        c.printf("Please the schema owning username and password for database at %s,%s",
+        c.printf("Please enter the schema owning username and password for database at %s,%s",
                  settings.editDatabaseLocation,System.lineSeparator());
         c.printf("username:");
         String username = c.readLine();

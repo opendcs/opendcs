@@ -3,6 +3,7 @@ package org.opendcs.fixtures.configurations.cwms;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -10,12 +11,12 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.MigrationManager;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.SimpleDataSource;
 import org.opendcs.fixtures.UserPropertiesBuilder;
-import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.fixtures.spi.Configuration;
 import org.opendcs.spi.database.MigrationProvider;
 import org.testcontainers.containers.output.OutputFrame;
@@ -74,6 +75,14 @@ public class CwmsOracleConfiguration implements Configuration
                             .withVolumeName(CWMS_ORACLE_VOLUME)
                             .withOfficeId("SPK")
                             .withOfficeEroc("l2")
+                            .withCreateContainerCmdModifier(cmd ->
+                            {
+                                cmd.getHostConfig()
+                                   .withMemory(4L*1024*1024*1024)
+                                   .withCpuPeriod(200000L)
+                                   .withCpuQuota(250000L)
+                                ;
+                            })
                             .withLogConsumer(line -> {
                                 log.info(((OutputFrame)line).getUtf8String());
                             });
@@ -81,62 +90,12 @@ public class CwmsOracleConfiguration implements Configuration
             cwmsDb.start();
             log.info("CWMS Database started.");
             cwmsDb.executeSQL("create tablespace CCP_DATA DATAFILE 'ccp_data.dbf' SIZE 100M REUSE AUTOEXTEND ON NEXT 1M MAXSIZE 2000M","sys");
-            cwmsDb.executeSQL("create user CCP no authentication default tablespace ccp_data QUOTA UNLIMITED ON ccp_data", "sys");
-            cwmsDb.executeSQL("alter user CCP GRANT CONNECT through " + cwmsDb.getUsername(), "sys");
-            cwmsDb.executeSQL("GRANT CWMS_USER TO CCP","sys");
-            cwmsDb.executeSQL("create role ccp_users","sys");
-            cwmsDb.executeSQL("grant create session,resource,connect to ccp_users","sys");
-            cwmsDb.executeSQL("grant ccp_users to cwms_user", "sys");
-            cwmsDb.executeSQL("GRANT ALTER ANY TABLE,CREATE ANY TABLE,CREATE ANY INDEX,CREATE ANY SEQUENCE,"
-                            + "CREATE ANY VIEW,CREATE ANY PROCEDURE,CREATE ANY TRIGGER,CREATE ANY JOB,"
-                            + "CREATE ANY SYNONYM,DROP ANY SYNONYM,CREATE PUBLIC SYNONYM,DROP PUBLIC SYNONYM"
-                            + " TO CCP","sys");
-            cwmsDb.executeSQL("GRANT CREATE ANY CONTEXT,ADMINISTER DATABASE TRIGGER TO CCP","sys");
-            cwmsDb.executeSQL("begin\n" + //
-                                "  execute immediate 'GRANT SELECT ON dba_scheduler_jobs to CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON dba_queue_subscribers to CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON dba_subscr_registrations to CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON dba_queues to CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON dbms_aq TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON dbms_aqadm TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON DBMS_SESSION to CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON DBMS_RLS to CCP';\n" + //
-                                "" + //
-                                "    sys.dbms_aqadm.grant_system_privilege (" + //
-                                "      privilege    => 'enqueue_any'," + //
-                                "      grantee      => 'CCP'," + //
-                                "      admin_option => false);\n" + //
-                                "    sys.dbms_aqadm.grant_system_privilege (" + //
-                                "      privilege    => 'dequeue_any'," + //
-                                "      grantee      => 'CCP'," + //
-                                "      admin_option => false);\n" + //
-                                "    sys.dbms_aqadm.grant_system_privilege (" + //
-                                "      privilege    => 'manage_any'," + //
-                                "      grantee      => 'CCP'," + //
-                                "      admin_option => false);\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_v_loc TO CCP WITH GRANT OPTION';\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_v_ts_id TO CCP WITH GRANT OPTION';\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_v_tsv TO CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_20.cwms_seq TO CCP';\n" + //
-                                "  execute immediate 'GRANT SELECT ON cwms_20.cwms_seq TO CCP_USERS';\n" + //
-                                "" + //
-                                "  execute immediate 'GRANT EXECUTE ON cwms_t_date_table TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON cwms_t_jms_map_msg_tab TO CCP';\n" + //
-                                "" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_ts TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_msg TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_util TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_sec TO CCP';\n" + //
-                                "" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_env TO CCP';\n" + //
-                                "  execute immediate 'GRANT EXECUTE ON CWMS_20.cwms_env TO CCP_USERS';\n" + //
-                                "" + //
-                                "  execute immediate 'ALTER USER CCP DEFAULT ROLE ALL';\n" + //
-                                "END;","sys");
+            //cwmsDb.executeSQL("create user CCP no authentication default tablespace ccp_data QUOTA UNLIMITED ON ccp_data", "sys");
+            
+            String createBuildUser = IOUtils.resourceToString("/database/admin_user.sql", StandardCharsets.UTF_8);
+            cwmsDb.executeSQL(createBuildUser, "sys");
+            SimpleDataSource ds = new SimpleDataSource(cwmsDb.getJdbcUrl(), "dbadm","adminuser");
 
-            SimpleDataSource ds = new SimpleDataSource(cwmsDb.getJdbcUrl(),
-                                                       cwmsDb.getUsername()+"[CCP]",
-                                                       cwmsDb.getPassword());
             MigrationManager mm = new MigrationManager(ds, NAME);
             MigrationProvider mp = mm.getMigrationProvider();
             mp.setPlaceholderValue("CWMS_SCHEMA", "CWMS_20");
