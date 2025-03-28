@@ -29,8 +29,13 @@ public class XmlDatabaseProvider implements DatabaseProvider
     public OpenDcsDatabase createDatabase(String appName, DecodesSettings settings, Properties credentials)
             throws DatabaseException 
     {
-        javax.sql.DataSource dataSource = new SimpleDataSource(settings.editDatabaseLocation, credentials);
-        return createDatabase(dataSource, settings);
+        DecodesSettings settingsCopy = settings.asCopy();
+        if (!settings.editDatabaseLocation.startsWith("jdbc:"))
+        {
+            settingsCopy.editDatabaseLocation = "jdbc:xml:" + settings.editDatabaseLocation;
+        }
+        javax.sql.DataSource dataSource = new SimpleDataSource(settingsCopy.editDatabaseLocation, credentials);
+        return createDatabase(dataSource, settingsCopy);
     }
 
     @Override
