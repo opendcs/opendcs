@@ -276,6 +276,7 @@ public abstract class TsdbAppTemplate
 			db = DatabaseService.getDatabaseFor(appName, settings);
 			decodesDb = db.getLegacyDatabase(Database.class).get();
 			decodesDb.initializeForDecoding();
+			Database.setDb(decodesDb);
 			theDb = db.getLegacyDatabase(TimeSeriesDb.class).get();
 		}
 		catch (DecodesException ex)
