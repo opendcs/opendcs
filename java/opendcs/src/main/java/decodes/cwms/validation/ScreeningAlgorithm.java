@@ -73,6 +73,7 @@ public class ScreeningAlgorithm
 		throws DbCompException
 	{
 		return null;
+	}
 	
 	boolean _inputIsOutput = false;
 	public boolean inputIsOutput() { return _inputIsOutput; }
