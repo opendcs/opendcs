@@ -54,10 +54,8 @@ import decodes.db.Site;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.PropertySpec;
 import decodes.util.TSUtil;
-import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
-import org.opendcs.annotations.algorithm.Output;
 
 @Algorithm(description = "Base-class for screening algorithm.\n" +
 "Implemented by DatchkScreeningAlgorithm and CwmsScreeningAlgorithm.")
