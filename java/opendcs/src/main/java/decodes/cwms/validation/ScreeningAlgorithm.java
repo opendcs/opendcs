@@ -66,6 +66,7 @@ public class ScreeningAlgorithm
 {
 	@Input
 	public double input;
+	String _inputNames[] = { "input" };
 
 	Screening screening = null;
 	/** Must be overloaded by concrete class to find the screening. */
