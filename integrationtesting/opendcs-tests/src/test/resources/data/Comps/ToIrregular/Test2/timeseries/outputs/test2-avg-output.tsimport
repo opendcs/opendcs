@@ -1,0 +1,3 @@
+﻿SET:TZ=UTC
+SET:UNITS=mm
+TSID:TESTSITE1.Precip.Ave.~1Hour.1Hour.output

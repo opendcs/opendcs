@@ -106,7 +106,7 @@ public abstract class DbAlgorithmExecutive
 	/** If (interpDeltas) this is max # of intervals to interp over. */
 	protected int maxInterpIntervals = 10;
 
-	public SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z");
+	public final SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z");
 	
 	protected Date effectiveStart = null;
 	protected Date effectiveEnd = null;

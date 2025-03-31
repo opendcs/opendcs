@@ -884,8 +884,8 @@ public class CwmsTimeSeriesDAO
                    .setCause(ex)
                    .log("Cannot prepare value for save '{}' - not a number.", tv.getStringValue());
             }
-            VarFlags.clearToDelete(tv);
-            VarFlags.clearToWrite(tv);
+            // VarFlags.clearToDelete(tv);
+            // VarFlags.clearToWrite(tv);
         }
     }
 
