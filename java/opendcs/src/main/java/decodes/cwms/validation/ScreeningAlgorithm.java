@@ -45,7 +45,6 @@ import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 
-//AW:IMPORTS
 import ilex.var.TimedVariable;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.IntervalIncrement;
@@ -53,33 +52,28 @@ import decodes.cwms.CwmsFlags;
 import decodes.cwms.validation.Screening;
 import decodes.db.Site;
 import decodes.tsdb.TimeSeriesIdentifier;
-//AW:IMPORTS_END
 import decodes.util.PropertySpec;
 import decodes.util.TSUtil;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-Base-class for screening algorithm.
-Implemented by DatchkScreeningAlgorithm and CwmsScreeningAlgorithm.
-
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Base-class for screening algorithm.\n" +
+"Implemented by DatchkScreeningAlgorithm and CwmsScreeningAlgorithm.")
 public class ScreeningAlgorithm
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	Screening screening = null;
 	/** Must be overloaded by concrete class to find the screening. */
 	protected Screening getScreening(TimeSeriesIdentifier tsid)
 		throws DbCompException
 	{
 		return null;
-	}
+	
 	boolean _inputIsOutput = false;
 	public boolean inputIsOutput() { return _inputIsOutput; }
 	
