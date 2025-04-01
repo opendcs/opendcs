@@ -79,8 +79,8 @@ public class CwmsOracleConfiguration implements Configuration
                             {
                                 cmd.getHostConfig()
                                    .withMemory(4L*1024*1024*1024)
-                                   .withCpuPeriod(200000L)
-                                   .withCpuQuota(250000L)
+                                   .withCpuPeriod(20000L)
+                                   .withCpuQuota(25000L)
                                 ;
                             })
                             .withLogConsumer(line -> {
@@ -104,8 +104,10 @@ public class CwmsOracleConfiguration implements Configuration
             mp.setPlaceholderValue("DEFAULT_OFFICE", "SPK");
             mp.setPlaceholderValue("TABLE_SPACE_SPEC", "tablespace CCP_DATA");
             mm.migrate();
+            cwmsDb.executeSQL("alter user CCP grant connect through cwms_20","sys");
             cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Mgr','SPK') ; end;", "cwms_20");
             cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Proc','SPK') ; end;", "cwms_20");
+            cwmsDb.executeSQL("begin CCP.ccp_help.register_callback_proc; end;", "cwms_20[CCP]");
             this.dbUrl = cwmsDb.getJdbcUrl();
             this.dcsUser = cwmsDb.getUsername();
             this.dcsUserPassword = cwmsDb.getPassword();
