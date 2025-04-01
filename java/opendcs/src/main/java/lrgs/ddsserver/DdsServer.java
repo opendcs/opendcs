@@ -16,6 +16,8 @@ import java.net.*;
 import java.io.*;
 import java.util.Iterator;
 
+import javax.net.ServerSocketFactory;
+
 import ilex.util.*;
 import ilex.net.*;
 import lrgs.apistatus.AttachedProcess;
@@ -88,10 +90,10 @@ public class DdsServer extends BasicServer
       @throws IOException on invalid port number or socket already bound.
     */
     public DdsServer(int port, InetAddress bindaddr, MsgArchive msgArchive,
-        QueueLogger qlog, JavaLrgsStatusProvider statusProvider)
+        QueueLogger qlog, JavaLrgsStatusProvider statusProvider, ServerSocketFactory socketFactory)
         throws IOException
     {
-        super(port, bindaddr);
+        super(port, bindaddr,socketFactory);
         enabled = false;
         shutdownFlag = false;
         this.msgArchive = msgArchive;

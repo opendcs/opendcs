@@ -58,6 +58,8 @@ import java.net.InetAddress;
 import java.util.Date;
 import java.util.LinkedList;
 
+import javax.net.ServerSocketFactory;
+
 import ilex.net.*;
 import ilex.util.Logger;
 import ilex.util.QueueLogger;
@@ -105,6 +107,7 @@ public class JLddsThread extends LddsThread
         attachedProcess.type = "DDS-CLI";
         attachedProcess.user = "(unknown)";
         attachedProcess.status = "user?";
+        this.setName("DDS-Client "+socket.getInetAddress().toString()+":"+socket.getPort());
     }
 
     /**
