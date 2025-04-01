@@ -56,6 +56,7 @@ import decodes.util.PropertySpec;
 import decodes.util.TSUtil;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
 @Algorithm(description = "Base-class for screening algorithm.\n" +
 "Implemented by DatchkScreeningAlgorithm and CwmsScreeningAlgorithm.")
@@ -64,7 +65,6 @@ public class ScreeningAlgorithm
 {
 	@Input
 	public double input;
-	String _inputNames[] = { "input" };
 
 	Screening screening = null;
 	/** Must be overloaded by concrete class to find the screening. */
@@ -98,21 +98,18 @@ public class ScreeningAlgorithm
 	}
 
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@org.opendcs.annotations.PropertySpec(value = "false") 
 	public boolean noOverwrite = false;
+	@org.opendcs.annotations.PropertySpec(value = "false") 
 	public boolean setInputFlags = false;
+	@org.opendcs.annotations.PropertySpec(value = "false")
 	public boolean setRejectMissing = false;
+	@org.opendcs.annotations.PropertySpec(value = "false")
 	public boolean noOutputOnReject = false;
-	String _propertyNames[] = { "noOverwrite", "setInputFlags", "setRejectMissing",
-		"noOutputOnReject" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -122,12 +119,7 @@ public class ScreeningAlgorithm
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -136,7 +128,6 @@ public class ScreeningAlgorithm
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before iterating through all the time-slices
 		
 		// Find the Screening record
@@ -256,9 +247,6 @@ public class ScreeningAlgorithm
 						 + sc.getSeasonStart().getTimeZone().getID())));
 			}
 		}
-			
-		
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -274,7 +262,6 @@ public class ScreeningAlgorithm
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		ScreeningCriteria crit = 
 			screening != null ? screening.findForDate(_timeSliceBaseTime, aggTZ) : null;
 		if (crit == null)
@@ -310,8 +297,6 @@ public class ScreeningAlgorithm
 		ParmRef inputParm = getParmRef("input");
 
 		crit.executeChecks(dc, inputParm.timeSeries, _timeSliceBaseTime, output, this);
-		
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -320,36 +305,9 @@ public class ScreeningAlgorithm
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
 		// period.
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
