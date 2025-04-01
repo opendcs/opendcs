@@ -32,10 +32,8 @@ import static org.opendcs.odcsapi.res.DataSourceContextCreator.DATA_SOURCE_ATTRI
 @OpenAPIDefinition(
 		info = @Info(
 				title = "OpenDCS - Swagger",
-				description = "OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation).\n" +
-						"    OpenDCS Rest API is intended to run as a stand-alone Java program. It uses embedded JETTY to implement the web services.\n" +
-						"    It was developed for the U. S. Army Corps of Engineers. Source and documentation may be found here:\n" +
-						"    [Github Documentation](https://github.com/opendcs/rest_api)",
+				description = "OpenDCS Rest API is web application that provides access to the OpenDCS database using JSON (Java Script Object Notation). " +
+						"Source and documentation may be found here: [Github Documentation](https://github.com/opendcs/rest_api)",
 				version = "0.0.3"
 		)
 )
