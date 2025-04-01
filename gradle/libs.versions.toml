@@ -19,7 +19,7 @@ mockito = "4.11.0"
 byte-buddy = "1.15.3"
 rest-assured = "5.5.0"
 hamcrest = "3.0"
-tomcat = "9.0.91"
+tomcat = "9.0.102"
 commons-io = "2.11.0"
 commons-lang = "2.5"
 
