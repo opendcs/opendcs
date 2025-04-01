@@ -17,8 +17,8 @@ package ilex.xml;
 import org.xml.sax.Attributes;
 
 /**
-* This class contains static methods that provide convenince functions for
-* writing XML parsers & writers.
+* This class contains static methods that provide convenience functions for
+* writing XML parsers and writers.
 */
 public class XmlUtils
 {
