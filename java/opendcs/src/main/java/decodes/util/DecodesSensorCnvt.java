@@ -106,7 +106,7 @@ public class DecodesSensorCnvt extends decodes.decoder.Sensor
 	}
 
 	/**
-	 * If recording interval > 0 then assume this is a fixed interval sensor.
+	 * If recording interval &gt; 0 then assume this is a fixed interval sensor.
 	 */
 	@Override
 	public char getRecordingMode()

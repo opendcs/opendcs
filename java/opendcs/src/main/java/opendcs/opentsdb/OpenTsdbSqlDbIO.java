@@ -11,21 +11,21 @@ import opendcs.dai.IntervalDAI;
 import decodes.db.DatabaseException;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
+import decodes.util.DecodesSettings;
 
 public class OpenTsdbSqlDbIO extends SqlDatabaseIO
 {
 
-	public OpenTsdbSqlDbIO()
-		throws DatabaseException
+	public OpenTsdbSqlDbIO() throws DatabaseException
 	{
-		this(null);
+		this(null, null);
 	}
 
-	public OpenTsdbSqlDbIO(String location)
-		throws DatabaseException
+	public OpenTsdbSqlDbIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
-		super(location);
+		super(dataSource, settings);
 		Logger.instance().info("Constructing OpenTsdbSqlDbIO");
+		postConnectInit();
 	}
 
 	@Override

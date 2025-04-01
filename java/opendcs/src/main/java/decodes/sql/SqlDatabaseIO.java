@@ -1,4 +1,19 @@
 /*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+/*
  * $Id: SqlDatabaseIO.java,v 1.15 2020/02/14 15:13:44 mmaloney Exp $
  *
  * Open Source Software
@@ -78,12 +93,14 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import ilex.util.AuthException;
 import ilex.util.EnvExpander;
+import opendcs.util.sql.WrappedConnection;
 import org.opendcs.authentication.AuthSourceService;
-
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.AlarmDAI;
@@ -119,8 +136,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import opendcs.util.sql.WrappedConnection;
-import ilex.util.AuthException;
 import ilex.util.Logger;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
@@ -142,7 +157,7 @@ public class SqlDatabaseIO
     extends DatabaseIO
     implements DatabaseConnectionOwner
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
     /**
      * The "location" of the SQL database, as passed into the constructor.
      * This is the full string from either the "DatabaseLocation" or the
@@ -150,9 +165,6 @@ public class SqlDatabaseIO
      * For example, "jdbc:postgresql:decodessample:testuser"
      */
     protected String _sqlDbLocation;
-
-    /** Holds the object describing the connection to the database. */
-    private Connection _conn = null;
 
     /** This is used to read and write the EngineeringUnit table. */
     private EngineeringUnitIO _engineeringUnitIO;
@@ -250,8 +262,9 @@ public class SqlDatabaseIO
      * Default constructor -- all initialization that doesn't depend on
      * a database connection goes here.
      */
-    public SqlDatabaseIO()
+    public SqlDatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
     {
+        super(dataSource, settings);
         // Initialize the child IO objects
         // Their are dependencies among them, which should be enforced
         // by their various constructors.  For example, the PlatformListIO
@@ -272,146 +285,16 @@ public class SqlDatabaseIO
         // Truncate lastLMT back to half-hour boundary
         lastLMT = (System.currentTimeMillis() / 1800000L) * 1800000L;
         commitAfterSelect = false;
-    }
-
-    /**
-     * Constructor.  The argument, sqlDbName, is the "location" of the
-     * database.  In the case of a SQL database, this is the name of
-     * the database, as used in the JDBC getConnection method.
-    * @param sqlDbLocation the location string from decodes.properties file
-     */
-    public SqlDatabaseIO(String sqlDbLocation)
-        throws DatabaseException
-    {
-        this();
-
-        connectToDatabase(sqlDbLocation);
-        keyGenerator = KeyGeneratorFactory.makeKeyGenerator(
-            DecodesSettings.instance().sqlKeyGenerator);
-    }
-
-    /**
-     * Initialize the database connection using the username and password
-     * provided in the hidden DECODES auth file.
-     * @param sqlDbLocation URL (may vary for different DBs)
-     */
-    public void connectToDatabase(String sqlDbLocation)
-        throws DatabaseException
-    {
-        // Placeholder for connecting from web where connection is from a DataSource.
-        if (sqlDbLocation == null || sqlDbLocation.trim().length() == 0)
-            return;
-        _sqlDbLocation = sqlDbLocation;
-
-        String driverClass = DecodesSettings.instance().jdbcDriverClass;
-        // Load the JDBC Driver Class
-        try
+        try (Connection conn = dataSource.getConnection())
         {
-            log.trace("Initializing driver class '{}'", driverClass);
-            Class.forName(driverClass).newInstance();
-            log.trace("...success.");
+            determineVersion(conn);        
+            setDBDatetimeFormat(conn);
         }
-        catch (Exception ex)
+        catch (SQLException ex)
         {
-            String msg = String.format("Cannot load JDBC driver class '%s'", driverClass);
-            log.atError().setCause(ex).log(msg);
-            throw new DatabaseConnectException(msg, ex);
-        }
-
-        // Try to authenticate using OS authentication (IDENT)
-        if (DecodesSettings.instance().tryOsDatabaseAuth)
-        {
-            Properties emptyProps = new Properties();
-            log.trace("Trying OS authentication with location '{}'", _sqlDbLocation);
-            try
-            {
-                _conn = DriverManager.getConnection(_sqlDbLocation, emptyProps);
-                log.trace("...Success.");
-            }
-            catch(SQLException ex)
-            {
-                log.info("SqlDatabaseIO Connection using OS authentication failed. "
-                    + "Will attempt username/password auth.", ex);
-                _conn = null;
-            }
-        }
-
-        if (_conn == null)
-        {
-            // Retrieve username and password for database
-            String authFileName = DecodesSettings.instance().DbAuthFile;
-            Properties credentials = null;
-            try
-            {
-                credentials = AuthSourceService.getFromString(authFileName)
-                                               .getCredentials();
-            }
-            catch(AuthException ex)
-            {
-                String msg = "Cannot read username and password from '{}'. Run setDecodesUser first.";
-                log.atError()
-                   .setCause(ex)
-                   .log(msg, EnvExpander.expand(authFileName));
-                throw new DatabaseConnectException(msg, ex);
-            }
-
-            connectUserPassword(credentials.getProperty("username"),
-                                credentials.getProperty("password"));
-        }
-
-        // MJM 2018-2/21 Force autoCommit on.
-        try { _conn.setAutoCommit(true);}
-        catch(SQLException ex)
-        {
-            log.warn("Cannot set SQL AutoCommit to true: ", ex);
-        }
-
-        determineVersion(_conn);
-
-        try {
-            setDBDatetimeFormat(_conn);
-        } catch (SQLException ex) {
             log.warn("Unable to set DB Date/Time format", ex);
         }
-
         postConnectInit();
-    }
-
-    private void connectUserPassword(String user, String pw)
-        throws DatabaseException
-    {
-        _dbUser = user;
-
-        // MJM Try for up to 30 sec to initialize the database because
-        // this might be a service and we need to wait for postgres to init.
-        long startTry = System.currentTimeMillis();
-        _conn = null;
-        while(_conn == null)
-        {
-            try
-            {
-                log.info("Connecting to {} as user '{}'", _sqlDbLocation, user);
-
-                _conn = DriverManager.getConnection(_sqlDbLocation, user, pw);
-            }
-            catch (Exception ex)
-            {
-                _conn = null;
-                   if (System.currentTimeMillis() - startTry > 30000L)
-                    throw new DatabaseException(
-                        "Error getting JDBC connection using driver '"
-                        + DecodesSettings.instance().jdbcDriverClass
-                        + "' to database at '" + _sqlDbLocation
-                        + "' for user '" + user + "': " + ex.toString(), ex);
-                else
-                {
-                    log.debug("JDBC Connection Failed (will retry): ", ex);
-                    try { Thread.sleep(5000L); }
-                    catch(InterruptedException ex2) {}
-                }
-            }
-        }
-
     }
 
     /**
@@ -422,6 +305,7 @@ public class SqlDatabaseIO
         throws DatabaseException
     {
         _isConnected = true;
+        setKeyGenerator(KeyGeneratorFactory.makeKeyGenerator(settings.sqlKeyGenerator));
     }
 
     protected void setDBDatetimeFormat(Connection conn)
@@ -588,19 +472,6 @@ public class SqlDatabaseIO
     */
     public void close( )
     {
-        try
-        {
-            log.info("Closing  database connection.");
-            if (_conn == null || _conn.isClosed())
-            {
-                return;
-            }
-            _conn.close();
-        }
-        catch (SQLException ex)
-        {
-            log.warn("Error closing database connection", ex);
-        }
     }
 
     /**
@@ -702,26 +573,24 @@ public class SqlDatabaseIO
     * @param euList the object to populate from the database.
     */
     @Override
-    public synchronized void readEngineeringUnitList(EngineeringUnitList euList)
-        throws DatabaseException
+    public synchronized void readEngineeringUnitList(EngineeringUnitList euList) throws DatabaseException
     {
-        Connection conn = null;
+        
 
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _engineeringUnitIO.setConnection(conn);
             _engineeringUnitIO.read(euList);
 
             _unitConverterIO.setConnection(conn);
             _unitConverterIO.read(euList.getDatabase().unitConverterSet);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read engineering unit list.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _engineeringUnitIO.setConnection(null);
             _unitConverterIO.setConnection(null);
         }
@@ -758,11 +627,8 @@ public class SqlDatabaseIO
     public synchronized void readPlatformList(PlatformList platformList)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             _platformListIO.read(platformList);
         }
@@ -773,10 +639,32 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
+            _platformListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * Read the platform list cross reference file and populate the passed
+     * PlatformList object.
+     * @param pl the object to populate from the database.
+     *  @param tmType the transport medium type to filter on.
+     */
+    @Override
+    public synchronized void readPlatformList(PlatformList pl, String tmType)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _platformListIO.setConnection(conn);
+            _platformListIO.read(pl, tmType);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read platform list", ex);
+            throw new DatabaseException("Unable to read platform list", ex);
+        }
+        finally
+        {
             _platformListIO.setConnection(null);
         }
     }
@@ -790,11 +678,9 @@ public class SqlDatabaseIO
     public synchronized void readConfigList(PlatformConfigList pcList)
         throws DatabaseException
     {
-        Connection conn = null;
 
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _configListIO.setConnection(conn);
             _configListIO.read(pcList);
         }
@@ -805,10 +691,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _configListIO.setConnection(null);
         }
     }
@@ -818,11 +700,8 @@ public class SqlDatabaseIO
         String originator)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _configListIO.setConnection(conn);
             return(_configListIO.newPlatformConfig(pc, deviceId, originator));
         }
@@ -832,10 +711,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _configListIO.setConnection(null);
         }
     }
@@ -849,11 +724,8 @@ public class SqlDatabaseIO
     public synchronized void readEquipmentModelList(EquipmentModelList eml)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _equipmentModelListIO.setConnection(conn);
             _equipmentModelListIO.read(eml);
         }
@@ -863,10 +735,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _equipmentModelListIO.setConnection(null);
         }
     }
@@ -881,11 +749,8 @@ public class SqlDatabaseIO
     public synchronized void readRoutingSpecList(RoutingSpecList rsList)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _routingSpecListIO.setConnection(conn);
             _routingSpecListIO.read(rsList);
         }
@@ -896,13 +761,49 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _routingSpecListIO.setConnection(null);
         }
     }
+
+    @Override
+    public synchronized List<RoutingStatus> readRoutingSpecStatus() throws DatabaseException
+    {
+        try (Connection conn = getConnection();
+            LoadingAppDAI loadingAppDAO = makeLoadingAppDAO())
+        {
+            _routingSpecListIO.setConnection(conn);
+           return _routingSpecListIO.readRoutingSpecStatus(loadingAppDAO);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read routing spec status list.", ex);
+            throw new DatabaseException("Unable to read routing spec status list", ex);
+        }
+        finally
+        {
+            _routingSpecListIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId) throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _routingSpecListIO.setConnection(conn);
+           return _routingSpecListIO.readRoutingExecStatus(scheduleEntryId);
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to read routing exec status list.", ex);
+            throw new DatabaseException("Unable to read routing exec status list", ex);
+        }
+        finally
+        {
+            _routingSpecListIO.setConnection(null);
+        }
+    }
+
 
     /**
     * Returns the list of DataSource objects defined in this database.
@@ -915,11 +816,8 @@ public class SqlDatabaseIO
     public synchronized void readDataSourceList(DataSourceList dsList)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _dataSourceListIO.setConnection(conn);
             _dataSourceListIO.read(dsList);
         }
@@ -929,10 +827,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _dataSourceListIO.setConnection(null);
         }
     }
@@ -947,11 +841,8 @@ public class SqlDatabaseIO
     public synchronized void readNetworkListList(NetworkListList nlList)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _networkListListIO.setConnection(conn);
             _networkListListIO.read(nlList);
         }
@@ -961,10 +852,32 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
+            _networkListListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * Returns the list of NetworkList objects defined in this database.
+     * Objects in this list may be only partially populated (key values
+     * and primary display attributes only).
+     * @param nlList the object to populate from the database.
+     * @param tmType the time series medium type to filter on.
+     */
+    @Override
+    public synchronized void readNetworkListList(NetworkListList nlList, String tmType)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _networkListListIO.setConnection(conn);
+            _networkListListIO.read(nlList, tmType);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read network lists", ex);
+        }
+        finally
+        {
             _networkListListIO.setConnection(null);
         }
     }
@@ -978,11 +891,8 @@ public class SqlDatabaseIO
     public synchronized ArrayList<NetworkListSpec> getNetlistSpecs()
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _networkListListIO.setConnection(conn);
             ArrayList<NetworkListSpec> ret =
                 _networkListListIO.getNetlistSpecs();
@@ -994,10 +904,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _networkListListIO.setConnection(null);
         }
     }
@@ -1013,11 +919,8 @@ public class SqlDatabaseIO
     public synchronized void readPresentationGroupList(PresentationGroupList pgList)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _presentationGroupListIO.setConnection(conn);
             _presentationGroupListIO.read(pgList);
         }
@@ -1028,10 +931,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _presentationGroupListIO.setConnection(null);
         }
     }
@@ -1090,6 +989,62 @@ public class SqlDatabaseIO
     public synchronized void readUnitConverterSet(UnitConverterSet ucs)
         throws DatabaseException
     {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            _unitConverterIO.read(ucs);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("readUnitConverterSet: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized void insertUnitConverter(UnitConverterDb uc)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            _unitConverterIO.addNew(uc);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("insertUnitConverter: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
+    }
+
+    @Override
+    public synchronized void deleteUnitConverter(Long ucId)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _unitConverterIO.setConnection(conn);
+
+            UnitConverterDb ucd = new UnitConverterDb(null, null);
+            ucd.setId(DbKey.createDbKey(ucId));
+            _unitConverterIO.delete(ucd);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deleteUnitConverterSet: ", ex);
+        }
+        finally
+        {
+            _unitConverterIO.setConnection(null);
+        }
     }
 
 
@@ -1103,11 +1058,8 @@ public class SqlDatabaseIO
     {
         log.info("Writing engineering unit list.");
 
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _engineeringUnitIO.setConnection(conn);
             _unitConverterIO.setConnection(conn);
 
@@ -1120,10 +1072,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _engineeringUnitIO.setConnection(null);
             _unitConverterIO.setConnection(null);
         }
@@ -1233,11 +1181,8 @@ public class SqlDatabaseIO
     public synchronized void readPlatform(Platform p)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             _platformListIO.readPlatform(p);
         }
@@ -1250,10 +1195,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _platformListIO.setConnection(null);
         }
     }
@@ -1263,11 +1204,8 @@ public class SqlDatabaseIO
         Date timeStamp)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             DbKey id = _platformListIO.lookupPlatformId(
                 mediumType, mediumId, timeStamp);
@@ -1282,10 +1220,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _platformListIO.setConnection(null);
         }
     }
@@ -1296,11 +1230,8 @@ public class SqlDatabaseIO
         String designator, boolean useDesignator)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             DbKey id = _platformListIO.lookupCurrentPlatformId(sn,
                 designator, useDesignator);
@@ -1315,10 +1246,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _platformListIO.setConnection(null);
         }
     }
@@ -1333,11 +1260,8 @@ public class SqlDatabaseIO
     public synchronized void writePlatform( Platform p )
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             _platformListIO.writePlatform(p);
         }
@@ -1352,10 +1276,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _platformListIO.setConnection(null);
         }
     }
@@ -1367,24 +1287,20 @@ public class SqlDatabaseIO
       in the database.
     */
     @Override
-    public synchronized Date getPlatformLMT(Platform p)
-        throws DatabaseException
+    public synchronized Date getPlatformLMT(Platform p) throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             Date d = _platformListIO.getLMT(p);
             return d;
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to get Platform last modified time.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _platformListIO.setConnection(null);
         }
     }
@@ -1392,20 +1308,20 @@ public class SqlDatabaseIO
     @Override
     public synchronized Date getPlatformListLMT()
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             return _platformListIO.getListLMT();
         }
+        catch (SQLException ex)
+        {
+            log.atWarn()
+               .setCause(ex)
+               .log("Unable to get platform list last modify time.");
+            return new Date(0L);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _platformListIO.setConnection(null);
         }
     }
@@ -1434,11 +1350,8 @@ public class SqlDatabaseIO
     public synchronized void deletePlatform( Platform p )
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _platformListIO.setConnection(conn);
             _platformListIO.delete(p);
         }
@@ -1448,10 +1361,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _platformListIO.setConnection(null);
         }
     }
@@ -1472,13 +1381,10 @@ public class SqlDatabaseIO
     public void readConfig(PlatformConfig pc)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _configListIO.setConnection(conn);
-            _configListIO.readConfig(pc.getId());
+            _configListIO.readConfig(pc);
         }
         catch (SQLException ex)
         {
@@ -1487,10 +1393,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _configListIO.setConnection(null);
         }
     }
@@ -1506,11 +1408,8 @@ public class SqlDatabaseIO
     public synchronized void writeConfig(PlatformConfig pc)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _configListIO.setConnection(conn);
             _configListIO.write(pc);
         }
@@ -1525,10 +1424,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _configListIO.setConnection(null);
         }
     }
@@ -1543,11 +1438,8 @@ public class SqlDatabaseIO
     public synchronized void deleteConfig(PlatformConfig pc)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _configListIO.setConnection(conn);
             _configListIO.delete(pc);
         }
@@ -1557,10 +1449,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _configListIO.setConnection(null);
         }
 
@@ -1589,11 +1477,8 @@ public class SqlDatabaseIO
     public void writeEquipmentModel(EquipmentModel eqm)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _equipmentModelListIO.setConnection(conn);
             _equipmentModelListIO.write(eqm);
         }
@@ -1603,10 +1488,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _equipmentModelListIO.setConnection(null);
         }
     }
@@ -1619,11 +1500,8 @@ public class SqlDatabaseIO
     public synchronized void deleteEquipmentModel(EquipmentModel eqm)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _equipmentModelListIO.setConnection(conn);
             _equipmentModelListIO.delete(eqm);
         }
@@ -1633,10 +1511,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _equipmentModelListIO.setConnection(null);
         }
     }
@@ -1655,20 +1529,17 @@ public class SqlDatabaseIO
     public synchronized void readPresentationGroup(PresentationGroup pg)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _presentationGroupListIO.setConnection(conn);
             _presentationGroupListIO.readPresentationGroup(pg, true);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read presentation groups", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _presentationGroupListIO.setConnection(null);
         }
     }
@@ -1683,11 +1554,8 @@ public class SqlDatabaseIO
     public synchronized void writePresentationGroup(PresentationGroup pg)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _presentationGroupListIO.setConnection(conn);
             _presentationGroupListIO.write(pg);
         }
@@ -1697,10 +1565,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _presentationGroupListIO.setConnection(null);
         }
     }
@@ -1713,11 +1577,8 @@ public class SqlDatabaseIO
     public synchronized void deletePresentationGroup(PresentationGroup pg)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _presentationGroupListIO.setConnection(conn);
             _presentationGroupListIO.delete(pg);
         }
@@ -1727,10 +1588,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _presentationGroupListIO.setConnection(null);
         }
     }
@@ -1745,20 +1602,47 @@ public class SqlDatabaseIO
     public Date getPresentationGroupLMT(PresentationGroup pg)
         throws DatabaseException
     {
-        Connection conn = null;
 
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _presentationGroupListIO.setConnection(conn);
             return _presentationGroupListIO.getLMT(pg);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to get Presentation group last modified time.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
+            _presentationGroupListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * If the presentation group referenced by groupId is used by one or more routing
+     * specs, return a list of routing spec IDs and names. If groupId is not used,
+     * return null.
+     * Objects in this list will be only partially populated (key values
+     * and names only).
+     * @param groupId the ID of the presentation group to check.
+     * @return string concatenated list of routing spec IDs and names, or null if not used.
+     * @throws DatabaseException if a database error occurs.
+     */
+    @Override
+    public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _presentationGroupListIO.setConnection(conn);
+            return _presentationGroupListIO.routeSpecsUsing(groupId);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deletePresentationGroup.", ex);
+        }
+        finally
+        {
             _presentationGroupListIO.setConnection(null);
         }
     }
@@ -1776,20 +1660,17 @@ public class SqlDatabaseIO
     public synchronized void readRoutingSpec(RoutingSpec rs)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
-        {
-            conn = getConnection();
+        try (Connection conn = getConnection())
+        {            
             _routingSpecListIO.setConnection(conn);
             _routingSpecListIO.readRoutingSpec(rs);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read routing spec.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _routingSpecListIO.setConnection(null);
         }
     }
@@ -1802,11 +1683,8 @@ public class SqlDatabaseIO
     public synchronized void writeRoutingSpec(RoutingSpec rs)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _routingSpecListIO.setConnection(conn);
             _routingSpecListIO.write(rs);
         }
@@ -1816,10 +1694,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _routingSpecListIO.setConnection(null);
         }
     }
@@ -1829,14 +1703,10 @@ public class SqlDatabaseIO
       @param rs the object to delete from the database.
     */
     @Override
-    public synchronized void deleteRoutingSpec(RoutingSpec rs)
-        throws DatabaseException
+    public synchronized void deleteRoutingSpec(RoutingSpec rs) throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _routingSpecListIO.setConnection(conn);
             _routingSpecListIO.delete(rs);
         }
@@ -1846,10 +1716,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _routingSpecListIO.setConnection(null);
         }
     }
@@ -1861,23 +1727,19 @@ public class SqlDatabaseIO
       exists in the database.
     */
     @Override
-    public synchronized Date getRoutingSpecLMT(RoutingSpec rs)
-        throws DatabaseException
+    public synchronized Date getRoutingSpecLMT(RoutingSpec rs) throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _routingSpecListIO.setConnection(conn);
             return _routingSpecListIO.getLMT(rs);
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to Read routing spec last modified time.", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _routingSpecListIO.setConnection(null);
         }
     }
@@ -1885,13 +1747,11 @@ public class SqlDatabaseIO
 
     /** Does nothing. */
     @Override
-    public synchronized void readDataSource(DataSource ds)
-        throws DatabaseException
+    public synchronized void readDataSource(DataSource ds) throws DatabaseException
     {
-        Connection conn = null;
-        try
+        
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _dataSourceListIO.setConnection(conn);
             DataSource tds = _dataSourceListIO.readDS(ds.getId());
             if (tds != null)
@@ -1903,12 +1763,12 @@ public class SqlDatabaseIO
                 Collections.copy(ds.groupMembers, tds.groupMembers);
             }
         }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("Unable to read data source", ex);
+        }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _dataSourceListIO.setConnection(null);
         }
 
@@ -1924,11 +1784,8 @@ public class SqlDatabaseIO
     public void writeDataSource(DataSource ds)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _dataSourceListIO.setConnection(conn);
             _dataSourceListIO.write(ds);
         }
@@ -1938,10 +1795,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _dataSourceListIO.setConnection(null);
         }
     }
@@ -1955,11 +1808,8 @@ public class SqlDatabaseIO
     public synchronized void deleteDataSource(DataSource ds)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _dataSourceListIO.setConnection(conn);
             _dataSourceListIO.delete(ds);
         }
@@ -1969,10 +1819,30 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
+            _dataSourceListIO.setConnection(null);
+        }
+    }
+
+    /**
+     * Deletes an EngineeringUnit from the database by its abbreviation.
+     * @param eu object with the abbreviation set.
+     * @throws DatabaseException if a database error occurs.
+     */
+    @Override
+    public synchronized void deleteEngineeringUnit(EngineeringUnit eu)
+            throws DatabaseException
+    {
+        try (Connection conn = getConnection())
+        {
+            _engineeringUnitIO.setConnection(conn);
+            _engineeringUnitIO.delete(eu);
+        }
+        catch (SQLException ex)
+        {
+            throw new DatabaseException("deleteDataSource.", ex);
+        }
+        finally
+        {
             _dataSourceListIO.setConnection(null);
         }
     }
@@ -1988,11 +1858,8 @@ public class SqlDatabaseIO
     public synchronized void readNetworkList( NetworkList ob )
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _networkListListIO.setConnection(conn);
             _networkListListIO.readNetworkList(ob);
         }
@@ -2002,10 +1869,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _networkListListIO.setConnection(null);
         }
     }
@@ -2020,11 +1883,8 @@ public class SqlDatabaseIO
     public synchronized void writeNetworkList(NetworkList nl)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _networkListListIO.setConnection(conn);
             _networkListListIO.write(nl);
         }
@@ -2034,10 +1894,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _networkListListIO.setConnection(null);
         }
     }
@@ -2050,11 +1906,8 @@ public class SqlDatabaseIO
     public synchronized void deleteNetworkList(NetworkList nl)
         throws DatabaseException
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = getConnection())
         {
-            conn = getConnection();
             _networkListListIO.setConnection(conn);
             _networkListListIO.delete(nl);
         }
@@ -2064,10 +1917,6 @@ public class SqlDatabaseIO
         }
         finally
         {
-            if (conn != null)
-            {
-                freeConnection(conn);
-            }
             _networkListListIO.setConnection(null);
         }
     }
@@ -2084,11 +1933,8 @@ public class SqlDatabaseIO
     {
         if (getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
         {
-            Connection conn = null;
-
-            try
+            try (Connection conn = getConnection())
             {
-                conn = getConnection();
                 _networkListListIO.setConnection(conn);
                 return _networkListListIO.getLMT(nl);
             }
@@ -2100,10 +1946,6 @@ public class SqlDatabaseIO
             }
             finally
             {
-                if (conn != null)
-                {
-                    freeConnection(conn);
-                }
                 _networkListListIO.setConnection(null);
             }
         }
@@ -2154,25 +1996,9 @@ public class SqlDatabaseIO
       Returns the JDBC Connection object.
     */
     @Override
-    public Connection getConnection()
+    public Connection getConnection() throws SQLException
     {
-        if (poolingDataSource != null)
-        {
-            try
-            {
-                return poolingDataSource.getConnection();
-            }
-            catch (SQLException ex)
-            {
-                log.warn("SqlDatabaseIO.getConnection() Cannot get pooled connection.", ex);
-            }
-        }
-        return new WrappedConnection(_conn, (c)-> {/* do nothing */});
-    }
-
-    public void setConnection(Connection conn)
-    {
-        _conn = conn;
+        return dataSource.getConnection();
     }
 
     public boolean commitAfterSelectStatus()
@@ -2520,16 +2346,15 @@ public class SqlDatabaseIO
     @Override
     public void freeConnection(Connection conn)
     {
-        // If we are pooling, close the connection which puts it back into the pool.
-        if (poolingDataSource != null)
+        /* no op */
+        log.warn("SqlDatabaseIO::freeConnection was called. This should no longer be the case.");
+        try
         {
-            try
-            {
-                conn.close();
-            }
-            catch (Exception ex)
-            {
-            }
+            conn.close();
+        }
+        catch (SQLException ex)
+        {
+            log.error("Unable to close sql connection.", ex);
         }
     }
 

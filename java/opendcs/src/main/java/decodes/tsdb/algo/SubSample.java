@@ -57,27 +57,18 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.VarFlags;
 import decodes.util.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Convert a short interval to a longer interval by taking the first value equal-to or after the longer-period timestamp.
-Example: Convert 10min data to 30min data by taking data on the hour and half-hour
-
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Convert a short interval to a longer interval by taking the first value equal-to or after the longer-period timestamp.\n" +
+"Example: Convert 10min data to 30min data by taking data on the hour and half-hour")
 public class SubSample
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
+	@Input
 	public double inputShortInterval;	//AW:TYPECODE=i
-	String _inputNames[] = { "inputShortInterval" };
-//AW:INPUTS_END
-
-//AW:LOCALVARS
+	
 	private IntervalIncrement outputIncr = null;
 	private GregorianCalendar outputCal = null;
 	private PropertySpec subsampPropertySpecs[] = 
@@ -91,45 +82,35 @@ public class SubSample
 	{
 		return subsampPropertySpecs;
 	}
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
-	public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval", 0);
-	String _outputNames[] = { "outputLongInterval" };
-//AW:OUTPUTS_END
+@Output(type = Double.class)
+public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval", 0);
 
-//AW:PROPERTIES
 //	public boolean aggLowerBoundClosed = true;
 //	public boolean aggUpperBoundClosed = false;
 //	String _propertyNames[] = { "aggLowerBoundClosed", "aggUpperBoundClosed" };
+
 	public String samplingTimeOffset = "";
-	String _propertyNames[] = { "samplingTimeOffset" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		
 		// Note aggTZ may be set either globally of specifically for this algo or comp.
 		outputCal = new GregorianCalendar(aggCal.getTimeZone());
@@ -238,7 +219,6 @@ public class SubSample
 		debug1("first input=" + debugSdf.format(firstInputT)
 			+ ", first output=" + debugSdf.format(outputCal.getTime())
 			+ " outputIncr=" + outputIncr.toString());
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -251,10 +231,10 @@ public class SubSample
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		Date nextOutputT = outputCal.getTime();
 		long deltaSec = (_timeSliceBaseTime.getTime() - nextOutputT.getTime()) / 1000L;
 		if (deltaSec <= roundSec && deltaSec >= -roundSec)
@@ -272,41 +252,14 @@ public class SubSample
 			outputCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
 		}
 		debug1("Advanced nextOutput to be at " + debugSdf.format(outputCal.getTime()));
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

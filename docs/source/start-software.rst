@@ -119,7 +119,7 @@ Installing OpenDCS requires a few steps outlined below.  The
 content below is catered towards users who wish to install
 OpenDCS on personal workstations. 
 
-#. Download the software package (opendcs-installer-#.#.#.jar).
+#. Download the software package (opendcs-#.#.#.tar or opendcs-#.#.#.zip).
 #. Unzip the contents.
 #. Configure OpenDCS.
 
@@ -157,10 +157,12 @@ is installed.
 If a java version (at least 1.8.##) is returned, then java is installed.
 Proceed with installing OpenDCS.
  
-If nothing is returned or the version is older then 1.8, then install
-the 1.8 or up to java 17 from https://adoptium.net/temurin/releases/ .
+If nothing is returned or the version is older than 1.8, then install
+Java 1.8 or up to java 17.
 
-Other JREs should work but are not as tested by the project.
+OpenDCS is tested with Java releases from https://adoptium.net/temurin/releases/.
+
+Other JREs should work but are not tested by the project.
 
 Where can I find releases of OpenDCS?
 =====================================
@@ -173,101 +175,44 @@ From the main github site click on the header "Releases" in the image below.
    :width: 800
 
 
-Alternatively the following link goes straight to the releasese page: https://github.com/opendcs/opendcs/releases 
+Alternatively the following link goes straight to the releases page: https://github.com/opendcs/opendcs/releases 
 For each release, there is a drop down menu "Assets", and in that section download the (opendcs-installer-#.#.#.jar).
 
-.. image:: ./media/start/software/im-02-releases.JPG
+.. image:: ./media/start/software/im-02-releases.png
    :alt: github releases - example of version to retrieve
    :width: 800
 
-Once the jar file is downloaded. Install it by launching it (double clicking).
+Once the archive file is downloaded. Install it by extracting the contents to an appropriate location.
 
 
-How do I install the jar?
+How do I install the archive?
 =========================
 
-Prior to double clicking or launching the install jar, decide where you
-want to install the program.  The default location will be "C:\\OPENDCS".
-If you already have a previous version installed in this location, back it 
-up per your own standards. 
+Linux
+-----
 
-Ensure that your desired installation path exists.  Ie if you wish to use 
-the default installation path, create an empty folder C:\\OPENDCS.
+.. code-block:: bash
 
-Double click the **opendcs-installer-#.#.#.jar** to begin the installation.
+    mkdir -p /opt/opendcs/main-nightly
+    cd /opt/opendcs/main-nightly
+    curl -O -L https://github.com/opendcs/opendcs/releases/download/main-nightly/opendcs-main-nightly.tar
+    tar -xf opendcs-main-nightly.tar
 
-The first window to pop-up will be a welcome note.  Click next.
 
-.. image:: ./media/start/software/im-03-install.JPG
-   :alt: install window - welcome
-   :width: 400
+Windows
+-------
 
-The next window will prompt a user to define an installation path.  If you 
-wish to use the default location (C:\\OPENDCS) click "Next" (so long as
-the location exists). Or select the the location.  Then click "Next".
-You may get a warning "The directory already exists! Are you sure you
-want to install here and possibly overwrite existing files?".  Click "Yes".
+For windows:
+1. Create an appropriate directory, such as `C:\programs\opendcs\main-nightly`
+2. Extract the contents of the archive to this directory.
 
-.. image:: ./media/start/software/im-04-install-path.JPG
-   :alt: install window - installation path
-   :width: 400
 
-Next, a window will pop up prompting the user to check which packs should
-be included in the install.  
+.. WARNING::
 
-.. image:: ./media/start/software/im-05-install-packs.JPG
-   :alt: install window - pack selection
-   :width: 400
-
-The following packs should be checked for each respective agency:
-
-USACE
-
-* OpenDCSBase
-* XML Database Template
-* Docs
-* TSBD Computation Components
-* Corps Water Management Systems (CWMS) Components
-* LRGS
-
-USBR
-
-* OpenDCSBase
-* XML Database Template
-* Docs
-* TSBD Computation Components
-* Bureau of Reclamation Hydrologic Database (HDB) Components
-* LRGS
-
-Other Agency
-
-* OpenDCSBase
-* XML Database Template
-* Docs
-* TSBD Computation Components
-* Open Time Series Database Schema and Components
-* LRGS
-
-Click "Next". Then the installation will begin. Once "Finished"
-shows up in the window, then click "Next".
-
-.. image:: ./media/start/software/im-06-install-progress.JPG
-   :alt: install window - finished
-   :width: 400
-
-The next window relates to shortcut set-up and preferences.
-Select your preferences and click "Next".  The final window
-shown below will include a button "Done".  Click "Done" and 
-the installation is completed.  
-
-.. image:: ./media/start/software/im-07-install-complete.JPG
-   :alt: install window - done
-   :width: 400
-
-Navigate to the install directory to view the contents that just
-installed.  Make note that the folder "doc" contains a folder "html"
-where documentation can be accessed.  Open the index.html (ie drag the 
-file into a browser).
+   OpenDCS does not support or recommend "updates-in-place". `main-nightly` is used here for convenience.
+   If you will be regularly testing nightly builds either name the folder with the current date or
+   simply delete the existing folder. Configuration is stored in the user directory, separate from 
+   the install directory.
 
 What do I need to edit/configure for my set-up?
 ===============================================
@@ -296,7 +241,7 @@ USACE and USBR users:
 
 * Copy the user.properties file from server to the $DCSTOOL_USERDIR directory. 
 * Should should only have to do this once or if the contents change.
-* IF you will be connecting to multiple systems (such as a backup system) we suggest renaming to `<Meaning to you name>.profile`
+* IF you will be connecting to multiple systems (such as a backup system) we suggest renaming to `<Meaningful to you name>.profile`
 
 For more details about the decodes.properties see
 :any:`leg-inst-start-configure`

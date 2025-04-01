@@ -17,7 +17,7 @@ public class RelativeHumidity extends AW_AlgorithmBase
 	@Input
 	public double dewPoint;
 
-	@Output
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
 
 

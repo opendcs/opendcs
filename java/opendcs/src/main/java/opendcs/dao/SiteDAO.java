@@ -643,8 +643,8 @@ public class SiteDAO
         StringBuilder q = new StringBuilder("INSERT INTO Site(");
 
         columns.add("id"); parameters.add(id);
-        columns.add("latitude"); parameters.add(s.latitude);
-        columns.add("longitude"); parameters.add(s.longitude);
+        columns.add("latitude"); parameters.add(db.isOpenTSDB() && db.isOracle() ? ("" + s.latitude) : s.latitude);
+        columns.add("longitude"); parameters.add(db.isOpenTSDB() && db.isOracle() ? ("" + s.longitude) : s.longitude);
         columns.add("nearestCity"); parameters.add(s.nearestCity);
         columns.add("state"); parameters.add(s.state);
         columns.add("region"); parameters.add(s.region);

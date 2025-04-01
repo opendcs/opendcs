@@ -19,7 +19,7 @@ the following formats:
 If seconds omitted, assume 0.
 If Julian Days omitted, assume today
 If YY omitted, assume current year
-If CC omitted, assume 1900 if YY >= 70, 2000 if YY < 70
+If CC omitted, assume 1900 if YY &gt;= 70, 2000 if YY &lt; 70
 now [+- N units [N units] ... ]
 This specifies a time relative to the current time. For
 examples "now - 1 day", "now + 1 hour 10 minutes 3 seconds".
@@ -315,7 +315,7 @@ public class IDateFormat
 	public static int[] UnitValue = new int[]{SecondsPerYear,SecondsPerMonth,SecondsPerWeek,SecondsPerDay,3600,60,1};
 	
 	/**
-	* Looks up time units & returns corresponding number of seconds.
+	* Looks up time units and returns corresponding number of seconds.
 	* @param label time unit like "year", "day", etc.
 	* @return number of seconds in one of those units
 	*/
@@ -335,7 +335,7 @@ public class IDateFormat
 	* <li>HHMM (length 4)</li>
 	* <li>HH:MM (length 5)</li>
 	* <li>HHMMSS (length 6)</li>
-	* <li>HH:MM:SS <length 8)</li>
+	* <li>HH:MM:SS (length 8)</li>
 	* </ul>
 	* Returns the second of the day as an integer.
 	* @param str string in one of the proscribed formats
@@ -432,7 +432,7 @@ public class IDateFormat
 	
 	/**
 	 * Return true if passed time zone ID is valid. False if not.
-	 * @param tz the time zone ID to check.
+	 * @param tzid the time zone ID to check.
 	 * @return
 	 */
 	public static boolean isValidTimeZone(String tzid)

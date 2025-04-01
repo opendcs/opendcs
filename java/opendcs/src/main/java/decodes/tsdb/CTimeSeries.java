@@ -462,7 +462,7 @@ public class CTimeSeries
 
     /**
      * Attempt to interpolate a value at the specified time by looking at
-     * the previous & next values.
+     * the previous and next values.
      * @param sec the time.
      * @return the interpolated value, or null if can't compute.
      */
@@ -698,8 +698,7 @@ Logger.instance().debug3("findInterp(sec=" + sec + ") prevSec=" + prevSec + ", n
     }
 
     /**
-     * @param tsName
-     *            the tsName to set
+     * @param briefDescription sets the brief description of the time series.
      */
     public void setBriefDescription(String briefDescription)
     {

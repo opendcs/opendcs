@@ -53,8 +53,9 @@
  */
 package decodes.sql;
 
-import java.util.Iterator;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.util.Iterator;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -64,8 +65,6 @@ import ilex.util.Logger;
 import decodes.db.DatabaseException;
 import decodes.db.EngineeringUnit;
 import decodes.db.EngineeringUnitList;
-import decodes.db.DbEnum;
-import decodes.db.EnumValue;
 
 /**
 This class handles SQL IO for Engineering Units
@@ -202,6 +201,23 @@ debug3(q);
 				+ sqlString(dbeu.getAbbr().toLowerCase());
 debug3(q);
 			tryUpdate(q);
+		}
+	}
+
+	/**
+	 * Deletes an EngineeringUnit from the database by its abbreviation.
+	 * @param eu object with the abbreviation set.
+	 * @throws SQLException if a database error occurs.
+	 */
+	public void delete(EngineeringUnit eu) throws SQLException
+	{
+		String q = "delete from engineeringunit where lower(unitabbr) = ?";
+
+		try (Connection conn = connection();
+			 PreparedStatement ps = conn.prepareStatement(q))
+		{
+			ps.setString(1, eu.getAbbr().toLowerCase());
+			ps.execute();
 		}
 	}
 

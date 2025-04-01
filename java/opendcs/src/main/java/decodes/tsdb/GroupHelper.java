@@ -71,7 +71,6 @@ public abstract class GroupHelper
 	 * contained within it or within its sub-groups.
 	 * Warning: Not thread safe.
 	 * @param tsGroup the top-level group to expand
-	 * @return list of all time series IDs under this group or sub-groups
 	 */
 	public void expandTsGroup(TsGroup tsGroup)
 		throws DbIoException
@@ -105,7 +104,7 @@ public abstract class GroupHelper
 	
 	/**
 	 * This recursive method does the actual work for expanding a group.
-	 * @param tsGroup The group to expand.
+	 * @param grp The group to expand.
 	 * @param groupIdsDone list of groups already expanded to prevent circular recursion
 	 * @return a set of time series IDs that are members of the group.
 	 * @throws DbIoException

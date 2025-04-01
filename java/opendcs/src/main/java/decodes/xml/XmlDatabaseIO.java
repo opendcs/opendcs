@@ -1,4 +1,19 @@
 /*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
+/*
 *  $Id$
 *  
 *  Open Source Software
@@ -33,6 +48,10 @@
 */
 package decodes.xml;
 
+import decodes.db.EngineeringUnit;
+import decodes.db.UnitConverterDb;
+import decodes.db.RoutingExecStatus;
+import decodes.db.RoutingStatus;
 import ilex.util.Counter;
 import ilex.util.FileCounter;
 import ilex.util.Logger;
@@ -44,14 +63,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -59,6 +79,8 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
+import org.apache.commons.lang.NotImplementedException;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import decodes.db.Constants;
@@ -91,6 +113,7 @@ import decodes.db.UnitConverterSet;
 import decodes.sql.DbKey;
 import decodes.tsdb.xml.XmlLoadingAppDAO;
 import decodes.util.DecodesSettings;
+import decodes.xml.jdbc.XmlConnection;
 
 /**
  * This class allows you to read database information from a
@@ -98,6 +121,7 @@ import decodes.util.DecodesSettings;
  */
 public class XmlDatabaseIO extends DatabaseIO
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(XmlDatabaseIO.class);
 	public static final String module = "XmlDatabaseIO";
 	// Directory Structure for the XML Files:
 	public static final String PlatformDir = "platform";
@@ -152,45 +176,61 @@ public class XmlDatabaseIO extends DatabaseIO
 
 	/**
 	 * Construct with a database directory location.
-	 * @param xmldir top of hierarchy of XML database
+	 * @param dataSource of XML database
+	 * @param settings DecodesSettings
 	 * @throws SAXException if can't initialize XML parsers
 	 * @throws ParserConfigurationException if can't configure XML parsers
 	 */
-	public XmlDatabaseIO( String xmldir ) 
-		throws SAXException, ParserConfigurationException
+	public XmlDatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG1, 
-			"Creating XmlDatabaseIO for directory '" + xmldir + "'");
-		this.xmldir = xmldir;
-		myParser = new TopLevelParser();
-
-		errorHandler = new LoggerErrorHandler();
-		errorHandler.stopOnWarnings(false);
-		errorHandler.stopOnErrors(false);
-		myParser.setErrorHandler(errorHandler);
-		platformIdCounter = null;
-
-		dtdUri = null;
-
-		if (xmldir != null && xmldir.length() > 0)
+		super(dataSource, settings);
+		try(XmlConnection con = dataSource.getConnection().unwrap(XmlConnection.class))
 		{
-			File xmlTop = new File(xmldir);
-			if (!xmlTop.isDirectory())
+			this.xmldir = con.getDirectory();
+		}
+		catch (SQLException ex)
+		{
+			throw new DatabaseException("Unable to retrieve directory", ex);
+		}
+		log.debug("Creating XmlDatabaseIO for directory '{}'", xmldir);
+		try
+		{
+			myParser = new TopLevelParser();
+
+			errorHandler = new LoggerErrorHandler();
+			errorHandler.stopOnWarnings(false);
+			errorHandler.stopOnErrors(false);
+			myParser.setErrorHandler(errorHandler);
+			platformIdCounter = null;
+
+			dtdUri = null;
+
+			if (xmldir != null && xmldir.length() > 0)
 			{
-				if (!xmlTop.mkdirs())
+				File xmlTop = new File(xmldir);
+				if (!xmlTop.isDirectory())
 				{
-					Logger.instance().warning(module + " Top directory '" + xmldir 
-						+ "' does not exist and cannot be created. Check permissions and location.");
-					return;
+					if (!xmlTop.mkdirs())
+					{
+						throw new DatabaseException(" Top directory '" + xmldir 
+							+ "' does not exist and cannot be created. Check permissions and location.");
+					}
+				}
+				for(String subdir : subdirs)
+				{
+					File entdir = new File(xmlTop, subdir);
+					if (!entdir.isDirectory() && !entdir.mkdir())
+					{
+						throw new DatabaseException("Entity directory '" + entdir.getPath() 
+							+ "' does not exist and cannot be created. Check permissions and location.");
+					}
 				}
 			}
-			for(String subdir : subdirs)
-			{
-				File entdir = new File(xmlTop, subdir);
-				if (!entdir.isDirectory() && !entdir.mkdir())
-					Logger.instance().warning(module + " Entity directory '" + entdir.getPath() 
-						+ "' does not exist and cannot be created. Check permissions and location.");
-			}
+		}
+	
+		catch (ParserConfigurationException | SAXException ex)
+		{
+			throw new DatabaseException("Unable to setup SAXParser.", ex);
 		}
 	}
 
@@ -748,6 +788,14 @@ public class XmlDatabaseIO extends DatabaseIO
 		}
 		catch(java.io.IOException e) { }
 	}
+
+	/**
+	 * Not implemented for XML.
+	 */
+	public void readNetworkListList( NetworkListList nll, String tmType)
+	{
+		throw new NotImplementedException("XmlDatabaseIO.readNetworkListList with filter not implemented for XML.");
+	}
 	
 	/**
 	 * Non-cached, stand-alone method to read the list of network list 
@@ -866,10 +914,10 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 	{
 		try
 		{
-			String ls[] = listDirectory(PlatformDir);
+			String[] ls = listDirectory(PlatformDir);
 			if (ls == null)
 				return;
-			for(int i=0; i<ls.length; i++)
+			for (int i=0; i<ls.length; i++)
 			{
 				InputStream is = null;
 				try
@@ -991,6 +1039,26 @@ e.printStackTrace();
 		}
 	}
 
+	/**
+	 * Returns the list of RoutingSpec statuses for the routing specs
+	 * stored to the database. XML implementation is not yet available.
+	 * @throws DatabaseException upon error
+	 */
+	@Override
+	public List<RoutingStatus> readRoutingSpecStatus()
+	{
+		throw new UnsupportedOperationException("readRoutingSpecStatus");
+	}
+
+	/**
+	 * Returns the list of RoutingExecStatus objects defined in this database.
+	 * @throws DatabaseException upon error
+	 */
+	@Override
+	public List<RoutingExecStatus> readRoutingExecStatus(DbKey scheduleEntryId)
+	{
+		throw new UnsupportedOperationException("readRoutingExecStatus");
+	}
 
 	/**
 	 * Returns the list of RoutingSpec objects defined in this database.
@@ -999,6 +1067,7 @@ e.printStackTrace();
 	 * @param rsl object in which to store data
 	 * @throws DatabaseException
 	 */
+	@Override
 	public void readRoutingSpecList( RoutingSpecList rsl ) throws DatabaseException
 	{
 		try
@@ -1032,6 +1101,18 @@ e.printStackTrace();
 		{
 			throw new DatabaseException(e.toString());
 		}
+	}
+
+	/**
+	 * Not implemented for XML.
+	 * @param groupId the group ID to check
+	 * @return list of routing spec IDs and names, or empty list if not used.
+	 * @throws DatabaseException upon error
+	 */
+	public synchronized List<RoutingSpec> routeSpecsUsing(long groupId)
+			throws DatabaseException
+	{
+		throw new NotImplementedException("routeSpecsUsing not implemented for XML.");
 	}
 
 
@@ -1097,6 +1178,10 @@ e.printStackTrace();
 		readEngineeringUnitList(ucs.getDatabase().engineeringUnitList);
 	}
 
+	public void deleteUnitConverter( Long ucId )
+	{
+		throw new UnsupportedOperationException("deleteUnitConverterSet not supported in XML");
+	}
 
 	/**
 	 * Writes the entire collection of engineering units to the database.
@@ -1124,6 +1209,16 @@ e.printStackTrace();
 		{
 			Database.setDb(oldDb);
 		}
+	}
+
+	/**
+	 Stores the provided list of UnitConverter objects into the database.
+	 @param ucs the list to store
+	 */
+	@Override
+	public void insertUnitConverter( UnitConverterDb ucs )
+	{
+		throw new UnsupportedOperationException("XmlDatabaseIO.insertUnitConverter");
 	}
 
 	//=============== Object-level Read/Write Functions ============
@@ -1322,6 +1417,17 @@ e.printStackTrace();
 		}
 		throw new DatabaseException(
 			"Cannot read platform from file '" + fn + "'");
+	}
+
+	/**
+	 * Not implemented for XML.
+	 * @param pl object in which to store data
+	 * @param tmType the transport medium type to filter on
+	 */
+	public synchronized void readPlatformList(PlatformList pl, String tmType)
+	{
+		throw new UnsupportedOperationException(
+				"XmlDatabaseIO.readPlatformList(PlatformList, tmType) is not implemented for XML.");
 	}
 
 
@@ -1594,6 +1700,7 @@ e.printStackTrace();
 	 * Reads a routing spec from the database.
 	 * @param ob object in which to store data
 	 */
+	@Override
 	public void readRoutingSpec( RoutingSpec ob ) throws DatabaseException
 	{
 		String fn = "";
@@ -1695,6 +1802,16 @@ e.printStackTrace();
 		String fn = xmldir + File.separator + DataSourceDir
 					+ File.separator + ob.makeFileName();
 		tryDelete(fn);
+	}
+
+	/**
+	 * Deletes an EngineeringUnit from the database by its abbreviation.
+	 * @param eu object with the abbreviation set.
+	 */
+	@Override
+	public void deleteEngineeringUnit(EngineeringUnit eu)
+	{
+		throw new UnsupportedOperationException("deleteEngineeringUnit");
 	}
 
 	/**

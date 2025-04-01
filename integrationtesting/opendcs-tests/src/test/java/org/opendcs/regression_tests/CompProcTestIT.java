@@ -19,12 +19,11 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
-import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
 import org.opendcs.fixtures.assertions.Waiting;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
-import org.opendcs.fixtures.helpers.Programs;
-import org.opendcs.spi.configuration.Configuration;
+import org.opendcs.fixtures.Programs;
+import org.opendcs.fixtures.spi.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +43,6 @@ import opendcs.dao.DaoBase;
  */
 @DecodesConfigurationRequired({
         "shared/test-sites.xml",
-        "${DCSTOOL_HOME}/schema/cwms/cwms-import.xml",
         "shared/presgrp-regtest.xml"
     })
 @ComputationConfigurationRequired("shared/loading-apps.xml")

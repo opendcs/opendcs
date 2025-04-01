@@ -583,6 +583,11 @@ public class Platform
 	 */
 	public void copyFrom(Platform rhs)
 	{
+		//This and input parameter could be the same reference if accessed via cache
+		if (rhs == this)
+		{
+			return;
+		}
 		this.description = rhs.description;
 		this.agency = rhs.agency;
 		this.isProduction = rhs.isProduction;

@@ -412,7 +412,7 @@ public class DbComputation
 	}
 	
 	/**
-	 * Check last-modify time in DB & reload this computation if necessary.
+	 * Check last-modify time in DB and reload this computation if necessary.
 	 * If 1st time since loaded, construct the DbAlgorithmExec object and 
 	 * initialize it.
 	 * @param tsdb the time series database.
@@ -643,7 +643,7 @@ public class DbComputation
 	}
 	
 	/**
-	 * Sets the Time Series Group used to determine input & output param components.
+	 * Sets the Time Series Group used to determine input and output param components.
 	 * @param group the group
 	 */
 	public void setGroup(TsGroup group)
@@ -661,7 +661,7 @@ public class DbComputation
 		}
 	}
 	
-	/** @return the time series group to use for inputs & outputs */
+	/** @return the time series group to use for inputs and outputs */
 	public TsGroup getGroup() { return group; }
 	
 	/**

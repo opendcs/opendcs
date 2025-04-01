@@ -33,7 +33,7 @@ import decodes.db.TransportMedium;
 
 /**
  * When connecting:
- * Send "AT\r" & Await "OK\r".
+ * Send "AT\r" and Await "OK\r".
  * SEND "ATDT " + telnum. Then await "CONNECT .*\r"
  * Try up to 3 times.
  *

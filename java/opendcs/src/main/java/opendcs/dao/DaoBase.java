@@ -169,7 +169,14 @@ public class DaoBase
             this.queryStmt2 = null;
             this.queryResults1 = null;
             this.queryResults2 = null;
-            myCon = db.getConnection();
+            try
+            {
+                myCon = db.getConnection();
+            }
+            catch (SQLException ex)
+            {
+                throw new RuntimeException("Unable to get connection.", ex);
+            }
         }
 
 
@@ -461,6 +468,18 @@ public class DaoBase
             {
                 stmt.setInt(index,(Integer)param);
             }
+            else if (param instanceof Double)
+            {
+                Double value = (Double)param;
+                if (value == Double.MAX_VALUE && db.isOpenTSDB() && db.isOracle())
+                {
+                    stmt.setNull(index, Types.NULL);
+                }
+                else
+                {
+                    stmt.setDouble(index, value);
+                }
+            }
             else if (param instanceof Boolean)
             {
                 Boolean v = (Boolean)param;
@@ -705,7 +724,7 @@ public class DaoBase
      * @param <R> The return type
      * @param query query that may return more than 1 result
      * @param consumer function to take the ResultSet and process it into a Object of type R (or null)
-     * @param defaultvalue value to provide if no query results
+     * @param defaultValue value to provide if no query results
      * @param parameters variables to bind into the query.
      * @return The value from the query, or the defaultValue if the query returns nothing
      * @throws SQLException

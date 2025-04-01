@@ -2,6 +2,7 @@ plugins
 {
     id 'opendcs.deps-conventions'
     id 'opendcs.java-conventions'
+    id 'opendcs.publishing-conventions'
     id 'java-library'
 }
 
@@ -20,10 +21,9 @@ configurations {
 dependencies {
     annotationProcessor(project(":opendcs-annotations"))
     api(project(":opendcs-annotations"))
+    api(project(":opendcs-api"))
     implementation(libs.bundles.oracle)
     implementation(libs.postgresql)
-    implementation(libs.asm)
-    implementation(libs.cglib)
     implementation(libs.commons.logging)
     implementation(libs.commons.net)
     implementation(libs.dom4j)
@@ -92,7 +92,6 @@ dependencies {
     }
     implementation(libs.hec.nucleus.metadata)
     api(libs.org.slf4j.api)
-    implementation(libs.bundles.jersey)
     implementation(libs.bundles.jdbi)
     implementation(libs.org.flywaydb.flyway.core)
     testImplementation enforcedPlatform(libs.junit.bom)
@@ -101,6 +100,8 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.fasterxml.jackson.databind)
+    testImplementation(libs.greenmail)  
+  
 }
 
 test
@@ -150,3 +151,17 @@ sourceSets {
 }
 
 compileJava.dependsOn(versionFile)
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId = 'opendcs'
+            from components.java
+
+            pom {
+                name = 'OpenDCS Core Library'
+                description = 'Contains built-in opendcs components and interfaces.'
+            }
+        }
+    }
+}

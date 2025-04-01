@@ -81,6 +81,7 @@ import java.util.logging.Level;
 import javax.management.JMException;
 import javax.management.ObjectName;
 
+import org.opendcs.jmx.JmxUtils;
 import org.opendcs.jmx.decodes.RoutingSchedulerMXBean;
 
 import opendcs.dai.DacqEventDAI;
@@ -120,7 +121,7 @@ public class RoutingScheduler
 	static BooleanToken windowsSvcArg = new BooleanToken("w", "Run as Windows Service", "", 
 		TokenOptions.optSwitch, false);
 
-	/** Holds app name, id, & description. */
+	/** Holds app name, id, and description. */
 	protected CompAppInfo appInfo;
 
 	/** My lock */
@@ -173,7 +174,12 @@ public class RoutingScheduler
 		{
             String name = String.format("RoutingScheduler(%s)",appName);
 			ManagementFactory.getPlatformMBeanServer()
-							 .registerMBean(this, new ObjectName("org.opendcs:type=RoutingScheduler,name="+name));
+							 .registerMBean(
+								this,
+								new ObjectName("org.opendcs:type=RoutingScheduler,name=\"" +
+											   JmxUtils.jmxSafeName(name)+"\""
+								)
+							);
 		}
 		catch(JMException ex)
 		{

@@ -16,9 +16,9 @@ import java.io.FileWriter;
 /**
 * PasswordFile implements a custom security mechanism for storing usernames,
 * roles, and hashed passwords in an ASCII file.
-* This class provides utilities for reading, writing, & modifying the file.
+* This class provides utilities for reading, writing, and modifying the file.
 * Care should be taken to make sure that the file is secure on the target
-* system. That is, it should be readable & writable only by the appropriate
+* system. That is, it should be readable and writable only by the appropriate
 * administrative user.
 */
 public class PasswordFile implements FileParser

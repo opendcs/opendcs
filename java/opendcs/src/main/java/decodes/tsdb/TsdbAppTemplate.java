@@ -1,20 +1,27 @@
 package decodes.tsdb;
 
+import java.io.IOException;
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.database.DatabaseService;
+import org.opendcs.database.api.OpenDcsDatabase;
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.LoadingAppDAI;
 import ilex.cmdline.*;
 import ilex.util.AuthException;
 import ilex.util.Logger;
+import ilex.util.Pair;
 import ilex.util.PropertiesUtil;
 import ilex.util.StderrLogger;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesVersion;
 import decodes.util.PropertySpec;
+import decodes.db.Database;
+import decodes.db.DatabaseException;
+import decodes.launcher.Profile;
 import decodes.sql.DbKey;
 import decodes.util.DecodesException;
 import decodes.util.PropertiesOwner;
@@ -59,39 +66,43 @@ public abstract class TsdbAppTemplate
 
 	/** The time series database to use in this application. */
 	public static TimeSeriesDb theDb = null;
+	protected static Database decodesDb = null;
+	protected OpenDcsDatabase db;
+	private DecodesSettings settings = null;
+	private String appName = null;
 
 	/** The application ID determined when connecting to the database. */
 	private DbKey appId = DbKey.NullKey;
-	
+
 	/**
 	 * Subclass can set this to true to cause application to restart if
 	 * the execute method exits due to database going down.
 	 */
 	protected boolean surviveDatabaseBounce = false;
-	
+
 	/**
 	 * Subclass can set this to true to cause application to restart if
 	 * the execute method exits due to database going down.
 	 */
 	protected boolean databaseFailed = false;
-	
+
 	/**
 	 * Most apps do the work in the runApp() method. Others, like GUIs
 	 * start threads and then allow the runApp method to exit. GUIs
 	 * should set noExitAfterRunApp to true.
 	 */
 	protected boolean noExitAfterRunApp = false;
-	
+
 	/**
 	 * Determined at startup, available via getPID();
 	 */
 	private int pid = -1;
-	
+
 	protected int appDebugMinPriority = Logger.E_INFORMATION;
-	
+
 	protected static TsdbAppTemplate appInstance = null;
-	
-	
+
+
 	/**
 	 * Base class constructor. Pass it the default name of the log file.
 	 */
@@ -101,11 +112,11 @@ public abstract class TsdbAppTemplate
 			logname = "test.log";
 		cmdLineArgs = new CmdLineArgs(false, logname);
 		cfgFileArg = new StringToken("c", "comp-config-file",
-			"", TokenOptions.optSwitch, ""); 
+			"", TokenOptions.optSwitch, "");
 		testModeArg = new BooleanToken("t", "test-mode",
 			"", TokenOptions.optSwitch, false);
-		modelRunArg = new IntegerToken("m", 
-			"output-model-run-ID", "", TokenOptions.optSwitch, -1); 
+		modelRunArg = new IntegerToken("m",
+			"output-model-run-ID", "", TokenOptions.optSwitch, -1);
 		appNameArg = new StringToken("a", "Application-Name", "", TokenOptions.optSwitch, "utility");
 		cmdLineArgs.addToken(cfgFileArg);
 		cmdLineArgs.addToken(testModeArg);
@@ -136,9 +147,12 @@ public abstract class TsdbAppTemplate
 		addCustomArgs(cmdLineArgs);
 		parseArgs(args);
 		startupLogMessage();
-		
+		appName = appNameArg.getValue();
+		Profile profile = cmdLineArgs.getProfile();
+		settings = DecodesSettings.instance();
+		settings.loadFromProfile(profile);
 		oneTimeInit();
-		
+
 		// Only daemons will set surviveDatabaseBounce=true.
 		// For other programs, like GUIs and utilities, the code will be
 		// executed only once.
@@ -153,22 +167,17 @@ public abstract class TsdbAppTemplate
 			databaseFailed = false;
 			try
 			{
-				initDecodes();
-			}
-			catch(DecodesException ex)
-			{
-				log.warn("Cannot init Decodes: ",ex);
-				databaseFailed = true;
-				continue;
-			}
-			try
-			{
 				createDatabase();
 				tryConnect();
 			}
 			catch(BadConnectException ex)
 			{
-				warning("Cannot connect to TSDB: " + ex);
+				if (ex.getCause() instanceof NullPointerException)
+				{
+					// Just bail
+					throw (NullPointerException)ex.getCause();
+				}
+				log.atError().setCause(ex).log("Cannot connect to TSDB.");
 				// CWMS-10402 don't keep trying if the failure was because the
 				// app name is invalid.
 				databaseFailed = !ex.toString().contains("Cannot determine app ID");
@@ -223,7 +232,7 @@ public abstract class TsdbAppTemplate
 
 	/**
 	 * Parses the command line arguments.
-	 * You probably don't need to override this method. This calls the 
+	 * You probably don't need to override this method. This calls the
 	 * parseArgs method in the CmdLineArgs class. Your app can retrieve the
 	 * results later.
 	 * @param args the argument from the main method.
@@ -261,90 +270,31 @@ public abstract class TsdbAppTemplate
 		throws ClassNotFoundException,
 		InstantiationException, IllegalAccessException
 	{
-		if (theDb != null)
-		{
-			return;
-		}
-
-		String className = DecodesSettings.instance().getTsdbClassName();
-
-		if (className == null)
-		{
-			String dbType = DecodesSettings.instance().editDatabaseType;
-			String msg = String.format("Error: can't create time series database with editDatabaseType='%s'", dbType);
-			log.error(msg);
-			throw new InstantiationException(msg);
-		}
-
 		try
 		{
-			log.info("Connecting to time series database with class '{}'",className);
-			ClassLoader cl = Thread.currentThread().getContextClassLoader();
-			Class dbClass = cl.loadClass(className);
-			theDb = (TimeSeriesDb)dbClass.newInstance();
-		}
-		catch(ClassNotFoundException ex)
-		{
-			log.error("Check concrete database class name. Can't find '{}",className,ex);
-			throw ex;
-		}
-		catch(InstantiationException ex)
-		{
-			log.error("Can't instantiate object of type '{}'", className ,ex);
-			throw ex;
-		}
-		catch(IllegalAccessException ex)
-		{
-			log.error("Not permitted to instantiate object of type '{}'", className,ex);
-			throw ex;
-		}
 
-		// Set test-mode flag & model run ID in the database interface.
-		theDb.setTestMode(testModeArg.getValue());
-		int modelRunId = modelRunArg.getValue();
-		if (modelRunId != -1)
-			theDb.setWriteModelRunId(modelRunId);
+			db = DatabaseService.getDatabaseFor(appName, settings);
+			decodesDb = db.getLegacyDatabase(Database.class).get();
+			decodesDb.initializeForDecoding();
+			Database.setDb(decodesDb);
+			theDb = db.getLegacyDatabase(TimeSeriesDb.class).get();
+		}
+		catch (DecodesException ex)
+		{
+			throw new RuntimeException("Unable to create database.", ex);
+		}
 	}
 
 	/**
 	 * Attempt to connect to the database.
 	 * @throws BadConnectException if failure to connect.
 	 */
-	public void tryConnect()
-		throws BadConnectException
+	public void tryConnect() throws BadConnectException
 	{
-		if (theDb.isConnected())
+		try (LoadingAppDAI loadingAppDAO = db.getDao(LoadingAppDAI.class).get())
 		{
-			warning("Closing connection before reconnect.");
-			theDb.closeConnection();
-		}
-		Properties credentials = null;
-		String nm = appNameArg.getValue();
-		if (!DecodesInterface.isGUI() || !theDb.isCwms())
-		{
-			// Get authorization parameters.
-			String afn = DecodesSettings.instance().DbAuthFile;
-			try
-			{
-				credentials = AuthSourceService.getFromString(afn)
-											   .getCredentials();
-			}
-			catch(AuthException ex)
-			{
-				authFileEx(afn, ex);
-				throw new BadConnectException("Cannot read auth file: " + ex);
-			}
-	
-			// Connect to the database!
-		}
-		// Else this is a CWMS GUI -- user will be prompted for credentials
-		// Leave the property set empty.
-		
-		setAppId(theDb.connect(nm, credentials));
-		
-		LoadingAppDAI loadingAppDAO = theDb.makeLoadingAppDAO();
-		try
-		{
+			CompAppInfo thisApp = loadingAppDAO.getComputationApp(appName);
+			this.appId = thisApp.getAppId();
 			// CWMS-8979 Allow settings in the database to override values in user.properties.
 			String settingsApp = cmdLineArgs.getCmdLineProps().getProperty("settings");
 			if (settingsApp != null)
@@ -353,7 +303,8 @@ public abstract class TsdbAppTemplate
 				try
 				{
 					CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
-					PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
+					this.appId = cai.getAppId();
+					PropertiesUtil.loadFromProps(settings, cai.getProperties());
 				}
 				catch (DbIoException ex)
 				{
@@ -365,9 +316,21 @@ public abstract class TsdbAppTemplate
 				}
 			}
 		}
-		finally
+		catch (DbIoException ex)
 		{
-			loadingAppDAO.close();
+			throw new BadConnectException("Unable to get AppId", ex);
+		}
+		catch (NoSuchObjectException ex)
+		{
+			throw new BadConnectException("unable to get database instance.", ex);
+		}
+
+		// Set test-mode flag & model run ID in the database interface.
+		theDb.setTestMode(testModeArg.getValue());
+		int modelRunId = modelRunArg.getValue();
+		if (modelRunId != -1)
+		{
+			theDb.setWriteModelRunId(modelRunId);
 		}
 	}
 
@@ -379,7 +342,7 @@ public abstract class TsdbAppTemplate
 	{
 		log.atError().setCause(ex).log("Cannot read DB auth from file '{}'", afn ,ex);
 	}
-	
+
 	protected void badConnect(String appName, BadConnectException ex)
 	{
 		log.error("Cannot read DB auth from file '{}'", appName ,ex);
@@ -388,13 +351,11 @@ public abstract class TsdbAppTemplate
 	public void initDecodes()
 		throws DecodesException
 	{
-		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
-		DecodesInterface.initializeForEditing();
 	}
-	
+
 	public void shutdownDecodes()
 	{
-		DecodesInterface.shutdownDecodes();
+	//	DecodesInterface.shutdownDecodes();
 	}
 
 	public void closeDb()
@@ -409,11 +370,10 @@ public abstract class TsdbAppTemplate
 			{
 				log.info("Closing database connection.");
 			}
-			theDb.closeConnection();
 		}
 		theDb = null;
 	}
-	
+
 	/**
 	 * Convenience method to log warning with app name prefix.
 	 * @param msg the message
@@ -445,12 +405,12 @@ public abstract class TsdbAppTemplate
 	{
 		DecodesInterface.silent = silent;
 	}
-	
+
 	/**
 	 * @return the PID assigned by the underlying VM and determined at startup.
 	 */
 	public int getPID() { return pid; }
-	
+
 	public static int determinePID()
 	{
 		String pids = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
@@ -469,7 +429,7 @@ public abstract class TsdbAppTemplate
 		}
 		return -1;
 	}
-	
+
 	public static int determineEventPort(CompAppInfo appInfo)
 	{
 		int evtPort = -1;
@@ -487,7 +447,7 @@ public abstract class TsdbAppTemplate
 			evtPort = 20000 + (determinePID() % 10000);
 		return evtPort;
 	}
-	
+
 
 	/**
 	 * {@inheritDoc}

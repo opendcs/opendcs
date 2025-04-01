@@ -22,6 +22,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -194,7 +195,7 @@ final public class ResEvapAlgo
         Date untilTime = new Date(baseTimes.first().getTime() + 86400000);
         try
         {
-            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, WTPID, baseTimes.first(), untilTime, startDepth, depthIncrement);
+            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WTPID, baseTimes.first(), untilTime, startDepth, depthIncrement);
         }
         catch (DbIoException ex)
         {
@@ -237,7 +238,7 @@ final public class ResEvapAlgo
             }
             i++;
         }
-        dailyWTP.setProfiles(arrayWTP, CurrentTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
+        dailyWTP.setProfiles(arrayWTP, CurrentTime, wtpTsId, reservoirId, zeroElevation, elev, timeSeriesDAO);
     }
 
     //Returns Converted double of cts from currUnits space to NewUnits
@@ -353,12 +354,17 @@ final public class ResEvapAlgo
             //Get site Data from Database
             try
             {
+                conn = tsdb.getConnection();
                 DbKey siteID = siteDAO.lookupSiteID(reservoirId);
                 site = siteDAO.getSiteById(siteID);
             }
             catch (DbIoException | NoSuchObjectException ex)
             {
                 throw new DbCompException("Failed to load Site data", ex);
+            }
+            catch (SQLException ex)
+            {
+                throw new DbCompException("Unable to acquire required connection.", ex);
             }
 
             //If missing data overwrite with site info
@@ -544,7 +550,7 @@ final public class ResEvapAlgo
             setOutput(hourlyFluxOut, computedList.get(5));
             setOutput(hourlyEvap, computedList.get(6));
 
-            hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
+            hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, reservoirId, zeroElevation, elev, timeSeriesDAO);
 
             count++;
             tally += (previousHourlyEvap + computedList.get(6)) / 2;
@@ -560,31 +566,36 @@ final public class ResEvapAlgo
     protected void afterTimeSlices()
             throws DbCompException
     {
-        if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
+        try
         {
-            setOutput(dailyEvap, tally, _timeSliceBaseTime);
-            try
+            if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
             {
-                setAsFlow(tally, _timeSliceBaseTime);
+                setOutput(dailyEvap, tally, _timeSliceBaseTime);
+                try
+                {
+                    setAsFlow(tally, _timeSliceBaseTime);
+                }
+                catch (RatingException | NoConversionException | DecodesException ex)
+                {
+                    throw new DbCompException("Failed to compute flow values from evap rate", ex);
+                }
+                setDailyProfiles(_timeSliceBaseTime);
+
+                //TODO save HourlyWTP
+                //		hourlyWTP.SaveProfiles(timeSeriesDAO);
+                dailyWTP.SaveProfiles(timeSeriesDAO);
             }
-            catch (RatingException | NoConversionException | DecodesException ex)
+            else
             {
-                throw new DbCompException("Failed to compute flow values from evap rate", ex);
+                warning("There are less than 24 hourly samples, can not compute daily sums");
             }
-            setDailyProfiles(_timeSliceBaseTime);
-
-            //TODO save HourlyWTP
-            //		hourlyWTP.SaveProfiles(timeSeriesDAO);
-            //dailyWTP.SaveProfiles(timeSeriesDAO);
-
+        }
+        finally
+        {
             tsdb.freeConnection(conn);
             crd.close();
             siteDAO.close();
             timeSeriesDAO.close();
-        }
-        else
-        {
-            warning("There are less than 24 hourly samples, can not compute daily sums");
         }
 //AW:AFTER_TIMESLICES
 //AW:AFTER_TIMESLICES_END

@@ -1,10 +1,24 @@
+/*
+ * Copyright 2025 OpenDCS Consortium and its Contributors
+ * Licensed under the Apache License, Version 2.0 (the "License")
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ */
+
 package opendcs.dao;
 
 import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
@@ -23,7 +37,6 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 		+ "EVENT_PRIORITY, SUBSYSTEM, MSG_RECV_TIME, EVENT_TEXT";
 	public static String dacqEventColumns = columnsBase;
 	private static Boolean hasAppId = null;
-	
 
 	public DacqEventDAO(DatabaseConnectionOwner tsdb)
 	{
@@ -235,6 +248,55 @@ public class DacqEventDAO extends DaoBase implements DacqEventDAI
 		q = q + " order by DACQ_EVENT_ID";
 		return queryForEvents(q, evtList, parameters);
 	}
+
+	@Override
+	public int readEvents(ArrayList<DacqEvent> evtList, DbKey appId, DbKey routingExecId, DbKey platformId, boolean backlogValid, Long lastDacqEventId, Long timeInMillis)
+			throws DbIoException
+	{
+		if (db.getDecodesDatabaseVersion() < DecodesDatabaseVersion.DECODES_DB_11)
+		{
+			return 0;
+		}
+		List<Object> parameters = new ArrayList<>();
+		String q = "SELECT " + dacqEventColumns + ", LOADING_APPLICATION_ID FROM " + dacqEventTableName;
+		String c = "WHERE";
+		if (appId != null)
+		{
+			q = q + " " + c + " LOADING_APPLICATION_ID = ?";
+			c = "AND";
+			parameters.add(appId);
+		}
+		if (routingExecId != null)
+		{
+			q = q + " " + c + " SCHEDULE_ENTRY_STATUS_ID = ?";
+			c = "AND";
+			parameters.add(routingExecId);
+		}
+		if (platformId != null)
+		{
+			q = q + " " + c + " PLATFORM_ID = ?";
+			c = " AND ";
+			parameters.add(platformId);
+		}
+		if (backlogValid)
+		{
+			if (lastDacqEventId != null)
+			{
+				q = q + " " + c + " DACQ_EVENT_ID > ?";
+				parameters.add(lastDacqEventId);
+			}
+			else if (timeInMillis != null)
+			{
+				q = q + " " + c + " EVENT_TIME >= ?";
+				parameters.add(new Date(timeInMillis));
+			}
+		}
+
+		q = q + " order by DACQ_EVENT_ID";
+
+		return queryForEvents(q, evtList, parameters);
+	}
+
 
 	@Override
 	public void deleteEventsForPlatform(DbKey platformId) throws DbIoException

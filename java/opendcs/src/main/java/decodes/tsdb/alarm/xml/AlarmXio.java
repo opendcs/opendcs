@@ -735,10 +735,11 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 	}
 	
 	/**
-	 * Writes to an output stream. Does not close stream after fininshing.
-	 * @param grp
-	 * @param os
-	 * @throws IOException
+	 * Writes to an output stream. Does not close stream after finishing.
+	 * @param screenings list of AlarmScreening
+	 * @param groups list of AlarmGroup
+	 * @param os output stream
+	 * @throws IOException if an error occurs during writing.
 	 */
 	public void writeXML(ArrayList<AlarmScreening> screenings, ArrayList<AlarmGroup> groups, OutputStream os)
 		throws IOException
