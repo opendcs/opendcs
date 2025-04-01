@@ -61,7 +61,7 @@ public class CwmsOracleProvider implements MigrationProvider
         properties.add(
             new MigrationProperty(
                 "TABLE_SPACE_SPEC", String.class,
-                "If data will be on a separate table space indicate the line here."));
+                "Name of table space, leave blank if you don't need a separate table space"));
     }
 
     @Override
