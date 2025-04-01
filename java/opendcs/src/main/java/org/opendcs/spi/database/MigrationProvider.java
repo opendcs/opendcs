@@ -82,9 +82,22 @@ public interface MigrationProvider
     {
     }
 
+    /**
+     * List of Schemas that flyway needs to be aware of and possibly create
+     * @return
+     */
     default List<String> schemas()
     {
         return new ArrayList<>();
+    }
+
+    /**
+     * Inform flyway as to whether it is responsible for the schema creation
+     * @return
+     */
+    default boolean createSchemas()
+    {
+        return false;
     }
 
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles);
