@@ -410,13 +410,15 @@ public final class NetlistResources extends OpenDcsResource
 	{
 		ApiNetList ret = new ApiNetList();
 
-		LineNumberReader rdr = new LineNumberReader(new StringReader(nldata));
+
 		String ln = null;
-		try
+		int lineNumber = 0;
+		try(LineNumberReader rdr = new LineNumberReader(new StringReader(nldata)))
 		{
 			while( (ln = rdr.readLine()) != null)
 			{
 				ln = ln.trim();
+				lineNumber = rdr.getLineNumber();
 				if (!(ln.isEmpty()
 						|| ln.charAt(0) == '#' || ln.charAt(0) == ':')) // skip comment lines.
 				{
@@ -428,14 +430,9 @@ public final class NetlistResources extends OpenDcsResource
 		catch(Exception ex)
 		{
 			String msg =
-					"NL File Parsing Failed on line " + rdr.getLineNumber() + ": " + ex
+					"NL File Parsing Failed on line " + lineNumber + ": " + ex
 							+ (ln == null ? "" : (" -- " + ln));
-			throw new WebAppException(HttpServletResponse.SC_NOT_ACCEPTABLE, msg);
-		}
-
-		try { rdr.close(); } catch (Exception ignored)
-		{
-			// Ignored
+			throw new WebAppException(HttpServletResponse.SC_NOT_ACCEPTABLE, msg, ex);
 		}
 
 		return Response.status(HttpServletResponse.SC_OK).entity(ret).build();

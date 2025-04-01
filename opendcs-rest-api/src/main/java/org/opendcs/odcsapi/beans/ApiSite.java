@@ -72,11 +72,6 @@ public final class ApiSite
 
 	@Schema(description = "The last modification timestamp for the site.")
 	private Date lastModified = null;
-
-
-	public ApiSite()
-	{	
-	}
 	
 	public Long getSiteId()
 	{

@@ -48,11 +48,6 @@ public final class ApiPlatformRef
 
 	@Schema(description = "Designator for the platform.", example = "tailwater")
 	private String designator = null;
-
-	/**
-	 * No args ctor for JSON
-	 */
-	public ApiPlatformRef() {}
 	
 	public String getName()
 	{

@@ -100,8 +100,10 @@ publishing {
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonarqube {
         properties {
-            property 'sonar.exclusions', 'src/main/resources/swaggerui/**'
-            property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml"
+            property 'sonar.exclusions', 'src/main/webapp/swaggerui/**'
+            property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml," +
+                    "../opendcs-integration-test/build/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
+                    "../opendcs-integration-test/build/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
         }
     }
 }

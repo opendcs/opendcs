@@ -29,8 +29,8 @@ import javax.ws.rs.core.Response;
 
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.util.ApiConstants;
-import org.opendcs.odcsapi.util.ApiHttpUtil;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -66,7 +66,8 @@ public final class SessionResource
 	public Response checkSessionAuthorization()
 	{
 		//Security filters will ensure this method is only accessible via an authenticated client
-		return ApiHttpUtil.createResponse("Session Valid");
+		return Response.status(HttpServletResponse.SC_OK).entity(new Status("Session Valid"))
+			.build();
 	}
 
 	@DELETE

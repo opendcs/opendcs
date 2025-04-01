@@ -27,7 +27,6 @@ import decodes.tsdb.TsdbException;
 import org.opendcs.odcsapi.beans.Status;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
-import org.opendcs.odcsapi.util.ApiHttpUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +36,7 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AppExceptionMapper.class);
+	private static final String INTERNAL_ERROR = "There was an error.  Please contact your sys admin.";
 
 	@Override
 	public Response toResponse(Throwable ex)
@@ -77,13 +77,17 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 	{
 		LOGGER.warn("Unknown Error", ex);
 		Status status = new Status("Bad Request.  There was an issue with the request, please try again or contact your system administrator.");
-		return ApiHttpUtil.createResponse(status, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		return Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+				.entity(status)
+				.build();
 	}
 
 	private static Response handle(UnsupportedOperationException wae)
 	{
 		LOGGER.warn("Unsupported endpoint", wae);
-		return ApiHttpUtil.createResponse(new Status(wae.getMessage()), HttpServletResponse.SC_NOT_IMPLEMENTED);
+		return Response.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
+				.entity(new Status(wae.getMessage()))
+				.build();
 	}
 
 	private static Response handle(WebApplicationException wae)
@@ -95,12 +99,14 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 			message = "Internal Server Error";
 		}
 		int status = wae.getResponse().getStatus();
-		return ApiHttpUtil.createResponse(new Status(message), status);
+		return Response.status(status)
+				.entity(new Status(message))
+				.build();
 	}
 
 	private static Response handle(DbException dbex)
 	{
-		String returnErrMsg = "There was an error.  Please contact your sys admin.";
+		String returnErrMsg = INTERNAL_ERROR;
 		if(dbex.getCause() != null)
 		{
 			String tempCause = dbex.getCause().toString().toLowerCase();
@@ -116,13 +122,15 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 			}
 		}
 		LOGGER.warn(returnErrMsg, dbex);
-		return ApiHttpUtil.createResponse(new Status(returnErrMsg), HttpServletResponse.SC_BAD_REQUEST);
+		return Response.status(HttpServletResponse.SC_BAD_REQUEST)
+				.entity(new Status(returnErrMsg))
+				.build();
 	}
 
 	private static Response handle(TsdbException dbex)
 	{
 		LOGGER.warn("Unexpected DbIoException thrown from request", dbex);
-		String returnErrMsg = "There was an error.  Please contact your sys admin.";
+		String returnErrMsg = INTERNAL_ERROR;
 		if(dbex.getCause() != null)
 		{
 			String tempCause = dbex.getCause().toString().toLowerCase();
@@ -134,12 +142,14 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 			}
 			LOGGER.warn(returnErrMsg, dbex);
 		}
-		return ApiHttpUtil.createResponse(new Status(returnErrMsg), HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		return Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+				.entity(new Status(returnErrMsg))
+				.build();
 	}
 
 	private static Response handle(ConstraintException dbex)
 	{
-		String returnErrMsg = "There was an error.  Please contact your sys admin.";
+		String returnErrMsg = INTERNAL_ERROR;
 		if(dbex.getCause() != null)
 		{
 			String tempCause = dbex.getCause().toString().toLowerCase();
@@ -153,7 +163,9 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 		{
 			LOGGER.warn("Violated constraint exception thrown from request", dbex);
 		}
-		return ApiHttpUtil.createResponse(new Status(returnErrMsg), HttpServletResponse.SC_BAD_REQUEST);
+		return Response.status(HttpServletResponse.SC_BAD_REQUEST)
+				.entity(new Status(returnErrMsg))
+				.build();
 	}
 
 	private static Response handle(WebAppException wae)
@@ -166,7 +178,9 @@ public final class AppExceptionMapper implements ExceptionMapper<Throwable>
 		{
 			LOGGER.info("Client error", wae);
 		}
-		return ApiHttpUtil.createResponse(new Status(wae.getErrMessage()), wae.getStatus());
+		return Response.status(wae.getStatus())
+				.entity(new Status(wae.getMessage()))
+				.build();
 	}
 
 }

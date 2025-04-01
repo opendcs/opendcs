@@ -40,14 +40,14 @@ public final class ContextPropertySetup implements ServletContextListener
 
 	private static void initProp(ServletContext servletContext, String sysParam, String decodesParam, String envParam)
 	{
-		String authCheck = servletContext.getInitParameter(sysParam);
-		if(authCheck == null || authCheck.trim().isEmpty())
+		String propertyValue = servletContext.getInitParameter(sysParam);
+		if(propertyValue == null || propertyValue.trim().isEmpty())
 		{
-			authCheck = System.getProperty(sysParam, System.getenv(envParam));
+			propertyValue = System.getProperty(sysParam, System.getenv(envParam));
 		}
-		if(authCheck != null && !authCheck.isEmpty())
+		if(propertyValue != null && !propertyValue.isEmpty())
 		{
-			DbInterface.decodesProperties.setProperty(decodesParam, authCheck);
+			DbInterface.decodesProperties.setProperty(decodesParam, propertyValue);
 		}
 	}
 }

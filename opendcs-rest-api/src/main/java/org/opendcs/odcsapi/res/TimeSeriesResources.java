@@ -165,7 +165,9 @@ public final class TimeSeriesResources extends OpenDcsResource
 				apiId.setStorageUnits(id.getStorageUnits());
 				apiId.setUniqueString(id.getUniqueString());
 				ret.add(apiId);
-			} else {
+			}
+			else
+			{
 				ApiTimeSeriesIdentifier apiId = new ApiTimeSeriesIdentifier();
 				if (id.getKey() != null)
 				{
@@ -352,7 +354,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			catch(IllegalArgumentException ex)
 			{
 				throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST,
-						"Invalid start time. Use [[[CC]YY]/DDD]/HH:MM[:SS] or relative time.");
+						"Invalid start time. Use [[[CC]YY]/DDD]/HH:MM[:SS] or relative time.", ex);
 			}
 		}
 		if (end != null)
@@ -364,7 +366,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 			catch (IllegalArgumentException ex)
 			{
 				throw new WebAppException(HttpServletResponse.SC_BAD_REQUEST,
-						"Invalid end time. Use [[[CC]YY]/DDD]/HH:MM[:SS] or relative time.");
+						"Invalid end time. Use [[[CC]YY]/DDD]/HH:MM[:SS] or relative time.", ex);
 			}
 		}
 
@@ -379,7 +381,7 @@ public final class TimeSeriesResources extends OpenDcsResource
 		}
 		catch (NoSuchObjectException ex)
 		{
-			throw new DatabaseItemNotFoundException("Time series with key=" + tsKey + " not found");
+			throw new DatabaseItemNotFoundException("Time series with key=" + tsKey + " not found", ex);
 		}
 		catch (DbIoException | BadTimeSeriesException ex)
 		{

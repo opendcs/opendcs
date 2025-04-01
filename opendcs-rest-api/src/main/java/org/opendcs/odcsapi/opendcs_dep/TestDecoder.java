@@ -46,6 +46,7 @@ import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
 import ilex.util.Logger;
+import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.EnumDAI;
@@ -65,9 +66,11 @@ import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.hydrojson.DbInterface;
 import org.opendcs.odcsapi.util.ApiPropertiesUtil;
+import org.slf4j.LoggerFactory;
 
 public final class TestDecoder
 {
+	private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TestDecoder.class);
 	private static long lastDecodesInitMsec = 0L;
 
 	private TestDecoder()
@@ -185,8 +188,9 @@ public final class TestDecoder
 			{
 				timeStamp = rawMessage.getPM(GoesPMParser.MESSAGE_TIME).getDateValue();
 			}
-			catch (Exception ex)
+			catch (RuntimeException | NoConversionException ex)
 			{
+				LOGGER.atDebug().setCause(ex).log("Cannot get message time from header. Defaulting to current time.");
 				timeStamp = new Date();
 			}
 			rawMessage.setTimeStamp(timeStamp);

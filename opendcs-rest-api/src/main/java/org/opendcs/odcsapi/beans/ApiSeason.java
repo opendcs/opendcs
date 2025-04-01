@@ -56,10 +56,6 @@ public final class ApiSeason
 	@Schema(description = "Specifies the sort order of seasons for GUI display.", example = "1")
 	private Integer sortNumber = null;
 
-	public ApiSeason()
-	{	
-	}
-
 	public String getAbbr()
 	{
 		return abbr;
