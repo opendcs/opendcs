@@ -24,7 +24,7 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
-import org.opendcs.fixtures.helpers.Programs;
+import org.opendcs.fixtures.Programs;
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.utils.FailableResult;
 import org.slf4j.Logger;
@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
+import decodes.db.UnitConverter;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
@@ -43,6 +44,7 @@ import decodes.tsdb.ImportComp;
 import decodes.tsdb.TsdbException;
 import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
+import decodes.util.TSUtil;
 import decodes.tsdb.DataCollection;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
@@ -136,8 +138,6 @@ public class AlgorithmTestsIT extends AppTestBase
                                     {
                                         System.out.println("Comps: " + comp_data.getAbsolutePath());
                                         String compstr = comp_data.getAbsolutePath();
-                                        // String[] compxml =  {compstr};
-                                        // Programs.CompImport(algoLog, configuration.getPropertiesFile(), environment, exit, compxml);
                                         List<String> compxml =  Arrays.asList(compstr);
                                         ImportComp ic = new ImportComp(tsDb, true, false, compxml);
                                         ic.runApp();
@@ -146,7 +146,6 @@ public class AlgorithmTestsIT extends AppTestBase
                                 loadRatingimport(test.getAbsolutePath()+"/rating");
 
                                 Collection<CTimeSeries> inputTS = loadTSimport(test.getAbsolutePath()+"/timeseries/inputs", importer);
-                                //Collection<CTimeSeries> HistoricInputTS = loadTSimport(test.getAbsolutePath()+"/timeseries/historicInputs", importer);
                                 Collection<CTimeSeries> outputTS = loadTSimport(test.getAbsolutePath()+"/timeseries/outputs", importer);
                                 Collection<CTimeSeries> expectedOutputTS = loadTSimport(test.getAbsolutePath()+"/timeseries/expectedOutputs", importer);
 
@@ -170,45 +169,9 @@ public class AlgorithmTestsIT extends AppTestBase
                                 //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
                                 testComp.prepareForExec(tsDb);
                                 testComp.apply(theData, tsDb);
-                                
-                                //String[] runComps = {"TestRelativeHumidity"};
-                                //Programs.RunCompExec(algoLog, configuration.getPropertiesFile(), environment, exit, null, null, null, null, null, null, true, runComps, null, null);
-
-                                // Date earliest=null, latest=null;
-                                // for (CTimeSeries cts: inputTS)
-                                // {
-                                //     for(int idx = 0; idx < cts.size(); idx++)
-                                //     {
-                                //         TimedVariable tv = cts.sampleAt(idx);
-                                    
-                                //         if (earliest == null)
-                                //         {
-                                //             earliest = tv.getTime();
-                                //         }
-
-                                //         if (latest == null)
-                                //         {
-                                //             latest = tv.getTime();
-                                //         }
-
-                                //         if (0 > tv.getTime().compareTo(earliest))
-                                //         {
-                                //             earliest = tv.getTime();
-                                //         }
-                                //         else if (0 < tv.getTime().compareTo(latest))
-                                //         {
-                                //             latest = tv.getTime();
-                                //         }
-                                //     }
-                                // }
-                                // System.out.println("earliest: "+earliest);
-                                // System.out.println("latest: "+latest);
 
                                 Iterator<CTimeSeries> iterOutput = outputTS.iterator();
                                 Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
-
-                                System.out.println("output: "+iterOutput.hasNext());
-                                System.out.println("expected: "+iterExpect.hasNext());
                                 
                                 while (iterExpect.hasNext())
                                 {
@@ -217,33 +180,20 @@ public class AlgorithmTestsIT extends AppTestBase
                                     TimeSeriesIdentifier outputID = tsDao.getTimeSeriesIdentifier(tsName);
                                     CTimeSeries currOutput = tsDao.makeTimeSeries(outputID);
 
-                                    System.out.println(currOutput.getNameString());
                                     System.out.println(currExpect.getNameString());
 
                                     CTimeSeries algoOutput = theData.getTimeSeriesByTsidKey(outputID);
-
-                                    //int tsvalues = tsDao.fillTimeSeries(currOutput, earliest, latest);
-
-                                    //System.out.println(tsvalues);
-                                    System.out.println("algo units: " + algoOutput.getUnitsAbbr());
                                     System.out.println("expected units: " + currExpect.getUnitsAbbr());
-                                    currExpect.setUnitsAbbr(algoOutput.getUnitsAbbr());
+                                    TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
 
                                     for (int i = 0; i<algoOutput.size(); i++){
                                         TimedVariable TVOutput = algoOutput.sampleAt(i);
                                         TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
-                                        
                                         System.out.println("output time: "+TVOutput.getTime());
-                                        System.out.println("output value: "+TVOutput.getDoubleValue());
-                                        System.out.println("expected time: "+TVExpected.getTime());
+                                        System.out.println("output value  : "+TVOutput.getDoubleValue());
                                         System.out.println("expected value: "+TVExpected.getDoubleValue());
-                                        //System.out.println("equals: "+TVOutput.equals(TVExpected));
-                                        // if(TVExpected != null){
-                                        //     assertTrue(TVOutput.equals(TVExpected), "Output timeseries not equal to expected values");
-                                        // }
-
                                     }
-                                    //assertEquals(algoOutput, currExpect, "expected ture");
+                                    assertEquals(algoOutput, currExpect, "expected ture", testComp.getValidStart(), testComp.getValidEnd());
                                 }
                             }
                         }    
@@ -253,7 +203,7 @@ public class AlgorithmTestsIT extends AppTestBase
         } 
         else 
         {
-            System.out.println("Invalid directory: " + "????????????????????????????????????????????????????????????" + current_Directory);
+            System.out.println("Invalid directory: " + current_Directory);
         }
     }
 
@@ -274,7 +224,7 @@ public class AlgorithmTestsIT extends AppTestBase
                 Collection<CTimeSeries> allTs = importer.readTimeSeriesFile(inputStream);
                 for (CTimeSeries tsIn: allTs)
                 {
-                    System.out.println("load: " + tsIn.getDisplayName());
+                    log.info("load: " + tsIn.getDisplayName());
 
                     log.info("Saving {}", tsIn.getTimeSeriesIdentifier());
                     tsDao.saveTimeSeries(tsIn);

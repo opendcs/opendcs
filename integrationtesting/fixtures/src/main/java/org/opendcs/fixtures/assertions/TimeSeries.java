@@ -6,15 +6,24 @@ import org.junit.jupiter.api.AssertionFailureBuilder;
 import org.junit.jupiter.api.Assertions;
 
 import decodes.tsdb.CTimeSeries;
+import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
 public class TimeSeries
 {
-    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, String message)
+    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, String message) throws Exception
     {
-        assertEquals(expected, actual, .0001, message);
+        assertEquals(expected, actual, .0001, message, null, null);
     }
     public static void assertEquals(CTimeSeries expected, CTimeSeries actual, double delta, String message)
+    {
+        assertEquals(expected, actual, delta, message, null, null);
+    }
+    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, String message, Date start, Date end)
+    {
+        assertEquals(expected, actual, .0001, message, start, end);
+    }
+    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, double delta, String message, Date start, Date end)
     {
         try
         {
@@ -44,21 +53,30 @@ public class TimeSeries
                                     .expected(expected.getUnitsAbbr())
                                     .buildAndThrow();
             }
-            else if(expected.size() != actual.size())
+            
+            int expectedElements = elementsInTimeWindow(expected, start, end);
+            int actualElements = elementsInTimeWindow(actual, start, end);
+            if(expectedElements != actualElements)
             {
                 AssertionFailureBuilder.assertionFailure()
                                     .reason("Time series do not have the same number of elements.")
                                     .message(message)
-                                    .actual(actual.size())
-                                    .expected((expected.size()))
+                                    .actual(actualElements)
+                                    .expected(expectedElements)
                                     .buildAndThrow();
             }
             else
             {
-                for (int i = 0; i < actual.size(); i++)
+                int expectedIndex = 0;
+                int actualIndex = 0;
+                if(start != null && end != null){
+                    expectedIndex = expected.findNextIdx(start);
+                    actualIndex = actual.findNextIdx(start);
+                }
+                for (int i = actualIndex; actualIndex - i < actualElements; expectedIndex++, actualIndex++)
                 {
-                    final TimedVariable expectedVar = expected.sampleAt(i);
-                    final TimedVariable actualVar = actual.sampleAt(i);
+                    final TimedVariable expectedVar = expected.sampleAt(expectedIndex);
+                    final TimedVariable actualVar = actual.sampleAt(actualIndex);
                     final Date expectedDate = expectedVar.getTime();
                     final Date actualDate = actualVar.getTime();
 
@@ -91,5 +109,27 @@ public class TimeSeries
         }
     }
 
-
+    private static int elementsInTimeWindow(CTimeSeries cts, Date start, Date end) throws NoConversionException{
+        if(start == null || end == null){
+            return cts.size();
+        }
+        int elementCount = 0;
+        int index = cts.findNextIdx(start);
+        TimedVariable tv = cts.sampleAt(index);
+        while(tv != null){
+            try {
+                Date time  = tv.getDateValue();
+                if(time.compareTo(end) >= 0){
+                    elementCount++;
+                    tv = cts.sampleAt(index+elementCount);
+                }
+                else{
+                    break;
+                }
+            } catch (NoConversionException ex) {
+                throw new NoConversionException("Failed to get Date value for timed variable");
+            }
+        }
+        return elementCount;
+    }
 }
