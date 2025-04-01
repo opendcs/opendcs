@@ -191,10 +191,10 @@ final public class ResEvapAlgo
     //Initialized hourly water temperature profiles and return double[] of WTP of the previous timeSlice before base.
     private double[] getProfiles(String WTPID) throws DbCompException
     {
-        Date untilTime = new Date(baseTimes.first().getTime() + 86400000);
+        Date sinceTime = new Date(baseTimes.first().getTime() - 86400000);
         try
         {
-            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WTPID, baseTimes.first(), untilTime, startDepth, depthIncrement);
+            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WTPID, sinceTime, baseTimes.first(), startDepth, depthIncrement);
         }
         catch (DbIoException ex)
         {
@@ -205,7 +205,7 @@ final public class ResEvapAlgo
         {
             try
             {
-                arrayWTP[i] = hourlyWTP.getTimeSeries().getTimeSeriesAt(i).findPrev(untilTime).getDoubleValue();
+                arrayWTP[i] = hourlyWTP.getTimeSeries().getTimeSeriesAt(i).findPrev(baseTimes.first()).getDoubleValue();
             }
             catch (RuntimeException | NoConversionException ex)
             {
@@ -375,10 +375,11 @@ final public class ResEvapAlgo
             hourlyWTP = new WaterTempProfiles(startDepth, depthIncrement);
             dailyWTP = new WaterTempProfiles(startDepth, depthIncrement);
 
-            //initialized input timeseries
+            //initialize output timeseries
             hourlyEvapTS = getParmRef("hourlyEvap").timeSeries;
             dailyEvapTS = getParmRef("dailyEvap").timeSeries;
 
+            //initialized input timeseries
             windSpeedTS = getParmRef("windSpeed").timeSeries;
             airTempTS = getParmRef("airTemp").timeSeries;
             relativeHumidityTS = getParmRef("relativeHumidity").timeSeries;
@@ -438,10 +439,10 @@ final public class ResEvapAlgo
             double initElev;
             try
             {
-                initElev = elevTS.findPrev(baseTimes.first()).getDoubleValue();
+                initElev = tsdb.getPreviousValue(elevTS, baseTimes.first()).getDoubleValue();
                 reservoir.setElevation(initElev, conn);
             }
-            catch (RuntimeException | NoConversionException ex)
+            catch (RuntimeException | NoConversionException | DbIoException | BadTimeSeriesException ex)
             {
                 throw new DbCompException("Failed to load initial elevation before time window of compute", ex);
             }
@@ -489,11 +490,7 @@ final public class ResEvapAlgo
             {
                 CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapTS.getTimeSeriesIdentifier());
                 cts.setUnitsAbbr("mm/hr");
-                Date until = new Date(baseTimes.first().getTime() + 86400000);
-                Date from = new Date(baseTimes.first().getTime() - 86400000);
-                int k = timeSeriesDAO.fillTimeSeries(cts, from, until, true, true, true);
-                Date test = baseTimes.first();
-                TimedVariable PrevTV = cts.findPrev(test);
+                TimedVariable PrevTV = tsdb.getPreviousValue(cts, baseTimes.first());
                 previousHourlyEvap = PrevTV.getDoubleValue();
             }
             catch (Exception ex)
