@@ -34,7 +34,7 @@ package ilex.var;
 /**
 * This interface defines constant bit-field values used by the flag values
 * in Variable and NamedVariableList. It also defines an interface for
-* setting & getting the flag values as a whole, and specific bits.
+* setting and getting the flag values as a whole, and specific bits.
 */
 public abstract interface IFlags
 {

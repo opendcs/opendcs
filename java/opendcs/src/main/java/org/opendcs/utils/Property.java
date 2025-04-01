@@ -70,7 +70,6 @@ public class Property
      * If the value cannot be retrieved null is returned.
      *
      * @param value value from a source such as the database or xml files
-     * @param defaultValue value returned if none founded
      * @param props Java Properties object to use for properties source
      * @param env env map to use for retrieving environment values.
      * @return expanded value
