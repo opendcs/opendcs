@@ -25,7 +25,6 @@ final class NetlistResourcesTest
 	{
 		NetworkListList nll = new NetworkListList();
 		NetworkList nl = new NetworkList("Test");
-		nl.lastModifyTime = Date.from(Instant.parse("2021-07-01T00:00:00Z"));
 		nl.siteNameTypePref = "TestPref";
 		nl.transportMediumType = "GOES";
 		nl.setId(DbKey.createDbKey(750556L));
@@ -95,7 +94,7 @@ final class NetlistResourcesTest
 		assertEquals(apiNetList.getName(), nl.getDisplayName());
 		assertEquals(apiNetList.getTransportMediumType(), nl.transportMediumType);
 		assertEquals(apiNetList.getNetlistId(), nl.getKey().getValue());
-		assertEquals(apiNetList.getLastModifyTime(), nl.lastModifyTime);
+		assertNotNull(nl.lastModifyTime);
 		assertEquals(1, nl.networkListEntries.size());
 		NetworkListEntry nle2 = nl.networkListEntries.get("Test Transport ID".toUpperCase());
 		assertNotNull(nle2);

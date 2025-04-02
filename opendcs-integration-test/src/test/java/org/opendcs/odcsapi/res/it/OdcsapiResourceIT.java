@@ -16,13 +16,17 @@
 package org.opendcs.odcsapi.res.it;
 
 
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
 import io.restassured.path.json.JsonPath;
@@ -39,6 +43,7 @@ import org.opendcs.odcsapi.fixtures.DatabaseContextProvider;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -168,10 +173,7 @@ final class OdcsapiResourceIT extends BaseIT
 
 		platformId = storePlatform();
 
-		request.getRawmsg().setPlatformId(String.valueOf(platformId));
-
 		String decodeJson = MAPPER.writeValueAsString(request);
-		JsonPath expected = getJsonPathFromResource("odcsapi_decode_response.json");
 
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
@@ -191,15 +193,13 @@ final class OdcsapiResourceIT extends BaseIT
 			.statusCode(is(HttpServletResponse.SC_OK))
 			.extract();
 
-		JsonPath actual = response.jsonPath();
-		assertEquals(expected.getList("logMessages"), actual.getList("logMessages"));
-		List<Map<String, Object>> tsList = actual.getList("timeSeries");
-		Map<String, Object> ts = tsList.get(0);
-		assertNotNull(ts);
-		assertEquals(expected.getInt("timeSeries[0].sensorNum"), (Integer) ts.get("sensorNum"));
-		assertEquals(expected.getString("timeSeries[0].sensorName"), ts.get("sensorName"));
-		assertEquals(expected.getString("timeSeries[0].units"), ts.get("units"));
-		assertEquals(expected.getList("timeSeries[0].values"), ts.get("values"));
+		JsonNode responseNode = MAPPER.readTree(response.body().asString());
+		assertDoesNotThrow(() -> ZonedDateTime.parse(responseNode.get("messageTime").asText()),
+				"messageTime in the actual response is not parseable to an Instant");
+		JsonNode expected = MAPPER.readTree(getJsonFromResource("odcsapi_decode_response.json"));
+		((ObjectNode)expected).remove("messageTime");
+		((ObjectNode)responseNode).remove("messageTime");
+		assertEquals(expected, responseNode, "The decoded response does not match the expected response");
 	}
 
 	private void assertPropertiesInDB(Properties properties)

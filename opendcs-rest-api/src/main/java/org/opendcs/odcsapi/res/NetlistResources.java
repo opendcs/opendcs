@@ -27,6 +27,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.security.RolesAllowed;
@@ -294,7 +295,7 @@ public final class NetlistResources extends OpenDcsResource
 		ret.name = netList.getName();
 		ret.transportMediumType = netList.getTransportMediumType();
 		ret.siteNameTypePref = netList.getSiteNameTypePref();
-		ret.lastModifyTime = netList.getLastModifyTime();
+		ret.lastModifyTime = new Date();
 		for (Map.Entry<String, ApiNetListItem> anli : netList.getItems().entrySet())
 		{
 			NetworkListEntry nle = new NetworkListEntry(ret, anli.getValue().getTransportId());

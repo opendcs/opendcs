@@ -1,12 +1,194 @@
 {
-  "messageTime": "2025-01-08T00:22:01.747Z[UTC]",
-  "logMessages": [],
+  "messageTime": "2025-04-02T15:17:03.494Z[UTC]",
+  "logMessages": [
+
+  ],
   "timeSeries": [
     {
-      "sensorNum": 15546,
-      "sensorName": "sensorName",
-      "units": "unknown",
-      "values": []
+      "sensorNum": 1,
+      "sensorName": "sensor1",
+      "units": "ft",
+      "values": [
+        {
+          "time": "2014-03-01T12:00:00.000Z[UTC]",
+          "value": "23.95",
+          "rawDataPosition": {
+            "start": 39,
+            "end": 45
+          }
+        },
+        {
+          "time": "2014-03-01T13:00:00.000Z[UTC]",
+          "value": "23.96",
+          "rawDataPosition": {
+            "start": 89,
+            "end": 95
+          }
+        },
+        {
+          "time": "2014-03-01T14:00:00.000Z[UTC]",
+          "value": "23.97",
+          "rawDataPosition": {
+            "start": 139,
+            "end": 145
+          }
+        }
+      ]
+    },
+    {
+      "sensorNum": 2,
+      "sensorName": "sensor2",
+      "units": "ft",
+      "values": [
+        {
+          "time": "2014-03-01T12:00:00.000Z[UTC]",
+          "value": "17.2",
+          "rawDataPosition": {
+            "start": 46,
+            "end": 51
+          }
+        },
+        {
+          "time": "2014-03-01T13:00:00.000Z[UTC]",
+          "value": "16.9",
+          "rawDataPosition": {
+            "start": 96,
+            "end": 101
+          }
+        },
+        {
+          "time": "2014-03-01T14:00:00.000Z[UTC]",
+          "value": "15.2",
+          "rawDataPosition": {
+            "start": 146,
+            "end": 151
+          }
+        }
+      ]
+    },
+    {
+      "sensorNum": 3,
+      "sensorName": "sensor3",
+      "units": "ft",
+      "values": [
+        {
+          "time": "2014-03-01T12:00:00.000Z[UTC]",
+          "value": "98.1",
+          "rawDataPosition": {
+            "start": 64,
+            "end": 69
+          }
+        },
+        {
+          "time": "2014-03-01T13:00:00.000Z[UTC]",
+          "value": "98.1",
+          "rawDataPosition": {
+            "start": 114,
+            "end": 119
+          }
+        },
+        {
+          "time": "2014-03-01T14:00:00.000Z[UTC]",
+          "value": "98.2",
+          "rawDataPosition": {
+            "start": 164,
+            "end": 169
+          }
+        }
+      ]
+    },
+    {
+      "sensorNum": 4,
+      "sensorName": "sensor4",
+      "units": "ft",
+      "values": [
+        {
+          "time": "2014-03-01T12:00:00.000Z[UTC]",
+          "value": "8252",
+          "rawDataPosition": {
+            "start": 52,
+            "end": 57
+          }
+        },
+        {
+          "time": "2014-03-01T13:00:00.000Z[UTC]",
+          "value": "8252",
+          "rawDataPosition": {
+            "start": 102,
+            "end": 107
+          }
+        },
+        {
+          "time": "2014-03-01T14:00:00.000Z[UTC]",
+          "value": "8252",
+          "rawDataPosition": {
+            "start": 152,
+            "end": 157
+          }
+        }
+      ]
+    },
+    {
+      "sensorNum": 5,
+      "sensorName": "sensor5",
+      "units": "ft",
+      "values": [
+        {
+          "time": "2014-03-01T12:00:00.000Z[UTC]",
+          "value": "0",
+          "rawDataPosition": {
+            "start": 58,
+            "end": 60
+          }
+        },
+        {
+          "time": "2014-03-01T13:00:00.000Z[UTC]",
+          "value": "0",
+          "rawDataPosition": {
+            "start": 108,
+            "end": 110
+          }
+        },
+        {
+          "time": "2014-03-01T14:00:00.000Z[UTC]",
+          "value": "0",
+          "rawDataPosition": {
+            "start": 158,
+            "end": 160
+          }
+        }
+      ]
+    },
+    {
+      "sensorNum": 6,
+      "sensorName": "sensor6",
+      "units": "ft",
+      "values": [
+        {
+          "time": "2014-03-01T12:00:00.000Z[UTC]",
+          "value": "0",
+          "rawDataPosition": {
+            "start": 61,
+            "end": 63
+          }
+        },
+        {
+          "time": "2014-03-01T13:00:00.000Z[UTC]",
+          "value": "0",
+          "rawDataPosition": {
+            "start": 111,
+            "end": 113
+          }
+        },
+        {
+          "time": "2014-03-01T14:00:00.000Z[UTC]",
+          "value": "0",
+          "rawDataPosition": {
+            "start": 161,
+            "end": 163
+          }
+        }
+      ]
     }
   ]
 }

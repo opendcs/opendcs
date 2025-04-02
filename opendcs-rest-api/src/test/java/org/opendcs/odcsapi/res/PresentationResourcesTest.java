@@ -143,7 +143,7 @@ final class PresentationResourcesTest
 		assertEquals(apiPresentationGroup.getName(), pg.groupName);
 		assertEquals(apiPresentationGroup.isProduction(), pg.isProduction);
 		assertEquals(apiPresentationGroup.getGroupId(), pg.getId().getValue());
-		assertEquals(apiPresentationGroup.getLastModified(), pg.lastModifyTime);
+		assertNotNull(pg.lastModifyTime);
 		assertMatch(apiPresentationGroup.getElements(), pg.dataPresentations);
 	}
 

@@ -1,64 +1,143 @@
 {
-  "rawmsg" : {
-    "flags" : 0,
-    "platformId" : null,
-    "sequenceNum" : null,
-    "localRecvTime" : null,
-    "carrierStart" : null,
-    "carrierStop" : null,
-    "baud" : null,
-    "goodPhasePct" : null,
-    "freqOffset" : null,
-    "signalStrength" : null,
-    "phaseNoise" : null,
-    "xmitTime" : 1609459200000,
-    "momsn" : null,
-    "mtmsn" : null,
-    "cdrReference" : null,
-    "sessionStatus" : null,
-    "base64" : "YmFzZTY0X2VuY29kZWRfc3RyaW5n"
+  "rawmsg": {
+    "base64": "aWdub3JlZCBoZWFkZXIgbGluZQowMy8wMS8yMDE0IDEyOjAwOjAwIDIzLjk1LCAxNy4yLCA4MjUyLCAwLCAwLCA5OC4xCjAzLzAxLzIwMTQgMTM6MDA6MDAgMjMuOTYsIDE2LjksIDgyNTIsIDAsIDAsIDk4LjEKMDMvMDEvMjAxNCAxNDowMDowMCAyMy45NywgMTUuMiwgODI1MiwgMCwgMCwgOTguMg=="
   },
-  "config" : {
-    "configId" : 486121,
-    "name" : "name",
-    "numPlatforms" : 15,
-    "description" : "description",
-    "configSensors" : [ {
-      "sensorNumber" : 15546,
-      "sensorName" : "sensorName",
-      "recordingMode" : "U",
-      "recordingInterval" : 3600,
-      "timeOfFirstSample" : 0,
-      "absoluteMin" : 0.0,
-      "absoluteMax" : 100.0,
-      "properties" : { },
-      "dataTypes" : { },
-      "usgsStatCode" : null
-    } ],
-    "scripts" : [ {
-      "name" : "scriptName",
-      "dataOrder" : "U",
-      "headerType" : null,
-      "scriptSensors" : [ {
-        "sensorNumber" : 0,
-        "unitConverter" : {
-          "ucId" : null,
-          "fromAbbr" : "m",
-          "toAbbr" : "ft",
-          "algorithm" : "Poly-5",
-          "a" : 1.0,
-          "b" : 10.0,
-          "c" : 100.0,
-          "d" : 1000.0,
-          "e" : 11.0,
-          "f" : 12.0
-        }
-      } ],
-      "formatStatements" : [ {
-        "sequenceNum" : 0,
-        "label" : "formatter",
-        "format" : "10X"
-      }]
-    } ]
+  "config": {
+    "configId": 486121,
+    "name": "name",
+    "numPlatforms": 15,
+    "description": "description",
+    "configSensors": [
+      {
+        "sensorNumber": 1,
+        "sensorName": "sensor1",
+        "recordingMode": "U",
+        "recordingInterval": 3600,
+        "timeOfFirstSample": 0,
+        "absoluteMin": 0.0,
+        "absoluteMax": 100.0,
+        "properties": {},
+        "dataTypes": {},
+        "usgsStatCode": null
+      },
+      {
+        "sensorNumber": 2,
+        "sensorName": "sensor2",
+        "recordingMode": "U",
+        "recordingInterval": 3600,
+        "timeOfFirstSample": 0,
+        "absoluteMin": 0.0,
+        "absoluteMax": 100.0,
+        "properties": {},
+        "dataTypes": {},
+        "usgsStatCode": null
+      },
+      {
+        "sensorNumber": 3,
+        "sensorName": "sensor3",
+        "recordingMode": "U",
+        "recordingInterval": 3600,
+        "timeOfFirstSample": 0,
+        "absoluteMin": 0.0,
+        "absoluteMax": 100.0,
+        "properties": {},
+        "dataTypes": {},
+        "usgsStatCode": null
+      },
+      {
+        "sensorNumber": 4,
+        "sensorName": "sensor4",
+        "recordingMode": "U",
+        "recordingInterval": 3600,
+        "timeOfFirstSample": 0,
+        "absoluteMin": 0.0,
+        "absoluteMax": 100.0,
+        "properties": {},
+        "dataTypes": {},
+        "usgsStatCode": null
+      },
+      {
+        "sensorNumber": 5,
+        "sensorName": "sensor5",
+        "recordingMode": "U",
+        "recordingInterval": 3600,
+        "timeOfFirstSample": 0,
+        "absoluteMin": 0.0,
+        "absoluteMax": 100.0,
+        "properties": {},
+        "dataTypes": {},
+        "usgsStatCode": null
+      },
+      {
+        "sensorNumber": 6,
+        "sensorName": "sensor6",
+        "recordingMode": "U",
+        "recordingInterval": 3600,
+        "timeOfFirstSample": 0,
+        "absoluteMin": 0.0,
+        "absoluteMax": 100.0,
+        "properties": {},
+        "dataTypes": {},
+        "usgsStatCode": null
+      }
+    ],
+    "scripts": [
+      {
+        "name": "scriptName",
+        "dataOrder": "U",
+        "headerType": null,
+        "scriptSensors": [
+          {
+            "sensorNumber": 1,
+            "unitConverter": {
+              "toAbbr": "ft",
+              "algorithm": "none"
+            }
+          },
+          {
+            "sensorNumber": 2,
+            "unitConverter": {
+              "toAbbr": "ft",
+              "algorithm": "none"
+            }
+          },
+          {
+            "sensorNumber": 3,
+            "unitConverter": {
+              "toAbbr": "ft",
+              "algorithm": "none"
+            }
+          },
+          {
+            "sensorNumber": 4,
+            "unitConverter": {
+              "toAbbr": "ft",
+              "algorithm": "none"
+            }
+          },
+          {
+            "sensorNumber": 5,
+            "unitConverter": {
+              "toAbbr": "ft",
+              "algorithm": "none"
+            }
+          },
+          {
+            "sensorNumber": 6,
+            "unitConverter": {
+              "toAbbr": "ft",
+              "algorithm": "none"
+            }
+          }
+        ],
+        "formatStatements": [
+          {
+            "sequenceNum": 0,
+            "label": "csv",
+            "format": "3(/, F(D,A,10,4), x, F(T,A,8), csv(1, 2, 4, 5, 6, 3) )"
+          }
+        ]
+      }
+    ]
   }
 }

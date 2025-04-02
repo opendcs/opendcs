@@ -269,6 +269,7 @@ public final class PlatformResources extends OpenDcsResource
 		{
 			ret.setSiteId(DbKey.NullKey.getValue());
 		}
+		ret.setProperties(platform.getProperties());
 		ret.setName(platform.getSiteName(false));
 		ret.setTransportMedia(map(platform.getTransportMedia()));
 		return ret;
@@ -380,6 +381,14 @@ public final class PlatformResources extends OpenDcsResource
 			site.setPublicName(platform.getName());
 			ret.setSite(site);
 		}
+		Properties properties = platform.getProperties();
+		if(properties != null)
+		{
+			for(Map.Entry<Object, Object> entry : properties.entrySet())
+			{
+				ret.setProperty(entry.getKey().toString(), entry.getValue().toString());
+			}
+		}
 		ret.transportMedia = map(platform.getTransportMedia());
 		return ret;
 	}
@@ -397,7 +406,11 @@ public final class PlatformResources extends OpenDcsResource
 				site.setId(DbKey.createDbKey(sensor.getActualSiteId()));
 				ps.site = site;
 			}
-			ps.setUsgsDdno(sensor.getUsgsDdno());
+			Integer usgsDdno = sensor.getUsgsDdno();
+			if(usgsDdno != null)
+			{
+				ps.setUsgsDdno(usgsDdno);
+			}
 			Properties props = sensor.getSensorProps();
 			for (String name : props.stringPropertyNames())
 			{

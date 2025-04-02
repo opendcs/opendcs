@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 import javax.annotation.security.RolesAllowed;
@@ -313,7 +314,7 @@ public final class PresentationResources extends OpenDcsResource
 			group.parent = parentGroup;
 		}
 		group.dataPresentations = map(dai, presGrp.getElements(), group);
-
+		group.lastModifyTime = new Date();
 		return group;
 	}
 

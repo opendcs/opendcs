@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -301,7 +302,7 @@ public final class RoutingResources extends OpenDcsResource
 			}
 			spec.setName(routing.getName());
 			spec.usePerformanceMeasurements = false;
-			spec.lastModifyTime = routing.getLastModified();
+			spec.lastModifyTime = new Date();
 			if (routing.getOutputTZ() != null)
 			{
 				spec.outputTimeZoneAbbr = routing.getOutputTZ();

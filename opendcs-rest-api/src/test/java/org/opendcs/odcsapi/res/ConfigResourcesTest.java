@@ -1,5 +1,11 @@
 package org.opendcs.odcsapi.res;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -10,6 +16,7 @@ import decodes.db.DecodesScript;
 import decodes.db.PlatformConfig;
 import decodes.db.PlatformConfigList;
 import decodes.db.ScriptSensor;
+import decodes.db.StreamDecodesScriptReader;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.xml.DecodesScriptParser;
@@ -19,6 +26,8 @@ import org.opendcs.odcsapi.beans.ApiConfigScript;
 import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
 import org.opendcs.odcsapi.beans.ApiPlatformConfig;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,6 +37,8 @@ import static org.opendcs.odcsapi.res.ConfigResources.map;
 
 final class ConfigResourcesTest
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ConfigResourcesTest.class);
+
 	@Test
 	void testPlatformConfigListMap() throws Exception
 	{
@@ -174,6 +185,7 @@ final class ConfigResourcesTest
 		unitConverter.setF(6.0);
 		sensor.setUnitConverter(unitConverter);
 
+		LOGGER.atDebug().log(sensor.prettyPrint());
 		ScriptSensor decodesSensor = map(sensor);
 
 		assertNotNull(decodesSensor);

@@ -15,6 +15,7 @@
 
 package org.opendcs.odcsapi.res;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Properties;
@@ -88,8 +89,10 @@ public final class OdcsapiResource extends OpenDcsResource
 		try
 		{
 			TimeSeriesDb tsdb = getLegacyTimeseriesDB();
-			tsdb.readTsdbProperties(tsdb.getConnection());
-
+			try(Connection connection = tsdb.getConnection())
+			{
+				tsdb.readTsdbProperties(connection);
+			}
 			Properties props = new Properties();
 			for (Object keyObj : Collections.list(tsdb.getPropertyNames()))
 			{

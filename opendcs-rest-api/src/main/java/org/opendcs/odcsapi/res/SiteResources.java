@@ -16,6 +16,7 @@
 package org.opendcs.odcsapi.res;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -294,7 +295,7 @@ public final class SiteResources extends OpenDcsResource
 		returnSite.setElevationUnits(site.getElevUnits());
 		returnSite.setActive(site.isActive());
 		returnSite.setDescription(site.getDescription());
-		returnSite.setLastModifyTime(site.getLastModified());
+		returnSite.setLastModifyTime(new Date());
 		returnSite.country = site.getCountry();
 		returnSite.state = site.getState();
 		returnSite.isNew = true;

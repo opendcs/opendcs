@@ -241,6 +241,7 @@ test {
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonarqube {
         properties {
+            property 'sonar.exclusions', 'src/main/**'
             property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
                     "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
         }

@@ -123,7 +123,7 @@ final class RoutingResourcesTest
 		{
 			fail("routingSpec.outputTimeZone is null, but apiRouting.getOutputTZ() is not null");
 		}
-		assertEquals(routingSpec.lastModifyTime, apiRouting.getLastModified());
+		assertNotNull(routingSpec.lastModifyTime);
 		assertEquals(routingSpec.enableEquations, apiRouting.isEnableEquations());
 		assertEquals(routingSpec.networkListNames, new Vector<>(apiRouting.getNetlistNames()));
 	}
