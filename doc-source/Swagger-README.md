@@ -10,7 +10,7 @@ resources and their functionality in a user-friendly manner.
 
 To view the API specification, navigate to the Swagger UI located at:
 ```
-https://[REST_API_URL]/odcsapi/swaggerui/index.html
+https://<host>:<port>/[REST_API_CONTEXT]/swaggerui/index.html
 ```
 
 On development machines running the REST API locally, this will be located at 

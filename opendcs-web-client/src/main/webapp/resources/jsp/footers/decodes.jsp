@@ -28,13 +28,29 @@
 		<span class="navbar-text"><a href="#">OpenDCS Web</a> </span>
 
 		<ul class="navbar-nav ml-lg-auto">
-
-			<li class="nav-item"><a
-				href="<% String swaggerUrl =  (String) request.getAttribute("api_swaggerui_url"); %><%= swaggerUrl %>"
-				class="nav-link" target="_blank" rel="noopener"> <i class="icon-code"></i> <span>
-						API Swagger UI </span>
-			</a>
+			<li class="nav-item">
+				<a id="swagger-link"
+				   href="#"
+				   class="nav-link"
+				   target="_blank"
+				   rel="noopener">
+					<i class="icon-code"></i>
+					<span>API Swagger UI </span>
+				</a>
 		</ul>
 	</div>
 </div>
+<script>
+	document.addEventListener("DOMContentLoaded", function() {
+		const apiUrl = window.API_URL || '';
+		const swaggerLink = document.getElementById("swagger-link");
+
+		if (apiUrl) {
+			swaggerLink.href = apiUrl + `/swaggerui/index.html`;
+		} else {
+			console.warn("API_URL is not defined");
+		}
+	});
+</script>
+
 <%-- /footer --%>
