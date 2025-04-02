@@ -90,14 +90,6 @@ public class ScreeningAlgorithm
 			+ "Warning: This may leave a previous value for the output param at that time slice "
 			+ "unchanged.")
 	};
-	
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return algoPropSpecs;
-	}
-
-
 
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
