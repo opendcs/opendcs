@@ -93,9 +93,12 @@ import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
 
-//AW:IMPORTS
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.lang.Const;
@@ -103,24 +106,16 @@ import hec.lang.Const;
 import java.util.ArrayList;
 
 import decodes.tsdb.TimeSeriesIdentifier;
-//AW:IMPORTS_END
 import decodes.util.TSUtil;
 
-//AW:JAVADOC
-/**
-Implements CWMS rating computations.
-Uses the CWMS API provided by HEC to do the rating.
-*/
-//AW:JAVADOC_END
+@Algorithm(description = "Implements CWMS rating computations.\n" +
+"Uses the CWMS API provided by HEC to do the rating.")
 public class CwmsRatingSingleIndep
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double indep;	//AW:TYPECODE=i
-	String _inputNames[] = { "indep" };
-//AW:INPUTS_END
+	@Input
+	public double indep;
 
-//AW:LOCALVARS
 	RatingSet ratingSet = null;
 	Date beginTime = null;
 	Date endTime = null;
@@ -128,19 +123,17 @@ public class CwmsRatingSingleIndep
 	ArrayList<Double> indepValues = new ArrayList<Double>();
 	String specId = "";
 	public static final String module = "CwmsRatingSingleIndep";
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable dep = new NamedVariable("dep", 0);
-	String _outputNames[] = { "dep" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "USGS-EXSA") 
 	public String templateVersion = "USGS-EXSA";
+	@PropertySpec(value = "Production") 
 	public String specVersion = "Production";
+	@PropertySpec(value = "false") 
 	public boolean useDepLocation = false;
-	public String _propertyNames[] = { "templateVersion", "specVersion", "useDepLocation" };
-//AW:PROPERTIES_END
+
 
 	// Allow javac to generate a no-args constructor.
 
@@ -150,12 +143,7 @@ public class CwmsRatingSingleIndep
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -164,7 +152,6 @@ public class CwmsRatingSingleIndep
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// Get parm refs for indep and dep
 		ParmRef indepParmRef = getParmRef("indep");
 		ParmRef depParmRef = getParmRef("dep");
@@ -238,7 +225,6 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 
 		indepTimes.clear();
 		indepValues.clear();
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -254,14 +240,12 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if (ratingSet == null)
 			throw new DbCompException("No rating set!");
 		
 		// Just collect the times & values. We do the rating after Time Slices.
 		indepTimes.add(_timeSliceBaseTime.getTime());
 		indepValues.add(indep);
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -269,7 +253,6 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		long []times = new long[indepTimes.size()];
 		double []vals = new double[indepTimes.size()];
 		for(int i=0; i<times.length; i++)
@@ -344,32 +327,6 @@ debug1(module + " depTSID=" + depParmRef.timeSeries.getTimeSeriesIdentifier());
 //					ex.printStackTrace(Logger.instance().getLogOutput());
 //			}
 //		}
-		
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
+	
 	}
 }

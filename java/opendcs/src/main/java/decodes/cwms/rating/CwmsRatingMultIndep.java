@@ -89,8 +89,11 @@ import decodes.db.SiteName;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.ParmRef;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.lang.Const;
@@ -98,34 +101,32 @@ import hec.lang.Const;
 import java.util.ArrayList;
 
 import decodes.tsdb.TimeSeriesIdentifier;
-//AW:IMPORTS_END
 import decodes.util.TSUtil;
 
-//AW:JAVADOC
-/**
-Implements CWMS rating computations.
-Uses the CWMS API provided by HEC to do the rating.
-*/
-//AW:JAVADOC_END
+@Algorithm(description = "Implements CWMS rating computations.\n" +
+"Uses the CWMS API provided by HEC to do the rating.")
 public class CwmsRatingMultIndep
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double indep1;	//AW:TYPECODE=i
-	public double indep2;	//AW:TYPECODE=i
-	public double indep3;	//AW:TYPECODE=i
-	public double indep4;	//AW:TYPECODE=i
-	public double indep5;	//AW:TYPECODE=i
-	public double indep6;	//AW:TYPECODE=i
-	public double indep7;	//AW:TYPECODE=i
-	public double indep8;	//AW:TYPECODE=i
-	public double indep9;	//AW:TYPECODE=i
+	@Input
+	public double indep1;
+	@Input
+	public double indep2;
+	@Input
+	public double indep3;
+	@Input
+	public double indep4;
+	@Input
+	public double indep5;
+	@Input
+	public double indep6;
+	@Input
+	public double indep7;
+	@Input
+	public double indep8;
+	@Input
+	public double indep9;
 
-	String _inputNames[] = { "indep1", "indep2", "indep3", "indep4", "indep5", 
-		"indep6", "indep7", "indep8", "indep9" };
-//AW:INPUTS_END
-
-//AW:LOCALVARS
 	public static final String module = "CwmsRatingMultIndep";
 	RatingSet ratingSet = null;
 	Date beginTime = null;
@@ -273,33 +274,36 @@ public class CwmsRatingMultIndep
 
 		return indepSpecId;
 	}
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable dep = new NamedVariable("dep", 0);
-	String _outputNames[] = { "dep" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "USGS-EXSA") 
 	public String templateVersion = "USGS-EXSA";
+	@PropertySpec(value = "Production") 
 	public String specVersion = "Production";
+	@PropertySpec(value = "fail") 
 	public String indep1_MISSING = "fail";
+	@PropertySpec(value = "ignore") 
 	public String indep2_MISSING = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String indep3_MISSING = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String indep4_MISSING = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String indep5_MISSING = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String indep6_MISSING = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String indep7_MISSING = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String indep8_MISSING = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String indep9_MISSING = "ignore";
+	@PropertySpec(value = "false") 
 	public boolean useDepLocation = false;
+	@PropertySpec(value = "") 
 	public String locationOverride = "";
-
-	public String _propertyNames[] = { "templateVersion", "specVersion",
-		"indep1_MISSING", "indep2_MISSING", "indep3_MISSING", "indep4_MISSING", "indep5_MISSING",
-		"indep6_MISSING", "indep7_MISSING", "indep8_MISSING", "indep9_MISSING", 
-		"useDepLocation", "locationOverride" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -309,12 +313,7 @@ public class CwmsRatingMultIndep
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -323,7 +322,6 @@ public class CwmsRatingMultIndep
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		specId = buildIndepSpec();
 		
 		ParmRef depParmRef = getParmRef("dep");
@@ -408,8 +406,6 @@ public class CwmsRatingMultIndep
 			valueSetsA.add(new ArrayList<Double>());
 		
 
-		
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -425,7 +421,6 @@ public class CwmsRatingMultIndep
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if (ratingSet == null)
 			throw new DbCompException("No rating set!");
 		
@@ -541,32 +536,5 @@ public class CwmsRatingMultIndep
 				cause.printStackTrace(out);
 			}
 		}
-
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
