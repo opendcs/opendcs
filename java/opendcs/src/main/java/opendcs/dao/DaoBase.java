@@ -45,6 +45,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.opendcs.database.SimpleTransaction;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.utils.sql.SqlSettings;
 
 import decodes.db.Constants;
@@ -102,6 +105,25 @@ public class DaoBase
         this.conSetManually = true;
         this.myCon = con;
     }
+
+    /**
+     * intended as stop gap for stateless transition
+     * @return * get a DataTransaction Object from owned or data source connection
+     * @deprecated
+     */
+    @Deprecated
+    @Override
+	public DataTransaction getTransaction() throws OpenDcsDataException
+	{
+		try
+		{
+			return new SimpleTransaction(db.getConnection());
+		}
+		catch (SQLException ex)
+		{
+			throw new OpenDcsDataException("Unable to get connection.", ex);
+		}
+	}
 
     /**
      * When used within the transaction block of another Dao allow this to assume the same connection.
