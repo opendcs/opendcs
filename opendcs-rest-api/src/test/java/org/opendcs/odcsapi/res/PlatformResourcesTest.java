@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -362,6 +363,7 @@ final class PlatformResourcesTest
 		assertMatch(plat.getPlatformSensors(), result.getPlatformSensors());
 		assertMatchMedium(plat.getTransportMedia(), result.getTransportMedia());
 		assertEquals(plat.getProperties(), result.getProperties());
+		result.platformSensors.forEach(s -> assertSame(result, s.platform));
 	}
 
 	private static void assertMatch(List<ApiPlatformSensor> apiPlatformSensors, Iterator<PlatformSensor> platformSensors)

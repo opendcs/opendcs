@@ -367,6 +367,7 @@ public final class PlatformResources extends OpenDcsResource
 		ret.setPlatformDesignator(platform.getDesignator());
 		ret.lastModifyTime = new Date();
 		ret.platformSensors = platMap(platform.getPlatformSensors());
+		ret.platformSensors.forEach(p -> p.platform = ret);
 		if (platform.getConfigId() != null)
 		{
 			PlatformConfig config = new PlatformConfig();
