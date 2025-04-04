@@ -46,7 +46,7 @@ public final class SessionResource
 	@GET
 	@Path("check")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Check if session authentication is valid",
 			description = "The ‘check’ GET method can be called with a configured session.",

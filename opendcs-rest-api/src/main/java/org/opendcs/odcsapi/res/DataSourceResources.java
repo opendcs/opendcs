@@ -69,7 +69,7 @@ public class DataSourceResources extends OpenDcsResource
 	@GET
 	@Path("datasourcerefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON list of DECODES Data Source records suitable for displaying in a table or pick-list",
 			description = "Example: \n\n`http://localhost:8080/odcsapi/datasourcerefs`\n\n" +
@@ -138,7 +138,7 @@ public class DataSourceResources extends OpenDcsResource
 	@GET
 	@Path("datasource")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "The GET datasource method returns a single DECODES data source with all of its detail.",
 			description = "The integer argument datasourceid is required.\n Example: " +
@@ -253,7 +253,7 @@ public class DataSourceResources extends OpenDcsResource
 	@Path("datasource")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing Data Source",
 			description = "The POST datasource method takes a single datasource in JSON format, as described for the GET method." +
@@ -347,7 +347,7 @@ public class DataSourceResources extends OpenDcsResource
 	@Path("datasource")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Data Source",
 			description = "Required argument datasourceid must be passed. " +

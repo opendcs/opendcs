@@ -71,7 +71,7 @@ public final class ComputationResources extends OpenDcsResource
 	@GET
 	@Path("computationrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve Computation References",
 			description = "Example:  \n\n    http://localhost:8080/odcsapi/computationrefs",
@@ -173,7 +173,7 @@ public final class ComputationResources extends OpenDcsResource
 	@GET
 	@Path("computation")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve Computation by its ID",
 			description = "Example: \n\n    http://localhost:8080/odcsapi/computation?computationid=4",
@@ -310,7 +310,7 @@ public final class ComputationResources extends OpenDcsResource
 	@Path("computation")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing OpenDCS Computation",
 			description = "The Computation POST method takes a single OpenDCS Computation Record in JSON format,"
@@ -451,7 +451,7 @@ public final class ComputationResources extends OpenDcsResource
 	@Path("computation")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing OpenDCS Computation",
 			description = "Required argument computationid must be passed in the URL.",

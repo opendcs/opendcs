@@ -39,6 +39,7 @@ dependencies {
     testImplementation(libs.hamcrest)
     testImplementation(libs.nimbus)
     testImplementation(libs.jwt)
+    testImplementation(libs.swagger.parser)
     testRuntimeOnly(libs.byte.buddy)
     testRuntimeOnly(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)

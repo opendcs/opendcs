@@ -7,6 +7,7 @@ jersey = "2.40"
 
 swagger = "2.2.28"
 swagger-ui = "5.18.3"
+swagger-parser = "2.1.25"
 jackson = "2.18.2"
 selenium = "3.141.59"
 nimbus = "9.41.1"
@@ -62,6 +63,7 @@ tomcat-jdbc = { module = "org.apache.tomcat:tomcat-jdbc", version.ref = "tomcat"
 commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
 commons-lang = { module = "commons-lang:commons-lang", version.ref = "commons-lang" }
 slf4j-jdk14 = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j"}
+swagger-parser = { module = "io.swagger.parser.v3:swagger-parser-v3", version.ref = "swagger-parser"}
 
 # webjars
 swagger-ui = { module ="org.webjars:swagger-ui", version.ref = "swagger-ui" }

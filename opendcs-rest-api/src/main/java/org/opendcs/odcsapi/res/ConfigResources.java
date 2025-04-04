@@ -111,7 +111,7 @@ public final class ConfigResources extends OpenDcsResource
 			},
 			tags = {"REST - DECODES Platform Configurations"}
 	)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	public Response getConfigRefs() throws DbException
 	{
 		DatabaseIO dbIo = getLegacyDatabase();
@@ -156,7 +156,7 @@ public final class ConfigResources extends OpenDcsResource
 	@GET
 	@Path("config")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON representation of a single, complete DECODES Config record",
 			description = "Example:  \n\n    http://localhost:8080/odcsapi/config?configid=12\n\n\n"
@@ -271,7 +271,7 @@ public final class ConfigResources extends OpenDcsResource
 	@Path("config")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing Config",
 			description = "The POST config method takes a single DECODES Platform Configuration record in JSON format, "
@@ -480,7 +480,7 @@ public final class ConfigResources extends OpenDcsResource
 	@Path("config")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Config",
 			description = "Required argument configid must be passed.  \n\n"

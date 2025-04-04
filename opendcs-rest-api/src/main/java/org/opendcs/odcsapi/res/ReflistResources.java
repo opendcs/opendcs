@@ -76,7 +76,7 @@ public final class ReflistResources extends OpenDcsResource
 	@GET
 	@Path("reflists")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Tag(name = "REST - Reference Lists", description = "Reference lists are used in OpenDCS to populate pulldown lists "
 			+ "and extend the functionality of the software.")
 	@Operation(
@@ -208,7 +208,7 @@ public final class ReflistResources extends OpenDcsResource
 	@Path("reflist")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create New Reference List, or Overwrite Existing Reference List",
 			description = "The ‘reflist’ POST method takes a single network "
@@ -304,7 +304,7 @@ public final class ReflistResources extends OpenDcsResource
 	@Path("reflist")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Reference List",
 			description = "Required argument reflistid must be passed.  \n\n"
@@ -342,7 +342,7 @@ public final class ReflistResources extends OpenDcsResource
 	@GET
 	@Path("seasons")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Seasons are used in various places in OpenDCS, usually to specify some type of conditional processing",
 			description = "Seasons are denoted by an abbreviation, a full name, start date/time, end date/time, and an optional time zone."
@@ -405,7 +405,7 @@ public final class ReflistResources extends OpenDcsResource
 	@GET
 	@Path("season")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Return a single season data structure ",
 			description = "Instead of a list of seasons, the returned data is a single season data structure:  ",
@@ -470,7 +470,7 @@ public final class ReflistResources extends OpenDcsResource
 	@Path("season")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Creates or overwrites a single season record",
 			description = "It takes a data structure like the one described above for GET season.",
@@ -551,7 +551,7 @@ public final class ReflistResources extends OpenDcsResource
 	@Path("season")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Season",
 			description = "The DELETE season method requires an argument"

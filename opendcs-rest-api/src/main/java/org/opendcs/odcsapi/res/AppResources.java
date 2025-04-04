@@ -71,7 +71,7 @@ public final class AppResources extends OpenDcsResource
 	@GET
 	@Path("apprefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieves a list of application references",
 			description = "Example:  \n\n    http://localhost:8080/odcsapi/apprefs",
@@ -114,7 +114,7 @@ public final class AppResources extends OpenDcsResource
 	@GET
 	@Path("app")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve a Single Application by its ID",
 			description = "Example: \n\n    http://localhost:8080/odcsapi/app?appid=4  \n",
@@ -156,7 +156,7 @@ public final class AppResources extends OpenDcsResource
 	@Path("app")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing App",
 			description = "The App POST method takes a single DECODES Loading Application in JSON format, "
@@ -228,7 +228,7 @@ public final class AppResources extends OpenDcsResource
 	@Path("app")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Loading App",
 			description = "Required argument appid must be passed in the URL.  \n\n"
@@ -277,7 +277,7 @@ public final class AppResources extends OpenDcsResource
 	@GET
 	@Path("appstat")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Returns an array with one element for each application",
 			description = "REST - Loading Application Records describes API methods for retrieving and manipulating "

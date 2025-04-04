@@ -93,7 +93,7 @@ public final class RoutingResources extends OpenDcsResource
 	@GET
 	@Path("routingrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Get Routing References",
 			description = "Retrieves a list of all routing references.",
@@ -153,7 +153,7 @@ public final class RoutingResources extends OpenDcsResource
 	@GET
 	@Path("routing")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON representation of a single routing spec",
 			description = "Example: \n\n    http://localhost:8080/odcsapi/routing?routingid=20",
@@ -239,7 +239,7 @@ public final class RoutingResources extends OpenDcsResource
 	@Path("routing")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing Routing Spec",
 			description = "The POST routing method takes a single DECODES Routing Spec in JSON format, "
@@ -352,7 +352,7 @@ public final class RoutingResources extends OpenDcsResource
 	@Path("routing")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Decodes Routing Spec",
 			description = "Required argument routingid must be passed in the URL.",
@@ -395,7 +395,7 @@ public final class RoutingResources extends OpenDcsResource
 	@GET
 	@Path("schedulerefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Retrieve all schedule references",
 			description = "Example:  \n\n    http://localhost:8080/odcsapi/schedulerefs\n\n"
@@ -465,7 +465,7 @@ public final class RoutingResources extends OpenDcsResource
 	@GET
 	@Path("schedule")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON representation of a single schedule entry",
 			description = "Fetches a specific schedule object based on the provided schedule ID.\n\n"
@@ -512,7 +512,7 @@ public final class RoutingResources extends OpenDcsResource
 	@Path("schedule")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing Schedule",
 			description = "The POST schedule method takes a single DECODES Schedule Entry "
@@ -625,7 +625,7 @@ public final class RoutingResources extends OpenDcsResource
 	@Path("schedule")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Schedule",
 			description = "Required argument scheduleid must be passed in the URL.",
@@ -662,7 +662,7 @@ public final class RoutingResources extends OpenDcsResource
 	@GET
 	@Path("routingstatus")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Tag(name = "OpenDCS Process Monitor and Control (Routing)", description = "The following methods allow a user to "
 			+ "view the status of all routing specs and to start/stop them.")
 	@Operation(
@@ -786,7 +786,7 @@ public final class RoutingResources extends OpenDcsResource
 	@GET
 	@Path("routingexecstatus")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "The GET routingexecstatus method returns all of the executions for the specified schedule entry",
 			description = "Sample URL\n  \n      http://localhost:8080/odcsapi/routingexecstatus?scheduleentryid=38\n  \n"
@@ -891,7 +891,7 @@ public final class RoutingResources extends OpenDcsResource
 	@GET
 	@Path("dacqevents")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Returns data acquisition events stored in the DACQ_EVENT database table",
 			description = "Sample URL:\n  \n    "

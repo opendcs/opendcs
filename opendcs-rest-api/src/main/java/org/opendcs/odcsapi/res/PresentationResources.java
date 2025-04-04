@@ -75,7 +75,7 @@ public final class PresentationResources extends OpenDcsResource
 	@GET
 	@Path("presentationrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Returns a list of references to presentation groups suitable for displaying a list",
 			tags = {"REST - DECODES Presentation Group Records"},
@@ -147,7 +147,7 @@ public final class PresentationResources extends OpenDcsResource
 	@GET
 	@Path("presentation")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON representation of a single, complete DECODES Presentation Group record",
 			description = "Example: \n \n `http://localhost:8080/odcsapi/presentation?groupid=4` \n \n "
@@ -244,7 +244,7 @@ public final class PresentationResources extends OpenDcsResource
 	@Path("presentation")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing Decodes Presentation Group",
 			description = "It takes a single DECODES "
@@ -365,7 +365,7 @@ public final class PresentationResources extends OpenDcsResource
 	@Path("presentation")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Presentation Group",
 			description = "Required argument groupid must be passed in the URL.",

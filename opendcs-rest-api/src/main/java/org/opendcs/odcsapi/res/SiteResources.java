@@ -71,7 +71,7 @@ public final class SiteResources extends OpenDcsResource
 	@GET
 	@Path("siterefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON list of DECODES Site records suitable for displaying in a table or pick-list.",
 			description = "The returned structure contains only the numeric ID (unique), description, and an array of site names."
@@ -128,7 +128,7 @@ public final class SiteResources extends OpenDcsResource
 	@GET
 	@Path("site")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON representation of a single, complete DECODES Site record.",
 			description = "Example:\n\n    http://localhost:8080/odcsapi/site?siteid=3\n\n"
@@ -227,7 +227,7 @@ public final class SiteResources extends OpenDcsResource
 	@Path("site")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing Site",
 			description = "The POST `site` method takes a single DECODES site record in JSON format."
@@ -320,7 +320,7 @@ public final class SiteResources extends OpenDcsResource
 	@Path("site")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Site",
 			description = "Required parameter `siteid` must be passed.",

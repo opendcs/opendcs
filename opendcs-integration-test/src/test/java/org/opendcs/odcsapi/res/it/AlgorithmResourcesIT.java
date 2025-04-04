@@ -20,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 
 import io.restassured.filter.log.LogDetail;
 import io.restassured.filter.session.SessionFilter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,10 +36,19 @@ import static org.hamcrest.Matchers.is;
 final class AlgorithmResourcesIT extends BaseIT
 {
 
+	private SessionFilter sessionFilter;
+
+	@BeforeEach
+	void setUp() throws Exception
+	{
+		setUpCreds();
+		sessionFilter = new SessionFilter();
+		authenticate(sessionFilter);
+	}
+
 	@TestTemplate
 	void getAlgorithmRefs()
 	{
-		SessionFilter sessionFilter = new SessionFilter();
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
@@ -61,7 +71,6 @@ final class AlgorithmResourcesIT extends BaseIT
 		ApiAlgorithm dto = getDtoFromResource("algorithm_tempstring_check.json", ApiAlgorithm.class);
 		//The ID can't be set as it is generated on store
 		dto.setAlgorithmId(null);
-		SessionFilter sessionFilter = new SessionFilter();
 		authenticate(sessionFilter);
 		//Assert algorithm can be stored. Update with the new id
 		dto = given()

@@ -83,7 +83,7 @@ public final class PlatformResources extends OpenDcsResource
 	@GET
 	@Path("platformrefs")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "The GET platformrefs method returns a list of platforms",
 			description = "The GET platformrefs method returns a list of platforms, "
@@ -184,7 +184,7 @@ public final class PlatformResources extends OpenDcsResource
 	@GET
 	@Path("platform")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "This method returns a JSON representation of a single, complete DECODES Platform record",
 			description = "Fetches detailed information about a specific platform using its unique ID. "
@@ -307,7 +307,7 @@ public final class PlatformResources extends OpenDcsResource
 	@Path("platform")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Create or Overwrite Existing Decodes Platform",
 			description = "The GET platform method takes a single DECODES Platform record in JSON format,"
@@ -478,7 +478,7 @@ public final class PlatformResources extends OpenDcsResource
 	@Path("platform")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_ADMIN, ApiConstants.ODCS_API_USER})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Delete Existing Decodes Platform",
 			description = "Required argument platformid must be passed.",
@@ -524,7 +524,7 @@ public final class PlatformResources extends OpenDcsResource
 	@GET
 	@Path("platformstat")
 	@Produces(MediaType.APPLICATION_JSON)
-	@RolesAllowed({ApiConstants.ODCS_API_GUEST})
+	@RolesAllowed({ApiConstants.ODCS_API_USER, ApiConstants.ODCS_API_ADMIN})
 	@Operation(
 			summary = "Returned structure contains information about recent activity on each platform",
 			description = "Sample URL:\n  \n    http://localhost:8080/odcsapi/platformstat  \n  \n  \n"
