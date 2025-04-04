@@ -39,6 +39,10 @@ test {
     def classPath = (project(':opendcs').jar.outputs.files
                   + project(":opendcs").configurations.runtimeClasspath).asPath
     inputs.property "opendcs.test.engine", project.findProperty("opendcs.test.engine")
+
+    if (System.getProperty("OpenDCSAlgoTestFilter") != null) {
+        systemProperty("OpenDCSAlgoTestFilter", System.getProperty("OpenDCSAlgoTestFilter"));
+    }
     
     systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
     systemProperties += project.properties.findAll {k, v -> k.startsWith("testcontainer")}

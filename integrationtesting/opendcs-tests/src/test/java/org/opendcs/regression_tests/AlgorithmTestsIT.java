@@ -1,5 +1,6 @@
 package org.opendcs.regression_tests;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
@@ -8,16 +9,20 @@ import static org.opendcs.fixtures.helpers.TestResources.getResource;
 import java.io.IOException;
 import java.io.File;
 import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.fixtures.AppTestBase;
@@ -70,15 +75,12 @@ public class AlgorithmTestsIT extends AppTestBase
 
     /**
      * This just tests that timeseries can be saved to the database, retrieved, and totally deleted.
-     * @param inputFile
+     * 
      * @throws Exception
      */
-    @ParameterizedTest
-    @CsvSource({
-        "timeseries/${impl}/regular_ts.tsimport"
-    })
+    @TestFactory
     @EnableIfTsDb
-    public void test_algorithm_operations(String inputFile) throws Exception
+    public Collection<DynamicTest> test_algorithm_operations() throws Exception
     {
         DecodesSettings settings = DecodesSettings.instance();
         TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
@@ -118,85 +120,22 @@ public class AlgorithmTestsIT extends AppTestBase
                 }
         });
         String workingDirectoryPath = Paths.get("").toAbsolutePath().toString();
-        String current_Directory = workingDirectoryPath+"/src/test/resources/data/Comps";
+        String current_Directory = buildFilePath(workingDirectoryPath, "src", "test", "resources", "data", "Comps");
         File directory = new File(current_Directory);
-        
+
+        Collection<DynamicTest> algoTests = new ArrayList<DynamicTest>();
+
+        String filterTest = System.getProperty("OpenDCSAlgoTestFilter", "").trim();
         if (directory.exists() && directory.isDirectory()) {
             File[] comps = directory.listFiles();
-
             if (comps != null) {
                 for (File comp : comps) {
-                    File algoLog = new File(configuration.getUserDir(),"/"+comp.getName()+"testalgolog.txt");
+                    //File algoLog = new File(configuration.getUserDir(),"/"+comp.getName()+"testalgolog.txt");
                     if (comp.isDirectory()) {
-                        for (File test : comp.listFiles()){
-                            if (test.isDirectory()) { 
-                                for (File comp_data : test.listFiles()) 
-                                {
-                                    // Process comp xml
-                                    String name = comp_data.getName();
-                                    if (name.contains("Comp.xml"))
-                                    {
-                                        System.out.println("Comps: " + comp_data.getAbsolutePath());
-                                        String compstr = comp_data.getAbsolutePath();
-                                        List<String> compxml =  Arrays.asList(compstr);
-                                        ImportComp ic = new ImportComp(tsDb, true, false, compxml);
-                                        ic.runApp();
-                                    }
-                                }
-                                loadRatingimport(test.getAbsolutePath()+"/rating");
-
-                                Collection<CTimeSeries> inputTS = loadTSimport(test.getAbsolutePath()+"/timeseries/inputs", importer);
-                                Collection<CTimeSeries> outputTS = loadTSimport(test.getAbsolutePath()+"/timeseries/outputs", importer);
-                                Collection<CTimeSeries> expectedOutputTS = loadTSimport(test.getAbsolutePath()+"/timeseries/expectedOutputs", importer);
-
-                                ComputationDAI compdao = tsDb.makeComputationDAO();
-
-                                DbComputation testComp = compdao.getComputationByName(test.getName()+comp.getName());
-
-                                DataCollection theData = new DataCollection();
-
-                                for (CTimeSeries ctsi: inputTS){
-                                    for (int idx = 0; idx < ctsi.size(); idx++){
-                                        VarFlags.setWasAdded(ctsi.sampleAt(idx));
-                                    }
-                                    theData.addTimeSeries(ctsi);
-                                }
-                                for (CTimeSeries ctso: outputTS){
-                                    theData.addTimeSeries(ctso);
-                                }
-
-                                // new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z")
-                                //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
-                                testComp.prepareForExec(tsDb);
-                                testComp.apply(theData, tsDb);
-
-                                Iterator<CTimeSeries> iterOutput = outputTS.iterator();
-                                Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
-                                
-                                while (iterExpect.hasNext())
-                                {
-                                    CTimeSeries currExpect = iterExpect.next();
-                                    String tsName = currExpect.getNameString();
-                                    TimeSeriesIdentifier outputID = tsDao.getTimeSeriesIdentifier(tsName);
-                                    CTimeSeries currOutput = tsDao.makeTimeSeries(outputID);
-
-                                    System.out.println(currExpect.getNameString());
-
-                                    CTimeSeries algoOutput = theData.getTimeSeriesByTsidKey(outputID);
-                                    System.out.println("expected units: " + currExpect.getUnitsAbbr());
-                                    TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
-
-                                    for (int i = 0; i<algoOutput.size(); i++){
-                                        TimedVariable TVOutput = algoOutput.sampleAt(i);
-                                        TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
-                                        System.out.println("output time: "+TVOutput.getTime());
-                                        System.out.println("output value  : "+TVOutput.getDoubleValue());
-                                        System.out.println("expected value: "+TVExpected.getDoubleValue());
-                                    }
-                                    assertEquals(algoOutput, currExpect, "expected ture", testComp.getValidStart(), testComp.getValidEnd());
-                                }
-                            }
-                        }    
+                        algoTests.addAll(Arrays.stream(comp.listFiles(test -> test.isDirectory()))
+                              .filter(test -> filterTest == "" || filterTest.equals(comp.getName()+test.getName()))
+                              .map(test -> getDynamicTest(test, comp, importer, tsDao))
+                              .collect(Collectors.toList()));  
                     }
                 }
             }
@@ -205,6 +144,88 @@ public class AlgorithmTestsIT extends AppTestBase
         {
             System.out.println("Invalid directory: " + current_Directory);
         }
+        return algoTests;
+    }
+
+    private DynamicTest getDynamicTest(File test, File comp, TsImporter importer, TimeSeriesDAI tsDao){
+        return DynamicTest.dynamicTest(comp.getName() +" "+test.getName(), () -> {
+            for (File comp_data : test.listFiles()) 
+            {
+                // Process comp xml
+                String name = comp_data.getName();
+                if (name.contains("Comp.xml"))
+                {
+                    System.out.println("Comps: " + comp_data.getAbsolutePath());
+                    String compstr = comp_data.getAbsolutePath();
+                    List<String> compxml =  Arrays.asList(compstr);
+                    ImportComp ic = new ImportComp(tsDb, true, false, compxml);
+                    ic.runApp();
+                }
+            }
+            loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
+
+            Collection<CTimeSeries> inputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","inputs"), importer);
+            Collection<CTimeSeries> outputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","outputs"), importer);
+            Collection<CTimeSeries> expectedOutputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","expectedOutputs"), importer);
+
+            ComputationDAI compdao = tsDb.makeComputationDAO();
+
+            DbComputation testComp = compdao.getComputationByName(test.getName()+comp.getName());
+
+            DataCollection theData = new DataCollection();
+
+            for (CTimeSeries ctsi: inputTS){
+                for (int idx = 0; idx < ctsi.size(); idx++){
+                    VarFlags.setWasAdded(ctsi.sampleAt(idx));
+                }
+                theData.addTimeSeries(ctsi);
+            }
+            for (CTimeSeries ctso: outputTS){
+                theData.addTimeSeries(ctso);
+            }
+
+            // new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z")
+            //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
+            testComp.prepareForExec(tsDb);
+            testComp.apply(theData, tsDb);
+
+            Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
+            
+            while (iterExpect.hasNext())
+            {
+                CTimeSeries currExpect = iterExpect.next();
+                String tsName = currExpect.getNameString();
+                TimeSeriesIdentifier outputID = tsDao.getTimeSeriesIdentifier(tsName);
+
+                log.info(currExpect.getNameString());
+
+                CTimeSeries algoOutput = theData.getTimeSeriesByTsidKey(outputID);
+                log.info("expected units: " + currExpect.getUnitsAbbr());
+                TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
+
+                for (int i = 0; i<algoOutput.size(); i++){
+                    TimedVariable TVOutput = algoOutput.sampleAt(i);
+                    TimedVariable TVExpected = currExpect.findWithin(TVOutput.getTime(), 0);
+                    log.info("output time: "+TVOutput.getTime());
+                    log.info("output value  : "+TVOutput.getDoubleValue());
+                    log.info("expected value: "+TVExpected.getDoubleValue());
+                }
+                assertEquals(algoOutput, currExpect, "expected true", testComp.getValidStart(), testComp.getValidEnd());
+            }
+        });
+    }
+
+    public static String buildFilePath(String... parts) {
+        // Start with the first part
+        Path path = Paths.get(parts[0]);
+    
+        // Append all the other parts using resolve() so it's platform independent
+        for (int i = 1; i < parts.length; i++) {
+            path = path.resolve(parts[i]);
+        }
+    
+        // Return the platform-specific path as a string
+        return path.toString();
     }
 
     private Collection<CTimeSeries> loadTSimport(String folderTSstr, TsImporter importer)
@@ -225,11 +246,9 @@ public class AlgorithmTestsIT extends AppTestBase
                 for (CTimeSeries tsIn: allTs)
                 {
                     log.info("load: " + tsIn.getDisplayName());
-
                     log.info("Saving {}", tsIn.getTimeSeriesIdentifier());
+
                     tsDao.saveTimeSeries(tsIn);
-                    // Retrieve the TimeSeriesIdentifier that shouldn't been saved to the database.
-                    // This will also fill in required metadata so that the retrieval operations are handled correctly.
                     FailableResult<TimeSeriesIdentifier,TsdbException> tsIdSavedResult = tsDao.findTimeSeriesIdentifier(tsIn.getTimeSeriesIdentifier().getUniqueString());
                     assertTrue(tsIdSavedResult.isSuccess(), "Time series was not correctly saved.");
                 }
@@ -251,12 +270,7 @@ public class AlgorithmTestsIT extends AppTestBase
         {
             try
             {
-                // String oid = officeIdArg.getValue().trim();
-                // if (oid != null && oid.length() > 0)
-                //     crd.setOfficeId(oid);
-                        
                 String xml = FileUtil.getFileContents(tsfiles);
-                        
                 crd.importXmlToDatabase(xml);
             } 
             catch(Exception ex)
