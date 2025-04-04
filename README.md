@@ -102,9 +102,11 @@ a report of tests is stored here: opendcs/java/opendcs/build/reports/tests/test
 ./gradlew test -Pno.docs=true
 
 # Tests of a "live" system.
-./gradlew testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-XML
+./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-XML
 # and if you have docker
-./gradlew testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-Postgres
+./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-Postgres
+# CWMS-Oracle (more memory hungry)
+./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=CWMS-Oracle
 
 #To test the LRGS
 gradlew testing:lrgs:test -Pno.docs=true
