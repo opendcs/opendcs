@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ratings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd">
-    <rating-template office-id="NWDM">
+    <rating-template office-id="SPK">
         <parameters-id>Elev;Area</parameters-id>
         <version>Linear</version>
         <ind-parameter-specs>
@@ -14,10 +14,10 @@
         <dep-parameter>Area</dep-parameter>
         <description></description>
     </rating-template>
-    <rating-spec office-id="NWDM">
-        <rating-spec-id>FTPK.Elev;Area.Linear.Step</rating-spec-id>
+    <rating-spec office-id="SPK">
+        <rating-spec-id>TESTSITE1.Elev;Area.Linear.Step</rating-spec-id>
         <template-id>Elev;Area.Linear</template-id>
-        <location-id>FTPK</location-id>
+        <location-id>TESTSITE1</location-id>
         <version>Step</version>
         <source-agency/>
         <in-range-method>LINEAR</in-range-method>
@@ -33,8 +33,8 @@
         <dep-rounding-spec>2222233332</dep-rounding-spec>
         <description/>
     </rating-spec>
-    <simple-rating office-id="NWDM">
-        <rating-spec-id>FTPK.Elev;Area.Linear.Step</rating-spec-id>
+    <simple-rating office-id="SPK">
+        <rating-spec-id>TESTSITE1.Elev;Area.Linear.Step</rating-spec-id>
         <vertical-datum-info unit="ft">
             <native-datum>NGVD-29</native-datum>
             <elevation>2234.0</elevation>

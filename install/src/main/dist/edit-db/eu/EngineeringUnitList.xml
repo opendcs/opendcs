@@ -1038,6 +1038,26 @@
     <A>0.001</A>
     <B>0</B>
   </UnitConverter>
+  <UnitConverter FromUnitsAbbr="W/m2" ToUnitsAbbr="langley/min">
+    <Algorithm>linear</Algorithm>
+    <A>0.001434034416826004</A>
+    <B>0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="langley/min" ToUnitsAbbr="W/m2">
+    <Algorithm>linear</Algorithm>
+    <A>697.3333333333333</A>
+    <B>0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="kpa" ToUnitsAbbr="mbar">
+    <Algorithm>linear</Algorithm>
+    <A>10.0</A>
+    <B>0</B>
+  </UnitConverter>
+  <UnitConverter FromUnitsAbbr="mbar" ToUnitsAbbr="kpa">
+    <Algorithm>linear</Algorithm>
+    <A>0.10</A>
+    <B>0</B>
+  </UnitConverter>
   <EngineeringUnit UnitsAbbr="MWh">
     <Name>Megawatt-hours</Name>
     <Family>univ</Family>
@@ -1143,7 +1163,7 @@
   </EngineeringUnit>
   <UnitConverter FromUnitsAbbr="in/hr" ToUnitsAbbr="in/day">
     <Algorithm>linear</Algorithm>
-    <A>0.4166667</A>
+    <A>24</A>
     <B>0</B>
   </UnitConverter>
   <EngineeringUnit UnitsAbbr="in/hr">
