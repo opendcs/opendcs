@@ -65,7 +65,7 @@ final class ReflistResourcesTest
 		assertNotNull(seasons);
 		ApiSeason season = seasons.get(0);
 		assertEquals(enumValue.getValue(), season.getAbbr());
-		assertEquals(enumValue.getFullName(), season.getName());
+		assertEquals(enumValue.getDescription(), season.getName());
 		assertEquals(enumValue.getEditClassName(),
 				String.format("%s %s %s", season.getStart(), season.getEnd(), season.getTz()));
 	}
@@ -110,24 +110,7 @@ final class ReflistResourcesTest
 		assertEquals(season.getStart(), startEndTzArray[0]);
 		assertEquals(season.getEnd(), startEndTzArray[1]);
 		assertEquals(season.getTz(), startEndTzArray[2]);
-	}
-
-	@Test
-	void testEnumSeasonMap()
-	{
-		ApiSeason season = new ApiSeason();
-		String abbr = "m";
-		season.setAbbr(abbr);
-		season.setName("Meter");
-		season.setStart("start");
-		season.setEnd("end");
-		season.setSortNumber(1);
-		season.setTz("UTC");
-
-		DbEnum dbEnum = map(season, abbr);
-
-		assertNotNull(dbEnum);
-		assertEquals(season.getName(), dbEnum.getUniqueName());
+		assertEquals(season.getSortNumber(), result.getSortNumber());
 	}
 
 	@Test

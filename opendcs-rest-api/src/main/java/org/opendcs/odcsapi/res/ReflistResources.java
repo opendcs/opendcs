@@ -388,11 +388,12 @@ public final class ReflistResources extends OpenDcsResource
 		for (EnumValue val : seasons.values())
 		{
 			ApiSeason as = new ApiSeason();
-			as.setName(val.getFullName());
+			as.setName(val.getDescription());
 			as.setAbbr(val.getValue());
 			String[] startEndTZ = val.getEditClassName().split(" ");
 			as.setStart(startEndTZ[0]);
 			as.setEnd(startEndTZ[1]);
+			as.setSortNumber(val.getSortNumber());
 			if (startEndTZ.length > 2)
 			{
 				as.setTz(startEndTZ[2]);
@@ -490,9 +491,7 @@ public final class ReflistResources extends OpenDcsResource
 			},
 			tags = {"REST - Reference Lists"}
 	)
-	public Response postSeason(@Parameter(description = "Abbreviation of the existing season to modify")
-		@QueryParam("fromabbr") String fromAbbr,
-			@Parameter(description = "Details of the new or updated season", required = true) ApiSeason season)
+	public Response postSeason(@Parameter(description = "Details of the new or updated season", required = true) ApiSeason season)
 		throws DbException
 	{
 		try (EnumDAI dai = getLegacyTimeseriesDB().makeEnumDAO())
@@ -510,12 +509,13 @@ public final class ReflistResources extends OpenDcsResource
 			{
 				dbSeasonId = dbEnum.getId();
 			}
-			if (fromAbbr != null)
+			String fromabbr = season.getFromabbr();
+			if (fromabbr != null)
 			{
-				dai.deleteEnumValue(dbSeasonId, fromAbbr);
+				dai.deleteEnumValue(dbSeasonId, fromabbr);
 			}
 			EnumValue dbSeason = map(season, dbEnum);
-			dai.writeEnumValue(dbSeasonId, dbSeason, fromAbbr, season.getSortNumber());
+			dai.writeEnumValue(dbSeasonId, dbSeason, null, season.getSortNumber());
 			return Response.status(HttpServletResponse.SC_CREATED)
 					.entity(map(dbSeason))
 					.build();
@@ -537,13 +537,6 @@ public final class ReflistResources extends OpenDcsResource
 		}
 		ret.setEditClassName(startEndTz);
 		ret.setSortNumber(season.getSortNumber());
-		return ret;
-	}
-
-	static DbEnum map(ApiSeason season, String fromAbbr)
-	{
-		DbEnum ret = new DbEnum(season.getName());
-		ret.setDefault(fromAbbr);
 		return ret;
 	}
 

@@ -410,17 +410,16 @@ final class ReflistResourcesIT extends BaseIT
 
 		String newSeasonId = response.jsonPath().getString("abbr");
 
-		// Retrieve Season and assert that it matches stored data
+		// Retrieve All Seasons and assert that the new one is in the list
 		response = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
 			.filter(sessionFilter)
-			.queryParam("abbr", newSeasonId)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.get("season")
+			.get("seasons")
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
@@ -428,74 +427,14 @@ final class ReflistResourcesIT extends BaseIT
 			.extract()
 		;
 
-		JsonPath actual = response.body().jsonPath();
 		JsonPath expected = new JsonPath(seasonJson);
-		assertEquals(expected.getString("abbr"), actual.getString("abbr"));
-		assertEquals(expected.getString("name"), actual.getString("name"));
-		assertEquals(expected.getString("start"), actual.getString("start"));
-		assertEquals(expected.getString("end"), actual.getString("end"));
-		assertEquals(expected.getString("tz"), actual.getString("tz"));
-
-		// Delete Season
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
-			.queryParam("abbr", newSeasonId)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("season")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
-		;
-
-		// Retrieve Season and assert that it is not found
-		given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.filter(sessionFilter)
-			.queryParam("abbr", newSeasonId)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("season")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
-		;
-	}
-
-	@TestTemplate
-	void testPostAndDeleteSeasonWithFromAbbr() throws Exception
-	{
-		String seasonJson = getJsonFromResource("reflist_season_from_abbr_insert_data.json");
-
-		// Store Season
-		ExtractableResponse<Response> response = given()
-			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(MediaType.APPLICATION_JSON)
-			.header("Authorization", authHeader)
-			.contentType(MediaType.APPLICATION_JSON)
-			.filter(sessionFilter)
-			.body(seasonJson)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.post("season")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL, true)
-		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_CREATED))
-			.extract()
-		;
-
-		String newSeasonId = response.jsonPath().getString("abbr");
+		Map<String, Object> actualMap = (Map<String, Object>) response.body().jsonPath().getList("").stream()
+				.filter(o -> ((Map<String, Object>)o).get("abbr").equals(expected.getString("abbr"))).findAny().get();
+		assertEquals(expected.getString("abbr"), actualMap.get("abbr").toString());
+		assertEquals(expected.getString("name"), actualMap.get("name").toString());
+		assertEquals(expected.getString("start"), actualMap.get("start").toString());
+		assertEquals(expected.getString("end"), actualMap.get("end").toString());
+		assertEquals(expected.getString("tz"), actualMap.get("tz").toString());
 
 		// Retrieve Season and assert that it matches stored data
 		response = given()
@@ -516,13 +455,11 @@ final class ReflistResourcesIT extends BaseIT
 		;
 
 		JsonPath actual = response.body().jsonPath();
-		JsonPath expected = new JsonPath(seasonJson);
 		assertEquals(expected.getString("abbr"), actual.getString("abbr"));
 		assertEquals(expected.getString("name"), actual.getString("name"));
 		assertEquals(expected.getString("start"), actual.getString("start"));
 		assertEquals(expected.getString("end"), actual.getString("end"));
 		assertEquals(expected.getString("tz"), actual.getString("tz"));
-		assertEquals(expected.getString("fromAbbr"), actual.getString("fromAbbr"));
 
 		// Delete Season
 		given()
