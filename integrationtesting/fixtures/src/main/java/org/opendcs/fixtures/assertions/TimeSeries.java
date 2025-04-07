@@ -11,7 +11,20 @@ import ilex.var.TimedVariable;
 
 public class TimeSeries
 {
-    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, String message) throws Exception
+
+    public static void assertContains(CTimeSeries expected, CTimeSeries actual, String message)
+    {
+        Date start;
+        Date end;
+        try {
+            start = expected.sampleAt(0).getDateValue();
+            end = expected.sampleAt(expected.size() - 1).getDateValue();
+        } catch (NoConversionException ex) {
+            throw new RuntimeException("Failed to get date value from the first sample", ex);
+        }
+        assertEquals(expected, actual, .0001, message, start, end);
+    }
+    public static void assertEquals(CTimeSeries expected, CTimeSeries actual, String message)
     {
         assertEquals(expected, actual, .0001, message, null, null);
     }

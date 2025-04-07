@@ -317,7 +317,6 @@ public class CompExec extends TsdbAppTemplate
 				warning(msg);
 			}
 		}
-		System.out.println("format: " + outputFormatter);
 
 		// if an output format is specified, format the data and send to stdout
 		if (outputFormatter != null)

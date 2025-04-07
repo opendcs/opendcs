@@ -144,8 +144,10 @@ final public class WaterTempProfiles
                     TimeSeriesIdentifier newTSID = tsid.copyNoKey();
 
                     String reservoirId = tsid.getSiteName();
-                    if (reservoirId.length() > 8) {
-                        reservoirId = reservoirId.substring(0, reservoirId.length() - 8);
+
+                    int index = reservoirId.lastIndexOf("-D");
+                    if (index != -1) {
+                        reservoirId = reservoirId.substring(0, index);
                     }
 
                     Site newsite = new Site();

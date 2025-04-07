@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import decodes.db.Constants;
+import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.UnitConverter;
@@ -83,11 +84,12 @@ public class AlgorithmTestsIT extends AppTestBase
     public Collection<DynamicTest> test_algorithm_operations() throws Exception
     {
         DecodesSettings settings = DecodesSettings.instance();
-        TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
-        SiteDAI siteDAO = tsDb.makeSiteDAO();
-        TsImporter importer = new TsImporter(TimeZone.getTimeZone("UTC"), settings.siteNameTypePreference, (tsIdStr) -> 
+        try (TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
+             SiteDAI siteDAO = tsDb.makeSiteDAO();)
         {
-            try
+            TsImporter importer = new TsImporter(TimeZone.getTimeZone("UTC"), settings.siteNameTypePreference, (tsIdStr) -> 
+            {
+                try
                 {
                     return tsDao.getTimeSeriesIdentifier(tsIdStr);
                 }
@@ -118,33 +120,33 @@ public class AlgorithmTestsIT extends AppTestBase
                         throw new DbIoException(String.format("No such time series and cannot create for '%'", tsIdStr), ex);
                     }
                 }
-        });
-        String workingDirectoryPath = Paths.get("").toAbsolutePath().toString();
-        String current_Directory = buildFilePath(workingDirectoryPath, "src", "test", "resources", "data", "Comps");
-        File directory = new File(current_Directory);
+            });
+            String workingDirectoryPath = Paths.get("").toAbsolutePath().toString();
+            String current_Directory = buildFilePath(workingDirectoryPath, "src", "test", "resources", "data", "Comps");
+            File directory = new File(current_Directory);
 
-        Collection<DynamicTest> algoTests = new ArrayList<DynamicTest>();
+            Collection<DynamicTest> algoTests = new ArrayList<DynamicTest>();
 
-        String filterTest = System.getProperty("OpenDCSAlgoTestFilter", "").trim();
-        if (directory.exists() && directory.isDirectory()) {
-            File[] comps = directory.listFiles();
-            if (comps != null) {
-                for (File comp : comps) {
-                    //File algoLog = new File(configuration.getUserDir(),"/"+comp.getName()+"testalgolog.txt");
-                    if (comp.isDirectory()) {
-                        algoTests.addAll(Arrays.stream(comp.listFiles(test -> test.isDirectory()))
-                              .filter(test -> filterTest == "" || filterTest.equals(comp.getName()+test.getName()))
-                              .map(test -> getDynamicTest(test, comp, importer, tsDao))
-                              .collect(Collectors.toList()));  
+            final String filterTest = System.getProperty("opendcs.test.algorithm.filter", "").trim();
+            if (directory.exists() && directory.isDirectory()) {
+                File[] comps = directory.listFiles();
+                if (comps != null) {
+                    for (File comp : comps) {
+                        if (comp.isDirectory()) {
+                            algoTests.addAll(Arrays.stream(comp.listFiles(test -> test.isDirectory()))
+                                .filter(test -> filterTest == "" || filterTest.equals(comp.getName()+test.getName()))
+                                .map(test -> getDynamicTest(test, comp, importer, tsDao))
+                                .collect(Collectors.toList()));  
+                        }
                     }
                 }
+            } 
+            else 
+            {
+                log.error("Invalid directory: " + current_Directory);
             }
-        } 
-        else 
-        {
-            System.out.println("Invalid directory: " + current_Directory);
+            return algoTests;
         }
-        return algoTests;
     }
 
     private DynamicTest getDynamicTest(File test, File comp, TsImporter importer, TimeSeriesDAI tsDao){
@@ -168,9 +170,11 @@ public class AlgorithmTestsIT extends AppTestBase
             Collection<CTimeSeries> outputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","outputs"), importer);
             Collection<CTimeSeries> expectedOutputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","expectedOutputs"), importer);
 
-            ComputationDAI compdao = tsDb.makeComputationDAO();
-
-            DbComputation testComp = compdao.getComputationByName(test.getName()+comp.getName());
+            DbComputation testComp = null;
+            try (ComputationDAI compdao = tsDb.makeComputationDAO())
+            {
+               testComp = compdao.getComputationByName(test.getName()+comp.getName());
+            }
 
             DataCollection theData = new DataCollection();
 
@@ -264,22 +268,20 @@ public class AlgorithmTestsIT extends AppTestBase
         File folderTS = new File(folderRatingStr);
         if (!folderTS.exists())
             return;
-        CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsDb);
-        crd.setUseReference(false);
-        for (File tsfiles : folderTS.listFiles())
-        {
-            try
+        try (CwmsRatingDao crd = new CwmsRatingDao((CwmsTimeSeriesDb)tsDb)){
+            crd.setUseReference(false);
+            for (File tsfiles : folderTS.listFiles())
             {
-                String xml = FileUtil.getFileContents(tsfiles);
-                crd.importXmlToDatabase(xml);
-            } 
-            catch(Exception ex)
-            {
-                log.error(ex.getMessage(), ex);
-                System.err.println(ex.toString());
-                ex.printStackTrace(System.err);
+                try
+                {
+                    String xml = FileUtil.getFileContents(tsfiles);
+                    crd.importXmlToDatabase(xml);
+                } 
+                catch(Exception ex)
+                {
+                    log.error(ex.getMessage(), ex);
+                }
             }
         }
-        crd.close();
     }
 }
