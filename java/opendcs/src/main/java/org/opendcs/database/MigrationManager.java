@@ -41,7 +41,7 @@ public final class MigrationManager
                              .loggers("org.opendcs.database.logging.MigrationLogCreator")
                              .dataSource(ds)
                              .schemas(migrationProvider.schemas().toArray(new String[0]))
-                             .createSchemas(false)
+                             .createSchemas(migrationProvider.createSchemas())
                              .locations("db/"+implementation)
                              .validateMigrationNaming(true);
     }
