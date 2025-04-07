@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import java.util.TimeZone;
 import java.util.Vector;
 
@@ -26,9 +27,11 @@ import org.opendcs.odcsapi.beans.ApiRoutingStatus;
 import org.opendcs.odcsapi.beans.ApiScheduleEntry;
 import org.opendcs.odcsapi.beans.ApiScheduleEntryRef;
 
+import static ilex.util.TextUtil.str2boolean;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.odcsapi.res.RoutingResources.map;
 import static org.opendcs.odcsapi.res.RoutingResources.statusMap;
 
@@ -111,21 +114,114 @@ final class RoutingResourcesTest
 		ApiRouting apiRouting = new ApiRouting();
 		apiRouting.setRoutingId(1234L);
 		apiRouting.setName("TestRoutingSpec");
+		Long routingId = 100L;
+		apiRouting.setRoutingId(routingId);
+		String name = "Test Routing";
+		apiRouting.setName(name);
+		Long dataSourceId = 50L;
+		apiRouting.setDataSourceId(dataSourceId);
+		String dataSourceName = "USGS-LRGS";
+		apiRouting.setDataSourceName(dataSourceName);
+		String destinationType = "directory";
+		apiRouting.setDestinationType(destinationType);
+		String destinationArg = "/path/to/destination";
+		apiRouting.setDestinationArg(destinationArg);
+		apiRouting.setEnableEquations(true);
+		String outputFormat = "emit-ascii";
+		apiRouting.setOutputFormat(outputFormat);
+		String outputTZ = "EST5EDT";
+		apiRouting.setOutputTZ(outputTZ);
+		String presGroupName = "CWMS-English";
+		apiRouting.setPresGroupName(presGroupName);
+		Date lastModified = new Date();
+		apiRouting.setLastModified(lastModified);
+		apiRouting.setProduction(true);
+		String since = "2023-01-01T00:00:00.000";
+		apiRouting.setSince(since);
+		String until = "2023-01-02T00:00:00.000";
+		apiRouting.setUntil(until);
+		apiRouting.setSettlingTimeDelay(true);
+		String applyTimeTo = "Both";
+		apiRouting.setApplyTimeTo(applyTimeTo);
+		apiRouting.setAscendingTime(false);
+		List<String> platformIds = new ArrayList<>();
+		platformIds.add("1");
+		apiRouting.setPlatformIds(platformIds);
+		List<String> platformNames = new ArrayList<>();
+		platformNames.add("PlatformName1");
+		apiRouting.setPlatformNames(platformNames);
+		List<String> netlistNames = new ArrayList<>();
+		netlistNames.add("NetlistName1");
+		apiRouting.setNetlistNames(netlistNames);
+		List<Integer> goesChannels = new ArrayList<>();
+		goesChannels.add(1234);
+		apiRouting.setGoesChannels(goesChannels);
+		Properties properties = new Properties();
+		properties.setProperty("sc:source_0", "True");
+		properties.setProperty("extra", "value");
+		apiRouting.setProperties(properties);
+		apiRouting.setQualityNotifications(true);
+		apiRouting.setParityCheck(true);
+		apiRouting.setParitySelection("Good");
+		apiRouting.setNetworkDCP(true);
+		apiRouting.setGoesSpacecraftCheck(true);
+		apiRouting.setGoesSpacecraftSelection("West");
+		apiRouting.setAscendingTime(true);
+
 		RoutingSpec routingSpec = map(apiRouting);
 		assertNotNull(routingSpec);
 		assertEquals(routingSpec.getId().getValue(), apiRouting.getRoutingId());
 		assertEquals(routingSpec.getName(), apiRouting.getName());
-		if (routingSpec.outputTimeZone != null)
-		{
-			assertEquals(routingSpec.outputTimeZone.getID(), apiRouting.getOutputTZ());
-		}
-		else if (apiRouting.getOutputTZ() != null)
-		{
-			fail("routingSpec.outputTimeZone is null, but apiRouting.getOutputTZ() is not null");
-		}
 		assertNotNull(routingSpec.lastModifyTime);
 		assertEquals(routingSpec.enableEquations, apiRouting.isEnableEquations());
 		assertEquals(routingSpec.networkListNames, new Vector<>(apiRouting.getNetlistNames()));
+		assertEquals(routingId, routingSpec.getId().getValue());
+		assertEquals(name, routingSpec.getName());
+		assertEquals(dataSourceId, routingSpec.dataSource.getId().getValue());
+		assertEquals(dataSourceName, routingSpec.dataSource.getName());
+		assertEquals(destinationType, routingSpec.consumerType);
+		assertEquals(destinationArg, routingSpec.consumerArg);
+		assertTrue(routingSpec.enableEquations);
+		assertEquals(outputFormat, routingSpec.outputFormat);
+		assertEquals(outputTZ, routingSpec.outputTimeZoneAbbr);
+		assertEquals(presGroupName, routingSpec.presentationGroupName);
+		assertNotNull(routingSpec.lastModifyTime);
+		assertTrue(routingSpec.isProduction);
+		assertEquals(since, routingSpec.sinceTime);
+		assertEquals(until, routingSpec.untilTime);
+		assertTrue(str2boolean(routingSpec.getProperty("sc:rt_settle_delay")));
+		assertEquals("B", routingSpec.getProperty("rs.timeapplyto"));
+		assertTrue(str2boolean(routingSpec.getProperty("sc:ASCENDING_TIME")));
+		List<String> mappedPlatformIds = routingSpec.getProperties().entrySet()
+				.stream()
+				.filter(e -> e.getKey().toString().toLowerCase().startsWith("sc:dcp_address_"))
+				.map(e -> e.getValue().toString())
+				.collect(toList());
+		assertEquals(platformIds, mappedPlatformIds);
+		List<String> mappedPlatformNames = routingSpec.getProperties().entrySet()
+				.stream()
+				.filter(e -> e.getKey().toString().toLowerCase().startsWith("sc:dcp_name_"))
+				.map(e -> e.getValue().toString())
+				.collect(toList());
+		assertEquals(platformNames.size(), mappedPlatformNames.size());
+		for (String platformName : platformNames)
+		{
+			assertTrue(mappedPlatformNames.contains(platformName));
+		}
+		assertEquals(netlistNames, routingSpec.networkListNames);
+		List<Integer> mappedChannels = routingSpec.getProperties().entrySet()
+				.stream()
+				.filter(e -> e.getKey().toString().toLowerCase().startsWith("sc:channel_"))
+				.map(e -> e.getValue().toString().substring(1))
+				.map(Integer::parseInt)
+				.collect(toList());
+		assertEquals(goesChannels, mappedChannels);
+		assertEquals(properties.get("extra"), routingSpec.getProperties().get("extra"));
+		assertEquals(routingSpec.getProperty("sc:daps_status"), apiRouting.isQualityNotifications() ? "A" : "N");
+		assertEquals("R", routingSpec.getProperty("sc:parity_error"));
+		assertTrue(str2boolean(routingSpec.getProperty("sc:SOURCE_0")));
+		assertEquals("W", routingSpec.getProperty("sc:SPACECRAFT"));
+
 	}
 
 	@Test
@@ -228,6 +324,8 @@ final class RoutingResourcesTest
 		scheduleEntry.setRunStop(Date.from(Instant.parse("2021-03-01T00:00:00Z")));
 		scheduleEntry.setRunStart(Date.from(Instant.parse("2021-02-01T00:00:00Z")));
 		scheduleEntry.setLastModified(Date.from(Instant.parse("2021-04-01T00:00:00Z")));
+		scheduleEntry.setLastConsumer("Test consumer");
+		scheduleEntry.setLastSource("Test source");
 		scheduleEntries.add(scheduleEntry);
 
 		ArrayList<ApiRoutingExecStatus> results = statusMap(scheduleEntries);
@@ -244,6 +342,8 @@ final class RoutingResourcesTest
 		assertEquals(scheduleEntry.getRunStop(), result.getRunStop());
 		assertEquals(scheduleEntry.getRunStart(), result.getRunStart());
 		assertEquals(scheduleEntry.getLastModified(), result.getLastActivity());
+		assertEquals(scheduleEntry.getLastConsumer(), result.getLastOutput());
+		assertEquals(scheduleEntry.getLastSource(), result.getLastInput());
 	}
 
 	@Test

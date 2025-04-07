@@ -1,9 +1,9 @@
 {
-  "configId" : null,
-  "name" : "Test Platform",
-  "numPlatforms" : 0,
-  "description" : "Test Platform",
-  "configSensors" : [
+  "configId": 4,
+  "name": "Test Platform",
+  "numPlatforms": 0,
+  "description": "Test Platform",
+  "configSensors": [
     {
       "sensorNumber" : 0,
       "sensorName" : "Test Sensor",
@@ -19,7 +19,7 @@
       "usgsStatCode" : "1123"
     }
   ],
-  "scripts" : [
+  "scripts": [
     {
       "name" : "Test Script",
       "dataOrder" : "U",
@@ -39,7 +39,8 @@
           "f" : null
         }
       }
-    ],
-    "formatStatements" : [ ]
-  } ]
+      ],
+      "formatStatements" : [ ]
+    }
+  ]
 }

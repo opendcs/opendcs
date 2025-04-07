@@ -191,7 +191,4 @@ public final class ApiTransportMedium
 	{
 		this.password = password;
 	}
-	
-	
-
 }

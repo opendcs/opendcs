@@ -12,9 +12,9 @@
   "lastModified" : "2025-01-03T18:57:53.613Z[UTC]",
   "since" : "2020-07-15T00:00:00Z",
   "until" : "2021-07-16T00:00:00Z",
-  "settlingTimeDelay" : false,
+  "settlingTimeDelay" : true,
   "applyTimeTo" : "Local Receive Time",
-  "ascendingTime" : false,
+  "ascendingTime" : true,
   "platformIds" : [ ],
   "platformNames" : [ ],
   "netlistNames" : [ ],
@@ -22,14 +22,14 @@
   "properties" : {
     "goesChannel" : "1"
   },
-  "goesSelfTimed" : false,
-  "goesRandom" : false,
+  "goesSelfTimed" : true,
+  "goesRandom" : true,
   "networkDCP" : false,
-  "iridium" : false,
-  "qualityNotifications" : false,
-  "goesSpacecraftCheck" : false,
+  "iridium" : true,
+  "qualityNotifications" : true,
+  "goesSpacecraftCheck" : true,
   "goesSpacecraftSelection" : "East",
-  "parityCheck" : false,
+  "parityCheck" : true,
   "paritySelection" : "Good",
   "production" : false
 }

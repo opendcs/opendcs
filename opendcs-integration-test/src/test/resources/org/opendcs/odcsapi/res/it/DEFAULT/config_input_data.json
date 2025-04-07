@@ -16,7 +16,7 @@
         "site" : "Test Site"
       },
       "dataTypes" : {},
-      "usgsStatCode" : null
+      "usgsStatCode" : "1144"
     }
   ],
   "scripts" : [

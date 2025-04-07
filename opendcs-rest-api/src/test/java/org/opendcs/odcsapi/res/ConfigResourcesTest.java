@@ -1,22 +1,19 @@
 package org.opendcs.odcsapi.res;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Vector;
 
 import decodes.db.ConfigSensor;
 import decodes.db.DecodesScript;
+import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
 import decodes.db.PlatformConfigList;
 import decodes.db.ScriptSensor;
-import decodes.db.StreamDecodesScriptReader;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.xml.DecodesScriptParser;
@@ -24,7 +21,9 @@ import org.junit.jupiter.api.Test;
 import org.opendcs.odcsapi.beans.ApiConfigRef;
 import org.opendcs.odcsapi.beans.ApiConfigScript;
 import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
+import org.opendcs.odcsapi.beans.ApiConfigSensor;
 import org.opendcs.odcsapi.beans.ApiPlatformConfig;
+import org.opendcs.odcsapi.beans.ApiScriptFormatStatement;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +76,7 @@ final class ConfigResourcesTest
 		DecodesScript script = builder.build();
 		script.scriptName = "Test script";
 		script.scriptType = "Test";
+		script.setDataOrder(ApiConfigScript.DataOrder.DESCENDING.getCode());
 		scripts.add(script);
 		config.decodesScripts = scripts;
 		PlatformConfig sensor = new PlatformConfig();
@@ -106,6 +106,8 @@ final class ConfigResourcesTest
 		assertEquals(config.getSensorVec().get(0).recordingInterval, apiConfig.getConfigSensors().get(0).getRecordingInterval());
 		assertEquals(config.getSensorVec().get(0).recordingMode, apiConfig.getConfigSensors().get(0).getRecordingMode().getCode());
 		assertEquals(config.getSensorVec().get(0).sensorName, apiConfig.getConfigSensors().get(0).getSensorName());
+		assertEquals(config.getSensorVec().get(0).sensorNumber, apiConfig.getConfigSensors().get(0).getSensorNumber());
+		assertEquals(config.getSensorVec().get(0).getUsgsStatCode(), apiConfig.getConfigSensors().get(0).getUsgsStatCode());
 	}
 
 	@Test
@@ -117,6 +119,23 @@ final class ConfigResourcesTest
 		apiConfig.setDescription("Platform description");
 		apiConfig.setScripts(scriptListBuilder());
 		apiConfig.setConfigId(5899L);
+		List<ApiConfigSensor> configSensors = new ArrayList<>();
+		ApiConfigSensor configSensor = new ApiConfigSensor();
+		configSensor.setAbsoluteMax(100.0);
+		configSensor.setAbsoluteMin(0.0);
+		configSensor.setRecordingInterval(15);
+		configSensor.setRecordingMode(ApiConfigSensor.RecordingMode.VARIABLE);
+		configSensor.setSensorName("Test sensor");
+		configSensor.setSensorNumber(12);
+		configSensor.setUsgsStatCode("00000");
+		Map<String, String> dataTypes = new HashMap<>();
+		dataTypes.put("Test data type", "Test data type description");
+		configSensor.setDataTypes(dataTypes);
+		Properties properties = new Properties();
+		properties.put("Test property", "Test property value");
+		configSensor.setProperties(properties);
+		configSensors.add(configSensor);
+		apiConfig.setConfigSensors(configSensors);
 
 		PlatformConfig config = map(apiConfig);
 
@@ -145,7 +164,11 @@ final class ConfigResourcesTest
 			assertEquals(apiConfig.getConfigSensors().get(0).getSensorName(), sensorConfig.sensorName);
 			assertEquals(apiConfig.getConfigSensors().get(0).getSensorNumber(), sensorConfig.sensorNumber);
 			assertEquals(apiConfig.getConfigSensors().get(0).getUsgsStatCode(), sensorConfig.getUsgsStatCode());
-			assertEquals(apiConfig.getConfigSensors().get(0).getDataTypes(), sensorConfig.getDataType());
+			for (Map.Entry<String, String> entry : apiConfig.getConfigSensors().get(0).getDataTypes().entrySet())
+			{
+				assertEquals(sensorConfig.getDataType().getStandard(), entry.getKey());
+				assertEquals(sensorConfig.getDataType().getCode(), entry.getValue());
+			}
 			assertEquals(apiConfig.getConfigSensors().get(0).getProperties(), sensorConfig.getProperties());
 		}
 	}
@@ -165,6 +188,28 @@ final class ConfigResourcesTest
 			assertEquals(scripts.get(0).getScriptSensors().get(0).getSensorNumber(), sensor.sensorNumber);
 			assertMatch(scripts.get(0).getScriptSensors().get(0).getUnitConverter(), sensor.execConverter);
 		}
+	}
+
+	@Test
+	void testFormatStatementMap() throws Exception
+	{
+		Vector<FormatStatement> formatStatements = new Vector<>();
+		DecodesScript.DecodesScriptBuilder dsb = DecodesScript.empty();
+		dsb.scriptName("Test script");
+		dsb.platformConfig(new PlatformConfig());
+		DecodesScript ds = dsb.build();
+		FormatStatement formatStatement = new FormatStatement(ds, 1);
+		formatStatement.format = "Test format";
+		formatStatement.label = "Test label";
+		formatStatements.add(formatStatement);
+
+		List<ApiScriptFormatStatement> apiFormatStatement = map(formatStatements);
+
+		assertEquals(1, apiFormatStatement.size());
+		ApiScriptFormatStatement apiFormatStatement1 = apiFormatStatement.get(0);
+		assertEquals(formatStatement.format, apiFormatStatement1.getFormat());
+		assertEquals(formatStatement.label, apiFormatStatement1.getLabel());
+		assertEquals(formatStatement.sequenceNum, apiFormatStatement1.getSequenceNum());
 	}
 
 	@Test

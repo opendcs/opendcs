@@ -122,5 +122,4 @@ public final class ApiTsGroup
 	{
 		return groupDataTypes;
 	}
-
 }

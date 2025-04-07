@@ -64,7 +64,4 @@ public final class ApiUnit
 	{
 		this.measures = measures;
 	}
-	
-	
-
 }

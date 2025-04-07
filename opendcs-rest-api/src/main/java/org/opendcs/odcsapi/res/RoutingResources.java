@@ -15,12 +15,7 @@
 
 package org.opendcs.odcsapi.res;
 
-import ilex.util.Logger;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.Content;
+import java.text.NumberFormat;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.util.stream.Collectors;
@@ -60,16 +56,20 @@ import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.opentsdb.Interval;
 import org.opendcs.odcsapi.beans.ApiDacqEvent;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.media.Schema;
-
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.opendcs.odcsapi.beans.ApiRouting;
 import org.opendcs.odcsapi.beans.ApiRoutingExecStatus;
 import org.opendcs.odcsapi.beans.ApiRoutingRef;
@@ -81,14 +81,22 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+import org.opendcs.odcsapi.util.ApiPropertiesUtil;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+
+import static ilex.util.TextUtil.str2boolean;
 
 @Path("/")
 public final class RoutingResources extends OpenDcsResource
 {
+	private static final Logger LOGGER = LoggerFactory.getLogger(RoutingResources.class);
 	private static final String LAST_DACQ_ATTRIBUTE = "last-dacq-event-id";
 
-	@Context private HttpServletRequest request;
-	@Context private HttpHeaders httpHeaders;
+	@Context
+	private HttpServletRequest request;
+	@Context
+	private HttpHeaders httpHeaders;
 
 	@GET
 	@Path("routingrefs")
@@ -128,9 +136,10 @@ public final class RoutingResources extends OpenDcsResource
 	static List<ApiRoutingRef> map(RoutingSpecList rsList)
 	{
 		List<ApiRoutingRef> refs = new ArrayList<>();
-		rsList.getList().forEach(rs -> {
+		rsList.getList().forEach(rs ->
+		{
 			ApiRoutingRef ref = new ApiRoutingRef();
-			if (rs.getId() != null)
+			if(rs.getId() != null)
 			{
 				ref.setRoutingId(rs.getId().getValue());
 			}
@@ -140,7 +149,7 @@ public final class RoutingResources extends OpenDcsResource
 			}
 			ref.setName(rs.getName());
 			ref.setDestination(rs.consumerArg);
-			if (rs.dataSource != null)
+			if(rs.dataSource != null)
 			{
 				ref.setDataSourceName(rs.dataSource.getName());
 			}
@@ -169,11 +178,11 @@ public final class RoutingResources extends OpenDcsResource
 	)
 	public Response getRouting(@Parameter(description = "Routing Spec ID", required = true, example = "20",
 			schema = @Schema(implementation = Long.class))
-		@QueryParam("routingid") Long routingId)
+	@QueryParam("routingid") Long routingId)
 			throws WebAppException, DbException
 	{
 
-		if (routingId == null)
+		if(routingId == null)
 		{
 			throw new MissingParameterException("Missing required routingid parameter.");
 		}
@@ -189,7 +198,7 @@ public final class RoutingResources extends OpenDcsResource
 		}
 		catch(DatabaseException e)
 		{
-			if (e.getCause() instanceof ValueNotFoundException)
+			if(e.getCause() instanceof ValueNotFoundException)
 			{
 				throw new DatabaseItemNotFoundException("RoutingSpec with ID " + routingId + " not found");
 			}
@@ -201,9 +210,10 @@ public final class RoutingResources extends OpenDcsResource
 		}
 	}
 
-	static ApiRouting map(RoutingSpec spec) {
+	static ApiRouting map(RoutingSpec spec)
+	{
 		ApiRouting routing = new ApiRouting();
-		if (spec.getId() != null)
+		if(spec.getId() != null)
 		{
 			routing.setRoutingId(spec.getId().getValue());
 		}
@@ -213,26 +223,124 @@ public final class RoutingResources extends OpenDcsResource
 		}
 		routing.setName(spec.getName());
 		routing.setLastModified(spec.lastModifyTime);
-		if (spec.outputTimeZoneAbbr != null)
+		if(spec.outputTimeZoneAbbr != null)
 		{
 			routing.setOutputTZ(spec.outputTimeZoneAbbr);
 		}
 		routing.setNetlistNames(new ArrayList<>(spec.networkListNames));
 		routing.setOutputFormat(spec.outputFormat);
 		routing.setEnableEquations(spec.enableEquations);
-		if (spec.dataSource != null)
+		if(spec.dataSource != null)
 		{
 			routing.setDataSourceId(spec.dataSource.getId().getValue());
 			routing.setDataSourceName(spec.dataSource.getName());
 		}
 		routing.setSince(spec.sinceTime);
 		routing.setUntil(spec.untilTime);
-		routing.setProperties(spec.getProperties());
 		routing.setPresGroupName(spec.presentationGroupName);
 		routing.setProduction(spec.isProduction);
 		routing.setDestinationArg(spec.consumerArg);
 		routing.setDestinationType(spec.consumerType);
+		mapApiRoutingProperties(spec, routing);
 		return routing;
+	}
+
+	private static void mapApiRoutingProperties(RoutingSpec spec, ApiRouting ret)
+	{
+		Properties properties = spec.getProperties();
+		for(final Map.Entry<Object, Object> entry : properties.entrySet())
+		{
+			String key = entry.getKey().toString().toLowerCase();
+			String value = entry.getValue().toString();
+			if(key.equals("sc:ascending_time"))
+			{
+				ret.setAscendingTime(str2boolean(value));
+			}
+			else if(key.equals("sc:rt_settle_delay"))
+			{
+				ret.setSettlingTimeDelay(str2boolean(value));
+			}
+			else if(key.equals("sc:daps_status")
+					&& value.toLowerCase().startsWith("a"))
+			{
+				ret.setQualityNotifications(true);
+			}
+			else if(key.equals("sc:parity_error"))
+			{
+				ret.setParityCheck(true);
+				// r = good only, o = bad only
+				ret.setParitySelection(value.toLowerCase().startsWith("r") ? "Good" : "Bad");
+			}
+			else if(key.startsWith("sc:source_"))
+			{
+				value = value.toLowerCase();
+				switch(value)
+				{
+					case "netdcp":
+						ret.setNetworkDCP(true);
+						break;
+					case "goes_random":
+						ret.setGoesRandom(true);
+						break;
+					case "goes_selftimed":
+						ret.setGoesSelfTimed(true);
+						break;
+					case "iridium":
+						ret.setIridium(true);
+						break;
+					default:
+						LOGGER.atDebug().log("Unknown source type: " + value);
+				}
+			}
+			else if(key.equals("sc:spacecraft"))
+			{
+				ret.setGoesSpacecraftCheck(true);
+				ret.setGoesSpacecraftSelection(value.toLowerCase().startsWith("e") ? "East" : "West");
+			}
+			else if(key.startsWith("sc:dcp_address_"))
+			{
+				ret.getPlatformIds().add(value);
+			}
+			else if(key.startsWith("sc:dcp_name_"))
+			{
+				ret.getPlatformNames().add(value);
+			}
+			else if(key.startsWith("sc:channel_"))
+			{
+				if(!Character.isDigit(value.charAt(0)))
+				{
+					value = value.substring(1);
+				}
+				try
+				{
+					ret.getGoesChannels().add(Integer.parseInt(value));
+				}
+				catch(NumberFormatException ex)
+				{
+					LOGGER.atDebug().setCause(ex).log("Unable to parse channel number: " + value);
+				}
+			}
+			else if(key.startsWith("rs.timeapplyto"))
+			{
+				value = value.toLowerCase();
+				if(value.startsWith("l"))
+				{
+					ret.setApplyTimeTo("Local Receive Time");
+				}
+				else if(value.startsWith("m"))
+				{
+					ret.setApplyTimeTo("Platform Xmit Time");
+				}
+				else if(value.startsWith("b"))
+				{
+					ret.setApplyTimeTo("Both");
+				}
+			}
+			else
+			{
+				ret.getProperties().setProperty(entry.getKey().toString(), value);
+			}
+		}
 	}
 
 	@POST
@@ -254,11 +362,11 @@ public final class RoutingResources extends OpenDcsResource
 					required = true,
 					content = @Content(mediaType = MediaType.APPLICATION_JSON,
 							schema = @Schema(implementation = ApiRouting.class),
-						examples = {
-							@ExampleObject(name = "Basic", value = ResourceExamples.RoutingExamples.BASIC),
-							@ExampleObject(name = "New", value = ResourceExamples.RoutingExamples.NEW),
-							@ExampleObject(name = "Update", value = ResourceExamples.RoutingExamples.UPDATE)
-					})
+							examples = {
+									@ExampleObject(name = "Basic", value = ResourceExamples.RoutingExamples.BASIC),
+									@ExampleObject(name = "New", value = ResourceExamples.RoutingExamples.NEW),
+									@ExampleObject(name = "Update", value = ResourceExamples.RoutingExamples.UPDATE)
+							})
 			),
 			responses = {
 					@ApiResponse(responseCode = "201", description = "Successfully created or updated the routing",
@@ -292,7 +400,7 @@ public final class RoutingResources extends OpenDcsResource
 		try
 		{
 			RoutingSpec spec = new RoutingSpec();
-			if (routing.getRoutingId() != null)
+			if(routing.getRoutingId() != null)
 			{
 				spec.setId(DbKey.createDbKey(routing.getRoutingId()));
 			}
@@ -303,7 +411,7 @@ public final class RoutingResources extends OpenDcsResource
 			spec.setName(routing.getName());
 			spec.usePerformanceMeasurements = false;
 			spec.lastModifyTime = new Date();
-			if (routing.getOutputTZ() != null)
+			if(routing.getOutputTZ() != null)
 			{
 				spec.outputTimeZoneAbbr = routing.getOutputTZ();
 				spec.outputTimeZone = TimeZone.getTimeZone(ZoneId.of(routing.getOutputTZ()));
@@ -315,19 +423,20 @@ public final class RoutingResources extends OpenDcsResource
 			spec.isProduction = routing.isProduction();
 			spec.consumerArg = routing.getDestinationArg();
 			spec.consumerType = routing.getDestinationType();
-			if (routing.getSince() != null)
+			if(routing.getSince() != null)
 			{
 				spec.sinceTime = routing.getSince();
 			}
-			if (routing.getUntil() != null)
+			if(routing.getUntil() != null)
 			{
 				spec.untilTime = routing.getUntil();
 			}
-			spec.setProperties(routing.getProperties());
-			if (routing.getDataSourceId() != null)
+
+			spec.setProperties(mapRoutingSpecProperties(routing));
+			if(routing.getDataSourceId() != null)
 			{
 				DataSource dataSource = new DataSource();
-				if (routing.getDataSourceId() != null)
+				if(routing.getDataSourceId() != null)
 				{
 					dataSource.setId(DbKey.createDbKey(routing.getDataSourceId()));
 				}
@@ -348,6 +457,84 @@ public final class RoutingResources extends OpenDcsResource
 
 	}
 
+	private static Properties mapRoutingSpecProperties(ApiRouting routing)
+	{
+		Properties props = new Properties();
+		ApiPropertiesUtil.copyProps(props, routing.getProperties());
+
+		if(routing.isAscendingTime())
+		{
+			props.setProperty("sc:ASCENDING_TIME", "true");
+		}
+		if(routing.isSettlingTimeDelay())
+		{
+			props.setProperty("sc:RT_SETTLE_DELAY", "true");
+		}
+		if(routing.isQualityNotifications())
+		{
+			props.setProperty("sc:DAPS_STATUS", "A");
+		}
+		if(routing.isParityCheck())
+		{
+			props.setProperty("sc:PARITY_ERROR",
+					routing.getParitySelection().equalsIgnoreCase("good") ? "R" : "A");
+		}
+		if(routing.isGoesSpacecraftCheck())
+		{
+			props.setProperty("sc:SPACECRAFT",
+					routing.getGoesSpacecraftSelection().toLowerCase().startsWith("e") ? "E" : "W");
+		}
+
+		int n = 0;
+		NumberFormat nf = NumberFormat.getIntegerInstance();
+		nf.setMinimumIntegerDigits(4);
+		nf.setGroupingUsed(false);
+		if(routing.isNetworkDCP())
+		{
+			props.setProperty("sc:SOURCE_" + nf.format(n++), "NETDCP");
+		}
+		if(routing.isGoesRandom())
+		{
+			props.setProperty("sc:SOURCE_" + nf.format(n++), "GOES_RANDOM");
+		}
+		if(routing.isGoesSelfTimed())
+		{
+			props.setProperty("sc:SOURCE_" + nf.format(n++), "GOES_SELFTIMED");
+		}
+		if(routing.isIridium())
+		{
+			props.setProperty("sc:SOURCE_" + nf.format(n++), "IRIDIUM");
+		}
+
+		n = 0;
+		for(String pid : routing.getPlatformIds())
+		{
+			props.setProperty("sc:DCP_ADDRESS_" + nf.format(n++), pid);
+		}
+
+		n = 0;
+		for(String pn : routing.getPlatformNames())
+		{
+			props.setProperty("sc:DCP_NAME_" + nf.format(n++), pn);
+		}
+
+		n = 0;
+		for(int ch : routing.getGoesChannels())
+		{
+			props.setProperty("sc:CHANNEL_" + nf.format(n++), "|" + ch);
+		}
+
+		String s = routing.getApplyTimeTo();
+		if(s != null && !s.isEmpty())
+		{
+			char c = s.charAt(0);
+			props.setProperty("rs.timeApplyTo",
+					c == 'L' ? "L" :
+							c == 'P' ? "M" : "B");
+		}
+		return props;
+	}
+
 	@DELETE
 	@Path("routing")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -365,10 +552,10 @@ public final class RoutingResources extends OpenDcsResource
 	)
 	public Response deleteRouting(@Parameter(description = "Routing Spec ID", required = true, example = "20",
 			schema = @Schema(implementation = Long.class))
-		@QueryParam("routingid") Long routingId)
+	@QueryParam("routingid") Long routingId)
 			throws WebAppException, DbException
 	{
-		if (routingId == null)
+		if(routingId == null)
 		{
 			throw new MissingParameterException("Missing required routingid parameter.");
 		}
@@ -427,7 +614,7 @@ public final class RoutingResources extends OpenDcsResource
 	public Response getScheduleRefs()
 			throws DbException
 	{
-		try (ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
+		try(ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
 		{
 			List<ScheduleEntry> entries = dai.listScheduleEntries(null);
 			return Response.status(HttpServletResponse.SC_OK)
@@ -442,9 +629,10 @@ public final class RoutingResources extends OpenDcsResource
 	static List<ApiScheduleEntryRef> entryMap(List<ScheduleEntry> entries)
 	{
 		List<ApiScheduleEntryRef> refs = new ArrayList<>();
-		entries.forEach(entry -> {
+		entries.forEach(entry ->
+		{
 			ApiScheduleEntryRef ref = new ApiScheduleEntryRef();
-			if (entry.getId() != null)
+			if(entry.getId() != null)
 			{
 				ref.setSchedEntryId(entry.getId().getValue());
 			}
@@ -483,18 +671,18 @@ public final class RoutingResources extends OpenDcsResource
 	)
 	public Response getSchedule(@Parameter(description = "Schedule ID", required = true,
 			schema = @Schema(implementation = Long.class, example = "21"))
-		@QueryParam("scheduleid") Long scheduleId)
+	@QueryParam("scheduleid") Long scheduleId)
 			throws WebAppException, DbException
 	{
-		if (scheduleId == null)
+		if(scheduleId == null)
 		{
 			throw new MissingParameterException("Missing required scheduleid parameter.");
 		}
 
-		try (ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
+		try(ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
 		{
 			ScheduleEntry entry = dai.readScheduleEntry(DbKey.createDbKey(scheduleId));
-			if (entry == null)
+			if(entry == null)
 			{
 				throw new DatabaseItemNotFoundException("ScheduleEntry with ID " + scheduleId + " not found");
 			}
@@ -526,11 +714,11 @@ public final class RoutingResources extends OpenDcsResource
 					required = true,
 					content = @Content(mediaType = MediaType.APPLICATION_JSON,
 							schema = @Schema(implementation = ApiScheduleEntry.class),
-					examples = {
-						@ExampleObject(name = "Basic", value = ResourceExamples.ScheduleExamples.BASIC),
-						@ExampleObject(name = "New", value = ResourceExamples.ScheduleExamples.NEW),
-						@ExampleObject(name = "Update", value = ResourceExamples.ScheduleExamples.UPDATE)
-					})
+							examples = {
+									@ExampleObject(name = "Basic", value = ResourceExamples.ScheduleExamples.BASIC),
+									@ExampleObject(name = "New", value = ResourceExamples.ScheduleExamples.NEW),
+									@ExampleObject(name = "Update", value = ResourceExamples.ScheduleExamples.UPDATE)
+							})
 			),
 			responses = {
 					@ApiResponse(responseCode = "201", description = "Successfully created or updated the schedule",
@@ -542,7 +730,7 @@ public final class RoutingResources extends OpenDcsResource
 	public Response postSchedule(ApiScheduleEntry schedule)
 			throws DbException
 	{
-		try (ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
+		try(ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
 		{
 			ScheduleEntry entry = map(schedule);
 			dai.writeScheduleEntry(entry);
@@ -550,7 +738,7 @@ public final class RoutingResources extends OpenDcsResource
 					.entity(map(entry))
 					.build();
 		}
-		catch (DbIoException e)
+		catch(DbIoException e)
 		{
 			throw new DbException("Unable to store schedule entry", e);
 		}
@@ -561,7 +749,7 @@ public final class RoutingResources extends OpenDcsResource
 		try
 		{
 			ScheduleEntry entry = new ScheduleEntry(schedule.getName());
-			if (schedule.getSchedEntryId() != null)
+			if(schedule.getSchedEntryId() != null)
 			{
 				entry.setId(DbKey.createDbKey(schedule.getSchedEntryId()));
 			}
@@ -571,12 +759,12 @@ public final class RoutingResources extends OpenDcsResource
 			}
 			entry.setStartTime(schedule.getStartTime());
 			entry.setTimezone(schedule.getTimeZone());
-			if (schedule.getAppId() != null)
+			if(schedule.getAppId() != null)
 			{
 				entry.setLoadingAppId(DbKey.createDbKey(schedule.getAppId()));
 				entry.setLoadingAppName(schedule.getAppName());
 			}
-			if (schedule.getRoutingSpecId() != null)
+			if(schedule.getRoutingSpecId() != null)
 			{
 				entry.setRoutingSpecId(DbKey.createDbKey(schedule.getRoutingSpecId()));
 				entry.setRoutingSpecName(schedule.getRoutingSpecName());
@@ -585,7 +773,7 @@ public final class RoutingResources extends OpenDcsResource
 			entry.setLastModified(schedule.getLastModified());
 			return entry;
 		}
-		catch (DatabaseException e)
+		catch(DatabaseException e)
 		{
 			throw new DbException("Unable to map schedule entry", e);
 		}
@@ -594,7 +782,7 @@ public final class RoutingResources extends OpenDcsResource
 	static ApiScheduleEntry map(ScheduleEntry entry)
 	{
 		ApiScheduleEntry schedule = new ApiScheduleEntry();
-		if (entry.getId() != null)
+		if(entry.getId() != null)
 		{
 			schedule.setSchedEntryId(entry.getId().getValue());
 		}
@@ -606,12 +794,12 @@ public final class RoutingResources extends OpenDcsResource
 		schedule.setStartTime(entry.getStartTime());
 		schedule.setTimeZone(entry.getTimezone());
 		schedule.setEnabled(entry.isEnabled());
-		if (entry.getLoadingAppId() != null)
+		if(entry.getLoadingAppId() != null)
 		{
 			schedule.setAppId(entry.getLoadingAppId().getValue());
 			schedule.setAppName(entry.getLoadingAppName());
 		}
-		if (entry.getRoutingSpecId() != null)
+		if(entry.getRoutingSpecId() != null)
 		{
 			schedule.setRoutingSpecId(entry.getRoutingSpecId().getValue());
 			schedule.setRoutingSpecName(entry.getRoutingSpecName());
@@ -638,21 +826,21 @@ public final class RoutingResources extends OpenDcsResource
 	)
 	public Response deleteSchedule(@Parameter(description = "Schedule ID", required = true,
 			schema = @Schema(implementation = Long.class, example = "21"))
-		@QueryParam("scheduleid") Long scheduleId)
+	@QueryParam("scheduleid") Long scheduleId)
 			throws WebAppException, DbException
 	{
-		if (scheduleId == null)
+		if(scheduleId == null)
 		{
 			throw new MissingParameterException("missing required scheduleid argument.");
 		}
-		try (ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
+		try(ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
 		{
 			ScheduleEntry entry = new ScheduleEntry(DbKey.createDbKey(scheduleId));
 			dai.deleteScheduleEntry(entry);
 			return Response.status(HttpServletResponse.SC_NO_CONTENT)
 					.entity("Schedule entry with ID " + scheduleId + " deleted").build();
 		}
-		catch (DbIoException e)
+		catch(DbIoException e)
 		{
 			throw new DbException(String.format("Unable to delete schedule entry by ID: %s", scheduleId), e);
 		}
@@ -666,7 +854,7 @@ public final class RoutingResources extends OpenDcsResource
 	@Tag(name = "OpenDCS Process Monitor and Control (Routing)", description = "The following methods allow a user to "
 			+ "view the status of all routing specs and to start/stop them.")
 	@Operation(
-			summary =  "This method allows a developer to implement a web version of the OpenDCS Routing Monitor screen.",
+			summary = "This method allows a developer to implement a web version of the OpenDCS Routing Monitor screen.",
 			description = "Sample URL:\n  \n    http://localhost:8080/odcsapi/routingstatus\n  \n"
 					+ "The returned data structure is shown below. Note the following:\n  \n"
 					+ "* All routing specs are contained in the list regardless of whether they have a "
@@ -732,7 +920,7 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(map(dbIo.readRoutingSpecStatus())).build();
 		}
-		catch (DatabaseException e)
+		catch(DatabaseException e)
 		{
 			throw new DbException("Unable to retrieve routing status", e);
 		}
@@ -745,12 +933,12 @@ public final class RoutingResources extends OpenDcsResource
 	static List<ApiRoutingStatus> map(List<RoutingStatus> entries)
 	{
 		List<ApiRoutingStatus> refs = new ArrayList<>();
-		for (RoutingStatus entry : entries)
+		for(RoutingStatus entry : entries)
 		{
 			ApiRoutingStatus status = new ApiRoutingStatus();
 			status.setEnabled(entry.isEnabled());
 			status.setName(entry.getName());
-			if (entry.getRoutingSpecId() != null)
+			if(entry.getRoutingSpecId() != null)
 			{
 				status.setRoutingSpecId(entry.getRoutingSpecId().getValue());
 			}
@@ -760,7 +948,7 @@ public final class RoutingResources extends OpenDcsResource
 			}
 			status.setLastActivity(entry.getLastActivityTime());
 			status.setRunInterval(entry.getRunInterval());
-			if (entry.getAppId() != null)
+			if(entry.getAppId() != null)
 			{
 				status.setAppId(entry.getAppId().getValue());
 			}
@@ -769,7 +957,7 @@ public final class RoutingResources extends OpenDcsResource
 			status.setLastMsgTime(entry.getLastMessageTime());
 			status.setNumErrors(entry.getNumDecodesErrors());
 			status.setNumMessages(entry.getNumMessages());
-			if (entry.getScheduleEntryId() != null)
+			if(entry.getScheduleEntryId() != null)
 			{
 				status.setScheduleEntryId(entry.getScheduleEntryId().getValue());
 			}
@@ -831,21 +1019,21 @@ public final class RoutingResources extends OpenDcsResource
 	)
 	public Response getRoutingExecStatus(@Parameter(description = "Schedule entry identifier", required = true,
 			schema = @Schema(implementation = Long.class), example = "38")
-		@QueryParam("scheduleentryid") Long scheduleEntryId)
+	@QueryParam("scheduleentryid") Long scheduleEntryId)
 			throws WebAppException, DbException
 	{
-		if (scheduleEntryId == null)
+		if(scheduleEntryId == null)
 		{
 			throw new MissingParameterException("Missing required scheduleentryid argument.");
 		}
 
-		try (ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
+		try(ScheduleEntryDAI dai = getLegacyDatabase().makeScheduleEntryDAO())
 		{
 			ScheduleEntry entry = new ScheduleEntry(DbKey.createDbKey(scheduleEntryId));
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(statusMap(dai.readScheduleStatus(entry))).build();
 		}
-		catch (DbIoException e)
+		catch(DbIoException e)
 		{
 			throw new DbException("Unable to retrieve routing exec status", e);
 		}
@@ -855,10 +1043,10 @@ public final class RoutingResources extends OpenDcsResource
 	{
 		// Note: Routing spec id is not mapped here!
 		ArrayList<ApiRoutingExecStatus> execStatuses = new ArrayList<>();
-		for (ScheduleEntryStatus status : statuses)
+		for(ScheduleEntryStatus status : statuses)
 		{
 			ApiRoutingExecStatus execStatus = new ApiRoutingExecStatus();
-			if (status.getScheduleEntryId() != null)
+			if(status.getScheduleEntryId() != null)
 			{
 				execStatus.setScheduleEntryId(status.getScheduleEntryId().getValue());
 			}
@@ -875,7 +1063,9 @@ public final class RoutingResources extends OpenDcsResource
 			execStatus.setNumPlatforms(status.getNumPlatforms());
 			execStatus.setNumMessages(status.getNumMessages());
 			execStatus.setLastActivity(status.getLastModified());
-			if (status.getId() != null)
+			execStatus.setLastInput(status.getLastSource());
+			execStatus.setLastOutput(status.getLastConsumer());
+			if(status.getId() != null)
 			{
 				execStatus.setRoutingExecId(status.getId().getValue());
 			}
@@ -940,41 +1130,41 @@ public final class RoutingResources extends OpenDcsResource
 			tags = {"OpenDCS Process Monitor and Control (Routing)"}
 	)
 	public Response getDacqEvents(@Parameter(description = "Only return events generated by a specific app.", example = "26",
-			schema = @Schema(implementation = Long.class))
-		@QueryParam("appid") Long appId,
+					schema = @Schema(implementation = Long.class))
+			@QueryParam("appid") Long appId,
 			@Parameter(description = "Only return events generated during a specific execution of a routing spec. " +
 					"(The 'GET routingexecstatus' method will return a list of executions, each with a unique ID.)",
 					example = "64", schema = @Schema(implementation = Long.class))
-		@QueryParam("routingexecid") Long routingExecId,
+			@QueryParam("routingexecid") Long routingExecId,
 			@Parameter(description = "Only return events generated during the processing of a specific platform.",
 					example = "45", schema = @Schema(implementation = Long.class))
-		@QueryParam("platformid") Long platformId,
+			@QueryParam("platformid") Long platformId,
 			@Parameter(description = "Either the word 'last' or one of the valid interval names returned in " +
 					"GET intervals (see section 3.4.1). Only events generated since the specified interval " +
 					"are returned. The word 'last' means only return events generated since the last " +
 					"'GET dacqevents' call within this session. It can be used to approximate a real-time stream.",
 					example = "15Minutes", schema = @Schema(implementation = String.class))
-		@QueryParam("backlog") String backlog)
+			@QueryParam("backlog") String backlog)
 			throws DbException, MissingParameterException
 	{
-		if (appId == null || routingExecId == null || platformId == null)
+		if(appId == null || routingExecId == null || platformId == null)
 		{
 			StringBuilder parameter = new StringBuilder();
-			if (appId == null)
+			if(appId == null)
 			{
 				parameter.append("appid");
 			}
-			if (routingExecId == null)
+			if(routingExecId == null)
 			{
-				if (parameter.length() > 0)
+				if(parameter.length() > 0)
 				{
 					parameter.append(", ");
 				}
 				parameter.append("routingexecid");
 			}
-			if (platformId == null)
+			if(platformId == null)
 			{
-				if (parameter.length() > 0)
+				if(parameter.length() > 0)
 				{
 					parameter.append(", ");
 				}
@@ -983,7 +1173,7 @@ public final class RoutingResources extends OpenDcsResource
 			throw new MissingParameterException(String.format("Missing required parameter(s): %s", parameter));
 		}
 
-		try (DacqEventDAI dai = getLegacyTimeseriesDB().makeDacqEventDAO())
+		try(DacqEventDAI dai = getLegacyTimeseriesDB().makeDacqEventDAO())
 		{
 			HttpSession session = request.getSession(true);
 			ArrayList<DacqEvent> events = new ArrayList<>();
@@ -996,7 +1186,7 @@ public final class RoutingResources extends OpenDcsResource
 			return Response.status(HttpServletResponse.SC_OK)
 					.entity(events.stream().map(RoutingResources::map).collect(Collectors.toList())).build();
 		}
-		catch (DbIoException e)
+		catch(DbIoException e)
 		{
 			throw new DbException("Unable to retrieve dacq events", e);
 		}
@@ -1009,31 +1199,31 @@ public final class RoutingResources extends OpenDcsResource
 		boolean backLogValid = false;
 		Long dacqEventId = null;
 		Long timeInMillis = null;
-		if (backlog != null && !backlog.trim().isEmpty())
+		if(backlog != null && !backlog.trim().isEmpty())
 		{
 			backLogValid = true;
-			if (backlog.equalsIgnoreCase("last"))
+			if(backlog.equalsIgnoreCase("last"))
 			{
-				if (lastDacqEventId != null)
+				if(lastDacqEventId != null)
 				{
 					dacqEventId = (Long) lastDacqEventId;
 				}
 			}
 			else
 			{
-				try (IntervalDAI intDai = getLegacyTimeseriesDB().makeIntervalDAO())
+				try(IntervalDAI intDai = getLegacyTimeseriesDB().makeIntervalDAO())
 				{
 					intDai.loadAllIntervals();
 					String[] intervalCodes = intDai.getValidIntervalCodes();
-					for (String intervalCode : intervalCodes)
+					for(String intervalCode : intervalCodes)
 					{
 						Interval intV = IntervalCodes.getInterval(intervalCode);
-						if (intV != null && backlog.equalsIgnoreCase(intV.getName()))
+						if(intV != null && backlog.equalsIgnoreCase(intV.getName()))
 						{
 							Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 							cal.setTimeInMillis(System.currentTimeMillis());
 							int calConstant = intV.getCalConstant();
-							if (calConstant != -1)
+							if(calConstant != -1)
 							{
 								cal.add(calConstant, -intV.getCalMultiplier());
 								timeInMillis = cal.getTimeInMillis();
@@ -1059,7 +1249,7 @@ public final class RoutingResources extends OpenDcsResource
 		apiEvent.setAppId(event.getAppId().getValue());
 		apiEvent.setPlatformId(event.getPlatformId().getValue());
 		apiEvent.setRoutingExecId(event.getScheduleEntryStatusId().getValue());
-		apiEvent.setPriority(Logger.priorityName[event.getEventPriority()]);
+		apiEvent.setPriority(ilex.util.Logger.priorityName[event.getEventPriority()]);
 		apiEvent.setEventTime(event.getEventTime());
 		apiEvent.setEventText(event.getEventText());
 		apiEvent.setSubsystem(event.getSubsystem());

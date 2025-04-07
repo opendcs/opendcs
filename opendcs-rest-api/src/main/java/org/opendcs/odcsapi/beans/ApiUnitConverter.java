@@ -156,6 +156,4 @@ public final class ApiUnitConverter
 	{
 		this.ucId = ucId;
 	}
-
-
 }

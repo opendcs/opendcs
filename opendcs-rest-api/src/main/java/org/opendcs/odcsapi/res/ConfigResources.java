@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Vector;
 import javax.annotation.security.RolesAllowed;
 
+import decodes.db.FormatStatement;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -69,6 +70,7 @@ import org.opendcs.odcsapi.beans.ApiConfigScript;
 import org.opendcs.odcsapi.beans.ApiConfigScriptSensor;
 import org.opendcs.odcsapi.beans.ApiConfigSensor;
 import org.opendcs.odcsapi.beans.ApiPlatformConfig;
+import org.opendcs.odcsapi.beans.ApiScriptFormatStatement;
 import org.opendcs.odcsapi.beans.ApiUnitConverter;
 import org.opendcs.odcsapi.dao.DbException;
 import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
@@ -229,6 +231,7 @@ public final class ConfigResources extends OpenDcsResource
 			apiSensor.setAbsoluteMin(sensor.absoluteMin);
 			apiSensor.setRecordingInterval(sensor.recordingInterval);
 			apiSensor.setTimeOfFirstSample(sensor.timeOfFirstSample);
+			apiSensor.setUsgsStatCode(sensor.getUsgsStatCode());
 			apiSensor.setRecordingMode(ApiConfigSensor.RecordingMode.fromChar(sensor.recordingMode));
 			Map<String, String> dataTypes = new HashMap<>();
 			sensor.getDataTypes()
@@ -261,10 +264,38 @@ public final class ConfigResources extends OpenDcsResource
 				scriptSensors.add(apiSensor);
 			});
 			apiScript.setScriptSensors(scriptSensors);
+			apiScript.setFormatStatements(map(script.getFormatStatements()));
+			apiScript.setHeaderType(script.getHeaderType());
+			switch(String.valueOf(script.getDataOrder()).toLowerCase())
+			{
+				case "d":
+					apiScript.setDataOrder(ApiConfigScript.DataOrder.DESCENDING);
+					break;
+				case "a":
+					apiScript.setDataOrder(ApiConfigScript.DataOrder.ASCENDING);
+					break;
+				default:
+					apiScript.setDataOrder(ApiConfigScript.DataOrder.UNDEFINED);
+					break;
+			}
 			scripts.add(apiScript);
 		});
 		apiConfig.setScripts(scripts);
 		return apiConfig;
+	}
+
+	static List<ApiScriptFormatStatement> map(Vector<FormatStatement> formatStatements)
+	{
+		List<ApiScriptFormatStatement> apiFormatStatements = new ArrayList<>();
+		for (FormatStatement fs : formatStatements)
+		{
+			ApiScriptFormatStatement apiFs = new ApiScriptFormatStatement();
+			apiFs.setFormat(fs.format);
+			apiFs.setLabel(fs.label);
+			apiFs.setSequenceNum(fs.sequenceNum);
+			apiFormatStatements.add(apiFs);
+		}
+		return apiFormatStatements;
 	}
 
 	@POST
@@ -348,6 +379,7 @@ public final class ConfigResources extends OpenDcsResource
 				configSensor.recordingInterval = sensor.getRecordingInterval();
 				configSensor.timeOfFirstSample = sensor.getTimeOfFirstSample();
 				configSensor.recordingMode = sensor.getRecordingMode().getCode();
+				configSensor.setUsgsStatCode(sensor.getUsgsStatCode());
 				for (Map.Entry<String, String> entry : sensor.getDataTypes().entrySet())
 				{
 					DataType dt = new DataType(entry.getKey(), entry.getValue());

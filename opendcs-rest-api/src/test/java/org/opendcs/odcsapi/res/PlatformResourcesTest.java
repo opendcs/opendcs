@@ -222,6 +222,20 @@ final class PlatformResourcesTest
 		scripts.add(script);
 		config.decodesScripts = scripts;
 		plat1.setConfig(config);
+		Vector<TransportMedium> tm = new Vector<>();
+		TransportMedium transportMedium = new TransportMedium(plat1);
+		transportMedium.setBaud(9600);
+		transportMedium.setMediumId("1234567890");
+		transportMedium.setMediumType("Sutron Logger");
+		transportMedium.setLoggerType("Logger");
+		transportMedium.setTimeAdjustment(12);
+		transportMedium.setTimeZone("UTC");
+		transportMedium.setStopBits(1);
+		transportMedium.setDataBits(8);
+		transportMedium.setParity('N');
+		transportMedium.setDoLogin(true);
+		tm.add(transportMedium);
+		plat1.transportMedia = tm;
 
 		ApiPlatform plat = map(plat1);
 		assertNotNull(plat);
@@ -322,6 +336,8 @@ final class PlatformResourcesTest
 			assertEquals(transportMedium.getUsername(), apiTransportMedium.getUsername());
 			assertEquals(transportMedium.getPassword(), apiTransportMedium.getPassword());
 			assertEquals(transportMedium.isDoLogin(), apiTransportMedium.getDoLogin());
+			assertEquals(transportMedium.getTimeAdjustment(), apiTransportMedium.getTimeAdjustment());
+			assertEquals(transportMedium.getLoggerType(), apiTransportMedium.getLoggerType());
 
 			i++;
 		}

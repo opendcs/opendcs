@@ -297,6 +297,8 @@ public final class PlatformResources extends OpenDcsResource
 			apiTm.setScriptName(tm.scriptName);
 			apiTm.setTransportInterval(tm.transmitInterval);
 			apiTm.setTransportWindow(tm.transmitWindow);
+			apiTm.setTimeAdjustment(tm.getTimeAdjustment());
+			apiTm.setLoggerType(tm.getLoggerType());
 
 			transportMedia.add(apiTm);
 		}
