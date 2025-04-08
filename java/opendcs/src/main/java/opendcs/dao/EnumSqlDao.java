@@ -259,7 +259,15 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 					if (dbEnum != null)
 						rs2EnumValue(rs, dbEnum);
 					top.addEnum(dbEnum);
-				});				
+				});
+				for(DbObjectCache<DbEnum>.CacheIterator it = cache.iterator(); it.hasNext(); )
+				{
+					final DbEnum dbEnum = it.next();
+					if (top.getEnum(dbEnum.enumName) == null)
+					{
+						top.addEnum(dbEnum);
+					}
+				}
 			}
 		}
 		catch (SQLException ex)
