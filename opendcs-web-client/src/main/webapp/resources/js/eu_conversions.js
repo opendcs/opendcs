@@ -291,7 +291,7 @@ function deleteEuConversion(event, clickedLink)
 
         show_waiting_modal();
         $.ajax({
-            url: `${window.API_URL}/euconv&euconvid=${ucId}`,
+            url: `${window.API_URL}/euconv?euconvid=${ucId}`,
             type: "DELETE",
             headers: {     
                 "Content-Type": "application/json"   
