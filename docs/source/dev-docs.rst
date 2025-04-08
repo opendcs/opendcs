@@ -597,7 +597,7 @@ To add new tests for the Decoding language and functions, developers need to cre
          5, Precip, in, none
          6, Zero, raw, none
 
-By adding these files, developers can create comprehensive tests to ensure the correctness and reliability of new or modified Decodes Functions.
+By adding these files, developers can create tests to ensure the correctness and reliability of the Decodes language including new or modified Decodes Functions.
 
 Algorithms
 ~~~~~~~~~~
