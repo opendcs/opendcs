@@ -99,7 +99,7 @@ public final class ComputationResources extends OpenDcsResource
 					description = "Whether to filter only enabled computations") @QueryParam("enabled") Boolean enabled,
 			@Parameter(schema = @Schema(implementation = String.class),
 					description = "Interval code to filter on") @QueryParam("interval") String interval)
-			throws DbException, WebAppException
+			throws DbException
 	{
 		try (ComputationDAI dai = getLegacyTimeseriesDB().makeComputationDAO())
 		{
@@ -125,10 +125,6 @@ public final class ComputationResources extends OpenDcsResource
 				compFilter.setIntervalCode(interval);
 			}
 			List<ApiComputationRef> computationRefs = map(dai.compEditList(compFilter));
-			if (computationRefs.isEmpty())
-			{
-				throw new DatabaseItemNotFoundException("No computations found matching the filter criteria");
-			}
 			return Response.status(HttpServletResponse.SC_OK).entity(computationRefs).build();
 		}
 		catch(DbIoException e)
