@@ -651,7 +651,7 @@ Within this directory, you can create subdirectories named `Test1`, `Test2`, etc
     - Purpose: This file defines the setup for the computation and the tests that need to be run. It specifies the algorithm configuration and links the input, output, and expected output time series.  
     - Note: You can create the `comp.xml` file using the `compexport` command.
 
-By organizing the test resources in this structure, developers can ensure that the algorithm tests are comprehensive and easy to manage.
+By organizing the algorithm test resources in this structure, developers can easily manage algorithm tests.
 
 
 Extension and other Junit information
