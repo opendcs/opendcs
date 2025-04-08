@@ -536,7 +536,7 @@ Decodes Functions
 
 Adding Tests for Decodes Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To add new tests for Decodes Functions, developers need to create four files in the `/git/opendcs/java/opendcs/src/test/resources/decodes/db` directory:
+To add new tests for the Decoding language and functions, developers need to create four files in the `./opendcs/java/opendcs/src/test/resources/decodes/db` directory:
 
 1. **`.assertions` file**:  
     - Purpose: Defines the expected output or results for the test.  
