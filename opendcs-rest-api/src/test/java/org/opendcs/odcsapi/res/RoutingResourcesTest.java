@@ -261,7 +261,7 @@ final class RoutingResourcesTest
 		apiScheduleEntry.setAppId(5678L);
 		apiScheduleEntry.setRoutingSpecId(9012L);
 		apiScheduleEntry.setStartTime(Date.from(Instant.parse("2021-01-01T00:00:00Z")));
-		apiScheduleEntry.setEnabled(true);
+		apiScheduleEntry.setEnabled(false);
 		apiScheduleEntry.setTimeZone("UTC");
 		apiScheduleEntry.setRunInterval("1h");
 		ScheduleEntry scheduleEntry = map(apiScheduleEntry);

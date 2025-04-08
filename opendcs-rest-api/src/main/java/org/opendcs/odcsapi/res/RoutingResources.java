@@ -771,6 +771,7 @@ public final class RoutingResources extends OpenDcsResource
 			}
 			entry.setRunInterval(schedule.getRunInterval());
 			entry.setLastModified(schedule.getLastModified());
+			entry.setEnabled(schedule.isEnabled());
 			return entry;
 		}
 		catch(DatabaseException e)
