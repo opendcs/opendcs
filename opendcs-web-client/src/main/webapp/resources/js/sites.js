@@ -134,44 +134,43 @@ function updateSitesTable(responseJson)
     sitesTable.clear();
     sitesTable.draw(false);
 
-    var selectedSiteNameType = $("#displayedTypeSelect").val();
+    var selectedSiteNameType = $("#displayedTypeSelect").val().toLowerCase();
     $("#siteNameColumnHeader").text("Site Name (" + selectedSiteNameType + ")");
     for (var x = 0; x < responseJson.length; x++)
     {
         var curSite = responseJson[x];
-        var siteNameTypes = Object.keys(curSite.sitenames);
-
-        var displayedSiteName = "";
-        var displayedSiteNames = "";
-        for (var key in curSite.sitenames)
-        {
-            var curSiteName = curSite.sitenames[key];
-            displayedSiteNames += key + " - " + curSiteName + "<br>";
-            if (key.toLowerCase() == selectedSiteNameType)
-            {
-                displayedSiteName = curSiteName;
+        var siteNameTypes = Object.keys(curSite.sitenames).map(key => key.toLowerCase());
+        if (siteNameTypes.indexOf(selectedSiteNameType) !== -1) {
+            var displayedSiteName = "";
+            var displayedSiteNames = "";
+            for (var key in curSite.sitenames) {
+                var curSiteName = curSite.sitenames[key];
+                displayedSiteNames += key + " - " + curSiteName + "<br>";
+                if (key.toLowerCase() == selectedSiteNameType) {
+                    displayedSiteName = curSiteName;
+                }
             }
-        }
 
-        var params = {
+            var params = {
                 "objectType": "site",
                 "objectTypeDisplayName": "Site",
                 "objectIdIndex": 0,
                 "objectNameIndex": 1,
                 "urlIdName": "siteid"
-        };
+            };
 
-        var actions = [{
-            "type": "delete",
-            "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
+            var actions = [{
+                "type": "delete",
+                "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`
 
-        }];
-        var newRow = [curSite.siteId,
-            displayedSiteName,
-            displayedSiteNames,
-            curSite.description != null ? curSite.description : '',
-                    createActionDropdown(actions)];
-        sitesTable.row.add(newRow);
+            }];
+            var newRow = [curSite.siteId,
+                displayedSiteName,
+                displayedSiteNames,
+                curSite.description != null ? curSite.description : '',
+                createActionDropdown(actions)];
+            sitesTable.row.add(newRow);
+        }
     }
     sitesTable.draw(false);
 }

@@ -362,7 +362,7 @@ function addElementToDataTableHeader(datatableId, element)
 {
     var targetSelector = "#" + datatableId + "_wrapper .dataTables_filter";
     element.appendTo(targetSelector);
-    $(targetSelector).addClass("w-60");
+    $(targetSelector).addClass("w-50");
     $("#" + datatableId + "_wrapper" + " .dataTables_filter label").addClass("float-left");
 }
 
