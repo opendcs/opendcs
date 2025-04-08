@@ -524,10 +524,10 @@ At the Class and method level the following annotations are available.
 |                                            |case the sets will be merged    |
 +--------------------------------------------+--------------------------------+
 
-Adding Subtests
+Creating additional tests
 ---------------
 
-This module provides functionality for decoding data and implementing algorithms.
+The sections below describe how to add new decoding and algorithm tests by adding files to specific directories.
 
 Decodes Functions
 ~~~~~~~~~~~~~~~~~
