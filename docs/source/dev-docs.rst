@@ -534,7 +534,7 @@ Decodes Functions
 - **Purpose**: Functions in this section are responsible for decoding input data into a usable format.
 - **Usage**: These functions are typically used to parse encoded data or transform it into a structured representation.
 
-Adding Tests for Decodes Functions
+Adding Decoding Tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 To add new tests for the Decoding language and functions, developers need to create four files in the `./opendcs/java/opendcs/src/test/resources/decodes/db` directory:
 
