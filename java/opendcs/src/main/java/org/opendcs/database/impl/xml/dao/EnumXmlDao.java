@@ -265,7 +265,7 @@ public class EnumXmlDao implements EnumDAI
             File xmlFile = new File(conn.getDirectory(), "enum/EnumList.xml");
             try (OutputStream outStream = new FileOutputStream(xmlFile))
             {
-                XMLStreamWriter writer = f.createXMLStreamWriter(outStream);
+                XMLStreamWriter writer = f.createXMLStreamWriter(outStream,"UTF-8");
                 writer.writeStartDocument("UTF-8", "1.0");
                 writer.writeStartElement("EnumList");
                     for (DbEnum curDbEnum: existing)
@@ -313,6 +313,7 @@ public class EnumXmlDao implements EnumDAI
         }
         catch (IOException | XMLStreamException | SQLException ex)
         {
+            ex.printStackTrace();
             throw new OpenDcsDataException("Unable to write enum to XML database.",ex);
         }
     }
