@@ -696,7 +696,7 @@ document.addEventListener('DOMContentLoaded', function() {
             "class": className
         };
         $.ajax({
-            url: `${window.API_URL}/propspect`,
+            url: `${window.API_URL}/propspecs`,
             type: "GET",
             data: params,
             success: function(response) {
