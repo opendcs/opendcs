@@ -563,7 +563,6 @@ To add new tests for the Decoding language and functions, developers need to cre
 
 2. **`.decodescript` file**:  
     - Purpose: Contains the Decodes script that defines how the input data should be processed.  
-    - Usage: Write the script to test the specific functionality of the Decodes Function.  
     - Example:  
       .. code-block:: text
 
