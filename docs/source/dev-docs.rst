@@ -529,7 +529,7 @@ Creating additional tests
 
 The sections below describe how to add new decoding and algorithm tests by adding files to specific directories.
 
-Decodes Functions
+Testing the Decodes Language
 ~~~~~~~~~~~~~~~~~
 - **Purpose**: Functions in this section are responsible for decoding input data into a usable format.
 - **Usage**: These functions are typically used to parse encoded data or transform it into a structured representation.
