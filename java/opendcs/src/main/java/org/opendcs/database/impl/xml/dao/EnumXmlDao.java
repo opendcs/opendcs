@@ -313,7 +313,6 @@ public class EnumXmlDao implements EnumDAI
         }
         catch (IOException | XMLStreamException | SQLException ex)
         {
-            ex.printStackTrace();
             throw new OpenDcsDataException("Unable to write enum to XML database.",ex);
         }
     }
