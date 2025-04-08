@@ -9,6 +9,8 @@ import java.util.Properties;
 import java.util.Vector;
 
 import decodes.db.ConfigSensor;
+import decodes.db.DataType;
+import decodes.db.DataTypeSet;
 import decodes.db.DecodesScript;
 import decodes.db.FormatStatement;
 import decodes.db.PlatformConfig;
@@ -137,7 +139,11 @@ final class ConfigResourcesTest
 		configSensors.add(configSensor);
 		apiConfig.setConfigSensors(configSensors);
 
-		PlatformConfig config = map(apiConfig);
+		DataTypeSet dataTypeSet = new DataTypeSet();
+		DataType dataType = new DataType("Test data type", "Test data type description");
+		dataType.setId(DbKey.createDbKey(1234L));
+		dataTypeSet.add(dataType);
+		PlatformConfig config = map(apiConfig, dataTypeSet);
 
 		assertNotNull(config);
 		assertEquals(apiConfig.getNumPlatforms(), config.numPlatformsUsing);
@@ -168,6 +174,7 @@ final class ConfigResourcesTest
 			{
 				assertEquals(sensorConfig.getDataType().getStandard(), entry.getKey());
 				assertEquals(sensorConfig.getDataType().getCode(), entry.getValue());
+				assertEquals(dataType.getId(), sensorConfig.getDataType().getId());
 			}
 			assertEquals(apiConfig.getConfigSensors().get(0).getProperties(), sensorConfig.getProperties());
 		}

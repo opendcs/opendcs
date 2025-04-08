@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Vector;
 import javax.annotation.security.RolesAllowed;
 
+import decodes.db.DataTypeSet;
 import decodes.db.FormatStatement;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -335,7 +336,9 @@ public final class ConfigResources extends OpenDcsResource
 		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{
-			PlatformConfig pc = map(config);
+			DataTypeSet dataTypeSet = new DataTypeSet();
+			dbIo.readDataTypeSet(dataTypeSet);
+			PlatformConfig pc = map(config, dataTypeSet);
 			dbIo.writeConfig(pc);
 			return Response.status(HttpServletResponse.SC_CREATED)
 					.entity(map(pc))
@@ -351,7 +354,7 @@ public final class ConfigResources extends OpenDcsResource
 		}
 	}
 
-	static PlatformConfig map(ApiPlatformConfig config) throws DbException
+	static PlatformConfig map(ApiPlatformConfig config, DataTypeSet dataTypeSet) throws DbException
 	{
 		try
 		{
@@ -382,7 +385,11 @@ public final class ConfigResources extends OpenDcsResource
 				configSensor.setUsgsStatCode(sensor.getUsgsStatCode());
 				for (Map.Entry<String, String> entry : sensor.getDataTypes().entrySet())
 				{
-					DataType dt = new DataType(entry.getKey(), entry.getValue());
+					DataType dt = dataTypeSet.get(entry.getKey(), entry.getValue());
+					if(dt == null )
+					{
+						dt = new DataType(entry.getKey(), entry.getValue());
+					}
 					configSensor.addDataType(dt);
 				}
 				for (String name : sensor.getProperties().stringPropertyNames())
