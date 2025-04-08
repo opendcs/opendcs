@@ -537,8 +537,7 @@ Adding Decoding Tests
 To add new tests for the Decoding language and functions, developers need to create four files in the `./opendcs/java/opendcs/src/test/resources/decodes/db` directory:
 
 1. **`.assertions` file**:  
-    - Purpose: Defines the expected output or results for the test.  
-    - Usage: Specify the expected values for the decoded data to validate the function's correctness.  
+    - Purpose: Defines the expected output for the test to validate the Decoding.
     - Example:  
       .. code-block:: csv
 
