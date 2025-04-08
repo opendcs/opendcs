@@ -570,7 +570,6 @@ To add new tests for the Decoding language and functions, developers need to cre
 
 3. **`.input` file**:  
     - Purpose: Provides the raw input data to be decoded.  
-    - Usage: Include the encoded data that the Decodes Function will process.  
     - Example:  
       .. code-block:: text
 
