@@ -242,9 +242,17 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		DatabaseIO dbIo = getLegacyDatabase();
 		try
 		{
-			EngineeringUnit unit = new EngineeringUnit(fromabbr, eu.getName(), eu.getFamily(), eu.getMeasures());
+			EngineeringUnit unit = new EngineeringUnit(eu.getAbbr(), eu.getName(), eu.getFamily(), eu.getMeasures());
 			EngineeringUnitList euList = new EngineeringUnitList();
 			dbIo.readEngineeringUnitList(euList);
+			if(fromabbr != null && !fromabbr.isEmpty())
+			{
+				EngineeringUnit engineeringUnit = euList.get(fromabbr);
+				if(engineeringUnit != null)
+				{
+					euList.remove(engineeringUnit);
+				}
+			}
 			euList.add(unit);
 			dbIo.writeEngineeringUnitList(euList);
 			return Response.status(HttpServletResponse.SC_CREATED)

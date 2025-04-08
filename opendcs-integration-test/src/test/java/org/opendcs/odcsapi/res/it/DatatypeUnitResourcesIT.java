@@ -376,7 +376,6 @@ final class DatatypeUnitResourcesIT extends BaseIT
 			.header("Authorization", authHeader)
 			.filter(sessionFilter)
 			.body(euJson)
-			.queryParam("fromabbr", fromAbbr)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -422,13 +421,34 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		}
 		assertTrue(found);
 
+		engineeringUnit.setAbbr(fromAbbr + "2");
+		euJson = mapper.writeValueAsString(engineeringUnit);
+		// Rename the EU
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.filter(sessionFilter)
+			.queryParam("abbr", euJson)
+			.body(euJson)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("eu")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED))
+		;
+
 		// Delete the EU
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
 			.filter(sessionFilter)
-			.queryParam("abbr", fromAbbr)
+			.queryParam("abbr", fromAbbr + "2")
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -440,7 +460,7 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		;
 
 		// Retrieve the EU and assert it is not found
-		given()
+		List<Map<String, Object>> units = given()
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(MediaType.APPLICATION_JSON)
 			.header("Authorization", authHeader)
@@ -448,12 +468,16 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.get("eulist")
+			.get("unitlist")
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
-		;
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.extract()
+			.response()
+			.jsonPath()
+			.getList("");
+		assertFalse(units.stream().anyMatch(u -> u.get("abbr").equals(fromAbbr + "2")));
 	}
 
 	@TestTemplate
