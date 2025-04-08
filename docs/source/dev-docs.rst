@@ -585,7 +585,6 @@ To add new tests for the Decoding language and functions, developers need to cre
 
 4. **`.sensors` file**:  
     - Purpose: Describes the sensors and their configurations used in the decoding process.  
-    - Usage: Define the sensor metadata required for the test.  
     - Example:  
       .. code-block:: csv
 
