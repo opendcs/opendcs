@@ -387,4 +387,27 @@ public class Database extends DatabaseObject
 		}
 	}
 
+	/**
+	 * Prints out a summary count of objects in the database.
+	 */
+	public static void printSummaryToConsole(Database db)
+	{
+	  System.out.println("enumList size: " + db.enumList.size());
+	  System.out.println("dataTypeSet size: " + db.dataTypeSet.values().size());
+	  System.out.println("engineeringUnitList size: " + db.engineeringUnitList.size());
+	  System.out.println("siteList size: " + db.siteList.size());
+	  System.out.println("platformConfigList size: " + db.platformConfigList.size());
+	  System.out.println("equipmentModelList size: " + db.equipmentModelList.size());
+	  System.out.println("routingSpecList size: " + db.routingSpecList.size());
+	  System.out.println("dataSourceList size: " + db.dataSourceList.size());
+	  System.out.println("networkListList size: " + db.networkListList.size());
+	  
+	  System.out.println("presentationGroupList size: " + db.presentationGroupList.size());
+	  System.out.println("platformList size: " + db.platformList.size());
+	  for(NetworkList nl : db.networkListList.getList())
+	  {
+		System.out.print("NetworkList: "+nl.name +" size: "+nl.size());
+	  }
+	} 
+
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<NetworkList Name="MVR-RIVERGAGES-DAS">
+  <TransportMediumType>goes</TransportMediumType>
+  <SiteNameTypePreference>nwshb5</SiteNameTypePreference>
+  <NetworkListEntry TransportId="DD31104C">
+    <PlatformName>WDMI4</PlatformName>
+    <Description>Raccoon River near West Des Moines, IA (USGS)</Description>
+  </NetworkListEntry>
+  <NetworkListEntry TransportId="CE45A8E4">
+    <PlatformName>LUSM7</PlatformName>
+    <Description>Mississippi River at Louisiana, MO (MVS)</Description>
+  </NetworkListEntry>
+</NetworkList>
