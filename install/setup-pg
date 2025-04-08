@@ -1,0 +1,35 @@
+
+# goal: setup OpenDCS-Postgres database with OpenDCS schema installed.
+
+# required: opendcs is compiled with :install:install
+
+docker run --rm --name pg-db -e POSTGRES_PASSWORD=test -d -p 5432:5432 postgres:15.3
+# Wait for PostgreSQL to be ready
+until docker exec pg-db psql -U postgres -c "SELECT 1;" > /dev/null 2>&1; do
+  echo "Waiting for PostgreSQL to start..."
+  sleep 2
+done
+
+DATABASE_OWNER_USERNAME=test_admin
+DATABASE_OWNER_PASSWORD=test
+DATABASE_NAME=opendcs
+export DATABASE_USERNAME=hydromet
+export DATABASE_PASSWORD=hydromet
+docker exec pg-db psql -U postgres -c "CREATE USER ${DATABASE_OWNER_USERNAME} WITH PASSWORD '${DATABASE_OWNER_PASSWORD}';"
+docker exec pg-db psql -U postgres -c "ALTER ROLE ${DATABASE_OWNER_USERNAME} SUPERUSER;"
+docker exec pg-db psql -U postgres -c "CREATE DATABASE ${DATABASE_NAME};"
+docker exec pg-db psql -U postgres -c "ALTER DATABASE ${DATABASE_NAME} OWNER TO ${DATABASE_OWNER_USERNAME};"
+
+
+cp ./pg-test.profile ${HOME}/.opendcs/user.properties
+script -c "./build/install/opendcs/bin/manageDatabase -I OpenDCS-Postgres -P ./pg-test.profile" <<EOF
+${DATABASE_OWNER_USERNAME}
+${DATABASE_OWNER_PASSWORD}
+1
+1
+${DATABASE_USERNAME}
+${DATABASE_PASSWORD}
+${DATABASE_PASSWORD}
+EOF
+
+
