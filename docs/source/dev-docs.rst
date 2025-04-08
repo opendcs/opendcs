@@ -601,7 +601,7 @@ By adding these files, developers can create tests to ensure the correctness and
 
 Algorithms
 ~~~~~~~~~~
-- **Purpose**: This section contains algorithmic implementations for solving specific problems or performing computations.
+- **Purpose**: This section describes how to test algorithmic implementations for solving specific problems or performing computations.
 
 Adding Tests for Algorithms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
