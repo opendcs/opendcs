@@ -27,6 +27,8 @@ import org.opendcs.fixtures.spi.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import decodes.db.Database;
+import decodes.db.NetworkList;
 import decodes.sql.DbKey;
 import decodes.sql.KeyGenerator;
 import decodes.tsdb.ComputationApp;
@@ -46,8 +48,9 @@ public class ImportXmlNetworkListTestIT extends AppTestBase
 {
     private static final Logger log = LoggerFactory.getLogger(ImportXmlNetworkListTestIT.class);
 
+
     @ConfiguredField
-    protected TimeSeriesDb db;
+    private Database decodesDatabase;
 
 
     @BeforeAll
@@ -61,18 +64,39 @@ public class ImportXmlNetworkListTestIT extends AppTestBase
         String xmlFileName = getResource(config, "shared/test-sites.xml");
 
 
-        //Programs.DbImport(logFile, propertiesFile, environment, exit, properties,xmlFileName);
+        Programs.DbImport(logFile, propertiesFile, environment, exit, properties,xmlFileName);
 
 
     }
 
     @Test
-    public void importNetworkList()
+    public void importNetworkList() throws Throwable
     {
+
+        Configuration config = this.configuration;
+        File propertiesFile = config.getPropertiesFile();
+
+        File logFile = new File(config.getUserDir(),"ImportXmlTestID.log");
+        String xmlFileName = getResource(config, "shared/MVR-NETLIST-SHORT.xml");
+
+        // gradlew clean :testing:opendcs-tests:test -Pno.docs=true  -Popendcs.test.engine=OpenDCS-XML  --tests org.opendcs.regression_tests.ImportXmlNetworkListTestIT --debug-jvm
+
+        Programs.DbImport(logFile, propertiesFile, environment, exit, properties,xmlFileName);
+        Database db = configuration.getDecodesDatabase();
+        System.out.println("networkListList size: " + db.networkListList.size());
+	  
+	  for(NetworkList nl : db.networkListList.getList())
+	  {
+		System.out.print("NetworkList: "+nl.name +" size: "+nl.size());
+	  }
+
+        NetworkList nl = db.networkListList.find("MVR-RIVERGAGES-DAS");
+
+        assertEquals(2,nl.size(),"MVR-RIVERGAGES-DAS network list should have two items");
 
        // Programs.DbImport(null, null, environment, exit, properties, null);
         // TODO:  import another xml file with overlapping sites/platforms with different officeID
-
+        
 
     }
 
