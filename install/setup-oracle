@@ -1,0 +1,30 @@
+
+# goal: setup Cwms-Oracle database with OpenDCS schema installed.
+
+#docker container stop mydb
+#docker container rm mydb
+
+ 
+docker run  --rm -d -p 1521:1521 --name mydb \
+        -e ORACLE_PASSWORD="test"  \
+        -e CWMS_PASSWORD="test" \
+        -e OFFICE_ID="HQ" \
+        -e OFFICE_EROC="s0" \
+        registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev
+
+
+# sh-4.4$ sqlplus CWMS_20/test@localhost:1521/FREEPDB1?oracle.net.disableOob=true
+
+exit -1
+
+cat /dcs_user_dir/user.properties
+
+script -c "manageDatabase -I OpenDCS-Postgres -P /dcs_user_dir/user.properties" <<EOF
+${DATABASE_OWNER_USERNAME}
+${DATABASE_OWNER_PASSWORD}
+1
+1
+${DATABASE_USERNAME}
+${DATABASE_PASSWORD}
+${DATABASE_PASSWORD}
+EOF
