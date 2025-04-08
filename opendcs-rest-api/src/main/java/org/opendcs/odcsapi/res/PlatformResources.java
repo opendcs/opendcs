@@ -436,7 +436,11 @@ public final class PlatformResources extends OpenDcsResource
 				t.setMediumId(tm.getMediumId());
 			}
 			t.setMediumType(tm.getMediumType());
-			t.setBaud(tm.getBaud());
+			Integer baud = tm.getBaud();
+			if(baud != null)
+			{
+				t.setBaud(baud);
+			}
 			if (tm.getAssignedTime() != null)
 			{
 				t.assignedTime = tm.getAssignedTime();
@@ -454,8 +458,16 @@ public final class PlatformResources extends OpenDcsResource
 			{
 				t.setStopBits(tm.getStopBits());
 			}
-			t.setParity(tm.getParity().charAt(0));
-			t.setDoLogin(tm.getDoLogin());
+			String parity = tm.getParity();
+			if(parity != null)
+			{
+				t.setParity(parity.charAt(0));
+			}
+			Boolean doLogin = tm.getDoLogin();
+			if(doLogin != null)
+			{
+				t.setDoLogin(doLogin);
+			}
 			t.setPassword(tm.getPassword());
 			t.setUsername(tm.getUsername());
 			t.scriptName = tm.getScriptName();

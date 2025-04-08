@@ -367,6 +367,12 @@ final class PlatformResourcesTest
 		plat.setSiteId(1234L);
 		plat.setLastModified(Date.from(Instant.parse("2021-07-01T12:00:00Z")));
 		plat.setProduction(true);
+		List<ApiTransportMedium> transportMedium = new ArrayList<>();
+		ApiTransportMedium medium = new ApiTransportMedium();
+		medium.setMediumType("Sutron Logger");
+		medium.setMediumId("1234567890");
+		transportMedium.add(medium);
+		plat.setTransportMedia(transportMedium);
 
 		Platform result = map(plat);
 
