@@ -606,7 +606,7 @@ Algorithms
 
 Adding Tests for Algorithms
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-To add new tests for algorithms, developers need to create a new directory within `/git/opendcs/integrationtesting/opendcs-tests/src/test/resources/data/Comps`. This folder must be titled with the name of the algorithm you wish to test.
+To add new tests for algorithms, developers need to create a new directory within `./opendcs/integrationtesting/opendcs-tests/src/test/resources/data/Comps`. This folder must be titled with the name of the algorithm you wish to test.
 
 Within this directory, you can create subdirectories named `Test1`, `Test2`, etc., for each test case. Each test directory can contain the following resources required to run the test:
 
