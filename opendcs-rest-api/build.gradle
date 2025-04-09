@@ -62,7 +62,7 @@ dependencies {
 tasks.register('extractWebJars', Copy) {
     from zipTree(configurations.webjars.singleFile)
 
-    into file("src/main/webapp/swaggerui")
+    into file("${layout.buildDirectory.get().asFile}/generated/webapp/swaggerui")
     includeEmptyDirs false
     eachFile {
         path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
@@ -85,7 +85,7 @@ jar {
 
 war {
     dependsOn extractWebJars
-    from 'src/main/webapp'
+    from "${layout.buildDirectory.get().asFile}/generated/webapp"
 }
 
 publishing {
@@ -100,7 +100,6 @@ publishing {
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonarqube {
         properties {
-            property 'sonar.exclusions', 'src/main/webapp/swaggerui/**'
             property 'sonar.coverage.jacoco.xmlReportPaths', "${layout.buildDirectory.get().asFile.toString()}/reports/jacoco/test/jacocoTestReport.xml," +
                     "../opendcs-integration-test/build/reports/jacoco/integrationTestReportCWMS/integrationTestReportCWMS.xml," +
                     "../opendcs-integration-test/build/reports/jacoco/integrationTestReportOpenTSDB/integrationTestReportOpenTSDB.xml"
