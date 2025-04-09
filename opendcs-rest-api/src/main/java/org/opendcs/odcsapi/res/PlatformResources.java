@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
+import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -74,6 +75,8 @@ import org.opendcs.odcsapi.errorhandling.DatabaseItemNotFoundException;
 import org.opendcs.odcsapi.errorhandling.MissingParameterException;
 import org.opendcs.odcsapi.errorhandling.WebAppException;
 import org.opendcs.odcsapi.util.ApiConstants;
+
+import static java.util.stream.Collectors.toList;
 
 @Path("/")
 public final class PlatformResources extends OpenDcsResource
@@ -278,7 +281,42 @@ public final class PlatformResources extends OpenDcsResource
 		ret.setProperties(platform.getProperties());
 		ret.setName(platform.getSiteName(false));
 		ret.setTransportMedia(map(platform.getTransportMedia()));
+		ret.setPlatformSensors(platform.platformSensors.stream()
+				.map(PlatformResources::map)
+				.collect(toList()));
 		return ret;
+	}
+
+	private static ApiPlatformSensor map(PlatformSensor ps)
+	{
+		ApiPlatformSensor retval = new ApiPlatformSensor();
+		retval.setSensorNum(ps.sensorNumber);
+		if (ps.site != null)
+		{
+			retval.setActualSiteId(ps.site.getId().getValue());
+		}
+		int usgsDdno = ps.getUsgsDdno();
+		if(usgsDdno != 0)
+		{
+			retval.setUsgsDdno(usgsDdno);
+		}
+		ps.getProperties()
+				.forEach((key, value) ->
+				{
+					if("min".equalsIgnoreCase(key.toString()))
+					{
+						retval.setMin(Double.valueOf(value.toString()));
+					}
+					else if("max".equalsIgnoreCase(key.toString()))
+					{
+						retval.setMax(Double.valueOf(value.toString()));
+					}
+					else
+					{
+						retval.getSensorProps().setProperty(key.toString(), value.toString());
+					}
+				});
+		return retval;
 	}
 
 	static ArrayList<ApiTransportMedium> map(Iterator<TransportMedium> transportMedium)
@@ -424,6 +462,14 @@ public final class PlatformResources extends OpenDcsResource
 			for (String name : props.stringPropertyNames())
 			{
 				ps.setProperty(name, props.getProperty(name));
+			}
+			if(sensor.getMin() != null)
+			{
+				ps.setProperty("min", sensor.getMin().toString());
+			}
+			if(sensor.getMax() != null)
+			{
+				ps.setProperty("max", sensor.getMax().toString());
 			}
 			ret.add(ps);
 		}

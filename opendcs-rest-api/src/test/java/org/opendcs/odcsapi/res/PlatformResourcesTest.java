@@ -243,6 +243,10 @@ final class PlatformResourcesTest
 		Site site = new Site();
 		site.setId(DbKey.createDbKey(1234L));
 		plat1.setSite(site);
+		PlatformSensor platformSensor = new PlatformSensor(plat1, 1);
+		platformSensor.setProperty("test", "value");
+		platformSensor.setUsgsDdno(1534);
+		plat1.platformSensors.add(platformSensor);
 		PlatformConfig config = new PlatformConfig();
 		config.setId(DbKey.createDbKey(33565L));
 		config.configName = plat1.getConfigName();
