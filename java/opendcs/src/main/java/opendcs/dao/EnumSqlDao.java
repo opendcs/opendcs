@@ -247,6 +247,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 							  (rs) -> {
 								DbEnum en = rs2Enum(rs, dbVer);
 								cache.put(en);
+							    top.addEnum(en);
 							});
 				
 				String q = "SELECT enumId, enumValue, description, execClass, editClass";
@@ -258,16 +259,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 					DbEnum dbEnum = cache.getByKey(key);
 					if (dbEnum != null)
 						rs2EnumValue(rs, dbEnum);
-					top.addEnum(dbEnum);
 				});
-				for(DbObjectCache<DbEnum>.CacheIterator it = cache.iterator(); it.hasNext(); )
-				{
-					final DbEnum dbEnum = it.next();
-					if (top.getEnum(dbEnum.enumName) == null)
-					{
-						top.addEnum(dbEnum);
-					}
-				}
 			}
 		}
 		catch (SQLException ex)
@@ -520,8 +512,18 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		},dbenum.getId());
 	}
 	
+	/**
+	* Write a single EnumValue to the database.
+	* Assume no conflict with EnumValues already in the database.
+	* @param ev the EnumValue
+	*/
+	public void writeEnumValue(EnumValue ev) throws DbIoException
+	{
+		writeEnumValue(this, ev);
+	}
+
 	private void rs2EnumValue(ResultSet rs, DbEnum dbEnum)
-		throws SQLException
+			throws SQLException
 	{
 		String enumValue = rs.getString(2);
 		String description = rs.getString(3);
@@ -539,16 +541,6 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		EnumValue ev = dbEnum.replaceValue(enumValue, description, execClass, editClass);
 		if (setSortNumber)
 			ev.setSortNumber(sn);
-	}
-
-	/**
-	* Write a single EnumValue to the database.
-	* Assume no conflict with EnumValues already in the database.
-	* @param ev the EnumValue
-	*/
-	public void writeEnumValue(EnumValue ev) throws DbIoException
-	{
-		writeEnumValue(this, ev);
 	}
 
 	/**
