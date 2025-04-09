@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="ToIrregular">
+    <ExecClass>decodes.cwms.algo.ToIrregularUsingPattern</ExecClass>
+    <AlgoParm roleName="input">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="pattern">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="Test2ToIrregular">
+    <Comment></Comment>
+    <Enabled>true</Enabled>
+    <AlgorithmName>ToIrregular</AlgorithmName>
+    <LastModified>2025-01-24 09:13:10 PST</LastModified>
+    <CompProperty name="input_MISSING">IGNORE</CompProperty>
+    <CompParm roleName="input">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Precip"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Ave.1Hour.input</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="pattern">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Precip"/>
+      </SiteDataType>
+      <Interval>~1Hour</Interval>
+      <TableSelector>Ave.1Hour.pattern</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Precip"/>
+      </SiteDataType>
+      <Interval>~1Hour</Interval>
+      <TableSelector>Ave.1Hour.output</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>

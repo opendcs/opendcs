@@ -195,7 +195,7 @@ final public class ResEvapAlgo
         Date sinceTime = new Date(baseTimes.first().getTime() - 86400000);
         try
         {
-            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WTPID, sinceTime, baseTimes.first(), startDepth, depthIncrement);
+            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, WTPID, sinceTime, baseTimes.first(), startDepth, depthIncrement);
         }
         catch (DbIoException ex)
         {
@@ -238,7 +238,7 @@ final public class ResEvapAlgo
             }
             i++;
         }
-        dailyWTP.setProfiles(arrayWTP, CurrentTime, wtpTsId, reservoirId, zeroElevation, elev, timeSeriesDAO);
+        dailyWTP.setProfiles(arrayWTP, CurrentTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
     }
 
     //Returns Converted double of cts from currUnits space to NewUnits
@@ -349,7 +349,6 @@ final public class ResEvapAlgo
             siteDAO = tsdb.makeSiteDAO();
             timeSeriesDAO = tsdb.makeTimeSeriesDAO();
             crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
-            
 
             //Get site Data from Database
             try
@@ -547,7 +546,7 @@ final public class ResEvapAlgo
             setOutput(hourlyFluxOut, computedList.get(5));
             setOutput(hourlyEvap, computedList.get(6));
 
-            hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, reservoirId, zeroElevation, elev, timeSeriesDAO);
+            hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
 
             count++;
             tally += (previousHourlyEvap + computedList.get(6)) / 2;

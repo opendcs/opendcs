@@ -54,6 +54,9 @@ public class RelativeHumidity extends AW_AlgorithmBase
 			throw new DbCompException("Output interval does not match temperature interval");
 		}
 
+		setOutputUnitsAbbr("temperature", "C");
+        setOutputUnitsAbbr("dewPoint", "C");
+
 	}
 
 

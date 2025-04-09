@@ -455,6 +455,29 @@ To run use the following commands:
     # or 
     ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=CWMS-Oracle
 
+Algorithm tests
+---------------
+
+Algorithm tests are a suite of regression tests designed to ensure that all algorithms are functioning correctly across builds and updates. These tests validate the correctness and stability of algorithmic computations by comparing the actual outputs against expected results.
+
+To run the algorithm tests, execute the following command:
+
+.. code-block:: bash
+
+    ./gradlew :testing:opendcs-tests:test --tests org.opendcs.regression_tests.AlgorithmTestsIT.test_algorithm_operations
+
+This will run the full suite of algorithm tests.
+
+If you want to run a specific test, you can use the following command with the `-P` argument to filter the test by name:
+
+.. code-block:: bash
+
+    ./gradlew :testing:opendcs-tests:test --tests org.opendcs.regression_tests.AlgorithmTestsIT.test_algorithm_operations -P"opendcs.test.algorithm.filter=ResEvapTest1"
+
+Replace `ResEvapTest1` with the name of the specific test you want to run. This allows for targeted testing of individual algorithms, which is useful during development or debugging.
+
+Note: some tests may require -P"opendcs.test.engine=CWMS-Oracle"
+
 Adding tests
 ------------
 
@@ -500,6 +523,129 @@ At the Class and method level the following annotations are available.
 |                                            |Method level, or both in which  |
 |                                            |case the sets will be merged    |
 +--------------------------------------------+--------------------------------+
+
+Creating additional tests
+---------------
+
+The sections below describe how to add new decoding and algorithm tests by adding files to specific directories.
+
+Testing the Decodes Language
+~~~~~~~~~~~~~~~~~
+
+Adding Decoding Tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To add new tests for the Decoding language and functions, developers need to create four files in the `./opendcs/java/opendcs/src/test/resources/decodes/db` directory:
+
+1. **`.assertions` file**:  
+    - Purpose: Defines the expected output for the test to validate the Decoding.
+    - Example:  
+      .. code-block:: csv
+
+         #sensor number, time (ISO8601), expected value (double or string), precision, message
+         1,2014-03-01T12:00:00Z,23.95,  0.0, Expected value not parsed (sensor 1)
+         1,2014-03-01T13:00:00Z,23.96,  0.0, Expected value not parsed (sensor 1)
+         1,2014-03-01T14:00:00Z,23.97,  0.0, Expected value not parsed (sensor 1)
+         2,2014-03-01T12:00:00Z,17.2,  0.0, Expected value not parsed (sensor 2)
+         2,2014-03-01T13:00:00Z,16.9,  0.0, Expected value not parsed (sensor 2)
+         2,2014-03-01T14:00:00Z,15.2,  0.0, Expected value not parsed (sensor 2)
+         3,2014-03-01T12:00:00Z,98.1,  0.0, Expected value not parsed (sensor 3)
+         3,2014-03-01T13:00:00Z,98.1,  0.0, Expected value not parsed (sensor 3)
+         3,2014-03-01T14:00:00Z,98.2,  0.0, Expected value not parsed (sensor 3)
+         4,2014-03-01T12:00:00Z,8252,  0.0, Expected value not parsed (sensor 4)
+         4,2014-03-01T13:00:00Z,8252,  0.0, Expected value not parsed (sensor 4)
+         4,2014-03-01T14:00:00Z,8252,  0.0, Expected value not parsed (sensor 4)
+         5,2014-03-01T12:00:00Z,0.0,  0.0, Expected value not parsed (sensor 5)
+         5,2014-03-01T13:00:00Z,0.0,  0.0, Expected value not parsed (sensor 5)
+         5,2014-03-01T14:00:00Z,0.0,  0.0, Expected value not parsed (sensor 5)
+         6,2014-03-01T12:00:00Z,0.0,  0.0, Expected value not parsed (sensor 6)
+         6,2014-03-01T13:00:00Z,0.0,  0.0, Expected value not parsed (sensor 6)
+         6,2014-03-01T14:00:00Z,0.0,  0.0, Expected value not parsed (sensor 6)
+
+2. **`.decodescript` file**:  
+    - Purpose: Contains the Decodes script that defines how the input data should be processed.  
+    - Example:  
+      .. code-block:: text
+
+         csv: 3(/, F(D,A,10,4), x, F(T,A,8), csv(1, 2, 4, 5, 6, 3))
+
+3. **`.input` file**:  
+    - Purpose: Provides the raw input data to be decoded.  
+    - Example:  
+      .. code-block:: text
+
+         # Ignored header line
+         03/01/2014 12:00:00 23.95, 17.2, 8252, 0, 0, 98.1
+         03/01/2014 13:00:00 23.96, 16.9, 8252, 0, 0, 98.1
+         03/01/2014 14:00:00 23.97, 15.2, 8252, 0, 0, 98.2
+
+4. **`.sensors` file**:  
+    - Purpose: Describes the sensors and their configurations used in the decoding process.  
+    - Example:  
+      .. code-block:: csv
+
+         #sensor number, sensor name, units, description
+         1, Stage, ft, none
+         2, Humidity, %, none
+         3, Temp, degF, none
+         4, Storage, acft, none
+         5, Precip, in, none
+         6, Zero, raw, none
+
+By adding these files, developers can create tests to ensure the correctness and reliability of the Decodes language including new or modified Decodes Functions.
+
+Algorithms
+~~~~~~~~~~
+- **Purpose**: This section describes how to test algorithmic implementations for solving specific problems or performing computations.
+
+Adding Tests for Algorithms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To add new tests for algorithms, developers need to create a new directory within `./opendcs/integrationtesting/opendcs-tests/src/test/resources/data/Comps`. This folder must be titled with the name of the algorithm you wish to test.
+
+Within this directory, you can create subdirectories named `Test1`, `Test2`, etc., for each test case. Each test directory can contain the following resources required to run the test:
+
+1. **Rating Tables**:  
+    - Location: `rating` folder within the test directory.  
+    - Purpose: Contains rating tables required for the computation.  
+    - Format: Stored as `.xml` files.
+    - Note: You can create the `rating.xml` file using the `exportRating` command.
+
+2. **Time Series Data**:  
+    - Location: `timeseries` folder within the test directory.  
+    - Structure:  
+        - `input` directory: Contains `.tsimport` files defining the input time series for the computation.  
+          Example `.tsimport` file:  
+          .. code-block:: text
+
+             TSID:TESTSITE1.Speed-Wind.Inst.1Hour.0.Rev-AWC
+             SET:TZ=UTC
+             SET:UNITS=kph
+             2024/10/04-24:00:00,20.5200000000,0
+             2024/10/05-01:00:00,20.5200000000,0
+             2024/10/05-02:00:00,22.3199999999,0
+             2024/10/05-03:00:00,24.1200000001,0
+             2024/10/05-04:00:00,25.9200000000,0
+             2024/10/05-05:00:00,63.0000000001,0
+             2024/10/05-06:00:00,59.4000000000,0
+             2024/10/05-07:00:00,50.0400000001,0
+             2024/10/05-08:00:00,40.6800000000,0
+             2024/10/05-09:00:00,59.4000000000,0
+             2024/10/05-10:00:00,38.8800000000,0
+             2024/10/05-11:00:00,20.5200000000,0
+             2024/10/05-12:00:00,25.9200000000,0
+             2024/10/05-13:00:00,18.3600000000,0
+             2024/10/05-14:00:00,16.5600000001,0
+
+          You can create this file using the `outputts` command.
+
+        - `output` directory: Contains `.tsimport` files defining the output time series generated by the computation.  
+        - `expectedOutputs` directory: Contains `.tsimport` files defining the expected output time series for validation.
+
+3. **Computation Configuration**:  
+    - File: `comp.xml`  
+    - Purpose: This file defines the setup for the computation and the tests that need to be run. It specifies the algorithm configuration and links the input, output, and expected output time series.  
+    - Note: You can create the `comp.xml` file using the `compexport` command.
+
+By organizing the algorithm test resources in this structure, developers can easily manage algorithm tests.
 
 
 Extension and other Junit information

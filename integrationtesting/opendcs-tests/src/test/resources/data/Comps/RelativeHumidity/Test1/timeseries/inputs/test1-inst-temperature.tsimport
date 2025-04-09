@@ -1,6 +1,6 @@
 ﻿SET:TZ=UTC
-SET:UNITS=in
-TSID:testsite-pattern.Precip-Cum.Inst.1Hour.0.temperature
+SET:UNITS=C
+TSID:TESTSITE1.Temp-Air.Inst.1Hour.0.temperature
 2024/06/13-11:00:00,20.0,0
 2024/06/13-12:00:00,21.0,0
 2024/06/13-13:00:00,22.0,0

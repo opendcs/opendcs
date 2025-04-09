@@ -62,6 +62,12 @@
     <MaxDecimals>3</MaxDecimals>
   </DataPresentation>
   <DataPresentation>
+    <DataType Standard="CWMS" Code="%-RelativeHumidity">
+    </DataType>
+    <UnitsAbbr>%</UnitsAbbr>
+    <MaxDecimals>3</MaxDecimals>
+  </DataPresentation>
+  <DataPresentation>
     <DataType Standard="CWMS" Code="Rotation">
     </DataType>
     <UnitsAbbr>rev</UnitsAbbr>

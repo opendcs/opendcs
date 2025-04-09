@@ -7,6 +7,13 @@ dependencies {
     implementation project(":install")
 
     testCompileOnly project(":opendcs")
+
+    //Includes all jar dependencies from the main OpenDCS build within the opendcs-tests compile 
+    testCompileOnly fileTree('../../install/build/install/opendcs/dep') {
+        include '*.jar'
+        builtBy ":install:installDist"
+    }
+  
     testImplementation project(":testing:fixtures")
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)

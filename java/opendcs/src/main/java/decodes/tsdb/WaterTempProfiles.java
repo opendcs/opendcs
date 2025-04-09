@@ -55,7 +55,7 @@ final public class WaterTempProfiles
     }
 
     //Initialize WaterTempProfiles with profiles from time slice previous to Until in database DAO connection
-    public WaterTempProfiles(TimeSeriesDAI timeSeriesDAO, String resID, String wtpId, Date since, Date until, double start, double incr) throws DbCompException, DbIoException
+    public WaterTempProfiles(TimeSeriesDAI timeSeriesDAO, String wtpId, Date since, Date until, double start, double incr) throws DbCompException, DbIoException
     {
         tseries = new DataCollection();
         startDepth = start;
@@ -70,6 +70,11 @@ final public class WaterTempProfiles
         catch (DbIoException | NoSuchObjectException ex)
         {
             throw new DbCompException("Failed to load timeSeries id: " + wtpId, ex);
+        }
+        
+        String resID = tsid.getSiteName();
+        if (resID.length() > 8) {
+            resID = resID.substring(0, resID.length() - 8);
         }
 
         while (loading)
@@ -126,7 +131,7 @@ final public class WaterTempProfiles
     }
 
     //Saves double[] of WTP to WTP object at time step, Stores data in CTimesSeries sets Flag  of timedVariable to T0_WRITE.
-    public void setProfiles(double[] wtp, Date CurrentTime, String wtpTsId, String reservoirId, Double zeroElevation, Double Elev, TimeSeriesDAI timeSeriesDAO) throws DbCompException
+    public void setProfiles(double[] wtp, Date CurrentTime, String wtpTsId, Double zeroElevation, Double Elev, TimeSeriesDAI timeSeriesDAO) throws DbCompException
     {
         double currentDepth = startDepth;
         for (int i = 0; i < wtp.length && currentDepth + (zeroElevation * 0.3048) <= Elev; i++)
@@ -137,6 +142,13 @@ final public class WaterTempProfiles
                 {
                     TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(wtpTsId);
                     TimeSeriesIdentifier newTSID = tsid.copyNoKey();
+
+                    String reservoirId = tsid.getSiteName();
+
+                    int index = reservoirId.lastIndexOf("-D");
+                    if (index != -1) {
+                        reservoirId = reservoirId.substring(0, index);
+                    }
 
                     Site newsite = new Site();
                     newsite.copyFrom(newTSID.getSite());
