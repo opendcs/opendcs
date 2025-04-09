@@ -85,7 +85,7 @@
       {
         "name": "scriptName",
         "dataOrder": "U",
-        "headerType": null,
+        "headerType": "Decodes:goes",
         "scriptSensors": [
           {
             "sensorNumber": 1,

@@ -77,7 +77,7 @@ final class ConfigResourcesTest
 		builder.platformConfig(scriptConfig);
 		DecodesScript script = builder.build();
 		script.scriptName = "Test script";
-		script.scriptType = "Test";
+		script.scriptType = "Decodes:goes";
 		script.setDataOrder(ApiConfigScript.DataOrder.DESCENDING.getCode());
 		scripts.add(script);
 		config.decodesScripts = scripts;
@@ -103,6 +103,7 @@ final class ConfigResourcesTest
 		assertEquals(config.getId().getValue(), apiConfig.getConfigId());
 		assertEquals(config.decodesScripts.size(), apiConfig.getScripts().size());
 		assertEquals(config.decodesScripts.get(0).scriptName, apiConfig.getScripts().get(0).getName());
+		assertEquals(config.decodesScripts.get(0).scriptType, apiConfig.getScripts().get(0).getHeaderType());
 		assertEquals(config.getSensorVec().get(0).absoluteMax, apiConfig.getConfigSensors().get(0).getAbsoluteMax());
 		assertEquals(config.getSensorVec().get(0).absoluteMin, apiConfig.getConfigSensors().get(0).getAbsoluteMin());
 		assertEquals(config.getSensorVec().get(0).recordingInterval, apiConfig.getConfigSensors().get(0).getRecordingInterval());
@@ -193,6 +194,7 @@ final class ConfigResourcesTest
 		for (ScriptSensor sensor : decodesScripts.get(0).scriptSensors)
 		{
 			assertEquals(scripts.get(0).getScriptSensors().get(0).getSensorNumber(), sensor.sensorNumber);
+			assertEquals(scripts.get(0).getHeaderType(), decodesScripts.get(0).scriptType);
 			assertMatch(scripts.get(0).getScriptSensors().get(0).getUnitConverter(), sensor.execConverter);
 		}
 	}
@@ -349,6 +351,7 @@ final class ConfigResourcesTest
 		ApiConfigScript script = new ApiConfigScript();
 		script.setName("Test script");
 		script.setScriptSensors(buildScriptSensorList());
+		script.setHeaderType("Decodes:goes");
 		configScriptList.add(script);
 		return configScriptList;
 	}

@@ -23,7 +23,7 @@
     {
       "name" : "Test Script",
       "dataOrder" : "U",
-      "headerType" : null,
+      "headerType" : "Decodes:goes",
       "scriptSensors" : [ {
         "sensorNumber" : 0,
         "unitConverter" : {
