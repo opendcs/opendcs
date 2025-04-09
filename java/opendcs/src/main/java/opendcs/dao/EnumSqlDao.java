@@ -511,19 +511,9 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			rs2EnumValue(rs, dbenum);
 		},dbenum.getId());
 	}
-	
-	/**
-	* Write a single EnumValue to the database.
-	* Assume no conflict with EnumValues already in the database.
-	* @param ev the EnumValue
-	*/
-	public void writeEnumValue(EnumValue ev) throws DbIoException
-	{
-		writeEnumValue(this, ev);
-	}
 
 	private void rs2EnumValue(ResultSet rs, DbEnum dbEnum)
-			throws SQLException
+		throws SQLException
 	{
 		String enumValue = rs.getString(2);
 		String description = rs.getString(3);
@@ -541,6 +531,16 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		EnumValue ev = dbEnum.replaceValue(enumValue, description, execClass, editClass);
 		if (setSortNumber)
 			ev.setSortNumber(sn);
+	}
+
+	/**
+	* Write a single EnumValue to the database.
+	* Assume no conflict with EnumValues already in the database.
+	* @param ev the EnumValue
+	*/
+	public void writeEnumValue(EnumValue ev) throws DbIoException
+	{
+		writeEnumValue(this, ev);
 	}
 
 	/**
