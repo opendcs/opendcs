@@ -247,6 +247,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 							  (rs) -> {
 								DbEnum en = rs2Enum(rs, dbVer);
 								cache.put(en);
+							    top.addEnum(en);
 							});
 				
 				String q = "SELECT enumId, enumValue, description, execClass, editClass";
@@ -257,15 +258,8 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 					DbKey key = DbKey.createDbKey(rs, 1);
 					DbEnum dbEnum = cache.getByKey(key);
 					if (dbEnum != null)
-					{
 						rs2EnumValue(rs, dbEnum);
-						top.addEnum(dbEnum);
-					}
-					else
-					{
-						log.warn("Enum not in cache for key {}. Orphaned enum value {}", key, rs.getString("enumValue"));
-					}
-				});				
+				});
 			}
 		}
 		catch (SQLException ex)
