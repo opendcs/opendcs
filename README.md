@@ -132,24 +132,24 @@ gradlew testing:lrgs:test -Pno.docs=true
 
 This will run all of the various tests and let you know you have everything setup such that you can start development.
 
-For all test tasks you can add `-DdebugPort=<a port number>` and the JVMs started will wait for a debug connection.
-Beware that gui-test and integration-test depend on test running, so you will have to attach the remote debugger twice.
-This is a current limitation of the ant build.
+For all test tasks you can add `--debug-jvm` and the JVMs started will wait for a debug connection on port 5005.
 
 To run a specific test only use:
 
 ```
 ./gradlew <test target> --tests # See [gradle documentation ](https://docs.gradle.org/current/userguide/java_testing.html#simple_name_pattern) for more detail
 
-example:
+example with debugging:
 
-gradlew test --tests AlarmMailerTest
+gradlew clean :testing:opendcs-tests:test -Pno.docs=true  -Popendcs.test.engine=OpenDCS-XML  --tests org.opendcs.regression_tests.ImportXmlNetworkListTestIT --debug-jvm
+
 
 ```
 
 It is possible a file glob will work in the tests parameter above but we have not tested this.
 
 See https://opendcs-env.readthedocs.io/en/latest/dev-docs.html for guidance on some of the newer components.
+
 
 # IDE integration
 
