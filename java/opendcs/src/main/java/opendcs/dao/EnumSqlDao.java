@@ -247,6 +247,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 							  (rs) -> {
 								DbEnum en = rs2Enum(rs, dbVer);
 								cache.put(en);
+							    top.addEnum(en);
 							});
 				
 				String q = "SELECT enumId, enumValue, description, execClass, editClass";
@@ -258,8 +259,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 					DbEnum dbEnum = cache.getByKey(key);
 					if (dbEnum != null)
 						rs2EnumValue(rs, dbEnum);
-					top.addEnum(dbEnum);
-				});				
+				});
 			}
 		}
 		catch (SQLException ex)
@@ -511,7 +511,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			rs2EnumValue(rs, dbenum);
 		},dbenum.getId());
 	}
-	
+
 	private void rs2EnumValue(ResultSet rs, DbEnum dbEnum)
 		throws SQLException
 	{
