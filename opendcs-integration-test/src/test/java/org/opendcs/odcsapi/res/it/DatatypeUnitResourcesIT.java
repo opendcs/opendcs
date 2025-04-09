@@ -631,6 +631,25 @@ final class DatatypeUnitResourcesIT extends BaseIT
 		}
 		assertTrue(found);
 
+		// Store the EU Converter
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(MediaType.APPLICATION_JSON)
+			.contentType(MediaType.APPLICATION_JSON)
+			.header("Authorization", authHeader)
+			.filter(sessionFilter)
+			.body(converterJson.replace("\"ft\"", "\"in\""))
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("euconv")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.extract()
+		;
+
 		// Delete the EU Converter
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)

@@ -408,6 +408,11 @@ public final class DatatypeUnitResources extends OpenDcsResource
 		try
 		{
 			UnitConverterDb unitConverterDb = ucDbMap(euc);
+			Long ucId = euc.getUcId();
+			if(ucId != null)
+			{
+				dbIo.deleteUnitConverter(ucId);
+			}
 			dbIo.insertUnitConverter(unitConverterDb);
 			return Response.status(HttpServletResponse.SC_CREATED).entity(map(unitConverterDb)).build();
 		}

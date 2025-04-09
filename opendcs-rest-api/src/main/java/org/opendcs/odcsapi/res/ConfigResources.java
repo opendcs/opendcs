@@ -377,8 +377,16 @@ public final class ConfigResources extends OpenDcsResource
 				ConfigSensor configSensor = new ConfigSensor(null, sensor.getSensorNumber());
 				configSensor.sensorName = sensor.getSensorName();
 				configSensor.platformConfig = pc;
-				configSensor.absoluteMax = sensor.getAbsoluteMax();
-				configSensor.absoluteMin = sensor.getAbsoluteMin();
+				Double absoluteMax = sensor.getAbsoluteMax();
+				if(absoluteMax != null)
+				{
+					configSensor.absoluteMax = absoluteMax;
+				}
+				Double absoluteMin = sensor.getAbsoluteMin();
+				if(absoluteMin != null)
+				{
+					configSensor.absoluteMin = absoluteMin;
+				}
 				configSensor.recordingInterval = sensor.getRecordingInterval();
 				configSensor.timeOfFirstSample = sensor.getTimeOfFirstSample();
 				configSensor.recordingMode = sensor.getRecordingMode().getCode();
