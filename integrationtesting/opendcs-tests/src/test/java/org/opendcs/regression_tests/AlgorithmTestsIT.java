@@ -1,5 +1,6 @@
 package org.opendcs.regression_tests;
 
+import static org.junit.Assume.assumeFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -8,6 +9,9 @@ import static org.opendcs.fixtures.helpers.TestResources.getResource;
 
 import java.io.IOException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.io.InputStream;
@@ -117,7 +121,7 @@ public class AlgorithmTestsIT extends AppTestBase
                     }
                     catch(Exception ex2)
                     {
-                        throw new DbIoException(String.format("No such time series and cannot create for '%'", tsIdStr), ex);
+                        throw new DbIoException(String.format("No such time series and cannot create for '%s'", tsIdStr), ex);
                     }
                 }
             });
@@ -157,16 +161,30 @@ public class AlgorithmTestsIT extends AppTestBase
                 String name = comp_data.getName();
                 if (name.contains("Comp.xml"))
                 {
-                    System.out.println("Comps: " + comp_data.getAbsolutePath());
+                    log.info("Comps: " + comp_data.getAbsolutePath());
                     String compstr = comp_data.getAbsolutePath();
                     List<String> compxml =  Arrays.asList(compstr);
                     ImportComp ic = new ImportComp(tsDb, true, false, compxml);
                     ic.runApp();
                 }
+                else if (name.contains(".config"))
+                {
+                    log.info("Has config: " + comp_data.getAbsolutePath());
+                    File configFile = new File(comp_data.getAbsolutePath());
+                    try (InputStream configStream = new FileInputStream(configFile)) {
+                        String firstLine = new BufferedReader(new InputStreamReader(configStream)).readLine();
+                        String keyword = "EnableOn:";
+                        if (firstLine != null && firstLine.contains(keyword)) {
+                            String substring = firstLine.substring(firstLine.indexOf(keyword) + keyword.length()).trim();
+                            final String testEngine = System.getProperty("opendcs.test.engine", "").trim();
+                            assumeFalse("Test is disabled by config file for: " + substring, !substring.equals(testEngine));
+                        }
+                    }
+                }
             }
             loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
 
-            Collection<CTimeSeries> inputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","inputs"), importer);
+            List<CTimeSeries> inputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","inputs"), importer);
             Collection<CTimeSeries> outputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","outputs"), importer);
             Collection<CTimeSeries> expectedOutputTS = loadTSimport(buildFilePath(test.getAbsolutePath(),"timeseries","expectedOutputs"), importer);
 
@@ -214,7 +232,7 @@ public class AlgorithmTestsIT extends AppTestBase
                     log.info("output value  : "+TVOutput.getDoubleValue());
                     log.info("expected value: "+TVExpected.getDoubleValue());
                 }
-                assertEquals(algoOutput, currExpect, "expected true", testComp.getValidStart(), testComp.getValidEnd());
+                assertEquals(currExpect, algoOutput, "expected true", testComp.getValidStart(), testComp.getValidEnd());
             }
         });
     }
@@ -232,13 +250,14 @@ public class AlgorithmTestsIT extends AppTestBase
         return path.toString();
     }
 
-    private Collection<CTimeSeries> loadTSimport(String folderTSstr, TsImporter importer)
+    private ArrayList<CTimeSeries> loadTSimport(String folderTSstr, TsImporter importer)
     throws Exception
     {
         File folderTS = new File(folderTSstr);
-        Collection<CTimeSeries> fullTs = new ArrayList<CTimeSeries>();
-        if (!folderTS.exists())
+        ArrayList<CTimeSeries> fullTs = new ArrayList<CTimeSeries>();
+        if (!folderTS.exists()){
             return fullTs;
+        }
         for (File tsfiles : folderTS.listFiles())
         {
             String relativePath = "Comps"+tsfiles.getAbsolutePath().split("Comps")[1];
