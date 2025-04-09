@@ -1,12 +1,10 @@
-[
+{
+  "siteId": 4,
+  "sitenames":
   {
-    "siteId": 4,
-    "sitenames":
-    {
-      "PUMP": "Pump Site",
-      "CWMS" : "Pump Site"
-    },
-    "publicName": "Pump Site",
-    "description": "Pump located in NM, USA"
-  }
-]
+    "PUMP": "Pump Site",
+    "CWMS" : "Pump Site"
+  },
+  "publicName": "Pump Site",
+  "description": "Pump located in NM, USA"
+}

@@ -60,6 +60,7 @@ public final class OpenDcsDatabaseFactory
 			//Temporary workaround until database_properties table is implemented in the schema
 			LOGGER.atWarn().setCause(e).log("Temporary solution forcing OpenTSDB");
 			DecodesSettings decodesSettings = new DecodesSettings();
+			DecodesSettings.instance().writeCwmsLocations = true;
 			decodesSettings.CwmsOfficeId = DbInterface.decodesProperties.getProperty("CwmsOfficeId");
 			try(Connection connection = dataSource.getConnection())
 			{
