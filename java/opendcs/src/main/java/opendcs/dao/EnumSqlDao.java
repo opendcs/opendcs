@@ -258,7 +258,13 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 					DbKey key = DbKey.createDbKey(rs, 1);
 					DbEnum dbEnum = cache.getByKey(key);
 					if (dbEnum != null)
+					{
 						rs2EnumValue(rs, dbEnum);
+					}
+					else
+					{
+						log.warn("Enum not in cache for key {}. Orphaned enum value {}", key, rs.getString("enumValue"));
+					}
 				});
 			}
 		}
