@@ -3,6 +3,7 @@ package org.opendcs.odcsapi.res;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -40,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -92,6 +94,51 @@ final class PlatformResourcesTest
 		scripts.add(script);
 		config.decodesScripts = scripts;
 		plat1.setConfig(config);
+		Vector<TransportMedium> transportMedia = new Vector<>();
+		TransportMedium tm = new TransportMedium(plat1);
+		tm.setTimeAdjustment(12);
+		tm.setBaud(9600);
+		tm.setLoggerType("Default");
+		tm.channelNum = 20;
+		tm.setTimeZone("America/Los_Angeles");
+		tm.setMediumId("TM-test");
+		tm.setMediumType("Serial");
+		tm.setDataBits(8);
+		tm.setStopBits(1);
+		tm.setParity('N');
+		tm.setUsername("user");
+		tm.setPassword("password");
+		EquipmentModel equipmentModel = new EquipmentModel();
+		equipmentModel.model = "Model 1";
+		equipmentModel.description = "An equipment model";
+		equipmentModel.setId(DbKey.createDbKey(555584L));
+		equipmentModel.name = "Equipped model";
+		equipmentModel.company = "GEI";
+		tm.equipmentModel = equipmentModel;
+		TransportMedium tm2 = new TransportMedium(plat1);
+		tm2.setTimeAdjustment(10);
+		tm2.setBaud(1200);
+		tm2.setLoggerType("Custom");
+		tm2.setDataBits(18);
+		tm2.setStopBits(2);
+		tm2.setParity('U');
+		tm2.setTimeZone("America/New_York");
+		tm2.setMediumId("TM-test2");
+		tm2.setMediumType("Analog");
+		tm2.channelNum = 22;
+		tm2.setUsername("user2");
+		tm2.setPassword("password2");
+		EquipmentModel equipmentModel2 = new EquipmentModel();
+		equipmentModel2.model = "Model 2";
+		equipmentModel2.description = "A second equipment model";
+		equipmentModel2.setId(DbKey.createDbKey(5554L));
+		equipmentModel2.name = "Equipped model";
+		equipmentModel2.company = "GEI";
+		tm2.equipmentModel = equipmentModel2;
+		transportMedia.add(tm);
+		transportMedia.add(tm2);
+		plat1.transportMedia = transportMedia;
+
 		Platform plat2 = new Platform();
 		plat2.setAgency("USBR");
 		plat2.setDescription("USBR Platform");
@@ -131,56 +178,54 @@ final class PlatformResourcesTest
 		assertNotNull(platRefs);
 		assertFalse(platRefs.isEmpty());
 		assertEquals(2, platRefs.size());
-		Platform plat1Ref = platformList.getById(platId1);
-		Platform plat2Ref = platformList.getById(platId2);
+		ApiPlatformRef plat1Ref = platRefs.get(0);
+		ApiPlatformRef plat2Ref = platRefs.get(1);
 		assertNotNull(plat1Ref);
 		assertNotNull(plat2Ref);
 
 		assertEquals(plat1.getAgency(), plat1Ref.getAgency());
 		assertEquals(plat1.getDescription(), plat1Ref.getDescription());
-		assertEquals(plat1.getPlatformDesignator(), plat1Ref.getPlatformDesignator());
-		assertEquals(plat1.getConfigName(), plat1Ref.getConfigName());
-		assertEquals(plat1.getId().getValue(), plat1Ref.getId().getValue());
-		assertEquals(plat1.getConfig().getId().getValue(), plat1Ref.getConfig().getId().getValue());
-		assertEquals(plat1.getConfig().getEquipmentModel().getId().getValue(), plat1Ref.getConfig().getEquipmentModel().getId().getValue());
-		assertEquals(plat1.getConfig().getEquipmentModel().getName(), plat1Ref.getConfig().getEquipmentModel().getName());
-		assertPlatMatchIterators(plat1.getPlatformSensors(), plat1Ref.getPlatformSensors());
-		assertTransportMatch(plat1.getTransportMedia(), plat1Ref.getTransportMedia());
-		assertEquals(plat1.getProperties(), plat1Ref.getProperties());
-		assertEquals(plat1.getBriefDescription(), plat1Ref.getBriefDescription());
-		assertEquals(plat1.getDisplayName(), plat1Ref.getDisplayName());
-		if (plat1.getSite() != null && plat1Ref.getSite() != null)
+		assertEquals(plat1.getPlatformDesignator(), plat1Ref.getDesignator());
+		assertEquals(plat1.getDisplayName(), plat1Ref.getName());
+		assertEquals(plat1.getId().getValue(), plat1Ref.getPlatformId());
+		assertEquals(plat1.getConfig().getId().getValue(), plat1Ref.getConfigId());
+		assertTransportPropertiesMatch(plat1.getTransportMedia(), plat1Ref.getTransportMedia());
+		for (String propKey : plat1.getProperties().stringPropertyNames())
 		{
-			assertEquals(plat1.getSite().getId().getValue(), plat1Ref.getSite().getId().getValue());
-			assertEquals(plat1.getSite().getDisplayName(), plat1Ref.getSiteName());
+			String expectedValue = plat1.getProperties().getProperty(propKey);
+			String actualValue = plat1Ref.getTransportMedia().getProperty(propKey);
+			assertEquals(expectedValue, actualValue);
+		}
+		if (plat1.getSite() != null && plat2Ref.getSiteId() != null)
+		{
+			assertEquals(plat1.getSite().getId().getValue(), plat2Ref.getSiteId());
 		}
 		else
 		{
 			assertNull(plat1.getSite());
-			assertNull(plat1Ref.getSite());
+			assertEquals(DbKey.NullKey.getValue(), plat1Ref.getSiteId());
 		}
 		assertEquals(plat2.getAgency(), plat2Ref.getAgency());
 		assertEquals(plat2.getDescription(), plat2Ref.getDescription());
-		assertEquals(plat2.getPlatformDesignator(), plat2Ref.getPlatformDesignator());
-		assertEquals(plat2.getConfigName(), plat2Ref.getConfigName());
-		assertEquals(plat2.getId().getValue(), plat2Ref.getId().getValue());
-		assertEquals(plat2.getConfig().getId().getValue(), plat2Ref.getConfig().getId().getValue());
-		assertEquals(plat2.getConfig().getEquipmentModel().getId().getValue(), plat2Ref.getConfig().getEquipmentModel().getId().getValue());
-		assertEquals(plat2.getConfig().getEquipmentModel().getName(), plat2Ref.getConfig().getEquipmentModel().getName());
-		assertPlatMatchIterators(plat2.getPlatformSensors(), plat2Ref.getPlatformSensors());
-		assertTransportMatch(plat2.getTransportMedia(), plat2Ref.getTransportMedia());
-		assertEquals(plat2.getProperties(), plat2Ref.getProperties());
-		assertEquals(plat2.getBriefDescription(), plat2Ref.getBriefDescription());
-		assertEquals(plat2.getDisplayName(), plat2Ref.getDisplayName());
-		if (plat2.getSite() != null && plat2Ref.getSite() != null)
+		assertEquals(plat2.getPlatformDesignator(), plat2Ref.getDesignator());
+		assertEquals(plat2.getConfigName(), plat2Ref.getConfig());
+		assertEquals(plat2.getId().getValue(), plat2Ref.getPlatformId());
+		assertEquals(plat2.getConfig().getId().getValue(), plat2Ref.getConfigId());
+		assertTransportPropertiesMatch(plat2.getTransportMedia(), plat2Ref.getTransportMedia());
+		for (String propKey : plat2.getProperties().stringPropertyNames())
 		{
-			assertEquals(plat2.getSite().getId().getValue(), plat2Ref.getSite().getId().getValue());
-			assertEquals(plat2.getSite().getDisplayName(), plat2Ref.getSiteName());
+			String expectedValue = plat2.getProperties().getProperty(propKey);
+			String actualValue = plat2Ref.getTransportMedia().getProperty(propKey);
+			assertEquals(expectedValue, actualValue);
+		}
+		if (plat2.getSite() != null && plat2Ref.getSiteId() != null)
+		{
+			assertEquals(plat2.getSite().getId().getValue(), plat2Ref.getSiteId());
 		}
 		else
 		{
 			assertNull(plat2.getSite());
-			assertNull(plat2Ref.getSite());
+			assertEquals(DbKey.NullKey.getValue(), plat2Ref.getSiteId());
 		}
 	}
 
@@ -271,44 +316,13 @@ final class PlatformResourcesTest
 		}
 	}
 
-	private void assertPlatMatchIterators(Iterator<PlatformSensor> platSensors, Iterator<PlatformSensor> otherPlatSensors)
+	private void assertTransportPropertiesMatch(Iterator<TransportMedium> expectedTransportMedium, Properties transportMedium)
 	{
-		assertEquals(iterSize(platSensors), iterSize(otherPlatSensors));
-
-		while (platSensors.hasNext())
+		while(expectedTransportMedium.hasNext())
 		{
-			PlatformSensor sensorA = platSensors.next();
-			PlatformSensor sensorB = otherPlatSensors.next();
-			assertEquals(sensorA.sensorNumber, sensorB.sensorNumber);
-			assertEquals(sensorA.site.getId().getValue(), sensorB.site.getId().getValue());
-			assertEquals(sensorA.getProperties(), sensorB.getProperties());
-			assertEquals(sensorA.getUsgsDdno(), sensorB.getUsgsDdno());
-		}
-	}
-
-	private void assertTransportMatch(Iterator<TransportMedium> expectedTransportMedium, Iterator<TransportMedium> transportMedium)
-	{
-		assertEquals(iterSize(expectedTransportMedium), iterSize(transportMedium));
-
-		while (expectedTransportMedium.hasNext())
-		{
-			TransportMedium expected = expectedTransportMedium.next();
-			TransportMedium actual = transportMedium.next();
-			assertEquals(expected.getMediumType(), actual.getMediumType());
-			assertEquals(expected.getMediumId(), actual.getMediumId());
-			assertEquals(expected.scriptName, actual.scriptName);
-			assertEquals(expected.channelNum, actual.channelNum);
-			assertEquals(expected.assignedTime, actual.assignedTime);
-			assertEquals(expected.transmitWindow, actual.transmitWindow);
-			assertEquals(expected.transmitInterval, actual.transmitInterval);
-			assertEquals(expected.getTimeZone(), actual.getTimeZone());
-			assertEquals(expected.getBaud(), actual.getBaud());
-			assertEquals(expected.getStopBits(), actual.getStopBits());
-			assertEquals(expected.getDataBits(), actual.getDataBits());
-			assertEquals(expected.getParity(), actual.getParity());
-			assertEquals(expected.getUsername(), actual.getUsername());
-			assertEquals(expected.getPassword(), actual.getPassword());
-			assertEquals(expected.isDoLogin(), actual.isDoLogin());
+			final TransportMedium tm = expectedTransportMedium.next();
+			assertTrue(transportMedium.containsKey(tm.getMediumType()));
+			assertEquals(tm.getMediumId(), transportMedium.getProperty(tm.getMediumType()));
 		}
 	}
 
@@ -367,12 +381,25 @@ final class PlatformResourcesTest
 		plat.setSiteId(1234L);
 		plat.setLastModified(Date.from(Instant.parse("2021-07-01T12:00:00Z")));
 		plat.setProduction(true);
-		List<ApiTransportMedium> transportMedium = new ArrayList<>();
-		ApiTransportMedium medium = new ApiTransportMedium();
-		medium.setMediumType("Sutron Logger");
-		medium.setMediumId("1234567890");
-		transportMedium.add(medium);
-		plat.setTransportMedia(transportMedium);
+		ApiTransportMedium tm = new ApiTransportMedium();
+		tm.setMediumType("serial");
+		tm.setMediumId("1");
+		tm.setScriptName("Testing Script");
+		tm.setChannelNum(1);
+		tm.setAssignedTime(12);
+		tm.setTransportWindow(10);
+		tm.setTransportInterval(5);
+		tm.setTimezone("UTC");
+		tm.setBaud(9600);
+		tm.setStopBits(1);
+		tm.setDataBits(8);
+		tm.setParity("N");
+		tm.setUsername("user");
+		tm.setPassword("password");
+		tm.setDoLogin(true);
+		tm.setTimeAdjustment(12);
+
+		plat.setTransportMedia(Collections.singletonList(tm));
 
 		Platform result = map(plat);
 

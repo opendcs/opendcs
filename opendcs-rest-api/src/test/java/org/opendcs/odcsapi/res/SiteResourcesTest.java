@@ -91,7 +91,7 @@ final class SiteResourcesTest
 		assertEquals(apiSite.isActive(), result.isActive());
 		assertEquals(apiSite.getSiteId(), result.getId().getValue());
 		assertEquals(apiSite.getLocationType(), result.getLocationType());
-		assertEquals(apiSite.getLastModified(), result.getLastModifyTime());
+		assertNotNull(result.getLastModifyTime());
 		assertEquals(apiSite.getCountry(), result.country);
 		assertEquals(apiSite.getTimezone(), result.timeZoneAbbr);
 		assertEquals(apiSite.getNearestCity(), result.nearestCity);

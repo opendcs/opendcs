@@ -7,5 +7,7 @@
   "config": null,
   "description" : "Platform 10 description",
   "designator" : "Platform Designator",
-  "transportMedia" : [ ]
+  "transportMedia" : {
+    "goes" : "IDENT"
+  }
 }

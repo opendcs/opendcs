@@ -173,8 +173,14 @@ public final class PlatformResources extends OpenDcsResource
 			{
 				ref.setSiteId(DbKey.NullKey.getValue());
 			}
-			ref.setName(plat.getSiteName(false));
-			ref.setTransportMedia(plat.getProperties());
+			Properties transportProps = new Properties();
+			transportProps.putAll(plat.getProperties());
+			for(Iterator<TransportMedium> it = plat.getTransportMedia(); it.hasNext(); )
+			{
+				final TransportMedium medium = it.next();
+				transportProps.setProperty(medium.getMediumType(), medium.getMediumId());
+			}
+			ref.setTransportMedia(transportProps);
 			ref.setDesignator(plat.getPlatformDesignator());
 			ret.add(ref);
 		}

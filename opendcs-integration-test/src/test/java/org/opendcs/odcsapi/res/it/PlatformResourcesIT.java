@@ -362,12 +362,18 @@ final class PlatformResourcesIT extends BaseIT
 		JsonPath actual = response.body().jsonPath();
 		assertNotNull(actual);
 		Map<String, Object> actualMap = actual.getMap("");
-		actualMap = (Map<String, Object>) actualMap.get(expected.getString("name")); // Name of platform is not stored in Platform object, could cause issues with collision
+		actualMap = (Map<String, Object>) actualMap.get(expected.getString("name") + "-" + expected.getString("designator"));
+		// Name of platform is not stored in Platform object, could cause issues with collision
 		assertNotNull(actualMap);
 		assertEquals(expected.get("description"), actualMap.get("description"));
 		assertEquals(expected.get("agency"), actualMap.get("agency"));
 		assertEquals(expected.get("designator"), actualMap.get("designator"));
 		assertEquals(expected.get("production"), actualMap.get("production"));
+		// The transportMedia map is interpreted by the JSON parser as a map of maps, but the actual JSON is a map of objects
+		Map<String, Object> transportMedia = (Map<String, Object>) actualMap.get("transportMedia");
+		assertTrue(transportMedia.containsKey("goes"));
+		assertEquals(expected.get("transportMedia.goes"), transportMedia.get("goes"));
+
 		assertEquals(configId, ((Integer) actualMap.get("configId")).longValue());
 
 		// Retrieve with a tmtype filter
@@ -390,12 +396,17 @@ final class PlatformResourcesIT extends BaseIT
 
 		actual = response.body().jsonPath();
 		actualMap = actual.getMap("");
-		actualMap = (Map<String, Object>) actualMap.get(expected.getString("name")); // Name of platform is not stored in Platform object, could cause issues with collision
+		actualMap = (Map<String, Object>) actualMap.get(expected.getString("name") + "-" + expected.getString("designator")); // Name of platform is not stored in Platform object, could cause issues with collision
 		assertNotNull(actualMap);
 		assertEquals(expected.get("description"), actualMap.get("description"));
 		assertEquals(expected.get("agency"), actualMap.get("agency"));
 		assertEquals(expected.get("designator"), actualMap.get("designator"));
 		assertEquals(expected.get("production"), actualMap.get("production"));
+		// The transportMedia map is interpreted by the JSON parser as a map of maps, but the actual JSON is a map of objects
+		transportMedia = (Map<String, Object>) actualMap.get("transportMedia");
+		assertTrue(transportMedia.containsKey("goes"));
+		assertEquals(expected.get("transportMedia.goes"), transportMedia.get("goes"));
+
 		assertEquals(configId, ((Integer) actualMap.get("configId")).longValue());
 
 		// Retrieve with an invalid tmtype to check filtering
