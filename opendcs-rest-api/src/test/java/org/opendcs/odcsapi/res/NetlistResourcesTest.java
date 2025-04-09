@@ -28,6 +28,10 @@ final class NetlistResourcesTest
 		nl.siteNameTypePref = "TestPref";
 		nl.transportMediumType = "GOES";
 		nl.setId(DbKey.createDbKey(750556L));
+		nl.networkListEntries.put("TestEntry", new NetworkListEntry(nl, "TestEntry"));
+		nl.networkListEntries.put("TestEntry2", new NetworkListEntry(nl, "TestEntry2"));
+		nl.networkListEntries.put("TestEntry3", new NetworkListEntry(nl, "TestEntry3"));
+		nl.networkListEntries.put("TestEntry4", new NetworkListEntry(nl, "TestEntry4"));
 
 		nll.add(nl);
 
@@ -40,6 +44,7 @@ final class NetlistResourcesTest
 		assertEquals(nl.transportMediumType, netlistRefs.get(0).getTransportMediumType());
 		assertEquals(nl.lastModifyTime, netlistRefs.get(0).getLastModifyTime());
 		assertEquals(nl.siteNameTypePref, netlistRefs.get(0).getSiteNameTypePref());
+		assertEquals(nl.networkListEntries.size(), netlistRefs.get(0).getNumPlatforms());
 	}
 
 	@Test

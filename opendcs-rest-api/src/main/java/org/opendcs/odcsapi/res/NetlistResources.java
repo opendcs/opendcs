@@ -144,6 +144,7 @@ public final class NetlistResources extends OpenDcsResource
 			anlr.setLastModifyTime(nl.lastModifyTime);
 			anlr.setTransportMediumType(nl.transportMediumType);
 			anlr.setSiteNameTypePref(nl.siteNameTypePref);
+			anlr.setNumPlatforms(nl.networkListEntries.size());
 			ret.add(anlr);
 		}
 		return ret;
