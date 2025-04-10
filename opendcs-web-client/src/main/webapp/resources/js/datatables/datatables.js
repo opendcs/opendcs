@@ -662,7 +662,6 @@ class OpenDcsDataTable {
                       }
                   }
               }
-
               $(jqTableId).removeClass("editing");
           }
           if (runAtEndFocusOut != null)
@@ -671,7 +670,6 @@ class OpenDcsDataTable {
           }
       });
   }
-
 }
 
 

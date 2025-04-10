@@ -24,23 +24,23 @@
 /**
  * Maintains the datatable object for the netlist details datatable.
  */
-var nlTable;
+let nlTable;
 
 /**
  * Maintains the datatable object for the netlist list datatable.
  */
-var netlistListTable;
+let netlistListTable;
 
 /**
  * Keeps track of the netlists when the netlist details modal is open.
  */
-var curNetlistDetails = undefined;
+let curNetlistDetails = undefined;
 
 /**
  * The list of GOES transport medium types.  
  * TODO: This needs to be hard coded for now, but should not be eventually.
  */
-var goesTms =     ["goes",                
+let goesTms =     ["goes",
     "goes-self-timed", 
     "goes-random"];
 
@@ -49,7 +49,7 @@ var goesTms =     ["goes",
  * TODO: This maybe should be a value that the user can select in a preference
  * page.
  */
-var ignoreTms = ["shef",
+let ignoreTms = ["shef",
     "polled-modem", 
     "polled-tcp", 
     "data-logger", 
@@ -60,7 +60,7 @@ var ignoreTms = ["shef",
  * The variable for storing all reference and propspec data so it can all 
  * be retrieved on page load.
  */
-var openDcsData;
+let openDcsData;
 
 /**
  * Runs on page load.  
@@ -77,17 +77,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updateNetlistsTable(classInstance.data.netlistrefs.data);
 
-        var transportMediumTypes = Object.keys(classInstance.data.reflists.data.TransportMediumType.items);
-        var blankO = new Option("", "");
+        let transportMediumTypes = Object.keys(classInstance.data.reflists.data.TransportMediumType.items);
+        let blankO = new Option("", "");
         $("#transportMediumTypeSelectbox").append(blankO);
-        for (var x = 0; x < transportMediumTypes.length; x++)
+        for (let x = 0; x < transportMediumTypes.length; x++)
         {
-            var o = new Option(transportMediumTypes[x], transportMediumTypes[x]);
+            let o = new Option(transportMediumTypes[x], transportMediumTypes[x]);
             $("#transportMediumTypeSelectbox").append(o);
         }
-        for (var x=0; x<ignoreTms.length; x++)
+        for (let x=0; x<ignoreTms.length; x++)
         {
-            var targetIndex = transportMediumTypes.indexOf(ignoreTms[x]);
+            let targetIndex = transportMediumTypes.indexOf(ignoreTms[x]);
             if (targetIndex != -1)
             {
                 transportMediumTypes.splice(targetIndex, 1);
@@ -114,11 +114,11 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function getSiteName(siteId, siteType)
 {
-    var siteName = null;
+    let siteName = null;
     openDcsData.data.siterefs.data.forEach(site => {
         if (siteName == null && site.siteId == siteId)
         {
-            for (var nameType in site.sitenames)
+            for (let nameType in site.sitenames)
             {
                 if (siteType.toLowerCase() == nameType.toLowerCase())
                 {
@@ -138,10 +138,10 @@ function getSiteName(siteId, siteType)
  */
 function getConfigById(configId)
 {
-    for (var x = 0; x < openDcsData.data.configrefs.data.length; x++)
+    for (let x = 0; x < openDcsData.data.configrefs.data.length; x++)
     {
-        var curConfig = openDcsData.data.configrefs.data[x];
-        if (curConfig.configId == configId)
+        let curConfig = openDcsData.data.configrefs.data[x];
+        if (curConfig.configId === configId)
         {
             return curConfig;
         }
@@ -157,10 +157,10 @@ function getConfigById(configId)
  */
 function getTransportMediaTypes(platform)
 {
-    var tmTypes = [];
+    let tmTypes = [];
     if (platform.transportMedia != null)
     {
-        for (var tmType in platform.transportMedia)
+        for (let tmType in platform.transportMedia)
         {
             tmTypes.push(tmType);
         }
@@ -176,10 +176,10 @@ function getTransportMediaTypes(platform)
  */
 function getTransportMediaIds(platform)
 {
-    var tmIds = [];
+    let tmIds = [];
     if (platform.transportMedia != null)
     {
-        for (var tmType in platform.transportMedia)
+        for (let tmType in platform.transportMedia)
         {
             tmIds.push(platform.transportMedia[tmType]);
         }
@@ -195,15 +195,15 @@ function getTransportMediaIds(platform)
  */
 function setNetlistPlatforms(netlistDetails)
 {
-    var allPlatformsModded = {};
-    for (var platKey in openDcsData.data.platformrefs.data)
+    let allPlatformsModded = {};
+    for (let platKey in openDcsData.data.platformrefs.data)
     {
-        var curPlatform = openDcsData.data.platformrefs.data[platKey];
+        let curPlatform = openDcsData.data.platformrefs.data[platKey];
 
         //TODO: Need to get transportMediumType as a property from the API call.
         curPlatform.transportMediumType = getTransportMediaTypes(curPlatform)
 
-        var config = getConfigById(curPlatform.configId);
+        let config = getConfigById(curPlatform.configId);
         curPlatform.config = "";
         if (config != null)
         {
@@ -212,7 +212,7 @@ function setNetlistPlatforms(netlistDetails)
 
         if (netlistDetails != null)
         {
-            var tmIds = getTransportMediaIds(curPlatform);
+            let tmIds = getTransportMediaIds(curPlatform);
             if (tmIds.some(r=> Object.keys(netlistDetails.items).includes(r)))
             {
                 curPlatform.inNetlist = true;
@@ -241,18 +241,18 @@ function setNetlistPlatforms(netlistDetails)
 function populateNetlistDetails(netlistId)
 {
     //A netlist was clicked and is being opened to be edited.
-    if (netlistId != -1) 
+    if (netlistId !== -1)
     {
-        var params = {
-                "netlistid": netlistId
+        let params = {
+            "netlistid": netlistId
         };
         $.ajax({
             url: `${window.API_URL}/netlist`,
             type: "GET",
             data: params,
             success: function(response) {
-                var netlistDetails = response;
-                var allPlatformsModded = setNetlistPlatforms(netlistDetails);
+                let netlistDetails = response;
+                let allPlatformsModded = setNetlistPlatforms(netlistDetails);
                 show_netlist_modal(netlistDetails, allPlatformsModded, openDcsData.data.reflists.data.TransportMediumType.items);
             },
             error: function(response) {
@@ -263,7 +263,7 @@ function populateNetlistDetails(netlistId)
     //A new netlist will be created.
     else 
     {
-        var allPlatformsModded = setNetlistPlatforms(null);
+        let allPlatformsModded = setNetlistPlatforms(null);
         show_netlist_modal(null, allPlatformsModded, openDcsData.data.reflists.data.TransportMediumType.items);
     }
 }
@@ -278,18 +278,18 @@ function updateNetlistsTable(netlistJson)
 {
     netlistListTable.clear();
     netlistListTable.draw(false);
-    for (var netlistKey in netlistJson)
+    for (let netlistKey in netlistJson)
     {
-        var curNetlist = netlistJson[netlistKey];
+        let curNetlist = netlistJson[netlistKey];
 
-        var params = {
+        let params = {
                 "objectType": "netlist",
                 "objectTypeDisplayName": "Netlist",
                 "objectIdIndex": 3,
                 "objectNameIndex": 0,
                 "urlIdName": "netlistid"
         };
-        var actions = [{
+        let actions = [{
             "type": "delete",
             "onclick": `deleteOpendcsObject_default(event, this, ${JSON.stringify(params)})`,
         },
@@ -314,7 +314,7 @@ function copyRow(event, clickedLink)
 {
     $(clickedLink).closest(".dropdown-menu").toggle();
     event.stopPropagation();
-    var netlistId = netlistListTable.row(clickedLink.closest("tr")).data()[3];
+    let netlistId = netlistListTable.row(clickedLink.closest("tr")).data()[3];
     openNetlistDialog(netlistId, true);
 }
 
@@ -341,8 +341,8 @@ function openNetlistDialog(netlistId, copyRow)
  */
 function netlistClicked()
 {
-    var clickedData = netlistListTable.row(this).data();
-    var netlistId = clickedData[3];
+    let clickedData = netlistListTable.row(this).data();
+    let netlistId = clickedData[3];
     openNetlistDialog(netlistId);
 }
 
@@ -384,13 +384,13 @@ function set_netlist_modal(netlistDetails, platformsList, tmTypes)
     $("#netlistName").val("");
     nlTable.clear();
     nlTable.search("");
-    if (platformsList != undefined)
+    if (platformsList !== undefined)
     {
-        if (netlistName == undefined)
+        if (netlistName === undefined)
         {
             netlistName = "";
         }
-        if ($("#displayedId").val().toString() != "-1")
+        if ($("#displayedId").val().toString() !== "-1")
         {
             $("#netlistTitle").text("Netlist - " + netlistDetails.name);
             $("#modal_netlist #modalTitle #modalSubTitle").html(` (Edit ${netlistDetails["name"]})`);
@@ -409,24 +409,25 @@ function set_netlist_modal(netlistDetails, platformsList, tmTypes)
             }
 
         }
-        if (netlistName != "")
+        if (netlistName !== "")
         {
             $("#transportMediumTypeSelectbox").val(netlistDetails.transportMediumType);
             $("#transportMediumTypeSelectbox").trigger("change");
         }
-        for (var key in platformsList)
+        for (let platformKey in platformsList)
         {
-            var curPlatform = platformsList[key];
-            var desc = (curPlatform.description != null ? curPlatform.description : "");
-            var tmDataHtml = "";
-            for (var key in curPlatform.transportMedia)
+            let curPlatform = platformsList[platformKey];
+            let desc = (curPlatform.description != null ? curPlatform.description : "");
+            let tmDataHtml = "<div>";
+            for (let tmKey in curPlatform.transportMedia)
             {
-                tmDataHtml += key + " - " + curPlatform.transportMedia[key] + "<br>";
+                tmDataHtml += `<div data-transportmedium="${tmKey}">${tmKey} - ${curPlatform.transportMedia[tmKey]}</div>`;
             }
+            tmDataHtml += "</div>";
 
-            var platformRow = [curPlatform.platformId, curPlatform.name, curPlatform.agency, tmDataHtml, curPlatform.config, desc];
+            let platformRow = [curPlatform.platformId, curPlatform.name, curPlatform.agency, tmDataHtml, curPlatform.config, desc];
 
-            var newRow = nlTable.row.add(platformRow).select(curPlatform.inNetlist);
+            let newRow = nlTable.row.add(platformRow).select(curPlatform.inNetlist);
         }
     }
     nlTable.draw(true);
@@ -454,8 +455,9 @@ function initializeEvents()
                 "bg-info", 
                 function() {
 
-            var tsm = $("#transportMediumTypeSelectbox").val();
-            var params = {
+            let tsm = $("#transportMediumTypeSelectbox").val();
+            let isGoesVariant = goesTms.includes(tsm);
+            let params = {
                     "name": $("#netlistName").val(),
                     "siteNameTypePref": $("#siteNameType").val(),
                     "transportMediumType": tsm,
@@ -463,11 +465,11 @@ function initializeEvents()
             };
             //This will overwrite the saved netlist, or create a new one.  
             //If the netlist id exists, it will overwrite the saved one.
-            if ($("#displayedId").val() != -1)
+            if ($("#displayedId").val() !== -1)
             {
                 params["netlistId"] = $("#displayedId").val();
             }
-            if (params.name == "")
+            if (params.name === "")
             {
                 show_notification_modal(
                         "Error", 
@@ -479,7 +481,7 @@ function initializeEvents()
                         null);
                 return;
             }
-            if (params.transportMediumType == "")
+            if (params.transportMediumType === "")
             {
                 show_notification_modal(
                         "Error", 
@@ -492,7 +494,7 @@ function initializeEvents()
                 return;
             }
 
-            if (params.siteNameTypePref == "")
+            if (params.siteNameTypePref === "")
             {
                 show_notification_modal(
                         "Error", 
@@ -505,25 +507,17 @@ function initializeEvents()
                 return;
             }
 
-            var selectedRowData = nlTable.rows({selected: true}).data();
-            for (var x = 0; x < selectedRowData.length; x++)
+            let selectedRowData = nlTable.rows({selected: true}).data();
+            for (let x = 0; x < selectedRowData.length; x++)
             {
-                var curData = selectedRowData[x];
-                var allPlatformTms = curData[3].split("<br>");
-                var validTmType = false;
+                let curData = selectedRowData[x];
+                let allPlatformTms = curData[3].split("<br>");
+                let validTmType = false;
                 allPlatformTms.forEach(ptm => {
-                    if (ptm.startsWith(tsm))
+                    let definedTm = $(ptm).find("div").data("transportmedium");
+                    if (definedTm === tsm || (isGoesVariant && goesTms.includes(definedTm)))
                     {
                         validTmType = true;
-                    }
-                    else
-                    {
-                        goesTms.forEach(tm => {
-                            if (ptm.startsWith(tm))
-                            {
-                                validTmType = true;
-                            }
-                        });
                     }
                     if (!validTmType)
                     {
@@ -545,19 +539,19 @@ function initializeEvents()
                 //Need to guess at which TM ID to use.  There may be more than 
                 //one per platform, but if they have GOES selected, or another 
                 //type, we can assume they want to use that Transport Medium
-                var selectedTransportMediaType = $("#transportMediumTypeSelectbox").val();
-                var platformInfo = openDcsData.data.platformrefs.data[curData[1]];
-                var allPlatformTmTypes = getTransportMediaTypes(platformInfo);
+                let selectedTransportMediaType = $("#transportMediumTypeSelectbox").val();
+                let platformInfo = openDcsData.data.platformrefs.data[curData[1]];
+                let allPlatformTmTypes = getTransportMediaTypes(platformInfo);
 
-                var tmId = null;
+                let tmId = null;
                 allPlatformTmTypes.forEach(tmType => {
                     if (tmId == null)
                     {    
-                        if (selectedTransportMediaType == tmType)
+                        if (selectedTransportMediaType === tmType)
                         {
                             tmId = platformInfo.transportMedia[tmType];
                         }
-                        else if (goesTms.indexOf(tmType) != -1) 
+                        else if (goesTms.indexOf(tmType) !== -1)
                         {
                             tmId = platformInfo.transportMedia[tmType];
                         }
@@ -565,7 +559,7 @@ function initializeEvents()
                 });
                 if (tmId != null)
                 {
-                    var siteName = getSiteName(platformInfo.siteId, $("#siteNameType").val());
+                    let siteName = getSiteName(platformInfo.siteId, $("#siteNameType").val());
                     params.items[tmId] = {
                             "description": curData[5],
                             "platformName": siteName,
@@ -609,7 +603,7 @@ function initializeEvents()
 
                 },
                 error: function(response) {
-                    var errorJson = JSON.parse(response.responseText);
+                    let errorJson = JSON.parse(response.responseText);
                     hide_waiting_modal(500);
                     show_notification_modal("Save Netlist", 
                             "Could not save Netlist", 
@@ -684,14 +678,27 @@ function initializeDataTables()
                 $('#transportMediumTypeSelectbox').data('previousVal', $(this).val());
             });
             $("#transportMediumTypeSelectbox").on("change", function(e){
-                var val = $(this).val();
+                let val = $(this).val();
                 if (val != null && val != "")
                 {
-                    var selectedRowData = nlTable.rows({selected: true}).data();
-                    for (var x = 0; x < selectedRowData.length; x++)
+                    let selectedRowData = nlTable.rows({selected: true}).data();
+                    for (let x = 0; x < selectedRowData.length; x++)
                     {
-                        var curData = selectedRowData[x];
-                        if (curData[3] != val && goesTms.indexOf(curData[3]) == -1 && goesTms.indexOf(val) == -1)
+                        let curData = selectedRowData[x];
+                        let curDataHtml = $(curData[3]).find("[data-transportmedium]");
+                        let tmMatched = false;
+                        let isGoesVariant = goesTms.includes(val);
+                        for (let y = 0; y < curDataHtml.length; y++)
+                        {
+                            let linkedTm = $(curDataHtml[y]).data("transportmedium");
+                            if (linkedTm === val || (isGoesVariant && goesTms.includes(linkedTm)))
+                            {
+                                //Found a linked trasnport medium
+                                tmMatched = true;
+                                break;
+                            }
+                        }
+                        if (!tmMatched)
                         {
                             set_yesno_modal(
                                     "Transport Medium Type Mismatch", 
@@ -717,7 +724,7 @@ function initializeDataTables()
         }
     });
     nlTable.on( 'select', function ( e, dt, type, indexes ) {
-        if ($("#transportMediumTypeSelectbox").val() == "")
+        if ($("#transportMediumTypeSelectbox").val() === "")
         {
             dt.rows(indexes[0]).deselect();
             show_notification_modal(
