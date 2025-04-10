@@ -412,6 +412,7 @@ public final class DatatypeUnitResources extends OpenDcsResource
 			if(ucId != null)
 			{
 				dbIo.deleteUnitConverter(ucId);
+				unitConverterDb.forceSetId(DbKey.NullKey);
 			}
 			dbIo.insertUnitConverter(unitConverterDb);
 			return Response.status(HttpServletResponse.SC_CREATED).entity(map(unitConverterDb)).build();
