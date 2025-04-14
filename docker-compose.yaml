@@ -1,0 +1,40 @@
+services:
+  opendcs:
+    build:
+      context: .      
+    image: opendcs    
+    container_name: opendcs
+    entrypoint: ["/opt/opendcs/env.sh"]
+    environment:
+      OPENDCS_DATABASE_TYPE: "CWMS"
+      OPENDCS_DATABASE_URL: "jdbc:oracle:thin:@oracledb:1521/FREEPDB1"
+      OPENDCS_CWMS_OFFICE: "NWDM"
+      OPENDCS_SITE_NAME_PREFERENCE: "cwms"
+      OPENDCS_DATATYPE_STANDARD: "CWMS"
+      OPENDCS_DATABASE_DRIVER : "oracle.jdbc.driver.OracleDriver"
+      OPENDCS_KEYGENERATOR: "decodes.sql.OracleSequenceKeyGenerator"
+      CWMS_USERNAME: "cwms"
+      CWMS_PASSWORD: "test"
+      OPENDCS_DB_AUTH: "env-auth-source:username=CWMS_USERNAME,password=CWMS_PASSWORD"
+    stdin_open: true  
+    tty: true
+    command: /bin/bash -c "/opt/opendcs/env.sh && exec /bin/bash"
+    depends_on:
+      oracledb:
+        condition: service_healthy
+  oracledb:
+    image: registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev
+    container_name: oracledb
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: "test"
+      CWMS_PASSWORD: "test"
+      OFFICE_ID: "HQ"
+      OFFICE_EROC: "s0"
+    healthcheck:
+      test: ["CMD","tnsping", "FREEPDB1"]
+      interval: 30s
+      timeout: 50s
+      retries: 50
+      start_period: 40m    
