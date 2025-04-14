@@ -198,6 +198,7 @@ public class NetworkList extends IdDatabaseObject
 	 * This compares one NetworkList with another.
 	  @param ob the other object
 	 */
+	@Override
 	public boolean equals(Object ob)
 	{
 		if (!(ob instanceof NetworkList))
@@ -214,6 +215,11 @@ public class NetworkList extends IdDatabaseObject
 		if (!siteNameTypePref.equalsIgnoreCase(nl.siteNameTypePref))
 			return false;
 
+		if (this.networkListEntries.size() != nl.networkListEntries.size())
+		{
+			return false;
+		}
+		
 		for(Iterator<String> it1 = networkListEntries.keySet().iterator();
 			it1.hasNext();)
 		{
