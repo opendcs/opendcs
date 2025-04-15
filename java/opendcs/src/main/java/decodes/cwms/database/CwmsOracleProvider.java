@@ -97,7 +97,23 @@ public class CwmsOracleProvider implements MigrationProvider
     @Override
     public void createUser(Jdbi jdbi, String username, String password, List<String> roles)
     {
-        log.warn("Create User ignored. CWMS Users are managed externally.");
+        jdbi.useTransaction(h ->
+        {
+            try(Call createUser = h.createCall("call cwms_sec.create_user(:user,:pw)");
+                Call assignRole = h.createCall("call cwms_sec.add_user_to_group(:user,:role,:office)");)
+            {
+                createUser.bind("user",username)
+                          .bind("pw", password)
+                          .invoke();
+                for(String role: roles)
+                {
+                    assignRole.bind("user",username)
+                              .bind("role",role)
+                              .bind("office", placeholders.get("DEFAULT_OFFICE"))
+                              .invoke();
+                }
+            }
+        });
     }
 
     @Override
