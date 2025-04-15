@@ -54,7 +54,6 @@ jobs:
         # Integration tests require docker now for test containers.
         # More work required to deal with the other platforms. Should be workable
         # at some point though.
-        if: matrix.platform == 'ubuntu-latest'
         run: |
           ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=OpenDCS-XML" --info
       - name: integration tests (OpenDCS-Postgres)
