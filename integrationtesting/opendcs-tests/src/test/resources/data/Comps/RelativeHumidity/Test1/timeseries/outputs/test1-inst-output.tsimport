@@ -1,0 +1,3 @@
+﻿SET:TZ=UTC
+SET:UNITS=%
+TSID:TESTSITE1.%-RelativeHumidity.Inst.1Hour.0.relativeHumidity-output
