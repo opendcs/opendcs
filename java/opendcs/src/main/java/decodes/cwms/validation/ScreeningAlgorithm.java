@@ -52,8 +52,8 @@ import decodes.cwms.CwmsFlags;
 import decodes.cwms.validation.Screening;
 import decodes.db.Site;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.util.PropertySpec;
 import decodes.util.TSUtil;
+import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
@@ -77,30 +77,25 @@ public class ScreeningAlgorithm
 	boolean _inputIsOutput = false;
 	public boolean inputIsOutput() { return _inputIsOutput; }
 	
-	PropertySpec algoPropSpecs[] =
-	{
-		new PropertySpec("noOverwrite", PropertySpec.BOOLEAN, "(default=false) "
-			+ "Set to true to disable overwriting of output parameter."),
-		new PropertySpec("setInputFlags", PropertySpec.BOOLEAN, "(default=false) "
-			+ "Set to true to set quality flags on the input parameter."),
-		new PropertySpec("setRejectMissing", PropertySpec.BOOLEAN, "(default=false) "
-			+ "If true and the value is REJECTED, set the output flags to MISSING."),
-		new PropertySpec("noOutputOnReject", PropertySpec.BOOLEAN, "(default=false) "
-			+ "If true and the value is REJECTED, then do not write output param at all. "
-			+ "Warning: This may leave a previous value for the output param at that time slice "
-			+ "unchanged.")
-	};
 
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-
+	
+	
 	@org.opendcs.annotations.PropertySpec(value = "false") 
+	/** (default=false) Set to true to disable overwriting of output parameter. */
 	public boolean noOverwrite = false;
 	@org.opendcs.annotations.PropertySpec(value = "false") 
+	/** (default=false) Set to true to set quality flags on the input parameter. */
 	public boolean setInputFlags = false;
 	@org.opendcs.annotations.PropertySpec(value = "false")
+	/** (default=false) If true and the value is REJECTED, set the output flags to MISSING. */
 	public boolean setRejectMissing = false;
 	@org.opendcs.annotations.PropertySpec(value = "false")
+	/** 
+	 * (default=false) If true and the value is REJECTED, then do not write output param at all.
+	 * Warning: This may leave a previous value for the output param at that time slice unchanged.
+	 * */
 	public boolean noOutputOnReject = false;
 
 	// Allow javac to generate a no-args constructor.
