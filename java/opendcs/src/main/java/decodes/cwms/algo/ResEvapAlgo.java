@@ -22,6 +22,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -194,7 +195,7 @@ final public class ResEvapAlgo
         Date sinceTime = new Date(baseTimes.first().getTime() - 86400000);
         try
         {
-            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, reservoirId, WTPID, sinceTime, baseTimes.first(), startDepth, depthIncrement);
+            hourlyWTP = new WaterTempProfiles(timeSeriesDAO, WTPID, sinceTime, baseTimes.first(), startDepth, depthIncrement);
         }
         catch (DbIoException ex)
         {
@@ -237,7 +238,7 @@ final public class ResEvapAlgo
             }
             i++;
         }
-        dailyWTP.setProfiles(arrayWTP, CurrentTime, wtpTsId, reservoirId, zeroElevation, elev, timeSeriesDAO);
+        dailyWTP.setProfiles(arrayWTP, CurrentTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
     }
 
     //Returns Converted double of cts from currUnits space to NewUnits
@@ -348,17 +349,21 @@ final public class ResEvapAlgo
             siteDAO = tsdb.makeSiteDAO();
             timeSeriesDAO = tsdb.makeTimeSeriesDAO();
             crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
-            conn = tsdb.getConnection();
 
             //Get site Data from Database
             try
             {
+                conn = tsdb.getConnection();
                 DbKey siteID = siteDAO.lookupSiteID(reservoirId);
                 site = siteDAO.getSiteById(siteID);
             }
             catch (DbIoException | NoSuchObjectException ex)
             {
                 throw new DbCompException("Failed to load Site data", ex);
+            }
+            catch (SQLException ex)
+            {
+                throw new DbCompException("Unable to acquire required connection.", ex);
             }
 
             //If missing data overwrite with site info
@@ -541,7 +546,7 @@ final public class ResEvapAlgo
             setOutput(hourlyFluxOut, computedList.get(5));
             setOutput(hourlyEvap, computedList.get(6));
 
-            hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, reservoirId, zeroElevation, elev, timeSeriesDAO);
+            hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
 
             count++;
             tally += (previousHourlyEvap + computedList.get(6)) / 2;

@@ -1,6 +1,6 @@
 ﻿SET:TZ=UTC
-SET:UNITS=in
-TSID:testsite-pattern.Precip-Cum.Inst.1Hour.0.test
+SET:UNITS=mm
+TSID:TESTSITE1.Precip.Ave.1Hour.1Hour.input
 2024/06/13-11:00:00,1.0,0
 2024/06/13-12:00:00,2.0,0
 2024/06/13-13:00:00,3.0,0
