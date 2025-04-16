@@ -107,6 +107,7 @@ public class TsImporter
      */
     private void endOfFile() throws DbIoException
     {
+        currentTS = null;
         lineNum = -1;
     }
 

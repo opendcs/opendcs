@@ -346,8 +346,10 @@ public class CompExec extends TsdbAppTemplate
 		}
 		else // Else write directly to database.
 		{
+			System.out.println("Saving data: " + theData.size());
 			for(CTimeSeries cts : theData.getAllTimeSeries())
 			{
+				System.out.println("Saving: " + cts.getDisplayName());
 				int numChanges = 0;
 				Date earliest=null, latest=null;
 				for(int idx = 0; idx < cts.size(); idx++)
