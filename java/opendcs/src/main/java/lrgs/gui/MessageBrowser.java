@@ -35,11 +35,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.net.*;
 
+import javax.net.SocketFactory;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.border.BevelBorder;
 
@@ -75,6 +77,7 @@ the remote system.
 public class MessageBrowser extends MenuFrame
     implements DcpMsgOutputMonitor, SearchCritEditorParent
 {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(MessageBrowser.class);
     private static ResourceBundle labels = null;
     private static ResourceBundle genericLabels = null;
 
@@ -392,16 +395,13 @@ public class MessageBrowser extends MenuFrame
                 new GridBagConstraints(0, 3, 1, 1, 0.2, 1.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                     new Insets(2, 5, 2, 5), 0, 0));
-            outFmts = DecodesInterface.getOutputFormats();
-            if (outFmts == null)
-            {
-                String[] thisFmt = new String[1];
-                thisFmt[0] = "human-readable";
-                outCombo = new JComboBox(thisFmt);
-            } else {
-
-                outCombo = new JComboBox(outFmts);
-            }
+            
+            
+            
+            String[] thisFmt = new String[1];
+            thisFmt[0] = "human-readable";
+            outCombo = new JComboBox(thisFmt);
+        
             outCombo.setSelectedItem(
                 GuiApp.getProperty("MessageBrowser.OutputFormat", "human-readable"));
             southwest.add(outCombo,
@@ -515,58 +515,7 @@ public class MessageBrowser extends MenuFrame
             "$DECODES_INSTALL_DIR/decodes.properties");
         dpf = EnvExpander.expand(dpf, System.getProperties());
 
-        try
-        {
-            DecodesInterface.initDecodes(dpf);
-            if (canDecode)
-            {
-                DecodesInterface.initializeForDecoding();
-            }
-        }
-        catch(decodes.util.DecodesException ex)
-        {
-            Logger.instance().log(Logger.E_FAILURE,
-                "Error initializing DECODES (Decoding functions disabled): "
-                + ex);
-            return;
-        }
-        catch(NoClassDefFoundError ex)
-        {
-            Logger.instance().log(Logger.E_FAILURE,
-                "Cannot find DECODES classes. "
-                + "Check CLASSPATH and software installation: " + ex);
-            return;
-        }
-
-        if (canDecode)
-        {
-            nm = "MessageBrowser.PresentationGroup";
-            String pgs[] = DecodesInterface.getPresentationGroups();
-            GuiApp.getProperty(nm, "empty-presentation");
-            if (pgs != null && pgs.length > 0)
-                EditPropsAction.registerEditor(nm, new JComboBox(pgs));
-
-            nm = "MessageBrowser.OutputFormat";
-            String fmts[] = DecodesInterface.getOutputFormats();
-            GuiApp.getProperty(nm, "human-readable");
-            if (fmts != null && fmts.length > 0)
-                EditPropsAction.registerEditor(nm, new JComboBox(fmts));
-
-            GuiApp.getProperty("MessageBrowser.TimeZone", "UTC");
-
-            nm = "MessageBrowser.EnableEquations";
-            GuiApp.getProperty(nm, "true");
-            EditPropsAction.registerEditor(nm,
-                new JComboBox(new String[] { "true", "false" }));
-
-            nm = "MessageBrowser.Show";
-            GuiApp.getProperty(nm, "Raw");
-            EditPropsAction.registerEditor(nm, new JComboBox(showChoices));
-
-            GuiApp.getProperty("MessageBrowser.BeforeData", "----\\n");
-
-            GuiApp.getProperty("MessageBrowser.AfterData", "");
-        }
+        // Decoding support will be added back in at a later time.
     }
 
     /**
@@ -696,9 +645,10 @@ public class MessageBrowser extends MenuFrame
         hostName = c.getHostName();
         String pw = LrgsConnection.decryptPassword(c, LrgsConnectionPanel.pwk);
         String username = c.getUsername();
+        SocketFactory socketFactory = c.getSocketFactory();
         try
         {
-            client = new LddsClient(hostName, port);
+            client = new LddsClient(hostName, port,socketFactory);
             client.connect();
 
             client.sendAuthHello(username, pw);
@@ -719,6 +669,7 @@ public class MessageBrowser extends MenuFrame
         }
         catch(IOException ioe)
         {
+            log.error(errmsg, ioe);
             errmsg = labels.getString("MessageBrowser.ioConnectErr") + ioe;
         }
         catch(ProtocolError pe)
