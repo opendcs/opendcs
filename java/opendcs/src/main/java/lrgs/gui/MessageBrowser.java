@@ -41,6 +41,7 @@ import javax.swing.border.TitledBorder;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.border.BevelBorder;
 
@@ -76,6 +77,7 @@ the remote system.
 public class MessageBrowser extends MenuFrame
     implements DcpMsgOutputMonitor, SearchCritEditorParent
 {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(MessageBrowser.class);
     private static ResourceBundle labels = null;
     private static ResourceBundle genericLabels = null;
 
@@ -667,6 +669,7 @@ public class MessageBrowser extends MenuFrame
         }
         catch(IOException ioe)
         {
+            log.error(errmsg, ioe);
             errmsg = labels.getString("MessageBrowser.ioConnectErr") + ioe;
         }
         catch(ProtocolError pe)

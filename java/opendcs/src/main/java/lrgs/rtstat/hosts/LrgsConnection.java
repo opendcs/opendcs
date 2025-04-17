@@ -95,8 +95,13 @@ public final class LrgsConnection
             {
 				SSLContext sslContext = SSLContext.getInstance("TLS");
 				TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-				KeyStore ks = KeyStore.getInstance("JKS");
-				ks.load(new FileInputStream(EnvExpander.expand("$DCSTOOL_USERDIR/lrgs/lrgs.ks")),"lrgspass".toCharArray());
+                //KeyStore.
+				KeyStore ks = KeyStore.getInstance("PKCS12");
+                try (FileInputStream fp = new FileInputStream(EnvExpander.expand("$DCSTOOL_USERDIR/lrgs.ks")))
+                {
+				    ks.load(new FileInputStream(EnvExpander.expand("$DCSTOOL_USERDIR/lrgs.ks")),null);
+                }
+                ks.load(null);
 				tmf.init(ks);
 				sslContext.init(null,tmf.getTrustManagers(),null);
 				return sslContext.getSocketFactory();
