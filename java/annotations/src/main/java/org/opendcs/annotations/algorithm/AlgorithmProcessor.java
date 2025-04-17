@@ -132,7 +132,7 @@ final public class AlgorithmProcessor extends AbstractProcessor
                 name = e.getSimpleName().toString();
             }
             out.writeAttribute("name", name);
-            out.writeCharacters(propSpec.value());
+                out.writeCharacters(propSpec.value());
             out.writeEndElement();                
         };
         TypeMirror superclass = currentClass.getSuperclass();
