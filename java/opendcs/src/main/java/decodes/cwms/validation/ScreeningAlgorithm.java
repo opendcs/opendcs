@@ -81,21 +81,14 @@ public class ScreeningAlgorithm
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
 	
-	
-	@org.opendcs.annotations.PropertySpec(value = "false") 
-	/** (default=false) Set to true to disable overwriting of output parameter. */
+	@PropertySpec(value = "false", description="(default=false) Set to true to disable overwriting of output parameter.")
 	public boolean noOverwrite = false;
-	@org.opendcs.annotations.PropertySpec(value = "false") 
-	/** (default=false) Set to true to set quality flags on the input parameter. */
+	@PropertySpec(value = "false", description="(default=false) Set to true to set quality flags on the input parameter.")
 	public boolean setInputFlags = false;
-	@org.opendcs.annotations.PropertySpec(value = "false")
-	/** (default=false) If true and the value is REJECTED, set the output flags to MISSING. */
+	@PropertySpec(value = "false", description="(default=false) If true and the value is REJECTED, set the output flags to MISSING.")
 	public boolean setRejectMissing = false;
-	@org.opendcs.annotations.PropertySpec(value = "false")
-	/** 
-	 * (default=false) If true and the value is REJECTED, then do not write output param at all.
-	 * Warning: This may leave a previous value for the output param at that time slice unchanged.
-	 * */
+	@PropertySpec(value = "false", description="(default=false) If true and the value is REJECTED, then do not write output param at all. \n
+		Warning: This may leave a previous value for the output param at that time slice unchanged.")
 	public boolean noOutputOnReject = false;
 
 	// Allow javac to generate a no-args constructor.
