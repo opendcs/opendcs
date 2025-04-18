@@ -99,10 +99,16 @@ public class CwmsOracleProvider implements MigrationProvider
     {
         jdbi.useTransaction(h ->
         {
-            try(Call createUser = h.createCall("call cwms_sec.create_user(:user,:pw, null, null)");
+            try(Call createUser = h.createCall("call ccp.create_user(:user,:pw)");
+                Call createCwmsUser = h.createCall("call cwms_sec.create_user(:user,:pw, null, null)");
                 Call assignRole = h.createCall("call cwms_sec.add_user_to_group(:user,:role,:office)");)
             {
-                createUser.bind("user",username)
+
+                createUser.bind("user", username)
+                          .bind("pw", password)
+                          .invoke();
+
+                createCwmsUser.bind("user",username)
                           .bind("pw", password)
 
                           .invoke();
