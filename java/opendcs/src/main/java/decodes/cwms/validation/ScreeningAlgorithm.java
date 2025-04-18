@@ -87,8 +87,8 @@ public class ScreeningAlgorithm
 	public boolean setInputFlags = false;
 	@PropertySpec(value = "false", description="(default=false) If true and the value is REJECTED, set the output flags to MISSING.")
 	public boolean setRejectMissing = false;
-	@PropertySpec(value = "false", description="(default=false) If true and the value is REJECTED, then do not write output param at all. \n
-		Warning: This may leave a previous value for the output param at that time slice unchanged.")
+	@PropertySpec(value = "false", description="(default=false) If true and the value is REJECTED, then do not write output param at all.\n
+	Warning: This may leave a previous value for the output param at that time slice unchanged.")
 	public boolean noOutputOnReject = false;
 
 	// Allow javac to generate a no-args constructor.
