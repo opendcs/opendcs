@@ -76,6 +76,7 @@ import ilex.util.TextUtil;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Site;
+import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.DbCompParm;
@@ -415,6 +416,13 @@ public class CwmsTsId
 			baseLoc = v.substring(0, hyphen);
 			subLoc = v.length() > hyphen+1 ? v.substring(hyphen+1) : null;
 		}
+		if (site == null) {
+			site = new Site();
+		}
+		site.clearNames();
+		SiteName sn = new SiteName(site, Constants.snt_CWMS, v);
+		site.addName(sn);
+
 
 	}
 	
