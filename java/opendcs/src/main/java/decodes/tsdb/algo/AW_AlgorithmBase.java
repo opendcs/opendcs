@@ -430,6 +430,7 @@ public abstract class AW_AlgorithmBase
 		}
 		try
 		{
+			beforeAllTimeSlices();
 			if (_awAlgoType == AWAlgoType.AGGREGATING
 			 || _awAlgoType == AWAlgoType.RUNNING_AGGREGATE)
 			{
@@ -449,6 +450,7 @@ public abstract class AW_AlgorithmBase
 					afterTimeSlices();
 				}
 			}
+			afterAllTimeSlices();
 		}
 		catch(RuntimeException ex){
 			throw new DbCompException("RunTime Error: "+ex+"\nAt: "+ex.getStackTrace()[0].toString(), ex);
@@ -457,6 +459,18 @@ public abstract class AW_AlgorithmBase
 		{
 			Logger.instance().setMinLogPriority(defLogPriority);
 		}
+	}
+
+	public void afterAllTimeSlices()
+		throws DbCompException
+	{
+		// Nothing to do here.
+	}
+
+	public void beforeAllTimeSlices()
+			throws DbCompException
+	{
+		// Nothing to do here.
 	}
 	
 
