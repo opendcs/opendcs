@@ -26,7 +26,7 @@ import org.opendcs.spi.configuration.Configuration;
 @ExtendWith(EnableIfTsDb.EnableIfTsDbCondition.class)
 public @interface EnableIfTsDb
 {
-    public String impl() default "";
+    public String[] value() default {};
 
     static class EnableIfTsDbCondition implements ExecutionCondition
     {
@@ -47,21 +47,37 @@ public @interface EnableIfTsDb
                 {
                     Optional<AnnotatedElement> element = ctx.getElement();
                     EnableIfTsDb anno = element.get().getAnnotation(EnableIfTsDb.class);
-                    if (anno.impl().isEmpty())
+                    final String configName = configs.get(0).getName();
+                    if (anno.value().length == 0)
                     {
                         retVal = ConditionEvaluationResult.enabled("Is Timeseries Db");
                     }
-                    else if (anno.impl().equalsIgnoreCase(configs.get(0).getName()))
+                    else if (matches(anno.value(),configName))
                     {
-                        retVal = ConditionEvaluationResult.enabled("Is Timeseries Db of type " + anno.impl());
+                        retVal = ConditionEvaluationResult.enabled(
+                            String.format("Is Timeseries Db of type (%s)", String.join(",", anno.value()))
+                        );
                     }
                     else
                     {
-                        retVal = ConditionEvaluationResult.disabled("Not a Timeseries Db of type" + anno.impl() + " was " +configs.get(0).getName());
+                        retVal = ConditionEvaluationResult.disabled(
+                            String.format("Not a Timeseries Db of type (%s) was %s", String.join(",", anno.value()), configName));
                     }
                 }
             }
             return retVal;
+        }
+
+        private boolean matches(String[] allowed, String have)
+        {
+            for (String current: allowed)
+            {
+                if (current.equals(have))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
