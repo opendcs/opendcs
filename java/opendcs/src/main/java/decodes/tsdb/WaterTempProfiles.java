@@ -55,7 +55,7 @@ final public class WaterTempProfiles
     }
 
     //Initialize WaterTempProfiles with profiles from time slice previous to Until in database DAO connection
-    public WaterTempProfiles(TimeSeriesDAI timeSeriesDAO, String resID, String wtpId, Date since, Date until, double start, double incr) throws DbCompException, DbIoException
+    public WaterTempProfiles(TimeSeriesDAI timeSeriesDAO, String wtpId, Date since, Date until, double start, double incr) throws DbCompException, DbIoException
     {
         tseries = new DataCollection();
         startDepth = start;
@@ -70,6 +70,13 @@ final public class WaterTempProfiles
         catch (DbIoException | NoSuchObjectException ex)
         {
             throw new DbCompException("Failed to load timeSeries id: " + wtpId, ex);
+        }
+
+        String resID = tsid.getSiteName();
+
+        int index = resID.lastIndexOf("-D");
+        if (index != -1) {
+            resID = resID.substring(0, index);
         }
 
         while (loading)
@@ -126,7 +133,7 @@ final public class WaterTempProfiles
     }
 
     //Saves double[] of WTP to WTP object at time step, Stores data in CTimesSeries sets Flag  of timedVariable to T0_WRITE.
-    public void setProfiles(double[] wtp, Date CurrentTime, String wtpTsId, String reservoirId, Double zeroElevation, Double Elev, TimeSeriesDAI timeSeriesDAO) throws DbCompException
+    public void setProfiles(double[] wtp, Date CurrentTime, String wtpTsId, Double zeroElevation, Double Elev, TimeSeriesDAI timeSeriesDAO) throws DbCompException
     {
         double currentDepth = startDepth;
         for (int i = 0; i < wtp.length && currentDepth + (zeroElevation * 0.3048) <= Elev; i++)
@@ -137,6 +144,13 @@ final public class WaterTempProfiles
                 {
                     TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(wtpTsId);
                     TimeSeriesIdentifier newTSID = tsid.copyNoKey();
+
+                    String reservoirId = tsid.getSiteName();
+
+                    int index = reservoirId.lastIndexOf("-D");
+                    if (index != -1) {
+                        reservoirId = reservoirId.substring(0, index);
+                    }
 
                     Site newsite = new Site();
                     newsite.copyFrom(newTSID.getSite());
@@ -153,7 +167,12 @@ final public class WaterTempProfiles
                     FailableResult<TimeSeriesIdentifier, TsdbException> check = timeSeriesDAO.findTimeSeriesIdentifier(newTSID.getUniqueString());
                     if (check.isSuccess())
                     {
-                        CTProfile = timeSeriesDAO.makeTimeSeries(check.getSuccess());
+                        CTProfile = tseries.getTimeSeriesByTsidKey(check.getSuccess());
+                        if (CTProfile == null)
+                        {
+                            CTProfile = timeSeriesDAO.makeTimeSeries(check.getSuccess());
+                            tseries.addTimeSeries(CTProfile);
+                        }
                     }
                     else if (check.getFailure() instanceof NoSuchObjectException)
                     {
@@ -168,7 +187,6 @@ final public class WaterTempProfiles
                     TimedVariable newTV = new TimedVariable(new Variable(wtp[i]), CurrentTime);
                     newTV.setFlags(VarFlags.TO_WRITE);
                     CTProfile.addSample(newTV);
-                    tseries.addTimeSeries(CTProfile);
                 }
                 catch (Exception ex)
                 {
@@ -197,6 +215,41 @@ final public class WaterTempProfiles
             catch (Exception ex)
             {
                 LOGGER.error("Error saving water temperature profile data", ex);
+            }
+        }
+    }
+
+    public void append(WaterTempProfiles wtp, Date appendTime, TimeSeriesDAI timeSeriesDAO)
+    {
+        if (tseries == null || wtp == null || wtp.getTimeSeries() == null)
+        {
+            return;
+        }
+
+        for (CTimeSeries tsery : wtp.getTimeSeries().getAllTimeSeries())
+        {
+            int idx = tsery.findNextIdx(appendTime);
+            if (idx == -1)
+            {
+                break;
+            }
+            CTimeSeries existingSeries = tseries.getTimeSeriesByUniqueSdi(tsery.getSDI());
+            if (existingSeries != null)
+            {
+                existingSeries.addSample(tsery.sampleAt(idx));
+            }
+            else
+            {
+                try
+                {
+                    CTimeSeries tseryCopy = timeSeriesDAO.makeTimeSeries(tsery.getTimeSeriesIdentifier());
+                    tseryCopy.addSample(tsery.sampleAt(idx));
+                    tseries.addTimeSeries(tsery);
+                }
+                catch (DuplicateTimeSeriesException | NoSuchObjectException | DbIoException  ex)
+                {
+                    LOGGER.error("Error appending water temperature profile data", ex);
+                }
             }
         }
     }
