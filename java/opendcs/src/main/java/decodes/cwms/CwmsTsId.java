@@ -76,6 +76,7 @@ import ilex.util.TextUtil;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.Site;
+import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.DbCompParm;
@@ -415,6 +416,13 @@ public class CwmsTsId
 			baseLoc = v.substring(0, hyphen);
 			subLoc = v.length() > hyphen+1 ? v.substring(hyphen+1) : null;
 		}
+		if (site == null) {
+			site = new Site();
+		}
+		site.clearNames();
+		SiteName sn = new SiteName(site, Constants.snt_CWMS, v);
+		site.addName(sn);
+
 
 	}
 	
@@ -506,14 +514,9 @@ public class CwmsTsId
 		
 		int idx = siteName.indexOf('-');
 		String baseLoc = idx < 0 ? siteName : siteName.substring(0, idx);
-		String subLoc = idx < 0 ? null : siteName.substring(idx+1);
 		
 		if (baseLoc.length() < 1)
 			throw new BadTimeSeriesException("Empty base location");
-		if (baseLoc.length() > 16)
-			throw new BadTimeSeriesException("Base location longer than 16 chars.");
-		if (subLoc != null && subLoc.length() > 32)
-			throw new BadTimeSeriesException("Sub-location longer than 32 chars.");
 		
 		String param = dataType == null ? "" : dataType.getCode();
 		if (param == null || param.length() == 0)
@@ -521,31 +524,21 @@ public class CwmsTsId
 		
 		idx = param.indexOf('-');
 		String baseParam = idx < 0 ? param : param.substring(0, idx);
-		String subParam = idx < 0 ? null : param.substring(idx+1);
-		if (baseParam.length() > 16)
-			throw new BadTimeSeriesException("Base parameter longer than 16 chars.");
-		if (subParam != null && subParam.length() > 32)
-			throw new BadTimeSeriesException("Sub-parameter longer than 32 chars.");
+
+		if (baseParam.length() < 1)
+			throw new BadTimeSeriesException("Base parameter empty while using sub parameter.");
 
 		if (paramType == null || paramType.length() == 0)
 			throw new BadTimeSeriesException("No ParamType specified");
-		if (paramType.length() > 16)
-			throw new BadTimeSeriesException("ParamType longer than 16 chars.");
 		
 		if (interval == null || interval.length() == 0)
 			throw new BadTimeSeriesException("No interval specified");
-		if (interval.length() > 16)
-			throw new BadTimeSeriesException("interval longer than 16 chars.");
 		
 		if (duration == null || duration.length() == 0)
 			throw new BadTimeSeriesException("No duration specified");
-		if (duration.length() > 16)
-			throw new BadTimeSeriesException("duration longer than 16 chars.");
 
 		if (version == null || version.length() == 0)
 			throw new BadTimeSeriesException("No version specified");
-		if (version.length() > 32)
-			throw new BadTimeSeriesException("version longer than 32 chars.");
 	}
 
 	@Override

@@ -1397,7 +1397,7 @@ debug1("Time series " + tsid.getUniqueString() + " already has offset = "
 		CwmsTsId ctsid = (CwmsTsId)tsid;
 		DbKey siteId = Constants.undefinedId;
 		Site site = tsid.getSite();
-		if (site != null)
+		if (site != null && !DbKey.isNull(site.getId()))
 			siteId = site.getId();
 		else
 		{
