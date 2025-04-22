@@ -98,7 +98,6 @@ public class CwmsOracleConfiguration implements Configuration
             String createBuildUser = IOUtils.resourceToString("/database/admin_user.sql", StandardCharsets.UTF_8);
             cwmsDb.executeSQL(createBuildUser, "sys");
             SimpleDataSource ds = new SimpleDataSource(cwmsDb.getJdbcUrl(), "builduser", CWMS_BUILDUSER_PASSWORD);
-);
 
             MigrationManager mm = new MigrationManager(ds, NAME);
             MigrationProvider mp = mm.getMigrationProvider();
