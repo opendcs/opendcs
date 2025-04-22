@@ -110,7 +110,6 @@ public class CwmsOracleProvider implements MigrationProvider
 
                 createCwmsUser.bind("user",username)
                           .bind("pw", password)
-
                           .invoke();
                 for(String role: roles)
                 {
