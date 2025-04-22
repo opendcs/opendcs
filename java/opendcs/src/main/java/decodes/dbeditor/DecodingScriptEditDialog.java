@@ -105,7 +105,7 @@ public class DecodingScriptEditDialog
 					started = true;
 				}
 			});
-		decodingScriptEditPanel.setTraceDialog(new TraceDialog(this, true));
+		decodingScriptEditPanel.setTraceDialog(new TraceDialog(this, false));
 	}
 
 	/** Fills in values from the object */
