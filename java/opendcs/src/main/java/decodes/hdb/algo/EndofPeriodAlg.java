@@ -20,7 +20,7 @@ import org.opendcs.annotations.algorithm.Output;
 import decodes.tsdb.ParmRef;
 
 
-@Algorithm(description = "Type a javadoc-style comment describing the algorithm class.")
+@Algorithm(description = "Copies input to output at EndofPeriod based on interval window")
 public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
