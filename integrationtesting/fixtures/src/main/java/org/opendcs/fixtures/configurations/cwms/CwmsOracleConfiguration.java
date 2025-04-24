@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +46,7 @@ public class CwmsOracleConfiguration implements Configuration
     private static final String CWMS_ORACLE_IMAGE = System.getProperty("opendcs.cwms.oracle.image","registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev");
     private static final String CWMS_ORACLE_VOLUME = System.getProperty("opendcs.cwms.oracle.volume","cwms_opendcs_volume");
     private static final String CWMS_SCHEMA_IMAGE = System.getProperty("opendcs.cwms.schema.image","registry-public.hecdev.net/cwms/schema_installer:latest-dev");
+    private static final String CWMS_BUILDUSER_PASSWORD = System.getProperty("opendcs.cwms.build.user.password","antbuildpassword");
 
     public static final String NAME = "CWMS-Oracle";
 
@@ -75,6 +77,7 @@ public class CwmsOracleConfiguration implements Configuration
                             .withVolumeName(CWMS_ORACLE_VOLUME)
                             .withOfficeId("SPK")
                             .withOfficeEroc("l2")
+                            .withEnv("BUILDUSER_PASSWORD", CWMS_BUILDUSER_PASSWORD)
                             .withCreateContainerCmdModifier(cmd ->
                             {
                                 cmd.getHostConfig()
@@ -94,7 +97,7 @@ public class CwmsOracleConfiguration implements Configuration
             
             String createBuildUser = IOUtils.resourceToString("/database/admin_user.sql", StandardCharsets.UTF_8);
             cwmsDb.executeSQL(createBuildUser, "sys");
-            SimpleDataSource ds = new SimpleDataSource(cwmsDb.getJdbcUrl(), "dbadm","adminuser");
+            SimpleDataSource ds = new SimpleDataSource(cwmsDb.getJdbcUrl(), "builduser", CWMS_BUILDUSER_PASSWORD);
 
             MigrationManager mm = new MigrationManager(ds, NAME);
             MigrationProvider mp = mm.getMigrationProvider();
@@ -104,13 +107,14 @@ public class CwmsOracleConfiguration implements Configuration
             mp.setPlaceholderValue("DEFAULT_OFFICE", "SPK");
             mp.setPlaceholderValue("TABLE_SPACE_SPEC", "tablespace CCP_DATA");
             mm.migrate();
-            cwmsDb.executeSQL("alter user CCP grant connect through cwms_20","sys");
-            cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Mgr','SPK') ; end;", "cwms_20");
-            cwmsDb.executeSQL("begin cwms_sec.add_user_to_group('" + cwmsDb.getUsername() + "', 'CCP Proc','SPK') ; end;", "cwms_20");
-            cwmsDb.executeSQL("begin CCP.ccp_help.register_callback_proc; end;", "cwms_20[CCP]");
+            ArrayList<String> roles = new ArrayList<>();
+            roles.add("CCP Mgr");
+            roles.add("CCP Proc");
+            roles.add("CWMS Users");
+            this.dcsUser = "dcs_user";
+            this.dcsUserPassword = "dcs_user";
+            mm.createUser(dcsUser, dcsUserPassword, roles);
             this.dbUrl = cwmsDb.getJdbcUrl();
-            this.dcsUser = cwmsDb.getUsername();
-            this.dcsUserPassword = cwmsDb.getPassword();
             createPropertiesFile(configBuilder, this.propertiesFile);
             profile = Profile.getProfile(this.propertiesFile);
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
