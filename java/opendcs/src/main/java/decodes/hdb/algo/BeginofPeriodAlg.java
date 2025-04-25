@@ -13,45 +13,34 @@ import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
 import decodes.sql.DbKey;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-// Place an import statements you need here.
 import decodes.tsdb.ParmRef;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-Type a javadoc-style comment describing the algorithm class.
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Type a javadoc-style comment describing the algorithm class.")
 public class BeginofPeriodAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
-{
-//AW:INPUTS
+{	
+	@Input
 	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
 
-//AW:LOCALVARS
-	// Enter any local class variables needed by the algorithm.
 	double value_out;
 	int count = 0;
 	boolean do_setoutput = true;
 	Date date_out;
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "0") 
 	public long req_window_period = 0;
+	@PropertySpec(value = "0") 
 	public long desired_window_period = 0;
+	@PropertySpec(value = "")
 	public String validation_flag = "";
-	String _propertyNames[] = { "req_window_period", "desired_window_period", "validation_flag" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -61,14 +50,8 @@ public class BeginofPeriodAlg
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -77,13 +60,11 @@ public class BeginofPeriodAlg
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
 		// period.
 		count = 0;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -99,7 +80,6 @@ public class BeginofPeriodAlg
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
 		if ((count == 0) && (!isMissing(input)))
 		{
@@ -108,7 +88,6 @@ public class BeginofPeriodAlg
 			date_out = _timeSliceBaseTime;
 			count++;
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -116,7 +95,6 @@ public class BeginofPeriodAlg
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
@@ -178,31 +156,5 @@ public class BeginofPeriodAlg
 		{
 		    deleteOutput(output);
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

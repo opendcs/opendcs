@@ -1,5 +1,6 @@
 package org.opendcs.dao;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.fixtures.assertions.TimeSeries.assertEquals;
@@ -8,6 +9,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.TimeZone;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.opendcs.fixtures.AppTestBase;
@@ -19,6 +21,7 @@ import org.opendcs.utils.FailableResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
@@ -26,6 +29,7 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsImporter;
 import decodes.tsdb.TsdbException;
+import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
 @DecodesConfigurationRequired({
@@ -89,6 +93,20 @@ class TimeSeriesDaoIT extends AppTestBase
                          tsIn.sampleAt(tsIn.size()-1).getTime(),
                           true, true, false));
             }
+        }
+    }
+
+    @Test
+    @EnableIfTsDb({"CWMS-Oracle", "OpenDCS-Postgres", "OpenDCS-Oracle"})
+    void test_timeseries_validation() throws Exception {
+        try(TimeSeriesDAI tsDao = tsDb.makeTimeSeriesDAO();
+            SiteDAI siteDao = tsDb.makeSiteDAO())
+        {
+            final TimeSeriesIdentifier tsId = tsDb.makeTsId("Paria R at Lees Ferry.Flow.Inst.15Minutes.0.Rev-SPL-USGS");
+            siteDao.writeSite(tsId.getSite());
+            final DbKey tsIdKey = tsDao.createTimeSeries(tsId);
+            final TimeSeriesIdentifier tsIdOut = tsDao.findTimeSeriesIdentifier(tsIdKey).getSuccess();
+            assertEquals(tsId, tsIdOut, "saved timeseries identifier does not match retrieved result.");
         }
     }
 }
