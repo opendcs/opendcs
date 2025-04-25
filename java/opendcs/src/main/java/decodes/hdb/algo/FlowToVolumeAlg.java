@@ -13,9 +13,10 @@ import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
 import decodes.sql.DbKey;
-
-//AW:IMPORTS
-// Place an import statements you need here.
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -32,42 +33,26 @@ import decodes.hdb.dbutils.DataObject;
 import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
 import decodes.hdb.dbutils.RBASEUtils;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
- * Algorithm calculates volume using average interval flows
- * 
- * Properties:
- * 
- * PARTIAL_CALCULATIONS: true/false : use if a running volume is wanted
- * 
- * MIN_VALUES_REQUIRED: Number: the required number of records that must exist
- * for calculation to succeed Value 0 means ALL interval observations must exist
- * 
- * MIN_VALUES_DESIRED: Number: will set flag field for result if # of inputs are
- * <= this value
- * 
- * VALIDATION_FLAG: set the validation flag on output record
- * 
- * OBSERVATIONS_CALCULATION : true/false : use exact number of interval
- * observations to calculate flow is only programmed to work for hourly and
- * daily inputs!
- * 
- * FLOW_FACTOR: Number: use as multiplier for flow to volume factor (2.0,1.98) :
- * Default: 86400/43560
- * 
- * NO_ROUNDING: if no rounding in the calculation is desired; default is FALSE
- */
-// AW:JAVADOC_END
+
+@Algorithm(description = "Algorithm calculates volume using average interval flows\n\n" +
+	"Properties:\n\n" +
+	"PARTIAL_CALCULATIONS: true/false : use if a running volume is wanted\n\n" +
+	"MIN_VALUES_REQUIRED: Number: the required number of records that must exist\n" +
+	"for calculation to succeed Value 0 means ALL interval observations must exist\n\n" +
+	"MIN_VALUES_DESIRED: Number: will set flag field for result if # of inputs are &lt;= this value\n\n" +
+	"VALIDATION_FLAG: set the validation flag on output record\n\n" + 
+	"OBSERVATIONS_CALCULATION : true/false : use exact number of interval\n" +
+	"observations to calculate flow is only programmed to work for hourly and\n" +
+	"FLOW_FACTOR: Number: use as multiplier for flow to volume factor (2.0,1.98) :\n" +
+	"daily inputs!\n\n" +
+	"Default: 86400/43560]\n\n" +
+	"NO_ROUNDING: if no rounding in the calculation is desired; default is FALSE")
 public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	// AW:INPUTS
-	public double input; // AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-	// AW:INPUTS_END
+	@Input
+	public double input;
 
-	// AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
 	// version 1.0.07 modded for CP upgrade 3.0 project by M. Bogner Aug 2012
 	// version 1.0.08 enhanced for LC request to choose if rounding desired by
@@ -86,25 +71,23 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	long mvr_count;
 	long mvd_count;
 
-	// AW:LOCALVARS_END
-
-	// AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-	// AW:OUTPUTS_END
 
-	// AW:PROPERTIES
+	@PropertySpec(value = "false")
 	public boolean no_rounding = false;
+	@PropertySpec(value = "false")
 	public boolean partial_calculations = false;
+	@PropertySpec(value = "false")
 	public boolean observations_calculation = false;
+	@PropertySpec(value = "1")
 	public long min_values_required = 1;
+	@PropertySpec(value = "0")
 	public long min_values_desired = 0;
+	@PropertySpec(value = "")
 	public String validation_flag = "";
+	@PropertySpec(value = " 86400/43560 ")
 	public String flow_factor = " 86400/43560 ";
-	String _propertyNames[] = { "partial_calculations", "min_values_required", "min_values_desired",
-		"validation_flag", "observations_calculation", "flow_factor", "no_rounding" };
-
-	// AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -113,14 +96,8 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void initAWAlgorithm() throws DbCompException
 	{
-		// AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-		// AW:INIT_END
-
-		// AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-		// AW:USERINIT_END
 	}
 
 	/**
@@ -128,7 +105,6 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void beforeTimeSlices() throws DbCompException
 	{
-		// AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -140,7 +116,6 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		conn = null;
 		date_out = null;
 		tally = 0.0;
-		// AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -154,14 +129,12 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void doAWTimeSlice() throws DbCompException
 	{
-		// AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
 		if (!isMissing(input))
 		{
 			tally += input;
 			total_count++;
 		}
-		// AW:TIMESLICE_END
 	}
 
 	/**
@@ -169,7 +142,6 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void afterTimeSlices()
 	{
-		// AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
@@ -413,31 +385,5 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		{
 			deleteOutput(output);
 		}
-		// AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to this
-	 * algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
