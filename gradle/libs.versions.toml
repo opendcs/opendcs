@@ -86,6 +86,8 @@ org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi
 org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
 org-jdbi3-oracle = { module = "org.jdbi:jdbi3-oracle12", version.ref = "jdbi" }
 org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
+org-flywaydb-flyway-db-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flywaydb" }
+org-flywaydb-flyway-db-oracle = { module = "org.flywaydb:flyway-database-oracle", version.ref = "flywaydb" }
 
 # CWMS
 cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
@@ -124,6 +126,7 @@ hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", v
 junit = [ "junit-api", "junit-engine", "junit-params" ]
 junit-platform = [ "junit-platform-launcher", "junit-platform-engine", "junit-platform-commons" ]
 jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres", "org-jdbi3-oracle" ]
+flyway = [ "org-flywaydb-flyway-core", "org-flywaydb-flyway-db-postgresql", "org-flywaydb-flyway-db-oracle" ]
 oracle = [ "oracle-ojdbc8" , "oracle-ucp" ]
 jersey = [ "org-eclipse-jetty-jsp", "org-eclipse-jetty-annotations", "org-eclipse-jetty-server", 
             "org-eclipse-jetty-servlets", "org-eclipse-jetty-webapp", "javax-servlet",
