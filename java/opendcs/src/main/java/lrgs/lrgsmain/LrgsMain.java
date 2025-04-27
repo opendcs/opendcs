@@ -195,7 +195,7 @@ public class LrgsMain
                     + "- Lock file '" + lockName + "' already taken. "
                     + "Is another instance of '" + LrgsCmdLineArgs.progname
                     + "' already running?");
-                System.exit(1);
+                return;
             }
         }
 
@@ -205,7 +205,7 @@ public class LrgsMain
             Logger.instance().fatal("============ " + getAppName()
                 + " INIT FAILED -- Exiting. ============");
             myServerLock.releaseLock();
-            System.exit(0);
+            return;
         }
 
         long lastStatusSnapshot = 0L;
