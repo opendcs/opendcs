@@ -8,6 +8,7 @@ build
 .*~
 .vscode
 .settings
+**/.factorypath
 dep/
 .classpath
 .project
