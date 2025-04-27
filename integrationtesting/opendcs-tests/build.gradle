@@ -48,6 +48,7 @@ test {
     jvmArgs += "-Dresource.dir=${projectDir}/src/test/resources" // TODO: make clearer
     jvmArgs += "-DDCSTOOL_HOME=${stageDir}"
     jvmArgs += "-Djava.util.logging.config.file=${projectDir}/src/test/test-config/logging.properties"
+    jvmArgs += "-Djava.security.manager=allow"
 
     reports {
         html {
