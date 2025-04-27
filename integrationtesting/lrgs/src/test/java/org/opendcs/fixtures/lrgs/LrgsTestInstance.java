@@ -53,7 +53,7 @@ public class LrgsTestInstance
         lrgs = new LrgsMain(queueLogger,"-", configFile.getAbsolutePath(), fileLogger);
 
         lrgsThread = new Thread(lrgs);
-        exit.execute(() -> lrgsThread.start());
+        lrgsThread.start();
         assertResultWithinTimeFrame(value ->
         {
             try
