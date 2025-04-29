@@ -676,11 +676,15 @@ public class DecodesScript extends IdDatabaseObject
         final private DecodesScriptReader scriptReader;
         private Supplier<PlatformConfig> platformSupplier;
         private Supplier<String> nameSupplier;
+        private Supplier<String> scriptType;
+        private Supplier<Boolean> addDefaultSensors;
 
         public DecodesScriptBuilder(DecodesScriptReader reader)
         {
             this.scriptReader = reader;
             nameSupplier = () -> "";
+            scriptType = () -> Constants.scriptTypeDecodes;
+            addDefaultSensors = () -> false;
         }
 
         /**
@@ -708,17 +712,25 @@ public class DecodesScript extends IdDatabaseObject
          */
         public DecodesScript build(boolean failOnError) throws DecodesScriptException, IOException
         {
-            Objects.requireNonNull(platformSupplier, "PlatformConfig cannot be null. Set before calling build.");
+            Objects.requireNonNull(nameSupplier, "nameSupplier cannot be null. Set before calling build.");
             DecodesScript script = new DecodesScript(nameSupplier.get());
             
+            Objects.requireNonNull(platformSupplier, "platformSupplier cannot be null. Set before calling build.");
             script.platformConfig = platformSupplier.get();
             Objects.requireNonNull(script.platformConfig, "A valid platform configuration was not available.");
+  
+            Objects.requireNonNull(scriptType,"Script type cannot be null");
+            script.scriptType = scriptType.get();
             try
             {
                 Optional<FormatStatement> fs = null;
                 while ((fs = scriptReader.nextStatement(script)).isPresent())
                 {
                     script.formatStatements.add(fs.get());
+                }
+                if( addDefaultSensors.get())
+                {
+                    buildDefaultSensors(script.platformConfig,script);
                 }
                 script.prepareForExec();
             }
@@ -783,6 +795,33 @@ public class DecodesScript extends IdDatabaseObject
             Objects.requireNonNull(nameSupplier, "Name cannot be set to null.");
             this.nameSupplier = nameSupplier;
             return this;
+        }
+
+        public DecodesScriptBuilder scriptType(String scriptType)
+        {
+            Objects.requireNonNull(scriptType,"Script type cannot be null");
+            this.scriptType =() -> scriptType;
+            return this;
+        }
+
+        public DecodesScriptBuilder addDefaultSensors()
+        {
+            addDefaultSensors = () -> true;
+            return this;
+        }
+
+        private static void buildDefaultSensors(PlatformConfig pc,DecodesScript ds)
+        {
+            for(Iterator<ConfigSensor> it = pc.getSensors(); it.hasNext(); )
+            {
+                ConfigSensor cs = it.next();
+                ScriptSensor ss = new ScriptSensor(ds, cs.sensorNumber);
+                ss.rawConverter = new UnitConverterDb("raw", "raw");
+                ss.rawConverter.algorithm = Constants.eucvt_none;
+                ds.addScriptSensor(ss);
+            }
+            
+
         }
     }
 }

@@ -529,17 +529,10 @@ public class ConfigEditPanel extends DbEditorTab
             DecodesScript ds = DecodesScript.empty()
                                             .scriptName("")
                                             .platformConfig(theConfig)
+                                            .scriptType(Constants.scriptTypeDecodes)
+                                            .addDefaultSensors()
                                             .build();
-            ds.scriptType = Constants.scriptTypeDecodes;
-            for(Iterator<ConfigSensor> it = theConfig.getSensors(); it.hasNext(); )
-            {
-                ConfigSensor cs = it.next();
-                ScriptSensor ss = new ScriptSensor(ds, cs.sensorNumber);
-                ss.rawConverter = new UnitConverterDb("raw", "raw");
-                ss.rawConverter.algorithm = Constants.eucvt_none;
-                ds.addScriptSensor(ss);
-            }
-
+            
             if (dsEditDlg == null)
             {
                 dsEditDlg = new DecodingScriptEditDialog(ds, this);
