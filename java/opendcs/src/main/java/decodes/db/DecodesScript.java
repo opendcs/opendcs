@@ -677,13 +677,14 @@ public class DecodesScript extends IdDatabaseObject
         private Supplier<PlatformConfig> platformSupplier;
         private Supplier<String> nameSupplier;
         private Supplier<String> scriptType;
-        private Supplier<Boolean> addDefaultSensors = () -> false;
+        private Supplier<Boolean> addDefaultSensors;
 
         public DecodesScriptBuilder(DecodesScriptReader reader)
         {
             this.scriptReader = reader;
             nameSupplier = () -> "";
-            this.scriptType = () -> Constants.scriptTypeDecodes;
+            scriptType = () -> Constants.scriptTypeDecodes;
+            addDefaultSensors = () -> false;
         }
 
         /**
