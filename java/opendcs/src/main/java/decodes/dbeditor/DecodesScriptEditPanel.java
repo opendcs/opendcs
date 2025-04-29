@@ -240,11 +240,9 @@ public class DecodesScriptEditPanel
 	}
 
 	/**
-	 * This is the constructor called by the GUI. Passed the DecodesScript
-	 * object to be edited.
+	 * setDecodesScript is called by the GUI.
 	 * 
-	 * @param ds
-	 *            the object to edit in this panel.
+	 * @param ds DecodesScript to be edited.
 	 */
 	public void setDecodesScript(DecodesScript ds)
 	{
