@@ -533,7 +533,6 @@ public class ConfigEditPanel extends DbEditorTab
                                             .addDefaultSensors()
                                             .build();
             
-            ds.scriptType = Constants.scriptTypeDecodes;
             if (dsEditDlg == null)
             {
                 dsEditDlg = new DecodingScriptEditDialog(ds, this);
