@@ -529,7 +529,7 @@ public class ConfigEditPanel extends DbEditorTab
             DecodesScript ds = DecodesScript.empty()
                                             .scriptName("")
                                             .platformConfig(theConfig)
-                                            //.scriptType(Constants.scriptTypeDecodes)
+                                            .scriptType(Constants.scriptTypeDecodes)
                                             .addDefaultSensors()
                                             .build();
             
