@@ -676,14 +676,14 @@ public class DecodesScript extends IdDatabaseObject
         final private DecodesScriptReader scriptReader;
         private Supplier<PlatformConfig> platformSupplier;
         private Supplier<String> nameSupplier;
-        private String scriptType;
-        private Boolean addDefaultSensors = false;
+        private Supplier<String> scriptType;
+        private Supplier<Boolean> addDefaultSensors = () -> false;
 
         public DecodesScriptBuilder(DecodesScriptReader reader)
         {
             this.scriptReader = reader;
             nameSupplier = () -> "";
-            this.scriptType = Constants.scriptTypeDecodes;
+            this.scriptType = () -> Constants.scriptTypeDecodes;
         }
 
         /**
@@ -719,7 +719,7 @@ public class DecodesScript extends IdDatabaseObject
             Objects.requireNonNull(script.platformConfig, "A valid platform configuration was not available.");
   
             Objects.requireNonNull(scriptType,"Script type cannot be null");
-            script.scriptType = scriptType;
+            script.scriptType = scriptType.get();
             try
             {
                 Optional<FormatStatement> fs = null;
@@ -727,7 +727,7 @@ public class DecodesScript extends IdDatabaseObject
                 {
                     script.formatStatements.add(fs.get());
                 }
-                if( addDefaultSensors)
+                if( addDefaultSensors.get())
                 {
                     buildDefaultSensors(script.platformConfig,script);
                 }
@@ -799,13 +799,13 @@ public class DecodesScript extends IdDatabaseObject
         public DecodesScriptBuilder scriptType(String scriptType)
         {
             Objects.requireNonNull(scriptType,"Script type cannot be null");
-            this.scriptType =scriptType;
+            this.scriptType =() -> scriptType;
             return this;
         }
 
         public DecodesScriptBuilder addDefaultSensors()
         {
-            addDefaultSensors = true;
+            addDefaultSensors = () -> true;
             return this;
         }
 
