@@ -41,8 +41,9 @@ The following environment variables are used to configure the container.
 For example the DATABASE_URL contains a string such as:
 
 ```text
-jdbc\:oracle\:thin\:@127.0.0.1\:1521/FREEPDB1?oracle.net.disableOob=true that tells your opendcs container where your SQL database is. 
+jdbc\:oracle\:thin\:@127.0.0.1\:1521/FREEPDB1?oracle.net.disableOob=true  
 ```
+
 which tells the container what database to connect to.
 
 note: These variables (except username and password) are used when creating a configuration file in the container. 
