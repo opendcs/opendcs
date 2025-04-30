@@ -12,7 +12,7 @@ docker run -d name lrgs -p 16003:16003 -v lrgs_volume:/lrgs_home -e LRGS_ADMIN_P
 
 ```
 
-16003 is the DDS protocol Port that the gui `rtstat` application can use. At this time there is no API and this is require for later configuration.
+16003 is the DDS protocol Port that the gui `rtstat` application can use. At this time there is no API and this is required for later configuration.
 There are additional input sources, and the ability to add additional custom input sources that may require you to 
 expose additional ports.
 
@@ -25,9 +25,10 @@ expose additional ports.
 
 # TsDbApps
 
-To operation the computation side of opendcs, or the routing specs using one of the SQL database the following containers are available.
+The following containers support automated processing. The computation containers, that start with 'comp' require using one of the SQL databases. 
 
 | Container | Purpose |
+|-----------|---------|
 | compdepends | Determines which data inputs trigger computations. |
 | compproc | Handles computation |
 | routingscheduler | Can pull data from an LRGS or other data source and push to the database or other locations |
@@ -35,6 +36,17 @@ To operation the computation side of opendcs, or the routing specs using one of 
 The above containers are the same except that the default `APPLICATION_NAME` and CMD are to match the default purpose.
 
 ## Variables
+
+The following environment variables are used to configure the container.
+For example the DATABASE_URL contains a string such as:
+
+```text
+jdbc\:oracle\:thin\:@127.0.0.1\:1521/FREEPDB1?oracle.net.disableOob=true that tells your opendcs container where your SQL database is. 
+```
+which tells the container what database to connect to.
+
+note: These variables (except username and password) are used when creating a configuration file in the container. 
+
 
 | Variable | Default | Description |
 | -------- | ------- | ----------- |
