@@ -42,6 +42,7 @@ public class MessageOutput extends MenuFrame
 
 	private String hostName, userName;
 	private int portNum;
+	private SocketFactory socketFactory;
 	private SearchCriteria searchcrit;
 	private boolean sendNetworkLists;
 	private String prefix, suffix;
@@ -81,7 +82,7 @@ public class MessageOutput extends MenuFrame
 	  @param beforeData printed before decoded data
 	  @param afterData printed after decoded data
 	*/
-	public MessageOutput(String hostName, int portNum, String userName,
+	public MessageOutput(String hostName, int portNum, SocketFactory socketFactory, String userName,
 		SearchCriteria searchcrit, String prefix, String suffix, 
 		boolean sendNetworkLists, boolean doDecode,
 		String beforeData, String afterData, boolean showRaw)
@@ -96,6 +97,7 @@ public class MessageOutput extends MenuFrame
 		 
 		this.hostName = hostName != null ? hostName : "localhost";
 		this.portNum = portNum == 0 ? DEFAULT_PORT_NUM : portNum;
+		this.socketFactory = socketFactory;
 		this.userName = userName != null ? userName :
 			System.getProperty("user.name");
 		this.searchcrit = searchcrit;
@@ -382,7 +384,7 @@ public class MessageOutput extends MenuFrame
 		try
 		{
 			what = labels.getString("MessageOutput.constructingClientI");
-			client = new LddsClient(hostName, portNum);
+			client = new LddsClient(hostName, portNum, socketFactory);
 
 			// MJM 20030223 added...
 			client.enableMultiMessageMode(true);
@@ -595,66 +597,4 @@ private static int idx2 = 0;
 		return IamPaused;
 	}
 
-	// Usage <SearchCriteriaEditor -f Filename.
-	static CmdLineArgs cmdLineArgs = new CmdLineArgs(true, "util.log");
-	static StringToken searchcrit_arg= new StringToken(
-		"f", "Search Crit File", "", TokenOptions.optSwitch, "");
-	static IntegerToken port_arg = new IntegerToken(
-		"p", "Port Number", "", TokenOptions.optSwitch, DEFAULT_PORT_NUM);
-	static StringToken user_arg = new StringToken(
-		"u", "User Name", "", TokenOptions.optSwitch|TokenOptions.optRequired, "");
-	static StringToken prefix_arg = new StringToken(
-		"b", "Prefix", "", TokenOptions.optSwitch, "\\n");
-	static StringToken suffix_arg = new StringToken(
-		"a", "After", "", TokenOptions.optSwitch, "\\n");
-	static BooleanToken netlist_arg = new BooleanToken(
-		"n", "Send Network Lists", "", TokenOptions.optSwitch, false);
-	static BooleanToken doDecode_arg = new BooleanToken(
-		"R", "Decode Data", "", TokenOptions.optSwitch, false);
-	static StringToken beforeData_arg = new StringToken(
-		"B", "Before Data", "", TokenOptions.optSwitch, "\\n----\\n");
-	static StringToken afterData_arg = new StringToken(
-		"A", "After Data", "", TokenOptions.optSwitch, "====\\n");
-	static
-	{
-		cmdLineArgs.addToken(searchcrit_arg);
-		cmdLineArgs.addToken(port_arg);
-		cmdLineArgs.addToken(user_arg);
-		cmdLineArgs.addToken(prefix_arg);
-		cmdLineArgs.addToken(suffix_arg);
-		cmdLineArgs.addToken(netlist_arg);
-		cmdLineArgs.addToken(doDecode_arg);
-		cmdLineArgs.addToken(beforeData_arg);
-		cmdLineArgs.addToken(afterData_arg);
-	}
-
-
-	/**
-	Test main so user can start this frame directly from command line.
-	*/
-	public static void main(String args[])
-		throws Exception
-	{
-		// Parse command line args & get argument values:
-		cmdLineArgs.parseArgs(args);
-
-		GuiApp.setAppName(LrgsApp.ShortID);
-		GeneralProperties.init();
-
-		String scf = searchcrit_arg.getValue();
-		SearchCriteria searchcrit = null;
-		if (scf != null && scf.length() > 0)
-			searchcrit = new SearchCriteria(new File(scf));
-
-		MessageOutput me = new MessageOutput(
-			cmdLineArgs.getHostName(), port_arg.getValue(), 
-			user_arg.getValue(),
-			searchcrit, prefix_arg.getValue(), suffix_arg.getValue(),
-			netlist_arg.getValue(),
-			doDecode_arg.getValue(),
-			beforeData_arg.getValue(), afterData_arg.getValue(), true);
-
-		GuiApp.setTopFrame(me);
-		me.startup(100, 100);
-	}
 }

@@ -1001,7 +1001,7 @@ public class MessageBrowser extends MenuFrame
         SearchCriteria outputcrit = new SearchCriteria(searchcrit);
 
         MessageOutput output = new MessageOutput(
-            currentLrgs.getHostName(), port, currentLrgs.getUsername(),
+            currentLrgs.getHostName(), port, currentLrgs.getSocketFactory(), currentLrgs.getUsername(),
             outputcrit, prefixField.getText(), suffixField.getText(),
             true, doDecode,
             (canDecode ? beforeDataField.getText() : null),
