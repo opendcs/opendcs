@@ -13,6 +13,10 @@ import decodes.db.DecodesScript;
 public class ReplaceValueWithFunction extends DecodesFunction
 {
 	public static final String module = "replaceValueWith";
+	private String find;
+	private String replace;
+	private DecodesScript script;
+
 	
 	public ReplaceValueWithFunction()
 	{
@@ -33,7 +37,7 @@ public class ReplaceValueWithFunction extends DecodesFunction
 	@Override
 	public void execute(DataOperations dd, DecodedMessage msg) throws DecoderException
 	{
-		// Execute doesn't do anything. Work is done in setArguments
+		script.addReplace(find,replace);
 	}
 
 	/**
@@ -42,20 +46,19 @@ public class ReplaceValueWithFunction extends DecodesFunction
 	@Override
 	public void setArguments(String argString, DecodesScript script) throws ScriptFormatException
 	{
-		Logger.instance().info(argString);
-		StringTokenizer st = new StringTokenizer(argString, ",");
-		while(st.hasMoreTokens())
+		Logger.instance().debug1(argString);
+		String[] args = argString.split(",");
+		if( args.length == 2)
 		{
-			String find = st.nextToken();
-			find = find.trim();
-			if( st.hasMoreTokens())
-			{
-		        String replace = st.nextToken();
-			    replace = replace.trim();
-				script.addReplace(find,replace);
-			}
-
+			find = args[0].trim();
+			replace = args[1].trim();
+			this.script = script;
 		}
+		else
+		{
+			throw new ScriptFormatException(module + " requires two arguments");
+		}
+ 
 	}
 
 }
