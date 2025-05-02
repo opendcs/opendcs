@@ -645,7 +645,12 @@ public class MessageBrowser extends MenuFrame
         hostName = c.getHostName();
         String pw = LrgsConnection.decryptPassword(c, LrgsConnectionPanel.pwk);
         String username = c.getUsername();
-        SocketFactory socketFactory = c.getSocketFactory();
+        SocketFactory socketFactory = c.getSocketFactory(p ->
+        {
+            System.out.println("Found Cert with hostname: " + p.getHostname().orElse("No hostname"));
+            // TODO pop open a GUI dialog for the user to agree to.
+            return false;
+        });
         try
         {
             client = new LddsClient(hostName, port,socketFactory);

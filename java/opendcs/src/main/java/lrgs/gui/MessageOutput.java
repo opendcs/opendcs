@@ -6,6 +6,8 @@ package lrgs.gui;
 import java.io.*;
 import java.awt.*;
 import java.awt.event.*;
+
+import javax.net.SocketFactory;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 

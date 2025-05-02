@@ -2,6 +2,7 @@ package lrgs.rtstat.hosts;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -9,10 +10,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+
+import nl.altindag.ssl.SSLFactory;
+import nl.altindag.ssl.model.TrustManagerParameters;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,32 +94,33 @@ public final class LrgsConnection
 
     public SocketFactory getSocketFactory()
     {
+        return getSocketFactory(p -> false);
+    }
+
+    public SocketFactory getSocketFactory(Predicate<TrustManagerParameters> certTest)
+    {
         if (tls)
         {
-			try 
-            {
-				SSLContext sslContext = SSLContext.getInstance("TLS");
-				TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-                //KeyStore.
-				KeyStore ks = KeyStore.getInstance("PKCS12");
-                try (FileInputStream fp = new FileInputStream(EnvExpander.expand("$DCSTOOL_USERDIR/lrgs.ks")))
-                {
-				    ks.load(new FileInputStream(EnvExpander.expand("$DCSTOOL_USERDIR/lrgs.ks")),null);
-                }
-                ks.load(null);
-				tmf.init(ks);
-				sslContext.init(null,tmf.getTrustManagers(),null);
-				return sslContext.getSocketFactory();
-			}
-            catch (NoSuchAlgorithmException | KeyStoreException | CertificateException | IOException | KeyManagementException ex)
-            {
-				throw new RuntimeException("Unable to connect to SSL Server.",ex);
-			}
-		}
+           return socketFactory(certTest);
+		}  
         else
         {
             return null;
         }
+    }
+
+    public static SocketFactory socketFactory(Predicate<TrustManagerParameters> certTest)
+    {
+        SSLFactory sslFactory = SSLFactory.builder()
+                                          .withDefaultTrustMaterial()
+                                          .withSystemTrustMaterial()
+                                          .withInflatableTrustMaterial(
+                                            Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12")),
+                                            "local_trust".toCharArray(),
+                                            "PKCS12", 
+                                            certTest)
+                                          .build();
+        return sslFactory.getSslContext().getSocketFactory();
     }
 
     @Override

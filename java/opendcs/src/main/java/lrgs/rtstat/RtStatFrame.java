@@ -377,7 +377,11 @@ public class RtStatFrame
     {
         closeConnection();
         client = null;
-        SocketFactory socketFactory = c.getSocketFactory();
+        SocketFactory socketFactory = c.getSocketFactory(certInfo ->
+        {
+            // TODO: Pop open GUI dialog presenting certificate information
+            return false;
+        });
 
 		final LddsClient tclient = new LddsClient(host, port,socketFactory);
         final JobDialog connectionJobDialog = new JobDialog(
