@@ -2,8 +2,6 @@ package decodes.decoder;
 
 import ilex.util.Logger;
 
-import java.util.StringTokenizer;
-
 import decodes.db.DecodesScript;
 
 /**
