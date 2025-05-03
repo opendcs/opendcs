@@ -1,5 +1,5 @@
 # Depends on having buildx available for the --mount feature
-FROM openjdk:8-jdk-bullseye as builder
+FROM openjdk:17-jdk-slim-buster AS builder
 
 RUN --mount=type=cache,target=/var/cache/apt \ 
     apt-get update && apt-get -y upgrade && \
@@ -12,7 +12,7 @@ RUN --mount=type=cache,target=/root \
     ./gradlew installDist -Dno.docs=true
 # end initial build
 
-FROM eclipse-temurin:11-jre-alpine as opendcs_base
+FROM eclipse-temurin:17-jre-alpine AS opendcs_base
 
 RUN apk upgrade --no-cache
 RUN apk add --no-cache \
@@ -26,11 +26,14 @@ WORKDIR /opt/opendcs/bin
 RUN rm *.bat && \
     chmod +x /opt/opendcs/bin/*
 
-ENV DCSTOOL_HOME=/opt/opendcs DECODES_INSTALL_DIR=${DCSTOOL_HOME}
+ENV DCSTOOL_HOME=/opt/opendcs
+ENV DECODES_INSTALL_DIR=${DCSTOOL_HOME}
 ENTRYPOINT ["/opt/opendcs/env.sh"]
+LABEL org.opencontainers.image.source=https://github.com/opendcs/opendcs
+LABEL org.opencontainers.image.source=https://github.com/opendcs/opendcs/README.docker.md
 # end baseline setup
 
-FROM opendcs_base as lrgs
+FROM opendcs_base AS lrgs
 COPY docker_scripts/lrgs.sh /
 USER opendcs:opendcs
 WORKDIR /lrgs_home
@@ -41,7 +44,7 @@ EXPOSE 16003
 CMD ["/lrgs.sh"]
 
 
-FROM opendcs_base as tsdbapp
+FROM opendcs_base AS tsdbapp
 COPY docker_scripts/tsdb_config.sh /opt/opendcs
 COPY docker_scripts/decodes.properties /opt/opendcs/decodes.properties.template
 USER opendcs:opendcs
@@ -58,19 +61,19 @@ ENV DATATYPE_STANDARD=""
 ENV KEYGENERATOR=""
 ENV APPLICATION_NAME="RoutingScheduler"
 
-FROM tsdbapp as routingscheduler
+FROM tsdbapp AS routingscheduler
 COPY docker_scripts/routingscheduler.sh /
 RUN mkdir routstat
 
 CMD ["/routingscheduler.sh"]
 
-FROM tsdbapp as compproc
+FROM tsdbapp AS compproc
 COPY docker_scripts/compproc.sh /
 ENV APPLICATION_NAME="compproc"
 
 CMD ["/compproc.sh"]
 
-FROM tsdbapp as compdepends
+FROM tsdbapp AS compdepends
 COPY docker_scripts/compdepends.sh /
 ENV APPLICATION_NAME="compdepends"
 

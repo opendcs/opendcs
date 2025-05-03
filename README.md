@@ -1,5 +1,7 @@
 ![current build](https://github.com/opendcs/opendcs/actions/workflows/build.yml/badge.svg)
 
+[Docker documentation](README.docker.md)
+
 # OpenDCS 
 
 OpenDCS is a tool for doing the following:
