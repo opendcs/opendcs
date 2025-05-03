@@ -12,16 +12,14 @@ package decodes.cwms.validation;
 
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.DbIoException;
-import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.TsidScreeningAssignment;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.cwms.CwmsTimeSeriesDb;
+import org.opendcs.annotations.algorithm.Algorithm;
 
-/**
-This class extends ScreeningAlgorithm. It supplies the code to 
-read/write screenings read from the CWMS database.
- */
+@Algorithm(description = "This class extends ScreeningAlgorithm. It supplies the code to "
++ "read/write screenings read from the CWMS database.")
 public class CwmsScreeningAlgorithm
 	extends ScreeningAlgorithm
 {

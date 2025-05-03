@@ -24,23 +24,14 @@ package decodes.cwms.validation;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.SortedSet;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
 import opendcs.dai.TimeSeriesDAI;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import ilex.var.Variable;
-import decodes.tsdb.BadTimeSeriesException;
-import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
@@ -50,7 +41,6 @@ import ilex.var.TimedVariable;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.IntervalIncrement;
 import decodes.cwms.CwmsFlags;
-import decodes.cwms.validation.Screening;
 import decodes.db.Site;
 import decodes.tsdb.TimeSeriesIdentifier;
 //AW:IMPORTS_END
