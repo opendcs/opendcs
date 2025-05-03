@@ -570,7 +570,7 @@ public class PlatformConfig extends IdDatabaseObject
             }
             else if (n.equalsIgnoreCase(GoesPMParser.MESSAGE_LENGTH))
             {
-                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Langth-Message"));
+                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Length-Message"));
                 cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YL"));
             }
             else if (n.equalsIgnoreCase(GoesPMParser.SIGNAL_STRENGTH))
