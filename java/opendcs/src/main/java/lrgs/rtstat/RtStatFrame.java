@@ -28,6 +28,7 @@ import java.util.Properties;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.opendcs.gui.x509.X509CertificateVerifierDialog;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
@@ -377,11 +378,7 @@ public class RtStatFrame
     {
         closeConnection();
         client = null;
-        SocketFactory socketFactory = c.getSocketFactory(certInfo ->
-        {
-            // TODO: Pop open GUI dialog presenting certificate information
-            return false;
-        });
+        SocketFactory socketFactory = c.getSocketFactory(cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), this));
 
 		final LddsClient tclient = new LddsClient(host, port,socketFactory);
         final JobDialog connectionJobDialog = new JobDialog(

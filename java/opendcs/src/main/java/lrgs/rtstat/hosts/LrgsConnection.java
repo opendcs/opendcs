@@ -94,7 +94,15 @@ public final class LrgsConnection
 
     public SocketFactory getSocketFactory()
     {
-        return getSocketFactory(p -> false);
+        return getSocketFactory(cert ->
+        {
+            log.warn("Certificate for host {} is not recognized. Signed by {}. If you trust this " +
+                     "Certificate you will need to manually add this to {}",
+                             cert.getHostname().orElse("No hostname"),
+                             cert.getChain()[0].getIssuerX500Principal().getName(),
+                             EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12"));
+            return false;
+        });
     }
 
     public SocketFactory getSocketFactory(Predicate<TrustManagerParameters> certTest)

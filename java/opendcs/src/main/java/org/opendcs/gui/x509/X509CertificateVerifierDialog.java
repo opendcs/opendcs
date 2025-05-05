@@ -6,21 +6,14 @@ import java.awt.BorderLayout;
 import java.security.cert.X509Certificate;
 import javax.swing.JButton;
 import java.awt.FlowLayout;
-import javax.swing.SpringLayout;
-import javax.swing.BoxLayout;
 import java.awt.Component;
-import javax.swing.Box;
-import javax.swing.SwingConstants;
 
 import ilex.gui.WindowUtility;
 
 import javax.swing.JPanel;
 import javax.swing.JFrame;
-import javax.swing.AbstractAction;
-import java.awt.event.ActionEvent;
-import javax.swing.Action;
 
-public class X509CertificateVerifier extends JDialog
+public class X509CertificateVerifierDialog extends JDialog
 {
 
 	private boolean accepted = false;
@@ -31,7 +24,7 @@ public class X509CertificateVerifier extends JDialog
 		return accepted;
 	}
 
-	public X509CertificateVerifier(X509Certificate[] certChain, JFrame parent)
+	public X509CertificateVerifierDialog(X509Certificate[] certChain, JFrame parent)
 	{
 		super(parent);
 		getContentPane().setLayout(new BorderLayout(0, 0));
@@ -68,4 +61,13 @@ public class X509CertificateVerifier extends JDialog
 		accepted = status;
 		setVisible(false);
 	}	
+
+
+	public static boolean acceptCertificate(X509Certificate[] certChain, JFrame parent)
+	{
+		X509CertificateVerifierDialog certDialog = new X509CertificateVerifierDialog(certChain, parent);
+		certDialog.setModal(true);
+		certDialog.setVisible(true);
+		return certDialog.getAccepted();
+	}
 }

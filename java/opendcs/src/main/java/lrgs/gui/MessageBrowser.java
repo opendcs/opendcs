@@ -68,7 +68,7 @@ import lrgs.rtstat.hosts.LrgsConnection;
 import lrgs.rtstat.hosts.LrgsConnectionComboBoxModel;
 import lrgs.rtstat.hosts.LrgsConnectionPanel;
 
-import org.opendcs.gui.x509.X509CertificateVerifier;
+import org.opendcs.gui.x509.X509CertificateVerifierDialog;
 
 /**
 The MessageBrowser allows the user to display DCP messages on the screen
@@ -647,13 +647,7 @@ public class MessageBrowser extends MenuFrame
         hostName = c.getHostName();
         String pw = LrgsConnection.decryptPassword(c, LrgsConnectionPanel.pwk);
         String username = c.getUsername();
-        SocketFactory socketFactory = c.getSocketFactory(p ->
-        {
-            X509CertificateVerifier certDialog = new X509CertificateVerifier(p.getChain(), this);
-            certDialog.setModal(true);
-            certDialog.setVisible(true);
-            return certDialog.getAccepted();
-        });
+        SocketFactory socketFactory = c.getSocketFactory(cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), this));
         try
         {
             client = new LddsClient(hostName, port,socketFactory);
