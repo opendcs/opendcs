@@ -1,11 +1,12 @@
-/*
-*  $Id$
-*/
-
 package decodes.db;
 
 import java.util.Vector;
+
+import decodes.datasource.GoesPMParser;
+import decodes.datasource.IridiumPMParser;
+
 import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.Date;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
@@ -488,6 +489,149 @@ public class PlatformConfig extends IdDatabaseObject
 	{
 		configSensors.removeAllElements();
 	}
+
+	/**
+      Called when the config sensors have changed.  Makes sure that there is
+      exactly one ScriptSensor for each config sensor, and no extras.
+    */
+    public void validateDecodingScriptSensors()
+    {
+        int nsensors = this.getNumSensors();
+        int sensnums[] = new int[nsensors];
+
+        for(Iterator<DecodesScript> dsit = this.decodesScripts.iterator(); dsit.hasNext(); )
+        {
+            DecodesScript ds = dsit.next();
+
+            // build an array of all valid sensor numbers.
+            int i = 0;
+            for(Iterator<ConfigSensor> csit = this.getSensors(); csit.hasNext(); )
+            {
+                ConfigSensor cs = csit.next();
+                sensnums[i++] = cs.sensorNumber;
+            }
+
+            for(Iterator<ScriptSensor> ssit = ds.scriptSensors.iterator(); ssit.hasNext(); )
+            {
+                // Make sure each script sensor still refers to a config sensor.
+                ScriptSensor ss = ssit.next();
+                for(i=0; i<nsensors; i++)
+                    if (ss.sensorNumber == sensnums[i])
+                    {
+                        sensnums[i] = -1;
+                        break;
+                    }
+                if (i == nsensors) // fell through - invalid sensor number.
+                    ssit.remove();
+            }
+
+            // Add script sensors for each unrepresented config sensor.
+            for(i=0; i < nsensors; i++)
+                if (sensnums[i] != -1)
+                {
+                    ScriptSensor ss = new ScriptSensor(ds, sensnums[i]);
+                    ss.rawConverter = new UnitConverterDb("raw", "raw");
+                    ss.rawConverter.algorithm = Constants.eucvt_none;
+                    ds.addScriptSensor(ss);
+                }
+        }
+    }
+
+	public ConfigSensor findSensorByName(String sensorName)
+    {
+        for(Iterator<ConfigSensor> csit = this.getSensors(); csit.hasNext();)
+        {
+            ConfigSensor cs = csit.next();
+            if (cs.sensorName.equalsIgnoreCase(sensorName))
+                return cs;
+        }
+        return null;
+    }
+
+	public void AddGoesParameters(ArrayList<String> pmNames, int startingSensorNumber) 
+	{
+		int sensorNum = startingSensorNumber;
+	  for(String n : pmNames)
+        {
+            ConfigSensor cs = findSensorByName(n);
+            if (cs != null)
+            {
+				Logger.instance().log(Logger.E_FAILURE, "There is already a sensor named '" + n + "' -- cannot add.");
+                continue;
+            }
+
+            cs = new ConfigSensor(this, sensorNum++);
+            cs.sensorName = n;
+            cs.recordingMode = Constants.recordingModeVariable;
+            if (n.equalsIgnoreCase(GoesPMParser.DCP_ADDRESS))
+            {
+                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-DCPAddress"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YA"));
+            }
+            else if (n.equalsIgnoreCase(GoesPMParser.MESSAGE_LENGTH))
+            {
+                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Length-Message"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YL"));
+            }
+            else if (n.equalsIgnoreCase(GoesPMParser.SIGNAL_STRENGTH))
+            {
+                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Power-Signal"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YS"));
+            }
+            else if (n.equalsIgnoreCase(GoesPMParser.FAILURE_CODE))
+            {
+                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-Failure"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YF"));
+            }
+            else if (n.equalsIgnoreCase(GoesPMParser.FREQ_OFFSET))
+            {
+                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Freq-Offset"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YO"));
+            }
+            else if (n.equalsIgnoreCase(GoesPMParser.MOD_INDEX))
+            {
+                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Ratio-ModIndex"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YI"));
+            }
+            else if (n.equalsIgnoreCase(GoesPMParser.CHANNEL))
+            {
+                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-Channel"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YC"));
+            }
+            else if (n.equalsIgnoreCase(GoesPMParser.SPACECRAFT))
+            {
+                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Code-Spacecraft"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YP"));
+            }
+            else if (n.equalsIgnoreCase(GoesPMParser.BAUD))
+            {
+                   cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Freq-Baud"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YB"));
+            }
+            else if (n.equalsIgnoreCase(GoesPMParser.DCP_MSG_FLAGS))
+            {
+                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Binary-Flags"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YG"));
+            }
+            else if (n.equalsIgnoreCase(IridiumPMParser.LATITUDE))
+            {
+                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Rotation-Latitude"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YA"));
+            }
+            else if (n.equalsIgnoreCase(IridiumPMParser.LONGITUDE))
+            {
+                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Rotation-Longitude"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YO"));
+            }
+            else if (n.equalsIgnoreCase(IridiumPMParser.CEP_RADIUS))
+            {
+                cs.addDataType(DataType.getDataType(Constants.datatype_CWMS, "Rotation-CEPRadius"));
+                cs.addDataType(DataType.getDataType(Constants.datatype_SHEF, "YR"));
+            }
+            this.addSensor(cs);
+        }
+	}
+
 
 }
 
