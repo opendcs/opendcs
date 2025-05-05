@@ -103,3 +103,15 @@ jobs:
         with:
           name: coverage
           path: ./**/build/**/jacoco*.xml
+  containers:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Clean up disk space, so we don't run out.
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+      - uses: actions/checkout@v4.1.1
+      - name: Build base container images
+        run: |
+          docker build -t opendcs:test-container --target opendcs_base . 
