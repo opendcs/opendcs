@@ -68,6 +68,8 @@ import lrgs.rtstat.hosts.LrgsConnection;
 import lrgs.rtstat.hosts.LrgsConnectionComboBoxModel;
 import lrgs.rtstat.hosts.LrgsConnectionPanel;
 
+import org.opendcs.gui.x509.X509CertificateVerifier;
+
 /**
 The MessageBrowser allows the user to display DCP messages on the screen
 and save them to a file. It uses DDS (not CORBA) to pull DCP messages from
@@ -647,9 +649,10 @@ public class MessageBrowser extends MenuFrame
         String username = c.getUsername();
         SocketFactory socketFactory = c.getSocketFactory(p ->
         {
-            System.out.println("Found Cert with hostname: " + p.getHostname().orElse("No hostname"));
-            // TODO pop open a GUI dialog for the user to agree to.
-            return false;
+            X509CertificateVerifier certDialog = new X509CertificateVerifier(p.getChain(), this);
+            certDialog.setModal(true);
+            certDialog.setVisible(true);
+            return certDialog.getAccepted();
         });
         try
         {
