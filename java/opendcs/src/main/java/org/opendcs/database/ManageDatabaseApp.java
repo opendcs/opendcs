@@ -110,7 +110,7 @@ public class ManageDatabaseApp
                     System.out.printf("%s - %s%s", mi.getVersion(), mi.getDescription(), System.lineSeparator());
                 }
                 System.out.println();
-                String doMigration = console.readLine("Proceed? (y/N)");
+                final String doMigration = console != null ? console.readLine("Proceed? (y/N)") : "y";
                 if (doMigration.toLowerCase().startsWith("y"))
                 {
                     System.out.println("Performing migration.");

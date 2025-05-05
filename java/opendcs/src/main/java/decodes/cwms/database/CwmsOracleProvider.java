@@ -277,8 +277,8 @@ public class CwmsOracleProvider implements MigrationProvider
     public List<String> getAdminRoles()
     {
         ArrayList<String> roles = new ArrayList<>();
-        roles.add("CCP_MGR");
-        roles.add("CCP_PROC");
+        roles.add("CCP MGR");
+        roles.add("CCP PROC");
         roles.add("CWMS Users");
         return roles;
     }
