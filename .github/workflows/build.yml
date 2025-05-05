@@ -33,7 +33,7 @@ jobs:
         with:
           java-version: ${{matrix.jdk}}
           distribution: temurin
-      - uses: actions/setup-python@v5.5.0
+      - uses: actions/setup-python@v5.6.0
         with:
           python-version: "3.8"
       - name: Setup Gradle
