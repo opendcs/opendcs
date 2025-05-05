@@ -3,7 +3,7 @@ FROM openjdk:17-jdk-slim-buster AS builder
 
 RUN --mount=type=cache,target=/var/cache/apt \ 
     apt-get update && apt-get -y upgrade && \
-    apt-get install -y python3-venv python3-pip
+    apt-get install -y python3-venv python3-pip git
 WORKDIR /app
 
 COPY . .
