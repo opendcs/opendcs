@@ -12,6 +12,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.slf4j.LoggerFactory;
+
 import java.io.StringWriter;
 import java.io.PrintWriter;
 
@@ -35,6 +38,8 @@ to pace the output.
 */
 class DcpMsgOutputThread extends Thread
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(DcpMsgOutputThread.class);
+
 	DcpMsgOutputMonitor parent;
 	LddsClient client;
 	OutputStream outs;
@@ -165,10 +170,15 @@ class DcpMsgOutputThread extends Thread
 			}
 			catch(InterruptedIOException ie)
 			{
+				log.atError().setCause(ie).log("Request Aborted.");
 				parent.dcpMsgOutputError("Request Aborted");
 			}
 			catch(IOException ioe)
 			{
+				log.atError()
+				   .setCause(ioe)
+				   .log("Error try to {}",
+					    (msg == null) ? "get message from server" : "save message to file" );
 				if (msg == null)
 					parent.dcpMsgOutputError(
 						"IO Error trying to get message from server: " + ioe);
@@ -179,6 +189,7 @@ class DcpMsgOutputThread extends Thread
 			}
 			catch(ProtocolError pe)
 			{
+				log.atError().setCause(pe).log("Error in protocol.");
 				parent.dcpMsgOutputError(pe.toString());
 				break;
 			}
@@ -195,6 +206,7 @@ class DcpMsgOutputThread extends Thread
 					long idleSec = (now - lastMsgReceived) / 1000L;
 					if (idleSec > timeout)
 					{
+						log.atDebug().log("No message in {} seconds", idleSec);
 						parent.dcpMsgOutputError("No Msg in " + idleSec
 							+ " seconds: " + se.toString());
 						timedOut = true;
@@ -208,6 +220,7 @@ class DcpMsgOutputThread extends Thread
 				}
 				else
 				{
+					log.atError().setCause(se).log("Server Error.");
 					parent.dcpMsgOutputError(se.toString());
 					break;
 				}

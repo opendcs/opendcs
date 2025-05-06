@@ -23,6 +23,7 @@ dependencies {
     api(project(":opendcs-annotations"))
     api(project(":opendcs-api"))
     implementation(libs.bundles.oracle)
+    implementation(libs.io.github.hakky54)
     implementation(libs.postgresql)
     implementation(libs.commons.logging)
     implementation(libs.commons.net)
