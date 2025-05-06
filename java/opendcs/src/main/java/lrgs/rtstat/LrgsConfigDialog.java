@@ -48,6 +48,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
+import org.opendcs.gui.x509.X509CertificateVerifierDialog;
+
 import lrgs.ddsrecv.DdsRecvConnectCfg;
 import lrgs.ddsrecv.DdsRecvSettings;
 import lrgs.ddsrecv.NetlistGroupAssoc;
@@ -55,6 +57,7 @@ import lrgs.drgs.DrgsConnectCfg;
 import lrgs.drgs.DrgsInputSettings;
 import lrgs.ldds.LddsClient;
 import lrgs.lrgsmain.LrgsConfig;
+import lrgs.rtstat.hosts.LrgsConnection;
 import decodes.dbeditor.TimeZoneSelector;
 import decodes.gui.GuiDialog;
 import decodes.gui.PropertiesEditPanel;
@@ -1734,7 +1737,13 @@ public class LrgsConfigDialog extends GuiDialog
         }
         DdsRecvConnectCfg cfg = (DdsRecvConnectCfg)ddsTableModel.getRowObject(idx);
 
-        LddsClient myClient = new LddsClient(cfg.host,cfg.port);
+        LddsClient myClient = 
+            new LddsClient(cfg.host,cfg.port,
+                           cfg.tls ?
+                           LrgsConnection.socketFactory(
+                            cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), null)
+                           )
+                           : null);
 
         //TODO add option for password sending
         LrgsConnectionTest myTester = new LrgsConnectionTest(this, myClient, cfg.username,null);
