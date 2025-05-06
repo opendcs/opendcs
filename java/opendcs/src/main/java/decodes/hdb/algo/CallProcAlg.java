@@ -12,77 +12,68 @@ import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 
 
-//AW:IMPORTS
 import decodes.hdb.dbutils.*;
 import decodes.hdb.HdbFlags;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
- * Takes up to 5 input values labeled input1 ... input5.
- * The callproc property will have all the proper procedure call elements already established,
- * so all this program has to do is call the procedure.
- * The &lt;input1&gt; ... &lt;input5&gt; and &lt;,tsbt&gt; can be used if you want to use the procedure call dynamically.
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Takes up to 5 input values labeled input1 ... input5.\n" +
+"The callproc property will have all the proper procedure call elements already established, \n" +
+"so all this program has to do is call the procedure.\n" +
+ "The &lt;input1&gt; ... &lt;input5&gt; and &lt;,tsbt&gt; can be used if you want to use the procedure call dynamically.")
 public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input1;	//AW:TYPECODE=i
-	public double input2;	//AW:TYPECODE=i
-	public double input3;	//AW:TYPECODE=i
-	public double input4;	//AW:TYPECODE=i
-	public double input5;	//AW:TYPECODE=i
-	String _inputNames[] = { "input1", "input2", "input3", "input4", "input5" };
-//AW:INPUTS_END
+	@Input
+	public double input1;
+	@Input
+	public double input2;
+	@Input
+	public double input3;
+	@Input
+	public double input4;
+	@Input
+	public double input5;
 
-//AW:LOCALVARS
-        boolean do_setoutput = true;
+    boolean do_setoutput = true;
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
-
-//AW:PROPERTIES
+	
+	@PropertySpec(value = "ignore")
 	public String input1_MISSING = "ignore";
+	@PropertySpec(value = "ignore")
 	public String input2_MISSING = "ignore";
+	@PropertySpec(value = "ignore")
 	public String input3_MISSING = "ignore";
+	@PropertySpec(value = "ignore")
 	public String input4_MISSING = "ignore";
+	@PropertySpec(value = "ignore")
 	public String input5_MISSING = "ignore";
-        public String proccall = "";
- 
-	String _propertyNames[] = { "proccall", "input1_MISSING", "input2_MISSING", "input3_MISSING", "input4_MISSING", "input5_MISSING" };
-//AW:PROPERTIES_END
+	@PropertySpec(value = "")
+    public String proccall = "";
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -95,10 +86,10 @@ public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 	   SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
            String new_proccall = proccall.replaceAll("<<INPUT","<<input");
            String tsbt_time = "to_date('" + sdf.format(_timeSliceBaseTime) + "','dd-mon-yyyy HH24:mi')";
@@ -148,7 +139,6 @@ public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 // 	    procedure call is expected to do everything so just return
             return;
 //
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -156,32 +146,5 @@ public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

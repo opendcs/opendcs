@@ -14,9 +14,6 @@ import decodes.tsdb.algo.AWAlgoType;
 // new class handles surrogate keys as an object
 import decodes.sql.DbKey;
 
-
-//AW:IMPORTS
-// Place an import statements you need here.
 import decodes.tsdb.ParmRef;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -30,22 +27,18 @@ import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
 import decodes.tsdb.DbCompException;
 import decodes.hdb.dbutils.RBASEUtils;
-//AW:IMPORTS_END
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-Type a javadoc-style comment describing the algorithm class.
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Type a javadoc-style comment describing the algorithm class.")
 public class EOPInterpAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
 //  Alg version 1.02 mods for CP upgrade 3.0  By M. Bogner Aug 2012
 //  Alg version 1.03 mods for CP upgrade 5.3  By M. Bogner March 2013 for Dbkey change
@@ -55,45 +48,38 @@ public class EOPInterpAlg
 	Date date_out;
 	int total_count = 0;
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "0")
 	public long desired_window_period = 0;
+	@PropertySpec(value = "0")
 	public long req_window_period = 0;
-        public String validation_flag = "";
-	String _propertyNames[] = { "desired_window_period", "req_window_period", "validation_flag" };
-//AW:PROPERTIES_END
+	@PropertySpec(value = "")
+    public String validation_flag = "";
+	
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-//AW:INIT_END
-
-//AW:USERINIT
 		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -102,7 +88,6 @@ public class EOPInterpAlg
 		value_out = 0D;
 		do_setoutput = true;
 		total_count = 0;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -115,10 +100,10 @@ public class EOPInterpAlg
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
 		if (!isMissing(input))
 		{
@@ -127,7 +112,6 @@ public class EOPInterpAlg
                         debug2("EOPINTERP- " + alg_ver + "  TimeSlice  VALUE: " + input);
                         total_count++;
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -136,7 +120,6 @@ public class EOPInterpAlg
 	@Override
 	protected void afterTimeSlices() throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
@@ -343,31 +326,5 @@ public class EOPInterpAlg
 		{
 		    deleteOutput(output);
 		}
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
