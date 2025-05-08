@@ -32,7 +32,7 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 
-@Algorithm(description = "Type a javadoc-style comment describing the algorithm class.")
+@Algorithm(description = "Class which interpolates the End-Of-Period value")
 public class EOPInterpAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
