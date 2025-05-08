@@ -70,6 +70,8 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.*;
 
+import org.slf4j.LoggerFactory;
+
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Frame;
@@ -81,6 +83,9 @@ import java.awt.event.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -102,6 +107,7 @@ import decodes.util.DecodesSettings;
  */
 public class LoadMessageDialog extends GuiDialog
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(LoadMessageDialog.class);
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -119,12 +125,14 @@ public class LoadMessageDialog extends GuiDialog
 	static JComboBox<String> dcpAddressCombo = new JComboBox<String>();
 	JRadioButton loadFromFileButton = new JRadioButton();
 	JTextField filePathField = new JTextField();
+	JTextField urlField = new JTextField();
 	JRadioButton loadFromLrgsButton = new JRadioButton();
+	JRadioButton loadFromUrlButton = new JRadioButton();
 	TitledBorder titledBorder1;
 	TitledBorder titledBorder2;
 	JScrollPane jScrollPane1 = new JScrollPane();
 	static JTextArea resultsArea = new JTextArea();
-	JComboBox lrgsCombo = new JComboBox();
+	JComboBox<String> lrgsCombo = new JComboBox<>();
 
 	/** The area we are to fill. */
 	private JTextArea targetArea = null;
@@ -156,12 +164,14 @@ public class LoadMessageDialog extends GuiDialog
 		jbInit();
 		sourceButtonGroup.add(loadFromLrgsButton);
 		sourceButtonGroup.add(loadFromFileButton);
+		sourceButtonGroup.add(loadFromUrlButton);
 		loadFromLrgsButton.setSelected(true);
 		dcpAddressCombo.setEnabled(true);
 		dcpAddressCombo.setEditable(true);
 		dcpAddressCombo.addItem(""); // blank item always at the top for manual entry.
 		channelField.setEnabled(true);
 		filePathField.setEnabled(false);
+		urlField.setEnabled(false);
 		selectFileButton.setEnabled(false);
 		autoCloseCheck.setSelected(true);
 		lrgsCombo.setEnabled(true);
@@ -270,6 +280,9 @@ public class LoadMessageDialog extends GuiDialog
 			}
 		});
 
+		loadFromUrlButton.setText(dbeditLabels.getString("LoadMessageDialog.URLLoad"));
+		loadFromUrlButton.addActionListener(e -> loadFromUrlButtonPressed());
+
 		JPanel whereToLoadFromPanel = new JPanel(new GridBagLayout());
 		whereToLoadFromPanel.setBorder(titledBorder1);
 		JPanel jPanel5 = new JPanel(new BorderLayout());
@@ -335,6 +348,20 @@ public class LoadMessageDialog extends GuiDialog
 			new GridBagConstraints(3, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, 
 				new Insets(5, 5, 5, 0), 0, 0));
+
+		whereToLoadFromPanel.add(loadFromUrlButton,
+			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(10, 10, 5, 2), 0, 0));
+		whereToLoadFromPanel.add(
+			new JLabel(dbeditLabels.getString("LoadMessageDialog.URL")),
+			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
+				new Insets(5, 20, 5, 5), 0, 0));
+		whereToLoadFromPanel.add(urlField,
+			new GridBagConstraints(1, 5, 2, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(5, 0, 5, 5), 10, 0));
 		jPanel3.add(jPanel5, null);
 		jPanel5.add(jScrollPane1, BorderLayout.CENTER);
 		jScrollPane1.getViewport().add(resultsArea, null);
@@ -348,6 +375,7 @@ public class LoadMessageDialog extends GuiDialog
 		dcpAddressCombo.setEnabled(true);
 		channelField.setEnabled(true);
 		filePathField.setEnabled(false);
+		urlField.setEnabled(false);
 		selectFileButton.setEnabled(false);
 		lrgsCombo.setEnabled(true);
 	}
@@ -357,8 +385,19 @@ public class LoadMessageDialog extends GuiDialog
 	{
 		dcpAddressCombo.setEnabled(false);
 		channelField.setEnabled(false);
+		urlField.setEnabled(false);
 		filePathField.setEnabled(true);
 		selectFileButton.setEnabled(true);
+		lrgsCombo.setEnabled(false);
+	}
+
+	void loadFromUrlButtonPressed()
+	{
+		dcpAddressCombo.setEnabled(false);
+		channelField.setEnabled(false);
+		filePathField.setEnabled(false);
+		urlField.setEnabled(true);
+		selectFileButton.setEnabled(false);
 		lrgsCombo.setEnabled(false);
 	}
 
@@ -403,10 +442,30 @@ public class LoadMessageDialog extends GuiDialog
 			}
 			catch (IOException ex)
 			{
+				log.atError().setCause(ex).log("Unable to read '{}'", f.getName());
 				showError("Cannot read '" + f.getName() + "': " + ex.toString());
 			}
 		}
-		else
+		else if (loadFromUrlButton.isSelected())
+		{
+			String urlString = urlField.getText();
+			try
+			{
+				URL url = new URL(urlString);
+				try(InputStream is = url.openStream())
+				{
+					byte[] data = is.readAllBytes();
+					sampleMessageOwner.setRawMessage(new String(data));
+					closeDlg();
+				}
+			}
+			catch (IOException ex)
+			{
+				log.atError().setCause(ex).log("Unable to retrieve data from URL '{}'", urlString);
+				showError("Cannot read '" + urlString + "': " + ex.toString());
+			}
+		}
+		else if (loadFromFileButton.isSelected())
 		// Load from LRGS
 		{
 			resultsArea.setText(dbeditLabels.getString("LoadMessageDialog.Validating") + "\n");
