@@ -110,7 +110,7 @@ public class LoadMessageDialog extends GuiDialog
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(LoadMessageDialog.class);
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
-
+	private static final int URL_BUFFER_SIZE = 4096;
 	JButton okButton = new JButton();
 	JButton cancelButton = new JButton();
 	ButtonGroup sourceButtonGroup = new ButtonGroup();
@@ -452,10 +452,20 @@ public class LoadMessageDialog extends GuiDialog
 			try
 			{
 				URL url = new URL(urlString);
+				int read = 0;
 				try(InputStream is = url.openStream())
 				{
-					byte[] data = is.readAllBytes();
-					sampleMessageOwner.setRawMessage(new String(data));
+					int available = is.available();
+					byte[] data = new byte[URL_BUFFER_SIZE];
+					StringBuffer sb = new StringBuffer(URL_BUFFER_SIZE);
+					while(available > 0)
+					{
+						read += is.read(data,0,URL_BUFFER_SIZE);
+						resultsArea.setText("Downloaded: " + read/1024.0 + " kilobytes.");
+						sb.append(new String(data));
+						available = is.available();
+					}
+					sampleMessageOwner.setRawMessage(sb.toString());
 					closeDlg();
 				}
 			}
