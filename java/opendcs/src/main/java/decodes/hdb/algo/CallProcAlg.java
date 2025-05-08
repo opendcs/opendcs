@@ -144,6 +144,7 @@ public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+        @Override
 	protected void afterTimeSlices()
 	{
 	}
