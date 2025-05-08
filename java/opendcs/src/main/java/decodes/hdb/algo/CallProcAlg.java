@@ -25,7 +25,7 @@ import org.opendcs.annotations.algorithm.Output;
 @Algorithm(description = "Takes up to 5 input values labeled input1 ... input5.\n" +
 "The callproc property will have all the proper procedure call elements already established, \n" +
 "so all this program has to do is call the procedure.\n" +
- "The &lt;input1&gt; ... &lt;input5&gt; and &lt;,tsbt&gt; can be used if you want to use the procedure call dynamically.")
+ "The <input1> ... <input5> and <tsbt> can be used if you want to use the procedure call dynamically.")
 public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
