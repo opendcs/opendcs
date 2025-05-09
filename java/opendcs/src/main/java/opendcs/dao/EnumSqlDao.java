@@ -59,18 +59,7 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		super(tsdb, "EnumSqlDao");
 	}
 
-	@Override
-	public DataTransaction getTransaction() throws OpenDcsDataException
-	{
-		try
-		{
-			return new SimpleTransaction(db.getConnection());
-		}
-		catch (SQLException ex)
-		{
-			throw new OpenDcsDataException("Unable to get connection.", ex);
-		}
-	}
+	
 	
 	private String getEnumColumns(int dbVer)
 	{
