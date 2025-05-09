@@ -34,25 +34,25 @@ public class ManageDatabaseApp
 
     public static void main(String args[]) throws Exception
     {
-        StringToken implementation = new StringToken("I","which database type are we installing",
+        StringToken implementation = new StringToken("I","which database type are we installing? Examples: 'CWMS-Oracle', 'OpenDCS-Oracle',  'OpenDCS-Postgres' ",
                                                      "",TokenOptions.optRequired,"");
         StringToken username = new StringToken("username",
-                                       "user name for user manage the database",
+                                       "administrator user name for the database",
                           "",
                                                TokenOptions.optRequired,
                                                null);
         StringToken password = new StringToken("password",
-                                       "password for user manage the database",
+                                       "administrator password for the database",
                           "",
                                                TokenOptions.optRequired,
                                                null);
         StringToken appUsername = new StringToken("appUsername",
-                                       "user name for user manage the database",
+                                       "user name for user of the database",
                           "",
                                               TokenOptions.optRequired,
                                               null);
         StringToken appPassword = new StringToken("appPassword",
-                                        "password for user manage the database",
+                                        "password for user of the database",
                             "",
                                                 TokenOptions.optRequired,
                                                 null);
