@@ -126,11 +126,10 @@ public class CmdLineArgs
             {
                 System.err.println("Invalid define '" + arg + "' -- should be "
                     + "in the form name=value.");
-                System.exit(1);
             }
             String name = arg.substring(0,idx).trim();
             String value = arg.substring(idx+1).trim();
-            if (name.length() == 0 || value.length() == 0)
+            if (name.length() == 0)
             {
                 System.err.println("Invalid define name='" + name
                     + "', value='" + value + "'");

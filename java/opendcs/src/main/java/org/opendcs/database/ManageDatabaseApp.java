@@ -5,6 +5,7 @@ import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
+import ilex.util.Pair;
 
 import javax.sql.DataSource;
 
@@ -17,6 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Simple Terminal application to prompt user for required information
@@ -32,43 +34,120 @@ public class ManageDatabaseApp
 
     public static void main(String args[]) throws Exception
     {
-        StringToken implementation = new StringToken("I","which database type are we installing",
+        StringToken implementation = new StringToken("I","which database type are we installing? Examples: 'CWMS-Oracle', 'OpenDCS-Oracle',  'OpenDCS-Postgres' ",
                                                      "",TokenOptions.optRequired,"");
+        StringToken username = new StringToken("username",
+                                       "administrator user name for the database",
+                          "",
+                                               TokenOptions.optRequired,
+                                               null);
+        StringToken password = new StringToken("password",
+                                       "administrator password for the database",
+                          "",
+                                               TokenOptions.optRequired,
+                                               null);
+        StringToken appUsername = new StringToken("appUsername",
+                                       "user name for user of the database",
+                          "",
+                                              TokenOptions.optRequired,
+                                              null);
+        StringToken appPassword = new StringToken("appPassword",
+                                        "password for user of the database",
+                            "",
+                                                TokenOptions.optRequired,
+                                                null);
         CmdLineArgs cliArgs = new CmdLineArgs(true, "migrate.log");
         cliArgs.addToken(implementation);
+        cliArgs.addToken(username);
+        cliArgs.addToken(password);
+        cliArgs.addToken(appPassword);
+        cliArgs.addToken(appUsername);
         cliArgs.parseArgs(args);
 
         System.out.println("Migrating Database:");
         String impl = implementation.getValue();
         Profile profile = cliArgs.getProfile();
         Console console = System.console();
-        DataSource ds = getDataSourceFromProfileAndUserInfo(profile,console);
+        DataSource ds = getDataSourceFromProfileAndUserInfo(profile,console, username.getValue(), password.getValue());
         MigrationManager mm = new MigrationManager(ds, impl);
-        
+
         final MigrationProvider mp = mm.getMigrationProvider();
-        List<MigrationProperty> requiredPlaceholders = mp.getPlaceHolderDescriptions();
-        if (!requiredPlaceholders.isEmpty())
-        {
-            console.writer().println("Please provide values for each of the presented properties.");
-            requiredPlaceholders.forEach(p ->
-            {
-                String value = console.readLine("%s (desc = %s) = ", p.name, p.description);
-                mp.setPlaceholderValue(p.name, value);
-            });
-        }
+        final Properties props = new Properties(System.getProperties());
+
+        setPlaceholders(props, console, mp);
 
         MigrationInfo[] applied = mm.currentVersion();
         if (applied.length == 0)
         {
-            console.writer().println("Installing fresh database");
-            
+            System.out.println("Installing fresh database");
+
             mm.migrate();
-            console.printf("A default admin username will be created to allow initial data import and GUI configuration.%s",
-                           System.lineSeparator());
-            String user = console.readLine("username:");
+            Pair<String,String> credentials = createInitialUser(mm, appUsername.getValue(), appPassword.getValue(), console);
+            System.out.printf("Now loading baseline data.%s", System.lineSeparator());
+            mp.loadBaselineData(profile, credentials.first, credentials.second);
+            System.out.printf("Base line data has been imported. You may now begin using the software.%s", System.lineSeparator());
+            System.out.printf("If you will be running background apps such as CompProc and the RoutingScheduler,%s", System.lineSeparator());
+            System.out.printf("you should create a separate user. This is not currently covered in this application.%s", System.lineSeparator());
+        }
+        else
+        {
+            System.out.printf("Applying migrations to existing database. Current version is:");
+            for (int i = applied.length -1; i >= 0; i--)
+            {
+                if (applied[i].isVersioned())
+                {
+                    System.out.println(applied[i].getVersion());
+                    break; // exit the loop, we're done.
+                }
+            }
+
+            MigrationInfo[] pending = mm.pendingUpdates();
+            System.out.println("The following migrations will be performed (only versioned migrations listed):");
+            if (pending.length > 0 )
+            {
+                for (MigrationInfo mi: pending)
+                {
+                    System.out.printf("%s - %s%s", mi.getVersion(), mi.getDescription(), System.lineSeparator());
+                }
+                System.out.println();
+                final String doMigration = console != null ? console.readLine("Proceed? (y/N)") : "y";
+                if (doMigration.toLowerCase().startsWith("y"))
+                {
+                    System.out.println("Performing migration.");
+                    mm.migrate();
+                }
+                else
+                {
+                    System.out.println("Exiting application.");
+                    System.exit(0);
+                }
+            }
+            else
+            {
+                System.out.println("Database is already up-to-date.");
+            }
+        }
+    }
+
+    /**
+     * Create the initial user defaulting to the passed in credentials if not null.
+     * @param mm migration manager instance
+     * @param appUsername configured application username
+     * @param appPassword configured application password
+     * @param console console instance to prompt user for the credentials
+     * @return
+     */
+    private static Pair<String,String> createInitialUser(MigrationManager mm, String appUsername, String appPassword, Console console)
+    {
+        System.out.printf("A default admin username will be created to allow initial data import and GUI configuration.%s",
+        System.lineSeparator());
+        String user = appUsername;
+        String password = appPassword;
+        if (user == null)
+        {
+            user = console.readLine("username:");
 
             boolean match = true;
-            String password;
             do
             {
                 if(!match)
@@ -82,65 +161,71 @@ public class ManageDatabaseApp
                 password = pw;
                 match = pw.equals(pw2);
             } while (!match);
-            List<String> roles = new ArrayList<>();
-            roles.add("OTSDB_MGR");
-            roles.add("OTSDB_ADMIN");
-            mp.createUser(mm.getJdbiHandle(), user, password, roles);
-            console.printf("Now loading baseline data.%s", System.lineSeparator());
-            mp.loadBaselineData(profile, user, password);
-            console.printf("Base line data has been imported. You may now begin using the software.%s", System.lineSeparator());
-            console.printf("If you will be running background apps such as CompProc and the RoutingScheduler,%s", System.lineSeparator());
-            console.printf("you should create a separate user. This is not currently covered in this application.%s", System.lineSeparator());
         }
-        else
-        {
-            console.printf("Applying migrations to existing database. Current version is:");
-            for (int i = applied.length -1; i >= 0; i--)
-            {
-                if (applied[i].isVersioned())
-                {
-                    console.writer().println(applied[i].getVersion());
-                    break; // exit the loop, we're done.
-                }
-            }
+        List<String> roles = mm.getMigrationProvider().getAdminRoles();
 
-            MigrationInfo[] pending = mm.pendingUpdates();
-            console.writer().println("The following migrations will be performed (only versioned migrations listed):");
-            if (pending.length > 0 )
+
+        mm.createUser(user, password, roles);
+        return Pair.of(user, password);
+    }
+
+    public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c, String username, String password) throws IOException, FileNotFoundException
+    {
+        DecodesSettings settings = DecodesSettings.fromProfile(p);
+        if (username == null)
+        {
+            c.printf("Please enter the schema owning username and password for database at %s,%s",
+                     settings.editDatabaseLocation,System.lineSeparator());
+            c.printf("username:");
+            username = c.readLine();
+            char[] pw = c.readPassword("password:");
+            password = new String(pw);
+        }
+
+        return new SimpleDataSource(settings.editDatabaseLocation,username,password);
+    }
+
+    private static void setPlaceholders(Properties props, Console c, MigrationProvider mp)
+    {
+
+        List<MigrationProperty> requiredPlaceholders = mp.getPlaceHolderDescriptions();
+        List<MigrationProperty> remaining = new ArrayList<>();
+        if (!requiredPlaceholders.isEmpty())
+        {
+            // get from props first
+            for (MigrationProperty placeholder: requiredPlaceholders)
             {
-                for (MigrationInfo mi: pending)
+                String value = props.getProperty(placeholder.name);
+                if (value != null || props.containsKey(placeholder.name))
                 {
-                    console.printf("%s - %s%s", mi.getVersion(), mi.getDescription(), System.lineSeparator());
-                }
-                console.writer().println();
-                String doMigration = console.readLine("Proceed? (y/N)");
-                if (doMigration.toLowerCase().startsWith("y"))
-                {
-                    console.writer().println("Performing migration.");
-                    mm.migrate();
+                    mp.setPlaceholderValue(placeholder.name, value);
                 }
                 else
                 {
-                    console.writer().println("Exiting application.");
-                    System.exit(0);
+                    remaining.add(placeholder);
                 }
             }
-            else
+
+            if (!remaining.isEmpty() && c != null)
             {
-                console.writer().println("Database is already up-to-date.");
+                c.writer().println("Please provide values for each of the presented properties.");
+                remaining.forEach(p ->
+                {
+                    String value = c.readLine("%s (desc = %s) = ", p.name, p.description);
+                    mp.setPlaceholderValue(p.name, value);
+                });
+            }
+            else if (!remaining.isEmpty() && c == null)
+            {
+                System.err.println("Not all placeholder values have been configured.");
+                System.err.println("Please define the following:");
+                remaining.forEach(p ->
+                {
+                    System.err.printf("%s: %s%s", p.name, p.description, System.lineSeparator());
+                });
+                throw new RuntimeException("Incomplete Placeholder configuration.");
             }
         }
-    }
 
-    public static DataSource getDataSourceFromProfileAndUserInfo(Profile p, Console c) throws IOException, FileNotFoundException
-    {
-        DecodesSettings settings = DecodesSettings.fromProfile(p);
-        c.printf("Please enter the schema owning username and password for database at %s,%s",
-                 settings.editDatabaseLocation,System.lineSeparator());
-        c.printf("username:");
-        String username = c.readLine();
-        char[] pw = c.readPassword("password:");
-        String password = new String(pw);
-        return new SimpleDataSource(settings.editDatabaseLocation,username,password);
     }
 }
