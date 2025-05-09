@@ -1,54 +1,3 @@
-/*
- *  $Id$
- *
- *  $Log$
- *  Revision 1.4  2015/01/17 21:25:49  mmaloney
- *  Fix for non-GOES DCP Messages
- *
- *  Revision 1.3  2014/05/30 13:15:35  mmaloney
- *  dev
- *
- *  Revision 1.2  2014/05/28 13:09:31  mmaloney
- *  dev
- *
- *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- *  OPENDCS 6.0 Initial Checkin
- *
- *  Revision 1.5  2010/09/13 15:31:11  mmaloney
- *  dev
- *
- *  Revision 1.4  2010/09/13 15:23:47  mmaloney
- *  Temporary fix for dialog changing binary data. Replace binary values with '$'.
- *
- *  Revision 1.3  2009/03/11 18:30:01  mjmaloney
- *  iridium development
- *
- *  Revision 1.2  2008/09/24 13:58:25  mjmaloney
- *  network DCPs
- *
- *  Revision 1.1  2008/04/04 18:21:00  cvs
- *  Added legacy code to repository
- *
- *  Revision 1.17  2008/01/14 14:56:43  mmaloney
- *  dev
- *
- *  Revision 1.16  2008/01/11 22:14:45  mmaloney
- *  Internationalization
- *  ~Dan
- *
- *  Revision 1.15  2005/09/06 15:29:50  mjmaloney
- *  Added decins-6-4.xml build file
- *
- *  Revision 1.14  2004/09/20 14:18:48  mjmaloney
- *  Javadocs
- *
- *  Revision 1.13  2004/08/27 18:41:33  mjmaloney
- *  Platwiz work
- *
- *  Revision 1.12  2004/07/28 20:54:49  mjmaloney
- *  dev
- *
- */
 package decodes.dbeditor;
 
 import ilex.util.AsciiUtil;
@@ -70,6 +19,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.*;
 
+import org.opendcs.utils.WebUtility;
 import org.slf4j.LoggerFactory;
 
 import java.awt.BorderLayout;
@@ -83,9 +33,6 @@ import java.awt.event.*;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -104,13 +51,13 @@ import decodes.util.DecodesSettings;
 
 /**
  * Dialog for user to specify parameters needed to load a sample message.
+ * Supports loading messages from Lrgs,File, or URL.
  */
 public class LoadMessageDialog extends GuiDialog
 {
 	private static final org.slf4j.Logger log = LoggerFactory.getLogger(LoadMessageDialog.class);
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
-	private static final int URL_BUFFER_SIZE = 4096;
 	JButton okButton = new JButton();
 	JButton cancelButton = new JButton();
 	ButtonGroup sourceButtonGroup = new ButtonGroup();
@@ -203,12 +150,6 @@ public class LoadMessageDialog extends GuiDialog
 	{
 		this(getDbEditFrame(), "", true);
 	}
-
-	/** Sets parent, who contains the text area being filled. */
-	// public void setParent(DecodingScriptEditDialog parent)
-	// {
-	// this.parent = parent;
-	// }
 
 	/**
 	 * Sets the target Text Area we are to fill.
@@ -451,23 +392,9 @@ public class LoadMessageDialog extends GuiDialog
 			String urlString = urlField.getText();
 			try
 			{
-				URL url = new URL(urlString);
-				int read = 0;
-				try(InputStream is = url.openStream())
-				{
-					int available = is.available();
-					byte[] data = new byte[URL_BUFFER_SIZE];
-					StringBuffer sb = new StringBuffer(URL_BUFFER_SIZE);
-					while(available > 0)
-					{
-						read += is.read(data,0,URL_BUFFER_SIZE);
-						resultsArea.setText("Downloaded: " + read/1024.0 + " kilobytes.");
-						sb.append(new String(data));
-						available = is.available();
-					}
-					sampleMessageOwner.setRawMessage(sb.toString());
-					closeDlg();
-				}
+				String s = WebUtility.readStringFromURL(urlString);
+				sampleMessageOwner.setRawMessage(s);
+				closeDlg();
 			}
 			catch (IOException ex)
 			{
