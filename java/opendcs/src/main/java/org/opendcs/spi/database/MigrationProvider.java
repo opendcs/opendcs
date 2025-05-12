@@ -16,7 +16,7 @@ public interface MigrationProvider
      * The name used for this implementation.
      * @return
      */
-    public String getName();
+    String getName();
     /**
      * If a given implementation requires any custom placeholders
      * within their usage will be acquired from here.
@@ -24,7 +24,7 @@ public interface MigrationProvider
      * Implementations *should* return an unmodifiable Map.
      * @return
      */
-    public Map<String,String> getPlaceholderValues();
+    Map<String,String> getPlaceholderValues();
 
     /**
      * Set a specific placeholder value
@@ -37,7 +37,7 @@ public interface MigrationProvider
      * Retrieves a map of required properties for this implementation.
      * @return
      */
-    public List<MigrationProperty> getPlaceHolderDescriptions();
+    List<MigrationProperty> getPlaceHolderDescriptions();
 
     /**
      * If this database implementation uses specific Jdbi plugins
@@ -48,7 +48,7 @@ public interface MigrationProvider
      * updating information.
      * @param jdbi an already prepared Jdbi instance.
      */
-    default public void registerJdbiPlugins(Jdbi jdbi)
+    default void registerJdbiPlugins(Jdbi jdbi)
     {
     }
 
@@ -58,18 +58,18 @@ public interface MigrationProvider
      * @param username user with permissions to write data to this database
      * @param password
      */
-    public void loadBaselineData(Profile profile, String username, String password) throws IOException;
+     void loadBaselineData(Profile profile, String username, String password) throws IOException;
 
     /**
      * Get baseline Decodes data, like enums, datatype, equipment, presentation groups, etc
      * @return
      */
-    public List<File> getDecodesData();
+    List<File> getDecodesData();
     /**
      * Get Baseline computation get, like Algorithm definitions, Loading Apps, etc.
      * @return
      */
-    public List<File> getComputationData();
+    List<File> getComputationData();
 
     /**
      * For those implementations that require placeholders, retrieve them
@@ -78,7 +78,7 @@ public interface MigrationProvider
      * A JDBI handle is provided and can use to query database information.
      * @param jdbi
      */
-    default public void determineCurrentPlaceHolders(Jdbi jdbi)
+    default void determineCurrentPlaceHolders(Jdbi jdbi)
     {
     }
 
@@ -87,7 +87,28 @@ public interface MigrationProvider
         return new ArrayList<>();
     }
 
-    public void createUser(Jdbi jdbi, String username, String password, List<String> roles);
+    /**
+     * Default roles require for admin operations.
+     * @return
+     */
+    default List<String> getAdminRoles()
+    {
+        ArrayList<String> roles = new ArrayList<>();
+        roles.add("OTSDB_MGR");
+        roles.add("OTSDB_ADMIN");
+        return roles;
+    }
+
+    /**
+     * Inform flyway as to whether it is responsible for the schema creation
+     * @return
+     */
+    default boolean createSchemas()
+    {
+        return false;
+    }
+
+    void createUser(Jdbi jdbi, String username, String password, List<String> roles);
 
     public static class MigrationProperty
     {

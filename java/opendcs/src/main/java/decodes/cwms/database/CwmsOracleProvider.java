@@ -244,4 +244,19 @@ public class CwmsOracleProvider implements MigrationProvider
         theSchemas.add("CCP");
         return theSchemas;
     }
+
+    public boolean createSchemas()
+    {
+        return true;
+    }
+
+    @Override
+    public List<String> getAdminRoles()
+    {
+        ArrayList<String> roles = new ArrayList<>();
+        roles.add("CCP MGR");
+        roles.add("CCP PROC");
+        roles.add("CWMS Users");
+        return roles;
+    }
 }
