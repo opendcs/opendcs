@@ -14,8 +14,6 @@ import decodes.tsdb.VarFlags;
 
 
 
-//AW:IMPORTS
-// Place an import statements you need here.
 import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -37,35 +35,28 @@ import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
 import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
-import decodes.util.PropertySpec;
+
 //import decodes.tsdb.DbCompConfig;
 import decodes.hdb.dbutils.RBASEUtils;
-//AW:IMPORTS_END
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-This algorithm is for aggregations across HDB expected intervals. 
-Will do any ORACLE based aggregation that takes only the one value 
-as the function  ie MAX(value)  so this algorithm can presently do:
-
-min, max, avg, count, sum, median, stddev, and variance
-
-specify the aggregate they desire by stating the oracle 
-function in the aggregate_name property  ie aggregate_name=sum
-
-MIN_VALUES_REQUIRED: setting to zero means use max number observations for interval 
-NO_ROUNDING: determines if rounding to the 5th decimal point is desired, default FALSE
- */
-//AW:JAVADOC_END
+@Algorithm(description = "This algorithm is for aggregations across HDB expected intervals.\n" +
+	"Will do any ORACLE based aggregation that takes only the one value\n" + 
+	"as the function  ie MAX(value)  so this algorithm can presently do:\n\n" +
+	"min, max, avg, count, sum, median, stddev, and variance\n\n" +
+	"specify the aggregate they desire by stating the oracle \n" +
+	"function in the aggregate_name property  ie aggregate_name=sum\n\n" +
+	"MIN_VALUES_REQUIRED: setting to zero means use max number observations for interval\n" +
+	"NO_ROUNDING: determines if rounding to the 5th decimal point is desired, default FALSE")
 public class DynamicAggregatesAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
         // version 12 change by M. Bogner 2/2013 to add NO_ROUNDING property
         // version 1.0.13 moded by M. Bogner March 2013 for CP 5.3 project
@@ -81,71 +72,51 @@ public class DynamicAggregatesAlg
 	long mvr_count;
 	long mvd_count;
 	
-	PropertySpec specs[] = 
-	{
-		new PropertySpec("aggregate_name", PropertySpec.STRING,
-			"(required) The name of the Oracle aggregate function."),
-		new PropertySpec("min_values_required", PropertySpec.INT, 
-			"(default=1) No output produced if fewer than this many inputs in the aggregate period."),
-		new PropertySpec("min_values_desired", PropertySpec.INT, 
-			"(default=0) If fewer than this many inputs in the period, output flagged as a partial calculation."),
-		new PropertySpec("partial_calculations", PropertySpec.BOOLEAN, 
-			"(default=false) If true, then partial calcs are accepted but flagged as 'T' (temporary)."),
-		new PropertySpec("no_rounding", PropertySpec.BOOLEAN, 
-			"(default=false) If true, then no rounding is done on the output value."),
-		new PropertySpec("validation_flag", PropertySpec.STRING,
-			"(empty) Always set this validation flag in the output."),
-		new PropertySpec("negativeReplacement", PropertySpec.NUMBER, 
-			"(no default) If set, and output would be negative, then replace with the number supplied.")
-	};
 
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(name = "no_rounding", value = "false", description = "(default=false) If true, no rounding on output.")
 	public boolean no_rounding = false;
+	@PropertySpec(name = "partial_calculations", value = "false", description = "(default=false) If true, partial calcs are accepted but flagged 'T'.")
 	public boolean partial_calculations = false;
+	 @PropertySpec(name = "min_values_required", value = "1", description = "(default=1) No output produced if fewer than this many inputs in the aggregate period.")
 	public long min_values_required = 1;
+	@PropertySpec(name = "min_values_desired", value = "0", description = "(default=0) Output flagged as partial if fewer than this many inputs.")
 	public long min_values_desired = 0;
+	@PropertySpec(name = "aggregate_name", value = "NONE", description = "(required) The name of the Oracle aggregate function.")
 	public String aggregate_name = "NONE";
+	@PropertySpec(name = "validation_flag", value = "", description = "Always set this validation flag in the output.")
     public String validation_flag = "";
+	@PropertySpec(name = "negativeReplacement", value = "Double.NEGATIVE_INFINITY", description = "If set and output is negative, replace with this number.")
 	public double negativeReplacement = Double.NEGATIVE_INFINITY;
 
-	String _propertyNames[] = { "partial_calculations", "min_values_required", "min_values_desired", "aggregate_name",
-	"validation_flag","no_rounding", "negativeReplacement" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-//AW:INIT_END
-
-//AW:USERINIT
 		// Code here will be run once, after the algorithm object is created.
 		noAggregateFill = true;
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -155,7 +126,6 @@ public class DynamicAggregatesAlg
 		do_setoutput = true;
 		flags = "";
 		date_out = null;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -168,12 +138,10 @@ public class DynamicAggregatesAlg
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
-		// Enter code to be executed at each time-slice.
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -182,7 +150,6 @@ public class DynamicAggregatesAlg
 	@Override
 	protected void afterTimeSlices() throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
@@ -427,39 +394,6 @@ public class DynamicAggregatesAlg
 			throw new DbCompException("Unable to get connection.", ex);
 		}
 
-
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
-	
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return specs;
 	}
 
 }
