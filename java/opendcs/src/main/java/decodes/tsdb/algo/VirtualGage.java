@@ -24,9 +24,9 @@ public class VirtualGage
 {
 
 	@Input
-	public double upstreamGage;	//AW:TYPECODE=i
+	public double upstreamGage;
 	@Input
-	public double downstreamGage;	//AW:TYPECODE=i
+	public double downstreamGage;
 
 
 	@Output(type = Double.class)

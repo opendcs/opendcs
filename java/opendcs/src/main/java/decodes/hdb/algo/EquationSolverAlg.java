@@ -31,7 +31,7 @@ import org.opendcs.annotations.algorithm.Output;
 	"inputs in the computation's defined equation and the equation is then\n" + 
 	"submitted to ORACLE to be evaluated.  The equation specification is simple\n" + 
 	"yet must be an acceptable ORACLE statement.\n\n" +
-	"ie  the three times the input1 squared equation is:   3*power\(<input1>,2\)") 
+	"ie  the three times the input1 squared equation is:   3*power(<input1>,2)") 
 public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
