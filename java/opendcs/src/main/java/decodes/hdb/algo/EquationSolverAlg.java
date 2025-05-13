@@ -13,8 +13,6 @@ import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 
-import decodes.util.PropertySpec;
-//AW:IMPORTS
 import decodes.hdb.dbutils.*;
 import decodes.hdb.HdbFlags;
 import decodes.hdb.HdbTsId;
@@ -22,89 +20,65 @@ import decodes.hdb.HdbTsId;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-Takes up to 5 input values labeled input1 ... input5.
-Takes the values of these inputs and replaces the reference of these
-inputs in the computation's defined equation and the equation is then 
-submitted to ORACLE to be evaluated.  The equation specification is simple 
-yet must be an acceptable ORACLE statement.
-
-ie  the three times the input1 squared equation is:   3*power(<input1>,2) 
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Takes up to 5 input values labeled input1 ... input5.\n" +
+	"Takes the values of these inputs and replaces the reference of these\n" +
+	"inputs in the computation's defined equation and the equation is then\n" + 
+	"submitted to ORACLE to be evaluated.  The equation specification is simple\n" + 
+	"yet must be an acceptable ORACLE statement.\n\n" +
+	"ie  the three times the input1 squared equation is:   3*power\(<input1>,2\)") 
 public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input1;	//AW:TYPECODE=i
-	public double input2;	//AW:TYPECODE=i
-	public double input3;	//AW:TYPECODE=i
-	public double input4;	//AW:TYPECODE=i
-	public double input5;	//AW:TYPECODE=i
-	String _inputNames[] = { "input1", "input2", "input3", "input4", "input5" };
-//AW:INPUTS_END
+	@Input
+	public double input1;
+	@Input
+	public double input2;
+	@Input
+	public double input3;
+	@Input
+	public double input4;
+	@Input
+	public double input5;
 
-//AW:LOCALVARS
     boolean do_setoutput = true;
 
-    private PropertySpec[] esaProps = 
-    {
-    	new PropertySpec("equation", PropertySpec.LONGSTRING, 
-    		"The database equation to execute at each time slice"),
-    	new PropertySpec("validation_flag", PropertySpec.STRING, 
-    		"If set, output values will be flagged with this flag.")
-    };
-
-    @Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return esaProps;
-	}
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
 //	public String input1_MISSING = "ignore";
 //	public String input2_MISSING = "ignore";
 //	public String input3_MISSING = "ignore";
 //	public String input4_MISSING = "ignore";
 //	public String input5_MISSING = "ignore";
+	
+	@PropertySpec(name = "validation_flag", value = "", description = "If set, output values will be flagged with this flag.")
     public String validation_flag = "";
+	@PropertySpec(name = "equation", value = "", description = "The database equation to execute at each time slice")
     public String equation = "";
  
-	String _propertyNames[] = { "equation", "validation_flag" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -117,10 +91,10 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yyyy HH:mm");
 		String new_equation = equation.replaceAll("<<INPUT", "<<input");
 		String tsbt_time = "to_date('" + sdf.format(_timeSliceBaseTime) + "','dd-mon-yyyy HH24:mi')";
@@ -308,41 +282,13 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		{
 			deleteOutput(output);
 		}
-
-		//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

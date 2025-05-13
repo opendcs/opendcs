@@ -32,7 +32,7 @@ public class RdbRating
     implements decodes.comp.HasLookupTable
 {
    @Input
-    double indep;    //AW:TYPECODE=i
+    double indep; 
 
     LookupTable lookupTable = null;
     LookupTable shiftTable = null;

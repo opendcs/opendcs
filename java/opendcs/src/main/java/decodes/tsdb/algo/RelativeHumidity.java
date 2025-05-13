@@ -28,13 +28,7 @@ public class RelativeHumidity extends AW_AlgorithmBase
 	 */
 	protected void initAWAlgorithm() throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**

@@ -49,7 +49,7 @@ public class AlarmScreeningAlgorithm
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double input;	//AW:TYPECODE=i
+	public double input;
 
 	// Will be set to true if input and output refer to the same time series.
 	boolean _inputIsOutput = false;

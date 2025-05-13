@@ -23,13 +23,11 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 
-//AW:IMPORTS
 // Place an import statements you need here.
 import decodes.cwms.CwmsFlags;
 import decodes.db.EngineeringUnit;
 import java.util.GregorianCalendar;
 import java.util.Calendar;
-//AW:IMPORTS_END
 
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
@@ -79,7 +77,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
     public double AirTemp;
     @Input
     public double BaroPressure;
-    String _inputNames[] = { "AirTemp", "WindSpeed", "SolarRadiation", "RelativeHumidity", "BaroPressure"};
 
     // Enter any local class variables needed by the algorithm.
         /**
@@ -166,7 +163,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
     // created a NameVariable with the name you want, and add the string of that name to the array
     @Output(type = Double.class)
     public NamedVariable Evap = new NamedVariable( "Evap", 0 );
-    String _outputNames[] = { "Evap" };
 
     @org.opendcs.annotations.PropertySpec(description = "True if the provided Solar Radiation value is Net radiation.")
     public boolean UsingNetRadiation = false;
@@ -183,7 +179,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
     public double  latitude = 0.0;
     @org.opendcs.annotations.PropertySpec(description = "Require value to adjust things. TODO: better explanation.")
     public double  latitude_center_tz = 120.0;
-    String _propertyNames[] = { "UsingNetRadiation", "Elevation", "WindSpeedHeight", "Albedo", "latitude", "MinSamples", "latitude_center_tz" };
 
 
     // Allow javac to generate a no-args constructor.
@@ -458,31 +453,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
         {
             log.warn("There where not enough values present, assuming the evap number calculated is junk, sorry");
         }
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
-    }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
     }
 
     // Pennmann Monteith support equations
