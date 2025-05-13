@@ -1,5 +1,5 @@
-create or replace procedure set_office_column(new_office IN OUT cwms_20.av_office.office_code%type,
-                                              old_office cwms_20.av_office.office_code%type)
+create or replace procedure set_office_column(new_office IN OUT number,
+                                              old_office number)
 is
 begin
     if new_office is null and old_office is null
