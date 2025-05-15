@@ -32,6 +32,7 @@ import java.util.Calendar;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 import org.slf4j.LoggerFactory;
 
 @Algorithm(name="Evap PennmanMonteith",

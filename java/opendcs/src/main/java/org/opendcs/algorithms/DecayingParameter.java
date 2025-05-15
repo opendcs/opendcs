@@ -72,13 +72,11 @@ public class DecayingParameter extends AW_AlgorithmBase
 	public NamedVariable output = new NamedVariable("output", 0);
 
 
-	@PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
-										 description = "Decay rate to apply to the previous value.")
+	@PropertySpec(value = "0.0", description = "Decay rate to apply to the previous value.")
 	public double Decay = 0.0;
 	@PropertySpec(description = "Day of the year (ddMMM format) to reset 'previous' value to the reset value.")
 	public String ResetDate = "";
-	@PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
-										  description = "Value to which 'previous' value should be reset if reset date is provided.")
+	@PropertySpec(value = "0.0", description = "Value to which 'previous' value should be reset if reset date is provided.")
 	public double ResetValue = 0.0;
 
 	/**
