@@ -25,7 +25,7 @@ public class BeginofPeriodAlg
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {	
 	@Input
-	public double input;	//AW:TYPECODE=i
+	public double input;
 
 	double value_out;
 	int count = 0;

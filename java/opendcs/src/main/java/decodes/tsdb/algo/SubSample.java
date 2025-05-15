@@ -67,7 +67,7 @@ public class SubSample
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double inputShortInterval;	//AW:TYPECODE=i
+	public double inputShortInterval;
 	
 	private IntervalIncrement outputIncr = null;
 	private GregorianCalendar outputCal = null;

@@ -23,17 +23,16 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 
-//AW:IMPORTS
 // Place an import statements you need here.
 import decodes.cwms.CwmsFlags;
 import decodes.db.EngineeringUnit;
 import java.util.GregorianCalendar;
 import java.util.Calendar;
-//AW:IMPORTS_END
 
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 import org.slf4j.LoggerFactory;
 
 @Algorithm(name="Evap PennmanMonteith",
@@ -79,7 +78,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
     public double AirTemp;
     @Input
     public double BaroPressure;
-    String _inputNames[] = { "AirTemp", "WindSpeed", "SolarRadiation", "RelativeHumidity", "BaroPressure"};
 
     // Enter any local class variables needed by the algorithm.
         /**
@@ -166,24 +164,22 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
     // created a NameVariable with the name you want, and add the string of that name to the array
     @Output(type = Double.class)
     public NamedVariable Evap = new NamedVariable( "Evap", 0 );
-    String _outputNames[] = { "Evap" };
 
-    @org.opendcs.annotations.PropertySpec(description = "True if the provided Solar Radiation value is Net radiation.")
+    @PropertySpec(description = "True if the provided Solar Radiation value is Net radiation.")
     public boolean UsingNetRadiation = false;
-    @org.opendcs.annotations.PropertySpec(description = "Elevation above MSL of the station. Roughly the elevation of the sensors.")
+    @PropertySpec(description = "Elevation above MSL of the station. Roughly the elevation of the sensors.")
     public double  Elevation = 0.0;
-    @org.opendcs.annotations.PropertySpec(description = "Elevation of the wind speed sensor.")
+    @PropertySpec(description = "Elevation of the wind speed sensor.")
     public double  WindSpeedHeight = 0.0;
-    @org.opendcs.annotations.PropertySpec(description = "Site dependent, use to determine adjustment to solar radiation.")
+    @PropertySpec(description = "Site dependent, use to determine adjustment to solar radiation.")
     public double  Albedo = 0.06;
-    @org.opendcs.annotations.PropertySpec(description = "Minimum number of samples before we can consider a calculated evap reasoanble.")
+    @PropertySpec(description = "Minimum number of samples before we can consider a calculated evap reasoanble.")
     public double  MinSamples = 72; // assume okay if we have more than 75% of the values
-    @org.opendcs.annotations.PropertySpec(description = "Latitude of the site. Used to determine various solar radiation adjustments."
+    @PropertySpec(description = "Latitude of the site. Used to determine various solar radiation adjustments."
                                                       + "NOTE: in the furture the system will be able to look this up, for now please manually enter it.")
     public double  latitude = 0.0;
-    @org.opendcs.annotations.PropertySpec(description = "Require value to adjust things. TODO: better explanation.")
+    @PropertySpec(description = "Require value to adjust things. TODO: better explanation.")
     public double  latitude_center_tz = 120.0;
-    String _propertyNames[] = { "UsingNetRadiation", "Elevation", "WindSpeedHeight", "Albedo", "latitude", "MinSamples", "latitude_center_tz" };
 
 
     // Allow javac to generate a no-args constructor.
@@ -458,31 +454,6 @@ public class EvapPennmanMonteith extends decodes.tsdb.algo.AW_AlgorithmBase
         {
             log.warn("There where not enough values present, assuming the evap number calculated is junk, sorry");
         }
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
-    }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
     }
 
     // Pennmann Monteith support equations

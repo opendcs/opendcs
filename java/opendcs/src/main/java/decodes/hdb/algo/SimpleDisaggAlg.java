@@ -153,7 +153,6 @@ info("DisAgg, input interval=" + iintv + ", isec=" + isec
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 
 		// if interval of output > interval of input then output a single 
 		// value at the input time.

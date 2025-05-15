@@ -15,7 +15,7 @@ import org.opendcs.annotations.algorithm.Output;
 public class BridgeClearance extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double waterLevel;	//AW:TYPECODE=i
+	public double waterLevel;
 
 	@Output
 	public NamedVariable clearance = new NamedVariable("clearance", 0);
