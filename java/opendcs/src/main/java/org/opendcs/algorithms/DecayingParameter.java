@@ -21,7 +21,6 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
-import decodes.util.PropertySpec;
 
 // Place an import statements you need here.
 import java.text.SimpleDateFormat;
@@ -36,6 +35,7 @@ import java.io.BufferedWriter;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 import org.slf4j.LoggerFactory;
 
 
@@ -72,12 +72,12 @@ public class DecayingParameter extends AW_AlgorithmBase
 	public NamedVariable output = new NamedVariable("output", 0);
 
 
-	@org.opendcs.annotations.PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
+	@PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
 										 description = "Decay rate to apply to the previous value.")
 	public double Decay = 0.0;
-	@org.opendcs.annotations.PropertySpec(description = "Day of the year (ddMMM format) to reset 'previous' value to the reset value.")
+	@PropertySpec(description = "Day of the year (ddMMM format) to reset 'previous' value to the reset value.")
 	public String ResetDate = "";
-	@org.opendcs.annotations.PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
+	@PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
 										  description = "Value to which 'previous' value should be reset if reset date is provided.")
 	public double ResetValue = 0.0;
 
