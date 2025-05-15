@@ -52,11 +52,14 @@ public class EUTableModel extends AbstractTableModel
 	private ArrayList<EngineeringUnit> eus;
 	private int lastSortColumn;
 
+	Database db;
+
 	/**
 	 * No args constructor for JBuilder.
 	 */
-	public EUTableModel()
+	public EUTableModel(Database db)
 	{
+		this.db = db;
 		columnNames = new String[4];
 		columnNames[0] = labels.getString("EUTableModel.abbrev");
 		columnNames[1] = labels.getString("EUDialog.fullName");
@@ -73,7 +76,7 @@ public class EUTableModel extends AbstractTableModel
 	public void rebuild()
 	{
 		eus = new ArrayList<EngineeringUnit>();
-		EngineeringUnitList eul = Database.getDb().engineeringUnitList;
+		EngineeringUnitList eul = db.engineeringUnitList;
 		for(Iterator<EngineeringUnit> it = eul.iterator(); it.hasNext(); )
 		{
 			EngineeringUnit eu = (EngineeringUnit)it.next();
