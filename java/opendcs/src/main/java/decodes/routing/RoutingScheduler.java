@@ -74,6 +74,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
@@ -529,22 +530,10 @@ public class RoutingScheduler
 		throws DecodesException
 	{
 		Logger.instance().debug1("initDecodes()");
-		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
-		DecodesInterface.initializeForDecoding();
-	}
-	
-	@Override
-	public synchronized void createDatabase()
-		throws ClassNotFoundException,
-		InstantiationException, IllegalAccessException
-	{
-		// Do nothing. The scheduler must not use the TSDB.
-	}
-	
-	@Override
-	public void tryConnect()
-	{
-		// Do nothing. The scheduler must not use the TSDB.
+		Optional<Database> db = this.db.getLegacyDatabase(Database.class);
+		if (db.isPresent()) {
+			db.get().initializeForDecoding();
+		}
 	}
 
 	/**
