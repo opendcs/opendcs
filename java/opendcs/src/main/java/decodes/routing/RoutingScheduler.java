@@ -357,11 +357,10 @@ public class RoutingScheduler
 	protected void runAppInit()
 	{
 		Logger.instance().debug1("runAppInit starting");
-		// Get the loading app info from the DECODES database, not TSDB.
-		DatabaseIO dbio = decodes.db.Database.getDb().getDbIo();
-		LoadingAppDAI loadingAppDao = dbio.makeLoadingAppDAO();
 
-		try
+		try(LoadingAppDAI loadingAppDao =
+				db.getDao(LoadingAppDAI.class)
+				  .orElseThrow(() -> new DbIoException("No LoadingAppDAI implementation is available for this database.")))
 		{
 			setAppId(loadingAppDao.lookupAppId(appNameArg.getValue()));
 			appInfo = loadingAppDao.getComputationApp(appNameArg.getValue());
@@ -414,10 +413,6 @@ public class RoutingScheduler
 			databaseFailed = true;
 			shutdownFlag = true;
 			return;
-		}
-		finally
-		{
-			loadingAppDao.close();
 		}
 	}
 	
