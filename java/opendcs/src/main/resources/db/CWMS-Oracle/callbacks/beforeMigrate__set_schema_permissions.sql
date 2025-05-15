@@ -21,27 +21,53 @@ GRANT  ALTER ANY TABLE,CREATE ANY TABLE,CREATE ANY INDEX,CREATE ANY SEQUENCE,
     TO ${CCP_SCHEMA};
 
 GRANT CREATE ANY CONTEXT TO ${CCP_SCHEMA};
-GRANT SELECT ON dba_scheduler_jobs to ${CCP_SCHEMA};
-GRANT SELECT ON dba_queue_subscribers to ${CCP_SCHEMA};
-GRANT SELECT ON dba_subscr_registrations to ${CCP_SCHEMA};
-GRANT SELECT ON dba_queues to ${CCP_SCHEMA};
-GRANT EXECUTE ON dbms_aq TO ${CCP_SCHEMA};
-GRANT EXECUTE ON dbms_aqadm TO ${CCP_SCHEMA};
-GRANT EXECUTE ON DBMS_SESSION to ${CCP_SCHEMA};
-GRANT EXECUTE ON DBMS_RLS to ${CCP_SCHEMA};
+-- The way to assign these specific privileges different when running in an Oracle RDS database.
+-- NOTE: These go away when if/when CWMS is no longer using the Oracle queues for it's queue system.
+declare
+    is_rds char := 'N';
 begin
-    sys.dbms_aqadm.grant_system_privilege (
-      privilege    => 'enqueue_any',
-      grantee      => '${CCP_SCHEMA}',
-      admin_option => false);
-    sys.dbms_aqadm.grant_system_privilege (
-      privilege    => 'dequeue_any',
-      grantee      => '${CCP_SCHEMA}',
-      admin_option => false);
-    sys.dbms_aqadm.grant_system_privilege (
-      privilege    => 'manage_any',
-      grantee      => '${CCP_SCHEMA}',
-      admin_option => false);
+    begin
+        select 'Y' into is_rds from dba_users where username='RDSADMIN';
+        execute immediate 'begin rdsadmin.rdsadmin_util.grant_sys_object('||
+            'p_obj_name     => ''DBA_SUBSCR_REGISTRATIONS'','||
+            'p_grantee      => ''${CCP_SCHEMA}'','||
+            'p_privilege    => ''SELECT'','||
+            'p_grant_option => true); end;';
+        execute immediate 'begin dbms_aqadm.grant_system_privilege ('||
+            'privilege    => ''enqueue_any'','||
+            'grantee      => ''${CCP_SCHEMA}'','||
+            'admin_option => false); end;';
+        execute immediate 'begin dbms_aqadm.grant_system_privilege ('||
+            'privilege    => ''dequeue_any'','||
+            'grantee      => ''${CCP_SCHEMA}'','||
+            'admin_option => false); end;';
+        execute immediate 'begin dbms_aqadm.grant_system_privilege ('||
+            'privilege    => ''manage_any'','||
+            'grantee      => ''${CCP_SCHEMA}'','||
+            'admin_option => false); end;';
+    exception
+    when no_data_found then
+        execute immediate 'GRANT SELECT ON dba_subscr_registrations to CCP';
+        sys.dbms_aqadm.grant_system_privilege (
+          privilege    => 'enqueue_any',
+          grantee      => '${CCP_SCHEMA}',
+          admin_option => false);
+        sys.dbms_aqadm.grant_system_privilege (
+          privilege    => 'dequeue_any',
+          grantee      => '${CCP_SCHEMA}',
+          admin_option => false);
+        sys.dbms_aqadm.grant_system_privilege (
+          privilege    => 'manage_any',
+          grantee      => '${CCP_SCHEMA}',
+          admin_option => false);
+    end;
+    execute immediate 'GRANT SELECT ON dba_scheduler_jobs to CCP';
+    execute immediate 'GRANT SELECT ON dba_queue_subscribers to CCP';
+    execute immediate 'GRANT SELECT ON dba_queues to CCP';
+    execute immediate 'GRANT EXECUTE ON dbms_aq TO CCP';
+    execute immediate 'GRANT EXECUTE ON dbms_aqadm TO CCP';
+    execute immediate 'GRANT EXECUTE ON DBMS_SESSION to CCP';
+    execute immediate 'GRANT EXECUTE ON DBMS_RLS to CCP';
 end;
 /
 
