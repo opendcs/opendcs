@@ -29,7 +29,7 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 	private static final String AVERAGESTRING = "average";
 
 	@Input
-	public double input;	//AW:TYPECODE=i
+	public double input;
 
 	double tally;
 	int count;

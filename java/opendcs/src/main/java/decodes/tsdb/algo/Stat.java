@@ -121,7 +121,6 @@ public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 				tally += input;
 				count++;
 			}
-	//AW:TIMESLICE_END
 		}
 
 		/**

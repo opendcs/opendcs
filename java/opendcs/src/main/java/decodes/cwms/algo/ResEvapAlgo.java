@@ -27,8 +27,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-//AW:IMPORTS
-
 import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
@@ -36,14 +34,6 @@ import org.opendcs.annotations.algorithm.Output;
 import org.slf4j.LoggerFactory;
 
 
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-
-/**
- * Run ResEvap Calculations.
- */
-//AW:JAVADOC_END
 @Algorithm(
         description = "Preform Reservoir Evaporation calculation based on an algorithm developed by NWDM," +
                 " Which utilizes air temp, air speed, solar radiation, and water temperature profiles to return" +
@@ -52,32 +42,32 @@ final public class ResEvapAlgo
         extends AW_AlgorithmBase
 {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(ResEvapAlgo.class.getName());
-    //AW:INPUTS
-    @Input
-    public double windSpeed;        //AW:TYPECODE=i
-    @Input
-    public double airTemp;            //AW:TYPECODE=i
-    @Input
-    public double relativeHumidity;    //AW:TYPECODE=i
-    @Input
-    public double atmPress;            //AW:TYPECODE=i
-    @Input
-    public double percentLowCloud;    //AW:TYPECODE=i
-    @Input
-    public double elevLowCloud;        //AW:TYPECODE=i
-    @Input
-    public double percentMidCloud;    //AW:TYPECODE=i
-    @Input
-    public double elevMidCloud;        //AW:TYPECODE=i
-    @Input
-    public double percentHighCloud;    //AW:TYPECODE=i
-    @Input
-    public double elevHighCloud;    //AW:TYPECODE=i
-    @Input
-    public double elev;                //AW:TYPECODE=i
-//AW:INPUTS_END
 
-    //AW:LOCALVARS
+    @Input
+    public double windSpeed;       
+    @Input
+    public double airTemp;          
+    @Input
+    public double relativeHumidity;    
+    @Input
+    public double atmPress;          
+    @Input
+    public double percentLowCloud;   
+    @Input
+    public double elevLowCloud;       
+    @Input
+    public double percentMidCloud;  
+    @Input
+    public double elevMidCloud;       
+    @Input
+    public double percentHighCloud;    
+    @Input
+    public double elevHighCloud;    
+    @Input
+    public double elev;    
+
+
+  
     private double tally; //running tally of hourly Evaporation
     private int count; //number of days calculated
     private boolean isDayLightSavings;
@@ -112,9 +102,9 @@ final public class ResEvapAlgo
     private EvapReservoir reservoir;
     private RatingSet ratingSet;
 
-//AW:LOCALVARS_END
 
-    //AW:OUTPUTS
+
+
     @Output
     public NamedVariable hourlySurfaceTemp = new NamedVariable("hourlySurfaceTemp", 0);
     @Output
@@ -133,9 +123,8 @@ final public class ResEvapAlgo
     public NamedVariable hourlyLatent = new NamedVariable("hourlyLatent", 0);
     @Output
     public NamedVariable hourlySensible = new NamedVariable("hourlySensible", 0);
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+
 // TODO Implement Location Levels
 //	public String SecchiDepthId;
 //	public String MaxTempDepthId;
@@ -167,7 +156,6 @@ final public class ResEvapAlgo
     @org.opendcs.annotations.PropertySpec(name = "rating", propertySpecType = PropertySpec.STRING,
             description = "Rating Curve specification for Elevation-Area curve, Example: FTPK.Elev;Area.Linear.Step")
     public String rating;
-//AW:PROPERTIES_END
 
     // Allow javac to generate a no-args constructor.
 
@@ -177,17 +165,11 @@ final public class ResEvapAlgo
     protected void initAWAlgorithm()
             throws DbCompException
     {
-//AW:INIT
         _awAlgoType = AWAlgoType.AGGREGATING;
         _aggPeriodVarRoleName = "dailyEvap";
         //aggPeriodInterval = IntervalCodes.int_one_day;
         aggUpperBoundClosed = true;
         aggLowerBoundClosed = false;
-
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
     }
 
     //Initialized hourly water temperature profiles and return double[] of WTP of the previous timeSlice before base.
@@ -344,7 +326,6 @@ final public class ResEvapAlgo
     protected void beforeTimeSlices()
             throws DbCompException
     {
-//AW:BEFORE_TIMESLICES
         tally = 0.0;
         count = 0;
 
@@ -513,7 +494,6 @@ final public class ResEvapAlgo
                 }
             }
         }
-//AW:BEFORE_TIMESLICES_END
     }
 
     /**
@@ -530,7 +510,6 @@ final public class ResEvapAlgo
     protected void doAWTimeSlice()
             throws DbCompException
     {
-//AW:TIMESLICE
         if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
         {
             boolean successful;
@@ -563,7 +542,6 @@ final public class ResEvapAlgo
             previousHourlyEvap = computedList.get(6);
 
         }
-//AW:TIMESLICE_END
     }
 
     /**
@@ -590,9 +568,6 @@ final public class ResEvapAlgo
         {
             warning("There are less than 24 hourly samples, can not compute daily sums");
         }
-
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
     }
 
     @Override

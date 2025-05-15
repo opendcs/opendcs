@@ -53,10 +53,8 @@ Look for alarm screening records in the database and apply to input parameter.
 public class AlarmScreeningAlgorithm
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	@Input
+	public double input;
 
 //AW:LOCALVARS
 	// Will be set to true if input and output refer to the same time series.

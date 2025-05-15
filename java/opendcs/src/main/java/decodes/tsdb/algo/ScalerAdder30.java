@@ -51,7 +51,6 @@ public class ScalerAdder30 extends AW_AlgorithmBase
     @Output(type = Double.class)
     public NamedVariable output = new NamedVariable("output", 0);
 
-//AW:PROPERTIES
     @PropertySpec(value = "1.0") public double coeff1 = 1.0;
     @PropertySpec(value = "1.0") public double coeff2 = 1.0;
     @PropertySpec(value = "1.0") public double coeff3 = 1.0;
