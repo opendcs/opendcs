@@ -57,9 +57,9 @@ public class EUTableModel extends AbstractTableModel
 	/**
 	 * No args constructor for JBuilder.
 	 */
-	public EUTableModel(Database db)
+	public EUTableModel()
 	{
-		this.db = db;
+		this.db = Database.getDb();
 		columnNames = new String[4];
 		columnNames[0] = labels.getString("EUTableModel.abbrev");
 		columnNames[1] = labels.getString("EUDialog.fullName");
