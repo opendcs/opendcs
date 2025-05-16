@@ -329,6 +329,8 @@ public class LrgsConfigDialog extends GuiDialog
         //dds server tab
         getDdsListenPortField().setText(String.valueOf(lrgsConfig.ddsListenPort));
         getDdsBindAddrField().setText(lrgsConfig.ddsBindAddr);
+        ddsKeystoreFile.setText(lrgsConfig.keyStoreFile);
+        ddsKeystorePass.setText(lrgsConfig.keyStorePassword);
         getDdsMaxClientsField().setText(String.valueOf(lrgsConfig.ddsMaxClients));
         getDdsParentDirectoryField().setText(lrgsConfig.ddsUserRootDir);
         getDdsLogFileField().setText(lrgsConfig.ddsUsageLog);
