@@ -5,6 +5,11 @@ package decodes.datasource;
 
 import java.util.Properties;
 import java.util.Vector;
+
+import javax.net.SocketFactory;
+
+import org.slf4j.LoggerFactory;
+
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.io.File;
@@ -28,6 +33,8 @@ import decodes.util.PropertySpec;
 
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.ServerError;
+import lrgs.lrgsmain.LrgsConfig;
+import lrgs.rtstat.hosts.LrgsConnection;
 import lrgs.common.DcpAddress;
 import lrgs.common.LrgsErrorCode;
 import lrgs.common.SearchCriteria;
@@ -41,6 +48,7 @@ import lrgs.common.DcpMsgFlag;
 */
 public class LrgsDataSource extends DataSourceExec
 {
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(LrgsDataSource.class);
     LddsClient lddsClient;
     String host;
     int port;
@@ -56,7 +64,7 @@ public class LrgsDataSource extends DataSourceExec
     private PMParser netdcpPMP;
     int retries;
     boolean singleModeOnly;    // Current connection forced to single mode.
-
+    boolean tls;
 
     /** For use under hot-backup-group: It will set the following to a
      *  positive number (180). Thus once a connection fails, it stays
@@ -89,6 +97,8 @@ public class LrgsDataSource extends DataSourceExec
         new PropertySpec("lrgs.maxConsecutiveBadmessages", PropertySpec.INT,
             "LRGS Data Source: How many bad messages in a row before it's decided this connection" +
             " is bad (default=-1 which means never assume bad messages should cause the connection to drop.)."),
+        new PropertySpec("lrgs.tls", PropertySpec.BOOLEAN,
+            "Use TLS connection for this LRGS.")
     };
 
 
@@ -112,6 +122,7 @@ public class LrgsDataSource extends DataSourceExec
         retries = 0;
         singleModeOnly = false;
         abortFlag = false;
+        tls = false;
         try { goesPMP = PMParser.getPMParser(Constants.medium_Goes); }
         catch(HeaderParseException e) {} // shouldn't happen.
         iridiumPMP = new IridiumPMParser();
@@ -319,6 +330,12 @@ public class LrgsDataSource extends DataSourceExec
             {
                 searchCrit.setRealtimeSettlingDelay(TextUtil.str2boolean(value));
             }
+        }
+
+        final String tlsStr = PropertiesUtil.getIgnoreCase(allProps, "lrgs.tls");
+        if (tlsStr != null)
+        {
+            tls = Boolean.parseBoolean(tlsStr);
         }
 
         openConnection();
@@ -941,19 +958,25 @@ public class LrgsDataSource extends DataSourceExec
     {
         log(Logger.E_DEBUG2,
             "LrgsDataSource.openConnection to host '" + host + "', port="
-            + port);
+            + port +", tls=" + tls);
         hangup();
         try
         {
+            final SocketFactory socketFactory = tls ?  LrgsConnection.socketFactory((cert) ->
+                {
+                    log.warn("Certificate for '{}' is not trusted.", cert.getHostname().orElse("<no hostname provided>"));
+                    return false;
+                })
+                : null;
             final String realUserName = EnvExpander.expand(username);
             final String realPassword = EnvExpander.expand(password);
             if (port == -1)
             {
-                lddsClient = new LddsClient(host);
+                lddsClient = new LddsClient(host, LrgsConfig.def_ddsListenPort, socketFactory);
             }
             else
             {
-                lddsClient = new LddsClient(host, port);
+                lddsClient = new LddsClient(host, port, socketFactory);
             }
 
             lddsClient.setModule("lrgsds-" + (connum++));

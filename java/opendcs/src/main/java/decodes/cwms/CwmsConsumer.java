@@ -250,7 +250,7 @@ public class CwmsConsumer extends DataConsumer
 			DecodesSettings settings = DecodesSettings.instance().asCopy();
 			settings.editDatabaseTypeCode = DecodesSettings.DB_CWMS;
 			settings.editDatabaseType = "CWMS";
-			settings.editDatabaseLocation = cwmsCfg.getDbAuthFile();
+			settings.editDatabaseLocation = cwmsCfg.getDbUri();
 			settings.DbAuthFile = cwmsCfg.DbAuthFile;
 			settings.CwmsOfficeId = cwmsCfg.cwmsOfficeId;
 			settings.editTimeZone = cwmsCfg.timeZone;
