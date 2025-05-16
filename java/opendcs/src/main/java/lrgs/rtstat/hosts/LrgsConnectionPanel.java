@@ -211,7 +211,7 @@ public final class LrgsConnectionPanel extends JPanel
         {
             portField.setText(""+c.getPort());
             usernameField.setText(c.getUsername());
-
+            tlsCheck.setSelected(c.getTls());
             String pw = LrgsConnection.decryptPassword(c, LrgsConnectionPanel.pwk);
             passwordField.setText(pw);
         }

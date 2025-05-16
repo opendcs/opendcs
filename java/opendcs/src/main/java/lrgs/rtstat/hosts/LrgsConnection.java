@@ -225,7 +225,7 @@ public final class LrgsConnection
         {
             password = parts[3];    
         }
-        if (parts.length > 4 && parts[4].equals("TLS"))
+        if (parts.length > 4 && parts[4].trim().equals("TLS"))
         {
             tls = true;
         }
