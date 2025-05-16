@@ -25,6 +25,7 @@ import decodes.dbeditor.routing.RSListTableModel;
 import decodes.decoder.Season;
 import decodes.gui.SortingListTable;
 import decodes.rledit.panels.EnumerationPanel;
+import decodes.util.DecodesException;
 
 /**
 RefListFrame is the GUI application for Reference List Editor.
@@ -110,11 +111,18 @@ public class RefListFrame extends JFrame
     /**
      * constructor for RefListFrame
      */
-    public RefListFrame(OpenDcsDatabase database)
+    public RefListFrame(OpenDcsDatabase database) throws DecodesException
     {
         this.database = database;
+        log.info("RefListFrame:initDecodes()");
+		Optional<Database> db = this.database.getLegacyDatabase(Database.class);
+		if (db.isPresent()) 
+        {
+			db.get().initializeForDecoding();
+            Database.setDb(db.get());
+        }
 
-        euTableModel = new EUTableModel(database.getLegacyDatabase());
+        euTableModel = new EUTableModel();
         euTable = new SortingListTable(euTableModel,
             new int[] { 20, 30, 25, 25 });
 
