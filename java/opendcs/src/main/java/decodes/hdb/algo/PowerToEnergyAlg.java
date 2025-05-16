@@ -15,7 +15,6 @@ import decodes.tsdb.algo.AWAlgoType;
 import decodes.sql.DbKey;
 
 
-//AW:IMPORTS
 // Place an import statements you need here.
 import java.util.TimeZone;
 import java.util.Calendar;

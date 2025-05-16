@@ -30,7 +30,7 @@ public class DisAggregate extends AW_AlgorithmBase
 {
 	private static final String OUTPUTSTRING = "output";
 	@Input
-	public double input;	//AW:TYPECODE=i
+	public double input;	
 
 	ParmRef iref = null;
 	String iintv = null;

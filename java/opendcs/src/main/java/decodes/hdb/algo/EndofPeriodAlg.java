@@ -13,45 +13,34 @@ import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
 import decodes.sql.DbKey;
-
-//AW:IMPORTS
-// Place an import statements you need here.
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import decodes.tsdb.ParmRef;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
- * Type a javadoc-style comment describing the algorithm class.
- */
-// AW:JAVADOC_END
+
+@Algorithm(description = "Copies input to output at EndofPeriod based on interval window")
 public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-	// AW:INPUTS
-	public double input; // AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-	// AW:INPUTS_END
+	@Input
+	public double input;
 
-	// AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
 	double value_out;
 	boolean do_setoutput = true;
 	Date date_out;
 	int total_count;
 
-	// AW:LOCALVARS_END
-
-	// AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-	// AW:OUTPUTS_END
-
-	// AW:PROPERTIES
+	
+	@PropertySpec(value = "0")
 	public long desired_window_period = 0;
+	@PropertySpec(value = "0")
 	public long req_window_period = 0;
+	@PropertySpec(value = "")
 	public String validation_flag = "";
-	String _propertyNames[] = { "desired_window_period", "req_window_period", "validation_flag" };
-
-	// AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -60,14 +49,8 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void initAWAlgorithm() throws DbCompException
 	{
-		// AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "output";
-		// AW:INIT_END
-
-		// AW:USERINIT
-		// Code here will be run once, after the algorithm object is created.
-		// AW:USERINIT_END
 	}
 
 	/**
@@ -75,7 +58,6 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void beforeTimeSlices() throws DbCompException
 	{
-		// AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
@@ -84,7 +66,6 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		value_out = 0D;
 		do_setoutput = true;
 		total_count = 0;
-		// AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -98,7 +79,6 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void doAWTimeSlice() throws DbCompException
 	{
-		// AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
 		if (!isMissing(input))
 		{
@@ -106,7 +86,6 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			date_out = _timeSliceBaseTime;
 			total_count++;
 		}
-		// AW:TIMESLICE_END
 	}
 
 	/**
@@ -114,7 +93,6 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 */
 	protected void afterTimeSlices()
 	{
-		// AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
@@ -188,31 +166,5 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		{
 			deleteOutput(output);
 		}
-		// AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to this
-	 * algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

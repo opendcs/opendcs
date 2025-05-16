@@ -22,7 +22,7 @@ public class UsgsEquation
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double input;	//AW:TYPECODE=i
+	public double input;
 
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);

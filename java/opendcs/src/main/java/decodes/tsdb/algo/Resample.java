@@ -29,8 +29,8 @@ public class Resample
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double input;	//AW:TYPECODE=i
-
+	public double input;
+	
 	/** The next output time */
 	private Date nextOutputTime = null;
 	private Date lastOutputTime = null;

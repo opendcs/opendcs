@@ -22,3 +22,5 @@ doc-source/*.rst
 !install/bin
 out
 gradle.properties
+**/.factorypath
+

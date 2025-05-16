@@ -17,13 +17,12 @@
 package decodes.cwms.validation;
 
 import decodes.tsdb.DbCompException;
-import decodes.cwms.validation.Screening;
 import decodes.tsdb.TimeSeriesIdentifier;
+import org.opendcs.annotations.algorithm.Algorithm;
 
-/**
-This class extends ScreeningAlgorithm. It supplies the code to 
-read/write and cache screenings read from DATCHK files.
- */
+
+@Algorithm(description ="This class extends ScreeningAlgorithm. It supplies the code to "
++ "read/write and cache screenings read from DATCHK files.")
 public class DatchkScreeningAlgorithm
 	extends ScreeningAlgorithm
 {

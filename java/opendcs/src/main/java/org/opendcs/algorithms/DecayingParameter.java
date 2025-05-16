@@ -21,9 +21,7 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
-import decodes.util.PropertySpec;
 
-//AW:IMPORTS
 // Place an import statements you need here.
 import java.text.SimpleDateFormat;
 import decodes.tsdb.*;
@@ -33,11 +31,11 @@ import ilex.var.TimedVariable;
 
 //for getInputData function
 import java.io.BufferedWriter;
-//AW:IMPORTS_END
 
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 import org.slf4j.LoggerFactory;
 
 
@@ -57,7 +55,6 @@ public class DecayingParameter extends AW_AlgorithmBase
 
 	@Input
 	public double input;
-	String _inputNames[] = { "input" };
 
 
 
@@ -73,18 +70,14 @@ public class DecayingParameter extends AW_AlgorithmBase
 
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
 
 
-	@org.opendcs.annotations.PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
-										 description = "Decay rate to apply to the previous value.")
+	@PropertySpec(value = "0.0", description = "Decay rate to apply to the previous value.")
 	public double Decay = 0.0;
-	@org.opendcs.annotations.PropertySpec(description = "Day of the year (ddMMM format) to reset 'previous' value to the reset value.")
+	@PropertySpec(description = "Day of the year (ddMMM format) to reset 'previous' value to the reset value.")
 	public String ResetDate = "";
-	@org.opendcs.annotations.PropertySpec(value = "0.0", propertySpecType = PropertySpec.NUMBER,
-										  description = "Value to which 'previous' value should be reset if reset date is provided.")
+	@PropertySpec(value = "0.0", description = "Value to which 'previous' value should be reset if reset date is provided.")
 	public double ResetValue = 0.0;
-	String _propertyNames[] = { "Decay", "ResetDate", "ResetValue" };
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
@@ -191,31 +184,4 @@ public class DecayingParameter extends AW_AlgorithmBase
 		throws DbCompException
 	{
 	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
-
-
 }

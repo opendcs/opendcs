@@ -1,47 +1,18 @@
-/*
-*	$Id$
-*/
 package decodes.dbeditor;
 
 import java.awt.*;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Properties;
-import java.util.Date;
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.event.*;
-import javax.swing.table.*;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
-import decodes.util.DecodesSettings;
 import decodes.util.DecodesException;
 
 import decodes.gui.TopFrame;
 import decodes.gui.GuiDialog;
-import decodes.gui.TableColumnAdjuster;
-import decodes.gui.EnumCellEditor;
-import decodes.db.Database;
 import decodes.db.DecodesScript;
-import decodes.db.FormatStatement;
-import decodes.db.ScriptSensor;
-import decodes.db.UnitConverterDb;
-import decodes.db.Constants;
 import decodes.db.PlatformConfig;
-import decodes.db.PresentationGroup;
-import decodes.db.Platform;
-import decodes.db.TransportMedium;
-
-import decodes.datasource.RawMessage;
-import decodes.datasource.GoesPMParser;
-import decodes.decoder.DecodedMessage;
-import decodes.consumer.StringBufferConsumer;
-import decodes.consumer.OutputFormatter;
 
 /**
 Dialog for editing a decoding script within the database editor.
@@ -100,12 +71,10 @@ public class DecodingScriptEditDialog
 				boolean started=false;
 				public void windowActivated(WindowEvent e)
 				{
-//					if (!started)
-//						scriptNameField.requestFocus();
 					started = true;
 				}
 			});
-		decodingScriptEditPanel.setTraceDialog(new TraceDialog(this, true));
+		decodingScriptEditPanel.setTraceDialog(new TraceDialog(this, false));
 	}
 
 	/** Fills in values from the object */
