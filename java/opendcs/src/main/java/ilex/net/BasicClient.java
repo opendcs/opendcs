@@ -97,7 +97,7 @@ public class BasicClient
 	*/
 	public BasicClient( String host, int port )
 	{
-		this(host,port,SocketFactory.getDefault());
+		this(host,port,null);
 	}
 
 	public BasicClient( String host, int port, SocketFactory socketFactory)
@@ -109,7 +109,7 @@ public class BasicClient
 		output = null;
 		debug = null;
 		lastConnectAttempt = 0L;
-		this.socketFactory = socketFactory;
+		this.socketFactory = socketFactory != null ? socketFactory : SocketFactory.getDefault();
 	}
 
 	/**
