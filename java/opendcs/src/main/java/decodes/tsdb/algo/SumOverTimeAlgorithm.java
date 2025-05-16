@@ -19,7 +19,7 @@ import org.opendcs.annotations.algorithm.Output;
 public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double input;	//AW:TYPECODE=i
+	public double input;
 
 	double tally;
 	int count;

@@ -13,9 +13,9 @@ import org.opendcs.annotations.algorithm.Output;
 public class Division extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
-	public double input1;	//AW:TYPECODE=i
+	public double input1;
 	@Input
-	public double input2;	//AW:TYPECODE=i
+	public double input2;
 
 	double numerator;
 	double denominator;

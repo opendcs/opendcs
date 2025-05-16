@@ -483,7 +483,6 @@ public class CwmsRatingMultIndep
 //			if (Logger.instance().getLogOutput() != null)
 //				ex.printStackTrace(Logger.instance().getLogOutput());
 //		}
-////AW:TIMESLICE_END
 	}
 
 	/**
@@ -491,7 +490,6 @@ public class CwmsRatingMultIndep
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		
 		// Convert nested ArrayLists to double[TIMES][VALUES].
 		// Note that the dimensions are reversed from the nested array lists.
