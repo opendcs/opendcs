@@ -25,7 +25,7 @@ public class RefListEditor
     final private OpenDcsDatabase database;
 
     /** Construct the application. */
-    public RefListEditor(OpenDcsDatabase database)
+    public RefListEditor(OpenDcsDatabase database) throws DecodesException
     {
         this.database = database;
         RefListFrame frame = new RefListFrame(database);
