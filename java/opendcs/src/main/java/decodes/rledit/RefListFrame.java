@@ -25,6 +25,7 @@ import decodes.dbeditor.routing.RSListTableModel;
 import decodes.decoder.Season;
 import decodes.gui.SortingListTable;
 import decodes.rledit.panels.EnumerationPanel;
+import decodes.util.DecodesException;
 
 /**
 RefListFrame is the GUI application for Reference List Editor.
@@ -57,9 +58,8 @@ public class RefListFrame extends JFrame
 
     private JPanel jPanel3 = new JPanel();
     private JScrollPane jScrollPane2 = new JScrollPane();
-    private EUTableModel euTableModel = new EUTableModel();
-    private JTable euTable = new SortingListTable(euTableModel,
-        new int[] { 20, 30, 25, 25 });
+    private EUTableModel euTableModel;
+    private JTable euTable;
     private JButton addEUButton = new JButton();
     private JButton editEUButton = new JButton();
     private JButton deleteEUButton = new JButton();
@@ -72,9 +72,8 @@ public class RefListFrame extends JFrame
 
     private JPanel jPanel4 = new JPanel();
     private JScrollPane jScrollPane3 = new JScrollPane();
-    private EUCnvTableModel ucTableModel = new EUCnvTableModel();
-    private JTable ucTable = new SortingListTable(ucTableModel,
-        new int[] {17, 17, 18, 8, 8, 8, 8, 8, 8 });
+    private EUCnvTableModel ucTableModel;
+    private JTable ucTable;
     private JButton addEUCnvtButton = new JButton();
     private JButton editEUCnvtButton = new JButton();
     private JButton deleteEUCnvtButton = new JButton();
@@ -82,8 +81,8 @@ public class RefListFrame extends JFrame
     private GridBagLayout gridBagLayout3 = new GridBagLayout();
     private Border border4;
 
-    private DTEquivTableModel dteTableModel = new DTEquivTableModel();
-    private JTable dteTable = new SortingListTable(dteTableModel,null);
+    private DTEquivTableModel dteTableModel;
+    private JTable dteTable;
     private JButton addDTEButton = new JButton();
     private JButton editDTEButton = new JButton();
     private JButton deleteDTEButton = new JButton();
@@ -104,18 +103,34 @@ public class RefListFrame extends JFrame
     private UnitConverterDb deletedConverter = null;
     private String []deletedDte = null;
 
-    private SeasonListTableModel seasonListTableModel = new SeasonListTableModel();
-    private SortingListTable seasonsTable = new SortingListTable(seasonListTableModel,
-        SeasonListTableModel.colWidths);
+    private SeasonListTableModel seasonListTableModel;
+    private SortingListTable seasonsTable;
 
     private final OpenDcsDatabase database;
 
     /**
      * constructor for RefListFrame
      */
-    public RefListFrame(OpenDcsDatabase database)
+    public RefListFrame(OpenDcsDatabase database) throws DecodesException
     {
         this.database = database;
+        log.info("RefListFrame:initDecodes()");
+	
+
+        euTableModel = new EUTableModel();
+        euTable = new SortingListTable(euTableModel,
+            new int[] { 20, 30, 25, 25 });
+
+        ucTableModel = new EUCnvTableModel();
+        ucTable = new SortingListTable(ucTableModel,
+            new int[] {17, 17, 18, 8, 8, 8, 8, 8, 8 });
+
+        dteTableModel = new DTEquivTableModel();
+        dteTable = new SortingListTable(dteTableModel,null);
+
+        seasonListTableModel = new SeasonListTableModel();
+        seasonsTable = new SortingListTable(seasonListTableModel,
+            SeasonListTableModel.colWidths);
 
 		/**
 		 * NOTE: this *should* be off the GUI thread but the performance impact for 
