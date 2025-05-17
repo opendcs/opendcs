@@ -1,28 +1,4 @@
-/*
- * $Id$
- * 
- * $Log$
- * Revision 1.6  2016/01/14 19:51:42  mmaloney
- * Bugfix: Wasn't honoring DecodesSettings.editTZ.
- *
- * Revision 1.5  2015/04/15 19:59:46  mmaloney
- * Fixed synchronization bugs when the same data sets are being processed by multiple
- * routing specs at the same time. Example is multiple real-time routing specs with same
- * network lists. They will all receive and decode the same data together.
- *
- * Revision 1.4  2015/02/06 19:01:11  mmaloney
- * Bugfix: reset dbedit Load Message Dialog after successful retrieval.
- *
- * Revision 1.3  2015/01/31 15:44:59  mmaloney
- * Configurable Decoded Value Colors
- *
- * Revision 1.2  2014/10/07 12:55:39  mmaloney
- * dev
- *
- * Revision 1.1  2014/10/02 14:25:09  mmaloney
- * Added platformListDesignatorCol
- *
- * 
+/** 
  * Reworked from open-source code in USGS repository and USACE HEC repository.
  * 
  * Open Source Software written by Cove Software, LLC under contract to the
@@ -458,52 +434,28 @@ public class DecodesScriptEditPanel
 		fmtStatementPanel.add(fmtStatementButtonPanel, BorderLayout.EAST);
 
 		JButton moveFormatUpButton = new JButton(genericLabels.getString("upAbbr"));
-		moveFormatUpButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				moveFormatUpButtonPressed();
-			}
-		});
+		moveFormatUpButton.addActionListener(e -> moveFormatUpButtonPressed());
 		fmtStatementButtonPanel.add(moveFormatUpButton, 
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		JButton moveFormatDownButton = new JButton(genericLabels.getString("downAbbr"));
-		moveFormatDownButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				moveFormatDownButtonPressed();
-			}
-		});
+		moveFormatDownButton.addActionListener(e -> moveFormatDownButtonPressed());
 		fmtStatementButtonPanel.add(moveFormatDownButton, 
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
 				new Insets(2, 4, 2, 4), 0, 0));
 		
 		JButton addFormatStatementButton = new JButton(genericLabels.getString("add"));
-		addFormatStatementButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				addFormatStatementButtonPressed();
-			}
-		});
+		addFormatStatementButton.addActionListener(e -> addFormatStatementButtonPressed());
 		fmtStatementButtonPanel.add(addFormatStatementButton, 
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
 				new Insets(2, 4, 2, 4), 0, 0));
 
 		JButton deleteFormatStatementButton = new JButton(genericLabels.getString("delete"));
-		deleteFormatStatementButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				deleteFormatStatementButtonPressed();
-			}
-		});
+		deleteFormatStatementButton.addActionListener(e -> deleteFormatStatementButtonPressed());
 		fmtStatementButtonPanel.add(deleteFormatStatementButton, 
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL, 
@@ -530,13 +482,7 @@ public class DecodesScriptEditPanel
 		
 		// LOAD
 		JButton loadSampleButton = new JButton(genericLabels.getString("load"));
-		loadSampleButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				loadSampleButtonPressed();
-			}
-		});
+		loadSampleButton.addActionListener(e ->	loadSampleButtonPressed());
 		rawMsgButtonPanel.add(loadSampleButton, 
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
@@ -544,13 +490,7 @@ public class DecodesScriptEditPanel
 		
 		// CLEAR
 		JButton clearSampleButton = new JButton(genericLabels.getString("clear"));
-		clearSampleButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				clearSampleButtonPressed();
-			}
-		});
+		clearSampleButton.addActionListener(e -> clearSampleButtonPressed());
 		rawMsgButtonPanel.add(clearSampleButton, 
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
@@ -558,13 +498,7 @@ public class DecodesScriptEditPanel
 
 		// DECODES
 		JButton decodeSampleButton = new JButton(genericLabels.getString("decode"));
-		decodeSampleButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				decodeSampleButtonPressed();
-			}
-		});
+		decodeSampleButton.addActionListener(e -> decodeSampleButtonPressed());
 		rawMsgButtonPanel.add(decodeSampleButton,
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
@@ -572,13 +506,7 @@ public class DecodesScriptEditPanel
 		
 		// TRACE
 		JButton traceButton = new JButton(dbeditLabels.getString("DecodingScriptEditPanel.trace"));
-		traceButton.addActionListener(new java.awt.event.ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				traceButton_actionPerformed(e);
-			}
-		});
+		traceButton.addActionListener(e -> traceButton_actionPerformed(e));
 		rawMsgButtonPanel.add(traceButton,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE, 

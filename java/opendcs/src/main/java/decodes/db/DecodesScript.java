@@ -306,6 +306,16 @@ public class DecodesScript extends IdDatabaseObject
         return ret;
     }
 
+
+    /**
+     * Clear the replacement and missing symbol lists.
+     */
+    private void clearReplacements(){
+        
+        missingSymbols.clear();
+        replaceSymbols.clear();;
+
+    }
     /**
     From DatabaseObject interface, prepare script sensors and format
     statements contained in this script.
@@ -313,6 +323,7 @@ public class DecodesScript extends IdDatabaseObject
     public void prepareForExec()
         throws IncompleteDatabaseException, InvalidDatabaseException
     {
+        clearReplacements();
         for(Iterator<ScriptSensor> it = scriptSensors.iterator(); it.hasNext(); )
         {
             ScriptSensor ss = it.next();
@@ -824,4 +835,5 @@ public class DecodesScript extends IdDatabaseObject
 
         }
     }
+
 }
