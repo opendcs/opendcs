@@ -25,7 +25,7 @@ public class RefListEditor
     final private OpenDcsDatabase database;
 
     /** Construct the application. */
-    public RefListEditor(OpenDcsDatabase database)
+    public RefListEditor(OpenDcsDatabase database) throws DecodesException
     {
         this.database = database;
         RefListFrame frame = new RefListFrame(database);
@@ -104,7 +104,9 @@ public class RefListEditor
         DecodesSettings settings = DecodesSettings.instance();
         DecodesInterface.setGUI(true);
         OpenDcsDatabase database = DatabaseService.getDatabaseFor("RefListEditor", settings);
-        database.getLegacyDatabase(Database.class).get().initializeForEditing();
+	    Database db = database.getLegacyDatabase(Database.class).get();
+        db.initializeForEditing();
+        Database.setDb(db);
         new RefListEditor(database);
     }
 }
