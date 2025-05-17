@@ -115,12 +115,7 @@ public class RefListFrame extends JFrame
     {
         this.database = database;
         log.info("RefListFrame:initDecodes()");
-		Optional<Database> db = this.database.getLegacyDatabase(Database.class);
-		if (db.isPresent()) 
-        {
-			db.get().initializeForDecoding();
-            Database.setDb(db.get());
-        }
+	
 
         euTableModel = new EUTableModel();
         euTable = new SortingListTable(euTableModel,
