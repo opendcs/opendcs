@@ -402,7 +402,7 @@ public class LoadMessageDialog extends GuiDialog
 				showError("Cannot read '" + urlString + "': " + ex.toString());
 			}
 		}
-		else if (loadFromFileButton.isSelected())
+		else if (loadFromLrgsButton.isSelected())
 		// Load from LRGS
 		{
 			resultsArea.setText(dbeditLabels.getString("LoadMessageDialog.Validating") + "\n");
@@ -468,6 +468,10 @@ public class LoadMessageDialog extends GuiDialog
 			loadMessageThread = new LoadMessageThread(this, myDSE, rsProps);
 			loadMessageThread.start();
 			// Return to UI thread.
+		}
+		else
+		{
+			showError(dbeditLabels.getString("LoadMessageDialog.InvalidSelection"));
 		}
 	}
 
