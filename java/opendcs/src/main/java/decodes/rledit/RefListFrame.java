@@ -16,12 +16,12 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import ilex.util.*;
 import opendcs.dai.EnumDAI;
 import decodes.db.*;
 import decodes.dbeditor.TraceDialog;
-import decodes.dbeditor.routing.RSListTableModel;
 import decodes.decoder.Season;
 import decodes.gui.SortingListTable;
 import decodes.rledit.panels.EnumerationPanel;
@@ -107,12 +107,13 @@ public class RefListFrame extends JFrame
     private SortingListTable seasonsTable;
 
     private final OpenDcsDatabase database;
-
+    private final Consumer<Void> exitHandler;
     /**
      * constructor for RefListFrame
      */
-    public RefListFrame(OpenDcsDatabase database) throws DecodesException
+    public RefListFrame(OpenDcsDatabase database, Consumer<Void> exitHandler) throws DecodesException
     {
+        this.exitHandler = exitHandler;
         this.database = database;
         log.info("RefListFrame:initDecodes()");
 	
@@ -134,7 +135,7 @@ public class RefListFrame extends JFrame
 
 		/**
 		 * NOTE: this *should* be off the GUI thread but the performance impact for 
-		 * enums is minimal and this shows a good demostration of the getLegacyDatabase.
+		 * enums is minimal and this shows a good demonstration of the getLegacyDatabase.
 		 * 
 		 * TODO: Correct before merge.
 		 */
@@ -167,7 +168,7 @@ public class RefListFrame extends JFrame
             {
                 public void windowClosing(WindowEvent e)
                 {
-                      jMenuFileExit_actionPerformed(null);
+                    jMenuFileExit();
                 }
             });
     }
@@ -203,13 +204,13 @@ public class RefListFrame extends JFrame
         statusBar.setText(" ");
         jMenuFile.setText(genericLabels.getString("file"));
         jMenuFileExit.setText(genericLabels.getString("exit"));
-        jMenuFileExit.addActionListener(new RefListFrame_jMenuFileExit_ActionAdapter(this));
+        jMenuFileExit.addActionListener( e -> jMenuFileExit());
         jMenuHelp.setText(genericLabels.getString("help"));
         jMenuHelpAbout.setText(genericLabels.getString("about"));
-        jMenuHelpAbout.addActionListener(new RefListFrame_jMenuHelpAbout_ActionAdapter(this));
+        jMenuHelpAbout.addActionListener(e ->showAbout());
         rlTabbedPane.setTabPlacement(JTabbedPane.TOP);
         mi_saveToDb.setText(labels.getString("RefListFrame.saveToDB"));
-        mi_saveToDb.addActionListener(new RefListFrame_mi_saveToDb_actionAdapter(this));
+        mi_saveToDb.addActionListener(e -> saveToDbMenu());
 
 
         EUTab.setLayout(borderLayout3);
@@ -225,24 +226,21 @@ public class RefListFrame extends JFrame
         addEUButton.setMinimumSize(new Dimension(122, 23));
         addEUButton.setPreferredSize(new Dimension(122, 23));
         addEUButton.setText(genericLabels.getString("add"));
-        addEUButton.addActionListener(new RefListFrame_addEUButton_actionAdapter(this));
+        addEUButton.addActionListener(e -> addEUButtonClick());
         editEUButton.setMaximumSize(new Dimension(122, 23));
         editEUButton.setMinimumSize(new Dimension(122, 23));
         editEUButton.setPreferredSize(new Dimension(122, 23));
         editEUButton.setText(genericLabels.getString("edit"));
-        editEUButton.addActionListener(new RefListFrame_editEUButton_actionAdapter(this));
+        editEUButton.addActionListener(e -> editEUButtonClick());
         deleteEUButton.setMaximumSize(new Dimension(122, 23));
         deleteEUButton.setMinimumSize(new Dimension(122, 23));
         deleteEUButton.setPreferredSize(new Dimension(122, 23));
         deleteEUButton.setText(genericLabels.getString("delete"));
-        deleteEUButton.addActionListener(new RefListFrame_deleteEUButton_actionAdapter(this));
+        deleteEUButton.addActionListener(e -> deleteEUButtonClick());
 
         undoDeleteEUButton.setEnabled(false);
-//        undoDeleteEUButton.setMaximumSize(new Dimension(122, 23));
-//        undoDeleteEUButton.setMinimumSize(new Dimension(122, 23));
-//        undoDeleteEUButton.setPreferredSize(new Dimension(122, 23));
         undoDeleteEUButton.setText(labels.getString("RefListFrame.undoDelete"));
-        undoDeleteEUButton.addActionListener(new RefListFrame_undoDeleteEUButton_actionAdapter(this));
+        undoDeleteEUButton.addActionListener(e -> undoDeleteEUButtonClick());
 
         EuCnvtTab.setLayout(borderLayout4);
         jTextArea3.setFont(new java.awt.Font("Serif", 0, 14));
@@ -257,44 +255,41 @@ public class RefListFrame extends JFrame
         addEUCnvtButton.setMinimumSize(new Dimension(122, 23));
         addEUCnvtButton.setPreferredSize(new Dimension(122, 23));
         addEUCnvtButton.setText(genericLabels.getString("add"));
-        addEUCnvtButton.addActionListener(new RefListFrame_addEUCnvtButton_actionAdapter(this));
+        addEUCnvtButton.addActionListener(e -> addEUCnvtButtonClick());
         editEUCnvtButton.setMaximumSize(new Dimension(122, 23));
         editEUCnvtButton.setMinimumSize(new Dimension(122, 23));
         editEUCnvtButton.setPreferredSize(new Dimension(122, 23));
         editEUCnvtButton.setRequestFocusEnabled(true);
         editEUCnvtButton.setText(genericLabels.getString("edit"));
-        editEUCnvtButton.addActionListener(new RefListFrame_editEUCnvtButton_actionAdapter(this));
+        editEUCnvtButton.addActionListener(e -> editEUCnvtButtonClick());
         deleteEUCnvtButton.setMaximumSize(new Dimension(122, 23));
         deleteEUCnvtButton.setMinimumSize(new Dimension(122, 23));
         deleteEUCnvtButton.setPreferredSize(new Dimension(122, 23));
         deleteEUCnvtButton.setText(genericLabels.getString("delete"));
-        deleteEUCnvtButton.addActionListener(new RefListFrame_deleteEUCnvtButton_actionAdapter(this));
-//        undoDelEuCnvtButton.setMaximumSize(new Dimension(122, 23));
-//        undoDelEuCnvtButton.setMinimumSize(new Dimension(122, 23));
-//        undoDelEuCnvtButton.setPreferredSize(new Dimension(122, 23));
+        deleteEUCnvtButton.addActionListener(e -> deleteEUCnvtButtonClick());
         undoDelEuCnvtButton.setText(labels.getString("RefListFrame.undoDelete"));
-        undoDelEuCnvtButton.addActionListener(new RefListFrame_undoDelEuCnvtButton_actionAdapter(this));
+        undoDelEuCnvtButton.addActionListener(e -> undoDelEuCnvtButtonClick());
 
         addDTEButton.setMaximumSize(new Dimension(122, 23));
         addDTEButton.setMinimumSize(new Dimension(122, 23));
         addDTEButton.setPreferredSize(new Dimension(122, 23));
         addDTEButton.setText(labels.getString("RefListFrame.addEquiv"));
-        addDTEButton.addActionListener(new RefListFrame_addDTEButton_actionAdapter(this));
+        addDTEButton.addActionListener(e -> addDTEButtonClick()); 
         editDTEButton.setMaximumSize(new Dimension(122, 23));
         editDTEButton.setMinimumSize(new Dimension(122, 23));
         editDTEButton.setPreferredSize(new Dimension(122, 23));
         editDTEButton.setMargin(new Insets(2, 14, 2, 14));
         editDTEButton.setText(genericLabels.getString("edit"));
-        editDTEButton.addActionListener(new RefListFrame_editDTEButton_actionAdapter(this));
+        editDTEButton.addActionListener(e -> editDTEButtonClick()); 
         deleteDTEButton.setMaximumSize(new Dimension(122, 23));
         deleteDTEButton.setMinimumSize(new Dimension(122, 23));
         deleteDTEButton.setPreferredSize(new Dimension(122, 23));
         deleteDTEButton.setText(labels.getString("RefListFrame.deleteEquiv"));
-        deleteDTEButton.addActionListener(new RefListFrame_deleteDTEButton_actionAdapter(this));
+        deleteDTEButton.addActionListener(e -> deleteDTEClicked());
         undoDeleteDTEButton.setEnabled(false);
         undoDeleteDTEButton.setText(labels.getString("RefListFrame.undoDelete"));
-        undoDeleteDTEButton.addActionListener(new RefListFrame_undoDeleteDTEButton_actionAdapter(this));
-
+        undoDeleteDTEButton.addActionListener(e -> undoDeleteDTEClick() );
+        
         contentPane.setFont(new java.awt.Font("Dialog", 0, 14));
         EuCnvtTab.setBorder(BorderFactory.createEmptyBorder());
         jMenuFile.add(mi_saveToDb);
@@ -393,45 +388,21 @@ public class RefListFrame extends JFrame
                 new Insets(5, 5, 5, 5), 0, 0));
 
         JButton deleteSeasonButton = new JButton(genericLabels.getString("delete"));
-        deleteSeasonButton.addActionListener(
-            new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    deleteSeasonPressed();
-                }
-            });
+        deleteSeasonButton.addActionListener( e -> deleteSeasonPressed());
         seasonsPanelCenter.add(deleteSeasonButton,
             new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
                 GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
                 new Insets(5, 5, 5, 5), 0, 0));
 
         JButton seasonUpButton = new JButton(labels.getString("RefListFrame.moveUp"));
-        seasonUpButton.addActionListener(
-            new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    seasonUpPressed();
-                }
-            });
+        seasonUpButton.addActionListener( e-> seasonUpPressed());
         seasonsPanelCenter.add(seasonUpButton,
             new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
                 GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
                 new Insets(5, 5, 5, 5), 0, 0));
 
         JButton seasonDownButton = new JButton(labels.getString("RefListFrame.moveDown"));
-        seasonDownButton.addActionListener(
-            new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    seasonDownPressed();
-                }
-            });
+        seasonDownButton.addActionListener( e -> seasonDownPressed());
         seasonsPanelCenter.add(seasonDownButton,
             new GridBagConstraints(1, 4, 1, 1, 0.0, 0.0,
                 GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
@@ -562,12 +533,22 @@ public class RefListFrame extends JFrame
     }
 
     /**
+     * Checks if any tracked data has unsaved changes.
+     * @return true if changes exist, false otherwise.
+     */
+    private boolean hasUnsavedChanges()
+    {
+        return EnumTab.enumsChanged() || unitsChanged || convertersChanged ||
+            dtsChanged || seasonsChanged;
+    }
+
+    /**
      * File | Exit action performed.
      * @param e ignored
      */
-    public void jMenuFileExit_actionPerformed(ActionEvent e)
+    public void jMenuFileExit()
     {
-        if (EnumTab.enumsChanged() || unitsChanged || convertersChanged || dtsChanged || seasonsChanged)
+        if (hasUnsavedChanges())
         {
             int r = JOptionPane.showConfirmDialog(this,
                 labels.getString("RefListFrame.unsavedChangesQues"),
@@ -576,14 +557,14 @@ public class RefListFrame extends JFrame
             if (r != JOptionPane.YES_OPTION)
                 return;
         }
-        System.exit(0);
+        exitHandler.accept(null);
     }
 
     /**
      * Help | About action performed.
      * @param e ignored
      */
-    public void jMenuHelpAbout_actionPerformed(ActionEvent e) {
+    public void showAbout() {
         RefListFrame_AboutBox dlg = new RefListFrame_AboutBox(this);
         Dimension dlgSize = dlg.getPreferredSize();
         Dimension frmSize = getSize();
@@ -592,7 +573,6 @@ public class RefListFrame extends JFrame
         dlg.setModal(true);
         dlg.pack();
         dlg.setVisible(true);
-//        dlg.show();
     }
 
 
@@ -601,7 +581,7 @@ public class RefListFrame extends JFrame
      * table. Sets modified flag.
      * @param e ActionEvent
      */
-    void addEUButton_actionPerformed(ActionEvent e)
+    void addEUButtonClick()
     {
         EUDialog dlg = new EUDialog();
         launchDialog(dlg);
@@ -640,7 +620,7 @@ public class RefListFrame extends JFrame
     * modified flag.
     * @param e ActionEvent
     */
-    void editEUButton_actionPerformed(ActionEvent e)
+    void editEUButtonClick()
     {
         int row = euTable.getSelectedRow();
         if (row == -1)
@@ -693,7 +673,7 @@ public class RefListFrame extends JFrame
      * Enables the undo-delete button.
      * @param e ActionEvent
      */
-    void deleteEUButton_actionPerformed(ActionEvent e)
+    void deleteEUButtonClick()
     {
         int row = euTable.getSelectedRow();
         if (row == -1)
@@ -714,7 +694,7 @@ public class RefListFrame extends JFrame
      * Disables the undo-delete button.
      * @param e ActionEvent
      */
-    void undoDeleteEUButton_actionPerformed(ActionEvent e)
+    void undoDeleteEUButtonClick()
     {
         undoDeleteEUButton.setEnabled(false);
         if (deletedEU == null)
@@ -731,7 +711,7 @@ public class RefListFrame extends JFrame
      * are added to the table as a new conversion.
      * @param e ActionEvent
      */
-    void addEUCnvtButton_actionPerformed(ActionEvent e)
+    void addEUCnvtButtonClick()
     {
         UnitConverterDb uc = new UnitConverterDb("", "");
         uc.algorithm = "";
@@ -753,7 +733,7 @@ public class RefListFrame extends JFrame
      * If OK pressed, the results are added to the table.
      * @param e ActionEvent
      */
-    void editEUCnvtButton_actionPerformed(ActionEvent e)
+    void editEUCnvtButtonClick()
     {
         int row = ucTable.getSelectedRow();
         if (row == -1)
@@ -795,7 +775,7 @@ public class RefListFrame extends JFrame
      * Enables the undo button.
      * @param e ActionEvent
      */
-    void deleteEUCnvtButton_actionPerformed(ActionEvent e)
+    void deleteEUCnvtButtonClick()
     {
         int row = ucTable.getSelectedRow();
         if (row == -1)
@@ -817,7 +797,7 @@ public class RefListFrame extends JFrame
      * Disables the undo button.
      * @param e ActionEvent
      */
-    void undoDelEuCnvtButton_actionPerformed(ActionEvent e)
+    void undoDelEuCnvtButtonClick()
     {
         if (deletedConverter == null)
             return;
@@ -834,7 +814,7 @@ public class RefListFrame extends JFrame
      * new DTE to the table.
      * @param e ActionEvent
      */
-    void addDTEButton_actionPerformed(ActionEvent e)
+    void addDTEButtonClick()
     {
         undoDeleteDTEButton.setEnabled(false);
         deletedDte = null;
@@ -855,7 +835,7 @@ public class RefListFrame extends JFrame
      * element in the table.
      * @param e ActionEvent
      */
-    void editDTEButton_actionPerformed(ActionEvent e)
+    void editDTEButtonClick()
     {
         undoDeleteDTEButton.setEnabled(false);
         deletedDte = null;
@@ -882,7 +862,7 @@ public class RefListFrame extends JFrame
      * Disables the undo button.
      * @param e ActionEvent
      */
-    void undoDeleteDTEButton_actionPerformed(ActionEvent e)
+    void undoDeleteDTEClick()
     {
         if (deletedDte != null)
         {
@@ -912,7 +892,7 @@ public class RefListFrame extends JFrame
      * Enables the undo button.
      * @param e ActionEvent
      */
-    void deleteDTEButton_actionPerformed(ActionEvent e)
+    void deleteDTEClicked()
     {
         int row = dteTable.getSelectedRow();
         if (row == -1)
@@ -943,7 +923,7 @@ public class RefListFrame extends JFrame
      * Called when save to DB menu item selected.
      * @param e ActionEvent
      */
-    void mi_saveToDb_actionPerformed(ActionEvent e)
+    void saveToDbMenu()
     {
 		final TraceDialog dlg = new TraceDialog(this, true);
 		final String CLOSE_MSG = "Saving Changes.";
@@ -1057,169 +1037,7 @@ public class RefListFrame extends JFrame
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }
 }
-class RefListFrame_jMenuFileExit_ActionAdapter implements ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_jMenuFileExit_ActionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.jMenuFileExit_actionPerformed(e);
-    }
-}
-
-class RefListFrame_jMenuHelpAbout_ActionAdapter implements ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_jMenuHelpAbout_ActionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.jMenuHelpAbout_actionPerformed(e);
-    }
-}
 
 
 
-class RefListFrame_addEUButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
 
-    RefListFrame_addEUButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.addEUButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_editEUButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_editEUButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.editEUButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_deleteEUButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_deleteEUButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.deleteEUButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_undoDeleteEUButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_undoDeleteEUButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.undoDeleteEUButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_addEUCnvtButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_addEUCnvtButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.addEUCnvtButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_editEUCnvtButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_editEUCnvtButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.editEUCnvtButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_deleteEUCnvtButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_deleteEUCnvtButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.deleteEUCnvtButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_undoDelEuCnvtButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_undoDelEuCnvtButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.undoDelEuCnvtButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_addDTEButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_addDTEButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.addDTEButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_editDTEButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_editDTEButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.editDTEButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_undoDeleteDTEButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_undoDeleteDTEButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.undoDeleteDTEButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_deleteDTEButton_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_deleteDTEButton_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.deleteDTEButton_actionPerformed(e);
-    }
-}
-
-class RefListFrame_mi_saveToDb_actionAdapter implements java.awt.event.ActionListener {
-    RefListFrame adaptee;
-
-    RefListFrame_mi_saveToDb_actionAdapter(RefListFrame adaptee) {
-        this.adaptee = adaptee;
-    }
-    public void actionPerformed(ActionEvent e) {
-        adaptee.mi_saveToDb_actionPerformed(e);
-    }
-}
