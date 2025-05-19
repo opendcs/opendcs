@@ -23,12 +23,12 @@ public class RefListEditor
     private static ResourceBundle labels = null;
     boolean packFrame = false;
     final private OpenDcsDatabase database;
-
+    private RefListFrame frame;
     /** Construct the application. */
     public RefListEditor(OpenDcsDatabase database) throws DecodesException
     {
         this.database = database;
-        RefListFrame frame = new RefListFrame(database);
+        frame = new RefListFrame(database, (v) -> handleExit());
         //Validate frames that have preset sizes
         //Pack frames that have useful preferred size info, e.g. from their layout
         if (packFrame) {
@@ -38,6 +38,11 @@ public class RefListEditor
             frame.validate();
         }
         WindowUtility.center(frame).setVisible(true);
+    }
+    private void handleExit() 
+    {
+        frame.dispose(); // Close the frame gracefully
+        // Perform other cleanup tasks if needed before shutting down the app
     }
 
     /**
