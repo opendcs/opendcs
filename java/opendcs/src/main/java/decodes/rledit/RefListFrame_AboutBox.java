@@ -1,46 +1,9 @@
-/*
-*	$Id$
-*
-*	$Log$
-*	Revision 1.2  2009/03/24 18:30:25  mjmaloney
-*	Version Info
-*	
-*	Revision 1.1  2008/04/04 18:21:04  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.7  2008/02/10 20:17:34  mmaloney
-*	dev
-*	
-*	Revision 1.2  2008/02/01 15:20:40  cvs
-*	modified files for internationalization
-*	
-*	Revision 1.6  2004/12/21 14:46:06  mjmaloney
-*	Added javadocs
-*	
-*	Revision 1.5  2004/04/30 15:29:38  mjmaloney
-*	6.1 beta release prep.
-*	
-*	Revision 1.4  2004/04/29 19:14:48  mjmaloney
-*	6.1 release prep
-*	
-*	Revision 1.3  2004/04/20 17:05:54  mjmaloney
-*	Implementation of RefListEditor
-*	
-*	Revision 1.2	2004/02/03 16:01:03	mjmaloney
-*	prototype dev.
-*
-*	Revision 1.1	2004/02/02 22:12:58	mjmaloney
-*	dev.
-*
-*/
 package decodes.rledit;
 
 import java.awt.*;
-import java.awt.event.*;
 import java.util.ResourceBundle;
 
 import javax.swing.*;
-import javax.swing.border.*;
 
 import decodes.util.DecodesVersion;
 import ilex.util.EnvExpander;
@@ -48,7 +11,7 @@ import ilex.util.EnvExpander;
 /**
 The "about box" for the reference list editor.
 */
-public class RefListFrame_AboutBox extends JDialog implements ActionListener 
+public class RefListFrame_AboutBox extends JDialog 
 {
 	private static ResourceBundle genericLabels = 
 		RefListEditor.getGenericLabels();
@@ -82,7 +45,7 @@ public class RefListFrame_AboutBox extends JDialog implements ActionListener
 	public RefListFrame_AboutBox(Frame parent) 
 	{
 		super(parent);
-		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		try {
 			jbInit();
 		}
@@ -119,7 +82,7 @@ public class RefListFrame_AboutBox extends JDialog implements ActionListener
 		insetsPanel3.setLayout(gridLayout1);
 		insetsPanel3.setBorder(BorderFactory.createEmptyBorder(10, 60, 10, 10));
 		button1.setText(genericLabels.getString("OK"));
-		button1.addActionListener(this);
+		button1.addActionListener(e -> dispose());
 		insetsPanel2.add(imageLabel, null);
 		panel2.add(insetsPanel2, BorderLayout.WEST);
 		this.getContentPane().add(panel1, null);
@@ -134,26 +97,4 @@ public class RefListFrame_AboutBox extends JDialog implements ActionListener
 		setResizable(true);
 	}
 
-	/**
-	  Called when windows is closed.
-	  @param e the window event.
-	*/
-	protected void processWindowEvent(WindowEvent e) {
-		if (e.getID() == WindowEvent.WINDOW_CLOSING) {
-			cancel();
-		}
-		super.processWindowEvent(e);
-	}
-
-	/** Close the dialog. */
-	void cancel() {
-		dispose();
-	}
-
-	/** Close the dialog on a button event. */
-	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == button1) {
-			cancel();
-		}
-	}
 }
