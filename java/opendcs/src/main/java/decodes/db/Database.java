@@ -387,4 +387,18 @@ public class Database extends DatabaseObject
 		}
 	}
 
+	public void printSizesToLog(String heading){
+		log.info(heading);
+		log.info("==== Database Summary ====");
+		log.info("Enum List Size: " + enumList.size());
+		log.info("Engineering Unit List Size: " + engineeringUnitList.size());
+		log.info("Site List Size: " + siteList.size());
+		log.info("Equipment Model List Size: " + equipmentModelList.size());
+		log.info("Platform Config List Size: " + platformConfigList.size());
+		log.info("Platform List Size: " + platformList.size());
+		log.info("Network List Size: " + networkListList.size());
+		log.info("Data Source List Size: " + dataSourceList.size());
+		log.info("Routing Spec List Size: " + routingSpecList.size());
+	}
+
 }
