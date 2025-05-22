@@ -3,34 +3,31 @@
 ##############################
 ResEvap Legacy Documentation
 ##############################
+######################
+ResEvap Documentation
+######################
 
 Introduction
 ==============
 
-ResEvap is a reservoir evaporation computational utility developed for the
+ResEvap is a reservoir evaporation computational utility originally developed for the
 reservoirs in the Missouri River basin. Development of ResEvap was motivated
 by the need for accurate estimates of evaporation to properly manage reservoirs,
 in conjunction with the known limitation of evaporation observations
 (e.g. Evaporation Pans). The underlying algorithm was developed with
-state-of-the-art evaporation and water temperature modeling techniques, and was
-subsequently written in Fortran by the USACE :ref:`(Daly 2005) <References>`.
-In order to improve the usability of ResEvap throughout the USACE, the model was
-converted to Java and Jython/Python by RMA. At the time of the original conversion,
-the desired outcome was a direct translation of the computation logic from
-Fortran to Java with Jython/Python scripting used to orchestrate the computations.
-Since that time, a need for documentation of the computational routines within
-ResEvap has developed, motivating the production of this document.
+state-of-the-art evaporation and water temperature modeling techniques by the USACE
+:ref:`(Daly 2005) <References>`. In order to improve the usability of ResEvap throughout
+the USACE, the model was converted from Fortran to Java and Jython/Python by RMA in 2015.
+Cloud migration efforts and ease of access prompted a new conversion to Java utilizing
+OpenDCS libraries in 2024 by the USACE.
 
-This documentation is intended to describe both the core computational
-functionality, as well as the entry points to the computational routines
-currently used by the USACE. The existing entry point for the ResEvap
-computations is the Jython Processor, described in the next section. Next, the
-computations, including the evaporation, radiation and vertical temperature
-profile models are described. Descriptions of the computations are supported
+This documentation is intended to describe the core computational
+functionality.
+
+The computations, including the evaporation, radiation, and vertical temperature
+profile models are described below. Descriptions of the computations are supported
 in `Appendix 1`_ and `Appendix 2`_, which contain variable definitions and
-constant value listings. `Appendix 3`_ provides example input files.
-`Appendix 4`_ provides recommendations for the existing ResEvap model,
-and last there is a list of references.
+constant value listings, and last there is a list of references.
 
 ResEvap Software Distribution and USAGE
 ========================================
@@ -217,7 +214,7 @@ parameter.
 
 .. _Table 2:
 
-*Table 2- Time series input data required for ResEvap computations*
+*Table 2 - Time series input data required for ResEvap computations*
 
 +--------------------------------+----------------------+---------------+-----------------------+
 | Parameter                      | Parameter Type       | Time Step     | Units                 |
@@ -247,42 +244,33 @@ parameter.
 | Water Temperature (Each Layer) | Instantaneous        | 1Day          | .. math:: {^\circ}C   |
 +--------------------------------+----------------------+---------------+-----------------------+
 
-In addition to time series data, ResEvap requires the start date, end date,
-GMT offset, version name, latitude, longitude, observation heights for wind
-speed, air temperature and relative humidity, and the elevation-area rating
-curve. Note that ResEvap is not aware of vertical datum info. All elevation
-input data must be supplied in the same vertical datum.
+
+In addition to time series data, ResEvap requires the GMT offset, version name,
+latitude, longitude, observation heights for wind speed, air temperature and
+relative humidity, and the elevation-area rating curve. Note that ResEvap is
+not aware of vertical datum info. All elevation input data must be supplied in
+the same vertical datum.
 
 Output Data
 ~~~~~~~~~~~
 
-ResEvap produces both meteorological and water temperature information, which is
-written to text files and returned to the Jython processor for storage into the
-CWMS database. Table 3 summarizes the time series data produced by ResEvap.
+ResEvap produces both meteorological and water temperature information for storage
+into the CWMS database. Table 3 summarizes the time series data produced by ResEvap.
+
+*Table 3 - Output data produced by ResEvap*
 
 Table 3-Output data produced by ResEvap
 
-+--------------------------------+---------------------------+---------------+---------------------------+
-| Parameter                      | Parameter Type            | Time Step     | Units                     |
-+================================+===========================+===============+===========================+
-| Solar Radiation                | Instantaneous             | 1Hour         | .. math:: \frac{W}{m^{2}} |
-+--------------------------------+---------------------------+---------------+---------------------------+
-| Downwelling Longwave Radiation | Instantaneous             | 1Hour         | .. math:: \frac{W}{m^{2}} |
-+--------------------------------+---------------------------+---------------+---------------------------+
-| Upwelling Longwave Radiation   | Instantaneous             | 1Hour         | .. math:: \frac{W}{m^{2}} |
-+--------------------------------+---------------------------+---------------+---------------------------+
-| Water Surface Temperature      | Instantaneous             | 1Hour         | .. math:: {^\circ}C       |
-+--------------------------------+---------------------------+---------------+---------------------------+
-| Sensible Heat Flux             | Instantaneous             | 1Hour         | .. math:: \frac{W}{m^{2}} |
-+--------------------------------+---------------------------+---------------+---------------------------+
-| Latent Heat Flux               | Instantaneous             | 1Hour         | .. math:: \frac{W}{m^{2}} |
-+--------------------------------+---------------------------+---------------+---------------------------+
-| Evaporation                    | Instantaneous, Cumulative | 1Hour, 1Day   | .. math:: mm              |
-+--------------------------------+---------------------------+---------------+---------------------------+
-| Evaporation as Flow            | Average                   | 1Day          | .. math:: \frac{m^{3}}{s} |
-+--------------------------------+---------------------------+---------------+---------------------------+
-| Water Temperature (Each Layer) | Instantaneous             | 1Hour         | .. math:: {^\circ}C       |
-+--------------------------------+---------------------------+---------------+---------------------------+
+   "Solar Radiation", "Instantaneous", "1Hour", "|W/m2_small|", "None"
+   "Downwelling Longwave Radiation", "Instantaneous", "1Hour", "|W/m2_small|", "None"
+   "Upwelling Longwave Radiation", "Instantaneous", "1Hour", "|W/m2_small|", "None"
+   "Water Surface Temperature", "Instantaneous", "1Hour", "|degC|", "None"
+   "Sensible Heat Flux", "Instantaneous", "1Hour", "|W/m2_small|", "None"
+   "Latent Heat Flux", "Instantaneous", "1Hour", "|W/m2_small|", "None"
+   "Evaporation", "Instantaneous, Cumulative", "1Hour, 1Day", "|mm|", "None"
+   "Evaporation as Flow", "Average", "1Day", "|m3/s_small|", "None"
+   "Water Temperature (Each Layer)", "Instantaneous", "1Hour", "|degC|", "None"
+
 
 ResEvap builds these output time series based on the input time window, location
 and version name. As the compute progresses in time, the hourly time series are
@@ -319,8 +307,6 @@ energy input, the total thermal energy at the end of the time step, the relative
 difference between the change in thermal energy and the total (net) energy input
 (should be ~0), and the reservoir surface area.
 
-A recommendation has been added to `Appendix 4`_: Recommendations, to prevent
-the generation of these files unless ResEvap is being run in a debug mode.
 
 Evaporation Computations
 ------------------------
@@ -368,7 +354,7 @@ computed, which represent differences in temperature and specific humidity
 required for computing the Monin-Obukhov similarity scaling parameters.
 These initial computations are described in the equations below:
 
-:math:`\overline{T_{a}} = .5\left( T_{s} - \widehat{T_{a}} \right)`
+:math:`\overline{T_{a}} = 0.5\left( T_{s} - \widehat{T_{a}} \right)`
 
 :math:`\mathrm{\Delta}_{t} = T_{s} - \theta_{r}`
 
@@ -416,7 +402,7 @@ actual vapor pressure.
 Additionally, the following computations require the kinematic viscosity of the
 air at the water surface, which is described below:
 
-:math:`\nu_{s} = 0.00001326(1.0 + T_{s}*(0.006542 + T_{s}*(0.000008301 - 0.00000000484T_{s})))`
+:math:`\nu_{s} = 0.00001326 \biggl(1.0 + T_{s}* \Bigl(0.006542 + T_{s}*(0.000008301 - 0.00000000484T_{s}) \Bigr) \biggr)`
 
 Finally, the latent heat of vaporization or sublimation is needed for computing
 the latent heat flux, which is described below:
@@ -468,7 +454,7 @@ are performed with a table lookup based on :math:`{R_e}^{*}` (see Table 4).
 
 .. _Table 4:
 
-*Table 4- Coefficients for the COARE algorithm*
+*Table 4 - Coefficients for the COARE algorithm*
 
 +-------------------------------+-------------------------+-------------------------+--------------------------+-------------------------+
 | .. math:: \mathbf{{R_e}^{*}}  | .. math:: \mathbf{a_t}  | .. math:: \mathbf{b_t}  | .. math:: \mathbf{a_q}   | .. math:: \mathbf{b_q}  |
@@ -499,11 +485,11 @@ Based on the roughness lengths, the transfer coefficients can be computed as fol
 
 Where:
 
-:math:`h_{m} = h_{u}, z_{m} = z_{u}, \psi_{m} = \psi_{u} \text{ for } C_{D}`
+    :math:`h_{m} = h_{u}, z_{m} = z_{u}, \psi_{m} = \psi_{u} \text{ for } C_{D}`
 
-:math:`h_{m} = h_{T}, z_{m} = z_{T}, \psi_{m} = \psi_{T} \text{ for } C_{T}`
+    :math:`h_{m} = h_{T}, z_{m} = z_{T}, \psi_{m} = \psi_{T} \text{ for } C_{T}`
 
-:math:`h_{m} = h_{q}, z_{m} = z_{q}, \psi_{m} = \psi_{q} \text{ for } C_{q}`
+    :math:`h_{m} = h_{q}, z_{m} = z_{q}, \psi_{m} = \psi_{q} \text{ for } C_{q}`
 
 
 :math:`\psi_{m} = \left\{
@@ -516,11 +502,12 @@ Where:
 \end{array}
 \right.\ `
 
-:math:`\zeta = \dfrac{h_{m}}{l_{o}}`
+    :math:`\zeta = \dfrac{h_{m}}{l_{o}}`
 
-:math:`{x = (1 - \ 16\zeta)}^{0.25}`
+    :math:`{x = (1 - \ 16\zeta)}^{0.25}`
 
-Where :math:`\psi_{m} = 0` for the initial iteration.
+    Where :math:`\psi_{m} = 0` for the initial iteration.
+
 From the above equations, the initial MOS scaling parameters can be computed as follows:
 
 :math:`t_{*} = - \left(\dfrac{C_{T}\hat{u}\mathrm{\Delta}_{T}}{u_{*}}\right)`
@@ -540,10 +527,11 @@ performed. The stopping criteria of the process is when:
 \dfrac{\left| t_{*_i} - {t_{{*}_{i - 1}}} \right|}{t_{*_i}} < 0.001 \text{  and  } \
 \dfrac{\left| q_{*_i} - {q_{{*}_{i - 1}}} \right|}{q_{*_i}} < 0.001`
 
-Where :math:`i` denotes the iteration number. The iterations proceed as follows.
-Compute the transfer coefficients :math:`(C_{D}, C_{T}\text{ and } C_{q})`
-with :math:`h_{u} = 10m`, and current estimates of :math:`l_{o}`, :math:`z_{u}`,
-:math:`z_{T}` and :math:`z_{q}`, and subsequently estimate the MOS similarity
+Where :math:`i` denotes the iteration number.
+
+The iterations proceed as follows. Compute the transfer coefficients :math:`(C_{D}, C_{T}\text{ and } C_{q})`
+with :math:`h_{u} = 10m` and the current estimates of :math:`l_{o}`, :math:`z_{u}`,
+:math:`z_{T}` and :math:`z_{q}`. This step subsequently provides an estimate of the MOS similarity
 scales. Recompute the transfer coefficients based on the current MOS similarity
 scales and the actual :math:`h_{u}`. Modify wind speed to account for gustiness
 as shown below:
@@ -585,8 +573,8 @@ This can be converted to the declination angle below:
 
 :math:`\left.
 \begin{array}{l}
-\sin(\delta) = \sin(23.44) \sin\Bigl(279.9348 + d + 1.914827\sin(d) - 0.079525\cos(d) \; + \\
-\hspace{5cm} 0.019938(2\sin(d)\cos(d)\Bigr) - 0.001639(2\cos^{2}(d) - 1)
+\sin(\delta) = \sin(23.44)\sin\Bigl( 279.9348 + d + 1.914827\sin(d) - 0.079525\cos(d) \; + \\
+\hspace{5.5cm} 0.019938 \bigl(2\sin(d)\cos(d)\bigr) - 0.001639 \bigl(2\cos^{2}(d) - 1\bigr)\Bigr)
 \end{array} \right.`
 
 The diurnal fluctuations of solar radiation are represented by the Hour Angle
@@ -599,8 +587,8 @@ longitude, and :math:`M` is the time of meridian passage computed below:
 
 :math:`\left.
 \begin{array}{l}
-M = 12 + 0.12357\sin(d) - 0.004289\cos(d) + 0.153809\bigl( 2\sin(d)\cos(d) \bigr) + \\
-\qquad\;\ 0.060783(2\cos^{2}(d) - 1)
+M = 12 + 0.12357\sin(d) - 0.004289\cos(d) + 0.153809\bigl( 2\sin(d)\cos(d) \bigr) \: + \\
+\hspace{2cm} 0.060783 \bigl(2\cos^{2}(d) - 1 \bigr)
 \end{array} \right.`
 
 Based on the declination, the latitude and the hour angle, the zenith angle may be computed as follows:
@@ -628,14 +616,14 @@ middle and high atmospheric layers, :math:`d_{l}`, :math:`d_{m}`, and :math:`d_{
 are the interactions between the different layers and :math:`S_{e}` is the
 extraterrestrial solar radiation on a horizontal plane in :math:`\frac{W}{m^{2}}`.
 
-:math:`d_{h} = 1 - R_{h}R_{m}`
+    :math:`d_{h} = 1 - R_{h}R_{m}`
 
-:math:`d_{m} = 1 - R_{m}R_{l}`
+    :math:`d_{m} = 1 - R_{m}R_{l}`
 
-:math:`d_{l} = 1 - R_{l}R_{g}`
+    :math:`d_{l} = 1 - R_{l}R_{g}`
 
-:math:`S_{e} = 1369.2\Biggl( 1.0001399 + 0.0167261cos\left(\dfrac{2\pi(JD - 2)}{365.242}\right) \
-\Biggr)^{2} \cos( \theta_{s})`
+    :math:`S_{e} = 1369.2\Biggl( 1.0001399 + 0.0167261cos\left(\dfrac{2\pi(JD - 2)}{365.242}\right) \
+    \Biggr)^{2} \cos( \theta_{s})`
 
 In the above equations, :math:`R_{k}` and :math:`T_{k}` are a composite of the
 overcast :math:`\left( R_{k}^{o}, T_{k}^{o} \right)` and clear sky
@@ -790,8 +778,10 @@ negligible effects on the resulting longwave radiation computations.
 :math:`l_{v} = \left( 3.166659 - 0.00243\widehat{T_{a}} \right)10^{6}`
 
 Similar to :math:`e_{s}`, the formulation of :math:`l_{v}` is different than in
-the evaporation computations. To be numerically equivalent, the equation would be
-:math:`l_{v} = \left( 3.1211431 - 0.002274\widehat{T_{a}} \right)10^{6}`.
+the evaporation computations. To be numerically equivalent, the equation would be:
+
+:math:`l_{v} = \left( 3.1211431 - 0.002274\widehat{T_{a}} \right)10^{6}`
+
 Although different, this is still expected to have negligible impacts on the
 resulting longwave radiation computations.
 
@@ -801,9 +791,8 @@ the height of the clouds in each layer :math:`(h_{c_k})`, as shown below:
 
 :math:`\left.
 \begin{array}{l}
-{I_{l \downarrow}}_{cloud} = {f_{c_l}}( 94 - 5.8{h_{c_l}} ) + \
-{f_{c_m}}(1 - {f_{c_l}})( 94 - 5.8{h_{c_m}} ) \;+ \\
-\hspace{2.5cm}{f_{c_h}}(1 - {f_{c_m}})(1 - {f_{c_l}})( 94 - 5.8{h_{c_h}})
+{I_{l \downarrow}}_{cloud} = {f_{c_l}}( 94 - 5.8{h_{c_l}} ) \; + \\
+\hspace{3cm}{f_{c_m}}(1 - {f_{c_l}})( 94 - 5.8{h_{c_m}} ) + {f_{c_h}}(1 - {f_{c_m}})(1 - {f_{c_l}})( 94 - 5.8{h_{c_h}})
 \end{array} \right.`
 
 :math:`\qquad`
@@ -813,7 +802,7 @@ the height of the clouds in each layer :math:`(h_{c_k})`, as shown below:
 a\  - \ b*\Bigl( 1.0 - \Bigl| cos\bigl(c*(lat - d) \bigr) \Bigr|\Bigr) & \text{otherwise}
 \end{matrix} \right.\ `
 
-Table 10, Table 11, Table 12, Table 13 provide the coefficients for computing
+Table 10, Table 11, Table 12, and Table 13 provide the coefficients for computing
 the cloud heights in the absence of observations.
 
 .. _Table 10:
@@ -879,12 +868,15 @@ Vertical transfer of heat within a reservoir is assumed to be a one-dimensional
 process, where the reservoir is assumed to be laterally homogeneous. This allows
 for ignoring effects of reservoir inflows and outflows. In the event that there
 is a large lateral variation in temperature (i.e. long run-of-the-river reservoirs),
-these computations will be unreliable. Based on this assumption, vertical transfer
+these computations will be unreliable. General guidance provided here is reservoirs with
+a flushing time less than 30 days will violate the assumption of laterally homogeneity,
+and therefore the vertical temperature profile computations should only be applied for
+reservoirs with a flushing time greater than 30 days. Based on this assumption, vertical transfer
 of heat is modeled first by assuming stable reservoir stratification, accounting
 for diffusion of heat, and then accounting for any convective or turbulent mixing
 that occurs in the reservoir profile. Vertical diffusion of heat within a
 one-dimensional reservoir is governed by the equation below
-:ref:`(Hondzo and Stefan 1993) <References>`.
+:ref:`(Hondzo and Stefan 1993) <References>`:
 
 :math:`\dfrac{dT_{w}}{dt} = \dfrac{1}{A}\dfrac{d}{dz}\left( K_{z}A\dfrac{dT_{w}}{dz} \right) + \
 \dfrac{I_{z}}{\rho_{w}c_{p}}`
@@ -955,7 +947,7 @@ In the above equations, :math:`f_{rating}` is the elevation-area rating function
 :math:`\overline{A_{l}}` is the average area of layer :math:`i`. Based on the
 known information, ResEvap applies a discretized form of the vertical heat
 diffusion equation. Discretization of the vertical diffusion equation is
-performed below, using the theta method.
+performed below, using the theta method:
 
 :math:`\dfrac{{T_{w}}_{i}^{t + 1} - {T_{w}}_{i}^{t}\ }{\mathrm{\Delta}t} = \
 \dfrac{1}{\overline{A_{l}}}\,\dfrac{1}{\mathrm{\Delta}z}\left\lbrack {K_{z_i}}A_{i} \
@@ -1013,8 +1005,8 @@ assuming layer :math:`i` is included, is evaluated as follows:
 
 :math:`\left.
 \begin{array}{l}
-{PE_{SML_i}} = g \biggl( {\rho_{SML_{i - 1}}} V_{i - 1:N} ( {z_{SML}^{com}}_{i - 1} - z_{i - 2} ) \; - \\
-\hspace{4cm} \Bigl( \rho_{i} V_{i:N} ( {z^{com}}_{i:N} - z_{i - 2} ) + \rho_{i - 1}V_{i - 1} \
+{PE_{SML_i}} = g \biggl( {\rho_{SML_{i - 1}}} V_{i - 1:N} \bigl( {z_{SML}^{com}}_{i - 1} - z_{i - 2} \bigr) \; - \\
+\hspace{6cm} \Bigl( \rho_{i} V_{i:N} ( {z^{com}}_{i:N} - z_{i - 2} ) + \rho_{i - 1}V_{i - 1} \
 ( {z^{com}}_{i:i} - z_{i - 2} ) \Bigr) \biggr)
 \end{array} \right.`
 
@@ -1044,7 +1036,7 @@ and the :math:`PE_{SML_{i - 1}}` is subsequently checked. Once a layer is
 identified where :math:`PE_{SML_i} \geq 0`, the density profile is considered
 stable. At this point, it is still possible deeper layers are in the SML, due to
 the combined convective and wind driven turbulent energy. Therefore, the
-turbulent kinetic energy (TKE) must be computed, and compared against the
+turbulent kinetic energy :math:`({TKE})` must be computed, and compared against the
 potential energy.
 
 :math:`{TKE}_{i:N} = Ke_{c_{i:N}} + Ke_{u_{i:N}}`
@@ -1061,9 +1053,11 @@ Where :math:`Ke_{c_{i:N}}` is the kinetic energy of the SML with layer
 :math:`i` included and :math:`Ke_{u_{i:N}}` is the kinetic energy from wind
 with layer :math:`i` included. If :math:`TKE_{i:N} \geq PE_{mix_i}` , then layer
 :math:`i` is considered in the SML, and the computations checks the deeper layer.
+
 If :math:`TKE_{i:N} > PE_{mix_i}` , then the computation of vertical
-temperature profile is complete. At this point, the reservoir surface
-temperature computations have comple ted, and ResEvap moves on to the next
+temperature profile is complete.
+
+At this point, the reservoir surface temperature computations have completed, and ResEvap moves on to the next
 time step. After the final time step, ResEvap reports data in the output reports
 and returns the results to the Jython processor.
 
@@ -1311,91 +1305,6 @@ Appendix 2: Constant Values
 NOTE: The Stefan-Boltzman constant is :math:`5.669*10^{- 8}` in the computation
 of the incoming longwave radiation, which is slightly different than the rest
 of the computations. This is considered an insignificant difference.
-
-.. _Appendix 3:
-
-Appendix 3: Example Input Files
-===============================
-
-ResEvap Properties
-------------------
-.. code-block::
-
-    # ResEvap script parameters that are constants
-    ResEvap.versionOut=test_vers
-    ResEvap.workingDir=sample_data
-
-    # DB Id for obtaining the max temperature depth (thus max layer)
-    ResEvap.maxTempDepthId=Depth.Const.0.Max Temperature Prof Depth
-
-    # DB Id for secchi depth from data base
-    ResEvap.secchiDepthId=Depth.Const.0.Secchi Depth
-
-Reservoir Information
------------------------
-.. code-block::
-
-    Reservoir:PA18
-    Secchi:0.54864
-    Zero elevation:1070.0
-    Lat:-60.7306
-    Long:38.5632
-    GMT Offset:6
-    Timezone:US/Central
-    Rating:PA18.Elev;Area.Linear.Step
-    1:SWT:KOMA.Speed-Wind.Inst.1Hour.0.Nwo-Evap:m/s
-    2:SWT:KOMA.Temp-Air.Inst.1Hour.0.nwo-evap:C
-    3:SWT:KOMA.%-RelativeHumidity.Inst.1Hour.0.nwo-evap:%
-    4:SWT:KOMA.Pres-ATMOSPHERIC.Inst.1Hour.0.nwo-evap:mb
-    5:SWT:KOMA.%-Cloud-Low.Inst.1Hour.0.nwo-evap:%
-    6:SWT:KOMA.Elev-Cloud-Low.Inst.1Hour.0.nwo-evap:m
-    7:SWT:KOMA.%-Cloud-Mid.Inst.1Hour.0.nwo-evap:%
-    8:SWT:KOMA.Elev-Cloud-Mid.Inst.1Hour.0.nwo-evap:m
-    9:SWT:KOMA.%-Cloud-High.Inst.1Hour.0.nwo-evap:%
-    10:SWT:KOMA.Elev-Cloud-High.Inst.1Hour.0.nwo-evap:m
-    11:SWT:PA18.Elev.Inst.1Hour.0.nwo-evaptest:ft
-    30:SWT:PA18.Temp-Water-0,0m.Inst.1Day.0.nwo-evaptest:C
-    31:SWT:PA18.Temp-Water-0,5m.Inst.1Day.0.nwo-evaptest:C
-    32:SWT:PA18.Temp-Water-1,0m.Inst.1Day.0.nwo-evaptest:C
-    33:SWT:PA18.Temp-Water-1,5m.Inst.1Day.0.nwo-evaptest:C
-    34:SWT:PA18.Temp-Water-2,0m.Inst.1Day.0.nwo-evaptest:C
-    35:SWT:PA18.Temp-Water-2,5m.Inst.1Day.0.nwo-evaptest:C
-    36:SWT:PA18.Temp-Water-3,0m.Inst.1Day.0.nwo-evaptest:C
-    37:SWT:PA18.Temp-Water-3,5m.Inst.1Day.0.nwo-evaptest:C
-    38:SWT:PA18.Temp-Water-4,0m.Inst.1Day.0.nwo-evaptest:C
-    39:SWT:PA18.Temp-Water-4,5m.Inst.1Day.0.nwo-evaptest:C
-    40:SWT:PA18.Temp-Water-5,0m.Inst.1Day.0.nwo-evaptest:C
-    41:SWT:PA18.Temp-Water-5,5m.Inst.1Day.0.nwo-evaptest:C
-    42:SWT:PA18.Temp-Water-6,0m.Inst.1Day.0.nwo-evaptest:C
-    43:SWT:PA18.Temp-Water-6,5m.Inst.1Day.0.nwo-evaptest:C
-    44:SWT:PA18.Temp-Water-7,0m.Inst.1Day.0.nwo-evaptest:C
-    45:SWT:PA18.Temp-Water-7,5m.Inst.1Day.0.nwo-evaptest:C
-    46:SWT:PA18.Temp-Water-8,0m.Inst.1Day.0.nwo-evaptest:C
-    47:SWT:PA18.Temp-Water-8,5m.Inst.1Day.0.nwo-evaptest:C
-    48:SWT:PA18.Temp-Water-9,0m.Inst.1Day.0.nwo-evaptest:C
-    49:SWT:PA18.Temp-Water-9,5m.Inst.1Day.0.nwo-evaptest:C
-    50:SWT:PA18.Temp-Water-10,0m.Inst.1Day.0.nwo-evaptest:C
-    51:SWT:PA18.Temp-Water-10,5m.Inst.1Day.0.nwo-evaptest:C
-    52:SWT:PA18.Temp-Water-11,0m.Inst.1Day.0.nwo-evaptest:C
-    53:SWT:PA18.Temp-Water-11,5m.Inst.1Day.0.nwo-evaptest:C
-    54:SWT:PA18.Temp-Water-12,0m.Inst.1Day.0.nwo-evaptest:C
-    55:SWT:PA18.Temp-Water-12,5m.Inst.1Day.0.nwo-evaptest:C
-    56:SWT:PA18.Temp-Water-13,0m.Inst.1Day.0.nwo-evaptest:C
-    57:SWT:PA18.Temp-Water-13,5m.Inst.1Day.0.nwo-evaptest:C
-    58:SWT:PA18.Temp-Water-14,0m.Inst.1Day.0.nwo-evaptest:C
-    59:SWT:PA18.Temp-Water-14,5m.Inst.1Day.0.nwo-evaptest:C
-    60:SWT:PA18.Temp-Water-15,0m.Inst.1Day.0.nwo-evaptest:C
-    61:SWT:PA18.Temp-Water-15,5m.Inst.1Day.0.nwo-evaptest:C
-    62:SWT:PA18.Temp-Water-16,0m.Inst.1Day.0.nwo-evaptest:C
-    63:SWT:PA18.Temp-Water-16,5m.Inst.1Day.0.nwo-evaptest:C
-    64:SWT:PA18.Temp-Water-17,0m.Inst.1Day.0.nwo-evaptest:C
-    65:SWT:PA18.Temp-Water-17,5m.Inst.1Day.0.nwo-evaptest:C
-    66:SWT:PA18.Temp-Water-18,0m.Inst.1Day.0.nwo-evaptest:C
-    67:SWT:PA18.Temp-Water-18,5m.Inst.1Day.0.nwo-evaptest:C
-    68:SWT:PA18.Temp-Water-19,0m.Inst.1Day.0.nwo-evaptest:C
-    69:SWT:PA18.Temp-Water-19,5m.Inst.1Day.0.nwo-evaptest:C
-    70:SWT:PA18.Temp-Water-20,0m.Inst.1Day.0.nwo-evaptest:C
-    71:SWT:PA18.Temp-Water-20,5m.Inst.1Day.0.nwo-evaptest:C
 
 .. _Appendix 4:
 
