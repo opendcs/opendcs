@@ -1,10 +1,6 @@
-#######################################
-OpenDCS Reservoir Evaporation Algorithm
-#######################################
-
 
 ResEvapAlgorithm
-****************
+-----------------
 
 Exec Class: decodes.cwms.algo.ResEvapAlgo
 
@@ -100,5 +96,5 @@ Important Notes:
 +-----------+------------------+----------------------------------------------+
 
 .. note::
-   See :ref:`Reservoir Evaporation Legacy Documentation <legacy-resevap-computation>` to better understand how the algorithm behaves.
+   See :ref:`ResEvap Documentation <legacy-resevap-computation>` to better understand how the algorithm behaves.
 
