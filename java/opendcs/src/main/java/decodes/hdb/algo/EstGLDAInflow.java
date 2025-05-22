@@ -32,7 +32,7 @@ import org.opendcs.annotations.algorithm.Output;
 "total_release = Powell total release volume\n\n" +
 
 "Output:\n" +
-"inflow = Powell total inflow"
+"inflow = Powell total inflow")
 public class EstGLDAInflow extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input

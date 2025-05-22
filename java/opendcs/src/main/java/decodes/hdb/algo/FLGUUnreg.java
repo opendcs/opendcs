@@ -18,7 +18,7 @@ import org.opendcs.annotations.algorithm.Output;
 
 @Algorithm(description = "Flaming Gorge Unregulated Inflow Computation\n" +
 "Takes Fontenelle Delta Storage and Evap from t-1 and\n" +
-"adds them to Flaming Gorge Inflow to get Unregulated Inflow"
+"adds them to Flaming Gorge Inflow to get Unregulated Inflow")
 public class FLGUUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 	@Input
