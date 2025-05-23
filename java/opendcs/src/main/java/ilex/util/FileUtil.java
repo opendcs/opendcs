@@ -45,6 +45,8 @@
 package ilex.util;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
@@ -282,6 +284,12 @@ public class FileUtil
 			}
 		}
 	}
+
+	 public static Path createEmptyTempDirectory(String prefix) throws IOException {
+        Path tempDir = Files.createTempDirectory(prefix);
+        tempDir.toFile().deleteOnExit();
+        return tempDir;
+    }
 
 
 	// test main
