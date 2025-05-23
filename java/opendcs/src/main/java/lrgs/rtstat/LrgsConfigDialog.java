@@ -48,6 +48,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 
+import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.PasswordWithShow;
 import org.opendcs.gui.x509.X509CertificateVerifierDialog;
 
 import lrgs.ddsrecv.DdsRecvConnectCfg;
@@ -112,7 +114,7 @@ public class LrgsConfigDialog extends GuiDialog
     private JTextField ddsListenPortField = null;
     private JTextField ddsBindAddrField = null;
     private JTextField ddsKeystoreFile = new JTextField();
-    private JPasswordField ddsKeystorePass = new JPasswordField();
+    private PasswordWithShow ddsKeystorePass = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
     private JTextField ddsMaxClientsField = null;
     private JTextField ddsParentDirectoryField = null;
     private JTextField ddsLogFileField = null;
@@ -578,7 +580,7 @@ public class LrgsConfigDialog extends GuiDialog
             }
 
             fieldName = "DDS Keystore Password";
-            sv = getStringFieldValue(ddsKeystorePass, null);
+            sv = ddsKeystorePass.getText().trim().length() == 0 ? null : ddsKeystorePass.getText();
             if (lrgsConfig.keyStorePassword != sv)
             {
                 lrgsConfig.keyStorePassword = sv;
