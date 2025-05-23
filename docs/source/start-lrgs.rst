@@ -190,9 +190,9 @@ TLS
 ###
 
 The LRGS can now serve and receive DDS messages over TLS. This provides for confidentiality and especially integrity of 
-the messages set and received. At this time the LRGS can either server all DDS request over TLS or none.
+the messages set and received. At this time the LRGS can either serve all DDS request over TLS or none.
 
-Future work will implement "STARTTLS" and the ability to server DDS from two ports.
+Future work will implement "STARTTLS" and the ability to serve DDS from two ports.
 
 For client usage, the TLS settings are determined per client connection.
 
@@ -212,7 +212,7 @@ If you have a certificate with key and the full trust chain you can do the follo
         -srcstoretype PKCS12 \
         -srcstorepass lrgspass # this password will depend on how the source .p12 file was created
 
-in you're lrgs.conf file set the following properties (also available in the GUI)
+in your lrgs.conf file set the following properties (also available in the GUI)
 
 .. code-block:: text
 
@@ -229,7 +229,7 @@ In the GUI
 Client
 ======
 
-The client use a combination of the following sources when determining certificate trust:
+The client uses a combination of the following sources when determining certificate trust:
 
 1. The current JVMs certificate keystore
 1. The system's certificate store
@@ -240,11 +240,11 @@ The local_trust.p12 file is created automatically. For example, if you connect t
 the server is not already trusted, you will recieve a prompt with the certificate information asking if you want
 to trust the server certificate.
 
-Backend processing applications wil log an error message with the host name if the certificate is not already trusted.
+Backend processing applications will log an error message with the host name if the certificate is not already trusted.
 If necessary, You can manually add trust to the local_trust.p12 file with the keytool command similar to the 
 Server certificate above. 
 
-The password is `local_trust`. Given the limit security (no more or less than the system or java keystores) only
+The password is `local_trust`. Given the limited security (no more or less than the system or java keystores) only
 public certificates should be put in the local_trust keystore.
 
 To configure the LRGS to connect with TLS to a given LRGS server, check the TLS box and save the configuration. 
