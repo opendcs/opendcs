@@ -62,7 +62,6 @@ public class LddsInputStream
 
 		// Read the 4-byte sync header & error out if it doesn't match.
 		int n = istrm.read(hdr, 0, 4);
-		System.out.println();
 		if (n < 0)
 		{
 			throw new IOException("Socket closed");
