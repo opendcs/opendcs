@@ -183,3 +183,76 @@ Connecting
 ##########
 
 Now that you have an initial LRGS you can use the RtStat program (LRGS Status in the launcher) to connect to your LRGS at the host and port 16003.
+
+
+
+TLS
+###
+
+The LRGS can now serve and receive DDS messages over TLS. This provides for confidentiality and especially integrity of 
+the messages set and received. At this time the LRGS can either serve all DDS request over TLS or none.
+
+Future work will implement "STARTTLS" and the ability to serve DDS from two ports.
+
+For client usage, the TLS settings are determined per client connection.
+
+Server
+======
+
+To server DDS data over make use of TLS create a java keystore file of a certificate and configure the lrgs to use it.
+If you have a certificate with key and the full trust chain you can do the following to create the keystore:
+
+.. code-block:: bash
+    # 
+    keytool -importkeystore -noprompt \
+        -alias lrgs  \
+        -destkeystore lrgs.ks \
+        -deststorepass lrgspass \
+        -srckeystore lrgs.p12 \
+        -srcstoretype PKCS12 \
+        -srcstorepass lrgspass # this password will depend on how the source .p12 file was created
+
+in your lrgs.conf file set the following properties (also available in the GUI)
+
+.. code-block:: text
+
+    keyStoreFile=$LRGSHOME/lrgs.p12 # or where you have placed the file
+    keyStorePassword=lrgspass    
+
+
+In the GUI
+
+.. image:: ./media/start/lrgs/01-rtstat-dds-server-with-tls.png
+   :alt: Enable TLS on DDS Server
+   :width: 700
+
+Client
+======
+
+The client uses a combination of the following sources when determining certificate trust:
+
+1. The current JVMs certificate keystore
+1. The system's certificate store
+2. The file $DCSTOOL_USERDIR/local_trust.p12
+
+
+The local_trust.p12 file is created automatically. For example, if you connect to an LRGS with with RtStat and
+the server is not already trusted, you will recieve a prompt with the certificate information asking if you want
+to trust the server certificate.
+
+Backend processing applications will log an error message with the host name if the certificate is not already trusted.
+If necessary, You can manually add trust to the local_trust.p12 file with the keytool command similar to the 
+Server certificate above. 
+
+The password is `local_trust`. Given the limited security (no more or less than the system or java keystores) only
+public certificates should be put in the local_trust keystore.
+
+To configure the LRGS to connect with TLS to a given LRGS server, check the TLS box and save the configuration. 
+The LRGS will need to be restarted.
+
+.. image:: ./media/start/lrgs/02-rtstat-dds-client-config-dialog.png
+   :alt: DDS Configuration Dialog with TLS Option
+   :width: 700
+
+For Routing Specs, documented later, there is a "lrgs.tls" property that can be set to true to enable TLS 
+for those connections.
