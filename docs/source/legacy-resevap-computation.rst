@@ -272,17 +272,19 @@ into the CWMS database. Table 3 summarizes the time series data produced by ResE
 
 *Table 3 - Output data produced by ResEvap*
 
-Table 3-Output data produced by ResEvap
+.. csv-table::
+   :header: "Parameter", "Parameter Type", "Time Step", "Units", "Default Value", "Optional"
+   :widths: auto
 
-   "Solar Radiation", "Instantaneous", "1Hour", "|W/m2_small|", "None"
-   "Downwelling Longwave Radiation", "Instantaneous", "1Hour", "|W/m2_small|", "None"
-   "Upwelling Longwave Radiation", "Instantaneous", "1Hour", "|W/m2_small|", "None"
-   "Water Surface Temperature", "Instantaneous", "1Hour", "|degC|", "None"
-   "Sensible Heat Flux", "Instantaneous", "1Hour", "|W/m2_small|", "None"
-   "Latent Heat Flux", "Instantaneous", "1Hour", "|W/m2_small|", "None"
-   "Evaporation", "Instantaneous, Cumulative", "1Hour, 1Day", "|mm|", "None"
-   "Evaporation as Flow", "Average", "1Day", "|m3/s_small|", "None"
-   "Water Temperature (Each Layer)", "Instantaneous", "1Hour", "|degC|", "None"
+   "Solar Radiation", "Instantaneous", "1Hour", "|W/m2_small|", "None", ""
+   "Downwelling Longwave Radiation", "Instantaneous", "1Hour", "|W/m2_small|", "None", ""
+   "Upwelling Longwave Radiation", "Instantaneous", "1Hour", "|W/m2_small|", "None", ""
+   "Water Surface Temperature", "Instantaneous", "1Hour", "|degC|", "If < 0: 0.0", "No"
+   "Sensible Heat Flux", "Instantaneous", "1Hour", "|W/m2_small|", "None", "No"
+   "Latent Heat Flux", "Instantaneous", "1Hour", "|W/m2_small|", "None", "No"
+   "Evaporation", "Instantaneous, Cumulative", "1Hour, 1Day", "|mm|", "None", "No"
+   "Evaporation as Flow", "Average", "1Day", "|m3/s_small|", "None", ""
+   "Water Temperature (Each Layer)", "Instantaneous", "1Hour", "|degC|", "If < 0: 0.0", "No"
 
 
 ResEvap builds these output time series based on the input time window, location
@@ -294,44 +296,36 @@ the following equation:
 
 :math:`{E_{f_t}} = E_{t}{A_{s_t}}`
 
-Where :math:`E_{f_t}` is the evaporation as flow at time :math:`t`, :math:`E_{t}`
-is the evaporation rate at time :math:`t`, and :math:`A_{s_t}` is the reservoir
-surface area at time :math:`t`.
+Where:
 
-Time series data is saved to text files as well. Time series data is reported in
-text files named "testtout_java.dat", "wtout_java.dat", reporting the
-meteorological/surface flux and water temperature time series information,
-respectively. The meteorological/surface flux results file reports values at
-every hour for the wind speed, air temperature, relative humidity, air pressure,
-water surface temperature, :math:`u_{*}`, :math:`{R_{e}}^{*}`, Obhukov Length,
-sensible heat flux, latent heat flux, solar radiation flux, downwelling longwave
-radiation flux, upwelling longwave radiation flux, and evaporation. The water
-temperature results file reports the temperature of every layer, for every hour
-computed, in :math:`℃`.
+    .. csv-table::
+       :widths: auto
 
-ResEvap also saves diagnostic information to text files, which can be used for
-debugging purposes. Reservoir profile and energy balance reports are provided in
-files named "xout_java.dat" and "xout2_java.dat", respectively. The reservoir
-profile information includes the depth to each layer, the thickness of each
-layer, the area of each layer, the elevation of each layer, and the volume of
-each layer. The energy balance report contains the water surface elevation,
-total thermal energy, the change in total thermal energy, the total thermal
-energy input, the total thermal energy at the end of the time step, the relative
-difference between the change in thermal energy and the total (net) energy input
-(should be ~0), and the reservoir surface area.
+       ":math:`E_{f_t}`", "Evaporation as flow at time :math:`t`"
+       ":math:`E_{t}`", "Evaporation rate at time :math:`t`"
+       ":math:`A_{s_t}`", "Reservoir surface area at time :math:`t`"
 
 
 Evaporation Computations
 ------------------------
 
 Evaporation computations are performed in the EvapWater class. The evaporation
-computations rely on 8 input variables, water surface temperature (:math:`T_{s}`),
-air temperature measurement :math:`(\widehat{T_{a}})`, reference height of the
-air temperature measurements (:math:`h_{T}`), relative humidity measurement
-(:math:`\widehat{RH}`), reference height of the relative humidity measurements
-(:math:`h_{q}`), wind speed measurement (:math:`\hat{u}`), reference height of
-the wind speed measurements (:math:`h_{u}`), the measured air pressure
-(:math:`\widehat{p_{a}}`) and latent heat of vaporization (:math:`l_{v}`).
+computations rely on nine input variables:
+
+    .. csv-table::
+       :header: "Parameter", "Description"
+       :widths: auto
+
+       ":math:`T_{s}`", "Water surface temperature"
+       ":math:`\widehat{T_{a}}`", "Air temperature measurement"
+       ":math:`h_{T}`", "Reference height of the air temperature measurements"
+       ":math:`\widehat{RH}`", "Relative humidity measurement"
+       ":math:`h_{q}`", "Reference height of the relative humidity measurements"
+       ":math:`\hat{u}`", "Wind speed measurement"
+       ":math:`h_{u}`", "Reference height of the wind speed measurements"
+       ":math:`\widehat{p_{a}}`", "The measured air pressure"
+       ":math:`l_{v}`", "Latent heat of vaporization"
+
 Note that all variables are described in `Appendix 1`_, and all variables with
 a :math:`\widehat{\ }` accent are observed data. From these variables, an
 iterative computation is performed to produce the output variables: sensible
@@ -357,12 +351,18 @@ Static Variables
 ~~~~~~~~~~~~~~~~
 
 Evaporation computations start by computing several values that are static
-across the iterative algorithm. These include the vertically averaged air
-temperature :math:`(\overline{T_{a}})`, the potential temperature
-:math:`(\theta_{r})`, the vertically averaged specific humidity
-:math:`(\overline{q})`, the density of the air :math:`(\rho_{a})`,
-and the kinematic viscosity :math:`(\nu_{s})`. Additionally, the
-:math:`\mathrm{\Delta}_{t}` and :math:`\mathrm{\Delta}_{q}` terms are
+across the iterative algorithm. These include:
+
+    .. csv-table::
+        :widths: auto
+
+        :math:`\overline{T_{a}}`, "Vertically averaged air temperature"
+        :math:`\theta_{r}`, "Potential temperature"
+        :math:`\overline{q}`, "Vertically averaged specific humidity"
+        :math:`\rho_{a}`, "Density of the air"
+        :math:`\nu_{s}`, "Kinematic viscosity"
+
+Additionally, the :math:`\mathrm{\Delta}_{t}` and :math:`\mathrm{\Delta}_{q}` terms are
 computed, which represent differences in temperature and specific humidity
 required for computing the Monin-Obukhov similarity scaling parameters.
 These initial computations are described in the equations below:
@@ -377,11 +377,17 @@ Where :math:`\theta_{r}` is the potential temperature, as computed below:
 
 :math:`c_{p}^{T} = 1005.60\  + (T - T_{FP}) \Bigl(0.017211\  + \ 0.000392(T - T_{FP})\Bigr)`
 
-Where :math:`g` is the gravitational acceleration, :math:`T_{FP}` is the freezing
-point in Kelvin, and :math:`c_{p}^{T}` is the specific heat of air based on
-reference temperature :math:`T`. In the above formulation :math:`c_{p}^{T}` is
-only valid for the range :math:`- 233.15K < T < 313.15K`, which is will only
-rarely be exceeded for surface reservoirs within the USA.
+Where:
+
+    .. csv-table::
+        :widths: auto
+
+        ":math:`g`", "Gravitational acceleration"
+        ":math:`T_{FP}`", "Freezing point in Kelvin"
+        ":math:`c_{p}^{T}`", "Specific heat of air based on reference temperature :math:`T`"
+
+In the above formulation :math:`c_{p}^{T}` is only valid for the range :math:`- 233.15K < T < 313.15K`,
+which is a range that surface reservoirs within the USA will rarely exceed.
 
 :math:`\mathrm{\Delta}_{q} = q_{s} - q_{r}`
 
@@ -390,13 +396,21 @@ rarely be exceeded for surface reservoirs within the USA.
 :math:`\rho_{a} = \rho_{d} + \rho_{v} = \dfrac{100e(1 - 0.000537*S)m_{w}}{R_{g}T_{a}} \
 + 1.2923\left(\dfrac{T_{FP}}{T_{a}}\right)\left(\dfrac{\widehat{p_{a}}}{1013.25}\right)`
 
-Where :math:`\rho_{a}` is the density of the air at the water surface,
-:math:`\rho_{d}` is the density of dry air, :math:`\rho_{v}` is the water vapor
-density, :math:`R_{g}` is the ideal gas constant, :math:`e` is the vapor
-pressure, :math:`S` is the salinity (assumed to be zero), :math:`m_{w}` is the
-molecular weight of water, and :math:`q_{s}` is solved by setting
-:math:`T_{a} = T_{s}` and :math:`RH = 1`, and :math:`q_{r}` is computed by
-setting :math:`T_{a} = \widehat{T_{a}}` and :math:`RH = \widehat{RH}`.
+Where:
+
+    .. csv-table::
+       :widths: auto
+
+       ":math:`\rho_{a}`", "Density of the air at the water surface"
+       ":math:`\rho_{d}`", "Density of dry air"
+       ":math:`\rho_{v}`", "Water vapor density"
+       ":math:`R_{g}`", "Ideal gas constant"
+       ":math:`e`", "Vapor pressure"
+       ":math:`S`", "Salinity (assumed to be zero)"
+       ":math:`m_{w}`", "Molecular weight of water"
+       ":math:`q_{s}`", "Solved by setting :math:`T_{a} = T_{s}` and :math:`RH = 1`"
+       ":math:`q_{r}`", "Computed by setting :math:`T_{a} = \widehat{T_{a}}` and :math:`RH = \widehat{RH}`"
+
 
 :math:`e_{s} = \left\{
 \begin{matrix}
@@ -614,13 +628,17 @@ due to it’s complexity. For information on this derivation, see
 :math:`I_{s \downarrow} = \dfrac{S_{e}T_{l}T_{m}T_{h}}{d_{l}\left( d_{h}d_{m} - \
 R_{h}R_{l}{T_{m}}^{2} \right) - d_{h}R_{m}R_{w}{T_{l}}^{2} - R_{h}R_{w}{T_{m}}^{2}{T_{l}}^{2}}`
 
-Where :math:`I_{s \downarrow}` is the incoming solar radiation at the water
-surface, :math:`T_{l}`, :math:`T_{m}`, and :math:`T_{h}` are the
-transmissivities of the low, middle and high atmospheric layers,
-:math:`R_{l}`, :math:`R_{m}`, and :math:`R_{h}` are the reflectance of the low
-middle and high atmospheric layers, :math:`d_{l}`, :math:`d_{m}`, and :math:`d_{h}`
-are the interactions between the different layers and :math:`S_{e}` is the
-extraterrestrial solar radiation on a horizontal plane in :math:`\frac{W}{m^{2}}`.
+Where:
+
+    .. csv-table::
+        :widths: auto
+
+        :math:`I_{s \downarrow}`, "Incoming solar radiation at the water surface"
+        ":math:`T_{l}`, :math:`T_{m}`, and :math:`T_{h}`", "Transmissivities of the low, middle and high atmospheric layers"
+        ":math:`R_{l}`, :math:`R_{m}`, and :math:`R_{h}`", "Reflectance of the low, middle and high atmospheric layers"
+        ":math:`d_{l}`, :math:`d_{m}`, and :math:`d_{h}`", "Interactions between the different layers"
+        :math:`S_{e}`, "Extraterrestrial solar radiation on a horizontal plane in :math:`W/m^{2}`"
+
 
     :math:`d_{h} = 1 - R_{h}R_{m}`
 
@@ -875,11 +893,20 @@ one-dimensional reservoir is governed by the equation below
 :math:`\dfrac{dT_{w}}{dt} = \dfrac{1}{A}\dfrac{d}{dz}\left( K_{z}A\dfrac{dT_{w}}{dz} \right) + \
 \dfrac{I_{z}}{\rho_{w}c_{p}}`
 
-:math:`T_{w}` is the water temperature in :math:`K, A` is the area through which
-the heat is transferred, :math:`K_{z}` is the thermal diffusivity,
-:math:`z` is the depth, :math:`I_{z}` is the net radiation, :math:`\rho_{w}` is
-the density or water, and :math:`c_{p}` is the heat capacity. In order to
-initialize the computations, the density and heat capacity must be updated for
+Where:
+
+    .. csv-table::
+       :widths: auto
+
+       ":math:`T_{w}`", "Water temperature in :math:`K`"
+       ":math:`A`", "Area through which the heat is transferred"
+       ":math:`K_{z}`", "Thermal diffusivity"
+       ":math:`z`", "Depth"
+       ":math:`I_{z}`", "Net radiation"
+       ":math:`\rho_{w}`", "Density of water"
+       ":math:`c_{p}`", "Heat capacity"
+
+In order to initialize the computations, the density and heat capacity must be updated for
 each layer.
 
 :math:`{\rho_{w_i}} = 1000 - 0.019549\left| {T_{w_i}} - 277.15 \right|^{1.68}`
@@ -898,10 +925,17 @@ computed for each layer as follows:
 
 :math:`\overline{\rho_{w}} = \dfrac{\sum_{i = 1}^{N}{{\rho_{w_i}}V_{i}}}{\sum_{i = 1}^{N}V_{i}}`
 
-Where :math:`\overline{\rho_{w}}` is the average density over the entire water
-column, :math:`z_{i}` is the depth of the top of layer :math:`i`, :math:`N_{i}`
-is the stability frequency of layer :math:`i`, and :math:`A_{s}` is the water
-surface area. Note that :math:`\overline{\rho_{w}}` is computed as a volumetric
+Where:
+
+    .. csv-table::
+       :widths: auto
+
+       ":math:`\overline{\rho_{w}}`", "Average density over the entire water column"
+       ":math:`z_{i}`", "Depth of the top of layer :math:`i`"
+       ":math:`N_{i}`", "Stability frequency of layer :math:`i`"
+       ":math:`A_{s}`", "Water surface area"
+
+Note that :math:`\overline{\rho_{w}}` is computed as a volumetric
 average, but should be the vertical average since this is a one-dimensional model.
 Additionally, the net radiation of layer :math:`i` is computed as follows:
 
@@ -916,21 +950,23 @@ e^\left({- \kappa_{a}z_{i - 1}}\right) A_{i - 1} \right)}{V_{i}} & \text{otherwi
 
 Where:
 
-    | :math:`I_{s \downarrow}` is the incoming shortwave radiation
-    | :math:`\beta` is the fraction of shortwave radiation that penetrates the water surface. :math:`(\beta = 0.4` is assumed)
-    | :math:`\alpha` is the albedo. (:math:`\alpha = 0.08` is assumed for water)
-    | :math:`A_{i}^{u}` is the area of the top of layer :math:`i`
-    | :math:`\kappa_{a}` is the bulk extinction coefficient for shortwave radiation
-    | :math:`SD` is the secchi depth
-    | :math:`I_{l \downarrow}` is the incoming longwave radiation
-    | :math:`I_{l \uparrow}` is the outgoing longwave radiation
-    | :math:`H_{l}` is the latent heat flux
-    | :math:`H_{s}` is the sensible heat flux
+    .. csv-table::
+       :widths: auto
 
-The assumed values for :math:`\beta` and :math:`\alpha`
-are reasonable for this application, and can range from 0 to 1. Radiation
-computations and heat fluxes are described in previous sections. The necessary
-areas for diffusion computations are described below:
+       ":math:`I_{s \downarrow}`", "Incoming shortwave radiation"
+       ":math:`\beta`", "Fraction of shortwave radiation that penetrates the water surface. :math:`(\beta = 0.4` is assumed)"
+       ":math:`\alpha`", "Albedo. (:math:`\alpha = 0.08` is assumed for water)"
+       ":math:`A_{i}^{u}`", "Area of the top of layer :math:`i`"
+       ":math:`\kappa_{a}`", "Bulk extinction coefficient for shortwave radiation"
+       ":math:`SD`", "Secchi depth"
+       ":math:`I_{l \downarrow}`", "Incoming longwave radiation"
+       ":math:`I_{l \uparrow}`", "Outgoing longwave radiation"
+       ":math:`H_{l}`", "Latent heat flux"
+       ":math:`H_{s}`", "Sensible heat flux"
+
+The assumed values for :math:`\beta` and :math:`\alpha` are reasonable for this application,
+and can range from 0 to 1. Radiation computations and heat fluxes are described in previous sections.
+The necessary areas for diffusion computations are described below:
 
 :math:`A_{i} = f_{rating}\left( z_{i} \right)`
 
@@ -950,11 +986,16 @@ performed below, using the theta method:
 
 :math:`{T_{w}}_{i}^{t + \theta} = \theta{T_{w}}_{i}^{t + 1} + (1 - \theta){T_{w}}_{i}^{t}`
 
-Where :math:`{T_{w}}_{i}^{t}` is the temperature at the start of the timestep
-for layer :math:`i`, :math:`{T_{w}}_{i}^{t + 1}` is the temperature at the end
-of the time step for layer :math:`i`, :math:`A_{i}` is the area through which
-the heat is transferred, and :math:`\theta` is the implicitness factor, which
-typically ranges from :math:`0.5 \leq \theta \leq 1`.
+Where:
+
+    .. csv-table::
+       :widths: auto
+
+       ":math:`{T_{w}}_{i}^{t}`", "Temperature at the start of the timestep for layer :math:`i`"
+       ":math:`{T_{w}}_{i}^{t + 1}`", "Temperature at the end of the time step for layer :math:`i`"
+       ":math:`A_{i}`", "Area through which the heat is transferred"
+       ":math:`\theta`", "Implicitness factor, which typically ranges from :math:`0.5 \leq \theta \leq 1`"
+
 
 The solution for this equation follows the form below:
 
@@ -1016,12 +1057,15 @@ assuming layer :math:`i` is included, is evaluated as follows:
 
 Where:
 
-    | :math:`{\rho_{SML_i}}` is the density of the SML with layer :math:`i` included
-    | :math:`{T_{SML_i}}` is the temperature of the SML with layer :math:`i` included
-    | :math:`{z_{SML}^{com}}_{i}` is the center of mass of the SML with layer :math:`i` included
-    | :math:`{z^{com}}_{i:j}\ ` is the center of mass of layers :math:`i` through :math:`j`
-    | :math:`PE_{SML_i}` is the difference in potential energy of the SML with layer \
-      :math:`i` included and excluded from the mixed layer.
+    .. csv-table::
+       :widths: 1 2
+
+       ":math:`{\rho_{SML_i}}`", "Density of the SML with layer :math:`i` included"
+       ":math:`{T_{SML_i}}`", "Temperature of the SML with layer :math:`i` included"
+       ":math:`{z_{SML}^{com}}_{i}`", "Center of mass of the SML with layer :math:`i` included"
+       ":math:`{z^{com}}_{i:j}`", "Center of mass of layers :math:`i` through :math:`j`"
+       ":math:`PE_{SML_i}`", "Difference in potential energy of the SML with layer :math:`i` included and excluded from the mixed layer"
+
 
 If :math:`PE_{SML_i} < 0`, then there is sufficient energy due
 to density instability to force mixing of layers :math:`i - 1\!:\!N`. In this
@@ -1043,9 +1087,15 @@ potential energy.
 
 :math:`u_{*}^{w} = u_{*}\sqrt{\frac{\rho_{a}}{\rho_{N}}}`
 
-Where :math:`Ke_{c_{i:N}}` is the kinetic energy of the SML with layer
-:math:`i` included and :math:`Ke_{u_{i:N}}` is the kinetic energy from wind
-with layer :math:`i` included. If :math:`TKE_{i:N} \geq PE_{mix_i}` , then layer
+Where:
+
+    .. csv-table::
+       :widths: auto
+
+       ":math:`Ke_{c_{i:N}}`", "Kinetic energy of the SML with layer :math:`i` included"
+       ":math:`Ke_{u_{i:N}}`", "Kinetic energy from wind with layer :math:`i` included"
+
+If :math:`TKE_{i:N} \geq PE_{mix_i}` , then layer
 :math:`i` is considered in the SML, and the computations checks the deeper layer.
 
 If :math:`TKE_{i:N} > PE_{mix_i}` , then the computation of vertical
