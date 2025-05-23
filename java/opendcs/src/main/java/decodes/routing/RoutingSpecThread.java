@@ -1013,14 +1013,9 @@ public class RoutingSpecThread
 			currentStatus = "ERR-FormatInit";
 			return;
 		}
-		catch(DataConsumerException e)
+		catch(DataConsumerException ex)
 		{
-			log(Logger.E_FAILURE, "Cannot initialize consumer '" + rs.consumerType
-				+ "': " + e.getLocalizedMessage());
-			if (e.getCause() != null)
-			{
-				log(Logger.E_FAILURE,e.getCause().getLocalizedMessage());
-			}
+			log.atError().setCause(ex).log("Cannot initialize consumer '{}'", rs.consumerType);
 			done = true;
 			currentStatus = "ERR-OutputInit";
 			return;

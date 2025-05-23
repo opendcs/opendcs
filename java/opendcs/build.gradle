@@ -22,6 +22,7 @@ dependencies {
     annotationProcessor(project(":opendcs-annotations"))
     api(project(":opendcs-annotations"))
     implementation(libs.bundles.oracle)
+    implementation(libs.io.github.hakky54)
     implementation(libs.postgresql)
     implementation(libs.asm)
     implementation(libs.cglib)
