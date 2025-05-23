@@ -34,6 +34,7 @@ public class DdsRecvConDialog
 	private JTextField ddsDialogHostField = null;
 	private JTextField ddsDialogNameField = null;
 	private JTextField ddsDialogPortField = null;
+	private JCheckBox ddsDialogTlsCheck = null;
 	private JTextField ddsDialogUserField = null;
 	private JCheckBox ddsDialogPasswordCheck = null;
 	private JCheckBox ddsDialogDomsatCheck = null;
@@ -157,6 +158,13 @@ public class DdsRecvConDialog
 		ddsDialogPortLabel.setText(labels.getString(
 				"DdsRecvConDialog.TCPPort"));
 
+		GridBagConstraints ddsDialogPortTlsConstraints = 
+			new GridBagConstraints();
+		ddsDialogPortTlsConstraints.gridx = 2;
+		ddsDialogPortTlsConstraints.anchor = GridBagConstraints.WEST;
+		ddsDialogPortTlsConstraints.insets = new Insets(2, 2, 2, 2);
+		ddsDialogPortTlsConstraints.gridy = 3;
+
 		GridBagConstraints ddsDialogHostLabelConstraints = 
 			new GridBagConstraints();
 		ddsDialogHostLabelConstraints.gridx = 0;
@@ -214,6 +222,7 @@ public class DdsRecvConDialog
 		ddsDialogCenterPane.add(getDdsDialogHostField(), ddsDialogHostFieldConstraints);
 		ddsDialogCenterPane.add(getDdsDialogNameField(), ddsDialogNameFieldConstraints);
 		ddsDialogCenterPane.add(getDdsDialogPortField(), ddsDialogPortFieldConstraints);
+		ddsDialogCenterPane.add(getDdsDialogTlsCheck(), ddsDialogPortTlsConstraints);
 		ddsDialogCenterPane.add(getDdsDialogUserField(), ddsDialogUserFieldConstraints);
 		ddsDialogCenterPane.add(getDdsGroupCombo(), ddsDialogGroupComboConstraints);
 		ddsDialogCenterPane.add(getDdsDialogPasswordCheck(), ddsDialogPasswordCheckConstraints);
@@ -228,6 +237,17 @@ public class DdsRecvConDialog
 		ddsDialogButtonPane.setLayout(new FlowLayout());
 		ddsDialogButtonPane.add(getDdsDialogOKButton(), null);
 		ddsDialogButtonPane.add(getDdsDialogCancelButton(), null);
+	}
+
+	private JCheckBox getDdsDialogTlsCheck()
+	{
+		if (ddsDialogTlsCheck == null)
+		{
+			ddsDialogTlsCheck = new JCheckBox();
+			ddsDialogTlsCheck.setText(
+				labels.getString("DdsRecvConDialog.useTls"));
+		}
+		return ddsDialogTlsCheck;
 	}
 
 	/**
@@ -444,6 +464,7 @@ public class DdsRecvConDialog
 		ddsDialogDomsatCheck.setSelected(cfg.hasDomsatSeqNums);
 		acceptARMsCheck.setSelected(cfg.acceptARMs);
 		ddsGroupCombo.setSelectedItem(cfg.group);
+		ddsDialogTlsCheck.setSelected(cfg.tls);
 	}
 
 	/**
@@ -475,6 +496,7 @@ public class DdsRecvConDialog
 		ddsConnectCfg.port = port;
 		ddsConnectCfg.name = nm;
 		ddsConnectCfg.host = host;
+		ddsConnectCfg.tls = ddsDialogTlsCheck.isSelected();
 		ddsConnectCfg.enabled = ddsDialogEnabledCheck.isSelected();
 		ddsConnectCfg.username = username;
 		ddsConnectCfg.authenticate = ddsDialogPasswordCheck.isSelected();

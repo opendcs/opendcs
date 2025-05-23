@@ -1,13 +1,30 @@
 package lrgs.rtstat.hosts;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.Objects;
+import java.util.function.Predicate;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+
+import nl.altindag.ssl.SSLFactory;
+import nl.altindag.ssl.model.TrustManagerParameters;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ilex.util.AuthException;
 import ilex.util.DesEncrypter;
+import ilex.util.EnvExpander;
 
 /**
  * Keep the information about a connection to an LRGS for the ComboBox model.
@@ -15,19 +32,21 @@ import ilex.util.DesEncrypter;
 public final class LrgsConnection
 {
     private static final Logger log = LoggerFactory.getLogger(LrgsConnection.class);
-    public static final LrgsConnection BLANK = new LrgsConnection("", -1, "", "", null);
+    public static final LrgsConnection BLANK = new LrgsConnection("", -1, "", "", null, false);
 
     private final String hostName;
     private final int port;
+    private final boolean tls;
     private final String username;
     private final String password;
     private final Date lastUsed;
 
 
-    public LrgsConnection(String hostName, int port, String username, String password, Date lastUsed)
+    public LrgsConnection(String hostName, int port, String username, String password, Date lastUsed, boolean tls)
     {
         this.hostName = hostName;
         this.port = port;
+        this.tls = tls;
         this.username = username;
         this.password = password;
         this.lastUsed = lastUsed;
@@ -37,6 +56,7 @@ public final class LrgsConnection
     {
         this.hostName = c.hostName;
         this.port = c.port;
+        this.tls = c.tls;
         this.username = c.username;
         this.password = c.password;
         this.lastUsed = lastUsed;
@@ -67,6 +87,50 @@ public final class LrgsConnection
         return lastUsed;
     }
 
+    public boolean getTls()
+    {
+        return tls;
+    }
+
+    public SocketFactory getSocketFactory()
+    {
+        return getSocketFactory(cert ->
+        {
+            log.warn("Certificate for host {} is not recognized. Signed by {}. If you trust this " +
+                     "Certificate you will need to manually add this to {}",
+                             cert.getHostname().orElse("No hostname"),
+                             cert.getChain()[0].getIssuerX500Principal().getName(),
+                             EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12"));
+            return false;
+        });
+    }
+
+    public SocketFactory getSocketFactory(Predicate<TrustManagerParameters> certTest)
+    {
+        if (tls)
+        {
+           return socketFactory(certTest);
+		}  
+        else
+        {
+            return null;
+        }
+    }
+
+    public static SocketFactory socketFactory(Predicate<TrustManagerParameters> certTest)
+    {
+        SSLFactory sslFactory = SSLFactory.builder()
+                                          .withDefaultTrustMaterial()
+                                          .withSystemTrustMaterial()
+                                          .withInflatableTrustMaterial(
+                                            Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12")),
+                                            "local_trust".toCharArray(),
+                                            "PKCS12", 
+                                            certTest)
+                                          .build();
+        return sslFactory.getSslContext().getSocketFactory();
+    }
+
     @Override
     public boolean equals(Object other)
     {
@@ -92,6 +156,10 @@ public final class LrgsConnection
         {
             return false;
         }
+        else if((tls != rhs.tls))
+        {
+            return false;
+        }        
 
         if (!hostName.equals(rhs.hostName))
         {
@@ -125,17 +193,19 @@ public final class LrgsConnection
 
     public String toPropertyEntry()
     {
-        return String.format("%d %s %d %s",
+        return String.format("%d %s %d %s%s",
                                 port, username,
                                 (lastUsed == null ? 0 : lastUsed.getTime()),
-                                password);
+                                password,
+                                (tls ? " TLS" : ""));
     }
 
 
     public static LrgsConnection fromDdsFile(String host, String input)
     {
         final String parts[] = input.split("\\s+");
-        final int port = Integer.parseInt(parts[0]);
+        boolean tls = false;
+        final int port = Integer.parseInt(parts[0].replace("/TLS", ""));
         String username = "<set_me>";
         long lastUsed = 0;
         String password = "<set_me>";
@@ -155,9 +225,12 @@ public final class LrgsConnection
         {
             password = parts[3];    
         }
+        if (parts.length > 4 && parts[4].trim().equals("TLS"))
+        {
+            tls = true;
+        }
 
-        return new LrgsConnection(host, port,
-                                  username, password, new Date(lastUsed));
+        return new LrgsConnection(host, port, username, password, new Date(lastUsed), tls);
     }
 
     public static String decryptPassword(LrgsConnection c, String key)
