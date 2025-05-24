@@ -36,7 +36,6 @@ LABEL org.opencontainers.image.source=https://github.com/opendcs/opendcs/README.
 FROM opendcs_base AS lrgs
 COPY docker_scripts/lrgs.sh /
 USER opendcs:opendcs
-VOLUME lrgs_home
 WORKDIR /lrgs_home
 ENV LRGSHOME=/lrgs_home
 ENV LRGS_ADMIN_PASSWORD=""
@@ -49,7 +48,6 @@ FROM opendcs_base AS tsdbapp
 COPY docker_scripts/tsdb_config.sh /opt/opendcs
 COPY docker_scripts/decodes.properties /opt/opendcs/decodes.properties.template
 USER opendcs:opendcs
-VOLUME /dcs_user_dir
 WORKDIR /dcs_user_dir
 ENV DCSTOOL_USERDIR=/dcs_user_dir
 ENV DATABASE_TYPE=xml
