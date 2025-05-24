@@ -5,7 +5,7 @@ ResEvapAlgorithm
 Exec Class: decodes.cwms.algo.ResEvapAlgo
 
 The "ResEvap" algorithm aggregates and calculates
-the Evaporation of water from a reservoir over the period of a day. By default,
+the evaporation of water from a reservoir over the period of a day. By default,
 if the following parameter values are not provided they will be retrieved from the CWMS DataBase.
 
 * Longitude
@@ -16,67 +16,71 @@ if the following parameter values are not provided they will be retrieved from t
 
 Important Notes:
 
-* Make sure to set your aggregateTimeOffset to your timezoneOffset if the form "8 hours"
+* Make sure to set your aggregateTimeOffset to your timezoneOffset in the form "8 hours"
 * Always set your aggregateTimeZone to "ETC/GMT"
 
-.. image:: ./media/resources/algorithms/im-042-ResEvap-Properties.jpg
-   :alt:  ResEvap Properties
-   :width: 600
+    .. image:: ./media/resources/algorithms/im-042-ResEvap-Properties.jpg
+       :alt:  ResEvap Properties
+       :width: 600
 
-* When setting Zero_elevation property check rating table to find the exact and correct Zero_elevation
-* This algorithm Requires there to exits a rating table within your CWMS data base for the area of your reservoir with rating id test to "FTPK.Elev;Area.Linear.Step"
-* This algorithm Requires there to exits a set of Water Temperature profiles with the WtpTsid format of "FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap-test"
+* When setting Zero_elevation property, check rating table to find the exact and correct Zero_elevation
+* This algorithm Requires that a rating table exist within your CWMS data base for the area of your reservoir
+  with rating id test to "FTPK.Elev;Area.Linear.Step"
+* This algorithm Requires that a set of Water Temperature profiles exist with the WtpTsid format of
+  "FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap-test"
 
 +-----------+------------------+----------------------------------------------+
 |**Role**   |**Role Name**     |**Description**                               |
 +===========+==================+==============================================+
-|Inputs     |windSpeed         |Wind speed at reservoir in meters per second. |
+|Inputs     |windSpeed         |Wind speed at reservoir in meters per second  |
 |           +------------------+----------------------------------------------+
-|           |AirTemp           |Air temperature at reservoir in Celsius       |
+|           |airTemp           |Air temperature at reservoir in Celsius       |
 |           +------------------+----------------------------------------------+
-|           |RelativeHumidity  |Percentage of relative humidity               |
+|           |relativeHumidity  |Percentage of relative humidity               |
 |           +------------------+----------------------------------------------+
-|           |AtmPress          |Atmospheric pressure in mbar                  |
+|           |atmPress          |Atmospheric pressure in mbar                  |
 |           +------------------+----------------------------------------------+
-|           |PercentLowCloud   |Percentage of low cloud cover                 |
+|           |percentLowCloud   |Percentage of low cloud cover                 |
 |           +------------------+----------------------------------------------+
-|           |ElevLowCloud      |High of low clouds cover in meters            |
+|           |elevLowCloud      |High of low cloud cover in meters             |
 |           +------------------+----------------------------------------------+
-|           |PercentMidCloud   |Percentage of mid cloud cover                 |
+|           |percentMidCloud   |Percentage of mid cloud cover                 |
 |           +------------------+----------------------------------------------+
-|           |ElevMidCloud      |High of mid clouds cover in meters            |
+|           |elevMidCloud      |High of mid cloud cover in meters             |
 |           +------------------+----------------------------------------------+
-|           |PercentHighCloud  |Percentage of high cloud cover                |
+|           |percentHighCloud  |Percentage of high cloud cover                |
 |           +------------------+----------------------------------------------+
-|           |ElevHighCloud     |High of high clouds cover in meters           |
+|           |elevHighCloud     |High of high cloud cover in meters            |
 |           +------------------+----------------------------------------------+
-|           |Elev              |Elevation of water level at reservoir         |
+|           |elev              |Elevation of water level at reservoir         |
 +-----------+------------------+----------------------------------------------+
-|Outputs    |HourlySurfaceTemp |                                              |
+|Outputs    |hourlySurfaceTemp |                                              |
 |           +------------------+----------------------------------------------+
-|           |HourlyEvap        |                                              |
+|           |hourlyEvap        |                                              |
 |           +------------------+----------------------------------------------+
-|           |DailyEvap         |                                              |
+|           |dailyEvap         |                                              |
 |           +------------------+----------------------------------------------+
-|           |DailyEvapAsFlow   |                                              |
+|           |dailyEvapAsFlow   |                                              |
 |           +------------------+----------------------------------------------+
-|           |HourlyFluxOut     |                                              |
+|           |hourlyFluxOut     |                                              |
 |           +------------------+----------------------------------------------+
-|           |HourlyFluxIn      |                                              |
+|           |hourlyFluxIn      |                                              |
 |           +------------------+----------------------------------------------+
-|           |HourlySolar       |                                              |
+|           |hourlySolar       |                                              |
 |           +------------------+----------------------------------------------+
-|           |HourlyLatent      |                                              |
+|           |hourlyLatent      |                                              |
+|           +------------------+----------------------------------------------+
+|           |hourlySensible    |                                              |
 +-----------+------------------+----------------------------------------------+
 |Properties |wtpTsId           |Base String for water Temperature Profiles,   |
-|           |                  |Example FTPK-Lower-D000,0m.Temp-Water.Inst.   |
+|           |                  |Example: FTPK-Lower-D000,0m.Temp-Water.Inst.  |
 |           |                  |1Day.0.Rev-NWO-Evap                           |
 |           +------------------+----------------------------------------------+
 |           |reservoirId       |Location ID of reservoir                      |
 |           +------------------+----------------------------------------------+
 |           |secchi            |Average secchi depth of reservoir in feet     |
 |           +------------------+----------------------------------------------+
-|           |zeroElevation     |Streambed elevation of reservoir in feet      |
+|           |zeroElevation     |Streamed elevation of reservoir in feet       |
 |           +------------------+----------------------------------------------+
 |           |latitude          |Latitude of reservoir                         |
 |           +------------------+----------------------------------------------+
