@@ -33,7 +33,6 @@ ENTRYPOINT ["/opt/opendcs/env.sh"]
 FROM opendcs_base as lrgs
 COPY docker_scripts/lrgs.sh /
 USER opendcs:opendcs
-VOLUME lrgs_home
 WORKDIR /lrgs_home
 ENV LRGSHOME=/lrgs_home
 ENV LRGS_ADMIN_PASSWORD=""
@@ -46,7 +45,6 @@ FROM opendcs_base as tsdbapp
 COPY docker_scripts/tsdb_config.sh /opt/opendcs
 COPY docker_scripts/decodes.properties /opt/opendcs/decodes.properties.template
 USER opendcs:opendcs
-VOLUME /dcs_user_dir
 WORKDIR /dcs_user_dir
 ENV DCSTOOL_USERDIR=/dcs_user_dir
 ENV DATABASE_TYPE=xml
