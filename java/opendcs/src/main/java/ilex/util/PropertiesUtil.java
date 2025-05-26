@@ -356,13 +356,13 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 	public static void storeInProps(Object obj, Properties props, String prefix)
 	{
 		// Use reflection to get declared public fields to match property names.
-		Class cls = obj.getClass();
+		Class<?> cls = obj.getClass();
 
 		try 
 		{
 			Field opf = cls.getField("otherProps");
 			Properties otherProps = (Properties)opf.get(obj); 
-			Enumeration penum = otherProps.propertyNames();
+			Enumeration<?> penum = otherProps.propertyNames();
 			while(penum.hasMoreElements())
 			{
 				String nm = (String)penum.nextElement();
@@ -429,6 +429,10 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 				}
 				else if (ftyp.equals("boolean"))
 					props.setProperty(pname, "" + fld.getBoolean(obj));
+				else if (fld.getType().isEnum())
+				{
+					props.setProperty(pname, ((Enum<?>)fld.get(obj)).name());
+				}
 				
 				//kludge added by Shweta to get rid of warning errors. needs to be correctly implemented
 				else if(ftyp.equals("decodes.sql.DbKey")){}

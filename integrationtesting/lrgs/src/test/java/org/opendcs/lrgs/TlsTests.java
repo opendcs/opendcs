@@ -47,11 +47,6 @@ public class TlsTests
         }), mode);
         assertDoesNotThrow(() -> client.connect());
 
-        if (mode == TlsMode.START_TLS)
-        {
-            log.info("Starting TLS Connection.");
-            assertDoesNotThrow(() -> client.sendStartTls());
-        }
 
         client.disconnect();
     }

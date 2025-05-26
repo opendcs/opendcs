@@ -29,6 +29,7 @@ import java.util.Properties;
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
 import org.opendcs.gui.x509.X509CertificateVerifierDialog;
+import org.opendcs.tls.TlsMode;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
@@ -380,7 +381,7 @@ public class RtStatFrame
         client = null;
         SocketFactory socketFactory = c.getSocketFactory(cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), this));
 
-		final LddsClient tclient = new LddsClient(host, port,socketFactory);
+		final LddsClient tclient = new LddsClient(host, port,socketFactory, c.getTls());
         final JobDialog connectionJobDialog = new JobDialog(
             this,
             labels.getString("RtStatFrame.connectingToInfo") + host+":"+port,
@@ -918,7 +919,7 @@ public class RtStatFrame
                 return;
             }
         }
-        hostCombo.addItem(new LrgsConnection(hostname, 16003, null, null, null, false));
+        hostCombo.addItem(new LrgsConnection(hostname, 16003, null, null, null, TlsMode.NONE));
         hostCombo.setSelectedIndex(n);
     }
 

@@ -174,6 +174,10 @@ public class LddsClient extends BasicClient
         socket.setTcpNoDelay(true);
         socket.setSoTimeout(60000);
         linput = new LddsInputStream(input);
+        if (this.tlsMode == TlsMode.START_TLS)
+        {
+            sendStartTls();
+        }
     }
 
     /**
@@ -222,25 +226,33 @@ public class LddsClient extends BasicClient
         return sessionKey != null;
     }
 
-    public void sendStartTls() throws ServerError, ProtocolError, IOException
+    public void sendStartTls() throws IOException
     {
         LddsMessage msg = new LddsMessage(LddsMessage.IdStartTls,null);
         sendData(msg.getBytes());
-        msg = linput.getMessage();
-        if (msg.MsgId == LddsMessage.IdStartTls)
+        try
         {
-            String result = new String(msg.getBytes(),StandardCharsets.UTF_8);
+            msg = linput.getMessage();
+            if (msg.MsgId == LddsMessage.IdStartTls)
+            {
+                String result = new String(msg.getBytes(),StandardCharsets.UTF_8);
 
-            if (result.contains("proceed"))
-            {
-                super.startTls();
-                this.linput = new LddsInputStream(input);
-            }
-            else
-            {
-                throw new ServerError("Unable to initiate TLS. Server responsed with: " + result);
+                if (result.contains("proceed"))
+                {
+                    super.startTls();
+                    this.linput = new LddsInputStream(input);
+                }
+                else
+                {
+                    throw new IOException("Unable to initiate TLS. Server responsed with: " + result);
+                }
             }
         }
+        catch (ProtocolError ex)
+        {
+            throw new IOException("Unable to initiate TLS.", ex);
+        }
+        
     }
     /**
       Sends a Hello message with the specified user name.
