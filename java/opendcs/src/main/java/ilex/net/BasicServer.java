@@ -171,9 +171,9 @@ public abstract class BasicServer
 		throws IOException
 	{
 		Objects.requireNonNull(socketFactory, "Socket Factory MUST non-null with this constructor.");
-		if (port <= 0)
+		if (port < 0)
 			throw new IOException(
-				"BasicServer: port number must be a positive integer.");
+				"BasicServer: port number must be a positive integer, or zero to get a random port assigned.");
 		this.socketFactory = socketFactory;
 		portNum = port;
 		this.bindaddr = bindaddr;
@@ -374,7 +374,10 @@ public abstract class BasicServer
 	*/
 	protected abstract BasicSvrThread newSvrThread( Socket sock ) throws IOException;
 
-	public int getPort() { return portNum; }
+	public int getPort()
+	{
+		return this.listeningSocket.getLocalPort();
+	}
 
 	protected void setModuleName(String nm) { module = nm; }
 

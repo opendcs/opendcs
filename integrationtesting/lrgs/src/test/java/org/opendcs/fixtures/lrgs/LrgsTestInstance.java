@@ -27,6 +27,11 @@ public class LrgsTestInstance
 
     public LrgsTestInstance(File lrgsHome) throws Exception
     {
+        this(lrgsHome, null, null);
+    }
+
+    public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword) throws Exception
+    {
         if (!lrgsHome.canRead())
         {
             throw new FileNotFoundException(
@@ -44,6 +49,13 @@ public class LrgsTestInstance
             fw.write("hritSourceCode=HR"+System.lineSeparator());
             fw.write("hritFileEnabled=true"+System.lineSeparator());
             fw.write("noTimeout=true"+System.lineSeparator());
+            fw.write("ddsListenPort=0"+System.lineSeparator());
+            fw.write("enableDdsRecv=true"+System.lineSeparator());
+
+            if (keyStore!=null) {
+                fw.write("keyStoreFile="+keyStore.getAbsolutePath()+System.lineSeparator());
+                fw.write("keyStorePassword="+keyStorePassword+System.lineSeparator());
+            }
             fw.flush();
         }
         new File(lrgsHome,"netlist").mkdirs();
@@ -74,6 +86,11 @@ public class LrgsTestInstance
     public MsgArchive getArchive()
     {
         return archive;
+    }
+
+    public int getDdsPort()
+    {
+        return lrgs.getDdsServer().getPort();
     }
 
 

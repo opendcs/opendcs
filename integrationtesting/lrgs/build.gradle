@@ -12,6 +12,7 @@ dependencies {
     testImplementation(libs.bundles.junit)
     testImplementation(libs.commons.io)
     testImplementation(libs.apache.derby)
+    testImplementation(libs.io.github.hakky54)
     testImplementation(libs.webcompere.system.stubs.jupiter)
 }
 

@@ -419,7 +419,9 @@ public class LrgsMain
 
         // Initialize the LRGS Database Interface
         dbThread = LrgsDatabaseThread.instance();
-        dbThread.start();
+        if (!dbThread.isAlive()) {
+            dbThread.start();
+        }
 
         alarmHandler.start();
 
