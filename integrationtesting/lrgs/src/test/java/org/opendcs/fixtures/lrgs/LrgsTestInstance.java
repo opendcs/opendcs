@@ -8,9 +8,12 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.opendcs.tls.TlsMode;
+
 import ilex.util.FileLogger;
 import ilex.util.QueueLogger;
 import lrgs.archive.MsgArchive;
+import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
 
@@ -27,10 +30,10 @@ public class LrgsTestInstance
 
     public LrgsTestInstance(File lrgsHome) throws Exception
     {
-        this(lrgsHome, null, null);
+        this(lrgsHome, null, null, TlsMode.NONE);
     }
 
-    public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword) throws Exception
+    public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword, TlsMode tlsMode) throws Exception
     {
         if (!lrgsHome.canRead())
         {
@@ -51,6 +54,7 @@ public class LrgsTestInstance
             fw.write("noTimeout=true"+System.lineSeparator());
             fw.write("ddsListenPort=0"+System.lineSeparator());
             fw.write("enableDdsRecv=true"+System.lineSeparator());
+            fw.write("ddsServerTlsMode="+tlsMode.name()+System.lineSeparator());
 
             if (keyStore!=null) {
                 fw.write("keyStoreFile="+keyStore.getAbsolutePath()+System.lineSeparator());
@@ -91,6 +95,11 @@ public class LrgsTestInstance
     public int getDdsPort()
     {
         return lrgs.getDdsServer().getPort();
+    }
+
+    public LrgsConfig getConfig()
+    {
+        return LrgsConfig.instance();
     }
 
 

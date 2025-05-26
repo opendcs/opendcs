@@ -246,7 +246,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 		String ignorePfx[])
 	{
 		// Use reflection to get declared public fields to match property names.
-		Class cls = obj.getClass();
+		Class<?> cls = obj.getClass();
 		Properties otherProps = null;
 		try 
 		{
@@ -260,7 +260,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 
 		Field[] fields = cls.getDeclaredFields();
 		
-		Enumeration names = props.propertyNames();
+		Enumeration<?> names = props.propertyNames();
 	  nextName:
 		while(names.hasMoreElements())
 		{
@@ -304,8 +304,13 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 							fld.setDouble(obj, Double.parseDouble(pval));
 						else if (ftyp.equals("boolean"))
 							fld.setBoolean(obj, TextUtil.str2boolean(pval));
+						else if (fld.getType().isEnum())
+						{
+							Class<?> clazz = fld.getType();
+							fld.set(obj, Enum.valueOf(clazz.asSubclass(Enum.class), pval));
+						}
 						else
-						{													
+						{
 							Logger.instance().warning(
 								"Unsupported field type '" + ftyp 
 								+ "' for field '" + fname + "' - skipped.");

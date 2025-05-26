@@ -88,12 +88,16 @@ package ilex.net;
 
 import ilex.net.BasicSvrThread;
 import ilex.util.Logger;
+import ilex.util.Pair;
 
 import java.net.*;
 import java.util.LinkedList;
 import java.util.Objects;
 
 import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.io.*;
@@ -109,6 +113,7 @@ servers. It provides the basic functionality for:
 */
 public abstract class BasicServer
 {
+	public static final org.slf4j.Logger log = LoggerFactory.getLogger(BasicServer.class);
 	/** The port number to listen on */
 	protected int portNum;
 
@@ -125,7 +130,9 @@ public abstract class BasicServer
 	private InetAddress bindaddr;
 
 	/** The server socket factory so SSL can be injected */
-	protected ServerSocketFactory socketFactory;
+	protected ServerSocketFactory serverSocketFactory;
+	/** So that the server can be upgraded to TLS after connection. */
+	protected SSLSocketFactory socketFactory;
 
 	/** Should be set by concrete subclass calling setModuleName() */
 	String module = "BasicServer";
@@ -154,7 +161,7 @@ public abstract class BasicServer
 	public BasicServer( int port, InetAddress bindaddr ) 
 		throws IOException
 	{
-		this(port,bindaddr,ServerSocketFactory.getDefault());
+		this(port,bindaddr,Pair.of(ServerSocketFactory.getDefault(),null));
 	}
 
 	/**
@@ -167,14 +174,15 @@ public abstract class BasicServer
 	* on one.
 	* @param socketFactory used to allow setup of SSL for those servers that need it.
 	*/
-	public BasicServer( int port, InetAddress bindaddr, ServerSocketFactory socketFactory)
+	public BasicServer( int port, InetAddress bindaddr, Pair<ServerSocketFactory,SSLSocketFactory> socketFactories)
 		throws IOException
 	{
-		Objects.requireNonNull(socketFactory, "Socket Factory MUST non-null with this constructor.");
+		Objects.requireNonNull(socketFactories, "Socket Factories MUST non-null with this constructor.");
 		if (port < 0)
 			throw new IOException(
 				"BasicServer: port number must be a positive integer, or zero to get a random port assigned.");
-		this.socketFactory = socketFactory;
+		this.serverSocketFactory = socketFactories.first;
+		this.socketFactory = socketFactories.second;
 		portNum = port;
 		this.bindaddr = bindaddr;
 		makeServerSocket();
@@ -189,7 +197,7 @@ public abstract class BasicServer
 	*/
 	protected void makeServerSocket( ) throws IllegalArgumentException, IOException
 	{		
-		listeningSocket = this.socketFactory.createServerSocket(portNum, portNum, bindaddr);
+		listeningSocket = this.serverSocketFactory.createServerSocket(portNum, portNum, bindaddr);
 	}
 
 	/**
