@@ -57,7 +57,9 @@ public class LrgsTestInstance
             fw.write("ddsServerTlsMode="+tlsMode.name()+System.lineSeparator());
 
             if (keyStore!=null) {
-                fw.write("keyStoreFile="+keyStore.getAbsolutePath()+System.lineSeparator());
+                String fileName =keyStore.getAbsolutePath();
+                fileName = fileName.replace('\\','/');
+                fw.write("keyStoreFile="+fileName+System.lineSeparator());
                 fw.write("keyStorePassword="+keyStorePassword+System.lineSeparator());
             }
             fw.flush();
