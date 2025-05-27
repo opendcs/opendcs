@@ -718,6 +718,7 @@ public class RtStatFrame
             String msg = LoadResourceBundle.sprintf(
                     labels.getString("RtStatFrame.cannotReadDdsConfErr"),
                     host, ex);
+            log.atError().setCause(ex).log(msg);
             showError(msg);
         }
 

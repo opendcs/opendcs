@@ -209,7 +209,7 @@ If you have a certificate with key and the full trust chain you can do the follo
         -destkeystore lrgs.ks \
         -deststorepass lrgspass \
         -srckeystore lrgs.p12 \
-        -srcstoretype PKCS12 \
+        -srcstoretype JKS \
         -srcstorepass lrgspass # this password will depend on how the source .p12 file was created
 
 in your lrgs.conf file set the following properties (also available in the GUI)
@@ -217,7 +217,10 @@ in your lrgs.conf file set the following properties (also available in the GUI)
 .. code-block:: text
 
     keyStoreFile=$LRGSHOME/lrgs.p12 # or where you have placed the file
-    keyStorePassword=lrgspass    
+    keyStorePassword=lrgspass
+    ddsServerTlsMode=TLS
+    # or START_TLS
+    # or NONE
 
 
 In the GUI
@@ -254,5 +257,7 @@ The LRGS will need to be restarted.
    :alt: DDS Configuration Dialog with TLS Option
    :width: 700
 
-For Routing Specs, documented later, there is a "lrgs.tls" property that can be set to true to enable TLS 
-for those connections.
+For Routing Specs, documented later, there is a "lrgs.tls" property that can be set to one of the same options to enable 
+TLS for those connections.
+
+For `START_TLS` OpenDCS clients consider failure to establish the TLS connection an unrecoverable error.

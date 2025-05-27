@@ -1763,11 +1763,12 @@ public class LrgsConfigDialog extends GuiDialog
 
         LddsClient myClient = 
             new LddsClient(cfg.host,cfg.port,
-                           cfg.tls ?
+                           cfg.tls != TlsMode.NONE ?
                            LrgsConnection.socketFactory(
                             cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), null)
                            )
-                           : null);
+                           : null,
+                           cfg.tls);
 
         //TODO add option for password sending
         LrgsConnectionTest myTester = new LrgsConnectionTest(this, myClient, cfg.username,null);
