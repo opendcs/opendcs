@@ -2,7 +2,7 @@
 LRGS Installation and Setup
 ###########################
 
-This Document is part of the OpenDCS Software Suite for environmental
+This document is part of the OpenDCS Software Suite for environmental
 data acquisition and processing. The project home is:
 https://github.com/opendcs/opendcs
 
@@ -19,10 +19,11 @@ What is the LRGS?
 The letters LRGS stand for Local Readout Ground Station. The primary purpose of this component is to get data from
 satellite sources, a DRGS (Direct Readout Ground Station) or an HRIT (High Rate Information Transfer).
 
-See The legacy lrgs user guide for additional information <./legacy-lrgs-userguide.rst>
+See the legacy LRGS user guide for additional information :doc:`Legacy LRGS User Guide <legacy-lrgs-userguide>`.
 
-While this is still a reasonable description the LRGS can take data from Satellites (HRIT, DRGS, NOAAport), Irridium,
-, HRIT files, or another LRGS (DDS Protocol), and any network device that implements the DAMS-NT protocol as 
+
+The LRGS can take data from Satellites (HRIT, DRGS, NOAAport, Irridium), HRIT files, 
+or another LRGS (DDS Protocol), and any network device that implements the DAMS-NT protocol as 
 built-in sources.
 
 Users can also provide custom sources to the LRGS.
@@ -95,7 +96,7 @@ appropriate directories.
     sudo firewall-cmd --zone=public --add-port=16003/tcp --permanent
 
     
-You will need to set your environment. Add the following to .bashrc, if using bash. Otherwise adjust to your choosen shell.
+You will need to set your environment. Add the following to .bashrc, if using bash. Otherwise adjust to your chosen shell.
 
 .. code-block:: bash
 
@@ -114,7 +115,7 @@ Now set the LRGS Admin Password:
 
 .. code-block:: bash
 
-    #For random Generation:
+    #For random generation:
     if [ "$LRGS_ADMIN_PASSWORD" == "" ]; then
         LRGS_ADMIN_PASSWORD=`tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1`
         echo "Admin Password is $LRGS_ADMIN_PASSWORD"
@@ -199,11 +200,11 @@ For client usage, the TLS settings are determined per client connection.
 Server
 ======
 
-To server DDS data over make use of TLS create a java keystore file of a certificate and configure the lrgs to use it.
+To serve DDS data over make use of TLS create a java keystore file of a certificate and configure the LRGS to use it.
 If you have a certificate with key and the full trust chain you can do the following to create the keystore:
 
 .. code-block:: bash
-    # 
+    
     keytool -importkeystore -noprompt \
         -alias lrgs  \
         -destkeystore lrgs.ks \
@@ -235,16 +236,16 @@ Client
 The client uses a combination of the following sources when determining certificate trust:
 
 1. The current JVMs certificate keystore
-1. The system's certificate store
-2. The file $DCSTOOL_USERDIR/local_trust.p12
+2. The system's certificate store
+3. The file $DCSTOOL_USERDIR/local_trust.p12
 
 
 The local_trust.p12 file is created automatically. For example, if you connect to an LRGS with with RtStat and
-the server is not already trusted, you will recieve a prompt with the certificate information asking if you want
+the server is not already trusted, you will receive a prompt with the certificate information asking if you want
 to trust the server certificate.
 
 Backend processing applications will log an error message with the host name if the certificate is not already trusted.
-If necessary, You can manually add trust to the local_trust.p12 file with the keytool command similar to the 
+If necessary, you can manually add trust to the local_trust.p12 file with the keytool command similar to the 
 Server certificate above. 
 
 The password is `local_trust`. Given the limited security (no more or less than the system or java keystores) only
