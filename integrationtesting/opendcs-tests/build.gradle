@@ -1,6 +1,7 @@
 plugins {
     id 'opendcs.java-conventions'
     id 'opendcs.deps-conventions'
+    id 'opendcs.sonar-conventions'
 }
 
 dependencies {
