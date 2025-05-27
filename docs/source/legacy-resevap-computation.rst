@@ -347,13 +347,26 @@ exchanges of latent and sensible heat :math:`\left( H_l \text{ and } H_s \right)
 These initial estimates assume neutral stratification
 :math:`( \text{i.e } \frac{h_u}{l_o} = 0)`.
 Estimating these parameters requires an initial estimate of the wind
-friction velocity :math:`\left( u_{*}\right)`, as shown below:
+friction velocity :math:`( u_{*})`, as shown below:
 
 :math:`u_{*} = \hat{u}\sqrt{C_{d}}`
 
-Where the drag coefficient (:math:`C_{d}`) is initially estimated as:
+Where :math:`\hat{u}` is the observed wind speed, and :math:`C_{d}` is the drag coefficient.
 
-:math:`C_{d_0} = (0.37 + 0.137\hat{u} )10^{- 3}`
+The Donelan method initially estimates the drag coefficient (:math:`C_{d}`) as follows:
+
+:math:`C_{d} = (0.37 + 0.137\hat{u} )10^{- 3}`
+
+Where the Fischer method initially estimates the drag coefficient (:math:`C_{d}`) based
+on the wind speed measurement (:math:`\hat{u}`) as follows:
+
+:math:`C_{d} = \left\{
+\begin{matrix}
+{0.001} & \hat{u} < 5.0 \\
+{0.0015} & \hat{u} > 15.0 \\
+{0.001 + 0.0005\left( \frac{\hat{u} - 5}{10} \right)} & \text{otherwise}
+\end{matrix}
+\right.\ `
 
 Note that the shear velocity is not allowed to drop below 0.01. The remaining
 computations require roughness lengths for momentum
@@ -1167,6 +1180,10 @@ References
 
 | Daly, S. F. (2005), Reservoir Evaporation, U.S. Army Engineering Research and
 |             Development Center, November 2015
+
+| Donelan, M. A., Dobson, F. W., Smith, S. D., & Anderson, R. J. (1993). On the Dependence of Sea
+|             Surface Roughness on Wave Development. Journal of Physical Oceanography, 23(9), pp. 2143-2149.
+|             h​ttps://doi.org/10.1175/1520-0485(1993)023<2143:OTDOSS>2.0.CO;2
 
 | Fairall, C.W., E.F. Bradley, D.P. Rogers, J.B. Edson, and G.S. Young, 1996: Bulk
 |             parameterization of air-sea fluxes for Tropical Ocean-Global Atmosphere Coupled-Ocean
