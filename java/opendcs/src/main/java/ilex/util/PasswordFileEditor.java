@@ -3,8 +3,13 @@
 */
 package ilex.util;
 
+import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Scanner;
+
 import ilex.cmdline.*;
 
 /**
@@ -14,6 +19,9 @@ script.
 */
 public class PasswordFileEditor extends CmdLineProcessor
 {
+
+	 private static final BufferedReader IN = new BufferedReader(new InputStreamReader(System.in));
+
 	/** The PasswordFile to edit */
 	PasswordFile passwordFile;
 	/** True if file has been modified. */
@@ -239,8 +247,8 @@ public class PasswordFileEditor extends CmdLineProcessor
 			System.out.println("No such user '" + user + "'");
 			return false;
 		}
-		String s1 = TTYEcho.readPassword("Enter Password: ",this.input);
-		String s2 = TTYEcho.readPassword("Re-enter Password: ",this.input);
+		String s1 = getResponse("Enter Password: ",false);
+		String s2 = getResponse("Re-enter Password: ",false);
 		if (s1.compareTo(s2) != 0)
 		{
 			System.out.println("Passwords do not match, record unchanged.");
@@ -396,26 +404,36 @@ public class PasswordFileEditor extends CmdLineProcessor
 	* @param echo
 	* @return the response
 	*/
-	private String getResponse( String prompt, boolean echo )
+private String getResponse(String prompt, boolean echo) 
+{
+	Console console = System.console();
+	if (console != null) 
 	{
-		try
-		{
-			if (!echo)
-				TTYEcho.off();
-
-			System.out.print(prompt);
-			System.out.flush();
-			String ret = input.readLine();
-
-			if (!echo)
-				TTYEcho.on();
-			return ret;
-		}
-		catch (IOException e)
-		{
-			return null;
+		if (echo) {
+			return console.readLine(prompt);
+		} else {
+			char[] pwd = console.readPassword(prompt);
+			if (pwd == null) return null;
+			String result = new String(pwd);
+			java.util.Arrays.fill(pwd, ' '); // Clear sensitive data
+			return result;
 		}
 	}
+	 else 
+	{
+		// Fallback if console is null (e.g., non-interactive env)
+		System.out.print(prompt);
+		System.out.flush();
+		 try 
+		 {
+          return IN.readLine();    // may return null on EOF
+         } catch (IOException e) 
+	     {
+			System.out.println("IN.readLine failed");
+          return null;
+         }
+	}
+}
 
 	// Main Method ===============================================
 	static ApplicationSettings settings = new ApplicationSettings();
