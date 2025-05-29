@@ -38,17 +38,6 @@ import org.slf4j.LoggerFactory;
 
 import opendcs.dai.TimeSeriesDAI;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
- * Intended primary for daily data, given a fixed day, go back in time to average that day over a period of time.
- * Algorithm was created to operate on generic intervals but has not been tested for them.
- * @author L2EDDMAN
- */
-//AW:JAVADOC_END
 @Algorithm(name="Average of This Point in History",
            description = "Intended primary for daily data, given a fixed day, go back in time to average that day over a period of time.\n" +
                          " Algorithm was created to operate on generic intervals but has not been tested for them.")
@@ -58,8 +47,7 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
 
         // input values, declare a variable, and add the string of the variable name to the _inputNames array
     @Input(type = Double.class)
-    public double input;   //AW:TYPECODE=i
-    String _inputNames[] = { "input"};
+    public double input;
 
 
 
@@ -71,14 +59,12 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
 
     @Output(type = Double.class, typeCode = "o")
     public NamedVariable average = new NamedVariable("average",0);
-    String _outputNames[] = { "average" };
 
 
     @org.opendcs.annotations.PropertySpec(value = "years", description = "Interval on week we go back in time." )
     public String interval = "years";
     @org.opendcs.annotations.PropertySpec(value = "10", description = "How many intervals we go back.")
     public int    numberOfIntervals = 10;
-    String _propertyNames[] = { "interval", "numberOfIntervals" };
 
     // Allow javac to generate a no-args constructor.
 
@@ -181,21 +167,5 @@ public class AverageOfThisPointInHistory extends AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
     }
 }
