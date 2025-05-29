@@ -20,14 +20,12 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 
-//AW:IMPORTS
 // Place an import statements you need here.
 import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverter;
 import decodes.util.DecodesException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-//AW:IMPORTS_END
 
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
@@ -35,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 //AW:JAVADOC
+
 /**
     Calculates reservoir input with the equation
  *  inflow = /\Storage + Evap + Outflow
@@ -51,7 +50,6 @@ import org.slf4j.LoggerFactory;
  * @author L2EDDMAN
  *
  */
-
 public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
 {
     private static final Logger log = LoggerFactory.getLogger(FlowResIn.class);
@@ -62,7 +60,6 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
     public double Evap;
     @Input(typeCode = "id", description = "Change in storage between this and the previous time slice")
     public double deltaStorage;
-    String _inputNames[] = { "ResOut", "Evap", "deltaStorage" };
 
 
 
@@ -74,11 +71,9 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
 
     @Output(type = Double.class)
     public NamedVariable ResIn = new NamedVariable("ResIn", 0);
-    String _outputNames[] = { "ResIn" };
 
     @org.opendcs.annotations.PropertySpec(description = "Should an evaporation volume be included in the calculation.")
     public boolean UseEvap = false;
-    String _propertyNames[] = { "UseEvap" };
 
     // Allow javac to generate a no-args constructor.
 
@@ -246,30 +241,5 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
-    }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
     }
 }
