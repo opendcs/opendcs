@@ -13,73 +13,59 @@ import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
 import decodes.sql.DbKey;
-
-//AW:IMPORTS
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import decodes.tsdb.RatingStatus;
 import decodes.hdb.HDBRatingTable;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-Implements the Shift and Rating Table Lookups from the database.
-Independent value is called "indep".
-Dependent values are "shift" and "dep".
-Shift may or may not be stored in the database
-
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Implements the Shift and Rating Table Lookups from the database. \n" +
+"Independent value is called \"indep\". \n" +
+"Dependent values are \"shift\" and \"dep\". \n" +
+"Shift may or may not be stored in the database")
 public class HdbLookupTimeShiftRating
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
 // Code modified September 2013 to include Reno Nevada customization logic
 // Code modified by M. Bogner for inclusion into main source code tree
-//AW:INPUTS
-	public double indep;	//AW:TYPECODE=i
-	String _inputNames[] = { "indep" };
-//AW:INPUTS_END
+	@Input
+	public double indep;
 
-//AW:LOCALVARS
 	HDBRatingTable ShiftTable = null;
 	HDBRatingTable RatingTable = null;
 	private boolean firstCall = true;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable dep = new NamedVariable("dep", 0);
 	public NamedVariable shift = new NamedVariable("shift", 0);
-	String _outputNames[] = { "dep", "shift" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "false") 
 	public boolean variableShift = false;
+	@PropertySpec(value = "0") 
 	public double singleShift = 0;
+	@PropertySpec(value = "Time Interpolated Shift") 
 	public String shiftTableType = "Time Interpolated Shift";
-	String _propertyNames[] = { "variableShift", "singleShift" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		if (firstCall)
 		{
 			firstCall = false;
@@ -101,7 +87,6 @@ public class HdbLookupTimeShiftRating
 		// at every group of time slices
 		ShiftTable.resetRatingId();
 		RatingTable.resetRatingId();
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -114,10 +99,10 @@ public class HdbLookupTimeShiftRating
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if (isMissing(indep)) {
 			deleteAllOutputs();
 		}
@@ -147,42 +132,15 @@ public class HdbLookupTimeShiftRating
 			rs.dep = round(rs.dep,2);
 			setOutput(dep, rs.dep);
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
