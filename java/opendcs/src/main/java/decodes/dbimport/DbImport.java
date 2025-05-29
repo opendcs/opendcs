@@ -2,8 +2,6 @@ package decodes.dbimport;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Iterator;
@@ -25,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import ilex.util.Logger;
-import ilex.util.Pair;
 import ilex.util.StderrLogger;
 import ilex.util.TeeLogger;
 import ilex.cmdline.*;
@@ -34,7 +31,6 @@ import decodes.sql.PlatformListIO;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.util.*;
 import decodes.db.*;
 import decodes.launcher.Profile;
@@ -191,17 +187,19 @@ public class DbImport
 		try
 		{
 			loadCurrentDatabase();
-			dumpDTS("after loadCurrentDatabase");
+			log.trace("after loadCurrentDatabase");
+			theDb.printSizesToLog("--- Current Database ---");
 			if (overwriteDb)
 			{
 				this.deleteCurrentDatabase();
-				this.dumpDTS("after deleteCurrentDatabase");
+				log.trace("after deleteCurrentDatabase");
 			}
 			initStageDb();
-			dumpDTS("after initStageDb");
+			log.trace("after initStageDb");
+			
 			readXmlFiles();
-			dumpDTS("after readXmlFiles");
-
+			log.trace("after readXmlFiles");
+			stageDb.printSizesToLog("--- Staging Database (in memory xml) ---");
 			if (log.isTraceEnabled())
 			{
 				log.trace("After readXmlFiles, there are {} platforms to import:", this.stageDb.platformList.size());
@@ -218,15 +216,15 @@ public class DbImport
 			}
 
 			mergeStageToTheDb();
-			dumpDTS("after mergeStageToTheDb");
-			log.trace("After mergeStageToTheDb, there are {} EUs", Database.getDb().engineeringUnitList.size());
+			theDb.printSizesToLog("after mergeStageToTheDb");
 			if (!validateOnly)
 			{
 				normalizeTheDb();
-				log.trace("After normalizeTheDb, there are {} EUs", Database.getDb().engineeringUnitList.size());
+				theDb.printSizesToLog("after normalizeTheDb");
 				writeTheChanges();
-				dumpDTS("after writeTheChanges");
+				theDb.printSizesToLog("after writeTheChanges");
 			}
+
 		}
 		catch (ParserConfigurationException | SAXException ex)
 		{
@@ -1846,32 +1844,4 @@ public class DbImport
 		return false;
 	}
 
-	private void dumpDTS(String when)
-	{
-		return;
-//		DbEnum dts = theDb.enumList.getEnum(Constants.enum_DataTypeStd);
-//		if (dts == null)
-//		{
-//			info("dumpDTS " + when + " there is no enum " + Constants.enum_DataTypeStd);
-//			return;
-//		}
-//		info("dumpDTS " + when + " enum " + Constants.enum_DataTypeStd + " has the following members:");
-//		for(Iterator<EnumValue> evit = dts.iterator(); evit.hasNext(); )
-//		{
-//			EnumValue ev = evit.next();
-//			info("    " + ev.getValue() + " " + ev.getDescription());
-//		}
-	}
-// Debug method:
-//	private void showEnums(String when)
-//	{
-//		System.out.println(when
-//			+ ", enumList.size() = " + theDb.enumList.size());
-//		for(Iterator eit = theDb.enumList.iterator(); eit.hasNext(); )
-//		{
-//			decodes.db.Enum en = (decodes.db.Enum)eit.next();
-//			System.out.println("\tEnum '"
-//				+ en.enumName + "' size=" + en.size());
-//		}
-//	}
 }
