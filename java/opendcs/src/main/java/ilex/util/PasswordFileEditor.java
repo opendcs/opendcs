@@ -1,14 +1,8 @@
-/*
-*  $Id$
-*/
 package ilex.util;
 
-import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Scanner;
 
 import ilex.cmdline.*;
 
@@ -402,34 +396,34 @@ public class PasswordFileEditor extends CmdLineProcessor
 	* @param echo
 	* @return the response
 	*/
-private String getResponse(String prompt, boolean echo) 
-{
-	Console console = System.console();
-	if (console != null) 
+	private String getResponse(String prompt, boolean echo) 
 	{
-		if (echo) {
-			return console.readLine(prompt);
-		} else {
-			char[] pwd = console.readPassword(prompt);
-			if (pwd == null) return null;
-			return new String(pwd);
+		Console console = System.console();
+		if (console != null) 
+		{
+			if (echo) {
+				return console.readLine(prompt);
+			} else {
+				char[] pwd = console.readPassword(prompt);
+				if (pwd == null) return null;
+				return new String(pwd);
+			}
+		}
+		else 
+		{
+			// console is null (non-interactive env)
+			System.out.print(prompt);
+			System.out.flush();
+			try 
+			{
+			return input.readLine();  
+			} catch (IOException e) 
+			{
+			System.out.println("Error reading input");	
+			return null;
+			}
 		}
 	}
-	 else 
-	{
-		// console is null (non-interactive env)
-		System.out.print(prompt);
-		System.out.flush();
-		 try 
-		 {
-          return input.readLine();  
-         } catch (IOException e) 
-	     {
-		  System.out.println("Error reading input");	
-          return null;
-         }
-	}
-}
 
 	// Main Method ===============================================
 	static ApplicationSettings settings = new ApplicationSettings();
