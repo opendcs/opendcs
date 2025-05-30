@@ -20,8 +20,6 @@ script.
 public class PasswordFileEditor extends CmdLineProcessor
 {
 
-	 private static final BufferedReader IN = new BufferedReader(new InputStreamReader(System.in));
-
 	/** The PasswordFile to edit */
 	PasswordFile passwordFile;
 	/** True if file has been modified. */
@@ -414,22 +412,20 @@ private String getResponse(String prompt, boolean echo)
 		} else {
 			char[] pwd = console.readPassword(prompt);
 			if (pwd == null) return null;
-			String result = new String(pwd);
-			java.util.Arrays.fill(pwd, ' '); // Clear sensitive data
-			return result;
+			return new String(pwd);
 		}
 	}
 	 else 
 	{
-		// Fallback if console is null (e.g., non-interactive env)
+		// console is null (non-interactive env)
 		System.out.print(prompt);
 		System.out.flush();
 		 try 
 		 {
-          return IN.readLine();    // may return null on EOF
+          return input.readLine();  
          } catch (IOException e) 
 	     {
-			System.out.println("IN.readLine failed");
+		  System.out.println("Error reading input");	
           return null;
          }
 	}

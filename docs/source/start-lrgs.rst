@@ -132,6 +132,36 @@ Now set the LRGS Admin Password:
     EOF
 
 
+Below is a Windows equivalent batch file:
+
+.. code-block:: bat
+
+    @echo off
+
+    set DCSTOOL_USERDIR=%appdata%\.opendcs
+    set LRGSHOME=%DCSTOOL_USERDIR%\lrgs
+
+    echo %LRGSHOME%
+    :: create empty password file
+    type nul > %LRGSHOME%\.lrgs.passwd
+
+    for /f "delims=" %%A in ('powershell -NoProfile -Command " -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 16 | ForEach-Object {[char]$_})"') do (
+        set "LRGS_ADMIN_PASSWORD=%%A"
+    )
+    echo Password is: %LRGS_ADMIN_PASSWORD%
+
+    (
+    echo adduser lrgsadmin
+    echo %LRGS_ADMIN_PASSWORD%
+    echo %LRGS_ADMIN_PASSWORD%
+    echo addrole lrgsadmin dds
+    echo addrole lrgsadmin admin
+    echo write
+    echo quit
+    ) | call editPasswd
+
+
+
 .. code-block:: bash
     
     # To set manually
