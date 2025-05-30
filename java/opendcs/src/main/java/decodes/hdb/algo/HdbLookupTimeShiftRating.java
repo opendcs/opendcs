@@ -38,6 +38,7 @@ public class HdbLookupTimeShiftRating
 
 	@Output
 	public NamedVariable dep = new NamedVariable("dep", 0);
+        @Output
 	public NamedVariable shift = new NamedVariable("shift", 0);
 
 	@PropertySpec(value = "false") 
