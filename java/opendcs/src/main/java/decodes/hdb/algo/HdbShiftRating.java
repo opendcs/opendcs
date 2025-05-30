@@ -13,63 +13,58 @@ import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // where surrogate keys in the CP were changed to a DbKey object
 import decodes.sql.DbKey;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
 import decodes.tsdb.RatingStatus;
 import decodes.util.PropertySpec;
 import decodes.hdb.HDBRatingTable;
-//AW:IMPORTS_END
 
-//AW:JAVADOC
-/**
-Implements the Shift and Rating Table Lookups from the database.
-Independent value is called "indep".
-Dependent values are "shift" and "dep".
-Shift may or may not be stored in the database
+@Algorithm(description = "Implements the Shift and Rating Table Lookups from the database. \n" +
+"Independent value is called \"indep\". \n" +
+"Dependent values are \"shift\" and \"dep\". \n" +
+"Shift may or may not be stored in the database \n\n" +
 
-By default, uses a shift input in the "singleShift" property.
-If variableShift is defined as true, then uses a rating algorithm
-from the database to find the shift.
+"By default, uses a shift input in the \"singleShift\" property. \n" +
+"If variableShift is defined as true, then uses a rating algorithm \n" +
+"from the database to find the shift. \n\n" +
 
-Default value for shiftTableType is "Stage Shift" which
-will linearly interpolate shifts from a single shift table.
-Other options are:
-Time Interpolated Shift: lookup shifts separated in time, do
-   linear interpolations in time.
-Time Interpolated Variable Shift: linear interpolate shifts from stage,
-   do linear interpolations in time from the resulting shifts
+"Default value for shiftTableType is \"Stage Shift\" which \n" +
+"will linearly interpolate shifts from a single shift table. \n" +
+"Other options are: \n" +
+"Time Interpolated Shift: lookup shifts separated in time, do \n" +
+"linear interpolations in time. \n" +
+"Time Interpolated Variable Shift: linear interpolate shifts from stage, \n" +
+"do linear interpolations in time from the resulting shifts \n\n" +
    
-The shift, if any, is added to the indep value, and then the dep value is found via 
-a "Stage Flow" rating table type.
- */
-//AW:JAVADOC_END
+"The shift, if any, is added to the indep value, and then the dep value is found via \n" +
+"a \"Stage Flow\" rating table type.")
 public class HdbShiftRating
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double indep;	//AW:TYPECODE=i
-	String _inputNames[] = { "indep" };
-//AW:INPUTS_END
+	@Input
+	public double indep;
 
-//AW:LOCALVARS
 	HDBRatingTable ShiftTable = null;
 	HDBRatingTable RatingTable = null;
 	private boolean firstCall = true;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable dep = new NamedVariable("dep", 0);
+	@Output
 	public NamedVariable shift = new NamedVariable("shift", 0);
-	String _outputNames[] = { "dep", "shift" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	
+	@org.opendcs.annotations.PropertySpec(value = "0")
 	public double singleShift = 0;
+	@org.opendcs.annotations.PropertySpec(value = "false")
 	public boolean variableShift = false;
+	@org.opendcs.annotations.PropertySpec(value = "Stage Shift")
 	public String shiftTableType = "Stage Shift";
+	@org.opendcs.annotations.PropertySpec(value = "Stage Flow")
 	public String lookupTableType = "Stage Flow";
-	String _propertyNames[] = { "variableShift", "singleShift", "shiftTableType", "lookupTableType" };
-//AW:PROPERTIES_END
+
 	
 	private PropertySpec shiftRatingPropertySpecs[] = 
 	{
@@ -94,24 +89,20 @@ public class HdbShiftRating
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		if (firstCall)
 		{
 			// Find the name for the input parameter.
@@ -134,7 +125,6 @@ public class HdbShiftRating
 		// at every group of time slices
 		ShiftTable.resetRatingId();
 		RatingTable.resetRatingId();
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -147,10 +137,10 @@ public class HdbShiftRating
 	 * @throws DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if (isMissing(indep)) {
 			deleteAllOutputs();
 		}
@@ -176,7 +166,6 @@ public class HdbShiftRating
 			debug3("Flow result:" +	rs.dep);
 			setOutput(dep, rs.dep);
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -184,34 +173,7 @@ public class HdbShiftRating
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }
