@@ -17,6 +17,7 @@ import java.io.*;
 import java.util.Iterator;
 
 import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLSocketFactory;
 
 import ilex.util.*;
 import ilex.net.*;
@@ -90,10 +91,10 @@ public class DdsServer extends BasicServer
       @throws IOException on invalid port number or socket already bound.
     */
     public DdsServer(int port, InetAddress bindaddr, MsgArchive msgArchive,
-        QueueLogger qlog, JavaLrgsStatusProvider statusProvider, ServerSocketFactory socketFactory)
+        QueueLogger qlog, JavaLrgsStatusProvider statusProvider, Pair<ServerSocketFactory,SSLSocketFactory> socketFactories)
         throws IOException
     {
-        super(port, bindaddr,socketFactory);
+        super(port, bindaddr,socketFactories);
         enabled = false;
         shutdownFlag = false;
         this.msgArchive = msgArchive;
@@ -134,7 +135,11 @@ public class DdsServer extends BasicServer
             LrgsConfig.instance().ddsUsageLog);
         statLoggerThread.start();
         Logger.instance().debug1("Starting DDS Listening thread.");
-        GetHostnameThread.instance().start();
+        GetHostnameThread ght = GetHostnameThread.instance();
+        if (!ght.isAlive())
+        {
+            ght.start();
+        }
         Thread listenThread = new Thread(this);
         listenThread.start();
         try
@@ -248,7 +253,7 @@ public class DdsServer extends BasicServer
             }
             id = conIdCounter.getNextValue();
             //End work around
-            LddsThread ret = new JLddsThread(this, sock, id, msgArchive,
+            LddsThread ret = new JLddsThread(this, sock, id, this.socketFactory, msgArchive,
                 globalMapper, ap);
             ret.statLogger = statLoggerThread;
             ret.setQueueLogger(qlog);

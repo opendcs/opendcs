@@ -2,7 +2,6 @@ package decodes.hdb;
 
 import java.sql.*;
 import ilex.cmdline.*;
-import ilex.util.TTYEcho;
 import opendcs.dai.DataTypeDAI;
 import decodes.tsdb.*;
 import decodes.util.CmdLineArgs;

@@ -13,6 +13,7 @@ import javax.swing.SwingWorker;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.opendcs.tls.TlsMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,9 @@ public final class LrgsConnectionPanel extends JPanel
     private static final long serialVersionUID = 1L;
     private JComboBox<LrgsConnection> hostCombo;
     private JTextField portField;
-    private JCheckBox tlsCheck = new JCheckBox(labels.getString("RtStatFrame.tls"),false);
+    private JLabel tlsOptionLabel = new JLabel(labels.getString("RtStatFrame.tls"));
+    private JComboBox<TlsMode> tlsOption = new JComboBox<>(TlsMode.values());
+    
     private JTextField usernameField;
     private JButton pausedButton;
     private PasswordWithShow passwordField;
@@ -97,7 +100,8 @@ public final class LrgsConnectionPanel extends JPanel
         panel_1.add(portField);        
         portField.setText("16003");
         portField.setColumns(10);
-        panel_1.add(tlsCheck);
+        panel_1.add(tlsOptionLabel);
+        panel_1.add(tlsOption);
 
         JPanel panel_2 = new JPanel();
         add(panel_2);
@@ -211,7 +215,7 @@ public final class LrgsConnectionPanel extends JPanel
         {
             portField.setText(""+c.getPort());
             usernameField.setText(c.getUsername());
-            tlsCheck.setSelected(c.getTls());
+            tlsOption.setSelectedItem(c.getTls());
             String pw = LrgsConnection.decryptPassword(c, LrgsConnectionPanel.pwk);
             passwordField.setText(pw);
         }
@@ -266,7 +270,7 @@ public final class LrgsConnectionPanel extends JPanel
         final int port = Integer.parseInt(portField.getText());
         final String username = usernameField.getText();
         final String password = LrgsConnection.encryptPassword(passwordField.getText(), LrgsConnectionPanel.pwk);
-        final boolean tls = tlsCheck.isSelected();
+        final TlsMode tls = (TlsMode)tlsOption.getSelectedItem();
         return new LrgsConnection(hostName, port, username, password, null, tls);
     }
 

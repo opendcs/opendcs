@@ -19,6 +19,9 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Date;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
 import ilex.net.*;
 import ilex.util.Logger;
 import ilex.util.QueueLogger;
@@ -105,16 +108,19 @@ public abstract class LddsThread extends BasicSvrThread
 
     boolean secondAuthAttempt = false;
 
+    private final SSLSocketFactory socketFactory;
+
     /**
       Constructor.
       @param parent the server object
       @param socket the socket to the client
       @param id unique integer ID for this client.
     */
-    public LddsThread(BasicServer parent, Socket socket, int id)
+    public LddsThread(BasicServer parent, Socket socket, int id, SSLSocketFactory socketFactory)
         throws IOException
     {
         super(parent, socket);
+        this.socketFactory = socketFactory;
 
         ins = new LddsInputStream(socket.getInputStream());
         outs = socket.getOutputStream();
@@ -422,6 +428,29 @@ public abstract class LddsThread extends BasicSvrThread
                     + getClientName() + ": " + ex);
             }
             disconnect();
+        }
+    }
+
+    /**
+     * Start TLS on this connection
+     * @throws IOException Error setting up TLS Socket.
+     */
+    public synchronized void startTls() throws IOException
+    {
+        if (socketFactory != null)
+        {
+            send(new LddsMessage(LddsMessage.IdStartTls, "proceed"));
+            this.socket = socketFactory.createSocket(socket, socket.getInputStream() , true);
+            final SSLSocket sslSocket = (SSLSocket)this.socket;
+            sslSocket.setUseClientMode(false);
+            sslSocket.startHandshake();
+            this.ins = new LddsInputStream(sslSocket.getInputStream());
+            this.outs = sslSocket.getOutputStream();
+        }
+        else
+        {
+            // error response.
+            send(new LddsMessage(LddsMessage.IdStartTls, "not supported"));
         }
     }
 
