@@ -2,11 +2,11 @@
 
 if [ ! -d $LRGSHOME/netlist ]; then
     echo "Generating initial LRGS HOME Directory."
-    cp -r $DCSTOOL_HOME/users .
-    cp $DCSTOOL_HOME/*.conf .
-    cp $DCSTOOL_HOME/*.xml .
-    cp $DCSTOOL_HOME/lrgs.conf .
-    cp -r $DCSTOOL_HOME/netlist .
+    cp -r $DCSTOOL_HOME/lrgs/users .
+    cp $DCSTOOL_HOME/lrgs/*.conf .
+    cp $DCSTOOL_HOME/lrgs/*.xml .
+    cp $DCSTOOL_HOME/lrgs/lrgs.conf .
+    cp -r $DCSTOOL_HOME/lrgs/netlist .
 
     if [ "$LRGS_ADMIN_PASSWORD" == "" ]; then
         LRGS_ADMIN_PASSWORD=`tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1`
