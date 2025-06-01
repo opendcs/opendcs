@@ -17,6 +17,7 @@ import org.opendcs.spi.database.DatabaseProvider;
 import decodes.db.DatabaseException;
 import decodes.util.DecodesSettings;
 import ilex.util.AuthException;
+import ilex.util.PropertiesUtil;
 
 public class DatabaseService
 {
@@ -97,6 +98,7 @@ public class DatabaseService
     {
         DecodesSettings settings = new DecodesSettings();
         // TODO: Need a special case for the XML database.
+        Properties props = new Properties();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement("select name,value from database_properties");
              ResultSet rs = stmt.executeQuery())
@@ -106,14 +108,16 @@ public class DatabaseService
             {
                 final String name = rs.getString("name");
                 final String value = rs.getString("value");
-                //TODO: map database name/values to appropriate field using reflection.
-            } 
+                props.setProperty(name, value);
+            }
+            PropertiesUtil.loadFromProps(settings, props);
+            return settings;
         }
         catch (SQLException ex)
         {
             throw new DatabaseException("Error retrieving settings data.", ex);
         }
 
-        return settings;
+        
     }
 }
