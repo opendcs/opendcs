@@ -10,111 +10,113 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-
-//AW:IMPORTS
 import decodes.hdb.HdbFlags;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS_END
+@Algorithm(description = "This algorithm is an Advanced  mass balance calculation for inflow as: \n" +
+"Delta Storage + Total Release + Delta Bank Storage + evaporation  \n" +
+"- all incoming diversions + all outgoing diversions \n\n" +
 
-//AW:JAVADOC
-/**
-This algorithm is an Advanced  mass balance calculation for inflow as: 
-Delta Storage + Total Release + Delta Bank Storage + evaporation 
-- all incoming diversions + all outgoing diversions
+"(up to 5 diversions of each type) \n" +
 
-(up to 5 diversions of each type)
+"If any of the input properties are set to \"fail\" then the inflow \n" +
+"will not be calculated and/or the inflow will be deleted. \n\n" +
 
-If any of the input properties are set to "fail" then the inflow 
-will not be calculated and/or the inflow will be deleted.
+"If all of the inputs do not exist because of a delete the inflow will \n" +
+"be deleted if the output exists regardless of the property settings. \n\n" +
 
-If all of the inputs do not exist because of a delete the inflow will 
-be deleted if the output exists regardless of the property settings.
-
-This algorithm written by M. Bogner, August 2008
-Modified by M. Bogner May 2009 to add additional delete logic and version control
-
- */
-//AW:JAVADOC_END
+"This algorithm written by M. Bogner, August 2008 \n" +
+"Modified by M. Bogner May 2009 to add additional delete logic and version control")
 public class InflowAdvancedAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double total_release;	//AW:TYPECODE=i
-	public double delta_storage;	//AW:TYPECODE=i
-	public double delta_bs;	//AW:TYPECODE=i
-	public double evap;		//AW:TYPECODE=i
-	public double diver_in1;	//AW:TYPECODE=i
-	public double diver_in2;	//AW:TYPECODE=i
-	public double diver_in3;	//AW:TYPECODE=i
-	public double diver_in4;	//AW:TYPECODE=i
-	public double diver_in5;	//AW:TYPECODE=i
-	public double diver_out1;	//AW:TYPECODE=i
-	public double diver_out2;	//AW:TYPECODE=i
-	public double diver_out3;	//AW:TYPECODE=i
-	public double diver_out4;	//AW:TYPECODE=i
-	public double diver_out5;	//AW:TYPECODE=i
-	String _inputNames[] = {"total_release","delta_storage","delta_bs","evap",
-			  	"diver_in1","diver_in2","diver_in3","diver_in4","diver_in5",
-				"diver_out1","diver_out2","diver_out3","diver_out4","diver_out5"} ;
-//AW:INPUTS_END
+	@Input
+	public double total_release;
+	@Input
+	public double delta_storage;
+	@Input
+	public double delta_bs;
+	@Input
+	public double evap;
+	@Input
+	public double diver_in1;
+	@Input
+	public double diver_in2;
+	@Input
+	public double diver_in3;
+	@Input
+	public double diver_in4;
+	@Input
+	public double diver_in5;
+	@Input
+	public double diver_out1;
+	@Input
+	public double diver_out2;
+	@Input
+	public double diver_out3;
+	@Input
+	public double diver_out4;
+	@Input
+	public double diver_out5;
 
-//AW:LOCALVARS
 // Version 1.0.03 was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 	String alg_ver = "1.0.03";
         boolean do_setoutput = true;
 	double inflow_calculation = 0.0;
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output
 	public NamedVariable inflow = new NamedVariable("inflow", 0);
-	String _outputNames[] = { "inflow" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "ignore") 
 	public String total_release_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String delta_storage_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String evap_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String delta_bs_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_in1_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_in2_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_in3_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_in4_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_in5_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_out1_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_out2_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_out3_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_out4_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String diver_out5_missing = "ignore";
-        public String validation_flag = "";
- 
-	String _propertyNames[] = { "total_release_missing", "delta_storage_missing", "validation_flag",
-		"evap_missing","delta_bs_missing","diver_in1_missing","diver_in2_missing","diver_in3_missing",
-		"diver_in4_missing","diver_in5_missing","diver_out1_missing","diver_out2_missing",
-		"diver_out3_missing","diver_out4_missing","diver_out5_missing" };
-//AW:PROPERTIES_END
+	@PropertySpec(value = "") 
+    public String validation_flag = "";
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -127,10 +129,10 @@ public class InflowAdvancedAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 	   inflow_calculation = 0.0;
 	   do_setoutput = true;
 	   if (!isMissing(total_release))
@@ -184,40 +186,13 @@ public class InflowAdvancedAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		debug3("InflowAdvancedAlg-" + alg_ver + ": Deleting inflow");
 		deleteOutput(inflow);
 	   }
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

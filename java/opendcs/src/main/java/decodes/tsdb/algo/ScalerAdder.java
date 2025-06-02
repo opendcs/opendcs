@@ -22,16 +22,16 @@ import org.opendcs.annotations.algorithm.Output;
 "All coefficients default to 1.0 if not supplied." )
 public class ScalerAdder extends AW_AlgorithmBase
 {
-	@Input public double input1;	//AW:TYPECODE=i
-	@Input public double input2;	//AW:TYPECODE=i
-	@Input public double input3;	//AW:TYPECODE=i
-	@Input public double input4;	//AW:TYPECODE=i
-	@Input public double input5;	//AW:TYPECODE=i
-	@Input public double input6;	//AW:TYPECODE=i
-	@Input public double input7;	//AW:TYPECODE=i
-	@Input public double input8;	//AW:TYPECODE=i
-	@Input public double input9;	//AW:TYPECODE=i
-	@Input public double input10;//AW:TYPECODE=i
+	@Input public double input1;
+	@Input public double input2;
+	@Input public double input3;
+	@Input public double input4;
+	@Input public double input5;
+	@Input public double input6;
+	@Input public double input7;
+	@Input public double input8;
+	@Input public double input9;
+	@Input public double input10;
 
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
