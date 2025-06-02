@@ -20,7 +20,6 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 
-// Place an import statements you need here.
 import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverter;
 import decodes.util.DecodesException;
@@ -29,10 +28,10 @@ import java.util.GregorianCalendar;
 
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//AW:JAVADOC
 
 /**
     Calculates reservoir input with the equation
@@ -72,7 +71,7 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
     @Output(type = Double.class)
     public NamedVariable ResIn = new NamedVariable("ResIn", 0);
 
-    @org.opendcs.annotations.PropertySpec(description = "Should an evaporation volume be included in the calculation.")
+    @PropertySpec(description = "Should an evaporation volume be included in the calculation.", value = "false")
     public boolean UseEvap = false;
 
     // Allow javac to generate a no-args constructor.
