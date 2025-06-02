@@ -1,7 +1,7 @@
 create table ${flyway:defaultSchema}.database_properties(
     name text not null unique,
     value text,
-) ${TABLE_SPACE_SPEC}
+);
 
 delete from DecodesDatabaseVersion;
 insert into DecodesDatabaseVersion values(72, 'Additional information is available in the ''flyway_schema_history'' table.');
