@@ -82,6 +82,24 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             xml.required = true
             html.required = true
         }
+        def excludes = [
+                    "**/easy_install/**",
+                    "**/python_packages",
+                    "**/certifi/**",
+                    "**/chardet/**",
+                    "**/urllib3/**",
+                    "**/requests/**",
+                    "**/chardet/**",
+                    "**/urllib3/**",
+                    "**/idna/**",
+                    "**/pkg_resources/**"
+                ]
+
+//        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: excludes)
+            }))
+  //      }
     }
 
     subprojects {
