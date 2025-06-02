@@ -1,6 +1,6 @@
 create table ${flyway:defaultSchema}.database_properties(
     name text not null unique,
-    value text,
+    value text
 );
 
 delete from DecodesDatabaseVersion;
