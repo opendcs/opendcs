@@ -16,9 +16,9 @@ import decodes.sql.DbKey;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 
 import decodes.tsdb.RatingStatus;
-import decodes.util.PropertySpec;
 import decodes.hdb.HDBRatingTable;
 
 @Algorithm(description = "Implements the Shift and Rating Table Lookups from the database. \n" +
@@ -56,32 +56,14 @@ public class HdbShiftRating
 	public NamedVariable shift = new NamedVariable("shift", 0);
 
 	
-	@org.opendcs.annotations.PropertySpec(value = "0")
+	@PropertySpec(description = "(default=0) If variableShift==false, then this number provides a constant shift for all lookups.", value = "0")
 	public double singleShift = 0;
-	@org.opendcs.annotations.PropertySpec(value = "false")
+	@PropertySpec(description = "(default=false) Set to true to use a separate shift table rather than the constant.", value = "false")
 	public boolean variableShift = false;
-	@org.opendcs.annotations.PropertySpec(value = "Stage Shift")
+	@PropertySpec(description = "(default=\"StageShift\") This is used as the HDB_TABLE type for the variable shifts.", value = "Stage Shift")
 	public String shiftTableType = "Stage Shift";
-	@org.opendcs.annotations.PropertySpec(value = "Stage Flow")
+	@PropertySpec(description = "(default=\"Stage Flow\") This is used as the HDB_TABLE type for the actual rating.", value = "Stage Flow")
 	public String lookupTableType = "Stage Flow";
-
-	
-	private PropertySpec shiftRatingPropertySpecs[] = 
-	{
-		new PropertySpec("singleShift", PropertySpec.NUMBER,
-			"(default=0) If variableShift==false, then this number provides a constant shift for all lookups."),
-		new PropertySpec("variableShift", PropertySpec.BOOLEAN,
-			"(default=false) Set to true to use a separate shift table rather than the constant."),
-		new PropertySpec("shiftTableType", PropertySpec.STRING,
-			"(default=\"StageShift\") This is used as the HDB_TABLE type for the variable shifts."),
-		new PropertySpec("lookupTableType", PropertySpec.STRING,
-			"(default=\"Stage Flow\") This is used as the HDB_TABLE type for the actual rating.")
-	};
-	@Override
-	protected PropertySpec[] getAlgoPropertySpecs()
-	{
-		return shiftRatingPropertySpecs;
-	}
 
 
 	// Allow javac to generate a no-args constructor.
