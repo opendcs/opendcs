@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.opendcs.annotations.algorithm.Input;
+
 import ilex.var.NamedVariableList;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
@@ -30,6 +32,7 @@ import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.VarFlags;
 import decodes.tsdb.alarm.mail.MailerException;
 import decodes.tsdb.algo.AWAlgoType;
+import decodes.tsdb.algo.AW_AlgorithmBase;
 import decodes.util.PropertySpec;
 import decodes.hdb.HdbFlags;
 import decodes.sql.DbKey;
@@ -50,8 +53,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 Look for alarm screening records in the database and apply to input parameter.
  */
 //AW:JAVADOC_END
-public class AlarmScreeningAlgorithm
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class AlarmScreeningAlgorithm extends AW_AlgorithmBase
 {
 	@Input
 	public double input;
@@ -589,32 +591,7 @@ Logger.instance().info("output different from input, noOutputOnReject=" + noOutp
 		// For Aggregating algorithms, this is done after each aggregate
 		// period.
 //AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
+	}	
 
 	public AlarmLimitSet gettLimitSet()
 	{
