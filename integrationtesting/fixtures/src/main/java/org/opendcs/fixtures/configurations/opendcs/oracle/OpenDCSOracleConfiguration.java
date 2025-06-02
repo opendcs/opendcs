@@ -131,6 +131,7 @@ public class OpenDCSOracleConfiguration implements Configuration
                     .withUsername(SCHEMA_OWNING_USER)
                     .withPassword(SCHEMA_OWNING_USER_PASSWORD)
                     .withStartupTimeoutSeconds(300)
+                    .withStartupAttempts(100)
                     ;
         }
 

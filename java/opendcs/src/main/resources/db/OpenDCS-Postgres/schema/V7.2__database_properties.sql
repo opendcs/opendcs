@@ -1,5 +1,5 @@
 create table ${flyway:defaultSchema}.database_properties(
-    name text not null unique,
+    name varchar(512) not null unique,
     value text
 );
 
