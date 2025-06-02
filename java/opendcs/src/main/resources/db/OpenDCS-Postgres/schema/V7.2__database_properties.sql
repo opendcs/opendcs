@@ -1,4 +1,4 @@
-create table ${flyway:defaultSchema}.database_properties(
+create table ${flyway:defaultSchema}.opendcs_properties(
     name varchar(512) not null unique,
     value text
 );

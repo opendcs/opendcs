@@ -100,7 +100,7 @@ public class DatabaseService
         // TODO: Need a special case for the XML database.
         Properties props = new Properties();
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("select name,value from database_properties");
+             PreparedStatement stmt = conn.prepareStatement("select name,value from opendcs_properties");
              ResultSet rs = stmt.executeQuery())
         {
             //
