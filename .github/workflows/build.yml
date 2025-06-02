@@ -89,7 +89,7 @@ jobs:
         # Integration tests require docker now for test containers.
         # More work required to deal with the other platforms. Should be workable
         # at some point though.
-        if: matrix.platform == 'ubuntu-latest' && matrix.jdk = 17
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
         run: |
           ./gradlew codeCoverageReport --info
       - name: Cache SonarCloud packages
