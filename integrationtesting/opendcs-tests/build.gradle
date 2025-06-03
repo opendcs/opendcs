@@ -4,6 +4,17 @@ plugins {
     id 'opendcs.sonar-conventions'
 }
 
+def commonJacocoExcludes = [
+  "**/easy_install/**",
+  "**/python_packages",
+  "**/certifi/**",
+  "**/chardet/**",
+  "**/urllib3/**",
+  "**/requests/**",
+  "**/idna/**",
+  "**/pkg_resources/**"
+]
+
 dependencies {
     implementation project(":install")
 
@@ -71,18 +82,7 @@ testEngines.each { engine ->
             junitXml {}
         }
         jacoco {
-            excludes += [
-                    "**/easy_install/**",
-                    "**/python_packages",
-                    "**/certifi/**",
-                    "**/chardet/**",
-                    "**/urllib3/**",
-                    "**/requests/**",
-                    "**/chardet/**",
-                    "**/urllib3/**",
-                    "**/idna/**",
-                    "**/pkg_resources/**"
-                ]
+            excludes += commonJacocoExcludes
         }
     }
     test.dependsOn task
@@ -101,22 +101,11 @@ testEngines.each { engine ->
             }
 
         }
-        def excludes = [
-                    "**/easy_install/**",
-                    "**/python_packages",
-                    "**/certifi/**",
-                    "**/chardet/**",
-                    "**/urllib3/**",
-                    "**/requests/**",
-                    "**/chardet/**",
-                    "**/urllib3/**",
-                    "**/idna/**",
-                    "**/pkg_resources/**"
-                ]
+      
 
 
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: excludes)
+            fileTree(dir: it, exclude: commonJacocoExcludes)
         }))
 
     }
