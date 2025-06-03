@@ -1,6 +1,7 @@
 plugins {
     id 'opendcs.java-conventions'
     id 'opendcs.deps-conventions'
+    id 'opendcs.sonar-conventions'
 }
 
 
@@ -18,7 +19,7 @@ dependencies {
 
 jacocoTestReport {
     dependsOn test
-    //additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
+    additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
     //additionalClassDirs files(project(":opendcs").sourceSets.main.output)
     sourceSets project(":opendcs").sourceSets.main
     def excludes = [
