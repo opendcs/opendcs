@@ -83,8 +83,7 @@ public class CwmsOracleConfiguration implements Configuration
                             {
                                 cmd.getHostConfig()
                                    .withMemory(4L*1024*1024*1024)
-                                   .withCpuPeriod(20000L)
-                                   .withCpuQuota(25000L)
+                                   .withCpuCount(2L)
                                 ;
                             })
                             .withLogConsumer(line -> {

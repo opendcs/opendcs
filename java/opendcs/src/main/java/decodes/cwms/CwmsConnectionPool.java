@@ -278,6 +278,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql
                 conn.unwrap(oracle.jdbc.OracleConnection.class).setDefaultTimeZone(TimeZone.getTimeZone("UTC"));
                 conn.setAutoCommit(true);
                 setCtxDbOfficeId(conn, info);
+                setModes(conn,info);                
                 final WrappedConnection wc = new WrappedConnection(conn,(c)->{
                     this.returnConnection(c);
                 },SqlSettings.TRACE_CONNECTIONS);
@@ -306,6 +307,14 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql
             }
         }
         throw new SQLException("No connections available after 3 attempts.");
+    }
+
+    private void setModes(Connection conn, CwmsConnectionInfo info) throws SQLException {
+        
+        try (CallableStatement setAllowLrts = conn.prepareCall("begin cwms_ts.set_allow_new_lrts_format_on_input('T'); end;"))
+        {
+            setAllowLrts.execute();
+        }
     }
 
     private boolean isFullPoolError(SQLException ex) {

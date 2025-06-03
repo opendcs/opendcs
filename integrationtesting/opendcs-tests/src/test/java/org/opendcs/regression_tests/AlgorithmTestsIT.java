@@ -288,8 +288,7 @@ public class AlgorithmTestsIT extends AppTestBase
         return path.toString();
     }
 
-    private ArrayList<CTimeSeries> loadTSimport(String folderTSstr, TsImporter importer)
-    throws Exception
+    private ArrayList<CTimeSeries> loadTSimport(String folderTSstr, TsImporter importer) throws Exception
     {
         File folderTS = new File(folderTSstr);
         ArrayList<CTimeSeries> fullTs = new ArrayList<CTimeSeries>();
