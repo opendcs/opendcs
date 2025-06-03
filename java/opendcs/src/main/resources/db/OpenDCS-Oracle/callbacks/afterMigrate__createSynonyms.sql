@@ -16,7 +16,7 @@ BEGIN
     exception
       when others then
         dbms_output.put_line('==> Cannot perform "'||l_sqlstr||'": '||sqlerrm);
-        raise;
+        RAISE_APPLICATION_ERROR(-20000,sqlerrm || ' ' || l_sqlstr);
     end;
   end loop;
 

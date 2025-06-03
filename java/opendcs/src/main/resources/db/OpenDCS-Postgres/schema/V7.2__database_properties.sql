@@ -1,0 +1,9 @@
+create table ${flyway:defaultSchema}.opendcs_properties(
+    name varchar(512) not null unique,
+    value text
+);
+
+delete from DecodesDatabaseVersion;
+insert into DecodesDatabaseVersion values(72, 'Additional information is available in the ''flyway_schema_history'' table.');
+delete from tsdb_database_version;
+insert into tsdb_database_version values(72, 'Additional information is available in the ''flyway_schema_history'' table.');
