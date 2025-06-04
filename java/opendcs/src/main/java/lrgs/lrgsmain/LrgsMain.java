@@ -29,7 +29,10 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
+
+import org.opendcs.tls.TlsMode;
 
 import java.util.Properties;
 import java.util.Set;
@@ -46,6 +49,7 @@ import ilex.util.Logger;
 import ilex.util.FileServerLock;
 import ilex.util.ServerLockable;
 import ilex.util.NoOpServerLock;
+import ilex.util.Pair;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
 import ilex.util.FileLogger;
@@ -419,7 +423,9 @@ public class LrgsMain
 
         // Initialize the LRGS Database Interface
         dbThread = LrgsDatabaseThread.instance();
-        dbThread.start();
+        if (!dbThread.isAlive()) {
+            dbThread.start();
+        }
 
         alarmHandler.start();
 
@@ -685,12 +691,12 @@ public class LrgsMain
             cfg.ddsBindAddr = null;
         try
         {
-            ServerSocketFactory socketFactory = initSocketFactory(cfg);
+            final Pair<ServerSocketFactory,SSLSocketFactory> socketFactories = initSocketFactory(cfg);
             InetAddress ia =
                 (cfg.ddsBindAddr != null && cfg.ddsBindAddr.length() > 0) ?
                 InetAddress.getByName(cfg.ddsBindAddr) : null;
             ddsServer = new DdsServer(cfg.ddsListenPort, ia, msgArchive,
-                    queueLogger, statusProvider, socketFactory);
+                    queueLogger, statusProvider, socketFactories);
             ddsServer.init();
             return true;
         }
@@ -707,12 +713,13 @@ public class LrgsMain
     }
 
 
-    private ServerSocketFactory initSocketFactory(LrgsConfig cfg) 
+    private Pair<ServerSocketFactory,SSLSocketFactory> initSocketFactory(LrgsConfig cfg)
         throws NoSuchAlgorithmException, CertificateException, 
                FileNotFoundException, IOException, KeyStoreException, UnrecoverableKeyException, KeyManagementException
     {
-        ServerSocketFactory socketFactory = ServerSocketFactory.getDefault();
-        if(cfg.keyStoreFile != null && cfg.keyStorePassword != null) {
+        ServerSocketFactory serverSocketFactory = ServerSocketFactory.getDefault();
+        SSLSocketFactory socketFactory = null;
+        if(cfg.getDdsServerTlsMode() != TlsMode.NONE && cfg.keyStoreFile != null && cfg.keyStorePassword != null) {
             SSLContext context = SSLContext.getInstance("TLS");
             //TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -720,13 +727,17 @@ public class LrgsMain
             ks.load(new FileInputStream(EnvExpander.expand(cfg.keyStoreFile)),cfg.keyStorePassword.toCharArray());
             kmf.init(ks,cfg.keyStorePassword.toCharArray());
             context.init(kmf.getKeyManagers(),null,null);
-            socketFactory = context.getServerSocketFactory();
-            if(socketFactory == null)
+            if (cfg.getDdsServerTlsMode() == TlsMode.TLS)
             {
-                System.err.println("Socket factory not initialized.");
+                serverSocketFactory = context.getServerSocketFactory();
+            }
+            else // START_TLS mode requires the BasicServer to have access to an ssl socket factory
+                 // to alter the connection
+            {
+                socketFactory = context.getSocketFactory();
             }
         }
-        return socketFactory;
+        return Pair.of(serverSocketFactory, socketFactory);
     }
 
     public void shutdown()

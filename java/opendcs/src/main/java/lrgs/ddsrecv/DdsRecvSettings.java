@@ -42,6 +42,7 @@ import java.util.Iterator;
 import lrgs.common.BadConfigException;
 import lrgs.common.NetworkList;
 
+import org.opendcs.tls.TlsMode;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -323,8 +324,9 @@ public class DdsRecvSettings
 						cfg.port = DomHelper.getIntegerContent(child,
 							16003, module);
 					else if (child.getNodeName().equalsIgnoreCase("use-tls"))
-						cfg.tls = DomHelper.getBooleanContent(child,
-							false, module);
+					{
+						cfg.tls = DomHelper.getEnum(child, TlsMode.class);
+					}
 					else if (child.getNodeName().equalsIgnoreCase("enabled"))
 						cfg.enabled = DomHelper.getBooleanContent(child,
 							true, module);
@@ -501,7 +503,7 @@ public class DdsRecvSettings
 				"host", drcc.host);
 			xos.writeElement("name", drcc.name);
 			xos.writeElement("port", ""+drcc.port);
-			xos.writeElement("use-tls", ""+drcc.tls);
+			xos.writeElement("use-tls", drcc.tls.name());
 			xos.writeElement("enabled", ""+drcc.enabled);
 			xos.writeElement("username", drcc.username);
 			xos.writeElement("authenticate", "" + drcc.authenticate);
