@@ -1,6 +1,7 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -71,6 +72,7 @@ import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 import ilex.var.TimedVariable;
+import ilex.util.FileLogger;
 import ilex.util.FileUtil;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -207,42 +209,43 @@ public class AlgorithmTestsIT extends AppTestBase
             loadScreenings(buildFilePath(test.getAbsolutePath(), "screenings"));
 
 
-            DbComputation testComp = null;
-            try (ComputationDAI compdao = tsDb.makeComputationDAO())
-            {
-               testComp = compdao.getComputationByName(test.getName()+comp.getName());
-            }
-
-            DataCollection theData = new DataCollection();
-
-            for (CTimeSeries ctsi: inputTS){
-                for (int idx = 0; idx < ctsi.size(); idx++){
-                    VarFlags.setWasAdded(ctsi.sampleAt(idx));
+                DbComputation testComp = null;
+                try (ComputationDAI compdao = tsDb.makeComputationDAO())
+                {
+                testComp = compdao.getComputationByName(test.getName()+comp.getName());
                 }
-                theData.addTimeSeries(ctsi);
-            }
-            for (CTimeSeries ctso: outputTS){
-                theData.addTimeSeries(ctso);
-            }
 
-            // new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z")
-            //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
-            testComp.prepareForExec(tsDb);
-            testComp.apply(theData, tsDb);
+                DataCollection theData = new DataCollection();
 
-            Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
-            
-            while (iterExpect.hasNext())
-            {
-                CTimeSeries currExpect = iterExpect.next();
-                String tsName = currExpect.getNameString();
-                TimeSeriesIdentifier outputID = tsDao.getTimeSeriesIdentifier(tsName);
+                for (CTimeSeries ctsi: inputTS){
+                    for (int idx = 0; idx < ctsi.size(); idx++){
+                        VarFlags.setWasAdded(ctsi.sampleAt(idx));
+                    }
+                    theData.addTimeSeries(ctsi);
+                }
+                for (CTimeSeries ctso: outputTS){
+                    theData.addTimeSeries(ctso);
+                }
 
-                log.info(currExpect.getNameString());
+                // new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z")
+                //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
+                testComp.prepareForExec(tsDb);
+                testComp.apply(theData, tsDb);
 
-                CTimeSeries algoOutput = theData.getTimeSeriesByTsidKey(outputID);
-                log.info("expected units: " + currExpect.getUnitsAbbr());
-                TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
+                Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
+                
+                while (iterExpect.hasNext())
+                {
+                    CTimeSeries currExpect = iterExpect.next();
+                    String tsName = currExpect.getNameString();
+                    TimeSeriesIdentifier outputID = tsDao.getTimeSeriesIdentifier(tsName);
+
+                    log.info(currExpect.getNameString());
+
+                    CTimeSeries algoOutput = theData.getTimeSeriesByTsidKey(outputID);
+                    assertNotNull(algoOutput, "No output timeseries.");
+                    log.info("expected units: " + currExpect.getUnitsAbbr());
+                    TSUtil.convertUnits(algoOutput, currExpect.getUnitsAbbr());
 
                 
                 if (log.isInfoEnabled()) 

@@ -2,13 +2,10 @@
 <CompMetaData>
   <Algorithm name="SubSample">
     <ExecClass>decodes.tsdb.algo.SubSample</ExecClass>
-    <AlgoParm roleName="input">
+    <AlgoParm roleName="inputShortInterval">
       <ParmType>i</ParmType>
     </AlgoParm>
-    <AlgoParm roleName="pattern">
-      <ParmType>i</ParmType>
-    </AlgoParm>
-    <AlgoParm roleName="output">
+    <AlgoParm roleName="outputLongInterval">
       <ParmType>o</ParmType>
     </AlgoParm>
   </Algorithm>
@@ -17,8 +14,9 @@
     <Enabled>true</Enabled>
     <AlgorithmName>SubSample</AlgorithmName>
     <LastModified>2025-01-24 09:13:10 PST</LastModified>
-    <CompProperty name="input_MISSING">IGNORE</CompProperty>
-    <CompParm roleName="input">
+    <CompProperty name="inputShortInterval_MISSING">IGNORE</CompProperty>
+    <CompProperty name="aggregateTimeZone">US/Pacific</CompProperty>
+    <CompParm roleName="inputShortInterval">
       <SiteDataType>
         <SiteName NameType="CWMS">SampleDataSite</SiteName>
         <DataType Standard="CWMS" code="Precip"/>
@@ -28,7 +26,7 @@
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>   
-    <CompParm roleName="output">
+    <CompParm roleName="outputLongInterval">
       <SiteDataType>
         <SiteName NameType="CWMS">SampleDateSite</SiteName>
         <DataType Standard="CWMS" code="Precip"/>

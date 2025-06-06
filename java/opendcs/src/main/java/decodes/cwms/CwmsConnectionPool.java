@@ -310,10 +310,12 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean, javax.sql
     }
 
     private void setModes(Connection conn, CwmsConnectionInfo info) throws SQLException {
-        
-        try (CallableStatement setAllowLrts = conn.prepareCall("begin cwms_ts.set_allow_new_lrts_format_on_input('T'); end;"))
+        // TODO: properties setting
+        try (CallableStatement setAllowLrtsInput = conn.prepareCall("begin cwms_ts.set_allow_new_lrts_format_on_input('T'); end;");
+             CallableStatement setUseLrtsOutput = conn.prepareCall("begin cwms_ts.set_use_new_lrts_format_on_output('T'); end;"))
         {
-            setAllowLrts.execute();
+            setAllowLrtsInput.execute();
+            setUseLrtsOutput.execute();
         }
     }
 

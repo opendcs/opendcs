@@ -1,7 +1,6 @@
 SET:TZ=UTC
 SET:UNITS=mm
-TSID:SampleDataSite.Precip.Inst.2HoursLocal.0.input
-
+TSID:SampleDataSite.Precip.Inst.2HoursLocal.0.output
 2025/03/08-20:00:00,1.0,0
 2025/03/08-22:00:00,3.0,0
 2025/03/09-00:00:00,5.0,0
