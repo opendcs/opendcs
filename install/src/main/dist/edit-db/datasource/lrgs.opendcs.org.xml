@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DataSource Name="lrgs.opendcs.org" Type="lrgs">
+  <DataSourceArg>
+    password=anonymous, lrgs.tls=True, username=anonymous
+  </DataSourceArg>
+</DataSource>
