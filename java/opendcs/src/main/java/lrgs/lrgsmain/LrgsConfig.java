@@ -20,6 +20,8 @@ import java.io.FileInputStream;
 import java.util.Optional;
 import java.util.Properties;
 
+import org.opendcs.tls.TlsMode;
+
 import lrgs.ldds.PasswordChecker;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
@@ -286,6 +288,7 @@ public class LrgsConfig implements PropertiesOwner
     /** SSL Settings */
     public String keyStoreFile = null;
     public String keyStorePassword = null;
+    public TlsMode ddsServerTlsMode = TlsMode.NONE;
 
     public static final boolean def_noaaportEnabled = false;
     public static final int def_noaaportPort = 18000;
@@ -642,5 +645,15 @@ public class LrgsConfig implements PropertiesOwner
     public void setPasswordChecker(PasswordChecker passwordChecker)
     {
         this.passwordChecker = passwordChecker;
+    }
+
+    public void setDdsServerTlsMode(TlsMode mode)
+    {
+        this.ddsServerTlsMode = mode;
+    }
+
+    public TlsMode getDdsServerTlsMode()
+    {
+        return this.ddsServerTlsMode;
     }
 }

@@ -650,7 +650,7 @@ public class MessageBrowser extends MenuFrame
         SocketFactory socketFactory = c.getSocketFactory(cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), this));
         try
         {
-            client = new LddsClient(hostName, port,socketFactory);
+            client = new LddsClient(hostName, port, socketFactory, c.getTls());
             client.connect();
 
             client.sendAuthHello(username, pw);

@@ -59,6 +59,10 @@ import java.rmi.UnknownHostException;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.opendcs.tls.TlsMode;
+import org.slf4j.LoggerFactory;
 
 /**
 This class encapsulates common functions for a TCP/IP client.
@@ -67,6 +71,7 @@ object of this type.
 */
 public class BasicClient
 {
+	public final static org.slf4j.Logger log = LoggerFactory.getLogger(BasicClient.class);
 	/** port to connect to. */
 	protected int port;
 	/** host to connect to. */
@@ -88,6 +93,8 @@ public class BasicClient
 	/** Allows sub-class to control how often connect attempts are made: */
 	protected long lastConnectAttempt;
 
+	protected final TlsMode tlsMode;
+
 	/**
 	* Construct client for specified port and host. Note, this creates
 	* the client object but the connection is not made until the
@@ -97,10 +104,10 @@ public class BasicClient
 	*/
 	public BasicClient( String host, int port )
 	{
-		this(host,port,null);
+		this(host,port,null, null);
 	}
 
-	public BasicClient( String host, int port, SocketFactory socketFactory)
+	public BasicClient( String host, int port, SocketFactory socketFactory, TlsMode tlsMode)
 	{
 		this.port = port;
 		this.host = host;
@@ -109,6 +116,7 @@ public class BasicClient
 		output = null;
 		debug = null;
 		lastConnectAttempt = 0L;
+		this.tlsMode = tlsMode;
 		this.socketFactory = socketFactory != null ? socketFactory : SocketFactory.getDefault();
 	}
 
@@ -156,6 +164,28 @@ public class BasicClient
 	}
 
 	/**
+	 * Upgrade the connection to using TLS for encryption.
+	 * @throws IOException Error setting up the TLS Connection or if the SocketFactory is not an SSLSocketFactory.
+	 */
+	public void startTls() throws IOException
+	{
+		if ((socketFactory instanceof SSLSocketFactory) && tlsMode == TlsMode.START_TLS)
+		{
+			socket = ((SSLSocketFactory)socketFactory).createSocket(socket, socket.getInetAddress().getHostName(), socket.getPort(), true);
+			final SSLSocket sslSocket = (SSLSocket)socket;
+			log.info("Starting TLS");
+			sslSocket.startHandshake();
+			log.info("Handshake finished.");
+			this.input = socket.getInputStream();
+			this.output = socket.getOutputStream();
+		}
+		else if (!(socketFactory instanceof SSLSocketFactory) && tlsMode == TlsMode.START_TLS)
+		{
+			throw new IOException("Socket Factory for this client is not an SSL Socket Factory. Cannot execute Start TLS operation");
+		}
+	}
+
+	/**
 	* When several client objects are created in different threads, the
 	* connect call can get an interrupted system call (inside the native
 	* implementation) and subsequently generate a SocketException. The
@@ -175,7 +205,7 @@ public class BasicClient
 		{
 			Logger.instance().debug3(ste[i].toString());
 		}
-		Socket ret = socketFactory.createSocket();
+		Socket ret = tlsMode == TlsMode.START_TLS ? SocketFactory.getDefault().createSocket() : socketFactory.createSocket();
 		InetSocketAddress iaddr = new InetSocketAddress(host, port);
 		if (iaddr.isUnresolved())
 		{

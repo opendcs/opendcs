@@ -335,6 +335,14 @@ public abstract class DomHelper
 		return defVal;
 	}
 
+	public static <T extends Enum<T>> T getEnum(Node node, Class<T> enumType)
+	{
+		String s = getTextContent(node);
+		System.out.println(node.toString());
+		System.out.println(s);
+		return Enum.valueOf(enumType, s);
+	}
+
 	/**
 	* Gets the content of this node and converts to a date.
 	* <p>
