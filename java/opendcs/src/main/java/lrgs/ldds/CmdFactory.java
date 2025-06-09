@@ -109,6 +109,8 @@ public class CmdFactory
 		case LddsMessage.IdAssertOutages:
 			return new CmdAssertOutages(msg.MsgData);
 
+		case LddsMessage.IdStartTls:
+			return new CmdStartTls(msg.MsgData);
 		default:
 			return null;
 		}
