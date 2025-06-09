@@ -1,10 +1,9 @@
-/*
-*  $Id$
-*/
 package ilex.util;
 
+import java.io.Console;
 import java.io.File;
 import java.io.IOException;
+
 import ilex.cmdline.*;
 
 /**
@@ -14,6 +13,7 @@ script.
 */
 public class PasswordFileEditor extends CmdLineProcessor
 {
+
 	/** The PasswordFile to edit */
 	PasswordFile passwordFile;
 	/** True if file has been modified. */
@@ -239,8 +239,8 @@ public class PasswordFileEditor extends CmdLineProcessor
 			System.out.println("No such user '" + user + "'");
 			return false;
 		}
-		String s1 = TTYEcho.readPassword("Enter Password: ",this.input);
-		String s2 = TTYEcho.readPassword("Re-enter Password: ",this.input);
+		String s1 = getResponse("Enter Password: ",false);
+		String s2 = getResponse("Re-enter Password: ",false);
 		if (s1.compareTo(s2) != 0)
 		{
 			System.out.println("Passwords do not match, record unchanged.");
@@ -396,24 +396,32 @@ public class PasswordFileEditor extends CmdLineProcessor
 	* @param echo
 	* @return the response
 	*/
-	private String getResponse( String prompt, boolean echo )
+	private String getResponse(String prompt, boolean echo) 
 	{
-		try
+		Console console = System.console();
+		if (console != null) 
 		{
-			if (!echo)
-				TTYEcho.off();
-
+			if (echo) {
+				return console.readLine(prompt);
+			} else {
+				char[] pwd = console.readPassword(prompt);
+				if (pwd == null) return null;
+				return new String(pwd);
+			}
+		}
+		else 
+		{
+			// console is null (non-interactive env)
 			System.out.print(prompt);
 			System.out.flush();
-			String ret = input.readLine();
-
-			if (!echo)
-				TTYEcho.on();
-			return ret;
-		}
-		catch (IOException e)
-		{
+			try 
+			{
+			return input.readLine();  
+			} catch (IOException e) 
+			{
+			System.out.println("Error reading input");	
 			return null;
+			}
 		}
 	}
 
