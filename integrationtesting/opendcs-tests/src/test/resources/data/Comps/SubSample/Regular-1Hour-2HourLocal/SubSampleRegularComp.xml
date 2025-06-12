@@ -28,7 +28,7 @@
     </CompParm>   
     <CompParm roleName="outputLongInterval">
       <SiteDataType>
-        <SiteName NameType="CWMS">SampleDateSite</SiteName>
+        <SiteName NameType="CWMS">SampleDataSite</SiteName>
         <DataType Standard="CWMS" code="Precip"/>
       </SiteDataType>
       <Interval>2HoursLocal</Interval>

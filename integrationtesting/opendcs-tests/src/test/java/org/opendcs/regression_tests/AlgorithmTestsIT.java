@@ -212,7 +212,7 @@ public class AlgorithmTestsIT extends AppTestBase
                 DbComputation testComp = null;
                 try (ComputationDAI compdao = tsDb.makeComputationDAO())
                 {
-                testComp = compdao.getComputationByName(test.getName()+comp.getName());
+                    testComp = compdao.getComputationByName(test.getName()+comp.getName());
                 }
 
                 DataCollection theData = new DataCollection();

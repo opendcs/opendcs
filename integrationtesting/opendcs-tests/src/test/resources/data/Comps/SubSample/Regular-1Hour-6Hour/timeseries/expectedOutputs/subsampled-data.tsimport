@@ -1,6 +1,6 @@
 SET:TZ=UTC
 SET:UNITS=mm
-TSID:SampleDataSite.Precip.Inst.6Hour.0.input
+TSID:SampleDataSite.Precip.Inst.6Hours.0.output
 2024/06/13-06:00:00,6.0,0
 2024/06/13-12:00:00,12.0,0
 2024/06/13-18:00:00,18.0,0
