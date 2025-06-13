@@ -206,8 +206,8 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 		long deltaSec = (_timeSliceBaseTime.getTime() - nextOutputT.getTime()) / 1000L;
 		if (deltaSec <= roundSec && deltaSec >= -roundSec)
 		{
-			log.debug("Outputting value at {}, deltaSec={}, timeSlice={}",
-					  nextOutputT, deltaSec, _timeSliceBaseTime);
+			log.debug("Outputting value '{}' at {}, deltaSec={}, timeSlice={}",
+					  inputShortInterval, nextOutputT, deltaSec, _timeSliceBaseTime);
 			setOutput(outputLongInterval, inputShortInterval, nextOutputT);
 		}
 		

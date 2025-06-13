@@ -14,6 +14,13 @@ import java.io.FileInputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalUnit;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.io.InputStream;
@@ -27,7 +34,9 @@ import java.util.stream.Collectors;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Iterator;
 
 import org.junit.jupiter.api.DynamicTest;
@@ -50,6 +59,7 @@ import decodes.db.DatabaseException;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.UnitConverter;
+import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
@@ -72,7 +82,6 @@ import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 import ilex.var.TimedVariable;
-import ilex.util.FileLogger;
 import ilex.util.FileUtil;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
@@ -231,6 +240,52 @@ public class AlgorithmTestsIT extends AppTestBase
                 //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
                 testComp.prepareForExec(tsDb);
                 testComp.apply(theData, tsDb);
+
+                theData.getAllTimeSeries()
+                       .stream()
+                       .filter(ts -> !DbKey.isNull(ts.getComputationId())) // Only outputs
+                       .forEach(ts -> 
+                        {
+                            log.info("Output Values for {}", ts.getTimeSeriesIdentifier().getUniqueString());
+                            for(int i = 0; i < ts.size(); i++)
+                            {
+                                TimedVariable tv = ts.sampleAt(i);
+                                log.info("{}: {}",tv.getTime(), tv.getStringValue());
+                            }
+                        });  
+                
+                TimeZone usPacific = TimeZone.getTimeZone("US/Pacific");
+                GregorianCalendar cal = new GregorianCalendar(usPacific);
+                cal.setTimeZone(usPacific);
+                cal.set(2025, 2, 7, 0, 0,0);
+                
+                SimpleDateFormat sdfTz = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss z");
+                sdfTz.setTimeZone(usPacific);
+                SimpleDateFormat sdfUtc = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss z");
+                sdfUtc.setTimeZone(TimeZone.getTimeZone("UTC"));
+                ZonedDateTime zdt = ZonedDateTime.of(2025, 3, 7, 0,0,0, 0,usPacific.toZoneId());
+                DateTimeFormatter dtf = DateTimeFormatter.ISO_ZONED_DATE_TIME;
+                Date tmp = cal.getTime();
+                System.out.println(String.format("utc=%s, local=%s", sdfUtc.format(tmp), sdfTz.format(tmp)));
+                Duration hours = Duration.ofHours(6);
+                for(int i = 0; i < 168; i++)
+                {
+                    cal.add(Calendar.HOUR_OF_DAY, hours.toHoursPart());
+                    tmp = cal.getTime();
+                    System.out.println(String.format("utc=%s, local=%s", sdfUtc.format(tmp), sdfTz.format(tmp)));
+                }
+
+                System.out.println("with local date time.");
+                LocalDateTime ldt = LocalDateTime.of(2025, 3, 7, 0,0,0,0);
+                System.out.println(String.format("utc=%s, local=%s", ldt.atZone(usPacific.toZoneId()).format(dtf),ldt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
+                Duration days = Duration.ofDays(1);
+                for (int i = 0; i <168; i++)
+                {
+                    ldt = ldt.plus(days);
+                    zdt = ldt.atZone(usPacific.toZoneId());
+                    ZonedDateTime zdtUtc = zdt.withZoneSameInstant(ZoneId.of("UTC"));
+                    System.out.println(String.format("utc=%s, local=%s", zdtUtc.format(dtf),ldt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
+                }
 
                 Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
                 

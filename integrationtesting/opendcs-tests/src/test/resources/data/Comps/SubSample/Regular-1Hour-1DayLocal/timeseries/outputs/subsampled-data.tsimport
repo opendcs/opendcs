@@ -1,0 +1,3 @@
+SET:TZ=UTC
+SET:UNITS=mm
+TSID:SampleDataSite.Precip.Inst.1DayLocal.0.output

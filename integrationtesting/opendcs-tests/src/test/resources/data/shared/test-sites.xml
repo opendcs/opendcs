@@ -122,7 +122,15 @@
       </Description>
     </PlatformConfig>
   </Platform>
-  <Sites>
+  <Platform PlatformId="190467">
+    <Agency>CWMS</Agency>
+    <IsProduction>true</IsProduction>
+    <LastModifyTime>06/13/2025 16:20:23</LastModifyTime>
+    <PlatformConfig ConfigName="Dummy-Config">
+      <Description>
+        Dummy config to allow import platform records in CWMS.
+      </Description>
+    </PlatformConfig>
     <Site>
       <Latitude>87.0</Latitude>
       <Longitude>-120.0</Longitude>
@@ -131,7 +139,7 @@
       <Timezone>US/Pacific</Timezone>
       <Country>UNITED STATES</Country>
       <Description>Site used for CWMS Local Regular Intervals</Description>
-      <SiteName NameType="CWMS">SampleData</SiteName>
+      <SiteName NameType="CWMS">SampleDataSite</SiteName>
     </Site>
-  </Sites>
+  </Platform>
 </Database>
