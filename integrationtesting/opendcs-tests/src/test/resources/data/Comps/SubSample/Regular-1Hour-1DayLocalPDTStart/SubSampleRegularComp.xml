@@ -9,14 +9,13 @@
       <ParmType>o</ParmType>
     </AlgoParm>
   </Algorithm>
-  <Computation name="Regular-1Hour-2HourLocalSubSample">
+  <Computation name="Regular-1Hour-1DayLocalPDTStartSubSample">
     <Comment></Comment>
     <Enabled>true</Enabled>
     <AlgorithmName>SubSample</AlgorithmName>
     <LastModified>2025-01-24 09:13:10 PST</LastModified>
     <CompProperty name="inputShortInterval_MISSING">IGNORE</CompProperty>
     <CompProperty name="aggregateTimeZone">US/Pacific</CompProperty>
-    <CompProperty name="roundSec">15</CompProperty>
     <CompParm roleName="inputShortInterval">
       <SiteDataType>
         <SiteName NameType="CWMS">SampleDataSite</SiteName>
@@ -32,8 +31,8 @@
         <SiteName NameType="CWMS">SampleDataSite</SiteName>
         <DataType Standard="CWMS" code="Precip"/>
       </SiteDataType>
-      <Interval>2HoursLocal</Interval>
-      <TableSelector>Inst.0.output</TableSelector>
+      <Interval>1DayLocal</Interval>
+      <TableSelector>Inst.0.output-pdtstart</TableSelector>
       <DeltaT>0</DeltaT>
       <DeltaTUnits>Seconds</DeltaTUnits>
     </CompParm>

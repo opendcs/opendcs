@@ -72,6 +72,7 @@ import decodes.tsdb.VarFlags;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
 import decodes.tsdb.DataCollection;
+import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbComputation;
 import opendcs.dai.TimeSeriesDAI;
@@ -240,7 +241,7 @@ public class AlgorithmTestsIT extends AppTestBase
                 //testComp.setProperty("ValidStart", "2024/10/09-23:00:00 UTC");
                 testComp.prepareForExec(tsDb);
                 testComp.apply(theData, tsDb);
-
+                ZoneId compTz = testComp.getExecutive().aggCal.getTimeZone().toZoneId();
                 theData.getAllTimeSeries()
                        .stream()
                        .filter(ts -> !DbKey.isNull(ts.getComputationId())) // Only outputs
@@ -250,42 +251,16 @@ public class AlgorithmTestsIT extends AppTestBase
                             for(int i = 0; i < ts.size(); i++)
                             {
                                 TimedVariable tv = ts.sampleAt(i);
-                                log.info("{}: {}",tv.getTime(), tv.getStringValue());
+                                LocalDateTime ldt = LocalDateTime.ofInstant(tv.getTime().toInstant(), compTz);
+                                ZonedDateTime zdt = ldt.atZone(compTz);
+                                ZonedDateTime zdtUtc = zdt.withZoneSameInstant(ZoneId.of("UTC"));
+                                log.info("{}/{}: {}",
+                                    zdt.format(DbAlgorithmExecutive.debugLDTF),
+                                    zdtUtc.format(DbAlgorithmExecutive.debugZDTF),
+                                    tv.getStringValue());
                             }
                         });  
-                
-                TimeZone usPacific = TimeZone.getTimeZone("US/Pacific");
-                GregorianCalendar cal = new GregorianCalendar(usPacific);
-                cal.setTimeZone(usPacific);
-                cal.set(2025, 2, 7, 0, 0,0);
-                
-                SimpleDateFormat sdfTz = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss z");
-                sdfTz.setTimeZone(usPacific);
-                SimpleDateFormat sdfUtc = new SimpleDateFormat("YYYY-MM-dd'T'HH:mm:ss z");
-                sdfUtc.setTimeZone(TimeZone.getTimeZone("UTC"));
-                ZonedDateTime zdt = ZonedDateTime.of(2025, 3, 7, 0,0,0, 0,usPacific.toZoneId());
-                DateTimeFormatter dtf = DateTimeFormatter.ISO_ZONED_DATE_TIME;
-                Date tmp = cal.getTime();
-                System.out.println(String.format("utc=%s, local=%s", sdfUtc.format(tmp), sdfTz.format(tmp)));
-                Duration hours = Duration.ofHours(6);
-                for(int i = 0; i < 168; i++)
-                {
-                    cal.add(Calendar.HOUR_OF_DAY, hours.toHoursPart());
-                    tmp = cal.getTime();
-                    System.out.println(String.format("utc=%s, local=%s", sdfUtc.format(tmp), sdfTz.format(tmp)));
-                }
 
-                System.out.println("with local date time.");
-                LocalDateTime ldt = LocalDateTime.of(2025, 3, 7, 0,0,0,0);
-                System.out.println(String.format("utc=%s, local=%s", ldt.atZone(usPacific.toZoneId()).format(dtf),ldt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
-                Duration days = Duration.ofDays(1);
-                for (int i = 0; i <168; i++)
-                {
-                    ldt = ldt.plus(days);
-                    zdt = ldt.atZone(usPacific.toZoneId());
-                    ZonedDateTime zdtUtc = zdt.withZoneSameInstant(ZoneId.of("UTC"));
-                    System.out.println(String.format("utc=%s, local=%s", zdtUtc.format(dtf),ldt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
-                }
 
                 Iterator<CTimeSeries> iterExpect = expectedOutputTS.iterator();
                 
