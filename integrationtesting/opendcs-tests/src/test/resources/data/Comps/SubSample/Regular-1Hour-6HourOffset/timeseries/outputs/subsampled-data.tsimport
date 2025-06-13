@@ -1,0 +1,3 @@
+SET:TZ=UTC
+SET:UNITS=mm
+TSID:SampleDataSite.Precip.Inst.6Hours.0.output-1hour-offset

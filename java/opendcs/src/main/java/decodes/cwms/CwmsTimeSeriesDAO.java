@@ -295,7 +295,7 @@ public class CwmsTimeSeriesDAO
     private DbKey ts_id2ts_code(String tsid)
     {
         String q = "SELECT TS_CODE FROM CWMS_V_TS_ID "
-            + "WHERE upper(CWMS_TS_ID) = upper(?)";
+            + "WHERE upper(CWMS_TS_ID) = upper(cwms_ts.format_lrts_input(?))";
         ArrayList<Object> parameters = new ArrayList<>();
         parameters.add(tsid);
         if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_8)
@@ -1209,7 +1209,6 @@ public class CwmsTimeSeriesDAO
                 IntervalCodes.getIntervalSeconds(tsid.getInterval()) == 0 ?
                 HecConstants.NO_UTC_OFFSET : HecConstants.UNDEFINED_UTC_OFFSET;
             DbKey tsKey = Constants.undefinedId;
-
             BigInteger tsCode = cwmsDbTs.createTsCodeBigInteger(
                 conn,
                 dbOfficeId,

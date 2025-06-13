@@ -1,0 +1,10 @@
+SET:TZ=UTC
+SET:UNITS=mm
+TSID:SampleDataSite.Precip.Inst.1DayLocal.0.output-pdtstart
+
+
+2025/06/13-07:00:00,7.0,0
+
+2025/11/02-07:00:00,12.0,0
+
+2025/11/03-08:00:00,25.0,0
