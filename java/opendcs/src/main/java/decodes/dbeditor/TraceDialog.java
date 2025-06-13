@@ -84,20 +84,10 @@ public class TraceDialog extends JDialog
 		panel1.setLayout(borderLayout1);
 		this.setTitle(
 			dbeditLabels.getString("TraceDialog.title"));
-		closeButton.setText(
-			genericLabels.getString("close"));
-		closeButton.addActionListener(new java.awt.event.ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				closeButton_actionPerformed(e);
-			}
-		});
-		clearButton.setText(
-			genericLabels.getString("clear"));
-		clearButton.addActionListener(new java.awt.event.ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				clear();
-			}
-		});
+		closeButton.setText(genericLabels.getString("close"));
+		closeButton.addActionListener(e -> closeButton_actionPerformed(e));
+		clearButton.setText(genericLabels.getString("clear"));
+		clearButton.addActionListener(e -> clear());
 		autoCycle.setSelected(false);
 		autoScroll.setSelected(true);
 		jPanel2.setLayout(flowLayout1);
