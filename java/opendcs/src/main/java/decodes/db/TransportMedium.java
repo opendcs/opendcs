@@ -327,6 +327,10 @@ public class TransportMedium extends DatabaseObject
 	*/
 	static String makeTmKey(String typ, String id)
 	{
+		if( id == null)
+		{
+			id="";
+		}
 		if (typ.toLowerCase().startsWith("goes"))
 			return "goes:" + id.trim().toUpperCase();
 		else
