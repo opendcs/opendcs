@@ -36,8 +36,15 @@ public class DTEquivTableModel extends AbstractTableModel
 	 */
 	public void rebuild()
 	{
-		decodes.db.DbEnum dtEnum = 
-			Database.getDb().getDbEnum(Constants.enum_DataTypeStd);
+		Database db = Database.getDb();
+		dataTypes = new Vector();
+		decodes.db.DbEnum dtEnum = db.getDbEnum(Constants.enum_DataTypeStd);
+		if( dtEnum == null)
+		{
+			numColumns = 0;
+			columnNames = new String[numColumns];
+			return;
+		}
 		numColumns = dtEnum.size();
 		columnNames = new String[numColumns];
 		int i=0;
@@ -47,7 +54,7 @@ public class DTEquivTableModel extends AbstractTableModel
 			columnNames[i++] = ev.getValue();
 		}
 
-		dataTypes = new Vector();
+		
 
 	  nextDT:
 		for(Iterator it1 = Database.getDb().dataTypeSet.iterator();
