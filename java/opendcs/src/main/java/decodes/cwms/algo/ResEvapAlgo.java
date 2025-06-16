@@ -68,7 +68,7 @@ final public class ResEvapAlgo
 
 
   
-    private double tally; //running tally of hourly Evaporation
+    private double totalDailyEvap; //running tally of hourly Evaporation
     private int count; //number of days calculated
     private boolean isDayLightSavings;
     private double previousHourlyEvap;
@@ -256,23 +256,56 @@ final public class ResEvapAlgo
         return newValue;
     }
 
-    //Converts evaporation to meters then to flow  and save value to output
-    private void setAsFlow(Double TotalEvap, Date CurrentTime) throws NoConversionException, DecodesException, RatingException, ResEvapException
+    /**
+     * Convert daily evap to flow using frustum formula to calculate average surface area
+     * set the output value. Package scoped for unit testing purposes
+     */
+    private void convertEvapToFlow(double totalEvap, Date currentTime) throws NoConversionException, DecodesException, RatingException, ResEvapException
     {
-        double evap_to_meters = convertUnits(TotalEvap, dailyEvapTS.getUnitsAbbr(), "m");
+        double evapToMeters = convertUnits(totalEvap, dailyEvapTS.getUnitsAbbr(), "m");
+        // get elevation before and after evaporation loss
+        double elevBeforeEvapLoss = resEvap.reservoir.getCurrentElevation(currentTime);
+        double elevAfterEvapLoss = elevBeforeEvapLoss - evapToMeters;
 
-        double elev = resEvap.reservoir.getCurrentElevation(CurrentTime);
-        double areaMetersSq;
+        // get area at elevation before and after evaporation loss
+        double m2areaAtElevBeforeEvapLoss = getAreaAtElevation(resEvap.reservoir, elevBeforeEvapLoss);
+        double m2areaAtElevAfterEvapLoss = getAreaAtElevation(resEvap.reservoir, elevAfterEvapLoss);
+
+        // calculate daily evap flow using frustum formula
+        double dailyEvapFlowCms = getDailyEvapFlow(m2areaAtElevBeforeEvapLoss, m2areaAtElevAfterEvapLoss, evapToMeters);
+
+        setOutput(dailyEvapAsFlow, dailyEvapFlowCms, _timeSliceBaseTime);
+    }
+
+
+    double getAreaAtElevation(EvapReservoir reservoir, double elevation) throws RatingException
+    {
         try
         {
-            areaMetersSq = resEvap.reservoir.intArea(elev, conn);
+            return reservoir.intArea(elevation, conn);
         }
-        catch (RatingException ex)
+        catch(RatingException ex)
         {
-            throw new RatingException("failed to compute rating for evaporation to flow", ex);
+            throw new RatingException("Failed to compute area at elevation: " + elevation, ex);
         }
-        double dailyEvapFlow = (areaMetersSq * evap_to_meters) / (86400.);
-        setOutput(dailyEvapAsFlow, dailyEvapFlow, _timeSliceBaseTime);
+
+    }
+
+    /**
+     * Calculate the daily evaporation flow using the frustum formula.
+     *
+     * @param areaAtElev1 area At Elevation Before Evap (m2)
+     * @param areaAtElev2 area At Elevation Minus Evap lost (m2)
+     * @param dailyEvapDepth evaporation depth (m)
+     * @return daily evaporation as flow (cms) m3/s
+     */
+    static double getDailyEvapFlow(double areaAtElev1, double areaAtElev2, double dailyEvapDepth)
+    {
+        double frustumAvgArea = (areaAtElev1 + areaAtElev2 + Math.sqrt(areaAtElev1 * areaAtElev2)) / 3.0;
+        double frustumEvapVolume = frustumAvgArea * dailyEvapDepth;
+
+        // convert vol to flow (cms)
+        return frustumEvapVolume / 86400.0;
     }
 
     //TODO Implement Location Levels
@@ -326,7 +359,7 @@ final public class ResEvapAlgo
     protected void beforeTimeSlices()
             throws DbCompException
     {
-        tally = 0.0;
+        totalDailyEvap = 0.0;
         count = 0;
 
         String evapInterval = getParmRef("dailyEvap").tsid.getInterval();
@@ -538,7 +571,7 @@ final public class ResEvapAlgo
             hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
 
             count++;
-            tally += (previousHourlyEvap + computedList.get(6)) / 2;
+            totalDailyEvap += (previousHourlyEvap + computedList.get(6)) / 2;
             previousHourlyEvap = computedList.get(6);
 
         }
@@ -553,10 +586,10 @@ final public class ResEvapAlgo
     {
         if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
         {
-            setOutput(dailyEvap, tally, _timeSliceBaseTime);
+            setOutput(dailyEvap, totalDailyEvap, _timeSliceBaseTime);
             try
             {
-                setAsFlow(tally, _timeSliceBaseTime);
+                convertEvapToFlow(totalDailyEvap, _timeSliceBaseTime);
             }
             catch (RatingException | NoConversionException | DecodesException ex)
             {
