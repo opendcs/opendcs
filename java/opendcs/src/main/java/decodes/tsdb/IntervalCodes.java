@@ -118,7 +118,6 @@ public class IntervalCodes
 	/** 2 hour    data */
 	public static final String int_two_hours_nc = "~2Hours";
 	public static final String int_two_hours = "2Hours";
-
 	/** 3 hour    data */
 	public static final String int_three_hours = "3Hours";
 	/** 4 hour    data */
@@ -145,7 +144,7 @@ public class IntervalCodes
 	/** 1 decade  data */
 	public static final String int_one_decade = "1Decade";
 
-	/** The following are used for CWMS intervals that honor DST. */
+	/** The following are used for CWMS intervals are psuedoregular (e.g. allowed to deviate from the base interval). */
 	public static final String int_three_hours_dst = "~3Hours";
 	public static final String int_four_hours_dst = "~4Hours";
 	public static final String int_six_hours_dst = "~6Hours";
@@ -161,6 +160,24 @@ public class IntervalCodes
 	public static final String int_one_month_dst = "~1Month";
 	public static final String int_one_year_dst = "~1Year";
 	public static final String int_one_decade_dst = "~1Decade";
+
+	/** CWMS Intervals where DST behavior is enforced. (e.g. always on the interval, but the interval allows DST.) */
+	public static final String int_two_hours_local = "2HoursLocal";
+	public static final String int_three_hours_local = "3HoursLocal";
+	public static final String int_four_hours_local = "4HoursLocal";
+	public static final String int_six_hours_local = "6HoursLocal";
+	public static final String int_eight_hours_local = "8HoursLocal";
+	public static final String int_twelve_hours_local = "12HoursLocal";
+	public static final String int_one_day_local = "1DayLocal";
+	public static final String int_two_days_local = "2DaysLocal";
+	public static final String int_three_days_local = "3DaysLocal";
+	public static final String int_four_days_local = "4DaysLocal";
+	public static final String int_five_days_local = "5DaysLocal";
+	public static final String int_six_days_local = "6DaysLocal";
+	public static final String int_one_week_local = "1WeekLocal";
+	public static final String int_one_month_local = "1MonthLocal";
+	public static final String int_one_year_local = "1YearLocal";
+	public static final String int_one_decade_local = "1DecadeLocal";
 
 	/** The singleton IntervalList instance holds intervals defined in the database */
 	private static IntervalList dbIntervals = IntervalList.instance();
@@ -188,13 +205,19 @@ public class IntervalCodes
 	/**
 	 * Get the number of seconds representing the interval.
 	 * @param interval the interval
-	 * @return number of seconds or 0 if interval not recognized.
+	 * @return number of seconds or 0 if interval not recognized. -1 if Local and the offset would not be valid.
 	 */
 	public static int getIntervalSeconds(String interval)
 	{
 		Interval intv = getInterval(interval);
 		if (intv == null || intv.getCalMultiplier() == 0)
+		{
 			return 0;
+		}
+		else if (interval.endsWith("Local"))
+		{
+			return -1;
+		}
 		switch(intv.getCalConstant())
 		{
 		case Calendar.MINUTE:
