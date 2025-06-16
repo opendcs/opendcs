@@ -137,11 +137,11 @@ public class SimpleDataSource implements DataSource, ConnectionPoolMXBean
                 c.getRealConnection().close();
                 connections.remove(c);
                 freed.getAndIncrement();
-                log.trace("connections requeste/freed {}/{}", requests.get(),freed.get());
+                log.trace("connections requests/freed {}/{}", requests.get(),freed.get());
             },
             SqlSettings.TRACE_CONNECTIONS);
         requests.getAndIncrement();
-        log.trace("connections requeste/freed {}/{}", requests.get(),freed.get());
+        log.trace("connections requests/freed {}/{}", requests.get(),freed.get());
         connections.add(wc);
         return wc;
     }
