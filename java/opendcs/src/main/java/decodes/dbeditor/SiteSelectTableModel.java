@@ -1,9 +1,10 @@
 package decodes.dbeditor;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
 
 import decodes.db.Database;
 import decodes.db.DatabaseException;
@@ -19,7 +20,7 @@ class SiteSelectTableModel extends javax.swing.table.AbstractTableModel
 {
 	private String colNames[] = { "Local", "NWSHB5", "USGS" };
 	private SiteSelectPanel panel;
-	private Vector sites;
+	private List<Site> sites;
 
 	public SiteSelectTableModel(SiteSelectPanel ssp)
 	{
@@ -39,7 +40,7 @@ class SiteSelectTableModel extends javax.swing.table.AbstractTableModel
 			}
 			colNames[col.size()] = SiteSelectPanel.descriptionLabel;
 		}
-		sites = new Vector();
+		sites = new ArrayList<>();
 		refill();
 
 		// MJM 20080707 - Initial sorting should be by preferred name type.
@@ -75,7 +76,7 @@ class SiteSelectTableModel extends javax.swing.table.AbstractTableModel
 
 	void deleteSiteAt(int index)
 	{
-		Site site = (Site)sites.elementAt(index);
+		Site site = sites.get(index);
 		try { Database.getDb().getDbIo().deleteSite(site); }
 		catch(DatabaseException e)
 		{
@@ -108,7 +109,7 @@ class SiteSelectTableModel extends javax.swing.table.AbstractTableModel
 
 	public Object getValueAt(int r, int c)
 	{
-		Site site = (Site)sites.elementAt(r);
+		Site site = sites.get(r);
 		if (c == colNames.length-1)
 			return site.getDescription();
 		String type = colNames[c];
@@ -123,7 +124,7 @@ class SiteSelectTableModel extends javax.swing.table.AbstractTableModel
 
 	public Object getRowObject(int r)
 	{
-		return sites.elementAt(r);
+		return sites.get(r);
 	}
 
 	public void sortByColumn(int c)
