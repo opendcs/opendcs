@@ -890,6 +890,7 @@ public class AlgorithmWizard extends TsdbAppTemplate implements AlgoData
 
 		TopFrame algowizFrame = initTopFrame();
 		algowizFrame.setVisible(true);
+		algowizFrame.toFront();
 	}
 
 	protected JPanel getPropPanel()
