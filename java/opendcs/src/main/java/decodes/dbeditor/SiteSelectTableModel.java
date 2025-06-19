@@ -2,7 +2,6 @@ package decodes.dbeditor;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -11,12 +10,9 @@ import decodes.db.DatabaseException;
 import decodes.db.EnumValue;
 import decodes.db.Site;
 import decodes.db.SiteName;
-import decodes.gui.SortingListTableModel;
 import decodes.gui.TopFrame;
-import decodes.util.DecodesSettings;
 
 class SiteSelectTableModel extends javax.swing.table.AbstractTableModel
-	implements SortingListTableModel
 {
 	private String colNames[] = { "Local", "NWSHB5", "USGS" };
 	private SiteSelectPanel panel;
@@ -42,20 +38,6 @@ class SiteSelectTableModel extends javax.swing.table.AbstractTableModel
 		}
 		sites = new ArrayList<>();
 		refill();
-
-		// MJM 20080707 - Initial sorting should be by preferred name type.
-		int c = -1;
-		if (DecodesSettings.instance().siteNameTypePreference != null)
-			for(int i=0; i<getColumnCount(); i++)
-				if (colNames[i].equalsIgnoreCase(
-					DecodesSettings.instance().siteNameTypePreference))
-				{
-					c = i;
-					break;
-				}
-		if (c == -1)
-			c = 0;
-		this.sortByColumn(c);
 	}
 
 	void refill()
@@ -127,9 +109,5 @@ class SiteSelectTableModel extends javax.swing.table.AbstractTableModel
 		return sites.get(r);
 	}
 
-	public void sortByColumn(int c)
-	{
-		Collections.sort(sites, new SiteNameComparator(colNames[c], null));
-	}
 }
 
