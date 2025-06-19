@@ -3,11 +3,13 @@ package decodes.dbeditor;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.TableRowSorter;
 
 import java.util.Collections;
 import java.util.ResourceBundle;
-
+import java.util.regex.Pattern;
 
 import decodes.db.*;
 import decodes.util.DecodesSettings;
@@ -26,6 +28,8 @@ public class SiteSelectPanel extends JPanel
 	private JTable siteTable;     
 	SiteSelectDialog parentDialog = null;
 	SiteListPanel parentPanel = null;
+	private JTextField filterField;
+	private JLabel filterStatusLabel = new JLabel("");
 
 	public SiteSelectPanel()
 	{
@@ -89,11 +93,45 @@ public class SiteSelectPanel extends JPanel
 
 	private void jbInit() throws Exception
 	{
+
+		filterField = new JTextField();
+		JPanel filterPanel = new JPanel(new BorderLayout());
+		JLabel filterLabel = new JLabel("Filter: ");
+		
 		this.setLayout(borderLayout1);
+		filterPanel.add(filterLabel, BorderLayout.WEST);
+		filterPanel.add(filterField, BorderLayout.CENTER);
+
+	    this.add(filterPanel, BorderLayout.NORTH);   
+		
 		jScrollPane1.setPreferredSize(new Dimension(600, 300));
         this.add(jScrollPane1, BorderLayout.CENTER);
 		jScrollPane1.getViewport().add(siteTable, null);
+		setupFilter();
 	}
+
+	private void setupFilter() 
+	{
+		filterField.getDocument().addDocumentListener(new DocumentListener() 
+		{
+			public void insertUpdate(DocumentEvent e) { newFilter(); }
+			public void removeUpdate(DocumentEvent e) { newFilter(); }
+			public void changedUpdate(DocumentEvent e) { newFilter(); }
+
+			private void newFilter() 
+			{
+				String text = filterField.getText();
+				if (text == null || text.trim().isEmpty()) 
+				{
+					sorter.setRowFilter(null); // clear filter
+				} else
+				{
+					sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(text))); // case-insensitive
+				}
+			}
+		});
+	}
+
 
 	/**
 	 * @return the currently-selected site, or null if no site is selected.
