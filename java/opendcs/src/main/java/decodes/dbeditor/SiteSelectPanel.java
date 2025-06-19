@@ -3,11 +3,14 @@ package decodes.dbeditor;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.table.TableRowSorter;
+
+import java.util.Collections;
 import java.util.ResourceBundle;
 
 
 import decodes.db.*;
-import decodes.gui.*;
+import decodes.util.DecodesSettings;
 
 @SuppressWarnings("serial")
 public class SiteSelectPanel extends JPanel
@@ -19,19 +22,24 @@ public class SiteSelectPanel extends JPanel
 	BorderLayout borderLayout1 = new BorderLayout();
 	JScrollPane jScrollPane1 = new JScrollPane();
 	SiteSelectTableModel model;
-	SortingListTable siteTable;
+	private TableRowSorter<SiteSelectTableModel> sorter;
+	private JTable siteTable;     
 	SiteSelectDialog parentDialog = null;
 	SiteListPanel parentPanel = null;
 
 	public SiteSelectPanel()
 	{
 	    model = new SiteSelectTableModel(this);
-		int cc = model.getColumnCount();
-		int widths[] = new int[cc];
-		for(int i=0; i<cc-1; i++)
-			widths[i] = 10;
-		widths[cc-1] = 30;
-		siteTable = new SortingListTable(model, widths);
+		siteTable = new JTable(model);
+		sorter = new TableRowSorter<>(model);
+        siteTable.setRowSorter(sorter);
+		
+		sorter.setSortKeys(
+            Collections.singletonList(
+                new RowSorter.SortKey(getDefaultSortingColumnIndex(), SortOrder.ASCENDING)
+            )
+        );
+        sorter.sort();
 		setMultipleSelection(false);
 
 		siteTable.addMouseListener(new MouseAdapter()
@@ -56,6 +64,22 @@ public class SiteSelectPanel extends JPanel
 		}
 	}
 
+	// MJM 20080707 - Initial sorting should be by preferred name type.
+	private int getDefaultSortingColumnIndex()
+	{
+		String pref = DecodesSettings.instance().siteNameTypePreference;
+        int initialCol = 0;
+		if (pref != null)
+		{
+			for(int i=0; i<model.getColumnCount(); i++)
+				if (model.getColumnName(i).equalsIgnoreCase(pref))
+				{
+					initialCol = i;
+					break;
+				}
+		}
+		return initialCol;
+	}
 	public void setMultipleSelection(boolean ok)
 	{
 		siteTable.getSelectionModel().setSelectionMode(
