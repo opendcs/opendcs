@@ -29,7 +29,7 @@ public class SiteSelectPanel extends JPanel
 	SiteSelectDialog parentDialog = null;
 	SiteListPanel parentPanel = null;
 	private JTextField filterField;
-	private JLabel filterStatusLabel = new JLabel("");
+	private JLabel filterStatusLabel = new JLabel("0/0");
 
 	public SiteSelectPanel()
 	{
@@ -100,7 +100,11 @@ public class SiteSelectPanel extends JPanel
 		
 		this.setLayout(borderLayout1);
 		filterPanel.add(filterLabel, BorderLayout.WEST);
-		filterPanel.add(filterField, BorderLayout.CENTER);
+		JPanel filterInputPanel = new JPanel(new BorderLayout());
+		filterInputPanel.add(filterField, BorderLayout.CENTER);
+		filterInputPanel.add(filterStatusLabel, BorderLayout.EAST);
+		filterPanel.add(filterInputPanel, BorderLayout.CENTER);
+
 
 	    this.add(filterPanel, BorderLayout.NORTH);   
 		
@@ -123,11 +127,15 @@ public class SiteSelectPanel extends JPanel
 				String text = filterField.getText();
 				if (text == null || text.trim().isEmpty()) 
 				{
-					sorter.setRowFilter(null); // clear filter
+					sorter.setRowFilter(null); 
 				} else
 				{
 					sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(text))); // case-insensitive
 				}
+				// Update status
+				int total = model.getRowCount();
+				int shown = siteTable.getRowCount();
+				filterStatusLabel.setText(shown + "/" + total);
 			}
 		});
 	}
