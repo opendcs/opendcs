@@ -575,8 +575,17 @@ public class PresentationGroupListIO extends SqlDbObjIo
             _dbio.writeDataType(dp.getDataType());
         }
 
+        String columns = "ID,groupid,datatypeid,unitabbr,equipmentid";
+        if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
+        {
+            columns += ",maxdecimals";
+          if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+            {
+              columns +=",max_value,min_value ";
+            }  
+        }
         String q =
-            "INSERT INTO DataPresentation VALUES (" +
+            "INSERT INTO DataPresentation ("+columns +") " + " VALUES (" +
               id + ", " +
               pg.getId() + ", " +
               dp.getDataType().getId() + ", " +
@@ -584,7 +593,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
               + "NULL"; // legacy equipment model id.
 
         if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
-        {
+        { 
             int md = dp.getMaxDecimals();
             q = q + ", " + (md == Integer.MAX_VALUE ? "NULL" : ("" + md));
             if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
