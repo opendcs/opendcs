@@ -6,6 +6,9 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.*;
 
+import decodes.dbeditor.DbEditorFrame;
+
+import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 /**
  * SearchPanel has a searching JTextField used to filter a TableModel
@@ -13,11 +16,12 @@ import java.util.regex.Pattern;
 @SuppressWarnings("serial")
 public class SearchPanel extends JPanel
 {
+    private static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();;
 	private final JTextField filterField = new JTextField();
 	private final JLabel filterStatusLabel = new JLabel("0/0");
 
-	private final JCheckBox matchCaseCheckBox = new JCheckBox("Match Case");
-	private final JCheckBox wholeWordCheckBox = new JCheckBox("Whole Word");
+	private final JCheckBox matchCaseCheckBox = new JCheckBox(genericLabels.getString("matchCase"));
+	private final JCheckBox wholeWordCheckBox = new JCheckBox(genericLabels.getString("wholeWord"));
 
 	private final TableRowSorter<? extends TableModel> sorter;
 	private final TableModel model;
@@ -34,7 +38,7 @@ public class SearchPanel extends JPanel
 	private void buildUI()
 	{
 		this.setLayout(new BorderLayout());
-		JLabel filterLabel = new JLabel("Filter: ");
+		JLabel filterLabel = new JLabel(genericLabels.getString("Filter")+":");
 
 		JPanel filterRow = new JPanel(new BorderLayout());
 		filterRow.add(filterLabel, BorderLayout.WEST);
