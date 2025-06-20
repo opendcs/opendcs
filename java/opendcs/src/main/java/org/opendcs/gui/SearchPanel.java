@@ -13,7 +13,7 @@ import decodes.dbeditor.DbEditorFrame;
 /**
  * SearchPanel is used to filter a TableModel
  * Search engine like filtering , with options for whole word, and case sensitive.
- * comboBox to select what column (or all) is use for filtering.
+ * comboBox to select what column (or all) is used for filtering.
  */
 @SuppressWarnings("serial")
 public class SearchPanel extends JPanel
