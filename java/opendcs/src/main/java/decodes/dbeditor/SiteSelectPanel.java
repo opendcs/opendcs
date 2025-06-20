@@ -3,13 +3,12 @@ package decodes.dbeditor;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.TableRowSorter;
+
+import org.opendcs.gui.SearchPanel;
 
 import java.util.Collections;
 import java.util.ResourceBundle;
-import java.util.regex.Pattern;
 
 import decodes.db.*;
 import decodes.util.DecodesSettings;
@@ -93,53 +92,13 @@ public class SiteSelectPanel extends JPanel
 
 	private void jbInit() throws Exception
 	{
-
-		filterField = new JTextField();
-		JPanel filterPanel = new JPanel(new BorderLayout());
-		JLabel filterLabel = new JLabel("Filter: ");
-		
 		this.setLayout(borderLayout1);
-		filterPanel.add(filterLabel, BorderLayout.WEST);
-		JPanel filterInputPanel = new JPanel(new BorderLayout());
-		filterInputPanel.add(filterField, BorderLayout.CENTER);
-		filterInputPanel.add(filterStatusLabel, BorderLayout.EAST);
-		filterPanel.add(filterInputPanel, BorderLayout.CENTER);
-
-
-	    this.add(filterPanel, BorderLayout.NORTH);   
-		
+		SearchPanel searchPanel = new SearchPanel(sorter, model);
+		this.add(searchPanel,BorderLayout.NORTH);
 		jScrollPane1.setPreferredSize(new Dimension(600, 300));
         this.add(jScrollPane1, BorderLayout.CENTER);
 		jScrollPane1.getViewport().add(siteTable, null);
-		setupFilter();
 	}
-
-	private void setupFilter() 
-	{
-		filterField.getDocument().addDocumentListener(new DocumentListener() 
-		{
-			public void insertUpdate(DocumentEvent e) { newFilter(); }
-			public void removeUpdate(DocumentEvent e) { newFilter(); }
-			public void changedUpdate(DocumentEvent e) { newFilter(); }
-
-			private void newFilter() 
-			{
-				String text = filterField.getText();
-				if (text == null || text.trim().isEmpty()) 
-				{
-					sorter.setRowFilter(null); 
-				} else
-				{
-					sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(text))); // case-insensitive
-				}
-				// Update status
-				int total = model.getRowCount();
-				int shown = siteTable.getRowCount();
-				filterStatusLabel.setText(shown + "/" + total);
-			}
-		});
-	}
-
 
 	/**
 	 * @return the currently-selected site, or null if no site is selected.
