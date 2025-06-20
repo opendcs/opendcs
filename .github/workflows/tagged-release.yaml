@@ -7,7 +7,7 @@ on:
       - '7.[05].[0-9]+-RC[0-9]+'
       - '8.0.0-M[0-9]+'
   release:
-    types: [published,prerelease]
+    types: [published]
 jobs:
   release-from-tag:
     permissions:
@@ -19,8 +19,8 @@ jobs:
       token: ${{ secrets.GITHUB_TOKEN }}
       signingKey: ${{ secrets.SIGNING_KEY }}
       signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-      ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
-      ossrhPassword: ${{ secrets.OSSRH_PASSWORD }}
+      mavenCentralUsername: ${{ secrets.CENTRALAPI_USERNAME }}
+      mavenCentralPassword: ${{ secrets.CENTRALAPI_PASSWORD }}
     with:
       branch: ${{github.ref_name}}
       nightly: false

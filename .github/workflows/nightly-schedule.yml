@@ -14,8 +14,8 @@ jobs:
       token: ${{ secrets.GITHUB_TOKEN }}
       signingKey: ${{ secrets.SIGNING_KEY }}
       signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-      ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
-      ossrhPassword: ${{ secrets.OSSRH_PASSWORD }}
+      mavenCentralUsername: ${{ secrets.CENTRALAPI_USERNAME }}
+      mavenCentralPassword: ${{ secrets.CENTRALAPI_PASSWORD }}
     with:
       branch: "main"
       nightly: true
@@ -29,8 +29,8 @@ jobs:
       token: ${{ secrets.GITHUB_TOKEN }}
       signingKey: ${{ secrets.SIGNING_KEY }}
       signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-      ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
-      ossrhPassword: ${{ secrets.OSSRH_PASSWORD }}
+      mavenCentralUsername: ${{ secrets.CENTRALAPI_USERNAME }}
+      mavenCentralPassword: ${{ secrets.CENTRALAPI_PASSWORD }}
     with:
       branch: "7.0"
       nightly: true
@@ -44,8 +44,8 @@ jobs:
       token: ${{ secrets.GITHUB_TOKEN }}
       signingKey: ${{ secrets.SIGNING_KEY }}
       signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-      ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
-      ossrhPassword: ${{ secrets.OSSRH_PASSWORD }}
+      mavenCentralUsername: ${{ secrets.CENTRALAPI_USERNAME }}
+      mavenCentralPassword: ${{ secrets.CENTRALAPI_PASSWORD }}
     with:
       branch: "7.5"
       nightly: true
