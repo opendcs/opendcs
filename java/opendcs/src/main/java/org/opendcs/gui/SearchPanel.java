@@ -11,7 +11,9 @@ import java.util.regex.Pattern;
 import decodes.dbeditor.DbEditorFrame;
 
 /**
- * SearchPanel has a searching JTextField used to filter a TableModel
+ * SearchPanel is used to filter a TableModel
+ * Search engine like filtering , with options for whole word, and case sensitive.
+ * comboBox to select what column (or all) is use for filtering.
  */
 @SuppressWarnings("serial")
 public class SearchPanel extends JPanel
