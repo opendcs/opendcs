@@ -12,6 +12,10 @@ jobs:
     uses: ./.github/workflows/release.yml
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
+      signingKey: ${{ secrets.SIGNING_KEY }}
+      signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      mavenCentralUsername: ${{ secrets.CENTRALAPI_USERNAME }}
+      mavenCentralPassword: ${{ secrets.CENTRALAPI_PASSWORD }}
     with:
       branch: "main"
   v7_0:
@@ -21,5 +25,25 @@ jobs:
     uses: ./.github/workflows/release.yml
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
+      signingKey: ${{ secrets.SIGNING_KEY }}
+      signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      mavenCentralUsername: ${{ secrets.CENTRALAPI_USERNAME }}
+      mavenCentralPassword: ${{ secrets.CENTRALAPI_PASSWORD }}
     with:
       branch: "7.0"
+      nightly: true
+  v7_5:
+    permissions:
+      packages: write
+      contents: write
+      id-token: write
+    uses: ./.github/workflows/release.yaml
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+      signingKey: ${{ secrets.SIGNING_KEY }}
+      signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      mavenCentralUsername: ${{ secrets.CENTRALAPI_USERNAME }}
+      mavenCentralPassword: ${{ secrets.CENTRALAPI_PASSWORD }}
+    with:
+      branch: "7.5"
+      nightly: true

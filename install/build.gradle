@@ -107,7 +107,7 @@ if (shouldSign) {
     }
 }
 
-// We don't publish the installer to maven central.
+// We don't publish the install distribution to maven central.
 project.tasks.findAll { task -> task.name.startsWith("publish")}.each { task -> task.enabled = false }
 
 def javaVersion = Double.parseDouble(project.findProperty("org.gradle.java.version") ?: "1.8" )
