@@ -5,9 +5,10 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 
+import org.opendcs.gui.SearchPanel;
+
 import java.util.Collections;
 import java.util.ResourceBundle;
-
 
 import decodes.db.*;
 import decodes.util.DecodesSettings;
@@ -26,6 +27,8 @@ public class SiteSelectPanel extends JPanel
 	private JTable siteTable;     
 	SiteSelectDialog parentDialog = null;
 	SiteListPanel parentPanel = null;
+	private JTextField filterField;
+	private JLabel filterStatusLabel = new JLabel("0/0");
 
 	public SiteSelectPanel()
 	{
@@ -90,6 +93,8 @@ public class SiteSelectPanel extends JPanel
 	private void jbInit() throws Exception
 	{
 		this.setLayout(borderLayout1);
+		SearchPanel searchPanel = new SearchPanel(sorter, model);
+		this.add(searchPanel,BorderLayout.NORTH);
 		jScrollPane1.setPreferredSize(new Dimension(600, 300));
         this.add(jScrollPane1, BorderLayout.CENTER);
 		jScrollPane1.getViewport().add(siteTable, null);
