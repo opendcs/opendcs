@@ -22,7 +22,7 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 	BorderLayout borderLayout1 = new BorderLayout();
 	ListOpsPanel listOpsPanel;
 	JLabel jLabelTitle = new JLabel();
-	PlatformSelectPanel platformSelectPanel = new PlatformSelectPanel(null);
+	PlatformSelectPanel platformSelectPanel;
 	DbEditorFrame parent;
 	int newIndex = 1;
 
@@ -31,7 +31,6 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 		parent = null;
 		listOpsPanel = new ListOpsPanel(this);
 		listOpsPanel.enableCopy(true);
-		platformSelectPanel.setParentPanel(this);
 		try {
 			jbInit();
 		} catch (Exception ex) {
@@ -52,7 +51,7 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 	/** Initializes GUI components. */
 	private void jbInit() throws Exception 
 	{
-		platformSelectPanel = new PlatformSelectPanel( null);
+		platformSelectPanel = new PlatformSelectPanel(() -> {openPressed();} ,null, null);
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		jLabelTitle.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelTitle.setText(dbeditLabels.getString("PlatformListPanel.title"));
@@ -88,8 +87,6 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 	/** Called when the 'Open' button is pressed. */
 	public void openPressed() 
 	{
-		int rows = this.platformSelectPanel.getPlatformListTable().getRowCount();
-		// System.out.println("Open rows: " + rows);
 		Platform p = getSelectedItem();
 		// Platform p = platformSelectPanel.getSelectedPlatform();
 		if (p == null)

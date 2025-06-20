@@ -43,56 +43,25 @@ public class PlatformSelectPanel extends JPanel
 	PlatformSelectTableModel model;
 	private TableRowSorter<PlatformSelectTableModel> sorter;
 	JTable platformListTable;
-	PlatformSelectDialog parentDialog = null;
 	PlatformListPanel parentPanel = null;
 
-	public PlatformSelectPanel(String mediumType)
-	{
-		model = new PlatformSelectTableModel(this, mediumType, Database.getDb());
-		platformListTable = new JTable(model);
-		sorter = new TableRowSorter<>(model);
-		platformListTable.setRowSorter(sorter);
-		setMultipleSelection(false);
-		platformListTable.addMouseListener(new MouseAdapter()
-		{
-			public void mouseClicked(MouseEvent e)
-			{
-				if (e.getClickCount() == 2)
-				{
-					if (parentDialog != null)
-						parentDialog.openPressed();
-					else if (parentPanel != null)
-						parentPanel.openPressed();
-				}
-			}
-		} );
-		try
-		{
-			jbInit();
-		}
-		catch(Exception ex)
-		{
-			ex.printStackTrace();
-		}
-	}
 
-	void setParentDialog(PlatformSelectDialog dlg)
-	{
-		parentDialog = dlg;
-	}
-
-	public PlatformSelectPanel(PlatformSelectDialog psd, Site site, String mediumType)
+	public PlatformSelectPanel(Runnable opener, Site site, String mediumType)
 	{
 		if ( site == null ) 
 			model = new PlatformSelectTableModel(this, mediumType, Database.getDb());
 		else
 			model = new PlatformSelectTableModel(this, site, Database.getDb());
 		platformListTable = new JTable(model);
+		sorter = new TableRowSorter<>(model);
+		platformListTable.setRowSorter(sorter);
 		setMultipleSelection(false);
 		platformListTable.addMouseListener(new MouseAdapter(){
 			public void mouseClicked(MouseEvent e){
-				if (e.getClickCount() == 2){
-					psd.openPressed();
+				if (e.getClickCount() == 2)
+				{
+					if (opener != null)
+						opener.run();
 				}
 			}
 		} );
@@ -181,11 +150,6 @@ public class PlatformSelectPanel extends JPanel
 	public void deletePlatform(Platform ob)
 	{
 		model.deletePlatform(ob);
-	}
-
-	public void setParentPanel(PlatformListPanel parentPanel)
-	{
-		this.parentPanel = parentPanel;
 	}
 
 	public JTable getPlatformListTable() {
