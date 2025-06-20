@@ -78,30 +78,38 @@ public class SearchPanel extends JPanel
 	private void newFilter()
     {
         String text = filterField.getText();
-        if (text == null || text.trim().isEmpty()) {
+        if (text == null || text.trim().isEmpty()) 
+        {
             sorter.setRowFilter(null);
-        } else {
+        } 
+        else 
+        {
             String raw = Pattern.quote(text);
             if (wholeWordCheckBox.isSelected()) {
                 raw = "\\b" + raw + "\\b";
             }
-            int flags = matchCaseCheckBox.isSelected() ? 0 : Pattern.CASE_INSENSITIVE;
+            int flags = matchCaseCheckBox.isSelected() ? 0: Pattern.CASE_INSENSITIVE;
             final Pattern compiledPattern = Pattern.compile(raw, flags);
-
-            RowFilter<TableModel, Integer> filter = new RowFilter<TableModel, Integer>() {
-                public boolean include(Entry<? extends TableModel, ? extends Integer> entry) {
-                    for (int i = 0; i < entry.getValueCount(); i++) {
+            RowFilter<TableModel, Integer> filter = new RowFilter<TableModel, Integer>()
+             {
+                public boolean include(Entry<? extends TableModel, ? extends Integer> entry) 
+                {
+                    for (int i = 0; i < entry.getValueCount(); i++) 
+                    {
                         String value = entry.getStringValue(i);
-                        if (value != null && compiledPattern.matcher(value).find()) {
+                        if (value != null && compiledPattern.matcher(value).find()) 
+                        {
                             return true;
                         }
                     }
                     return false;
                 }
+                
             };
 
             sorter.setRowFilter(filter);
         }
+      
         updateStatus();
     }
 
