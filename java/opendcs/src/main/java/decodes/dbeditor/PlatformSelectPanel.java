@@ -1,26 +1,36 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-import javax.swing.*;
-import javax.swing.table.*;
+import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.table.TableRowSorter;
 
-import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Vector;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.ResourceBundle;
+import org.opendcs.gui.SearchPanel;
 
-import ilex.util.Logger;
-import decodes.gui.*;
+
 import decodes.db.*;
 import decodes.dbeditor.platform.PlatformSelectTableModel;
-import decodes.util.DecodesSettings;
 
 /**
 Displays a sorting-list of Platform objects in the database.
@@ -28,67 +38,30 @@ Displays a sorting-list of Platform objects in the database.
 @SuppressWarnings("serial")
 public class PlatformSelectPanel extends JPanel
 {
-	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
-	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
-
 	BorderLayout borderLayout1 = new BorderLayout();
 	JScrollPane jScrollPane1 = new JScrollPane();
 	PlatformSelectTableModel model;
+	private TableRowSorter<PlatformSelectTableModel> sorter;
 	JTable platformListTable;
-	PlatformSelectDialog parentDialog = null;
 	PlatformListPanel parentPanel = null;
 
-	public PlatformSelectPanel(String mediumType)
-	{
-		model = new PlatformSelectTableModel(this, mediumType, Database.getDb());
-		platformListTable = new JTable(model);
-		platformListTable.setAutoCreateRowSorter(true);
-		platformListTable.getSelectionModel().setSelectionMode(
-			ListSelectionModel.SINGLE_SELECTION);
-		setMultipleSelection(false);
-		platformListTable.addMouseListener(new MouseAdapter()
-		{
-			public void mouseClicked(MouseEvent e)
-			{
-				if (e.getClickCount() == 2)
-				{
-					if (parentDialog != null)
-						parentDialog.openPressed();
-					else if (parentPanel != null)
-						parentPanel.openPressed();
-				}
-			}
-		} );
-		try
-		{
-			jbInit();
-		}
-		catch(Exception ex)
-		{
-			ex.printStackTrace();
-		}
-	}
 
-	public void setParentDialog(PlatformSelectDialog dlg)
-	{
-		parentDialog = dlg;
-	}
-
-	public PlatformSelectPanel(final PlatformSelectDialog psd, Site site, String mediumType)
+	public PlatformSelectPanel(Runnable opener, Site site, String mediumType)
 	{
 		if ( site == null ) 
 			model = new PlatformSelectTableModel(this, mediumType, Database.getDb());
 		else
 			model = new PlatformSelectTableModel(this, site, Database.getDb());
 		platformListTable = new JTable(model);
-		platformListTable.setAutoCreateRowSorter(true);
-		platformListTable.getSelectionModel().setSelectionMode(
-				ListSelectionModel.SINGLE_SELECTION);
+		sorter = new TableRowSorter<>(model);
+		platformListTable.setRowSorter(sorter);
 		setMultipleSelection(false);
 		platformListTable.addMouseListener(new MouseAdapter(){
 			public void mouseClicked(MouseEvent e){
-				if (e.getClickCount() == 2){
-					psd.openPressed();
+				if (e.getClickCount() == 2)
+				{
+					if (opener != null)
+						opener.run();
 				}
 			}
 		} );
@@ -114,8 +87,10 @@ public class PlatformSelectPanel extends JPanel
 	{
 		this.setPreferredSize(new Dimension(800,500));
 		this.setLayout(borderLayout1);
+		SearchPanel searchPanel = new SearchPanel(sorter, model);
+		this.add(searchPanel,BorderLayout.NORTH);
 		this.add(jScrollPane1, BorderLayout.CENTER);
-		jScrollPane1.getViewport().add(platformListTable, null);
+		jScrollPane1.setViewportView(platformListTable);
 	}
 
 	/**
@@ -177,16 +152,8 @@ public class PlatformSelectPanel extends JPanel
 		model.deletePlatform(ob);
 	}
 
-	public void setParentPanel(PlatformListPanel parentPanel)
-	{
-		this.parentPanel = parentPanel;
-	}
-
 	public JTable getPlatformListTable() {
 		return platformListTable;
 	}
 
-	public void setPlatformListTable(SortingListTable platformListTable) {
-		this.platformListTable = platformListTable;
-	}
 }

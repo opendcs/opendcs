@@ -27,8 +27,6 @@ public class SiteSelectPanel extends JPanel
 	private JTable siteTable;     
 	SiteSelectDialog parentDialog = null;
 	SiteListPanel parentPanel = null;
-	private JTextField filterField;
-	private JLabel filterStatusLabel = new JLabel("0/0");
 
 	public SiteSelectPanel()
 	{

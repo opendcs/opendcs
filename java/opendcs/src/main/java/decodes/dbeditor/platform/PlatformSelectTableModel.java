@@ -1,13 +1,10 @@
 package decodes.dbeditor.platform;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.ResourceBundle;
 import java.util.Vector;
 
-import javax.swing.RowFilter;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -180,7 +177,8 @@ public class PlatformSelectTableModel extends AbstractTableModel
 
     public Object getValueAt(int modelRow, int c)
     {
-        return this.columnizer.getColumn(getPlatformAt(modelRow), c);
+        Platform p = getPlatformAt(modelRow);
+        return this.columnizer.getColumn(p, c);
     }
 
     public Platform getPlatformAt(int modelRow)
@@ -347,31 +345,4 @@ public class PlatformSelectTableModel extends AbstractTableModel
         }
     }
 
-    /**
-     * Simple filter for the value not set cases.
-     */
-    public static class ColumnEmptyRowFilter extends RowFilter<TableModel,Integer>
-    {
-        private final String columnName;
-        private int column = -1;
-        public ColumnEmptyRowFilter(String column)
-        {
-            this.columnName = column;
-        }
-
-        @Override
-        public boolean include(Entry<? extends TableModel, ? extends Integer> entry)
-        {
-            
-            final int id = entry.getIdentifier();
-            final PlatformSelectTableModel model = (PlatformSelectTableModel)entry.getModel();
-            if (column == -1)
-            {
-                column = model.getColumnFor(columnName);
-            }
-            final String displayName = (String)entry.getModel().getValueAt(id, column);
-            // Model never returns null for this column
-            return displayName.equals("");
-        }
-    }
 }
