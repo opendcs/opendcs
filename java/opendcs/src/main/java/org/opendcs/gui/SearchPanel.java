@@ -21,7 +21,7 @@ public class SearchPanel extends JPanel
 	private final JLabel filterStatusLabel = new JLabel("0/0");
 
 	private final JCheckBox matchCaseCheckBox = new JCheckBox(genericLabels.getString("matchCase"));
-	private final JCheckBox wholeWordCheckBox = new JCheckBox(genericLabels.getString("wholeWord"));
+	private final JCheckBox wholeWordCheckBox = new JCheckBox(genericLabels.getString("matchWord"));
 
 	private final TableRowSorter<? extends TableModel> sorter;
 	private final TableModel model;
@@ -38,7 +38,7 @@ public class SearchPanel extends JPanel
 	private void buildUI()
 	{
 		this.setLayout(new BorderLayout());
-		JLabel filterLabel = new JLabel(genericLabels.getString("Filter")+":");
+		JLabel filterLabel = new JLabel(genericLabels.getString("filter")+":");
 
 		JPanel filterRow = new JPanel(new BorderLayout());
 		filterRow.add(filterLabel, BorderLayout.WEST);
