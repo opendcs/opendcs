@@ -1,6 +1,9 @@
 plugins {
     id 'signing'
     id 'maven-publish'
+    id 'com.palantir.git-version'
+    id 'opendcs.version-conventions'
+    id 'io.github.opendcs.maven.maven-central-upload'
 }
 
 ext.shouldSign = (project.findProperty("sign") ?: "false") == "true"
@@ -61,12 +64,10 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
 
         repositories {
             maven {
-                def releaseUrl = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                def snapshotUrl = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                def user = project.findProperty("ossrhUsername")
-                def passwd = project.findProperty("ossrhPassword")
-                name = 'MavenCentral'
-                url = version.endsWith('SNAPSHOT') ? snapshotUrl : releaseUrl
+                name = "mavenCentralApi"
+                url = "https://central.sonatype.com"
+                def user = project.findProperty("centralApiUsername")
+                def passwd = project.findProperty("centralApiPassword")
                 credentials {
                     username = user
                     password = passwd
