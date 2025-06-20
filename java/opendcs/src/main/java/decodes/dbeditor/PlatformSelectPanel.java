@@ -1,26 +1,16 @@
-/*
-*  $Id$
-*/
 package decodes.dbeditor;
 
 import java.awt.*;
 
 import javax.swing.*;
-import javax.swing.table.*;
+import javax.swing.table.TableRowSorter;
 
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Vector;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.ResourceBundle;
 
-import ilex.util.Logger;
 import decodes.gui.*;
 import decodes.db.*;
 import decodes.dbeditor.platform.PlatformSelectTableModel;
-import decodes.util.DecodesSettings;
 
 /**
 Displays a sorting-list of Platform objects in the database.
@@ -34,6 +24,7 @@ public class PlatformSelectPanel extends JPanel
 	BorderLayout borderLayout1 = new BorderLayout();
 	JScrollPane jScrollPane1 = new JScrollPane();
 	PlatformSelectTableModel model;
+	private TableRowSorter<PlatformSelectTableModel> sorter;
 	JTable platformListTable;
 	PlatformSelectDialog parentDialog = null;
 	PlatformListPanel parentPanel = null;
@@ -42,9 +33,8 @@ public class PlatformSelectPanel extends JPanel
 	{
 		model = new PlatformSelectTableModel(this, mediumType, Database.getDb());
 		platformListTable = new JTable(model);
-		platformListTable.setAutoCreateRowSorter(true);
-		platformListTable.getSelectionModel().setSelectionMode(
-			ListSelectionModel.SINGLE_SELECTION);
+		sorter = new TableRowSorter<>(model);
+
 		setMultipleSelection(false);
 		platformListTable.addMouseListener(new MouseAdapter()
 		{
