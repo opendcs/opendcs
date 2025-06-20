@@ -2,7 +2,7 @@ name: SonarCloud Scan
 on:
   workflow_run:
     workflows: ["OpenDCS Build and unit tests"]
-    type: [completed]
+    types: [completed]
 
 jobs:
   Sonar:

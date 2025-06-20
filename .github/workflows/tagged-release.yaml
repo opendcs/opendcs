@@ -5,8 +5,10 @@ on:
     tags:
       - '7.0.[0-9]*'
       - '7.0.[0-9]*-RC[0-9]*'
-jobs:
   release:
+    types: [published]
+jobs:
+  release-from-tag:
     permissions:
       id-token: write
       contents: write
@@ -16,8 +18,8 @@ jobs:
       token: ${{ secrets.GITHUB_TOKEN }}
       signingKey: ${{ secrets.SIGNING_KEY }}
       signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-      ossrhUsername: ${{ secrets.OSSRH_USERNAME }}
-      ossrhPassword: ${{ secrets.OSSRH_PASSWORD }}
+      mavenCentralUsername: ${{ secrets.CENTRALAPI_USERNAME }}
+      mavenCentralPassword: ${{ secrets.CENTRALAPI_PASSWORD }}
     with:
       branch: ${{github.ref_name}}
       nightly: false

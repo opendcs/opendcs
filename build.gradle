@@ -10,7 +10,8 @@ buildscript {
 }
 
 plugins {
-    id "com.palantir.git-version" version "3.1.0"
+    id 'eclipse'
+    id 'jacoco'
 }
 
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
@@ -20,24 +21,7 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-def gitDetails = versionDetails()
-
 ext.osWin = Os.isFamily(Os.FAMILY_WINDOWS)
-ext.gitCommit = gitDetails.gitHashFull ?: "Not build from git";
-
-def static versionLabel(gitInfo) {
-    def branch = gitInfo.branchName // all branches are snapshots, only tags get released
-    def tag = gitInfo.lastTag
-    // tag is returned as is. Branch may need cleanup
-    return branch == null ? tag : "7.99." + branch.replace("/", "-") + "-SNAPSHOT"
-}
-
-allprojects {
-    group = 'org.opendcs'
-    version = project.findProperty("versionOverride") ?: versionLabel(versionDetails())
-}
-
-
 
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonar {
