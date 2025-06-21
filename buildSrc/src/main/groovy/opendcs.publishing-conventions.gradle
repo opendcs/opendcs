@@ -11,20 +11,6 @@ if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
     plugins.apply('io.github.opendcs.maven.maven-central-upload')
 
     if (shouldSign) {
-        plugins.apply('dev.sigstore.sign')
-
-        sigstoreSign {
-            oidcClient {
-                gitHub {
-                    audience.set("sigstore")
-                }
-
-                web {
-                    clientId.set("sigstore")
-                    issuer.set("https://oauth2.sigstore.dev/auth")
-                }
-            }
-        }
         signing {
             def signingKey = project.getProperty("signingKey").trim().replace("\n","")
             def signingPassword = project.getProperty("signingKeyPassword")
@@ -33,9 +19,7 @@ if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
         }
     }
 
-    publishing {
-        publications {
-            maven(MavenPublication) {
+    publishing.publications.withType(MavenPublication) {
                 pom {
                     url = 'https://github.com/opendcs/opendcs'
 
@@ -60,9 +44,9 @@ if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
                         }
                     }
                 }
-            }
-        }
+    }
 
+    publishing {
         repositories {
             maven {
                 name = "mavenCentralApi"
