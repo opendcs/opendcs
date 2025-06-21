@@ -68,7 +68,7 @@ jobs:
         # We don't publish to maven central for the nightly builds
         if: inputs.nightly == false
         run: |
-          ./gradlew publish --info -Psign=true \
+          ./gradlew publishAllToNewMavenCentralApi --info -Psign=true \
              -PversionOverride=$VERSION \
              -PsigningKeyPassword="${{ secrets.signingKeyPassword != null && secrets.signingKeyPassword || secrets.SIGNING_KEY_PASSWORD }}" \
              -PcentralApiUsername=${{ secrets.mavenCentralUsername != null && secrets.mavenCentralUsername || secrets.CENTRAL_API_USERNAME }} \
