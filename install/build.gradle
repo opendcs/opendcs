@@ -101,10 +101,6 @@ if (shouldSign) {
         dependsOn signDistTar
         dependsOn signDistZip
     }
-
-    sigstoreSignMavenPublication {
-        enabled = false
-    }
 }
 
 // We don't publish the install distribution to maven central.
