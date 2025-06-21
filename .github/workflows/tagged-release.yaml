@@ -19,8 +19,8 @@ jobs:
       token: ${{ secrets.GITHUB_TOKEN }}
       signingKey: ${{ secrets.SIGNING_KEY }}
       signingKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-      mavenCentralUsername: ${{ secrets.CENTRALAPI_USERNAME }}
-      mavenCentralPassword: ${{ secrets.CENTRALAPI_PASSWORD }}
+      mavenCentralUsername: ${{ secrets.ORG_OPENDCS_CENTRALAPI_USERNAME }}
+      mavenCentralPassword: ${{ secrets.ORG_OPENDCS_CENTRALAPI_PASSWORD }}
     with:
       branch: ${{github.ref_name}}
       nightly: false
