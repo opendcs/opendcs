@@ -51,7 +51,7 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 	/** Initializes GUI components. */
 	private void jbInit() throws Exception 
 	{
-		platformSelectPanel = new PlatformSelectPanel(() -> {openPressed();} ,null, null);
+		platformSelectPanel = new PlatformSelectPanel(this::openPressed,null, null);
 		this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		jLabelTitle.setHorizontalAlignment(SwingConstants.CENTER);
 		jLabelTitle.setText(dbeditLabels.getString("PlatformListPanel.title"));

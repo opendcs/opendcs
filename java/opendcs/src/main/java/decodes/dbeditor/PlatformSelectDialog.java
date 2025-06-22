@@ -46,7 +46,7 @@ public class PlatformSelectDialog extends JDialog
 	public PlatformSelectDialog(Site site, String mediumType )
     {
         super(TopFrame.instance(), "", true);
-        selectPanel = new PlatformSelectPanel(() -> {openPressed();},site, mediumType);
+        selectPanel = new PlatformSelectPanel(this::openPressed,site, mediumType);
 		plat = null;
         try 
 		{
@@ -69,7 +69,7 @@ public class PlatformSelectDialog extends JDialog
 
 	private void init(String mediumType)
 	{
-		selectPanel = new PlatformSelectPanel(() -> {openPressed();},null,mediumType);
+		selectPanel = new PlatformSelectPanel(this::openPressed,null,mediumType);
 		plat = null;
         try 
 		{
