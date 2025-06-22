@@ -8,10 +8,8 @@ import javax.swing.*;
 import java.awt.event.*;
 import javax.swing.border.*;
 
-import java.util.ArrayList;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
 import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.gui.TopFrame;
@@ -48,9 +46,7 @@ public class PlatformSelectDialog extends JDialog
 	public PlatformSelectDialog(Site site, String mediumType )
     {
         super(TopFrame.instance(), "", true);
-        selectPanel = new PlatformSelectPanel(this, site, mediumType);
-       // init(mediumType);
-        selectPanel.setParentDialog(this);
+        selectPanel = new PlatformSelectPanel(this::openPressed,site, mediumType);
 		plat = null;
         try 
 		{
@@ -73,8 +69,7 @@ public class PlatformSelectDialog extends JDialog
 
 	private void init(String mediumType)
 	{
-		selectPanel = new PlatformSelectPanel(mediumType);
-		selectPanel.setParentDialog(this);
+		selectPanel = new PlatformSelectPanel(this::openPressed,null,mediumType);
 		plat = null;
         try 
 		{
