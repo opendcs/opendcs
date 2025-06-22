@@ -73,7 +73,7 @@ jobs:
              -PcentralApiUsername=${{ secrets.mavenCentralUsername != null && secrets.mavenCentralUsername || secrets.CENTRAL_API_USERNAME }} \
              -PcentralApiPassword=${{ secrets.mavenCentralPassword != null && secrets.mavenCentralPassword || secrets.CENTRAL_API_PASSWORD }} \
              -PsigningKey="${{ secrets.signingKey != null && secrets.signingKey || secrets.SIGNING_KEY }}" \
-             -PautomaticPublish=true \
+             -PautomaticPublish=false \
              -PwaitForPublished=false
       - name: Create distributions
         run: |
@@ -91,7 +91,6 @@ jobs:
         env:
             GH_TOKEN: "${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}"
         run: |
-          VERSION=`./gradlew properties -q | grep "^version:" | awk '{ print $2}'`
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.tar#opendcs-${VERSION}.tar --clobber
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.tar.asc#opendcs-${VERSION}.tar.asc --clobber
           gh release upload ${VERSION} install/build/distributions/opendcs-${VERSION}.zip#opendcs-${VERSION}.zip --clobber
