@@ -68,11 +68,11 @@ jobs:
         # We don't publish to maven central for the nightly builds
         if: inputs.nightly == false
         run: |
-          ./gradlew publish --info -Psign=true \
+          ./gradlew publishAllToNewMavenCentralApi --info -Psign=true \
              -PversionOverride=$VERSION \
              -PsigningKeyPassword="${{ secrets.signingKeyPassword != null && secrets.signingKeyPassword || secrets.SIGNING_KEY_PASSWORD }}" \
-             -PcentralApiUsername=${{ secrets.mavenCentralUsername != null && secrets.mavenCentralUsername || secrets.CENTRAL_API_USERNAME }} \
-             -PcentralApiPassword=${{ secrets.mavenCentralPassword != null && secrets.mavenCentralPassword || secrets.CENTRAL_API_PASSWORD }} \
+             -PcentralApiUsername=${{ secrets.mavenCentralUsername != null && secrets.mavenCentralUsername || secrets.ORG_OPENDCS_CENTRALAPI_USERNAME }} \
+             -PcentralApiPassword=${{ secrets.mavenCentralPassword != null && secrets.mavenCentralPassword || secrets.ORG_OPENDCS_CENTRALAPI_PASSWORD }} \
              -PsigningKey="${{ secrets.signingKey != null && secrets.signingKey || secrets.SIGNING_KEY }}" \
              -PautomaticPublish=true \
              -PwaitForPublished=false
@@ -81,8 +81,8 @@ jobs:
           ./gradlew signDist -Psign=true \
              -PversionOverride=$VERSION \
              -PsigningKeyPassword="${{ secrets.signingKeyPassword != null && secrets.signingKeyPassword || secrets.SIGNING_KEY_PASSWORD }}" \
-             -PcentralApiUsername=${{ secrets.mavenCentralUsername != null && secrets.mavenCentralUsername || secrets.CENTRAL_API_USERNAME }} \
-             -PcentralApiPassword=${{ secrets.mavenCentralPassword != null && secrets.mavenCentralPassword || secrets.CENTRAL_API_PASSWORD }} \
+             -PcentralApiUsername=${{ secrets.mavenCentralUsername != null && secrets.mavenCentralUsername || secrets.ORG_OPENDCS_CENTRALAPI_USERNAME }} \
+             -PcentralApiPassword=${{ secrets.mavenCentralPassword != null && secrets.mavenCentralPassword || secrets.ORG_OPENDCS_CENTRALAPI_PASSWORD }} \
              -PsigningKey="${{ secrets.signingKey != null && secrets.signingKey || secrets.SIGNING_KEY }}"
       - name: create docker images
         run: |
