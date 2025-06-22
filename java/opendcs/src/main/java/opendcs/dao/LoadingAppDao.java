@@ -56,14 +56,21 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
+
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDataException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PropertiesDAI;
@@ -81,10 +88,9 @@ import decodes.tsdb.TsdbCompLock;
  * Data Access Object for writing/reading DbEnum objects to/from a SQL database
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class LoadingAppDao
-    extends DaoBase
-    implements LoadingAppDAI
+public class LoadingAppDao extends DaoBase implements LoadingAppDAI
 {
+    private static final Logger log = LoggerFactory.getLogger(LoadingAppDao.class);
     private final String lockCheckQuery =
         "SELECT loading_application_id,pid,hostname,heartbeat,cur_status from CP_COMP_PROC_LOCK WHERE LOADING_APPLICATION_ID = ?";
     private final String updateHeartbeatQuery =
@@ -418,97 +424,25 @@ public class LoadingAppDao
     }
 
     @Override
-    public void deleteComputationApp(CompAppInfo app)
-        throws DbIoException, ConstraintException
+    public void deleteComputationApp(CompAppInfo app) throws DbIoException, ConstraintException
     {
         // Don't allow deleting if any comps or se's depend on this app.
         String q = "";
-        try
+        try(DataTransaction tx = this.getTransaction())
         {
-            q = "select count(*) from CP_COMPUTATION where LOADING_APPLICATION_ID = ?";
-            int numComps = getSingleResult(q, rs -> rs.getInt(1),app.getKey());
-            if (numComps > 0)
-            {
-                throw new ConstraintException("Cannot delete application '" + app.getAppName()
-                    + "' with id=" + app.getKey() + " because " + numComps + " computations are "
-                        + "assigned to it.");
-            }
-
-            q = "select count(*) from SCHEDULE_ENTRY where LOADING_APPLICATION_ID = ?";
-            int numSched = getSingleResult(q, rs -> rs.getInt(1),app.getKey());
-
-            if (numSched > 0)
-            {
-                throw new ConstraintException("Cannot delete application '" + app.getAppName()
-                    + "' with id=" + app.getKey() + " because " + numSched + " schedule entries are "
-                        + "assigned to it.");
-            }
-
-            String columnQuery;
-            boolean columnExists = false;
-            if (db.isOpenTSDB())
-            {
-                columnQuery = "select exists(select 1 from information_schema.columns " +
-                        "where upper(table_name) = 'ALARM_SCREENING' and upper(column_name) = 'LOADING_APPLICATION_ID')";
-                columnExists = getSingleResult(columnQuery, rs -> rs.getBoolean(1));
-            }
-            else if (db.isOracle())
-            {
-                columnQuery = "select count(*) from all_tab_cols where " +
-                        "upper(table_name) = 'ALARM_SCREENING' and upper(column_name) = 'LOADING_APPLICATION_ID'";
-                columnExists = getSingleResult(columnQuery, rs -> rs.getInt(1) > 0);
-            }
-
-            if (columnExists)
-            {
-                q = "select count(*) from ALARM_SCREENING where LOADING_APPLICATION_ID = ?";
-                int numAlarms = getSingleResult(q, rs -> rs.getInt(1), app.getKey());
-                if (numAlarms > 0)
-                {
-                    throw new ConstraintException("Cannot delete application '" + app.getAppName()
-                        + "' with id=" + app.getKey() + " because " + numAlarms + " alarm screenings are "
-                        + "assigned to it.");
-                }
-            }
-
-
-
-            q = "delete from REF_LOADING_APPLICATION_PROP "
-                + "where LOADING_APPLICATION_ID = ?";
-            doModify(q,app.getKey());
-
-
-
-            // LOADING_APPLICATION_ID column doesn't exist in old versions of DACQ_EVENT.
-            if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
-            {
-                q = "delete from DACQ_EVENT where LOADING_APPLICATION_ID = ?";
-                doModify(q, app.getKey());
-            }
-            q = "delete from cp_comp_proc_lock where LOADING_APPLICATION_ID = ?";
-            doModify(q, app.getKey());
-            if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
-            {
-                q = "delete from "
-                    + (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_17 ? "ALARM_EVENT"
-                        : "ALARM_DEF")
-                    + " where LOADING_APPLICATION_ID = ?";
-                doModify(q, app.getKey());
-                q = "delete from PROCESS_MONITOR where LOADING_APPLICATION_ID = ?";
-                doModify(q, app.getKey());
-            }
-            q = "delete from HDB_LOADING_APPLICATION "
-                + "where LOADING_APPLICATION_ID = ?";
-            doModify(q, app.getKey());
+            this.deleteComputationApp(tx, app);
         }
-        catch(SQLException ex)
+        catch (OpenDcsDataException ex)
         {
-            String msg = "Error in query '" + q + "': " + ex;
-            warning(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
-            throw new DbIoException(msg, ex);
-        }
+            if (ex.getCause() instanceof ConstraintException)
+            {
+                throw (ConstraintException)ex.getCause();
+            }
+            else
+            {
+                throw new DbIoException("Error deleting computation app", ex);
+            }
+        }           
     }
 
     @Override
@@ -659,37 +593,16 @@ public class LoadingAppDao
     }
 
     @Override
-    public void checkCompProcLock(TsdbCompLock lock)
-        throws LockBusyException, DbIoException
+    public void checkCompProcLock(TsdbCompLock lock) throws LockBusyException, DbIoException
     {
-        try
+        try (DataTransaction tx = getTransaction())
         {
-            final TsdbCompLock tlock = getSingleResult(lockCheckQuery, rs->rs2lock(rs), lock.getAppId());
-
-            if (tlock != null)
+            if (checkCompProcLockBusy(tx, lock))
             {
-                if (lock.getPID() != tlock.getPID()
-                 || !lock.getHost().equalsIgnoreCase(tlock.getHost()))
-                {
-                    throw new LockBusyException(
-                        "Lock for app ID " + lock.getAppId()
-                        + " has been stolen by PID " + tlock.getPID()
-                        + " on host '" + tlock.getHost() + "'"
-                        + ", my PID=" + lock.getPID()
-                        + ", my host='" + lock.getHost() + "'");
-                }
-                lock.setHeartbeat(new Date());
-
-                debug3("updating heartbeat");
-                doModify(updateHeartbeatQuery,lock.getHeartbeat(),lock.getStatus(),lock.getAppId());
-            }
-            else
-            {
-                throw new LockBusyException("Lock for app ID " + lock.getAppId()
-                    + " has been deleted.");
+                throw new LockBusyException("Lock busy for " + lock.getAppId());
             }
         }
-        catch(SQLException ex)
+        catch(OpenDcsDataException ex)
         {
             throw new DbIoException("Cannot read locks: " + ex);
         }
@@ -765,5 +678,194 @@ public class LoadingAppDao
                 + appId + ": " + ex);
         }
 		return null;
+    }
+
+    @Override
+    public List<String> listComputationsByApplicationId(DataTransaction tx, DbKey appId, boolean enabledOnly)
+            throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'listComputationsByApplicationId'");
+    }
+
+    @Override
+    public ArrayList<CompAppInfo> listComputationApps(DataTransaction tx, boolean usedOnly)
+            throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'listComputationApps'");
+    }
+
+    @Override
+    public Optional<CompAppInfo> getComputationApp(DataTransaction tx, DbKey id) throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getComputationApp'");
+    }
+
+    @Override
+    public Optional<CompAppInfo> getComputationApp(DataTransaction tx, String name) throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getComputationApp'");
+    }
+
+    @Override
+    public Optional<DbKey> lookupAppId(DataTransaction tx, String name) throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'lookupAppId'");
+    }
+
+    @Override
+    public void writeComputationApp(DataTransaction tx, CompAppInfo app) throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'writeComputationApp'");
+    }
+
+    @Override
+    public void deleteComputationApp(DataTransaction tx, CompAppInfo app) throws OpenDcsDataException
+    {
+        String q = "select count(*) from CP_COMPUTATION where LOADING_APPLICATION_ID = ?";
+        Connection c = tx.connection(Connection.class).orElseThrow( () -> new OpenDcsDataException("Unable to retrieve connection."));
+        try(DaoHelper dao = new DaoHelper(this.db, "delete-comp", c))
+        {
+            int numComps = dao.getSingleResult(q, rs -> rs.getInt(1),app.getKey());
+            if (numComps > 0)
+            {
+                throw new ConstraintException("Cannot delete application '" + app.getAppName()
+                    + "' with id=" + app.getKey() + " because " + numComps + " computations are "
+                        + "assigned to it.");
+            }
+
+            q = "select count(*) from SCHEDULE_ENTRY where LOADING_APPLICATION_ID = ?";
+            int numSched = dao.getSingleResult(q, rs -> rs.getInt(1),app.getKey());
+
+            if (numSched > 0)
+            {
+                throw new ConstraintException("Cannot delete application '" + app.getAppName()
+                    + "' with id=" + app.getKey() + " because " + numSched + " schedule entries are "
+                        + "assigned to it.");
+            }
+
+            String columnQuery;
+            boolean columnExists = false;
+            if (db.isOpenTSDB())
+            {
+                columnQuery = "select exists(select 1 from information_schema.columns " +
+                        "where upper(table_name) = 'ALARM_SCREENING' and upper(column_name) = 'LOADING_APPLICATION_ID')";
+                columnExists = dao.getSingleResult(columnQuery, rs -> rs.getBoolean(1));
+            }
+            else if (db.isOracle())
+            {
+                columnQuery = "select count(*) from all_tab_cols where " +
+                        "upper(table_name) = 'ALARM_SCREENING' and upper(column_name) = 'LOADING_APPLICATION_ID'";
+                columnExists = dao.getSingleResult(columnQuery, rs -> rs.getInt(1) > 0);
+            }
+
+            if (columnExists)
+            {
+                q = "select count(*) from ALARM_SCREENING where LOADING_APPLICATION_ID = ?";
+                int numAlarms = dao.getSingleResult(q, rs -> rs.getInt(1), app.getKey());
+                if (numAlarms > 0)
+                {
+                    throw new ConstraintException("Cannot delete application '" + app.getAppName()
+                        + "' with id=" + app.getKey() + " because " + numAlarms + " alarm screenings are "
+                        + "assigned to it.");
+                }
+            }
+
+
+
+            q = "delete from REF_LOADING_APPLICATION_PROP "
+                + "where LOADING_APPLICATION_ID = ?";
+            dao.doModify(q,app.getKey());
+
+
+
+            // LOADING_APPLICATION_ID column doesn't exist in old versions of DACQ_EVENT.
+            if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+            {
+                q = "delete from DACQ_EVENT where LOADING_APPLICATION_ID = ?";
+                dao.doModify(q, app.getKey());
+            }
+            q = "delete from cp_comp_proc_lock where LOADING_APPLICATION_ID = ?";
+            dao.doModify(q, app.getKey());
+            if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_15)
+            {
+                q = "delete from "
+                    + (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_17 ? "ALARM_EVENT"
+                        : "ALARM_DEF")
+                    + " where LOADING_APPLICATION_ID = ?";
+                dao.doModify(q, app.getKey());
+                q = "delete from PROCESS_MONITOR where LOADING_APPLICATION_ID = ?";
+                dao.doModify(q, app.getKey());
+            }
+            q = "delete from HDB_LOADING_APPLICATION "
+                + "where LOADING_APPLICATION_ID = ?";
+            dao.doModify(q, app.getKey());
+        }
+        catch(SQLException ex)
+        {
+            String msg = "Error in query '" + q;
+            throw new OpenDcsDataException(msg, ex);
+        }
+        catch(ConstraintException ex)
+        {
+            throw new OpenDcsDataException("Unable to delete computation app.", ex);
+        }
+    }
+
+    @Override
+    public Optional<TsdbCompLock> obtainCompProcLock(DataTransaction tx, CompAppInfo appInfo, int pid, String host)
+            throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'obtainCompProcLock'");
+    }
+
+    @Override
+    public void releaseCompProcLock(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'releaseCompProcLock'");
+    }
+
+    @Override
+    public boolean checkCompProcLockBusy(DataTransaction tx, TsdbCompLock lock) throws OpenDcsDataException 
+    {
+        Connection c = tx.connection(Connection.class).orElseThrow(()-> new OpenDcsDataException("Unable to get Connection"));
+        try (DaoHelper dao = new DaoHelper(db, "checklock", c))
+        {
+            final TsdbCompLock tlock = dao.getSingleResult(lockCheckQuery, rs -> rs2lock(rs), lock.getAppId());
+
+            if (tlock != null)
+            {
+                if (lock.getPID() != tlock.getPID()
+                 || !lock.getHost().equalsIgnoreCase(tlock.getHost()))
+                {
+                    log.info("Lock for app ID {} has been stolen by PID {} on host {}, my PID={}, my host={}",
+                            lock.getAppId(), tlock.getPID(), tlock.getHost(), lock.getPID(), lock.getHost());
+                }
+                lock.setHeartbeat(new Date());
+
+                debug3("updating heartbeat");
+                dao.doModify(updateHeartbeatQuery,lock.getHeartbeat(),lock.getStatus(),lock.getAppId());
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new OpenDcsDataException("Unable to check lock", ex);
+        }
+    }
+
+    @Override
+    public List<TsdbCompLock> getAllCompProcLocks(DataTransaction tx) throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAllCompProcLocks'");
+    }
+
+    @Override
+    public Optional<ZonedDateTime> getLastModified(DataTransaction tx, DbKey appId) throws OpenDcsDataException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getLastModified'");
     }
 }
