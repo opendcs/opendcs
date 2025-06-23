@@ -1,19 +1,28 @@
+/*
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package decodes.dbeditor;
 
-import java.util.Collections;
-import java.util.Vector;
-
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.table.AbstractTableModel;
 
-import decodes.db.Database;
-import decodes.db.DatabaseException;
-import decodes.db.DatabaseObject;
-import decodes.db.PlatformConfig;
-import decodes.gui.SortingListTableModel;
+import decodes.db.*;
 import decodes.gui.TopFrame;
 
 class ConfigSelectTableModel extends AbstractTableModel
-	implements SortingListTableModel
 {
 	private String colNames[] = 
 	{ 
@@ -22,17 +31,12 @@ class ConfigSelectTableModel extends AbstractTableModel
 		ConfigSelectPanel.dbeditLabels.getString("ConfigSelectPanel.col2"),
 		ConfigSelectPanel.dbeditLabels.getString("ConfigSelectPanel.col3")
 	};
-	private ConfigSelectPanel panel;
-	private Vector vec;
-	private int lastSortColumn;
+	private List<PlatformConfig> items;
 
-	public ConfigSelectTableModel(ConfigSelectPanel ssp)
+	public ConfigSelectTableModel()
 	{
 		super();
-		lastSortColumn = -1;
-		this.panel = ssp;
 		refill();
-		this.sortByColumn(0);
 	}
 
 	void refill()
@@ -41,36 +45,36 @@ class ConfigSelectTableModel extends AbstractTableModel
 		{
 			Database.getDb().platformConfigList.read();
 			Database.getDb().platformConfigList.countPlatformsUsing();
-		} catch (DatabaseException dbe ) { };
-		vec = new Vector(Database.getDb().platformConfigList.values());
+		} catch (DatabaseException dbe ) { }
+		items = new ArrayList<>(Database.getDb().platformConfigList.values());
+		fireTableDataChanged();
 	}
 
 	void add(PlatformConfig ob)
 	{
-		for(int i=0; i<vec.size(); i++)
+		for(int i = 0; i< items.size(); i++)
 		{
-			PlatformConfig pc = (PlatformConfig)vec.elementAt(i);
+			PlatformConfig pc = items.get(i);
 			if (pc.configName.equals(ob.configName))
 				return;
 		}
-		vec.add(ob);
+		items.add(ob);
 		fireTableDataChanged();
 	}
 
-	void replace(DatabaseObject oldOb, DatabaseObject newOb)
+	void replace(PlatformConfig oldOb, PlatformConfig newOb)
 	{
-		vec.remove(oldOb);
-		vec.add(newOb);
-		if (lastSortColumn != -1)
-			sortByColumn(lastSortColumn);
-		else
-			fireTableDataChanged();
+		int row = items.indexOf(oldOb);
+		if (row == -1) return;
+
+		items.set(row, newOb);
+		fireTableRowsUpdated(row, row);
 	}
 
 	void deleteAt(int index)
 	{
-		PlatformConfig ob = (PlatformConfig)vec.elementAt(index);
-		vec.remove(index);
+		PlatformConfig ob = items.get(index);
+		items.remove(index);
 		try { Database.getDb().getDbIo().deleteConfig(ob); }
 		catch(DatabaseException e)
 		{
@@ -95,12 +99,19 @@ class ConfigSelectTableModel extends AbstractTableModel
 
 	public int getRowCount()
 	{
-		return vec.size();
+		return items.size();
 	}
 
-	public Object getValueAt(int r, int c)
+	public Object getValueAt(int row, int col)
 	{
-		return ConfigColumnizer.getColumn(getConfigAt(r), c);
+		PlatformConfig pc = items.get(row);
+		switch(col) {
+			case 0: return pc.configName;
+			case 1: return pc.getEquipmentModelName();
+			case 2: return pc.numPlatformsUsing;    // return an Integer
+			case 3: return pc.description;
+			default: throw new IllegalArgumentException("Bad column: "+col);
+		}
 	}
 
 	PlatformConfig getConfigAt(int r)
@@ -110,13 +121,7 @@ class ConfigSelectTableModel extends AbstractTableModel
 
 	public Object getRowObject(int r)
 	{
-		return vec.elementAt(r);
+		return items.get(r);
 	}
 
-	public void sortByColumn(int c)
-	{
-		lastSortColumn = c;
-		Collections.sort(vec, new pcColumnComparator(c));
-		fireTableDataChanged();
-	}
 }

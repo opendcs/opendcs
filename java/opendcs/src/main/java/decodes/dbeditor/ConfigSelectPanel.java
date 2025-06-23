@@ -15,15 +15,17 @@
  */
 package decodes.dbeditor;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.event.*;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.ResourceBundle;
 import javax.swing.*;
+import javax.swing.table.TableRowSorter;
 
-import ilex.util.TextUtil;
 import decodes.db.*;
-import decodes.gui.*;
+import org.opendcs.gui.SearchPanel;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -37,13 +39,26 @@ public class ConfigSelectPanel extends JPanel
 	BorderLayout borderLayout1 = new BorderLayout();
 	JScrollPane jScrollPane1 = new JScrollPane();
 	ConfigSelectTableModel model;
-	SortingListTable configTable;
+	private final TableRowSorter<ConfigSelectTableModel> sorter;
+	JTable configTable;
 
 	/** Constructor. */
 	public ConfigSelectPanel(Runnable onDoubleClick)
 	{
-	    model = new ConfigSelectTableModel(this);
-		configTable = new SortingListTable(model, null);
+	    model = new ConfigSelectTableModel();
+		configTable = new JTable(model);
+		sorter = new TableRowSorter<>(model);
+		configTable.setRowSorter(sorter);
+		sorter.setSortKeys(
+				Collections.singletonList(
+						new RowSorter.SortKey(0, SortOrder.ASCENDING)
+				)
+		);
+		sorter.setComparator(0, String.CASE_INSENSITIVE_ORDER);
+		sorter.setComparator(1, String.CASE_INSENSITIVE_ORDER);
+		// skip column 2  - natural Integer order.
+		sorter.setComparator(3, String.CASE_INSENSITIVE_ORDER);
+
 		configTable.getSelectionModel().setSelectionMode(
 			ListSelectionModel.SINGLE_SELECTION);
 
@@ -70,9 +85,11 @@ public class ConfigSelectPanel extends JPanel
 	private void jbInit()
 	{
 		this.setLayout(borderLayout1);
+		SearchPanel searchPanel = new SearchPanel(sorter, model);
+		this.add(searchPanel,BorderLayout.NORTH);
 		jScrollPane1.setPreferredSize(new Dimension(453, 300));
         this.add(jScrollPane1, BorderLayout.CENTER);
-		jScrollPane1.getViewport().add(configTable, null);
+		jScrollPane1.setViewportView(configTable);
 	}
 
 	/**
@@ -164,48 +181,4 @@ public class ConfigSelectPanel extends JPanel
 }
 
 
-class ConfigColumnizer
-{
-	static String getColumn(PlatformConfig pc, int c)
-	{
-		switch(c)
-		{
-		case 0: return pc.configName;
-		case 1: return pc.equipmentModel == null ? "" : 
-			pc.equipmentModel.name;
-		case 2: return "" + pc.numPlatformsUsing;
-		case 3: return pc.description;
-		default: return "";
-		}
-	}
-}
-
-class pcColumnComparator implements Comparator
-{
-	int col;
-
-	pcColumnComparator(int col)
-	{
-		this.col = col;
-	}
-
-	public int compare(Object ob1, Object ob2)
-	{
-		if (ob1 == ob2)
-			return 0;
-		PlatformConfig pc1 = (PlatformConfig)ob1;
-		PlatformConfig pc2 = (PlatformConfig)ob2;
-		switch(col)
-		{
-		case 0: return TextUtil.strCompareIgnoreCase(
-			pc1.configName, pc2.configName);
-		case 1: return TextUtil.strCompareIgnoreCase(
-			pc1.getEquipmentModelName(), pc2.getEquipmentModelName());
-		case 2: return pc1.numPlatformsUsing - pc2.numPlatformsUsing;
-		case 3: return TextUtil.strCompareIgnoreCase(
-			pc1.description, pc2.description);
-		default: return 0;
-		}
-	}
-}
 

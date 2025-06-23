@@ -57,18 +57,6 @@ public class ConfigSelectDialog extends JDialog
 		allInit();
  	}
 
-	/** 
-	  Construct new dialog with dialog parent.
-	  @param parent the owner of this dialog to receive a call-back when a 
-	  selection has been made.
-	*/
-    public ConfigSelectDialog(JDialog parent)
-	{
-        super(parent, dbeditLabels.getString("ConfigSelectDialog.title"), true);
-		myController = null;
-		allInit();
-	}
-
 	private void allInit()
 	{
 		config = null;
