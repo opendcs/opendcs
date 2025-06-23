@@ -9,17 +9,14 @@ import ilex.util.LoadResourceBundle;
 
 import decodes.gui.*;
 import decodes.db.*;
-import decodes.dbeditor.platform.PlatformSelectTableModel;
 
 /**
 Displays a sorting-list of Platform objects in the database.
  */
 public class PlatformListPanel extends JPanel implements ListOpsController
 {
-	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
-	BorderLayout borderLayout1 = new BorderLayout();
 	ListOpsPanel listOpsPanel;
 	JLabel jLabelTitle = new JLabel();
 	PlatformSelectPanel platformSelectPanel;
@@ -64,31 +61,11 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 	/** @return type of entity that this panel edits. */
 	public String getEntityType() { return "Platform"; }
 
-	public Platform getSelectedPlatform()
-	{
-		return platformSelectPanel.getSelectedPlatform();
-	}
-
-	/**
-	 * Get the selected Platform from the filtered list
-	 * 
-	 * @return Platform
-	 */
-	public Platform getSelectedItem() 
-	{
-		int rowNumb = this.platformSelectPanel.getPlatformListTable().getSelectedRow();
-		int rowModel = this.platformSelectPanel.getPlatformListTable().convertRowIndexToModel(rowNumb);
-		PlatformSelectTableModel model = (PlatformSelectTableModel) platformSelectPanel.getPlatformListTable()
-																					   .getModel();
-		Platform platform = model.getPlatformAt(rowModel);
-		return platform;
-	}
 
 	/** Called when the 'Open' button is pressed. */
 	public void openPressed() 
 	{
-		Platform p = getSelectedItem();
-		// Platform p = platformSelectPanel.getSelectedPlatform();
+		Platform p = platformSelectPanel.getSelectedPlatform();
 		if (p == null)
 		{
 			TopFrame.instance().showError(
@@ -154,7 +131,6 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 
 	/** Called when the 'Delete' button is pressed. */
 	public void deletePressed() {
-		Platform p = getSelectedItem();
 		Platform ob = platformSelectPanel.getSelectedPlatform();
 		if (ob == null)
 			TopFrame.instance().showError(
