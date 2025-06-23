@@ -6,8 +6,6 @@ on:
       - '7.[05].[0-9]+'
       - '7.[05].[0-9]+-RC[0-9]+'
       - '8.0.0-M[0-9]+'
-  release:
-    types: [published]
 jobs:
   release-from-tag:
     permissions:
