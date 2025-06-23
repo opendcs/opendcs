@@ -38,33 +38,26 @@ public class ConfigSelectPanel extends JPanel
 	JScrollPane jScrollPane1 = new JScrollPane();
 	ConfigSelectTableModel model;
 	SortingListTable configTable;
-	ConfigSelectDialog parentDialog = null;
 
 	/** Constructor. */
-	public ConfigSelectPanel()
+	public ConfigSelectPanel(Runnable onDoubleClick)
 	{
 	    model = new ConfigSelectTableModel(this);
 		configTable = new SortingListTable(model, null);
 		configTable.getSelectionModel().setSelectionMode(
 			ListSelectionModel.SINGLE_SELECTION);
 
-		configTable.addMouseListener(
-			new MouseAdapter()
+		configTable.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
 			{
-				public void mouseClicked(MouseEvent e)
+				if (e.getClickCount() == 2)
 				{
-					if (e.getClickCount() == 2)
-					{
-						JPanel p = (JPanel)ConfigSelectPanel.this.getParent();
-						if (p instanceof ConfigsListPanel)
-							((ConfigsListPanel)p).openPressed();
-						else if (parentDialog != null)
-						{
-							parentDialog.selectButtonPressed();
-						}
-					}
+					onDoubleClick.run();
 				}
-			});
+			}
+		});
 		try {
 		    jbInit();
 		}
@@ -74,7 +67,7 @@ public class ConfigSelectPanel extends JPanel
 	}
 
 	/** Initializes GUI components. */
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		this.setLayout(borderLayout1);
 		jScrollPane1.setPreferredSize(new Dimension(453, 300));
@@ -168,10 +161,6 @@ public class ConfigSelectPanel extends JPanel
 		configTable.clearSelection();
 	}
 
-	public void setParentDialog(ConfigSelectDialog parentDialog)
-	{
-		this.parentDialog = parentDialog;
-	}
 }
 
 
