@@ -152,8 +152,4 @@ public class PlatformSelectPanel extends JPanel
 		model.deletePlatform(ob);
 	}
 
-	public JTable getPlatformListTable() {
-		return platformListTable;
-	}
-
 }
