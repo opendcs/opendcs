@@ -536,12 +536,22 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
                 {
                     CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapTS.getTimeSeriesIdentifier());
                     cts.setUnitsAbbr("mm/hr");
-                    TimedVariable PrevTV = tsdb.getPreviousValue(cts, baseTimes.first());
-                    previousHourlyEvap = PrevTV.getDoubleValue();
+                    TimedVariable prevTv = tsdb.getPreviousValue(cts, baseTimes.first());
+                    if (prevTv != null)
+                    {
+                        previousHourlyEvap = prevTv.getDoubleValue();
+                    }
+                    else
+                    {
+                        previousHourlyEvap = Double.NaN; // sentinel meaning "unknown"
+                        log.debug("No previous hourlyEvapRate value found before {} - will use first-hour fallback.", baseTimes.first());
+                    }
                 }
-                catch (Exception ex)
+                catch (RuntimeException | NoConversionException | DbIoException | BadTimeSeriesException | NoSuchObjectException ex)
                 {
-                    throw new DbCompException("Failed to initialize HourlyEvapRate for Evaporate from compute time window", ex);
+                    // Don’t abort the run; log and fall back.
+                    previousHourlyEvap = Double.NaN;
+                    log.warn("Failed to initialize previous hourlyEvapRate; using first-hour fallback.", ex);
                 }
             }
         }
@@ -587,8 +597,11 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             setOutput(hourlyEvap, computedList.get(6));
 
             hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
-
             count++;
+            if(Double.isNaN(previousHourlyEvap))
+            {
+                previousHourlyEvap = computedList.get(6);
+            }
             tally += (previousHourlyEvap + computedList.get(6)) / 2;
             previousHourlyEvap = computedList.get(6);
 

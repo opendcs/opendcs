@@ -829,7 +829,7 @@ computed for each layer as follows:
 :math:`{N_{i}}^{2} = max\left(0.00007,\ \dfrac{g}{\overline{\rho_{w}}} \, \dfrac{{\rho_{w}}_{i} - \
 {\rho_{w}}_{i - 1}}{z_{i} - z_{i - 1}}\right)`
 
-:math:`\overline{\rho_{w}} = \dfrac{\sum_{i = 1}^{N}{{\rho_{w_i}}V_{i}}}{\sum_{i = 1}^{N}V_{i}}`
+:math:`\overline{\rho_{w}} = \dfrac{\sum_{i = 1}^{N}{\rho_{w_i} \Delta z_i}}{\sum_{i = 1}^{N}{\Delta z_i}}`
 
 Where:
 
@@ -841,8 +841,9 @@ Where:
        ":math:`N_{i}`", "Stability frequency of layer |i|"
        ":math:`A_{s}`", "Water surface area"
 
-Note that :math:`\overline{\rho_{w}}` is computed as a volumetric
-average, but should be the vertical average since this is a one-dimensional model.
+Note that :math:`\overline{\rho_{w}}` is computed as a thickness-weighted average using the layer thickness
+:math:`\Delta z_i`, consistent with the one-dimensional structure of this model.
+
 Additionally, the net radiation of layer |i| is computed as follows:
 
 :math:`{I_{z_i}} = \left\{ \begin{matrix}
