@@ -36,7 +36,12 @@ import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 
-
+/**
+ * the CAPEdit application used to edit:
+ *  C - Computation
+ *  A - Algorithms
+ *  P - Processes
+ */
 public class CAPEdit 
 	extends TsdbAppTemplate
 {
