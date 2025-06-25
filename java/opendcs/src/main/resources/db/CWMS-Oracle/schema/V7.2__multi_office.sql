@@ -10,6 +10,7 @@
  -- increase description size for platformconfig table; see: https://github.com/opendcs/opendcs/issues/1154
 ALTER TABLE ${CCP_SCHEMA}.PLATFORMCONFIG MODIFY (DESCRIPTION VARCHAR2(4000)); 
  -- , Error Message = ORA-12899: value too large for column "CCP"."DATASOURCE"."DATASOURCEARG" (actual: 413, maximum: 400)
+ --- https://github.com/opendcs/opendcs/issues/672
 ALTER TABLE ${CCP_SCHEMA}.DATASOURCE MODIFY (DATASOURCEARG VARCHAR(4000));
 
 CREATE OR REPLACE PROCEDURE add_db_office_code (
