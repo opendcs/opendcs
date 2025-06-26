@@ -42,30 +42,35 @@
 */
 package decodes.tsdb.compedit;
 
-import java.awt.*;
+
+import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.Vector;
 
-import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+
+import java.util.List;
 
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import ilex.util.*;
 import decodes.db.Constants;
 import decodes.gui.SortingListTable;
-import decodes.gui.SortingListTableModel;
 import decodes.gui.TopFrame;
 import decodes.sql.DbKey;
 import decodes.tsdb.*;
+import decodes.tsdb.compedit.computations.ComputationsListPanelTableModel;
 
 @SuppressWarnings("serial")
 public class ComputationsListPanel extends ListPanel 
@@ -133,9 +138,24 @@ public class ComputationsListPanel extends ListPanel
 	{
 		if (compListTableModel == null) 
 		{
-			compListTableModel = new ComputationsListPanelTableModel();
-			compListTable = new SortingListTable(compListTableModel, 
-				ComputationsListPanelTableModel.columnWidths);
+			String columnNames[] = 
+			{ 
+				ComputationsListPanel.compLabels.getString(
+					"ComputationsFilterPanel.TableColumn1"), 
+				ComputationsListPanel.compLabels.getString(
+					"ComputationsFilterPanel.TableColumn2"), 
+				ComputationsListPanel.compLabels.getString(
+					"ComputationsFilterPanel.TableColumn3"), 
+				ComputationsListPanel.compLabels.getString(
+					"ComputationsFilterPanel.TableColumn4"),
+				ComputationsListPanel.compLabels.getString(
+					"ComputationsFilterPanel.TableColumn5"),
+				ComputationsListPanel.compLabels.getString(
+					"ComputationsFilterPanel.TableColumn6")
+			};
+			compListTableModel = new ComputationsListPanelTableModel(columnNames);
+			compListTable = new JTable(compListTableModel);
+			compListTable.setAutoCreateRowSorter(true);
 			compListTable.addMouseListener(
 				new MouseAdapter()
 				{
@@ -162,24 +182,9 @@ public class ComputationsListPanel extends ListPanel
 				compLabels.getString("ComputationsFilterPanel.OpenError"));
 			return;
 		}
-		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(rowModel);
-		ComputationDAI computationDAO = tsdb.makeComputationDAO();
-		try
-		{
-			DbComputation toOpen = computationDAO.getComputationById(dc.getComputationId());
-			openEditTab(toOpen);
-		}
-		catch(Exception ex)
-		{
-			ex.printStackTrace();
-			parentFrame.showError(
-				"Cannot read computation with id=" + dc.getComputationId() 
-				+ ": " + ex);
-		}
-		finally
-		{
-			computationDAO.close();
-		}
+		DbComputation toOpen = compListTableModel.getCompAt(rowModel);
+		
+		openEditTab(toOpen);
 	}
 
 	private void openEditTab(DbComputation dc)
@@ -193,7 +198,7 @@ public class ComputationsListPanel extends ListPanel
 			{
 				ComputationsEditPanel cep = (ComputationsEditPanel)c;
 				DbComputation eo = cep.getEditedObject();
-				if (eo.getId() != Constants.undefinedId && eo.getId() == dc.getId())
+				if (eo.getId() != Constants.undefinedId && eo.getId().equals(dc.getId()))
 				{
 					tabbedPane.setSelectedIndex(idx);
 					return;
@@ -232,7 +237,7 @@ public class ComputationsListPanel extends ListPanel
 			return;
 		}
 		int rowModel = compListTable.convertRowIndexToModel(r);
-		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(rowModel);
+		DbComputation dc = compListTableModel.getCompAt(rowModel);
 
 	    String newName = JOptionPane.showInputDialog(
 	    	compLabels.getString("ComputationsFilterPanel.NewInput"));
@@ -244,24 +249,10 @@ public class ComputationsListPanel extends ListPanel
 				compLabels.getString("ComputationsFilterPanel.CopyError2"));
 			return;
 		}
-
-		ComputationDAI computationDAO = tsdb.makeComputationDAO();
-		try
-		{
-			DbComputation toCopy = computationDAO.getComputationById(dc.getComputationId());
-			DbComputation copydc = toCopy.copyNoId();
-			copydc.setName(newName);
-			openEditTab(copydc);
-		}
-		catch(Exception ex)
-		{
-			showError("Cannot open copy of computation with id="
-				+ dc.getComputationId() + ": " + ex);
-		}
-		finally
-		{
-			computationDAO.close();
-		}
+		
+		DbComputation copydc = dc.copyNoId();
+		copydc.setName(newName);
+		openEditTab(copydc);
 	}
 
 	protected void doDelete()
@@ -274,19 +265,19 @@ public class ComputationsListPanel extends ListPanel
 			return;
 		}
 		int rowModel = compListTable.convertRowIndexToModel(r);
-		ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(rowModel);
+		DbComputation dc = compListTableModel.getCompAt(rowModel);
 
 		int ok = JOptionPane.showConfirmDialog(this,
 			LoadResourceBundle.sprintf(
 				compLabels.getString("ComputationListPanel.VerifyDelete"),
-				dc.getComputationName()));
+				dc.getName()));
 		if (ok != JOptionPane.YES_OPTION)
 			return;
 
 		ComputationDAI computationDAO = tsdb.makeComputationDAO();
 		try
 		{
-			computationDAO.deleteComputation(dc.getComputationId());
+			computationDAO.deleteComputation(dc.getId());
 			doRefresh();
 		}
 		catch(Exception ex)
@@ -294,7 +285,7 @@ public class ComputationsListPanel extends ListPanel
 			CAPEdit.instance().getFrame().showError(
 				compLabels.getString(
 					"ComputationsFilterPanel.DeleteError2") 
-					+ dc.getComputationName() + "': " + ex);
+					+ dc.getName() + "': " + ex);
 		}
 		finally
 		{
@@ -305,20 +296,17 @@ public class ComputationsListPanel extends ListPanel
 	void doRefresh()
 	{
 		Logger.instance().debug1("ComputationListPanel.doRefresh() ------------");
-		ComputationDAI computationDAO = tsdb.makeComputationDAO();
+		
 		
 		CompFilter compFilter = new CompFilter();
 		
 		compFilter.setFilterLowIds(filterLowIds);
 		filterPanel.setFilterParams(compFilter, tsdb);
-		try
+		try (ComputationDAI computationDAO = tsdb.makeComputationDAO())
 		{
-			// MJM 6.2 moves filtering into the DAO.
-			ArrayList<ComputationInList> displayComps = computationDAO.compEditList(compFilter);
-			
+			List<DbComputation> displayComps = computationDAO.listComps(c -> compFilter.passes(c));
 			compListTableModel.setContents(displayComps);
-			if (compListTableModel.sortedBy != -1)
-				compListTableModel.sortByColumn(compListTableModel.sortedBy);
+			
 		}
 		catch(Exception ex)
 		{
@@ -327,11 +315,6 @@ public class ComputationsListPanel extends ListPanel
 			ex.printStackTrace(System.err);
 			parentFrame.showError(msg);
 		}
-		finally
-		{
-			computationDAO.close();
-		}
-
 	}
 
 	public Vector<DbComputation> getSelectedComputations()
@@ -342,175 +325,9 @@ public class ComputationsListPanel extends ListPanel
 		for(int x : selected)
 		{
 			int modelRow = compListTable.convertRowIndexToModel(x);
-			ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(modelRow);
-
-			try (ComputationDAI computationDAO = tsdb.makeComputationDAO();)
-			{
-				ret.add(computationDAO.getComputationById(dc.getComputationId()));
-			}
-			catch(Exception ex)
-			{
-				parentFrame.showError("Cannot read computation with id=" + 
-					dc.getComputationId() + ": " + ex);
-			}
+			DbComputation dc = compListTableModel.getCompAt(modelRow);
+			ret.add(dc);
 		}
 		return ret;
-	}
-}
-
-@SuppressWarnings("serial")
-class ComputationsListPanelTableModel extends AbstractTableModel 
-	implements SortingListTableModel 
-{
-	private ArrayList<ComputationInList> comps = new ArrayList<ComputationInList>();
-//	public ArrayList<DbComputation> computations = 
-//		new ArrayList<DbComputation>();
-	static String columnNames[] = 
-	{ 
-		ComputationsListPanel.compLabels.getString(
-			"ComputationsFilterPanel.TableColumn1"), 
-		ComputationsListPanel.compLabels.getString(
-			"ComputationsFilterPanel.TableColumn2"), 
-		ComputationsListPanel.compLabels.getString(
-			"ComputationsFilterPanel.TableColumn3"), 
-		ComputationsListPanel.compLabels.getString(
-			"ComputationsFilterPanel.TableColumn4"),
-		ComputationsListPanel.compLabels.getString(
-			"ComputationsFilterPanel.TableColumn5"),
-		ComputationsListPanel.compLabels.getString(
-			"ComputationsFilterPanel.TableColumn6")
-	};
-	static int columnWidths[] = { 10, 20, 15, 10, 5, 40};
-	static char sortType[] = { 'i', 'S', 'S', 'S', 'S', 'S' };
-
-	int sortedBy = -1;
-	
-	/**
-	 * Construtor
-	 */
-	public ComputationsListPanelTableModel()
-	{
-		super();
-	}
-	
-	public void sortByColumn(int c)
-	{
-		Collections.sort(comps, 
-			new ComputationsListComparator(c, sortType[c]));
-		sortedBy = c;
-		fireTableDataChanged();
-	}
-
-	public void setContents(ArrayList<ComputationInList> comps)
-	{
-		this.comps = comps;
-		fireTableDataChanged();
-	}
-
-	public Object getRowObject(int arg0) {
-		return comps.get(arg0);
-	}
-
-	public int getRowCount() {
-		return comps.size();
-	}
-
-	public int getColumnCount() {
-		return columnNames.length;
-	}
-	
-	public String getColumnName(int col)
-	{
-		return columnNames[col];
-	}
-
-	public Object getValueAt(int rowIndex, int columnIndex) 
-	{
-		ComputationInList cil = comps.get(rowIndex);
-		if (cil != null)
-			return getNlColumn(cil, columnIndex);
-		else
-			return "";
-	}
-		
-	public static String getNlColumn(ComputationInList obj, int columnIndex) 
-	{
-		switch (columnIndex) {
-		case 0:
-			return "" + obj.getComputationId();
-		case 1:
-			return obj.getComputationName();
-		case 2:
-		  {
-			String s = obj.getAlgorithmName();
-			return s != null ? s :
-				ComputationsListPanel.compLabels.getString(
-					"ComputationsFilterPanel.N1ColumnNull");
-		  }
-		case 3:
-			return obj.getProcessName();
-		case 4:
-			return String.valueOf(obj.isEnabled());
-		case 5:
-			return obj.getDescription();
-		default:
-			return "";
-		}
-	}
-
-	public boolean compExists(String name)
-	{
-		for(ComputationInList dc : comps)
-		{
-			if (name.equalsIgnoreCase(dc.getComputationName()))
-				return true;
-		}
-		return false;
-	}
-}
-
-class ComputationsListComparator implements Comparator
-{
-	int column;
-	char sortType;
-
-	public ComputationsListComparator(int column, char sortType)
-	{
-		this.column = column;
-		this.sortType = sortType;
-	}
-
-	/**
-	 * Compare the eqMod names of the specified type.
-	 */
-	public int compare(Object ob1, Object ob2)
-	{
-		if (ob1 == ob2)
-			return 0;
-		ComputationInList ds1 = (ComputationInList)ob1;
-		ComputationInList ds2 = (ComputationInList)ob2;
-
-		String s1 = ComputationsListPanelTableModel.getNlColumn(ds1, column);
-		String s2 = ComputationsListPanelTableModel.getNlColumn(ds2, column);
-		if (sortType == 'i')
-		{
-			try
-			{
-				int i1 = Integer.parseInt(s1.trim());
-				int i2 = Integer.parseInt(s2.trim());
-				return i1 - i2;
-			}
-			catch(Exception ex) {}
-		}
-		if (s1 == null)
-			s1 = "";
-		if (s2 == null)
-			s2 = "";	
-		return s1.compareToIgnoreCase(s2);
-	}
-
-	public boolean equals(Object ob)
-	{
-		return false;
 	}
 }
