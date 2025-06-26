@@ -843,8 +843,6 @@ By default the following criteria are met or assumed in the algorithm.
 ... more content coming soon ...
 
 
-
-
 Standard - Arithmetic - Hidden 
 ==============================
 
@@ -860,17 +858,15 @@ Standard - Hydrologic Specific - Hidden
 CWMS Only - Hydrologic
 ======================
 
-+-----------------------+-------------------------------------------------------+
-|**Algorithm**          |**Description**                                        |
-+=======================+=======================================================+
-|CwmsRatingMultiIndep   |Implements CWMS Rating Computations                    |
-+-----------------------+-------------------------------------------------------+
-|CwmsRatingSingleIndep  |Implements CWMS Rating Computations                    |
-+-----------------------+-------------------------------------------------------+
-|CwmsScreening          |CWMS Validation with CWMS Screening Records            |
-+-----------------------+-------------------------------------------------------+
-|DatchkScreening        |CWMS Validation with DATCHK files                      |
-+-----------------------+-------------------------------------------------------+
+.. csv-table::
+    :header: "Algorithm", "Description"
+    :widths: 20, 80
+
+    "CwmsRatingMultiIndep", "Implements CWMS Rating Computations"
+    "CwmsRatingSingleIndep", "Implements CWMS Rating Computations"
+    "CwmsScreening", "CWMS Validation with CWMS Screening Records"
+    "DatchkScreening", "CWMS Validation with DATCHK files"
+    "ResEvapAlgorithm", "Calculates Reservoir Water Temperature Profiles and Evaporation"
 
 CwmsRatingMultiIndep
 --------------------
@@ -891,6 +887,8 @@ DatchkScreening
 ---------------
 
 Exec Class: decodes.cwms.validation.DatchkScreeningAlgorithm
+
+.. include:: reservoir-evaporation-algorithm.rst
 
 HDB Only - Hydrologic
 =====================
