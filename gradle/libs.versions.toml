@@ -1,7 +1,7 @@
 [versions]
 #General/Shared Versions
 oracle = { strictly = "23.5.0.24.07" }
-postgres = "42.7.4"
+postgres = "42.7.7"
 commons-logging = "1.0.4"
 commons-net = "3.3"
 dom4j = { strictly = "2.1.4" }
