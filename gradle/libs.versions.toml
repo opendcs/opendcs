@@ -1,7 +1,7 @@
 [versions]
 #General/Shared Versions
 oracle = { strictly = "23.5.0.24.07" }
-postgres = "42.7.4"
+postgres = "42.7.7"
 asm = "3.3"
 cglib = "2.1_3"
 commons-logging = "1.0.4"
