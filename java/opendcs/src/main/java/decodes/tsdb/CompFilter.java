@@ -118,6 +118,16 @@ public class CompFilter
 		if (dbComp == null)
 			return false;
 
+		if (!DbKey.isNull(processId) && !processId.equals(dbComp.getAppId()))
+		{
+			return false;
+		}
+
+		if (!DbKey.isNull(algoId) && !algoId.equals(dbComp.getAlgorithmId()))
+		{
+			return false;
+		}
+
 		if (filterLowIds && dbComp.getId().getValue() < minCompId)
 			return false;
 
