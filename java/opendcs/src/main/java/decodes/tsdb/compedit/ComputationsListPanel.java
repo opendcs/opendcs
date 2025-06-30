@@ -59,6 +59,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 
 import java.util.List;
 
@@ -120,14 +121,8 @@ public class ComputationsListPanel extends ListPanel
 			JScrollPane scrollPane = new JScrollPane(getCompListTable());
 			
 			filterPanel = new ComputationsFilterPanel(tsdb, parentFrame);
-			filterPanel.getRefresh().addActionListener(
-					new java.awt.event.ActionListener()
-					{
-						public void actionPerformed(ActionEvent e) {
-							doRefresh();
-						}
-					});
-			
+			filterPanel.getRefresh().addActionListener(e -> doRefresh());
+
 			jContentPane.add(scrollPane, java.awt.BorderLayout.CENTER);
 			jContentPane.add(filterPanel, BorderLayout.NORTH);
 		}
@@ -274,47 +269,48 @@ public class ComputationsListPanel extends ListPanel
 		if (ok != JOptionPane.YES_OPTION)
 			return;
 
-		ComputationDAI computationDAO = tsdb.makeComputationDAO();
-		try
+		SwingUtilities.invokeLater(() ->
 		{
-			computationDAO.deleteComputation(dc.getId());
-			doRefresh();
-		}
-		catch(Exception ex)
-		{
-			CAPEdit.instance().getFrame().showError(
-				compLabels.getString(
-					"ComputationsFilterPanel.DeleteError2") 
-					+ dc.getName() + "': " + ex);
-		}
-		finally
-		{
-			computationDAO.close();
-		}
+			try (ComputationDAI computationDAO = tsdb.makeComputationDAO())
+			{
+				computationDAO.deleteComputation(dc.getId());
+				doRefresh();
+			}
+			catch(Exception ex)
+			{
+				CAPEdit.instance().getFrame().showError(
+					compLabels.getString(
+						"ComputationsFilterPanel.DeleteError2") 
+						+ dc.getName() + "': " + ex);
+			}
+		});
+		
 	}
 
 	void doRefresh()
 	{
 		Logger.instance().debug1("ComputationListPanel.doRefresh() ------------");
 		
-		
-		CompFilter compFilter = new CompFilter();
-		
-		compFilter.setFilterLowIds(filterLowIds);
-		filterPanel.setFilterParams(compFilter, tsdb);
-		try (ComputationDAI computationDAO = tsdb.makeComputationDAO())
+		SwingUtilities.invokeLater(() -> 
 		{
-			List<DbComputation> displayComps = computationDAO.listComps(c -> compFilter.passes(c));
-			compListTableModel.setContents(displayComps);
+			CompFilter compFilter = new CompFilter();
 			
-		}
-		catch(Exception ex)
-		{
-			String msg = "Cannot refresh computation list: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			parentFrame.showError(msg);
-		}
+			compFilter.setFilterLowIds(filterLowIds);
+			filterPanel.setFilterParams(compFilter, tsdb);
+			try (ComputationDAI computationDAO = tsdb.makeComputationDAO())
+			{
+				List<DbComputation> displayComps = computationDAO.listComps(c -> compFilter.passes(c));
+				compListTableModel.setContents(displayComps);
+				
+			}
+			catch(Exception ex)
+			{
+				String msg = "Cannot refresh computation list: " + ex;
+				System.err.println(msg);
+				ex.printStackTrace(System.err);
+				parentFrame.showError(msg);
+			}
+		});
 	}
 
 	public Vector<DbComputation> getSelectedComputations()
