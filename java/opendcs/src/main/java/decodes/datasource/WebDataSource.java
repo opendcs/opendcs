@@ -4,24 +4,14 @@
 package decodes.datasource;
 
 import java.io.BufferedInputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.file.Paths;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSocketFactory;
-
-import org.opendcs.utils.WebUtility;
 
 import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
-import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
-import lrgs.rtstat.hosts.LrgsConnection;
-import nl.altindag.ssl.SSLFactory;
+import org.opendcs.utils.WebUtility;
 
 /**
  * Extends StreamDataSource to read data from an URL opened on the internet.

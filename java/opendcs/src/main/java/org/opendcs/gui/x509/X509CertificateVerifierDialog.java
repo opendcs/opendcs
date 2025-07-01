@@ -22,12 +22,6 @@ public class X509CertificateVerifierDialog extends JDialog
 
 	private boolean accepted = false;
 	
-	
-	public boolean getAccepted()
-	{
-		return accepted;
-	}
-
 	public X509CertificateVerifierDialog(X509Certificate[] certChain, JFrame parent)
 	{
 		super(parent);
@@ -69,6 +63,11 @@ public class X509CertificateVerifierDialog extends JDialog
 		}
 		pack();
 		WindowUtility.center(this);
+	}
+
+	public boolean getAccepted()
+	{
+		return accepted;
 	}
 	
 	private void setStatusAndClose(boolean status)

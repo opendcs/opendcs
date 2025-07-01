@@ -6,8 +6,6 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 import java.io.File;
-import java.io.IOException;
-import java.security.cert.CertificateException;
 
 import javax.net.ssl.SSLHandshakeException;
 
@@ -26,7 +24,7 @@ import uk.org.webcompere.systemstubs.properties.SystemProperties;
 
 @ExtendWith(MockServerExtension.class)
 @ExtendWith(SystemStubsExtension.class)
-public class WebUtilityTest
+class WebUtilityTest
 {
     SystemProperties properties = null ;
 
@@ -53,7 +51,7 @@ public class WebUtilityTest
 
             assertThrows(SSLHandshakeException.class, () -> WebUtility.readStringFromURL("https://localhost:" + client.getPort()));
 
-            final String result = WebUtility.readStringFromURL("https://localhost:" + client.getPort(), (certs) ->
+            final String result = WebUtility.readStringFromURL("https://localhost:" + client.getPort(), certs ->
             {
                 System.out.println(certs.getHostname().orElse("No present"));
                 return certs.getHostname().orElse("null").equals("localhost");

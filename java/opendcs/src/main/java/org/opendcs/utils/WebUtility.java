@@ -22,7 +22,7 @@ import nl.altindag.ssl.model.TrustManagerParameters;
 
 public class WebUtility 
 {
-    private static Logger log = LoggerFactory.getLogger(WebUtility.class);
+    private static final Logger log = LoggerFactory.getLogger(WebUtility.class);
 
     /**
      * Default Certificate Trust that only logs the host information for the user to review.
@@ -30,11 +30,14 @@ public class WebUtility
     public static final Predicate<TrustManagerParameters> TRUST_EXISTING_CERTIFICATES = cert ->
     {
         X509Certificate[] chain = cert.getChain();
-        WebUtility.log.warn("Certificate for host {} is not recognized. Signed by {}. If you trust this " +
+        if (log.isWarnEnabled() && chain != null && chain.length > 0)
+        {
+            log.warn("Certificate for host {} is not recognized. Signed by {}. If you trust this " +
                  "Certificate you will need to manually add this to {}",
                          cert.getHostname().orElse("No hostname"),
                          chain[0].getIssuerX500Principal().getName(),
                          EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12"));
+        }
         return false;
     };
 
@@ -111,7 +114,7 @@ public class WebUtility
         if (con instanceof HttpsURLConnection)
         {
             HttpsURLConnection httpsCon = (HttpsURLConnection)con;
-            httpsCon.setSSLSocketFactory((SSLSocketFactory)WebUtility.socketFactory(certTest));
+            httpsCon.setSSLSocketFactory(WebUtility.socketFactory(certTest));
         }
         return con.getInputStream();
     }
