@@ -13,11 +13,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.opendcs.fixtures.lrgs.LrgsTestInstance;
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.WebUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import lrgs.ldds.LddsClient;
-import lrgs.rtstat.hosts.LrgsConnection;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 @ExtendWith(SystemStubsExtension.class)
@@ -38,7 +38,7 @@ public class TlsTests
                 return new LrgsTestInstance(lrgsHome, new File("src/test/resources/lrgs.jks"), "lrgstest", mode);
             });
         assertEquals(mode, lrgs.getConfig().getDdsServerTlsMode(), "Tls Mode was not set to the expected value.");
-        final LddsClient client = new LddsClient("localhost", lrgs.getDdsPort(), LrgsConnection.socketFactory(cert->
+        final LddsClient client = new LddsClient("localhost", lrgs.getDdsPort(), WebUtility.socketFactory(cert->
         {
             X509Certificate[] chain = cert.getChain();
             assertTrue(chain.length > 0, "no certificates provided");

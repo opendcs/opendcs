@@ -8,6 +8,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -19,6 +20,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.*;
 
+import org.opendcs.gui.x509.X509CertificateVerifierDialog;
 import org.opendcs.utils.WebUtility;
 import org.slf4j.LoggerFactory;
 
@@ -392,7 +394,9 @@ public class LoadMessageDialog extends GuiDialog
 			String urlString = urlField.getText();
 			try
 			{
-				String s = WebUtility.readStringFromURL(urlString);
+				String s = WebUtility.readStringFromURL(
+					urlString,
+					cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), this));
 				sampleMessageOwner.setRawMessage(s);
 				closeDlg();
 			}

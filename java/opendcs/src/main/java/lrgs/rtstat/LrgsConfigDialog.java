@@ -52,6 +52,7 @@ import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
 import org.opendcs.gui.x509.X509CertificateVerifierDialog;
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.WebUtility;
 
 import lrgs.ddsrecv.DdsRecvConnectCfg;
 import lrgs.ddsrecv.DdsRecvSettings;
@@ -60,7 +61,6 @@ import lrgs.drgs.DrgsConnectCfg;
 import lrgs.drgs.DrgsInputSettings;
 import lrgs.ldds.LddsClient;
 import lrgs.lrgsmain.LrgsConfig;
-import lrgs.rtstat.hosts.LrgsConnection;
 import decodes.dbeditor.TimeZoneSelector;
 import decodes.gui.GuiDialog;
 import decodes.gui.PropertiesEditPanel;
@@ -1764,8 +1764,8 @@ public class LrgsConfigDialog extends GuiDialog
         LddsClient myClient = 
             new LddsClient(cfg.host,cfg.port,
                            cfg.tls != TlsMode.NONE ?
-                           LrgsConnection.socketFactory(
-                            cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), null)
+                           WebUtility.socketFactory(
+                            cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), this)
                            )
                            : null,
                            cfg.tls);
