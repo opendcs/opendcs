@@ -13,20 +13,29 @@ import ilex.gui.WindowUtility;
 import javax.swing.JPanel;
 import javax.swing.JFrame;
 
+/**
+ * Dialog to present certificate chain information to the user
+ * to allow accepting or rejecting of trust in the presented certificates.
+ */
 public class X509CertificateVerifierDialog extends JDialog
 {
 
 	private boolean accepted = false;
 	
-	
-	public boolean getAccepted()
-	{
-		return accepted;
-	}
-
 	public X509CertificateVerifierDialog(X509Certificate[] certChain, JFrame parent)
 	{
 		super(parent);
+		setup(certChain);
+	}
+
+	public X509CertificateVerifierDialog(X509Certificate[] certChain, JDialog parent)
+	{
+		super(parent);
+		setup(certChain);
+	}
+
+	private void setup(X509Certificate[]certChain)
+	{
 		getContentPane().setLayout(new BorderLayout(0, 0));
 		
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
@@ -55,6 +64,11 @@ public class X509CertificateVerifierDialog extends JDialog
 		pack();
 		WindowUtility.center(this);
 	}
+
+	public boolean getAccepted()
+	{
+		return accepted;
+	}
 	
 	private void setStatusAndClose(boolean status)
 	{
@@ -62,10 +76,34 @@ public class X509CertificateVerifierDialog extends JDialog
 		setVisible(false);
 	}	
 
-
+	/**
+	 * Primarily used in calls to {@link WebUtility.socketFactory} to allow GUI used to accept a certficate chain
+	 * not already trusted.
+	 * @param certChain
+	 * @param parent JFrame derived parent
+	 * @return whether or not the certificate chain was trusted.
+	 */
 	public static boolean acceptCertificate(X509Certificate[] certChain, JFrame parent)
 	{
 		X509CertificateVerifierDialog certDialog = new X509CertificateVerifierDialog(certChain, parent);
+		return acceptCertificate(certDialog);
+	}
+
+	/**
+	 * Primarily used in calls to {@link WebUtility.socketFactory} to allow GUI used to accept a certficate chain
+	 * not already trusted.
+	 * @param certChain
+	 * @param parent JDialog derived parent
+	 * @return whether or not the certificate chain was trusted.
+	 */
+	public static boolean acceptCertificate(X509Certificate[] certChain, JDialog parent)
+	{
+		X509CertificateVerifierDialog certDialog = new X509CertificateVerifierDialog(certChain, parent);
+		return acceptCertificate(certDialog);
+	}
+
+	private static boolean acceptCertificate(X509CertificateVerifierDialog certDialog)
+	{
 		certDialog.setModal(true);
 		certDialog.setVisible(true);
 		return certDialog.getAccepted();
