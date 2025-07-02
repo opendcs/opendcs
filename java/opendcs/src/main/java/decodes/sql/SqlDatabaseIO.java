@@ -118,6 +118,7 @@ import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
+import opendcs.dai.TaskListDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
@@ -2376,5 +2377,11 @@ public class SqlDatabaseIO
     public void setKeyGenerator(KeyGenerator keyGenerator)
     {
         this.keyGenerator = keyGenerator;
+    }
+
+    @Override
+    public TaskListDAI makeTaskListDao()
+    {
+        throw new UnsupportedOperationException("Unimplemented method 'makeTaskListDao'");
     }
 }

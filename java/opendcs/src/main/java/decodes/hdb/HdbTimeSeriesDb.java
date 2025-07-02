@@ -125,6 +125,7 @@ import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
+import opendcs.dai.TaskListDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import oracle.jdbc.OraclePreparedStatement;
@@ -1286,6 +1287,13 @@ public class HdbTimeSeriesDb extends TimeSeriesDb
 	public String flags2display(int flags)
 	{
 		return HdbFlags.flag2HdbDerivation(flags);
+	}
+
+	@Override
+	public TaskListDAI makeTaskListDao()
+	{
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'makeTaskListDao'");
 	}
 
 }
