@@ -10,9 +10,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.Vector;
 
@@ -30,20 +27,15 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 
-import org.opendcs.database.api.OpenDcsDatabase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import decodes.db.Database;
 import decodes.db.DbEnum;
 import decodes.db.EnumValue;
-import decodes.gui.SortingListTable;
 import decodes.rledit.EnumTableModel;
 import decodes.rledit.EnumValueDialog;
 import decodes.rledit.RefListEditor;
-import decodes.rledit.RefListFrame;
 import ilex.util.AsciiUtil;
-import ilex.util.TextUtil;
 
 public class EnumerationPanel extends JPanel
 {
@@ -57,8 +49,7 @@ public class EnumerationPanel extends JPanel
     private JPanel jPanel1 = new JPanel();
     private JScrollPane jScrollPane1 = new JScrollPane();
     private EnumTableModel enumTableModel = new EnumTableModel();
-    private JTable enumTable = new SortingListTable(enumTableModel,
-        new int[] { 9, 20, 41, 30 });
+    private JTable enumTable = new JTable(enumTableModel);
     private JButton addEnumValButton = new JButton();
     private JButton editEnumValButton = new JButton();
     private JButton deleteEnumValButton = new JButton();

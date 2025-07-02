@@ -295,8 +295,7 @@ public class CwmsSiteDAO extends SiteDAO
 					null,                       // publishedLatitude
 					null,                       // publishedLongitude,
 					null,                       // boundingOffice
-					null, // PLACEHOLDER FOR NATIONID, which currently does not work!!!!
-//					site.country,               // nationId
+					newSite.country, 			// NATIONID example: 'US'
 					newSite.nearestCity,
 					true);                      // ignoreNulls
 

@@ -2,7 +2,7 @@
 LRGS Installation and Setup
 ###########################
 
-This Document is part of the OpenDCS Software Suite for environmental
+This document is part of the OpenDCS Software Suite for environmental
 data acquisition and processing. The project home is:
 https://github.com/opendcs/opendcs
 
@@ -19,10 +19,11 @@ What is the LRGS?
 The letters LRGS stand for Local Readout Ground Station. The primary purpose of this component is to get data from
 satellite sources, a DRGS (Direct Readout Ground Station) or an HRIT (High Rate Information Transfer).
 
-See The legacy lrgs user guide for additional information <./legacy-lrgs-userguide.rst>
+See the legacy LRGS user guide for additional information :doc:`Legacy LRGS User Guide <legacy-lrgs-userguide>`.
 
-While this is still a reasonable description the LRGS can take data from Satellites (HRIT, DRGS, NOAAport), Irridium,
-, HRIT files, or another LRGS (DDS Protocol), and any network device that implements the DAMS-NT protocol as 
+
+The LRGS can take data from Satellites (HRIT, DRGS, NOAAport, Irridium), HRIT files, 
+or another LRGS (DDS Protocol), and any network device that implements the DAMS-NT protocol as 
 built-in sources.
 
 Users can also provide custom sources to the LRGS.
@@ -95,7 +96,7 @@ appropriate directories.
     sudo firewall-cmd --zone=public --add-port=16003/tcp --permanent
 
     
-You will need to set your environment. Add the following to .bashrc, if using bash. Otherwise adjust to your choosen shell.
+You will need to set your environment. Add the following to .bashrc, if using bash. Otherwise adjust to your chosen shell.
 
 .. code-block:: bash
 
@@ -114,7 +115,7 @@ Now set the LRGS Admin Password:
 
 .. code-block:: bash
 
-    #For random Generation:
+    #For random generation:
     if [ "$LRGS_ADMIN_PASSWORD" == "" ]; then
         LRGS_ADMIN_PASSWORD=`tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1`
         echo "Admin Password is $LRGS_ADMIN_PASSWORD"
@@ -129,6 +130,36 @@ Now set the LRGS Admin Password:
         write
         quit
     EOF
+
+
+Below is a Windows equivalent batch file:
+
+.. code-block:: bat
+
+    @echo off
+
+    set DCSTOOL_USERDIR=%appdata%\.opendcs
+    set LRGSHOME=%DCSTOOL_USERDIR%\lrgs
+
+    echo %LRGSHOME%
+    :: create empty password file
+    type nul > %LRGSHOME%\.lrgs.passwd
+
+    for /f "delims=" %%A in ('powershell -NoProfile -Command " -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 16 | ForEach-Object {[char]$_})"') do (
+        set "LRGS_ADMIN_PASSWORD=%%A"
+    )
+    echo Password is: %LRGS_ADMIN_PASSWORD%
+
+    (
+    echo adduser lrgsadmin
+    echo %LRGS_ADMIN_PASSWORD%
+    echo %LRGS_ADMIN_PASSWORD%
+    echo addrole lrgsadmin dds
+    echo addrole lrgsadmin admin
+    echo write
+    echo quit
+    ) | call editPasswd
+
 
 
 .. code-block:: bash
@@ -175,11 +206,89 @@ Installation - docker
     
     docker volume create lrgs_home
     # A default password will be generated and in the logs
-    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home ghcr.io/opendcs/opendcs/lrgs:main-nightly
+    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home ghcr.io/opendcs/lrgs:main-nightly
     # or if you wish to manually set the password
-    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home -e LRGS_ADMIN_PASSWORD="<password>" ghcr.io/opendcs/opendcs/lrgs:main-nightly
+    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home -e LRGS_ADMIN_PASSWORD="<password>" ghcr.io/opendcs/lrgs:main-nightly
 
 Connecting
 ##########
 
 Now that you have an initial LRGS you can use the RtStat program (LRGS Status in the launcher) to connect to your LRGS at the host and port 16003.
+
+
+
+TLS
+###
+
+The LRGS can now serve and receive DDS messages over TLS. This provides for confidentiality and especially integrity of 
+the messages set and received. At this time the LRGS can either serve all DDS request over TLS or none.
+
+Future work will implement "STARTTLS" and the ability to serve DDS from two ports.
+
+For client usage, the TLS settings are determined per client connection.
+
+Server
+======
+
+To serve DDS data over make use of TLS create a java keystore file of a certificate and configure the LRGS to use it.
+If you have a certificate with key and the full trust chain you can do the following to create the keystore:
+
+.. code-block:: bash
+    
+    keytool -importkeystore -noprompt \
+        -alias lrgs  \
+        -destkeystore lrgs.ks \
+        -deststorepass lrgspass \
+        -srckeystore lrgs.p12 \
+        -srcstoretype JKS \
+        -srcstorepass lrgspass # this password will depend on how the source .p12 file was created
+
+in your lrgs.conf file set the following properties (also available in the GUI)
+
+.. code-block:: text
+
+    keyStoreFile=$LRGSHOME/lrgs.p12 # or where you have placed the file
+    keyStorePassword=lrgspass
+    ddsServerTlsMode=TLS
+    # or START_TLS
+    # or NONE
+
+
+In the GUI
+
+.. image:: ./media/start/lrgs/01-rtstat-dds-server-with-tls.png
+   :alt: Enable TLS on DDS Server
+   :width: 700
+
+Client
+======
+
+The client uses a combination of the following sources when determining certificate trust:
+
+1. The current JVMs certificate keystore
+2. The system's certificate store
+3. The file $DCSTOOL_USERDIR/local_trust.p12
+
+
+The local_trust.p12 file is created automatically. For example, if you connect to an LRGS with with RtStat and
+the server is not already trusted, you will receive a prompt with the certificate information asking if you want
+to trust the server certificate.
+
+Backend processing applications will log an error message with the host name if the certificate is not already trusted.
+If necessary, you can manually add trust to the local_trust.p12 file with the keytool command similar to the 
+Server certificate above. 
+
+The password is `local_trust`. Given the limited security (no more or less than the system or java keystores) only
+public certificates should be put in the local_trust keystore.
+
+To configure the LRGS to connect with TLS to a given LRGS server, check the TLS box and save the configuration. 
+The LRGS will need to be restarted.
+
+.. image:: ./media/start/lrgs/02-rtstat-dds-client-config-dialog.png
+   :alt: DDS Configuration Dialog with TLS Option
+   :width: 700
+
+For Routing Specs, documented later, there is a "lrgs.tls" property that can be set to one of the same options to enable 
+TLS for those connections.
+
+For `START_TLS` OpenDCS clients consider failure to establish the TLS connection an unrecoverable error.

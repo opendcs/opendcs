@@ -7,6 +7,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.utils.WebUtility;
+
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
 
@@ -52,6 +55,7 @@ public class GetDcpMessages extends Thread
 	 * Constructor.
 	 * @param host host name to connect to
 	 * @param port port number
+	 * @param tls to use TLS or not
 	 * @param user user name
 	 * @param crit name of search criteria file
 	 * @param verbose if true, print additional info about each message
@@ -59,7 +63,7 @@ public class GetDcpMessages extends Thread
 	 * @param afterAscii String to print after each message
 	 * @param newline if true, print newline after each message
 	 */
-	public GetDcpMessages(String host, int port, String user, String crit, 
+	public GetDcpMessages(String host, int port, boolean tls, String user, String crit,
 		boolean verbose, String beforeAscii, String afterAscii, boolean newline,
 		boolean unix)
 		throws Exception
@@ -71,8 +75,11 @@ public class GetDcpMessages extends Thread
 		this.unix = unix;
 		before = new String(AsciiUtil.ascii2bin(beforeAscii));
 		after = new String(AsciiUtil.ascii2bin(afterAscii));
-
-		lddsClient = new LddsClient(host, port);
+		if (tls) {
+			lddsClient = new LddsClient(host, port, WebUtility.socketFactory(WebUtility.TRUST_EXISTING_CERTIFICATES));
+		} else {
+			lddsClient = new LddsClient(host, port);
+		}
 		if (verbose)
 			lddsClient.setDebugStream(System.err);
 		total = 0;
@@ -297,6 +304,8 @@ public class GetDcpMessages extends Thread
 		"h", "Host", "", TokenOptions.optSwitch, "localhost");
 	static IntegerToken portArg= new IntegerToken(
 		"p", "Port number", "", TokenOptions.optSwitch, LddsParams.DefaultPort);
+	static BooleanToken tlsArg = new BooleanToken(
+		"tls", "use tls", "", TokenOptions.optSwitch,false);
 	static StringToken userArg = new StringToken(
 		"u", "User", "", TokenOptions.optSwitch | TokenOptions.optRequired, "");
 	static StringToken searchcritArg = new StringToken(
@@ -339,6 +348,7 @@ public class GetDcpMessages extends Thread
 	{
 		settings.addToken(hostArg);
 		settings.addToken(portArg);
+		settings.addToken(tlsArg);
 		settings.addToken(userArg );
 		settings.addToken(searchcritArg );
 		settings.addToken(verboseArg );
@@ -409,7 +419,7 @@ public class GetDcpMessages extends Thread
 				crit = null;
 
 			GetDcpMessages gdm = new GetDcpMessages(
-				hostArg.getValue(), portArg.getValue(), userArg.getValue(),
+				hostArg.getValue(), portArg.getValue(), tlsArg.getValue(),userArg.getValue(),
 				crit, verboseArg.getValue(), beforeArg.getValue(), 
 				afterArg.getValue(), newlineArg.getValue(), unixArg.getValue());
 			gdm.timeout = timeoutArg.getValue();
@@ -437,4 +447,3 @@ public class GetDcpMessages extends Thread
 		}
 	}
 }
-

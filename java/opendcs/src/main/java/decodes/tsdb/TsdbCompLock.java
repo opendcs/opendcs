@@ -63,7 +63,8 @@ public class TsdbCompLock
 	 * @param appId the application ID.
 	 * @param pid the PID on the host name.
 	 * @param host the host name where the app is running.
-	 * @param heartbeat stored in database & used to detect dead apps.
+	 * @param heartbeat stored in database and used to detect dead apps.
+	 * @param status the status of the app.
 	 */
 	public TsdbCompLock(DbKey appId, int pid, String host, Date heartbeat,
 		String status)

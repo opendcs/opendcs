@@ -698,8 +698,7 @@ Logger.instance().debug3("findInterp(sec=" + sec + ") prevSec=" + prevSec + ", n
     }
 
     /**
-     * @param tsName
-     *            the tsName to set
+     * @param briefDescription sets the brief description of the time series.
      */
     public void setBriefDescription(String briefDescription)
     {

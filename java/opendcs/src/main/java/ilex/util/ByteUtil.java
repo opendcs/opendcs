@@ -251,7 +251,7 @@ public class ByteUtil
 	}
 	
 	/**
-	 * Pass a byte array that might contain a mix of ascii & binary chars.
+	 * Pass a byte array that might contain a mix of ascii and binary chars.
 	 * ASCII chars are printed, others are shown as hex.
 	 * @param b byte array
 	 * @param offset offset where to start

@@ -12,6 +12,8 @@
 */
 package lrgs.ddsrecv;
 
+import org.opendcs.tls.TlsMode;
+
 import ilex.util.ByteUtil;
 import ilex.util.TextUtil;
 
@@ -32,6 +34,9 @@ public class DdsRecvConnectCfg
 
 	/** socket listening port */
 	public int port;
+
+	/** use TLS for this connection */
+	public TlsMode tls;
 
 	/** Enable the port for receiving data */
 	public boolean enabled;
@@ -61,6 +66,7 @@ public class DdsRecvConnectCfg
 		this.host = host;
 		name = host;
 		port = 16003;
+		tls = TlsMode.NONE;
 		enabled = true;
 		username = "ddsrecv";
 		authenticate = false;
@@ -76,6 +82,7 @@ public class DdsRecvConnectCfg
 		host = rhs.host;
 		name = rhs.name;
 		port = rhs.port;
+		tls = rhs.tls;
 		enabled = rhs.enabled;
 		username = rhs.username;
 		authenticate = rhs.authenticate;
@@ -92,6 +99,7 @@ public class DdsRecvConnectCfg
 		return "ddsrecv[" + connectNum + "] host=" + host
 			+ ", name=" + name
 			+ ", port=" + port
+			+ ", tls=" + tls.name()
 			+ ", enabled=" + enabled
 			+ ", username=" + username
 			+ ", authenticate=" + authenticate
@@ -117,6 +125,6 @@ public class DdsRecvConnectCfg
 		r = TextUtil.strCompareIgnoreCase(username, rhs.username);
 		if (r != 0) return r;
 		
-		return 0;
+		return Integer.compare(tls.ordinal(), rhs.tls.ordinal());
 	}
 }

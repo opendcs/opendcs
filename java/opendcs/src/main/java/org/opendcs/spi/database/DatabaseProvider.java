@@ -28,7 +28,7 @@ public interface DatabaseProvider
 
     /**
      * Create an instance of OpenDcsDatabase
-     * @param settings DecodesSettigns object
+     * @param settings DecodesSettings object
      * @param credentials Properties with appropriate credentials for the given database.
      * @return
      * @throws DatabaseException
@@ -42,8 +42,8 @@ public interface DatabaseProvider
      * Create an instance of OpenDcsDatabase with existing connection setup.
      * DecodesSettings will be filled in from the datasource.
      * @param dataSource any valid javax.sql.DataSource
-     * @param DecodesSettings
-     * @return
+     * @param settings DecodesSettings object
+     * @returnOpenDcsDatabase
      * @throws DatabaseException
      */
     OpenDcsDatabase createDatabase(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException;

@@ -13,6 +13,7 @@ import javax.swing.SwingWorker;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.opendcs.tls.TlsMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,7 @@ import lrgs.gui.MessageBrowser;
 import java.awt.Component;
 import java.awt.Dimension;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 
 import java.util.Date;
 import java.util.Locale;
@@ -39,6 +41,9 @@ public final class LrgsConnectionPanel extends JPanel
     private static final long serialVersionUID = 1L;
     private JComboBox<LrgsConnection> hostCombo;
     private JTextField portField;
+    private JLabel tlsOptionLabel = new JLabel(labels.getString("RtStatFrame.tls"));
+    private JComboBox<TlsMode> tlsOption = new JComboBox<>(TlsMode.values());
+    
     private JTextField usernameField;
     private JButton pausedButton;
     private PasswordWithShow passwordField;
@@ -92,9 +97,11 @@ public final class LrgsConnectionPanel extends JPanel
 
         portField = new JTextField();
         portField.setMaximumSize(new Dimension(32, 2147483647));
-        panel_1.add(portField);
+        panel_1.add(portField);        
         portField.setText("16003");
         portField.setColumns(10);
+        panel_1.add(tlsOptionLabel);
+        panel_1.add(tlsOption);
 
         JPanel panel_2 = new JPanel();
         add(panel_2);
@@ -208,7 +215,7 @@ public final class LrgsConnectionPanel extends JPanel
         {
             portField.setText(""+c.getPort());
             usernameField.setText(c.getUsername());
-
+            tlsOption.setSelectedItem(c.getTls());
             String pw = LrgsConnection.decryptPassword(c, LrgsConnectionPanel.pwk);
             passwordField.setText(pw);
         }
@@ -263,7 +270,8 @@ public final class LrgsConnectionPanel extends JPanel
         final int port = Integer.parseInt(portField.getText());
         final String username = usernameField.getText();
         final String password = LrgsConnection.encryptPassword(passwordField.getText(), LrgsConnectionPanel.pwk);
-        return new LrgsConnection(hostName, port, username, password, null);
+        final TlsMode tls = (TlsMode)tlsOption.getSelectedItem();
+        return new LrgsConnection(hostName, port, username, password, null, tls);
     }
 
     public static class ConnectionRender extends JLabel implements ListCellRenderer<LrgsConnection>

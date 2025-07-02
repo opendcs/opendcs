@@ -13,7 +13,7 @@ public class UserPropertiesBuilder
     /**
      * Create the actual properties file.
      * @param out prepared output stream to write the properties
-     * @throws IOException
+     * @throws IOException if an I/O error occurs while writing to the stream
      */
     public void build(OutputStream out) throws IOException
     {
@@ -23,7 +23,7 @@ public class UserPropertiesBuilder
     /**
      * Set Database location
      * @param dbLocation directory or jdbc URL
-     * @return
+     * @return This builder instance for method chaining.
      */
     public UserPropertiesBuilder withDatabaseLocation(String dbLocation)
     {
@@ -34,7 +34,7 @@ public class UserPropertiesBuilder
     /**
      * Set the required SQLDate format
      * @param format SimpleDateFormat used to generating or parsing certain results.
-     * @return
+     * @return UserPropertiesBuilder instance with the updated SQLDate format.
      */
     public UserPropertiesBuilder withSqlDateFormat(String format)
     {
@@ -45,7 +45,7 @@ public class UserPropertiesBuilder
     /**
      * Sets what type of database we're using
      * @param type XML,OPENDCS,CWMS,HDB are currently valid
-     * @return
+     * @return This builder instance for method chaining.
      */
     public UserPropertiesBuilder withEditDatabaseType(String type)
     {
@@ -55,8 +55,8 @@ public class UserPropertiesBuilder
 
     /**
      * Default site name style (CWMS,HDB,USGS,NWS, etc) to look for.
-     * @param preference
-     * @return
+     * @param preference for name style
+     * @return This builder instance for method chaining.
      */
     public UserPropertiesBuilder withSiteNameTypePreference(String preference)
     {
@@ -67,8 +67,8 @@ public class UserPropertiesBuilder
     /**
      * Pointer to authentication information. defaults to $DCSTOOL_USERDIR/.decodes.auth
      * Required for SQL based instances.
-     * @param auth
-     * @return
+     * @param auth source for authentication information.
+     * @return This builder instance for method chaining.
      */
     public UserPropertiesBuilder withDecodesAuth(String auth)
     {
@@ -80,8 +80,8 @@ public class UserPropertiesBuilder
      * Set the Cwms Office Id to use for connection setup.
      *
      * NOTE: only used by CWMS.
-     * @param officeId
-     * @return
+     * @param officeId default officeId
+     * @return This builder instance for method chaining.
      */
     public UserPropertiesBuilder withCwmsOffice(String officeId)
     {
@@ -93,8 +93,8 @@ public class UserPropertiesBuilder
      * Default office id to use for certain interfaces.
      *
      * NOTE: CWMS Only
-     * @param officeId
-     * @return
+     * @param officeId default officeId
+     * @return This builder instance for method chaining.
      */
     public UserPropertiesBuilder withDbOffice(String officeId)
     {
@@ -106,7 +106,7 @@ public class UserPropertiesBuilder
      * Default, if not set, is false.
      *
      * @param writeCwmsLocations true if you want to allow creating of CWMS locations (sites)
-     * @return
+     * @return This builder instance for method chaining.
      */
     public UserPropertiesBuilder withWriteCwmsLocations(boolean writeCwmsLocations)
     {
@@ -117,7 +117,7 @@ public class UserPropertiesBuilder
     /**
      *
      * @param generator which KeyGenerator implementation to use.
-     * @return
+     * @return This builder instance for method chaining.
      */
     public UserPropertiesBuilder withSqlKeyGenerator(Class<? extends KeyGenerator> generator)
     {
@@ -225,6 +225,10 @@ routingStatusDir=$DCSTOOL_USERDIR/routstat
 decodesFormatLabelMode=f
 */
 
+    /**
+     * Sets the database driver class.
+     * @param driverString jdbcDriverClass
+     */
     public void withDatabaseDriver(String driverString)
     {
         this.props.put("jdbcDriverClass",driverString);
