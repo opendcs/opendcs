@@ -36,6 +36,7 @@ jdbi = "3.39.1"
 flywaydb = "9.8.1"
 sun-mailapi="1.6.7"
 hakky54-ssl = "9.1.0"
+mock-server = "5.15.0"
 
 #test deps
 junit = "5.10.2"
@@ -117,7 +118,7 @@ apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
 webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
 fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
-
+org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter-no-dependencies", version.ref = "mock-server" }
 
 
 #integration test deps
