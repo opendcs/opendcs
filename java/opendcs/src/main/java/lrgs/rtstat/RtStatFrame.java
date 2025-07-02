@@ -3,6 +3,10 @@ package lrgs.rtstat;
 import java.awt.*;
 import java.awt.event.*;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import javax.swing.*;
 import javax.swing.event.*;
 
@@ -11,6 +15,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.ResourceBundle;
@@ -19,6 +28,8 @@ import java.util.Properties;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.opendcs.gui.x509.X509CertificateVerifierDialog;
+import org.opendcs.tls.TlsMode;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 
@@ -30,6 +41,8 @@ import ilex.gui.LoginDialog;
 import ilex.gui.WindowUtility;
 import ilex.util.AsciiUtil;
 import ilex.util.AuthException;
+import ilex.util.DesEncrypter;
+import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
@@ -96,11 +109,12 @@ public class RtStatFrame
     private int dividerLoc;
     private int splitPaneHeight;
 
-    /** the currently connected host -- null if not connected. */
-    String host;
-    int port;
-    String user;
-    String passwd;
+	/** the currently connected host -- null if not connected. */
+	String host;
+	int port;
+	String user;
+	String passwd;
+	SocketFactory socketFactory;
 
     /** Dialog for editing users. */
     private UserListDialog userListDialog = null;
@@ -365,7 +379,9 @@ public class RtStatFrame
     {
         closeConnection();
         client = null;
-        final LddsClient tclient = new LddsClient(host, port);
+        SocketFactory socketFactory = c.getSocketFactory(cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), this));
+
+		final LddsClient tclient = new LddsClient(host, port,socketFactory, c.getTls());
         final JobDialog connectionJobDialog = new JobDialog(
             this,
             labels.getString("RtStatFrame.connectingToInfo") + host+":"+port,
@@ -416,6 +432,7 @@ public class RtStatFrame
                         }
                         catch(ServerError ex)
                         {
+							ex.printStackTrace(System.out);
                             connectionJobDialog.addToProgress(labels.getString(
                                     "RtStatFrame.connectionRejectedErr")
                                     + ex);
@@ -423,12 +440,14 @@ public class RtStatFrame
                         }
                         catch(ProtocolError ex)
                         {
+							ex.printStackTrace(System.out);
                             connectionJobDialog.addToProgress(
                             labels.getString("RtStatFrame.protocolErr") + ex);
                             tclient.disconnect();
                         }
                         catch(Exception ex)
                         {
+							ex.printStackTrace(System.out);
                             connectionJobDialog.addToProgress(labels.getString(
                               "RtStatFrame.authenticationErr") + ex);
                             tclient.disconnect();
@@ -446,7 +465,7 @@ public class RtStatFrame
         {
             setTitle(labels.getString("RtStatFrame.frameTitle")+": " + host);
             client = tclient;
-            displayEvent("Connected to " + host + ":" + port + " as user '" + user + "'");
+            displayEvent("Connected to " + host + ":" + port + " as user '" + user + "'" + "with TLS" + c.getTls());
             return true;
         }
         else
@@ -699,6 +718,7 @@ public class RtStatFrame
             String msg = LoadResourceBundle.sprintf(
                     labels.getString("RtStatFrame.cannotReadDdsConfErr"),
                     host, ex);
+            log.atError().setCause(ex).log(msg);
             showError(msg);
         }
 
@@ -900,7 +920,7 @@ public class RtStatFrame
                 return;
             }
         }
-        hostCombo.addItem(new LrgsConnection(hostname, 16003, null, null, null));
+        hostCombo.addItem(new LrgsConnection(hostname, 16003, null, null, null, TlsMode.NONE));
         hostCombo.setSelectedIndex(n);
     }
 

@@ -121,12 +121,12 @@ public class FileCounter implements Counter
 	}
 
 	/**
-	* Main is a simple utility for testing & manipulating File Counter.
+	* Main is a simple utility for testing and manipulating File Counter.
 	* Two or three arguments must be supplied on the command line:
 	* <ul>
-	* <li>g filename - Get next value from file & increment</li>
+	* <li>g filename - Get next value from file and increment</li>
 	* <li>s filename value - Set next value of file to value</li>
-	* </ul
+	* </ul>
 	* @param args
 	* @throws IOException
 	*/

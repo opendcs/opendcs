@@ -87,8 +87,18 @@
 package ilex.net;
 
 import ilex.net.BasicSvrThread;
+import ilex.util.Logger;
+import ilex.util.Pair;
+
 import java.net.*;
 import java.util.LinkedList;
+import java.util.Objects;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.slf4j.LoggerFactory;
+
 import java.util.Iterator;
 import java.io.*;
 
@@ -103,6 +113,7 @@ servers. It provides the basic functionality for:
 */
 public abstract class BasicServer
 {
+	public static final org.slf4j.Logger log = LoggerFactory.getLogger(BasicServer.class);
 	/** The port number to listen on */
 	protected int portNum;
 
@@ -117,6 +128,11 @@ public abstract class BasicServer
 
 	/** The bind address if one is specified. */
 	private InetAddress bindaddr;
+
+	/** The server socket factory so SSL can be injected */
+	protected ServerSocketFactory serverSocketFactory;
+	/** So that the server can be upgraded to TLS after connection. */
+	protected SSLSocketFactory socketFactory;
 
 	/** Should be set by concrete subclass calling setModuleName() */
 	String module = "BasicServer";
@@ -145,14 +161,32 @@ public abstract class BasicServer
 	public BasicServer( int port, InetAddress bindaddr ) 
 		throws IOException
 	{
-		if (port <= 0)
-			throw new IOException(
-				"BasicServer: port number must be a positive integer.");
+		this(port,bindaddr,Pair.of(ServerSocketFactory.getDefault(),null));
+	}
 
+	/**
+	* This version of the constructor allows you to specify the inet
+	* address for the listening socket. This should be used if your
+	* host has more than one network connection and you need to specify
+	* which to use.
+	* @param port port to listen on
+	* @param bindaddr used if you have multiple NICs and only want to listen 
+	* on one.
+	* @param socketFactory used to allow setup of SSL for those servers that need it.
+	*/
+	public BasicServer( int port, InetAddress bindaddr, Pair<ServerSocketFactory,SSLSocketFactory> socketFactories)
+		throws IOException
+	{
+		Objects.requireNonNull(socketFactories, "Socket Factories MUST non-null with this constructor.");
+		if (port < 0)
+			throw new IOException(
+				"BasicServer: port number must be a positive integer, or zero to get a random port assigned.");
+		this.serverSocketFactory = socketFactories.first;
+		this.socketFactory = socketFactories.second;
 		portNum = port;
 		this.bindaddr = bindaddr;
 		makeServerSocket();
-		mySvrThreads = new LinkedList();
+		mySvrThreads = new LinkedList<>();
 		listeningThread = null;
 	}
 
@@ -162,8 +196,8 @@ public abstract class BasicServer
 	* @throws IOException if can't open.
 	*/
 	protected void makeServerSocket( ) throws IllegalArgumentException, IOException
-	{
-		listeningSocket = new ServerSocket(portNum, 50, bindaddr);
+	{		
+		listeningSocket = this.serverSocketFactory.createServerSocket(portNum, portNum, bindaddr);
 	}
 
 	/**
@@ -187,6 +221,7 @@ public abstract class BasicServer
 			{
 				listeningThread = Thread.currentThread();
 				Socket client = listeningSocket.accept();
+				Logger.instance().info("Socket connection of type: " + client.getClass().getName());
 				listeningThread = null;
 				serviceNewClient(client);
 			}
@@ -347,9 +382,11 @@ public abstract class BasicServer
 	*/
 	protected abstract BasicSvrThread newSvrThread( Socket sock ) throws IOException;
 
-	public int getPort() { return portNum; }
+	public int getPort()
+	{
+		return this.listeningSocket.getLocalPort();
+	}
 
 	protected void setModuleName(String nm) { module = nm; }
 
 }
-

@@ -14,22 +14,42 @@ package lrgs.lrgsmain;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.Map.Entry;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+
+import org.opendcs.tls.TlsMode;
+
 import java.util.Properties;
 import java.util.Set;
 import java.net.InetAddress;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 
 import opendcs.dai.LoadingAppDAI;
 import ilex.util.Logger;
 import ilex.util.FileServerLock;
 import ilex.util.ServerLockable;
 import ilex.util.NoOpServerLock;
+import ilex.util.Pair;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
 import ilex.util.FileLogger;
@@ -403,7 +423,9 @@ public class LrgsMain
 
         // Initialize the LRGS Database Interface
         dbThread = LrgsDatabaseThread.instance();
-        dbThread.start();
+        if (!dbThread.isAlive()) {
+            dbThread.start();
+        }
 
         alarmHandler.start();
 
@@ -667,16 +689,16 @@ public class LrgsMain
         LrgsConfig cfg = LrgsConfig.instance();
         if (cfg.ddsBindAddr != null && cfg.ddsBindAddr.trim().length() == 0)
             cfg.ddsBindAddr = null;
-
         try
         {
+            final Pair<ServerSocketFactory,SSLSocketFactory> socketFactories = initSocketFactory(cfg);
             InetAddress ia =
                 (cfg.ddsBindAddr != null && cfg.ddsBindAddr.length() > 0) ?
                 InetAddress.getByName(cfg.ddsBindAddr) : null;
-
             ddsServer = new DdsServer(cfg.ddsListenPort, ia, msgArchive,
-                    queueLogger, statusProvider);
+                    queueLogger, statusProvider, socketFactories);
             ddsServer.init();
+            return true;
         }
         catch(Exception ex)
         {
@@ -685,11 +707,38 @@ public class LrgsMain
             Logger.instance().fatal(msg);
             System.err.println(msg);
             ex.printStackTrace(System.err);
-            return false;
+            throw new RuntimeException("Unable to start DDS server",ex);
+            //return false;
         }
-        return true;
     }
 
+
+    private Pair<ServerSocketFactory,SSLSocketFactory> initSocketFactory(LrgsConfig cfg)
+        throws NoSuchAlgorithmException, CertificateException, 
+               FileNotFoundException, IOException, KeyStoreException, UnrecoverableKeyException, KeyManagementException
+    {
+        ServerSocketFactory serverSocketFactory = ServerSocketFactory.getDefault();
+        SSLSocketFactory socketFactory = null;
+        if(cfg.getDdsServerTlsMode() != TlsMode.NONE && cfg.keyStoreFile != null && cfg.keyStorePassword != null) {
+            SSLContext context = SSLContext.getInstance("TLS");
+            //TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            KeyStore ks = KeyStore.getInstance("jks");
+            ks.load(new FileInputStream(EnvExpander.expand(cfg.keyStoreFile)),cfg.keyStorePassword.toCharArray());
+            kmf.init(ks,cfg.keyStorePassword.toCharArray());
+            context.init(kmf.getKeyManagers(),null,null);
+            if (cfg.getDdsServerTlsMode() == TlsMode.TLS)
+            {
+                serverSocketFactory = context.getServerSocketFactory();
+            }
+            else // START_TLS mode requires the BasicServer to have access to an ssl socket factory
+                 // to alter the connection
+            {
+                socketFactory = context.getSocketFactory();
+            }
+        }
+        return Pair.of(serverSocketFactory, socketFactory);
+    }
 
     public void shutdown()
     {

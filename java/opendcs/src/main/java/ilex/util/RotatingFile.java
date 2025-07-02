@@ -8,7 +8,7 @@ import java.nio.channels.FileLock;
 import java.nio.channels.FileChannel;
 
 /**
-* This class used for log file & summary files. It allows a file to grow to a fixed
+* This class used for log file and summary files. It allows a file to grow to a fixed
 * size. Upon reaching the limit, the file is renamed with a ".old" extension and a
 * new file is created. File locking is used to allow output from multiple JVMs.
 */

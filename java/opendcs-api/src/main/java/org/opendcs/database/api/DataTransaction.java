@@ -45,6 +45,7 @@ public interface DataTransaction extends AutoCloseable {
     /**
      * Reset data sources to known state.
      * Transaction *MUST* return to the valid initial state.
+     * @throws OpenDcsDataException if a failure to rollback occurs
      */
     void rollback() throws OpenDcsDataException;
 

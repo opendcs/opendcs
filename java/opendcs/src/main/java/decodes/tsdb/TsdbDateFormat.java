@@ -7,7 +7,7 @@ import java.util.TimeZone;
 import java.util.Date;
 
 /**
-Static methods for parsing & printing dates in a variety of formats.
+Static methods for parsing and printing dates in a variety of formats.
 */
 public class TsdbDateFormat
 {

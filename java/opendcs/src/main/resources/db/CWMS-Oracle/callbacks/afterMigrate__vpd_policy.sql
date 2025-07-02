@@ -9,8 +9,6 @@
 -----------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 -- CCP CWMS Database
--- Maintainer: Cove Software, LLC
--- Last Modified: March 5, 2014
 ---------------------------------------------------------------------------
 
 ---------------------------------------------------------------------------
@@ -18,7 +16,7 @@
 ---------------------------------------------------------------------------
 begin
   for rec in (
-    select table_name from user_tab_columns where column_name in ('DB_OFFICE_CODE')
+    select table_name from dba_tab_columns where owner='${CCP_SCHEMA}' and  column_name in ('DB_OFFICE_CODE')
     )
   loop
     begin

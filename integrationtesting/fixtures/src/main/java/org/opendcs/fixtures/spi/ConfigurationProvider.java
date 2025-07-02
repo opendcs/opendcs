@@ -5,7 +5,7 @@ import java.io.File;
 public interface ConfigurationProvider {
     /**
      * Unique name of this implementation
-     * @return
+     * @return name
      */
     public String getImplementation();
 
@@ -15,7 +15,8 @@ public interface ConfigurationProvider {
      *
      * @param tempDir temporary location to expand and build "opendcs_userdir"
      *                DCSTOOL_USERDIR will point to this location.
-     * @return
+     * @return Configuration instance 
+     * @throws Exception if an error occurs during configuration setup.
      */
     public Configuration getConfig(File tempDir) throws Exception;
 }

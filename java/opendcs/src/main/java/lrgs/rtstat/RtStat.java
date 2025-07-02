@@ -12,6 +12,8 @@ import javax.swing.*;
 
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
+
+import org.opendcs.tls.TlsMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +78,7 @@ public class RtStat
 															LrgsConnection.encryptPassword(
 																password,
 																LrgsConnectionPanel.pwk),
-															null)
+															null, TlsMode.NONE)
 									);
 								}
 							}

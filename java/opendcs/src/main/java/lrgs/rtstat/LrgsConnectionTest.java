@@ -473,7 +473,6 @@ public class LrgsConnectionTest{
 	/**
 	 * This method initializes this
 	 * 
-	 * @return void
 	 */
 	public void startConnect() {
 		backgroundJob.start();

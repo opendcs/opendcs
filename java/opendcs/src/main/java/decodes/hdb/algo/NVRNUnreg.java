@@ -10,68 +10,57 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
- * Navajo Unregulated Inflow Computation
-Sums Vallecito Delta Storage and Evaporation at t-1
-adds it to Navajo Inflow to get Unregulated Inflow
-Adds Azotea tunnel volume to Navajo Unregulated flow to get Mod Unregulated Flow
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Navajo Unregulated Inflow Computation \n" +
+"Sums Vallecito Delta Storage and Evaporation at t-1 \n" +
+"adds it to Navajo Inflow to get Unregulated Inflow \n" +
+"Adds Azotea tunnel volume to Navajo Unregulated flow to get Mod Unregulated Flow")
 public class NVRNUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double VCRCDeltaStorage;	//AW:TYPECODE=i
-	public double VCRCEvap;			//AW:TYPECODE=i
-	public double NVRNInflow;			//AW:TYPECODE=i
-	public double SJANVolume;			//AW:TYPECODE=i
-	String _inputNames[] = { "VCRCDeltaStorage", "VCRCEvap", "NVRNInflow", "SJANVolume" };
-//AW:INPUTS_END
+	@Input
+	public double VCRCDeltaStorage;
+	@Input
+	public double VCRCEvap;
+	@Input
+	public double NVRNInflow;
+	@Input
+	public double SJANVolume;
 
-//AW:LOCALVARS
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable unreg = new NamedVariable("unreg", 0);
+	@Output(type = Double.class)
 	public NamedVariable modunreg = new NamedVariable("modunreg", 0);
-	String _outputNames[] = { "unreg", "modunreg" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "fail")
 	public String VCRCDeltaStorage_missing = "fail";
+	@PropertySpec(value = "fail")
 	public String VCRCEvap_missing 		= "fail";
+	@PropertySpec(value = "fail")
 	public String NVRNInflow_missing 		= "fail";
+	@PropertySpec(value = "fail")
 	public String SJANVolume_missing 		= "fail";
-	String _propertyNames[] = { "VCRCDeltaStorage_missing", "VCRCEvap_missing", "NVRNInflow_missing", "SJANVolume_missing" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -87,7 +76,6 @@ public class NVRNUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		if (_sliceInputsDeleted) { //handle deleted values, since we have more than one output
 			deleteAllOutputs();
 			return;
@@ -99,41 +87,13 @@ debug3("doAWTimeSlice, VCRCDeltaStorage="+VCRCDeltaStorage+" VCRCEvap="+VCRCEvap
 
 		setOutput(unreg, NVRNInflow + sum);
 		setOutput(modunreg, NVRNInflow + sum + SJANVolume);
-
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

@@ -246,9 +246,9 @@ public class OpenDCSPGConfiguration implements Configuration
     }
 
     /**
-     * Returns true if this Database implementation supports a given dataset.
+     * 
      * @param dao Class that extends from {@link opendcs.dao.DaoBase}
-     * @return
+     * @return true if this Database implementation supports a given dataset.
      */
     @Override
     public boolean supportsDao(Class<? extends DaoBase> dao)

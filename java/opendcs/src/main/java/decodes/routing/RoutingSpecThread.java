@@ -63,7 +63,7 @@ public class RoutingSpecThread
 	/** The object that is formatting data for output. */
 	protected OutputFormatter formatter;
 
-	/** The presentation group used to set units & rounding. */
+	/** The presentation group used to set units and rounding. */
 	protected PresentationGroup presentationGroup;
 
 	/** If true, apply sensor limits in config or platform sensor records. */
@@ -1014,14 +1014,9 @@ public class RoutingSpecThread
 			currentStatus = "ERR-FormatInit";
 			return;
 		}
-		catch(DataConsumerException e)
+		catch(DataConsumerException ex)
 		{
-			log(Logger.E_FAILURE, "Cannot initialize consumer '" + rs.consumerType
-				+ "': " + e.getLocalizedMessage());
-			if (e.getCause() != null)
-			{
-				log(Logger.E_FAILURE,e.getCause().getLocalizedMessage());
-			}
+			log.atError().setCause(ex).log("Cannot initialize consumer '{}'", rs.consumerType);
 			done = true;
 			currentStatus = "ERR-OutputInit";
 			return;
@@ -1201,7 +1196,7 @@ log(Logger.E_DEBUG1, "includePMs='" + s + "', " + includePMs.size() + " names pa
 
 	/**
 	  Checks to see if the routing spec has been modified since it was 
-	  started, and if so, reloads & re-initializes this executable.
+	  started, and if so, reloads and re-initializes this executable.
 
 	  @return true if spec was reloaded.
 	*/

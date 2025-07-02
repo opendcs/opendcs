@@ -1,1 +1,1 @@
-@"%~dp0\decj" decodes.tsdb.ImportComp %*%
+@"%~dp0\decj" decodes.tsdb.ImportCompApp %*%

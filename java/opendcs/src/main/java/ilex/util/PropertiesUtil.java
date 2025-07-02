@@ -26,7 +26,7 @@ public class PropertiesUtil
 	* In this method, keys are compared case SENSITIVE.
 	* @param p1 the first properties set.
 	* @param p2 the second properties set.
-	* @return true if keys & values in both sets are equal, or if both are null.
+	* @return true if keys and values in both sets are equal, or if both are null.
 	*/
 	public static boolean propertiesEqual( Properties p1, Properties p2 )
 	{
@@ -246,7 +246,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 		String ignorePfx[])
 	{
 		// Use reflection to get declared public fields to match property names.
-		Class cls = obj.getClass();
+		Class<?> cls = obj.getClass();
 		Properties otherProps = null;
 		try 
 		{
@@ -260,7 +260,7 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 
 		Field[] fields = cls.getDeclaredFields();
 		
-		Enumeration names = props.propertyNames();
+		Enumeration<?> names = props.propertyNames();
 	  nextName:
 		while(names.hasMoreElements())
 		{
@@ -304,8 +304,13 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 							fld.setDouble(obj, Double.parseDouble(pval));
 						else if (ftyp.equals("boolean"))
 							fld.setBoolean(obj, TextUtil.str2boolean(pval));
+						else if (fld.getType().isEnum())
+						{
+							Class<?> clazz = fld.getType();
+							fld.set(obj, Enum.valueOf(clazz.asSubclass(Enum.class), pval));
+						}
 						else
-						{													
+						{
 							Logger.instance().warning(
 								"Unsupported field type '" + ftyp 
 								+ "' for field '" + fname + "' - skipped.");
@@ -351,13 +356,13 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 	public static void storeInProps(Object obj, Properties props, String prefix)
 	{
 		// Use reflection to get declared public fields to match property names.
-		Class cls = obj.getClass();
+		Class<?> cls = obj.getClass();
 
 		try 
 		{
 			Field opf = cls.getField("otherProps");
 			Properties otherProps = (Properties)opf.get(obj); 
-			Enumeration penum = otherProps.propertyNames();
+			Enumeration<?> penum = otherProps.propertyNames();
 			while(penum.hasMoreElements())
 			{
 				String nm = (String)penum.nextElement();
@@ -424,6 +429,10 @@ Logger.instance().debug3("Property " + k + " values differ '" + v1 + "' '" + v2 
 				}
 				else if (ftyp.equals("boolean"))
 					props.setProperty(pname, "" + fld.getBoolean(obj));
+				else if (fld.getType().isEnum())
+				{
+					props.setProperty(pname, ((Enum<?>)fld.get(obj)).name());
+				}
 				
 				//kludge added by Shweta to get rid of warning errors. needs to be correctly implemented
 				else if(ftyp.equals("decodes.sql.DbKey")){}

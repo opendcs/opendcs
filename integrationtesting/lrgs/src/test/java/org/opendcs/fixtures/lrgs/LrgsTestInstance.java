@@ -8,9 +8,12 @@ import java.io.FileWriter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.opendcs.tls.TlsMode;
+
 import ilex.util.FileLogger;
 import ilex.util.QueueLogger;
 import lrgs.archive.MsgArchive;
+import lrgs.lrgsmain.LrgsConfig;
 import lrgs.lrgsmain.LrgsInputInterface;
 import lrgs.lrgsmain.LrgsMain;
 
@@ -26,6 +29,11 @@ public class LrgsTestInstance
     private final Thread lrgsThread;
 
     public LrgsTestInstance(File lrgsHome) throws Exception
+    {
+        this(lrgsHome, null, null, TlsMode.NONE);
+    }
+
+    public LrgsTestInstance(File lrgsHome, File keyStore, String keyStorePassword, TlsMode tlsMode) throws Exception
     {
         if (!lrgsHome.canRead())
         {
@@ -44,6 +52,16 @@ public class LrgsTestInstance
             fw.write("hritSourceCode=HR"+System.lineSeparator());
             fw.write("hritFileEnabled=true"+System.lineSeparator());
             fw.write("noTimeout=true"+System.lineSeparator());
+            fw.write("ddsListenPort=0"+System.lineSeparator());
+            fw.write("enableDdsRecv=true"+System.lineSeparator());
+            fw.write("ddsServerTlsMode="+tlsMode.name()+System.lineSeparator());
+
+            if (keyStore!=null) {
+                String fileName =keyStore.getAbsolutePath();
+                fileName = fileName.replace('\\','/');
+                fw.write("keyStoreFile="+fileName+System.lineSeparator());
+                fw.write("keyStorePassword="+keyStorePassword+System.lineSeparator());
+            }
             fw.flush();
         }
         new File(lrgsHome,"netlist").mkdirs();
@@ -74,6 +92,16 @@ public class LrgsTestInstance
     public MsgArchive getArchive()
     {
         return archive;
+    }
+
+    public int getDdsPort()
+    {
+        return lrgs.getDdsServer().getPort();
+    }
+
+    public LrgsConfig getConfig()
+    {
+        return LrgsConfig.instance();
     }
 
 

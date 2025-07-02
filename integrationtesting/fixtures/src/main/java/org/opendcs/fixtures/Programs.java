@@ -33,6 +33,7 @@ public class Programs
      * @param propertiesFile userProperties file for this execution
      * @param env SystemStubs environment instance
      * @param exit SystemStubs exit instance
+     * @param properties SystemProperties instance
      * @param filesOrDirectories list of specific files or directories. Will be expanded recursively.
      * @throws Exception If DbImport exists with a code other than 0 (or null)
      */
@@ -216,6 +217,7 @@ public class Programs
      * @param presentationGroup configuration for output format
      * @param tsNames list of specific timeseries to delete
      * @throws Exception If DbImport exists with a code other than 0 (or null)
+     * @return output from the command
      */
     public static String OutputTs(File log, File propertiesFile,
                                   EnvironmentVariables env, SystemExit exit, String start,

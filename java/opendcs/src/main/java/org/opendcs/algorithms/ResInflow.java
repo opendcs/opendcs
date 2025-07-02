@@ -20,41 +20,36 @@ import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 
-//AW:IMPORTS
-// Place an import statements you need here.
 import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverter;
 import decodes.util.DecodesException;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-//AW:IMPORTS_END
 
+import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//AW:JAVADOC
-/**
-    Calculates reservoir input with the equation
- *  inflow = /\Storage + Evap + Outflow
- *
- *  Outflow should be provided in cfs
- * Storage and Evap should be provided in ac-ft and will be converted to cfs based on the
- * interval of data.
- * ( this comp will need to be created 3 times for each project, 15minutes, 1hour, and 1day )
- * there may be a way to group things
- *
- * NOTE: there are ac-ft to cfs conversions build into this comp, do NOT use metric input, the comp
- *       will provide bogus results.
- *
- * @author L2EDDMAN
- *
- */
 
-public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
+@Algorithm(description=
+    "Calculates reservoir inflow with the equation\n" +
+    "  inflow = ΔStorage + Evap + Outflow\n" +
+    "\n" +
+    "Outflow should be provided in cfs\n" +
+    "Storage and Evap should be provided in ac-ft and will be converted to cfs based on the\n" +
+    "interval of data.\n" +
+    "(This comp will need to be created 3 times for each project: 15 minutes, 1 hour, and 1 day.)\n" +
+    "There may be a way to group things.\n" +
+    "\n" +
+    "NOTE: There are ac-ft to cfs conversions built into this comp; do NOT use metric input—the comp\n" +
+    "      will provide bogus results."
+)
+public class ResInflow extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    private static final Logger log = LoggerFactory.getLogger(FlowResIn.class);
+    private static final Logger log = LoggerFactory.getLogger(ResInflow.class);
 
     @Input
     public double ResOut;
@@ -62,7 +57,6 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
     public double Evap;
     @Input(typeCode = "id", description = "Change in storage between this and the previous time slice")
     public double deltaStorage;
-    String _inputNames[] = { "ResOut", "Evap", "deltaStorage" };
 
 
 
@@ -74,11 +68,9 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
 
     @Output(type = Double.class)
     public NamedVariable ResIn = new NamedVariable("ResIn", 0);
-    String _outputNames[] = { "ResIn" };
 
-    @org.opendcs.annotations.PropertySpec(description = "Should an evaporation volume be included in the calculation.")
+    @PropertySpec(description = "Should an evaporation volume be included in the calculation.", value = "false")
     public boolean UseEvap = false;
-    String _propertyNames[] = { "UseEvap" };
 
     // Allow javac to generate a no-args constructor.
 
@@ -246,30 +238,5 @@ public class FlowResIn extends decodes.tsdb.algo.AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
-    }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
     }
 }

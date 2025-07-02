@@ -1,5 +1,6 @@
 package org.opendcs.gui;
 
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.util.ResourceBundle;
 
@@ -34,6 +35,8 @@ public class PasswordWithShow extends JPanel
 
         this.setLayout(new BoxLayout(this,BoxLayout.LINE_AXIS));
         passwordField = new JPasswordField(width);
+        
+        passwordField.setMinimumSize(new Dimension(width, passwordField.getPreferredSize().height));
         defaultEchoChar = passwordField.getEchoChar();
         showPasswordButton = new JToggleButton(resources.getString("Password.show"));
         showPasswordButton.setName("showToggle");
@@ -53,6 +56,7 @@ public class PasswordWithShow extends JPanel
         });
         this.add(passwordField);
         this.add(showPasswordButton);
+        this.setMinimumSize(new Dimension(width + 10 /* a little bit for the button */, showPasswordButton.getPreferredSize().height));
     }
 
     /**

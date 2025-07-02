@@ -41,16 +41,23 @@ public class XmlDatabaseProvider implements DatabaseProvider
     @Override
     public OpenDcsDatabase createDatabase(DataSource dataSource, DecodesSettings settings) throws DatabaseException
     {
+        Database old = Database.getDb();
         Database db = new Database(true);
+        
         XmlDatabaseIO dbIo = new XmlDatabaseIO(dataSource, settings);
         db.setDbIo(dbIo);
+        
         try
         {
+            Database.setDb(db);
             db.init(settings);
         }
         catch(DecodesException ex)
         {
             throw new DatabaseException("Unable to initialize decodes.", ex);
+        }
+        finally{
+            Database.setDb(old);
         }
         return new XmlOpenDcsDatabaseWrapper(settings, db, null, dataSource);
     }    

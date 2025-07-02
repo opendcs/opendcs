@@ -157,8 +157,8 @@ is installed.
 If a java version (at least 1.8.##) is returned, then java is installed.
 Proceed with installing OpenDCS.
  
-If nothing is returned or the version is older then 1.8, then install
-the 1.8 or up to java 17.
+If nothing is returned or the version is older than 1.8, then install
+Java 1.8 or up to java 17.
 
 OpenDCS is tested with Java releases from https://adoptium.net/temurin/releases/.
 

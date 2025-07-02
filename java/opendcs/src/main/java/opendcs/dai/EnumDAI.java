@@ -49,8 +49,7 @@ public interface EnumDAI extends DaiBase, OpenDcsDao
 
 	/**
 	 * 
-	 * @param enumName
-	 * @return
+	 * @param top EnumList
 	 * @throws DbIoException
 	 * @deprecated new code should use the DataTransaction based methods method
 	 */
@@ -59,8 +58,7 @@ public interface EnumDAI extends DaiBase, OpenDcsDao
 	
 	/**
 	 * 
-	 * @param enumName
-	 * @return
+	 * @param enumList
 	 * @throws DbIoException
 	 * @deprecated new code should use the DataTransaction based methods method
 	 */
@@ -69,8 +67,7 @@ public interface EnumDAI extends DaiBase, OpenDcsDao
 
 	/**
 	 * 
-	 * @param enumName
-	 * @return
+	 * @param dbenum
 	 * @throws DbIoException
 	 * @deprecated new code should use the DataTransaction based methods method
 	 */

@@ -1,5 +1,19 @@
 /*
-*  $Id$
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
+/*
 *
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
@@ -14,24 +28,21 @@ package decodes.tsdb.compedit;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import java.util.*;
 
 import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableRowSorter;
 
+import org.opendcs.gui.SearchPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import opendcs.dai.AlgorithmDAI;
 
 import decodes.db.Constants;
-import decodes.gui.SortingListTable;
-import decodes.gui.SortingListTableModel;
 
 import decodes.tsdb.*;
 import decodes.tsdb.compedit.algotab.LoadNewDialog;
@@ -39,15 +50,13 @@ import decodes.tsdb.compedit.algotab.LoadNewDialog;
 public class AlgorithmsListPanel extends ListPanel
 {
 	private static final Logger log = LoggerFactory.getLogger(AlgorithmsListPanel.class);
-	JPanel getFieldPanel() {
-		return getJContentPane();
-	}
 
 	private JPanel jContentPane = null;
 
 	JTable algoListTable = null;
 
 	AlgoListTableModel algoListTableModel = null;
+
 
 	private String openErr;
 	private String newInputText;
@@ -92,7 +101,21 @@ public class AlgorithmsListPanel extends ListPanel
 			checkForNew.addActionListener(e -> checkForNew());
 			buttonPanel.add(checkForNew);
 			jContentPane.add(buttonPanel, java.awt.BorderLayout.SOUTH);
-			JScrollPane scrollPane = new JScrollPane(getAlgoListTable());
+
+			getAlgoListTable();
+			JScrollPane scrollPane = new JScrollPane(algoListTable);
+			TableRowSorter<AlgoListTableModel> sorter;
+			sorter = new TableRowSorter<>(algoListTableModel);
+			algoListTable.setRowSorter(sorter);
+			sorter.setSortKeys(
+					Collections.singletonList(
+							new RowSorter.SortKey(1, SortOrder.ASCENDING)
+					)
+			);
+			algoListTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+			SearchPanel searchPanel = new SearchPanel(sorter, algoListTableModel);
+			this.add(searchPanel,BorderLayout.NORTH);
 
 			jContentPane.add(scrollPane, java.awt.BorderLayout.CENTER);
 		}
@@ -118,14 +141,16 @@ public class AlgorithmsListPanel extends ListPanel
 		}
 	}
 
+
 	protected JTable getAlgoListTable()
 	{
 		if (algoListTableModel == null)
 		{
 			algoListTableModel = new AlgoListTableModel();
 			algoListTableModel.fill();
-			algoListTable = new SortingListTable(algoListTableModel,
-				AlgoListTableModel.columnWidths);
+			algoListTable = new JTable(algoListTableModel);
+
+
 			algoListTable.addMouseListener(
 				new MouseAdapter()
 				{
@@ -152,7 +177,7 @@ public class AlgorithmsListPanel extends ListPanel
 		//Get the correct row from the table model
 		int modelrow = algoListTable.convertRowIndexToModel(r);
 		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();
-		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
+		DbCompAlgorithm dca = tablemodel.getRowAlgorithm(modelrow);
 		openEditTab(dca);
 	}
 
@@ -207,7 +232,7 @@ public class AlgorithmsListPanel extends ListPanel
 		//Get the correct row from the table model
 		int modelrow = algoListTable.convertRowIndexToModel(r);
 		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();
-		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
+		DbCompAlgorithm dca = tablemodel.getRowAlgorithm(modelrow);
 
 	    String newName = JOptionPane.showInputDialog(cpyInput);
 		if (newName == null)
@@ -235,7 +260,7 @@ public class AlgorithmsListPanel extends ListPanel
 		//Get the correct row from the table model
 		int modelrow = algoListTable.convertRowIndexToModel(r);
 		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();
-		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
+		DbCompAlgorithm dca = tablemodel.getRowAlgorithm(modelrow);
 
 		AlgorithmDAI algorithmDao = CAPEdit.instance().theDb.makeAlgorithmDAO();
 		try

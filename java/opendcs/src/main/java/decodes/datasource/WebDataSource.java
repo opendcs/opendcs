@@ -4,8 +4,6 @@
 package decodes.datasource;
 
 import java.io.BufferedInputStream;
-import java.net.URL;
-import java.net.URLConnection;
 
 import decodes.db.DataSource;
 import decodes.db.Database;
@@ -13,6 +11,7 @@ import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
+import org.opendcs.utils.WebUtility;
 
 /**
  * Extends StreamDataSource to read data from an URL opened on the internet.
@@ -86,16 +85,13 @@ public class WebDataSource
 		try
 		{
 			log(Logger.E_INFORMATION, module + " Opening '" + activeAddr + "'");
-			URL url = new URL(activeAddr);
-			URLConnection con = url.openConnection();
-			con.setConnectTimeout(5000);
-			return new BufferedInputStream(con.getInputStream());
+			return new BufferedInputStream(WebUtility.openUrl(activeAddr, 5000));
 		}
-		catch(Exception ex)
+		catch (Exception ex)
 		{
 			String msg = module + " Open failed on '" + activeAddr + "': " + ex;
 			log(Logger.E_WARNING, msg);
-			throw new DataSourceException(msg);
+			throw new DataSourceException(msg, ex);
 		}
 	}
 

@@ -5,6 +5,7 @@ package lrgs.ldds;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -13,6 +14,11 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.util.zip.GZIPInputStream;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+
+import org.opendcs.tls.TlsMode;
 
 import ilex.util.*;
 import ilex.net.BasicClient;
@@ -92,7 +98,25 @@ public class LddsClient extends BasicClient
     */
     public LddsClient(String host, int port)
     {
-        super(host, port);
+        this(host,port,SocketFactory.getDefault(), TlsMode.NONE);
+    }
+
+
+    public LddsClient(String host, int port, SocketFactory socketFactory)
+    {
+        this(host, port, socketFactory, socketFactory instanceof SSLSocketFactory ? TlsMode.TLS : TlsMode.NONE);
+    }
+
+    /**
+      Constructs client for LDDS at specified port on specified host.
+      The connection is not made until the 'connect()' method is called.
+      @param host the remote host
+      @param port the remote port
+      @param socketFactory SocketFactory used to allow injecting SSL usage
+    */
+    public LddsClient(String host, int port, SocketFactory socketFactory, TlsMode tlsMode)
+    {
+        super(host, port,socketFactory, tlsMode);
 
         goesDateFormat = new SimpleDateFormat("yyDDDHHmmss");
         TimeZone jtz = TimeZone.getTimeZone("UTC");
@@ -150,6 +174,10 @@ public class LddsClient extends BasicClient
         socket.setTcpNoDelay(true);
         socket.setSoTimeout(60000);
         linput = new LddsInputStream(input);
+        if (this.tlsMode == TlsMode.START_TLS)
+        {
+            sendStartTls();
+        }
     }
 
     /**
@@ -198,6 +226,34 @@ public class LddsClient extends BasicClient
         return sessionKey != null;
     }
 
+    public void sendStartTls() throws IOException
+    {
+        LddsMessage msg = new LddsMessage(LddsMessage.IdStartTls,null);
+        sendData(msg.getBytes());
+        try
+        {
+            msg = linput.getMessage();
+            if (msg.MsgId == LddsMessage.IdStartTls)
+            {
+                String result = new String(msg.getBytes(),StandardCharsets.UTF_8);
+
+                if (result.contains("proceed"))
+                {
+                    super.startTls();
+                    this.linput = new LddsInputStream(input);
+                }
+                else
+                {
+                    throw new IOException("Unable to initiate TLS. Server responsed with: " + result);
+                }
+            }
+        }
+        catch (ProtocolError ex)
+        {
+            throw new IOException("Unable to initiate TLS.", ex);
+        }
+        
+    }
     /**
       Sends a Hello message with the specified user name.
       Then awaits the response from the server. If an exception is not thrown,

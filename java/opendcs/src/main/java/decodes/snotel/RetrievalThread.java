@@ -499,7 +499,7 @@ Logger.instance().debug1(module + " ASCII MSG: non PB char '" + (char)buffer[i]
 
 	/**
 	 * Provides default isBinary = false.
-	 * @see getField(int length, String delim, boolean isBinary)
+	 * @see getField(int length, String delim, boolean isBinary, boolean isString)
 	 */
 	public byte[] getField(int length, String delim)
 	throws EndOfDataException

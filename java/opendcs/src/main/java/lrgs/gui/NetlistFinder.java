@@ -59,22 +59,25 @@ public class NetlistFinder
 		f = new File(EnvExpander.expand("$DECODES_INSTALL_DIR/netlist/"+name));
 		Logger.instance().debug3("   Checking '" + f.getPath() + "'");
 		if (f.canRead())
+		{
 			return f;
-
-		Database db = Database.getDb();
-		try { db.networkListList.read(); }
-		catch(DatabaseException ex)
-		{
-			Logger.instance().warning("Cannot load network lists from DECODES database: " + ex);
 		}
-		decodes.db.NetworkList nl = db.networkListList.find(name);
-		if (nl != null)
+
+		String tmpdirname = EnvExpander.expand("$DCSTOOL_USERDIR/tmp");
+		Database db = Database.getDb();
+		if (db == null)
 		{
-			
-			Logger.instance().debug3("   Found DECODES netlist by that name.");
-			String tmpdirname = EnvExpander.expand("$DCSTOOL_USERDIR/tmp");
-			try
+			Logger.instance().failure("Unable to find netlist. Database is not available.");
+			return null;
+		}
+		try
+		{
+			db.networkListList.read();
+			decodes.db.NetworkList nl = db.networkListList.find(name);
+			if (nl != null)
 			{
+				Logger.instance().debug3("   Found DECODES netlist by that name.");
+
 				nl.prepareForExec();
 				lrgs.common.NetworkList lln = nl.legacyNetworkList;
 				File tmpdir = new File(tmpdirname);
@@ -85,22 +88,25 @@ public class NetlistFinder
 				lln.saveFile(f);
 				return f;
 			}
-			catch(InvalidDatabaseException ex)
-			{
-				Logger.instance().warning(
-					"Cannot construct legacy netlist file for '" + name + "': "
-					+ ex);
-				return null;
-			}
-			catch(IOException ex)
-			{
-				Logger.instance().warning(
-					"Cannot write legacy netlist file '" + name + "' in dir '" 
-					+ tmpdirname + "': " + ex);
-				return null;
-			}
 		}
-		
+		catch(InvalidDatabaseException ex)
+		{
+			Logger.instance().warning(
+				"Cannot construct legacy netlist file for '" + name + "': "
+				+ ex);
+			return null;
+		}
+		catch(IOException ex)
+		{
+			Logger.instance().warning(
+				"Cannot write legacy netlist file '" + name + "' in dir '" 
+				+ tmpdirname + "': " + ex);
+			return null;
+		}
+		catch(DatabaseException ex)
+		{
+			Logger.instance().warning("Cannot load network lists from DECODES database: " + ex);
+		}
 		return null;
 	}
 }

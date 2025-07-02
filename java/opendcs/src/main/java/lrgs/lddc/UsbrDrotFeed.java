@@ -44,7 +44,7 @@ public class UsbrDrotFeed extends GetDcpMessages
 		throws Exception
 	{
 		// no before/after strings, no verbose, no newline.
-		super(ddsHost, ddsPort, ddsUser, crit, false, "", "", false, false);
+		super(ddsHost, ddsPort, false, ddsUser, crit, false, "", "", false, false);
 		timeout = 3600;
 		setSingleMode(true);
 		Logger.instance().log(Logger.E_INFORMATION,

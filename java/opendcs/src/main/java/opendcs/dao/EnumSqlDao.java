@@ -239,10 +239,6 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 		{
 			synchronized(cache)
 			{
-				/**				 
-				 * This could also be a single query with a join.
-				 * though a little trickier with the different versions columns
-				 */
 				doQuery("SELECT " + getEnumColumns(dbVer) + " FROM Enum", 
 							  (rs) -> {
 								DbEnum en = rs2Enum(rs, dbVer);
@@ -250,10 +246,12 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 							    top.addEnum(en);
 							});
 				
-				String q = "SELECT enumId, enumValue, description, execClass, editClass";
+				String q = "SELECT enumId, enumValue, ev.description, execClass, editClass";
 				if (dbVer >= DecodesDatabaseVersion.DECODES_DB_6)
 					q = q + ", sortNumber";
-				q = q + " FROM EnumValue";
+				q = q + " FROM EnumValue ev,";
+				q = q + " Enum  e";
+				q = q + " WHERE ev.enumId = e.id";
 				doQuery(q, (rs) -> {
 					DbKey key = DbKey.createDbKey(rs, 1);
 					DbEnum dbEnum = cache.getByKey(key);

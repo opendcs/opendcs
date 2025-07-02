@@ -1,11 +1,18 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.3  2008/11/20 18:49:21  mjmaloney
-*  merge from usgs mods
-*
-*/
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -21,6 +28,7 @@ import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.util.DecodesSettings;
+import org.slf4j.LoggerFactory;
 
 /**
 Panel containing a sortable list of Platform Configurations.
@@ -29,7 +37,7 @@ Panel containing a sortable list of Platform Configurations.
 public class ConfigsListPanel extends JPanel
 	implements ListOpsController
 {
-	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ConfigsListPanel.class);
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
     BorderLayout borderLayout1 = new BorderLayout();
@@ -42,13 +50,13 @@ public class ConfigsListPanel extends JPanel
     public ConfigsListPanel()
 	{
         try {
-			configSelectPanel = new ConfigSelectPanel();
+			configSelectPanel = new ConfigSelectPanel(this::openPressed);
 		    listOpsPanel = new ListOpsPanel(this);
             jbInit();
         }
         catch(Exception ex) 
 		{
-            ex.printStackTrace();
+            log.atInfo().log("Error  initializing ConfigsListPanel",ex);
         }
     }
 
@@ -62,7 +70,7 @@ public class ConfigsListPanel extends JPanel
 	}
 
 	/** Initializes GUI components. */
-    private void jbInit() throws Exception {
+    private void jbInit()  {
         this.setLayout(borderLayout1);
         jLabel1.setHorizontalAlignment(SwingConstants.CENTER);
         jLabel1.setText(dbeditLabels.getString("ConfigsListPanel.title"));

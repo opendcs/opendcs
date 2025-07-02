@@ -61,17 +61,6 @@ public interface MigrationProvider
      void loadBaselineData(Profile profile, String username, String password) throws IOException;
 
     /**
-     * Get baseline Decodes data, like enums, datatype, equipment, presentation groups, etc
-     * @return
-     */
-    List<File> getDecodesData();
-    /**
-     * Get Baseline computation get, like Algorithm definitions, Loading Apps, etc.
-     * @return
-     */
-    List<File> getComputationData();
-
-    /**
      * For those implementations that require placeholders, retrieve them
      * and set the values.
      *

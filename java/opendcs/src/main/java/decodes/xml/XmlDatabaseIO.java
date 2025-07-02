@@ -13,39 +13,6 @@
  *
  */
 
-/*
-*  $Id$
-*  
-*  Open Source Software
-*  
-*  $Log$
-*  Revision 1.6  2016/02/04 18:51:01  mmaloney
-*  Improved debugs.
-*
-*  Revision 1.5  2015/04/15 19:59:47  mmaloney
-*  Fixed synchronization bugs when the same data sets are being processed by multiple
-*  routing specs at the same time. Example is multiple real-time routing specs with same
-*  network lists. They will all receive and decode the same data together.
-*
-*  Revision 1.4  2014/08/29 18:20:00  mmaloney
-*  remove updateTransportId method
-*
-*  Revision 1.3  2014/08/22 17:23:04  mmaloney
-*  6.1 Schema Mods and Initial DCP Monitor Implementation
-*
-*  Revision 1.2  2014/05/30 13:00:28  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.17  2013/05/06 18:17:20  mmaloney
-*  Bug in Platform File Name creation. DbKey is now not a number.
-*
-*  Revision 1.16  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
-*
-*/
 package decodes.xml;
 
 import decodes.db.EngineeringUnit;
@@ -54,7 +21,6 @@ import decodes.db.RoutingExecStatus;
 import decodes.db.RoutingStatus;
 import ilex.util.Counter;
 import ilex.util.FileCounter;
-import ilex.util.Logger;
 import ilex.xml.LoggerErrorHandler;
 import ilex.xml.XmlObjectWriter;
 import ilex.xml.XmlOutputStream;
@@ -290,7 +256,7 @@ public class XmlDatabaseIO extends DatabaseIO
 	protected InputStream getInputStream( String dir, String name ) throws IOException
 	{
 		String fn = makePath(dir, name);
-		Logger.instance().debug3("XmlDatabaseIO: Opening '" + fn + "'");
+		log.info("XmlDatabaseIO: Opening '" + fn + "'");
 		return new FileInputStream(fn);
 	}
 
@@ -391,8 +357,10 @@ public class XmlDatabaseIO extends DatabaseIO
 				catch(Exception e)
 				{
 					String msg = "Error parsing platform config '" 
-						+ ls[i] + "' " + e;
-					Logger.instance().log(Logger.E_FAILURE, msg);
+						+ ls[i] + "' ";
+					log.atError()
+					.setCause(e)
+					.log(msg);
 				}
 				finally
 				{
@@ -477,8 +445,10 @@ public class XmlDatabaseIO extends DatabaseIO
 		    catch(Exception e)
 		    {
 		      String msg = "Error parsing platform config '"
-		        + ls[i] + "' " + e;
-		      Logger.instance().log(Logger.E_FAILURE, msg);
+		        + ls[i] + "' ";
+		      log.atError()
+			  .setCause(e)
+			  .log(msg);
 		    }
 		    finally
 		    {
@@ -508,8 +478,10 @@ public class XmlDatabaseIO extends DatabaseIO
 		    catch(Exception e)
 		    {
 		      String msg = "Error parsing platform config '"
-		        + ls[i] + "' " + e;
-		      Logger.instance().log(Logger.E_FAILURE, msg);
+		        + ls[i] + "' ";
+		      log.atError()
+			  .setCause(e)
+			  .log(msg);
 		    }
 		    finally
 		    {
@@ -557,8 +529,9 @@ public class XmlDatabaseIO extends DatabaseIO
 				// Catch other type (IO or bad cast) exceptions
 				catch(Exception e)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing data source '" + ls[i] + "' " + e);
+					log.atError()
+					.setCause(e)
+					.log("Error parsing data source '" + ls[i] + "' ");
 				}
 				finally
 				{
@@ -660,7 +633,9 @@ public class XmlDatabaseIO extends DatabaseIO
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace(System.out);
+			log.atError()
+			.setCause(e)
+			.log("Error reading readEngineeringUnitList. "+e);
 			throw new DatabaseException(e.toString());
 		}
 		finally
@@ -733,8 +708,9 @@ public class XmlDatabaseIO extends DatabaseIO
 				// Catch other type (IO or bad cast) exceptions
 				catch(Exception e)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing equipment model '" + ls[i] + "' " + e);
+					log.atError()
+					.setCause(e)
+					.log("Error parsing equipment model '" + ls[i] + "' " );
 				}
 				finally
 				{
@@ -776,8 +752,9 @@ public class XmlDatabaseIO extends DatabaseIO
 				// Catch other type (IO or bad cast) exceptions
 				catch(Exception e)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing network list '" + ls[i] + "' " + e);
+					log.atError()
+					.setCause(e)
+					.log("Error parsing network list '" + ls[i] + "' ");
 				}
 				finally
 				{
@@ -842,7 +819,9 @@ public class XmlDatabaseIO extends DatabaseIO
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace(System.err);
+			log.atError()
+			.setCause(e)
+			.log("Error in : readPlatformList");
 			throw new DatabaseException(e.toString());
 		}
 		finally
@@ -879,10 +858,12 @@ public class XmlDatabaseIO extends DatabaseIO
         Platform p = platList.findPlatform(mediumType, mediumId, timeStamp);
        	if (p == null)
        	{
-Logger.instance().debug3("XmlDatabaseIO: lookup - No platform matching " + mediumType + ":" + mediumId);
+		 log.atWarn()
+		 .log("XmlDatabaseIO: lookup - No platform matching " + mediumType + ":" + mediumId);
        		return Constants.undefinedId;
        	}
-Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
+		log.atWarn()
+		.log("XmlDatabaseIO: lookup - platformID = " + p.getId());
        	return p.getId();
 	}
 	
@@ -932,9 +913,9 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 				// Catch other type (IO or bad cast) exceptions
 				catch(Exception e)
 				{
-					e.printStackTrace(System.out);
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing platform '" + ls[i] + "' " + e);
+					log.atError()
+					.setCause(e)
+					.log("Error parsing platform '" + ls[i] + "' ");
 				}
 				finally
 				{
@@ -945,53 +926,12 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 		}
 		catch(Exception e)
 		{
-			e.printStackTrace(System.err);
+			log.atError()
+			.setCause(e)
+			.log("Error in readAllPlatforms");
 			throw new DatabaseException(e.toString());
 		}
 	}
-
-
-//	/**
-//	  Returns the list of PMConfig objects defined in this database.
-//	  Objects in this list may be only partially populated (key values
-//	  and primary display attributes only).
-//	*/
-//	public void readPMConfigList(PMConfigList pmcl)
-//		throws DatabaseException
-//	{
-//		try
-//		{
-//			String ls[] = listDirectory(PMConfigDir);
-//			if (ls == null)
-//				return;
-//			for(int i=0; i<ls.length; i++)
-//			{
-//				InputStream is = null;
-//				try
-//				{
-//					is = getInputStream(PMConfigDir, ls[i]);
-//					PMConfig ob = (PMConfig)myParser.parse(is);
-//					// No need to add -- PMConfig ctor will do it.
-//					//pmcl.add(ob);
-//				}
-//				// Catch other type (IO or bad cast) exceptions
-//				catch(Exception e)
-//				{
-//					Logger.instance().log(Logger.E_FAILURE,
-//						"Error parsing perf measurements '" + ls[i] + "' " + e);
-//				}
-//				finally
-//				{
-//					if (is != null)
-//						try { is.close(); } catch(Exception e) {}
-//				}
-//			}
-//		}
-//		catch(Exception e)
-//		{
-//			throw new DatabaseException(e.toString());
-//		}
-//	}
 
 
 	/**
@@ -1020,11 +960,10 @@ Logger.instance().debug3("XmlDatabaseIO: lookup - platformID = " + p.getId());
 				// Catch other type (IO or bad cast) exceptions
 				catch(Exception e)
 				{
-					String msg = "Error parsing presentation group '" 
-						+ ls[i] + "' " +e;
-					Logger.instance().log(Logger.E_FAILURE, msg);
-System.err.println(msg);
-e.printStackTrace();
+					log.atError()
+					.setCause(e)
+					.log("Error parsing presentation group '" 
+						+ ls[i] + "' ");
 				}
 				finally
 				{
@@ -1087,8 +1026,9 @@ e.printStackTrace();
 				// Catch other type (IO or bad cast) exceptions
 				catch(Exception e)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing routing spec '" + ls[i] + "' " + e);
+					log.atError()
+					.setCause(e)
+					.log("Error parsing routing spec '" + ls[i] + "' ");
 				}
 				finally
 				{
@@ -1125,9 +1065,6 @@ e.printStackTrace();
 	 */
 	public void readSiteList( SiteList sl ) throws DatabaseException
 	{
-//System.out.println("Reading Site List");
-//try { throw new Exception("x"); }
-//catch(Exception ex) { ex.printStackTrace(); }
 		try
 		{
 			String ls[] = listDirectory(SiteDir);
@@ -1146,8 +1083,9 @@ e.printStackTrace();
 				// Catch other type (IO or bad cast) exceptions
 				catch(Exception e)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Error parsing site '" + ls[i] + "' " + e);
+					log.atError()
+					.setCause(e)
+					.log("Error parsing site '" + ls[i] + "' ");
 				}
 				finally
 				{
@@ -1289,8 +1227,8 @@ e.printStackTrace();
 		*/
 		if (site.filename != null && !fn.equals(site.filename))
 		{
-			Logger.instance().log(Logger.E_DEBUG1,
-				"XmlDatabaseIO.writeSite: Deleting old site file '"
+			log.atInfo()
+			.log("XmlDatabaseIO.writeSite: Deleting old site file '"
 				+ site.filename + "'");
 			try
 			{
@@ -1299,8 +1237,9 @@ e.printStackTrace();
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					"XmlDatabaseIO.writeSite: Cannot remove old site file '" 
+				log.atError()
+				.setCause(ex)
+				.log("XmlDatabaseIO.writeSite: Cannot remove old site file '" 
 					+ site.filename + "'");
 			}
 		}
@@ -1395,8 +1334,7 @@ e.printStackTrace();
 		String fn = makePath(PlatformDir,
 			"p" + platIdFormat.format(p.getId().getValue()));
 
-		Logger.instance().log(Logger.E_DEBUG1,
-			"XmlDatabaseIO: Reading '" + fn + "'");
+		log.atInfo().log("XmlDatabaseIO: Reading '" + fn + "'");
 
 		File file = new File(fn);
 		if (file.canRead())
@@ -1405,14 +1343,15 @@ e.printStackTrace();
 			try { myParser.parse(file, p); }
 			catch(Exception ex)
 			{
-				String msg = "Error reading '" + fn + "': " + ex;
-				System.err.println(msg);
-				ex.printStackTrace();
+				String msg = "Error reading '" + fn + "': ";
+				log.atError()
+				.setCause(ex)
+				.log(msg);
 				throw new DatabaseException(msg);
 			}
-			Logger.instance().debug1("XML readPlatform, fileLMT="
+			log.atInfo()
+			.log("XML readPlatform, fileLMT="
 				+ myParser.getFileLMT() + ", platformLMT=" + p.lastModifyTime);
-
 			return;
 		}
 		throw new DatabaseException(
@@ -1469,7 +1408,7 @@ e.printStackTrace();
 		{
 			String msg = "Platform '" + p.makeFileName() + "' with file name '"
 				+ fn + "' has been deleted.";
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log.atWarn().log(msg);
 			return null;
 		}
 		return new Date(f.lastModified());
@@ -1603,37 +1542,6 @@ e.printStackTrace();
 		tryDelete(fn);
 	}
 
-//	public void readEquationSpec( EquationSpec ob )
-//		throws DatabaseException
-//	{
-//		String fn = "";
-//		try
-//		{
-//			fn = makePath(EquationDir, ob.makeFileName());
-//			myParser.parse(new File(fn), ob);
-//		}
-//		catch(Exception e)
-//		{
-//			throw new DatabaseException("Error reading '" + fn + "': " + e);
-//		}
-//	}
-//
-//
-//	public void writeEquationSpec( EquationSpec ob )
-//		throws DatabaseException
-//	{
-//		String fn = xmldir + File.separator + EquationDir
-//					+ File.separator + ob.makeFileName();
-//		writeDatabaseObject(fn, new EquationSpecParser(ob));
-//	}
-//
-//	public void deleteEquationSpec( EquationSpec ob )
-//		throws DatabaseException
-//	{
-//		String fn = xmldir + File.separator + EquationDir
-//					+ File.separator + ob.makeFileName();
-//		tryDelete(fn);
-//	}
 
 	/**
 	 * This reads the PresentationGroup object from the XML database,
@@ -1689,8 +1597,7 @@ e.printStackTrace();
 		File f = new File(fn);
 		if (!f.exists())
 		{
-			String msg = "Presentation Group '" + fn + "' has been deleted.";
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log.atWarn().log("Presentation Group '" + fn + "' has been deleted.");
 			return null;
 		}
 		return new Date(f.lastModified());
@@ -1750,8 +1657,7 @@ e.printStackTrace();
 		File f = new File(fn);
 		if (!f.exists())
 		{
-			String msg = "Routing Spec '" + fn + "' has been deleted.";
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log.atWarn().log("Routing Spec '" + fn + "' has been deleted.");
 			return null;
 		}
 		return new Date(f.lastModified());
@@ -1769,8 +1675,7 @@ e.printStackTrace();
 		try
 		{
 			fn = makePath(DataSourceDir, ob.makeFileName());
-			Logger.instance().log(Logger.E_DEBUG1,
-				"XmlDatabaseIO: Reading DataSource '" + fn + "'");
+			log.atDebug().log("XmlDatabaseIO: Reading DataSource '" + fn + "'");
 			myParser.parse(new File(fn), ob);
 		}
 		catch(Exception e)
@@ -1874,8 +1779,7 @@ e.printStackTrace();
 		File f = new File(fn);
 		if (!f.exists())
 		{
-			String msg = "Network List '" + fn + "' has been deleted.";
-			Logger.instance().log(Logger.E_WARNING, msg);
+			log.atWarn().log("Network List '" + fn + "' has been deleted.");
 			return null;
 		}
 		return new Date(f.lastModified());
@@ -1905,8 +1809,7 @@ e.printStackTrace();
 			fn = fn + ".xml";
 		try
 		{
-			Logger.instance().log(Logger.E_DEBUG1,
-				"XmlDatabaseIO: Writing '" + fn + "'");
+			log.atDebug().log("XmlDatabaseIO: Writing '" + fn + "'");
 			os = new FileOutputStream(new File(fn));
 			XmlOutputStream xos = new XmlOutputStream(os, xow.myName());
 			xos.xmlDtdUri = dtdUri;
@@ -1915,7 +1818,9 @@ e.printStackTrace();
 		}
 		catch(Exception e)
 		{
-e.printStackTrace();
+			log.atError()
+			.setCause(e)
+			.log("Error writing XML database.");
 			throw new DatabaseException("Error writing '" + fn + "': " + e);
 		}
 		finally
@@ -1939,21 +1844,22 @@ e.printStackTrace();
 		{
 			try
 			{
-				Logger.instance().log(Logger.E_DEBUG1,
-					"Deleting '" + fn + "' ");
+				log.atDebug().log("Deleting '" + fn + "' ");
 				file.delete();
 			}
 			catch (Exception e)
 			{
 				String err = "Cannot delete '" + fn + "': " + e;
-				Logger.instance().log(Logger.E_FAILURE, err);
+				log.atError()
+				.setCause(e)
+				.log(err);
 				throw new DatabaseException(err);
 			}
 		}
 		else
 		{
-			Logger.instance().debug1(
-				"Could not delete " + fn + ": file doesn't exist!");
+			log.atDebug()
+			.log("Could not delete " + fn + ": file doesn't exist!");
 		}
 	}
 
@@ -1971,8 +1877,9 @@ e.printStackTrace();
 			try { platformIdCounter = new FileCounter(fn); }
 			catch(IOException e)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"Cannot get platform ID file counter at '" + fn + "': "+e);
+				log.atError()
+				.setCause(e)
+				.log("Cannot get platform ID file counter at '" + fn + "'");
 			}
 		}
 		return platformIdCounter;

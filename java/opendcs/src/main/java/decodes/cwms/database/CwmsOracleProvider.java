@@ -13,20 +13,18 @@ import java.util.stream.Collectors;
 
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.statement.Call;
-import org.jdbi.v3.postgres.PostgresPlugin;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.spi.database.MigrationHelper;
 import org.opendcs.spi.database.MigrationProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.dbimport.DbImport;
 import decodes.launcher.Profile;
 import decodes.tsdb.ImportComp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
-import ilex.util.EnvExpander;
 
 /**
  * CwmsOracleProvider provides support for handling installation and updates of the OpenDCS-CWMS-Oracle
@@ -122,84 +120,15 @@ public class CwmsOracleProvider implements MigrationProvider
         });
     }
 
-    @Override
-    public List<File> getDecodesData()
+    private List<File> getComputationData()
     {
-        List<File> files = new ArrayList<>();
-        String decodesData[] =
-        {
-            "${DCSTOOL_HOME}/edit-db/enum",
-            "${DCSTOOL_HOME}/edit-db/eu/EngineeringUnitList.xml",
-            "${DCSTOOL_HOME}/edit-db/datatype/DataTypeEquivalenceList.xml",
-            "${DCSTOOL_HOME}/edit-db/presentation",
-            "${DCSTOOL_HOME}/edit-db/loading-app"
-        };
-
-        fillFiles(files, decodesData, ".xml");
-        if (log.isTraceEnabled())
-        {
-            for (File f: files)
-            {
-                log.trace("Importing '{}'", f.getAbsolutePath());
-            }
-        }
-        return files;
-    }
-
-    @Override
-    public List<File> getComputationData()
-    {
-        List<File> files = new ArrayList<>();
         String computationData[] =
         {
-            "${DCSTOOL_HOME}/imports/comp-standard/algorithms.xml",
-            "${DCSTOOL_HOME}/imports/comp-standard/Division.xml",
-            "${DCSTOOL_HOME}/imports/comp-standard/Multiplication.xml",
             "${DCSTOOL_HOME}/schema/cwms/cwms-comps.xml"
         };
-        fillFiles(files, computationData, ".xml");
-        return files;
-    }
-
-    /**
-        for the input array of fileNames[] expand and store the absolute paths of files (that are usable) in the List<File>files  argument.
-    */
-    private void fillFiles(List<File> files, String fileNames[], String suffix)
-    {
-        for (String filename: fileNames)
-        {
-            File f = new File(EnvExpander.expand(filename, System.getProperties()));
-            if (f.exists() && f.canRead() && f.isFile())
-            {
-                files.add(f);
-            }
-            else if (f.exists() && f.canRead() && f.isDirectory())
-            {
-                try
-                {
-                    files.addAll(Files.walk(f.toPath())
-                                      .map(p -> p.toFile())
-                                      .filter(file -> file.isFile())
-                                      .filter(file -> file.getAbsolutePath().endsWith(suffix))
-                                      .collect(Collectors.toList())
-                        );
-                }
-                catch (IOException ex)
-                {
-                    log.atError()
-                       .setCause(ex)
-                       .log("Unable to process diretory '{}'", f.getAbsolutePath());
-                }
-            }
-            else if(f.exists() && !f.canRead())
-            {
-                log.error("File '{}' is not readable. Skipping.", f.getAbsolutePath());
-            }
-            else
-            {
-                log.error("File '{}' is not present. Skipping.", f.getAbsolutePath());
-            }
-        }
+        List<File> rval = MigrationHelper.getComputationData(log);
+        rval.addAll(MigrationHelper.getUsableFiles(computationData, ".xml",log));
+        return rval;
     }
 
     @Override
@@ -211,7 +140,7 @@ public class CwmsOracleProvider implements MigrationProvider
         Properties creds = new Properties();
         creds.put("username", username);
         creds.put("password", password);
-        List<File> decodesFiles = getDecodesData();
+        List<File> decodesFiles = MigrationHelper.getDecodesData(log);
         List<File> computationFiles = getComputationData();
         try
         {
