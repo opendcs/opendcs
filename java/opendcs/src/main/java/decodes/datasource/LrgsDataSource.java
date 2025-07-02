@@ -9,6 +9,7 @@ import java.util.Vector;
 import javax.net.SocketFactory;
 
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.WebUtility;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
@@ -35,7 +36,6 @@ import decodes.util.PropertySpec;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.ServerError;
 import lrgs.lrgsmain.LrgsConfig;
-import lrgs.rtstat.hosts.LrgsConnection;
 import lrgs.common.DcpAddress;
 import lrgs.common.LrgsErrorCode;
 import lrgs.common.SearchCriteria;
@@ -963,7 +963,7 @@ public class LrgsDataSource extends DataSourceExec
         hangup();
         try
         {
-            final SocketFactory socketFactory = (tls != TlsMode.NONE) ?  LrgsConnection.socketFactory((cert) ->
+            final SocketFactory socketFactory = (tls != TlsMode.NONE) ?  WebUtility.socketFactory((cert) ->
                 {
                     log.warn("Certificate for '{}' is not trusted.", cert.getHostname().orElse("<no hostname provided>"));
                     return false;

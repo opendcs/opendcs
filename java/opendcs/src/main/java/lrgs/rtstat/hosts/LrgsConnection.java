@@ -1,31 +1,20 @@
 package lrgs.rtstat.hosts;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.Objects;
 import java.util.function.Predicate;
 
 import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 
-import nl.altindag.ssl.SSLFactory;
 import nl.altindag.ssl.model.TrustManagerParameters;
 
 import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.WebUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ilex.util.AuthException;
 import ilex.util.DesEncrypter;
-import ilex.util.EnvExpander;
 
 /**
  * Keep the information about a connection to an LRGS for the ComboBox model.
@@ -33,6 +22,7 @@ import ilex.util.EnvExpander;
 public final class LrgsConnection
 {
     private static final Logger log = LoggerFactory.getLogger(LrgsConnection.class);
+
     public static final LrgsConnection BLANK = new LrgsConnection("", -1, "", "", null, TlsMode.NONE);
 
     private final String hostName;
@@ -102,15 +92,7 @@ public final class LrgsConnection
      */
     public SocketFactory getSocketFactory()
     {
-        return getSocketFactory(cert ->
-        {
-            log.warn("Certificate for host {} is not recognized. Signed by {}. If you trust this " +
-                     "Certificate you will need to manually add this to {}",
-                             cert.getHostname().orElse("No hostname"),
-                             cert.getChain()[0].getIssuerX500Principal().getName(),
-                             EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12"));
-            return false;
-        });
+        return getSocketFactory(WebUtility.TRUST_EXISTING_CERTIFICATES);
     }
 
     /**
@@ -122,35 +104,12 @@ public final class LrgsConnection
     {
         if (tls != TlsMode.NONE)
         {
-           return socketFactory(certTest);
+           return WebUtility.socketFactory(certTest);
 		}  
         else
         {
             return null;
         }
-    }
-
-    /**
-     * @see getSocketFactory 
-     * 
-     * Used by components that aren't specifically using a LrgsConnection object to retrieve the 
-     * socket factories with a trust store.
-     * 
-     * @param certTest
-     * @return
-     */
-    public static SocketFactory socketFactory(Predicate<TrustManagerParameters> certTest)
-    {
-        SSLFactory sslFactory = SSLFactory.builder()
-                                          .withDefaultTrustMaterial()
-                                          .withSystemTrustMaterial()
-                                          .withInflatableTrustMaterial(
-                                            Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12")),
-                                            "local_trust".toCharArray(),
-                                            "PKCS12", 
-                                            certTest)
-                                          .build();
-        return sslFactory.getSslContext().getSocketFactory();
     }
 
     @Override

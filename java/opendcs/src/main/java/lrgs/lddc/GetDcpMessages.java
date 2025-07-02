@@ -7,6 +7,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.utils.WebUtility;
+
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
 
@@ -18,7 +21,6 @@ import lrgs.ldds.LddsClient;
 import lrgs.ldds.LddsParams;
 import lrgs.ldds.ProtocolError;
 import lrgs.ldds.ServerError;
-import lrgs.rtstat.hosts.LrgsConnection;
 
 /**
 This was originally written as a test client program but it has since found
@@ -74,7 +76,7 @@ public class GetDcpMessages extends Thread
 		before = new String(AsciiUtil.ascii2bin(beforeAscii));
 		after = new String(AsciiUtil.ascii2bin(afterAscii));
 		if (tls) {
-			lddsClient = new LddsClient(host, port, LrgsConnection.socketFactory((certInfo) -> false));
+			lddsClient = new LddsClient(host, port, WebUtility.socketFactory(WebUtility.TRUST_EXISTING_CERTIFICATES));
 		} else {
 			lddsClient = new LddsClient(host, port);
 		}
