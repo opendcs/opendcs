@@ -113,6 +113,7 @@ jobs:
           name: coverage
           path: |
             ./**/build/**/jacoco*.xml
+            ./build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml
             ./**/build/**/*.class
   containers:
     runs-on: [ubuntu-latest]
