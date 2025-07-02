@@ -1,13 +1,5 @@
+
 /*
- * $Id$
- *
- * $Log$
- * Revision 1.2  2014/07/03 12:53:40  mmaloney
- * debug improvements.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to the United States Government. No warranty is provided or implied other
  * than specific contractual terms between COVE and the U.S. Government.
@@ -21,11 +13,16 @@ import ilex.util.HasProperties;
 import ilex.util.Logger;
 
 import java.io.IOException;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.opendcs.utils.Property;
@@ -47,6 +44,8 @@ import decodes.tsdb.DbIoException;
  */
 public class PropertiesSqlDao extends DaoBase implements PropertiesDAI
 {
+    private final ConcurrentMap<String,String> columnCache = new ConcurrentHashMap<>();
+
     public PropertiesSqlDao(DatabaseConnectionOwner tsdb)
     {
         super(tsdb, "PropertiesSqlDao");
@@ -116,14 +115,49 @@ public class PropertiesSqlDao extends DaoBase implements PropertiesDAI
         }
     }
 
+    private String getColumnNames(String tableName,
+                                  String idColumn, int limit) throws SQLException
+    {
+        if(columnCache.containsKey(tableName))
+        {
+          return columnCache.get(tableName);
+        }
+
+        String sql = "SELECT * FROM " + tableName + " WHERE 1=0";
+        try (PreparedStatement ps = getConnection().prepareStatement(sql);
+            ResultSet    rs = ps.executeQuery())
+        {
+            ResultSetMetaData md = rs.getMetaData();
+            List<String> cols = new ArrayList<>();
+            for (int i = 1; i <= md.getColumnCount(); i++) 
+            {
+                String col = md.getColumnName(i);
+                if (!col.equalsIgnoreCase(idColumn)) 
+                {
+                    cols.add(col);
+                }
+                if( cols.size() == limit)
+                {
+                break;
+                }
+            }
+            String r = String.join(",",cols);
+            columnCache.put(tableName, r);
+            return  r;
+        }
+    }
+
     @Override
     public void writeProperties(String tableName, String idColumn,
         DbKey parentKey, Properties props) throws DbIoException
     {
         deleteProperties(tableName, idColumn, parentKey);
-        final String q = "insert into " + tableName + " values(?,?,?)";
+        String q="";
         try
         {
+            String columnNames = getColumnNames(tableName, idColumn,3);
+            String cn = " ("+idColumn+","+ columnNames+")";
+            q = "insert into " + tableName + cn +" values(?,?,?)";
             doModifyBatch(q, key ->
             {
                 return new Object[]{parentKey, key, props.getProperty((String)key)};
