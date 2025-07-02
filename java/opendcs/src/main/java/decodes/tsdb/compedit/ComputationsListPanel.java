@@ -59,7 +59,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.RowFilter;
+import javax.swing.RowFilter.Entry;
 import javax.swing.SwingUtilities;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import java.util.List;
 
@@ -78,6 +82,7 @@ public class ComputationsListPanel extends ListPanel
 {
 	private JPanel jContentPane = null;
 	private JTable compListTable = null;
+	private TableRowSorter<ComputationsListPanelTableModel> sorter = null;
 	private ComputationsFilterPanel filterPanel;
 	ComputationsListPanelTableModel compListTableModel = null;
 	boolean isDialog=false;
@@ -120,7 +125,7 @@ public class ComputationsListPanel extends ListPanel
 			
 			JScrollPane scrollPane = new JScrollPane(getCompListTable());
 			
-			filterPanel = new ComputationsFilterPanel(tsdb, parentFrame);
+			filterPanel = new ComputationsFilterPanel(tsdb, parentFrame, compListTableModel, sorter);
 			filterPanel.getRefresh().addActionListener(e -> doRefresh());
 
 			jContentPane.add(scrollPane, java.awt.BorderLayout.CENTER);
@@ -150,7 +155,8 @@ public class ComputationsListPanel extends ListPanel
 			};
 			compListTableModel = new ComputationsListPanelTableModel(columnNames);
 			compListTable = new JTable(compListTableModel);
-			compListTable.setAutoCreateRowSorter(true);
+			sorter = new TableRowSorter<>(compListTableModel);
+			compListTable.setRowSorter(sorter);
 			compListTable.addMouseListener(
 				new MouseAdapter()
 				{
@@ -299,9 +305,8 @@ public class ComputationsListPanel extends ListPanel
 			filterPanel.setFilterParams(compFilter, tsdb);
 			try (ComputationDAI computationDAO = tsdb.makeComputationDAO())
 			{
-				List<DbComputation> displayComps = computationDAO.listComps(c -> compFilter.passes(c));
+				List<DbComputation> displayComps = computationDAO.listComps(c -> true);
 				compListTableModel.setContents(displayComps);
-				
 			}
 			catch(Exception ex)
 			{

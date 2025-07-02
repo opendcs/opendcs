@@ -27,6 +27,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicReference;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -35,10 +36,14 @@ import decodes.db.SiteName;
 import decodes.dbeditor.SiteSelectDialog;
 import decodes.sql.DbKey;
 import decodes.tsdb.*;
+import decodes.tsdb.compedit.computations.ComputationsListPanelTableModel;
 import decodes.gui.*;
 import ilex.util.*;
 
 import javax.swing.*;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
+import javax.swing.text.TableView.TableRow;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.IntervalDAI;
@@ -67,6 +72,10 @@ public class ComputationsFilterPanel extends JPanel
 	private JComboBox groupCombo = null;
 	private ArrayList<TsGroup> groupList;
 	private JCheckBox hideDisabledCheck = null;
+	private AtomicReference<CompFilter> compFilter = new AtomicReference<>(new CompFilter());
+
+	private ComputationsListPanelTableModel model;
+	private TableRowSorter<ComputationsListPanelTableModel> sorter;
 
 	/**
 	 * constructor taking a new database to filter the computations from. if the
@@ -75,8 +84,11 @@ public class ComputationsFilterPanel extends JPanel
 	 * @param newDb
 	 */
 	@SuppressWarnings("unchecked")
-	ComputationsFilterPanel(TimeSeriesDb newDb, TopFrame parentFrame)
+	ComputationsFilterPanel(TimeSeriesDb newDb, TopFrame parentFrame, 
+							ComputationsListPanelTableModel model, TableRowSorter<ComputationsListPanelTableModel> sorter)
 	{
+		this.sorter = sorter;
+		this.model = model;
 		this.parentFrame = parentFrame;
 		compLabels = CAPEdit.instance().compeditDescriptions;
 		any = compLabels.getString("ComputationsFilterPanel.Any");
@@ -89,7 +101,7 @@ public class ComputationsFilterPanel extends JPanel
 		if (newDb == null)
 		{
 			isDialog = false;
-		}
+			}
 		else
 		{
 			isDialog = true;
@@ -102,6 +114,7 @@ public class ComputationsFilterPanel extends JPanel
 		paramCode.setText(any);
 		intervalBox = new JComboBox();
 		intervalBox.addItem(any);
+		intervalBox.addActionListener(e -> setFilterParams(new CompFilter(), newDb));
 		clear = new JButton(CAPEdit.instance().genericDescriptions.getString("clear"));
 		clear.addActionListener(new java.awt.event.ActionListener()
 		{
@@ -126,6 +139,7 @@ public class ComputationsFilterPanel extends JPanel
 
 		groupCombo = new JComboBox();
 		groupCombo.addItem("");
+		groupCombo.addActionListener(e -> setFilterParams(new CompFilter(), newDb));
 
 		try (TimeSeriesDAI tsDai = mydb.makeTimeSeriesDAO();
 			TsGroupDAI tsGroupDAO = mydb.makeTsGroupDAO();)
@@ -330,6 +344,25 @@ public class ComputationsFilterPanel extends JPanel
 		}
 		
 		compFilter.setEnabledOnly(hideDisabledCheck.isSelected());
+
+		updateFilter(compFilter);
+
+	}
+
+	private void updateFilter(CompFilter filter)
+	{
+		sorter.setRowFilter(new RowFilter<TableModel, Integer>()
+		{
+			@Override
+			public boolean include(Entry<? extends TableModel, ? extends Integer> entry)
+			{
+				int row = entry.getIdentifier();
+				ComputationsListPanelTableModel model = (ComputationsListPanelTableModel) entry.getModel();
+				DbComputation comp = model.getCompAt(row);
+				return filter.passes(comp);
+			}
+			
+		});
 	}
 
 }
