@@ -25,6 +25,7 @@ import java.util.ResourceBundle;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingUtilities;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
@@ -112,8 +113,7 @@ public class CAPEdit
 		TopFrame frame = getTopFrame();
 //		frame.centerOnScreen();
 		frame.setVisible(true);
-		
-		computationsListPanel.doRefresh();
+		SwingUtilities.invokeLater(() -> computationsListPanel.doRefresh());
 	}
 
 	/**

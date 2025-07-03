@@ -100,11 +100,4 @@ public interface ComputationDAI
 	 */
 	void close();
 
-	/**
-	 * New 6.2 List computations for GUI method.
-	 * @param filter
-	 * @return
-	 * @throws DbIoException
-	 */
-	ArrayList<ComputationInList> compEditList(CompFilter filter) throws DbIoException;
 }
