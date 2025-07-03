@@ -120,8 +120,9 @@ public class PropertiesSqlDao extends DaoBase implements PropertiesDAI
     public void writeProperties(String tableName, String idColumn,
         DbKey parentKey, Properties props) throws DbIoException
     {
+        String columnNames = " ("+idColumn +",prop_name,prop_value) ";
         deleteProperties(tableName, idColumn, parentKey);
-        final String q = "insert into " + tableName + " values(?,?,?)";
+        final String q = "insert into " + tableName + columnNames+ " values(?,?,?)";
         try
         {
             doModifyBatch(q, key ->
