@@ -9,6 +9,8 @@
 package opendcs.dai;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
 
 import decodes.db.Site;
 import decodes.db.SiteList;
@@ -60,6 +62,14 @@ public interface ComputationDAI
 		throws DbIoException;
 	
 	/**
+	 * Apply the filter to the cached computations.
+	 * @param filter the computation filter containing site, algorithm, datatype, interval, process, and group names
+	 * @return List of computations
+	 */
+	
+	public List<DbComputation> listComps(Predicate<DbComputation> filter) throws DbIoException;
+
+	/**
 	 * Writes a computation to the database.
 	 * Note: Does not write the subordinate algorithm record.
 	 * @throws DbIoException on Database IO error.
@@ -92,11 +102,4 @@ public interface ComputationDAI
 	 */
 	public void close();
 
-	/**
-	 * New 6.2 List computations for GUI method.
-	 * @param filter
-	 * @return
-	 * @throws DbIoException
-	 */
-	public ArrayList<ComputationInList> compEditList(CompFilter filter) throws DbIoException;
 }

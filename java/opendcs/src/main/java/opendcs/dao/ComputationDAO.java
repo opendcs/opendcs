@@ -71,6 +71,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
+import java.util.function.Predicate;
 
 import org.slf4j.LoggerFactory;
 
@@ -590,298 +592,25 @@ public class ComputationDAO
 	}
 
 	/**
-	 * New 6.2 method for listing computations for the CompEdit GUI.
-	 * @param filter
-	 * @return
+	 * Apply the filter to the cached computations.
+	 * @param filter the computation filter containing site, algorithm, datatype, interval, process, and group names
+	 * @return List of computations
 	 */
-	@Override
-	public ArrayList<ComputationInList> compEditList(CompFilter filter)
-			throws DbIoException
+	public List<DbComputation> listComps(Predicate<DbComputation> filter) throws DbIoException
 	{
-		debug3("compEditList()");
-		ArrayList<ComputationInList> ret = new ArrayList<ComputationInList>();
+		debug1("listComps " + filter);
 
-		String columns = "cmp.computation_id, cmp.computation_name, "
-			+ "cmp.algorithm_id, cmp.cmmnt, cmp.loading_application_id, cmp.enabled";
-		String tables = "cp_computation cmp";
-		StringBuilder where = new StringBuilder();
+		fillCache();
 
-		// Build the where clause.
-		if (!DbKey.isNull(filter.getAlgoId()))
+		List<DbComputation> ret = new ArrayList<>();
+		for (DbObjectCache<DbComputation>.CacheIterator it = compCache.iterator(); it.hasNext(); )
 		{
-			if (where.length() > 0)
-				where.append(" and ");
-			where.append("algorithm_id = " + filter.getAlgoId());
-		}
-		if (!DbKey.isNull(filter.getProcessId()))
-		{
-			if (where.length() > 0)
-				where.append(" and ");
-			where.append("loading_application_id = " + filter.getProcessId());
-		}
-		if (filter.isEnabledOnly())
-		{
-			if (where.length() > 0)
-				where.append(" and ");
-			where.append("ENABLED = " + sqlBoolean(true));
-		}
-		// Group comp query does not include param fields.
-		String groupWhere = where.toString();
-
-		// Build the query for NON group comps.
-		if (where.length() > 0)
-			where.append(" and ");
-
-		where.append("(cmp.group_id is null or cmp.group_id = -1)");
-		if (!DbKey.isNull(filter.getSiteId())
-		 || !DbKey.isNull(filter.getDataTypeId())
-		 || filter.getIntervalCode() != null)
-		{
-			tables = tables + ", cp_comp_ts_parm prm";
-			where.append(" and cmp.computation_id = prm.computation_id");
-
-			if (db.isCwms() || db.isOpenTSDB())
+			DbComputation comp = it.next();
+			if (filter.test(comp))
 			{
-				// CWMS already has site_id and datatype_id in the fully-defined parms.
-				if (!DbKey.isNull(filter.getSiteId()))
-					where.append(" and prm.site_id = " + filter.getSiteId());
-				if (!DbKey.isNull(filter.getDataTypeId()))
-					where.append(" and prm.datatype_id = " + filter.getDataTypeId());
-			}
-			else if (db.isHdb())
-			{
-				tables = tables + ", HDB_SITE_DATATYPE sdt";
-				where.append(" and prm.site_datatype_id = sdt.site_datatype_id");
-				if (!DbKey.isNull(filter.getSiteId()))
-					where.append(" and sdt.site_id = " + filter.getSiteId());
-				if (!DbKey.isNull(filter.getDataTypeId()))
-					where.append(" and sdt.datatype_id = " + filter.getDataTypeId());
-			}
-
-			if (filter.getIntervalCode() != null)
-				where.append(" and lower(prm.INTERVAL"
-					+ (db.isHdb()?"":"_ABBR") +") = '" + filter.getIntervalCode().toLowerCase() + "'");
-		}
-
-		// Get all non-group computations via where clause using all filter
-		if (DbKey.isNull(filter.getGroupId()))
-		{
-			String q = "select " + columns + " from " + tables;
-			if (where.length() > 0)
-				q = q + " where " + where.toString();
-			q = q + " order by cmp.computation_id";
-			try
-			{
-				debug3("Getting NON-group comps with query '" + q + "'");
-				ResultSet rs = doQuery(q);
-				int n = 0;
-				DbKey lastCompId = DbKey.NullKey;
-				while(rs.next())
-				{
-					// A computation may have multiple params that pass the filter.
-					// Only add a given computation to the list once.
-					DbKey compId = DbKey.createDbKey(rs, 1);
-					if (compId.equals(lastCompId))
-						continue;
-
-					ret.add(
-						new ComputationInList(compId, rs.getString(2),
-							DbKey.createDbKey(rs, 3), DbKey.createDbKey(rs, 5),
-							TextUtil.str2boolean(rs.getString(6)), rs.getString(4)));
-					n++;
-					lastCompId = compId;
-				}
-				debug3("" + n + " non-group computations retrieved.");
-			}
-			catch(Exception ex)
-			{
-				throw new DbIoException("CompuationDao.compEditList(): Error in query '" + q + "': " + ex);
+				ret.add(comp);
 			}
 		}
-
-
-		// Now get all group comps completely. The number should be small.
-		String q = "select " + compTableColumns + " from CP_COMPUTATION "
-			+ "where ";
-		if (DbKey.isNull(filter.getGroupId())) // accept any comp with a group
-			q = q + " (GROUP_ID is not null and GROUP_ID != -1) ";
-		else // specific group is requested
-			q = q + " GROUP_ID = " + filter.getGroupId() + " ";
-
-		if (groupWhere.length() > 0)
-			q = q + " and " + groupWhere.toString();
-
-		ArrayList<CompAppInfo> apps = loadingAppDAO.listComputationApps(true);
-		ArrayList<DbCompAlgorithm> algos = algorithmDAO.listAlgorithms();
-
-		debug3("Expanding group comps and checking filter");
-		try (TimeSeriesDAI tsDAO = this.db.makeTimeSeriesDAO())
-		{
-			ArrayList<DbKey> groupCompIds = new ArrayList<DbKey>();
-
-			ResultSet rs = doQuery(q);
-			int n = 0;
-			while(rs != null && rs.next())
-			{
-				DbComputation comp = rs2comp(rs);
-				compCache.put(comp);
-				groupCompIds.add(comp.getKey());
-				n++;
-			}
-			Logger.instance().debug1("" + n + " cp_computation group comp recs read.");
-
-			q = "select prop.computation_id, prop.prop_name, prop.prop_value "
-				+ "from cp_comp_property prop, cp_computation cmp "
-				+ "where prop.computation_id = cmp.computation_id and "
-				+ "(cmp.GROUP_ID is not null and cmp.GROUP_ID != -1)";
-			if (groupWhere.length() > 0)
-				q = q + " and " + groupWhere.toString();
-			rs = doQuery(q);
-			n = 0;
-			while(rs != null && rs.next())
-			{
-				DbComputation comp = compCache.getByKey(DbKey.createDbKey(rs, 1));
-				if (comp != null)
-					comp.setProperty(rs.getString(2), rs.getString(3));
-				n++;
-			}
-			Logger.instance().debug1("" + n + " cp_comp_property recs read.");
-
-			// Associate comps with groups, apps & algorithms.
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
-			{
-				DbComputation comp = (DbComputation)it.next();
-				if (!DbKey.isNull(comp.getGroupId()))
-					comp.setGroup(tsGroupDAO.getTsGroupById(comp.getGroupId()));
-
-				if (!DbKey.isNull(comp.getAppId()))
-					for(CompAppInfo cai : apps)
-						if (comp.getAppId().equals(cai.getAppId()))
-						{
-							comp.setApplicationName(cai.getAppName());
-							break;
-						}
-
-				if (!DbKey.isNull(comp.getAlgorithmId()))
-					for(DbCompAlgorithm algo : algos)
-						if (comp.getAlgorithmId().equals(algo.getId()))
-						{
-							comp.setAlgorithm(algo);
-							comp.setAlgorithmName(algo.getName());
-							break;
-						}
-			}
-
-			// Note the parms rely on the algorithms being in place. So get them now.
-			q = "select prm.* "
-				+ "from CP_COMP_TS_PARM prm, CP_COMPUTATION cmp "
-				+ "where prm.COMPUTATION_ID = cmp.COMPUTATION_ID "
-				+ "and (cmp.GROUP_ID is not null and cmp.GROUP_ID != -1)";
-			if (groupWhere.length() > 0)
-				q = q + " and " + groupWhere.toString();
-
-			rs = doQuery(q);
-			n = 0;
-			while(rs.next())
-			{
-				DbKey compId = DbKey.createDbKey(rs, 1);
-				DbComputation comp = compCache.getByKey(compId);
-				if (comp != null)
-					rs2compParm(comp, rs);
-				n++;
-			}
-			Logger.instance().debug1("" + n + " cp_comp_ts_parm recs read.");
-
-			for(CacheIterator it = compCache.iterator(); it.hasNext(); )
-			{
-				DbComputation comp = (DbComputation)it.next();
-
-				// Make sure site IDs and datatype IDs are set in the parms
-				for(DbCompParm parm : comp.getParmList())
-					if (!parm.getSiteDataTypeId().isNull())
-						try { db.expandSDI(parm); }
-						catch (NoSuchObjectException e) {}
-			}
-
-			// Now the cache has all my group comps and groupCompIds is a list of the IDs
-			// that are for this query.
-			// Expand the groups, evaluate the comps, check the expanded params.
-			for(DbKey compId : groupCompIds)
-			{
-				DbComputation groupComp = compCache.getByKey(compId);
-				TsGroup group = groupComp.getGroup();
-
-				if (group == null) // Means comp had an invalid group ID
-				{
-					Logger.instance().warning("Computation ID=" + compId + " has invalid group ID="
-						+ groupComp.getGroupId() + " -- skipped.");
-					continue;
-				}
-
-				// If no TS-specific filtering is done, there's no need to expand.
-				if (DbKey.isNull(filter.getSiteId()) && DbKey.isNull(filter.getDataTypeId())
-				 && filter.getIntervalCode() == null)
-				{
-					if (filter.passes(groupComp))
-						ret.add(
-							new ComputationInList(groupComp.getKey(), groupComp.getName(),
-								groupComp.getAlgorithmId(), groupComp.getAppId(),
-								groupComp.isEnabled(), groupComp.getComment()));
-					continue;
-				}
-
-				// Group object may be shared by multiple comps. Only expand it once.
-				if (!group.getIsExpanded())
-					db.expandTsGroup(group);
-
-				for(TimeSeriesIdentifier tsid : group.getExpandedList())
-					try
-					{
-						if (filter.passes(DbCompResolver.makeConcrete((TimeSeriesDb)db, tsDAO, tsid, groupComp, false)))
-						{
-							ret.add(
-								new ComputationInList(groupComp.getKey(), groupComp.getName(),
-									groupComp.getAlgorithmId(), groupComp.getAppId(),
-									groupComp.isEnabled(), groupComp.getComment()));
-							break;
-						}
-					}
-					catch(NoSuchObjectException ex)
-					{
-						Logger.instance().debug1("Cannot expand comp(" + groupComp.getId()
-							+ ") " + groupComp.getName() + ": " + ex);
-					}
-			}
-
-		}
-		catch(Exception ex)
-		{
-			log.atWarn()
-			   .setCause(ex)
-			   .log("Exception listing computations for GUI.");
-		}
-
-		// Fill in algo name & process name, or leave that for app?
-		for(ComputationInList cil : ret)
-		{
-			DbKey appId = cil.getProcessId();
-			if (!DbKey.isNull(appId))
-				for(CompAppInfo cai : apps)
-					if (appId.equals(cai.getKey()))
-					{
-						cil.setProcessName(cai.getAppName());
-						break;
-					}
-			DbKey algoId = cil.getAlgorithmId();
-			if (!DbKey.isNull(algoId))
-				for(DbCompAlgorithm algo : algos)
-					if (algoId.equals(algo.getKey()))
-					{
-						cil.setAlgorithmName(algo.getName());
-						break;
-					}
-		}
-
 		return ret;
 	}
 
