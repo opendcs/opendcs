@@ -1,56 +1,26 @@
 /*
-*  $Id$
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*  
-*  $Log$
-*  Revision 1.3  2016/07/20 15:43:56  mmaloney
-*  remove unneeded loading app dao.
-*
-*  Revision 1.2  2016/01/27 22:06:16  mmaloney
-*  Optimizations for filter.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.16  2013/07/25 18:42:24  mmaloney
-*  dev
-*
-*  Revision 1.15  2013/07/24 13:45:50  mmaloney
-*  New comp filtering code. Portable across database implementations
-*
-*  Revision 1.14  2012/08/17 13:35:27  mmaloney
-*  Don't assume running inside compedit. This panel is also used in comprun GUI and
-*  maybe elsewhere. When listing comps, fetch our own list of algorithms and apps.
-*
-*  Revision 1.13  2012/08/17 13:22:38  mmaloney
-*  Added stack trace on null pointer in refresh.
-*
-*  Revision 1.12  2012/07/31 16:58:54  mmaloney
-*  dev
-*
-*  Revision 1.11  2012/07/31 15:03:18  mmaloney
-*  Allow double-click for selection from list panels.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.tsdb.compedit;
 
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.Vector;
 
@@ -59,22 +29,15 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.RowFilter;
-import javax.swing.RowFilter.Entry;
 import javax.swing.SwingUtilities;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import java.util.List;
 
 import opendcs.dai.ComputationDAI;
-import opendcs.dai.LoadingAppDAI;
 import ilex.util.*;
 import decodes.db.Constants;
-import decodes.gui.SortingListTable;
-import decodes.gui.TopFrame;
-import decodes.sql.DbKey;
-import decodes.tsdb.*;
+import decodes.gui.TopFrame;import decodes.tsdb.*;
 import decodes.tsdb.compedit.computations.ComputationsListPanelTableModel;
 
 @SuppressWarnings("serial")
@@ -102,6 +65,7 @@ public class ComputationsListPanel extends ListPanel
 		setLayout(new BorderLayout());
 		compLabels = CAPEdit.instance().compeditDescriptions;
 		this.add(getJContentPane(), java.awt.BorderLayout.CENTER);
+		doRefresh();
 	}
 
 	public void setIsDialog(boolean tf) { isDialog = tf; }
@@ -125,7 +89,8 @@ public class ComputationsListPanel extends ListPanel
 			
 			JScrollPane scrollPane = new JScrollPane(getCompListTable());
 			
-			filterPanel = new ComputationsFilterPanel(tsdb, parentFrame, compListTableModel, sorter);
+			filterPanel = new ComputationsFilterPanel(tsdb, parentFrame, compListTableModel,
+													  sorter, filterLowIds);
 			filterPanel.getRefresh().addActionListener(e -> doRefresh());
 
 			jContentPane.add(scrollPane, java.awt.BorderLayout.CENTER);
@@ -299,10 +264,6 @@ public class ComputationsListPanel extends ListPanel
 		
 		SwingUtilities.invokeLater(() -> 
 		{
-			CompFilter compFilter = new CompFilter();
-			
-			compFilter.setFilterLowIds(filterLowIds);
-			filterPanel.setFilterParams(compFilter, tsdb);
 			try (ComputationDAI computationDAO = tsdb.makeComputationDAO())
 			{
 				List<DbComputation> displayComps = computationDAO.listComps(c -> true);
