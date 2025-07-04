@@ -154,7 +154,7 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 		//		DbEditorFrame.class.getResource("[Your Icon]")));
 		contentPane = (JPanel) this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
-		this.setSize(new Dimension(900, 850));
+		//this.setSize(new Dimension(900, 850));
 		this.setTitle(dbeditLabels.getString("dbedit.frameTitle"));
 		statusBar.setText(" ");
 		jMenuFile.setText(genericLabels.getString("file"));
