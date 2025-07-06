@@ -109,7 +109,9 @@ public class ScalerAdder extends AW_AlgorithmBase
 			pr.missingAction != MissingAction.IGNORE)
 		 || ((pr = getParmRef(t = "input8")) != null && isAssigned(t) && isMissing(input8) && 
 			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input0")) != null && isAssigned(t) && isMissing(input9) && 
+		 || ((pr = getParmRef(t = "input9")) != null && isAssigned(t) && isMissing(input9) &&
+			pr.missingAction != MissingAction.IGNORE)
+		 || ((pr = getParmRef(t = "input10")) != null && isAssigned(t) && isMissing(input10) &&
 			pr.missingAction != MissingAction.IGNORE))
 		{
 			debug2("Skipping time slice with base time " + debugSdf.format(_timeSliceBaseTime)
