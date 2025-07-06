@@ -1,14 +1,16 @@
 package decodes.tsdb.algo;
 
 import decodes.tsdb.DbCompException;
+import decodes.tsdb.MissingAction;
+import decodes.tsdb.ParmRef;
 import ilex.var.NamedVariable;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 
-@Algorithm(description = "Calculate Weighted Average values (eg Water Temperature) using: sum(input1n*input2n) / total2")
-public class WeightedAverage
-	extends AW_AlgorithmBase
+@Algorithm(description = "Calculate Weighted Average values (eg Water Temperature) using: sum(inputN*weightN) / weightTotal\n" +
+		"weightTotal is required input timeseries, other input timeseries obey FAIL/IGNORE specifications.")
+public class WeightedAverage extends AW_AlgorithmBase
 {
 	@Input
 	public double weightTotal;
@@ -67,6 +69,11 @@ public class WeightedAverage
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
+		if (!isAssigned("weightTotal"))
+		{
+			throw new DbCompException("WeightedAverage called with unassigned weightTotal input series, cannot run.");
+		}
+			
 	}
 
 	/**
@@ -83,20 +90,84 @@ public class WeightedAverage
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-		if(weightTotal > 0)
+		if (isMissing(weightTotal))
 		{
-			double tot = input1*weight1;
-			tot += input2*weight2;
-			tot += input3*weight3;
-			tot += input4*weight4;
-			tot += input5*weight5;
-			tot += input6*weight6;
-			tot += input7*weight7;
-			tot += input8*weight8;
-
-			setOutput(output,tot/weightTotal);
+			debug2("Skipping time slice with base time " + debugSdf.format(_timeSliceBaseTime)
+					+ " because of missing value for weightTotal");
+			return;
 		}
 
+		double tot = 0.0;
+		ParmRef pr = null;
+		String t = null;
+		if (((pr = getParmRef(t = "input1")) != null && isAssigned(t) && isMissing(input1) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "input2")) != null && isAssigned(t) && isMissing(input2) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "input3")) != null && isAssigned(t) && isMissing(input3) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "input4")) != null && isAssigned(t) && isMissing(input4) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "input5")) != null && isAssigned(t) && isMissing(input5) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "input6")) != null && isAssigned(t) && isMissing(input6) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "input7")) != null && isAssigned(t) && isMissing(input7) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "input8")) != null && isAssigned(t) && isMissing(input8) &&
+				pr.missingAction != MissingAction.IGNORE))
+		{
+			debug2("Skipping time slice with base time " + debugSdf.format(_timeSliceBaseTime)
+					+ " because of missing value for param " + t);
+			return;
+		}
+		if (((pr = getParmRef(t = "weight1")) != null && isAssigned(t) && isMissing(weight1) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "weight2")) != null && isAssigned(t) && isMissing(weight2) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "weight3")) != null && isAssigned(t) && isMissing(weight3) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "weight4")) != null && isAssigned(t) && isMissing(weight4) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "weight5")) != null && isAssigned(t) && isMissing(weight5) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "weight6")) != null && isAssigned(t) && isMissing(weight6) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "weight7")) != null && isAssigned(t) && isMissing(weight7) &&
+				pr.missingAction != MissingAction.IGNORE)
+				|| ((pr = getParmRef(t = "weight8")) != null && isAssigned(t) && isMissing(weight8) &&
+				pr.missingAction != MissingAction.IGNORE))
+		{
+			debug2("Skipping time slice with base time " + debugSdf.format(_timeSliceBaseTime)
+					+ " because of missing value for param " + t);
+			return;
+		}
+		if (!isMissing(input1) && !isMissing(weight1))
+			tot += (input1 * weight1);
+		if (!isMissing(input2) && !isMissing(weight2))
+			tot += (input2 * weight2);
+		if (!isMissing(input3) && !isMissing(weight3))
+			tot += (input3 * weight3);
+		if (!isMissing(input4) && !isMissing(weight4))
+			tot += (input4 * weight4);
+		if (!isMissing(input5) && !isMissing(weight5))
+			tot += (input5 * weight5);
+		if (!isMissing(input6) && !isMissing(weight6))
+			tot += (input6 * weight6);
+		if (!isMissing(input7) && !isMissing(weight7))
+			tot += (input7 * weight7);
+		if (!isMissing(input8) && !isMissing(weight8))
+			tot += (input8 * weight8);
+
+		// Output only if nonzero total weight
+		if(weightTotal != 0) {
+			tot /= weightTotal;
+			debug3("doAWTimeSlice baseTime=" + debugSdf.format(_timeSliceBaseTime)
+					+ ", input1=" + input1 + ", weight1=" + weight1
+					+ ", input2=" + input2 + ", weight2=" + weight2 + ", tot=" + tot);
+
+			setOutput(output, tot);
+		}
 	}
 
 	/**
