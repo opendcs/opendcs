@@ -84,7 +84,6 @@ public class RtStatFrame
     private JMenu jMenuHelp = new JMenu();
     private JMenuItem jMenuHelpAbout = new JMenuItem();
     private BorderLayout borderLayout1 = new BorderLayout();
-    private JPanel topPanel = new JPanel();
     private JLabel hostLabel = new JLabel();
     private JComboBox<LrgsConnection> hostCombo = new JComboBox<>();
     private PasswordWithShow passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
@@ -148,7 +147,8 @@ public class RtStatFrame
         Dimension d = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         d.width = 800;
         d.height -= 60;
-        setSize(d);
+        //setSize(d);
+        
         dividerLoc = d.height - 80 - 160;
         splitPaneHeight = 0;
         jSplitPane1.setDividerLocation(dividerLoc);
@@ -167,6 +167,7 @@ public class RtStatFrame
                     jSplitPane1.setDividerLocation(newLoc);
                     splitPaneHeight = newHeight;
                     dividerLoc = newLoc;
+                    repaint();
                 }
             });
         eventsPanel.addAncestorListener(
@@ -211,7 +212,7 @@ public class RtStatFrame
 
         contentPane = (JPanel)this.getContentPane();
         contentPane.setLayout(borderLayout1);
-        this.setSize(new Dimension(793, 716));
+        //this.setSize(new Dimension(793, 716));
         this.setTitle(
                 labels.getString("RtStatFrame.frameTitle"));
         jMenuFile.setText(genericLabels.getString("file"));
@@ -286,7 +287,6 @@ public class RtStatFrame
 
         hostLabel.setText(
                 labels.getString("RtStatFrame.host"));
-        topPanel.setLayout(new BorderLayout());
 
         connectionPanel.onPause(c -> pauseButton_actionPerformed(c));
 
@@ -306,13 +306,14 @@ public class RtStatFrame
         jMenuHelp.add(jMenuHelpAbout);
         jMenuBar1.add(jMenuFile);
         jMenuBar1.add(jMenuHelp);
-        contentPane.add(topPanel, BorderLayout.NORTH);
-        topPanel.add(connectionPanel);
+        contentPane.add(connectionPanel, BorderLayout.PAGE_START);
+        connectionPanel.setBackground(Color.GREEN);
         connectionPanel.onConnect(c -> connectButton_actionPerformed(c));
         contentPane.add(jSplitPane1, BorderLayout.CENTER);
         jSplitPane1.add(rtStatPanel, JSplitPane.TOP);
         jSplitPane1.add(eventsPanel, JSplitPane.BOTTOM);
         this.setJMenuBar(jMenuBar1);
+        pack();
     }
 
     //File | Exit action performed

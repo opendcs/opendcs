@@ -96,7 +96,7 @@ public final class LrgsConnectionPanel extends JPanel
         lblNewLabel_1.setLabelFor(portField);
 
         portField = new JTextField();
-        portField.setMaximumSize(new Dimension(32, 2147483647));
+        //portField.setMaximumSize(new Dimension(32, 2147483647));
         panel_1.add(portField);        
         portField.setText("16003");
         portField.setColumns(10);
@@ -142,9 +142,9 @@ public final class LrgsConnectionPanel extends JPanel
 
         controller.setView(this);
 
-
-        int minWidth = passwordField.getMinimumSize().width + lblNewLabel_3.getMinimumSize().width + 50;
-        this.setMinimumSize(new Dimension(minWidth, 40));
+        
+        //int minWidth = passwordField.getMinimumSize().width + lblNewLabel_3.getMinimumSize().width + 50;
+        //this.setMinimumSize(new Dimension(minWidth, 40));
     }
 
     private void connect()
