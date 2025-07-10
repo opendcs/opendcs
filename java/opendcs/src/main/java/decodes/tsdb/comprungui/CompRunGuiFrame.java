@@ -64,12 +64,15 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JViewport;
 import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -96,6 +99,7 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Week;
 import org.jfree.data.time.Year;
 import org.jfree.data.xy.XYDataset;
+import org.opendcs.gui.tables.DateRenderer;
 import org.slf4j.LoggerFactory;
 
 import decodes.dbeditor.TraceDialog;
@@ -1419,6 +1423,17 @@ public class CompRunGuiFrame extends TopFrame
 		myscrollpane.add(timeSeriesTable);
 		myscrollpane.setViewportView(timeSeriesTable);
 		myscrollpane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		JTable timesTable = new JTable();
+		timesTable.setAutoCreateColumnsFromModel(false);
+		timesTable.setModel(timeSeriesTable.getModel());
+		timesTable.setRowSorter(timeSeriesTable.getRowSorter());
+		TableColumn tc = timeSeriesTable.getColumnModel().getColumn(0);
+		timeSeriesTable.getColumnModel().removeColumn(tc);
+		timesTable.getColumnModel().addColumn(tc);
+		//timesTable.getColumnModel().getColumn(0).setCellRenderer(new DateRenderer(TimeSeriesTableModel.sdf));
+		myscrollpane.setRowHeaderView(timesTable);
+		myscrollpane.setCorner(JScrollPane.UPPER_LEFT_CORNER, timesTable.getTableHeader());
+		
 		return myscrollpane;
 	}
 
