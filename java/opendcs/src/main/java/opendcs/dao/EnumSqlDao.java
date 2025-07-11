@@ -64,7 +64,9 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 	{
 		try
 		{
-			return new SimpleTransaction(db.getConnection());
+			Connection conn = db.getConnection();
+			conn.setAutoCommit(false);
+			return new SimpleTransaction(conn, null);
 		}
 		catch (SQLException ex)
 		{
