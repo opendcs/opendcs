@@ -9,6 +9,7 @@ import java.util.TimeZone;
 import java.util.Vector;
 
 import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 
@@ -19,15 +20,15 @@ import decodes.util.DecodesSettings;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
-class TimeSeriesTableModel extends AbstractTableModel
+public final class TimeSeriesTableModel extends AbstractTableModel
 {
-	public Vector<CTimeSeries> inputs;
-	public Vector<CTimeSeries> outputs;
+	public final Vector<CTimeSeries> inputs;
+	public final Vector<CTimeSeries> outputs;
 	private CTimeSeries maxseries=null;
 	TimeSeriesDb mydb;
 	int rows;
 	private DecimalFormat df1 = new DecimalFormat("###0.00");
-	private ArrayList<Date> allTimes;
+	private final ArrayList<Date> allTimes;
 	public static final SimpleDateFormat sdf = new SimpleDateFormat("ddMMMyyyy, HH:mm");
 	
 	/**
@@ -53,14 +54,29 @@ class TimeSeriesTableModel extends AbstractTableModel
 		mydb=newdb;
 	}
 
-	public void setInOut(Vector<CTimeSeries> inputs,
-							Vector<CTimeSeries> outputs)
+	public void addInput(CTimeSeries input)
+	{
+		this.inputs.add(input);
+		updateTimeList();
+	}
+
+	public void addOutput(CTimeSeries output)
+	{
+		this.outputs.add(output);
+		updateTimeList();
+	}
+
+	public void clearTimesSeries()
 	{
 		allTimes.clear();
+		inputs.clear();
+		outputs.clear();
+		updateTimeList();
+	}
 
-		this.inputs=inputs;
-		this.outputs=outputs;
-
+	private void updateTimeList()
+	{
+		allTimes.clear();
 		// Build an aggregate list of all distinct times.
 		for(CTimeSeries cts : inputs)
 		{
@@ -97,9 +113,25 @@ class TimeSeriesTableModel extends AbstractTableModel
 		Collections.sort(allTimes);
 		rows = allTimes.size();
 
-		this.fireTableChanged(
-				new TableModelEvent(this,TableModelEvent.HEADER_ROW));
+		System.out.println("Fire Data change.");
 		this.fireTableDataChanged();
+		//System.out.println("Fire Header Row");
+		//this.fireTableChanged(new TableModelEvent(this,TableModelEvent.HEADER_ROW));
+		
+
+	}
+
+	public void setInOut(Vector<CTimeSeries> inputs,
+							Vector<CTimeSeries> outputs)
+	{
+		
+
+		this.inputs.clear();
+		this.inputs.addAll(inputs);
+		this.outputs.clear();
+		this.outputs.addAll(outputs);
+
+		updateTimeList();
 	}
 
 	/**
@@ -109,7 +141,7 @@ class TimeSeriesTableModel extends AbstractTableModel
 	 */
 	public int getColumnCount()
 	{
-		return 3*inputs.size()+3*outputs.size()+1;
+		return 3*inputs.size()+3*outputs.size();
 	}
 
 	/**
@@ -136,15 +168,16 @@ class TimeSeriesTableModel extends AbstractTableModel
 
 		Date d = allTimes.get(row);
 		if (column == 0)
+		{
 			return sdf.format(d);
-
+		}
 		int tsIndex = (column - 1)/3;
-		CTimeSeries cts = (tsIndex < inputs.size()) ?
-			inputs.get(tsIndex) : 
-			outputs.get(tsIndex - inputs.size());
+		CTimeSeries cts = (tsIndex < inputs.size()) ? inputs.get(tsIndex) : outputs.get(tsIndex - inputs.size());
 		TimedVariable tv = cts.findWithin(d.getTime()/1000L, 1);
 		if (tv == null || VarFlags.mustDelete(tv))
+		{
 			return "";
+		}
 
 		switch ((column-1)%3)
 		{
@@ -208,10 +241,10 @@ class TimeSeriesTableModel extends AbstractTableModel
 			}
 			return myseries.getUnitsAbbr();
 		case 1:
-			return mydb.getLimitLabel();
+			return mydb != null ? mydb.getLimitLabel(): "Lim";
 		case 2:
-			return mydb.getRevisionLabel();
+			return mydb != null ? mydb.getRevisionLabel() : "Rev";
 		}
 		return null;
-	}
+	}	
 }

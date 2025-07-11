@@ -132,8 +132,8 @@ import decodes.util.DecodesSettings;
 public class CompRunGuiFrame extends TopFrame
 {
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(CompRunGuiFrame.class);
-	static ResourceBundle labels = null;
-	private static ResourceBundle genericLabels = null;
+	public static final ResourceBundle labels = RunComputationsFrameTester.getLabels();;
+	private static final ResourceBundle genericLabels = RunComputationsFrameTester.getGenericLabels();;
 	public static String description;
 	public static String selectFromListLabel;
 	private String removeFromListLabel;
@@ -151,9 +151,9 @@ public class CompRunGuiFrame extends TopFrame
 	private String cancelComputationExecution;
 	public static String okButtonLabel;// generic
 	public static String cancelButtonLabel;// generic
-	public static String dateTimeColumnLabel;
-	public static String inputLabel;
-	public static String outputLabel;
+	public static String dateTimeColumnLabel = labels.getString("TimeSeriesTable.dateTimeColumnLabel") + " (UTC)";
+	public static final String inputLabel = labels.getString("RunComputationsFrame.inputLabel");
+	public static final String outputLabel = labels.getString("RunComputationsFrame.outputLabel");;
 
 	private ComputationsTable mytable;
 	private Vector<CTimeSeries> myoutputs = new Vector<>();
@@ -196,9 +196,7 @@ public class CompRunGuiFrame extends TopFrame
 		super();
 
 		this.standAloneMode = standAloneMode;
-
-		labels = RunComputationsFrameTester.getLabels();
-		genericLabels = RunComputationsFrameTester.getGenericLabels();
+		
 		timeZoneStr = DecodesSettings.instance().sqlTimeZone;
 		timeZoneStr = timeZoneStr == null ? "UTC" : timeZoneStr;
 		setAllLabels();
@@ -252,8 +250,7 @@ public class CompRunGuiFrame extends TopFrame
 
 		this.standAloneMode = standAloneMode;
 
-		labels = RunComputationsFrameTester.getLabels();
-		genericLabels = RunComputationsFrameTester.getGenericLabels();
+		
 		timeZoneStr = DecodesSettings.instance().sqlTimeZone;
 		timeZoneStr = timeZoneStr == null ? "UTC" : timeZoneStr;
 		setAllLabels();
@@ -320,8 +317,7 @@ public class CompRunGuiFrame extends TopFrame
 		cancelComputationExecutionLabel = cancelButtonLabel;
 		dateTimeColumnLabel = labels.getString("TimeSeriesTable.dateTimeColumnLabel") + " (" + timeZoneStr
 			+ ")";
-		inputLabel = labels.getString("RunComputationsFrame.inputLabel");
-		outputLabel = labels.getString("RunComputationsFrame.outputLabel");
+		
 	}
 
 	/**

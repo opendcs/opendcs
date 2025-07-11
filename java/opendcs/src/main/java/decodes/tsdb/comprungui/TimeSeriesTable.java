@@ -35,7 +35,10 @@ import ilex.gui.ColumnGroup;
 import ilex.gui.GroupableTableHeader;
 
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.TableModelEvent;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import decodes.tsdb.CTimeSeries;
@@ -45,25 +48,22 @@ import decodes.tsdb.TimeSeriesIdentifier;
 @SuppressWarnings("serial")
 public class TimeSeriesTable extends JTable
 {
-	TimeSeriesTableModel mymodel;
 	TimeSeriesDb mydb;
-	TimeSeriesTable(TimeSeriesDb newdb)
+	public TimeSeriesTable(TimeSeriesDb newdb)
 	{
 		super();
 		this.autoCreateColumnsFromModel=true;
 		mydb=newdb;
-		mymodel=new TimeSeriesTableModel(mydb);
-		setModel(mymodel);
+		setModel(new TimeSeriesTableModel(mydb));
 	}
 	
 	TimeSeriesTable(TimeSeriesTableModel newmodel,TimeSeriesDb newdb)
 	{
 		super(newmodel);
-		this.autoCreateColumnsFromModel=true;
-		mymodel=newmodel;
+		this.autoCreateColumnsFromModel=false;
 		mydb=newdb;
-		mymodel=new TimeSeriesTableModel(mydb);
-		setModel(mymodel);
+		setModel(newmodel);
+		setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
 	}
 	
 	/**
@@ -74,61 +74,93 @@ public class TimeSeriesTable extends JTable
 	public void setTsdb(TimeSeriesDb newdb)
 	{
 		mydb = newdb;
-		mymodel.setDb(newdb);  
+		((TimeSeriesTableModel)getModel()).setDb(newdb);
+	}
+
+	@Override
+	public void tableChanged(TableModelEvent e)
+	{
+
+		TableColumnModel cm = this.getColumnModel();
+		GroupableTableHeader header = (GroupableTableHeader)this.getTableHeader();
+		TimeSeriesTableModel mymodel = (TimeSeriesTableModel)e.getSource();
+		
+		System.out.println("Columns" + cm.getColumnCount());
+		int[] selectedRows = null;
+		if (e.getType() == TableModelEvent.UPDATE)
+		{
+			selectedRows = selectionModel.getSelectedIndices();
+			while (cm.getColumnCount() > 0)
+			{
+				cm.removeColumn(cm.getColumn(0));
+			}
+			System.out.println("Creating headers." + e.getType());
+			//cm.getColumn(0).setMinWidth(120);
+			for(int pos=0;pos<mymodel.inputs.size();pos++)
+			{
+				CTimeSeries cts = mymodel.inputs.get(pos);
+				TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
+				String tsName = tsid != null ? tsid.getUniqueString() : cts.getDisplayName();
+				ColumnGroup input = new ColumnGroup(CompRunGuiFrame.inputLabel + tsName);
+				TableColumn value = new TableColumn(pos*3+1);
+				value.setMinWidth(30);
+				TableColumn limQual = new TableColumn(pos*3+2);
+				limQual.setMinWidth(30);
+				TableColumn rev = new TableColumn(pos*3+3);
+				rev.setMinWidth(30);
+				input.add(value);
+				input.add(limQual);
+				input.add(rev);
+				cm.addColumn(value);
+				cm.addColumn(limQual);
+				cm.addColumn(rev);
+				header.addColumnGroup(input);
+			}
+			for(int pos=mymodel.inputs.size();
+							pos<mymodel.outputs.size()+mymodel.inputs.size();pos++)
+			{
+				CTimeSeries cts = mymodel.outputs.get(pos-mymodel.inputs.size());
+				TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
+				String tsName = tsid != null ? tsid.getUniqueString() : cts.getDisplayName();
+
+				ColumnGroup output = new ColumnGroup(CompRunGuiFrame.outputLabel + tsName);
+				TableColumn value = new TableColumn(pos*3+1);
+				value.setMinWidth(30);
+				TableColumn limQual = new TableColumn(pos*3+2);
+				limQual.setMinWidth(30);
+				TableColumn rev = new TableColumn(pos*3+3);
+				rev.setMinWidth(30);
+				//add columns  from outputs to column group and set minimum size
+				output.add(value);
+				output.add(limQual);
+				output.add(rev);
+				cm.addColumn(value);
+				cm.addColumn(limQual);
+				cm.addColumn(rev);
+				header.addColumnGroup(output);
+			}
+		}
+		super.tableChanged(e);
+		if (selectedRows != null && selectedRows.length > 0)
+		{
+			for(int i: selectedRows)
+			{
+				selectionModel.addSelectionInterval(i, i);
+			}
+		}
 	}
 
 	public void setInOut(Vector<CTimeSeries> inputs,
 							Vector<CTimeSeries> outputs)
 	{
-		this.setModel(mymodel);
-		mymodel.setInOut(inputs,outputs);
-		
-		TableColumnModel cm = this.getColumnModel();
-		
-		cm.getColumn(0).setMinWidth(120);
-		for(int pos=0;pos<mymodel.inputs.size();pos++)
-		{
-			CTimeSeries cts = mymodel.inputs.get(pos);
-			TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
-			String tsName = tsid != null ? tsid.getUniqueString() : cts.getDisplayName();
-			ColumnGroup input = 
-				new ColumnGroup(CompRunGuiFrame.inputLabel + tsName);
-			cm.getColumn((pos)*3+1).setMinWidth(30);
-			input.add(cm.getColumn((pos)*3+1));
-			cm.getColumn((pos)*3+2).setMinWidth(30);
-			input.add(cm.getColumn((pos)*3+2));
-			cm.getColumn((pos)*3+3).setMinWidth(30);
-			input.add(cm.getColumn((pos)*3+3));
-			GroupableTableHeader header = (GroupableTableHeader) this
-				.getTableHeader();
-			header.addColumnGroup(input);
-		}
-		for(int pos=mymodel.inputs.size();
-						pos<mymodel.outputs.size()+mymodel.inputs.size();pos++)
-		{
-			CTimeSeries cts = mymodel.outputs.get(pos-mymodel.inputs.size());
-			TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
-			String tsName = tsid != null ? tsid.getUniqueString() : cts.getDisplayName();
-
-			ColumnGroup output = 
-						new ColumnGroup(CompRunGuiFrame.outputLabel + tsName);
-
-			//add columns  from outputs to column group and set minimum size
-			cm.getColumn((pos)*3+1).setMinWidth(30);
-			output.add(cm.getColumn((pos)*3+1));     
-			cm.getColumn((pos)*3+2).setMinWidth(30);
-			output.add(cm.getColumn((pos)*3+2));
-			cm.getColumn((pos)*3+3).setMinWidth(30);
-			output.add(cm.getColumn((pos)*3+3));
-			GroupableTableHeader header = (GroupableTableHeader) this
-				.getTableHeader();
-			header.addColumnGroup(output);
-		}
+		((TimeSeriesTableModel)getModel()).setInOut(inputs,outputs);
 	}
 	
+	
+
 	@Override
 	protected JTableHeader createDefaultTableHeader()
 	{
-		return new GroupableTableHeader(columnModel);
+		return new GroupableTableHeader(super.getColumnModel());
 	}
 }
