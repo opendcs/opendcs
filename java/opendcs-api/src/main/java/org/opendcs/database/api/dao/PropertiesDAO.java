@@ -1,6 +1,5 @@
 package org.opendcs.database.api.dao;
 
-import java.util.List;
 import java.util.Properties;
 
 import org.opendcs.database.api.DataTransaction;
@@ -12,42 +11,50 @@ public interface PropertiesDAO extends OpenDcsDao
 {
     /**
     * Write properties to the database
-    * @param tx Active transaction to use to retrieve or process data
+    * @param tx Active transaction to use for saving
     * @param tableName name of the properties table
     * @param idColumn name of the id column in the table
     * @param parentKey surrogate key of the parent element owning the properties
-    * @param props the properties object
+    * @param props the set of properties to be saved
     */
    void writeProperties(DataTransaction tx, String tableName, String idColumn, DatabaseKey parentKey, Properties props) throws OpenDcsDataException;
 
-   /** Some properties tables have a secondary key (key1, key2, prop_name, prop_value) */
+   /**
+    * Write properties to the database
+    * @param tx Active transaction to use for saving
+    * @param tableName name of the properties table
+    * @param idColumn name of the id column in the table
+    * @param id2Column name of secondary integer column
+    * @param parentKey surrogate key of the parent element owning the properties
+    * @param props the set of properties to be saved
+    */
    void writeProperties(DataTransaction tx, String tableName, String idColumn, String id2Column, DatabaseKey parentKey, int key2, Properties props) throws OpenDcsDataException;
 
    /**
     * Read properties from the database
-    * @param tx Active transaction to use to retrieve or process data
+    * @param tx Active transaction to use for reading
     * @param tableName name of the properties table
     * @param idColumn name of the id column in the table
     * @param parentKey surrogate key of the parent element owning the properties
-    * @return props the properties object
+    * @return the set of properties read
     */
    Properties readProperties(DataTransaction tx, String tableName, String idColumn, DatabaseKey parentKey) throws OpenDcsDataException;
 
    /**
     * Read properties from the database
-    * @param tx Active transaction to use to retrieve or process data
+    * @param tx Active transaction to use for reading
     * @param tableName name of the properties table
     * @param idColumn name of the id column in the table
     * @param parentKey surrogate key of the parent element owning the properties
-    * @param id2column name of secondary integer column
+    * @param id2Column name of secondary integer column
     * @param key2 secondary key, primarily used for sorting.
-    * @return props the properties object
+    * @return the set of properties read
     */
    Properties readProperties(DataTransaction tx, String tableName, String idColumn, String id2Column, DatabaseKey parentKey, int key2) throws OpenDcsDataException;
 
    /**
     * Delete properties from the database
-    * @param tx Active transaction to use to retrieve or process data
+    * @param tx Active transaction to use for deleting
     * @param tableName name of the properties table
     * @param idColumn name of the id column in the table
     * @param parentKey surrogate key of the parent element owning the properties
@@ -61,8 +68,8 @@ public interface PropertiesDAO extends OpenDcsDao
     * @param tableName name of the properties table
     * @param idColumn name of the id column in the table
     * @param parentKey surrogate key of the parent element owning the properties
-    * @param id2Column @see readProperties
-    * @param key2
+    * @param id2Column name of secondary integer column
+    * @param key2 secondary key, primarily used for sorting.
     * @throws OpenDcsDataException
     */
    void deleteProperties(DataTransaction tx, String tableName, String idColumn, String id2Column, DatabaseKey parentKey, int key2) throws OpenDcsDataException;
