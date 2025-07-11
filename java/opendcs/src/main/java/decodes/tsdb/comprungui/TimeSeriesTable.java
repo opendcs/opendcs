@@ -41,6 +41,8 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import org.opendcs.gui.tables.Selection;
+
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
@@ -77,7 +79,7 @@ public class TimeSeriesTable extends JTable
 		int[] selectedRows = null;
 		if (e.getType() == TableModelEvent.UPDATE)
 		{
-			selectedRows = selectionModel.getSelectedIndices();
+			selectedRows = Selection.getSelected(selectionModel);
 			while (cm.getColumnCount() > 0)
 			{
 				cm.removeColumn(cm.getColumn(0));

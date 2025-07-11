@@ -15,6 +15,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import org.opendcs.gui.tables.Selection;
+
 import decodes.tsdb.comprungui.TimeSeriesTableModel.ColumnInfo;
 
 public class TimeSeriesTablePanel extends JPanel
@@ -106,9 +108,9 @@ public class TimeSeriesTablePanel extends JPanel
 
             ListSelectionModel lsm = (ListSelectionModel)e.getSource();
             ListSelectionModel otherLsm = other.getSelectionModel();
-            int[] selection = lsm.getSelectedIndices();
+            int[] selection = Selection.getSelected(lsm);
             
-            int[] other = otherLsm.getSelectedIndices();
+            int[] other = Selection.getSelected(otherLsm);
             boolean reset = false;
             for (int i = 0; i < selection.length; i++)
             {
