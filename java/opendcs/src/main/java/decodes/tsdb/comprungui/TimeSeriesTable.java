@@ -74,8 +74,7 @@ public class TimeSeriesTable extends JTable
 		TableColumnModel cm = this.getColumnModel();
 		GroupableTableHeader header = (GroupableTableHeader)this.getTableHeader();
 		TimeSeriesTableModel mymodel = (TimeSeriesTableModel)e.getSource();
-		
-		System.out.println("Columns" + cm.getColumnCount());
+
 		int[] selectedRows = null;
 		if (e.getType() == TableModelEvent.UPDATE)
 		{

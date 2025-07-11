@@ -78,7 +78,6 @@ public class TimeSeriesTablePanel extends JPanel
         timesModel.addColumn(tc);
         
 		scrollPane.setRowHeaderView(timesTable);
-        System.out.println("***" +CompRunGuiFrame.dateTimeColumnLabel+"***");
 		scrollPane.setCorner(JScrollPane.UPPER_LEFT_CORNER, new JLabel(CompRunGuiFrame.dateTimeColumnLabel));
         add(scrollPane, BorderLayout.CENTER);
     }
