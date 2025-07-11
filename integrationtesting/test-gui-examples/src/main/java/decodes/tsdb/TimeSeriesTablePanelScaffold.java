@@ -14,6 +14,7 @@ import javax.swing.SwingUtilities;
 import decodes.cwms.CwmsTsId;
 
 import decodes.tsdb.comprungui.TimeSeriesTableModel;
+import decodes.tsdb.comprungui.TimeSeriesTableModel.ColumnInfo;
 import decodes.tsdb.comprungui.TimeSeriesTablePanel;
 import ilex.var.TimedVariable;
 
@@ -57,6 +58,16 @@ public final class TimeSeriesTablePanelScaffold
 				controls.add(clearTimeSeries);
 
 				content.add(controls, BorderLayout.NORTH);
+
+				model.setLimitColumnInfo(new ColumnInfo("limits",tv ->
+				{
+					return "" + tv.getFlags();
+				}));
+
+				model.setRevColumnInfo(new ColumnInfo("rev", tv ->
+				{
+					return tv.getSourceId().toString();
+				}));
 
 				window.pack();
 				window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

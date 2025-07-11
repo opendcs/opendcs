@@ -15,6 +15,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import decodes.tsdb.comprungui.TimeSeriesTableModel.ColumnInfo;
+
 public class TimeSeriesTablePanel extends JPanel
 {
     private final TimeSeriesTableModel tableModel;
@@ -127,6 +129,5 @@ public class TimeSeriesTablePanel extends JPanel
                 }
             }
         }
-        
     }
 }

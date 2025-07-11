@@ -981,13 +981,21 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 				sb.append('R');
 			if ((flags & CwmsFlags.VALIDITY_QUESTIONABLE) != 0)
 				sb.append('Q');
+			if ((flags & CwmsFlags.PROTECTED) != 0)
+				sb.append('P');
 		}
 		return sb.toString();
 	}
 
 	/** @return label to use for 'revision' column in tables. */
-	public String getRevisionLabel() { return ""; }
+	public String getRevisionLabel() { return "Qual Code(hex)"; }
 
+	@Override
+	public String flags2RevisionCodes(int flags)
+	{
+		
+		return String.format("%x", CwmsFlags.flag2CwmsQualityCode(flags));
+	}
 	
 	public boolean isCwms() { return true; }
 

@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -24,12 +26,13 @@ public final class TimeSeriesTableModel extends AbstractTableModel
 {
 	public final Vector<CTimeSeries> inputs;
 	public final Vector<CTimeSeries> outputs;
-	private CTimeSeries maxseries=null;
-	TimeSeriesDb mydb;
 	int rows;
 	private DecimalFormat df1 = new DecimalFormat("###0.00");
 	private final ArrayList<Date> allTimes;
 	public static final SimpleDateFormat sdf = new SimpleDateFormat("ddMMMyyyy, HH:mm");
+
+	private ColumnInfo limitColumn = new ColumnInfo("", v -> null);
+	private ColumnInfo revColumn = new ColumnInfo("", v -> null);
 	
 	/**
 	 * Creates a new table model
@@ -41,17 +44,11 @@ public final class TimeSeriesTableModel extends AbstractTableModel
 		rows=0;
 		inputs = new Vector<CTimeSeries>();
 		outputs = new Vector<CTimeSeries>();
-		mydb=newdb;
 		allTimes = new ArrayList<Date>();
 		String timeZoneStr = DecodesSettings.instance().sqlTimeZone;
 		timeZoneStr = timeZoneStr == null ? "UTC" : timeZoneStr;
 		
 		sdf.setTimeZone(TimeZone.getTimeZone(timeZoneStr));
-	}
-
-	public void setDb(TimeSeriesDb newdb)
-	{
-		mydb=newdb;
 	}
 
 	public void addInput(CTimeSeries input)
@@ -113,12 +110,7 @@ public final class TimeSeriesTableModel extends AbstractTableModel
 		Collections.sort(allTimes);
 		rows = allTimes.size();
 
-		System.out.println("Fire Data change.");
 		this.fireTableDataChanged();
-		//System.out.println("Fire Header Row");
-		//this.fireTableChanged(new TableModelEvent(this,TableModelEvent.HEADER_ROW));
-		
-
 	}
 
 	public void setInOut(Vector<CTimeSeries> inputs,
@@ -181,34 +173,18 @@ public final class TimeSeriesTableModel extends AbstractTableModel
 
 		switch ((column-1)%3)
 		{
-		case 0: // Value
-			try { return df1.format(tv.getDoubleValue()); }
-			catch (NoConversionException e)
-			{
-				return tv.getStringValue();
-			}
-		case 1:
-			return convertLim(tv);
-		case 2:
-			return convertRev(tv);
+			case 0: // Value
+				try { return df1.format(tv.getDoubleValue()); }
+				catch (NoConversionException e)
+				{
+					return tv.getStringValue();
+				}
+			case 1:
+				return limitColumn.valueLookup.apply(tv);
+			case 2:
+				return revColumn.valueLookup.apply(tv);
 		}
 		return null;
-	}
-
-	private String convertLim(TimedVariable var)
-	{
-		if(mydb!=null)
-			return mydb.flags2LimitCodes(var.getFlags());
-		else
-			return "";
-	}
-	
-	private String convertRev(TimedVariable var)
-	{
-		if(mydb!=null)
-			return mydb.flags2RevisionCodes(var.getFlags());
-		else
-			return "";
 	}
 
 	/**
@@ -228,23 +204,47 @@ public final class TimeSeriesTableModel extends AbstractTableModel
 		int index = (column - 1)/3;
 		switch ((column-1)%3)
 		{
-		case 0:
-			CTimeSeries myseries;
-			if(index>=inputs.size())
-			{
-				index=index-inputs.size();
-				myseries = outputs.get(index);
-			}
-			else
-			{
-				myseries = inputs.get(index);
-			}
-			return myseries.getUnitsAbbr();
-		case 1:
-			return mydb != null ? mydb.getLimitLabel(): "Lim";
-		case 2:
-			return mydb != null ? mydb.getRevisionLabel() : "Rev";
+			case 0:
+				CTimeSeries myseries;
+				if(index>=inputs.size())
+				{
+					index=index-inputs.size();
+					myseries = outputs.get(index);
+				}
+				else
+				{
+					myseries = inputs.get(index);
+				}
+				return myseries.getUnitsAbbr();
+			case 1:
+				return limitColumn.name;
+			case 2:
+				return revColumn.name;
 		}
 		return null;
-	}	
+	}
+
+	public void setLimitColumnInfo(ColumnInfo info)
+	{
+		this.limitColumn = info;
+	}
+
+	public void setRevColumnInfo(ColumnInfo info)
+	{
+		this.revColumn = info;
+	}
+
+
+	public static class ColumnInfo
+	{
+		public final String name;
+		public final Function<TimedVariable, String> valueLookup;
+
+
+		public ColumnInfo(String name, Function<TimedVariable, String> lookupFunction)
+		{
+			this.name = name;
+			this.valueLookup = lookupFunction;
+		}
+	}
 }

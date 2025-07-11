@@ -48,34 +48,22 @@ import decodes.tsdb.TimeSeriesIdentifier;
 @SuppressWarnings("serial")
 public class TimeSeriesTable extends JTable
 {
-	TimeSeriesDb mydb;
+
 	public TimeSeriesTable(TimeSeriesDb newdb)
 	{
 		super();
 		this.autoCreateColumnsFromModel=true;
-		mydb=newdb;
-		setModel(new TimeSeriesTableModel(mydb));
+		
+		setModel(new TimeSeriesTableModel(newdb));
 	}
 	
 	TimeSeriesTable(TimeSeriesTableModel newmodel,TimeSeriesDb newdb)
 	{
 		super(newmodel);
 		this.autoCreateColumnsFromModel=false;
-		mydb=newdb;
 		setModel(newmodel);
 		setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
-	}
-	
-	/**
-	 * Method to set the database obj in case the initial db is null
-	 * when set at the constructor
-	 * @param newdb
-	 */
-	public void setTsdb(TimeSeriesDb newdb)
-	{
-		mydb = newdb;
-		((TimeSeriesTableModel)getModel()).setDb(newdb);
-	}
+	}	
 
 	@Override
 	public void tableChanged(TableModelEvent e)
@@ -94,8 +82,7 @@ public class TimeSeriesTable extends JTable
 			{
 				cm.removeColumn(cm.getColumn(0));
 			}
-			System.out.println("Creating headers." + e.getType());
-			//cm.getColumn(0).setMinWidth(120);
+
 			for(int pos=0;pos<mymodel.inputs.size();pos++)
 			{
 				CTimeSeries cts = mymodel.inputs.get(pos);
@@ -104,9 +91,12 @@ public class TimeSeriesTable extends JTable
 				ColumnGroup input = new ColumnGroup(CompRunGuiFrame.inputLabel + tsName);
 				TableColumn value = new TableColumn(pos*3+1);
 				value.setMinWidth(30);
+				value.setHeaderValue(mymodel.getColumnName(1));
 				TableColumn limQual = new TableColumn(pos*3+2);
+				limQual.setHeaderValue(mymodel.getColumnName(2));
 				limQual.setMinWidth(30);
 				TableColumn rev = new TableColumn(pos*3+3);
+				rev.setHeaderValue(mymodel.getColumnName(3));
 				rev.setMinWidth(30);
 				input.add(value);
 				input.add(limQual);
@@ -116,8 +106,7 @@ public class TimeSeriesTable extends JTable
 				cm.addColumn(rev);
 				header.addColumnGroup(input);
 			}
-			for(int pos=mymodel.inputs.size();
-							pos<mymodel.outputs.size()+mymodel.inputs.size();pos++)
+			for(int pos=mymodel.inputs.size(); pos<mymodel.outputs.size()+mymodel.inputs.size();pos++)
 			{
 				CTimeSeries cts = mymodel.outputs.get(pos-mymodel.inputs.size());
 				TimeSeriesIdentifier tsid = cts.getTimeSeriesIdentifier();
@@ -126,9 +115,12 @@ public class TimeSeriesTable extends JTable
 				ColumnGroup output = new ColumnGroup(CompRunGuiFrame.outputLabel + tsName);
 				TableColumn value = new TableColumn(pos*3+1);
 				value.setMinWidth(30);
+				value.setHeaderValue(mymodel.getColumnName(1));
 				TableColumn limQual = new TableColumn(pos*3+2);
+				limQual.setHeaderValue(mymodel.getColumnName(2));
 				limQual.setMinWidth(30);
 				TableColumn rev = new TableColumn(pos*3+3);
+				rev.setHeaderValue(mymodel.getColumnName(3));
 				rev.setMinWidth(30);
 				//add columns  from outputs to column group and set minimum size
 				output.add(value);

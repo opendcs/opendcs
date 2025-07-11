@@ -122,6 +122,7 @@ import decodes.tsdb.VarFlags;
 import decodes.tsdb.alarm.AlarmManager;
 import decodes.tsdb.compedit.ComputationsEditPanel;
 import decodes.tsdb.compedit.ComputationsListPanel;
+import decodes.tsdb.comprungui.TimeSeriesTableModel.ColumnInfo;
 import decodes.tsdb.groupedit.TimeSeriesSelectDialog;
 import decodes.util.DecodesSettings;
 
@@ -163,7 +164,7 @@ public class CompRunGuiFrame extends TopFrame
 	private DateTimeCalendar toDTCal;
 	private TimeSeriesCollection[] datasets;
 	private JFreeChart mychart;
-	private TimeSeriesTable timeSeriesTable;
+	private TimeSeriesTablePanel timeSeriesTablePanel = new TimeSeriesTablePanel();
 	private String module = "RunComputationFrame";
 	private ChartPanel chartPanel;
 
@@ -193,42 +194,7 @@ public class CompRunGuiFrame extends TopFrame
 	 */
 	public CompRunGuiFrame(boolean standAloneMode)
 	{
-		super();
-
-		this.standAloneMode = standAloneMode;
-		
-		timeZoneStr = DecodesSettings.instance().sqlTimeZone;
-		timeZoneStr = timeZoneStr == null ? "UTC" : timeZoneStr;
-		setAllLabels();
-		chartXLabel = "Time";
-
-		JPanel mycontent = (JPanel)this.getContentPane();
-		mycontent.setLayout(new BoxLayout(mycontent, BoxLayout.Y_AXIS));
-
-		this.setTitle(labels.getString("RunComputationsFrame.frameTitle"));
-		this.trackChanges("runcomps");
-		traceDialog = new TraceDialog(this, false);
-		traceDialog.setTraceType("Computation Run");
-		mycontent.add(listPanel());
-		mycontent.add(timePanel());
-		mycontent.add(getChart());
-		mycontent.add(getTable());
-		mycontent.add(closePanel());
-		pack();
-
-		// Default operation is to do nothing when user hits 'X' in
-		// upper right to close the window. We will catch the closing
-		// event and do the same thing as if user had hit close.
-		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-		addWindowListener(new WindowAdapter()
-		{
-			public void windowClosing(WindowEvent e)
-			{
-				doClose();
-			}
-		});
-		exitOnClose = true;
-
+		this(standAloneMode, null, null, null);
 	}
 
 	/**
@@ -266,7 +232,7 @@ public class CompRunGuiFrame extends TopFrame
 		mycontent.add(listPanel());
 		mycontent.add(timePanel());
 		mycontent.add(getChart());
-		mycontent.add(getTable());
+		mycontent.add(timeSeriesTablePanel);
 		mycontent.add(closePanel());
 		pack();
 
@@ -290,7 +256,10 @@ public class CompRunGuiFrame extends TopFrame
 			toDTCal.setDate(until);
 		}
 
-		mytable.fill(dbComps);
+		if (dbComps != null)
+		{
+			mytable.fill(dbComps);
+		}
 
 
 	}
@@ -810,7 +779,17 @@ public class CompRunGuiFrame extends TopFrame
 	public void setDb(TimeSeriesDb mydb)
 	{
 		this.theDb = mydb;
-		timeSeriesTable.setTsdb(mydb);
+		TimeSeriesTableModel tsTm = timeSeriesTablePanel.getTimeSeriesModel();
+		if (theDb != null)
+		{
+			tsTm.setRevColumnInfo(new ColumnInfo(theDb.getRevisionLabel(), tv -> theDb.flags2RevisionCodes(tv.getFlags())));
+			tsTm.setLimitColumnInfo(new ColumnInfo(theDb.getLimitLabel(), tv -> theDb.flags2LimitCodes(tv.getFlags())));
+		}
+		else
+		{
+			tsTm.setRevColumnInfo(new ColumnInfo("", tv -> null));
+			tsTm.setLimitColumnInfo(new ColumnInfo("", tv -> null));
+		}
 	}
 
 	private void runButtonPressed()
@@ -1365,7 +1344,7 @@ public class CompRunGuiFrame extends TopFrame
 
 					both.add(cts);
 					plotDataOnChart(both, myinputs.size());
-					timeSeriesTable.setInOut(myinputs, myoutputs);
+					timeSeriesTablePanel.getTimeSeriesModel().setInOut(myinputs, myoutputs);
 				}
 			}
 
@@ -1380,7 +1359,7 @@ public class CompRunGuiFrame extends TopFrame
 				cancelExecutionButton.setEnabled(false);
 				saveButton.setEnabled(true);
 				plotDataOnChart(both, myinputs.size());
-				timeSeriesTable.setInOut(myinputs, myoutputs);
+				timeSeriesTablePanel.getTimeSeriesModel().setInOut(myinputs, myoutputs);
 			}
 		};
 		compExecutionWorker.addPropertyChangeListener(event -> updateProgress(event));
@@ -1408,30 +1387,7 @@ public class CompRunGuiFrame extends TopFrame
 				progressBar.setString(String.format("%d of %d", progress.getDone(), progress.getTotal()));
 			}
 		}
-	}
-
-	private JScrollPane getTable()
-	{
-		JScrollPane myscrollpane = new JScrollPane();
-		myscrollpane.setPreferredSize(new Dimension(600, 400));
-		timeSeriesTable = new TimeSeriesTable(theDb);
-		timeSeriesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		myscrollpane.add(timeSeriesTable);
-		myscrollpane.setViewportView(timeSeriesTable);
-		myscrollpane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		JTable timesTable = new JTable();
-		timesTable.setAutoCreateColumnsFromModel(false);
-		timesTable.setModel(timeSeriesTable.getModel());
-		timesTable.setRowSorter(timeSeriesTable.getRowSorter());
-		TableColumn tc = timeSeriesTable.getColumnModel().getColumn(0);
-		timeSeriesTable.getColumnModel().removeColumn(tc);
-		timesTable.getColumnModel().addColumn(tc);
-		//timesTable.getColumnModel().getColumn(0).setCellRenderer(new DateRenderer(TimeSeriesTableModel.sdf));
-		myscrollpane.setRowHeaderView(timesTable);
-		myscrollpane.setCorner(JScrollPane.UPPER_LEFT_CORNER, timesTable.getTableHeader());
-		
-		return myscrollpane;
-	}
+	}	
 
 	private JPanel closePanel()
 	{
@@ -1563,7 +1519,7 @@ public class CompRunGuiFrame extends TopFrame
 					Logger.instance().failure(msg);
 				}
 			}
-			timeSeriesTable.setInOut(myinputs, myoutputs);
+			timeSeriesTablePanel.getTimeSeriesModel().setInOut(myinputs, myoutputs);
 		}
 		finally
 		{
