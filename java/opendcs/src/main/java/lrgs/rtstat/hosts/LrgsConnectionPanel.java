@@ -13,6 +13,7 @@ import javax.swing.SwingWorker;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.opendcs.gui.layout.WrapLayout;
 import org.opendcs.tls.TlsMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +71,7 @@ public final class LrgsConnectionPanel extends JPanel
     private LrgsConnectionPanel(LrgsConnectionPanelController controller, boolean showPause)
     {
         this.controller = controller;
-        setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        setLayout(new WrapLayout(FlowLayout.LEFT, 5, 5));
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         //FlowLayout flowLayout = (FlowLayout) panel.getLayout();
