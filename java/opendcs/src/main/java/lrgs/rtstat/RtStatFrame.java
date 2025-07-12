@@ -167,7 +167,14 @@ public class RtStatFrame
                     jSplitPane1.setDividerLocation(newLoc);
                     splitPaneHeight = newHeight;
                     dividerLoc = newLoc;
+                    System.out.println(connectionPanel.getSize());
+                    connectionPanel.revalidate();
                     repaint();
+                    System.out.println("cur: "+connectionPanel.getSize());
+                    System.out.println("min: "+connectionPanel.getMinimumSize());
+                    System.out.println("max: "+connectionPanel.getMaximumSize());
+                    System.out.println("pref:"+connectionPanel.getPreferredSize());
+                    System.out.println(connectionPanel.getLayout());
                 }
             });
         eventsPanel.addAncestorListener(
