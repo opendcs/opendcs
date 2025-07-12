@@ -206,8 +206,8 @@ public class MessageBrowser extends MenuFrame
         // The below dimensions were determined by sizing the controls within
         // the eclipse window builder tool and using those measurements. If anyone
         // has a better method to get the minimum size, please go for it.
-        lrgsConnectionPanel.setMinimumSize(new Dimension(529,140));
-        lrgsConnectionPanel.setPreferredSize(lrgsConnectionPanel.getMinimumSize());
+        //lrgsConnectionPanel.setMinimumSize(new Dimension(529,140));
+        //lrgsConnectionPanel.setPreferredSize(lrgsConnectionPanel.getMinimumSize());
 
         northwest.add(lrgsConnectionPanel);
 
