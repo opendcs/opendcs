@@ -93,7 +93,7 @@ public class MessageBrowser extends MenuFrame
     private SearchCriteria searchcrit;
     private SearchCriteriaEditorIF scedit;
 
-    private final LrgsConnectionPanel lrgsConnectionPanel = new LrgsConnectionPanel(false);
+    private final LrgsConnectionPanel lrgsConnectionPanel = new LrgsConnectionPanel(false,true);
     private JTextField scfileField;
     private JButton scSelectButton, scEditButton;
     private JTextField prefixField, suffixField;
@@ -203,18 +203,12 @@ public class MessageBrowser extends MenuFrame
         northwest.setBorder(new TitledBorder(
                 labels.getString("MessageBrowser.serverTitle")));
 
-        // The below dimensions were determined by sizing the controls within
-        // the eclipse window builder tool and using those measurements. If anyone
-        // has a better method to get the minimum size, please go for it.
-        //lrgsConnectionPanel.setMinimumSize(new Dimension(529,140));
-        //lrgsConnectionPanel.setPreferredSize(lrgsConnectionPanel.getMinimumSize());
-
         northwest.add(lrgsConnectionPanel);
 
         lrgsConnectionPanel.onConnect(c -> connectButtonPress(c));
         // Finally, add northwest to the west panel.
         west.add(northwest,
-            new GridBagConstraints(0, 0, 1, 1, 0.0, 1.0,
+            new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                 GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH,
                 new Insets(2, 5, 2, 5), 0, 0));
 

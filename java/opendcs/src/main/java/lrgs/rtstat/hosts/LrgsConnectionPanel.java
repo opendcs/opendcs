@@ -27,7 +27,6 @@ import java.awt.Dimension;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 
 import java.util.Date;
 import java.util.Locale;
@@ -47,7 +46,7 @@ public final class LrgsConnectionPanel extends JPanel
     private JTextField portField;
     private JLabel tlsOptionLabel = new JLabel(labels.getString("RtStatFrame.tls"));
     private JComboBox<TlsMode> tlsOption = new JComboBox<>(TlsMode.values());
-    
+
     private JTextField usernameField;
     private JButton pausedButton;
     private PasswordWithShow passwordField;
@@ -60,22 +59,27 @@ public final class LrgsConnectionPanel extends JPanel
      */
     public LrgsConnectionPanel()
     {
-        this(new LrgsConnectionPanelController(), true);
+        this(new LrgsConnectionPanelController(), true, false);
     }
 
-    public LrgsConnectionPanel(boolean showPause)
+    public LrgsConnectionPanel(boolean showPause, boolean vertical)
     {
-        this(new LrgsConnectionPanelController(), showPause);
+        this(new LrgsConnectionPanelController(), showPause, vertical);
     }
 
-    private LrgsConnectionPanel(LrgsConnectionPanelController controller, boolean showPause)
+    private LrgsConnectionPanel(LrgsConnectionPanelController controller, boolean showPause, boolean vertical)
     {
         this.controller = controller;
-        setLayout(new WrapLayout(FlowLayout.LEFT, 5, 5));
+        if (vertical)
+        {
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        }
+        else
+        {
+            setLayout(new WrapLayout(FlowLayout.LEFT, 5, 5));
+        }
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-        //FlowLayout flowLayout = (FlowLayout) panel.getLayout();
-        //flowLayout.setAlignment(FlowLayout.LEFT);
         add(panel);
 
         JLabel lblNewLabel = new JLabel(labels.getString("RtStatFrame.host")); //$NON-NLS-1$
@@ -85,23 +89,17 @@ public final class LrgsConnectionPanel extends JPanel
 
         hostCombo = new JComboBox<>();
         hostCombo.setName("hostCombo");
-        //hostCombo.setMinimumSize(new Dimension(120, 24));
         hostCombo.setAlignmentX(Component.LEFT_ALIGNMENT);
         hostCombo.setEditable(true);
         hostCombo.addActionListener(e -> changeConnection());
         hostCombo.setRenderer(new ConnectionRender());
         panel.add(hostCombo);
 
-        //JPanel panel_1 = new JPanel();
-        //panel.setLayout(new BoxLayout(panel_1, BoxLayout.X_AXIS));
-        //add(panel_1);
-
         JLabel lblNewLabel_1 = new JLabel(labels.getString("RtStatFrame.port")); //$NON-NLS-1$
         panel.add(lblNewLabel_1);
         lblNewLabel_1.setLabelFor(portField);
 
         portField = new JTextField();
-        //portField.setMaximumSize(new Dimension(32, 2147483647));
         panel.add(portField);
         portField.setText("16003");
         portField.setColumns(6);
@@ -110,6 +108,10 @@ public final class LrgsConnectionPanel extends JPanel
 
         JPanel panel_2 = new JPanel();
         panel_2.setLayout(new BoxLayout(panel_2, BoxLayout.X_AXIS));
+        if (vertical)
+        {
+            add(Box.createRigidArea(new Dimension(5,5)));
+        }
         add(panel_2);
 
         JLabel lblNewLabel_2 = new JLabel(labels.getString("RtStatFrame.user")); //$NON-NLS-1$
@@ -120,15 +122,16 @@ public final class LrgsConnectionPanel extends JPanel
         panel_2.add(usernameField);
         usernameField.setColumns(10);
 
-        
-
         JLabel lblNewLabel_3 = new JLabel(labels.getString("RtStatFrame.password")); //$NON-NLS-1$
         panel_2.add(lblNewLabel_3);
         lblNewLabel_3.setLabelFor(passwordField);
 
         passwordField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
         panel_2.add(passwordField);
-
+        if (vertical)
+        {
+            add(Box.createVerticalGlue());
+        }
         JPanel panel_4 = new JPanel();
         panel_4.setLayout(new BoxLayout(panel_4, BoxLayout.X_AXIS));
         add(panel_4);
@@ -136,9 +139,9 @@ public final class LrgsConnectionPanel extends JPanel
         JButton connectButton = new JButton(labels.getString("RtStatFrame.connectButton")); //$NON-NLS-1$
         connectButton.addActionListener(e -> connect());
         panel_4.add(connectButton);
-
+        panel_4.add(Box.createRigidArea(new Dimension(5, 5)));
         pausedButton = new JButton(labels.getString("RtStatFrame.pause")); //$NON-NLS-1$
-        pausedButton.addActionListener(e -> 
+        pausedButton.addActionListener(e ->
         {
             paused = !paused;
             pause(paused);
@@ -149,9 +152,6 @@ public final class LrgsConnectionPanel extends JPanel
 
         controller.setView(this);
 
-        
-        //int minWidth = passwordField.getMinimumSize().width + lblNewLabel_3.getMinimumSize().width + 50;
-        //this.setMinimumSize(new Dimension(minWidth, 40));
     }
 
     @Override

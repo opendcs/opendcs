@@ -38,11 +38,8 @@ import decodes.gui.TopFrame;
 import ilex.gui.EventsPanel;
 import ilex.gui.JobDialog;
 import ilex.gui.LoginDialog;
-import ilex.gui.WindowUtility;
 import ilex.util.AsciiUtil;
 import ilex.util.AuthException;
-import ilex.util.DesEncrypter;
-import ilex.util.EnvExpander;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
@@ -147,8 +144,7 @@ public class RtStatFrame
         Dimension d = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
         d.width = 800;
         d.height -= 60;
-        //setSize(d);
-        
+
         dividerLoc = d.height - 80 - 160;
         splitPaneHeight = 0;
         jSplitPane1.setDividerLocation(dividerLoc);
@@ -167,14 +163,6 @@ public class RtStatFrame
                     jSplitPane1.setDividerLocation(newLoc);
                     splitPaneHeight = newHeight;
                     dividerLoc = newLoc;
-                    System.out.println(connectionPanel.getSize());
-                    connectionPanel.revalidate();
-                    repaint();
-                    System.out.println("cur: "+connectionPanel.getSize());
-                    System.out.println("min: "+connectionPanel.getMinimumSize());
-                    System.out.println("max: "+connectionPanel.getMaximumSize());
-                    System.out.println("pref:"+connectionPanel.getPreferredSize());
-                    System.out.println(connectionPanel.getLayout());
                 }
             });
         eventsPanel.addAncestorListener(
@@ -314,7 +302,6 @@ public class RtStatFrame
         jMenuBar1.add(jMenuFile);
         jMenuBar1.add(jMenuHelp);
         contentPane.add(connectionPanel, BorderLayout.PAGE_START);
-        connectionPanel.setBackground(Color.GREEN);
         connectionPanel.onConnect(c -> connectButton_actionPerformed(c));
         contentPane.add(jSplitPane1, BorderLayout.CENTER);
         jSplitPane1.add(rtStatPanel, JSplitPane.TOP);
