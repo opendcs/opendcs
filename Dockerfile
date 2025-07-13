@@ -1,5 +1,5 @@
 # Depends on having buildx available for the --mount feature
-FROM openjdk:17-jdk-slim-buster AS builder
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
 RUN --mount=type=cache,target=/var/cache/apt \ 
     apt-get update && apt-get -y upgrade && \
