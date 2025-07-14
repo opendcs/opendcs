@@ -1,7 +1,7 @@
 # Depends on having buildx available for the --mount feature
-FROM openjdk:17-jdk-slim-buster AS builder
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
-RUN --mount=type=cache,target=/var/cache/apt \ 
+RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get -y upgrade && \
     apt-get install -y python3-venv python3-pip git
 WORKDIR /app
@@ -40,7 +40,7 @@ WORKDIR /lrgs_home
 ENV LRGSHOME=/lrgs_home
 ENV LRGS_ADMIN_PASSWORD=""
 # DDS Port
-EXPOSE 16003 
+EXPOSE 16003
 CMD ["/lrgs.sh"]
 
 
