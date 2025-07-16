@@ -64,14 +64,14 @@ final public class ResEvapAlgo
     @Input
     public double elevHighCloud;    
     @Input
-    public double elev;    
+    public double elev;
 
 
-  
-    private double tally; //running tally of hourly Evaporation
+    private double previousElev;
+    private double totalDailyEvapVolumeM3 = 0.0; // aggregated hourly evaporation frustum volume in cubic meters
     private int count; //number of days calculated
     private boolean isDayLightSavings;
-    private double previousHourlyEvap;
+    private double previousInstHourlyEvap;
 
     private double startDepth = 0.;
     private double depthIncrement = .5;
@@ -256,24 +256,86 @@ final public class ResEvapAlgo
         return newValue;
     }
 
-    //Converts evaporation to meters then to flow  and save value to output
-    private void setAsFlow(Double TotalEvap, Date CurrentTime) throws NoConversionException, DecodesException, RatingException, ResEvapException
+    /**
+     * Convert hourly evaporation to volume in cubic meters using the frustum formula.
+     * This method calculates the volume of water evaporated based on the average elevation
+     * before and after evaporation loss.
+     *
+     * @param totalEvap  total evaporation for the hour (mm/hr)
+     * @param elevation (m)
+     * @return frustum volume of water evaporated (m3)
+     */
+    private double convertEvapToVolumeM3(double totalEvap, double elevation) throws NoConversionException, DecodesException, RatingException
     {
-        double evap_to_meters = convertUnits(TotalEvap, dailyEvapTS.getUnitsAbbr(), "m");
+        double evapMeters = convertUnits(totalEvap, hourlyEvapTS.getUnitsAbbr(), "m");
 
-        double elev = resEvap.reservoir.getCurrentElevation(CurrentTime);
-        double areaMetersSq;
-        try
-        {
-            areaMetersSq = resEvap.reservoir.intArea(elev, conn);
-        }
-        catch (RatingException ex)
-        {
-            throw new RatingException("failed to compute rating for evaporation to flow", ex);
-        }
-        double dailyEvapFlow = (areaMetersSq * evap_to_meters) / (86400.);
-        setOutput(dailyEvapAsFlow, dailyEvapFlow, _timeSliceBaseTime);
+        // get elevation before and after evaporation loss
+        double elevAfterEvapLoss = elevation - evapMeters;
+
+        // get area at elevation before and after evaporation loss
+        double areaAtElevBeforeEvapLoss = getAreaAtElevation(resEvap.reservoir, elevation);
+        double areaAtElevAfterEvapLoss = getAreaAtElevation(resEvap.reservoir, elevAfterEvapLoss);
+
+        return getFrustumVolumeM3(areaAtElevBeforeEvapLoss, areaAtElevAfterEvapLoss, evapMeters);
     }
+
+
+    /**
+     * Get the area at a given elevation from the reservoir's rating curve.
+     *
+     * @param reservoir  the EvapReservoir object
+     * @param elevation  the elevation at which to get the area (m)
+     * @return area at the specified elevation (m2)
+     */
+    double getAreaAtElevation(EvapReservoir reservoir, double elevation) throws RatingException
+    {
+        return reservoir.intArea(elevation, conn);
+    }
+
+
+    /**
+     * Calculate the volume of a frustum given the areas at two elevations and the depth between them.
+     *
+     * @param areaAtElev1 (m2)
+     * @param areaAtElev2 (m2)
+     * @param depth       (m)
+     * @return volume of the frustum (m3)
+     */
+    static double getFrustumVolumeM3(double areaAtElev1, double areaAtElev2, double depth)
+    {
+        double frustumAvgArea = (areaAtElev1 + areaAtElev2 + Math.sqrt(areaAtElev1 * areaAtElev2)) / 3.0;
+        return frustumAvgArea * depth;
+    }
+
+
+    /**
+     * Convert a volume in cubic meters to a flow rate in cubic meters per second.
+     *
+     * @param volume (m3)
+     * @return flow rate in cubic meters per second
+     */
+    static double getVolumeM3AsFlowCMS(double volume)
+    {
+        return volume / 86400.0;
+    }
+
+    /**
+     * WILL DELETE THIS METHOD AFTER TESTING
+     *
+     * @param areaAtElev1 area At Elevation Before Evap (m2)
+     * @param areaAtElev2 area At Elevation Minus Evap lost (m2)
+     * @param dailyEvapDepth evaporation depth (m)
+     * @return daily evaporation as flow (cms) m3/s
+     */
+    static double getDailyEvapFlow(double areaAtElev1, double areaAtElev2, double dailyEvapDepth)
+    {
+        double frustumAvgArea = (areaAtElev1 + areaAtElev2 + Math.sqrt(areaAtElev1 * areaAtElev2)) / 3.0;
+        double frustumEvapVolume = frustumAvgArea * dailyEvapDepth;
+
+        // convert vol to flow (cms)
+        return frustumEvapVolume / 86400.0;
+    }
+
 
     //TODO Implement Location Levels
     private double getMaxTempDepthMeters()
@@ -326,7 +388,7 @@ final public class ResEvapAlgo
     protected void beforeTimeSlices()
             throws DbCompException
     {
-        tally = 0.0;
+        totalDailyEvapVolumeM3 = 0.0;
         count = 0;
 
         String evapInterval = getParmRef("dailyEvap").tsid.getInterval();
@@ -486,7 +548,7 @@ final public class ResEvapAlgo
                     CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapTS.getTimeSeriesIdentifier());
                     cts.setUnitsAbbr("mm/hr");
                     TimedVariable PrevTV = tsdb.getPreviousValue(cts, baseTimes.first());
-                    previousHourlyEvap = PrevTV.getDoubleValue();
+                    previousInstHourlyEvap = PrevTV.getDoubleValue();
                 }
                 catch (Exception ex)
                 {
@@ -538,14 +600,34 @@ final public class ResEvapAlgo
             hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
 
             count++;
-            tally += (previousHourlyEvap + computedList.get(6)) / 2;
-            previousHourlyEvap = computedList.get(6);
+
+            // calculate hourly avg evap and elev
+            double currentHourlyTotalEvap = (previousInstHourlyEvap + computedList.get(6)) / 2;
+            double avgHourlyElevation = (elev + previousElev) / 2;
+
+            // aggregate hourly evap volume
+            try
+            {
+                totalDailyEvapVolumeM3 += convertEvapToVolumeM3(currentHourlyTotalEvap, avgHourlyElevation);
+            }
+            catch (NoConversionException | DecodesException | RatingException ex)
+            {
+                throw new DbCompException("Failed to convert evaporation to volume", ex);
+            }
+
+            previousInstHourlyEvap = computedList.get(6);
+            previousElev = elev;
 
         }
     }
 
+
+
     /**
-     * This method is called once after iterating all time slices.
+     * This method is called once after iterating all time slices and
+     * sets the daily evaporation volume and flow rate outputs and appends the
+     * hourly water temperature profiles to the daily profiles.
+     * If there are less than 24 hourly samples, it will log a warning and fail -- or does it continue?
      */
     @Override
     protected void afterTimeSlices()
@@ -553,15 +635,12 @@ final public class ResEvapAlgo
     {
         if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
         {
-            setOutput(dailyEvap, tally, _timeSliceBaseTime);
-            try
-            {
-                setAsFlow(tally, _timeSliceBaseTime);
-            }
-            catch (RatingException | NoConversionException | DecodesException ex)
-            {
-                throw new DbCompException("Failed to compute flow values from evap rate", ex);
-            }
+            // Convert daily evap volume to a flow rate and set outputs.
+            double dailyEvapFlowCms = getVolumeM3AsFlowCMS(totalDailyEvapVolumeM3);
+
+            setOutput(dailyEvap, totalDailyEvapVolumeM3, _timeSliceBaseTime);
+            setOutput(dailyEvapAsFlow, dailyEvapFlowCms, _timeSliceBaseTime);
+
             dailyWTP.append(hourlyWTP, _timeSliceBaseTime, timeSeriesDAO);
         }
         else
