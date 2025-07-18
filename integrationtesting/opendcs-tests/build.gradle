@@ -48,15 +48,16 @@ test {
 
 testEngines.each { engine ->
     def tmpdir = "${project.layout.buildDirectory.get()}/runs/${engine}/tmp"
-
-    def task = tasks.register("test"+engine.replace("-",""), Test) { task ->
+    def taskName = "test"+engine.replace("-","")
+    def task = tasks.register(taskName, Test) { task ->
         dependsOn ":install:installDist"
         dependsOn ":opendcs:test"
         //outputs.upToDateWhen {false}
         useJUnitPlatform()
 
 
-        enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":test")
+        enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":test") ||
+                  gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" + taskName)
         doFirst {
             project.mkdir(tmpdir)
         }

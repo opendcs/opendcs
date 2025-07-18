@@ -2,6 +2,7 @@ package org.opendcs.database;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,16 +12,23 @@ import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
+import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.mapper.ColumnMapper;
+import org.jdbi.v3.core.statement.StatementContext;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.database.api.dao.PropertiesDAO;
+import org.opendcs.database.impl.opendcs.PropertiesDaoImpl;
+import org.opendcs.database.impl.opendcs.jdbi.DbKeyArgumentFactory;
 import org.opendcs.settings.api.OpenDcsSettings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
+import decodes.sql.DbKey;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 
@@ -32,6 +40,10 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     private final TimeSeriesDb timeSeriesDb;
     private final DataSource dataSource;
     private final Map<Class<? extends OpenDcsDao>, DaoWrapper<? extends OpenDcsDao>> daoMap = new HashMap<>();
+    // NOTE: only applies to SQL, this is a "quick fix" to test concept
+    // At this point the SimpleWrapper is insufficient on it's own as we shouldn't have these types
+    // of ifs.
+    private final Jdbi jdbi; // jdbi interface
 
     public SimpleOpenDcsDatabaseWrapper(DecodesSettings settings, Database decodesDb, TimeSeriesDb timeSeriesDb, DataSource dataSource)
     {
@@ -39,6 +51,23 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         this.decodesDb = decodesDb;
         this.timeSeriesDb = timeSeriesDb;
         this.dataSource = dataSource;
+        if (!settings.editDatabaseType.contains("XML"))
+        {
+            this.jdbi = Jdbi.create(dataSource);
+            jdbi.registerColumnMapper(DbKey.class,new ColumnMapper<DbKey>() {
+
+                @Override
+                public DbKey map(ResultSet r, int columnNumber, StatementContext ctx) throws SQLException {
+                    return DbKey.createDbKey(r, columnNumber);
+                }
+            });
+
+            jdbi.registerArgument(new DbKeyArgumentFactory());
+        }
+        else
+        {
+            jdbi = null;
+        }
     }
 
     @SuppressWarnings("unchecked") // class is checked before casting
@@ -67,6 +96,10 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         DaoWrapper<?> wrapper =
             daoMap.computeIfAbsent(dao, daoDesired ->
             {
+                if (dao.isAssignableFrom(PropertiesDAO.class))
+                {
+                    return new DaoWrapper<>(() -> new PropertiesDaoImpl());
+                }
                 Optional<Method> daoMakeMethod;
                 if (timeSeriesDb != null)
                 {
@@ -130,7 +163,8 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
     {
         try
         {
-            return new SimpleTransaction(this.dataSource.getConnection());
+
+            return new SimpleTransaction(jdbi == null ? this.dataSource.getConnection() : null, jdbi);
         }
         catch (SQLException ex)
         {
