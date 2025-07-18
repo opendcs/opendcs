@@ -250,7 +250,6 @@ public class DbImport
 	XmlDatabaseIO stageDbio;  // For reading the input files.
 	TopLevelParser topParser; // Top level XML parser.
 	Vector<IdDatabaseObject> newObjects;   // Stores new DatabaseObjects to be added.
-	ArrayList<IdDatabaseObject> toDelete = new ArrayList<IdDatabaseObject>();
 	final List<String> files;
 	boolean writePlatformList;
 	private Pdt pdt = null;
@@ -872,25 +871,6 @@ public class DbImport
 				// use cases 4 & 5: This is a NEW platform.
 				log.info("Adding New Platform '{}'", newPlat.makeFileName());
 				theDb.platformList.add(newPlat);
-
-//				if (oldTmMatch != null)
-//				{
-//					info("Match for tm '" + oldTmMatch.toString() + "' -- will remove from old platform with id="
-//						+ oldTmMatch.getId());
-//					// use case 5 No match for (site,desig) but there is a match for TM.
-//					// Need to cause the old TMs to be removed from existing platform.
-//					for(Iterator<TransportMedium> tmit = newPlat.getTransportMedia(); tmit.hasNext(); )
-//					{
-//						TransportMedium newTM = tmit.next();
-//						TransportMedium oldTM = oldTmMatch.getTransportMedium(newTM.getMediumType());
-//						if (oldTM != null && newTM.getMediumId().equals(oldTM.getMediumId()))
-//							tmit.remove();
-//					}
-//					if (oldTmMatch.transportMedia.size() > 0)
-//						newObjects.add(oldTmMatch);
-//					else if (!DbKey.isNull(oldTmMatch.getId()))
-//						toDelete.add(oldTmMatch);
-//				}
 				newObjects.add(newPlat);
 				if (log.isTraceEnabled())
 				{
@@ -1357,14 +1337,6 @@ public class DbImport
 	{
 		Database.setDb(theDb);
 
-		for(IdDatabaseObject td : toDelete)
-		{
-			if (td instanceof Platform)
-			{
-				log.info("Deleting platform {}", ((Platform)td).makeFileName());
-				theDb.getDbIo().deletePlatform((Platform)td);
-			}
-		}
 
 		// All the new Objects must now have the real database.
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
