@@ -228,13 +228,21 @@ public class DbImport
 				}
 			}
 
-			mergeStageToTheDb();
+			DbMerge merger = new DbMerge.Builder(theDb, stageDb)
+			.overwriteDb(overwriteDb)
+			.validateOnly(validateOnly)
+			.keepOld(keepOld)
+			.newDesignator(newDesignator)
+			.build();
+		
+			merger.merge();
+
 			theDb.printSizesToLog("after mergeStageToTheDb");
 			if (!validateOnly)
 			{
-				normalizeTheDb();
+				normalizeTheDb(merger.getImmutableNewObjects());
 				theDb.printSizesToLog("after normalizeTheDb");
-				writeTheChanges();
+				writeTheChanges(merger.getWritePlatformList(),merger.getImmutableNewObjects());
 				theDb.printSizesToLog("after writeTheChanges");
 			}
 
@@ -262,9 +270,7 @@ public class DbImport
 	Database stageDb;
 	XmlDatabaseIO stageDbio;  // For reading the input files.
 	TopLevelParser topParser; // Top level XML parser.
-	Vector<IdDatabaseObject> newObjects;   // Stores new DatabaseObjects to be added.
 	final List<String> files;
-	boolean writePlatformList;
 	private Pdt pdt = null;
 
 	public DbImport(Profile profile, String dbLoc, boolean validateOnly, boolean keepOld, boolean overwriteDb,
@@ -478,7 +484,6 @@ public class DbImport
 		stageDbio = new XmlDatabaseIO(ds, null);
 		stageDb.setDbIo(stageDbio);
 		topParser = stageDbio.getParser();
-		newObjects = new Vector<IdDatabaseObject>();
 
 		if (!overwriteDb)
 		{
@@ -668,15 +673,7 @@ public class DbImport
 	*/
 	private void mergeStageToTheDb()
 	{
-		DbMerge merger = new DbMerge.Builder(theDb, stageDb)
-			.overwriteDb(overwriteDb)
-			.validateOnly(validateOnly)
-			.keepOld(keepOld)
-			.newDesignator(newDesignator)
-			.build();
 		
-		merger.merge();
-		writePlatformList = merger.getWritePlatformList();
 	}
 
 	/**
@@ -690,7 +687,8 @@ public class DbImport
 	  This is necessary for SQL, because only the ones in the collections will
 	  be saved, and will have valid SQL integer IDs.
 	*/
-	private void normalizeTheDb()
+	private void normalizeTheDb(List<IdDatabaseObject> newObjects)
+		throws DatabaseException
 	{
 		// Point to the new merged, database */
 		Database.setDb(theDb);
@@ -792,7 +790,7 @@ public class DbImport
 
 	}
 
-	private void writeTheChanges()
+	private void writeTheChanges(boolean writePlatformList, List<IdDatabaseObject> newObjects) 
 		throws DatabaseException
 	{
 		Database.setDb(theDb);
@@ -889,7 +887,7 @@ public class DbImport
 		Vector<PlatformConfig> modifiedCfgs = new Vector<PlatformConfig>();
 		for(PlatformConfig pc : theDb.platformConfigList.values())
 		{
-			if (isNewObject(pc))
+			if (isNewObject(newObjects, pc))
 			{
 				modifiedCfgs.add(pc);
 			}
@@ -1264,7 +1262,7 @@ public class DbImport
 	}
 
 	/** @return true if the passed object is in the newObjects vector. */
-	private boolean isNewObject(IdDatabaseObject ob)
+	private static boolean isNewObject(List<IdDatabaseObject> newObjects,IdDatabaseObject ob)
 	{
 		for(Iterator<IdDatabaseObject> it = newObjects.iterator(); it.hasNext(); )
 		{

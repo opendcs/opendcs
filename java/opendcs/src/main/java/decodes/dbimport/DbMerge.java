@@ -15,9 +15,11 @@
  */
 package decodes.dbimport;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +59,7 @@ public class DbMerge
 
 	// tracks if new platforms were written
 	private boolean writePlatformList;
+	private List<IdDatabaseObject> newObjects = new ArrayList<>();
 
 	private DbMerge(Builder b)
 	{
@@ -73,9 +76,13 @@ public class DbMerge
 		return writePlatformList;
 	}
 
+	public List<IdDatabaseObject> getImmutableNewObjects()
+	{
+		return Collections.unmodifiableList(newObjects);
+	}
+
 	public void merge()
 	{
-		Vector<IdDatabaseObject> newObjects = new Vector<>();
 		Database theDb = destination;
 		Database stageDb = source;
 		Database.setDb(theDb);
