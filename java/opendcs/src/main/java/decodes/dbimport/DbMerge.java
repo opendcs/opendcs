@@ -23,6 +23,8 @@ import java.util.List;
 
 import org.slf4j.LoggerFactory;
 
+import decodes.db.ConfigSensor;
+import decodes.db.DataPresentation;
 import decodes.db.DataSource;
 import decodes.db.DataType;
 import decodes.db.Database;
@@ -38,11 +40,13 @@ import decodes.db.PlatformSensor;
 import decodes.db.PresentationGroup;
 import decodes.db.RoutingSpec;
 import decodes.db.RoutingSpecList;
+import decodes.db.ScheduleEntry;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.db.TransportMedium;
 import decodes.db.UnitConverterDb;
 import decodes.sql.DbKey;
+import decodes.tsdb.CompAppInfo;
 import decodes.xml.EnumParser;
 
 public class DbMerge
@@ -541,7 +545,104 @@ public class DbMerge
 					log.info("Keeping old version of {} '{}'", oldOb.getObjectType(), ob.name);
 				}
 			}
+			// MJM 20140826 I don't think we need to do the following. DataTypes
+			// are always
+			// created via DataType.getDataType method, regardless of where
+			// they're parsed
+			// from (config sensors, dp elements, etc.) So they'll already be in
+			// the DataTypeSet
+			// which was copied above.
+			/*
+			 * ConfigSensors and DataPresentation elements contain references to
+			 * DataType objects. Change the references to the object in the
+			 * db-to-write.
+			 */
+			for (PlatformConfig stagePc : stageDb.platformConfigList.values())
+			{
+				for (Iterator<ConfigSensor> sit = stagePc.getSensors(); sit.hasNext();)
+				{
+					ConfigSensor stageSensor = sit.next();
+					for (int dtidx = 0; dtidx < stageSensor.getDataTypeVec().size(); dtidx++)
+					{
+						DataType dt = stageSensor.getDataTypeVec().get(dtidx);
+						DataType dbdt = DataType.getDataType(dt.getStandard(), dt.getCode());
+						stageSensor.getDataTypeVec().set(dtidx, dbdt);
+					}
+				}
+			}
+			for (Iterator<PresentationGroup> pgit = stageDb.presentationGroupList.iterator(); pgit.hasNext();)
+			{
+				PresentationGroup pg = pgit.next();
+				for (Iterator<DataPresentation> dpit = pg.iterator(); dpit.hasNext();)
+				{
+					DataPresentation stageDP = dpit.next();
+					if (stageDP.getDataType() != null)
+					{
+						DataType dt = DataType.getDataType(stageDP.getDataType().getStandard(),
+								stageDP.getDataType().getCode());
+						stageDP.setDataType(dt);
+					}
+				}
+			}
 
+			for (CompAppInfo stageApp : stageDb.loadingAppList)
+			{
+				CompAppInfo existingApp = null;
+				for (CompAppInfo cai : theDb.loadingAppList)
+				{
+					if (cai.getAppName().equalsIgnoreCase(stageApp.getAppName()))
+					{
+						existingApp = cai;
+						break;
+					}
+				}
+				if (existingApp != null)
+				{
+					log.info("Overwriting loading app '{}'", stageApp.getAppName());
+				} else
+				{
+					log.info("Adding loading app '{}'", stageApp.getAppName());
+				}
+
+				newObjects.add(stageApp);
+			}
+
+			for (ScheduleEntry stageSE : stageDb.schedEntryList)
+			{
+				// Don't import manual schedule entries, which are created when
+				// someone runs
+				// a routing spec with the 'rs' command.
+				if (stageSE.getName() == null || stageSE.getName().endsWith("-manual"))
+				{
+					log.info("Skipping manual schedule entry '{}'", stageSE.getName());
+					continue;
+				}
+
+				ScheduleEntry existingSE = null;
+				for (ScheduleEntry x : theDb.schedEntryList)
+				{
+					if (x.getName().equals(stageSE.getName()))
+					{
+						existingSE = x;
+						break;
+					}
+				}
+				if (existingSE != null)
+				{
+					log.info("Overwriting schedule entry '{}'", existingSE.getName());
+				} else
+				{
+					log.info("Adding schedule entry '{}'", stageSE.getName());
+				}
+
+				newObjects.add(stageSE);
+			}
+
+			if (validateOnly)
+			{
+				log.info("Previous messages indicate what WOULD HAVE BEEN modified in the"
+						+ " database. No changes have actually been made.");
+			}
 		}
 
 	}
