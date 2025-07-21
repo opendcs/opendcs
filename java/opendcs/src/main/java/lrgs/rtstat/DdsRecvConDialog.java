@@ -17,8 +17,12 @@ import java.awt.event.*;
 import java.util.ResourceBundle;
 
 import javax.swing.*;
+
+import org.opendcs.tls.TlsMode;
+
 import decodes.gui.GuiDialog;
 import lrgs.ddsrecv.DdsRecvConnectCfg;
+import lrgs.lrgsmain.LrgsConfig;
 
 public class DdsRecvConDialog
 	extends GuiDialog
@@ -34,7 +38,8 @@ public class DdsRecvConDialog
 	private JTextField ddsDialogHostField = null;
 	private JTextField ddsDialogNameField = null;
 	private JTextField ddsDialogPortField = null;
-	private JCheckBox ddsDialogTlsCheck = null;
+	private JLabel ddsDialogTlsOptionLabel = null;
+	private JComboBox<TlsMode> ddsDialogTlsOption = null;
 	private JTextField ddsDialogUserField = null;
 	private JCheckBox ddsDialogPasswordCheck = null;
 	private JCheckBox ddsDialogDomsatCheck = null;
@@ -158,9 +163,17 @@ public class DdsRecvConDialog
 		ddsDialogPortLabel.setText(labels.getString(
 				"DdsRecvConDialog.TCPPort"));
 
+		GridBagConstraints ddsDialogPortTlsLabelConstraints = 
+			new GridBagConstraints();		
+		ddsDialogPortTlsLabelConstraints.gridx = 2;
+		ddsDialogPortTlsLabelConstraints.anchor = GridBagConstraints.WEST;
+		ddsDialogPortTlsLabelConstraints.insets = new Insets(2, 2, 2, 2);
+		ddsDialogPortTlsLabelConstraints.gridy = 3;
+		ddsDialogTlsOptionLabel = new JLabel(labels.getString("LrgsConfigDialog.ddsServerTlsMode"));
+
 		GridBagConstraints ddsDialogPortTlsConstraints = 
 			new GridBagConstraints();
-		ddsDialogPortTlsConstraints.gridx = 2;
+		ddsDialogPortTlsConstraints.gridx = 3;
 		ddsDialogPortTlsConstraints.anchor = GridBagConstraints.WEST;
 		ddsDialogPortTlsConstraints.insets = new Insets(2, 2, 2, 2);
 		ddsDialogPortTlsConstraints.gridy = 3;
@@ -222,7 +235,8 @@ public class DdsRecvConDialog
 		ddsDialogCenterPane.add(getDdsDialogHostField(), ddsDialogHostFieldConstraints);
 		ddsDialogCenterPane.add(getDdsDialogNameField(), ddsDialogNameFieldConstraints);
 		ddsDialogCenterPane.add(getDdsDialogPortField(), ddsDialogPortFieldConstraints);
-		ddsDialogCenterPane.add(getDdsDialogTlsCheck(), ddsDialogPortTlsConstraints);
+		ddsDialogCenterPane.add(ddsDialogTlsOptionLabel, ddsDialogPortTlsLabelConstraints);
+		ddsDialogCenterPane.add(getDdsDialogTlsOption(), ddsDialogPortTlsConstraints);
 		ddsDialogCenterPane.add(getDdsDialogUserField(), ddsDialogUserFieldConstraints);
 		ddsDialogCenterPane.add(getDdsGroupCombo(), ddsDialogGroupComboConstraints);
 		ddsDialogCenterPane.add(getDdsDialogPasswordCheck(), ddsDialogPasswordCheckConstraints);
@@ -239,15 +253,14 @@ public class DdsRecvConDialog
 		ddsDialogButtonPane.add(getDdsDialogCancelButton(), null);
 	}
 
-	private JCheckBox getDdsDialogTlsCheck()
+	private JComboBox<TlsMode> getDdsDialogTlsOption()
 	{
-		if (ddsDialogTlsCheck == null)
+		if (ddsDialogTlsOption == null)
 		{
-			ddsDialogTlsCheck = new JCheckBox();
-			ddsDialogTlsCheck.setText(
-				labels.getString("DdsRecvConDialog.useTls"));
+			ddsDialogTlsOption = new JComboBox<>(TlsMode.values());
+			ddsDialogTlsOption.setSelectedItem(TlsMode.NONE);
 		}
-		return ddsDialogTlsCheck;
+		return ddsDialogTlsOption;
 	}
 
 	/**
@@ -464,7 +477,7 @@ public class DdsRecvConDialog
 		ddsDialogDomsatCheck.setSelected(cfg.hasDomsatSeqNums);
 		acceptARMsCheck.setSelected(cfg.acceptARMs);
 		ddsGroupCombo.setSelectedItem(cfg.group);
-		ddsDialogTlsCheck.setSelected(cfg.tls);
+		ddsDialogTlsOption.setSelectedItem(cfg.tls);
 	}
 
 	/**
@@ -496,7 +509,7 @@ public class DdsRecvConDialog
 		ddsConnectCfg.port = port;
 		ddsConnectCfg.name = nm;
 		ddsConnectCfg.host = host;
-		ddsConnectCfg.tls = ddsDialogTlsCheck.isSelected();
+		ddsConnectCfg.tls = ddsDialogTlsOption.getItemAt(ddsDialogTlsOption.getSelectedIndex());
 		ddsConnectCfg.enabled = ddsDialogEnabledCheck.isSelected();
 		ddsConnectCfg.username = username;
 		ddsConnectCfg.authenticate = ddsDialogPasswordCheck.isSelected();

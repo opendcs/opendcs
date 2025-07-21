@@ -51,6 +51,8 @@ import javax.swing.table.TableColumn;
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
 import org.opendcs.gui.x509.X509CertificateVerifierDialog;
+import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.WebUtility;
 
 import lrgs.ddsrecv.DdsRecvConnectCfg;
 import lrgs.ddsrecv.DdsRecvSettings;
@@ -59,7 +61,6 @@ import lrgs.drgs.DrgsConnectCfg;
 import lrgs.drgs.DrgsInputSettings;
 import lrgs.ldds.LddsClient;
 import lrgs.lrgsmain.LrgsConfig;
-import lrgs.rtstat.hosts.LrgsConnection;
 import decodes.dbeditor.TimeZoneSelector;
 import decodes.gui.GuiDialog;
 import decodes.gui.PropertiesEditPanel;
@@ -115,6 +116,7 @@ public class LrgsConfigDialog extends GuiDialog
     private JTextField ddsBindAddrField = null;
     private JTextField ddsKeystoreFile = new JTextField();
     private PasswordWithShow ddsKeystorePass = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
+    private JComboBox<TlsMode> ddsServerTlsMode = new JComboBox<>(TlsMode.values());
     private JTextField ddsMaxClientsField = null;
     private JTextField ddsParentDirectoryField = null;
     private JTextField ddsLogFileField = null;
@@ -333,6 +335,7 @@ public class LrgsConfigDialog extends GuiDialog
         getDdsBindAddrField().setText(lrgsConfig.ddsBindAddr);
         ddsKeystoreFile.setText(lrgsConfig.keyStoreFile);
         ddsKeystorePass.setText(lrgsConfig.keyStorePassword);
+        ddsServerTlsMode.setSelectedItem(lrgsConfig.getDdsServerTlsMode());
         getDdsMaxClientsField().setText(String.valueOf(lrgsConfig.ddsMaxClients));
         getDdsParentDirectoryField().setText(lrgsConfig.ddsUserRootDir);
         getDdsLogFileField().setText(lrgsConfig.ddsUsageLog);
@@ -584,6 +587,14 @@ public class LrgsConfigDialog extends GuiDialog
             if (lrgsConfig.keyStorePassword != sv)
             {
                 lrgsConfig.keyStorePassword = sv;
+                changed = true;
+            }
+
+            fieldName = "DDS Server Tls Mode";
+            final TlsMode tmpMode = ddsServerTlsMode.getItemAt(ddsServerTlsMode.getSelectedIndex());
+            if (lrgsConfig.getDdsServerTlsMode() != tmpMode)
+            {
+                lrgsConfig.setDdsServerTlsMode(tmpMode);
                 changed = true;
             }
 
@@ -962,7 +973,7 @@ public class LrgsConfigDialog extends GuiDialog
                     GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 0), 0, 0));
 
-            ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDiaolog.ddsKeystoreFile")),
+            ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsKeystoreFile")),
                 new GridBagConstraints(0, 1, 1, 1, 0, 0,
                     GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
                     new Insets(6, 0, 6, 2), 0, 0));
@@ -975,7 +986,7 @@ public class LrgsConfigDialog extends GuiDialog
                         GridBagConstraints.WEST, GridBagConstraints.NONE,
                         new Insets(6, 0, 6, 10), 0, 0));
 
-            ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDiaolog.ddsKeystorePassword")),
+            ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsKeystorePassword")),
                 new GridBagConstraints(0, 2, 1, 1, 0, 0,
                     GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
                     new Insets(6, 0, 6, 2), 0, 0));
@@ -984,49 +995,58 @@ public class LrgsConfigDialog extends GuiDialog
                     GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 0), 0, 0));
 
+                    ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsServerTlsMode")),
+                new GridBagConstraints(0, 3, 1, 1, 0, 0,
+                    GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
+                    new Insets(6, 0, 6, 2), 0, 0));
+            ddsServerConfigTab.add(ddsServerTlsMode, 
+                new GridBagConstraints(1, 3, 1, 1, .5, 0.,
+                    GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
+                    new Insets(6, 0, 6, 0), 0, 0));
+
 
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsBindIPAddress")), 
-                new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                     new Insets(6, 0, 6, 2), 0, 0));
             ddsServerConfigTab.add(getDdsBindAddrField(), 
-                new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0,
+                new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 0), 80, 0));
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsMultiNICSystems")), 
-                new GridBagConstraints(2, 3, 1, 1, 0.5, 0.0,
+                new GridBagConstraints(2, 4, 1, 1, 0.5, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.NONE,
                     new Insets(6, 0, 6, 10), 0, 0));
 
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsMaxClients")),
-                new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                     new Insets(6, 10, 6, 2), 0, 0));
             ddsServerConfigTab.add(getDdsMaxClientsField(),
-                new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0,
+                new GridBagConstraints(1, 5, 1, 1, 0.5, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 0), 0, 0));
 
             ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsSandboxDir")), 
-                new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
+                new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
                     GridBagConstraints.EAST, GridBagConstraints.NONE,
                     new Insets(6, 10, 6, 2), 0, 0));
             ddsServerConfigTab.add(getDdsParentDirectoryField(), 
-                new GridBagConstraints(1, 5, 2, 1, 1.0, 0.0,
-                    GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-                    new Insets(6, 0, 6, 40), 0, 0));
-
-            ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsUsageLogFile")), 
-                new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0, 
-                    GridBagConstraints.EAST, GridBagConstraints.NONE,
-                    new Insets(6, 10, 6, 2), 0, 0));
-            ddsServerConfigTab.add(getDdsLogFileField(), 
                 new GridBagConstraints(1, 6, 2, 1, 1.0, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
                     new Insets(6, 0, 6, 40), 0, 0));
 
+            ddsServerConfigTab.add(new JLabel(labels.getString("LrgsConfigDialog.ddsUsageLogFile")), 
+                new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0, 
+                    GridBagConstraints.EAST, GridBagConstraints.NONE,
+                    new Insets(6, 10, 6, 2), 0, 0));
+            ddsServerConfigTab.add(getDdsLogFileField(), 
+                new GridBagConstraints(1, 7, 2, 1, 1.0, 0.0,
+                    GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+                    new Insets(6, 0, 6, 40), 0, 0));
+
             ddsServerConfigTab.add(getDdsRequireAuthCheck(), 
-                new GridBagConstraints(1, 7, 2, 1, 0.0, 0.0,
+                new GridBagConstraints(1, 8, 2, 1, 0.0, 0.0,
                     GridBagConstraints.WEST, GridBagConstraints.NONE,
                     new Insets(6, 0, 6, 0), 0, 0));
 
@@ -1743,11 +1763,12 @@ public class LrgsConfigDialog extends GuiDialog
 
         LddsClient myClient = 
             new LddsClient(cfg.host,cfg.port,
-                           cfg.tls ?
-                           LrgsConnection.socketFactory(
-                            cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), null)
+                           cfg.tls != TlsMode.NONE ?
+                           WebUtility.socketFactory(
+                            cert -> X509CertificateVerifierDialog.acceptCertificate(cert.getChain(), this)
                            )
-                           : null);
+                           : null,
+                           cfg.tls);
 
         //TODO add option for password sending
         LrgsConnectionTest myTester = new LrgsConnectionTest(this, myClient, cfg.username,null);

@@ -1,0 +1,15 @@
+plugins {
+    id 'opendcs.deps-conventions'
+    id 'opendcs.java-conventions'
+    id 'application'
+}
+
+dependencies {
+    implementation project(":opendcs-api")
+    implementation project(":opendcs")
+    runtimeOnly(libs.org.slf4j.simple)
+}
+
+application {
+    mainClass = project.findProperty("opendcs.scaffold.class") ?: "decodes.tsdb.TimeSeriesTablePanelScaffold"
+}

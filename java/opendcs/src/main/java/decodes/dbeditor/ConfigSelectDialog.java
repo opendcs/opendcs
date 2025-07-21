@@ -1,19 +1,32 @@
 /*
-*  $Id$
-*/
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ */
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
-import java.awt.event.*;
 import java.util.ResourceBundle;
 import javax.swing.border.*;
 
 import decodes.db.PlatformConfig;
+import org.slf4j.LoggerFactory;
 
 /** Dialog for selecting a configuration from a list. */
 public class ConfigSelectDialog extends JDialog
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ConfigSelectDialog.class);
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -29,7 +42,7 @@ public class ConfigSelectDialog extends JDialog
     BorderLayout borderLayout2 = new BorderLayout();
     TitledBorder titledBorder1;
     Border border1;
-    ConfigSelectPanel configSelectPanel = new ConfigSelectPanel();
+    ConfigSelectPanel configSelectPanel = new ConfigSelectPanel(this::selectButtonPressed);
 	PlatformConfig config;
 
 	/** 
@@ -42,20 +55,7 @@ public class ConfigSelectDialog extends JDialog
         super(parent, dbeditLabels.getString("ConfigSelectDialog.title"), true);
 		myController = ctl;
 		allInit();
-		configSelectPanel.setParentDialog(this);
-	}
-
-	/** 
-	  Construct new dialog with dialog parent.
-	  @param parent the owner of this dialog to receive a call-back when a 
-	  selection has been made.
-	*/
-    public ConfigSelectDialog(JDialog parent)
-	{
-        super(parent, dbeditLabels.getString("ConfigSelectDialog.title"), true);
-		myController = null;
-		allInit();
-	}
+ 	}
 
 	private void allInit()
 	{
@@ -66,7 +66,7 @@ public class ConfigSelectDialog extends JDialog
             pack();
         }
         catch(Exception ex) {
-            ex.printStackTrace();
+            log.atInfo().log("Error in allInit() ",ex);
         }
     }
 
@@ -79,17 +79,9 @@ public class ConfigSelectDialog extends JDialog
         panel1.setLayout(borderLayout1);
         jPanel1.setLayout(flowLayout1);
         selectButton.setText(genericLabels.getString("select"));
-        selectButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                selectButtonPressed();
-            }
-        });
+        selectButton.addActionListener(e -> selectButtonPressed());
         cancelButton.setText(genericLabels.getString("cancel"));
-        cancelButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                cancelButton_actionPerformed(e);
-            }
-        });
+        cancelButton.addActionListener(e -> cancel());
         flowLayout1.setHgap(35);
         flowLayout1.setVgap(10);
         jPanel2.setLayout(borderLayout2);
@@ -122,9 +114,8 @@ public class ConfigSelectDialog extends JDialog
 
 	/**
 	  Called when Cancel the button is pressed.
-	  @param e ignored.
 	*/
-    void cancelButton_actionPerformed(ActionEvent e)
+    void cancel()
 	{
 		config = null;
 		closeDlg();

@@ -25,36 +25,23 @@ import decodes.tsdb.DbCompException;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
- * calculates val = (a+b) % modulus
- * where % is the modulus operator in the above equation
- *
- */
-//AW:JAVADOC_END
 @Algorithm(description = "Calculates val = (a+b) % modulus\n"
                        + "Where % is the modulus operator in the above equation")
 public class SumModulo extends AW_AlgorithmBase
 {
     @Input
-    public double a;    //AW:TYPECODE=i
+    public double a;
     @Input
-    public double b;    //AW:TYPECODE=i
-    String _inputNames[] = { "a", "b" };
+    public double b;
 
 
     @Output(type=Double.class)
     public NamedVariable y = new NamedVariable("y", 0.0);
-    String _outputNames[] = { "y" };
 
 
     @org.opendcs.annotations.PropertySpec(value="360.0", description = "modulus to wrap around.")
     double modulus = 360.0;
-    String _propertyNames[] = { "modulus"  };
+ 
 
     // Allow javac to generate a no-args constructor.
 
@@ -96,30 +83,5 @@ public class SumModulo extends AW_AlgorithmBase
     protected void afterTimeSlices()
         throws DbCompException
     {
-    }
-
-    /**
-     * Required method returns a list of all input time series names.
-     */
-    public String[] getInputNames()
-    {
-        return _inputNames;
-    }
-
-    /**
-     * Required method returns a list of all output time series names.
-     */
-    public String[] getOutputNames()
-    {
-        return _outputNames;
-    }
-
-    /**
-     * Required method returns a list of properties that have meaning to
-     * this algorithm.
-     */
-    public String[] getPropertyNames()
-    {
-        return _propertyNames;
     }
 }

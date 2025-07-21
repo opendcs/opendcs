@@ -10,90 +10,75 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-
-
-//AW:IMPORTS
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 import decodes.hdb.HdbFlags;
 
-//AW:IMPORTS_END
+@Algorithm(description = "This algorithm calculates the Glen Canyon Bank Storage Mass Balance \n\n" +
 
-//AW:JAVADOC
-/**
-This algorithm calculates the Glen Canyon Bank Storage Mass Balance
+"The calculation for the Bank storage is Inflow minus the total Releases, \n" +
+"delta storage, and evaporation \n\n" +
 
-The calculation for the Bank storage is Inflow minus the total Releases, 
-delta storage, and evaporation
+"If inputs Delta Storage or Total Release Above or Total Release Below \n" +
+"or if the Evap do not exist or have been deleted and the \n" +
+"DELTA_STORAGE_MISSING or the TOTAL_RELEASE_MISSING or EVAP_MISSING, \n" +
+"or INFLOW_MISSING properties are set to \"fail\" then the BANK STORAGE \n" +
+"will not be calculated and/or the BANK STORAGE will be deleted. \n\n" +
 
-If inputs Delta Storage or Total Release Above or Total Release Below
-or  ithe Evap do not exist or have been deleted and the 
-DELTA_STORAGE_MISSING or the TOTAL_RELEASE_MISSING or EVAP_MISSING,
-or INFLOW_MISSING properties are set to "fail" then the BANK STORAGE
-will not be calculated and/or the BANK STORAGE will be deleted.
+"If all of the inputs do not exist because of a delete the BANK STORAGE \n" +
+"will be deleted if the output exists regardless of the property settings. \n\n" +
 
-If all of the inputs do not exist because of a delete the BANK STORAGE
-will be deleted if the output exists regardless of the property settings.
-
-This algorithm written by M. Bogner, August 2008
-Modified by M. Bogner May 2009 to add additional delete logic and version control
-
- */
-//AW:JAVADOC_END
+"This algorithm written by M. Bogner, August 2008 \n" +
+"Modified by M. Bogner May 2009 to add additional delete logic and version control")
 public class GlenDeltaBSMBAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double inflow;		//AW:TYPECODE=i
-	public double total_release;	//AW:TYPECODE=i
-	public double delta_storage;	//AW:TYPECODE=i
-	public double evap;		//AW:TYPECODE=i
-	String _inputNames[] = {"inflow","total_release","delta_storage","evap"};
-//AW:INPUTS_END
+	@Input
+	public double inflow;
+	@Input
+	public double total_release;
+	@Input
+	public double delta_storage;
+	@Input
+	public double evap;
 
-//AW:LOCALVARS
 // Version 1.0.03 was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 	String alg_ver = "1.0.03";
         boolean do_setoutput = true;
 	double bs_calculation = 0.0;
 
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output(type = Double.class)
 	public NamedVariable delta_bs = new NamedVariable("delta_bs", 0);
-	String _outputNames[] = { "delta_bs" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@PropertySpec(value = "ignore") 
 	public String total_release_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String delta_storage_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String evap_missing = "ignore";
+	@PropertySpec(value = "ignore") 
 	public String inflow_missing = "ignore";
-        public String validation_flag = "";
- 
-	String _propertyNames[] = { "total_release_missing", "delta_storage_missing", "validation_flag",
-		"evap_missing","inflow_missing"};
-//AW:PROPERTIES_END
+	@PropertySpec(value = "") 
+    public String validation_flag = "";
 
 	// Allow javac to generate a no-args constructor.
 
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
+	@Override
 	protected void initAWAlgorithm( )
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
+	@Override
 	protected void beforeTimeSlices()
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -106,10 +91,10 @@ public class GlenDeltaBSMBAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	 * @throw DbCompException (or subclass thereof) if execution of this
 	 *        algorithm is to be aborted.
 	 */
+	@Override
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 	   bs_calculation = 0;
 	   do_setoutput = true;
 	   if (!isMissing(total_release))
@@ -142,41 +127,13 @@ public class GlenDeltaBSMBAlg extends decodes.tsdb.algo.AW_AlgorithmBase
                 debug3("GlenDeltaBSMBAlg-" + alg_ver + ": Deleting Delta Bank Storage output");
                 deleteOutput(delta_bs);
         }
-
-//AW:TIMESLICE_END
 	}
 
 	/**
 	 * This method is called once after iterating all time slices.
 	 */
+	@Override
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
-	}
-
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
 	}
 }

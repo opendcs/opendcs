@@ -1,10 +1,6 @@
 
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonar {
-        skipProject = (name == ":testing")
-        properties {
-            property "sonar.sources", "src/main/java"
-            property "sonar.tests", "src/test/java"
-        }
+        skipProject = (name == ":testing") || (name == ":docs") || (name == ":install")
     }
 }

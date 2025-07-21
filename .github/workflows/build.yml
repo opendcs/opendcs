@@ -37,7 +37,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4.4.0
+        uses: gradle/actions/setup-gradle@v4.4.1
         with:
           dependency-graph: generate-and-submit
       - name: Change temp dir in windows
@@ -83,6 +83,15 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: |
           ./gradlew :testing:opendcs-tests:test -P"opendcs.test.engine=CWMS-Oracle" --info
+      - name: Gather Code Coverage into single report
+        # There is an odd issues with the log file name on the windows runner.
+        # It does work locally though. Will work on it later.
+        # Integration tests require docker now for test containers.
+        # More work required to deal with the other platforms. Should be workable
+        # at some point though.
+        if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
+        run: |
+          ./gradlew codeCoverageReport --info
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         if: matrix.platform == 'ubuntu-latest' && matrix.jdk == 17
@@ -102,7 +111,10 @@ jobs:
         uses: actions/upload-artifact@v4.6.2
         with:
           name: coverage
-          path: ./**/build/**/jacoco*.xml
+          path: |
+            ./**/build/**/jacoco*.xml
+            ./build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml
+            ./**/build/**/*.class
   containers:
     runs-on: [ubuntu-latest]
     steps:

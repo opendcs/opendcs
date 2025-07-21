@@ -59,6 +59,7 @@ import java.util.Date;
 import java.util.LinkedList;
 
 import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLSocketFactory;
 
 import ilex.net.*;
 import ilex.util.Logger;
@@ -95,11 +96,11 @@ public class JLddsThread extends LddsThread
       @param ap
       @throws IOException
     */
-    public JLddsThread(BasicServer parent, Socket socket, int id, 
+    public JLddsThread(BasicServer parent, Socket socket, int id, SSLSocketFactory socketFactory,
         MsgArchive msgArchive, DcpNameMapper globalMapper, AttachedProcess ap)
         throws IOException
     {
-        super(parent, socket, id);
+        super(parent, socket, id, socketFactory);
         this.msgArchive = msgArchive;
         this.globalMapper = globalMapper;
         this.attachedProcess = ap;

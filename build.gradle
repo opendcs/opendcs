@@ -1,44 +1,31 @@
 buildscript {
     repositories {
         gradlePluginPortal()
+        mavenCentral()
     }
     dependencies {
         if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
-            classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:4.4.1.3373"
+            classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:6.2.0.5505"
         }
     }
 }
 
 plugins {
-    id "com.palantir.git-version" version "3.1.0"
     id 'eclipse'
+    id 'jacoco'
 }
 
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     apply plugin: "org.sonarqube"
 }
 
+repositories {
+    mavenCentral()
+}
 
 import org.apache.tools.ant.taskdefs.condition.Os
 
-def gitDetails = versionDetails()
-
 ext.osWin = Os.isFamily(Os.FAMILY_WINDOWS)
-ext.gitCommit = gitDetails.gitHashFull ?: "Not build from git";
-
-def static versionLabel(gitInfo) {
-    def branch = gitInfo.branchName // all branches are snapshots, only tags get released
-    def tag = gitInfo.lastTag
-    // tag is returned as is. Branch may need cleanup
-    return branch == null ? tag : "main.99." + branch.replace("/", "-") + "-SNAPSHOT"
-}
-
-allprojects {
-    group = 'org.opendcs'
-    version = project.findProperty("versionOverride") ?: versionLabel(versionDetails())
-}
-
-
 
 if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     sonar {
@@ -48,13 +35,60 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
             property "sonar.host.url", "https://sonarcloud.io"
             property "sonar.pullrequest.provider", "GitHub"
             property "sonar.pullrequest.github.repository", "opendcs/opendcs"
-            property "sonar.coverage.jacoco.xmlReportPaths", "./**/jacoco*.xml"
+                                                                                          
+            
             property "sonar.projectVersion", sonarVersion()
             // TODO: just remove the C files that are no longer used. However, they are still
             // called in some of the java
             property "sonar.c.file.suffixes", "-"
             property "sonar.cpp.file.suffixes", "-"
             property "sonar.objc.file.suffixes", "-"
+        }
+    }
+
+
+    tasks.register("codeCoverageReport", JacocoReport) {
+        subprojects { subproject -> 
+            subproject.plugins.withType(JacocoPlugin).configureEach {
+                subproject.tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).configureEach { testTask ->
+                    if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
+                        sourceSets subproject.sourceSets.main
+                        executionData(testTask)
+                    }
+                }
+            }
+        }
+
+        // enable the different report types (html, xml, csv)
+        reports {
+            xml.required = true
+            html.required = true
+        }
+        def excludes = [
+                    "**/easy_install/**",
+                    "**/python_packages",
+                    "**/certifi/**",
+                    "**/chardet/**",
+                    "**/urllib3/**",
+                    "**/requests/**",
+                    "**/chardet/**",
+                    "**/urllib3/**",
+                    "**/idna/**",
+                    "**/pkg_resources/**"
+                ]
+
+//        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: excludes)
+            }))
+  //      }
+    }
+
+    subprojects {
+        sonar {
+            properties {
+                property "sonar.coverage.jacoco.xmlReportPaths", "$rootDir/build/reports/jacoco/codeCoverageReport/codeCoverageReport.xml"
+            }
         }
     }
 }

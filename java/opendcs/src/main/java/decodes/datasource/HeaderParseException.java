@@ -34,5 +34,9 @@ public class HeaderParseException extends DataSourceException
 	{
 		super(msg);
 	}
-}
 
+	public HeaderParseException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
+}

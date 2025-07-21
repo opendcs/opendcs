@@ -3,6 +3,7 @@ plugins
     id 'opendcs.deps-conventions'
     id 'opendcs.java-conventions'
     id 'opendcs.publishing-conventions'
+    id 'opendcs.sonar-conventions'
     id 'java-library'
 }
 
@@ -101,7 +102,8 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.webcompere.system.stubs.jupiter)
     testImplementation(libs.fasterxml.jackson.databind)
-    testImplementation(libs.greenmail)  
+    testImplementation(libs.greenmail)
+    testImplementation(libs.org.mock.server)
   
 }
 

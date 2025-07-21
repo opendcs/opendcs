@@ -1,23 +1,18 @@
 package decodes.dbeditor;
 
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Date;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.opendcs.database.SimpleDataSource;
 import org.xml.sax.SAXException;
 
 import javax.swing.DefaultListModel;
-import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -29,24 +24,19 @@ import javax.swing.border.Border;
 import javax.swing.JScrollPane;
 import javax.swing.JFileChooser;
 
-import ilex.gui.CheckableItem;
 import ilex.gui.CheckBoxList;
 import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
+import ilex.util.FileUtil;
 import ilex.util.Logger;
 import ilex.util.LoadResourceBundle;
-import ilex.xml.XmlOutputStream;
-import ilex.xml.XmlObjectWriter;
 
 import decodes.db.*;
 import decodes.gui.TopFrame;
 import decodes.gui.GuiDialog;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
-import decodes.xml.DatabaseParser;
-import decodes.xml.PlatformParser;
-import decodes.xml.XmlDbTags;
 import decodes.xml.XmlDatabaseIO;
 import decodes.xml.TopLevelParser;
 
@@ -184,60 +174,18 @@ public class ImportDialog extends GuiDialog
 				dbeditLabels.getString("ImportDialog.ImportButtonTT"));
 		
 		browseButton.setPreferredSize(new Dimension(100, 27));
-		browseButton.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					browseButtonPressed();
-				}
-			});
-		scanButton.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					scanButtonPressed();
-				}
-			});
+		browseButton.addActionListener(e -> browseButtonPressed());
+		scanButton.addActionListener(e -> scanButtonPressed());
 		allButton.setPreferredSize(new Dimension(100, 27));
-		allButton.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					setAllSelections(true);
-				}
-			});
+		allButton.addActionListener(e -> setAllSelections(true));
 		allButton.setEnabled(true);
 		noneButton.setPreferredSize(new Dimension(100, 27));
-		noneButton.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					setAllSelections(false);
-				}
-			});
+		noneButton.addActionListener( e -> setAllSelections(false));
 		noneButton.setEnabled(true);
 		importButton.setPreferredSize(new Dimension(100, 27));
-		importButton.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					importButtonPressed();
-				}
-			});
+		importButton.addActionListener(e -> importButtonPressed());
 		cancelButton.setPreferredSize(new Dimension(100, 27));
-		cancelButton.addActionListener(
-			new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					cancelButtonPressed();
-				}
-			});
+		cancelButton.addActionListener(e -> cancelButtonPressed());
 	}
 
 
@@ -300,15 +248,19 @@ public class ImportDialog extends GuiDialog
 
 	/** 
 	 * Initialize the staging database. XML files will be read into this. 
+	 * @throws IOException 
 	 */
 	private void initStageDb()
-		throws SAXException, ParserConfigurationException, DatabaseException
+		throws SAXException, ParserConfigurationException, DatabaseException, IOException
 	{
 		Logger.instance().debug3(
 				dbeditLabels.getString("ImportDialog.InitStageDebug"));
 		stageDb = new decodes.db.Database();
 		Database.setDb(stageDb);
-		javax.sql.DataSource ds = new SimpleDataSource("", "", "");
+		Path tmpPath = FileUtil.createEmptyTempDirectory("edit-db");
+		String connStr = "jdbc:xml:"+tmpPath.toAbsolutePath();
+		javax.sql.DataSource ds = new SimpleDataSource(connStr, "", "");
+	
 		stageDbIo = new XmlDatabaseIO(ds, DecodesSettings.instance());
 		stageDb.setDbIo(stageDbIo);
 		topParser = stageDbIo.getParser();

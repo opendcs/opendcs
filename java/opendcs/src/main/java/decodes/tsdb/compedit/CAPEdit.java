@@ -25,6 +25,7 @@ import java.util.ResourceBundle;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingUtilities;
 import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
@@ -36,7 +37,12 @@ import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 
-
+/**
+ * the CAPEdit application used to edit:
+ *  C - Computation
+ *  A - Algorithms
+ *  P - Processes
+ */
 public class CAPEdit 
 	extends TsdbAppTemplate
 {
@@ -107,8 +113,7 @@ public class CAPEdit
 		TopFrame frame = getTopFrame();
 //		frame.centerOnScreen();
 		frame.setVisible(true);
-		
-		computationsListPanel.doRefresh();
+		SwingUtilities.invokeLater(() -> computationsListPanel.doRefresh());
 	}
 
 	/**

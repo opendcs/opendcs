@@ -15,7 +15,7 @@ import javax.swing.table.TableColumnModel;
 public class GroupableTableHeader extends JTableHeader
 {
 	private static final String uiClassID = "GroupableTableHeaderUI";
-	protected Vector columnGroups = null;
+	protected Vector<ColumnGroup> columnGroups = null;
 
 	public GroupableTableHeader(TableColumnModel model)
 	{
@@ -38,20 +38,20 @@ public class GroupableTableHeader extends JTableHeader
 	{
 		if (columnGroups == null)
 		{
-			columnGroups = new Vector();
+			columnGroups = new Vector<>();
 		}
 		columnGroups.addElement(g);
 	}
 
-	public Enumeration getColumnGroups(TableColumn col)
+	public Enumeration<Object> getColumnGroups(TableColumn col)
 	{
 		if (columnGroups == null)
 			return null;
-		Enumeration e = columnGroups.elements();
+		Enumeration<ColumnGroup> e = columnGroups.elements();
 		while (e.hasMoreElements())
 		{
-			ColumnGroup cGroup = (ColumnGroup) e.nextElement();
-			Vector v_ret = (Vector) cGroup.getColumnGroups(col, new Vector());
+			ColumnGroup cGroup = e.nextElement();
+			Vector<Object> v_ret = cGroup.getColumnGroups(col, new Vector<>());
 			if (v_ret != null)
 			{
 				return v_ret.elements();
@@ -65,10 +65,10 @@ public class GroupableTableHeader extends JTableHeader
 		if (columnGroups == null)
 			return;
 		int columnMargin = getColumnModel().getColumnMargin();
-		Enumeration e = columnGroups.elements();
+		Enumeration<ColumnGroup> e = columnGroups.elements();
 		while (e.hasMoreElements())
 		{
-			ColumnGroup cGroup = (ColumnGroup) e.nextElement();
+			ColumnGroup cGroup = e.nextElement();
 			cGroup.setColumnMargin(columnMargin);
 		}
 	}

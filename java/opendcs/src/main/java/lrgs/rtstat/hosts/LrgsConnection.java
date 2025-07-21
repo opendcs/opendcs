@@ -1,30 +1,20 @@
 package lrgs.rtstat.hosts;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.Objects;
 import java.util.function.Predicate;
 
 import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 
-import nl.altindag.ssl.SSLFactory;
 import nl.altindag.ssl.model.TrustManagerParameters;
 
+import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.WebUtility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ilex.util.AuthException;
 import ilex.util.DesEncrypter;
-import ilex.util.EnvExpander;
 
 /**
  * Keep the information about a connection to an LRGS for the ComboBox model.
@@ -32,17 +22,18 @@ import ilex.util.EnvExpander;
 public final class LrgsConnection
 {
     private static final Logger log = LoggerFactory.getLogger(LrgsConnection.class);
-    public static final LrgsConnection BLANK = new LrgsConnection("", -1, "", "", null, false);
+
+    public static final LrgsConnection BLANK = new LrgsConnection("", -1, "", "", null, TlsMode.NONE);
 
     private final String hostName;
     private final int port;
-    private final boolean tls;
+    private final TlsMode tls;
     private final String username;
     private final String password;
     private final Date lastUsed;
 
 
-    public LrgsConnection(String hostName, int port, String username, String password, Date lastUsed, boolean tls)
+    public LrgsConnection(String hostName, int port, String username, String password, Date lastUsed, TlsMode tls)
     {
         this.hostName = hostName;
         this.port = port;
@@ -87,48 +78,38 @@ public final class LrgsConnection
         return lastUsed;
     }
 
-    public boolean getTls()
+    public TlsMode getTls()
     {
         return tls;
     }
 
+    /**
+     * Get Default Socket Factory. If TLS mode is enabled a default "no additional trust" is used.
+     * Certificates signed by The System and Java Trust stores or already in the "local_trust" will be accepted,
+     * all others
+     * will fail verification.
+     * @return
+     */
     public SocketFactory getSocketFactory()
     {
-        return getSocketFactory(cert ->
-        {
-            log.warn("Certificate for host {} is not recognized. Signed by {}. If you trust this " +
-                     "Certificate you will need to manually add this to {}",
-                             cert.getHostname().orElse("No hostname"),
-                             cert.getChain()[0].getIssuerX500Principal().getName(),
-                             EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12"));
-            return false;
-        });
+        return getSocketFactory(WebUtility.TRUST_EXISTING_CERTIFICATES);
     }
 
+    /**
+     * @see getSocketFactory
+     * @param certTest Predicate callback that allows either invoking system to approve the certificate if desired.
+     * @return
+     */
     public SocketFactory getSocketFactory(Predicate<TrustManagerParameters> certTest)
     {
-        if (tls)
+        if (tls != TlsMode.NONE)
         {
-           return socketFactory(certTest);
+           return WebUtility.socketFactory(certTest);
 		}  
         else
         {
             return null;
         }
-    }
-
-    public static SocketFactory socketFactory(Predicate<TrustManagerParameters> certTest)
-    {
-        SSLFactory sslFactory = SSLFactory.builder()
-                                          .withDefaultTrustMaterial()
-                                          .withSystemTrustMaterial()
-                                          .withInflatableTrustMaterial(
-                                            Paths.get(EnvExpander.expand("$DCSTOOL_USERDIR/local_trust.p12")),
-                                            "local_trust".toCharArray(),
-                                            "PKCS12", 
-                                            certTest)
-                                          .build();
-        return sslFactory.getSslContext().getSocketFactory();
     }
 
     @Override
@@ -197,14 +178,14 @@ public final class LrgsConnection
                                 port, username,
                                 (lastUsed == null ? 0 : lastUsed.getTime()),
                                 password,
-                                (tls ? " TLS" : ""));
+                                (tls != TlsMode.NONE ? " " + tls.name() : ""));
     }
 
 
     public static LrgsConnection fromDdsFile(String host, String input)
     {
         final String parts[] = input.split("\\s+");
-        boolean tls = false;
+        TlsMode tls = TlsMode.NONE;
         final int port = Integer.parseInt(parts[0].replace("/TLS", ""));
         String username = "<set_me>";
         long lastUsed = 0;
@@ -225,9 +206,9 @@ public final class LrgsConnection
         {
             password = parts[3];    
         }
-        if (parts.length > 4 && parts[4].trim().equals("TLS"))
+        if (parts.length > 4)
         {
-            tls = true;
+            tls = TlsMode.valueOf(parts[4].trim());
         }
 
         return new LrgsConnection(host, port, username, password, new Date(lastUsed), tls);

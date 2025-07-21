@@ -8,6 +8,8 @@ import java.util.Vector;
 
 import javax.net.SocketFactory;
 
+import org.opendcs.tls.TlsMode;
+import org.opendcs.utils.WebUtility;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
@@ -34,7 +36,6 @@ import decodes.util.PropertySpec;
 import lrgs.ldds.LddsClient;
 import lrgs.ldds.ServerError;
 import lrgs.lrgsmain.LrgsConfig;
-import lrgs.rtstat.hosts.LrgsConnection;
 import lrgs.common.DcpAddress;
 import lrgs.common.LrgsErrorCode;
 import lrgs.common.SearchCriteria;
@@ -64,7 +65,7 @@ public class LrgsDataSource extends DataSourceExec
     private PMParser netdcpPMP;
     int retries;
     boolean singleModeOnly;    // Current connection forced to single mode.
-    boolean tls;
+    TlsMode tls;
 
     /** For use under hot-backup-group: It will set the following to a
      *  positive number (180). Thus once a connection fails, it stays
@@ -97,7 +98,7 @@ public class LrgsDataSource extends DataSourceExec
         new PropertySpec("lrgs.maxConsecutiveBadmessages", PropertySpec.INT,
             "LRGS Data Source: How many bad messages in a row before it's decided this connection" +
             " is bad (default=-1 which means never assume bad messages should cause the connection to drop.)."),
-        new PropertySpec("lrgs.tls", PropertySpec.BOOLEAN,
+        new PropertySpec("lrgs.tls", PropertySpec.JAVA_ENUM+TlsMode.class.getName(),
             "Use TLS connection for this LRGS.")
     };
 
@@ -113,7 +114,7 @@ public class LrgsDataSource extends DataSourceExec
         super(ds,db);
         lddsClient = null;
         host = null;
-        port = -1;
+        port = LrgsConfig.def_ddsListenPort;
         username = null;
         timeout = 60;
         consecutiveBadMessages = 0;
@@ -122,7 +123,7 @@ public class LrgsDataSource extends DataSourceExec
         retries = 0;
         singleModeOnly = false;
         abortFlag = false;
-        tls = false;
+        tls = TlsMode.NONE;
         try { goesPMP = PMParser.getPMParser(Constants.medium_Goes); }
         catch(HeaderParseException e) {} // shouldn't happen.
         iridiumPMP = new IridiumPMParser();
@@ -210,7 +211,7 @@ public class LrgsDataSource extends DataSourceExec
         else
         {
             // No port specified -- use default
-            port = -1;
+            port = LrgsConfig.def_ddsListenPort;
         }
         // Username and password, if stored in properties
         // will be expanded at time of use to reduce the time they are 
@@ -335,7 +336,7 @@ public class LrgsDataSource extends DataSourceExec
         final String tlsStr = PropertiesUtil.getIgnoreCase(allProps, "lrgs.tls");
         if (tlsStr != null)
         {
-            tls = Boolean.parseBoolean(tlsStr);
+            tls = TlsMode.valueOf(tlsStr);
         }
 
         openConnection();
@@ -958,11 +959,11 @@ public class LrgsDataSource extends DataSourceExec
     {
         log(Logger.E_DEBUG2,
             "LrgsDataSource.openConnection to host '" + host + "', port="
-            + port +", tls=" + tls);
+            + port +", tls=" + tls.name());
         hangup();
         try
         {
-            final SocketFactory socketFactory = tls ?  LrgsConnection.socketFactory((cert) ->
+            final SocketFactory socketFactory = (tls != TlsMode.NONE) ?  WebUtility.socketFactory((cert) ->
                 {
                     log.warn("Certificate for '{}' is not trusted.", cert.getHostname().orElse("<no hostname provided>"));
                     return false;
@@ -970,14 +971,7 @@ public class LrgsDataSource extends DataSourceExec
                 : null;
             final String realUserName = EnvExpander.expand(username);
             final String realPassword = EnvExpander.expand(password);
-            if (port == -1)
-            {
-                lddsClient = new LddsClient(host, LrgsConfig.def_ddsListenPort, socketFactory);
-            }
-            else
-            {
-                lddsClient = new LddsClient(host, port, socketFactory);
-            }
+            lddsClient = new LddsClient(host, LrgsConfig.def_ddsListenPort, socketFactory, tls);
 
             lddsClient.setModule("lrgsds-" + (connum++));
 

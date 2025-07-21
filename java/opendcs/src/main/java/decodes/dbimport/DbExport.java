@@ -1,14 +1,10 @@
-/*
-*  $Id$
-*/
 package decodes.dbimport;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Vector;
-import java.util.Properties;
-import java.util.Iterator;
-import java.util.Date;
+
+import org.opendcs.database.DatabaseService;
+import org.opendcs.database.api.OpenDcsDatabase;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
@@ -20,7 +16,6 @@ import ilex.cmdline.*;
 import decodes.tsdb.DbIoException;
 import decodes.util.*;
 import decodes.db.*;
-import decodes.xml.XmlDatabaseIO;
 import decodes.xml.TopLevelParser;
 
 /**
@@ -64,33 +59,14 @@ public class DbExport
 			+ ") =====================");
 
 		DecodesSettings settings = DecodesSettings.instance();
-
-		// Construct the database and the interface specified by properties.
-		Database db = new decodes.db.Database();
-		Database.setDb(db);
-		DatabaseIO dbio;
-
-		dbio = DatabaseIO.makeDatabaseIO(
-			settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-		
-		// Standard Database Initialization for all Apps:
 		Site.explicitList = false; // YES Sites automatically added to SiteList
-		db.setDbIo(dbio);
-
-		// Initialize standard collections:
-		db.enumList.read();
-		db.dataTypeSet.read();
-		db.engineeringUnitList.read();
-		db.siteList.read();
-		db.equipmentModelList.read();
-		db.platformConfigList.read();
-		db.platformList.read();
-		db.networkListList.read();
-		db.dataSourceList.read();
-		db.presentationGroupList.read();
-		db.routingSpecList.read();
+		OpenDcsDatabase database = DatabaseService.getDatabaseFor("DbExport", settings);
+		// Construct the database and the interface specified by properties.
+		Database db = database.getLegacyDatabase(Database.class).get();
+		db.initializeForEditing();
+		Database.setDb(db);
 		
-		LoadingAppDAI loadingAppDAO = dbio.makeLoadingAppDAO();
+		LoadingAppDAI loadingAppDAO = db.getDbIo().makeLoadingAppDAO();
 		try
 		{
 			db.loadingAppList.addAll(loadingAppDAO.listComputationApps(false));
@@ -105,7 +81,7 @@ public class DbExport
 			loadingAppDAO.close();
 		}
 		
-		ScheduleEntryDAI scheduleEntryDAO = dbio.makeScheduleEntryDAO();
+		ScheduleEntryDAI scheduleEntryDAO = db.getDbIo().makeScheduleEntryDAO();
 		if (scheduleEntryDAO == null)
 			Logger.instance().debug1("Cannot export schedule entries. Not supported on this database.");
 		else
