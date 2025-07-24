@@ -64,12 +64,15 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JViewport;
 import javax.swing.SwingWorker;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -96,6 +99,7 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.time.Week;
 import org.jfree.data.time.Year;
 import org.jfree.data.xy.XYDataset;
+import org.opendcs.gui.tables.DateRenderer;
 import org.slf4j.LoggerFactory;
 
 import decodes.dbeditor.TraceDialog;
@@ -118,6 +122,7 @@ import decodes.tsdb.VarFlags;
 import decodes.tsdb.alarm.AlarmManager;
 import decodes.tsdb.compedit.ComputationsEditPanel;
 import decodes.tsdb.compedit.ComputationsListPanel;
+import decodes.tsdb.comprungui.TimeSeriesTableModel.ColumnInfo;
 import decodes.tsdb.groupedit.TimeSeriesSelectDialog;
 import decodes.util.DecodesSettings;
 
@@ -128,8 +133,8 @@ import decodes.util.DecodesSettings;
 public class CompRunGuiFrame extends TopFrame
 {
 	private static org.slf4j.Logger log = LoggerFactory.getLogger(CompRunGuiFrame.class);
-	static ResourceBundle labels = null;
-	private static ResourceBundle genericLabels = null;
+	public static final ResourceBundle labels = RunComputationsFrameTester.getLabels();;
+	private static final ResourceBundle genericLabels = RunComputationsFrameTester.getGenericLabels();;
 	public static String description;
 	public static String selectFromListLabel;
 	private String removeFromListLabel;
@@ -147,9 +152,9 @@ public class CompRunGuiFrame extends TopFrame
 	private String cancelComputationExecution;
 	public static String okButtonLabel;// generic
 	public static String cancelButtonLabel;// generic
-	public static String dateTimeColumnLabel;
-	public static String inputLabel;
-	public static String outputLabel;
+	public static String dateTimeColumnLabel = labels.getString("TimeSeriesTable.dateTimeColumnLabel") + " (UTC)";
+	public static final String inputLabel = labels.getString("RunComputationsFrame.inputLabel");
+	public static final String outputLabel = labels.getString("RunComputationsFrame.outputLabel");;
 
 	private ComputationsTable mytable;
 	private Vector<CTimeSeries> myoutputs = new Vector<>();
@@ -159,7 +164,7 @@ public class CompRunGuiFrame extends TopFrame
 	private DateTimeCalendar toDTCal;
 	private TimeSeriesCollection[] datasets;
 	private JFreeChart mychart;
-	private TimeSeriesTable timeSeriesTable;
+	private TimeSeriesTablePanel timeSeriesTablePanel = new TimeSeriesTablePanel();
 	private String module = "RunComputationFrame";
 	private ChartPanel chartPanel;
 
@@ -189,44 +194,7 @@ public class CompRunGuiFrame extends TopFrame
 	 */
 	public CompRunGuiFrame(boolean standAloneMode)
 	{
-		super();
-
-		this.standAloneMode = standAloneMode;
-
-		labels = RunComputationsFrameTester.getLabels();
-		genericLabels = RunComputationsFrameTester.getGenericLabels();
-		timeZoneStr = DecodesSettings.instance().sqlTimeZone;
-		timeZoneStr = timeZoneStr == null ? "UTC" : timeZoneStr;
-		setAllLabels();
-		chartXLabel = "Time";
-
-		JPanel mycontent = (JPanel)this.getContentPane();
-		mycontent.setLayout(new BoxLayout(mycontent, BoxLayout.Y_AXIS));
-
-		this.setTitle(labels.getString("RunComputationsFrame.frameTitle"));
-		this.trackChanges("runcomps");
-		traceDialog = new TraceDialog(this, false);
-		traceDialog.setTraceType("Computation Run");
-		mycontent.add(listPanel());
-		mycontent.add(timePanel());
-		mycontent.add(getChart());
-		mycontent.add(getTable());
-		mycontent.add(closePanel());
-		pack();
-
-		// Default operation is to do nothing when user hits 'X' in
-		// upper right to close the window. We will catch the closing
-		// event and do the same thing as if user had hit close.
-		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-		addWindowListener(new WindowAdapter()
-		{
-			public void windowClosing(WindowEvent e)
-			{
-				doClose();
-			}
-		});
-		exitOnClose = true;
-
+		this(standAloneMode, null, null, null);
 	}
 
 	/**
@@ -248,8 +216,7 @@ public class CompRunGuiFrame extends TopFrame
 
 		this.standAloneMode = standAloneMode;
 
-		labels = RunComputationsFrameTester.getLabels();
-		genericLabels = RunComputationsFrameTester.getGenericLabels();
+		
 		timeZoneStr = DecodesSettings.instance().sqlTimeZone;
 		timeZoneStr = timeZoneStr == null ? "UTC" : timeZoneStr;
 		setAllLabels();
@@ -265,7 +232,7 @@ public class CompRunGuiFrame extends TopFrame
 		mycontent.add(listPanel());
 		mycontent.add(timePanel());
 		mycontent.add(getChart());
-		mycontent.add(getTable());
+		mycontent.add(timeSeriesTablePanel);
 		mycontent.add(closePanel());
 		pack();
 
@@ -289,7 +256,10 @@ public class CompRunGuiFrame extends TopFrame
 			toDTCal.setDate(until);
 		}
 
-		mytable.fill(dbComps);
+		if (dbComps != null)
+		{
+			mytable.fill(dbComps);
+		}
 
 
 	}
@@ -316,8 +286,7 @@ public class CompRunGuiFrame extends TopFrame
 		cancelComputationExecutionLabel = cancelButtonLabel;
 		dateTimeColumnLabel = labels.getString("TimeSeriesTable.dateTimeColumnLabel") + " (" + timeZoneStr
 			+ ")";
-		inputLabel = labels.getString("RunComputationsFrame.inputLabel");
-		outputLabel = labels.getString("RunComputationsFrame.outputLabel");
+		
 	}
 
 	/**
@@ -810,7 +779,17 @@ public class CompRunGuiFrame extends TopFrame
 	public void setDb(TimeSeriesDb mydb)
 	{
 		this.theDb = mydb;
-		timeSeriesTable.setTsdb(mydb);
+		TimeSeriesTableModel tsTm = timeSeriesTablePanel.getTimeSeriesModel();
+		if (theDb != null)
+		{
+			tsTm.setRevColumnInfo(new ColumnInfo(theDb.getRevisionLabel(), tv -> theDb.flags2RevisionCodes(tv.getFlags())));
+			tsTm.setLimitColumnInfo(new ColumnInfo(theDb.getLimitLabel(), tv -> theDb.flags2LimitCodes(tv.getFlags())));
+		}
+		else
+		{
+			tsTm.setRevColumnInfo(new ColumnInfo("", tv -> null));
+			tsTm.setLimitColumnInfo(new ColumnInfo("", tv -> null));
+		}
 	}
 
 	private void runButtonPressed()
@@ -1365,7 +1344,7 @@ public class CompRunGuiFrame extends TopFrame
 
 					both.add(cts);
 					plotDataOnChart(both, myinputs.size());
-					timeSeriesTable.setInOut(myinputs, myoutputs);
+					timeSeriesTablePanel.getTimeSeriesModel().setInOut(myinputs, myoutputs);
 				}
 			}
 
@@ -1380,7 +1359,7 @@ public class CompRunGuiFrame extends TopFrame
 				cancelExecutionButton.setEnabled(false);
 				saveButton.setEnabled(true);
 				plotDataOnChart(both, myinputs.size());
-				timeSeriesTable.setInOut(myinputs, myoutputs);
+				timeSeriesTablePanel.getTimeSeriesModel().setInOut(myinputs, myoutputs);
 			}
 		};
 		compExecutionWorker.addPropertyChangeListener(event -> updateProgress(event));
@@ -1408,19 +1387,7 @@ public class CompRunGuiFrame extends TopFrame
 				progressBar.setString(String.format("%d of %d", progress.getDone(), progress.getTotal()));
 			}
 		}
-	}
-
-	private JScrollPane getTable()
-	{
-		JScrollPane myscrollpane = new JScrollPane();
-		myscrollpane.setPreferredSize(new Dimension(600, 400));
-		timeSeriesTable = new TimeSeriesTable(theDb);
-		timeSeriesTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		myscrollpane.add(timeSeriesTable);
-		myscrollpane.setViewportView(timeSeriesTable);
-		myscrollpane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		return myscrollpane;
-	}
+	}	
 
 	private JPanel closePanel()
 	{
@@ -1552,7 +1519,7 @@ public class CompRunGuiFrame extends TopFrame
 					Logger.instance().failure(msg);
 				}
 			}
-			timeSeriesTable.setInOut(myinputs, myoutputs);
+			timeSeriesTablePanel.getTimeSeriesModel().setInOut(myinputs, myoutputs);
 		}
 		finally
 		{
