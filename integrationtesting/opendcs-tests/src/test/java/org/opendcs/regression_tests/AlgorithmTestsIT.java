@@ -33,7 +33,7 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
-import org.opendcs.fixtures.Programs;
+
 import org.opendcs.fixtures.helpers.TestResources;
 import org.opendcs.utils.FailableResult;
 import org.slf4j.Logger;
