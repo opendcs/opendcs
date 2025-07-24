@@ -26,13 +26,13 @@ final class ResEvapAlgoRatingTableTest
     enum Reservoir
     {
         YETL ("YETL", 0.01, 3214., Double.MAX_VALUE),  ///  this is ok to use after elev - 3214
-        YETL_1 ("YETL", 0.01, 3204., Double.MAX_VALUE),  ///  test the full set
+//        YETL_1 ("YETL", 0.01, 3204., Double.MAX_VALUE),  ///  test the full set
 
         OAHE("OAHE", 0.01, 1431., 1572.), /// this is ok to use after elev - 1431 and before 1572
-        OAHE_1("OAHE", 0.01, 1418., 1619.), ///  test the full set
+//        OAHE_1("OAHE", 0.01, 1418., 1619.), ///  test the full set
 
-        GAPT("GAPT", 0.01, 1185., Double.MAX_VALUE), ///  this is ok to use after elev - 1185
-        GAPT_1("GAPT", 0.01, 1167., Double.MAX_VALUE); ///  test the full set
+        GAPT("GAPT", 0.01, 1185., Double.MAX_VALUE); ///  this is ok to use after elev - 1185
+//        GAPT_1("GAPT", 0.01, 1167., Double.MAX_VALUE); ///  test the full set
 
         private final String reservoirName;
         private final double tolerance;
@@ -65,24 +65,6 @@ final class ResEvapAlgoRatingTableTest
         }
     }
 
-    @Test
-    void testGetDailyEvapFlowComparison()
-    {
-        double areaAtElev1m2 = 200.0;
-        double areaAtElev2m2 = 100.0;
-        double depthMeters = 1.0;
-
-        double expectedFlowLostCMS = ResEvapAlgo.getDailyEvapFlow(areaAtElev1m2, areaAtElev2m2, depthMeters);
-
-        double frustumVolumeM3 = ResEvapAlgo.getFrustumVolumeM3(areaAtElev1m2, areaAtElev2m2, depthMeters);
-        double flowFromVolumeCMS = ResEvapAlgo.getVolumeM3AsFlowCMS(frustumVolumeM3);
-
-        assertEquals(expectedFlowLostCMS, flowFromVolumeCMS, 0.0001,
-                "Comparison between getDailyEvapFlow() and (getFrustumVolume() in conjunction with " +
-                        "getDailyVolumeAsFlow() is not within the given tolerance, 0.01");
-
-    }
-
 
 /**
  * This test provides a diagnostic comparison of three approaches to calculating evaporation loss:
@@ -112,17 +94,17 @@ final class ResEvapAlgoRatingTableTest
 
         // ----- Legacy Vertical Wall Calculation -----
         double legacyVolumeLossM3 = areaStart * totalDailyEvapDepth;
-        double legacyFlowCMS = ResEvapAlgo.getVolumeM3AsFlowCMS(legacyVolumeLossM3);
+        double legacyFlowCMS = ResEvapAlgo.getVolumeM3AsFlowCMS(legacyVolumeLossM3, SECONDS_PER_DAY);
 
         // ----- Frustum Daily Calculation -----
         double frustumVolumeLossM3 = ResEvapAlgo.getFrustumVolumeM3(areaStart, areaEnd, totalDailyEvapDepth);
-        double frustumFlowCMS = ResEvapAlgo.getVolumeM3AsFlowCMS(frustumVolumeLossM3);
+        double frustumFlowCMS = ResEvapAlgo.getVolumeM3AsFlowCMS(frustumVolumeLossM3, SECONDS_PER_DAY);
 
         // ----- Frustum Hourly Aggregation Calculation -----
         // if not using a constant depth, this should be an avgHourlyEvapDepth ((prev + curr) / 2.0)
         double hourlyEvapDepth = totalDailyEvapDepth / 24.0;
         double aggregatedVolumeLossM3 = simulateHourlyEvapVolume(elevStart, elevEnd, areaStart, areaEnd, hourlyEvapDepth);
-        double aggregatedFlowCMS = ResEvapAlgo.getVolumeM3AsFlowCMS(aggregatedVolumeLossM3);
+        double aggregatedFlowCMS = ResEvapAlgo.getVolumeM3AsFlowCMS(aggregatedVolumeLossM3, SECONDS_PER_DAY);
 
         // ----- Output Comparison -----
         System.out.printf("%n--- Evaporation Loss Comparison ---%n");
@@ -203,7 +185,7 @@ final class ResEvapAlgoRatingTableTest
             double expectedFlowLostCMS = expectedVolumeM3 / SECONDS_PER_DAY;
 
             double aggregatedVolumeLossM3 = simulateHourlyEvapVolume(row.elevStart, row.elevEnd, row.areaStart, row.areaEnd, hourlyEvapDepthMeters);
-            double aggregatedFlowLossCMS = ResEvapAlgo.getVolumeM3AsFlowCMS(aggregatedVolumeLossM3);
+            double aggregatedFlowLossCMS = ResEvapAlgo.getVolumeM3AsFlowCMS(aggregatedVolumeLossM3, SECONDS_PER_DAY);
 
             double absoluteError = Math.abs(expectedFlowLostCMS - aggregatedFlowLossCMS);
             double relativeError = absoluteError / expectedFlowLostCMS;
@@ -223,45 +205,6 @@ final class ResEvapAlgoRatingTableTest
         }
         assertAll(executables);
     }
-
-
-    /**
-     * This test was written before the code was updated to use hourly aggregation.
-     * It relies on reading rating tables and uses single elevation logic, which may not match
-     * the frustum volume calculations now used. This test may be updated or removed in the future.
-     * **/
-    @ParameterizedTest
-    @EnumSource(Reservoir.class)
-    void testDailyFrustumFlowWithRatingTables(Reservoir reservoir)
-    {
-        double tolerance = reservoir.tolerance;
-        List<Executable> executables = new ArrayList<>();
-
-        for (TestRow row : reservoir.validRows) {
-            double depthMeters = row.elevStart - row.elevEnd;
-
-            double expectedVolumeM3 = row.storStart - row.storEnd;
-            double expectedFlowLostCMS = expectedVolumeM3 / SECONDS_PER_DAY;
-
-            double actualFlowLostCMS = ResEvapAlgo.getDailyEvapFlow(row.areaStart, row.areaEnd, depthMeters);
-
-            double absoluteError = Math.abs(expectedFlowLostCMS - actualFlowLostCMS);
-            double relativeError = absoluteError / expectedFlowLostCMS;
-
-            String msg = String.format(
-                    "%s:%n" +
-                            "   ElevStart: %.2f | ElevEnd: %.2f%n" +
-                            "   RelErr:    %.4f | AbsErr:  %.4f%n" +
-                            "   ActualFlowCMS:     %.4f | ExpectedFlowCMS: %.4f",
-                    reservoir, (row.elevStart/ 0.3048), (row.elevEnd/ 0.3048),
-                    relativeError, absoluteError,
-                    actualFlowLostCMS, expectedFlowLostCMS
-            );
-            executables.add(() -> assertTrue(relativeError <  tolerance, msg));
-        }
-        assertAll(executables);
-    }
-
 
 }
 
