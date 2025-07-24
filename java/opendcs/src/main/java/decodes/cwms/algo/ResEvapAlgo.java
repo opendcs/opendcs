@@ -318,10 +318,6 @@ final public class ResEvapAlgo
         {
             throw new DbCompException("Failed to load Site data", ex);
         }
-        catch (SQLException ex)
-        {
-            throw new DbCompException("Unable to acquire required connection.", ex);
-        }
 
         try
         {
