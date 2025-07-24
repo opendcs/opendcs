@@ -26,14 +26,14 @@ public class PropertiesDAOTestIT extends AppTestBase
     @EnableIfTsDb({"OpenDCS-Postgres", "OpenDCS-Oracle"})
     void test_write_property() throws Exception
     {
-        PropertiesDAO propsDAO = db.getDao(PropertiesDAO.class).orElseThrow();
+        PropertiesDAO propsDAO = db.getDao(PropertiesDAO.class).get();
         DbKey appKey = DbKey.NullKey;
 
         final Properties propsIn = new Properties();
         propsIn.setProperty("TestProp","testValue");
         propsIn.setProperty("2nd Test Prop", "Test Value 2");
 
-        try (LoadingAppDAI appDAI = db.getDao(LoadingAppDAI.class).orElseThrow();
+        try (LoadingAppDAI appDAI = db.getDao(LoadingAppDAI.class).get();
             DataTransaction tx = db.newTransaction())
         {
             appKey = appDAI.getComputationApp("compproc").getAppId();
