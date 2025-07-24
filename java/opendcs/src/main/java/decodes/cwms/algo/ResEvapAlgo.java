@@ -68,10 +68,10 @@ final public class ResEvapAlgo
 
 
     private double previousElev;
+    private double previousInstHourlyEvap;
     private double totalDailyEvapVolumeM3 = 0.0; // aggregated hourly evaporation frustum volume in cubic meters
     private int count; //number of days calculated
     private boolean isDayLightSavings;
-    private double previousInstHourlyEvap;
 
     private double startDepth = 0.;
     private double depthIncrement = .5;
@@ -311,29 +311,13 @@ final public class ResEvapAlgo
     /**
      * Convert a volume in cubic meters to a flow rate in cubic meters per second.
      *
-     * @param volume (m3)
+     * @param volume        (m3)
+     * @param secondsPerDay number of seconds in a day, accounts for daylight savings if applicable
      * @return flow rate in cubic meters per second
      */
-    static double getVolumeM3AsFlowCMS(double volume)
+    static double getVolumeM3AsFlowCMS(double volume, double secondsPerDay)
     {
-        return volume / 86400.0;
-    }
-
-    /**
-     * WILL DELETE THIS METHOD AFTER TESTING
-     *
-     * @param areaAtElev1 area At Elevation Before Evap (m2)
-     * @param areaAtElev2 area At Elevation Minus Evap lost (m2)
-     * @param dailyEvapDepth evaporation depth (m)
-     * @return daily evaporation as flow (cms) m3/s
-     */
-    static double getDailyEvapFlow(double areaAtElev1, double areaAtElev2, double dailyEvapDepth)
-    {
-        double frustumAvgArea = (areaAtElev1 + areaAtElev2 + Math.sqrt(areaAtElev1 * areaAtElev2)) / 3.0;
-        double frustumEvapVolume = frustumAvgArea * dailyEvapDepth;
-
-        // convert vol to flow (cms)
-        return frustumEvapVolume / 86400.0;
+        return volume / secondsPerDay;
     }
 
 
@@ -493,11 +477,11 @@ final public class ResEvapAlgo
                 reservoir.setInstrumentHeights(32.81, 32.81, 32.81);
                 reservoir.setElevationTs(elevTS);
 
-                double initElev;
+                //retrieve Elevation from Previous Timestep to be used to calculate average instantaneous EvapRate over the hour
                 try
                 {
-                    initElev = tsdb.getPreviousValue(elevTS, baseTimes.first()).getDoubleValue();
-                    reservoir.setElevation(initElev, conn);
+                    previousElev = tsdb.getPreviousValue(elevTS, baseTimes.first()).getDoubleValue();
+                    reservoir.setElevation(previousElev, conn);
                 }
                 catch (RuntimeException | NoConversionException | DbIoException | BadTimeSeriesException ex)
                 {
@@ -627,7 +611,7 @@ final public class ResEvapAlgo
      * This method is called once after iterating all time slices and
      * sets the daily evaporation volume and flow rate outputs and appends the
      * hourly water temperature profiles to the daily profiles.
-     * If there are less than 24 hourly samples, it will log a warning and fail -- or does it continue?
+     * If there are less than 23/24 hourly samples, it will not compute the daily totals.
      */
     @Override
     protected void afterTimeSlices()
@@ -635,8 +619,9 @@ final public class ResEvapAlgo
     {
         if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
         {
+            double secondsPerDay = baseTimes.size() * 3600.0;
             // Convert daily evap volume to a flow rate and set outputs.
-            double dailyEvapFlowCms = getVolumeM3AsFlowCMS(totalDailyEvapVolumeM3);
+            double dailyEvapFlowCms = getVolumeM3AsFlowCMS(totalDailyEvapVolumeM3, secondsPerDay);
 
             setOutput(dailyEvap, totalDailyEvapVolumeM3, _timeSliceBaseTime);
             setOutput(dailyEvapAsFlow, dailyEvapFlowCms, _timeSliceBaseTime);
@@ -645,7 +630,7 @@ final public class ResEvapAlgo
         }
         else
         {
-            warning("There are less than 24 hourly samples, can not compute daily sums");
+            warning("Only " + baseTimes.size() + " hourly values found, fewer than required for a full day. Daily totals will not be computed.");
         }
     }
 
