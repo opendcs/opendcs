@@ -3,6 +3,8 @@
 */
 package ilex.util;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -61,9 +63,10 @@ public class FileLogger extends Logger
 	* Set to false to cause the constructor to zero and start a new log.
 	*/
 	public static boolean appendFlag = true;
-
+	private static int MESSAGE_CAPACITY = 5000;
+	public static int DRAIN_TO_QUANTITY = 1000;
 	private AtomicBoolean closeOperations = new AtomicBoolean(false);	
-	private BlockingQueue<String> queue = new ArrayBlockingQueue<>(5000); // TODO: intentionally arbitrary number for now.;
+	private BlockingQueue<String> queue = new ArrayBlockingQueue<>(MESSAGE_CAPACITY); // TODO: intentionally arbitrary number for now.;
 	private Thread writerThread;
 	private boolean isTerminal = false;
 	
@@ -97,28 +100,27 @@ public class FileLogger extends Logger
 		openNewLog();
 		writerThread = new Thread(() ->
 			{
+				ArrayList<String> messages = new ArrayList<>();
 				while (closeOperations.get() == false)
 				{
-					try
+					queue.drainTo(messages, DRAIN_TO_QUANTITY);
+					PrintStream ps = output.get();
+					if (messages.size() > 0 && ps != null && !ps.checkError())
 					{
-						String msg = queue.poll(1, TimeUnit.SECONDS);
-						PrintStream ps = output.get();
-						if (msg != null && ps != null && !ps.checkError())
+						for (String msg: messages)
 						{
+							ps.println(msg);
 							if (!isTerminal) // avoid any kind of buffer overflow errors since this would just keep accumulating.
 							{
 								bytesWritten.getAndAdd(msg.length());
+								if (bytesWritten.get() >= this.maxLength)
+								{
+									rotateLogs();
+									ps = output.get(); // need to update the output stream
+								}
 							}
-							ps.println(msg);
 						}
-						if (!isTerminal && (bytesWritten.get() >= this.maxLength))
-						{
-							rotateLogs();
-						}
-					}
-					catch (InterruptedException ex)
-					{
-
+						messages.clear();
 					}
 				}
 			},
