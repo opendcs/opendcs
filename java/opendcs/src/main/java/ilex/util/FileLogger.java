@@ -38,7 +38,7 @@ public class FileLogger extends Logger
 	 */
 	private static final int MESSAGE_CAPACITY = 5000;
 	/**
-	 * Numbered of queued messages to log in a single batch
+	 * Number of queued messages to log in a single batch
 	 */
 	public static final int DRAIN_TO_QUANTITY = 1000;
 
