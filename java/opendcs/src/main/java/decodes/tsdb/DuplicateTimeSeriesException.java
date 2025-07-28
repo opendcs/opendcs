@@ -26,4 +26,9 @@ public class DuplicateTimeSeriesException extends TsdbException
 	{
 		super(msg);
 	}
+
+	public DuplicateTimeSeriesException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
 }

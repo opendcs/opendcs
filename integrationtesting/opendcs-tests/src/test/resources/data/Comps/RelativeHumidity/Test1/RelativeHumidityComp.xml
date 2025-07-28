@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="RelativeHumidity">
+    <Comment>
+      Takes two inputs, Air temperature and dew point, to calculate relative
+      humidity
+    </Comment>
+    <ExecClass>decodes.tsdb.algo.RelativeHumidity</ExecClass>
+    <AlgoParm roleName="temperature">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="dewPoint">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="output">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="Test1RelativeHumidity">
+    <Comment></Comment>
+    <Enabled>true</Enabled>
+    <AlgorithmName>RelativeHumidity</AlgorithmName>
+    <LastModified>2025-01-06 03:16:19 PST</LastModified>
+    <CompParm roleName="output">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="%-RelativeHumidity"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.relativeHumidity-output</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="temperature">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Temp-Air"/>
+      </SiteDataType>
+      <Interval>1Hour</Interval>
+      <TableSelector>Inst.0.temperature</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="dewPoint">
+      <SiteDataType>
+        <SiteName NameType="CWMS">TESTSITE1</SiteName>
+        <DataType Standard="CWMS" code="Temp-Air"/>
+      </SiteDataType>
+      <Interval>~1Hour</Interval>
+      <TableSelector>Inst.0.dewPoint</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>

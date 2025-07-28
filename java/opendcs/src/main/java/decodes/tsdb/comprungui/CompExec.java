@@ -207,7 +207,7 @@ public class CompExec extends TsdbAppTemplate
 		// Now all arguments are read either from cmd line or control file.
 		if (tsids.isEmpty() && specifiedCompIDs.isEmpty())
 		{
-			System.out.println("Nothing to do -- No time series or computations specified.");
+			info("Nothing to do -- No time series or computations specified.");
 			System.exit(1);
 		}
 		else if (specifiedCompIDs.isEmpty())
@@ -346,8 +346,10 @@ public class CompExec extends TsdbAppTemplate
 		}
 		else // Else write directly to database.
 		{
+			info("Saving data: " + theData.size());
 			for(CTimeSeries cts : theData.getAllTimeSeries())
 			{
+				info("Saving: " + cts.getDisplayName());
 				int numChanges = 0;
 				Date earliest=null, latest=null;
 				for(int idx = 0; idx < cts.size(); idx++)

@@ -96,14 +96,22 @@ Reminder - legacy PDFs are no longer being updated.
    Screening - Intro <./start-screening.rst>   
    
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Resources
    
    DECODING <./resources-decoding.rst>
    Algorithms <./resources-algorithms.rst>   
    Computations <./resources-computations.rst>
    Screening Editor <./resources-screening.rst>
-   
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Supplemental Documentation
+
+   ResEvap Documentation <./legacy-resevap-computation.rst>
+
+
 .. toctree::
    :maxdepth: 1
    :caption: Developer Documentation

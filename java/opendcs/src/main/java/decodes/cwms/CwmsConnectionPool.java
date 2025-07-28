@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -269,6 +270,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
             try
             {
                 conn = pool.getConnection();
+                conn.unwrap(oracle.jdbc.OracleConnection.class).setDefaultTimeZone(TimeZone.getTimeZone("UTC"));
                 conn.setAutoCommit(true);
                 setCtxDbOfficeId(conn, info);
                 final WrappedConnection wc = new WrappedConnection(conn,(c)->{
