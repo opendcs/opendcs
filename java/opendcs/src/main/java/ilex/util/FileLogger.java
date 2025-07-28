@@ -126,7 +126,16 @@ public class FileLogger extends Logger
 			},
 			"FileLogger-Writer");
 		writerThread.setDaemon(true);
+		writerThread.setUncaughtExceptionHandler((thread, ex) ->
+		{
+			/* Use of System.err is intentional. This is printing an error with the logging system itself and 
+			 * cannot use the logger to present any information.
+			 */
+			System.err.println(String.format("Error on thread %s", thread.getName()));
+			ex.printStackTrace(System.err);
+		});
 		writerThread.start();
+		
 	}
 
 	/**
