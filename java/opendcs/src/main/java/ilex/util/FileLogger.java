@@ -3,16 +3,19 @@
 */
 package ilex.util;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.io.*;
-import java.nio.channels.FileChannel;
+
 
 
 /**
@@ -28,6 +31,17 @@ import java.nio.channels.FileChannel;
 */
 public class FileLogger extends Logger
 {
+	/**
+	 * Message Queue capacity.
+	 *
+	 * This number is currently rather arbitrary and may need adjustment in the future.
+	 */
+	private static final int MESSAGE_CAPACITY = 5000;
+	/**
+	 * Numbered of queued messages to log in a single batch
+	 */
+	public static final int DRAIN_TO_QUANTITY = 1000;
+
 	/**
 	* The current output PrintStream
 	*/
@@ -63,10 +77,8 @@ public class FileLogger extends Logger
 	* Set to false to cause the constructor to zero and start a new log.
 	*/
 	public static boolean appendFlag = true;
-	private static int MESSAGE_CAPACITY = 5000;
-	public static int DRAIN_TO_QUANTITY = 1000;
-	private AtomicBoolean closeOperations = new AtomicBoolean(false);	
-	private BlockingQueue<String> queue = new ArrayBlockingQueue<>(MESSAGE_CAPACITY); // TODO: intentionally arbitrary number for now.;
+	private final AtomicBoolean closeOperations = new AtomicBoolean(false);
+	private final BlockingQueue<String> queue = new ArrayBlockingQueue<>(MESSAGE_CAPACITY);
 	private Thread writerThread;
 	private boolean isTerminal = false;
 	
@@ -105,7 +117,7 @@ public class FileLogger extends Logger
 				{
 					queue.drainTo(messages, DRAIN_TO_QUANTITY);
 					PrintStream ps = output.get();
-					if (messages.size() > 0 && ps != null && !ps.checkError())
+					if (!messages.isEmpty() && ps != null && !ps.checkError())
 					{
 						for (String msg: messages)
 						{
@@ -131,8 +143,8 @@ public class FileLogger extends Logger
 			/* Use of System.err is intentional. This is printing an error with the logging system itself and 
 			 * cannot use the logger to present any information.
 			 */
-			System.err.println(String.format("Error on thread %s", thread.getName()));
-			ex.printStackTrace(System.err);
+			System.err.println(String.format("Error on thread %s", thread.getName())); // NOSONAR
+			ex.printStackTrace(System.err); //NOSONAR
 		});
 		writerThread.start();
 		
@@ -167,8 +179,8 @@ public class FileLogger extends Logger
 		catch (InterruptedException ex)
 		{
 			// NOTE: use of STDERR is intentional here. This is an error with logging itself.
-			System.err.println("Unable to put data in the log message queue.");
-			ex.printStackTrace();
+			System.err.println("Unable to put data in the log message queue."); // NOSONAR
+			ex.printStackTrace(System.err); //NOSONAR
 		}
 	}
 

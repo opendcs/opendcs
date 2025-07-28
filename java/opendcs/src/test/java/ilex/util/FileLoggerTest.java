@@ -52,7 +52,6 @@ public class FileLoggerTest
         {
             loggerUnderTest.doLog(Logger.E_INFORMATION, testMsg1+1);
         }
-        Thread.sleep(2000);
         loggerUnderTest.doLog(Logger.E_WARNING, testMsg1);
         loggerUnderTest.doLog(Logger.E_DEBUG1, testMsg2);
 
