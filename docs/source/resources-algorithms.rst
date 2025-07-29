@@ -865,7 +865,7 @@ Exec Class: decodes.tsdb.algo.WeightedAverage
 Each Input and Weight Timeseries can be set "Ignore" missing values.
 If the weightTotal timeseries is not assigned, the algorithm will immediately exit.
 
-The algorithm is as follows assuming Tn are the input and T' is the output, and Q are the individual weights, and Q` the weightTotal.
+The algorithm is as follows assuming Tn are the input and T' is the output, and Qn are the individual weights, and Q` the weightTotal.
 
 T` = sum(Tn*Qn)/Q`
 
