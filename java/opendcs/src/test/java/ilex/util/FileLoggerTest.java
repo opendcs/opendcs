@@ -47,6 +47,11 @@ public class FileLoggerTest
         final FileLogger loggerUnderTest = new FileLogger("test", myLog.toString(), 700);
         loggerUnderTest.setMinLogPriority(Logger.E_DEBUG3);
         loggerUnderTest.doLog(Logger.E_INFORMATION, testMsg1);
+        // Need to enqueue a sufficient number of messages that the drainTo method doesn't pull in message two.
+        for (int i =0; i < FileLogger.DRAIN_TO_QUANTITY+2; i++)
+        {
+            loggerUnderTest.doLog(Logger.E_INFORMATION, testMsg1+1);
+        }
         loggerUnderTest.doLog(Logger.E_WARNING, testMsg1);
         loggerUnderTest.doLog(Logger.E_DEBUG1, testMsg2);
 
