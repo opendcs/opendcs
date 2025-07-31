@@ -184,6 +184,21 @@ Typical information required for this type of source include:
 * username:
 * password: 
 
+Please make username and password more secure by storing them outside the lrgs source configuration.  For example you can use an environment variable, or a file with restricted permissions.
+
+To use an environment variable, set the variable in your shell or OS.  Then in the lrgs source properties, use the syntax: ${env.ENV_VAR_NAME} for the username or password. For example, if you set the environment variable "LRGS_USER" to "myuser", then in the lrgs source properties you would enter ${env.LRGS_USER} for the username.
+
+To use a file, create a file with the username or password and set file permissions so only the appropriate user can read it. In the lrgs source properties, use the syntax: ${file./path/to/your/file} for the username or password. For example, if you store the username in `/home/karl/.lrgsuser`, then enter `${file./home/karl/.lrgsuser}` in the username property. This helps keep sensitive information out of the configuration.
+
+This example image below is using the environment for the password, and a file for username.
+
+.. image:: ./media/start/routingspec/im-03a-source-lrgs-env-file.JPG
+   :alt: sources - lrgs environment and file based secrets
+   :width: 600
+
+
+
+
 For further information about lrgs and connection, see :doc:`LRGS User Guide <./legacy-lrgs-userguide>`.
 For more information about the properties options see :any:`lrgs source properties <leg-route-source-properties-lrgs>`.
 

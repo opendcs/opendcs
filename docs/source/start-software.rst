@@ -186,7 +186,7 @@ Once the archive file is downloaded. Install it by extracting the contents to an
 
 
 How do I install the archive?
-=========================
+=============================
 
 Linux
 -----
