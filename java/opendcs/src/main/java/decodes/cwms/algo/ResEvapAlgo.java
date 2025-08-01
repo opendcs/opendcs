@@ -656,21 +656,22 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         }
     }
 
-
-
     /**
-     * This method is called once after iterating all time slices and
-     * sets the daily evaporation volume and flow rate outputs and appends the
-     * hourly water temperature profiles to the daily profiles.
-     * If there are less than 23/24 hourly samples, it will not compute the daily totals.
+     * Finalizes daily evaporation outputs after processing all time slices.
+     * Converts total volume to flow rate, sets outputs and appends the hourly temperature profile.
+     * if the number of time steps is not 23 or 24, it logs a warning and skips daily computation.
      */
     @Override
-    protected void afterTimeSlices()
-            throws DbCompException
+    protected void afterTimeSlices() throws DbCompException
     {
+        // Get the start and end times for aggregation
+        long startTimeMillis = baseTimes.first().getTime();
+        long endTimeMillis = baseTimes.last().getTime();
+
+        double secondsPerDay = (endTimeMillis - startTimeMillis) / 1000.0;
+
         if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
         {
-            double secondsPerDay = baseTimes.size() * 3600.0;
             // Convert daily evap volume to a flow rate and set outputs.
             double dailyEvapFlowCms = getVolumeM3AsFlowCMS(totalDailyEvapVolumeM3, secondsPerDay);
 
@@ -681,7 +682,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         }
         else
         {
-            log.warn("Only " + baseTimes.size() + " hourly values found, fewer than required for a full day. Daily totals will not be computed.");
+            log.warn("Found " + baseTimes.size() + " hourly values — daily totals require exactly 23 or 24 values. Skipping daily computation.");
         }
     }
 
