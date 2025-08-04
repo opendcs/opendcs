@@ -80,16 +80,15 @@ public class DbMerge
 		return writePlatformList;
 	}
 
-	public List<IdDatabaseObject> getImmutableNewObjects()
+	public List<IdDatabaseObject> getNewObjects()
 	{
-		return Collections.unmodifiableList(newObjects);
+		return newObjects;
 	}
 
 	public void merge()
 	{
 		Database theDb = destination;
 		Database stageDb = source;
-		Database.setDb(theDb);
 
 		if (overwriteDb)
 		{

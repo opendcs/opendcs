@@ -249,7 +249,7 @@ public class DbImport
 	Database stageDb;
 	XmlDatabaseIO stageDbio;  // For reading the input files.
 	TopLevelParser topParser; // Top level XML parser.
-	Vector<IdDatabaseObject> newObjects;   // Stores new DatabaseObjects to be added.
+	List<IdDatabaseObject> newObjects;   // Stores new DatabaseObjects to be added.
 	ArrayList<IdDatabaseObject> toDelete = new ArrayList<IdDatabaseObject>();
 	final List<String> files;
 	boolean writePlatformList;
@@ -657,6 +657,22 @@ public class DbImport
 	private void mergeStageToTheDb()
 	{
 		Database.setDb(theDb);
+
+	    DbMerge dbMerge = new DbMerge.Builder(theDb, stageDb)
+            .overwriteDb(overwriteDb)
+            .validateOnly(validateOnly)
+            .keepOld(keepOld)
+            .newDesignator(newDesignator)
+            .build();
+		dbMerge.merge();
+		this.writePlatformList = dbMerge.getWritePlatformList();
+		this.newObjects = dbMerge.getNewObjects();
+
+		int two = 2;
+		if( 2 == two)
+		{
+		return ;
+		}
 
 		if (overwriteDb)
 		{
