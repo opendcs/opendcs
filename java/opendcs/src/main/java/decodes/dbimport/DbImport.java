@@ -18,7 +18,6 @@ import opendcs.opentsdb.Interval;
 
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.opendcs.database.SimpleDataSource;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
@@ -35,12 +34,9 @@ import decodes.util.*;
 import decodes.db.*;
 import decodes.launcher.Profile;
 import decodes.xml.DataTypeEquivalenceListParser;
-import decodes.xml.ElementFilter;
 import decodes.xml.EngineeringUnitParser;
 import decodes.xml.UnitConverterParser;
 import decodes.xml.XmlDatabaseIO;
-import decodes.xml.XmlDbTags;
-import decodes.xml.TopLevelParser;
 import decodes.xml.EnumParser;
 
 /**
@@ -247,8 +243,6 @@ public class DbImport
 	final String newPlatformOwner;
 	final String defaultAgency;
 	Database stageDb;
-	XmlDatabaseIO stageDbio;  // For reading the input files.
-	TopLevelParser topParser; // Top level XML parser.
 	Vector<IdDatabaseObject> newObjects;   // Stores new DatabaseObjects to be added.
 	ArrayList<IdDatabaseObject> toDelete = new ArrayList<IdDatabaseObject>();
 	final List<String> files;
@@ -462,10 +456,7 @@ public class DbImport
 		log.debug("Initializing the staging database.");
 		stageDb = new decodes.db.Database(false);
 		Database.setDb(stageDb);
-		javax.sql.DataSource ds = new SimpleDataSource("jdbc:xml:", "", "");
-		stageDbio = new XmlDatabaseIO(ds, null);
-		stageDb.setDbIo(stageDbio);
-		topParser = stageDbio.getParser();
+
 		newObjects = new Vector<IdDatabaseObject>();
 
 		if (!overwriteDb)
@@ -507,147 +498,15 @@ public class DbImport
 	private void readXmlFiles()
 		throws IOException, DatabaseException
 	{
-		//enumsModified = false;
-		EnumParser.enumParsed = false;
-		EngineeringUnitParser.engineeringUnitsParsed = false;
-		UnitConverterParser.unitConvertersParsed = false;
-		DataTypeEquivalenceListParser.dtEquivalencesParsed = false;
 
-		// Read all the files into a new 'staging' database.
-		for(String s: files)
-		{
-			log.info("Processing '{}'", s);
-			DatabaseObject ob = null;
+	DbXmlReader xmlReader = new DbXmlReader(
+        files, 
+        platformRelatedOnly, 
+        allowHistorical, 
+        stageDb);
 
-			// If -p argument is used set a filter to skip non-platform-related elements.
-			if (platformRelatedOnly)
-			{
-				topParser.setElementFilter(
-					new ElementFilter()
-						{
-							@Override
-							public boolean acceptElement(String elementName)
-							{
-								return elementName.equalsIgnoreCase(XmlDbTags.Platform_el)
-									|| elementName.equalsIgnoreCase(XmlDbTags.NetworkList_el)
-									|| elementName.equalsIgnoreCase(XmlDbTags.PlatformConfig_el)
-									|| elementName.equalsIgnoreCase(XmlDbTags.EquipmentModel_el)
-									|| elementName.equalsIgnoreCase(XmlDbTags.Site_el);
-							}
-						});
-			}
+		xmlReader.readFiles();
 
-			try
-			{
-				ob = topParser.parse(new File(s));
-			}
-			catch(org.xml.sax.SAXException ex)
-			{
-				throw new IOException("Unable to process " + s, ex);
-			}
-
-			// Some file entity types must be explicitly added to the database.
-			// Some are implicitely added during the XML read.
-			if (ob instanceof Platform)
-			{
-				Platform p = (Platform)ob;
-				// Ignore historical versions unless the -H arg was given
-				if (p.expiration == null || allowHistorical)
-				{
-					stageDb.platformList.add((Platform)ob);
-				}
-			}
-			else if (ob instanceof Site)
-			{
-				stageDb.siteList.addSite((Site)ob);
-			}
-			else if (ob instanceof RoutingSpec)
-			{
-				stageDb.routingSpecList.add((RoutingSpec)ob);
-			}
-			else if (ob instanceof NetworkList)
-			{
-				stageDb.networkListList.add((NetworkList)ob);
-			}
-			else if (ob instanceof PresentationGroup)
-			{
-				stageDb.presentationGroupList.add((PresentationGroup)ob);
-			}
-			else if (ob instanceof ScheduleEntry)
-			{
-				stageDb.schedEntryList.add((ScheduleEntry)ob);
-			}
-			else if (ob instanceof CompAppInfo)
-			{
-				stageDb.loadingAppList.add((CompAppInfo)ob);
-			}
-			else if (ob instanceof PlatformList)
-			{
-				log.error("Cannot import PlatformList files! '{}'", s);
-				throw new DatabaseException("Cannot import PlatformList XML files!");
-			}
-		}
-
-		/*
-		  XML Platforms file may have contained PlatformConfig, Site, and
-		  EquipementModel objects. Copy them into the stage-db collections.
-		*/
-		for(Iterator<Platform> it = stageDb.platformList.iterator(); it.hasNext(); )
-		{
-			Platform plat = it.next();
-
-			// The PlatformID needs to be cleared so it won't conflict
-			// with an ID in the real editable database.
-			plat.clearId();
-
-			PlatformConfig pc = plat.getConfig();
-			if (pc != null)
-			{
-				stageDb.platformConfigList.add(pc);
-				if (pc.equipmentModel != null)
-				{
-					stageDb.equipmentModelList.add(pc.equipmentModel);
-				}
-			}
-
-			if (plat.getSite() != null)
-			{
-				try
-				{
-					SiteName sn = plat.getSite().getPreferredName();
-					Site oldSite = stageDb.siteList.getSite(sn);
-					if (oldSite != null)
-					{
-						stageDb.siteList.removeSite(oldSite);
-					}
-					stageDb.siteList.addSite(plat.getSite());
-				}
-				catch (Exception ex)
-				{
-					log.atError()
-					   .setCause(ex)
-					   .log("Platform {} has an invalid site configuration. Platform will be imported without a site", plat.getDcpAddress());
-					plat.setSite(null);
-				}
-			}
-		}
-
-		// Set presentation group parent objects so that when we write to SQL,
-		// it can write the parent first so that it has an ID for reference.
-		for(PresentationGroup pg : stageDb.presentationGroupList.getVector())
-		{
-			if (pg.inheritsFrom != null && pg.inheritsFrom.trim().length() > 0)
-			{
-				for (PresentationGroup pg2 : stageDb.presentationGroupList.getVector())
-				{
-					if (pg != pg2 && pg.inheritsFrom.equalsIgnoreCase(pg2.groupName))
-					{
-						pg.parent = pg2;
-						break;
-					}
-				}
-			}
-		}
 	}
 
 	/**
