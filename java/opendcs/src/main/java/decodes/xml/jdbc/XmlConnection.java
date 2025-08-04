@@ -82,26 +82,22 @@ public class XmlConnection implements java.sql.Connection
 
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setAutoCommit'");
+        /* no op */
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAutoCommit'");
+        return true;
     }
 
     @Override
     public void commit() throws SQLException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'commit'");
+        /* no op */
     }
 
     @Override
     public void rollback() throws SQLException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'rollback'");
+        /* no op */
     }
 
     @Override

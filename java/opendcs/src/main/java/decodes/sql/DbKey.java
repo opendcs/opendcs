@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import org.opendcs.database.api.DatabaseKey;
+
 
 /**
  * Encapsulates a surrogate key for identifying records in a database.
@@ -50,8 +52,7 @@ import java.util.Map.Entry;
  * Recommendation: In new code, always compare keys with key1.equals(key2);
  */
 @SuppressWarnings("serial")
-public class DbKey
-	implements Comparable<DbKey>, Serializable
+public class DbKey implements DatabaseKey, Comparable<DbKey>, Serializable
 {
 	/** Immutable internal long integer key value */
 	private long value;
