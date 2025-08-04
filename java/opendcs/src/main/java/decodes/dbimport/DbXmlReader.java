@@ -2,7 +2,6 @@ package decodes.dbimport;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -38,7 +37,7 @@ import decodes.xml.XmlDbTags;
  */
 public class DbXmlReader {
     
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(DbImport.class);
+    private static final Logger log = LoggerFactory.getLogger(DbImport.class);
 
     private final List<String> files;
     private final boolean platformRelatedOnly;
@@ -53,8 +52,7 @@ public class DbXmlReader {
      * @param files List of XML file paths to process
      * @param platformRelatedOnly Whether to import only platform-related elements
      * @param allowHistorical Whether to import historical versions
-     * @param stageDb The staging database to read into
-     * @param topParser The XML parser to use
+     * @param stageDb The database to read into
      */
     public DbXmlReader(List<String> files, boolean platformRelatedOnly,
                      boolean allowHistorical, Database stageDb) throws DatabaseException 
