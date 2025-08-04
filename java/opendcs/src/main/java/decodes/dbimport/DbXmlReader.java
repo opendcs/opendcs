@@ -201,15 +201,19 @@ public class DbXmlReader {
             }
             
             // Extract and add Site
-            if (platform.getSite() != null) {
+            if (platform.getSite() != null) 
+            {
                 try {
                     SiteName siteName = platform.getSite().getPreferredName();
                     Site existingSite = stageDb.siteList.getSite(siteName);
-                    if (existingSite != null) {
+                    if (existingSite != null)
+                    {
+                        log.atWarn().log("Warning: overwriting {} site ",siteName);
                         stageDb.siteList.removeSite(existingSite);
                     }
                     stageDb.siteList.addSite(platform.getSite());
-                } catch (Exception ex) {
+                } catch (Exception ex) 
+                {
                     log.atError()
                     .setCause(ex)
                     .log("Platform {} has an invalid site configuration. " +
@@ -228,14 +232,16 @@ public class DbXmlReader {
     {
         for(PresentationGroup pg : stageDb.presentationGroupList.getVector()) 
         {
-            if (pg.inheritsFrom != null && pg.inheritsFrom.trim().length() > 0) {
+            if (pg.inheritsFrom != null && pg.inheritsFrom.trim().length() > 0) 
+            {
                 for (PresentationGroup potentialParent : stageDb.presentationGroupList.getVector()) 
                 {
                     if (pg != potentialParent && 
-                        pg.inheritsFrom.equalsIgnoreCase(potentialParent.groupName)) {
+                        pg.inheritsFrom.equalsIgnoreCase(potentialParent.groupName)) 
+                        {
                         pg.parent = potentialParent;
                         break;
-                    }
+                        }
                 }
             }
         }
