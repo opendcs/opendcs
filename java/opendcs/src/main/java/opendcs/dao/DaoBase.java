@@ -23,7 +23,6 @@
  */
 package opendcs.dao;
 
-import ilex.util.Logger;
 import opendcs.dai.DaiBase;
 import opendcs.util.functional.ConnectionConsumer;
 import opendcs.util.functional.DaoConsumer;
@@ -45,7 +44,9 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.sql.SqlSettings;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 import decodes.sql.DbKey;
@@ -59,9 +60,9 @@ import decodes.util.DecodesException;
  * @author mmaloney Mike Maloney, Cove Software LLC
  *
  */
-public class DaoBase
-    implements DaiBase
+public class DaoBase implements DaiBase
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     protected DatabaseConnectionOwner db = null;
     private Statement queryStmt1 = null;
     private ResultSet queryResults1 = null;
@@ -235,19 +236,18 @@ public class DaoBase
                 queryStmt1 = getConnection().createStatement();
             if (fetchSize > 0)
                 queryStmt1.setFetchSize(fetchSize);
-            debug3("Query1 '" + q + "'");
-
-//if (this instanceof decodes.cwms.CwmsTimeSeriesDAO
-// || this instanceof decodes.cwms.CwmsSiteDAO)
-//debug1("Fetch size=" + queryStmt1.getFetchSize());
+            log.trace("Query1 '{}'", q);
 
             return queryResults1 = queryStmt1.executeQuery(q);
         }
         catch(SQLException ex)
         {
-            String msg = "SQL Error in query '" + q + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "SQL Error in query '" + q + "'";
+            if (log.isTraceEnabled())
+            {
+                log.atWarn().setCause(ex).log(msg);
+            }
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -269,14 +269,17 @@ public class DaoBase
         {
             if (queryStmt2 == null|| statementInvalid(queryStmt2))
                 queryStmt2 = getConnection().createStatement();
-            debug3("Query2 '" + q + "'");
+            log.trace("Query2 '{}'", q);
             return queryResults2 = queryStmt2.executeQuery(q);
         }
         catch(SQLException ex)
         {
-            String msg = "SQL Error in query '" + q + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "SQL Error in query '" + q + "'";
+            if (log.isTraceEnabled())
+            {
+                log.atWarn().setCause(ex).log(msg);
+            }
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -297,43 +300,48 @@ public class DaoBase
         try(Connection conn = getConnection();
             Statement modStmt = conn.createStatement();)
         {
-            debug3("Executing statement '" + q + "'");
+            log.trace("Executing statement '{}'", q);
             return modStmt.executeUpdate(q);
         }
         catch(SQLException ex)
         {
-            String msg = "SQL Error in modify query '" + q + "': " + ex;
-            throw new DbIoException(msg);
+            String msg = "SQL Error in query '" + q + "'";
+            if (log.isTraceEnabled())
+            {
+                log.atWarn().setCause(ex).log(msg);
+            }
+            throw new DbIoException(msg, ex);
         }
     }
 
+    // TODO: remove once all classes have their own logger instance.
     public void debug1(String msg)
     {
-        Logger.instance().debug1(module + " " + msg);
+        log.debug("{} {}" , module, msg);
     }
     public void debug2(String msg)
     {
-        Logger.instance().debug2(module + " " + msg);
+        log.debug("{} {}" , module, msg);
     }
     public void debug3(String msg)
     {
-        Logger.instance().debug3(module + " " + msg);
+        log.trace("{} {}" , module, msg);
     }
     public void info(String msg)
     {
-        Logger.instance().info(module + " " + msg);
+        log.info("{} {}" , module, msg);
     }
     public void warning(String msg)
     {
-        Logger.instance().warning(module + " " + msg);
+        log.warn("{} {}" , module, msg);
     }
     public void failure(String msg)
     {
-        Logger.instance().failure(module + " " + msg);
+        log.error("{} {}" , module, msg);
     }
     public void fatal(String msg)
     {
-        Logger.instance().fatal(module + " " + msg);
+        log.error("{} {}" , module, msg);
     }
 
     /**
@@ -358,13 +366,15 @@ public class DaoBase
         return "'" + a + "'";
     }
 
-    public DbKey getKey(String tableName)
-        throws DbIoException
+    public DbKey getKey(String tableName) throws DbIoException
     {
-        try { return db.getKeyGenerator().getKey(tableName, getConnection()); }
-        catch(DecodesException ex)
+        try (Connection conn = getConnection())
         {
-            throw new DbIoException(ex.getMessage());
+            return db.getKeyGenerator().getKey(tableName, conn);
+        }
+        catch(SQLException | DecodesException ex)
+        {
+            throw new DbIoException("error retrieving key", ex);
         }
     }
 

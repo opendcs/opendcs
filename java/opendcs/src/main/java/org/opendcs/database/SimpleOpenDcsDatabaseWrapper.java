@@ -16,8 +16,8 @@ import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.settings.api.OpenDcsSettings;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
@@ -26,7 +26,7 @@ import decodes.util.DecodesSettings;
 
 public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
 {
-    private static final Logger log = LoggerFactory.getLogger(SimpleOpenDcsDatabaseWrapper.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private final DecodesSettings settings;
     private final Database decodesDb;
     private final TimeSeriesDb timeSeriesDb;
