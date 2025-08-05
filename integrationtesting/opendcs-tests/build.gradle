@@ -27,35 +27,41 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
+    testRuntimeOnly(project(":opendcs-slf4j-provider"))
 }
 
-def impl = project.findProperty("opendcs.test.engine")
-def tmpdir = "${project.layout.buildDirectory.get()}/runs/${impl}/tmp"
+
+
+
+def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
 
 test {
     dependsOn ":install:installDist"
     dependsOn ":opendcs:test"
     //outputs.upToDateWhen {false}
 
-    enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" + name)
-    doFirst {
-        project.mkdir(tmpdir)
-    }
-    def install = project(":install")
-    def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
-    def classPath = (project(':opendcs').jar.outputs.files
-                  + project(":opendcs").configurations.runtimeClasspath).asPath
-    inputs.property "opendcs.test.engine", project.findProperty("opendcs.test.engine")
-    
-    systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
-    systemProperties += project.properties.findAll {k, v -> k.startsWith("testcontainer")}
-    
-    jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
-    jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
-    jvmArgs += "-Dopendcs.test.classpath=${classPath}"
-    jvmArgs += "-Dresource.dir=${projectDir}/src/test/resources" // TODO: make clearer
-    jvmArgs += "-DDCSTOOL_HOME=${stageDir}"
-    jvmArgs += "-Djava.util.logging.config.file=${projectDir}/src/test/test-config/logging.properties"
+
+        enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":test") ||
+                  gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" +task.name)
+        doFirst {
+            project.mkdir(tmpdir)
+        }
+        def install = project(":install")
+        def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
+        def classPath = (project(':opendcs').jar.outputs.files
+                    + project(":opendcs").configurations.runtimeClasspath).asPath
+        inputs.property "opendcs.test.engine", engine
+
+        systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
+        systemProperties += project.properties.findAll {k, v -> k.startsWith("testcontainer")}
+        systemProperties += ["opendcs.test.engine": engine]
+
+        jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
+        jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
+        jvmArgs += "-Dopendcs.test.classpath=${classPath}"
+        jvmArgs += "-Dresource.dir=${projectDir}/src/test/resources" // TODO: make clearer
+        jvmArgs += "-DDCSTOOL_HOME=${stageDir}"
+        jvmArgs += "-Djava.util.logging.config.file=${projectDir}/src/test/test-config/logging.properties"
 
     reports {
         html {
