@@ -37,7 +37,7 @@ import decodes.xml.XmlDbTags;
  */
 public class DbXmlReader {
     
-    private static final Logger log = LoggerFactory.getLogger(DbImport.class);
+    private static final Logger log = LoggerFactory.getLogger(DbXmlReader.class);
 
     private final List<String> files;
     private final boolean platformRelatedOnly;
