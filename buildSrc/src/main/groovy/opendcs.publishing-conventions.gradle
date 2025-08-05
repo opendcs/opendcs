@@ -33,36 +33,35 @@ if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
         }
     }
 
-    publishing {
-        publications {
-            maven(MavenPublication) {
-                pom {
-                    url = 'https://github.com/opendcs/opendcs'
 
-                    scm {
-                        connection = 'scm:git:https://github.com/opendcs/opendcs.git'
-                        developerConnection = 'scm:git:ssh://git@github.com:opendcs/opendcs.git'
-                        url = 'https://github.com/opendcs/opendcs'
-                    }
+    publishing.publications.withType(MavenPublication) {
+        pom {
+            url = 'https://github.com/opendcs/opendcs'
 
-                    licenses {
-                        license {
-                            name = 'The Apache License, Version 2.0'
-                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                        }
-                    }
+            scm {
+                connection = 'scm:git:https://github.com/opendcs/opendcs.git'
+                developerConnection = 'scm:git:ssh://git@github.com:opendcs/opendcs.git'
+                url = 'https://github.com/opendcs/opendcs'
+            }
 
-                    developers {
-                        developer {
-                            id = 'opendcs'
-                            name = 'The OpenDCS Team'
-                            email = 'https://github.com/opendcs'
-                        }
-                    }
+            licenses {
+                license {
+                    name = 'The Apache License, Version 2.0'
+                    url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                }
+            }
+
+            developers {
+                developer {
+                    id = 'opendcs'
+                    name = 'The OpenDCS Team'
+                    email = 'https://github.com/opendcs'
                 }
             }
         }
-
+    }
+        
+    publishing {
         repositories {
             maven {
                 name = "mavenCentralApi"

@@ -103,8 +103,15 @@ Reminder - legacy PDFs are no longer being updated.
    Algorithms <./resources-algorithms.rst>   
    Computations <./resources-computations.rst>
    Screening Editor <./resources-screening.rst>
-   ResEvap Documentation <./reservoir-evaporation-algorithm.rst>
-   
+
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Supplemental Documentation
+
+   ResEvap Documentation <./legacy-resevap-computation.rst>
+
+
 .. toctree::
    :maxdepth: 1
    :caption: Developer Documentation

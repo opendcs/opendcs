@@ -116,7 +116,7 @@ fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-data
 greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
 org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter-no-dependencies", version.ref = "mock-server" }
 
-
+org-slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j-api" }
 #integration test deps
 
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref="testcontainers" }

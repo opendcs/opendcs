@@ -525,12 +525,12 @@ At the Class and method level the following annotations are available.
 +--------------------------------------------+--------------------------------+
 
 Creating additional tests
----------------
+--------------------------
 
 The sections below describe how to add new decoding and algorithm tests by adding files to specific directories.
 
 Testing the Decodes Language
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Adding Decoding Tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
