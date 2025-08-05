@@ -11,7 +11,6 @@ import org.slf4j.helpers.MessageFormatter;
 
 public class SLF4JLogger extends AbstractLogger
 {
-    private String name;
 
     public SLF4JLogger(String name)
     {

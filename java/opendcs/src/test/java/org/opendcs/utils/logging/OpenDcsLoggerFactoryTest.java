@@ -10,9 +10,16 @@ public class OpenDcsLoggerFactoryTest
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Test
-    void test_logger_name_correctly_retrieved()
+    void test_logger_name_correctly_retrieved_static()
     {
         assertEquals(OpenDcsLoggerFactoryTest.class.getName(), log.getName(), "Incorrect logger name retrieved.");
+    }
+
+    @Test
+    void test_logger_name_correctly_retrieved()
+    {
+        final Logger log1 = OpenDcsLoggerFactory.getLogger();
+        assertEquals(OpenDcsLoggerFactoryTest.class.getName(), log1.getName(), "Incorrect logger name retrieved.");
 
         final String logName = "a.test.logger";
         final Logger log2 = OpenDcsLoggerFactory.getLogger(logName);

@@ -3,17 +3,29 @@ plugins {
     id 'opendcs.deps-conventions'
 }
 
+def commonJacocoExcludes = [
+  "**/easy_install/**",
+  "**/python_packages",
+  "**/certifi/**",
+  "**/chardet/**",
+  "**/urllib3/**",
+  "**/requests/**",
+  "**/idna/**",
+  "**/pkg_resources/**"
+]
+
+
 dependencies {
     implementation project(":install")
 
     testCompileOnly project(":opendcs")
 
-    //Includes all jar dependencies from the main OpenDCS build within the opendcs-tests compile 
+    //Includes all jar dependencies from the main OpenDCS build within the opendcs-tests compile
     testCompileOnly fileTree('../../install/build/install/opendcs/dep') {
         include '*.jar'
         builtBy ":install:installDist"
     }
-  
+
     testImplementation project(":testing:fixtures")
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.testcontainers.core)
@@ -27,7 +39,6 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
-    testRuntimeOnly(project(":opendcs-slf4j-provider"))
 }
 
 
@@ -36,9 +47,17 @@ dependencies {
 def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
 
 test {
-    dependsOn ":install:installDist"
-    dependsOn ":opendcs:test"
-    //outputs.upToDateWhen {false}
+    // The below registered test tasks do all the real work.
+    exclude '**/*'
+}
+
+testEngines.each { engine ->
+    def tmpdir = "${project.layout.buildDirectory.get()}/runs/${engine}/tmp"
+
+    def task = tasks.register("test"+engine.replace("-",""), Test) { task ->
+        dependsOn ":install:installDist"
+        dependsOn ":opendcs:test"
+        useJUnitPlatform()
 
 
         enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":test") ||
@@ -63,61 +82,36 @@ test {
         jvmArgs += "-DDCSTOOL_HOME=${stageDir}"
         jvmArgs += "-Djava.util.logging.config.file=${projectDir}/src/test/test-config/logging.properties"
 
-    reports {
-        html {
-            outputLocation = reporting.baseDirectory.dir("${impl}")
+        reports {
+            html {}
+            junitXml {}
         }
-        junitXml {
-            outputLocation = reporting.baseDirectory.dir("${impl}")
+        jacoco {
+            excludes += commonJacocoExcludes
         }
     }
-    jacoco {
-        destinationFile = layout.buildDirectory.file("jacoco/${impl}.exec").get().asFile
-        excludes += [
-                "**/easy_install/**",
-                "**/python_packages",
-                "**/certifi/**",
-                "**/chardet/**",
-                "**/urllib3/**",
-                "**/requests/**",
-                "**/chardet/**",
-                "**/urllib3/**",
-                "**/idna/**",
-                "**/pkg_resources/**"
-            ]
-    }
-}
+    test.dependsOn task
 
-jacocoTestReport {
-    dependsOn test
-    //additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
-    //additionalClassDirs files(project(":opendcs").sourceSets.main.output)
-    sourceSets project(":opendcs").sourceSets.main
-    reports {
-        html {
-            outputLocation = jacoco.reportsDirectory.dir("jacoco-${impl}-html")
-        }
-        xml {
-            outputLocation = jacoco.reportsDirectory.file("jacoco-${impl}.xml")
+    def jtr = tasks.register("jacocoTestReport"+engine.replace("-",""), JacocoReport) {
+        dependsOn task
+        //additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
+        //additionalClassDirs files(project(":opendcs").sourceSets.main.output)
+        sourceSets project(":opendcs").sourceSets.main
+        reports {
+            html {
+                outputLocation = jacoco.reportsDirectory.dir("jacoco-${engine}-html")
+            }
+            xml {
+                outputLocation = jacoco.reportsDirectory.file("jacoco-${engine}.xml")
+            }
         }
 
-    }
-    def excludes = [
-                "**/easy_install/**",
-                "**/python_packages",
-                "**/certifi/**",
-                "**/chardet/**",
-                "**/urllib3/**",
-                "**/requests/**",
-                "**/chardet/**",
-                "**/urllib3/**",
-                "**/idna/**",
-                "**/pkg_resources/**"
-            ]
-
-    afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: excludes)
+            fileTree(dir: it, exclude: commonJacocoExcludes)
         }))
+    }
+
+    task.configure {
+        finalizedBy jtr
     }
 }
