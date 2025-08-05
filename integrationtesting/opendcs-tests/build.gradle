@@ -39,7 +39,11 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
+    testRuntimeOnly(project(":opendcs-slf4j-provider"))
 }
+
+
+
 
 
 
