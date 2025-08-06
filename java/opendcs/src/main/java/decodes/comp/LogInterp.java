@@ -98,7 +98,7 @@ public class LogInterp
 		{
 			overflowFlag = true;
 		}
-		log.atTrace().log("LogInterp(x1={}, y1={}, x2={}, y2={}, overflow={}", 
+		log.trace("LogInterp(x1={}, y1={}, x2={}, y2={}, overflow={}", 
 						   x1,y1,x2,y2,overflowFlag);
 
 		// Do as much computation as possible up front.
