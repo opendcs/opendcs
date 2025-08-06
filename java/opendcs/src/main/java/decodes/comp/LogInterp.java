@@ -1,35 +1,23 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.2  2010/08/17 04:39:05  gchen
-*  Fix the bug with using the logarithmic algorithm when one of two rating table points has zero values.
-*
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.5  2007/07/17 15:12:43  mmaloney
-*  dev
-*
-*  Revision 1.4  2004/08/24 14:31:28  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.3  2004/08/11 21:40:57  mjmaloney
-*  Improved javadocs
-*
-*  Revision 1.2  2004/08/11 21:17:17  mjmaloney
-*  dev
-*
-*  Revision 1.1  2004/06/30 20:01:51  mjmaloney
-*  Isolated DECODES interface behind IDataCollection and ITimeSeries interfaces.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.comp;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.text.NumberFormat;
 import java.text.DecimalFormat;
@@ -41,6 +29,7 @@ import java.text.DecimalFormat;
 */
 public class LogInterp
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** X of the lower of the two points. */
 	private double x1;
 
@@ -105,13 +94,12 @@ public class LogInterp
 //Detect if there exists any overflow for (x1,y1) and (x2,y2) and
 //use linear algorithm if overFlowFlag is set as true.
 		overflowFlag = false;
-//		if ((y1 <= 0) || (y2 <= 0) || (x1-off <= 0) || (x2-off <= 0)) 
 		if ((y1 <= 0) || (y2 <= 0) || (x1 <= 0) || (x2 <= 0)) 
 		{
 			overflowFlag = true;
 		}
-		Logger.instance().debug3("LogInterp(x1=" + x1 + ", y1=" + y1 + ", x2=" + x2 + ", y2=" 
-		+ y2 + " overflow=" + overflowFlag);
+		log.atTrace().log("LogInterp(x1={}, y1={}, x2={}, y2={}, overflow={}", 
+						   x1,y1,x2,y2,overflowFlag);
 
 		// Do as much computation as possible up front.
 		if (overflowFlag) 
@@ -138,7 +126,7 @@ public class LogInterp
 	{
 		if (rangeX == 0)
 		{
-			System.out.println("Error: rangeX = 0. Check if the rating table file has the same value for x.");
+			log.error("Error: rangeX = 0. Check if the rating table file has the same value for x.");
 			return -999999;
 		}
 		if (overflowFlag)

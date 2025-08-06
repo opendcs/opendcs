@@ -4,6 +4,9 @@
 
 package decodes.comp;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.File;
 import java.util.Iterator;
 import java.util.Vector;
@@ -15,7 +18,6 @@ import decodes.util.PropertySpec;
 import decodes.util.SensorPropertiesOwner;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 /**
@@ -26,6 +28,8 @@ public class AreaRatingCompResolver
 	extends CompResolver
 	implements SensorPropertiesOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	/**
 	 * These properties can be set on Platform or Config sensors.
 	 */
@@ -92,8 +96,7 @@ public class AreaRatingCompResolver
 			if (areafn != null)
 			{	//This is the HG sensor - which contains AreaFile and 
 				//AreaShef properties
-				Logger.instance().debug1(module + " Found AreaFile property='" 
-					+ areafn + "'");
+				log.atWarn().log("{} Found AreaFile property='{}'",module, areafn);
 				File areaf = new File(dir, areafn);
 				AreaRatingReader arr = new AreaRatingReader(areaf.getPath());
 
@@ -126,9 +129,11 @@ public class AreaRatingCompResolver
 					catch(NumberFormatException ex)
 					{
 						String mediumId = this.getPlatformContext(msg);
-						Logger.instance().warning("Platform " + mediumId + " RDB Rating computation for sensor "
-							+ ts.getSensorId() + " has invalid 'depSensorNumber' property '" + sh 
-							+ "' -- ignoring computation.");
+						 log.atWarn()
+						 .setCause(ex)
+						 .log("Platform {} RDB Rating computation for sensor {} "
+							 + " has invalid 'depSensorNumber' property '{}'"  
+							 + " -- ignoring computation.",mediumId,ts.getSensorId(),sh);
 						return null;
 					}
 				}
@@ -143,8 +148,9 @@ public class AreaRatingCompResolver
 				}
 				catch(ComputationParseException ex)
 				{
-					Logger.instance().warning("Cannot read '" + areafn
-						+ "': " + ex);
+					log.atWarn()
+					.setCause(ex)
+					.log("Cannot parse Area file '{}'", areaf.getPath());
 				}
 			}
 		}
@@ -165,8 +171,7 @@ public class AreaRatingCompResolver
 					if (sensorName != null && 
 							(sensorName.equalsIgnoreCase(velocitySensor)))
 					{
-						Logger.instance().debug1(module + 
-							" Found velocity sensor " + sensorName);
+						log.atWarn().log(" {} Found velocity sensor {} ",module, sensorName);
 						rc.setXVSensorNum(ts.getSensorId());
 						foundXVSensor = true;
 						break;
@@ -175,7 +180,7 @@ public class AreaRatingCompResolver
 			}
 			if (foundXVSensor == false)
 			{
-				Logger.instance().warning(
+				log.warn(
 						"Did not find a velocity sensor. Can not" +
 						" perform the velocity rating calculations");
 				return null; //The XV Sensor not found - cannot do the velocity
@@ -201,8 +206,8 @@ public class AreaRatingCompResolver
 			dir = new File(EnvExpander.expand(d));
 		else
 			dir = new File(".");
-		Logger.instance().debug1("AreaRatingCompResolver will look in directory '"
-			+ dir.getPath() + "'");
+		log.atInfo()
+		.log("AreaRatingCompResolver will look in directory '{}'",dir.getPath());
 	}
 
 	@Override

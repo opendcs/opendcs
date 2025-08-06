@@ -1,43 +1,26 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.2  2009/06/18 18:01:56  mjmaloney
-*  Run computations from HTML display in dcp monitor
-*
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2007/06/27 20:57:36  mmaloney
-*  dev
-*
-*  Revision 1.5  2004/08/24 14:31:28  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.4  2004/08/11 21:40:57  mjmaloney
-*  Improved javadocs
-*
-*  Revision 1.3  2004/08/11 21:17:17  mjmaloney
-*  dev
-*
-*  Revision 1.2  2004/06/24 18:36:06  mjmaloney
-*  Preliminary working version.
-*
-*  Revision 1.1  2004/06/24 14:29:53  mjmaloney
-*  Created.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
-/**
- * @(#) ComputationProcessor.java
- */
+
 package decodes.comp;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.comp.CompResolver;
 import decodes.db.RoutingSpec;
-//import decodes.decoder.DecodedMessage;
 
 import java.util.Vector;
 import java.util.ArrayList;
@@ -53,7 +36,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Element;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.ErrorException;
 import ilex.xml.DomHelper;
 
@@ -64,6 +46,7 @@ import ilex.xml.DomHelper;
 */
 public class ComputationProcessor
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* Set of known resolvers, populated from configuration file.
 	*/
@@ -115,8 +98,9 @@ public class ComputationProcessor
 	public synchronized void init( String configFile, RoutingSpec routingSpec )
 		throws BadConfigException
 	{
-		Logger.instance().debug1(module + " initializing with config file '"
-			+ configFile + "' for routing spec '" + routingSpec.getName() + "'");
+		log.atInfo()
+		.log("{} initializing with config file '{}' for routing spec '{}'",
+			module,configFile,routingSpec.getName());
 		this.configFile = configFile;
 		this.routingSpec = routingSpec;
 		
@@ -140,7 +124,7 @@ public class ComputationProcessor
             String s = module
                 + ": Wrong type of configuration file -- Cannot initialize. "
                 + "Root element is not 'ComputationProcessor'.";
-            Logger.instance().failure(s);
+			log.atError().log(s);
             throw new BadConfigException(s);
         }
 
@@ -157,8 +141,7 @@ public class ComputationProcessor
                     if (nn.equalsIgnoreCase("CompResolver"))
 						parseCRElem((Element)node);
 					else
-						parseWarning("Unexpected node name '" + nn 
-							+ " -- ignored.");
+						log.warn("Unexpected node name '{}'  -- ignored.", nn );
                 }
             }
 		}
@@ -183,12 +166,10 @@ public class ComputationProcessor
 		String clsname = crelem.getAttribute("class");
 		if (clsname == null)
 		{
-			parseWarning(
-				"CompResolver element with no class attribute ignored.");
+			log.warn("CompResolver element with no class attribute ignored.");
 			return;
 		}
-		Logger.instance().debug1("Parsing CompResolver element for class '"
-			+ clsname + "'");
+		log.atInfo().log("Parsing CompResolver element for class '{}'",clsname);
 		try
 		{
 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -209,15 +190,14 @@ public class ComputationProcessor
 						String attr = pelem.getAttribute("name");
 						if (attr == null)
 						{
-							parseWarning("CompResolver for class '"
-								+ clsname + " contains Property with no "
-								+ "'name' attribute -- ignored.");
+							log.warn("CompResolver for class '{}'"
+								+ " contains Property with no "
+								+ "'name' attribute -- ignored.",clsname);
 							continue;
 						}
 						String val = DomHelper.getTextContent(pelem).trim();
 						cr.setProperty(attr, val);
-						Logger.instance().debug1("CR Property '" + attr
-							+ "=" + val);
+						log.debug("CR Property '{}' =", attr, val);
 					}
                 }
             }
@@ -227,41 +207,32 @@ public class ComputationProcessor
 		}
 		catch(ClassNotFoundException ex)
 		{
-			parseWarning("CompResolver references class '" + clsname
-				+ "' which cannot be found -- ignored.");
+			log.atWarn().setCause(ex).log("CompResolver references class '{}'" 
+				+ " which cannot be found -- ignored.",clsname);
 			return;
 		}
 		catch(InstantiationException ex)
 		{
-			parseWarning("CompResolver references class '" + clsname
-				+ "' which cannot be instantiated -- ignored.");
+			log.atWarn().setCause(ex).log("CompResolver references class '{}'"
+				+ " which cannot be instantiated -- ignored.",clsname);
 			return;
 		}
 		catch(IllegalAccessException ex)
 		{
-			parseWarning("CompResolver references class '" + clsname
-				+ "' which cannot be accessed -- ignored.");
+			log.atWarn().setCause(ex).log("CompResolver references class '{}'" 
+				+ " which cannot be accessed -- ignored.",clsname);
 			return;
 		}
 		catch(ClassCastException ex)
 		{
-			parseWarning("CompResolver element uses class '" + clsname
+			log.atWarn().setCause(ex)
+			.log("CompResolver element uses class '{}'"  
 				+ " which does not extend the CompResolver base class. "
-				+ "-- ignored.");
+				+ "-- ignored.",clsname);
 			return;
 		}
 	}
 	
-	
-	/**
-	* Print a warning message with the config file name.
-	* @param msg a message to print
-	*/
-	private void parseWarning( String msg )
-	{
-		Logger.instance().warning(module + "Config File '" + configFile
-			+ "': " + msg);
-	}
 	
 	/**
 	 * Called before routing spec exits. Shut down all resolvers.
