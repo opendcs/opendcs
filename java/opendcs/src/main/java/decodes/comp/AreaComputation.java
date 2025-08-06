@@ -1,9 +1,23 @@
-/*
-*  $Id$
+ /*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.comp;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -20,6 +34,7 @@ public class AreaComputation
 	extends Computation
 	implements HasLookupTable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "AreaComputation";
 
 	/**
@@ -112,14 +127,13 @@ public class AreaComputation
 	*/
 	public void apply( IDataCollection msg )
 	{
-		Logger.instance().debug3("Applying area rating calculation");
+		log.atTrace().log("Applying area rating calculation");
 		// Retrieve independent time series.
 		ITimeSeries indepTs = msg.getITimeSeries(indepSensorNum);
 		if (indepTs == null)
 		{
-			Logger.instance().warning(module + 
-				" Message does not contain independent sensor " +
-				indepSensorNum);
+			log.atWarn().log(" {} Message does not contain independent sensor {}",
+								module,	indepSensorNum);
 			return;
 		}
 
@@ -128,7 +142,7 @@ public class AreaComputation
 			name = "anon";
 
 		ITimeSeries depTs = msg.newTimeSeries(depSensorNum, name);
-		Logger.instance().debug3("Created dep sensor " + depSensorNum + ": " + name);
+		log.atTrace().log("Created dep sensor {}:{}", depSensorNum , name);
 		depTs.setDataOrder(indepTs.getDataOrder());
 		depTs.setPeriodicity(indepTs.getRecordingMode(), 
 			indepTs.getTimeOfFirstSample(), indepTs.getTimeInterval());
@@ -158,7 +172,7 @@ public class AreaComputation
 			if (d.compareTo(beginTime) < 0
 			 || d.compareTo(endTime) > 0)
 			{
-				Logger.instance().warning(
+				log.atWarn().log(
 					"Skipping area computation because sample time is"
 					+ " outside the rating time range.");
 				continue;
@@ -167,8 +181,8 @@ public class AreaComputation
 			{
 				//Find area for the HG value - comes from the area files
 				double area = ratingTable.lookup(indepTv.getDoubleValue());
-				Logger.instance().info(module + " Area for " + 
-						indepTv.getDoubleValue() + " is " + area);
+				log.atInfo().log(module + "{} Area for {} is {} ", 
+						module,indepTv.getDoubleValue() , area);
 				//multiply the area by the XV value sensor. Note the XV value
 				//has a scale value, this value is multiplied by the XV value
 				//before doing this equation
@@ -177,9 +191,8 @@ public class AreaComputation
 				ITimeSeries xvTs = msg.getITimeSeries(xvSensorNum);
 				if (xvTs == null)
 				{
-					Logger.instance().warning(module + 
-						" Message does not contain xv (mean velocity) sensor " +
-						xvSensorNum);
+					log.atWarn().log(" {} Message does not contain xv (mean velocity) sensor {} ",
+						module,	xvSensorNum);
 					return;
 				}
 				int xvz = xvTs.size();
@@ -198,9 +211,8 @@ public class AreaComputation
 				//Calculate avg velocity
 				double outputV = area * xvValue;
 
-				Logger.instance().debug1(module + " area = " + area + 
-						" VelocityValue = "
-						+ xvValue + " output = " + outputV );
+				log.atDebug().log(" {} area =  {} VelocityValue = {}  output = {} ",
+						  module,area,xvValue, outputV );
 
 				TimedVariable depTv = new TimedVariable(outputV);
 				depTv.setTime(d);
@@ -208,16 +220,15 @@ public class AreaComputation
 			}
 			catch(NoConversionException ex)
 			{
-				Logger.instance().warning("Independent value not a number.");
+				log.atWarn().log("Independent value not a number.");
 			}
 			catch(TableBoundsException ex)
 			{
-				Logger.instance().warning(ex.toString());
+				log.atWarn().setCause(ex).log("value is outside the bounds of the rating table.");
 			}
 		}
 
-		Logger.instance().debug3("AreaComp produced " + depTs.size() +
-			" " + name + " samples.");
+		 log.atTrace().log("AreaComp produced {} {} samples.",depTs.size() ,name);
 
 		if (depTs.size() == 0)
 			msg.rmTimeSeries(depTs);

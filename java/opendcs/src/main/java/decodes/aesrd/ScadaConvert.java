@@ -20,9 +20,11 @@
  */
 package decodes.aesrd;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
 import ilex.util.PropertiesUtil;
@@ -60,6 +62,8 @@ public class ScadaConvert
 	extends TsdbAppTemplate
 	implements PropertiesOwner, ProcWaiterCallback
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private static final String module = "ScadaConvert";
 	private CompAppInfo appInfo = null;
 	private TsdbCompLock myLock = null;
@@ -125,7 +129,7 @@ public class ScadaConvert
 	@Override
 	protected void runApp() throws Exception
 	{
-		info("runApp() Starting");
+		log.info("runApp() Starting");
 		init();
 		long lastLockCheck = System.currentTimeMillis();
 		// Set lastCheck to cause first check 5 seconds after startup.
@@ -175,7 +179,7 @@ public class ScadaConvert
 			try { Thread.sleep(1000L); }
 			catch(InterruptedException ex) {}
 		}
-		info("shutting down.");
+		log.info("shutting down.");
 		cleanup();
 		System.exit(0);
 	}
@@ -184,9 +188,7 @@ public class ScadaConvert
 	{
 		this.cmdInProgress = cmd;
 		int cmdTimeout = 20;
-		debug("Executing '" + cmdInProgress 
-			+ "' and waiting up to " + cmdTimeout 
-			+ " seconds for completion.");
+		log.debug("Executing '{}' and waiting up to {} seconds for completion.",cmdInProgress,cmdTimeout);
 		cmdFinished = false;
 		try 
 		{
@@ -210,10 +212,9 @@ public class ScadaConvert
 			catch(InterruptedException ex) {}
 		}
 		if (cmdFinished)
-			debug("Command '" + cmdInProgress 
-				+ "' completed with exit status " + cmdExitStatus);
+			log.debug("Command '{}' completed with exit status {}", cmdInProgress, cmdExitStatus);
 		else
-			warning("Command '" + cmdInProgress + "' Did not complete!");
+			log.warn("Command '{}' Did not complete!",cmdInProgress);
 	}
 
 	private void processFile(File f)
@@ -245,7 +246,7 @@ public class ScadaConvert
 				}
 				if (System.currentTimeMillis() - timeStamp.getTime() > maxAgeHours*3600000L)
 				{
-					debug("Discarding too-old sample at time " + column[0]);
+					log.debug("Discarding too-old sample at time {}", column[0]);
 					continue;
 				}
 				// Truncate ID to max of 21 chars.
@@ -328,16 +329,18 @@ public class ScadaConvert
 					}
 					catch (NoSuchObjectException e)
 					{
-						warning("Invalid line " + lnr.getLineNumber() + " '" + line + "' -- ignored.");
+					log.atWarn().setCause(e)
+       				.log("Invalid line {} '{}' -- ignored.", lnr.getLineNumber(), line);
 					}
 				}
 				lnr.close();
-				info("Parsed " + decodeSpecs.size() + " specifications from file '" 
-					+ specFile.getPath() + "'");
+				log.info("Parsed {} specifications from file '{}'",
+				        decodeSpecs.size(), specFile.getPath()
+);
 			}
 			catch (IOException ex)
 			{
-				warning("Cannot read spec file '" + specFile.getPath() + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot read spec file '{}'", specFile.getPath());
 			}
 		}
 	}
@@ -558,14 +561,6 @@ public class ScadaConvert
 		theApp.execute(args);
 	}
 
-	public void info(String msg)
-	{
-		Logger.instance().info(module + " " + msg);
-	}
-	private void debug(String msg)
-	{
-		Logger.instance().debug1(module + " " + msg);
-	}
 	
 	@Override
 	public PropertySpec[] getSupportedProps()

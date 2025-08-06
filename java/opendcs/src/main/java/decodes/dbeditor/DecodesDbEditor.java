@@ -6,24 +6,24 @@ import java.util.ResourceBundle;
 
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.gui.WindowUtility;
 import lrgs.gui.DecodesInterface;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
-import ilex.util.Pair;
-import ilex.util.StderrLogger;
 import ilex.cmdline.*;
 import decodes.util.*;
 import decodes.db.*;
-import decodes.tsdb.TimeSeriesDb;
 
 /**
 The MAIN class for the DECODES Database Editor.
 */
 public class DecodesDbEditor
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    
     boolean packFrame = false;
     static Frame theFrame = null;
     static Properties theProperties = new Properties();
@@ -102,8 +102,6 @@ public class DecodesDbEditor
     /**Main method*/
     public static void main(String[] args) throws Exception
     {
-        Logger.setLogger(new StderrLogger("DecodesDbEditor"));
-
         // Parse command line arguments.
         try
         {
@@ -114,8 +112,7 @@ public class DecodesDbEditor
             System.exit(1);
         }
 
-        Logger.instance().log(Logger.E_INFORMATION,
-            "DecodesDbEditor Starting (" + DecodesVersion.startupTag()
+        log.info("DecodesDbEditor Starting (" + DecodesVersion.startupTag()
             + ") =====================");
 
         DecodesSettings settings = DecodesSettings.instance();
