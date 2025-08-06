@@ -98,8 +98,7 @@ public class ComputationProcessor
 	public synchronized void init( String configFile, RoutingSpec routingSpec )
 		throws BadConfigException
 	{
-		log.atInfo()
-		.log("{} initializing with config file '{}' for routing spec '{}'",
+		log.info("{} initializing with config file '{}' for routing spec '{}'",
 			module,configFile,routingSpec.getName());
 		this.configFile = configFile;
 		this.routingSpec = routingSpec;
@@ -124,7 +123,7 @@ public class ComputationProcessor
             String s = module
                 + ": Wrong type of configuration file -- Cannot initialize. "
                 + "Root element is not 'ComputationProcessor'.";
-			log.atError().log(s);
+			log.error(s);
             throw new BadConfigException(s);
         }
 
