@@ -1,6 +1,5 @@
 package decodes.comp;
 
-import ilex.util.Logger;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -8,17 +7,20 @@ import java.io.LineNumberReader;
 import java.math.BigDecimal;
 import java.util.StringTokenizer;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
  * Reads a rating table from a USGS rating table Area file.
  */
 public class AreaRatingReader implements RatingTableReader
 {
-
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	 * The name of the file being read.
 	 */
 	private String filename;
-	
+
 	/**
 	 * Used for reading the file.
 	 */
@@ -32,18 +34,18 @@ public class AreaRatingReader implements RatingTableReader
 		this.filename = filename;
 		rdr = null;
 	}
-	
+
 	/**
 	 * Reads rating data from the file and populates the computation.
 	 * @param rc the computation.
 	 * @throws ComputationParseException if error reading file.
 	 */
-	public synchronized void readRatingTable( HasLookupTable rc ) 
+	public synchronized void readRatingTable( HasLookupTable rc )
 		throws ComputationParseException
 	{
 		try
 		{
-			LineNumberReader rdr = new LineNumberReader(
+			rdr = new LineNumberReader(
 				new FileReader(filename));
 			String line;
 			double samples[] = {.0,.1,.2,.3,.4,.5,.6,.7,.8,.9};
@@ -52,7 +54,7 @@ public class AreaRatingReader implements RatingTableReader
 				//Need to skip the header lines, the last 2 lines of the file
 				StringTokenizer st1 = new StringTokenizer(line);
 				int numItems = st1.countTokens();//needs to be 12 numbers or
-												//2 numbers which is the last 
+												//2 numbers which is the last
 												//line of the last table
 				//If line start with feet - find out the STANDARD PRECISION
 				String trimLine = line.trim();
@@ -65,21 +67,21 @@ public class AreaRatingReader implements RatingTableReader
 						String s = st1.nextToken();
 						if (s != null && s.equalsIgnoreCase("feet"))
 							continue;
-						
-						try 
+
+						try
 						{
 							if (preCount < 10)
 							{
 								samples[preCount] = Double.parseDouble(s);
-								//System.out.println("prec = " + 
-								//samples[preCount]);	
+								//System.out.println("prec = " +
+								//samples[preCount]);
 							}
 						}
 						catch(NumberFormatException ex)
 						{
 							parseWarning("AreaRatingReader " +
-									"Not a parseable precision line '" + line 
-									+ "' -- ignored.");
+									"Not a parseable precision line '" + line
+									+ "' -- ignored.", ex);
 						}
 						preCount++;
 					}
@@ -89,15 +91,15 @@ public class AreaRatingReader implements RatingTableReader
 				if (numItems == 12 || numItems ==2)
 				{
 					double[] data = new double[numItems];
-					
+
 					boolean dataPoints = true;//indicates a good line
 					//Verify that all numbers are double parseable
 					int x = 0;
 					while(st1.hasMoreTokens())
 					{
 						String s = st1.nextToken();
-						try 
-						{ 
+						try
+						{
 							//Ged rid of * if there is one
 							int idx = s.indexOf("*");
 							if (idx != -1)
@@ -115,8 +117,8 @@ public class AreaRatingReader implements RatingTableReader
 							if (numItems != 2)
 							{	//we have a lot of lines with 2 items
 								parseWarning("AreaRatingReader " +
-								"Not a parseable line '" + line 
-								+ "' -- ignored.");
+								"Not a parseable line '" + line
+								+ "' -- ignored.", ex);
 							}
 							break;
 						}
@@ -132,13 +134,13 @@ public class AreaRatingReader implements RatingTableReader
 						int numberOfItems = data.length - 1;
 						if (numItems == 2)
 							numberOfItems = data.length;
-						
+
 						for (int y = 1; y < numberOfItems; y++)
 						{	//Get the next 10 numbers after the first one or
 							//just one
 							double dep = data[y];
 							int decimalPlace = 2;
-						    BigDecimal bd = 
+						    BigDecimal bd =
 						    	new BigDecimal(indep + samples[y-1]);
 						    bd = bd.setScale(
 						    		decimalPlace,BigDecimal.ROUND_HALF_EVEN);
@@ -153,7 +155,7 @@ public class AreaRatingReader implements RatingTableReader
 		}
 		catch(IOException ex)
 		{
-			parseWarning("IO Error: " + ex + " -- aborting.");
+			parseWarning("IO Error -- aborting.", ex);
 		}
 		finally
 		{
@@ -165,16 +167,17 @@ public class AreaRatingReader implements RatingTableReader
 			rc = null;
 		}
 	}
-	
+
 	/**
 	* Logs a warning message about parsing this file.
 	* @param msg the message
+	* @param cause the cause
 	*/
-	private void parseWarning( String msg )
+	private void parseWarning( String msg, Throwable cause )
 	{
-		Logger.instance().warning("Table File '" + filename + ":"
-			+ (rdr != null ? rdr.getLineNumber() : -1)
-			+ " " + msg);
+		log.atWarn()
+		   .setCause(cause)
+		   .log("Table File {}:{} -- {}", filename, (rdr != null ? rdr.getLineNumber() : -1), msg);
 	}
 
 }

@@ -1,11 +1,11 @@
 /*
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
+ * No warranty is provided or implied other than specific contractual terms
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +22,6 @@ package decodes.aesrd;
 
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
 import ilex.util.PropertiesUtil;
@@ -43,7 +42,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
-import lrgs.gui.DecodesInterface;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.LoadingAppDAI;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.CompEventSvr;
@@ -56,10 +57,11 @@ import decodes.util.CmdLineArgs;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
-public class ScadaConvert 
+public class ScadaConvert
 	extends TsdbAppTemplate
 	implements PropertiesOwner, ProcWaiterCallback
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String module = "ScadaConvert";
 	private CompAppInfo appInfo = null;
 	private TsdbCompLock myLock = null;
@@ -88,21 +90,21 @@ public class ScadaConvert
 	private int cmdExitStatus = -1;
 	private CompEventSvr compEventSvr = null;
 
-	private PropertySpec propSpecs[] = 
+	private PropertySpec propSpecs[] =
 	{
-		new PropertySpec("inputDir", PropertySpec.DIRECTORY, 
+		new PropertySpec("inputDir", PropertySpec.DIRECTORY,
 			"Name of directory to monitor for incoming raw SCADA files"),
-		new PropertySpec("fileExt", PropertySpec.STRING, 
+		new PropertySpec("fileExt", PropertySpec.STRING,
 			"Only process input files with this extension (default = .dat)"),
-		new PropertySpec("outputDir", PropertySpec.DIRECTORY, 
+		new PropertySpec("outputDir", PropertySpec.DIRECTORY,
 			"Directory in which to store output Alberta Loader files"),
-		new PropertySpec("specFile", PropertySpec.FILENAME, 
+		new PropertySpec("specFile", PropertySpec.FILENAME,
 			"Pathname of 'scdalst.in' file"),
-		new PropertySpec("dailyArchiveDir", PropertySpec.DIRECTORY, 
+		new PropertySpec("dailyArchiveDir", PropertySpec.DIRECTORY,
 			"Directory for daily archive files (may be null)"),
-		new PropertySpec("MaxAgeHours", PropertySpec.INT, 
+		new PropertySpec("MaxAgeHours", PropertySpec.INT,
 			"(default=24) discard data older than this"),
-		new PropertySpec("DoneDir", PropertySpec.DIRECTORY, 
+		new PropertySpec("DoneDir", PropertySpec.DIRECTORY,
 			"Put raw files here after processing."),
 		new PropertySpec("CmdAfterFile", PropertySpec.STRING,
 			"Optional command to execute after finishing file. The command will be passed the "
@@ -125,7 +127,7 @@ public class ScadaConvert
 	@Override
 	protected void runApp() throws Exception
 	{
-		info("runApp() Starting");
+		log.info("runApp() Starting");
 		init();
 		long lastLockCheck = System.currentTimeMillis();
 		// Set lastCheck to cause first check 5 seconds after startup.
@@ -163,7 +165,7 @@ public class ScadaConvert
 				}
 				catch (LockBusyException ex)
 				{
-					warning("Shutting down: lock removed: " + ex);
+					log.atWarn().setCause(ex).log("Shutting down: lock removed");
 					shutdown = true;
 				}
 				finally
@@ -171,33 +173,30 @@ public class ScadaConvert
 					loadingAppDao.close();
 				}
 			}
-			
+
 			try { Thread.sleep(1000L); }
 			catch(InterruptedException ex) {}
 		}
-		info("shutting down.");
+		log.info("shutting down.");
 		cleanup();
 		System.exit(0);
 	}
-	
+
 	private void exec(String cmd)
 	{
 		this.cmdInProgress = cmd;
 		int cmdTimeout = 20;
-		debug("Executing '" + cmdInProgress 
-			+ "' and waiting up to " + cmdTimeout 
-			+ " seconds for completion.");
+		log.debug("Executing '{}' and waiting up to {} seconds for completion.", cmdInProgress, cmdTimeout);
 		cmdFinished = false;
-		try 
+		try
 		{
 			cmdExitStatus = -1;
-			ProcWaiterThread.runBackground(cmdInProgress, 
+			ProcWaiterThread.runBackground(cmdInProgress,
 				"cmdAfterFile", this, cmdInProgress);
 		}
 		catch(IOException ex)
 		{
-			warning("Cannot execute '" 
-				+ cmdInProgress + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot execute '{}'", cmdInProgress);
 			cmdInProgress = null;
 			cmdFinished = true;
 			return;
@@ -210,17 +209,16 @@ public class ScadaConvert
 			catch(InterruptedException ex) {}
 		}
 		if (cmdFinished)
-			debug("Command '" + cmdInProgress 
-				+ "' completed with exit status " + cmdExitStatus);
+			log.debug("Command '{}' completed with exit status {}", cmdInProgress, cmdExitStatus);
 		else
-			warning("Command '" + cmdInProgress + "' Did not complete!");
+			log.warn("Command '{}' Did not complete!", cmdInProgress);
 	}
 
 	private void processFile(File f)
 	{
 		if (dailyArchiveDir != null)
 			archive(f);
-		
+
 		try
 		{
 			LineNumberReader lnr = new LineNumberReader(new FileReader(f));
@@ -238,14 +236,16 @@ public class ScadaConvert
 					try { timeStamp = scadaFmt2.parse(column[0]); }
 					catch (ParseException ex2)
 					{
-						warning(f.getName() + "(" + lnr.getLineNumber() 
-							+ ") Unparsable date/time '" + column[0] + "' line skipped.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("{}({}) Unparsable date/time '{}' line skipped.",
+						 		f.getName(), lnr.getLineNumber(), column[0]);
 						continue;
 					}
 				}
 				if (System.currentTimeMillis() - timeStamp.getTime() > maxAgeHours*3600000L)
 				{
-					debug("Discarding too-old sample at time " + column[0]);
+					log.debug("Discarding too-old sample at time {}", column[0]);
 					continue;
 				}
 				// Truncate ID to max of 21 chars.
@@ -260,8 +260,8 @@ public class ScadaConvert
 					}
 				if (spec == null)
 				{
-					warning(f.getName() + "(" + lnr.getLineNumber() 
-						+ ") No spec matches label '" + column[1] + "' line skipped.");
+					log.warn(f.getName() + "{}({}) No spec matches label '{}' line skipped.",
+							 f.getName(), lnr.getLineNumber(), column[1]);
 					continue;
 				}
 				output(column, spec, timeStamp);
@@ -269,18 +269,20 @@ public class ScadaConvert
 			lnr.close();
 			String doneDir = appInfo.getProperty("DoneDir");
 			if (doneDir != null)
-				FileUtil.copyFile(f, 
+				FileUtil.copyFile(f,
 					new File(EnvExpander.expand(doneDir), f.getName()));
 			f.delete();
 		}
 		catch (IOException ex)
 		{
-			warning("Error processing file '" + f.getPath() + "': " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Error processing file '{}'", f.getPath());
 			numFileErrors++;
 		}
 		setAppStatus("files=" + (++numFilesProcessed) + ", errors=" + numFileErrors);
 	}
-	
+
 	private String stripQuotes(String line)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -298,12 +300,14 @@ public class ScadaConvert
 		File archFile = new File(dailyArchiveDir, arcNameSdf.format(new Date()) + ".scda");
 		try
 		{
-			FileUtil.copyStream(new FileInputStream(f), 
+			FileUtil.copyStream(new FileInputStream(f),
 				new FileOutputStream(archFile, true));
 		}
 		catch (IOException ex)
 		{
-			warning("Error writing to daily archive '" + archFile.getPath() + "': " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Error writing to daily archive '{}'", archFile.getPath());
 		}
 	}
 
@@ -326,29 +330,32 @@ public class ScadaConvert
 					{
 						decodeSpecs.add(new ScadaDecodeSpec(line));
 					}
-					catch (NoSuchObjectException e)
+					catch (NoSuchObjectException ex)
 					{
-						warning("Invalid line " + lnr.getLineNumber() + " '" + line + "' -- ignored.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Invalid line {} '{}' -- ignored.", lnr.getLineNumber(), line);
 					}
 				}
 				lnr.close();
-				info("Parsed " + decodeSpecs.size() + " specifications from file '" 
-					+ specFile.getPath() + "'");
+				log.info("Parsed {} specifications from file '{}'", decodeSpecs.size(), specFile.getPath());
 			}
 			catch (IOException ex)
 			{
-				warning("Cannot read spec file '" + specFile.getPath() + "': " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot read spec file '{}'", specFile.getPath());
 			}
 		}
 	}
-	
+
 	private void output(String column[], ScadaDecodeSpec spec, Date timestamp)
 	{
 		try
 		{
 			if (outputFile == null)
 			{
-				File of = new File(outputDir, 
+				File of = new File(outputDir,
 					"scda-" + outputFileFmt.format(new Date()));
 				outputFile = new PrintWriter(of);
 				outputFilePath = of.getPath();
@@ -359,7 +366,7 @@ public class ScadaConvert
 					continue;
 				if (column.length < idx+2)
 					break;
-				
+
 				String vs = column[idx+2];
 				if (vs == null || vs.trim().length() == 0)
 					continue;
@@ -370,10 +377,12 @@ public class ScadaConvert
 				}
 				catch(Exception ex)
 				{
-					warning("Skipping bad value '" + vs + "'");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Skipping bad value '{}'", vs);
 					continue;
 				}
-				
+
 				// NNNNNNNN YYYYMMDD HHMMVVVVVVVVSSSSR
 				outputFile.println(
 					TextUtil.setLengthLeftJustify(spec.newleafSite, 8)
@@ -385,66 +394,71 @@ public class ScadaConvert
 		}
 		catch(IOException ex)
 		{
-			warning("Error writing output line: " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Error writing output line");
 		}
 	}
 
 	private void init()
 	{
-		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
-		try
+		try (LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO())
 		{
 			appInfo = loadingAppDao.getComputationApp(getAppId());
-			
-			
+
+
 			// If this process can be monitored, start an Event Server.
 			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
 			{
-				try 
+				try
 				{
 					compEventSvr = new CompEventSvr(determineEventPort(appInfo));
 					compEventSvr.startup();
 				}
 				catch(IOException ex)
 				{
-					failure("Cannot create Event server: " + ex
-						+ " -- no events available to external clients.");
+					log.atError()
+					   .setCause(ex)
+					   .log("Cannot create Event server -- no events available to external clients.");
 				}
 			}
 
 			String hostname = "unknown";
-			try { hostname = InetAddress.getLocalHost().getHostName(); }
-			catch(Exception e) { hostname = "unknown"; }
+			try
+			{
+				hostname = InetAddress.getLocalHost().getHostName();
+			}
+			catch(Exception ex)
+			{
+				log.atTrace().setCause(ex).log("Unable to retrieve localhost name.");
+				hostname = "unknown";
+			}
 
-			myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname); 
+			myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname);
 		}
 		catch (LockBusyException ex)
 		{
-			warning("Cannot run: lock busy: " + ex);
+			log.atWarn().setCause(ex).log("Cannot run: lock busy.");
 			shutdown = true;
 			return;
 		}
 		catch (DbIoException ex)
 		{
-			warning("Database I/O Error: " + ex);
+			log.atError().setCause(ex).log("Database I/O Error.");
 			shutdown = true;
 			return;
 		}
 		catch (NoSuchObjectException ex)
 		{
-			warning("Cannot run: No such app name '" + appNameArg.getValue() + "': " + ex);
+			log.atError().setCause(ex).log("Cannot run: No such app name '{}'", appNameArg.getValue());
 			shutdown = true;
 			return;
 		}
-		finally
-		{
-			loadingAppDao.close();
-		}
-		
+
 		String s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "inputDir");
 		if (s == null)
 		{
-			warning("Missing required 'inputDir' application property.");
+			log.warn("Missing required 'inputDir' application property.");
 			shutdown = true;
 			return;
 		}
@@ -452,7 +466,7 @@ public class ScadaConvert
 		inputDir = new File(s);
 		if (!inputDir.isDirectory())
 		{
-			warning("Specified input directory '" + s + "' is not a directory.");
+			log.warn("Specified input directory '" + s + "' is not a directory.");
 			shutdown = true;
 			return;
 		}
@@ -460,7 +474,7 @@ public class ScadaConvert
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "outputDir");
 		if (s == null)
 		{
-			warning("Missing required 'outputDir' application property.");
+			log.warn("Missing required 'outputDir' application property.");
 			shutdown = true;
 			return;
 		}
@@ -468,15 +482,15 @@ public class ScadaConvert
 		outputDir = new File(s);
 		if (!outputDir.isDirectory())
 		{
-			warning("Specified output directory '" + s + "' is not a directory.");
+			log.warn("Specified output directory '" + s + "' is not a directory.");
 			shutdown = true;
 			return;
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "specFile");
 		if (s == null)
 		{
-			warning("Missing required 'specFile' application property.");
+			log.warn("Missing required 'specFile' application property.");
 			shutdown = true;
 			return;
 		}
@@ -484,7 +498,7 @@ public class ScadaConvert
 		specFile = new File(s);
 		if (!specFile.canRead())
 		{
-			warning("Specified spec file '" + s + "' is not readable.");
+			log.warn("Specified spec file '" + s + "' is not readable.");
 			shutdown = true;
 			return;
 		}
@@ -492,7 +506,7 @@ public class ScadaConvert
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "fileExt");
 		if (s != null)
 			fileExt = s;
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "dailyArchiveDir");
 		if (s != null)
 		{
@@ -500,23 +514,23 @@ public class ScadaConvert
 			dailyArchiveDir = new File(s);
 			if (!dailyArchiveDir.isDirectory())
 			{
-				warning("Specified daily archive directory '" + s + "' is not a directory.");
+				log.warn("Specified daily archive directory '{}' is not a directory.", s);
 				shutdown = true;
 				return;
 			}
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "maxAgeHours");
 		if (s != null)
 		{
 			try { maxAgeHours = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
 			{
-				warning("Bad 'maxAgeHours' property '" + s + "' -- will use default of 24.");
+				log.atWarn().setCause(ex).log("Bad 'maxAgeHours' property '{}' -- will use default of 24.", s);
 				maxAgeHours = 24;
 			}
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "cmdAfterFile");
 		if (s != null && s.trim().length() > 0)
 			cmdAfterFile = s;
@@ -525,18 +539,13 @@ public class ScadaConvert
 
 	private void cleanup()
 	{
-		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
-		try
+		try (LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO())
 		{
 			loadingAppDao.releaseCompProcLock(myLock);
 		}
 		catch (DbIoException ex)
 		{
-			warning("Error attempting to release lock: " + ex);
-		}
-		finally
-		{
-			loadingAppDao.close();
+			log.atWarn().setCause(ex).log("Error attempting to release lock.");
 		}
 	}
 
@@ -546,7 +555,7 @@ public class ScadaConvert
 		setSilent(true);
 		appNameArg.setDefaultValue("ScadaConvert");
 	}
-	
+
 	/**
 	 * The main method.
 	 * @param args command line arguments.
@@ -558,15 +567,6 @@ public class ScadaConvert
 		theApp.execute(args);
 	}
 
-	public void info(String msg)
-	{
-		Logger.instance().info(module + " " + msg);
-	}
-	private void debug(String msg)
-	{
-		Logger.instance().debug1(module + " " + msg);
-	}
-	
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{

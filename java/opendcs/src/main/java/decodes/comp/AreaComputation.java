@@ -3,7 +3,6 @@
 */
 package decodes.comp;
 
-import ilex.util.Logger;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -11,79 +10,81 @@ import ilex.var.TimedVariable;
 import java.util.Date;
 import java.util.Enumeration;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
 * Implements area table computations.
 * Holds the lookup table &amp; shift values.
 * Delegates table reads to supplied reader.
 */
-public class AreaComputation 
-	extends Computation
-	implements HasLookupTable
+public class AreaComputation extends Computation implements HasLookupTable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "AreaComputation";
 
 	/**
 	* If true, apply shifts to independent variable before lookup.
 	*/
 	private boolean applyShifts;
-	
+
 	/**
 	* Sensor number in PlatformConfig for independent variable
 	*/
 	private int indepSensorNum;
-	
+
 	/**
 	 * Sensor number in PlatformConfig for Mean Velocity (XV)
 	 */
 	private int xvSensorNum;
-	
+
 	/**
-	 * 
+	 *
 	 */
 	private double xvScale;
-	
-	
+
+
 	/**
 	* Internal flag indicating whether tables
 	* have been sorted.
 	*/
 	private boolean sorted;
-	
+
 	/**
 	* The table of independent/dependent points for the rating.
 	*/
 	private LookupTable ratingTable;
-	
+
 	/**
 	* A table of shift values.
 	*/
 	private LookupTable shiftTable;
-	
+
 	/**
 	* The object used to read the table.
 	*/
 	private RatingTableReader tableReader;
-	
-	
+
+
 	/**
 	* Sensor number for the dependent (output) value.
 	*/
 	private int depSensorNum;
-	
-	
+
+
 	/**
 	* Beginning time for this rating. Only independent values after this time
 	* will be processed.
 	*/
 	private Date beginTime;
-	
-	
+
+
 	/**
 	* Ending time for this rating. Only independent values before this time
 	* will be processed.
 	*/
 	private Date endTime;
-	
+
 	/**
 	  Adds a point to the table.
 	  @param indep the independent value
@@ -93,7 +94,7 @@ public class AreaComputation
 	{
 		ratingTable.add(indep, dep);
 	}
-	
+
 	/**
 	  Adds a shift to the table.
 	  @param indep the independent value
@@ -103,7 +104,7 @@ public class AreaComputation
 	{
 		shiftTable.add(indep, shift);
 	}
-	
+
 	/**
 	  Applies the rating to the data found in the passed
 	  message. If successful, this will result in a new
@@ -112,14 +113,12 @@ public class AreaComputation
 	*/
 	public void apply( IDataCollection msg )
 	{
-		Logger.instance().debug3("Applying area rating calculation");
+		log.trace("Applying area rating calculation");
 		// Retrieve independent time series.
 		ITimeSeries indepTs = msg.getITimeSeries(indepSensorNum);
 		if (indepTs == null)
 		{
-			Logger.instance().warning(module + 
-				" Message does not contain independent sensor " +
-				indepSensorNum);
+			log.warn("Message does not contain independent sensor {}", indepSensorNum);
 			return;
 		}
 
@@ -128,9 +127,9 @@ public class AreaComputation
 			name = "anon";
 
 		ITimeSeries depTs = msg.newTimeSeries(depSensorNum, name);
-		Logger.instance().debug3("Created dep sensor " + depSensorNum + ": " + name);
+		log.trace("Created dep sensor {}:{}", depSensorNum, name);
 		depTs.setDataOrder(indepTs.getDataOrder());
-		depTs.setPeriodicity(indepTs.getRecordingMode(), 
+		depTs.setPeriodicity(indepTs.getRecordingMode(),
 			indepTs.getTimeOfFirstSample(), indepTs.getTimeInterval());
 		String s = getProperty("DepEpaCode");
 		if (s != null)
@@ -158,17 +157,14 @@ public class AreaComputation
 			if (d.compareTo(beginTime) < 0
 			 || d.compareTo(endTime) > 0)
 			{
-				Logger.instance().warning(
-					"Skipping area computation because sample time is"
-					+ " outside the rating time range.");
+				log.warn("Skipping area computation because sample time is outside the rating time range.");
 				continue;
 			}
 			try
 			{
 				//Find area for the HG value - comes from the area files
 				double area = ratingTable.lookup(indepTv.getDoubleValue());
-				Logger.instance().info(module + " Area for " + 
-						indepTv.getDoubleValue() + " is " + area);
+				log.info("Area for {} is {}", indepTv.getDoubleValue(), area);
 				//multiply the area by the XV value sensor. Note the XV value
 				//has a scale value, this value is multiplied by the XV value
 				//before doing this equation
@@ -177,9 +173,7 @@ public class AreaComputation
 				ITimeSeries xvTs = msg.getITimeSeries(xvSensorNum);
 				if (xvTs == null)
 				{
-					Logger.instance().warning(module + 
-						" Message does not contain xv (mean velocity) sensor " +
-						xvSensorNum);
+					log.warn("Message does not contain xv (mean velocity) sensor {}", xvSensorNum);
 					return;
 				}
 				int xvz = xvTs.size();
@@ -198,9 +192,7 @@ public class AreaComputation
 				//Calculate avg velocity
 				double outputV = area * xvValue;
 
-				Logger.instance().debug1(module + " area = " + area + 
-						" VelocityValue = "
-						+ xvValue + " output = " + outputV );
+				log.debug("area = {} VelocityValue = {} output = {}", area, xvValue, outputV );
 
 				TimedVariable depTv = new TimedVariable(outputV);
 				depTv.setTime(d);
@@ -208,21 +200,20 @@ public class AreaComputation
 			}
 			catch(NoConversionException ex)
 			{
-				Logger.instance().warning("Independent value not a number.");
+				log.atWarn().setCause(ex).log("Independent value not a number.");
 			}
 			catch(TableBoundsException ex)
 			{
-				Logger.instance().warning(ex.toString());
+				log.atWarn().setCause(ex).log("Input out of bounds");
 			}
 		}
 
-		Logger.instance().debug3("AreaComp produced " + depTs.size() +
-			" " + name + " samples.");
+		log.trace("AreaComp produced {} {} samples", depTs.size(), name);
 
 		if (depTs.size() == 0)
 			msg.rmTimeSeries(depTs);
 	}
-	
+
 	/**
 	  Called from the resolver.
 	  @param reader the object used to read the table.
@@ -243,7 +234,7 @@ public class AreaComputation
 		endTime = new Date(Long.MAX_VALUE);
 		xvScale = 1.0;
 	}
-	
+
 	/**
 	* Sets the applyShifts flag.
 	* @param yn the flag
@@ -252,7 +243,7 @@ public class AreaComputation
 	{
 		applyShifts = yn;
 	}
-	
+
 	/**
 	* Sets the flags to interpolate above/below the table bounds.
 	* @param below the below flag
@@ -265,7 +256,7 @@ public class AreaComputation
 		shiftTable.setExceedLowerBound(below);
 		shiftTable.setExceedUpperBound(above);
 	}
-	
+
 	/**
 	* Sets sensor number for independent variable.
 	* @param num the sensor number
@@ -273,19 +264,19 @@ public class AreaComputation
 	public void setIndepSensorNum( int num )
 	{
 		indepSensorNum = num;
-		
+
 	}
 
 	/**
 	 * Sets the Mean Velocity Sensor number
-	 * 
+	 *
 	 * @param num the sensor number
 	 */
 	public void setXVSensorNum( int num)
 	{
 		xvSensorNum = num;
 	}
-	
+
 	/**
 	* Sets the X offset used for logarithmic interpolation.
 	* @param xo the X offset
@@ -294,8 +285,8 @@ public class AreaComputation
 	{
 		ratingTable.setXOffset(xo);
 	}
-	
-	/** 
+
+	/**
 	* Sets lookup type to one of the constantd defined in LookupTable.
 	* @param t the type
 	*/
@@ -328,10 +319,10 @@ public class AreaComputation
 	  Reads the rating table using the supplied reader.
 	  @throws ComputationParseException if error reading table.
 	*/
-	public void read( ) 
+	public void read( )
 		throws ComputationParseException
 	{
-		tableReader.readRatingTable(this);	
+		tableReader.readRatingTable(this);
 	}
 
 	/**
@@ -351,8 +342,8 @@ public class AreaComputation
 	{
 		beginTime = bt;
 	}
-	
-	
+
+
 	/**
 	* Sets the end time for this rating.
 	* @param et the end time
@@ -367,10 +358,10 @@ public class AreaComputation
 	/**
 	 * This is the scale value used to get mean velocity from
 	 * the XV Sensor value
-	 * 
+	 *
 	 * @return xv scale
 	 */
-	public double getXvScale() 
+	public double getXvScale()
 	{
 		return xvScale;
 	}
@@ -378,10 +369,10 @@ public class AreaComputation
 	/**
 	 * This is the scale value used to get mean velocity from
 	 * the XV Sensor value
-	 * 
+	 *
 	 * @param xvScale value used to get the mean velocity
 	 */
-	public void setXvScale(double xvScale) 
+	public void setXvScale(double xvScale)
 	{
 		this.xvScale = xvScale;
 	}
