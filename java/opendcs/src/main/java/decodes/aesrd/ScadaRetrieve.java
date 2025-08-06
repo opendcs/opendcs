@@ -316,8 +316,9 @@ public class ScadaRetrieve
 				}
 				catch(ParseException ex)
 				{
-					log.atWarn().setCause(ex)
-					.log("Cannot parse date for result set: {}, {}, {}, {}", ds, tag, data, quality);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Cannot parse date for result set: {}, {}, {}, {}", ds, tag, data, quality);
 					continue;
 				}
 				rows.add(new ScadaQueryRow(d, tag, data, quality));
