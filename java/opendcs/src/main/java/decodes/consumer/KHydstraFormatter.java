@@ -2,7 +2,7 @@
 *  $Id$
 *
 *  Author: Michael Maloney
-*  
+*
 *  $Log$
 *  Revision 1.6  2017/03/20 18:14:28  mmaloney
 *  Added new selfIdent property.
@@ -26,6 +26,9 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
@@ -48,14 +51,15 @@ import decodes.util.PropertySpec;
  */
 public class KHydstraFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String delimiter;
 	private SimpleDateFormat KHydstraDateFormat;
 	private boolean selfIdent = false;
 	private int qualcode = 1;
-	
-	protected PropertySpec ofPropSpecs[] = 
+
+	protected PropertySpec ofPropSpecs[] =
 	{
-		new PropertySpec("delimiter", PropertySpec.STRING, 
+		new PropertySpec("delimiter", PropertySpec.STRING,
 			"(default=comma) delimiter between columns."),
 		new PropertySpec("selfIdent", PropertySpec.BOOLEAN,
 			"(default=false) set to true to add addition columns for Hydstra "
@@ -99,11 +103,11 @@ public class KHydstraFormatter extends OutputFormatter
 			try { qualcode = Integer.parseInt(s.trim()); }
 			catch(NumberFormatException ex)
 			{
-				logger.warning("Invalid qualcode propertyp '" + s + "' -- ignored. Usinge default=1");
+				log.atWarn().setCause(ex).log("Invalid qualcode property '{}' -- ignored. Using default=1", s);
 				qualcode = 1;
 			}
 		}
-		
+
 		Calendar cal = Calendar.getInstance(tz);
 		KHydstraDateFormat.setCalendar(cal);
 	}
@@ -146,7 +150,7 @@ public class KHydstraFormatter extends OutputFormatter
 		SiteName sn = platform.getSite().getName(Constants.snt_USGS);
 		if (sn == null)
 			sn = platform.getSite().getPreferredName();
-	
+
 
 		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )
 		{
@@ -157,10 +161,10 @@ public class KHydstraFormatter extends OutputFormatter
 
 			String stationName = sn.getNameValue().toUpperCase();
 			String siteName =sensor.getSensorSiteName();
-							
+
 			if (siteName != null)
 				stationName = siteName;
-		
+
 			//site id may contain only upper case letters, digits and underscore characters.
 			// replace any other occurrence with '_'
 			for(int i = 0;i<stationName.length();i++)
@@ -168,7 +172,7 @@ public class KHydstraFormatter extends OutputFormatter
 					stationName = stationName.replace(stationName.charAt(i), '_');
 			if (!selfIdent)
 				stationName = TextUtil.setLengthLeftJustify(stationName, 15);
-				
+
 			EngineeringUnit eu = ts.getEU();
 
 
@@ -178,7 +182,7 @@ public class KHydstraFormatter extends OutputFormatter
 				dt = sensor.getDataType();
 				dt = dt.findEquivalent(Constants.datatype_Hydstra);
 			}
-			String hydstraCode = dt != null ? dt.getCode() : "0";                       
+			String hydstraCode = dt != null ? dt.getCode() : "0";
 			int sz = ts.size();
 			for(int i=0; i<sz; i++)
 			{
@@ -189,9 +193,9 @@ public class KHydstraFormatter extends OutputFormatter
 				sb.setLength(0);
 				if (selfIdent)
 					sb.append("#V2" + delimiter);
-				
+
 				sb.append(stationName + delimiter);
-				
+
 				if (selfIdent)
 					sb.append(delimiter); // placeholder for data source
 
@@ -199,7 +203,7 @@ public class KHydstraFormatter extends OutputFormatter
 				sb.append(delimiter);
 
 				sb.append(KHydstraDateFormat.format(tv.getTime()));
-				sb.append(delimiter);		
+				sb.append(delimiter);
 
 				NumberFormat nf = NumberFormat.getNumberInstance(new Locale("en_US"));
 				nf.setGroupingUsed(false); // don't group by threes
@@ -210,12 +214,12 @@ public class KHydstraFormatter extends OutputFormatter
 				{
 					s = nf.format(tv.getDoubleValue());
 				}
-				catch (Exception e)
+				catch (Exception ex)
 				{
-					throw new OutputFormatterException(e.toString());
+					throw new OutputFormatterException("Unable to convert time series value", ex);
 				}
 				sb.append(TextUtil.setLengthRightJustify(s, 10) + delimiter);
-				
+
 				String sQualcode = selfIdent ? ("" + qualcode) : ("  " + qualcode);
 				sb.append(sQualcode + delimiter);
 
@@ -242,4 +246,3 @@ public class KHydstraFormatter extends OutputFormatter
 
 
 }
-

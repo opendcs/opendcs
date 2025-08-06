@@ -1,23 +1,20 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.4  2016/02/29 22:12:45  mmaloney
- * Add performance measurements & fix bug where it wasn't initializing the consumer.
- *
- * Revision 1.3  2014/05/30 13:15:32  mmaloney
- * dev
- *
- * Revision 1.2  2014/05/28 13:09:27  mmaloney
- * dev
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.consumer;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
@@ -31,8 +28,10 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.archive.MsgValidator;
-import lrgs.archive.XmitWindow;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 import decodes.datasource.GoesPMParser;
@@ -60,12 +59,13 @@ yyyyMMMdd hhmm cbtt     PC        NewValue   OldValue   Flag user:jmaxon
  */
 public class HydrometDMS3Formatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public final String module = "HydrometDMS3Formatter";
-	
+
 	private NumberFormat valueFormat = NumberFormat.getNumberInstance();
-	private SimpleDateFormat dateFormat = 
+	private SimpleDateFormat dateFormat =
 		new SimpleDateFormat("yyyyMMMdd HHmm");
-	
+
 	public final static String FLAG_GOOD = "-01";
 	public final static String FLAG_NO_VALUE = "-02";
 	public final static String FLAG_LOW_LIMIT = "-20";
@@ -75,7 +75,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 	private boolean justOpened = true;
 	private TimeZone rsTimeZone = null;
 	private Platform lastPlatform = null;
-	
+
 	public HydrometDMS3Formatter()
 	{
 		super();
@@ -113,9 +113,9 @@ public class HydrometDMS3Formatter extends OutputFormatter
 		SiteName platformSiteName = platformSite.getName("cbtt");
 		if (platformSiteName == null)
 			platformSiteName = platformSite.getPreferredName();
-		
+
 		TimeZone platformTZ = null;
-		if (platformSite.timeZoneAbbr != null 
+		if (platformSite.timeZoneAbbr != null
 		 && platformSite.timeZoneAbbr.trim().length() > 0)
 			platformTZ = TimeZone.getTimeZone(platformSite.timeZoneAbbr.trim());
 
@@ -133,7 +133,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 //				+ (platformTZ == null ? "" : ", Timezone=" + platformTZ.getID()));
 			lastPlatform = msg.getPlatform();
 		}
-		
+
 		StringBuilder line = new StringBuilder();
 		for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext();)
 		{
@@ -141,7 +141,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 			for (int idx = 0; idx < ts.size(); idx++)
 			{
 				TimedVariable tv = ts.sampleAt(idx);
-				
+
 				// Determine the value and flag.
 				double d = MISSING_VALUE;
 				String dms3Flag = FLAG_GOOD;
@@ -151,7 +151,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 				}
 				catch(NoConversionException ex)
 				{
-//					Logger.instance().warning(module + " unexpected " + ex);
+					log.atTrace().setCause(ex).log("Unable to convert value {}", tv.toString());
 					dms3Flag = FLAG_NO_VALUE;
 				}
 				if ((tv.getFlags() & IFlags.LIMIT_VIOLATION) != 0)
@@ -168,7 +168,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 					dms3Flag = FLAG_NO_VALUE;
 					d = MISSING_VALUE;
 				}
-				
+
 				// Get the site name
 				Site site = ts.getSensor().getSensorSite();
 				if (site == null)
@@ -177,7 +177,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 				SiteName siteName = site.getName("cbtt");
 				if (siteName == null)
 					siteName = site.getPreferredName();
-				
+
 				// get the data type. If CBTT data type is defined, use it. Else use
 				// preference in decodes settings. Else use the first one defined in the
 				// config sensor record.
@@ -186,7 +186,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 					if ((dataType = ts.getSensor().getDataType(
 						DecodesSettings.instance().dataTypeStdPreference)) == null)
 						ts.getSensor().getDataType();
-				
+
 				line.setLength(0);
 
 				// Set time zone to whatever is defined for the site.
@@ -203,7 +203,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 					valueFormat.format(d), dms3Flag));
 			}
 		}
-		
+
 		// Now output the performance measurements if they are available.
 		DcpMsg dcpMsg = msg.getRawMessage().getOrigDcpMsg();
 		if (dcpMsg != null)
@@ -216,7 +216,7 @@ public class HydrometDMS3Formatter extends OutputFormatter
 					np++;
 			consumer.println(formatValue(msg.getMessageTime(), sn, "PARITY",
 				valueFormat.format((double)np), FLAG_GOOD));
-			
+
 			Variable v = msg.getRawMessage().getPM(GoesPMParser.SIGNAL_STRENGTH);
 			if (v != null)
 			{
@@ -226,13 +226,15 @@ public class HydrometDMS3Formatter extends OutputFormatter
 					consumer.println(formatValue(msg.getMessageTime(), sn, "POWER",
 						valueFormat.format(d), FLAG_GOOD));
 				}
-				catch (NoConversionException e)
+				catch (NoConversionException ex)
 				{
-					Logger.instance().warning("Site " + sn + " has signal strength '" + v.toString() 
-						+ "' that cannot be expressed as a number.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Site {} has signal strength '{}' that cannot be expressed as a number.",
+					        sn, v.toString());
 				}
 			}
-			
+
 			v = msg.getRawMessage().getPM(GoesPMParser.GPS_SYNC);
 			if (v != null)
 			{
@@ -240,17 +242,19 @@ public class HydrometDMS3Formatter extends OutputFormatter
 				{
 					consumer.println(formatValue(msg.getMessageTime(), sn, "GPS", ""+v.getIntValue(), FLAG_GOOD));
 				}
-				catch (NoConversionException e)
+				catch (NoConversionException ex)
 				{
-					Logger.instance().warning("Site " + sn + " has GPS SYNC '" + v.toString() 
-						+ "' that cannot be expressed as an integer.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Site {} has GPS SYNC '{}' that cannot be expressed as an integer.",
+					   		sn, v.toString());
 				}
 
 			}
-			
+
 			consumer.println(formatValue(msg.getMessageTime(), sn, "MSGLEN",
 				valueFormat.format((double)msgData.length), FLAG_GOOD));
-			
+
 			String s = msg.getPlatform().getProperty("expectLength");
 			if (s != null)
 			{
@@ -262,18 +266,20 @@ public class HydrometDMS3Formatter extends OutputFormatter
 				}
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().warning("Site " + sn + " has expectLength property '" + s 
-						+ "' that cannot be expressed as an integer.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Site {} has expectLength property '{}' that cannot be expressed as an integer.",
+					   	    sn, s);
 
 				}
 			}
-			
+
 			v = msg.getRawMessage().getPM("GPS_SYNC");
-			
+
 			if (!Pdt.instance().isLoaded())
 			{
-				Logger.instance().info(module + " loading PDT.");
-				Pdt.instance().startMaintenanceThread(DecodesSettings.instance().pdtUrl, 
+				log.info("Loading PDT.");
+				Pdt.instance().startMaintenanceThread(DecodesSettings.instance().pdtUrl,
 					DecodesSettings.instance().pdtLocalFile);
 				// Give it up to two minutes to load.
 				long start = System.currentTimeMillis();
@@ -286,9 +292,8 @@ public class HydrometDMS3Formatter extends OutputFormatter
 			if (pdtEntry != null)
 			{
 				if (dcpMsg.getGoesChannel() != pdtEntry.st_channel)
-					Logger.instance().warning("Site " + sn + " DCP " + dcpAddress + " not on correct channel"
-						+ " for self timed message. This channel=" + dcpMsg.getGoesChannel()
-						+ ", ST Channel = " + pdtEntry.st_channel);
+					log.warn("Site {} DCP {} not on correct channel for self timed message. This channel={}"
+						   + ", ST Channel = {}", sn, dcpAddress, dcpMsg.getGoesChannel(), pdtEntry.st_channel);
 				else // we have a ST message on the correct channel.
 				{
 					// Compute expected start & end time for this message.
@@ -305,23 +310,23 @@ public class HydrometDMS3Formatter extends OutputFormatter
 						/ xi;
 					long expected_start_tt = base_timet + pdtEntry.st_first_xmit_sod
 						+ windows_since_base * xi;
-					
+
 					long terr = xmitmsec - (expected_start_tt * 1000L);
 					consumer.println(formatValue(msg.getMessageTime(), sn, "TIMEERR",
 						valueFormat.format((double)terr/1000.), FLAG_GOOD));
 				}
 			}
 			else
-				Logger.instance().warning("Site " + sn + " has no PDT entry for dcp address " + dcpAddress);
-				
+				log.warn("Site {} has no PDT entry for dcp address {}", sn, dcpAddress);
+
 		}
-		
+
 	}
-	
+
 	private String formatValue(Date t, String siteName, String dtCode, String v, String flag)
 	{
 		StringBuilder line = new StringBuilder();
-		
+
 		line.append(dateFormat.format(t).toUpperCase());
 		line.append(' ');
 		line.append(TextUtil.setLengthLeftJustify(siteName, 8));
