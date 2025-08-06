@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.comp;
 
 import java.util.ArrayList;
@@ -10,8 +25,7 @@ import java.util.Iterator;
  * from an independent point.
  * Supports several types of lookup algorithms. See the INTERP constants.
  */
-public class LookupTable
-    implements HasLookupTable
+public class LookupTable implements HasLookupTable
 {
     public static boolean debug = false;
 
@@ -130,14 +144,13 @@ public class LookupTable
         // BinarySearch finds exact match or the insertion point.
         int idx = Collections.binarySearch(points, new RatingPoint(indep, 0));
 
-//Logger.instance().debug3("binary search returned idx=" + idx + " for indep=" + indep);
         if (idx >= 0) // exact match found.
         {
             return ((RatingPoint)points.get(idx)).dep;
         }
 
         idx = -(idx + 1);  // Convert negative index into insertion point.
-//Logger.instance().debug3("after convert negative idx=" + idx);
+
         if (idx == 0 && !exceedLowerBound)
         {
             throw new TableBoundsException("Value " + indep
@@ -154,7 +167,6 @@ public class LookupTable
         {
             idx--;
         }
-//Logger.instance().debug3("table point below indep is idx=" + idx);
 
         if (lookupType == INTERP_TRUNC)
         {
@@ -198,17 +210,14 @@ public class LookupTable
             }
             p0 = (RatingPoint)points.get(idx);
             p1 = (RatingPoint)points.get(idx + 1);
-//System.out.println("Inter lower point " + idx + ": (" + p0.indep + "," + p0.dep + ")");
-//System.out.println("Inter upper point " + (idx+1) + ": (" + p1.indep + "," + p1.dep + ")");
 
             double ifactor = (indep - p0.indep) / (p1.indep - p0.indep);
             double range = p1.dep - p0.dep;
-//System.out.println("ifactor=" + ifactor + ", range=" + range);
+
             return p0.dep + ifactor * range;
         }
         else if (lookupType == INTERP_LOG)
         {
-//Logger.instance().debug3("interp idx=" + idx + ", lastIdx=" + lastTableIdx);
             if (logInterp == null || idx != lastTableIdx)
             {
                 lastTableIdx = idx;

@@ -1,11 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.comp;
 
 import java.util.Enumeration;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Date;
-import ilex.util.Logger;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 import ilex.var.NoConversionException;
@@ -15,61 +30,60 @@ import ilex.var.NoConversionException;
 * Holds the lookup table &amp; shift values.
 * Delegates table reads to supplied reader.
 */
-public class RatingComputation 
-	extends Computation
-	implements HasLookupTable
+public class RatingComputation extends Computation implements HasLookupTable
 {
+	public static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* If true, apply shifts to independent variable before lookup.
 	*/
 	private boolean applyShifts;
-	
+
 	/**
 	* Sensor number in PlatformConfig for independent variable
 	*/
 	private int indepSensorNum;
-	
+
 	/**
 	* Internal flag indicating whether tables
 	* have been sorted.
 	*/
 	private boolean sorted;
-	
+
 	/**
 	* The table of independent/dependent points for the rating.
 	*/
 	private LookupTable ratingTable;
-	
+
 	/**
 	* A table of shift values.
 	*/
 	private LookupTable shiftTable;
-	
+
 	/**
 	* The object used to read the table.
 	*/
 	private RatingTableReader tableReader;
-	
-	
+
+
 	/**
 	* Sensor number for the dependent (output) value.
 	*/
 	private int depSensorNum;
-	
-	
+
+
 	/**
 	* Beginning time for this rating. Only independent values after this time
 	* will be processed.
 	*/
 	private Date beginTime;
-	
-	
+
+
 	/**
 	* Ending time for this rating. Only independent values before this time
 	* will be processed.
 	*/
 	private Date endTime;
-	
+
 	/**
 	  Adds a point to the table.
 	  @param indep the independent value
@@ -79,7 +93,7 @@ public class RatingComputation
 	{
 		ratingTable.add(indep, dep);
 	}
-	
+
 	/**
 	  Adds a shift to the table.
 	  @param indep the independent value
@@ -89,7 +103,7 @@ public class RatingComputation
 	{
 		shiftTable.add(indep, shift);
 	}
-	
+
 	/**
 	  Applies the rating to the data found in the passed
 	  message. If successful, this will result in a new
@@ -98,14 +112,12 @@ public class RatingComputation
 	*/
 	public void apply( IDataCollection msg )
 	{
-		Logger.instance().debug3("Applying rating calculation");
+		log.trace("Applying rating calculation");
 		// Retrieve independent time series.
 		ITimeSeries indepTs = msg.getITimeSeries(indepSensorNum);
 		if (indepTs == null)
 		{
-			Logger.instance().warning(
-				"Message does not contain independent sensor " +
-				indepSensorNum);
+			log.warn("Message does not contain independent sensor {}",indepSensorNum);
 			return;
 		}
 
@@ -121,10 +133,10 @@ public class RatingComputation
 		else
 		{
 			depTs = msg.newTimeSeries(depSensorNum, name);
-			Logger.instance().debug3("Created dep sensor " + depSensorNum + ": " + name);
+			log.trace("Created dep sensor {}:{}", depSensorNum, name);
 		}
 		depTs.setDataOrder(indepTs.getDataOrder());
-		depTs.setPeriodicity(indepTs.getRecordingMode(), 
+		depTs.setPeriodicity(indepTs.getRecordingMode(),
 			indepTs.getTimeOfFirstSample(), indepTs.getTimeInterval());
 		String s = getProperty("DepEpaCode");
 		if (s != null)
@@ -132,13 +144,6 @@ public class RatingComputation
 		s = getProperty("DepShefCode");
 		if (s != null)
 			depTs.addDataType("SHEF-PE", s);
-//		s = getProperty("depCwmsParam");
-//		if (s != null)
-//			depTs.addDataType(CwmsConstants.CWMS_DATA_TYPE, s);
-
-/////// THIS IS THE ONLY HOLE
-//		ps.site = indepSensor.getSensorSite();
-////////
 
 		s = getProperty("DepUnits");
 		if (s != null)
@@ -155,11 +160,11 @@ public class RatingComputation
 			if (d.compareTo(beginTime) < 0
 			 || d.compareTo(endTime) > 0)
 			{
-				Logger.instance().warning(
+				log.warn(
 					"Skipping rating computation because sample time is"
-					+ " outside the rating time range. Sample Time=" +d
-					+ ", RatingStart=" + beginTime
-					+ ", RatingEnd=" + endTime);
+					+ " outside the rating time range. Sample Time={}"
+					+ ", RatingStart={}"
+					+ ", RatingEnd=", d, beginTime, endTime);
 				continue;
 			}
 			try
@@ -171,21 +176,20 @@ public class RatingComputation
 			}
 			catch(NoConversionException ex)
 			{
-				Logger.instance().warning("Independent value not a number.");
+				log.atWarn().setCause(ex).log("Independent value not a number.");
 			}
 			catch(TableBoundsException ex)
 			{
-				Logger.instance().warning(ex.toString());
+				log.atWarn().setCause(ex).log("Inputs out of bounds");
 			}
 		}
 
-		Logger.instance().debug3("RatingComp produced " + depTs.size() +
-			" " + name + " samples.");
+		log.trace("RatingComp produced {} {} samples.", depTs.size(), name);
 
 		if (depTs.size() == 0)
 			msg.rmTimeSeries(depTs);
 	}
-	
+
 	/**
 	  Called from the resolver.
 	  @param reader the object used to read the table.
@@ -205,7 +209,7 @@ public class RatingComputation
 		beginTime = new Date(0L);
 		endTime = new Date(Long.MAX_VALUE);
 	}
-	
+
 	/**
 	* Sets the applyShifts flag.
 	* @param yn the flag
@@ -214,7 +218,7 @@ public class RatingComputation
 	{
 		applyShifts = yn;
 	}
-	
+
 	/**
 	* Sets the flags to interpolate above/below the table bounds.
 	* @param below the below flag
@@ -227,7 +231,7 @@ public class RatingComputation
 		shiftTable.setExceedLowerBound(below);
 		shiftTable.setExceedUpperBound(above);
 	}
-	
+
 	/**
 	* Sets sensor number for independent variable.
 	* @param num the sensor number
@@ -235,7 +239,7 @@ public class RatingComputation
 	public void setIndepSensorNum( int num )
 	{
 		indepSensorNum = num;
-		
+
 	}
 
 	/**
@@ -246,8 +250,8 @@ public class RatingComputation
 	{
 		ratingTable.setXOffset(xo);
 	}
-	
-	/** 
+
+	/**
 	* Sets lookup type to one of the constantd defined in LookupTable.
 	* @param t the type
 	*/
@@ -280,10 +284,10 @@ public class RatingComputation
 	  Reads the rating table using the supplied reader.
 	  @throws ComputationParseException if error reading table.
 	*/
-	public void read( ) 
+	public void read( )
 		throws ComputationParseException
 	{
-		tableReader.readRatingTable(this);	
+		tableReader.readRatingTable(this);
 	}
 
 	/**
@@ -303,8 +307,8 @@ public class RatingComputation
 	{
 		beginTime = bt;
 	}
-	
-	
+
+
 	/**
 	* Sets the end time for this rating.
 	* @param et the end time

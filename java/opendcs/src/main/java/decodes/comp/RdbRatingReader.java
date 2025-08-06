@@ -1,20 +1,36 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.comp;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
 
 import java.io.LineNumberReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
@@ -23,6 +39,7 @@ import java.text.ParseException;
  */
 public class RdbRatingReader implements RatingTableReader
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
      * The name of the file being read.
      */
@@ -108,7 +125,7 @@ public class RdbRatingReader implements RatingTableReader
         lastShiftValue = -1.0;
         try (InputStreamReader reader = new InputStreamReader(inputStream))
         {
-            LineNumberReader rdr = new LineNumberReader(reader);
+            rdr = new LineNumberReader(reader);
             String line;
             while((line = rdr.readLine()) != null)
             {
@@ -127,7 +144,7 @@ public class RdbRatingReader implements RatingTableReader
         }
         catch(IOException ex)
         {
-            parseWarning("IO Error: " + ex + " -- aborting.");
+            log.atError().setCause(ex).log("IO Error -- aborting.");
         }
         finally
         {
@@ -209,7 +226,7 @@ public class RdbRatingReader implements RatingTableReader
             }
             catch(NumberFormatException ex)
             {
-                parseWarning("Bad OFFSET1 value '" + v + "' -- ignored.");
+                log.atWarn().setCause(ex).log("Bad OFFSET1 value '{}' -- ignored.", v);
             }
             if ((v = TextUtil.scanAssign(line, "OFFSET2", 1, true)) != null)
             {
@@ -291,8 +308,7 @@ public class RdbRatingReader implements RatingTableReader
                 }
                 catch(ParseException ex)
                 {
-                    parseWarning("Invalid begin time format '" + ts
-                        + "' -- begin time ignored.");
+                    log.atWarn().setCause(ex).log("Invalid begin time format '{}' -- begin time ignored.", ts);
                 }
             }
             ts = TextUtil.scanAssign(line,"END", 1, true);
@@ -317,23 +333,11 @@ public class RdbRatingReader implements RatingTableReader
                     }
                     catch(ParseException ex)
                     {
-                        parseWarning("Invalid end time format '" + ts
-                            + "' -- begin time ignored.");
+                        log.atWarn().setCause(ex).log("Invalid end time format '{}' -- begin time ignored.", ts);
                     }
                 }
             }
         }
-    }
-
-    /**
-    * Logs a warning message about parsing this file.
-    * @param msg the message
-    */
-    private void parseWarning( String msg )
-    {
-        Logger.instance().warning("RDB File '" + filename + ":"
-            + (rdr != null ? rdr.getLineNumber() : -1)
-            + " " + msg);
     }
 
     /**
@@ -344,8 +348,7 @@ public class RdbRatingReader implements RatingTableReader
     {
         if (!line.startsWith("INDEP"))
         {
-            parseWarning("Expected column header, got '" + line
-                + "' -- ignored");
+            log.warn("Expected column header, got '{}' -- ignored", line);
         }
         containsShifts = line.indexOf("SHIFT") != -1;
         state = STATE_COL_FMT;
@@ -361,8 +364,7 @@ public class RdbRatingReader implements RatingTableReader
         state = STATE_COL_DATA;
         if (line.indexOf('N') == -1 && line.indexOf('S') == -1)
         {
-            parseWarning("Expected column format line, got '" + line
-                + "' -- will try to parse column data.");
+            log.warn("Expected column format line, got '{}' -- will try to parse column data.", line);
             processColData(line);
         }
     }
@@ -386,8 +388,7 @@ public class RdbRatingReader implements RatingTableReader
             }
             catch(NumberFormatException ex)
             {
-                parseWarning("Expected 3 numbers, got '" + line
-                    + "' -- ignored.");
+                log.warn("Expected 3 numbers, got '{}' -- ignored.", line);
                 return;
             }
         }

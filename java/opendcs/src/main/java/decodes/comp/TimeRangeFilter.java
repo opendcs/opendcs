@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.comp;
 
-import ilex.util.Logger;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 
@@ -8,6 +22,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Platform;
 import decodes.decoder.DecodedMessage;
@@ -19,6 +36,8 @@ import decodes.decoder.TimeSeries;
  */
 public class TimeRangeFilter extends Computation
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private int maxFutureMinutes;
 	private int maxAgeHours;
 	public final static String module = "TimeRangeFilter";
@@ -51,11 +70,10 @@ public class TimeRangeFilter extends Computation
 		if (!(msg instanceof DecodedMessage))
 			return;
 		DecodedMessage dm = (DecodedMessage)msg;
-		
+
 		Platform p = dm.getPlatform();
-		Logger.instance().debug1("Applying time range filter to message from "
-			+ (p != null ? p.getSiteName() : "unknown platform")
-			+ ", maxFutureMinutes=" + maxFutureMinutes + ", maxAgeHours=" + maxAgeHours);
+		log.debug("Applying time range filter to message from {}, maxFutureMinutes={}, maxAgeHours={}",
+				  (p != null ? p.getSiteName() : "unknown platform"), maxFutureMinutes, maxAgeHours);
 
 		for(Iterator<TimeSeries> tsit = dm.getAllTimeSeries(); tsit.hasNext(); )
 		{
@@ -66,26 +84,21 @@ public class TimeRangeFilter extends Computation
 				int flags = tv.getFlags();
 				if ((flags & (IFlags.IS_MISSING | IFlags.IS_ERROR)) != 0)
 					continue;
-				
+
 				Date sampleTime = tv.getTime();
-				
-				// deltaT is difference between sample time and now. 
+
+				// deltaT is difference between sample time and now.
 				// Future data is positive, past data is negative
 				long deltaT = sampleTime.getTime() - System.currentTimeMillis();
 				if (deltaT > maxFutureMinutes * 60000L)
 				{
-					Logger.instance().debug3(module + " "
-						+ ts.getSensor().getSite().getDisplayName() + " "
-						+ ts.getSensorName() + " Discarding FUTURE TIME " 
-						+ sampleTime);
+					log.trace("{} {} Discarding FUTURE TIME {}", ts.getSensor().getSite().getDisplayName(), ts.getSensorName(), sampleTime);
 					tv.setFlags(flags | IFlags.IS_ERROR | IFlags.IS_MISSING);
 				}
 				else if (deltaT < -maxAgeHours * 3600000L)
 				{
-					Logger.instance().debug3(module + " "
-						+ ts.getSensor().getSite().getDisplayName() + " "
-						+ ts.getSensorName() + " Discarding ANCIENT TIME " 
-						+ sampleTime + ", deltaT=" + deltaT);
+					log.trace("{} {} Discarding ANCIENT TIME  {}, deltaT={}",
+							  ts.getSensor().getSite().getDisplayName(), ts.getSensorName(), sampleTime, deltaT);
 					tv.setFlags(flags | IFlags.IS_ERROR | IFlags.IS_MISSING);
 				}
 			}

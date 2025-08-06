@@ -1,7 +1,18 @@
-/**
- * @(#) RdbRatingCompResolver.java
- */
-
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.comp;
 
 import java.io.File;
@@ -9,24 +20,23 @@ import java.io.FileNotFoundException;
 import java.util.Iterator;
 import java.util.Vector;
 
-import decodes.comp.CompResolver;
-import decodes.comp.Computation;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.RoutingSpec;
 import decodes.util.PropertySpec;
 import decodes.util.SensorPropertiesOwner;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
 /**
 * Tries to find RDB Files for computations to be applied to the passed message.
 */
-public class RdbRatingCompResolver 
-	extends CompResolver
-	implements SensorPropertiesOwner
+public class RdbRatingCompResolver  extends CompResolver implements SensorPropertiesOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* The directory containing RDB files. PlatformSensor properties need
 	* not contain the entire path.
@@ -37,21 +47,21 @@ public class RdbRatingCompResolver
 	/**
 	 * These properties can be set on Platform or Config sensors.
 	 */
-	private PropertySpec sensorProperties[] = 
+	private PropertySpec sensorProperties[] =
 	{
-		new PropertySpec("RdbFile", PropertySpec.FILENAME, 
+		new PropertySpec("RdbFile", PropertySpec.FILENAME,
 			"Name of RDB Rating file. May include environment settings" +
 			" like $HOME, or $DCSTOOL_HOME."),
-		new PropertySpec("RdbShef", PropertySpec.STRING, 
+		new PropertySpec("RdbShef", PropertySpec.STRING,
 			"Optional way to set the SHEF code for the dependent variable."),
-		new PropertySpec("ExceedBounds", PropertySpec.BOOLEAN, 
+		new PropertySpec("ExceedBounds", PropertySpec.BOOLEAN,
 			"Set to true to allow interpolation if independent variable " +
 			"is above or below the table bounds."),
-		new PropertySpec("depSensorNumber", PropertySpec.BOOLEAN, 
+		new PropertySpec("depSensorNumber", PropertySpec.BOOLEAN,
 			"Set to the sensor number for the dependent param. If this is not set,"
 			+ "DECODES will create a new sensor with the SHEF code assigned in 'RdbShef'."),
 	};
-	
+
 	/**
 	* This class looks for parameters that can be processed with a
 	* USGS RDB Rating File.
@@ -60,7 +70,7 @@ public class RdbRatingCompResolver
 	{
 		super();
 	}
-	
+
 	/**
 	* Resolves RDB Rating Computations that can be done on this message.
 	* The current algorithm simply looks for PlatformSensors that contain
@@ -82,7 +92,7 @@ public class RdbRatingCompResolver
 			String rdbfn = ts.getProperty("RdbFile");
 			if (rdbfn != null)
 			{
-				Logger.instance().debug1("Found RdbFile property='" + rdbfn + "'");
+				log.debug("Found RdbFile property='{}'", rdbfn);
 				File rdbf = new File(dir, EnvExpander.expand(rdbfn));
 				try
 				{
@@ -114,9 +124,11 @@ public class RdbRatingCompResolver
 						}
 						catch(NumberFormatException ex)
 						{
-							Logger.instance().warning("Platform " + mediumId + " RDB Rating computation for sensor "
-								+ ts.getSensorId() + " has invalid 'depSensorNumber' property '" + sh 
-								+ "' -- ignoring computation.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Platform {} RDB Rating computation for sensor {} " +
+							   		"has invalid 'depSensorNumber' property '{}' -- ignoring computation.",
+									mediumId, ts.getSensorId(), sh);
 							return null;
 						}
 					}
@@ -131,12 +143,11 @@ public class RdbRatingCompResolver
 				}
 				catch(ComputationParseException ex)
 				{
-					Logger.instance().warning("Cannot read '" + rdbfn
-						+ "': " + ex);
+					log.atWarn().setCause(ex).log("Cannot read '{}'", rdbfn);
 				}
 				catch (FileNotFoundException ex)
 				{
-					Logger.instance().warning("Unable to find file " + rdbfn);
+					log.atWarn().setCause(ex).log("Unable to find file '{}'", rdbfn);
 					continue;
 				}
 			}
@@ -161,8 +172,7 @@ public class RdbRatingCompResolver
 			dir = new File(EnvExpander.expand(d));
 		else
 			dir = new File(".");
-		Logger.instance().debug1("RdbRatingCompResolver will look in directory '"
-			+ dir.getPath() + "'");
+		log.debug("RdbRatingCompResolver will look in directory '{}'", dir.getPath());
 	}
 
 	@Override
