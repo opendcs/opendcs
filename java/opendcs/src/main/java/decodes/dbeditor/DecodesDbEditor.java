@@ -112,7 +112,7 @@ public class DecodesDbEditor
             System.exit(1);
         }
 
-        log.atInfo().log("DecodesDbEditor Starting (" + DecodesVersion.startupTag()
+        log.log("DecodesDbEditor Starting (" + DecodesVersion.startupTag()
             + ") =====================");
 
         DecodesSettings settings = DecodesSettings.instance();
