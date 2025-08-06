@@ -1,35 +1,31 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-* 
-* This software was written by Cove Software, LLC ("COVE") under contract 
-* to the United States Government. 
-* 
-* No warranty is provided or implied other than specific contractual terms
-* between COVE and the U.S. Government
-* 
-* Copyright 2018 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
-* All rights reserved.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.consumer;
 
 import ilex.net.BasicClient;
-import ilex.util.AsciiUtil;
-import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.util.ProcWaiterThread;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.Properties;
 
-import decodes.db.Constants;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.decoder.DecodedMessage;
 import decodes.util.PropertySpec;
 
@@ -40,6 +36,7 @@ import decodes.util.PropertySpec;
  */
 public class TcpClientConsumer extends DataConsumer
 {
+	private static Logger log = OpenDcsLoggerFactory.getLogger();
 	public static String module="TcpClientConsumer";
 	private boolean connectPerMessage = false;
 	private String before = null;
@@ -51,8 +48,8 @@ public class TcpClientConsumer extends DataConsumer
     private int connectPauseSec = 60;
     private static String lineSep = System.getProperty("line.separator");
 
-	private PropertySpec propSpecs[] = 
-	{		
+	private PropertySpec propSpecs[] =
+	{
 		new PropertySpec("connectPerMessage", PropertySpec.BOOLEAN,
 			"If true, establish separate socket for each message (default=false)"),
 		new PropertySpec("before", PropertySpec.STRING,
@@ -79,7 +76,7 @@ public class TcpClientConsumer extends DataConsumer
 		String hp = consumerArg;
 		if (hp == null || (hp = hp.trim()).length() == 0)
 			throw new DataConsumerException("Missing required 'host:port' argument.");
-		
+
 		int idx = hp.indexOf(':');
 		if (idx < 0)
 			idx = hp.indexOf(' ');
@@ -93,34 +90,34 @@ public class TcpClientConsumer extends DataConsumer
 		{
 			throw new DataConsumerException("Invalid port '" + ps + "' in host:port argument '" + hp + "'");
 		}
-		
+
 		// Use props for before & after strings -- OK if null
 		before = PropertiesUtil.getIgnoreCase(props, "before");
 		after = PropertiesUtil.getIgnoreCase(props, "after");
 
 		// If not present, will default to false.
 		connectPerMessage = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "connectPerMessage"));
-		
+
 		String s = PropertiesUtil.getIgnoreCase(props, "connectTries");
 		if (s != null)
 			try { connectTries = Integer.parseInt(s.trim()); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning(module + " Invalid connectTries property '" + s + 
-					"' -- will use default=3");
+				log.atWarn().setCause(ex).log("Invalid connectTries property '{}' -- will use default=3", s);
 				connectTries = 3;
 			}
-		
+
 		s = PropertiesUtil.getIgnoreCase(props, "connectPauseSec");
 		if (s != null)
 			try { connectPauseSec = Integer.parseInt(s.trim()); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning(module + " Invalid connectPauseSec property '" + s + 
-					"' -- will use default=60");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid connectPauseSec property '{}' -- will use default=60", s);
 				connectPauseSec = 60;
 			}
-		
+
 		// NOTE: Defer opening the connection until we get the first startMessage call.
 	}
 
@@ -144,18 +141,18 @@ public class TcpClientConsumer extends DataConsumer
 			{
 				try
 				{
-					Logger.instance().info(module + " Connecting to " + hostname + ":" + port);
+					log.info("Connecting to {}:{}", hostname, port);
 					con = new BasicClient(hostname, port);
 					con.connect();
 					break;
 				}
 				catch (Exception ex)
 				{
-					String m = "Cannot connect to " + hostname + ":" + port + " -- " + ex;
-					Logger.instance().warning(m);
+					String m = "Cannot connect to " + hostname + ":" + port;
+
 					close();
 					if (n == connectTries - 1)
-						throw new DataConsumerException(m);
+						throw new DataConsumerException(m, ex);
 					else
 						try { Thread.sleep(connectPauseSec * 1000L); }
 						catch(InterruptedException ex2) {}
@@ -165,7 +162,7 @@ public class TcpClientConsumer extends DataConsumer
 		if (before != null)
 			write(before);
 	}
-	
+
 	private void write(String s)
 		throws DataConsumerException
 	{
@@ -175,7 +172,7 @@ public class TcpClientConsumer extends DataConsumer
 		catch(Exception ex)
 		{
 			close();
-			throw new DataConsumerException(module + " Cannot write string '" + s + "': " + ex);
+			throw new DataConsumerException(" Cannot write string '" + s + "'", ex);
 		}
 	}
 
@@ -185,7 +182,7 @@ public class TcpClientConsumer extends DataConsumer
 		try { write(line); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning(module + " cannot write '" + line + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot write '{}'", line);
 			close();
 		}
 	}
@@ -215,7 +212,7 @@ public class TcpClientConsumer extends DataConsumer
 	{
 		return "Host:Port";
 	}
-	
+
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{

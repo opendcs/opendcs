@@ -1,15 +1,20 @@
 /*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* 2023/02/15 Baoyu Yin
-* Fixing issues with twos complement and undefined number - ING629 & ING 631
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* 2023/02/08 Baoyu Yin
-* Fixing First Temperature and Second Temperature in WL sensors - ING622
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.consumer;
 
-import ilex.util.Logger;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
@@ -18,9 +23,11 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.ArrayList; 
 
-import lrgs.common.DcpMsg;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+import java.util.ArrayList;
 
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.RawMessage;
@@ -30,13 +37,13 @@ import decodes.db.PresentationGroup;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.NosDecoder;
 import decodes.decoder.TimeSeries;
-import java.util.Arrays;
 
 /**
  * Generates the NOS XXX.QC Format
  */
 public class NosQcFormatter extends OutputFormatter
 {
+        private static final Logger log = OpenDcsLoggerFactory.getLogger();
         private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd yyyy HH:mm");
         public static final String module = "NosQcFormatter";
 
@@ -63,7 +70,7 @@ public class NosQcFormatter extends OutputFormatter
                 RawMessage rawmsg = msg.getRawMessage();
                 if (rawmsg == null)
                 {
-                        Logger.instance().warning(module + " no raw message!");
+                        log.warn(" no raw message!");
                         return;
                 }
 
@@ -87,8 +94,8 @@ public class NosQcFormatter extends OutputFormatter
 
                 // Go through each sensor. If ancillary output a line.
         String msgString = msg.getRawMessage().toString();
-        ArrayList<String> NTArray=new ArrayList<>(10); 
-        for (int i = 0; i < 10; i++) 
+        ArrayList<String> NTArray=new ArrayList<>(10);
+        for (int i = 0; i < 10; i++)
         {
             NTArray.add(" ");
         }
@@ -107,7 +114,7 @@ public class NosQcFormatter extends OutputFormatter
                                 continue;
                         int sensorDcpNum = ts.getSensorNumber() / 100 + 1;
 
-            String holdStationDCP = rawmsg.getPM(NosDecoder.PM_STATION_ID).getStringValue() + sensorDcpNum;  
+            String holdStationDCP = rawmsg.getPM(NosDecoder.PM_STATION_ID).getStringValue() + sensorDcpNum;
 
                         for(int varidx = 0; varidx < ts.size(); varidx++)
                         {
@@ -147,7 +154,7 @@ public class NosQcFormatter extends OutputFormatter
                                                         // parse and put data in the prim_wl fields
                                                         // If aquatrack(A) or airgap(Q), then the
                                                         // two temperature fields are also present.
-                                                        StringTokenizer strtok = 
+                                                        StringTokenizer strtok =
                                                                 new StringTokenizer(tv.getStringValue(),",");
                                                         if (strtok.hasMoreTokens())
                                                                 prim_wl_value = Integer.parseInt(strtok.nextToken());
@@ -173,46 +180,21 @@ public class NosQcFormatter extends OutputFormatter
                                                         prim_wl_value = tv.getIntValue();
                                                         if (prim_wl_value == 262143) prim_wl_value = 999999;
                                                 }
-//                                      }
-//                                      else
-//                                      {
-//                                              if (!tv.isNumeric())
-//                                              {
-//                                                      // should be value,sigma,outliers[,t1,t2]
-//                                                      // parse and put data in the back_wl fields
-//                                                      // If aquatrack(A) or airgap(Q), then the
-//                                                      // two temperature fields are also present.
-//                                                      StringTokenizer strtok = 
-//                                                              new StringTokenizer(tv.getStringValue(),",");
-//                                                      if (strtok.hasMoreTokens())
-//                                                              back_wl_value = Integer.parseInt(strtok.nextToken());
-//                                                      if (strtok.hasMoreTokens())
-//                                                              back_wl_sigma = Integer.parseInt(strtok.nextToken());
-//                                                      if (strtok.hasMoreTokens())
-//                                                              back_wl_outli = Integer.parseInt(strtok.nextToken());
-//                                                      if (strtok.hasMoreTokens())
-//                                                              airtemp1 = Integer.parseInt(strtok.nextToken());
-//                                                      if (strtok.hasMoreTokens())
-//                                                              airtemp2 = Integer.parseInt(strtok.nextToken());
-//                                              }
-//                                              else // is numeric -- means redundant.
-//                                              {
-//                                                      back_wl_value = tv.getIntValue();
-//                                              }
-//                                      }
                                         // Datum Offset
-                                        datum_offset = 
+                                        datum_offset =
                                                 msg.getRawMessage().getPM(
                                                         NosDecoder.PM_DATUM_OFFSET).getIntValue();
-                                        sensor_offset = 
+                                        sensor_offset =
                                                 msg.getRawMessage().getPM(
                                                         NosDecoder.PM_SENSOR_OFFSET).getIntValue();
                                 }
                                 catch(Exception ex)
                                 {
-                                        Logger.instance().warning("NosQcFormatter bad value '"
-                                                + tv.getStringValue() + "' -- cannot parse.");
-                                        continue;
+                                    log.atWarn()
+                                       .setCause(ex)
+                                       .log("NosQcFormatter bad value '{}}' -- cannot parse.",
+                                           tv.getStringValue());
+                                    continue;
                                 }
 
                                 if (dt.getCode().equals("N1") ||
@@ -227,7 +209,7 @@ public class NosQcFormatter extends OutputFormatter
                     sb.append(" " + String.format("%6d", pressure));
                                 sb.append(" " + String.format("%6d", prim_wl_value));
                 }
-                
+
                                 sb.append(" " + String.format("%6d", prim_wl_sigma));
                                 sb.append(" " + String.format("%6d", prim_wl_outli));
                                 sb.append(" " + String.format("%6d", back_wl_value));
@@ -257,12 +239,12 @@ public class NosQcFormatter extends OutputFormatter
                                 sb.append(" " + String.format("%6d", back_wl_gain));
                                 sb.append(" " + String.format("%6d", back_wl_offset));
                 consumer.println(sb.toString());
-                
+
                                 if (dt.getCode().equals("N1") || dt.getCode().equals("T1"))
                 {
                     try
                     {
-                    for (int i = 0; i < NTArray.size(); i++) 
+                    for (int i = 0; i < NTArray.size(); i++)
                     {
                        // ING-569 To write an NT record, the times have to match, and there has to be both
                        //   an N1 and T1 record present.  Therefore, the times and dcp must match, but the sensor
@@ -273,11 +255,11 @@ public class NosQcFormatter extends OutputFormatter
                        {
                            if (dt.getCode().equals("N1"))
                            {
-                               consumer.println(sb.toString().substring(0,28) + "NT" + sb.toString().substring(30,132)); 
+                               consumer.println(sb.toString().substring(0,28) + "NT" + sb.toString().substring(30,132));
                            }
                            else
                            {
-                               consumer.println(NTArray.get(i).substring(0,28) + "NT" + NTArray.get(i).substring(30,132));                               
+                               consumer.println(NTArray.get(i).substring(0,28) + "NT" + NTArray.get(i).substring(30,132));
                            }
                            NTArray.remove(i);
                        }
@@ -289,26 +271,26 @@ public class NosQcFormatter extends OutputFormatter
                        }
                     }
                     }
-                    catch (Exception e)
+                    catch (Exception ex)
                     {
-                        Logger.instance().warning(module + ": Exception: Array is empty");
+                        log.atWarn().setCause(ex).log("Exception: Array is empty");
                     }
                     if (NTArray.get(0).equals(" "))
                     {
                            NTArray.set(0, sb.toString());
                            NTIndex = 1;
                     }
-                }        
-                    
+                }
+
                                 sb.setLength(0);
                         }
                 }
         }
 
         @Override
-        public boolean usesTZ() 
-        { 
-             return false; 
+        public boolean usesTZ()
+        {
+             return false;
         }
 
 }

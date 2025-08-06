@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.consumer;
 
-import ilex.util.Logger;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
@@ -9,6 +23,9 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.RawMessage;
@@ -32,6 +49,8 @@ import decodes.decoder.TimeSeries;
  */
 public class NosAncFormatter extends OutputFormatter
 {
+     private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
      private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd yyyy HH:mm");
      public static final String module = "NosAncFormatter";
 
@@ -39,7 +58,7 @@ public class NosAncFormatter extends OutputFormatter
      {
           sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
      }
-     
+
      @Override
      protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp,
                Properties rsProps) throws OutputFormatterException
@@ -58,10 +77,10 @@ public class NosAncFormatter extends OutputFormatter
           RawMessage rawmsg = msg.getRawMessage();
           if (rawmsg == null)
           {
-               Logger.instance().warning(module + " no raw message!");
+               log.warn("No raw message!");
                return;
           }
-          
+
           try
           {
                char fc = rawmsg.getPM(GoesPMParser.FAILURE_CODE).getCharValue();
@@ -74,7 +93,7 @@ public class NosAncFormatter extends OutputFormatter
           }
 
           StringBuilder sb = new StringBuilder();
-          
+
           // Go through each sensor. If ancillary output a line.
        nextSensor:
           for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
@@ -98,22 +117,22 @@ public class NosAncFormatter extends OutputFormatter
                 sb.append(dt.getCode());
                     if (tv.isNumeric()) // single number value
                     {
-                         try 
+                         try
                          {
                               if (((dt.getCode().equals("D1") || dt.getCode().equals("E1") ||
-                                                      dt.getCode().equals("D2") || dt.getCode().equals("E2") || 
+                                                      dt.getCode().equals("D2") || dt.getCode().equals("E2") ||
                                                       dt.getCode().equals("L1") || dt.getCode().equals("M1"))&&
                                                       (tv.getIntValue() == 2047 || tv.getIntValue() == -2048)) ||
                                                       (tv.getIntValue() == 4095 || tv.getIntValue() == 262143) )
                                                 {
-                                                   sb.append(String.format("%6d", 99999));                            
+                                                   sb.append(String.format("%6d", 99999));
                                                 }
                                                 else
                                                 {
 
                                   if ((dt.getCode().equals("L1") && tv.getIntValue() > 10000))
                                                     {
-                                                       sb.append(String.format("%6d", 10000));                            
+                                                       sb.append(String.format("%6d", 10000));
                                                     }
 
 
@@ -129,9 +148,11 @@ public class NosAncFormatter extends OutputFormatter
                                                 }
                               sb.append("            ");
                          }
-                         catch(Exception ex) 
+                         catch(Exception ex)
                          {
-                              Logger.instance().warning(module + " bad variable: " + ex);
+                              log.atWarn()
+                                 .setCause(ex)
+                                 .log("Bad variable.");
                               continue nextSensor;
                          }
                     }
@@ -156,11 +177,11 @@ public class NosAncFormatter extends OutputFormatter
                }
           }
      }
-     
+
      @Override
-     public boolean usesTZ() 
-     { 
-          return false; 
+     public boolean usesTZ()
+     {
+          return false;
      }
 
 }
