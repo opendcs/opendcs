@@ -35,26 +35,21 @@
  */
 package decodes.comp;
 
-import decodes.comp.CompResolver;
 import decodes.db.RoutingSpec;
-//import decodes.decoder.DecodedMessage;
 
-import java.util.Vector;
+
+
 import java.util.ArrayList;
-import java.util.Iterator;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
+
 import org.w3c.dom.Element;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.util.ErrorException;
 import ilex.xml.DomHelper;
 
 /**
@@ -64,24 +59,25 @@ import ilex.xml.DomHelper;
 */
 public class ComputationProcessor
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* Set of known resolvers, populated from configuration file.
 	*/
 	private ArrayList<CompResolver> compResolvers;
-	
+
 	/**
 	* Module name required by DOM reader.
 	*/
 	public static final String module = "ComputationProcessor";
 
-	
+
 	/**
 	* Configuration file being read, used in warning messages.
 	*/
 	private String configFile;
-	
+
 	private RoutingSpec routingSpec = null;
-	
+
 	/**
 	* Resolve and execute all relavent computations for the passed
 	* DecodedMessage.
@@ -97,7 +93,7 @@ public class ComputationProcessor
 					comps[i].apply(msg);
 		}
 	}
-	
+
 	/**
 	* Construct new ComputationProcessor.
 	*/
@@ -105,7 +101,7 @@ public class ComputationProcessor
 	{
 		compResolvers = new ArrayList<CompResolver>();
 	}
-	
+
 	/**
 	 * Initialize the computation processor from the named configuraiton file.
 	 * @param configFile name of configuration file to use.
@@ -115,11 +111,10 @@ public class ComputationProcessor
 	public synchronized void init( String configFile, RoutingSpec routingSpec )
 		throws BadConfigException
 	{
-		Logger.instance().debug1(module + " initializing with config file '"
-			+ configFile + "' for routing spec '" + routingSpec.getName() + "'");
+		log.debug("Initializing with config file '{}' for routing spec '{}'", configFile, routingSpec.getName());
 		this.configFile = configFile;
 		this.routingSpec = routingSpec;
-		
+
 		// MJM 6/18/2009 - Allow init to be called multiple times. Each time
 		// It throws away anything it had before.
 		compResolvers = new ArrayList<CompResolver>();
@@ -133,14 +128,13 @@ public class ComputationProcessor
 		{
 			throw new BadConfigException(ex.toString());
 		}
-                                                                                
+
         Node element = doc.getDocumentElement();
         if (!element.getNodeName().equalsIgnoreCase("ComputationProcessor"))
         {
-            String s = module
-                + ": Wrong type of configuration file -- Cannot initialize. "
+            String s = "Wrong type of configuration file -- Cannot initialize. "
                 + "Root element is not 'ComputationProcessor'.";
-            Logger.instance().failure(s);
+            log.error(s);
             throw new BadConfigException(s);
         }
 
@@ -157,7 +151,7 @@ public class ComputationProcessor
                     if (nn.equalsIgnoreCase("CompResolver"))
 						parseCRElem((Element)node);
 					else
-						parseWarning("Unexpected node name '" + nn 
+						parseWarning("Unexpected node name '" + nn
 							+ " -- ignored.");
                 }
             }
@@ -183,16 +177,15 @@ public class ComputationProcessor
 		String clsname = crelem.getAttribute("class");
 		if (clsname == null)
 		{
-			parseWarning(
-				"CompResolver element with no class attribute ignored.");
+			parseWarning("CompResolver element with no class attribute ignored.");
 			return;
 		}
-		Logger.instance().debug1("Parsing CompResolver element for class '"
+		log.debug("Parsing CompResolver element for class '"
 			+ clsname + "'");
 		try
 		{
 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
-			Class cls = cl.loadClass(clsname);
+			Class<?> cls = cl.loadClass(clsname);
 			CompResolver cr = (CompResolver)cls.newInstance();
         	NodeList crkids = crelem.getChildNodes();
         	if (crkids != null)
@@ -216,8 +209,7 @@ public class ComputationProcessor
 						}
 						String val = DomHelper.getTextContent(pelem).trim();
 						cr.setProperty(attr, val);
-						Logger.instance().debug1("CR Property '" + attr
-							+ "=" + val);
+						log.debug("CR Property '{}' = {}", attr, val);
 					}
                 }
             }
@@ -228,41 +220,49 @@ public class ComputationProcessor
 		catch(ClassNotFoundException ex)
 		{
 			parseWarning("CompResolver references class '" + clsname
-				+ "' which cannot be found -- ignored.");
+				+ "' which cannot be found -- ignored.", ex);
 			return;
 		}
 		catch(InstantiationException ex)
 		{
 			parseWarning("CompResolver references class '" + clsname
-				+ "' which cannot be instantiated -- ignored.");
+				+ "' which cannot be instantiated -- ignored.", ex);
 			return;
 		}
 		catch(IllegalAccessException ex)
 		{
 			parseWarning("CompResolver references class '" + clsname
-				+ "' which cannot be accessed -- ignored.");
+				+ "' which cannot be accessed -- ignored.", ex);
 			return;
 		}
 		catch(ClassCastException ex)
 		{
 			parseWarning("CompResolver element uses class '" + clsname
 				+ " which does not extend the CompResolver base class. "
-				+ "-- ignored.");
+				+ "-- ignored.", ex);
 			return;
 		}
 	}
-	
-	
+
 	/**
 	* Print a warning message with the config file name.
 	* @param msg a message to print
 	*/
 	private void parseWarning( String msg )
 	{
-		Logger.instance().warning(module + "Config File '" + configFile
-			+ "': " + msg);
+		parseWarning(msg, null);
 	}
-	
+
+	/**
+	* Print a warning message with the config file name.
+	* @param msg a message to print
+	* @param cause direct cause of error
+	*/
+	private void parseWarning( String msg, Throwable cause )
+	{
+		log.atWarn().setCause(cause).log("Config File '{}': {}", configFile,msg);
+	}
+
 	/**
 	 * Called before routing spec exits. Shut down all resolvers.
 	 */
@@ -271,6 +271,6 @@ public class ComputationProcessor
 		for(CompResolver cr : compResolvers)
 			cr.shutdown();
 	}
-	
-	
+
+
 }

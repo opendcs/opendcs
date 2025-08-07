@@ -4,17 +4,19 @@
 package covesw.azul.consumer;
 
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.Date;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 
 import decodes.consumer.DataConsumer;
@@ -27,12 +29,12 @@ import decodes.db.Constants;
 import decodes.db.Platform;
 import decodes.db.PresentationGroup;
 import decodes.decoder.DecodedMessage;
-import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
 import decodes.util.PropertySpec;
 
 public class CsvFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String mod = "CsvFormatter";
 	private String timeFormat = "MM/dd/yyyy,HH:mm:ss";
 	private SimpleDateFormat sdf = new SimpleDateFormat(timeFormat);
@@ -45,8 +47,8 @@ public class CsvFormatter extends OutputFormatter
 	private boolean headerEveryMessage = true;
 	private boolean firstMsg = true;
 	private boolean omitTrailingBlanks = false;
-	
-	PropertySpec propSpecs[] = 
+
+	PropertySpec propSpecs[] =
 	{
 		new PropertySpec("delimiter", PropertySpec.STRING, "(default=comma) Use to delimit columns"),
 		new PropertySpec("dataTypes", PropertySpec.STRING,
@@ -69,7 +71,7 @@ public class CsvFormatter extends OutputFormatter
 	{
 		super();
 	}
-	
+
 	class CsvCol
 	{
 		TimeSeries timeSeries;
@@ -93,9 +95,13 @@ public class CsvFormatter extends OutputFormatter
 		String nextSamp()
 		{
 			if (timeSeries == null)
+			{
 				return "";
+			}
 			if (sampleNum >= timeSeries.size())
+			{
 				return "";
+			}
 			int idx = sampleNum++;
 			TimedVariable tv = timeSeries.sampleAt(idx);
 			if ((tv.getFlags() & IFlags.IS_MISSING) != 0 || (tv.getFlags() & IFlags.IS_ERROR) != 0)
@@ -104,13 +110,17 @@ public class CsvFormatter extends OutputFormatter
 			}
 			return timeSeries.formattedSampleAt(idx).trim();
 		}
-		
+
 		Date nextSampTime()
 		{
 			if (timeSeries == null)
+			{
 				return null;
+			}
 			if (sampleNum < timeSeries.size())
+			{
 				return timeSeries.timeAt(sampleNum);
+			}
 			return null;
 		}
 
@@ -121,43 +131,58 @@ public class CsvFormatter extends OutputFormatter
 	protected void initFormatter(String type, java.util.TimeZone tz, PresentationGroup presGrp,
 		Properties rsProps) throws OutputFormatterException
 	{
-		logger.debug1("initFormatter " + mod 
-			+ ", props='" + PropertiesUtil.props2string(rsProps) + "'");
-		
+		log.debug("initFormatter {}, props='{}'", mod, PropertiesUtil.props2string(rsProps));
+
 		String pval = PropertiesUtil.getIgnoreCase(rsProps, "headerEveryMessage");
 		if (pval != null)
+		{
 			headerEveryMessage = TextUtil.str2boolean(pval);
+		}
 
 		pval = PropertiesUtil.getIgnoreCase(rsProps, "noHeader");
 		if (pval != null)
+		{
 			noHeader = TextUtil.str2boolean(pval);
-		
+		}
+
 		pval = PropertiesUtil.getIgnoreCase(rsProps, "timeFormat");
 		if (pval != null)
+		{
 			sdf = new SimpleDateFormat(timeFormat = pval);
+		}
 
 		pval = PropertiesUtil.getIgnoreCase(rsProps, "IncludeSiteName");
 		if (pval != null)
+		{
 			inclSiteNameCol = TextUtil.str2boolean(pval);
+		}
 
 		sdf.setTimeZone(tz);
 
 		dataTypes = PropertiesUtil.getIgnoreCase(rsProps, "dataTypes");
 		if (dataTypes != null)
+		{
 			dataTypes = dataTypes.trim();
+		}
 
 		pval = PropertiesUtil.getIgnoreCase(rsProps, "missing");
 		if (pval != null)
+		{
 			missingValue = pval;
+		}
 
 		pval = PropertiesUtil.getIgnoreCase(rsProps, "delimiter");
 		if (pval != null)
+		{
 			delimiter = new String(AsciiUtil.ascii2bin(pval));
-		
+		}
+
 		pval = PropertiesUtil.getIgnoreCase(rsProps, "omitTrailingBlanks");
 		if (pval != null)
+		{
 			omitTrailingBlanks = TextUtil.str2boolean(pval);
-		
+		}
+
 		firstMsg = true;
 	}
 
@@ -179,12 +204,15 @@ public class CsvFormatter extends OutputFormatter
 		csvCols.clear();
 
 		Platform platform;
-		try { platform = rawmsg.getPlatform(); }
+		try
+		{
+			platform = rawmsg.getPlatform();
+		}
 		catch (UnknownPlatformException ex)
 		{
-			logger.warning(mod + " requires platform association. Cannot format '"
-				+ (msg.getRawMessage() != null ? new String(msg.getRawMessage().getHeader()) : "unknown") + "'");
-			throw new OutputFormatterException(ex.toString());
+			final String logMsg = (msg.getRawMessage() != null ? new String(msg.getRawMessage().getHeader()) : "unknown");
+			log.warn("{} requires platform association. Cannot format '{}'", mod, logMsg);
+			throw new OutputFormatterException(ex.toString(), ex);
 		}
 
 		// Has user specified specific columns?
@@ -199,24 +227,36 @@ public class CsvFormatter extends OutputFormatter
 			}
 		}
 		else
+		{
 			for(TimeSeries ts : msg.getTimeSeriesArray())
+			{
 				csvCols.add(new CsvCol(ts, ts.getDataTypeCode()));
-		
+			}
+		}
+
 		if (csvCols.size() == 0)
+		{
 			throw new OutputFormatterException("No columns -- nothing to format.");
-		
+		}
+
 		if (firstMsg || headerEveryMessage)
 		{
 			if (!noHeader)
 			{
 				sb.setLength(0);
 				if (inclSiteNameCol)
+				{
 					sb.append("SiteName" + delimiter);
+				}
 				// If time format contains the delimeter, assume separate columns for date and time
 				if (timeFormat.contains(delimiter))
+				{
 					sb.append("Date" + delimiter + "Time");
+				}
 				else
+				{
 					sb.append("Date/Time");
+				}
 				for(CsvCol col : csvCols)
 				{
 					sb.append(delimiter);
@@ -239,24 +279,27 @@ public class CsvFormatter extends OutputFormatter
 				sb.append(id);
 				sb.append(delimiter);
 			}
-			
+
 			sb.append(sdf.format(d));
 
 			for(CsvCol col : csvCols)
 			{
 				sb.append(delimiter);
 				if (d.equals(col.nextSampTime()))
+				{
 					sb.append(col.nextSamp());
+				}
 			}
 			if (omitTrailingBlanks)
 			{
 				int newlen = sb.length();
 				while(newlen > 0 && sb.charAt(newlen-1) == ',')
+				{
 					newlen--;
+				}
 				String s= sb.toString();
 				sb.setLength(newlen);
-				Logger.instance().debug1(
-					"Truncate '" + s + "' to len="+newlen + ", result='" + sb.toString() + "'");
+				log.debug("Truncate '{}' to len={}, result='{}'", s, newlen, sb.toString());
 			}
 			consumer.println(sb.toString());
 		}
@@ -271,7 +314,9 @@ public class CsvFormatter extends OutputFormatter
 		{
 			Date d = csvCols.get(idx).nextSampTime();
 			if (d != null && (ret == null || d.compareTo(ret) < 0))
+			{
 				ret = d;
+			}
 		}
 		return ret;
 	}

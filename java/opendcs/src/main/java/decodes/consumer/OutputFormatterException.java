@@ -23,7 +23,7 @@ Thrown by concrete output formatters.
 */
 public class OutputFormatterException extends DecodesException
 {
-	/** 
+	/**
 	  Constructs new exception.
 	  @param msg the explanation
 	*/
@@ -31,5 +31,14 @@ public class OutputFormatterException extends DecodesException
 	{
 		super(msg);
 	}
-}
 
+	/**
+	  Constructs new exception.
+	  @param msg the explanation
+	  @param cause the cause
+	*/
+	public OutputFormatterException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
+}

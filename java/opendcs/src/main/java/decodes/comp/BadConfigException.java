@@ -20,7 +20,6 @@
 */
 package decodes.comp;
 
-import decodes.comp.ComputationException;
 
 /**
 * Thrown when ComputationProcessor could not initialize because of
@@ -35,5 +34,15 @@ public class BadConfigException extends ComputationException
 	public BadConfigException(String msg)
 	{
 		super(msg);
+	}
+
+	/**
+	  Construct new BadConfigException.
+	  @param msg the message
+	  @param cause the cause
+	*/
+	public BadConfigException(String msg, Throwable cause)
+	{
+		super(msg, cause);
 	}
 }

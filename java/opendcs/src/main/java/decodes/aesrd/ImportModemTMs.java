@@ -2,13 +2,15 @@ package decodes.aesrd;
 
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.gui.DecodesInterface;
 import decodes.db.Database;
@@ -22,20 +24,21 @@ import decodes.util.DecodesException;
 
 public class ImportModemTMs extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "ImportModemTMs";
-	
+
 	private StringToken topDirArg = new StringToken("",
         "top dir of legacy dacq, corresponding to /usr1 on collect", "",
         TokenOptions.optArgument | TokenOptions.optRequired, null);
-	
+
 	private File topdir = null;
 
 	public ImportModemTMs()
 	{
 		super(module);
 	}
-	
-	
+
+
 
 	@Override
 	protected void runApp() throws Exception
@@ -44,7 +47,7 @@ public class ImportModemTMs extends TsdbAppTemplate
 		topdir = new File(topDirArg.getValue());
 		if (!topdir.isDirectory())
 			throw new Exception("required arg is top dir containing lstfiles and confiles subdirs.");
-		
+
 		File phonelistfile = new File(topdir.getPath() + "/lstfiles/Phone.txt");
 		if (!phonelistfile.canRead())
 			throw new Exception("Cannot read '" + phonelistfile.getPath() + "'");
@@ -63,16 +66,16 @@ public class ImportModemTMs extends TsdbAppTemplate
 		}
 		lnr.close();
 	}
-	
+
 	private void processStation(String stationName)
 	{
 		File inFile = new File(topdir.getPath() + "/lstfiles/" + stationName + ".in");
 		if (!inFile.canRead())
 		{
-			System.err.println("Can't read '" + inFile.getPath() + "' -- skipping station " + stationName);
+			log.warn("Can't read '{}' -- skipping station {}", inFile.getPath(), stationName);
 			return;
 		}
-		
+
 		// open lstfiles/$STATION.in, read the one line in the file
 		BufferedReader br = null;
 		String username = null;
@@ -83,7 +86,7 @@ public class ImportModemTMs extends TsdbAppTemplate
 			String line1 = br.readLine();
 			if (line1 == null)
 			{
-				System.err.println("File '" + inFile.getPath() + "' is empty. Skipping " + stationName);
+				log.warn("File '{}' is empty. Skipping {}", inFile.getPath(), stationName);
 				return;
 			}
 			// First field is username (only used for campbells)
@@ -91,32 +94,32 @@ public class ImportModemTMs extends TsdbAppTemplate
 			String fields[] = line1.split("\\s+");
 			if (fields.length < 2)
 			{
-				System.err.println("File '" + inFile.getPath() + "' not enough fields. Skipping " + stationName);
+				log.warn("File '{}' not enough fields. Skipping {}", inFile.getPath(), stationName);
 				return;
 			}
 			username = fields[0];
 			loggerType = code2loggerType(fields[1]);
 			if (loggerType == null)
 			{
-				System.err.println("File '" + inFile.getPath() + "' unrecognized logger type '"
-					+ fields[1] + "'. Skipping " + stationName);
+				log.warn("File '{}' unrecognized logger type '{}'. Skipping {}",
+						 inFile.getPath(), fields[1], stationName);
 				return;
 			}
 		}
 		catch (IOException ex)
 		{
-			System.err.println("Error reading '" + inFile.getPath() + "' Skipping " + stationName + ": " + ex);
+			log.atError().setCause(ex).log("Error reading '{}' Skipping ", inFile.getPath(), stationName);
 			return;
 		}
 		finally { if (br != null) try { br.close(); } catch(Exception ex) {} }
-		
+
 		Platform platform = Database.getDb().platformList.getBySiteNameValue(stationName);
 		if (platform == null)
 		{
-			System.err.println("No platform for station name '" + stationName + "' -- Skipped.");
+			log.warn("No platform for station name '{}' -- Skipped.", stationName);
 			return;
 		}
-		
+
 		TransportMedium pmtm = platform.getTransportMedium("polled-modem");
 		boolean wasNew = false;
 		if (pmtm == null)
@@ -124,7 +127,7 @@ public class ImportModemTMs extends TsdbAppTemplate
 			pmtm = new TransportMedium(platform, "polled-modem", "");
 			wasNew = true;
 		}
-		
+
 		// open confiles/$STATION.con
 		// parse the modem params.
 		File conFile = new File(topdir.getPath() + "/confiles/" + stationName + ".con");
@@ -140,7 +143,7 @@ public class ImportModemTMs extends TsdbAppTemplate
 				String words[] = line.split("\\s+");
 				if (words.length < 2)
 					continue;
-System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'");
+				log.info("{} : '{}' '{}'", conFile.getName(), words[0], words[1]);
 				if (words[0].equalsIgnoreCase("call"))
 					pmtm.setMediumId(words[1]);
 				else if (words[0].equalsIgnoreCase("baud"))
@@ -148,7 +151,7 @@ System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'"
 					try { pmtm.setBaud(Integer.parseInt(words[1])); }
 					catch(NumberFormatException ex)
 					{
-						System.err.println("Bad baud in " + conFile.getPath() + " -- default to 1200");
+						log.atWarn().setCause(ex).log("Bad baud in {} -- default to 1200", conFile.getPath());
 						pmtm.setBaud(1200);
 					}
 				}
@@ -161,8 +164,10 @@ System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'"
 					{
 						pmtm.setDataBits(pmtm.getParity() == Parity.None.getCode()
 							|| pmtm.getParity() == Parity.Unknown.getCode() ? 8 : 7);
-						System.err.println("Bad wordlen in " + conFile.getPath()
-							+ " -- default to " + pmtm.getDataBits() + " with parity " + pmtm.getParity());
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Bad wordlen in {} -- default to {} with parity {}",
+							    conFile.getPath(), pmtm.getDataBits(), pmtm.getParity());
 					}
 				}
 				else if (words[0].equalsIgnoreCase("stopbits"))
@@ -171,39 +176,39 @@ System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'"
 					catch(NumberFormatException ex)
 					{
 						pmtm.setStopBits(1);
-						System.err.println("Bad stopbits in " + conFile.getPath()
-							+ " -- default to 1");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Bad stopbits in {} -- default to 1", conFile.getPath());
 					}
 				}
 			}
 			if (pmtm.getMediumId() == null || pmtm.getMediumId().length() == 0)
 			{
-				System.err.println("No 'call' statement found. Required for TMID. Skipping " + stationName);
+				log.error("No 'call' statement found. Required for TMID. Skipping {}", stationName);
 				return;
 			}
-			Logger.instance().info("New TM: type=" + pmtm.getMediumType() + ", id=" + pmtm.getMediumId());
+			log.info("New TM: type={}, id={}", pmtm.getMediumType(), pmtm.getMediumId());
 			pmtm.setLoggerType(loggerType);
 			if (loggerType.equalsIgnoreCase("campbell"))
 				pmtm.setUsername(username);
 			if (wasNew)
 				platform.transportMedia.add(pmtm);
-			
+
 			platform.write();
 		}
 		catch (IOException ex)
 		{
-			System.err.println("Error reading '" + conFile.getPath() + "' Skipping " + stationName + ": " + ex);
+			log.atError().setCause(ex).log("Error reading '{}' Skipping {}" , conFile.getPath(), stationName);
 			return;
 		}
 		catch (DatabaseException ex)
 		{
-			System.err.println("Error saving platform to database. Station=" + stationName + ": " + ex);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Error saving platform to database. Station={}", stationName);
 			return;
 		}
 		finally { if (br != null) try { br.close(); } catch(Exception ex) {} }
 	}
-	
+
 	private String code2loggerType(String code)
 	{
 		code = code.toUpperCase();
@@ -238,5 +243,5 @@ System.out.println(conFile.getName() + ": '" + words[0] + "' '" + words[1] + "'"
 		DecodesInterface.initializeForDecoding();
 	}
 
-	
+
 }

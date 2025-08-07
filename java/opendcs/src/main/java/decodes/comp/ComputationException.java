@@ -22,12 +22,22 @@ import decodes.util.DecodesException;
 /** Base class for exceptions thrown by computation code. */
 public class ComputationException extends DecodesException
 {
-	/** 
-	  Construct new object. 
+	/**
+	  Construct new object.
 	  @param msg the message
 	*/
 	public ComputationException( String msg )
 	{
 		super(msg);
+	}
+
+	/**
+	  Construct new object.
+	  @param msg the message
+	  @param cause the cause
+	*/
+	public ComputationException(String msg, Throwable cause)
+	{
+		super(msg, cause);
 	}
 }
