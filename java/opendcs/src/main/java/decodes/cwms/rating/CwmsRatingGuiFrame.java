@@ -1,25 +1,18 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.2  2012/10/30 15:46:37  mmaloney
- * dev
- *
- * Revision 1.1  2012/10/30 01:59:27  mmaloney
- * First cut of rating GUI.
- *
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.rating;
 
 import ilex.util.LoadResourceBundle;
@@ -28,6 +21,9 @@ import java.awt.Dimension;
 import java.util.ResourceBundle;
 
 import javax.swing.JPanel;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
@@ -42,6 +38,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class CwmsRatingGuiFrame extends TopFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JPanel contentPane;
 	private JPanel tsGroupTab;
 	private JPanel tsGroupListTab;
@@ -70,14 +67,14 @@ public class CwmsRatingGuiFrame extends TopFrame
 		try
 		{
 			jbInit();
-		} 
-		catch (Exception e)
+		}
+		catch (Exception ex)
 		{
-			e.printStackTrace();
+			log.atError().setCause(ex).log("Unable to initialize GUI elements.");
 		}
 		trackChanges("CwmsRatingFrame");
 	}
-	
+
 	/**
 	 * Returns the time series DB object.
 	 */
@@ -107,7 +104,7 @@ public class CwmsRatingGuiFrame extends TopFrame
 
 		//Set up the frame dimension
 		this.setSize(new Dimension(863, 768));//763, 803 763, 760
-		this.setTitle(frameTitle);   
+		this.setTitle(frameTitle);
 		contentPane = (JPanel) this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
 		contentPane.add(tsGroupTab, BorderLayout.CENTER);
