@@ -1,10 +1,22 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package covesw.azul.consumer;
 
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
@@ -16,6 +28,9 @@ import java.util.Properties;
 import java.util.Date;
 import java.util.StringTokenizer;
 import java.text.SimpleDateFormat;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
@@ -33,7 +48,7 @@ import decodes.util.PropertySpec;
 
 public class CsvFormatter extends OutputFormatter
 {
-	private String mod = "CsvFormatter";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();	
 	private String timeFormat = "MM/dd/yyyy,HH:mm:ss";
 	private SimpleDateFormat sdf = new SimpleDateFormat(timeFormat);
 	private ArrayList<CsvCol> csvCols = new ArrayList<CsvCol>();
@@ -121,8 +136,7 @@ public class CsvFormatter extends OutputFormatter
 	protected void initFormatter(String type, java.util.TimeZone tz, PresentationGroup presGrp,
 		Properties rsProps) throws OutputFormatterException
 	{
-		logger.debug1("initFormatter " + mod 
-			+ ", props='" + PropertiesUtil.props2string(rsProps) + "'");
+		log.debug("initFormatter props='{}'", PropertiesUtil.props2string(rsProps));
 		
 		String pval = PropertiesUtil.getIgnoreCase(rsProps, "headerEveryMessage");
 		if (pval != null)
@@ -182,9 +196,10 @@ public class CsvFormatter extends OutputFormatter
 		try { platform = rawmsg.getPlatform(); }
 		catch (UnknownPlatformException ex)
 		{
-			logger.warning(mod + " requires platform association. Cannot format '"
-				+ (msg.getRawMessage() != null ? new String(msg.getRawMessage().getHeader()) : "unknown") + "'");
-			throw new OutputFormatterException(ex.toString());
+			final String logMsg = (msg.getRawMessage() != null ? new String(msg.getRawMessage().getHeader()) : "unknown");
+
+			log.atWarn().setCause(ex).log("requires platform association. Cannot format '{}'", logMsg);
+			throw new OutputFormatterException("CsvFormatter needs a platform.",ex);
 		}
 
 		// Has user specified specific columns?
@@ -255,8 +270,7 @@ public class CsvFormatter extends OutputFormatter
 					newlen--;
 				String s= sb.toString();
 				sb.setLength(newlen);
-				Logger.instance().debug1(
-					"Truncate '" + s + "' to len="+newlen + ", result='" + sb.toString() + "'");
+				log.debug("Truncate '{}' to len={}, result='{}'", s, newlen, sb.toString());
 			}
 			consumer.println(sb.toString());
 		}

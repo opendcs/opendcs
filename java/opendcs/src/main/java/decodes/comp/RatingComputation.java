@@ -1,11 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.comp;
 
 import java.util.Enumeration;
 import java.util.Date;
-import ilex.util.Logger;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 import ilex.var.NoConversionException;
@@ -15,10 +31,9 @@ import ilex.var.NoConversionException;
 * Holds the lookup table &amp; shift values.
 * Delegates table reads to supplied reader.
 */
-public class RatingComputation 
-	extends Computation
-	implements HasLookupTable
+public class RatingComputation extends Computation implements HasLookupTable
 {
+	public static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* If true, apply shifts to independent variable before lookup.
 	*/
@@ -98,14 +113,12 @@ public class RatingComputation
 	*/
 	public void apply( IDataCollection msg )
 	{
-		Logger.instance().debug3("Applying rating calculation");
+		log.trace("Applying rating calculation");
 		// Retrieve independent time series.
 		ITimeSeries indepTs = msg.getITimeSeries(indepSensorNum);
 		if (indepTs == null)
 		{
-			Logger.instance().warning(
-				"Message does not contain independent sensor " +
-				indepSensorNum);
+			log.warn("Message does not contain independent sensor {}",indepSensorNum);
 			return;
 		}
 
@@ -121,7 +134,7 @@ public class RatingComputation
 		else
 		{
 			depTs = msg.newTimeSeries(depSensorNum, name);
-			Logger.instance().debug3("Created dep sensor " + depSensorNum + ": " + name);
+			log.trace("Created dep sensor {}:{}", depSensorNum, name);
 		}
 		depTs.setDataOrder(indepTs.getDataOrder());
 		depTs.setPeriodicity(indepTs.getRecordingMode(), 
@@ -132,13 +145,6 @@ public class RatingComputation
 		s = getProperty("DepShefCode");
 		if (s != null)
 			depTs.addDataType("SHEF-PE", s);
-//		s = getProperty("depCwmsParam");
-//		if (s != null)
-//			depTs.addDataType(CwmsConstants.CWMS_DATA_TYPE, s);
-
-/////// THIS IS THE ONLY HOLE
-//		ps.site = indepSensor.getSensorSite();
-////////
 
 		s = getProperty("DepUnits");
 		if (s != null)
@@ -155,11 +161,11 @@ public class RatingComputation
 			if (d.compareTo(beginTime) < 0
 			 || d.compareTo(endTime) > 0)
 			{
-				Logger.instance().warning(
+				log.warn(
 					"Skipping rating computation because sample time is"
-					+ " outside the rating time range. Sample Time=" +d
-					+ ", RatingStart=" + beginTime
-					+ ", RatingEnd=" + endTime);
+					+ " outside the rating time range. Sample Time={}"
+					+ ", RatingStart={}"
+					+ ", RatingEnd={}", d, beginTime, endTime);
 				continue;
 			}
 			try
@@ -171,16 +177,15 @@ public class RatingComputation
 			}
 			catch(NoConversionException ex)
 			{
-				Logger.instance().warning("Independent value not a number.");
+				log.atWarn().setCause(ex).log("Independent value not a number.");
 			}
 			catch(TableBoundsException ex)
 			{
-				Logger.instance().warning(ex.toString());
+				log.atWarn().setCause(ex).log("Inputs out of bounds");
 			}
 		}
 
-		Logger.instance().debug3("RatingComp produced " + depTs.size() +
-			" " + name + " samples.");
+		log.trace("RatingComp produced {} {} samples.", depTs.size(), name);
 
 		if (depTs.size() == 0)
 			msg.rmTimeSeries(depTs);
@@ -248,7 +253,7 @@ public class RatingComputation
 	}
 	
 	/** 
-	* Sets lookup type to one of the constantd defined in LookupTable.
+	* Sets lookup type to one of the constants defined in LookupTable.
 	* @param t the type
 	*/
 	public void setLookupType( int t )
