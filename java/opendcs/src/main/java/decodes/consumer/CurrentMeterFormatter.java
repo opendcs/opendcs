@@ -63,7 +63,7 @@ public class CurrentMeterFormatter extends OutputFormatter
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
-		log.debug("Initializing {}, props='{}'", module, PropertiesUtil.props2string(rsProps));
+		log.debug("Initializing, props='{}'", PropertiesUtil.props2string(rsProps));
 		
 		String s = PropertiesUtil.getIgnoreCase(rsProps, "missing");
 		if (s != null)
