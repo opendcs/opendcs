@@ -1,29 +1,21 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.4  2015/09/17 17:44:55  mmaloney
- * CWMS Screening I/O and Algorithm
- *
- * Revision 1.3  2015/09/10 21:18:07  mmaloney
- * Development on Screening
- *
- * Revision 1.2  2015/05/14 13:52:17  mmaloney
- * RC08 prep
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.14  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.validation;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,7 +25,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -49,6 +40,8 @@ import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -58,13 +51,14 @@ import org.w3c.dom.NodeList;
 
 public class DatchkReader
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public String module = "DatchkValidation";
 	private static DatchkReader _instance = null;
 
 	private LoadedFile cfgFile = null;
-	private HashMap<String, PathMapping> dssPath2pathMap = 
+	private HashMap<String, PathMapping> dssPath2pathMap =
 		new HashMap<String, PathMapping>();
-	private ArrayList<LoadedFile> loadedFiles = 
+	private ArrayList<LoadedFile> loadedFiles =
 		new ArrayList<LoadedFile>();
 	private HashMap<String, GregorianCalendar> seasons
 		= new HashMap<String, GregorianCalendar>();
@@ -79,14 +73,9 @@ public class DatchkReader
 
 	private DatchkReader()
 	{
-		cfgFile = new LoadedFile(
-			EnvExpander.expand(DecodesSettings.instance().datchkConfigFile));
-		Logger.instance().info(module + " created new instance with config file '"
-			+ cfgFile.getPath() + "'");
-		seasonTz = TimeZone.getTimeZone(
-			DecodesSettings.instance().aggregateTimeZone);
+		this(DecodesSettings.instance().datchkConfigFile);
 	}
-	
+
 	/**
 	 * For DatchkExport, allow creation with an alternate config file.
 	 * @param cfgFile the config file name.
@@ -95,8 +84,7 @@ public class DatchkReader
 	{
 		cfgFile = new LoadedFile(
 			EnvExpander.expand(cfgFileName));
-		Logger.instance().info(module + " created new instance with config file '"
-			+ cfgFile.getPath() + "'");
+		log.info(module + " created new instance with config file '{}'", cfgFile.getPath());
 		seasonTz = TimeZone.getTimeZone(
 			DecodesSettings.instance().aggregateTimeZone);
 	}
@@ -107,34 +95,32 @@ public class DatchkReader
 			_instance = new DatchkReader();
 		return _instance;
 	}
-	
+
 	public Screening getScreening(TimeSeriesIdentifier tsid)
 		throws DbCompException
 	{
 		checkConfig();
 		return findScreening(tsid.getUniqueString());
 	}
-	
+
 	public Screening findScreening(String tsidStr)
 	{
 		String uc = tsidStr.toUpperCase();
-		Logger.instance().debug1(module + " looking for match to '" + tsidStr + "'");
+		log.debug("Looking for match to '{}'", tsidStr);
 		Screening ret = tsidScreeningMap.get(uc);
 		if (ret == null)
 		{
-			Logger.instance().debug1("No screening defined for '"
-				+ uc + "', " + tsidScreeningMap.size()
-				+ " screenings defined.");
+			log.debug("No screening defined for '{}', {} screening defined.", uc, tsidScreeningMap.size());
 		}
 		else
-			Logger.instance().debug1("Found screening for '" + tsidStr + "'");
+			log.debug("Found screening for '{}'", tsidStr);
 		return ret;
 	}
-	
+
 	/**
 	 * Checks to see if the configuration file has changed. If so it loads it
 	 * and then loads all of the caches.
-	 * 
+	 *
 	 * @throws DbCompException
 	 */
 	private void checkConfig() throws DbCompException
@@ -146,7 +132,7 @@ public class DatchkReader
 		if (cfgFile.lastModified() > cfgFile.getLastRead())
 		{
 			doReload = true;
-			Logger.instance().info(module + " must reload because config file was changed.");
+			log.info("Must reload because config file was changed.");
 		}
 		else
 			for (LoadedFile lf : loadedFiles)
@@ -154,8 +140,7 @@ public class DatchkReader
 				if (lf.lastModified() > lf.getLastRead())
 				{
 					doReload = true;
-					Logger.instance().info(module + " must reload because file '"
-						+ lf.getPath() + "' was changed.");
+					log.info("Must reload because file '{}' was changed.", lf.getPath());
 				}
 			}
 		if (doReload)
@@ -169,10 +154,10 @@ public class DatchkReader
 		}
 	}
 
-	public void reloadAll() 
+	public void reloadAll()
 		throws DbCompException
 	{
-		Logger.instance().info(module + " reloading all files.");
+		log.info("Reloading all files.");
 		// Load the configuration file. Throw DbCompException if error.
 		Document doc;
 		try
@@ -183,18 +168,18 @@ public class DatchkReader
 		catch(ilex.util.ErrorException ex)
 		{
 			throw new DbCompException(module + " Cannot read config file '"
-				+ cfgFile.getPath() + "': " + ex);
+				+ cfgFile.getPath() + "'", ex);
 		}
 
 		Node topElement = doc.getDocumentElement();
 		NodeList children = topElement.getChildNodes();
 		if (children == null)
 		{
-			fileWarning(cfgFile, -1, 
+			fileWarning(cfgFile, -1,
 				"Empty config! No mappings or datchk files specified!");
 			return;
 		}
-		
+
 		// First walk the tree and get path mappings and seasons
 		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd HH:mm");
 		sdf.setTimeZone(seasonTz);
@@ -203,7 +188,7 @@ public class DatchkReader
 			Node node = children.item(i);
 			if (node.getNodeType() == Node.ELEMENT_NODE)
 			{
-				Element elem = (Element)node;		
+				Element elem = (Element)node;
 				if (node.getNodeName().equalsIgnoreCase("timezone"))
 				{
 					String tx = DomHelper.getTextContent(node);
@@ -284,11 +269,10 @@ public class DatchkReader
 				}
 			}
 		}
-		
-		Logger.instance().info(module + " Loaded " + tsidScreeningMap.size()
-			+ " time-series screenings.");
+
+		log.info("Loaded {} time-series screenings.", tsidScreeningMap.size());
 	}
-	
+
 	private void loadPathmapFile(String filename)
 	{
 		LineNumberReader lnr = null;
@@ -310,7 +294,7 @@ public class DatchkReader
 				int idx = mapping.indexOf('=');
 				if (idx == -1)
 				{
-					fileWarning(file, lnr.getLineNumber(), 
+					fileWarning(file, lnr.getLineNumber(),
 						"Path assignment with no equal sign '" + mapping
 						+ "' -- ignored.");
 					continue;
@@ -367,8 +351,7 @@ public class DatchkReader
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " Error reading pathmap file '"
-				+ filename + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading pathmap file '{}'", filename);
 		}
 		finally
 		{
@@ -380,14 +363,15 @@ public class DatchkReader
 			}
 		}
 	}
-	
+
 	private void fileWarning(File file, int linenum, String msg)
 	{
 		String w = module + " file " + file.getPath() + " ";
 		if (linenum >= 0)
 			w = w + "line=" + linenum + " ";
 		w = w + msg;
-		Logger.instance().warning(w);	}
+		log.warn(w);
+	}
 
 	/**
 	 * Loads a datchk file optionally to a season
@@ -401,8 +385,8 @@ public class DatchkReader
 		file.setLastRead(System.currentTimeMillis());
 		loadedFiles.add(file);
 		datchkSeason = season;
-		
-		Logger.instance().debug1("Loading DATCHK file '" + filename + "'");
+
+		log.debug("Loading DATCHK file '{}'", filename);
 
 		try
 		{
@@ -415,7 +399,7 @@ public class DatchkReader
 				line = line.trim();
 				if (line.length() == 0 || line.charAt(0) == '*')
 					continue;
-				
+
 				StringTokenizer st = new StringTokenizer(line, " ");
 				String kw = st.nextToken();
 				DatchkKeyword keyword = DatchkKeyword.token2keyword(kw);
@@ -428,7 +412,7 @@ public class DatchkReader
 				if (keyword != DatchkKeyword.DATA
 				 && prevKeyword == DatchkKeyword.DATA)
 					flushCriteria();
-						
+
 				int lineNum = lnr.getLineNumber();
 				switch(keyword)
 				{
@@ -451,9 +435,9 @@ public class DatchkReader
 				case TIME:
 				case CONTEXT:
 					break;
-				
+
 				default:
-					fileWarning(file, lnr.getLineNumber(), 
+					fileWarning(file, lnr.getLineNumber(),
 						"Keyword '"
 						+ keyword.name() + "' ignored.");
 				}
@@ -463,8 +447,7 @@ public class DatchkReader
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " Error reading datchk file '"
-				+ filename + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading datchk file '{}'", filename);
 		}
 		finally
 		{
@@ -475,9 +458,9 @@ public class DatchkReader
 				try {lnr.close(); } catch(Exception ex) {}
 			}
 		}
-	
+
 	}
-	
+
 	private void flushCriteria()
 	{
 		critBuffer = new ScreeningCriteria(datchkSeason);
@@ -492,13 +475,13 @@ public class DatchkReader
 		else
 			fileWarning(file, lineNum, "DEFINE without name -- ignored");
 	}
-	
+
 	private void endNamedTest()
 	{
 		if (testName != null)
 			storedTests.put(testName, critBuffer);
 	}
-	
+
 	private void recallNamedTest(StringTokenizer st, File file, int lineNum)
 	{
 		flushCriteria();
@@ -514,7 +497,7 @@ public class DatchkReader
 			}
 		}
 	}
-	
+
 	private void specifyCriteria(StringTokenizer st, File file, int lineNum)
 	{
 		if (!st.hasMoreTokens())
@@ -547,7 +530,7 @@ public class DatchkReader
 			}
 			double min = Double.NEGATIVE_INFINITY;
 			double max = Double.POSITIVE_INFINITY;
-			try 
+			try
 			{
 				min = Double.parseDouble(st.nextToken());
 				max = Double.parseDouble(st.nextToken());
@@ -571,7 +554,7 @@ public class DatchkReader
 			}
 			double min = Double.NEGATIVE_INFINITY;
 			double max = Double.POSITIVE_INFINITY;
-			try 
+			try
 			{
 				min = Double.parseDouble(st.nextToken());
 				max = Double.parseDouble(st.nextToken());
@@ -604,7 +587,7 @@ public class DatchkReader
 			IntervalIncrement maxGap = null;
 			if (st.hasMoreTokens())
 			{
-				try 
+				try
 				{
 					min = Double.parseDouble(st.nextToken());
 					if (st.hasMoreTokens())
@@ -618,7 +601,7 @@ public class DatchkReader
 							{
 								maxGap = IntervalCodes.getIntervalCalIncr(missingArg);
 								if (maxGap == null)
-									fileWarning(file, lineNum, "Invalid nmissing argument '" 
+									fileWarning(file, lineNum, "Invalid nmissing argument '"
 										+ missingArg + "' -- ignored.");
 							}
 						}
@@ -634,7 +617,7 @@ public class DatchkReader
 			ConstCheck cc = new ConstCheck(qflag, duration, min, tolerance, nmissing);
 			cc.setMaxGap(maxGap);
 			critBuffer.addConstCheck(cc);
-			
+
 		}
 		else if (type.startsWith("RATE"))
 		{
@@ -647,7 +630,7 @@ public class DatchkReader
 			}
 			double neg = 0.0;
 			double pos = 0.0;
-			try 
+			try
 			{
 				neg = Double.parseDouble(st.nextToken());
 				pos = Double.parseDouble(st.nextToken());
@@ -661,23 +644,13 @@ public class DatchkReader
 			critBuffer.addRocPerHourCheck(
 				new RocPerHourCheck(qflag, neg, pos));
 		}
-//		else if (type.startsWith("REL"))
-//		{
-//			// relative magnitude test args: qflag min-expr, max-expr
-//			//    [action duration]
-//		}
-//		else if (type.startsWith("DIS"))
-//		{
-//			// distribution test args: qflag duration significance-lev
-//			//    base1 base2
-//		}
 		else
 		{
 			fileWarning(file, lineNum, "CRITERIA " + type
 				+ " not implemented.");
 		}
 	}
-	
+
 	private void specifyData(String line, File file, int lineNum)
 	{
 		// Isolate the DSS path on the line
@@ -689,7 +662,7 @@ public class DatchkReader
 			return;
 		}
 		int dssPathEnd = line.indexOf(';', dssPathStart);
-		String dssPath = 
+		String dssPath =
 			dssPathEnd != -1 ? line.substring(dssPathStart, dssPathEnd) :
 				line.substring(dssPathStart);
 
@@ -701,7 +674,7 @@ public class DatchkReader
 				+ dssPath + "' -- ignored.");
 			return;
 		}
-		
+
 		// Get the screening for this TSID, or create one if none yet exists.
 		String cwmsTSID = pm.getCwmsPath();
 		String tsid_uc = cwmsTSID.toUpperCase();
@@ -714,14 +687,12 @@ public class DatchkReader
 				pm.getDssUnitsAbbr());
 			tsidScreeningMap.put(tsid_uc, screening);
 			screenedTsids.add(cwmsTSID);
-			Logger.instance().debug2(module + " Created new screening for '" +
-				tsid_uc + "'");
+			log.info("Created new screening for '{}'", tsid_uc);
 		}
-		
+
 		// Add the accumulated criteria checks to this screening.
 		screening.add(critBuffer);
-		Logger.instance().debug3(module + " Added new criteria for '" +
-			tsid_uc + "' read from file '" + file.getPath() + "'");
+		log.trace("Added new criteria for '{}' read from file '{}'", tsid_uc, file.getPath());
 	}
 
 	// Convert a datchk duration into a CWMS interval/duration code
@@ -733,7 +704,7 @@ public class DatchkReader
 		if (idx == 0)
 			return IntervalCodes.int_cwms_zero;
 		int n = Integer.parseInt(tok.substring(0, idx));
-		char u = idx == tok.length() ? 'H' : 
+		char u = idx == tok.length() ? 'H' :
 			Character.toUpperCase(tok.charAt(idx));
 		if (u == 'M')
 			switch(n)
@@ -773,9 +744,9 @@ public class DatchkReader
 			}
 		return IntervalCodes.int_one_hour;
 	}
-	
+
 	/**
-	 * Reads all the input files specified in the config and prints a 
+	 * Reads all the input files specified in the config and prints a
 	 * report containing all screenings.
 	 * @param args <configfile> [<seasonTimeZone>]
 	 */
@@ -784,13 +755,13 @@ public class DatchkReader
 	{
 		DatchkReader datchkReader = DatchkReader.instance();
 		datchkReader.cfgFile = new LoadedFile(args[0]);
-		
+
 		datchkReader.checkConfig();
-		
+
 		System.out.println("Files Loaded:");
 		for(LoadedFile lf : datchkReader.loadedFiles)
 			System.out.println("\t" + lf.getPath());
-		
+
 		SimpleDateFormat sdf = new SimpleDateFormat("MMM dd HH:mm");
 		sdf.setTimeZone(datchkReader.seasonTz);
 		System.out.println("Seasons Defined:");
@@ -800,12 +771,12 @@ public class DatchkReader
 			Date d = cal.getTime();
 			System.out.println("\t" + seasonName + " = " + sdf.format(d));
 		}
-		
+
 		System.out.println("DSS - CWMS Path Mappings:");
 		for(PathMapping pmap : datchkReader.dssPath2pathMap.values())
 			System.out.println(pmap.getDssPath() + " = " + pmap.getCwmsPath()
 				+ " DSS Units=" + pmap.getDssUnitsAbbr());
-		
+
 		System.out.println("Screenings by Time Series Identifier:");
 		for(String tsid : datchkReader.tsidScreeningMap.keySet())
 		{
@@ -825,7 +796,7 @@ public class DatchkReader
 				System.out.println("\tNo screening found.");
 		}
 	}
-	
+
 	public static void printScreening(Screening scr)
 	{
 		System.out.println("Screening Name: " + scr.getScreeningName());
@@ -858,5 +829,5 @@ public class DatchkReader
 	{
 		return screenedTsids;
 	}
-	
+
 }

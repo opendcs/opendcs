@@ -1,25 +1,23 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.3  2017/06/02 14:32:02  mmaloney
- * If yesOption is used, also supress all stdout.
- *
- * Revision 1.2  2015/09/17 17:44:56  mmaloney
- * CWMS Screening I/O and Algorithm
- *
- * Revision 1.1  2015/09/10 21:18:08  mmaloney
- * Development on Screening
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.validation;
 
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.io.File;
@@ -30,6 +28,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.gui.DecodesInterface;
 import decodes.cwms.CwmsTimeSeriesDb;
@@ -43,29 +44,29 @@ import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.CmdLineArgs;
 import opendcs.dai.TimeSeriesDAI;
 
-public class ScreeningImport
-	extends TsdbAppTemplate
+public class ScreeningImport extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public String module = "ScreeningImport";
-	
+
 	private BooleanToken noTsidsToken = new BooleanToken("T", "(Do NOT import TSIDs and their screening assignments.)",
 		"", TokenOptions.optSwitch, false);
 	private StringToken fileNameToken = new StringToken("", "Screening file(s) to import",
 		"", TokenOptions.optArgument | TokenOptions.optRequired | TokenOptions.optMultiple, "");
 	private BooleanToken yesToken = new BooleanToken("y", "(Yes do the import. Don't ask for confirmation.)",
 		"", TokenOptions.optSwitch, false);
-	
+
 	private Screening currentScreening = null;
 	private ScreeningCriteria critBuffer = null;
 	private ArrayList<Screening> screenings = new ArrayList<Screening>();
-	
+
 	// For each screening name, a list of time series assigned to it.
 	private HashMap<String, ArrayList<String>> screeningName2TsidMap = new HashMap<String, ArrayList<String>>();
-	
+
 	private TimeSeriesDAI timeSeriesDAO = null;
 	private LineNumberReader lnr = null;
 	private String curFile = null;
-	
+
 	enum ParseState { Top, InScreening, InCriteria };
 	private ParseState parseState = ParseState.Top;
 	private int numWarnings = 0;
@@ -74,7 +75,7 @@ public class ScreeningImport
 	{
 		super("screening.log");
 	}
-	
+
 	@Override
 	public void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
@@ -83,12 +84,12 @@ public class ScreeningImport
 		cmdLineArgs.addToken(fileNameToken);
 		DecodesInterface.silent = true;
 	}
-	
+
 	@Override
 	protected void runApp() throws Exception
 	{
 		timeSeriesDAO = theDb.makeTimeSeriesDAO();
-		
+
 		int totalWarnings = 0;
 		for(int idx=0; idx < fileNameToken.NumberOfValues(); idx++)
 		{
@@ -97,7 +98,7 @@ public class ScreeningImport
 			if (!yesToken.getValue())
 				System.out.println("Reading file " + curFile);
 			else
-				Logger.instance().info("Reading file " + curFile);
+				log.info("Reading file {}", curFile);
 			readFile(curFile);
 			if (numWarnings > 0)
 			{
@@ -106,7 +107,7 @@ public class ScreeningImport
 			}
 		}
 		curFile = null;
-		
+
 		// Printout list of what will be imported
 		if (!yesToken.getValue())
 		{
@@ -126,14 +127,14 @@ public class ScreeningImport
 			}
 			if (totalWarnings > 0)
 				System.out.println("NOTE: There were " + totalWarnings + " in reading the screening files.");
-		
+
 			System.out.print("OK to continue? (y/n)");
 			System.out.flush();
 			String line = System.console().readLine();
 			if (line == null || !line.trim().toLowerCase().startsWith("y"))
 				System.exit(1);
 		}
-		
+
 		ScreeningDAI screeningDAO = ((CwmsTimeSeriesDb)theDb).makeScreeningDAO();
 		// Write the screenings
 		for(Screening screening : screenings)
@@ -144,13 +145,12 @@ public class ScreeningImport
 			}
 			catch(DbIoException ex)
 			{
-				warning("Cannot write screening '" + screening.getScreeningName() + "': " + ex);
-				ex.printStackTrace();
+				log.atWarn().setCause(ex).log("Cannot write screening '{}'", screening.getScreeningName());
 				continue;
 			}
-			
+
 			if (!noTsidsToken.getValue())
-			{	
+			{
 				// Resolve the time series and create if necessary
 				ArrayList<String> tsidList = screeningName2TsidMap.get(screening.getScreeningName());
 				if (tsidList != null)
@@ -164,8 +164,8 @@ public class ScreeningImport
 				}
 			}
 		}
-		
-		
+
+
 		timeSeriesDAO.close();
 	}
 
@@ -180,7 +180,7 @@ public class ScreeningImport
 		currentScreening = null;
 		critBuffer = null;
 
-		Logger.instance().debug1("Loading Screening file '" + filename + "'");
+		log.debug("Loading Screening file '{}'", filename);
 
 		try
 		{
@@ -191,10 +191,10 @@ public class ScreeningImport
 				line = line.trim();
 				if (line.length() == 0 || line.charAt(0) == '*')
 					continue;
-				
+
 				StringTokenizer st = new StringTokenizer(line, " ");
 				String kw = st.nextToken();
-				
+
 				if (kw.equalsIgnoreCase("SCREENING"))
 					screening(st);
 				else if (kw.equalsIgnoreCase("screening_end"))
@@ -233,8 +233,7 @@ public class ScreeningImport
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " Error reading screening file '"
-				+ filename + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading screening file '{}'", filename);
 		}
 		finally
 		{
@@ -245,15 +244,15 @@ public class ScreeningImport
 			}
 		}
 	}
-	
+
 	private void estimate(String line)
 	{
 		if (parseState != ParseState.InCriteria)
 		{
-			warning("ESTIMATE while not inside a CRITERIA block. Ignored.");
+			log.warn("ESTIMATE while not inside a CRITERIA block. Ignored.");
 			return;
 		}
-		
+
 		critBuffer.setEstimateExpression(line.substring(8).trim());
 	}
 
@@ -261,12 +260,12 @@ public class ScreeningImport
 	{
 		if (currentScreening == null)
 		{
-			warning("DURMAG_ACTIVE while not in a SCREENING block. Ignored.");
+			log.warn("DURMAG_ACTIVE while not in a SCREENING block. Ignored.");
 			return;
 		}
 		if (!st.hasMoreTokens())
 		{
-			warning("DURMAG_ACTIVE with no boolean argument. Ignored.");
+			log.warn("DURMAG_ACTIVE with no boolean argument. Ignored.");
 			return;
 		}
 		currentScreening.setDurMagActive(TextUtil.str2boolean(st.nextToken()));
@@ -276,12 +275,12 @@ public class ScreeningImport
 	{
 		if (currentScreening == null)
 		{
-			warning("CONST_ACTIVE while not in a SCREENING block. Ignored.");
+			log.warn("CONST_ACTIVE while not in a SCREENING block. Ignored.");
 			return;
 		}
 		if (!st.hasMoreTokens())
 		{
-			warning("CONST_ACTIVE with no boolean argument. Ignored.");
+			log.warn("CONST_ACTIVE with no boolean argument. Ignored.");
 			return;
 		}
 		currentScreening.setConstActive(TextUtil.str2boolean(st.nextToken()));
@@ -291,12 +290,12 @@ public class ScreeningImport
 	{
 		if (currentScreening == null)
 		{
-			warning("ROC_ACTIVE while not in a SCREENING block. Ignored.");
+			log.warn("ROC_ACTIVE while not in a SCREENING block. Ignored.");
 			return;
 		}
 		if (!st.hasMoreTokens())
 		{
-			warning("ROC_ACTIVE with no boolean argument. Ignored.");
+			log.warn("ROC_ACTIVE with no boolean argument. Ignored.");
 			return;
 		}
 		currentScreening.setRocActive(TextUtil.str2boolean(st.nextToken()));
@@ -306,12 +305,12 @@ public class ScreeningImport
 	{
 		if (currentScreening == null)
 		{
-			warning("RANGE_ACTIVE while not in a SCREENING block. Ignored.");
+			log.warn("RANGE_ACTIVE while not in a SCREENING block. Ignored.");
 			return;
 		}
 		if (!st.hasMoreTokens())
 		{
-			warning("RANGE_ACTIVE with no boolean argument. Ignored.");
+			log.warn("RANGE_ACTIVE with no boolean argument. Ignored.");
 			return;
 		}
 		currentScreening.setRangeActive(TextUtil.str2boolean(st.nextToken()));
@@ -321,19 +320,19 @@ public class ScreeningImport
 	{
 		if (parseState != ParseState.InCriteria)
 		{
-			warning("SEASON while not in a criteria block. Ignored.");
+			log.warn("SEASON while not in a criteria block. Ignored.");
 			return;
 		}
 		if (!st.hasMoreTokens())
 		{
-			warning("SEASON expected MM/DD. Ignored.");
+			log.warn("SEASON expected MM/DD. Ignored.");
 			return;
 		}
 		String mmdd = st.nextToken();
 		int slash = mmdd.indexOf('/');
 		if (slash == -1)
 		{
-			warning("Cannot parse value after SEASON. Expected MM/DD. Got '" + mmdd + "'. Ignored.");
+			log.warn("Cannot parse value after SEASON. Expected MM/DD. Got '{}'. Ignored.", mmdd);
 			return;
 		}
 		try
@@ -351,7 +350,7 @@ public class ScreeningImport
 		}
 		catch(Exception ex)
 		{
-			warning("Cannot parse value after SEASON. Expected MM/DD. Got '" + mmdd + "'. Ignored.");
+			log.atWarn().setCause(ex).log("Cannot parse value after SEASON. Expected MM/DD. Got '{}'. Ignored.", mmdd);
 			return;
 		}
 	}
@@ -360,11 +359,11 @@ public class ScreeningImport
 	{
 		line = line.trim();
 		line = line.substring(6).trim();
-		
+
 		int colon = line.indexOf(':');
 		String tsidStr = line.substring(0, colon).trim();
 		String screeningName = line.substring(colon+1).trim();
-		
+
 		ArrayList<String> tsList = screeningName2TsidMap.get(screeningName);
 		if (tsList == null)
 		{
@@ -373,7 +372,7 @@ public class ScreeningImport
 		}
 		tsList.add(tsidStr);
 	}
-	
+
 	private TimeSeriesIdentifier getTsid(String tsidStr)
 	{
 		TimeSeriesIdentifier tsid = null;
@@ -393,7 +392,7 @@ public class ScreeningImport
 		}
 		catch (Exception ex)
 		{
-			warning("Cannot retrieve or create time series '" + tsidStr + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot retrieve or create time series '{}'", tsidStr);
 			return null;
 		}
 	}
@@ -402,7 +401,7 @@ public class ScreeningImport
 	{
 		if (parseState != ParseState.InCriteria)
 		{
-			warning("CRITERIA_SET_END while not in a criteria block. Ignored.");
+			log.warn("CRITERIA_SET_END while not in a criteria block. Ignored.");
 			return;
 		}
 		currentScreening.add(critBuffer);
@@ -414,24 +413,24 @@ public class ScreeningImport
 	{
 		if (parseState == ParseState.Top)
 		{
-			warning("CRITERIA_SET not inside a SCREENING block. Ignored.");
+			log.warn("CRITERIA_SET not inside a SCREENING block. Ignored.");
 			return;
 		}
 		else if (parseState == ParseState.InCriteria)
 		{
-			warning("CRITERIA_SET while already in a criteria block. Starting new block.");
+			log.warn("CRITERIA_SET while already in a criteria block. Starting new block.");
 			criteria_set_end();
 		}
 		critBuffer = new ScreeningCriteria(null);
 		parseState = ParseState.InCriteria;
-		
+
 	}
 
 	private void units(StringTokenizer st)
 	{
 		if (currentScreening == null)
 		{
-			warning("UNITS not inside valid SCREENING block. Ignored.");
+			log.warn("UNITS not inside valid SCREENING block. Ignored.");
 			return;
 		}
 		currentScreening.setCheckUnitsAbbr(st.nextToken());
@@ -441,7 +440,7 @@ public class ScreeningImport
 	{
 		if (currentScreening == null)
 		{
-			warning("DURATION not inside valid SCREENING block. Ignored.");
+			log.warn("DURATION not inside valid SCREENING block. Ignored.");
 			return;
 		}
 		currentScreening.setDurationId(st.nextToken());
@@ -451,7 +450,7 @@ public class ScreeningImport
 	{
 		if (currentScreening == null)
 		{
-			warning("PARAMTYPE not inside valid SCREENING block. Ignored.");
+			log.warn("PARAMTYPE not inside valid SCREENING block. Ignored.");
 			return;
 		}
 		currentScreening.setParamTypeId(st.nextToken());
@@ -461,7 +460,7 @@ public class ScreeningImport
 	{
 		if (currentScreening == null)
 		{
-			warning("PARAM not inside valid SCREENING block. Ignored.");
+			log.warn("PARAM not inside valid SCREENING block. Ignored.");
 			return;
 		}
 		currentScreening.setParamId(st.nextToken());
@@ -471,7 +470,7 @@ public class ScreeningImport
 	{
 		if (currentScreening == null)
 		{
-			warning("DESC not inside valid SCREENING block. Ignored.");
+			log.warn("DESC not inside valid SCREENING block. Ignored.");
 			return;
 		}
 		String desc = currentScreening.getScreeningDesc();
@@ -494,13 +493,13 @@ public class ScreeningImport
 	{
 		if (parseState != ParseState.Top)
 		{
-			warning("SCREENING when already inside a screening. Assume missing SCREENING_END keyword.");
+			log.warn("SCREENING when already inside a screening. Assume missing SCREENING_END keyword.");
 			screening_end();
 		}
-		
+
 		if (!st.hasMoreTokens())
 		{
-			warning("SCREENING with no screening name. Ignored");
+			log.warn("SCREENING with no screening name. Ignored");
 			return;
 		}
 		currentScreening = new Screening();
@@ -512,26 +511,25 @@ public class ScreeningImport
 	{
 		if (parseState != ParseState.InCriteria)
 		{
-			warning("CRITERIA while not in CRITERIA block. Ignored.");
+			log.warn("CRITERIA while not in CRITERIA block. Ignored.");
 			return;
 		}
 		if (!st.hasMoreTokens())
 		{
-			warning("CRITERIA with no type field -- ignored.");
+			log.warn("CRITERIA with no type field -- ignored.");
 			return;
 		}
 		String type = st.nextToken().toUpperCase();
 		if (!st.hasMoreTokens())
 		{
-			warning("CRITERIA " + type + " with no arguments.");
+			log.warn("CRITERIA {} with no arguments.", type);
 			return;
 		}
 		String tok = st.nextToken().toUpperCase();
 		char qflag = tok.charAt(0);
 		if (qflag != 'R' && qflag != 'Q' && qflag != 'M')
 		{
-			warning("CRITERIA " + type
-				+ " with unrecognized qflag '" + qflag + " -- ignored.");
+			log.warn("CRITERIA {} with unrecognized qflag '{}' -- ignored.", type, qflag);
 			return;
 		}
 		if (type.startsWith("ABS"))
@@ -539,21 +537,19 @@ public class ScreeningImport
 			// absolute magnitude test args: qflag min max
 			if (st.countTokens() < 2)
 			{
-				warning("CRITERIA " + type
-					+ " missing range variables -- ignored.");
+				log.warn("CRITERIA {} missing range variables -- ignored.", type);
 				return;
 			}
 			double min = Double.NEGATIVE_INFINITY;
 			double max = Double.POSITIVE_INFINITY;
-			try 
+			try
 			{
 				min = Double.parseDouble(st.nextToken());
 				max = Double.parseDouble(st.nextToken());
 			}
 			catch(Exception ex)
 			{
-				warning("CRITERIA " + type
-					+ " non-numeric range variables -- ignored.");
+				log.atWarn().setCause(ex).log("CRITERIA {} non-numeric range variables -- ignored.", type);
 				return;
 			}
 			critBuffer.addAbsCheck(new AbsCheck(qflag, min, max));
@@ -563,21 +559,19 @@ public class ScreeningImport
 			// duration magnitude test args: qflag min max duration
 			if (st.countTokens() < 3)
 			{
-				warning("CRITERIA " + type
-					+ " missing variables -- ignored.");
+				log.warn("CRITERIA {} missing variables -- ignored.", type);
 				return;
 			}
 			double min = Double.NEGATIVE_INFINITY;
 			double max = Double.POSITIVE_INFINITY;
-			try 
+			try
 			{
 				min = Double.parseDouble(st.nextToken());
 				max = Double.parseDouble(st.nextToken());
 			}
 			catch(Exception ex)
 			{
-				warning("CRITERIA " + type
-					+ " non-numeric range variables -- ignored.");
+				log.atWarn().setCause(ex).log("CRITERIA {} non-numeric range variables -- ignored.", type);
 				return;
 			}
 			tok = st.nextToken();
@@ -590,8 +584,7 @@ public class ScreeningImport
 			// constant value test args: qflag duration [min [tolerance [maxmissing]]]
 			if (!st.hasMoreTokens())
 			{
-				warning("CRITERIA " + type
-					+ " missing duration -- ignored.");
+				log.warn("CRITERIA {} missing duration -- ignored.", type);
 				return;
 			}
 			tok = st.nextToken();
@@ -602,7 +595,7 @@ public class ScreeningImport
 			IntervalIncrement maxGap = null;
 			if (st.hasMoreTokens())
 			{
-				try 
+				try
 				{
 					min = Double.parseDouble(st.nextToken());
 					if (st.hasMoreTokens())
@@ -616,65 +609,51 @@ public class ScreeningImport
 							{
 								maxGap = IntervalCodes.getIntervalCalIncr(missingArg);
 								if (maxGap == null)
-									warning("Invalid nmissing argument '" 
-										+ missingArg + "' -- ignored.");
+									log.warn("Invalid nmissing argument '{}' -- ignored.", missingArg);
 							}
 						}
 					}
 				}
 				catch(Exception ex)
 				{
-					warning("CRITERIA " + type
-						+ " non-numeric min and/or tolerance.");
+					log.atWarn().setCause(ex).log("CRITERIA {} non-numeric min and/or tolerance.", type);
 					return;
 				}
 			}
 			ConstCheck cc = new ConstCheck(qflag, duration, min, tolerance, nmissing);
 			cc.setMaxGap(maxGap);
 			critBuffer.addConstCheck(cc);
-			
+
 		}
 		else if (type.startsWith("RATE"))
 		{
 			// rate of change test args: qflag neg-rate positive-rate
 			if (st.countTokens() < 2)
 			{
-				warning("CRITERIA " + type
-					+ " missing variables -- ignored.");
+				log.warn("CRITERIA {} missing variables -- ignored.", type);
 				return;
 			}
 			double neg = 0.0;
 			double pos = 0.0;
-			try 
+			try
 			{
 				neg = Double.parseDouble(st.nextToken());
 				pos = Double.parseDouble(st.nextToken());
 			}
 			catch(Exception ex)
 			{
-				warning("CRITERIA " + type
-					+ " non-numeric range variables -- ignored.");
+				log.atWarn().setCause(ex).log("CRITERIA {} non-numeric range variables -- ignored.", type);
 				return;
 			}
 			critBuffer.addRocPerHourCheck(
 				new RocPerHourCheck(qflag, neg, pos));
 		}
-//		else if (type.startsWith("REL"))
-//		{
-//			// relative magnitude test args: qflag min-expr, max-expr
-//			//    [action duration]
-//		}
-//		else if (type.startsWith("DIS"))
-//		{
-//			// distribution test args: qflag duration significance-lev
-//			//    base1 base2
-//		}
 		else
 		{
-			warning("CRITERIA " + type + " not implemented.");
+			log.warn("CRITERIA {} not implemented.", type);
 		}
 	}
-	
+
 	// Convert a datchk duration into a CWMS interval/duration code
 	private String dur2IntervalCode(String tok)
 	{
@@ -684,7 +663,7 @@ public class ScreeningImport
 		if (idx == 0)
 			return IntervalCodes.int_cwms_zero;
 		int n = Integer.parseInt(tok.substring(0, idx));
-		char u = idx == tok.length() ? 'H' : 
+		char u = idx == tok.length() ? 'H' :
 			Character.toUpperCase(tok.charAt(idx));
 		if (u == 'M')
 			switch(n)
@@ -724,19 +703,9 @@ public class ScreeningImport
 			}
 		return IntervalCodes.int_one_hour;
 	}
-	
-	public void warning(String msg)
-	{
-		numWarnings++;
-		System.err.println(
-			(curFile != null ? curFile : "") + 
-			(lnr != null ? (":" + lnr.getLineNumber()) : "")
-			+ " " + msg);
-	}
-	
-	
+
 	/**
-	 * Reads all the input files specified in the config and prints a 
+	 * Reads all the input files specified in the config and prints a
 	 * report containing all screenings.
 	 * @param args <configfile> [<seasonTimeZone>]
 	 */
@@ -746,7 +715,6 @@ public class ScreeningImport
 		ScreeningImport me = new ScreeningImport();
 		me.execute(args);
 	}
-	
-	
-}
 
+
+}

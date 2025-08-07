@@ -1,10 +1,18 @@
-/**
- * $Id$
- *
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- *
- * $Log$
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.validation;
 
 import java.text.NumberFormat;
@@ -13,11 +21,13 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.TimeSeriesDAI;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
 import lrgs.gui.DecodesInterface;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.validation.dao.ScreeningDAI;
@@ -42,6 +52,7 @@ import decodes.util.DecodesException;
  */
 public class ScreeningExport extends TsdbAppTemplate
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final String module = "ScreeningExport";
 
     private StringToken screeningIdArg = new StringToken("n", "screening ID",
@@ -115,7 +126,7 @@ public class ScreeningExport extends TsdbAppTemplate
             }
             catch (InvalidDatabaseException ex)
             {
-                warning("Cannot initialize presentation group '" + pgName + ": " + ex);
+                log.atWarn().setCause(ex).log("Cannot initialize presentation group '{}'", pgName);
                 presGroup = null;
             }
         }
@@ -147,12 +158,12 @@ public class ScreeningExport extends TsdbAppTemplate
                     TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsidStr);
                     TsidScreeningAssignment tsa = screeningDAO.getScreeningForTS(tsid);
                     if (tsa == null)
-                        warning("No screening assigned to '" + tsidStr + "'");
+                        log.warn("No screening assigned to '{}'", tsidStr);
                     else screeningIDs.add(tsa.getScreening().getScreeningName());
                 }
                 catch(NoSuchObjectException ex)
                 {
-                    warning("No such time series '" + tsidStr + "': " + ex);
+                    log.atWarn().setCause(ex).log("No such time series '{}'", tsidStr);
                 }
             }
 
@@ -208,8 +219,8 @@ public class ScreeningExport extends TsdbAppTemplate
             // Convert all the limits in this screening to the english units
             String storUnits = screening.getCheckUnitsAbbr();
             String engUnits = ((CwmsTimeSeriesDb)theDb).getBaseParam().getEnglishUnits4Param(screening.getParamId());
-Logger.instance().info("English units requested, looking for converter for param '" + screening.getParamId()
-    + "' storUnits='" + storUnits + "' engunits='" + engUnits + "'");
+            log.info("English units requested, looking for converter for param '{}', storeUnits='{}', engunits='{}'",
+                     screening.getParamId(), storUnits, engUnits);
             unitConverter = Database.getDb().unitConverterSet.get(
                 EngineeringUnit.getEngineeringUnit(storUnits),
                 EngineeringUnit.getEngineeringUnit(engUnits));
@@ -335,7 +346,7 @@ Logger.instance().info("English units requested, looking for converter for param
             }
             catch (DecodesException ex)
             {
-                System.err.println("Cannot convert limit " + stor + ": " + ex);
+                log.atError().setCause(ex).log("Cannot convert limit {}", stor);
             }
         return stor;
     }

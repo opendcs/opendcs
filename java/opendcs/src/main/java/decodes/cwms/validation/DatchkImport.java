@@ -1,16 +1,27 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.validation;
 
 import java.io.ByteArrayOutputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.TimeSeriesDAI;
 import ilex.cmdline.BooleanToken;
@@ -21,8 +32,6 @@ import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.TsidScreeningAssignment;
-import decodes.sql.DbKey;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
@@ -30,49 +39,50 @@ import decodes.util.CmdLineArgs;
 
 public class DatchkImport extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public final static String module = "DatchkImport";
-	
+
 	private StringToken configFile = new StringToken("", "DATCHK Config File",
 		"", TokenOptions.optArgument | TokenOptions.optRequired, "");
 	private BooleanToken confirmEach = new BooleanToken("C", "(confirm each screening before write",
 		"", TokenOptions.optSwitch, false);
-	
-	
+
+
 	public DatchkImport()
 	{
 		super("screening.log");
 	}
 
 	@Override
-	protected void runApp() 
+	protected void runApp()
 		throws Exception
 	{
 		DatchkReader reader = new DatchkReader(configFile.getValue());
-		
+
 		System.out.println("Loading screenings specified in " + configFile.getValue());
 		reader.reloadAll();
 		System.out.println("" + reader.getScreenedTsids().size() + " screenings read.");
-		
+
 		ArrayList<TsidScreeningAssignment> importAssignments = new ArrayList<TsidScreeningAssignment>();
-		
+
 		MessageDigest md = MessageDigest.getInstance("SHA");
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DigestOutputStream dos = new DigestOutputStream(baos, md);
 		Base64 base64 = new Base64();
 
-		
+
 		for(String tsidStr : reader.getScreenedTsids())
 		{
 			Screening screening = reader.findScreening(tsidStr);
 			if (screening == null)
 			{
-				warning("After loading, cannot find screening for '" + tsidStr + "'");
+				log.warn("After loading, cannot find screening for '{}'", tsidStr);
 				continue;
 			}
-			
+
 			// DATCHK Reader will create a separate screening for every time series with the name
 			// of the screening being the TSID.
-			// CWMS requires a unique name with max of 16 chars. 
+			// CWMS requires a unique name with max of 16 chars.
 			// So the name will be LLLLLL-PPP-nnnnn, where ...
 			// LLLLLL is the location ID, truncated to 6 chars
 			// PPP is the param ID truncated to 6 chars
@@ -96,7 +106,7 @@ public class DatchkImport extends TsdbAppTemplate
 
 			importAssignments.add(new TsidScreeningAssignment(cwmsTsid, screening, true));
 		}
-		
+
 		System.out.println("Will import the following screenings:");
 		for (TsidScreeningAssignment tsa : importAssignments)
 			System.out.println("\tScreening " + tsa.getScreening().getScreeningName()
@@ -108,7 +118,7 @@ public class DatchkImport extends TsdbAppTemplate
 		String answer = System.console().readLine();
 		if (answer == null || answer.trim().length() == 0 || !answer.trim().toUpperCase().startsWith("Y"))
 			System.exit(0);
-		
+
 		CwmsTimeSeriesDb cwmsDb = (CwmsTimeSeriesDb)theDb;
 		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
 		ScreeningDAI screeningDAO = cwmsDb.makeScreeningDAO();
@@ -126,7 +136,7 @@ public class DatchkImport extends TsdbAppTemplate
 			try
 			{
 				TimeSeriesIdentifier dbTsid = timeSeriesDAO.getTimeSeriesIdentifier(tsa.getTsid().getUniqueString());
-				System.out.println("Time series " + tsa.getTsid().getUniqueString() + " already exists with ts_code=" 
+				System.out.println("Time series " + tsa.getTsid().getUniqueString() + " already exists with ts_code="
 					+ dbTsid.getKey());
 				tsa.setTsid(dbTsid);
 			}
@@ -144,14 +154,14 @@ public class DatchkImport extends TsdbAppTemplate
 			screeningDAO.assignScreening(tsa.getScreening(), tsa.getTsid(), true);
 		}
 	}
-		
+
 	@Override
 	public void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
 		cmdLineArgs.addToken(confirmEach);
 		cmdLineArgs.addToken(configFile);
 	}
-	
+
 	public static void main(String[] args)
 		throws Exception
 	{

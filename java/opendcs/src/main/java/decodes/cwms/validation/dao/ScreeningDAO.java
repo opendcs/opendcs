@@ -1,31 +1,20 @@
-/**
- * $Id$
- *
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- *
- * $Log$
- * Revision 1.10  2019/01/16 15:31:19  mmaloney
- * test
- *
- * Revision 1.9  2018/11/28 21:18:48  mmaloney
- * CWMS JOOQ Migration Mods
- *
- * Revision 1.8  2016/03/09 16:46:50  mmaloney
- * CWMS-7822 It was trying to save Double Negative/Positive infinity for ROC checks.
- *
- * Revision 1.7  2016/02/29 22:16:46  mmaloney
- * Bug fix -- on update it was not saving the new description.
- *
- * Revision 1.6  2015/11/18 14:04:37  mmaloney
- * Remove debugs
- *
- * Revision 1.5  2015/11/12 15:13:41  mmaloney
- * Added HEC header.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.validation.dao;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.sql.Connection;
@@ -37,6 +26,10 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.PrintStream;
 import java.math.BigDecimal;
 
@@ -68,17 +61,13 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
  * This DAO translates between normal Java types and the Oracle-specific types
  * used by the JPub-Generated CwmsScreeningDbIo module.
  */
-public class ScreeningDAO
-    extends DaoBase
-    implements ScreeningDAI
+public class ScreeningDAO extends DaoBase implements ScreeningDAI
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final String module = "ScreeningDAO";
 
     // Screenings are allowed to stay in the cache for an hour
     protected static DbObjectCache<Screening> cache = new DbObjectCache<Screening>(60 * 60 * 1000L, false);
-
-    // Associates a time series with a screening
-//    private static HashMap<TimeSeriesIdentifier, Screening> ts2screening = new HashMap<TimeSeriesIdentifier, Screening>();
 
     /** Columns to read from cwms_v_screening_id to tell if a screening exists. */
     public static final String screenIdTable = "CWMS_V_SCREENING_ID";
@@ -95,7 +84,6 @@ public class ScreeningDAO
         + "RATE_CHANGE_QUEST_FALL, RATE_CHANGE_QUEST_RISE, "
         + "CONST_REJECT_DURATION, CONST_REJECT_MIN, CONST_REJECT_TOLERANCE, CONST_REJECT_N_MISS, "
         + "CONST_QUEST_DURATION, CONST_QUEST_MIN, CONST_QUEST_TOLERANCE, CONST_QUEST_N_MISS";
-//        + "RANGE_ACTIVE_FLAG, RATE_CHANGE_ACTIVE_FLAG, CONST_ACTIVE_FLAG, DUR_MAG_ACTIVE_FLAG";
 
     public static final String screenControlTable = "CWMS_V_SCREENING_CONTROL";
     public static final String screenControlColumns = "SCREENING_CODE, "
@@ -117,25 +105,20 @@ public class ScreeningDAO
         }
         catch(Exception ex)
         {
-            String msg = module + " cannot create CwmsScreeningDbIo: " + ex;
-            Logger.instance().failure(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
-            throw new DbIoException(msg,ex);
+            throw new DbIoException("Cannot create CwmsScreeningDbIo",ex);
         }
     }
 
     @Override
-    public void writeScreening(Screening screening)
-        throws DbIoException
+    public void writeScreening(Screening screening) throws DbIoException
     {
-        Logger.instance().debug1(module + ".writeScreening(" + screening.getScreeningName() + ") key=" + screening.getScreeningCode());
+        log.debug("::writeScreening({}) key={}", screening.getScreeningName(), screening.getScreeningCode());
 
         // if screening does not have a DbKey, try to get key through the unique id.
         if (DbKey.isNull(screening.getScreeningCode()))
             screening.setScreeningCode(getKeyForId(screening.getScreeningName()));
 
-        try(Connection conn = getConnection();)
+        try (Connection conn = getConnection();)
         {
             String officeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
             String P_SCREENING_ID = screening.getScreeningName();
@@ -153,16 +136,16 @@ public class ScreeningDAO
                 String P_PARAMETER_TYPE_ID = screening.getParamTypeId();
                 String P_DURATION_ID = screening.getDurationId();
 
-                Logger.instance().info("Creating screening '" + screening.getScreeningName() + "' param="
-                    + screening.getParamId() + ", paramType=" + screening.getParamTypeId() + ", dur="
-                    + screening.getDurationId() + ", officeId=" + officeId);
-//System.out.println("Calling create Screening with P_PARAMETER_ID=" + P_PARAMETER_ID);
+                log.info("Creating screening '{}' param={}, paramType={}, dur={}, officeId={}",
+                         screening.getScreeningName(), screening.getParamId(), screening.getParamTypeId(),
+                         screening.getDurationId(), officeId);
+
                 csdbio.createScreeningId(conn,
                     P_SCREENING_ID, P_SCREENING_ID_DESC, P_PARAMETER_ID,
                     P_PARAMETER_TYPE_ID, P_DURATION_ID, P_DB_OFFICE_ID);
 
                 screening.setScreeningCode(getKeyForId(screening.getScreeningName()));
-                Logger.instance().info("after creation, screening code = " + screening.getScreeningCode());
+                log.info("After creation, screening code = {}", screening.getScreeningCode());
 
                 if (DbKey.isNull(screening.getScreeningCode()))
                     throw new DbIoException("Key for screening '" + screening.getScreeningName()
@@ -170,8 +153,8 @@ public class ScreeningDAO
             }
             else // Screening exists. The only thing that can be changed is the description.
             {
-                Logger.instance().info("Screening already exists with key=" + screening.getScreeningCode()
-                    + ", updating description.");
+                log.info("Screening already exists with key={}, updating description",
+                         screening.getScreeningCode());
                 csdbio.updateScreeningIdDesc(conn,
                     P_SCREENING_ID, P_SCREENING_ID_DESC, P_DB_OFFICE_ID);
             }
@@ -180,7 +163,7 @@ public class ScreeningDAO
             ArrayList<ScreeningCriteria> cpCriteriaArray = screening.getCriteriaSeasons();
             if (cpCriteriaArray.size() == 0)
             {
-                warning("Screening " + screening.getScreeningName() + " has no criteria sets.");
+                log.warn("Screening {} has no criteria sets.", screening.getScreeningName());
                 return; // No criteria to write
             }
 
@@ -227,7 +210,7 @@ public class ScreeningDAO
 
                 int startDay = cpCrit.getSeasonStart() == null ? 0 : cpCrit.getSeasonStart().get(Calendar.DAY_OF_MONTH);
                 int startMonth = cpCrit.getSeasonStart() == null ? 0 : (cpCrit.getSeasonStart().get(Calendar.MONTH)+1);
-                info("Preparing crit with season " + startMonth + "/" + startDay);
+                log.info("Preparing crit with season {}/{}", startMonth, startDay);
 
                 oracleScreenCrit[critIdx] = new ScreenCritType(
                     BigDecimal.valueOf(startDay),
@@ -264,7 +247,7 @@ public class ScreeningDAO
                 screening.isConstActive() ? "T" : "F",
                 screening.isDurMagActive() ? "T" : "F");
 
-            info("Calling storeScreeningCriteria with " + oracleScreenCrit.length + " seasons.");
+            log.info("Calling storeScreeningCriteria with {} seasons.", oracleScreenCrit.length);
             csdbio.storeScreeningCriteria(conn,
                 P_SCREENING_ID,
                 oracleScreenCritArray,
@@ -277,10 +260,7 @@ public class ScreeningDAO
         }
         catch(SQLException ex)
         {
-            String msg = module + ".writeScreening(" + screening.getScreeningName() + ") Error: " + ex;
-            Logger.instance().failure(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
+            String msg = "Unable to write Screening" + screening.getScreeningName() + ")";
             throw new DbIoException(msg,ex);
         }
 
@@ -302,10 +282,8 @@ public class ScreeningDAO
         }
         catch (SQLException ex)
         {
-            String msg = module + ".deleteScreening() error deleting screening '" + screening.getScreeningName()
-                + "': " + ex;
-            warning(msg);
-            throw new DbIoException(msg);
+            String msg = "error deleting screening '" + screening.getScreeningName() + "'";
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -367,7 +345,7 @@ public class ScreeningDAO
         }
         catch (SQLException ex)
         {
-            String msg = module + ".getByKey(): Error parsing results for query '" + q + "': " + ex;
+            String msg = module + ".getByKey(): Error parsing results for query '" + q + "'";
             throw new DbIoException(msg,ex);
         }
     }
@@ -403,8 +381,8 @@ public class ScreeningDAO
                     }
                 if (screening == null)
                 {
-                    warning("Screening criteria with code=" + screeningCode + " but there is no "
-                        + "matching screening id");
+                    log.warn("Screening criteria with code={} but there is no matching screening id",
+                             screeningCode);
                     return; // shouldn't happen
                 }
                 rsAddCriteria(rs, screening);
@@ -422,8 +400,8 @@ public class ScreeningDAO
                     }
                 if (screening == null)
                 {
-                    warning("Screening criteria with code=" + screeningCode + " but there is no "
-                        + "matching screening id");
+                    log.warn("Screening criteria with code={} but there is no matching screening id",
+                             screeningCode);
                     return; // shouldn't happen
                 }
                 rsAddControl(rs, screening);
@@ -465,7 +443,7 @@ public class ScreeningDAO
         }
         catch (SQLException ex)
         {
-            String msg = module + ".getAllScreenings(): Error parsing results for query '" + q + "': " + ex;
+            String msg = ".getAllScreenings(): Error parsing results for query '" + q + "'";
             throw new DbIoException(msg,ex);
         }
     }
@@ -489,7 +467,7 @@ public class ScreeningDAO
             }
             catch (NoConversionException ex)
             {
-                warning("Screening '" + scr.getScreeningName() + "': " + ex);
+                log.warn("Screening '{}'", scr.getScreeningName());
             }
     }
 
@@ -521,19 +499,19 @@ public class ScreeningDAO
                 }
                 catch(DbIoException ex)
                 {
-                    throw new SQLException("Unable to retrieved screening for Code: " + screeningCode,ex);
+                    throw new SQLException("Unable to retrieved screening for Code: " + screeningCode, ex);
                 }
                 catch(NoSuchObjectException ex)
                 {
-                    throw new SQLException("Screening Code " + screeningCode + " refers to non-existent screening.",ex);
+                    throw new SQLException("Screening Code " + screeningCode + " refers to non-existent screening.", ex);
                 }
             },((CwmsTimeSeriesDb)db).getDbOfficeId(),tsid.getKey());
             return ret;
         }
         catch (SQLException ex)
         {
-            String msg = module + ".getScreeningForTS() Error reading screening assignment: " + ex;
-            throw new DbIoException(msg,ex);
+            String msg = module + ".getScreeningForTS() Error reading screening assignment.";
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -668,8 +646,6 @@ public class ScreeningDAO
     private void rsAddControl(ResultSet rs, Screening screening)
         throws SQLException
     {
-//        public static final String screenControlColumns = "SCREENING_CODE, "
-//            + "RANGE_ACTIVE_FLAG, RATE_CHANGE_ACTIVE_FLAG, CONST_ACTIVE_FLAG, DUR_MAG_ACTIVE_FLAG";
         screening.setRangeActive(TextUtil.str2boolean(rs.getString(2)));
         screening.setRocActive(TextUtil.str2boolean(rs.getString(3)));
         screening.setConstActive(TextUtil.str2boolean(rs.getString(4)));
@@ -688,9 +664,6 @@ public class ScreeningDAO
     private void rsAddDurMag(ResultSet rs, ScreeningCriteria crit)
         throws SQLException
     {
-//        public static final String durMagColumns = "SCREENING_CODE, SEASON_START_DAY, SEASON_START_MONTH, "
-//            + "DUR_MAG_DURATION_ID, REJECT_LO, REJECT_HI, QUESTION_LO, QUESTION_HI";
-
         String dur = rs.getString(4);
         double lo = rs.getDouble(5);
         if (rs.wasNull())
@@ -754,11 +727,8 @@ public class ScreeningDAO
             if (ex.toString().contains("DOES_NOT_EXIST"))
                 return DbKey.NullKey;
 
-            String msg = module + " getKeyForId(" + screeningId + ") error: " + ex;
-            Logger.instance().failure(msg);
-            System.err.println(msg);
-            ex.printStackTrace(System.err);
-            throw new DbIoException(msg,ex);
+            String msg = "getKeyForId(" + screeningId + ") error.";
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -785,8 +755,8 @@ public class ScreeningDAO
             cal.set(Calendar.SECOND, 0);
             cal.set(Calendar.MILLISECOND, 0);
         }
-Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
-+ ", calendar day=" + cal.get(Calendar.DAY_OF_MONTH) + ", cal.mon=" + cal.get(Calendar.MONTH));
+        log.debug("ScreeningDAO.makeCal day={}, mon={}, calendar day={}, cal.mon={}",
+                    day, month, cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.MONTH));
         return cal;
     }
 
@@ -825,7 +795,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
                 try { screening = getByKey(p.screeningCode); }
                 catch(NoSuchObjectException ex)
                 {
-                    warning("Screening Code " + p.screeningCode + " refers to non-existent screening.");
+                    log.warn("Screening Code {} refers to non-existent screening.", p.screeningCode);
                     continue;
                 }
                 TimeSeriesIdentifier tsid = null;
@@ -835,8 +805,11 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
                 }
                 catch (NoSuchObjectException ex)
                 {
-                    warning("Time Series Code " + p.tsCode + " for screening Screening Code " + p.screeningCode
-                        + " refers to non-existent time series.");
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Time Series Code {} for screening Screening Code "
+                           +"{} refers to non-existent time series.",
+                           p.tsCode, p.screeningCode);
                     continue;
                 }
                 ret.add(new TsidScreeningAssignment(tsid, screening, p.active));
@@ -844,7 +817,9 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
         }
         catch(SQLException ex)
         {
-            warning(module + ".getTsidScreeningAssociations() error in query '" + q + "': " + ex);
+            log.atWarn()
+               .setCause(ex)
+               .log(".getTsidScreeningAssociations() error in query '{}'", q);
         }
         return ret;
     }
@@ -868,15 +843,8 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
         {
             String msg = module + ".assignScreening() error assigning screening '"
                 + screening.getScreeningName() + "' to tsid '" + tsid.getUniqueString() + " with activeFlag="
-                + active + ": " + ex;
-            warning(msg);
-            PrintStream ps = Logger.instance().getLogOutput();
-            if (ps != null)
-            {
-                ps.println("Cause is: " + ex);
-                ex.printStackTrace(ps);
-            }
-            throw new DbIoException(msg,ex);
+                + active;
+            throw new DbIoException(msg, ex);
         }
     }
 
@@ -902,13 +870,12 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
     {
         try (Connection conn = getConnection();)
         {
-            Logger.instance().info("Renaming screening '" + oldId + "' to '" + newId + "'");
+            log.info("Renaming screening '{}' to '{}'", oldId, newId);
             csdbio.renameScreeningId(conn, oldId, newId, ((CwmsTimeSeriesDb)db).getDbOfficeId());
         }
         catch (SQLException ex)
         {
-            throw new DbIoException(module + ".renameScreening(" + oldId + ", " + newId
-                + ": Error: " + ex, ex);
+            throw new DbIoException(module + ".renameScreening(" + oldId + ", " + newId, ex);
         }
     }
 
@@ -925,8 +892,7 @@ Logger.instance().debug1("ScreeningDAO.makeCal day=" + day + ", mon=" + month
         }
         catch (SQLException ex)
         {
-            throw new DbIoException(module + ".renameScreening(" + screeningId + ", " + desc
-                + ": Error: " + ex,ex);
+            throw new DbIoException(module + ".renameScreening(" + screeningId + ", " + desc, ex);
         }
     }
 }
