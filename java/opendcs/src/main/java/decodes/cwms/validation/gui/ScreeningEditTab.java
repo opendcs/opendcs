@@ -1,16 +1,18 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.2  2016/02/29 22:17:46  mmaloney
- * Disable fields that cannot be changed on editing an existing screening.
- *
- * Revision 1.1  2015/11/12 15:12:39  mmaloney
- * Initial release.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.validation.gui;
 
 import ilex.gui.DateCalendar;
@@ -43,6 +45,10 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import javax.swing.SwingWorker;
 
 import opendcs.dai.IntervalDAI;
@@ -58,6 +64,7 @@ import decodes.sql.DbKey;
 
 public class ScreeningEditTab extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private ScreeningEditFrame frame = null;
 	private Screening screening = null;
 	private JTextField screeningIdField = new JTextField(5);
@@ -159,10 +166,10 @@ public class ScreeningEditTab extends JPanel
 		}
 		catch(Exception ex)
 		{
-			String msg = "Error reading durations & Param Types: " + ex;
-			frame.showError(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			String msg = "Error reading durations & Param Types";
+			log.atError().setCause(ex).log(msg);
+			frame.showError(msg + ":" + ex);
+			
 		}
 		finally
 		{
@@ -534,8 +541,9 @@ public class ScreeningEditTab extends JPanel
 				}
 				catch(Exception ex)
 				{
-					frame.showError("Error writing screening '" + screening.getScreeningName()
-						+ "': " + ex);
+					final String msg = "Error writing screening '" + screening.getScreeningName();
+					log.atError().setCause(ex).log(msg);
+					frame.showError(msg + "': " + ex);
 				}
 				return null;
 			}
