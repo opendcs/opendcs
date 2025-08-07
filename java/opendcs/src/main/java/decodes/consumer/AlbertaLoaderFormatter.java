@@ -1,9 +1,21 @@
 /*
- * $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package decodes.consumer;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
@@ -15,6 +27,10 @@ import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 import decodes.db.DataPresentation;
@@ -43,16 +59,16 @@ import decodes.util.PropertySpec;
  * - R is the result code. It can be 'R' for a normal value, or 'D' for a value that was
  *   deleted because it was out of range.
  */
-public class AlbertaLoaderFormatter 
-	extends OutputFormatter
+public class AlbertaLoaderFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	public final static String module = "AlbertaLoaderFormatter";
 	private TimeZone timeZone = TimeZone.getTimeZone("MST");
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HHmm");
 	private String siteNameType = "local";
 	private PresentationGroup presGrp = null;
 	private NumberFormat numberFormat = null;
-	private DataConsumer consumer = null;
 	private boolean trailer = true;
 
 
@@ -93,20 +109,12 @@ public class AlbertaLoaderFormatter
 	@Override
 	public void shutdown()
 	{
-//		if (consumer != null)
-//		{
-//			Logger.instance().info("Adding file trailer.");
-//			consumer.println("XXXXXXXX 00000000 00000000000000000");
-//			consumer.println("ZZZ      00000000 00000000000000000");
-//		}
-		consumer = null;
 	}
 
 	@Override
 	public void formatMessage(DecodedMessage msg, DataConsumer consumer)
 		throws DataConsumerException, OutputFormatterException
 	{
-		this.consumer = consumer;
 		consumer.startMessage(msg);
 
 		for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
@@ -141,8 +149,7 @@ public class AlbertaLoaderFormatter
 			}
 			if (dataType == null)
 			{
-				Logger.instance().warning("Cannot convert datatype "
-					+ sensor.getDataType() + " to nl-shef -- sensor skipped.");
+				log.warn("Cannot convert datatype {} to nl-shef -- sensor skipped.", sensor.getDataType());
 				continue;
 			}
 
@@ -151,10 +158,8 @@ public class AlbertaLoaderFormatter
 				DataPresentation dataPres = presGrp.findDataPresentation(dataType);
 				if (dataPres == null)
 				{
-					Logger.instance().warning(module + "Site " + siteName.getNameValue()
-						+ " Skipping sensor '"
-						+ dataType + "' because there is no PresentationGroup("
-						+ presGrp.groupName + ") element.");
+					log.warn("Site {} Skipping sensor '{}' because there is no PresentationGroup({}) element.",
+							 siteName.getNameValue(), dataType, presGrp.groupName);
 					continue;
 				}
 			}
@@ -185,10 +190,8 @@ public class AlbertaLoaderFormatter
 				}
 				catch (NoConversionException e)
 				{
-					Logger.instance().warning(module + "Site " + siteName.getNameValue()
-						+ " Skipping sensor "
-						+ dataType + " at time " + dateFormat.format(tv.getTime())
-						+ " cannot retrieve numeric value.");
+					log.warn("Site {} Skipping sensor {} at time {} cannot retrieve numeric value.",
+							 siteName.getNameValue(), dataType, dateFormat.format(tv.getTime()));
 					continue;
 				}
 				line.append(TextUtil.setLengthLeftJustify(dataType.getCode(), 4));

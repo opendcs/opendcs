@@ -1,8 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 
 package decodes.consumer;
 
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
@@ -11,6 +25,9 @@ import ilex.var.TimedVariable;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
@@ -22,13 +39,14 @@ import decodes.decoder.TimeSeries;
 
 /**
  * 
- * This class outputs the decoded ensemble for real time current meteres. Developed for NOS. 
+ * This class outputs the decoded ensemble for real time current meters. Developed for NOS. 
  * @author shweta
  *
  */
 public class CurrentMeterFormatter extends OutputFormatter
 {
-	private String module = "CurrentMeterFormatter";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private Column columns[];
 	private String delim;	
 	private String missing = "";
@@ -45,9 +63,7 @@ public class CurrentMeterFormatter extends OutputFormatter
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
-		Logger.instance().debug1(
-				"Initializing " + module + ", props='" +
-				PropertiesUtil.props2string(rsProps) + "'");
+		log.debug("Initializing {}, props='{}'", module, PropertiesUtil.props2string(rsProps));
 		
 		String s = PropertiesUtil.getIgnoreCase(rsProps, "missing");
 		if (s != null)
@@ -59,15 +75,14 @@ public class CurrentMeterFormatter extends OutputFormatter
 		if (s != null)
 		{
 			delim = new String(AsciiUtil.ascii2bin(s));
-			Logger.instance().debug1("Delimiter changed to '" + delim + "'");
+			log.debug("Delimiter changed to '{}'", delim);
 		}
 
 		s = PropertiesUtil.getIgnoreCase(rsProps, "includeGoesHeader");
 		if (s != null)
 		{
 			includeGoesHeader = TextUtil.str2boolean(s);
-			Logger.instance().debug1("includeGoesHeader = " 
-				+ includeGoesHeader);
+			log.debug("includeGoesHeader = {}", includeGoesHeader);
 		}
 	}
 
@@ -100,7 +115,7 @@ public class CurrentMeterFormatter extends OutputFormatter
 		}
 		catch(UnknownPlatformException ex)
 		{
-			throw new OutputFormatterException(ex.toString());
+			throw new OutputFormatterException("Unable to retrieve platform",ex);
 		}
 
 		// Construct column array, not counting the ID & time columns.
