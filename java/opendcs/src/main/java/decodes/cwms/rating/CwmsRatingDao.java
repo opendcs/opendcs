@@ -1,14 +1,18 @@
 /*
- *
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government.
- *
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- *
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.rating;
 
 import ilex.util.TextUtil;
@@ -24,8 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import opendcs.dao.DaoBase;
 import decodes.cwms.BadRatingException;
@@ -39,7 +43,7 @@ import hec.data.cwmsRating.RatingSet;
 
 public class CwmsRatingDao extends DaoBase
 {
-    private static final Logger log = LoggerFactory.getLogger(CwmsRatingDao.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final String module = "CwmsRatingDao";
     public static final String cwms_v_rating_columns =
         "RATING_CODE, RATING_ID, EFFECTIVE_DATE, CREATE_DATE, ACTIVE_FLAG";
