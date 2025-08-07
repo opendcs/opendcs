@@ -1,30 +1,27 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.2  2014/08/22 17:23:10  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.1  2012/10/30 01:59:27  mmaloney
- * First cut of rating GUI.
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.rating;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.ImageIcon;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.gui.DecodesInterface;
 
 import ilex.util.EnvExpander;
@@ -32,23 +29,24 @@ import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesException;
 
 /**
- * 
+ *
  * This is the main class for the Time Series Database Group Editor GUI.
- * This class calls the TsDbGrpEditorFrame class which is the frame 
+ * This class calls the TsDbGrpEditorFrame class which is the frame
  * that contains the Time Series Groups Tab at the moment. It may be
  * expanded to contain the Time Series Data Descriptor Tab and the Alarms Tab.
- * 
+ *
  */
 public class CwmsRatingGuiMain extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static String module = "CwmsRatingGui";
 
 	private CwmsRatingGuiFrame theFrame;
 	private boolean packFrame = false;
 	private static String logfile = "cwmsrating.log";
-	
+
 	private boolean exitOnClose = true;
-	
+
 	/**
 	 * Constructor for TsDbGrpEditor
 	 */
@@ -86,7 +84,7 @@ public class CwmsRatingGuiMain extends TsdbAppTemplate
 		theFrame.setIconImage(titleIcon.getImage());
 //		theFrame.centerOnScreen();
 		theFrame.setVisible(true);
-		
+
 		theFrame.addWindowListener(new WindowAdapter()
 		{
 			public void windowClosing(WindowEvent e)
@@ -108,7 +106,7 @@ public class CwmsRatingGuiMain extends TsdbAppTemplate
 	{
 		exitOnClose = tf;
 	}
-	
+
 	public void initDecodes()
 		throws DecodesException
 	{
@@ -125,14 +123,12 @@ public class CwmsRatingGuiMain extends TsdbAppTemplate
 		DecodesInterface.setGUI(true);
 		CwmsRatingGuiMain guiApp = new CwmsRatingGuiMain();
 		try
-		{			
+		{
 			guiApp.execute(args);
-		} 
+		}
 		catch (Exception ex)
 		{
-			System.err.println(
-				module + " Can not initialize. "
-				+ ex.getMessage());
+			log.atError().setCause(ex).log("Unable to execute application.");
 		}
 	}
 }

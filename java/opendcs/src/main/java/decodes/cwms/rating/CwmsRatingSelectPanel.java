@@ -1,50 +1,26 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2017/02/16 14:41:26  mmaloney
- * Close CwmsRatingDao in final block.
- *
- * Revision 1.2  2016/09/29 18:54:36  mmaloney
- * CWMS-8979 Allow Database Process Record to override decodes.properties and
- * user.properties setting. Command line arg -Dsettings=appName, where appName is the
- * name of a process record. Properties assigned to the app will override the file(s).
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.4  2012/11/06 20:47:37  mmaloney
- * dev
- *
- * Revision 1.3  2012/10/30 15:46:37  mmaloney
- * dev
- *
- * Revision 1.2  2012/10/30 13:21:24  mmaloney
- * dev
- *
- * Revision 1.1  2012/10/30 01:59:27  mmaloney
- * First cut of rating GUI.
- *
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.rating;
 
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -53,13 +29,14 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
-import decodes.gui.TopFrame;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesDb;
-import decodes.tsdb.TimeSeriesIdentifier;
 
 /**
  * Displays a sorting-list of CWMS Rating objects in the database.
@@ -67,6 +44,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
 @SuppressWarnings("serial")
 public class CwmsRatingSelectPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public String module = "CwmsRatingSelectPanel";
 	private JScrollPane jScrollPane;
 	private CwmsRatingTableModel model;
@@ -88,7 +66,7 @@ public class CwmsRatingSelectPanel extends JPanel
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Unable to initialize GUI elements.");
 		}
 	}
 	
