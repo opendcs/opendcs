@@ -1,11 +1,11 @@
 /*
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
+ * No warranty is provided or implied other than specific contractual terms
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -71,17 +71,16 @@ import decodes.util.PropertySpec;
  * Main class for Alberta ESRD SCADA Retrieval.
  * @author mmaloney
  */
-public class ScadaRetrieve 
+public class ScadaRetrieve
 	extends TsdbAppTemplate
 	implements PropertiesOwner, ProcWaiterCallback
 {
 	 private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
-	private static final String module = "ScadaRetrieve";
 	private CompAppInfo appInfo = null;
 	private TsdbCompLock myLock = null;
 	private boolean shutdown = false;
-	
+
 	private String dbUrl = "jdbc:jtds://[servername[\\instanceName][:port]]";
 	private int numDays = 2;
 	private TimeZone dbTZ = TimeZone.getTimeZone("MST");
@@ -104,11 +103,11 @@ public class ScadaRetrieve
 	private boolean cmdFinished = false;
 	private String cmdInProgress = null;
 	private int cmdExitStatus = -1;
-	
+
 	private long configIntervalMsec = 600000L; // config every 10 min.
 	private long nextConfig = 0L;
 	private String tagList = "";
-	private static final String queryTemplateDefault = 
+	private static final String queryTemplateDefault =
 		"SELECT v_AnalogHistory.DateTime, lower(v_AnalogHistory.TagName), "
 		+ "Value AS data, v_AnalogHistory.Quality "
 //		+ "Right(Str([Value]),25) AS data, v_AnalogHistory.Quality "
@@ -124,25 +123,25 @@ public class ScadaRetrieve
 	private boolean haveLock = false;
 	private CompEventSvr compEventSvr = null;
 
-	private PropertySpec propSpecs[] = 
+	private PropertySpec propSpecs[] =
 	{
-		new PropertySpec("dbUrl", PropertySpec.STRING, 
+		new PropertySpec("dbUrl", PropertySpec.STRING,
 			"URL for connecting to database (jdbc:jtds://host[\\instance][:port])"),
-		new PropertySpec("username", PropertySpec.STRING, 
+		new PropertySpec("username", PropertySpec.STRING,
 			"Username in the SQL Database"),
-		new PropertySpec("password", PropertySpec.STRING, 
+		new PropertySpec("password", PropertySpec.STRING,
 			"Password in the SQL Database"),
-		new PropertySpec("jdbcDriverClass", PropertySpec.STRING, 
+		new PropertySpec("jdbcDriverClass", PropertySpec.STRING,
 			"Template for output file name. Default=scada-$DATE(yyyyMMdd-HHmm).dat"),
-		new PropertySpec("tagfile", PropertySpec.FILENAME, 
+		new PropertySpec("tagfile", PropertySpec.FILENAME,
 			"Pathname of file containing list of SCADA tags"),
-		new PropertySpec("numdays", PropertySpec.INT, 
+		new PropertySpec("numdays", PropertySpec.INT,
 			"Number of days for which to query data (default = 2)"),
-		new PropertySpec("dbTZ", PropertySpec.TIMEZONE, 
+		new PropertySpec("dbTZ", PropertySpec.TIMEZONE,
 			"Used to interpret date/time from database and in scheduling queries"),
-		new PropertySpec("timeformat", PropertySpec.STRING, 
+		new PropertySpec("timeformat", PropertySpec.STRING,
 			"Java SimpleDateFormat spec for date/times from db. Default=MM/dd/yyyy HH:mm:ss"),
-		new PropertySpec("firstQuery", PropertySpec.STRING, 
+		new PropertySpec("firstQuery", PropertySpec.STRING,
 			"hour:minute of first query of day, e.g. 00:37"),
 		new PropertySpec("interval", PropertySpec.INT,
 			"Interval in hours between queries."),
@@ -150,11 +149,11 @@ public class ScadaRetrieve
 			"Directory name for output ZRXP files"),
 		new PropertySpec("tmpDir", PropertySpec.DIRECTORY,
 			"Temporary directory where the files are initially built"),
-		new PropertySpec("filenameTemplate", PropertySpec.STRING, 
+		new PropertySpec("filenameTemplate", PropertySpec.STRING,
 			"Template for output file name. Default=scada-$DATE(yyyyMMdd-HHmm).dat"),
-		new PropertySpec("dailyArchiveDir", PropertySpec.DIRECTORY, 
+		new PropertySpec("dailyArchiveDir", PropertySpec.DIRECTORY,
 			"Directory for daily archive files (may be null)"),
-		new PropertySpec("zrxpTZ", PropertySpec.TIMEZONE, 
+		new PropertySpec("zrxpTZ", PropertySpec.TIMEZONE,
 			"Used to format the output ZRXP, default=MST"),
 		new PropertySpec("queryFile", PropertySpec.FILENAME,
 			"Optional text file containing the SQL query to execute (Overrides default)"),
@@ -179,7 +178,7 @@ public class ScadaRetrieve
 		surviveDatabaseBounce = true;
 		init();
 		configure();
-		
+
 		long lastLockCheck = System.currentTimeMillis();
 		// Set lastCheck to cause first check 5 seconds after startup.
 		setAppStatus("running");
@@ -214,12 +213,11 @@ public class ScadaRetrieve
 			}
 			else
 				log.debug("Awaiting next query at {}", nextQuery);
-			
+
 			if (System.currentTimeMillis() - lastLockCheck > 10000L)
 			{
-				LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 
-				try
+				try(LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO())
 				{
 					myLock.setStatus("goodQueries=" + goodQueries + ", numErrors=" + numErrors);
 					loadingAppDao.checkCompProcLock(myLock);
@@ -227,36 +225,33 @@ public class ScadaRetrieve
 				}
 				catch (LockBusyException ex)
 				{
-					warning("Shutting down: lock removed: " + ex);
+					log.atWarn().setCause(ex).log("Shutting down: lock removed.");
 					shutdown = true;
 					haveLock = false;
 				}
-				finally
-				{
-					loadingAppDao.close();
-				}
+				
 			}
-			
+
 			try { Thread.sleep(5000L); }
 			catch(InterruptedException ex) {}
 		}
-		info("shutting down.");
+		log.info("shutting down.");
 		cleanup();
 		System.exit(0);
 	}
-	
+
 	private void query()
 	{
-		info("Starting query");
+		log.info("Starting query");
 		lastFile = null;
 		loadTags();
 		if (tagList.length() == 0)
 		{
-			warning("Tag list is empty. Aborting query.");
+			log.warn("Tag list is empty. Aborting query.");
 			numErrors++;
 			return;
 		}
-		
+
 		// Construct JDBC Driver. Then login to database.
 		Connection con = connect();
 		if (con == null)
@@ -269,7 +264,7 @@ public class ScadaRetrieve
 		props.setProperty("numdays", "" + numDays);
 		props.setProperty("TAGLIST", tagList);
 		String q = EnvExpander.expand(queryTemplate, props);
-		
+
 		// Execute the query, saving results in an array.
 		ArrayList<ScadaQueryRow> rows = new ArrayList<ScadaQueryRow>();
 		Statement stmt = null;
@@ -286,15 +281,13 @@ public class ScadaRetrieve
 				String tag = rs.getString(2);
 				String data = rs.getString(3);
 				String quality = rs.getString(4);
-				
-				log.debug("row: ds='{}', tag='{}', data='{}', qual='{}'",
-								 ds , tag , data ,quality );
-				
+
+				log.debug("row: ds='{}', tag='{}', data='{}', qual='{}'",ds ,tag ,data, quality);
+
 				if (ds == null || tag == null)
 				{
-					
-					log.debug("Discarding null result row: ds='{}', tag='{}', data='{}', qual='{}'",
-								 ds , tag , data ,quality );
+
+					log.debug("Discarding null result row: ds='{}', tag='{}', data='{}', qual='{}'",ds, tag, data,quality);
 					continue;
 				}
 				ds = ds.trim();
@@ -340,7 +333,7 @@ public class ScadaRetrieve
 
 		// Sort by tag and then date/time.
 		Collections.sort(rows);
-		
+
 		// Now normalize the times. They only want even half-hour values.
 		// Construct a new set with half-hour times by interpolating.
 		ArrayList<ScadaQueryRow> displayRows = new ArrayList<ScadaQueryRow>();
@@ -371,7 +364,7 @@ public class ScadaRetrieve
 							t < t2; t += DISPLAY_INTERVAL_MS)
 						{
 							double v = y1 + ((t-t1) / (double)dt) * slope;
-							ScadaQueryRow nr = new ScadaQueryRow(new Date(t), sqr.getTag(), 
+							ScadaQueryRow nr = new ScadaQueryRow(new Date(t), sqr.getTag(),
 								numberFormat.format(v), sqr.getQuality());
 							displayRows.add(nr);
 					        log.debug("Added interpolated {}", nr);
@@ -385,14 +378,15 @@ public class ScadaRetrieve
 				}
 				catch(Exception ex)
 				{
-					log.atWarn().setCause(ex)
+					log.atWarn()
+					 .setCause(ex)
 					.log("Bad number, cannot interpolate: '{}', '{}'",lastRow.getData(),sqr.getData());
 				}
 			}
 			lastRow = sqr;
 		}
 		 log.info("After normalization, {} query rows reduced to {} display rows.",rows.size(), displayRows.size());
-		
+
 		String filename = EnvExpander.expand(filenameTemplate);
 		File tmpOut = new File(tmpDir, filename);
 		PrintWriter pw = null;
@@ -405,7 +399,7 @@ public class ScadaRetrieve
 				if (!curtag.equals(sqr.getTag()))
 				{
 					// Start a new ZRXP header
-					pw.println("#REXCHANGE" + sqr.getTag() + "|*|RINVAL-777|*|TZ" 
+					pw.println("#REXCHANGE" + sqr.getTag() + "|*|RINVAL-777|*|TZ"
 						+ zrxpTZ.getID() + "|*|");
 					// they don't want this: pw.println("#LAYOUT(timestamp,value)|*|");
 
@@ -418,8 +412,9 @@ public class ScadaRetrieve
 		}
 		catch(IOException ex)
 		{
-			log.atWarn().setCause(ex)
-			.log("Error writing to '{}'", tmpOut.getPath());
+			log.atWarn()
+			 .setCause(ex)
+			 .log("Error writing to '{}'", tmpOut.getPath());
 			numErrors++;
 			return;
 		}
@@ -432,15 +427,16 @@ public class ScadaRetrieve
 		try { FileUtil.moveFile(tmpOut, outfile); }
 		catch(IOException ex)
 		{
-			log.atWarn().setCause(ex)
-			.log("Cannot move '{}' to {}", tmpOut.getPath(),outfile.getPath());
+			log.atWarn()
+			 .setCause(ex)
+			 .log("Cannot move '{}' to {}", tmpOut.getPath(),outfile.getPath());
 			numErrors++;
 			return;
 		}
 		lastFile = outfile;
 		goodQueries++;
 	}
-	
+
 	private Connection connect()
 	{
 		log.info("Connecting to '{}' as user '{}' with driver '{}'"
@@ -457,13 +453,13 @@ public class ScadaRetrieve
 		}
 		catch (SQLException ex)
 		{
-			String msg = "Error connecting to database at  '" + dbUrl 
-				+ "' as user " + username ;
-			log.atError().setCause(ex).log(msg);
+			log.atError()
+			   .setCause(ex)
+			   .log("Unable to connect");
 			return null;
 		}
 	}
-	
+
 	private void loadTags()
 	{
 		StringBuilder sb = new StringBuilder();
@@ -506,18 +502,18 @@ public class ScadaRetrieve
 	{
 		this.cmdInProgress = cmd;
 		int cmdTimeout = 20;
-		log.debug("Executing '{}' and waiting up to {}" +  
+		log.debug("Executing '{}' and waiting up to {}" +
 			  " seconds for completion.", cmdInProgress,cmdTimeout );
 		cmdFinished = false;
-		try 
+		try
 		{
 			cmdExitStatus = -1;
-			ProcWaiterThread.runBackground(cmdInProgress, 
+			ProcWaiterThread.runBackground(cmdInProgress,
 				"cmdAfterFile", this, cmdInProgress);
 		}
 		catch(IOException ex)
 		{
-			log.atWarn().setCause(ex).log("Cannot execute '{}'", cmdInProgress); 
+			log.atWarn().setCause(ex).log("Cannot execute '{}'", cmdInProgress);
 			cmdInProgress = null;
 			cmdFinished = true;
 			return;
@@ -546,7 +542,7 @@ public class ScadaRetrieve
 		File archFile = new File(dailyArchiveDir, arcNameSdf.format(new Date()) + ".scda");
 		try
 		{
-			FileUtil.copyStream(new FileInputStream(f), 
+			FileUtil.copyStream(new FileInputStream(f),
 				new FileOutputStream(archFile, true));
 		}
 		catch (IOException ex)
@@ -563,18 +559,18 @@ public class ScadaRetrieve
 		try
 		{
 			appInfo = loadingAppDao.getComputationApp(getAppId());
-			
+
 			// If this process can be monitored, start an Event Server.
 			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
 			{
-				try 
+				try
 				{
 					compEventSvr = new CompEventSvr(determineEventPort(appInfo));
 					compEventSvr.startup();
 				}
 				catch(IOException ex)
 				{
-					log.atError().setCause(ex).log("Cannot create Event server: " 
+					log.atError().setCause(ex).log("Cannot create Event server: "
 						      + " -- no events available to external clients.");
 				}
 			}
@@ -609,11 +605,11 @@ public class ScadaRetrieve
 			loadingAppDao.close();
 		}
 	}
-	
+
 	private void configure()
 	{
 		log.info("Loading configuration");
-		
+
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		try { appInfo = loadingAppDao.getComputationApp(getAppId()); }
 		catch(Exception ex)
@@ -623,7 +619,7 @@ public class ScadaRetrieve
 			return;
 		}
 		finally { loadingAppDao.close(); }
-		
+
 		dbUrl = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "dbUrl");
 		if (dbUrl == null)
 		{
@@ -631,7 +627,7 @@ public class ScadaRetrieve
 			shutdown = true;
 			return;
 		}
-		
+
 		String s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "numDays");
 		if (s != null)
 		{
@@ -643,21 +639,21 @@ public class ScadaRetrieve
 				numDays = 2;
 			}
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "dbTZ");
 		if (s != null)
 			dbTZ = TimeZone.getTimeZone(s);
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "timeformat");
 		if (s != null)
 			dbSdf = new SimpleDateFormat(s);
 		dbSdf.setTimeZone(dbTZ);
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "zrxpTZ");
 		if (s != null)
 			zrxpTZ = TimeZone.getTimeZone(s);
 		zrxpSdf.setTimeZone(zrxpTZ);
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "tagFile");
 		tagFile = new File(EnvExpander.expand(s));
 		if (!tagFile.canRead())
@@ -666,7 +662,7 @@ public class ScadaRetrieve
 			shutdown = true;
 			return;
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "outputDir");
 		outputDir = new File(EnvExpander.expand(s));
 		if (!outputDir.isDirectory() && !outputDir.mkdirs())
@@ -675,7 +671,7 @@ public class ScadaRetrieve
 			shutdown = true;
 			return;
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "tmpDir");
 		tmpDir = new File(EnvExpander.expand(s));
 		if (!tmpDir.isDirectory() && !tmpDir.mkdirs())
@@ -684,11 +680,11 @@ public class ScadaRetrieve
 			shutdown = true;
 			return;
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "filenameTemplate");
 		if (s != null)
 			filenameTemplate = s;
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "dailyArchiveDir");
 		if (s != null)
 		{
@@ -701,7 +697,7 @@ public class ScadaRetrieve
 				return;
 			}
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "cmdAfterFile");
 		if (s != null && s.trim().length() > 0)
 			cmdAfterFile = s;
@@ -712,16 +708,18 @@ public class ScadaRetrieve
 			try { intervalHours = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
 			{
-				warning("Bad 'interval' property '" + s + "' -- will use default of 4.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Bad 'interval' property '{}' -- will use default of 4.", s);
 				intervalHours = 4;
 			}
 			if (intervalHours <= 0)
 			{
-				warning("Bad 'interval' property '" + s + "' -- will use default of 4.");
+				log.warn("Bad 'interval' property '{}' -- will use default of 4.", s);
 				intervalHours = 4;
 			}
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "firstQuery");
 		if (s == null)
 			firstHour = firstMinute = 0;
@@ -735,18 +733,20 @@ public class ScadaRetrieve
 			}
 			catch(Exception ex)
 			{
-				warning("Bad firstQuery property '" + s + "' -- will use 00:00");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Bad firstQuery property '{}' -- will use 00:00", s);
 				firstHour = firstMinute = 0;
 			}
 		}
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "jdbcDriverClass");
 		if (s != null && s.trim().length() > 0)
 			jdbcDriverClass = s.trim();
-		
+
 		username = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "username");
 		password = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "password");
-		
+
 		s = PropertiesUtil.getIgnoreCase(appInfo.getProperties(), "queryFile");
 		if (s != null && s.trim().length() > 0)
 		{
@@ -757,16 +757,18 @@ public class ScadaRetrieve
 			}
 			catch(IOException ex)
 			{
-				warning("Cannot load query from '" + fn + "':" + ex + " -- will use default query.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot load query from '{}' -- will use default query.", fn);
 				queryTemplate = queryTemplateDefault;
 			}
 		}
 		else
 			queryTemplate = queryTemplateDefault;
-		
+
 		nextConfig = System.currentTimeMillis() + configIntervalMsec;
 	}
-	
+
 	private void determineNextQuery()
 	{
 		Calendar cal = Calendar.getInstance(dbTZ);
@@ -799,7 +801,7 @@ public class ScadaRetrieve
 			}
 			catch (DbIoException ex)
 			{
-				warning("Error attempting to release lock: " + ex);
+				log.atWarn().setCause(ex).log("Error attempting to release lock.");
 			}
 			finally
 			{
@@ -814,8 +816,8 @@ public class ScadaRetrieve
 		appNameArg.setDefaultValue("AlbertaScada");
 	}
 
-	
-	
+
+
 	/**
 	 * The main method.
 	 * @param args command line arguments.
@@ -827,7 +829,7 @@ public class ScadaRetrieve
 		theApp.execute(args);
 	}
 
-	
+
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{

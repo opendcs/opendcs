@@ -30,9 +30,7 @@ import java.util.Enumeration;
 * Holds the lookup table &amp; shift values.
 * Delegates table reads to supplied reader.
 */
-public class AreaComputation 
-	extends Computation
-	implements HasLookupTable
+public class AreaComputation extends Computation implements HasLookupTable
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "AreaComputation";
@@ -127,12 +125,12 @@ public class AreaComputation
 	*/
 	public void apply( IDataCollection msg )
 	{
-		log.atTrace().log("Applying area rating calculation");
+		log.trace("Applying area rating calculation");
 		// Retrieve independent time series.
 		ITimeSeries indepTs = msg.getITimeSeries(indepSensorNum);
 		if (indepTs == null)
 		{
-			log.atWarn().log(" {} Message does not contain independent sensor {}",
+			log.warn(" {} Message does not contain independent sensor {}",
 								module,	indepSensorNum);
 			return;
 		}
@@ -172,7 +170,7 @@ public class AreaComputation
 			if (d.compareTo(beginTime) < 0
 			 || d.compareTo(endTime) > 0)
 			{
-				log.atWarn().log(
+				log.warn(
 					"Skipping area computation because sample time is"
 					+ " outside the rating time range.");
 				continue;
@@ -181,7 +179,7 @@ public class AreaComputation
 			{
 				//Find area for the HG value - comes from the area files
 				double area = ratingTable.lookup(indepTv.getDoubleValue());
-				log.atInfo().log(module + "{} Area for {} is {} ", 
+				log.info(module + "{} Area for {} is {} ", 
 						module,indepTv.getDoubleValue() , area);
 				//multiply the area by the XV value sensor. Note the XV value
 				//has a scale value, this value is multiplied by the XV value
@@ -191,7 +189,7 @@ public class AreaComputation
 				ITimeSeries xvTs = msg.getITimeSeries(xvSensorNum);
 				if (xvTs == null)
 				{
-					log.atWarn().log(" {} Message does not contain xv (mean velocity) sensor {} ",
+					log.warn(" {} Message does not contain xv (mean velocity) sensor {} ",
 						module,	xvSensorNum);
 					return;
 				}
@@ -211,7 +209,7 @@ public class AreaComputation
 				//Calculate avg velocity
 				double outputV = area * xvValue;
 
-				log.atDebug().log(" {} area =  {} VelocityValue = {}  output = {} ",
+				log.debug(" {} area =  {} VelocityValue = {}  output = {} ",
 						  module,area,xvValue, outputV );
 
 				TimedVariable depTv = new TimedVariable(outputV);
@@ -220,7 +218,7 @@ public class AreaComputation
 			}
 			catch(NoConversionException ex)
 			{
-				log.atWarn().log("Independent value not a number.");
+				log.atWarn().setCause(ex).log("Independent value not a number.");
 			}
 			catch(TableBoundsException ex)
 			{
@@ -228,7 +226,7 @@ public class AreaComputation
 			}
 		}
 
-		 log.atTrace().log("AreaComp produced {} {} samples.",depTs.size() ,name);
+		 log.trace("AreaComp produced {} {} samples.",depTs.size() ,name);
 
 		if (depTs.size() == 0)
 			msg.rmTimeSeries(depTs);

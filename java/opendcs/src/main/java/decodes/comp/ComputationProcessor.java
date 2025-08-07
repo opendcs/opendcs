@@ -22,17 +22,11 @@ import org.slf4j.Logger;
 import decodes.comp.CompResolver;
 import decodes.db.RoutingSpec;
 
-import java.util.Vector;
 import java.util.ArrayList;
-import java.util.Iterator;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Element;
 
 import ilex.util.EnvExpander;
@@ -120,8 +114,7 @@ public class ComputationProcessor
         Node element = doc.getDocumentElement();
         if (!element.getNodeName().equalsIgnoreCase("ComputationProcessor"))
         {
-            String s = module
-                + ": Wrong type of configuration file -- Cannot initialize. "
+            String s = "Wrong type of configuration file -- Cannot initialize. "
                 + "Root element is not 'ComputationProcessor'.";
 			log.error(s);
             throw new BadConfigException(s);
@@ -168,7 +161,7 @@ public class ComputationProcessor
 			log.warn("CompResolver element with no class attribute ignored.");
 			return;
 		}
-		log.atInfo().log("Parsing CompResolver element for class '{}'",clsname);
+		log.info("Parsing CompResolver element for class '{}'",clsname);
 		try
 		{
 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -189,7 +182,7 @@ public class ComputationProcessor
 						String attr = pelem.getAttribute("name");
 						if (attr == null)
 						{
-							log.warn("CompResolver for class '{}'"
+							log.debug("CompResolver for class '{}'"
 								+ " contains Property with no "
 								+ "'name' attribute -- ignored.",clsname);
 							continue;

@@ -1,6 +1,18 @@
-/**
- * @(#) AreaRatingCompResolver.java
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 
 package decodes.comp;
 
@@ -24,9 +36,7 @@ import ilex.util.PropertiesUtil;
 * Tries to find Area Files for computations to be applied to the passed 
 * message.
 */
-public class AreaRatingCompResolver 
-	extends CompResolver
-	implements SensorPropertiesOwner
+public class AreaRatingCompResolver extends CompResolver implements SensorPropertiesOwner
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
@@ -64,8 +74,6 @@ public class AreaRatingCompResolver
 	*/
 	private File dir;
 
-	private String module = "AreaRatingCompResolver";
-	
 	/**
 	* This class looks for parameters that can be processed with a
 	* USGS Area Rating File.
@@ -96,7 +104,7 @@ public class AreaRatingCompResolver
 			if (areafn != null)
 			{	//This is the HG sensor - which contains AreaFile and 
 				//AreaShef properties
-				log.atWarn().log("{} Found AreaFile property='{}'",module, areafn);
+				log.warn("Found AreaFile property='{}'",areafn);
 				File areaf = new File(dir, areafn);
 				AreaRatingReader arr = new AreaRatingReader(areaf.getPath());
 
@@ -171,7 +179,7 @@ public class AreaRatingCompResolver
 					if (sensorName != null && 
 							(sensorName.equalsIgnoreCase(velocitySensor)))
 					{
-						log.atWarn().log(" {} Found velocity sensor {} ",module, sensorName);
+						log.atWarn().log("Found velocity sensor {} ",sensorName);
 						rc.setXVSensorNum(ts.getSensorId());
 						foundXVSensor = true;
 						break;
@@ -206,8 +214,7 @@ public class AreaRatingCompResolver
 			dir = new File(EnvExpander.expand(d));
 		else
 			dir = new File(".");
-		log.atInfo()
-		.log("AreaRatingCompResolver will look in directory '{}'",dir.getPath());
+		log.info("AreaRatingCompResolver will look in directory '{}'",dir.getPath());
 	}
 
 	@Override
