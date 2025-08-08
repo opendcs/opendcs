@@ -1,6 +1,19 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.consumer;
 
 import java.io.PrintStream;
@@ -10,9 +23,11 @@ import java.io.IOException;
 import java.io.FileOutputStream;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
@@ -36,9 +51,9 @@ substitution variables.
       60)</li>
 </ul>
 */
-public class FileConsumer extends DataConsumer
-	implements ProcWaiterCallback
+public class FileConsumer extends DataConsumer implements ProcWaiterCallback
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Used to write to the file. */
 	private PrintStream os;
 	/** delimiter written before each message */
@@ -70,7 +85,7 @@ public class FileConsumer extends DataConsumer
 	};
 
 	/** 
-	  In the absense of a file.overwrite property, this defines the default
+	  In the absence of a file.overwrite property, this defines the default
 	  behavior.
 	*/
 	public static boolean defaultFileOverwrite = true;
@@ -96,8 +111,7 @@ public class FileConsumer extends DataConsumer
 	  @param rsProps routing spec properties.
 	  @throws DataConsumerException if the consumer could not be initialized.
 	*/
-	public void open(String consumerArg, Properties rsProps)
-		throws DataConsumerException
+	public void open(String consumerArg, Properties rsProps) throws DataConsumerException
 	{
 		this.props = new Properties();
 		PropertiesUtil.copyProps(this.props, System.getProperties());
@@ -107,7 +121,7 @@ public class FileConsumer extends DataConsumer
 		try
 		{
 			// open file named in consumerArg
-			Logger.instance().debug1("Opening '" + fn + "'");
+			log.debug("Opening '{}'", fn );
 			File f = new File(fn);
 			boolean overwrite = defaultFileOverwrite;
 			String s = props.getProperty("file.overwrite");
@@ -122,7 +136,7 @@ public class FileConsumer extends DataConsumer
 		catch(IOException e)
 		{
 			throw new DataConsumerException("Cannot open file '"
-				+ consumerArg + "': " + e);
+				+ consumerArg + "'." , e);
 		}
 
 		// Use props for before & after strings
@@ -156,9 +170,7 @@ public class FileConsumer extends DataConsumer
 			PropertiesUtil.rmIgnoreCase(cmdProps, "FILENAME");
 			cmdProps.setProperty("FILENAME", filename);
 			cmdInProgress = EnvExpander.expand(cmdAfterFile, cmdProps);
-			Logger.instance().debug1("Executing '" + cmdInProgress 
-				+ "' and waiting up to " + cmdTimeout 
-				+ " seconds for completion.");
+			log.debug("Executing '{}' and waiting up to {} seconds for completion.", cmdInProgress, cmdTimeout);
 			cmdFinished = false;
 			try 
 			{
@@ -168,8 +180,9 @@ public class FileConsumer extends DataConsumer
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning("Cannot execute '" 
-					+ cmdInProgress + "': " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot execute '{}'", cmdInProgress);
 				cmdInProgress = null;
 				cmdFinished = true;
 				return;
@@ -182,12 +195,14 @@ public class FileConsumer extends DataConsumer
 				catch(InterruptedException ex) {}
 			}
 			if (cmdFinished)
-				Logger.instance().debug1("Command '" + cmdInProgress 
-					+ "' completed with exit status " + cmdExitStatus);
+			{
+				log.debug("Command '{}' completed with exit status {}", cmdInProgress, cmdExitStatus);
+			}
 			else
-				Logger.instance().warning("Command '" + cmdInProgress 
-					+ "' Did not complete!");
-		}
+			{
+				log.warn("Command '{}' Did not complete!", cmdInProgress);
+			}
+		}	
 		filename = null;
 	}
 

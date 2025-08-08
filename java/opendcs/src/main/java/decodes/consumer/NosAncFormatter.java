@@ -1,6 +1,21 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package decodes.consumer;
 
-import ilex.util.Logger;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
@@ -9,6 +24,9 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.RawMessage;
@@ -32,6 +50,7 @@ import decodes.decoder.TimeSeries;
  */
 public class NosAncFormatter extends OutputFormatter
 {
+     private static final Logger log = OpenDcsLoggerFactory.getLogger();
      private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd yyyy HH:mm");
      public static final String module = "NosAncFormatter";
 
@@ -58,7 +77,7 @@ public class NosAncFormatter extends OutputFormatter
           RawMessage rawmsg = msg.getRawMessage();
           if (rawmsg == null)
           {
-               Logger.instance().warning(module + " no raw message!");
+               log.warn(" no raw message!");
                return;
           }
           
@@ -131,7 +150,9 @@ public class NosAncFormatter extends OutputFormatter
                          }
                          catch(Exception ex) 
                          {
-                              Logger.instance().warning(module + " bad variable: " + ex);
+                              log.atWarn()
+                                 .setCause(ex)
+                                 .log("Bad variable.");
                               continue nextSensor;
                          }
                     }

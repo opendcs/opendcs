@@ -1,16 +1,20 @@
-/**
- * $Id$
- * 
- * Copyright 2017 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.1  2017/10/10 17:58:02  mmaloney
- * Created.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.consumer;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
@@ -19,6 +23,9 @@ import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.PresentationGroup;
 import decodes.decoder.DecodedMessage;
@@ -31,6 +38,7 @@ import decodes.util.DecodesSensorCnvt;
  */
 public class TsdbFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "TsdbFormatter";
 	private String timeFormat = "yyyy/MM/dd-HH:mm:ss";
 	private TimeZone tz = null;
@@ -77,8 +85,7 @@ public class TsdbFormatter extends OutputFormatter
 			}
 			catch(ClassCastException ex)
 			{
-				Logger.instance().failure(module + 
-					" can only be used for extracting data from database.");
+				log.atWarn().setCause(ex).log(" can only be used for extracting data from database.");
 				continue;
 			}
 			
