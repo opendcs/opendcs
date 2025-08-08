@@ -1,40 +1,18 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.6  2015/03/19 13:18:29  mmaloney
- * Added bufferTimeSec to allow buffering before outputting. This aggregates more
- * samples under the same REXCHANGE header, and allows the Kisters importer to
- * operate more efficiently.
- *
- * Revision 1.5  2014/09/15 13:55:32  mmaloney
- * Updates for AESRD
- *
- * Revision 1.4  2014/08/22 17:23:10  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
- * Revision 1.3  2014/05/30 13:15:33  mmaloney
- * dev
- *
- * Revision 1.2  2014/05/28 13:09:29  mmaloney
- * dev
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Copyright 2014 Cove Software, LLC
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.consumer;
 
 import ilex.util.PropertiesUtil;
@@ -50,6 +28,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -68,11 +49,12 @@ import decodes.util.PropertySpec;
  *
  * @author Michael Maloney, Cove Software, LLC
  */
-public class KistersFormatter 
-	extends OutputFormatter
+public class KistersFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
-	
+
 	/** Can be set by "includeTZ" property */
 	private boolean includeTZ = true;
 	/** Can be set by tzName property. Defaults to abbreviation from Routing Spec TZ */
@@ -99,9 +81,9 @@ public class KistersFormatter
 	private boolean includeLayout = false;
 	private int bufferTimeSec = 0;
 	private DataConsumer theConsumer = null;
-	
+
 	public static final String headerDelim = "|*|";
-	
+
 	class SampleValue
 	{
 		long t;
@@ -140,13 +122,13 @@ public class KistersFormatter
 					{
 						return o1.t - o2.t < 0 ? -1 : o1.t - o2.t > 0 ? 1 : 0;
 					}
-				
+
 				});
 		}
 	}
 	long bufferingStarted = -1L;
 	ArrayList<SensorData> sensorDataArray = new ArrayList<SensorData>();
-	
+
 	/**
 	 * Constructor for Kisters ZRXP Formatter
 	 */
@@ -154,7 +136,7 @@ public class KistersFormatter
 	{
 		super();
 	}
-	
+
 	@Override
 	public boolean requiresDecodedMessage() { return true; }
 
@@ -166,12 +148,12 @@ public class KistersFormatter
 
 	@Override
 	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp,
-		Properties rsProps) 
+		Properties rsProps)
 		throws OutputFormatterException
 	{
 		sdf.setTimeZone(tz);
 		tzName = tz.getID();
-		
+
 		String s = PropertiesUtil.getIgnoreCase(rsProps, "includeTZ");
 		if (s != null)
 			includeTZ = TextUtil.str2boolean(s);
@@ -214,7 +196,9 @@ public class KistersFormatter
 			try { bufferTimeSec = Integer.parseInt(s.trim()); }
 			catch(Exception ex)
 			{
-				logger.warning("Invalid bufferTimeSec property '" + s + "' ignored. Buffering disabled.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid bufferTimeSec property '{}' ignored. Buffering disabled.", s);
 				bufferTimeSec = 0;
 			}
 		}
@@ -225,7 +209,7 @@ public class KistersFormatter
 	{
 		if (bufferTimeSec <= 0)
 			return;
-		
+
 		// If any data is accumulated in the buffer, flush it now.
 		try
 		{
@@ -233,7 +217,7 @@ public class KistersFormatter
 		}
 		catch (DataConsumerException ex)
 		{
-			logger.warning("Error shutting down formatter: " + ex);
+			log.atWarn().setCause(ex).log("Error shutting down formatter.");
 		}
 	}
 
@@ -242,11 +226,10 @@ public class KistersFormatter
 		throws DataConsumerException, OutputFormatterException
 	{
 		theConsumer = consumer;
-		
+
 		//MJM 20150227 If a message is nothing but missing, don't output anything.
 		boolean hasData = false;
-//		logger.debug3("KistersFormatter msg from " + msg.getPlatform().makeFileName() + " with time " + 
-//			sdf.format(msg.getMessageTime()));
+
 	  ts_loop:
 		for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
 		{
@@ -258,8 +241,6 @@ public class KistersFormatter
 				TimedVariable tv = ts.sampleAt(idx);
 				if ((tv.getFlags() & (IFlags.IS_ERROR | IFlags.IS_MISSING)) == 0)
 				{
-//					logger.debug1("Found first data: " + ts.getSensorName() + " " 
-//						+ sdf.format(tv.getTime()) + " " + tv.getStringValue());
 					hasData = true;
 					break ts_loop;
 				}
@@ -267,23 +248,24 @@ public class KistersFormatter
 		}
 		if (!hasData)
 		{
-			logger.debug1("Skipping message with no non-missing data");
+			log.debug("Skipping message with no non-missing data");
 			return;
 		}
-		
-		
+
+
 		// Get the site associated with the Platform that generated the message.
 		Site platformSite = null;
 		try
 		{
 			platformSite = msg.getRawMessage().getPlatform().getSite();
 			if (platformSite == null)
-				logger.warning("No site associated with platform.");
+			{
+				log.warn("No site associated with platform.");
+			}
 		}
 		catch(Exception ex)
 		{
-			throw new OutputFormatterException(
-				"Cannot determine platform site: " + ex.toString());
+			throw new OutputFormatterException("Cannot determine platform site.", ex);
 		}
 
 		if (bufferTimeSec <= 0)
@@ -305,16 +287,15 @@ public class KistersFormatter
 
 			if (site == null)
 			{
-				logger.warning("No platform site and no site associated with " +
-					"sensor " + sensor.getName() + " -- skipped.");
+				log.warn("No platform site and no site associated with sensor {} -- skipped.", sensor.getName());
 				continue;
 			}
-			
+
 			SiteName siteName = site.getName(siteNameType);
 			if (siteName == null)
 				if ((siteName = site.getName(siteNameTypeAlt)) == null)
 					siteName = site.getPreferredName();
-			
+
 			DataType dt = sensor.getDataType(dataTypeStandard);
 			if (dt == null)
 				if (dataTypeStandardAlt == null
@@ -327,7 +308,7 @@ public class KistersFormatter
 			headerLineBuilder.append(siteName.getNameValue());
 			headerLineBuilder.append("." + dt.getCode());
 			headerLineBuilder.append(headerDelim);
-			
+
 			if (includeTZ)
 			{
 				headerLineBuilder.append("TZ" + tzName);
@@ -352,7 +333,7 @@ public class KistersFormatter
 				headerLineBuilder.append("CUNIT" + eustr);
 				headerLineBuilder.append(headerDelim);
 			}
-			
+
 			String headerLine = headerLineBuilder.toString();
 			if (bufferTimeSec <= 0)
 			{
@@ -369,12 +350,12 @@ public class KistersFormatter
 				String samp = ts.formattedSampleAt(idx);
 				boolean inval = samp.equals("error") || samp.equals("missing")
 					|| ((tv.getFlags() & (IFlags.IS_ERROR | IFlags.IS_MISSING)) != 0);
-				
+
 				if (inval)
 				{
 					if (!includeRINVAL)
 						continue;
-					else 
+					else
 						samp = RINVAL;
 				}
 				Date sampTime = ts.timeAt(idx);
@@ -393,23 +374,23 @@ public class KistersFormatter
 			&& (System.currentTimeMillis() - bufferingStarted)/1000L > bufferTimeSec)
 			flushBuffer();
 	}
-	
-	protected PropertySpec kfPropSpecs[] = 
+
+	protected PropertySpec kfPropSpecs[] =
 	{
-		new PropertySpec("includeTZ", PropertySpec.BOOLEAN, 
+		new PropertySpec("includeTZ", PropertySpec.BOOLEAN,
 			"Default=true. Set to false to exclude TZ specifier from the header."),
-		new PropertySpec("tzName", PropertySpec.STRING, 
+		new PropertySpec("tzName", PropertySpec.STRING,
 			"Default=null. Set to override the TZ name in the routing spec."
 			+ " Caution: this will not change the time values, just the name in the header."),
-		new PropertySpec("includeCNAME", PropertySpec.BOOLEAN, 
+		new PropertySpec("includeCNAME", PropertySpec.BOOLEAN,
 			"Default=false. Set to true to include CNAME in the header with the DECODES sensor name."),
-		new PropertySpec("includeCUNIT", PropertySpec.BOOLEAN, 
+		new PropertySpec("includeCUNIT", PropertySpec.BOOLEAN,
 			"Default=false. Set to true to include CUNIT in the header with the " +
 			"engineering units."),
-		new PropertySpec("includeRINVAL", PropertySpec.BOOLEAN, 
+		new PropertySpec("includeRINVAL", PropertySpec.BOOLEAN,
 			"Default=true. Set to false to exclude RINVAL from the header. " +
 			"RINVAL specifies the special value to be used for missing or erroneous values."),
-		new PropertySpec("RINVAL", PropertySpec.STRING, 
+		new PropertySpec("RINVAL", PropertySpec.STRING,
 			"Default=-777. Specifies a special value to be used for missing or erroneous " +
 			"values in the output data."),
 		new PropertySpec("SiteNameType", PropertySpec.DECODES_ENUM + Constants.enum_SiteName,
@@ -422,15 +403,15 @@ public class KistersFormatter
 		new PropertySpec("DataTypeStandardAlt", PropertySpec.DECODES_ENUM + Constants.enum_DataTypeStd,
 			"Specifies the alternate DECODES data type to use in the header if the primary" +
 			" is undefined."),
-		new PropertySpec("SitePrefix", PropertySpec.STRING, 
+		new PropertySpec("SitePrefix", PropertySpec.STRING,
 			"A constant string to be placed before the site name in REXCHANGE values."),
-		new PropertySpec("includeLayout", PropertySpec.BOOLEAN, 
+		new PropertySpec("includeLayout", PropertySpec.BOOLEAN,
 			"Default=true. Set to true to include a separate header line with layout."),
 		new PropertySpec("bufferTimeSec", PropertySpec.INT,
 			"(# seconds, default=0) Set this to positive number to have data lines buffered and combined."
 			+ " This may result in fewer ZRXP headers with more data lines.")
 	};
-	
+
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
@@ -443,13 +424,13 @@ public class KistersFormatter
 	{
 		return false;
 	}
-	
+
 	private void flushBuffer()
 		throws DataConsumerException
 	{
 		if (bufferingStarted <= 0)
 			return;
-		
+
 		// Sort the SensrData array by header. This will put all data for same platform together.
 		Collections.sort(sensorDataArray,
 			new Comparator<SensorData>()
@@ -460,7 +441,7 @@ public class KistersFormatter
 					return o1.header.compareTo(o2.header);
 				}
 			});
-		
+
 
 		String platformName = "";
 		for(SensorData sd : sensorDataArray)
@@ -483,28 +464,28 @@ public class KistersFormatter
 				// Platform Name is different. Start a new message.
 				if (platformName.length() > 0)
 					theConsumer.endMessage(); // End the previous message if one was started.
-				
+
 				theConsumer.startMessage(sd.msg);
 				platformName = pn;
 			}
-			
+
 			// output the header line
 			theConsumer.println(sd.header);
 			if (includeLayout)
 				theConsumer.println("#LAYOUT(timestamp,value)");
-			
+
 			// output each data line
 			for(SampleValue sv : sd.samples)
 				theConsumer.println(sv.v);
 		}
-		
+
 		// End the last message we were working on.
 		if (platformName.length() > 0)
 			theConsumer.endMessage();
 		sensorDataArray.clear();
 		bufferingStarted = -1;
 	}
-	
+
 	private void addToBuffer(String header, String dataLine, long t, DecodedMessage dm)
 	{
 		if (bufferingStarted < 0)
