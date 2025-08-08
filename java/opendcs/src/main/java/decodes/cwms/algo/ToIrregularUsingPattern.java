@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.algo;
 
 import decodes.cwms.CwmsConstants;
@@ -15,10 +30,13 @@ import org.opendcs.annotations.algorithm.Output;
 
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 @Algorithm(description = "Interpolate input data to fit Irregular time series pattern.") 
-public class ToIrregularUsingPattern
-	extends AW_AlgorithmBase
+public class ToIrregularUsingPattern extends AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;	
 	@Input
@@ -87,7 +105,7 @@ public class ToIrregularUsingPattern
 		}
 		catch(Exception ex)
 		{
-			warning("Error accessing input/output time series: " + ex);
+			log.atWarn().setCause(ex).log("Error accessing input/output time series.");
 		}
 
 		
@@ -112,7 +130,7 @@ public class ToIrregularUsingPattern
 			}
 			catch (NoConversionException ex)
 			{
-				warning("Interpolation resulted in invalid var: " + ex);
+				log.atWarn().setCause(ex).log("Interpolation resulted in invalid var.");
 			}
 		}
 		//check if input data is Average. copies the average value of the previous input variable.
@@ -122,7 +140,7 @@ public class ToIrregularUsingPattern
 			}
 			catch (NoConversionException ex)
 			{
-				warning("Interpolation resulted in invalid var: " + ex);
+				log.atWarn().setCause(ex).log("Interpolation resulted in invalid var.");
 			}
 		}
 		//check if input data is Total. linear interpolation between zero at time of previous value and next value.
@@ -136,7 +154,7 @@ public class ToIrregularUsingPattern
 			}
 			catch (NoConversionException ex)
 			{
-				warning("Interpolation resulted in invalid var: " + ex);
+				log.atWarn().setCause(ex).log("Interpolation resulted in invalid var.");
 			}
 		}
 	}
@@ -175,7 +193,7 @@ public class ToIrregularUsingPattern
 			}
 			catch(Exception ex)
 			{
-				warning("Error accessing input/output time series: " + ex);
+				log.atWarn().setCause(ex).log("Error accessing input/output time series.");
 				return;
 			}
 		}

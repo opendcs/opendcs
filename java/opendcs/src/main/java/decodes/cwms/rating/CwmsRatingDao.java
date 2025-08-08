@@ -6,8 +6,7 @@
  * No warranty is provided or implied other than specific contractual terms
  * between COVE and the U.S. Government
  *
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
+ * U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  */
 package decodes.cwms.rating;
 
@@ -25,7 +24,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import opendcs.dao.DaoBase;
 import decodes.cwms.BadRatingException;
@@ -39,7 +38,7 @@ import hec.data.cwmsRating.RatingSet;
 
 public class CwmsRatingDao extends DaoBase
 {
-    private static final Logger log = LoggerFactory.getLogger(CwmsRatingDao.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final String module = "CwmsRatingDao";
     public static final String cwms_v_rating_columns =
         "RATING_CODE, RATING_ID, EFFECTIVE_DATE, CREATE_DATE, ACTIVE_FLAG";
