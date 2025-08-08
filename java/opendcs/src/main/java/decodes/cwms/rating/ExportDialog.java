@@ -1,27 +1,4 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.5  2013/03/28 19:19:32  mmaloney
- * User temp files are now placed under DCSTOOL_USERDIR which may be different
- * from DCSTOOL_HOME on linux/unix multi-user installations.
- *
- * Revision 1.4  2012/10/30 17:55:06  mmaloney
- * dev
- *
- * Revision 1.3  2012/10/30 16:09:14  mmaloney
- * dev
- *
- * Revision 1.2  2012/10/30 15:50:13  mmaloney
- * dev
- *
- * Revision 1.1  2012/10/30 15:46:37  mmaloney
- * dev
- *
- * 
  * Open source software written for U.S. Army Corps of Engineers.
  * Author: Mike Maloney, Cove Software, LLC
  */
@@ -31,9 +8,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.IOException;
 
 import javax.swing.JPanel;
 import javax.swing.JButton;
@@ -47,6 +22,9 @@ import javax.swing.JRadioButton;
 import javax.swing.ButtonGroup;
 import javax.swing.JFileChooser;
 import java.util.ResourceBundle;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
@@ -62,6 +40,7 @@ This class implements the dialog displayed for exporting ratings.
 @SuppressWarnings("serial")
 public class ExportDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JButton exportButton = new JButton();
 	private JRadioButton onlySelectedRadio = new JRadioButton("Only Selected Rating");
 	private JRadioButton allRelatedRadio = new JRadioButton("All Ratings with same Spec");
@@ -94,9 +73,9 @@ public class ExportDialog extends GuiDialog
 			jbInit();
 			pack();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			log.atError().setCause(ex).log("Cannot initialize ExportDialog");
 		}
 	}
 
@@ -236,13 +215,6 @@ public class ExportDialog extends GuiDialog
 			exportButton.setEnabled(true);
 		}
 	}
-
-//	public static void main(String args[])
-//	{
-//		ExportDialog dlg = new ExportDialog(null, theDb);
-//		dlg.setVisible(true);
-//	}
-
 
 	private void closeDlg()
 	{

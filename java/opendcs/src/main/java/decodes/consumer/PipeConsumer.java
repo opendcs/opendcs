@@ -1,60 +1,33 @@
 /*
-*  $Id: PipeConsumer.java,v 1.4 2019/12/11 19:04:34 mmaloney Exp $
-*
-*  $State: Exp $
-*
-*  $Log: PipeConsumer.java,v $
-*  Revision 1.4  2019/12/11 19:04:34  mmaloney
-*  Added setOutputStream method for Test Runner.
-*
-*  Revision 1.3  2014/05/30 13:15:32  mmaloney
-*  dev
-*
-*  Revision 1.2  2014/05/28 13:09:27  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2006/08/25 11:54:18  mmaloney
-*  dev
-*
-*  Revision 1.5  2005/04/25 21:38:08  mjmaloney
-*  dev
-*
-*  Revision 1.4  2004/08/24 21:01:37  mjmaloney
-*  added javadocs
-*
-*  Revision 1.3  2004/04/15 19:47:48  mjmaloney
-*  Added status methods to support the routng status monitor web app.
-*
-*  Revision 1.2  2003/06/06 01:39:20  mjmaloney
-*  Datasources to handle either datasource or routingspec properties.
-*  Consumers to handle delimiters consistently.
-*  FileConsumer and DirectoryConsumer to handle File Name Templates.
-*
-*  Revision 1.1  2001/09/14 21:16:42  mike
-*  dev
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.consumer;
 
 import java.io.PrintStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Properties;
 
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
-import decodes.datasource.RawMessage;
 import decodes.decoder.DecodedMessage;
 import decodes.util.PropertySpec;
-import decodes.db.*;
 
 /**
   PipeConsumer sends data to the standard output, standard error, or a
@@ -70,6 +43,7 @@ import decodes.db.*;
 */
 public class PipeConsumer extends DataConsumer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	PrintStream os;
 	Process childProc;
 	private String before;
@@ -113,15 +87,13 @@ public class PipeConsumer extends DataConsumer
 		{
 			try
 			{
-				Logger.instance().log(Logger.E_INFORMATION,
-					"Starting command '" + consumerArg + "'");
+				log.info("Starting command '{}'", consumerArg);
 				childProc = Runtime.getRuntime().exec(consumerArg);
 				os = new PrintStream(childProc.getOutputStream());
 			}
 			catch(Exception ex)
 			{
-				throw new DataConsumerException(
-					"Cannot start child process '" + consumerArg + "'");
+				throw new DataConsumerException("Cannot start child process '" + consumerArg + "'", ex);
 			}
 		}
 

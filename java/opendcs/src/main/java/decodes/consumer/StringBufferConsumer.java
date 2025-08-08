@@ -1,42 +1,22 @@
 /*
-*  $Id$
-*
-*  $State$
-*
-*  $Log$
-*  Revision 1.2  2014/05/28 13:09:27  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.2  2008/11/20 18:49:17  mjmaloney
-*  merge from usgs mods
-*
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2004/08/24 21:01:38  mjmaloney
-*  added javadocs
-*
-*  Revision 1.3  2004/04/15 19:47:48  mjmaloney
-*  Added status methods to support the routng status monitor web app.
-*
-*  Revision 1.2  2001/10/26 00:17:22  mike
-*  Added getBuffer method.
-*
-*  Revision 1.1  2001/10/26 00:14:52  mike
-*  Added StringBufferConsumer
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.consumer;
 
-import java.io.PrintStream;
-
 import java.util.Properties;
-import decodes.datasource.RawMessage;
 import decodes.decoder.DecodedMessage;
-import decodes.db.*;
 
 /**
   StringBufferConsumer writes data to a StringBuffer. It is used by GUI
