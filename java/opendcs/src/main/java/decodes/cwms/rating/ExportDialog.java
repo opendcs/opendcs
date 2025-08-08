@@ -1,46 +1,35 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.5  2013/03/28 19:19:32  mmaloney
- * User temp files are now placed under DCSTOOL_USERDIR which may be different
- * from DCSTOOL_HOME on linux/unix multi-user installations.
- *
- * Revision 1.4  2012/10/30 17:55:06  mmaloney
- * dev
- *
- * Revision 1.3  2012/10/30 16:09:14  mmaloney
- * dev
- *
- * Revision 1.2  2012/10/30 15:50:13  mmaloney
- * dev
- *
- * Revision 1.1  2012/10/30 15:46:37  mmaloney
- * dev
- *
- * 
- * Open source software written for U.S. Army Corps of Engineers.
- * Author: Mike Maloney, Cove Software, LLC
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.rating;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.IOException;
-
 import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import javax.swing.BorderFactory;
 import javax.swing.border.Border;
 import javax.swing.JRadioButton;
@@ -62,12 +51,13 @@ This class implements the dialog displayed for exporting ratings.
 @SuppressWarnings("serial")
 public class ExportDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JButton exportButton = new JButton();
 	private JRadioButton onlySelectedRadio = new JRadioButton("Only Selected Rating");
 	private JRadioButton allRelatedRadio = new JRadioButton("All Ratings with same Spec");
 	private JTextField outputFileField = new JTextField();
 	private DecodesSettings settings = DecodesSettings.instance();
-	private ResourceBundle genericLabels = 
+	private ResourceBundle genericLabels =
 		LoadResourceBundle.getLabelDescriptions(
 			"decodes/resources/generic", settings.language);
 
@@ -76,7 +66,7 @@ public class ExportDialog extends GuiDialog
 
 	private TimeSeriesDb tsdb = null;
 	private CwmsRatingRef cwmsRatingRef = null;
-	
+
 	/**
 	 * Constructor.
 	 * @param owner the db editor top-frame.
@@ -93,16 +83,16 @@ public class ExportDialog extends GuiDialog
 			jbInit();
 			pack();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			log.atError().setCause(ex).log("Unable to initialize GUI elements.");
 		}
 	}
 
 	private void jbInit() throws Exception
 	{
 		JPanel mainPanel = new JPanel(new BorderLayout());
-		
+
 		JButton doneButton = new JButton(genericLabels.getString("done"));
 		doneButton.addActionListener(new ActionListener()
 		{
@@ -111,7 +101,7 @@ public class ExportDialog extends GuiDialog
 				doneButtonPressed();
 			}
 		});
-		
+
 		exportButton.setText(genericLabels.getString("export"));
 		exportButton.setEnabled(false);
 		exportButton.addActionListener(new ActionListener()
@@ -142,13 +132,13 @@ public class ExportDialog extends GuiDialog
 		Border whatTitledBorder = new TitledBorder(whatEtchedBorder, "What to Export?");
 		whatPanel.setBorder(whatTitledBorder);
 		mainPanel.add(whatPanel, java.awt.BorderLayout.NORTH);
-		
+
 		JPanel fileSelectPanel = new JPanel(new GridBagLayout());
 		fileSelectPanel.add(new JLabel(genericLabels.getString("filename")),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(10, 10, 10, 2), 0, 0));
-		
+
 		outputFileField.setText("");
 		outputFileField.addActionListener(new ActionListener()
 		{
@@ -161,7 +151,7 @@ public class ExportDialog extends GuiDialog
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 0, 10, 10), 300, 0));
-		
+
 		JButton chooseButton = new JButton(genericLabels.getString("choose"));
 		chooseButton.addActionListener(new ActionListener()
 		{
@@ -174,9 +164,9 @@ public class ExportDialog extends GuiDialog
 			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(10, 5, 10, 10), 0, 0));
-	
+
 		mainPanel.add(fileSelectPanel, BorderLayout.CENTER);
-		
+
 		getContentPane().add(mainPanel);
 	}
 
@@ -235,12 +225,6 @@ public class ExportDialog extends GuiDialog
 			exportButton.setEnabled(true);
 		}
 	}
-
-//	public static void main(String args[])
-//	{
-//		ExportDialog dlg = new ExportDialog(null, theDb);
-//		dlg.setVisible(true);
-//	}
 
 
 	private void closeDlg()

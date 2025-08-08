@@ -1,11 +1,28 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.consumer;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.io.File;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.decoder.DecodedMessage;
 
@@ -17,6 +34,7 @@ import decodes.decoder.DecodedMessage;
  */
 public class NosConsumer extends DataConsumer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private File outputDir;
 	private Properties rsProps;
 	public static final String module = "NosConsumer";
@@ -42,12 +60,12 @@ public class NosConsumer extends DataConsumer
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	@Override
 	public void startMessage(DecodedMessage msg) throws DataConsumerException
 	{
-		Logger.instance().info("NosConsumer output dir is '" + outputDir.getPath() + "'");
+		log.info("NosConsumer output dir is '{}'", outputDir.getPath());
 		FileConsumer fc = null;
 		rsProps.setProperty("file.overwrite", "false");
 		// Append to XXX.DCP
@@ -62,11 +80,9 @@ public class NosConsumer extends DataConsumer
 			nosDcpFmt.formatMessage(msg, fc);
 			nosDcpFmt.shutdown();
 		}
-		catch (OutputFormatterException e)
+		catch (OutputFormatterException ex)
 		{
-			Logger.instance().failure(module + " Cannot write DCP format: " + e);
-			e.printStackTrace();
-			throw new DataConsumerException(e.toString());
+			throw new DataConsumerException("Cannot write DCP format", ex);
 		}
 		finally
 		{
@@ -74,7 +90,7 @@ public class NosConsumer extends DataConsumer
 				fc.close();
 			fc = null;
 		}
-		
+
 		// Append to XXX.ANC
 		try
 		{
@@ -87,11 +103,9 @@ public class NosConsumer extends DataConsumer
 			nosAncFmt.formatMessage(msg, fc);
 			nosAncFmt.shutdown();
 		}
-		catch (OutputFormatterException e)
+		catch (OutputFormatterException ex)
 		{
-			Logger.instance().failure(module + " Cannot write ANC format: " + e);
-			e.printStackTrace();
-			throw new DataConsumerException(e.toString());
+			throw new DataConsumerException("Cannot write ANC format.", ex);
 		}
 		finally
 		{
@@ -99,7 +113,7 @@ public class NosConsumer extends DataConsumer
 				fc.close();
 			fc = null;
 		}
-		
+
 		// Append to XXX.NES
 		try
 		{
@@ -112,11 +126,9 @@ public class NosConsumer extends DataConsumer
 			nosNesFmt.formatMessage(msg, fc);
 			nosNesFmt.shutdown();
 		}
-		catch (OutputFormatterException e)
+		catch (OutputFormatterException ex)
 		{
-			Logger.instance().failure(module + " Cannot write NES format: " + e);
-			e.printStackTrace();
-			throw new DataConsumerException(e.toString());
+			throw new DataConsumerException("Cannot write NES format", ex);
 		}
 		finally
 		{
@@ -124,7 +136,7 @@ public class NosConsumer extends DataConsumer
 				fc.close();
 			fc = null;
 		}
-		
+
 		// Append to XXX.QC
 		try
 		{
@@ -137,11 +149,9 @@ public class NosConsumer extends DataConsumer
 			nosQcFmt.formatMessage(msg, fc);
 			nosQcFmt.shutdown();
 		}
-		catch (OutputFormatterException e)
+		catch (OutputFormatterException ex)
 		{
-			Logger.instance().failure(module + " Cannot write QC format: " + e);
-			e.printStackTrace();
-			throw new DataConsumerException(e.toString());
+			throw new DataConsumerException("Cannot write QC format", ex);
 		}
 		finally
 		{
@@ -162,7 +172,7 @@ public class NosConsumer extends DataConsumer
 	{
 		// Do nothing. All work done in startMessage method.
 	}
-	
+
 	/**
 	 * @return true if this data type code is concidered 'ancillary'.
 	 */
@@ -189,9 +199,9 @@ public class NosConsumer extends DataConsumer
 		default: // everything else is ancillary
 			return true;
 		}
-		
+
 	}
-	
+
 	public static boolean isWaterLevel(String dt)
 	{
 		return !isAncillary(dt);

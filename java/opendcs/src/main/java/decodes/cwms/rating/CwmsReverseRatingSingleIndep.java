@@ -21,6 +21,7 @@ import java.util.Date;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +52,7 @@ import decodes.util.TSUtil;
                   "be *any* duplicate outputs for an input in the table.")
 public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-    private static Logger log = LoggerFactory.getLogger(CwmsReverseRatingSingleIndep.class);
+    private static Logger log = OpenDcsLoggerFactory.getLogger();
     @Input(description = "Value used to perform lookup in the rating table.")
     public double indep;
 
@@ -105,7 +106,7 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
             SiteName depSiteName = depParmRef.compParm.getSiteName(Constants.snt_CWMS);
             if (depSiteName == null)
             {
-                log.debug("No dependent site name available, using site from indep1");
+                log.warn("No dependent site name available, using site from indep1 '{}'", specLocation);
             }
             else
             {
@@ -138,9 +139,10 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
              && indepParmRef.timeSeries.getUnitsAbbr() != null
              && !indepParmRef.timeSeries.getUnitsAbbr().equalsIgnoreCase(punits[0]))
             {
-                debug1(module + " Converting indep units for time series "
-                    + indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + " from "
-                    + indepParmRef.timeSeries.getUnitsAbbr() + " to " + punits[0]);
+                log.debug(" Converting indep units for time series {} from {} to {}",
+                          indepParmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString(),
+                          indepParmRef.timeSeries.getUnitsAbbr(),
+                          punits[0]);
                 TSUtil.convertUnits(indepParmRef.timeSeries, punits[0]);
             }
             // Likewise for the dependent param:
@@ -155,7 +157,7 @@ public class CwmsReverseRatingSingleIndep extends decodes.tsdb.algo.AW_Algorithm
         }
         catch (RatingException ex)
         {
-            throw new DbCompException("Cannot read rating for '" + specId + "': " + ex, ex);
+            throw new DbCompException("Cannot read rating for '" + specId + "'", ex);
         }
 
         indepTimes.clear();

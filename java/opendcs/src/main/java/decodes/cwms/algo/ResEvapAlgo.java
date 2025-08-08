@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.algo;
 
 import decodes.cwms.CwmsTimeSeriesDb;
@@ -22,7 +37,6 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -33,7 +47,9 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 
 
 //AW:IMPORTS_END
@@ -51,7 +67,7 @@ import org.slf4j.LoggerFactory;
 final public class ResEvapAlgo
         extends AW_AlgorithmBase
 {
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(ResEvapAlgo.class.getName());
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     //AW:INPUTS
     @Input
     public double windSpeed;        //AW:TYPECODE=i
@@ -433,7 +449,9 @@ final public class ResEvapAlgo
                 }
                 catch (RuntimeException ex)
                 {
-                    LOGGER.error(ex.toString());
+                    // If this failure is acceptable change to a log message that explains what default will
+                    // be used but also contains the cause for diagnostics.
+                    throw new DbCompException("Unable to set wind shear method.", ex);
                 }
 
                 reservoir.setInputDataIsEnglish(true);
@@ -584,7 +602,7 @@ final public class ResEvapAlgo
         }
         else
         {
-            warning("There are less than 24 hourly samples, can not compute daily sums");
+            log.warn("There are less than 24 hourly samples, can not compute daily sums");
         }
 
 //AW:AFTER_TIMESLICES

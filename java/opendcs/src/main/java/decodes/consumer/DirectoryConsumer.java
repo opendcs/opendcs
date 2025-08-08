@@ -1,16 +1,31 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.consumer;
 
 import java.io.File;
 import java.io.OutputStream;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Date;
 
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.var.Variable;
@@ -22,7 +37,7 @@ import decodes.db.*;
 import decodes.util.PropertySpec;
 
 /**
-DirectoryConsumer sends data to files in a named directory. 
+DirectoryConsumer sends data to files in a named directory.
 The 'argument' is the name of the directory.
 Properties are used to specify file name templates, etc.
 <ul>
@@ -35,12 +50,13 @@ Properties are used to specify file name templates, etc.
 */
 public class DirectoryConsumer extends DataConsumer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Set by argument */
 	private String directoryName;
 
 	/** The directory as a File object. */
 	private File directory;
- 
+
 	/** Local copy of properties */
 	private Properties props;
 
@@ -58,18 +74,18 @@ public class DirectoryConsumer extends DataConsumer
 
 	/** Temporary directory for building files. */
 	private File tmpdir;
-	
+
 	/** So apps like poll and PollGUI can retrieve last file written */
 	private File lastOutFile = null;
-	
+
 	private int sequenceNum = 1;
 	private boolean useSysDate = false;
-	
+
 	PropertySpec[] myspecs = new PropertySpec[]
 	{
-		new PropertySpec("filenameTemplate", PropertySpec.STRING, 
+		new PropertySpec("filenameTemplate", PropertySpec.STRING,
 			"Template for building filename."),
-		new PropertySpec("tmpdir", PropertySpec.STRING, 
+		new PropertySpec("tmpdir", PropertySpec.STRING,
 			"Temporary directory for building file before moving to final location."),
 		new PropertySpec("useSysDate", PropertySpec.BOOLEAN,
 			"Set to true to use system time for $DATE in filenameTemplate. Otherwise use msg time.")
@@ -110,7 +126,7 @@ public class DirectoryConsumer extends DataConsumer
 			if (filenameTemplate == null)
 				filenameTemplate = "$SITENAME-$DATE(" + Constants.suffixDateFormat_fmt + ")";
 		}
-		Logger.instance().debug3("DirectoryConsumer filenameTemplate='" + filenameTemplate + "'");
+		log.trace("DirectoryConsumer filenameTemplate='{}'", filenameTemplate);
 
 		String tmpdirname = PropertiesUtil.getIgnoreCase(props, "tmpdir");
 		if (tmpdirname != null)
@@ -120,7 +136,7 @@ public class DirectoryConsumer extends DataConsumer
 				if (!tmpdir.mkdirs())
 					tmpdir = null;
 		}
-		
+
 		useSysDate = TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(props, "useSysDate"));
 	}
 
@@ -134,15 +150,12 @@ public class DirectoryConsumer extends DataConsumer
 		endMessage();
 	}
 
-	public void startMessage(DecodedMessage msg)
-		throws DataConsumerException
+	public void startMessage(DecodedMessage msg) throws DataConsumerException
 	{
-		try { prepareConsumer(msg, false); }
-		catch(DataConsumerException e ) { throw (e); }
-	}	
+		prepareConsumer(msg, false);
+	}
 
-	public void prepareConsumer(DecodedMessage msg, boolean appendToCurrentFile)
-		throws DataConsumerException
+	public void prepareConsumer(DecodedMessage msg, boolean appendToCurrentFile) throws DataConsumerException
 	{
 		if (curFileConsumer != null)
 			endMessage(); // shouldn't happen!
@@ -165,23 +178,20 @@ public class DirectoryConsumer extends DataConsumer
 					props.setProperty("SITENAME", n);
 			}
 			TransportMedium tm = rm.getTransportMedium();
-			Logger.instance().log(Logger.E_DEBUG3, 
-                              "Transport Id  = " + tm.getMediumId() );
+			log.trace("Transport Id  = {}", tm.getMediumId());
 			if (tm != null)
 				props.setProperty("TRANSPORTID", tm.getMediumId());
 		}
-		catch(UnknownPlatformException e) 
+		catch(UnknownPlatformException e)
 		{
 		}
-		
+
 		props.setProperty("SEQUENCE", "" + (sequenceNum++));
 
 		try
 		{
-			Logger.instance().debug2( 
-            	"FileNameTemplate = " + filenameTemplate );
-			Logger.instance().debug2( 
-                "TRANSPORTID = " + props.getProperty("TRANSPORTID") );
+			log.trace("FileNameTemplate = {}", filenameTemplate );
+			log.trace("TRANSPORTID = {}", props.getProperty("TRANSPORTID"));
 			if ( currentFileName == null || !appendToCurrentFile )
 			{
 				if (useSysDate)
@@ -193,27 +203,26 @@ public class DirectoryConsumer extends DataConsumer
 				}
 			}
 
-			Logger.instance().debug2( 
-                "CurrentFileName = " + currentFileName );
+			log.trace("CurrentFileName = {}", currentFileName);
 
 			if (tmpdir != null)
 				outFile = new File(tmpdir, currentFileName);
 			else
 				outFile = new File(directory, currentFileName);
 
-			Logger.instance().debug2(
-				"Opening file '" + outFile.getPath() + "'");
+			log.trace("Opening file '{}'", outFile.getPath());
 
 			curFileConsumer = new FileConsumer();
 			if ( appendToCurrentFile )
-					props.setProperty("file.overwrite", "false");		 
+					props.setProperty("file.overwrite", "false");
 			curFileConsumer.open(outFile.getPath(), props);
 			curFileConsumer.startMessage(msg);
 		}
-		catch(DataConsumerException e)
+		catch(DataConsumerException ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE,
-				"Cannot create output file: " + e);
+			log.atError()
+			   .setCause(ex)
+			   .log("Cannot create output file.");
 			curFileConsumer = null;
 		}
 	}
@@ -241,12 +250,15 @@ public class DirectoryConsumer extends DataConsumer
 			if (tmpdir != null && outFile.exists() && outFile.length() > 0L)
 			{
 				File permFile = new File(directory, outFile.getName());
-				try { FileUtil.moveFile(outFile, permFile); }
+				try
+				{
+					FileUtil.moveFile(outFile, permFile);
+				}
 				catch(Exception ex)
 				{
-					Logger.instance().failure(
-						"Cannot move '" + outFile.getPath() + "' to '"
-						+ permFile.getPath() + "': " + ex);
+					log.atError()
+					   .setCause(ex)
+					   .log("Cannot move '{}' to '{}'", outFile.getPath(), permFile.getPath());
 				}
 			}
 			lastOutFile = outFile;
@@ -258,8 +270,7 @@ public class DirectoryConsumer extends DataConsumer
 		}
 	}
 
-	public OutputStream getOutputStream()
-		throws DataConsumerException
+	public OutputStream getOutputStream() throws DataConsumerException
 	{
 		if (curFileConsumer == null)
 			throw new DataConsumerException("No current file in directory.");
@@ -270,7 +281,7 @@ public class DirectoryConsumer extends DataConsumer
 	{
 		return currentFileName != null ? currentFileName : "(no file)";
 	}
-	
+
 	@Override
 	public String getArgLabel()
 	{
@@ -281,7 +292,7 @@ public class DirectoryConsumer extends DataConsumer
 	{
 		return lastOutFile;
 	}
-	
+
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
@@ -290,4 +301,3 @@ public class DirectoryConsumer extends DataConsumer
 
 
 }
-

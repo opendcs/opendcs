@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.consumer;
 
@@ -30,9 +42,9 @@ public class EmitAsciiFormatter extends OutputFormatter
 	private String delimiter;
 	private SimpleDateFormat emitDateFormat;
 	private boolean useQuotes;
-	
-	private PropertySpec propSpecs[] = 
-	{		
+
+	private PropertySpec propSpecs[] =
+	{
 		new PropertySpec("delimiter", PropertySpec.STRING,
 			"Used between columns (default=space)"),
 		new PropertySpec("useQuotes", PropertySpec.BOOLEAN,
@@ -100,9 +112,9 @@ public class EmitAsciiFormatter extends OutputFormatter
 			tm = rawmsg.getTransportMedium();
 			platform = rawmsg.getPlatform();
 		}
-		catch(UnknownPlatformException e)
+		catch(UnknownPlatformException ex)
 		{
-			throw new OutputFormatterException(e.toString());
+			throw new OutputFormatterException("Error retrieving Transport Medium or Platform", ex);
 		}
 
 		String dcpId = tm.getMediumId();
@@ -155,7 +167,7 @@ public class EmitAsciiFormatter extends OutputFormatter
 				sb.append(sensorNum);
 				for(int j=sensorNum.length(); j<4; j++)
 					sb.append(' ');
-			
+
 				sb.append(delimiter);
 				sb.append(emitDateFormat.format(tv.getTime()));
 
@@ -164,7 +176,7 @@ public class EmitAsciiFormatter extends OutputFormatter
 				sb.append(s);
 				for(int j=s.length(); j<10; j++)
 					sb.append(' ');
-			
+
 				sb.append(delimiter);
 				sb.append(platformType);
 
@@ -206,7 +218,7 @@ public class EmitAsciiFormatter extends OutputFormatter
 		consumer.println("ZZZZ");
 		consumer.endMessage();
 	}
-	
+
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
@@ -214,4 +226,3 @@ public class EmitAsciiFormatter extends OutputFormatter
 	}
 
 }
-
