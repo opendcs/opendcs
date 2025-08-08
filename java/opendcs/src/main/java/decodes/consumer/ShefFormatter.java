@@ -1,124 +1,49 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.5  2018/02/02 14:52:14  mmaloney
-*  Attempt .E for non-GOES as long as data is regular interval.
-*
-*  Revision 1.4  2015/11/12 15:19:23  mmaloney
-*  Added PropertySpec entries with tooltip for all props.
-*  Added new siteNameType property.
-*
-*  Revision 1.3  2014/05/30 13:15:34  mmaloney
-*  dev
-*
-*  Revision 1.2  2014/05/28 13:09:29  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.4  2012/09/10 23:55:39  mmaloney
-*  Allow operation without platform record for OutputTs.
-*
-*  Revision 1.3  2011/05/19 17:11:46  mmaloney
-*  use TextUtil.str2Boolean
-*
-*  Revision 1.2  2008/05/29 22:44:18  cvs
-*  dev
-*
-*  Revision 1.3  2006/05/11 19:45:17  mjmaloney
-*  dev
-*
-*  Revision 1.2  2005/03/21 14:26:21  mjmaloney
-*  dev
-*
-*  Revision 1.1  2005/02/18 14:27:32  mjmaloney
-*  Created.
-*
-*  Revision 1.19  2005/02/11 13:35:54  mjmaloney
-*  dev
-*
-*  Revision 1.18  2004/09/06 13:42:00  mjmaloney
-*  bug-fixes
-*
-*  Revision 1.17  2004/08/24 21:01:37  mjmaloney
-*  added javadocs
-*
-*  Revision 1.16  2004/07/13 14:32:07  mjmaloney
-*  Fixed bug in getting shef codes for several formatters.
-*
-*  Revision 1.15  2004/01/13 20:34:38  mjmaloney
-*  Fix for full-shef-code option.
-*
-*  Revision 1.14  2004/01/13 17:19:51  mjmaloney
-*  Bug-fixes on DECODES 6.0 beta
-*
-*  Revision 1.13  2003/12/23 20:10:17  mjmaloney
-*  Mods to support -a (autoinstall) feature on dbimport.
-*
-*  Revision 1.12  2003/11/15 20:12:02  mjmaloney
-*  Use accessor methods for transport medium type.
-*
-*  Revision 1.11  2002/12/03 21:43:07  mjmaloney
-*  *** empty log message ***
-*
-*  Revision 1.10  2002/12/03 21:28:47  mjmaloney
-*  Added UseNesdisId property.
-*
-*  Revision 1.9  2002/11/01 21:38:32  mjmaloney
-*  Fixed null pointer bug if there was no sensor data type.
-*
-*  Revision 1.8  2002/11/01 21:35:09  mjmaloney
-*  release prep
-*
-*  Revision 1.7  2002/05/19 13:02:44  mjmaloney
-*  Final TimeZone mods
-*
-*  Revision 1.6  2002/05/19 00:22:18  mjmaloney
-*  Deprecated decodes.db.TimeZone and decodes.db.TimeZoneList.
-*  These are now replaced by the java.util.TimeZone class.
-*
-*  Revision 1.5  2002/04/18 12:19:40  mike
-*  Fixed negative number parsing problem.
-*  Fixed MISSING and ERROR value problem.
-*
-*  Revision 1.4  2002/04/05 21:25:14  mike
-*  Implement sensor-site names in all formatters.
-*  Fix time-ordering.
-*  Fix DirectoryConsumer move functions.
-*
-*  Revision 1.3  2002/03/31 21:09:35  mike
-*  bug fixes
-*
-*  Revision 1.2  2002/02/13 20:56:33  mike
-*  Modify ShefFormatter to generate both .E and .A
-*
-*  Revision 1.1  2001/10/05 19:21:00  mike
-*  Implemented ShefFormatter
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.consumer;
 
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.text.NumberFormat;
 
-import ilex.var.TimedVariable;
-import ilex.var.IFlags;
-import ilex.util.PropertiesUtil;
-import ilex.util.Logger;
-import ilex.util.TextUtil;
-import decodes.db.*;
-import decodes.decoder.DecodedMessage;
-import decodes.decoder.TimeSeries;
-import decodes.decoder.Sensor;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
+import decodes.db.Constants;
+import decodes.db.DataPresentation;
+import decodes.db.DataType;
+import decodes.db.EngineeringUnit;
+import decodes.db.Platform;
+import decodes.db.PresentationGroup;
+import decodes.db.Site;
+import decodes.db.SiteName;
+import decodes.db.TransportMedium;
+import decodes.decoder.DecodedMessage;
+import decodes.decoder.Sensor;
+import decodes.decoder.TimeSeries;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertySpec;
+import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
+import ilex.var.IFlags;
+import ilex.var.TimedVariable;
 
 /**
   This class formats decoded data in SHEF .A or .E lines.
@@ -139,6 +64,7 @@ import decodes.util.PropertySpec;
 */
 public class ShefFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private SimpleDateFormat dateFormat;
 	private boolean dotAOnly;
 	private java.util.TimeZone myTZ;
@@ -230,16 +156,16 @@ public class ShefFormatter extends OutputFormatter
 		s = PropertiesUtil.getIgnoreCase(rsProps, "useNesdisId");
 		if (s == null)
 			s = PropertiesUtil.getIgnoreCase(rsProps, "useNesdisIds");
-		Logger.instance().log(Logger.E_DEBUG1,"useNesdisId property is '" + s + "'");
+		log.debug("useNesdisId property is '{}'", s);
 		if (s != null && 
 			(s.equalsIgnoreCase("yes") || s.equalsIgnoreCase("true")
 			 || s.equalsIgnoreCase("on")))
 		{
 			useNesdisId = true;
-			Logger.instance().log(Logger.E_DEBUG1,"Using NESDIS IDs in SHEF");
+			log.debug("Using NESDIS IDs in SHEF");
 		}
 		else
-			Logger.instance().log(Logger.E_DEBUG1,"Not using NESDIS IDs");
+			log.debug("Not using NESDIS IDs");
 
 		s = PropertiesUtil.getIgnoreCase(rsProps, "FullShefCode");
 		if (s != null)
@@ -261,7 +187,7 @@ public class ShefFormatter extends OutputFormatter
 		if (s != null)
 		{
 			siteNameType = s;
-			Logger.instance().info("ShefFormatter.init - will use siteNameType=" + siteNameType);
+			log.info("ShefFormatter.init - will use siteNameType={}", siteNameType);
 		}
 	}
 
@@ -307,17 +233,23 @@ public class ShefFormatter extends OutputFormatter
 			if (sn == null)
 			{
 				sn = s.getPreferredName();
-				Logger.instance().info("Platform '" + platform.makeFileName() + "' does not have site name "
-					+ "with type '" + siteNameType + "'. Will use " + sn.toString());
-				Logger.instance().debug3("Available site names are:");
-				for(SiteName tsn : s.getNameArray())
-					Logger.instance().debug3("    " + tsn.toString());
+				log.info("Platform '{}' does not have site name with type '{}'. Will use {}",
+						 platform.makeFileName(), siteNameType, sn.toString());
+
+				if (log.isTraceEnabled())
+				{
+					log.trace("Available site names are:");
+					for(SiteName tsn : s.getNameArray())
+					{
+						log.trace("    {}", tsn.toString());
+					}
+				}
 			}
 			platformSiteName = sn.getNameValue();
 		}
-		catch(UnknownPlatformException e)
+		catch(UnknownPlatformException ex)
 		{
-//			throw new OutputFormatterException(e.toString());
+			log.atError().setCause(ex).log("Unknown platform in format Message");
 		}
 
 
@@ -390,7 +322,6 @@ public class ShefFormatter extends OutputFormatter
 				}
 			}
 			
-//			String recordingInt = "" + sensor.getRecordingInterval();
 
 			String unitsId = " /DUE ";
 			if (eu != null && eu.family != null
@@ -502,8 +433,9 @@ public class ShefFormatter extends OutputFormatter
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot format variable '"
-				+ tv.toString() + "': " + ex);
+		log.atWarn()
+		   .setCause(ex)
+		   .log("Cannot format variable '{}'", tv.toString());
 			return "+";
 		}
 	}

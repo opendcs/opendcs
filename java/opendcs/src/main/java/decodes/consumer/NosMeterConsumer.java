@@ -1,14 +1,30 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.consumer;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
 
 import java.io.File;
 import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
@@ -24,6 +40,7 @@ import decodes.decoder.DecodedMessage;
  */
 public class NosMeterConsumer extends DataConsumer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();	
 	private File outputDir;
 	private Properties rsProps;
 	public static final String module = "NosMeterConsumer";
@@ -63,8 +80,8 @@ public class NosMeterConsumer extends DataConsumer
 				if (n != null)
 					rsProps.setProperty("SITENAME", n);
 			}
-		} catch (UnknownPlatformException e1) {
-			Logger.instance().warning(e1.getMessage());
+		} catch (UnknownPlatformException ex) {
+			log.atWarn().setCause(ex).log("Unable to retrieve platform.");
 		}
 		
 		String msg1 = msg.getTimeSeries(1).sampleAt(0).getStringValue();
@@ -75,7 +92,7 @@ public class NosMeterConsumer extends DataConsumer
 		msg.getRawMessage().setPM("NOS_DCP_NUM", new Variable(""));
 		
 	
-		Logger.instance().info("NosConsumer output dir is '" + outputDir.getPath() + "'");
+		log.info("NosConsumer output dir is '{}'", outputDir.getPath());
 		FileConsumer fc = null;
 		String filenameTemplate ="";
 		rsProps.setProperty("file.overwrite", "false");
@@ -93,11 +110,9 @@ public class NosMeterConsumer extends DataConsumer
 			nosDcpFmt.formatMessage(msg, fc);
 			nosDcpFmt.shutdown();
 		}
-		catch (OutputFormatterException e)
+		catch (OutputFormatterException ex)
 		{
-			Logger.instance().failure(module + " Cannot write DCP format: " + e);
-			e.printStackTrace();
-			throw new DataConsumerException(e.toString());
+			throw new DataConsumerException("Cannot write DCP format.", ex);
 		}
 		finally
 		{
@@ -120,11 +135,9 @@ public class NosMeterConsumer extends DataConsumer
 			curMetFmt.formatMessage(msg, fc);
 			curMetFmt.shutdown();
 		}
-		catch (OutputFormatterException e)
+		catch (OutputFormatterException ex)
 		{
-			Logger.instance().failure(module + " Cannot write Current Meter format: " + e);
-			e.printStackTrace();
-			throw new DataConsumerException(e.toString());
+			throw new DataConsumerException("cannot write Current Meter format.", ex);
 		}
 		finally
 		{

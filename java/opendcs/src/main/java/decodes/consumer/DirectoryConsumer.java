@@ -1,6 +1,19 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.consumer;
 
 import java.io.File;
@@ -8,9 +21,11 @@ import java.io.OutputStream;
 import java.util.Properties;
 import java.util.Date;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.var.Variable;
@@ -35,6 +50,7 @@ Properties are used to specify file name templates, etc.
 */
 public class DirectoryConsumer extends DataConsumer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Set by argument */
 	private String directoryName;
 
@@ -110,7 +126,7 @@ public class DirectoryConsumer extends DataConsumer
 			if (filenameTemplate == null)
 				filenameTemplate = "$SITENAME-$DATE(" + Constants.suffixDateFormat_fmt + ")";
 		}
-		Logger.instance().debug3("DirectoryConsumer filenameTemplate='" + filenameTemplate + "'");
+		log.trace("DirectoryConsumer filenameTemplate='{}'", filenameTemplate);
 
 		String tmpdirname = PropertiesUtil.getIgnoreCase(props, "tmpdir");
 		if (tmpdirname != null)
@@ -165,8 +181,7 @@ public class DirectoryConsumer extends DataConsumer
 					props.setProperty("SITENAME", n);
 			}
 			TransportMedium tm = rm.getTransportMedium();
-			Logger.instance().log(Logger.E_DEBUG3, 
-                              "Transport Id  = " + tm.getMediumId() );
+			log.trace("Transport Id  = {}", tm.getMediumId());
 			if (tm != null)
 				props.setProperty("TRANSPORTID", tm.getMediumId());
 		}
@@ -178,10 +193,8 @@ public class DirectoryConsumer extends DataConsumer
 
 		try
 		{
-			Logger.instance().debug2( 
-            	"FileNameTemplate = " + filenameTemplate );
-			Logger.instance().debug2( 
-                "TRANSPORTID = " + props.getProperty("TRANSPORTID") );
+			log.trace("FileNameTemplate = {}", filenameTemplate );
+			log.trace("TRANSPORTID = {}", props.getProperty("TRANSPORTID"));
 			if ( currentFileName == null || !appendToCurrentFile )
 			{
 				if (useSysDate)
@@ -193,16 +206,14 @@ public class DirectoryConsumer extends DataConsumer
 				}
 			}
 
-			Logger.instance().debug2( 
-                "CurrentFileName = " + currentFileName );
+			log.trace("CurrentFileName = {}", currentFileName);
 
 			if (tmpdir != null)
 				outFile = new File(tmpdir, currentFileName);
 			else
 				outFile = new File(directory, currentFileName);
 
-			Logger.instance().debug2(
-				"Opening file '" + outFile.getPath() + "'");
+			log.trace("Opening file '{}'", outFile.getPath());
 
 			curFileConsumer = new FileConsumer();
 			if ( appendToCurrentFile )
@@ -210,10 +221,11 @@ public class DirectoryConsumer extends DataConsumer
 			curFileConsumer.open(outFile.getPath(), props);
 			curFileConsumer.startMessage(msg);
 		}
-		catch(DataConsumerException e)
+		catch(DataConsumerException ex)
 		{
-			Logger.instance().log(Logger.E_FAILURE,
-				"Cannot create output file: " + e);
+			log.atError()		
+			   .setCause(ex)
+			   .log("Cannot create output file.");					
 			curFileConsumer = null;
 		}
 	}
@@ -241,12 +253,15 @@ public class DirectoryConsumer extends DataConsumer
 			if (tmpdir != null && outFile.exists() && outFile.length() > 0L)
 			{
 				File permFile = new File(directory, outFile.getName());
-				try { FileUtil.moveFile(outFile, permFile); }
+				try 
+				{
+					FileUtil.moveFile(outFile, permFile); 
+				}
 				catch(Exception ex)
 				{
-					Logger.instance().failure(
-						"Cannot move '" + outFile.getPath() + "' to '"
-						+ permFile.getPath() + "': " + ex);
+					log.atError()
+					   .setCause(ex)
+					   .log("Cannot move '{}' to '{}'", outFile.getPath(), permFile.getPath());
 				}
 			}
 			lastOutFile = outFile;
