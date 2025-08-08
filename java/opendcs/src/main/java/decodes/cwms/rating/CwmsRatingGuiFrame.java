@@ -1,15 +1,4 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.2  2012/10/30 15:46:37  mmaloney
- * dev
- *
- * Revision 1.1  2012/10/30 01:59:27  mmaloney
- * First cut of rating GUI.
  *
  * This software was written by Cove Software, LLC ("COVE") under contract 
  * to the United States Government. 
@@ -17,8 +6,7 @@
  * No warranty is provided or implied other than specific contractual terms
  * between COVE and the U.S. Government
  * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
+ * U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  */
 package decodes.cwms.rating;
 
@@ -28,6 +16,9 @@ import java.awt.Dimension;
 import java.util.ResourceBundle;
 
 import javax.swing.JPanel;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
@@ -42,6 +33,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class CwmsRatingGuiFrame extends TopFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JPanel contentPane;
 	private JPanel tsGroupTab;
 	private JPanel tsGroupListTab;
@@ -57,9 +49,6 @@ public class CwmsRatingGuiFrame extends TopFrame
 	public CwmsRatingGuiFrame(TimeSeriesDb theDb)
 	{
 		this.theDb = theDb;
-		ResourceBundle groupResources = LoadResourceBundle.getLabelDescriptions(
-			"decodes/resources/groupedit",
-			DecodesSettings.instance().language);
 		ResourceBundle genericResources = LoadResourceBundle.getLabelDescriptions(
 			"decodes/resources/generic",
 			DecodesSettings.instance().language);
@@ -71,9 +60,9 @@ public class CwmsRatingGuiFrame extends TopFrame
 		{
 			jbInit();
 		} 
-		catch (Exception e)
+		catch (Exception ex)
 		{
-			e.printStackTrace();
+			log.atError().setCause(ex).log("Unable to initialize GUI elements.");
 		}
 		trackChanges("CwmsRatingFrame");
 	}
