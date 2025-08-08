@@ -1,34 +1,42 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.comp;
 
-import decodes.comp.RatingTableReader;
-import decodes.comp.RatingComputation;
-import decodes.comp.ComputationParseException;
-
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.util.TextUtil;
 
 import java.io.LineNumberReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Reads a rating table from a USGS rating table RDB file.
  */
 public class TabRatingReader implements RatingTableReader
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	/**
 	 * The name of the file being read.
 	 */
 	private String filename;
-	
+
 	/**
 	 * Used for reading the file.
 	 */
@@ -42,13 +50,13 @@ public class TabRatingReader implements RatingTableReader
 		this.filename = filename;
 		rdr = null;
 	}
-	
+
 	/**
 	 * Reads rating data from the file and populates the computation.
 	 * @param rc the computation.
 	 * @throws ComputationParseException if error reading file.
 	 */
-	public synchronized void readRatingTable( HasLookupTable rc ) 
+	public synchronized void readRatingTable( HasLookupTable rc )
 		throws ComputationParseException
 	{
 		try
@@ -82,7 +90,7 @@ public class TabRatingReader implements RatingTableReader
 		}
 		catch(IOException ex)
 		{
-			parseWarning("IO Error: " + ex + " -- aborting.");
+			log.atError().setCause(ex).log("IO Error -- aborting.");
 		}
 		finally
 		{
@@ -94,15 +102,5 @@ public class TabRatingReader implements RatingTableReader
 			rc = null;
 		}
 	}
-	
-	/**
-	* Logs a warning message about parsing this file.
-	* @param msg the message
-	*/
-	private void parseWarning( String msg )
-	{
-		Logger.instance().warning("Table File '" + filename + ":"
-			+ (rdr != null ? rdr.getLineNumber() : -1)
-			+ " " + msg);
-	}
+
 }

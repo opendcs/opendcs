@@ -1,8 +1,21 @@
-
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.consumer;
 
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
@@ -11,6 +24,9 @@ import ilex.var.TimedVariable;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
@@ -21,16 +37,18 @@ import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
 
 /**
- * 
- * This class outputs the decoded ensemble for real time current meteres. Developed for NOS. 
+ *
+ * This class outputs the decoded ensemble for real time current meteres. Developed for NOS.
  * @author shweta
  *
  */
 public class CurrentMeterFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private String module = "CurrentMeterFormatter";
 	private Column columns[];
-	private String delim;	
+	private String delim;
 	private String missing = "";
 	private boolean includeGoesHeader = false;
 
@@ -38,36 +56,33 @@ public class CurrentMeterFormatter extends OutputFormatter
 	{
 		super();
 		delim = "\n";
-		columns = null;	
+		columns = null;
 	}
 
 	protected void initFormatter(String type, java.util.TimeZone tz,
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
-		Logger.instance().debug1(
-				"Initializing " + module + ", props='" +
-				PropertiesUtil.props2string(rsProps) + "'");
-		
+		log.debug("Initializing {}, props='{}'", module, PropertiesUtil.props2string(rsProps));
+
 		String s = PropertiesUtil.getIgnoreCase(rsProps, "missing");
 		if (s != null)
 			missing = s;
-		
+
 		s = PropertiesUtil.getIgnoreCase(rsProps, "delim");
 		if (s == null)
 			s = PropertiesUtil.getIgnoreCase(rsProps, "delimiter");
 		if (s != null)
 		{
 			delim = new String(AsciiUtil.ascii2bin(s));
-			Logger.instance().debug1("Delimiter changed to '" + delim + "'");
+			log.debug("Delimiter changed to '{}'", delim);
 		}
 
 		s = PropertiesUtil.getIgnoreCase(rsProps, "includeGoesHeader");
 		if (s != null)
 		{
 			includeGoesHeader = TextUtil.str2boolean(s);
-			Logger.instance().debug1("includeGoesHeader = " 
-				+ includeGoesHeader);
+			log.debug("includeGoesHeader = {}", includeGoesHeader);
 		}
 	}
 
@@ -100,33 +115,33 @@ public class CurrentMeterFormatter extends OutputFormatter
 		}
 		catch(UnknownPlatformException ex)
 		{
-			throw new OutputFormatterException(ex.toString());
+			throw new OutputFormatterException("Unable to retrieve platform", ex);
 		}
 
 		// Construct column array, not counting the ID & time columns.
 		int numColumns = 0;
-		
+
 			for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); it.next())
 				numColumns++;
-			
+
 			if (numColumns == 0)
 				throw new OutputFormatterException(
-					"Empty time series for platform '" 
+					"Empty time series for platform '"
 					+ platform.makeFileName() + "' -- skipped.");
 
 			columns = new Column[1];
 
 			TimeSeries ts = msg.getTimeSeries(1);
 			columns[0] = new Column(ts);
-		
-		
+
+
 		Date d;
 		while((d = findNextDate()) != null)
 		{
 			sb.setLength(0);
-			
+
 			sb.append(columns[0].nextSample());
-			sb.append("\n");		
+			sb.append("\n");
 			consumer.println(sb.toString());
 		}
 		consumer.endMessage();
@@ -163,7 +178,7 @@ public class CurrentMeterFormatter extends OutputFormatter
 				timeSeries.sort();
 			}
 		}
-		
+
 
 		// Return date of next sample in series or null if at end of series.
 		Date nextSampleTime()
@@ -192,4 +207,3 @@ public class CurrentMeterFormatter extends OutputFormatter
 		}
 	}
 }
-
