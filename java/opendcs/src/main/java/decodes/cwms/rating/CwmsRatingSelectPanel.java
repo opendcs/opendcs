@@ -9,8 +9,6 @@
  */
 package decodes.cwms.rating;
 
-import static java.awt.Container.log;
-
 import java.awt.BorderLayout;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
