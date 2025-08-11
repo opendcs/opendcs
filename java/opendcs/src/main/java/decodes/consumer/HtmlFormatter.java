@@ -1,10 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.consumer;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
@@ -20,6 +32,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.common.DapsFailureCode;
 import decodes.datasource.GoesPMParser;
@@ -51,6 +66,7 @@ import decodes.xml.XmlDatabaseIO;
 */
 public class HtmlFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private SimpleDateFormat dateFormat;
 	private SimpleDateFormat msgDateFormat;
 	private SimpleDateFormat tzFormat;
@@ -170,14 +186,13 @@ public class HtmlFormatter extends OutputFormatter
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot determine failure code "
-				+ " -- assuming good.");
+			log.atWarn().setCause(ex).log("Cannot determine failure code -- assuming good.");
 		}
 
 		OutputStream os = consumer.getOutputStream();
 		if (os == null)
 		{
-			Logger.instance().debug1("Messgae skipped -- null output stream.");
+			log.debug("Messgae skipped -- null output stream.");
 			return;
 		}
 
@@ -199,7 +214,7 @@ public class HtmlFormatter extends OutputFormatter
 		}
 		catch(IOException ex)
 		{
-			throw new DataConsumerException("Cannot write to output: " + ex);
+			throw new DataConsumerException("Cannot write to output: " , ex);
 		}
 		consumer.endMessage();
 	}
@@ -278,8 +293,9 @@ public class HtmlFormatter extends OutputFormatter
 //				siteName = sp.first;
 //				siteDesc = sp.second;
 //			}
-			Logger.instance().debug1(
-				"Cannot get platform metadata, will display raw only: " + ex);
+			log.atDebug()
+			   .setCause(ex)
+			   .log("Cannot get site name or description from message");
 			Variable siteNameV = rawmsg.getPM(GoesPMParser.DCP_ADDRESS);
 			if (siteName.equals("") && siteNameV != null)
 			{
@@ -481,8 +497,8 @@ public class HtmlFormatter extends OutputFormatter
 			// Preserve line breaks in formatted ascii messages like RAWS data.
 			usePre = true;
 		// Else DON'T use <pre> because it disables word wrapping.
-Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + newlines + ", longestSpan=" + longestSpan
-	+ ", usePre=" + usePre);
+		log.info("writeRaw: msglen={}, newlines={}, longestSpan={}, usePre={}",
+			msgStr.length(), newlines, longestSpan, usePre);
 		
 		xos.writeElement("h3", "Raw Data:");
 		StringPair sp3[] = new StringPair[3];
@@ -574,28 +590,6 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 		}
 		xos.endElement("thead");
 
-		// Forth line is actual-site-name. Only use if a sensor uses it.
-//		sb.setLength(0);
-//		for(i=0; i<dateFormatString.length(); i++)
-//			sb.append(' ');
-//		sb.append(delimiter);
-//		boolean doSensorSite = false;
-//		for(i=0; i<columns.length; i++)
-//		{
-//			if (columns[i].siteName != null)
-//			{
-//				doSensorSite = true;
-//				sb.append(TextUtil.strcenter(columns[i].siteName,
-//					columns[i].colWidth));
-//			}
-//			else
-//				sb.append(TextUtil.strcenter(" ", columns[i].colWidth));
-//			sb.append(delimiter);
-//		}
-//		if (doSensorSite)
-//			consumer.println(sb.toString());
-
-
 		xos.startElement("tbody");
 
 		Date d;
@@ -642,7 +636,9 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 			}
 			catch(UnknownPlatformException upex)
 			{
-				Logger.instance().debug2("Cannot write meta-data link: "+upex);
+				log.atWarn()
+					.setCause(upex)
+					.log("Cannot write meta-data link");
 				return;
 			}
 		}
@@ -736,10 +732,8 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 				dt = ts.getSensor().getDataType();
 				if (dt == null)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Site '" + siteName +"' Sensor "
-						+ ts.getSensor().configSensor.sensorNumber 
-						+ " has unknown data type!");
+					log.warn("Site '{}' Sensor {} has unknown data type!",
+							 siteName, ts.getSensor().configSensor.sensorNumber);
 					dt = DataType.getDataType("UNKNOWN", "UNKNOWN");
 				}
 			}
@@ -753,11 +747,8 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 
 			dotPos = -1;
 			for(int i=0; i<timeSeries.size(); i++)
-//			for(Iterator it = timeSeries.formattedSamplesIterator(); 
-//				it.hasNext(); )
 			{
 				String s = timeSeries.formattedSampleAt(i);
-//				String s = (String)it.next();
 				if (s.length() > colWidth)
 					colWidth = s.length();
 				int dp = s.indexOf('.');
