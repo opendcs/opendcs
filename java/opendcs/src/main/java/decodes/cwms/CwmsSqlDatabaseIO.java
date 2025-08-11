@@ -1,15 +1,18 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms;
 
 import java.sql.Connection;
@@ -21,6 +24,8 @@ import java.util.TimeZone;
 
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.spi.authentication.AuthSource;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
@@ -30,7 +35,6 @@ import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfoImpl;
 import lrgs.gui.DecodesInterface;
 import ilex.util.AuthException;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.db.*;
 import decodes.sql.DecodesDatabaseVersion;
@@ -49,10 +53,9 @@ import decodes.util.DecodesSettings;
  * USACE (U.S. Army Corps of Engineers) CWMS (Corps Water Management System)
  * database, which is hosted on an Oracle DBMS.<p>
  */
-public class CwmsSqlDatabaseIO
-	extends SqlDatabaseIO
-	implements DatabaseConnectionOwner
+public class CwmsSqlDatabaseIO extends SqlDatabaseIO
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public final static String module = "CwmsSqlDatabaseIO";
 	/** The office ID associated with this connection. This implicitely
 	 * filters the records that are visible.
@@ -61,7 +64,7 @@ public class CwmsSqlDatabaseIO
 	private CwmsConnectionInfo conInfo = null;
 	private String sqlDbLocation = null;
 	private CwmsConnectionPool pool = null;
-	
+
 	/**
  	* Constructor.  The argument is the "location" of the
  	* database from the "decodes.properties" file.
@@ -75,17 +78,17 @@ public class CwmsSqlDatabaseIO
 	{
 		// No-args base class ctor doesn't connect to DB.
 		super();
-		
+
         writeDateFmt = new SimpleDateFormat(
 			"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
 		DecodesSettings.instance().sqlTimeZone = "GMT";
         writeDateFmt.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone));
-		
+
 		this.sqlDbLocation = sqlDbLocation;
 
 		connectToDatabase(sqlDbLocation);
 
-		/* 
+		/*
 		 * Oracle does not require a COMMIT after each block of nested SELECTs.
 		 * The following causes the parent class to do this.
 		 */
@@ -127,7 +130,7 @@ public class CwmsSqlDatabaseIO
 		// be known before getting a connection from the pool. Therefore I cannot set
 		// it dynamically from the database or from user selection.
 		dbOfficeId = DecodesSettings.instance().CwmsOfficeId;
-		
+
 		// CWMS is Always GMT.
 		DecodesSettings.instance().sqlTimeZone = "GMT";
 
@@ -136,7 +139,7 @@ public class CwmsSqlDatabaseIO
 		CwmsGuiLogin cgl = CwmsGuiLogin.instance();
 		if (DecodesInterface.isGUI())
 		{
-			try 
+			try
 			{
 				if (!cgl.isLoginSuccess())
 				{
@@ -154,16 +157,14 @@ public class CwmsSqlDatabaseIO
 			}
 			catch(Exception ex)
 			{
-				String msg = "Cannot display login dialog: " + ex;
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
-				throw new DatabaseException(msg);
+				String msg = "Cannot display login dialog";
+				throw new DatabaseException(msg, ex);
 			}
 		}
 		else // Non-GUI can try auth file mechanism.
 		{
-			Logger.instance().info("This is not a GUI app.");
-			
+			log.info("This is not a GUI app.");
+
 			// Retrieve username and password for database
 			String authFileName = DecodesSettings.instance().DbAuthFile;
 			try
@@ -175,8 +176,8 @@ public class CwmsSqlDatabaseIO
 			}
 			catch(AuthException ex)
 			{
-				String msg = "Cannot process credential information provided";				
-				throw new DatabaseConnectException(msg,ex);
+				String msg = "Cannot process credential information provided";
+				throw new DatabaseConnectException(msg, ex);
 			}
 		}
 		if( conInfo == null)
@@ -193,15 +194,14 @@ public class CwmsSqlDatabaseIO
 			{
 				try(Connection conn = pool.getConnection();)
 				{
-					Logger.instance().info(module +
-						" Connected to DECODES CWMS Database " + sqlDbLocation + " as user " + _dbUser
-						+ " with officeID=" + dbOfficeId);
+					log.info("Connected to DECODES CWMS Database {} as user {} with officeID={}",
+					         sqlDbLocation, _dbUser, dbOfficeId);
 					readVersionInfo(this, conn);
 
 					// CWMS OPENDCS-16 for DB version >= 68, use old OracleSequenceKeyGenerator,
 					// which assumes a separate sequence for each table. Do not use CWMS_SEQ for anything.
 					int decodesDbVersion = getDecodesDatabaseVersion();
-					Logger.instance().info(module + " decodesDbVersion=" + decodesDbVersion);
+					log.info("decodesDbVersion={}", decodesDbVersion);
 					keyGenerator = decodesDbVersion >= DecodesDatabaseVersion.DECODES_DB_68 ?
 							new OracleSequenceKeyGenerator() :
 							new CwmsSequenceKeyGenerator(decodesDbVersion);
@@ -209,72 +209,66 @@ public class CwmsSqlDatabaseIO
 						cgl.setLoginSuccess(true);
 
 					String q = null;
-					try(Statement st = conn.createStatement();)
+					try (Statement st = conn.createStatement();)
 					{
 						// Hard-code date & timestamp format for reads. Always use GMT.
 						q = "ALTER SESSION SET TIME_ZONE = 'GMT'";
-						Logger.instance().info(q);
+						log.info(q);
 						st.execute(q);
 
 						q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
-						Logger.instance().info(q);
+						log.info(q);
 						st.execute(q);
 
 						q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
-						Logger.instance().info(q);
+						log.info(q);
 						st.execute(q);
 
 						q = "ALTER SESSION SET nls_timestamp_tz_format = 'yyyy-mm-dd hh24:mi:ss'";
-						Logger.instance().info(q);
+						log.info(q);
 						st.execute(q);
 
-						Logger.instance().info("DECODES IF Connected to TSDB Version " + tsdbVersion);
+						log.info("DECODES IF Connected to TSDB Version {}", tsdbVersion);
 					}
 					catch(SQLException ex)
 					{
-						String msg = "Error in '" + q + "': " + ex
-							+ " -- will proceed anyway.";
-						Logger.instance().failure(msg + " " + ex);
+						log.atError().setCause(ex).log("Error in '{}'' -- will proceed anyway.", q);
 					}
 
 					cgl.setLoginSuccess(true);
-					Logger.instance().info(module + 
-						" Connected to DECODES CWMS Database " + sqlDbLocation + " as user " + _dbUser
-						+ " with officeID=" + dbOfficeId + " (dbOfficeCode=" + conInfo.getDbOfficeCode() + ")");
+					log.info("Connected to DECODES CWMS Database {} as user {} with officeID={} (dbOfficeCode={})",
+						     sqlDbLocation, _dbUser, dbOfficeId, conInfo.getDbOfficeCode());
 
 					// CWMS-8979 Allow settings in the database to override values in user.properties.
 					String settingsApp = System.getProperty("SETTINGS");
 					if (settingsApp != null)
 					{
-						Logger.instance().info("SqlDatabaseIO Overriding Decodes Settings with properties in "
-							+ "Process Record '" + settingsApp + "'");
-						LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();
-						try
+						log.info("SqlDatabaseIO Overriding Decodes Settings with properties in Process Record '{}'",
+								 settingsApp);
+
+						try (LoadingAppDAI loadingAppDAO = makeLoadingAppDAO();)
 						{
 							CompAppInfo cai = loadingAppDAO.getComputationApp(settingsApp);
 							PropertiesUtil.loadFromProps(DecodesSettings.instance(), cai.getProperties());
 						}
 						catch (DbIoException ex)
 						{
-							Logger.instance().warning("Cannot load settings from app '" + settingsApp + "': " + ex);
+							log.atWarn().setCause(ex).log("Cannot load settings from app '{}'", settingsApp);
 						}
 						catch (NoSuchObjectException ex)
 						{
-							Logger.instance().warning("Cannot load settings from non-existent app '" 
-								+ settingsApp + "': " + ex);
-						}
-						finally
-						{
-							loadingAppDAO.close();
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Cannot load settings from non-existent app '{}'", settingsApp);
 						}
 					}
 
 					cgl.setLoginSuccess(true);
-					
+
 				}
 				catch(SQLException ex)
 				{
-					throw new DatabaseException("Pool was able to start but not retrieve connection",ex);
+					throw new DatabaseException("Pool was able to start but not retrieve connection", ex);
 				}
 			}
 			else
@@ -284,7 +278,7 @@ public class CwmsSqlDatabaseIO
 		}
 		catch(BadConnectException ex)
 		{
-			throw new DatabaseException("Unable to initialize for " + conInfo,ex);
+			throw new DatabaseException("Unable to initialize for " + conInfo, ex);
 		}
 	}
 
@@ -303,15 +297,15 @@ public class CwmsSqlDatabaseIO
 	{
 		return sqlDbLocation;
 	}
-	
+
 	public boolean isCwms() { return true; }
-	
+
 	@Override
 	public SiteDAI makeSiteDAO()
 	{
 		return new CwmsSiteDAO(this, dbOfficeId);
 	}
-	
+
 	@Override
 	public IntervalDAI makeIntervalDAO()
 	{
@@ -332,7 +326,7 @@ public class CwmsSqlDatabaseIO
 		}
 		catch(SQLException ex)
 		{
-			throw new RuntimeException("Error retrieving connection",ex);
+			throw new RuntimeException("Error retrieving connection", ex);
 		}
 	}
 
@@ -346,8 +340,8 @@ public class CwmsSqlDatabaseIO
 		}
 		catch(SQLException ex)
 		{
-			Logger.instance().warning("Unable to close returned connection: " + ex.getLocalizedMessage());
+			log.atWarn().setCause(ex).log("Unable to close returned connection.");
 		}
 	}
-	
+
 }

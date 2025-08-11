@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms;
 
 import ilex.util.TextUtil;
@@ -21,8 +36,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.opendcs.database.ExceptionHelpers;
 import org.opendcs.utils.FailableResult;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -62,7 +77,7 @@ public class CwmsTimeSeriesDAO
     extends DaoBase
     implements TimeSeriesDAI
 {
-    private final Logger log = LoggerFactory.getLogger(CwmsTimeSeriesDAO.class);
+    private final Logger log = OpenDcsLoggerFactory.getLogger();
     protected static final  DbObjectCache<TimeSeriesIdentifier> cache =
         new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
     protected SiteDAI siteDAO = null;
@@ -149,20 +164,17 @@ public class CwmsTimeSeriesDAO
         {
             return ExceptionHelpers.throwDbIoNoSuchObject(ret.getFailure());
         }
-        
+
     }
 
     private CwmsTsId rs2TsId(ResultSet rs, boolean createDataType)
         throws SQLException, DbIoException, NoSuchObjectException
     {
-//        private String cwmsTsidQueryBase = "SELECT a.CWMS_TS_ID, a.VERSION_FLAG, a.INTERVAL_UTC_OFFSET, "
-//            + "a.UNIT_ID, a.PARAMETER_ID, '', a.TS_CODE, a.LOCATION_CODE, "
-//            + "a.LOCATION_ID, a.TS_ACTIVE_FLAG FROM CWMS_V_TS_ID a, CWMS_V_LOC c";
 
         DbKey key = DbKey.createDbKey(rs, 7);
         String desc = rs.getString(1);
         String param = rs.getString(5);
-//        String publicSiteName = rs.getString(6);
+
         DataType dt =
             DataType.getDataType(Constants.datatype_CWMS, param);
 
@@ -274,14 +286,14 @@ public class CwmsTimeSeriesDAO
                 new NoSuchObjectException("No timeseries with name '"+uniqueString+"' is defined in this database.")
             );
         }
-        
+
         FailableResult<TimeSeriesIdentifier,TsdbException> tmp = findTimeSeriesIdentifier(ts_code);
         if (tmp.isSuccess())
         {
             if (displayName != null)
             {
                 tmp.getSuccess().setDisplayName(displayName);
-            }        
+            }
         }
         return tmp;
     }
@@ -928,28 +940,6 @@ public class CwmsTimeSeriesDAO
                .log("deleteTimeSeriesRange - Error in CwmsDbTs.deleteTs for tsid '{}' from {} to {}.",
                        tsid, sdf.format(from), sdf.format(until));
         }
-
-//        // For CWMS Comps, there are no physical deletes, so first we read, then
-//        // we set the MISSING flag, then we store.
-//        int n = fillTimeSeries(cts, from, until, true, true, true);
-//        if (n == 0)
-//            return;
-//
-//        int sz = cts.size();
-//        int num2delete = 0;
-//        for(int i=0; i<sz; i++)
-//        {
-//            TimedVariable tv = cts.sampleAt(i);
-//            Date d = tv.getTime();
-//            if (d.compareTo(from) >= 0 && d.compareTo(until) <= 0)
-//            {
-//                VarFlags.setToDelete(tv);
-//                num2delete++;
-//            }
-//        }
-//
-//        if (num2delete > 0)
-//            saveTimeSeries(cts);
     }
 
     @Override
@@ -1101,7 +1091,7 @@ public class CwmsTimeSeriesDAO
 
         // Each TSID will need a site, so prefill the site cache to prevent
         // it from doing individual reads for each site.
-//        siteDAO.fillCache();
+
 
         String q = cwmsTsidQueryBase + " WHERE upper(a.DB_OFFICE_ID) = upper(?)";
         int origFetchSize = getFetchSize();
