@@ -197,7 +197,7 @@ public class HydroJSONFormatter extends OutputFormatter
 					   .setCause(ex)
 					   .log("Site {} -- cannot parse longitude '{}' to double -- set longitude to empty.",
 					        sn, lon);
-					lat = "";
+					lon = "";
 				}
 
 			}
