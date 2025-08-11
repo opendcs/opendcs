@@ -216,7 +216,7 @@ public class HtmlFormatter extends OutputFormatter
 		}
 		catch(IOException ex)
 		{
-			throw new DataConsumerException("Cannot write to output: " + ex);
+			throw new DataConsumerException("Cannot write to output.", ex);
 		}
 		consumer.endMessage();
 	}

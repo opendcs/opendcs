@@ -192,7 +192,7 @@ public class NosQcFormatter extends OutputFormatter
                                 {
                                     log.atWarn()
                                        .setCause(ex)
-                                       .log("NosQcFormatter bad value '{}}' -- cannot parse.",
+                                       .log("NosQcFormatter bad value '{}' -- cannot parse.",
                                            tv.getStringValue());
                                     continue;
                                 }
