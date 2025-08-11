@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.consumer;
 
@@ -10,9 +22,11 @@ import java.io.IOException;
 import java.io.FileOutputStream;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
@@ -32,13 +46,14 @@ substitution variables.
   <li>ConsumerBefore - String written at the beginning of each message</li>
   <li>ConsumerAfter - String written at the end of each message</li>
   <li>cmdAfterFile - Optional command line to execute after closing file.</li>
-  <li>cmdTimeout - # seconds to wait for cmdAfterFile to complete (default 
+  <li>cmdTimeout - # seconds to wait for cmdAfterFile to complete (default
       60)</li>
 </ul>
 */
-public class FileConsumer extends DataConsumer
-	implements ProcWaiterCallback
+public class FileConsumer extends DataConsumer implements ProcWaiterCallback
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	/** Used to write to the file. */
 	private PrintStream os;
 	/** delimiter written before each message */
@@ -58,18 +73,18 @@ public class FileConsumer extends DataConsumer
 
 	private PropertySpec[] myspecs = new PropertySpec[]
 	{
-		new PropertySpec("file.overwrite", PropertySpec.BOOLEAN, 
+		new PropertySpec("file.overwrite", PropertySpec.BOOLEAN,
 			"(default=true) set to false to append."),
-		new PropertySpec("ConsumerBefore", PropertySpec.STRING, 
+		new PropertySpec("ConsumerBefore", PropertySpec.STRING,
 			"Optional string placed at the start of each message."),
-		new PropertySpec("ConsumerAfter", PropertySpec.STRING, 
+		new PropertySpec("ConsumerAfter", PropertySpec.STRING,
 			"Optional string placed at the end of each message."),
-		new PropertySpec("cmdAfterFile", PropertySpec.STRING, 
+		new PropertySpec("cmdAfterFile", PropertySpec.STRING,
 			"Optional command executed after completion of file. "
 			+ "May contain '$FILENAME' to pass the name of file to the command.")
 	};
 
-	/** 
+	/**
 	  In the absense of a file.overwrite property, this defines the default
 	  behavior.
 	*/
@@ -96,8 +111,7 @@ public class FileConsumer extends DataConsumer
 	  @param rsProps routing spec properties.
 	  @throws DataConsumerException if the consumer could not be initialized.
 	*/
-	public void open(String consumerArg, Properties rsProps)
-		throws DataConsumerException
+	public void open(String consumerArg, Properties rsProps) throws DataConsumerException
 	{
 		this.props = new Properties();
 		PropertiesUtil.copyProps(this.props, System.getProperties());
@@ -107,7 +121,7 @@ public class FileConsumer extends DataConsumer
 		try
 		{
 			// open file named in consumerArg
-			Logger.instance().debug1("Opening '" + fn + "'");
+			log.debug("Opening '{}'", fn );
 			File f = new File(fn);
 			boolean overwrite = defaultFileOverwrite;
 			String s = props.getProperty("file.overwrite");
@@ -115,14 +129,14 @@ public class FileConsumer extends DataConsumer
 				overwrite = true;
 			else if (s != null)
 				overwrite = TextUtil.str2boolean(s);
-			
+
 			FileOutputStream fos = new FileOutputStream(f, !overwrite);
 			os = new PrintStream(fos);
 		}
-		catch(IOException e)
+		catch(IOException ex)
 		{
 			throw new DataConsumerException("Cannot open file '"
-				+ consumerArg + "': " + e);
+				+ consumerArg + "'.", ex);
 		}
 
 		// Use props for before & after strings
@@ -156,20 +170,19 @@ public class FileConsumer extends DataConsumer
 			PropertiesUtil.rmIgnoreCase(cmdProps, "FILENAME");
 			cmdProps.setProperty("FILENAME", filename);
 			cmdInProgress = EnvExpander.expand(cmdAfterFile, cmdProps);
-			Logger.instance().debug1("Executing '" + cmdInProgress 
-				+ "' and waiting up to " + cmdTimeout 
-				+ " seconds for completion.");
+			log.debug("Executing '{}' and waiting up to {} seconds for completion.", cmdInProgress, cmdTimeout);
 			cmdFinished = false;
-			try 
+			try
 			{
 				cmdExitStatus = -1;
-				ProcWaiterThread.runBackground(cmdInProgress, 
+				ProcWaiterThread.runBackground(cmdInProgress,
 					"post-file-cmd", this, cmdInProgress);
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().warning("Cannot execute '" 
-					+ cmdInProgress + "': " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot execute '{}'", cmdInProgress);
 				cmdInProgress = null;
 				cmdFinished = true;
 				return;
@@ -182,11 +195,9 @@ public class FileConsumer extends DataConsumer
 				catch(InterruptedException ex) {}
 			}
 			if (cmdFinished)
-				Logger.instance().debug1("Command '" + cmdInProgress 
-					+ "' completed with exit status " + cmdExitStatus);
+				log.debug("Command '{}' completed with exit status {}", cmdInProgress, cmdExitStatus);
 			else
-				Logger.instance().warning("Command '" + cmdInProgress 
-					+ "' Did not complete!");
+				log.warn("Command '{}' Did not complete!", cmdInProgress);
 		}
 		filename = null;
 	}
@@ -260,4 +271,3 @@ public class FileConsumer extends DataConsumer
 		return myspecs;
 	}
 }
-

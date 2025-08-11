@@ -1,10 +1,21 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.consumer;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
@@ -20,6 +31,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.common.DapsFailureCode;
 import decodes.datasource.GoesPMParser;
@@ -51,6 +65,8 @@ import decodes.xml.XmlDatabaseIO;
 */
 public class HtmlFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private SimpleDateFormat dateFormat;
 	private SimpleDateFormat msgDateFormat;
 	private SimpleDateFormat tzFormat;
@@ -61,12 +77,12 @@ public class HtmlFormatter extends OutputFormatter
 	private Column columns[];
 	private TimeZone myTZ;
 	public static boolean comesFromDcpMon = false;
-	
+
 	/** Set to true to have meta-data link be a CGI call for DCP monitor. */
 	public static boolean metaDataCgi = false;
-	
-	private PropertySpec propSpecs[] = 
-	{		
+
+	private PropertySpec propSpecs[] =
+	{
 		new PropertySpec("dateformat", PropertySpec.STRING,
 			"SimpleDateFormat spec used to format date/times (default=" + Constants.defaultDateFormat_fmt
 			+ ")"),
@@ -103,7 +119,7 @@ public class HtmlFormatter extends OutputFormatter
 			dateFormatString = s;
 		dateFormat = new SimpleDateFormat(dateFormatString);
 		tzFormat = new SimpleDateFormat("z");
-		
+
 		dateFormat.setTimeZone(tz);
 		tzFormat.setTimeZone(tz);
 		myTZ = tz;
@@ -131,7 +147,7 @@ public class HtmlFormatter extends OutputFormatter
 
 	/**
 	 * HtmlFormatter will still create an abbreviated report for data that
-	 * wasn't decoded. 
+	 * wasn't decoded.
 	 * @return false
 	 */
 	public boolean requiresDecodedMessage() { return false; }
@@ -170,14 +186,15 @@ public class HtmlFormatter extends OutputFormatter
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot determine failure code "
-				+ " -- assuming good.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot determine failure code -- assuming good.");
 		}
 
 		OutputStream os = consumer.getOutputStream();
 		if (os == null)
 		{
-			Logger.instance().debug1("Messgae skipped -- null output stream.");
+			log.debug("Messgae skipped -- null output stream.");
 			return;
 		}
 
@@ -199,7 +216,7 @@ public class HtmlFormatter extends OutputFormatter
 		}
 		catch(IOException ex)
 		{
-			throw new DataConsumerException("Cannot write to output: " + ex);
+			throw new DataConsumerException("Cannot write to output.", ex);
 		}
 		consumer.endMessage();
 	}
@@ -248,7 +265,7 @@ public class HtmlFormatter extends OutputFormatter
 				siteDesc = p.description;
 				if (siteDesc == null || siteDesc.equals(""))
 					siteDesc = s.getDescription();
-	
+
 //TODO When running as part of the DCP Mon web service, we want to resolve the
 // name according to DCP Monitor config.
 // Options: Make a separate formatter for DCP Mon or figure out how this reference can work
@@ -257,7 +274,7 @@ public class HtmlFormatter extends OutputFormatter
 //				{
 //					DcpAddress daddr = new DcpAddress(
 //						rawmsg.getPM(GoesPMParser.DCP_ADDRESS).getStringValue());
-//					DcpNameDescResolver dndr = 
+//					DcpNameDescResolver dndr =
 //						DcpMonitor.instance().getDcpNameDescResolver();
 //					StringPair sp = dndr.getBestNameDesc(daddr, p);
 //					siteName = sp.first;
@@ -270,7 +287,7 @@ public class HtmlFormatter extends OutputFormatter
 //TODO Likewise, DcpMonitor is no longer a singleton.
 //			if (comesFromDcpMon)
 //			{
-//				DcpNameDescResolver dndr = 
+//				DcpNameDescResolver dndr =
 //					DcpMonitor.instance().getDcpNameDescResolver();
 //				DcpAddress daddr = new DcpAddress(
 //					rawmsg.getPM(GoesPMParser.DCP_ADDRESS).getStringValue());
@@ -278,8 +295,7 @@ public class HtmlFormatter extends OutputFormatter
 //				siteName = sp.first;
 //				siteDesc = sp.second;
 //			}
-			Logger.instance().debug1(
-				"Cannot get platform metadata, will display raw only: " + ex);
+			log.atDebug().setCause(ex).log("Cannot get platform metadata, will display raw only.");
 			Variable siteNameV = rawmsg.getPM(GoesPMParser.DCP_ADDRESS);
 			if (siteName.equals("") && siteNameV != null)
 			{
@@ -287,16 +303,16 @@ public class HtmlFormatter extends OutputFormatter
 			}
 			if (siteDesc != null && !siteDesc.equals(""))
 			{
-				siteDesc = siteDesc + 
+				siteDesc = siteDesc +
 				", No Matching TransportMedium for Channel "
-					+ getPM(rawmsg, GoesPMParser.CHANNEL);	
+					+ getPM(rawmsg, GoesPMParser.CHANNEL);
 			}
 			else
 			{
 				siteDesc = "No Matching TransportMedium for Channel "
 					+ getPM(rawmsg, GoesPMParser.CHANNEL);
 			}
-		}	
+		}
 
 		Date t = rawmsg.getTimeStamp();
 		xos.startElement("h2", "style", "text-align: center;");
@@ -308,7 +324,7 @@ public class HtmlFormatter extends OutputFormatter
 		}
 		xos.endElement("h2");
 	}
-	
+
 	private void writeMsgParams(DecodedMessage msg, XmlOutputStream xos)
 		throws IOException, OutputFormatterException
 	{
@@ -317,8 +333,7 @@ public class HtmlFormatter extends OutputFormatter
 		sp4[0] = new StringPair("cellpadding", "2");
 		sp4[1] = new StringPair("cellspacing", "2");
 		sp4[2] = new StringPair("border", "1");
-		sp4[3] = new StringPair("style",
-	"width: 60%; text-align: left; margin-left: auto; margin-right: auto");
+		sp4[3] = new StringPair("style", "width: 60%; text-align: left; margin-left: auto; margin-right: auto");
 		xos.startElement("table", sp4);
 		xos.startElement("tbody");
 
@@ -367,30 +382,30 @@ public class HtmlFormatter extends OutputFormatter
 			}
 			xos.writeElement("td", "Message Length: " + s);
 		xos.endElement("tr");
-		
+
 		if (comesFromDcpMon)
 		{
 			String code = "";
 			String drgsDescription = "";
 			//build the path to check if drgsident.html file exists or not
-			String path =  				
+			String path =
 				EnvExpander.expand(
 					"$DECODES_INSTALL_DIR/drgsident/drgsident.html");
 			File htmlFile = new File(path);
 			if (rawmsg.getPM(GoesPMParser.UPLINK_CARRIER) != null)
 			{
-				code = 
+				code =
 					rawmsg.getPM(GoesPMParser.UPLINK_CARRIER).getStringValue();
-				//Find out the drgs code description for this "upLinkCarrier" 
+				//Find out the drgs code description for this "upLinkCarrier"
 				//in the DRGS receiver xml file
-				drgsDescription = DrgsReceiverIo.findDescforCode(code);	
+				drgsDescription = DrgsReceiverIo.findDescforCode(code);
 			}
 			xos.startElement("tr");
 			//If code empty or file drgsident.html does not exist
 			//- do not show link
 			if (code.equals("") || (!htmlFile.canRead()))
 			{
-				xos.writeElement("td", "DRGS code: " + code);	
+				xos.writeElement("td", "DRGS code: " + code);
 			}
 			else
 			{	//just path the file name - we do not want to expose the
@@ -405,8 +420,8 @@ public class HtmlFormatter extends OutputFormatter
 			xos.writeElement("td", "DRGS Description: " + drgsDescription);
 			xos.endElement("tr");
 		}
-		
-		// Add start and end carrier times if they are present. 
+
+		// Add start and end carrier times if they are present.
 		SimpleDateFormat timeFmt = new SimpleDateFormat("HH:mm:ss.S");
 		TimeZone utc = TimeZone.getTimeZone("UTC");
 		timeFmt.setTimeZone(utc);
@@ -417,11 +432,11 @@ public class HtmlFormatter extends OutputFormatter
 		if (cstart != null || cstop != null)
 		{
 			xos.startElement("tr");
-			xos.writeElement("td", 
-				"Carrier Start (UTC): " + 
+			xos.writeElement("td",
+				"Carrier Start (UTC): " +
 				(cstart == null ? "(unknown)" : timeFmt.format(cstart)));
-			xos.writeElement("td", 
-				"Carrier Stop (UTC): " + 
+			xos.writeElement("td",
+				"Carrier Stop (UTC): " +
 				(cstop == null ? "(unknown)" : timeFmt.format(cstop)));
 			xos.endElement("tr");
 		}
@@ -437,7 +452,7 @@ public class HtmlFormatter extends OutputFormatter
 					continue;
 				if (sb.length()>0)
 					sb.append(", ");
-				sb.append(c + " (" + 
+				sb.append(c + " (" +
 					DapsFailureCode.failureCode2string(c)+")");
 			}
 			xos.writeElement("td", "colspan", "2", "Additional Flags: "
@@ -449,7 +464,7 @@ public class HtmlFormatter extends OutputFormatter
 		xos.endElement("table");
 	}
 
-		
+
 	private void writeRaw(DecodedMessage msg, XmlOutputStream xos)
 		throws IOException, OutputFormatterException
 	{
@@ -464,7 +479,7 @@ public class HtmlFormatter extends OutputFormatter
 				if (span > longestSpan)
 					longestSpan = span;
 				span = 0;
-				if (c == '\n' || c == '\r') 
+				if (c == '\n' || c == '\r')
 					newlines++;
 			}
 			else
@@ -481,16 +496,15 @@ public class HtmlFormatter extends OutputFormatter
 			// Preserve line breaks in formatted ascii messages like RAWS data.
 			usePre = true;
 		// Else DON'T use <pre> because it disables word wrapping.
-Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + newlines + ", longestSpan=" + longestSpan
-	+ ", usePre=" + usePre);
-		
+		log.info("writeRaw: msglen={}, newlines={}, longestSpan={}, usePre={}",
+				 msgStr.length(), newlines, longestSpan, usePre);
+
 		xos.writeElement("h3", "Raw Data:");
 		StringPair sp3[] = new StringPair[3];
 		sp3[0] = new StringPair("cellpadding", "4");
 		sp3[1] = new StringPair("border", "1");
-		sp3[2] = new StringPair("style",
-	"width: 100%; font-family: monospace; text-align: left; margin-left: auto; "
-			+ "margin-right: auto; border-collapse: collapse");
+		sp3[2] = new StringPair("style", "width: 100%; font-family: monospace; text-align: left; margin-left: auto; "
+										 + "margin-right: auto; border-collapse: collapse");
 		xos.startElement("table", sp3);
 		xos.startElement("tbody");
 		xos.startElement("tr");
@@ -542,7 +556,7 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 		sp3[3] = new StringPair("style",
 			"text-align: center; width: 100%; border-collapse: collapse");
 		xos.startElement("table", sp3);
-		xos.startElement("thead", "style", 
+		xos.startElement("thead", "style",
 			"background-color: rgb(210, 210, 210);");
 
 		xos.startElement("th", "style", "width: 20%;");
@@ -574,28 +588,6 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 		}
 		xos.endElement("thead");
 
-		// Forth line is actual-site-name. Only use if a sensor uses it.
-//		sb.setLength(0);
-//		for(i=0; i<dateFormatString.length(); i++)
-//			sb.append(' ');
-//		sb.append(delimiter);
-//		boolean doSensorSite = false;
-//		for(i=0; i<columns.length; i++)
-//		{
-//			if (columns[i].siteName != null)
-//			{
-//				doSensorSite = true;
-//				sb.append(TextUtil.strcenter(columns[i].siteName,
-//					columns[i].colWidth));
-//			}
-//			else
-//				sb.append(TextUtil.strcenter(" ", columns[i].colWidth));
-//			sb.append(delimiter);
-//		}
-//		if (doSensorSite)
-//			consumer.println(sb.toString());
-
-
 		xos.startElement("tbody");
 
 		Date d;
@@ -620,7 +612,7 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 	}
 
 	/**
-	 * Adds a link to platform metadata at the bottom of the page. 
+	 * Adds a link to platform metadata at the bottom of the page.
 	 */
 	private void writeMetaData(DecodedMessage msg, XmlOutputStream xos)
 		throws IOException, OutputFormatterException
@@ -635,14 +627,16 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 				xos.writeElement("hr", null);
 				xos.writeElement("p", null);
 				xos.writePCDATA("Click ");
-				xos.writeElement("a", "href", 
+				xos.writeElement("a", "href",
 					"meta-data.cgi?dcpAddr=" + id,
 					"here");
 				xos.writePCDATA(" for platform meta-data.");
 			}
 			catch(UnknownPlatformException upex)
 			{
-				Logger.instance().debug2("Cannot write meta-data link: "+upex);
+				log.atWarn()
+				   .setCause(upex)
+				   .log("Cannot write meta-data link.");
 				return;
 			}
 		}
@@ -656,7 +650,7 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 			xos.writeElement("hr", null);
 			xos.writeElement("p", null);
 			xos.writePCDATA("Click ");
-			xos.writeElement("a", "href", 
+			xos.writeElement("a", "href",
 				xmlPlatformDir + "/" + XmlDatabaseIO.makeFileName(p),
 				"here");
 			xos.writePCDATA(" for platform meta-data.");
@@ -736,10 +730,8 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 				dt = ts.getSensor().getDataType();
 				if (dt == null)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Site '" + siteName +"' Sensor "
-						+ ts.getSensor().configSensor.sensorNumber 
-						+ " has unknown data type!");
+					log.warn("Site '{}' Sensor {} has unknown data type!",
+							 siteName, ts.getSensor().configSensor.sensorNumber);
 					dt = DataType.getDataType("UNKNOWN", "UNKNOWN");
 				}
 			}
@@ -753,11 +745,8 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 
 			dotPos = -1;
 			for(int i=0; i<timeSeries.size(); i++)
-//			for(Iterator it = timeSeries.formattedSamplesIterator(); 
-//				it.hasNext(); )
 			{
 				String s = timeSeries.formattedSampleAt(i);
-//				String s = (String)it.next();
 				if (s.length() > colWidth)
 					colWidth = s.length();
 				int dp = s.indexOf('.');
@@ -786,7 +775,7 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 		{
 			return blankSample;
 		}
-	
+
 		// Return date of next sample in series or null if at end of series.
 		Date nextSampleTime()
 		{
@@ -815,7 +804,7 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 			}
 			while(sb.length() < colWidth-2)
 				sb.append(' ');
-			
+
 			s = sb.toString();
 			return s;
 		}
@@ -826,7 +815,7 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 		Variable v = rawmsg.getPM(field);
 		return v == null ? "" : v.toString();
 	}
-	
+
 	public static Date getVarDateValue(Variable v, Date dflt)
 	{
 		if (v == null)
@@ -842,5 +831,3 @@ Logger.instance().info("writeRaw: msglen=" + msgStr.length() + ", newlines=" + n
 	}
 
 }
-
-

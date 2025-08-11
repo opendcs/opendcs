@@ -1,31 +1,24 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2014/05/28 13:09:27  mmaloney
-*  dev
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.3  2004/08/24 21:01:37  mjmaloney
-*  added javadocs
-*
-*  Revision 1.2  2004/02/29 20:48:52  mjmaloney
-*  Working implementation of DCP Monitor Server
-*
-*  Revision 1.1  2004/02/19 01:46:43  mjmaloney
-*  Added NullFormatter to this package. Used by DCP Monitor app.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.consumer;
 
 import java.util.Properties;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.*;
 import decodes.decoder.DecodedMessage;
@@ -37,6 +30,7 @@ import decodes.decoder.DecodedMessage;
 */
 public class NullFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** default constructor */
 	public NullFormatter()
 	{
@@ -48,7 +42,7 @@ public class NullFormatter extends OutputFormatter
 		PresentationGroup presGrp, Properties rsProps)
 		throws OutputFormatterException
 	{
-		Logger.instance().info("NullFormatter initializing.");
+		log.info("NullFormatter initializing.");
 	}
 
 	/** Does nothing. */
@@ -59,7 +53,7 @@ public class NullFormatter extends OutputFormatter
 	/**
 	  Passes the DecodedMessage to the passed consumer via
 	  the startMessage call. No formatting is done.
-	 
+
 	  @param msg The message to output.
 	  @param consumer The DataConsumer to output to.
 	  @throws DataConsumerException, passed through from consumer methods.
@@ -89,4 +83,3 @@ public class NullFormatter extends OutputFormatter
 
 
 }
-

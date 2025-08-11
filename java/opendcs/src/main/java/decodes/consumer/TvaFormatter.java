@@ -1,16 +1,31 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.consumer;
 
 import java.util.Iterator;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 import java.text.NumberFormat;
 
 import ilex.var.TimedVariable;
 import ilex.var.IFlags;
-import ilex.util.Logger;
 
 import decodes.db.*;
 import decodes.decoder.DecodedMessage;
@@ -24,6 +39,7 @@ import decodes.datasource.UnknownPlatformException;
 */
 public class TvaFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private SimpleDateFormat tvaDateFormat = new SimpleDateFormat("yyyyMMddHHmm");
 	public static final String TVA_GAGE_ID = "tva-gage-id";
 
@@ -106,7 +122,7 @@ public class TvaFormatter extends OutputFormatter
 		}
 		if (tvaGageId.length() < 4)
 		{
-			String err = "Invalid TVA Gage ID '" + tvaGageId 
+			String err = "Invalid TVA Gage ID '" + tvaGageId
 				+ "' Defined in site "
 				+ platform.getSiteName() + " -- skipped.";
 			throw new OutputFormatterException(err);
@@ -120,10 +136,8 @@ public class TvaFormatter extends OutputFormatter
 			DataType origDt = sensor.getDataType();
 			if (origDt == null || origDt.getStandard() == null)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					"Station '" + platform.getSiteName()
-					+ "' No datatype defined for sensor '" + sensor.getName() 
-					+ "' -- skipped.");
+				log.warn("Station '{}' No datatype defined for sensor '{}' -- skipped.",
+						 platform.getSiteName(), sensor.getName());
 				continue;
 			}
 			DataType dt = origDt;
@@ -132,10 +146,8 @@ public class TvaFormatter extends OutputFormatter
 			if (dt == null || dt.getStandard() == null
 			 || dt.getCode() == null || dt.getCode().length() < 2)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					"Station '" + platform.getSiteName()
-					+ "' Cannot find SHEF datatype for sensor '" 
-					+ sensor.getName() + "' -- skipped.");
+				log.warn("Station '{}' Cannot find SHEF datatype for sensor '{}' -- skipped.",
+					     platform.getSiteName(), sensor.getName());
 				continue;
 			}
 
@@ -143,10 +155,8 @@ public class TvaFormatter extends OutputFormatter
 			if (tvaDataCode == null || tvaDataCode.length() < 2)
 			{
 				if (!sensor.getName().equalsIgnoreCase("battery"))
-					Logger.instance().info(
-						"Station '" + platform.getSiteName()
-						+ "' Cannot find TVA Data Code for sensor '" 
-						+ sensor.getName() + "' -- skipped.");
+					log.info("Station '{}' Cannot find TVA Data Code for sensor '{}' -- skipped.",
+							 platform.getSiteName(), sensor.getName());
 				continue;
 			}
 
@@ -203,10 +213,10 @@ public class TvaFormatter extends OutputFormatter
 				}
 				catch(ilex.var.NoConversionException ex)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Station '" + platform.getSiteName()
-						+ "' Bad sensor value '" + tv.toString()
-						+ "' -- skipped.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Station '{}' Bad sensor value '{}' -- skipped.",
+					        platform.getSiteName(), tv.toString());
 					continue;
 				}
 				for(int j=0; j<3; j++)
@@ -252,8 +262,7 @@ public class TvaFormatter extends OutputFormatter
 			return "14";
 		else if (shef.equalsIgnoreCase("TP") || shef.equalsIgnoreCase("TW"))
 			return "15";
-		else 
+		else
 			return null;
-	} 
+	}
 }
-

@@ -1,24 +1,19 @@
-/**
- * $Id: TsImportFormatter.java,v 1.1 2020/02/20 15:32:38 mmaloney Exp $
- * 
- * $Log: TsImportFormatter.java,v $
- * Revision 1.1  2020/02/20 15:32:38  mmaloney
- * Final fixes.
- *
- *
- * Copyright 2014 Cove Software, LLC
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+/*
+* Copyright 2014 Cove Software, LLC
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.consumer;
 
 import ilex.util.PropertiesUtil;
@@ -33,6 +28,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.cwms.CwmsDbConfig;
 import decodes.datasource.UnknownPlatformException;
@@ -54,12 +52,12 @@ import decodes.util.PropertySpec;
  *
  * @author Michael Maloney, Cove Software, LLC
  */
-public class TsImportFormatter 
-	extends OutputFormatter
+public class TsImportFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "OpenTsdbFormatter";
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
-	
+
 	/** Can be set by tzName property. Defaults to abbreviation from Routing Spec TZ */
 	private String tzName = null;
 	/** Can be set by "includeCNAME" property */
@@ -73,10 +71,10 @@ public class TsImportFormatter
 	private int bufferTimeSec = 0;
 	private DataConsumer theConsumer = null;
 	private String newline = "\n";
-	
+
 	// Used, if needed, to construct CWMS TSIDs from Sensor Info.
 	private OpenTsdbConsumer openTsdbConsumer = null;
-	
+
 	class SampleValue
 	{
 		long t;
@@ -113,13 +111,13 @@ public class TsImportFormatter
 					{
 						return o1.t - o2.t < 0 ? -1 : o1.t - o2.t > 0 ? 1 : 0;
 					}
-				
+
 				});
 		}
 	}
 	long bufferingStarted = -1L;
 	ArrayList<SensorData> sensorDataArray = new ArrayList<SensorData>();
-	
+
 	/**
 	 * Constructor for Kisters ZRXP Formatter
 	 */
@@ -127,7 +125,7 @@ public class TsImportFormatter
 	{
 		super();
 	}
-	
+
 	@Override
 	public boolean requiresDecodedMessage() { return true; }
 
@@ -139,12 +137,12 @@ public class TsImportFormatter
 
 	@Override
 	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp,
-		Properties rsProps) 
+		Properties rsProps)
 		throws OutputFormatterException
 	{
 		sdf.setTimeZone(tz);
 		tzName = tz.getID();
-		
+
 		String s = PropertiesUtil.getIgnoreCase(rsProps, "SiteNameType");
 		if (s != null)
 			siteNameType = s;
@@ -160,7 +158,7 @@ public class TsImportFormatter
 			TimeZone tz2 = TimeZone.getTimeZone(s);
 			if (tz2 == null)
 			{
-				logger.warning(module + " Invalid tzName propertye '" + s + "': will use " + tzName);
+				log.warn(" Invalid tzName property '{}': will use {}", s, tzName);
 			}
 			else
 				tzName = s;
@@ -171,8 +169,7 @@ public class TsImportFormatter
 			try { bufferTimeSec = Integer.parseInt(s.trim()); }
 			catch(Exception ex)
 			{
-				logger.warning(module + " Invalid bufferTimeSec property '" + s 
-					+ "' ignored. Buffering disabled.");
+				log.warn("Invalid bufferTimeSec property '{}' ignored. Buffering disabled.", s);
 				bufferTimeSec = 0;
 			}
 		}
@@ -184,7 +181,7 @@ public class TsImportFormatter
 	{
 		if (bufferTimeSec <= 0)
 			return;
-		
+
 		// If any data is accumulated in the buffer, flush it now.
 		try
 		{
@@ -192,7 +189,7 @@ public class TsImportFormatter
 		}
 		catch (DataConsumerException ex)
 		{
-			logger.warning("Error shutting down formatter: " + ex);
+			log.atWarn().setCause(ex).log("Error shutting down formatter.");
 		}
 	}
 
@@ -201,7 +198,7 @@ public class TsImportFormatter
 		throws DataConsumerException, OutputFormatterException
 	{
 		theConsumer = consumer;
-		
+
 		// If a message is nothing but missing, don't output anything.
 		boolean hasData = false;
 
@@ -214,22 +211,22 @@ public class TsImportFormatter
 		}
 		if (!hasData)
 		{
-			logger.debug1(module + " Skipping message with no non-missing data");
+			log.debug("Skipping message with no non-missing data");
 			return;
 		}
-		
-		
+
+
 		// Get the site associated with the Platform that generated the message.
 		Site platformSite = null;
 		try
 		{
 			platformSite = msg.getRawMessage().getPlatform().getSite();
 			if (platformSite == null)
-				logger.warning(module + " No site associated with platform.");
+				log.warn("No site associated with platform.");
 		}
 		catch(UnknownPlatformException ex)
 		{
-			logger.warning(module + " Cannot determine platform.");
+			log.warn("Cannot determine platform.");
 		}
 
 		if (bufferTimeSec <= 0)
@@ -250,16 +247,15 @@ public class TsImportFormatter
 
 			if (site == null)
 			{
-				logger.warning(module + " No platform site and no site associated with " +
-					"sensor " + sensor.getName() + " -- skipped.");
+				log.warn("No platform site and no site associated with sensor {} -- skipped.", sensor.getName());
 				continue;
 			}
-			
+
 			SiteName siteName = site.getName(siteNameType);
 			if (siteName == null)
 				if ((siteName = site.getName(siteNameTypeAlt)) == null)
 					siteName = site.getPreferredName();
-			
+
 			DataType dt = sensor.getDataType(dataTypeStandard);
 			if (dt == null)
 				dt = sensor.getDataType();
@@ -269,7 +265,7 @@ public class TsImportFormatter
 			headerBuilder.append("TSID:" + makeTsid(sensor, ts, platformSite) + newline);
 			headerBuilder.append("SET:UNITS=" + ts.getUnits());
 			// Note: No newline after units because it will be printed with println.
-			
+
 			String header = headerBuilder.toString();
 			if (bufferTimeSec <= 0)
 				// output data directly -- no buffering.
@@ -283,8 +279,8 @@ public class TsImportFormatter
 				Date sampTime = tv.getTime();
 				tv.resetChanged();
 				int flags = tv.getFlags();
-				
-				String dataLine = sdf.format(sampTime) + "," + sampVal + ",0x" 
+
+				String dataLine = sdf.format(sampTime) + "," + sampVal + ",0x"
 					+ Integer.toHexString(flags);
 				if (bufferTimeSec <= 0)
 					consumer.println(dataLine); // No buffering
@@ -300,24 +296,24 @@ public class TsImportFormatter
 			&& (System.currentTimeMillis() - bufferingStarted)/1000L > bufferTimeSec)
 			flushBuffer();
 	}
-	
+
 	private String makeTsid(Sensor sensor, TimeSeries ts, Site platformSite)
 	{
 		if (sensor instanceof DecodesSensorCnvt)
 			return ((DecodesSensorCnvt)sensor).getDbTsId();
-		
+
 		if (openTsdbConsumer == null)
 		{
 			openTsdbConsumer = new OpenTsdbConsumer();
 			openTsdbConsumer.loadShefCwmsParamMapping(CwmsDbConfig.instance().getShefCwmsParamFile());
 		}
-		
+
 		return openTsdbConsumer.buildTSID(ts, platformSite);
 	}
 
-	protected PropertySpec kfPropSpecs[] = 
+	protected PropertySpec kfPropSpecs[] =
 	{
-		new PropertySpec("tzName", PropertySpec.STRING, 
+		new PropertySpec("tzName", PropertySpec.STRING,
 			"Default=null. Set to override the TZ name in the routing spec."),
 		new PropertySpec("SiteNameType", PropertySpec.DECODES_ENUM + Constants.enum_SiteName,
 			"Specifies which DECODES site name to use in the header (default=CWMS)."),
@@ -330,7 +326,7 @@ public class TsImportFormatter
 			"(# seconds, default=0) Set this to positive number to have data lines buffered and combined."
 			+ " This may result in fewer ZRXP headers with more data lines.")
 	};
-	
+
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
@@ -343,13 +339,13 @@ public class TsImportFormatter
 	{
 		return false;
 	}
-	
+
 	private void flushBuffer()
 		throws DataConsumerException
 	{
 		if (bufferingStarted <= 0)
 			return;
-		
+
 		// Sort the SensrData array by header. This will put all data for same platform together.
 		Collections.sort(sensorDataArray,
 			new Comparator<SensorData>()
@@ -360,7 +356,7 @@ public class TsImportFormatter
 					return o1.header.compareTo(o2.header);
 				}
 			});
-		
+
 
 		String platformName = "";
 		for(SensorData sd : sensorDataArray)
@@ -383,26 +379,26 @@ public class TsImportFormatter
 				// Platform Name is different. Start a new message.
 				if (platformName.length() > 0)
 					theConsumer.endMessage(); // End the previous message if one was started.
-				
+
 				theConsumer.startMessage(sd.msg);
 				platformName = pn;
 			}
-			
+
 			// output the header line
 			theConsumer.println(sd.header);
-			
+
 			// output each data line
 			for(SampleValue sv : sd.samples)
 				theConsumer.println(sv.v);
 		}
-		
+
 		// End the last message we were working on.
 		if (platformName.length() > 0)
 			theConsumer.endMessage();
 		sensorDataArray.clear();
 		bufferingStarted = -1;
 	}
-	
+
 	private void addToBuffer(String header, String dataLine, long t, DecodedMessage dm)
 	{
 		if (bufferingStarted < 0)

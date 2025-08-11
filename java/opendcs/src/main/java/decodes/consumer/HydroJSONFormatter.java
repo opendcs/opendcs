@@ -1,34 +1,36 @@
-/**
- * $Id$
- * 
- * Copyright 2017 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.5  2018/03/19 19:24:33  mmaloney
- * Bugfix: wasn't honoring tz in the routing spec.
- *
- * Revision 1.4  2017/10/10 17:58:33  mmaloney
- * Added support for TsdbFormatter
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.consumer;
 
 import ilex.util.Location;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.Strftime;
-import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.cwms.CwmsConstants;
 import decodes.cwms.CwmsConsumer;
@@ -36,15 +38,11 @@ import decodes.cwms.CwmsDbConfig;
 import decodes.cwms.CwmsFlags;
 import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.cwms.CwmsTsId;
-import decodes.datasource.RawMessage;
-import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.Database;
-import decodes.db.Platform;
 import decodes.db.PresentationGroup;
 import decodes.db.Site;
 import decodes.db.SiteName;
-import decodes.db.TransportMedium;
 import decodes.decoder.DecodedMessage;
 import decodes.decoder.TimeSeries;
 import decodes.util.DecodesSensorCnvt;
@@ -53,11 +51,13 @@ import decodes.util.PropertySpec;
 
 /**
  * HydroJSON format is described at https://github.com/gunnarleffler/hydroJSON
- * 
+ *
  *
  */
 public class HydroJSONFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private String module = "HydroJSONFormatter";
 	private String timeFormat = "%Y-%m-%dT%H:%M:%S%z";
 	private String indent = "  ";
@@ -67,17 +67,17 @@ public class HydroJSONFormatter extends OutputFormatter
 	private CwmsConsumer cwmsConsumer = null;
 	private Strftime strftime = null;
 
-	private static PropertySpec propSpecs[] = 
+	private static PropertySpec propSpecs[] =
 	{
-		new PropertySpec("siteNameTypePreference", 
-			PropertySpec.DECODES_ENUM + Constants.enum_SiteName, 
+		new PropertySpec("siteNameTypePreference",
+			PropertySpec.DECODES_ENUM + Constants.enum_SiteName,
 			"(default='local' specify site name type to use in output"),
-		new PropertySpec("timeFormat", PropertySpec.STRING, 
+		new PropertySpec("timeFormat", PropertySpec.STRING,
 			"(default=%Y-%m-%dT%H:%M:%S%z) SimpleDateFormat time/date format string.")
 	};
 
 	@Override
-	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp, 
+	protected void initFormatter(String type, TimeZone tz, PresentationGroup presGrp,
 		Properties rsProps)
 		throws OutputFormatterException
 	{
@@ -89,11 +89,11 @@ public class HydroJSONFormatter extends OutputFormatter
 			timeFormat = s;
 		strftime = new Strftime(timeFormat);
 		strftime.setTimeZone(tz);
-		
+
 		s = PropertiesUtil.getIgnoreCase(rsProps, "siteNameTypePreference");
 		if (s != null)
 			siteNameTypePreference = s;
-		if (Database.getDb() != null 
+		if (Database.getDb() != null
 		 && Database.getDb().getDbIo() != null
 		 && Database.getDb().getDbIo() instanceof CwmsSqlDatabaseIO)
 		{
@@ -101,7 +101,7 @@ public class HydroJSONFormatter extends OutputFormatter
 			if (officeId == null || officeId.trim().length() == 0)
 				officeId = DecodesSettings.instance().CwmsOfficeId;
 		}
-		
+
 		// HydroJSONFormatter follows the same rules as CwmsConsumer for creating TSIDs
 		// from info in the DECODES database. We use the methods in CwmsConsumer
 		// to accomplish this.
@@ -113,8 +113,10 @@ public class HydroJSONFormatter extends OutputFormatter
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " cannot load CWMS Config from '"
-				+ CwmsConstants.CONFIG_FILE_NAME + "': " + ex + " -- will proceed with defaults.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot load CWMS Config from '{}' -- will proceed with defaults.",
+			   	    CwmsConstants.CONFIG_FILE_NAME);
 		}
 		cwmsConsumer.loadShefCwmsParamMapping(CwmsDbConfig.instance().getShefCwmsParamFile());
 	}
@@ -130,7 +132,7 @@ public class HydroJSONFormatter extends OutputFormatter
 		OutputFormatterException
 	{
 		consumer.startMessage(msg);
-		
+
 		// Construct a list of distinct sites to include in the output
 		ArrayList<Site> sites = new ArrayList<Site>();
 		for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
@@ -142,12 +144,12 @@ public class HydroJSONFormatter extends OutputFormatter
 			if (!sites.contains(site))
 				sites.add(site);
 		}
-		
+
 		// Put out a separate block of JSON for each site
 		for(int siteIdx = 0; siteIdx < sites.size(); siteIdx++)
-		{	
+		{
 			Site site = sites.get(siteIdx);
-			
+
 			consumer.println("{");
 			SiteName sn = site.getName(siteNameTypePreference);
 			if (sn == null)
@@ -155,10 +157,10 @@ public class HydroJSONFormatter extends OutputFormatter
 			if (sn == null)
 				sn = site.getNameAt(0);
 			consumer.println(indent + "\"" + sn.getNameValue() + "\": {");
-			
+
 			consumer.println(indent+indent + "\"HUC\": \"\",");
 			consumer.println(indent+indent + "\"active_flag\": \"T\",");
-			
+
 			// coordinates block
 			String lat = site.latitude;
 			if (lat == null || lat.trim().length() == 0)
@@ -172,8 +174,10 @@ public class HydroJSONFormatter extends OutputFormatter
 				}
 				catch(NumberFormatException ex)
 				{
-					consumer.routingSpecThread.log(Logger.E_WARNING, "Site " + sn
-						+ " -- cannot parse latitude '" + lat + "' to double -- set latitude to empty.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Site {} -- cannot parse latitude '{}' to double -- set latitude to empty.",
+					   	    sn, lat);
 					lat = "";
 				}
 			}
@@ -189,13 +193,15 @@ public class HydroJSONFormatter extends OutputFormatter
 				}
 				catch(NumberFormatException ex)
 				{
-					consumer.routingSpecThread.log(Logger.E_WARNING, "Site " + sn
-						+ " -- cannot parse longitude '" + lon + "' to double -- set longitude to empty.");
-					lat = "";
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Site {} -- cannot parse longitude '{}' to double -- set longitude to empty.",
+					        sn, lon);
+					lon = "";
 				}
 
 			}
-			
+
 			String datum = site.getProperty("horizontal_datum");
 			if (datum == null)
 				datum = "";
@@ -217,7 +223,7 @@ public class HydroJSONFormatter extends OutputFormatter
 			consumer.println(indent+indent+indent + "\"method\": \"\",");
 			consumer.println(indent+indent+indent + "\"value\": " + elev);
 			consumer.println(indent+indent + "},");
-		
+
 			String locType = site.getProperty("location_type");
 			if (locType == null)
 				locType = "";
@@ -226,13 +232,12 @@ public class HydroJSONFormatter extends OutputFormatter
 			if (publicName == null)
 				publicName = "";
 			consumer.println(indent+indent + "\"name\": \"" + publicName + "\",");
-			
+
 			consumer.println(indent+indent + "\"responsibility\": \"" + officeId + "\",");
-			
+
 			consumer.println(indent+indent + "\"time_format\": \"" + timeFormat + "\",");
-//			consumer.println(indent+indent + "\"tz_offset\": " + (tz.getRawOffset()/3600000.));
-			
-			
+
+
 			consumer.println(indent+indent + "\"timeseries\": {");
 			ArrayList<TimeSeries> ts2process = new ArrayList<TimeSeries>();
 			for(Iterator<TimeSeries> tsit = msg.getAllTimeSeries(); tsit.hasNext(); )
@@ -248,22 +253,21 @@ public class HydroJSONFormatter extends OutputFormatter
 					tsid = cwmsConsumer.createTimeSeriesDesc(ts, site);
 				if (tsid == null)
 				{
-					consumer.routingSpecThread.log(Logger.E_WARNING, "Cannot make CWMS TSID for sensor["
-						+ ts.getSensorNumber() + "] '" + ts.getSensorName() + "' -- Make sure CWMS param is"
-						+ " defined.");
+					log.warn("Cannot make CWMS TSID for sensor[{}] '{}' -- Make sure CWMS param is defined.",
+							 ts.getSensorNumber(), ts.getSensorName());
 					continue;
 				}
 
 				ts2process.add(ts);
 			}
 
-			
-			
+
+
 			for(int tsIdx = 0; tsIdx < ts2process.size(); tsIdx ++)
 			{
 				TimeSeries ts = ts2process.get(tsIdx);
 				ts.sort();
-				
+
 				// If this is from OutputTs, we will have read real CWMS tsids
 				// from the database. Use these
 				String tsid = null;
@@ -274,7 +278,7 @@ public class HydroJSONFormatter extends OutputFormatter
 					tsid = cwmsConsumer.createTimeSeriesDesc(ts, site);
 				CwmsTsId cwmsTsId = new CwmsTsId();
 				cwmsTsId.setUniqueString(tsid);
-				
+
 				consumer.println(indent+indent+indent + "\"" + tsid + "\": {");
 
 				consumer.println(indent+indent+indent+indent + "\"values\": [");
@@ -286,18 +290,18 @@ public class HydroJSONFormatter extends OutputFormatter
 					TimedVariable tv = ts.sampleAt(idx);
 					if ((tv.getFlags() & (IFlags.IS_ERROR|IFlags.IS_MISSING)) != 0)
 						continue;
-					
+
 					consumer.println(indent+indent+indent+indent+indent + "[");
 					consumer.println(indent+indent+indent+indent+indent+indent + "\""
 						+ formatTime(tv.getTime()) + "\",");
-					consumer.println(indent+indent+indent+indent+indent+indent + 
+					consumer.println(indent+indent+indent+indent+indent+indent +
 						ts.formattedSampleAt(idx) + ",");
-					consumer.println(indent+indent+indent+indent+indent+indent + 
+					consumer.println(indent+indent+indent+indent+indent+indent +
 						CwmsFlags.flag2CwmsQualityCode(tv.getFlags()));
 
 					consumer.println(indent+indent+indent+indent+indent + "]"
 						+ (idx < ts.size()-1 ? "," : ""));
-					
+
 					try
 					{
 						double v = tv.getDoubleValue();
@@ -318,31 +322,31 @@ public class HydroJSONFormatter extends OutputFormatter
 					count++;
 				}
 				consumer.println(indent+indent+indent+indent + "],");
-				
+
 				consumer.println(indent+indent+indent+indent + "\"quality_type\": \"string\",");
-				consumer.println(indent+indent+indent+indent + "\"parameter\": \"" + 
+				consumer.println(indent+indent+indent+indent + "\"parameter\": \"" +
 					cwmsTsId.getDataType().getCode() + "\",");
-				consumer.println(indent+indent+indent+indent + "\"duration\": \"" + 
+				consumer.println(indent+indent+indent+indent + "\"duration\": \"" +
 					cwmsTsId.getDuration() + "\",");
-				consumer.println(indent+indent+indent+indent + "\"interval\": \"" + 
+				consumer.println(indent+indent+indent+indent + "\"interval\": \"" +
 					cwmsTsId.getInterval() + "\",");
-				consumer.println(indent+indent+indent+indent + "\"units\": \"" + 
+				consumer.println(indent+indent+indent+indent + "\"units\": \"" +
 					ts.getUnits() + "\",");
 				consumer.println(indent+indent+indent+indent + "\"count\": " + count + ",");
-				consumer.println(indent+indent+indent+indent + "\"min_value\": " 
+				consumer.println(indent+indent+indent+indent + "\"min_value\": "
 					+ (minIdx==-1?"null":ts.formattedSampleAt(minIdx)) + ",");
-				consumer.println(indent+indent+indent+indent + "\"max_value\": " 
+				consumer.println(indent+indent+indent+indent + "\"max_value\": "
 					+ (maxIdx==-1?"null":ts.formattedSampleAt(maxIdx)) + ",");
-				consumer.println(indent+indent+indent+indent + "\"start_time\": " 
+				consumer.println(indent+indent+indent+indent + "\"start_time\": "
 					+ (startTime==null?"null": ("\"" + formatTime(startTime) + "\"")) + ",");
-				consumer.println(indent+indent+indent+indent + "\"end_time\": " 
+				consumer.println(indent+indent+indent+indent + "\"end_time\": "
 					+ (endTime==null?"null": ("\"" + formatTime(endTime) + "\"")));
-	
+
 				consumer.println(indent+indent+indent + "}"
 					+ (tsIdx < ts2process.size()-1 ? "," : ""));
 			}
 
-			
+
 			// no comma if this is the last site.
 			consumer.println(indent+indent + "}" + (siteIdx < sites.size()-1 ? "," : ""));
 
@@ -350,10 +354,10 @@ public class HydroJSONFormatter extends OutputFormatter
 			consumer.println("}");
 
 		}
-		
+
 		consumer.endMessage();
 	}
-	
+
 	private String formatTime(Date d)
 	{
 		return strftime.format(d);

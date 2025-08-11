@@ -1,43 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2014/05/28 13:09:29  mmaloney
-*  dev
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.5  2008/02/10 20:17:32  mmaloney
-*  dev
-*
-*  Revision 1.2  2008/02/10 19:59:02  cvs
-*  dev
-*
-*  Revision 1.1.1.1  2008/01/28 22:06:03  cvs
-*  Imported from open source.
-*
-*  Revision 1.4  2004/08/24 21:01:38  mjmaloney
-*  added javadocs
-*
-*  Revision 1.3  2003/11/19 16:16:20  mjmaloney
-*  Always format BV with 3 decimal places.
-*
-*  Revision 1.2  2003/03/06 18:49:47  mjmaloney
-*  Fixed DR 113 TransmitMonitor formatter problems.
-*
-*  Revision 1.1  2002/10/31 18:53:52  mjmaloney
-*  release prep
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.consumer;
 
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
 import java.text.NumberFormat;
@@ -46,7 +30,6 @@ import ilex.var.Variable;
 import ilex.var.NoConversionException;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 
 import decodes.db.*;
 import decodes.decoder.DecodedMessage;
@@ -63,6 +46,7 @@ with one line per DCP message.
 */
 public class TransmitMonitorFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String delimiter;
 	private SimpleDateFormat dateFormat;
 	private String columns;
@@ -70,18 +54,18 @@ public class TransmitMonitorFormatter extends OutputFormatter
 	private boolean justify;
 	private int colwidths[];
 	private NumberFormat bvFormat;
-	
-	private static PropertySpec propSpecs[] = 
+
+	private static PropertySpec propSpecs[] =
 	{
-		new PropertySpec("delimiter", PropertySpec.STRING, 
+		new PropertySpec("delimiter", PropertySpec.STRING,
 			"(default=space) delimits columns in output"),
-		new PropertySpec("columns", PropertySpec.STRING, 
+		new PropertySpec("columns", PropertySpec.STRING,
 			"Comma-separated list of columns to include. Default is date/time followed by GOES header columns."),
-		new PropertySpec("colwidths", PropertySpec.STRING, 
+		new PropertySpec("colwidths", PropertySpec.STRING,
 			"Comma-separated list of column widths. Columns are padded with blanks to specified width."),
-		new PropertySpec("justify", PropertySpec.BOOLEAN, 
+		new PropertySpec("justify", PropertySpec.BOOLEAN,
 			"(default=false) If true, justify data in specified column width. Negative width=left justify. Positive=right.")
-		
+
 	};
 
 	/** default constructor */
@@ -152,16 +136,17 @@ public class TransmitMonitorFormatter extends OutputFormatter
 				try { colwidths[i] = Integer.parseInt(st.nextToken()); }
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Invalid width in position " + i + 
-						", 'colwidths' property must be an array of numbers.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Invalid width in position {}" +
+						    ", 'colwidths' property must be an array of numbers.", i);
 					colwidths[i] = 10;
 				}
 			}
 		}
 
 		s = PropertiesUtil.getIgnoreCase(rsProps, "justify");
-		if (s != null && 
+		if (s != null &&
 			(s.equalsIgnoreCase("false") || s.equalsIgnoreCase("no")
 			 || s.equalsIgnoreCase("off")))
 			justify = false;
@@ -217,7 +202,7 @@ public class TransmitMonitorFormatter extends OutputFormatter
 
 				// Find sensor named 'batt' or with data type VB or equiv.
 				TimeSeries batt_ts = null;
-				for(Iterator it = msg.getAllTimeSeries(); 
+				for(Iterator it = msg.getAllTimeSeries();
 					it != null && it.hasNext(); )
 				{
 					TimeSeries ts = (TimeSeries)it.next();
@@ -236,7 +221,7 @@ public class TransmitMonitorFormatter extends OutputFormatter
 					// Look for data type of SHEF VB
 					DataType bv=
 						DataType.getDataType(Constants.datatype_SHEF,"VB");
-					for(Iterator it = msg.getAllTimeSeries(); 
+					for(Iterator it = msg.getAllTimeSeries();
 						it != null && it.hasNext(); )
 					{
 						TimeSeries ts = (TimeSeries)it.next();
@@ -256,7 +241,7 @@ public class TransmitMonitorFormatter extends OutputFormatter
 					batt_ts.sort();
 					try
 					{
-						double bv = 
+						double bv =
 							batt_ts.sampleAt(batt_ts.size()-1).getDoubleValue();
 						colval = bvFormat.format(bv);
 					}
@@ -271,10 +256,8 @@ public class TransmitMonitorFormatter extends OutputFormatter
 				Variable v = rawmsg.getPM(colarray[i]);
 				if (v == null)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Message from platform " + nm + "(" + id 
-						+ ") does not have performance measurement '"
-						+ colarray[i] + "'");
+					log.warn("Message from platform {}({}) does not have performance measurement '{}'",
+						     nm, id, colarray[i]);
 				}
 				else
 					colval = v.toString();
@@ -305,7 +288,7 @@ public class TransmitMonitorFormatter extends OutputFormatter
 
 	/** All this format to work on DAPS status messages. */
 	public boolean acceptRealDcpMessagesOnly() { return false; }
-	
+
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{
@@ -313,4 +296,3 @@ public class TransmitMonitorFormatter extends OutputFormatter
 	}
 
 }
-
