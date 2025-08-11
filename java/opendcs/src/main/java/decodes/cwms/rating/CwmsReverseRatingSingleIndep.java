@@ -1,4 +1,5 @@
 /**
+ * * Copyright 2014 Cove Software, LLC
  * Copyright 2024 OpenDCS Consortium and Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");

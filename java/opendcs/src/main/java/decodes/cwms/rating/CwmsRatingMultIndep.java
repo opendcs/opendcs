@@ -1,4 +1,5 @@
 /*
+* Copyright 2014 Cove Software, LLC
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -422,7 +423,7 @@ public class CwmsRatingMultIndep extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 		catch(Exception ex)
 		{
-			log.atWarn().setCause(ex).log("Raiting failure.");
+			log.atWarn().setCause(ex).log("Rating failure.");
 		}
 
 //AW:AFTER_TIMESLICES_END
