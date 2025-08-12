@@ -1,16 +1,18 @@
-/**
- * $Id$
- *
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- *
- * $Log$
- * Revision 1.2  2016/11/03 18:58:48  mmaloney
- * Force reload when assessing TSIDs.
- *
- * Revision 1.1  2015/11/12 15:12:38  mmaloney
- * Initial release.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.validation.gui;
 
 import ilex.util.AsciiUtil;
@@ -35,6 +37,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.TimeSeriesDAI;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -48,6 +53,7 @@ import decodes.cwms.validation.dao.ScreeningDAI;
 
 public class ScreeningIdListTab extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	SortingListTable screeningIdTable = null;
 	ScreeningIdTableModel model = null;
 	ScreeningEditFrame frame = null;
@@ -196,7 +202,9 @@ public class ScreeningIdListTab extends JPanel
 		}
 		catch (DbIoException ex)
 		{
-			frame.showError("Error reading TSIDs from the database: " + ex);
+			final String msg = "Error reading TSIDs from the database";
+			log.atError().setCause(ex).log(msg);
+			frame.showError(msg + ": " + ex);
 			return;
 		}
 
@@ -223,11 +231,9 @@ public class ScreeningIdListTab extends JPanel
 		}
 		catch (DbIoException ex)
 		{
-			String msg = "Error assigning screening '" + scr.getScreeningName() + "' to TSID '" + tsidT
-				+ ": " + ex;
-			frame.showError(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			String msg = "Error assigning screening '" + scr.getScreeningName() + "' to TSID '" + tsidT;
+			log.atError().setCause(ex).log(msg);
+			frame.showError(msg + ": " + ex);
 		}
 	}
 
@@ -244,10 +250,9 @@ public class ScreeningIdListTab extends JPanel
 		}
 		catch (DbIoException ex)
 		{
-			String msg = "DbIo error reading screening info: " + ex;
-			frame.showError(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			String msg = "DbIo error reading screening info";
+			log.atError().setCause(ex).log(msg);
+			frame.showError(msg + ": " + ex);
 		}
 
 		frame.getTsidAssignTab().doRefresh();
@@ -259,7 +264,9 @@ public class ScreeningIdListTab extends JPanel
 		}
 		catch (DbIoException ex)
 		{
-			frame.showError("Error reading TSIDs from the database: " + ex);
+			final String msg = "Error reading TSIDs from the database";
+			log.atError().setCause(ex).log(msg);
+			frame.showError(msg + ": " + ex);
 		}
 	}
 
@@ -297,10 +304,9 @@ public class ScreeningIdListTab extends JPanel
 		}
 		catch (DbIoException ex)
 		{
-			String msg = "Error deleting screening '" + scr.getScreeningName() + "': " + ex;
-			frame.showError(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			String msg = "Error deleting screening '" + scr.getScreeningName()+"'";
+			log.atError().setCause(ex).log(msg);
+			frame.showError(msg + "': " + ex);
 		}
 	}
 
