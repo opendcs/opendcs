@@ -1,14 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
 import java.util.Properties;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 import java.util.Date;
 
-import ilex.util.Logger;
 import ilex.util.IDateFormat;
 import ilex.util.PropertiesUtil;
 
@@ -19,22 +34,22 @@ import decodes.db.NetworkList;
 
 /**
 HotBackupGroup implements the data source interface. It manages a
-group of subordinate data sources. One data source is used at a 
-time. If (and only if) a failure is detected in the 'current' data 
+group of subordinate data sources. One data source is used at a
+time. If (and only if) a failure is detected in the 'current' data
 source, one of the 'backup' data sources, will become the 'current'.
 <p>
 HotBackupGroup is designed to manage a group of LRGS/DRS interfaces.
 When one connection goes bad (e.g. the server is not available), it
 will switch to another and attempt to pick up where it left off.
 <p>
-The first data source in the group is considered the 'preferred' 
+The first data source in the group is considered the 'preferred'
 data source. Even when other sources are active, the HotBackupGroup
 will periodically attempt to re-establish a connection to the preferred
 source.
 */
-public class HotBackupGroup
-	extends DataSourceExec
+public class HotBackupGroup extends DataSourceExec
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	Properties props;          // Properties from routing spec
 	String since, until;       // Since & until time from routing spec
 	Vector networkLists;       // Network Lists from routing spec
@@ -86,9 +101,8 @@ public class HotBackupGroup
 	public void processDataSource()
 		throws InvalidDatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG1, 
-			"Initializing HotBackupGroup for '" + dbDataSource.getName() 
-			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
+		log.debug("Initializing HotBackupGroup for '{}', args='{}'.",
+				  dbDataSource.getName(), dbDataSource.getDataSourceArg());
 
 		// This is a data-source-group, call prepareForExec() for all members
 		for(Iterator it = dbDataSource.groupMembers.iterator(); it.hasNext(); )
@@ -96,8 +110,7 @@ public class HotBackupGroup
 			DataSource ds = (DataSource)it.next();
 			if (ds != null)  // there may be empty slots.
 			{
-				Logger.instance().log(Logger.E_DEBUG1,
-					"Making delegate for '" + ds.getName() + "'");
+				log.debug("Making delegate for '{}'", ds.getName());
 				DataSourceExec del = ds.makeDelegate(); // recursion!
 				del.setAllowNullPlatform(getAllowNullPlatform());
 				del.setAllowDapsStatusMessages(getAllowDapsStatusMessages());
@@ -143,19 +156,17 @@ public class HotBackupGroup
 			}
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE, 
-					"Group '" + dbDataSource.getName()
-					+ "' Invalid recheck period '" + s 
-					+ "', using default of 15 min.");
+				log.atError()
+				   .setCause(ex)
+				   .log("Group '{}' Invalid recheck period '{}', using default of 15 min.",
+				        dbDataSource.getName(), s);
 				recheckPeriod = 15 * 60 * 1000L;
 			}
 		}
 		activeMember = null;
 		findActiveMember();
-		Logger.instance().log(Logger.E_DEBUG1, 
-			"HotBackupGroup.init() for '" + dbDataSource.getName() 
-			+ "' since='" + since + "' until= '" + until + "', recheck=" 
-			+ recheckPeriod);
+		log.debug("HotBackupGroup.init() for '{}' since='{}', until='{}', recheck={}",
+				  dbDataSource.getName(), since, until, recheckPeriod);
 
 	}
 
@@ -165,8 +176,7 @@ public class HotBackupGroup
 	*/
 	private void findActiveMember()
 	{
-		Logger.instance().debug3("HotBackupGroup.findActiveMember()"
-			+ ", activeMember=" + activeMember);
+		log.trace("HotBackupGroup.findActiveMember(), activeMember={}", activeMember);
 		lastInitAttempt = System.currentTimeMillis();
 
 		// If this is NOT the first time, adjust 'since' to start just after
@@ -193,20 +203,18 @@ public class HotBackupGroup
 				return;
 			try
 			{
-				Logger.instance().debug3("HotBackupGroup init new active member " + ds);
+				log.trace("HotBackupGroup init new active member {}", ds);
 				ds.setRoutingSpecThread(this.routingSpecThread);
 				ds.init(props, since, until, networkLists);
 				if (activeMember != null)
 					activeMember.close();
-			
+
 				activeMember = ds;
 				return;
 			}
-			catch(DataSourceException e)
+			catch(DataSourceException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING, 
-					"Could not initialize data source '" 
-					+ ds.dbDataSource.getName() + "': " + e);
+				log.atWarn().setCause(ex).log("Could not initialize data source '{}'.", ds.dbDataSource.getName());
 			}
 		}
 	}
@@ -234,19 +242,16 @@ public class HotBackupGroup
 		if (activeMember == null && now - lastInitAttempt >= initPeriod)
 		{
 			// No active member. Periodically attempt to get one.
-			Logger.instance().log(Logger.E_DEBUG1, 
-				"Group '" + dbDataSource.getName() + 
-				"' Attempting to find a group member.");
+			log.debug("Group '{}' Attempting to find a group member.", dbDataSource.getName());
 
 			findActiveMember();
 
 			// If no success, pause a couple seconds.
 			if (activeMember == null)
 			{
-				Logger.instance().log(Logger.E_FAILURE, 
-					"No data sources in group '" + dbDataSource.getName()
-					+ "' are available now. Will retry later.");
-				
+				log.error("No data sources in group '{}' are available now. Will retry later.",
+						  dbDataSource.getName());
+
 				// Failsafe code: If ALL deligates are in error, don't
 				// impose the timeout period.
 				for(Iterator it = delegates.iterator(); it.hasNext(); )
@@ -264,9 +269,7 @@ public class HotBackupGroup
 		      || activeMember != (DataSourceExec)delegates.elementAt(0)
 		         && now - lastInitAttempt >= recheckPeriod)
 		{
-			Logger.instance().log(Logger.E_DEBUG1, 
-				"Group '" + dbDataSource.getName() + 
-				"' Rechecking higher-priority group members.");
+			log.debug("Group '{}' Rechecking higher-priority group members.", dbDataSource.getName());
 
 			// If activeMember is not the first in the list, recheck
 			// periodically to see if we can connect to the primary.
@@ -286,23 +289,22 @@ public class HotBackupGroup
 				lastTimeStamp = ret.getTimeStamp();
 				return ret;
 			}
-			catch(DataSourceEndException e)
+			catch(DataSourceEndException ex)
 			{
-				Logger.instance().log(Logger.E_INFORMATION, 
-					"DataSource '" + activeMember.getName()
-					+ "' End of Data Stream: " + e.getMessage());
+				log.atInfo().setCause(ex).log("DataSource '{}' End of Data Stream.", activeMember.getName());
 				close();
-				throw e;
+				throw ex;
 			}
 			catch(UnknownPlatformException upex)
 			{
 				throw upex;
 			}
-			catch(DataSourceException e)
+			catch(DataSourceException ex)
 			{
 				if (activeMember != null)
-					Logger.instance().log(Logger.E_WARNING, "DataSource '" + activeMember.getName()
-						+ "' failed: " + e);
+				{
+					log.atWarn().setCause(ex).log("Data Source '{}' failed.", activeMember.getName());
+				}
 				close();
 			}
 		}
@@ -326,7 +328,7 @@ public class HotBackupGroup
 	  is no DECODES database record).
 	  @param tf the flag
 	*/
-	public void setAllowNullPlatform(boolean tf) 
+	public void setAllowNullPlatform(boolean tf)
 	{
 		super.setAllowNullPlatform(tf);
 		for(Iterator it = delegates.iterator(); it.hasNext(); )
@@ -337,7 +339,7 @@ public class HotBackupGroup
 	}
 
 	/**
-	  Sets flag to allow daps status messages 
+	  Sets flag to allow daps status messages
 	  @param tf the flag
 	*/
 	public void setAllowDapsStatusMessages(boolean tf)
@@ -349,16 +351,16 @@ public class HotBackupGroup
 			ds.setAllowDapsStatusMessages(tf);
 		}
 	}
-		
+
 	/** Aborts the current get method, if one is in progress. */
 	public void abortGetRawMessage()
 	{
 		if (activeMember != null)
 		{
-			Logger.instance().debug1("Aborting active LRGS member.");
+			log.debug("Aborting active LRGS member.");
 			activeMember.abortGetRawMessage();
 		}
 		else
-			Logger.instance().debug1("No currently active data source member.");
+			log.debug("No currently active data source member.");
 	}
 }
