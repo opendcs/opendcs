@@ -1,92 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.4  2017/08/22 19:33:46  mmaloney
-*  Refactor
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2016/10/07 14:49:24  mmaloney
-*  Updates for Web Report for Gail Monds, LRD.
-*
-*  Revision 1.2  2014/10/02 14:31:05  mmaloney
-*  Encapsulated execClassName
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.9  2012/04/09 15:28:28  mmaloney
-*  Added EUMETSAT medium type.
-*
-*  Revision 1.8  2012/02/16 20:42:07  mmaloney
-*  Added support for SutronLoggerCsvPMParser
-*
-*  Revision 1.7  2011/11/29 16:05:14  mmaloney
-*  Added MetarPMParser
-*
-*  Revision 1.6  2011/09/27 01:23:08  mmaloney
-*  Enhancements to StreamDataSource for SHEF and NOS Decoding.
-*
-*  Revision 1.5  2010/06/15 16:06:48  mjmaloney
-*  Updates for Alberta Env
-*
-*  Revision 1.4  2008/11/20 18:49:18  mjmaloney
-*  merge from usgs mods
-*
-*  Revision 1.1  2008/11/15 01:03:12  mmaloney
-*  Moved from separate trees to common parent
-*
-*  Revision 1.12  2008/09/30 01:09:43  satin
-*  *** empty log message ***
-*
-*  Revision 1.11  2004/08/24 23:52:45  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.10  2003/12/12 17:55:33  mjmaloney
-*  Working implementation of DirectoryDataSource.
-*
-*  Revision 1.9  2003/12/07 20:36:48  mjmaloney
-*  First working implementation of EDL time stamping.
-*
-*  Revision 1.8  2003/06/17 00:34:00  mjmaloney
-*  StreamDataSource implemented.
-*  FileDataSource re-implemented as a subclass of StreamDataSource.
-*
-*  Revision 1.7  2002/12/08 20:21:01  mjmaloney
-*  Updates
-*
-*  Revision 1.6  2002/10/11 01:27:01  mjmaloney
-*  Added SocketStreamDataSource and NoaaportPMParser stuff.
-*
-*  Revision 1.5  2002/06/03 15:38:59  mjmaloney
-*  DR fixes.
-*
-*  Revision 1.4  2002/06/03 00:54:43  mjmaloney
-*  dev
-*
-*  Revision 1.3  2002/05/21 20:50:10  mjmaloney
-*  dev
-*
-*  Revision 1.2  2001/11/26 22:22:42  mike
-*  Call hard-coded GOES PM Parser from LrgsDataSource.
-*  Skip DAPS Status messages in LrgsDataSource.
-*
-*  Revision 1.1  2001/08/24 19:31:41  mike
-*  Moved PMParser stuff to datasource package.
-*  Added reference in RawMessage to performance measurements.
-*  Created FileDataSource.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
-
-import ilex.util.Logger;
 
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Properties;
 
-import decodes.datasource.RawMessage;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.DbEnum;
@@ -99,6 +34,7 @@ header. A subclass of this class exists for each of the known header types.
 */
 public abstract class PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static HashMap parsers = new HashMap();
 
 	/** default constructor */
@@ -111,20 +47,21 @@ public abstract class PMParser
 	  @return the PM Parser for the specified header type.
 	  @throws HeaderParseException if type unknown.
 	*/
+	// TODO: This should really just be a service provider (though the use of the db will certainly cause some other issues.)
 	public static PMParser getPMParser(String headerType)
 		throws HeaderParseException
 	{
-		/** 
+		/**
 		 * If we get here and the database and enum list is null, something is very wrong.
 		 * Be more drastic. Nothing downstream is likely to work anyways.
-		 * 
+		 *
 		 */
 		Objects.requireNonNull(Database.getDb(), "The database is not available and " +
 											     " we're parsing a header. Check configuration.");
 		Objects.requireNonNull(Database.getDb().enumList, "The database enum list is not available and " +
 														  " we're parsing a header. Check configuration.");
 		headerType = headerType.toLowerCase();
-		Logger.instance().debug3("Constructing PMParser for headerType='" + headerType + "'");
+		log.trace("Constructing PMParser for headerType='{}'.", headerType);
 
 		// First use enum to lookup headerType, retrieve class
 		// name. Then instantiate the class.
@@ -143,19 +80,19 @@ public abstract class PMParser
 				}
 				catch (Exception ex)
 				{
-					Logger.instance().warning("Cannot instantiate header parser "
-						+ "from class name '" + htev.getExecClassName() + "': " + ex);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Cannot instantiate header parser from class name '{}'.", htev.getExecClassName());
 				}
 			}
 		}
-		
+
 		if (headerType.startsWith("goes"))
 			headerType = Constants.medium_Goes;
 
 		if (headerType.equalsIgnoreCase(Constants.medium_Goes))
 		{
 			PMParser pmp = new GoesPMParser();
-//			parsers.put("goes", pmp);
 			return pmp;
 		}
 		else if (headerType.equalsIgnoreCase("iridium"))
@@ -221,7 +158,6 @@ public abstract class PMParser
 			ret.timezone = "MST";
 			ret.datacol = 4;
 			ret.delim = ",";
-//			ret.mediumType = Constants.medium_EDL;
 			ret.headerType = "tau";
 			ret.mediumType = "tau";
 			ret.setProperties(new Properties());
@@ -239,21 +175,20 @@ public abstract class PMParser
 			return (PMParser)obj;
 
 		// Finally, if failure, cannot parse the header.
-		throw new HeaderParseException("Unknown header type '"
-			+ headerType + "'");
+		throw new HeaderParseException("Unknown header type '" + headerType + "'");
 	}
 
 	/** @return a string describing this type of header, e.g. goes, vitel */
 	public abstract String getHeaderType();
 
-	/** 
+	/**
 	  Returns one of the valid mediumType's in Constants.java,
 	  used to determine how to handle the mediumID to make
 	  the platform association.
 	  @return the medium type constant.
 	*/
 	public abstract String getMediumType();
-	
+
 	/**
 	 * Some PMPs might use properties to affect behavior.
 	 * Default implementation of setProperties does nothing.
@@ -295,4 +230,3 @@ public abstract class PMParser
 		return true;
 	}
 }
-

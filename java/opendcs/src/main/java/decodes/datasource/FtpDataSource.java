@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.datasource;
 
 import org.apache.commons.net.ftp.FTP;
@@ -5,11 +20,12 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPFileFilter;
 import org.apache.commons.net.ftp.FTPSClient;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.apache.commons.net.ftp.FTPConnectionClosedException;
 
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -30,10 +46,9 @@ import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 import decodes.util.PropertySpec;
 
-public class FtpDataSource 
-	extends DataSourceExec
+public class FtpDataSource extends DataSourceExec
 {
-	
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	private String module = "FtpDataSource";
 	private PropertySpec[] ftpDsPropSpecs =
@@ -54,7 +69,7 @@ public class FtpDataSource
 			+ " saved locally."),
 		new PropertySpec("filenames", PropertySpec.STRING,
 			"Space-separated list of files to download from server"),
-		new PropertySpec("xferMode", 
+		new PropertySpec("xferMode",
 			PropertySpec.JAVA_ENUM + "decodes.datasource.FtpMode",
 			"FTP Data Source: FTP transfer mode"),
 		new PropertySpec("deleteFromServer", PropertySpec.BOOLEAN,
@@ -67,20 +82,19 @@ public class FtpDataSource
 			"Use with OneMessageFile=true if the downloaded filename is to be treated as a medium ID"
 			+ " in order to link this data with a platform."),
 		new PropertySpec("ftps", PropertySpec.BOOLEAN, "(default=false) Use Secure FTP."),
-		new PropertySpec("newerThan", PropertySpec.STRING, 
+		new PropertySpec("newerThan", PropertySpec.STRING,
 			"Either a Date/Time in the format [[[CC]YY] DDD] HH:MM[:SS], "
 			+ "or a string of the form 'now - N incr',"
 			+ " where N is an integer and incr is minutes, hours, or days."),
 
 	};
-	
+
 	private String host = null;
 	private int port = -1;
 	private String username = "anon";
 	private String password = null;
 	private String remoteDir = "";
 	private String filenames = "";
-	// String filename = null; Use protected 'filename' from FileDataSource base class.
 	private String localDir = null;
 	private FtpMode ftpMode = FtpMode.Binary;
 	private boolean deleteFromServer = false;
@@ -104,7 +118,7 @@ public class FtpDataSource
 	public FtpDataSource(DataSource source, Database db) {
 		super(source, db);
 	}
-	
+
 	public boolean setProperty(String name, String value)
 	{
 		if (name.equalsIgnoreCase("host"))
@@ -114,8 +128,7 @@ public class FtpDataSource
 			try { port = Integer.parseInt(value); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning("Non-numeric port '" + value
-					+ "' -- will use default of 21.");
+				log.atWarn().setCause(ex).log("Non-numeric port '{}' -- will use default of 21.", value);
 			}
 		}
 		else if (name.equalsIgnoreCase("username"))
@@ -140,8 +153,8 @@ public class FtpDataSource
 		else if (name.equalsIgnoreCase("newerThan"))
 			newerThan = value.trim();
 		return true;
-	}		
-	
+	}
+
 	/**
 	 * Base class returns an empty array for backward compatibility.
 	 */
@@ -156,16 +169,14 @@ public class FtpDataSource
 		for(; xidx < x.length; xidx++)
 			if (!x[xidx].getName().equalsIgnoreCase("filename"))
 				y[yidx++] = x[xidx];
-		
+
 		return PropertiesUtil.combineSpecs(y, ftpDsPropSpecs);
 	}
 
 	@Override
 	public void processDataSource() throws InvalidDatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG3, 
-			module + ".processDataSource '" + getName() 
-			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
+		log.trace("processDataSource '{}', args='{}'", getName(), dbDataSource.getDataSourceArg());
 	}
 
 	@Override
@@ -175,7 +186,7 @@ public class FtpDataSource
 		mySince = since;
 		myUntil = until;
 		myNetworkLists = networkLists;
-		
+
 		// Build a complete property set. Routing Spec props override DS props.
 		allProps = new Properties(dbDataSource.arguments);
 		for(Enumeration<?> it = routingSpecProps.propertyNames(); it.hasMoreElements();)
@@ -191,11 +202,11 @@ public class FtpDataSource
 			name = name.trim().toLowerCase();
 			setProperty(name, value);
 		}
-		
+
 		downloadFiles();
 		if (downloadedFiles.size() == 0)
 			throw new DataSourceException(module + " Failed to download any files.");
-		
+
 		openNextFile();
 	}
 
@@ -210,10 +221,10 @@ public class FtpDataSource
 			throw new DataSourceException("Missing required 'username' property.");
 		if (password == null || password.trim().length() == 0)
 			throw new DataSourceException("Missing required 'password' property.");
-		
+
 		// Next download the file using FTP client.
 		FTPClient ftpClient = ftps ? new FTPSClient() : new FTPClient();
-		Logger.instance().debug1("FTP client class is '" + ftpClient.getClass().getName() + "'");
+		log.debug("FTP client class is '{}'", ftpClient.getClass().getName());
 		String remote = remoteDir;
 		if (remote.length() > 0 && !remote.endsWith("/"))
 			remote += "/";
@@ -222,28 +233,26 @@ public class FtpDataSource
 		downloadedFileIndex = 0;
 		// split by whitespace* comma
 		String fns[] = filenames.split(" ");
-		Logger.instance().debug3(module + " there are " + fns.length + " filenames in the list:");
-		for(String fn : fns) Logger.instance().debug3(module + "   '" + fn + "'");
-		
-		Logger.instance().debug1(module + " Connecting to FTP Server " + host + ":" + port
-			+ " with username=" + username + ", using "
-			+ (ftpActiveMode ? "Active" : "Passive") + " mode.");
-			
+		if (log.isTraceEnabled())
+		{
+			log.trace("There are {} filenames in the list:", fns.length);
+			for(String fn: fns)
+			{
+				log.trace("    {}", fn);
+			}
+
+		}
+		log.debug("Connecting to FTP Server {}:{} with username={}, using {} mode",
+				  host, port, username, (ftpActiveMode ? "Active" : "Passive"));
+
 		try
 		{
 			if (port == -1) // no port specified, use default for either ftp or ftps
 				ftpClient.connect(host);
 			else // a custom port has been specified
 				ftpClient.connect(host, port);
-		
-// BCH ftps Server returns a 'malformed' reply.
-//			Logger.instance().debug3("Connected, checking reply code.");
-//			// It is recommended to check the reply code.
-//			int reply = ftpClient.getReplyCode();
-//			if (!FTPReply.isPositiveCompletion(reply))
-//				throw new IOException("Unsuccessful reply code from client: " + reply);
-			
-			Logger.instance().debug3("Logging in with username='" + username + "' and pw='" + password + "'");
+
+			log.trace("Logging in with username='{}' and pw=***", username);
 			ftpClient.login(username, password);
 			if (ftpActiveMode)
 				ftpClient.enterLocalActiveMode();
@@ -258,11 +267,11 @@ public class FtpDataSource
 			{
 				try { ftpClient.disconnect(); } catch(Exception x) {}
 			}
-			throw new DataSourceException(module + 
-				" Error connecting to FTP host '" + host 
-				+ "' port=" + port + ", remote='" + remote + "': " + ex);
+			throw new DataSourceException(module +
+				" Error connecting to FTP host '" + host
+				+ "' port=" + port + ", remote='" + remote + "'", ex);
 		}
-			
+
 		String local = localDir;
 		if (local == null || local.length() == 0)
 			local = "$DCSTOOL_USERDIR/tmp";
@@ -270,8 +279,8 @@ public class FtpDataSource
 		File localDirectory = new File(local);
 		if (!localDirectory.isDirectory())
 			localDirectory.mkdirs();
-		
-		if (fns == null || fns.length == 0 
+
+		if (fns == null || fns.length == 0
 		 || (fns.length == 1 && fns[0].trim().length() == 0)
 		 || (fns.length == 1 && fns[0].trim().equals("*")))
 		{
@@ -292,8 +301,7 @@ public class FtpDataSource
 							{
 								if (!f.getTimestamp().getTime().before(since))
 									return true;
-								Logger.instance().debug3(module + " Skipping '" + f.getName() + "' with time="
-									+ f.getTimestamp().getTime());
+								log.trace("Skipping '{}' with time={}", f.getName(), f.getTimestamp().getTime());
 								return false;
 							}
 						});
@@ -305,7 +313,7 @@ public class FtpDataSource
 					if (n == null || n.equals(".") || n.equals(".."))
 						continue;
 					fa.add(n);
-					Logger.instance().debug3(module + " Will process file '" + n + "'");
+					log.trace("Will process file '{}'", n);
 				}
 				fns = new String[fa.size()];
 				fns = fa.toArray(fns);
@@ -313,28 +321,25 @@ public class FtpDataSource
 			catch(IllegalArgumentException ex)
 			{
 				String msg = module + " Cannot parse newerThan time '"
-					+ newerThan + "': " + ex;
-				Logger.instance().failure(msg);
-				throw new DataSourceException(msg);
+					+ newerThan + "'";
+				throw new DataSourceException(msg, ex);
 			}
 			catch(IOException ex)
 			{
 				String msg = module + " Cannot list directory on server '"
-					+ remoteDir + "': " + ex;
-				Logger.instance().failure(msg);
-				throw new DataSourceException(msg);
+					+ remoteDir + "'";
+				throw new DataSourceException(msg, ex);
 			}
 		}
-			
+
 		for(String filename : fns)
 		{
 			filename = filename.trim(); // remove any whitespace before or after the comma.
 			String remoteName = remote + filename;
 			File localFile = new File(localDirectory, filename);
 			BufferedOutputStream bos = null;
-		
-			Logger.instance().debug1(module + " Downloading remote file '" + remoteName
-				+ "' to '" + localFile.getPath() + "'");
+
+			log.debug("Downloading remote file '{}' to '{}'.", remoteName, localFile.getPath());
 			try
 			{
 				bos = new BufferedOutputStream(
@@ -348,41 +353,37 @@ public class FtpDataSource
 						try
 						{
 							if (!ftpClient.deleteFile(remoteName))
-								Logger.instance().warning(module + " cannot delete '"
-									+ remoteName + "' on server.");
+							{
+								log.warn("Cannot delete '{}' on server.", remoteName);
+							}
 						}
 						catch(Exception ex) { /* ignore exceptions on delete */ }
 					}
 				}
 				else
-					Logger.instance().warning(module + " Download failed for "
-					+ "host=" + host + ", user=" + username
-					+ "remote=" + remoteName + ", local=" + localFile.getPath());
+					log.warn("Download failed for {} host={}, user={}, remote={}, local={}",
+							 host, username, remoteName, localFile.getPath());
 			}
 			catch(SocketException ex)
 			{
-				throw new DataSourceException(
-					"Connect failed to host '" + host + "' port=" + port + ": " + ex);
+				throw new DataSourceException("Connect failed to host '" + host + "' port=" + port, ex);
 			}
 			catch(FTPConnectionClosedException ex)
 			{
-				throw new DataSourceException(
-					"Connection closed prematurely to host '" + host 
-					+ "' port=" + port + ": " + ex);
-				
+				throw new DataSourceException("Connection closed prematurely to host '" + host + "' port=" + port, ex);
+
 			}
 			catch (IOException ex)
 			{
-				throw new DataSourceException(
-					"IOException in FTP transfer from host '" + host 
-					+ "' port=" + port + ", remote='" + remoteName + "': " + ex);
+				throw new DataSourceException("IOException in FTP transfer from host '" + host +
+											  "' port=" + port + ", remote='" + remoteName + "'", ex);
 			}
 			finally
 			{
 				try { if (bos != null) bos.close(); } catch(Exception ex) {}
 			}
 		}
-        try 
+        try
         {
             if (ftpClient.isConnected())
             {
@@ -392,11 +393,12 @@ public class FtpDataSource
         }
         catch (IOException ex)
         {
+			log.atWarn().setCause(ex).log("Unable to properly disconnect FTP session.");
             ex.printStackTrace();
         }
-        Logger.instance().info(module + " " + downloadedFiles.size() + " files downloaded.");
+        log.info("{} files downloaded.", downloadedFiles.size());
 	}
-	
+
 	/**
 	 * Opens the next file downloaded from FTP by constructing a FileDataSource delegate.
 	 * @throws DataSourceEndException exception if there are no more files
@@ -406,17 +408,17 @@ public class FtpDataSource
 		throws DataSourceException
 	{
 		currentFileDS = null;
-		
+
 		if (downloadedFileIndex >= downloadedFiles.size())
 			throw new DataSourceEndException(module + " All " + downloadedFileIndex
 				+ " files processed.");
-		
+
 		currentFile = downloadedFiles.get(downloadedFileIndex++);
 		currentFileDS = new FileDataSource(this.dbDataSource,this.db);
 		allProps.setProperty("filename", currentFile.getPath());
 		if (TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(allProps, "NameIsMediumId")))
 			allProps.setProperty("mediumid", currentFile.getName());
-		
+
 		currentFileDS.init(allProps, mySince, myUntil, myNetworkLists);
 	}
 
@@ -431,7 +433,7 @@ public class FtpDataSource
 	}
 
 	@Override
-	public RawMessage getRawMessage() 
+	public RawMessage getRawMessage()
 		throws DataSourceException
 	{
 		if (currentFileDS == null)
@@ -442,18 +444,15 @@ public class FtpDataSource
 		}
 		catch(DataSourceEndException ex)
 		{
-			Logger.instance().info(module + " End of file '" 
-				+ currentFile.getPath() + "'");
+			log.atInfo().setCause(ex).log("End of file '{}'.", currentFile.getPath());
 			openNextFile();
 			return getRawMessage(); // recursive call with newly opened file.
 		}
 		catch(DataSourceException ex)
 		{
-			Logger.instance().warning(module + " Error processing file '" 
-				+ currentFile.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Error processing file '{}'.", currentFile.getPath());
 			openNextFile();
 			return getRawMessage(); // recursive call with newly opened file.
 		}
 	}
-
 }
