@@ -194,6 +194,7 @@ public class TsidAssignTab extends JPanel
 		{
 			final String msg = "DbIo error reading screening info.";
 			log.atError().setCause(ex).log(msg);
+			frame.showError(msg + ": " + ex);
 		}
 		finally
 		{

@@ -892,7 +892,7 @@ public class ScreeningDAO extends DaoBase implements ScreeningDAI
         }
         catch (SQLException ex)
         {
-            throw new DbIoException(module + ".renameScreening(" + screeningId + ", " + desc, ex);
+            throw new DbIoException(module + ".updateScreeningDescription(" + screeningId + ", " + desc, ex);
         }
     }
 }

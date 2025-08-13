@@ -141,7 +141,7 @@ public class ScreeningCriteria
 		// MJM 20121002 Leave protected values completely unchanged. Don't even validate.
 		if (inputIsOutput && (tv.getFlags() & CwmsFlags.PROTECTED) != 0)
 		{
-			log.debug("Skipping PROTECTED value at {}", alg.debugSdf.format(dataTime));
+			log.debug("Skipping PROTECTED value at {}", dataTime);
 			return;
 		}
 		
@@ -231,7 +231,7 @@ public class ScreeningCriteria
 		if (screening == null || screening.isRangeActive())
 			for(AbsCheck chk : absChecks)
 			{
-				alg.debug1(chk.toString());
+				log.debug(chk.toString());
 				if (compare(value, chk.getLow()) < 0 || compare(value,chk.getHigh()) > 0)
 				{
 					setValidity(chk.getFlag(), CwmsFlags.TEST_ABSOLUTE_VALUE);
@@ -247,7 +247,7 @@ public class ScreeningCriteria
 		nextConstCheck:
 			for(ConstCheck chk : constChecks)
 			{
-				alg.debug1(chk.toString());
+				log.debug(chk.toString());
 				
 				// Flag if value has not changed more than tolerance
 				// over specified duration.

@@ -304,9 +304,9 @@ public class ScreeningIdListTab extends JPanel
 		}
 		catch (DbIoException ex)
 		{
-			String msg = "Error deleting screening '" + scr.getScreeningName();// + 
+			String msg = "Error deleting screening '" + scr.getScreeningName() + "'";
 			log.atError().setCause(ex).log(msg);
-			frame.showError(msg + "': " + ex);
+			frame.showError(msg + ": " + ex);
 		}
 	}
 

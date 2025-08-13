@@ -541,9 +541,9 @@ public class ScreeningEditTab extends JPanel
 				}
 				catch(Exception ex)
 				{
-					final String msg = "Error writing screening '" + screening.getScreeningName();
+					final String msg = "Error writing screening '" + screening.getScreeningName() + "'";
 					log.atError().setCause(ex).log(msg);
-					frame.showError(msg + "': " + ex);
+					frame.showError(msg + ": " + ex);
 				}
 				return null;
 			}
