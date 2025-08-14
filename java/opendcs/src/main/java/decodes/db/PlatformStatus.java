@@ -1,11 +1,28 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.db;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.PlatformStatusDAI;
 import decodes.sql.DbKey;
@@ -15,9 +32,9 @@ import decodes.tsdb.DbIoException;
  * Bean class for PLATFORM_STATUS record in the DECODES database
  * @author Mike Maloney, Cove Software, LLC
  */
-public class PlatformStatus
-	extends IdDatabaseObject
+public class PlatformStatus extends IdDatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** One status rec per platform, so platformId serves as primary key here. */
 	private DbKey platformId = Constants.undefinedId;
 	
@@ -165,27 +182,19 @@ public class PlatformStatus
 	{
 		if (getDatabase() != null)
 		{
-			PlatformStatusDAI platformStatusDAO = getDatabase().getDbIo().makePlatformStatusDAO();
-			if (platformStatusDAO == null)
+			try (PlatformStatusDAI platformStatusDAO = getDatabase().getDbIo().makePlatformStatusDAO();)
 			{
-				Logger.instance().debug1("Cannot write PlatformStatus -- not supported in this database.");
-				return;
-			}
-				
-			try
-			{
+				if (platformStatusDAO == null)
+				{
+					log.debug("Cannot write PlatformStatus -- not supported in this database.");
+					return;
+				}
 				platformStatusDAO.writePlatformStatus(this);
 			}
 			catch (DbIoException ex)
 			{
-				String msg = "Cannot write " + getObjectType() + " platformId=" + getKey()
-					+ ": " + ex;
-				Logger.instance().warning(msg);
-				throw new DatabaseException(msg);
-			}
-			finally
-			{
-				platformStatusDAO.close();
+				String msg = "Cannot write " + getObjectType() + " platformId=" + getKey();
+				throw new DatabaseException(msg, ex);
 			}
 		}
 	}

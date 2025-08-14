@@ -1,12 +1,25 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.db;
 
-import ilex.util.Logger;
-
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
@@ -21,6 +34,7 @@ import decodes.tsdb.CompAppInfo;
 
 public class Database extends DatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static Database _theDb = null;  // Static 'current' instance
 
 	// Collection classes that represent this database:
@@ -32,8 +46,6 @@ public class Database extends DatabaseObject
 	public EnumList			  enumList;
 
 	public NetworkListList	   networkListList;
-
-//	public PMConfigList		  pMConfigList;
 
 	public PlatformList		  platformList;
 
@@ -54,11 +66,11 @@ public class Database extends DatabaseObject
 	public DataSourceList		dataSourceList;
 
 	public ArrayList<CompAppInfo> loadingAppList = new ArrayList<CompAppInfo>();
-	
+
 	public ArrayList<ScheduleEntry> schedEntryList = new ArrayList<ScheduleEntry>();
-	
+
 	public ArrayList<PlatformStatus> platformStatusList = new ArrayList<PlatformStatus>();
-	
+
 	/** The interface for reading and writing this database. */
 
 	private DatabaseIO dbio;
@@ -91,7 +103,7 @@ public class Database extends DatabaseObject
 		engineeringUnitList.setDatabase(this);
 		enumList = new EnumList();
 		enumList.setDatabase(this);
-		
+
 		networkListList = new NetworkListList();
 		networkListList.setDatabase(this);
 		platformList = new PlatformList();
@@ -160,7 +172,7 @@ public class Database extends DatabaseObject
 
 	@Override
 	public void prepareForExec() {}
-	
+
 	@Override
 	public boolean isPrepared() { return false;}
 
@@ -224,7 +236,7 @@ public class Database extends DatabaseObject
 		}
 		platformList.write();
 	}
-	
+
 	/**
 	 * Reads an enumeration from the DB if necessary and adds it to the cache.
 	 * @param enumName Name of enumeration
@@ -237,7 +249,7 @@ public class Database extends DatabaseObject
 		DbEnum ret = enumList.getEnum(enumName);
 		if (ret != null || enumList.haveReadAllEnums())
 			return ret;
-		
+
 		try
 		{
 			if (!(dbio instanceof SqlDatabaseIO))
@@ -253,14 +265,11 @@ public class Database extends DatabaseObject
 		}
 		catch(DatabaseException ex)
 		{
-			String msg = "Cannot read enum: " + enumName + ": " + ex;
-			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Cannot read enum: '{}'.", enumName);
 			return null;
 		}
 	}
-	
+
 	public PresentationGroupList getPresentationGroupList()
 	{
 		if (!presentationGroupList.wasRead())
@@ -268,10 +277,7 @@ public class Database extends DatabaseObject
 			try { presentationGroupList.read(); }
 			catch(DatabaseException ex)
 			{
-				String msg = "Cannot read presentation group list: " + ex;
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
-				Logger.instance().failure(msg);
+				log.atError().setCause(ex).log("Cannot read presentation group list.");
 			}
 		}
 		return presentationGroupList;

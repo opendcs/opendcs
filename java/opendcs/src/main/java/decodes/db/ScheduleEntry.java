@@ -1,11 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.db;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.util.Date;
 
-import opendcs.dai.LoadingAppDAI;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.ScheduleEntryDAI;
 
 import decodes.sql.DbKey;
@@ -13,50 +29,51 @@ import decodes.tsdb.DbIoException;
 
 /**
  * A schedule entry executes a routing spec on a specified schedule.
- * 
+ *
  * @author mmaloney Mike Maloney, Cove Software, LLC.
  */
 public class ScheduleEntry extends IdDatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Unique name for this schedule entry */
 	private String name = null;
-	
+
 	/** Loading app that is assigned to execute this schedule entry */
 	private DbKey loadingAppId = Constants.undefinedId;
-	
+
 	/** Routing spec to execute */
 	private DbKey routingSpecId = Constants.undefinedId;
 
-	/** 
+	/**
 	 * Start executing this schedule entry at this time.
 	 * Null means run continuously.
 	 * Non-null means either one-time (if runInterval==null) or periodic.
 	 */
 	private Date startTime = null;
-	
+
 	/** Used in adding interval to start time */
 	private String timezone = null;
-	
-	/** 
+
+	/**
 	 * Parsable interval at which to run this entry. Null means run once only
 	 * if startTime != null. OR continuously if startTime == null.
 	 */
 	private String runInterval = null;
-	
+
 	/** Only execute when enabled */
 	private boolean enabled = true;
-	
+
 	/** Time that this entry was last modified in the database */
 	private Date lastModified = null;
-	
+
 	/** When read from XML, this is the name of the loading app */
 	private String loadingAppName = null;
-	
+
 	/** When read from XML, this is the routing spec name */
 	private String routingSpecName = null;
-	
+
 	private DbKey lastScheduleEntryStatusId = DbKey.NullKey;
-	
+
 	/**
 	 * Constructor for SQL where the ID is the key
 	 * @param id the key
@@ -65,7 +82,7 @@ public class ScheduleEntry extends IdDatabaseObject
 	{
 		super(id);
 	}
-	
+
 	/**
 	 * Constructor for XML where name is the key.
 	 */
@@ -73,7 +90,7 @@ public class ScheduleEntry extends IdDatabaseObject
 	{
 		this.name = name;
 	}
-	
+
 	@Override
 	public String getObjectType()
 	{
@@ -115,26 +132,19 @@ public class ScheduleEntry extends IdDatabaseObject
 	{
 		if (getDatabase() != null)
 		{
-			ScheduleEntryDAI scheduleEntryDAO = getDatabase().getDbIo().makeScheduleEntryDAO();
-			if (scheduleEntryDAO == null)
+			try (ScheduleEntryDAI scheduleEntryDAO = getDatabase().getDbIo().makeScheduleEntryDAO();)
 			{
-				Logger.instance().debug1("Cannot write schedule entry. Not supported on this database.");
-				return;
-			}
-			try
-			{
+				if (scheduleEntryDAO == null)
+				{
+					log.debug("Cannot write schedule entry. Not supported on this database.");
+					return;
+				}
 				scheduleEntryDAO.writeScheduleEntry(this);
 			}
 			catch (DbIoException ex)
 			{
-				String msg = "Cannot write scheduleEntry '" + getName()
-					+ "': " + ex;
-				Logger.instance().warning(msg);
-				throw new DatabaseException(msg);
-			}
-			finally
-			{
-				scheduleEntryDAO.close();
+				String msg = "Cannot write scheduleEntry '" + getName() + "'";
+				throw new DatabaseException(msg, ex);
 			}
 		}
 	}
@@ -228,7 +238,7 @@ public class ScheduleEntry extends IdDatabaseObject
 	{
 		this.routingSpecName = routingSpecName;
 	}
-	
+
 	/**
 	 * Used by update/check methods.
 	 * @param rhs the schedule entry to copy from.
@@ -255,7 +265,7 @@ public class ScheduleEntry extends IdDatabaseObject
 	{
 		this.timezone = timezone;
 	}
-	
+
 	@Override
 	public boolean equals(Object rhs)
 	{
@@ -264,33 +274,27 @@ public class ScheduleEntry extends IdDatabaseObject
 		ScheduleEntry se = (ScheduleEntry)rhs;
 		if (this == se)
 			return true;
-		
+
 		if (!TextUtil.strEqual(name, se.name)
 		 || !getId().equals(se.getId())
 		 || !loadingAppId.equals(se.loadingAppId)
 		 || !routingSpecId.equals(se.routingSpecId))
 		{
-			Logger.instance().debug1("id, appId, or rsId is different this=" + toString() + "\n rhs="
-				+ se.toString());
 			return false;
 		}
-		
+
 		if (startTime != se.startTime)
 		{
 			if (startTime == null || se.startTime == null)
 			{
-				Logger.instance().debug1("one start time is null this=" + toString() + "\n rhs="
-					+ se.toString());
 				return false;
 			}
 			if (!startTime.equals(se.startTime))
 			{
-				Logger.instance().debug1("Start times are null this=" + toString() + "\n rhs="
-					+ se.toString());
 				return false;
 			}
 		}
-		
+
 		// Start times are the same. If null, it means continuous, which means interval and TZ are moot.
 		// So only compare these fields if there is a start time.
 		if (startTime != null)
@@ -298,8 +302,6 @@ public class ScheduleEntry extends IdDatabaseObject
 			if (!TextUtil.strEqual(timezone, se.timezone)
 			 || !TextUtil.strEqual(runInterval, se.runInterval))
 			{
-				Logger.instance().debug1("tz or runInt different this=" + toString() + "\n rhs="
-					+ rhs.toString());
 				return false;
 			}
 		}
@@ -308,14 +310,12 @@ public class ScheduleEntry extends IdDatabaseObject
 		 || !TextUtil.strEqual(loadingAppName, se.loadingAppName)
 		 || !TextUtil.strEqual(routingSpecName, se.routingSpecName))
 		{
-			Logger.instance().debug1("enab, appName or rsName different this=" + toString() + "\n rhs="
-				+ rhs.toString());
 			return false;
 		}
 
 		return true;
 	}
-	
+
 	public String toString()
 	{
 		return "ScheduleEntry(" + this.getId() + ")"

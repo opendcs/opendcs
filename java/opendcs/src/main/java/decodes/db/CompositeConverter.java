@@ -1,53 +1,28 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.2  2015/07/17 13:24:22  mmaloney
-*  When building composite converter, use equals() method when comparing EU abbrevs.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.8  2004/08/25 19:31:12  mjmaloney
-*  Added javadocs & deprecated unused code.
-*
-*  Revision 1.7  2003/12/07 20:36:49  mjmaloney
-*  First working implementation of EDL time stamping.
-*
-*  Revision 1.6  2001/09/27 18:18:55  mike
-*  Finished rounding rules & eu conversions.
-*
-*  Revision 1.5  2001/09/27 00:57:23  mike
-*  Work on presentation elements.
-*
-*  Revision 1.4  2001/08/12 17:36:54  mike
-*  Slight architecture change for unit converters. The UnitConverterDb objects
-*  are now full-fledged DatabaseObjects and not derived from UnitConverter.
-*  This necessitated changes to DB parsing code and prepareForExec code.
-*
-*  Revision 1.3  2001/06/30 13:37:21  mike
-*  dev
-*
-*  Revision 1.2  2001/03/23 20:22:53  mike
-*  Collection classes are no longer static monostate. Access them through
-*  the current database (Database.getDb().collectionName)
-*
-*  Revision 1.1  2001/01/13 14:59:33  mike
-*  Implemented EU Conversions
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.db;
 
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 import java.util.Stack;
 
-import ilex.util.Logger;
 
 import decodes.util.DecodesException;
 
@@ -60,6 +35,7 @@ inches -&gt; feet -&gt; meters -&gt; millimeters
 */
 public class CompositeConverter extends UnitConverter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private Vector conversions;
 
 	/**
@@ -126,20 +102,16 @@ public class CompositeConverter extends UnitConverter
 	  @return new CompositeConverter if successful, null if you can't get
 	  there from here.
 	*/
-	public static synchronized UnitConverter 
+	public static synchronized UnitConverter
 		build(EngineeringUnit from, EngineeringUnit to)
 	{
 		/* This method is only called from UnitConverterSet.get(), so
 		 * assume that no direct conversion exists. Try to get there step
 		 * by step.
 		 */
-//		UnitConverter ret = Database.getDb().unitConverterSet.get(from, to);
-//		if (ret != null)
-//			return ret;
 
-		Logger.instance().log(Logger.E_DEBUG3, 
-			"Attempting to build composite converter from " + from + " to "
-			+ to);
+
+		log.trace("Attempting to build composite converter from {}, to {}.", from, to);
 
 		resetSearchedFlags();
 		Stack<UnitConverter> callStack = new Stack<UnitConverter>();
@@ -160,7 +132,7 @@ public class CompositeConverter extends UnitConverter
 		return best;
 	}
 
-	private static void recursiveSearch(EngineeringUnit from, 
+	private static void recursiveSearch(EngineeringUnit from,
 		EngineeringUnit to, Stack<UnitConverter> callStack, Vector solutions)
 	{
 		from.cnvtSearched = true;
