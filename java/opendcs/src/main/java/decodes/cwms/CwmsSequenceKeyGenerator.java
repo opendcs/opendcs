@@ -1,52 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.5  2016/11/19 15:58:02  mmaloney
-*  Support wildcards
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.4  2016/09/29 18:54:35  mmaloney
-*  CWMS-8979 Allow Database Process Record to override decodes.properties and
-*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
-*  name of a process record. Properties assigned to the app will override the file(s).
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.3  2016/01/27 21:37:09  mmaloney
-*  schedule_entry_status and dacq_event have their own sequences.
-*
-*  Revision 1.2  2015/12/02 21:13:12  mmaloney
-*  Overload new reset() method to do nothing. CWMS sequence is never reset.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.5  2013/04/11 21:01:42  mmaloney
-*  dev
-*
-*  Revision 1.4  2013/04/04 19:24:56  mmaloney
-*  CWMS connection stuff for both DECODES and TSDB.
-*
-*  Revision 1.3  2013/03/27 18:42:29  mmaloney
-*  CWMS 2.2 Mods
-*
-*  Revision 1.2  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.1  2011/09/20 15:56:50  mmaloney
-*  created - gang to finish.
-*
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.cwms;
 
 import java.sql.Connection;
 import java.sql.Statement;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -54,7 +28,6 @@ import decodes.db.DatabaseException;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.KeyGenerator;
-import ilex.util.Logger;
 
 /**
 Implements the KeyGenerator interface by using SQL sequences using the
@@ -64,17 +37,16 @@ that it uses the oracle attribute syntax, rather than the postgres
 function call syntax.
 This implementation will work with Version 5 or Version 6 database.
 */
-public class CwmsSequenceKeyGenerator
-	implements KeyGenerator
+public class CwmsSequenceKeyGenerator implements KeyGenerator
 {
 	private int decodesDatabaseVersion = 0;
-	
+
 	/** Default constructor. */
 	public CwmsSequenceKeyGenerator(int decodesDatabaseVersion)
 	{
 		this.decodesDatabaseVersion = decodesDatabaseVersion;
 	}
-	
+
 	/**
 	  Generates a database-unique key suitable for adding a new entry
 	  to the table.
@@ -87,41 +59,36 @@ public class CwmsSequenceKeyGenerator
 		throws DatabaseException
 	{
 		String seqname = "cwms_20.cwms_seq";
-		
+
 		// DB 13 is DECODES 6.2 or later. Use table-specific sequences for
 		// high-volume records so we don't overrun CWMS_SEQ.
 		if (decodesDatabaseVersion >= DecodesDatabaseVersion.DECODES_DB_13
 		 && (tableName.equalsIgnoreCase("SCHEDULE_ENTRY_STATUS")
 			 || tableName.equalsIgnoreCase("DACQ_EVENT")))
 			seqname = tableName + "IdSeq";
-		
+
 		if (tableName.equalsIgnoreCase("CP_DEPENDS_NOTIFY"))
 			seqname = tableName + "IdSeq";
-		
+
 		String q = "SELECT " + seqname + ".nextval from dual";
 
-		try
+		try (Statement stmt = conn.createStatement();
+			 ResultSet rs = stmt.executeQuery(q);)
 		{
-			Statement stmt = conn.createStatement();
-	
-			ResultSet rs = stmt.executeQuery(q);
 			if (rs == null || !rs.next())
 			{
-				String err = "Cannot read sequence with '" + q 
+				String err = "Cannot read sequence with '" + q
 					+ "': " + (rs == null ? "Null Return" : "Empty Return");
-				Logger.instance().log(Logger.E_FAILURE, err);
 				throw new DatabaseException(err);
 			}
-	
+
 			DbKey ret = DbKey.createDbKey(rs, 1);
-			stmt.close();
 			return ret;
 		}
 		catch(SQLException ex)
 		{
-			String err = "SQL Error executing '" + q + "': " + ex;
-			Logger.instance().log(Logger.E_FAILURE, err);
-			throw new DatabaseException(err);
+			String err = "SQL Error executing '" + q + "'";
+			throw new DatabaseException(err, ex);
 		}
 	}
 
@@ -130,6 +97,5 @@ public class CwmsSequenceKeyGenerator
 	{
 		// Never reset the one-and-only cwms sequence
 	}
-	
-}
 
+}
