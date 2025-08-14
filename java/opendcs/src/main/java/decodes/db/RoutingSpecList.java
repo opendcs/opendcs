@@ -1,78 +1,28 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.2  2014/08/22 17:23:05  mmaloney
-*  6.1 Schema Mods and Initial DCP Monitor Implementation
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.3  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.2  2009/08/23 14:54:55  mjmaloney
-*  SFWMD Import
-*
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.15  2004/08/27 12:23:11  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.14  2004/02/05 21:50:20  mjmaloney
-*  final release prep for 6.0
-*
-*  Revision 1.13  2002/09/30 18:54:34  mjmaloney
-*  SQL dev.
-*
-*  Revision 1.12  2002/09/24 13:13:59  mjmaloney
-*  SQL dev.
-*
-*  Revision 1.11  2002/08/26 04:53:46  chris
-*  Major SQL Database I/O development.
-*
-*  Revision 1.10  2002/08/04 17:45:39  chris
-*  Updated javadoc comments.
-*
-*  Revision 1.9  2001/11/12 01:49:35  mike
-*  dev
-*
-*  Revision 1.8  2001/10/02 15:28:53  mike
-*  Implemented default DataPresentation
-*
-*  Revision 1.7  2001/07/24 02:17:10  mike
-*  dev
-*
-*  Revision 1.6  2001/04/21 20:19:23  mike
-*  Added read & write methods to all DatabaseObjects
-*
-*  Revision 1.5  2001/04/13 16:46:38  mike
-*  dev
-*
-*  Revision 1.4  2001/04/12 12:30:42  mike
-*  dev
-*
-*  Revision 1.3  2001/04/02 00:42:33  mike
-*  DatabaseObject is now an abstract base-class.
-*
-*  Revision 1.2  2001/03/23 20:09:25  mike
-*  Collection classes are no longer monostate static collections.
-*
-*  Revision 1.1  2001/03/20 03:43:24  mike
-*  Implement final parsers
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.db;
 
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 
 import decodes.sql.DbKey;
-
-import ilex.util.Logger;
 
 /**
  * RoutingSpecList is a collection of all known RoutingSpec objects.
@@ -80,6 +30,7 @@ import ilex.util.Logger;
  */
 public class RoutingSpecList extends DatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Internal vector of specs */
 	private Vector<RoutingSpec> routingSpecVec;
 
@@ -124,7 +75,7 @@ public class RoutingSpecList extends DatabaseObject
 			}
 		}
 		if (rs != null)
-			remove(rs);	
+			remove(rs);
 
 		routingSpecVec.add(spec);
 		rsIdList.add(spec);
@@ -146,18 +97,18 @@ public class RoutingSpecList extends DatabaseObject
 		}
 
 		// Not found in current list. Try to read it from database.
-		Logger.instance().log(Logger.E_DEBUG2,
-			"Attempting to read routing spec '" + name + "'");
+		log.trace("Attempting to read routing spec '{}'", name);
 		RoutingSpec rs = new RoutingSpec(name);
 		try { rs.read(); }
-		catch (DatabaseException e)
+		catch (DatabaseException ex)
 		{
 			if (!silentFind)
-				Logger.instance().log(Logger.E_FAILURE,
-					"Cannot read RoutingSpec '" + name + "': " + e);
+			{
+				log.atError().setCause(ex).log("Cannot read RoutingSpec '{}'", name);
+			}
 			return null;
 		}
-		Logger.instance().log(Logger.E_DEBUG3, "...success");
+		log.trace("...success");
 		add(rs);
 		return rs;
 	}
@@ -189,7 +140,7 @@ public class RoutingSpecList extends DatabaseObject
 	  Note - caller should not modify the returned vector directly.
 	  @return Vector containing RoutingSpecs
 	*/
-	public Vector<RoutingSpec> getList() 
+	public Vector<RoutingSpec> getList()
 	{
 		return routingSpecVec;
 	}
@@ -251,11 +202,10 @@ public class RoutingSpecList extends DatabaseObject
 			ob.write();
 		}
 	}
-	
+
 	public void clear()
 	{
 		routingSpecVec.clear();
 		rsIdList.clear();
 	}
 }
-

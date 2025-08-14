@@ -1,10 +1,19 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.db;
-
-import ilex.util.Logger;
-import ilex.util.TextUtil;
 
 import java.io.File;
 import java.util.Collection;
@@ -12,13 +21,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
 A NetworkList is a collection of transport media. The most common
 type is a list of GOES DCP addresses.
  */
 public class NetworkList extends IdDatabaseObject
 {
-	// _id is stored in the IdDatabaseObject superclass.
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	/** Unique name of this network list. */
 	public String name;
@@ -159,7 +171,7 @@ public class NetworkList extends IdDatabaseObject
 		return (NetworkListEntry) networkListEntries.get(
 			transportId.toUpperCase());
 	}
-	
+
 	/**
 	 * Remove the entry with the passed transport ID.
 	 * @param transportId the ID to remove
@@ -240,65 +252,51 @@ public class NetworkList extends IdDatabaseObject
 		//Feature added to allow different type of DCP Address (less than 8
 		//hex digits) other than GOES
 		//If transport medium type is one of these types:
-		
+
 		// MJM 5/30/2014 Why not allow it to create a legacy netlist regardless
 		// of type? There may be some use for this later as LRGS becomes more flexible.
 
-//		if (transportMediumType.equalsIgnoreCase(Constants.medium_Goes) ||
-//				transportMediumType.equalsIgnoreCase(Constants.medium_GoesRD ) ||
-//				transportMediumType.equalsIgnoreCase(Constants.medium_GoesST) ||
-//				transportMediumType.equalsIgnoreCase(Constants.medium_IRIDIUM) ||
-//				transportMediumType.equalsIgnoreCase(Constants.medium_EDL))
-//		{
-			// Translate new NetworkList into old LRGS netlist format:
-			legacyNetworkList = new lrgs.common.NetworkList();
 
-			String path = legacyNetlistDir != null ?
-				(legacyNetlistDir + File.separator) : "";
-				path = path + name + ".nl";
+		// Translate new NetworkList into old LRGS netlist format:
+		legacyNetworkList = new lrgs.common.NetworkList();
 
-			legacyNetworkList.file = new File(path);
+		String path = legacyNetlistDir != null ?
+			(legacyNetlistDir + File.separator) : "";
+			path = path + name + ".nl";
 
-			for (Iterator<NetworkListEntry> it = iterator(); it.hasNext(); )
+		legacyNetworkList.file = new File(path);
+
+		for (Iterator<NetworkListEntry> it = iterator(); it.hasNext(); )
+		{
+			NetworkListEntry nle = it.next();
+
+			lrgs.common.NetworkListItem nli =
+				new lrgs.common.NetworkListItem();
+			nli.name = nle.getPlatformName() == null ? "" : nle.getPlatformName();
+			nli.description =
+				nle.getDescription() == null ? "" : nle.getDescription();
+
+			// Make sure the description is only a single line.
+			int idx = nli.description.indexOf('\r');
+			if (idx == -1)
+				idx = nli.description.indexOf('\n');
+			if (idx != -1)
+				nli.description = nli.description.substring(0, idx);
+
+			nli.type = 'U';
+			try
 			{
-				NetworkListEntry nle = it.next();
-
-				lrgs.common.NetworkListItem nli =
-					new lrgs.common.NetworkListItem();
-				nli.name = nle.getPlatformName() == null ? "" : nle.getPlatformName();
-				nli.description =
-					nle.getDescription() == null ? "" : nle.getDescription();
-
-				// Make sure the description is only a single line.
-				int idx = nli.description.indexOf('\r');
-				if (idx == -1)
-					idx = nli.description.indexOf('\n');
-				if (idx != -1)
-					nli.description = nli.description.substring(0, idx);
-
-				nli.type = 'U';
-				try
-				{
-					nli.addr = new lrgs.common.DcpAddress(nle.transportId);
-					legacyNetworkList.add(nli);
-				}
-				catch(NumberFormatException nfe)
-				{
-					Logger.instance().log(Logger.E_WARNING,
-							"Network List '" + name
-							+ "' has improper DCP address '" + nle.transportId +
-					"' - must be 8 hex digits -- skipped.");
-				}
+				nli.addr = new lrgs.common.DcpAddress(nle.transportId);
+				legacyNetworkList.add(nli);
 			}
-//		}
-//		else
-//		{
-//			Logger.instance().log(Logger.E_WARNING,
-//					"NetworkList:prepareForExec - Network List '" + name
-//					+ "' did not create legacyNetworkList, transport medium type is "
-//					+ "not of a GOES type. Type is " + transportMediumType +
-//			" Ignore this message if you want to use a type other than Goes.");
-//		}
+			catch(NumberFormatException nfe)
+			{
+				log.atWarn()
+				   .setCause(nfe)
+				   .log("Network List '{}' has improper DCP address '{}' - must be 8 hex digits -- skipped.",
+				        name, nle.transportId);
+			}
+		}
 	}
 
 	/**
@@ -353,28 +351,17 @@ public class NetworkList extends IdDatabaseObject
 	{
 		return name;
 	}
-	
+
 	/**
 	 * Return true if this list contains a medium id matching the passed platform
 	 * @param p the platform
-	 * @return true if this list contains a medium id matching the passed platform 
+	 * @return true if this list contains a medium id matching the passed platform
 	 */
 	public boolean contains(Platform p)
 	{
 		return getEntry(p) != null;
-//		TransportMedium ptm = p.getTransportMedium(transportMediumType);
-//		if (ptm == null)
-//			return false;
-//		String pmi = ptm.getMediumId();
-//		for(Iterator<NetworkListEntry> nleit = iterator(); nleit.hasNext(); )
-//		{
-//			NetworkListEntry nle = nleit.next();
-//			if (pmi.equalsIgnoreCase(nle.getTransportId()))
-//				return true;
-//		}
-//		return false;
 	}
-	
+
 	/**
 	 * If this list contains an entry matching a transport medium in the passed
 	 * platform, return it. Otherwise return null.
@@ -387,7 +374,7 @@ public class NetworkList extends IdDatabaseObject
 		if (this.transportMediumType == null)
 			platTM = p.transportMedia.size() == 0 ? null : p.transportMedia.firstElement();
 		else
-		{		
+		{
 			boolean _isGoes = isGoes();
 			for(Iterator<TransportMedium> tmit = p.getTransportMedia(); tmit.hasNext(); )
 			{
@@ -402,10 +389,10 @@ public class NetworkList extends IdDatabaseObject
 		}
 		if (platTM == null)
 			return null;
-		
+
 		return getEntry(platTM.getMediumId());
 	}
-	
+
 	public boolean contains(TransportMedium tm)
 	{
 		if ((tm.isGoes() && this.isGoes()
@@ -421,11 +408,11 @@ public class NetworkList extends IdDatabaseObject
 		}
 		return false;
 	}
-	
+
 	public boolean isGoes()
 	{
-		return transportMediumType != null 
+		return transportMediumType != null
 			&& transportMediumType.toLowerCase().startsWith("goes");
 	}
-	
+
 }

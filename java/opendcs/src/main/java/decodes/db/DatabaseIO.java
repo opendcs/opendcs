@@ -1,9 +1,20 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.db;
 
-import java.sql.SQLException;
 import java.util.*;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -14,7 +25,6 @@ import opendcs.dai.ScheduleEntryDAI;
 
 import org.xml.sax.SAXException;
 
-import ilex.util.Counter;
 import decodes.sql.DbKey;
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.sql.SqlDatabaseIO;
@@ -41,22 +51,22 @@ public abstract class DatabaseIO
 		throws DatabaseException
 	{
 		ResourceFactory.instance().initDbResources();
-		
-		try 
+
+		try
 		{
 			if (type == DecodesSettings.DB_XML)
 				return new XmlDatabaseIO(location);
 		}
-		catch (SAXException se) 
+		catch (SAXException se)
 		{
 			throw new DatabaseException("Caught a SAXException while " +
-				"attempting to create an XmlDatabaseIO object");
+				"attempting to create an XmlDatabaseIO object", se);
 		}
-		catch (ParserConfigurationException pce) 
+		catch (ParserConfigurationException pce)
 		{
 			throw new DatabaseException("Caught a " +
 				"ParserConfigurationException while " +
-				"attempting to create an XmlDatabaseIO object");
+				"attempting to create an XmlDatabaseIO object", pce);
 		}
 
 		if (type == DecodesSettings.DB_SQL)
@@ -67,10 +77,10 @@ public abstract class DatabaseIO
 
 		if (type == DecodesSettings.DB_OPENTSDB)
 			return new opendcs.opentsdb.OpenTsdbSqlDbIO(location);
-		
+
 		if (type == DecodesSettings.DB_HDB)
 			return new decodes.hdb.HdbSqlDatabaseIO(location);
-		
+
 		// Add other database interface types (URL) here...
 
 		throw new DatabaseException(
@@ -308,8 +318,8 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
-	  @return Date object representing the last modify time for this 
-	  platform in the database, or null if the platform no longer exists 
+	  @return Date object representing the last modify time for this
+	  platform in the database, or null if the platform no longer exists
 	  in the database.
 	  @param p the platform
 	*/
@@ -392,8 +402,8 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
-	  @return Date object representing the last modify time for this 
-	  presentation group in the database, or null if the presentation 
+	  @return Date object representing the last modify time for this
+	  presentation group in the database, or null if the presentation
 	  group no longer exists in the database.
 	*/
 	public abstract Date getPresentationGroupLMT(PresentationGroup pg)
@@ -429,8 +439,8 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
-	  Returns Date object representing the last modify time for this 
-	  routing spec in the database, or null if the routing spec no 
+	  Returns Date object representing the last modify time for this
+	  routing spec in the database, or null if the routing spec no
 	  longer exists in the database.
 	*/
 	public abstract Date getRoutingSpecLMT(RoutingSpec rs)
@@ -470,7 +480,7 @@ public abstract class DatabaseIO
 	* Writes a NetworkList to the database.  This uses
 	* the object's name member (not its ID) to uniquely identify the
 	* record in the database.
-	  @param nl the NetworkList to write 
+	  @param nl the NetworkList to write
 	*/
 	public abstract void writeNetworkList( NetworkList nl )
 		throws DatabaseException;
@@ -484,15 +494,15 @@ public abstract class DatabaseIO
 		throws DatabaseException;
 
 	/**
-	  @return Date object representing the last modify time for this 
-	  network list in the database or null if the network list no longer 
+	  @return Date object representing the last modify time for this
+	  network list in the database or null if the network list no longer
 	  exists in the database.
 	*/
 	public abstract Date getNetworkListLMT(NetworkList nl)
 		throws DatabaseException;
-	
+
 	/**
-	 * Non-cached, stand-alone method to read the list of network list 
+	 * Non-cached, stand-alone method to read the list of network list
 	 * specs currently defined in the database.
 	 * @return ArrayList of currently defined network list specs.
 	 */
@@ -508,16 +518,16 @@ public abstract class DatabaseIO
 	public abstract boolean commitAfterSelectStatus();
 	public abstract void setCommitAfterSelect(boolean status);
 
-	public abstract PlatformConfig newPlatformConfig(PlatformConfig pc, 
+	public abstract PlatformConfig newPlatformConfig(PlatformConfig pc,
 		String model, String owner)
 		throws DatabaseException;
-	
+
 	/** @return platform ID if match is found, null if not */
 	public abstract DbKey lookupPlatformId(String mediumType, String mediumId,
 		Date timeStamp)
 		throws DatabaseException;
-	
-	/** 
+
+	/**
 	 * Find a platform ID by site name, and optionally, designator.
 	 * @return matching platform ID or null if no match found.
 	 */
@@ -527,7 +537,7 @@ public abstract class DatabaseIO
 
 	public abstract Site getSiteBySiteName(SiteName sn)
 		throws DatabaseException;
-	
+
 	/**
 	 * Factory method to make a DAO for loading applications
 	 * @return the DAO
@@ -536,7 +546,7 @@ public abstract class DatabaseIO
 
 	/** Factory method to make a DAO for schedule entries */
 	public abstract ScheduleEntryDAI makeScheduleEntryDAO();
-	
+
 	/** Factory method to make a DAO for platform statuses */
 	public abstract PlatformStatusDAI makePlatformStatusDAO();
 	/**

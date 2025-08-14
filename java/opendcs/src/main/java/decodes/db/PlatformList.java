@@ -1,16 +1,31 @@
 /*
-*  $Id: PlatformList.java,v 1.11 2020/02/12 15:11:45 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.db;
 
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Date;
 
 import decodes.sql.DbKey;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
@@ -20,17 +35,18 @@ import ilex.util.TextUtil;
  */
 public class PlatformList extends DatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** This stores all the known Platform objects. */
 	private Vector<Platform> platformVec = new Vector<Platform>();
-	
+
 	/** This is a hashmap by transport medium of current platforms (i.e. no expiration) */
 	private HashMap<String, Platform> currentPlatformMap = new HashMap<String, Platform>();
 
 	/** Cross reference of Platform objects to SQL IDs. */
 	private IdRecordList pidList = new IdRecordList("Platform");
-	
+
 	private boolean listWasRead = false;
-	
+
 	private long lastReadTime = 0L;
 
 	/** No-arg constructor.  */
@@ -69,7 +85,7 @@ public class PlatformList extends DatabaseObject
 			platformVec.add(plat);
 
 		pidList.add(plat);  // Adds or replaces in the ID list.
-		
+
 		if (plat.expiration == null)
 		{
 			for(Iterator<TransportMedium> tmit = plat.getTransportMedia(); tmit.hasNext(); )
@@ -79,11 +95,10 @@ public class PlatformList extends DatabaseObject
 			}
 		}
 	}
-	
+
 	private void refillCurrentPlatformMap()
 	{
 		currentPlatformMap.clear();
-//		int tms = 0;
 		for(Platform plat : platformVec)
 		{
 			if (plat.expiration == null)
@@ -93,20 +108,16 @@ public class PlatformList extends DatabaseObject
 					TransportMedium tm = tmit.next();
 					String key = tm.getTmKey();
 					currentPlatformMap.put(key, plat);
-//if (tm.getMediumId().equalsIgnoreCase("CE5E7ABA"))
-//	Logger.instance().info("Added tm map for " + key);
-//					tms++;
 				}
 			}
 		}
-//Logger.instance().debug3("" + tms + " TMs processed, map size=" + currentPlatformMap.size());
 	}
 
-	
-	/** 
-	  Return a Platform object, given a SQL ID. Returns null if no match. 
+
+	/**
+	  Return a Platform object, given a SQL ID. Returns null if no match.
 	  @param id the ID to search for
-	  @return a Platform object, given a SQL ID. Returns null if no match. 
+	  @return a Platform object, given a SQL ID. Returns null if no match.
 	*/
 	public Platform getById(DbKey id)
 	{
@@ -154,13 +165,13 @@ public class PlatformList extends DatabaseObject
 		Platform p = findPlatform(mediumType, mediumId, ts);
 		if (getDatabase() == null || getDatabase().getDbIo() == null)
 		{
-			Logger.instance().debug3("getPlatform: No db or dbio.");
+			log.trace("getPlatform: No db or dbio.");
 			return null;
 		}
 		boolean cs = getDatabase().getDbIo().commitAfterSelectStatus();
 		if (p == null)
 		{
-			Logger.instance().debug3("getPlatform: No platform matching '" + mediumType + ":" + mediumId);
+			log.trace("getPlatform: No platform matching '{}:{}'", mediumType, mediumId);
 			DatabaseIO dbio = getDatabase().getDbIo();
 			DbKey platId = getDatabase().getDbIo().lookupPlatformId(
 				mediumType, mediumId, ts);
@@ -169,7 +180,7 @@ public class PlatformList extends DatabaseObject
 			p = new Platform(platId);
 			add(p);
 		}
-		
+
 		if (!p.isComplete())
 		{
 			getDatabase().getDbIo().setCommitAfterSelect(false);
@@ -184,13 +195,11 @@ public class PlatformList extends DatabaseObject
 			if (dbLMT == null)
 			{
 				// Platform has been deleted from database!
-				String msg = "Platform '" + p.makeFileName() 
-					+ "' has been removed from the database.";
-				Logger.instance().log(Logger.E_WARNING, msg);
+				log.warn("Platform '{}' has been removed from the database.", p.makeFileName());
 				removePlatform(p);
 				return null;
 			}
-			
+
 			// MJM Note: p.lastModifyTime is set from the <LastModifyTime> element
 			// in an XML file.
 			// But in XML, dbLMT will be the actual file time stamp from the OS.
@@ -199,9 +208,7 @@ public class PlatformList extends DatabaseObject
 			long deltaMsec = p.lastModifyTime.getTime() - dbLMT.getTime();
 			if (deltaMsec < -2000)
 			{
-				String msg = "Platform '" + p.makeFileName() 
-					+ "' has been modified in the database -- will reload";
-				Logger.instance().log(Logger.E_DEBUG2, msg);
+				log.trace("Platform '{}' has been modified in the database -- will reload", p.makeFileName());
 				// Object has been modified in the database.
 				getDatabase().getDbIo().setCommitAfterSelect(false);
 				p.clear();	// Clear out old definition but keep the ID.
@@ -228,7 +235,7 @@ public class PlatformList extends DatabaseObject
 		String tmKey = TransportMedium.makeTmKey(mediumType, mediumId);
 		if (ts == null || System.currentTimeMillis() - ts.getTime() < 3600000L)
 			return currentPlatformMap.get(tmKey);
-			
+
 		// Find the platform with earliest exp time that's after ts.
 		// While iterating, find the current version.
 
@@ -301,9 +308,6 @@ public class PlatformList extends DatabaseObject
 			// Return immediately if current (exp == null)
 			if (siteMatch)
 			{
-//				if (bestSiteMatch == null)
-//					bestSiteMatch = p;
-
 				String pdes = p.getPlatformDesignator();
 				if (designator == null)
 				{
@@ -326,8 +330,8 @@ public class PlatformList extends DatabaseObject
 		}
 		return bestSiteMatch;
 	}
-	
-	public Platform readPlatformFromDb(SiteName sn, 
+
+	public Platform readPlatformFromDb(SiteName sn,
 		String designator, boolean useDesignator)
 	{
 		DatabaseIO dbio = myDatabase.getDbIo();
@@ -336,20 +340,19 @@ public class PlatformList extends DatabaseObject
 			DbKey pid = dbio.lookupCurrentPlatformId(sn, designator, useDesignator);
 			if (pid == null)
 				return null;
-			
+
 			Platform plat = new Platform(pid);
 			plat.read();
 			return plat;
 		}
 		catch(DatabaseException ex)
 		{
-			Logger.instance().warning("Cannot get platform for site name '"
-				+ sn.getDisplayName() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot get platform for site name '{}'", sn.getDisplayName());
 			return null;
 		}
 	}
 
-	
+
 	/*
 		Get next platform designator  using this template
 
@@ -368,7 +371,7 @@ public class PlatformList extends DatabaseObject
 		String key = deviceId+"-";
 		int maxseq = 0;
 		int seq = 0;
-		for(Iterator<Platform> it = platformVec.iterator(); it.hasNext(); ) 
+		for(Iterator<Platform> it = platformVec.iterator(); it.hasNext(); )
 		{
 			Platform p = it.next();
 			Site s = p.getSite();
@@ -380,13 +383,13 @@ public class PlatformList extends DatabaseObject
 							if ( pdes.substring(0,key.length() ).equals(key) ) {
 								String[] component = pdes.split("-");
 								seq = Integer.parseInt(component[1]);
-								if ( seq > maxseq ) 
+								if ( seq > maxseq )
 									maxseq = seq;
 							}
 						}
 					}
 				}
-			} 
+			}
 		}
 		maxseq++;
 		designator=key+maxseq;
@@ -427,7 +430,7 @@ public class PlatformList extends DatabaseObject
 	}
 
 	/**
-	 * Search for a platform using its 'filename', which is 
+	 * Search for a platform using its 'filename', which is
 	 * <p>
 	 *    sitename [ -designator ]
 	 * @param fn the filename
@@ -482,12 +485,12 @@ public class PlatformList extends DatabaseObject
 			try { read(); }
 			catch(DatabaseException ex)
 			{
-				Logger.instance().failure("Cannot read platform list: " + ex);
+				log.atError().setCause(ex).log("Cannot read platform list.");
 			}
 		}
 		return platformVec;
 	}
-	
+
 	/** @return the number of Platforms in the list.  */
 	public int size()
 	{
@@ -570,7 +573,6 @@ public class PlatformList extends DatabaseObject
 		myDatabase.getDbIo().readPlatformList(this);
 		listWasRead = true;
 		refillCurrentPlatformMap();
-//System.out.println("Read Platform List: " + size() + " entries.");
 	}
 
 	/**
@@ -580,7 +582,7 @@ public class PlatformList extends DatabaseObject
 		throws DatabaseException
 	{
 		myDatabase.getDbIo().writePlatformList(this);
-		
+
 	}
 
 	/**
@@ -603,4 +605,3 @@ public class PlatformList extends DatabaseObject
 		return lastReadTime;
 	}
 }
-
