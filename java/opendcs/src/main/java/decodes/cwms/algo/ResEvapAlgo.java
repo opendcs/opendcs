@@ -7,14 +7,15 @@
 * 
 *   http://www.apache.org/licenses/LICENSE-2.0
 * 
-* Unless required by applicable law or agreed to in writing, software 
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.cwms.algo;
 
+import decodes.cwms.CwmsLocationLevelDAO;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 import decodes.cwms.resevapcalc.*;
@@ -59,27 +60,27 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Input
-    public double windSpeed;       
+    public double windSpeed;
     @Input
-    public double airTemp;          
+    public double airTemp;
     @Input
-    public double relativeHumidity;    
+    public double relativeHumidity;
     @Input
-    public double atmPress;          
+    public double atmPress;
     @Input
-    public double percentLowCloud;   
+    public double percentLowCloud;
     @Input
-    public double elevLowCloud;       
+    public double elevLowCloud;
     @Input
-    public double percentMidCloud;  
+    public double percentMidCloud;
     @Input
-    public double elevMidCloud;       
+    public double elevMidCloud;
     @Input
-    public double percentHighCloud;    
+    public double percentHighCloud;
     @Input
-    public double elevHighCloud;    
+    public double elevHighCloud;
     @Input
-    public double elev;    
+    public double elev;
 
 
   
@@ -171,6 +172,9 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     @org.opendcs.annotations.PropertySpec(name = "rating", propertySpecType = PropertySpec.STRING,
             description = "Rating Curve specification for Elevation-Area curve, Example: FTPK.Elev;Area.Linear.Step")
     public String rating;
+    @org.opendcs.annotations.PropertySpec(name = "LocationLevel", propertySpecType = PropertySpec.STRING,
+            description = "Location Level ID for Secchi Depth, Example: FTPK.Depth.Const.0.Secchi Depth")
+    public String LocationLevel;
 
     // Allow javac to generate a no-args constructor.
 
@@ -303,6 +307,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         siteDAO = tsdb.makeSiteDAO();
         timeSeriesDAO = tsdb.makeTimeSeriesDAO();
         crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
+        CwmsLocationLevelDAO locLevDAO = null;
 
         //Get site Data from Database
         try
@@ -310,6 +315,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             conn = tsdb.getConnection();
             DbKey siteID = siteDAO.lookupSiteID(reservoirId);
             site = siteDAO.getSiteById(siteID);
+            locLevDAO = new CwmsLocationLevelDAO((CwmsTimeSeriesDb) tsdb, conn);
         }
         catch (DbIoException | NoSuchObjectException ex)
         {
@@ -328,6 +334,21 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         {
             throw new DbCompException("Failed to load rating table", ex);
         }
+
+        if (secchi == 0){
+            if (LocationLevel != null){
+                try
+                {
+                    secchi = locLevDAO.getLatestLocationLevelValue(LocationLevel, "ft", "in").getLevelValue();
+                }
+                catch (DbIoException ex)
+                {
+                    throw new DbCompException("Failed to load Location Level " + LocationLevel, ex);
+                }
+
+            }
+        }
+        locLevDAO.close();
 
         //initialized Water Temperature Profiles
         dailyWTP = new WaterTempProfiles(startDepth, depthIncrement);

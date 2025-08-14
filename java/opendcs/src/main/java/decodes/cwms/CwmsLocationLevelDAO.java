@@ -1,14 +1,12 @@
 package decodes.cwms;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import opendcs.dao.LocationLevelDAO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,20 +15,20 @@ import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
 import decodes.util.DecodesException;
 import ilex.var.NoConversionException;
 import opendcs.dao.CachableDbObject;
 import opendcs.dao.DaoBase;
-import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
 
 /**
  * Data Access Object for CWMS Location Level data.
  * This class provides methods to read and store location level data
  * directly from/to the CWMS database.
+ *
+ * Implements the LocationLevelDAO interface for database abstraction.
  */
-public class CwmsLocationLevelDAO extends DaoBase
+public class CwmsLocationLevelDAO extends DaoBase implements LocationLevelDAO
 {
     private final Logger log = LoggerFactory.getLogger(CwmsLocationLevelDAO.class);
     
@@ -128,6 +126,7 @@ public class CwmsLocationLevelDAO extends DaoBase
      * @return The latest LocationLevelValue or null if none found
      * @throws DbIoException on database error
      */
+    @Override
     public LocationLevelValue getLatestLocationLevelValue(String locationLevelId) 
         throws DbIoException
     {
@@ -142,6 +141,7 @@ public class CwmsLocationLevelDAO extends DaoBase
      * @return The latest LocationLevelValue or null if none found
      * @throws DbIoException on database error
      */
+    @Override
     public LocationLevelValue getLatestLocationLevelValue(String locationLevelId, 
         String targetUnits, String sourceUnitsIn)
         throws DbIoException
@@ -254,6 +254,7 @@ public class CwmsLocationLevelDAO extends DaoBase
     /**
      * Clear the location level spec cache
      */
+    @Override
     public void clearCache()
     {
         specCache.clear();
@@ -346,30 +347,4 @@ public class CwmsLocationLevelDAO extends DaoBase
         public void setAttributeParameterId(String attributeParameterId) { this.attributeParameterId = attributeParameterId; }
     }
     
-    /**
-     * Inner class representing a Location Level Value
-     */
-    public static class LocationLevelValue
-    {
-        private String locationLevelId;
-        private double levelValue;
-        private Date levelDate;
-        private int qualityCode;
-        private String units;
-        
-        public String getLocationLevelId() { return locationLevelId; }
-        public void setLocationLevelId(String locationLevelId) { this.locationLevelId = locationLevelId; }
-        
-        public double getLevelValue() { return levelValue; }
-        public void setLevelValue(double levelValue) { this.levelValue = levelValue; }
-        
-        public Date getLevelDate() { return levelDate; }
-        public void setLevelDate(Date levelDate) { this.levelDate = levelDate; }
-        
-        public int getQualityCode() { return qualityCode; }
-        public void setQualityCode(int qualityCode) { this.qualityCode = qualityCode; }
-        
-        public String getUnits() { return units; }
-        public void setUnits(String units) { this.units = units; }
-    }
 }
