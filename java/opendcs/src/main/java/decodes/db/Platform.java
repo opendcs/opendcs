@@ -807,7 +807,7 @@ public class Platform extends IdDatabaseObject implements HasProperties, Propert
 		// Check properties for equality.
 		if (this.properties.size() != p.properties.size())
 			return false;
-		
+
 		for(Enumeration it = this.properties.propertyNames();
 			it.hasMoreElements(); )
 		{
