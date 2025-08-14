@@ -1,29 +1,23 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.10  2016/03/24 19:02:49  mmaloney
- * Refactoring for Python.
- *
- * Revision 1.9  2016/03/09 16:44:59  mmaloney
- * Improved Debug.
- *
- * Revision 1.8  2016/02/29 22:14:48  mmaloney
- * Fixed ROC checks. It was not using the correct flags mask.
- *
- * Revision 1.7  2015/11/12 15:17:13  mmaloney
- * Added HEC headers.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.validation;
 
-import ilex.util.Logger;
 import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
-import ilex.var.Variable;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -31,6 +25,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.function.Function;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.cwms.CwmsFlags;
 import decodes.db.UnitConverter;
@@ -48,6 +45,7 @@ import decodes.tsdb.algo.AW_AlgorithmBase;
  */
 public class ScreeningCriteria
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "ScreeningCriteria";
 	
 	/** Start of season for this group of checks, or null if all-time */
@@ -143,7 +141,7 @@ public class ScreeningCriteria
 		// MJM 20121002 Leave protected values completely unchanged. Don't even validate.
 		if (inputIsOutput && (tv.getFlags() & CwmsFlags.PROTECTED) != 0)
 		{
-			alg.debug1("Skipping PROTECTED value at " + alg.debugSdf.format(dataTime));
+			log.debug("Skipping PROTECTED value at {}", dataTime);
 			return;
 		}
 		
@@ -151,16 +149,15 @@ public class ScreeningCriteria
 		try { v = tv.getDoubleValue(); }
 		catch(NoConversionException ex)
 		{
-			alg.warning("Crit-1: " + ex.toString());
+			log.atWarn().setCause(ex).log("Crit-1: Error converting value.");
 			return;
 		}
 		
 		output.setValue(v);
 		int flags = tv.getFlags();
 		
-		alg.debug3("Executing checks, value " + v + " at time " + 
-			alg.debugSdf.format(dataTime)
-			+ ", flags initially=0x" + Integer.toHexString(flags));
+		log.trace("Executing checks, value {} at time {}, flags initially=0x{}",
+				  v, dataTime, Integer.toHexString(flags));
 
 		flags |= doChecks(dc, input, dataTime, alg, v);
 		
@@ -221,18 +218,7 @@ public class ScreeningCriteria
 	public int doChecks(DataCollection dc, CTimeSeries input,
 		Date dataTime, AW_AlgorithmBase alg, double value)
 	{
-//		TimedVariable tv = input.findWithin(dataTime, alg.roundSec);
-//		if (tv == null)
-//			throw new NoSuchObjectException(module + ".doChecks - no value at time "
-//				+ alg.debugSdf.format(dataTime));
-//		double value = 0.0;
-//		try { value = tv.getDoubleValue(); }
-//		catch(NoConversionException ex)
-//		{
-//			throw new NoSuchObjectException(module + ".doChecks - Value at time "
-//				+ alg.debugSdf.format(dataTime) + " is not a number: " + tv.toString());
-//		}
-		
+	
 		TimeSeriesIdentifier inputTsid = input.getTimeSeriesIdentifier();
 		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(inputTsid.getInterval());
 		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
@@ -245,14 +231,12 @@ public class ScreeningCriteria
 		if (screening == null || screening.isRangeActive())
 			for(AbsCheck chk : absChecks)
 			{
-				alg.debug1(chk.toString());
+				log.debug(chk.toString());
 				if (compare(value, chk.getLow()) < 0 || compare(value,chk.getHigh()) > 0)
 				{
 					setValidity(chk.getFlag(), CwmsFlags.TEST_ABSOLUTE_VALUE);
-					alg.info(input.getTimeSeriesIdentifier().getUniqueString()
-						+ " value " + value + " at time " 
-						+ alg.debugSdf.format(dataTime)
-						+ " failed " + chk.toString());
+					log.info("{} value {} at time {} failed {}",
+							 input.getTimeSeriesIdentifier().getUniqueString(), value, dataTime, chk.toString());
 				}
 			}
 		
@@ -263,7 +247,7 @@ public class ScreeningCriteria
 		nextConstCheck:
 			for(ConstCheck chk : constChecks)
 			{
-				alg.debug1(chk.toString());
+				log.debug(chk.toString());
 				
 				// Flag if value has not changed more than tolerance
 				// over specified duration.
@@ -293,7 +277,7 @@ public class ScreeningCriteria
 				// until !d.after(dataTime)
 				if (input.size() < 1)
 					continue nextConstCheck;
-				alg.debug3("Iterating for CONST check, maxGap=" + maxGap);
+				log.trace("Iterating for CONST check, maxGap={}", maxGap);
 				int idx = 0;
 				Date lastTime = null, firstTime = null;
 				for(; idx < input.size() && input.sampleAt(idx).getTime().before(startTime); idx++);
@@ -314,7 +298,7 @@ public class ScreeningCriteria
 					
 					if (firstTime == null)
 						firstTime = x.getTime();
-	//alg.debug3("    CONST value=" + xv + " at time " + alg.debugSdf.format(x.getTime()));
+
 	
 					if (maxGap != null && lastTime != null)
 					{
@@ -322,8 +306,7 @@ public class ScreeningCriteria
 						aggCal.add(maxGap.getCalConstant(), maxGap.getCount());
 						if (aggCal.getTime().before(x.getTime()))
 						{
-							alg.debug1("Value skipped because of time gap: "
-								+ alg.debugSdf.format(lastTime) + " - " + alg.debugSdf.format(x.getTime()));
+							log.debug("Value skipped because of time gap: {} - {}", lastTime, x.getTime());
 							lastTime = x.getTime();
 							continue nextConstCheck;
 						}
@@ -338,7 +321,6 @@ public class ScreeningCriteria
 				
 				// If variance is less than the tolerance, flag the value.
 				double variance = maxvalue - minvalue;
-	//alg.debug3("  Iteration done, max=" + maxvalue + ", min=" + minvalue + ", variance=" + variance);
 				if (compare(variance, chk.getTolerance()) <= 0)
 				{
 					// Make sure that specified duration was exceeded.
@@ -347,19 +329,18 @@ public class ScreeningCriteria
 					if (!lastTime.before(aggCal.getTime()))
 					{
 						setValidity(chk.getFlag(), CwmsFlags.TEST_CONSTANT_VALUE);
-						alg.info(input.getTimeSeriesIdentifier().getUniqueString()
-							+ " value " + value + " at time " + alg.debugSdf.format(dataTime)
-							+ " failed " + chk.toString()
-							+ " max=" + maxvalue + ", min=" + minvalue);
+						log.info("{} value at time {} failed {} max={}, min ={}",
+								 input.getTimeSeriesIdentifier().getUniqueString(), value,
+								 dataTime, chk.toString(), maxvalue, minvalue);
 					}
-	//else alg.debug3("No flag set because duration was not seen.");
 				}
-	//else alg.debug3("No flag set because variance exceeded.");
 			}
 		}
 		
 		if (screening != null && !screening.isRocActive())
-		alg.debug1("Skipping ROC checks because ROC is not active.");
+		{
+			log.debug("Skipping ROC checks because ROC is not active.");
+		}
 		
 		if (screening == null || screening.isRocActive())
 		{
@@ -371,29 +352,27 @@ public class ScreeningCriteria
 			{
 				for(RocPerHourCheck chk : rocPerHourChecks)
 				{
-					alg.debug1(chk.toString());
+					log.debug(chk.toString());
 					try
 					{
 						double delta = value - prevtv.getDoubleValue();
 						if (compare(delta, chk.getFall()) < 0 || compare(delta,chk.getRise()) > 0)
 						{
 							setValidity(chk.getFlag(), CwmsFlags.TEST_RATE_OF_CHANGE);
-							alg.info(input.getTimeSeriesIdentifier().getUniqueString()
-								+ " value " + value + " at time " + alg.debugSdf.format(dataTime)
-								+ " failed " + chk.toString()
-								+ " prev=" + prevtv.getDoubleValue() 
-								+ ", prevFlags=0x" + Integer.toHexString(prevtv.getFlags()) + ", delta=" + delta);
+							log.info("{} value at time {} failed {} prev={}, prevFlags=0x{}, delta={}",
+									 input.getTimeSeriesIdentifier().getUniqueString(), value, dataTime, chk.toString(),
+									 prevtv.getDoubleValue(), Integer.toHexString(prevtv.getFlags()), delta);
 						}
 					}
 					catch(NoConversionException ex)
 					{
-						alg.warning("Crit-3: " + ex.toString());
+						log.atWarn().setCause(ex).log("Crit-3: Unable to convert double value.");
 						continue;
 					}
 				}
 			}
 			else if (rocPerHourChecks.size() > 0) 
-				alg.debug1("Not checking dataTime=" + dataTime + " because prev is missing or rejected.");
+				log.debug("Not checking dataTime={} because prev is missing or rejected.", dataTime);
 				
 		}
 		
@@ -410,13 +389,12 @@ public class ScreeningCriteria
 			
 			for(DurCheckPeriod chk : durCheckPeriods)
 			{
-				alg.debug1(chk.toString() + ", incremental=" + incremental);
+				log.debug("{}, incremental={}", chk.toString(), incremental);
 				
 				// Accumulate change over duration specified in the DATCHK file.
 				IntervalIncrement durinc = IntervalCodes.getIntervalCalIncr(chk.getDuration());
 				if (durinc.getCount() == 0)
 					continue;
-	//alg.debug3("   DUR period=" + tsinc);
 				
 				double prev = Double.NEGATIVE_INFINITY;
 				double tally = 0;
@@ -437,10 +415,9 @@ public class ScreeningCriteria
 					try { xv = x.getDoubleValue(); }
 					catch(NoConversionException ex)
 					{
-						alg.warning("Crit-4: " + ex.toString());
+						log.atWarn().setCause(ex).log("Crit-4: Unable to convert double value.");
 						continue;
-					}
-	//alg.debug3("   DUR sample[" + idx + "] time=" + alg.debugSdf.format(x.getTime()) + ", value=" + xv);
+					}	
 					if (!incremental)
 					{
 						// Must take deltas of cumulative values and then add them.
@@ -453,18 +430,14 @@ public class ScreeningCriteria
 					}
 					else // Already have incremental numbers, just add them.
 						tally += xv;
-	//alg.debug3("    Tally is now " + tally);
 				}
-	//alg.debug3("  Looping done, tally=" + tally + ", low=" + chk.getLow() + ", high=" + chk.getHigh());
 				if (compare(tally,chk.getLow()) < 0 || compare(tally,chk.getHigh()) > 0)
 				{
 					setValidity(chk.getFlag(), CwmsFlags.TEST_DURATION_VALUE);
-					alg.info(input.getTimeSeriesIdentifier().getUniqueString()
-						+ " value " + value + " at time " + alg.debugSdf.format(dataTime)
-						+ " failed " + chk.toString() + ", tally=" + tally
-						+ "limits=(" + chk.getLow() + "," + chk.getHigh());
-				}
-	//else alg.debug3("  Not out of limits.");
+					log.info("{} value {} at time {} failed {}, tally={}, limits=({},{})",
+							 input.getTimeSeriesIdentifier().getUniqueString(), value, dataTime,
+							 chk.toString(), chk.getLow(), chk.getHigh());
+				}	
 			}
 		}
 		
@@ -477,9 +450,8 @@ public class ScreeningCriteria
 		}
 		resultFlags |= testbits;
 		
-		alg.debug1("After all checks, value " + value + " at time " + 
-			alg.debugSdf.format(dataTime)
-			+ ", resultFlags = 0x" + Integer.toHexString(resultFlags));
+		log.debug("After all checks, value {} at time {}, resultFlags = 0x{}",
+				  value, dataTime, Integer.toHexString(resultFlags));
 		
 		return resultFlags;
 	}
@@ -494,11 +466,6 @@ public class ScreeningCriteria
 		long llim = (long)(limit*1000 + .5);
 		long diff = lval - llim;
 		return diff < 0 ? -1 : diff > 0 ? 1 : 0;
-//		double x = value - limit;
-//		int sign = (x < 0) ? -1 : 1;
-//		if (x < 0) x = -x;
-//		long diff = (long)(x*1000.0 + .5) * sign;
-//		return diff < 0 ? -1 : diff > 0 ? 1 : 0;
 	}
 	
 	private void setValidity(char testFlag, int testbits)
@@ -539,7 +506,7 @@ public class ScreeningCriteria
 		// ConstChecks will need the range from t-duration through t.
 		for(ConstCheck cc : constChecks)
 		{
-			alg.debug3("Adding dates for const check: " + cc.toString());
+			log.trace("Adding dates for const check: {}", cc.toString());
 			addDatesThruDuration(inTS, tsinc, 
 				IntervalCodes.getIntervalCalIncr(cc.getDuration()),
 				aggCal,needed, alg, inputIrregular);
@@ -548,7 +515,7 @@ public class ScreeningCriteria
 		// ROC checks need the previous hour for each trigger value
 		if (rocPerHourChecks.size() > 0)
 		{
-			alg.debug3("Adding dates for ROC checks");
+			log.trace("Adding dates for ROC checks");
 
 			// With the changes to addToNeeded, the following works fine for regular and irregular.
 			// Although, 1 hour deltas are an odd thing for irregular.
@@ -569,7 +536,7 @@ public class ScreeningCriteria
 		//DurCheckPeriod also needs the range
 		for(DurCheckPeriod cc : durCheckPeriods)
 		{
-			alg.debug3("Adding dates for dur check: " + cc.toString());
+			log.trace("Adding dates for dur check: {}", cc.toString());
 			addDatesThruDuration(inTS, tsinc, 
 				IntervalCodes.getIntervalCalIncr(cc.getDuration()),
 				aggCal,needed, alg, inputIrregular);
@@ -579,7 +546,7 @@ public class ScreeningCriteria
 		if (!inputIrregular)
 		{
 			// Don't do this if inputIrregular -- there should only be two dates and we need them both.
-			alg.debug3("Removing needed dates we already have. needed.size=" + needed.size());
+			log.trace("Removing needed dates we already have. needed.size={}", needed.size());
 			for(Iterator<Date> dit = needed.iterator(); dit.hasNext(); )
 			{
 				Date d = dit.next();
@@ -587,7 +554,7 @@ public class ScreeningCriteria
 					dit.remove();
 			}
 		}
-		alg.debug1("ScreeningCriteria.fillTimesNeeded done.");
+		log.debug("ScreeningCriteria.fillTimesNeeded done.");
 	}
 
 	public Calendar getSeasonStart()
@@ -616,8 +583,7 @@ public class ScreeningCriteria
 			{
 				addToNeeded(d, needed, inputIrregular);
 				addToNeeded(sampleTime, needed, inputIrregular);
-				alg.debug3("addDatesThruDuration (irregular input) first=" + needed.first()
-					+ ", last=" + needed.last());
+				log.trace("addDatesThruDuration (irregular input) first={}, last{}", needed.first(), needed.last());
 			}
 			else // Regular input, iterate forward by interval to get discrete times we need.
 			{
@@ -631,9 +597,8 @@ public class ScreeningCriteria
 					aggCal.add(tsinc.getCalConstant(), tsinc.getCount());
 					d = aggCal.getTime();
 				}
-				alg.debug3("addDatesThruDuration inTS.size="
-					+ inTS.size() + ", nProcessed=" + nProcessed
-					+ ", nAdded=" + nAdded);
+				log.trace("addDatesThruDuration inTS.size={}, nProcessed={}, nAdded={}",
+						  inTS.size(), nProcessed, nAdded);
 			}
 		}
 	}
@@ -773,8 +738,10 @@ public class ScreeningCriteria
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Screening '" + screening.getScreeningName()
-				+ "' " + what + ": cannot convert to " + paramUnits + ": " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Screening '{}' {}: cannot convert to{} ",
+			       screening.getScreeningName(), what, paramUnits);
 		}
 	
 		

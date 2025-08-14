@@ -1,43 +1,28 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.12  2019/05/10 18:35:26  mmaloney
- * dev
- *
- * Revision 1.11  2019/05/07 13:17:50  mmaloney
- * dev
- *
- * Revision 1.10  2019/04/22 21:26:34  mmaloney
- * dev
- *
- * Revision 1.9  2019/04/22 18:13:53  mmaloney
- * dev
- *
- * Revision 1.8  2019/04/22 17:42:12  mmaloney
- * dev
- *
- * Revision 1.7  2016/03/24 19:01:49  mmaloney
- * Added debug.
- *
- * Revision 1.6  2016/03/09 16:45:52  mmaloney
- * Null Ptr Checks
- *
- * Revision 1.5  2015/11/12 15:17:13  mmaloney
- * Added HEC headers.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms.validation;
 
-import ilex.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.function.Function;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dao.CachableDbObject;
 import decodes.db.EngineeringUnit;
@@ -48,12 +33,12 @@ import decodes.sql.DbKey;
 /**
  * Represents a named set of screening-criteria for CWMS.
  */
-public class Screening
-	implements CachableDbObject
+public class Screening implements CachableDbObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** surrogate database key */
 	private DbKey screeningCode = DbKey.NullKey;
-	
+
 	/**
 	 * Unique name of this screening set. For DATCHK screenings,
 	 * the unique 6-part CWMS time-series identifier is used.
@@ -61,24 +46,24 @@ public class Screening
 	 * multiple time-series.
 	 */
 	private String screeningName = null;
-	
+
 	/** Description */
 	private String screeningDesc = null;
-	
+
 	/** The units that the checks are done in */
 	private String checkUnitsAbbr = null;
-	
+
 	ArrayList<ScreeningCriteria> criteriaSeasons = new ArrayList<ScreeningCriteria>();
-	
+
 	/** When read from CWMS database, paramId will always be present */
 	private String paramId = null;
-	
+
 	/** In a CWMS database, this can be set to act as a filter on candidate time series. */
 	private String paramTypeId = "Inst";
-	
+
 	/** In a CWMS database, this can be set to act as a filter on candidate time series. */
 	private String durationId = "1Day";
-	
+
 	private boolean rangeActive = true;
 	private boolean rocActive = true;
 	private boolean constActive = true;
@@ -87,7 +72,7 @@ public class Screening
 	public Screening()
 	{
 	}
-	
+
 	/**
 	 * Constructor
 	 * @param screeningCode surrogate database key
@@ -164,7 +149,7 @@ public class Screening
 	{
 		return checkUnitsAbbr;
 	}
-	
+
 	/**
 	 * Adds a screening criteria and keeps the set in order.
 	 * @param screeningCriteria to be added
@@ -187,7 +172,7 @@ public class Screening
 		}
 		screeningCriteria.setScreening(this);
 	}
-	
+
 	/**
 	 * @return true if the time-of-year represented by c1 is before c2.
 	 */
@@ -247,14 +232,14 @@ public class Screening
 		if (criteriaSeasons.get(0).getSeasonStart() == null
 		 || criteriaSeasons.size() == 1)
 			return criteriaSeasons.get(0);
-		
+
 		// There are multiple seasons, sorted in ascending order
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeZone(tz);
 		cal.setTime(d);
 		int month = cal.get(Calendar.MONTH);
 		int day = cal.get(Calendar.DAY_OF_MONTH);
-		
+
 		ScreeningCriteria prevSeason = criteriaSeasons.get(criteriaSeasons.size()-1);
 		for(ScreeningCriteria sc : criteriaSeasons)
 		{
@@ -262,7 +247,7 @@ public class Screening
 			boolean isBefore =
 				month < scCal.get(Calendar.MONTH)
 				|| (month == scCal.get(Calendar.MONTH) && day < scCal.get(Calendar.DAY_OF_MONTH));
-				
+
 			if (isBefore)
 				return prevSeason;
 			prevSeason = sc;
@@ -270,8 +255,8 @@ public class Screening
 		// Fell through means all seasons are before this date, return last one.
 		return criteriaSeasons.get(criteriaSeasons.size()-1);
 	}
-	
-	
+
+
 
 	public void setScreeningCode(DbKey screeningCode)
 	{
@@ -374,7 +359,7 @@ public class Screening
 	{
 		this.checkUnitsAbbr = checkUnitsAbbr;
 	}
-	
+
 	public void setSeasonTimeZone(TimeZone tz)
 	{
 		for(ScreeningCriteria crit : criteriaSeasons)
@@ -410,16 +395,16 @@ public class Screening
 		if (uc == null)
 			throw new NoConversionException("Cannot derive a converter from '"
 				+ checkUnitsAbbr + "' to '" + paramUnitsAbbr + "'");
-		Logger.instance().debug1("Screening.convertUnits: converting screening units from " + checkUnitsAbbr
-			+ " to " + paramUnitsAbbr);
-		
+		log.debug("Screening.convertUnits: converting screening units from {} to {}.",
+				  checkUnitsAbbr, paramUnitsAbbr);
+
 		// Descend through all checks and convert the limits to the new units.
 		// then set this.checkUnitsAbbr
 		for(ScreeningCriteria crit : criteriaSeasons)
 			crit.convertUnits(paramUnitsAbbr, uc);
-		
+
 		checkUnitsAbbr = paramUnitsAbbr;
-		
+
 	}
 
 	public void setScreeningDesc(String screeningDesc)

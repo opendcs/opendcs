@@ -1,15 +1,22 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.validation.gui;
 
 import ilex.gui.DateCalendar;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -25,7 +32,6 @@ import java.util.Comparator;
 import java.util.TimeZone;
 
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -35,18 +41,21 @@ import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.IntervalDAI;
 import decodes.cwms.validation.AbsCheck;
 import decodes.cwms.validation.ConstCheck;
 import decodes.cwms.validation.DurCheckPeriod;
 import decodes.cwms.validation.RocPerHourCheck;
 import decodes.cwms.validation.ScreeningCriteria;
-import decodes.cwms.validation.dao.TsidScreeningAssignment;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 
 public class SeasonCheckPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JTextField rejHiValue = new JTextField(7);
 	private JTextField quesHiValue = new JTextField(7);
 	private JTextField quesLoValue = new JTextField(7);
@@ -98,10 +107,9 @@ public class SeasonCheckPanel extends JPanel
 		}
 		catch(Exception ex)
 		{
-			String msg = "Error reading durations: " + ex;
-			frame.showError(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			String msg = "Error reading durations";
+			log.atError().setCause(ex).log(msg);
+			frame.showError(msg + ": "  + ex);
 		}
 		finally
 		{
