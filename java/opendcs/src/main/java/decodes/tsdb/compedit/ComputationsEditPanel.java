@@ -2,18 +2,15 @@ package decodes.tsdb.compedit;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.TimeZone;
-import java.util.Properties;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.List;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import decodes.gui.PropertiesEditDialog;
+import decodes.gui.properties.PropertiesTableModel;
+import decodes.util.PropertySpec;
 import opendcs.dai.ComputationDAI;
 import ilex.gui.DateTimeCalendar;
 import ilex.util.AsciiUtil;
@@ -673,8 +670,9 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
         if (compParmTableModel == null)
         {
             compParmTableModel = new CompParmTableModel(this);
-            compParmTable = new SortingListTable(compParmTableModel,
-                compParmTableModel.columnWidths);
+            compParmTable = new JTable(compParmTableModel);
+            compParmTable.setAutoCreateRowSorter(true);
+            compParmTable.getRowSorter().toggleSortOrder(0);
             compParmTable.addMouseListener(
                 new MouseAdapter()
                 {
@@ -758,7 +756,32 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
             if (ok != JOptionPane.YES_OPTION)
                 return;
         }
+        PropertiesTableModel model = (PropertiesTableModel)propertiesPanel.propertiesTable.getModel();
+        for (String groupName : model.getRequirementGroups().keySet()) {
+            if (!model.isRequirementGroupSatisfied(groupName)) {
+                List<String> members = model.getRequirementGroups().get(groupName);
+                if(members.size() == 1)
+                {
+                    int r = JOptionPane.showConfirmDialog(this,
+                            CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.missingErr")
+                                    .replace("%s", members.get(0)));
+                    if (r == JOptionPane.CANCEL_OPTION || r == JOptionPane.NO_OPTION || r == JOptionPane.CLOSED_OPTION)
+                        return;
+                    else if (r == JOptionPane.YES_OPTION)
+                        break;
+                }
+                else{
+                    int r = JOptionPane.showConfirmDialog(this,
+                            CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.missingGroupErr")
+                                .replace("%s", groupName + ": " + String.join(", ", members)));
+                    if (r == JOptionPane.CANCEL_OPTION || r == JOptionPane.NO_OPTION || r == JOptionPane.CLOSED_OPTION)
+                        return;
+                    else if (r == JOptionPane.YES_OPTION)
+                        break;
+                }
 
+            }
+        }
         saveToObject(editedObject);
 
         ComputationDAI computationDAO = CAPEdit.instance().theDb.makeComputationDAO();
@@ -1094,7 +1117,8 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                     .getString("ComputationsEditPanel.DeleteError1"));
             return;
         }
-        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(r);
+        int modelRow = compParmTable.convertRowIndexToModel(r);
+        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(modelRow);
         int ok = JOptionPane.showConfirmDialog(this,
                 LoadResourceBundle.sprintf(CAPEdit.instance().compeditDescriptions
                 .getString("ComputationsEditPanel.DeleteError2")
@@ -1112,7 +1136,9 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                     .getString("ComputationsEditPanel.EditError"));
             return;
         }
-        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(r);
+        int modelRow = compParmTable.convertRowIndexToModel(r);
+
+        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(modelRow);
 
         CompParmDialog compParmDialog =
             new CompParmDialog(dcp.isInput(), siteSelectPanel);

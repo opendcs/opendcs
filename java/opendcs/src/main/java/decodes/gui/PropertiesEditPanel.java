@@ -1,5 +1,6 @@
 package decodes.gui;
 import java.awt.*;
+import java.util.List;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -25,7 +26,7 @@ public class PropertiesEditPanel extends JPanel
 {
     private static ResourceBundle genericLabels = null;
     private JScrollPane jScrollPane1 = new JScrollPane();
-    private JTable propertiesTable;
+    public JTable propertiesTable;
     private TitledBorder titledBorder1;
     private JButton editButton = new JButton();
     private JButton addButton = new JButton();
@@ -95,6 +96,16 @@ public class PropertiesEditPanel extends JPanel
                 String pn = ((String) model.getValueAt(modelRow, 0)).toUpperCase();
                 PropertySpec ps = propHash.get(pn);
                 cr.setToolTipText(ps != null ? ps.getDescription() : "");
+                if (ps != null && !model.isRequirementGroupSatisfied(ps.getRequirementGroup())) {
+                    if (value == null || value.toString().trim().isEmpty()) {
+                        Color c = new Color(255, 220, 220);
+                        cr.setOpaque(true);
+                        cr.setBackground(c);
+                    } else {
+                        cr.setOpaque(false);
+                        cr.setBackground(null);
+                    }
+                }
             }
             if (value instanceof Color)
             {

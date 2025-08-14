@@ -125,42 +125,42 @@ public abstract class AW_AlgorithmBase
 	private PropertySpec basePropertySpecs[] = 
 	{
 		new PropertySpec("OverwriteFlag", PropertySpec.BOOLEAN,
-				"True to write 'O' to the Overwrite flag field (currently only supported for hdb)"),
+				"True to write 'O' to the Overwrite flag field (currently only supported for hdb)", false),
 		new PropertySpec("interpDeltas", PropertySpec.BOOLEAN,
-			"True to allow interpolation when computing deltas"),
+			"True to allow interpolation when computing deltas", false),
 		new PropertySpec("maxInterpIntervals", PropertySpec.INT,
-			"Max number of intervals that can be interpolated for missing"),
+			"Max number of intervals that can be interpolated for missing", false),
 		new PropertySpec("ifQuestionable", PropertySpec.STRING,
-			"ProcessAsNormal, QuestionOutput, or SkipTimeslice"),
+			"ProcessAsNormal, QuestionOutput, or SkipTimeslice", false),
 		new PropertySpec("maxMissingValuesForFill", PropertySpec.INT,
-			"When filling regular interval missing input data, do not fill more than this many intervals."),
+			"When filling regular interval missing input data, do not fill more than this many intervals.", false),
 		new PropertySpec("maxMissingTimeForFill", PropertySpec.INT,
-			"When filling missing input data, fail if the missing gap is more than this many seconds."),
+			"When filling missing input data, fail if the missing gap is more than this many seconds.", false),
 		new PropertySpec("timedCompInterval",PropertySpec.STRING,
-			"Set for timed computations that are NOT triggered by inputs. e.g. '1 hour'"),
+			"Set for timed computations that are NOT triggered by inputs. e.g. '1 hour'", false),
 		new PropertySpec("timedCompOffset", PropertySpec.STRING,
 			"(default=no offset) an optional offset after the regular interval for timed computations."
-			+ " e.g. '13 minutes'"),
+			+ " e.g. '13 minutes'", false),
 		new PropertySpec("timedCompDataSince",PropertySpec.STRING,
-			"Control data window SINCE time for timed computations e.g. '150 minutes'."),
+			"Control data window SINCE time for timed computations e.g. '150 minutes'.", false),
 		new PropertySpec("timedCompDataUntil",PropertySpec.STRING,
-			"Control data window UNTIL time for timed computations e.g. '15 minutes'.")		
+			"Control data window UNTIL time for timed computations e.g. '15 minutes'.", false)
 	};
 	private PropertySpec aggAlgoPropertySpecs[] = 
 	{
 		new PropertySpec("aggUpperBoundClosed", PropertySpec.BOOLEAN,
-			"True to include end of period in aggregate"),
+			"True to include end of period in aggregate", false),
 		new PropertySpec("aggLowerBoundClosed", PropertySpec.BOOLEAN,
-			"True to include beginning of period in aggregate"),
+			"True to include beginning of period in aggregate", false),
 		new PropertySpec("aggregateTimeZone", PropertySpec.TIMEZONE,
-			"Java time zone for evaluating aggregate periods"),
+			"Java time zone for evaluating aggregate periods", false),
 		new PropertySpec("noAggregateFill", PropertySpec.BOOLEAN,
-			"Set to false to disable filling aggregate periods before algo execution"),
+			"Set to false to disable filling aggregate periods before algo execution", false),
 		new PropertySpec("aggPeriodInterval", PropertySpec.STRING, 
-			"Aggregate Period Interval"), 
+			"Aggregate Period Interval", false),
 		new PropertySpec("aggregateTimeOffset", PropertySpec.STRING, 
 			"e.g. '8 hours', '1 day'. If supplied it is added to the output time of an aggregate."
-			+ " An example would be to center an average within its period.")
+			+ " An example would be to center an average within its period.", false)
 	};
 	private PropertySpec allprops[] = null;
 	
@@ -1653,7 +1653,7 @@ ex.printStackTrace(System.err);
 									final org.opendcs.annotations.PropertySpec propSpec = p.second;
 									final String name = PropertySpec.getPropertyName(f, propSpec);
 									String specType = PropertySpec.getSpecTypeFromAnnotation(propSpec, f);
-									return new PropertySpec(name, specType, propSpec.description());
+									return new PropertySpec(name, specType, propSpec.description(), propSpec.required(), propSpec.requirementGroup());
 								})
 								.collect(Collectors.toList())
 								.toArray(new PropertySpec[0]);
@@ -1671,7 +1671,7 @@ ex.printStackTrace(System.err);
 			String propNames[] = getPropertyNames();
 			algoProps = new PropertySpec[propNames.length];
 			for(int i=0; i<propNames.length; i++)
-				algoProps[i] = new PropertySpec(propNames[i], PropertySpec.STRING, "");
+				algoProps[i] = new PropertySpec(propNames[i], PropertySpec.STRING, "", false);
 		}
 		allprops = new PropertySpec[basePropertySpecs.length +
 		    (_awAlgoType == AWAlgoType.TIME_SLICE ? 0 : aggAlgoPropertySpecs.length)

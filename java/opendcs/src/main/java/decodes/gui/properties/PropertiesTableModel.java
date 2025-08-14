@@ -4,9 +4,13 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.TreeSet;
 
 import javax.swing.table.AbstractTableModel;
@@ -39,6 +43,9 @@ public class PropertiesTableModel extends AbstractTableModel
      private boolean changed;
 
      private HashMap<String, PropertySpec> propHash = null;
+     
+     /** Map of requirement groups to their member properties */
+     private Map<String, List<String>> requirementGroups = new HashMap<>();
 
      /** Constructs a new table model for the passed Properties set. */
      public PropertiesTableModel(Properties properties)
@@ -51,6 +58,80 @@ public class PropertiesTableModel extends AbstractTableModel
 
      public HashMap<String,PropertySpec> getPropHash() {
         return propHash;
+     }
+     
+     /**
+      * Get all requirement groups including individually required properties
+      * @return Map of requirement group names to list of property names in that group
+      */
+     public Map<String, List<String>> getRequirementGroups() {
+         return new HashMap<>(requirementGroups);
+     }
+     
+     /**
+      * Check if a property is required (either individually or as part of a group)
+      * @param propertyName The name of the property to check
+      * @return true if the property is in any requirement group
+      */
+     public boolean isPropertyRequired(String propertyName) {
+         for (List<String> groupMembers : requirementGroups.values()) {
+             for (String member : groupMembers) {
+                 if (member.equalsIgnoreCase(propertyName)) {
+                     return true;
+                 }
+             }
+         }
+         return false;
+     }
+     
+     /**
+      * Get the requirement group for a specific property
+      * @param propertyName The name of the property
+      * @return The requirement group name, or null if not required
+      */
+     public String getPropertyRequirementGroup(String propertyName) {
+         for (Map.Entry<String, List<String>> entry : requirementGroups.entrySet()) {
+             for (String member : entry.getValue()) {
+                 if (member.equalsIgnoreCase(propertyName)) {
+                     return entry.getKey();
+                 }
+             }
+         }
+         return null;
+     }
+     
+     /**
+      * Check if a requirement group is satisfied (at least one property has a value)
+      * @param groupName The name of the requirement group
+      * @return true if at least one property in the group has a non-empty value
+      */
+     public boolean isRequirementGroupSatisfied(String groupName) {
+         List<String> groupMembers = requirementGroups.get(groupName);
+         if (groupMembers == null || groupMembers.isEmpty()) {
+             return true; // No such group or empty group is considered satisfied
+         }
+         
+         for (String propertyName : groupMembers) {
+             String value = getCurrentPropValue(propertyName);
+             if (value != null && !value.trim().isEmpty()) {
+                 return true; // At least one property in the group has a value
+             }
+         }
+         return false; // No properties in the group have values
+     }
+     
+     /**
+      * Get all unsatisfied requirement groups
+      * @return List of requirement group names that are not satisfied
+      */
+     public List<String> getUnsatisfiedRequirementGroups() {
+         List<String> unsatisfied = new ArrayList<>();
+         for (String groupName : requirementGroups.keySet()) {
+             if (!isRequirementGroupSatisfied(groupName)) {
+                 unsatisfied.add(groupName);
+             }
+         }
+         return unsatisfied;
      }
 
      /**
@@ -65,6 +146,32 @@ public class PropertiesTableModel extends AbstractTableModel
      public void setPropHash(HashMap<String, PropertySpec> propHash)
      {
          this.propHash = propHash;
+         
+         // Build requirement groups from property specs
+         requirementGroups.clear();
+         if (propHash != null)
+         {
+             for (PropertySpec spec : propHash.values())
+             {
+                 String reqGroup = spec.getRequirementGroup();
+                 if (reqGroup != null && !reqGroup.isEmpty())
+                 {
+                     List<String> groupMembers = requirementGroups.get(reqGroup);
+                     if (groupMembers == null)
+                     {
+                         groupMembers = new ArrayList<>();
+                         requirementGroups.put(reqGroup, groupMembers);
+                     }
+                     groupMembers.add(spec.getName());
+                 }
+             }
+         }
+         log.debug("Requirement groups: {} groups found", requirementGroups.size());
+         for (Map.Entry<String, List<String>> entry : requirementGroups.entrySet())
+         {
+             log.debug("  Group '{}': {}", entry.getKey(), entry.getValue());
+         }
+         
          for (String ucName : propHash.keySet())
          {
              boolean found = false;

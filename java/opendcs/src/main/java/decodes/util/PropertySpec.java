@@ -29,6 +29,16 @@ public class PropertySpec
 	/** A description of this property */
 	private String description = null;
 
+    /** true if this property is required, false if it is optional */
+    private boolean required = false;
+    
+    /** 
+     * The requirement group this property belongs to.
+     * Empty string means optional, "REQUIRED" means individually required,
+     * any other value means part of a mutual exclusion group.
+     */
+    private String requirementGroup = "";
+
 	/** type for a long integer property */
 	public static final String INT = "i";
 
@@ -65,13 +75,42 @@ public class PropertySpec
 	public static final String COLOR = "color";
 	
 	private boolean dynamic = false;
+
+    public PropertySpec(String name, String type, String description)
+    {
+        super();
+        this.name = name;
+        this.type = type;
+        this.description = description;
+        this.required = false;
+        this.requirementGroup = "";
+    }
 	
-	public PropertySpec(String name, String type, String description)
+	public PropertySpec(String name, String type, String description, boolean required)
 	{
 		super();
 		this.name = name;
 		this.type = type;
 		this.description = description;
+        this.required = required;
+        // If required is true, put it in its own unique group based on the property name
+        this.requirementGroup = required ? ("_required_" + name) : "";
+	}
+	
+	public PropertySpec(String name, String type, String description, boolean required, String requirementGroup)
+	{
+		super();
+		this.name = name;
+		this.type = type;
+		this.description = description;
+        if (requirementGroup != null && !requirementGroup.isEmpty()){
+            this.requirementGroup = requirementGroup;
+            this.required = true;
+        }
+        else{
+            this.requirementGroup = required ? ("_required_" + name) : "";
+            this.required = required;
+        }
 	}
 
 	public String getName()
@@ -103,6 +142,46 @@ public class PropertySpec
 	{
 		this.description = description;
 	}
+
+    public boolean required() { return required; }
+
+    public void setRequired(boolean required) 
+    { 
+        this.required = required;
+        // When setting required to true, create a unique group if not already in one
+        if (required && (requirementGroup == null || requirementGroup.isEmpty())) {
+            this.requirementGroup = "_required_" + name;
+        } else if (!required && requirementGroup != null && requirementGroup.startsWith("_required_")) {
+            // Clear auto-generated requirement group when setting required to false
+            this.requirementGroup = "";
+        }
+    }
+    
+    public String getRequirementGroup() { return requirementGroup; }
+    
+    public void setRequirementGroup(String requirementGroup) 
+    { 
+        this.requirementGroup = requirementGroup != null ? requirementGroup : "";
+        this.required = !this.requirementGroup.isEmpty();
+    }
+    
+    /**
+     * Check if this property is individually required (not part of a mutual exclusion group)
+     * @return true if this property is in its own unique requirement group
+     */
+    public boolean isIndividuallyRequired() 
+    {
+        return requirementGroup != null && requirementGroup.startsWith("_required_");
+    }
+    
+    /**
+     * Check if this property is part of a mutual exclusion requirement group
+     * @return true if this property is part of a named group (not individually required)
+     */
+    public boolean isPartOfRequirementGroup() 
+    {
+        return requirementGroup != null && !requirementGroup.isEmpty() && !requirementGroup.startsWith("_required_");
+    }
 	
 	public String toString()
 	{

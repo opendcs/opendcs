@@ -37,4 +37,20 @@ public @interface PropertySpec
     String value() default "";
     String propertySpecType() default "";
     String description() default "";
+    
+    /**
+     * Marks this property as required. 
+     * If true and no requirementGroup is specified, the property is placed in its own unique group.
+     * @return true if this property is required
+     */
+    boolean required() default false;
+    
+    /**
+     * Specifies the requirement group this property belongs to.
+     * Properties in the same group are mutually exclusive - only one is required.
+     * Empty string means the property is not part of any requirement group (optional).
+     *
+     * @return the requirement group name, or empty string if optional
+     */
+    String requirementGroup() default "";
 }
