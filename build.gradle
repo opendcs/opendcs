@@ -49,9 +49,10 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
 
     tasks.register("codeCoverageReport", JacocoReport) {
         subprojects { subproject -> 
-            subproject.plugins.withType(JacocoPlugin).configureEach {
-                subproject.tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).configureEach { testTask ->
+            subproject.plugins.withType(JacocoPlugin).each {
+                subproject.tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).each { testTask ->
                     if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
+                        println("Adding " + testTask.name)
                         sourceSets subproject.sourceSets.main
                         executionData(testTask)
                     }
@@ -77,11 +78,10 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
                     "**/pkg_resources/**"
                 ]
 
-//        afterEvaluate {
-            classDirectories.setFrom(files(classDirectories.files.collect {
-                fileTree(dir: it, exclude: excludes)
-            }))
-  //      }
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: excludes)
+        }))
+
     }
 
     subprojects {
