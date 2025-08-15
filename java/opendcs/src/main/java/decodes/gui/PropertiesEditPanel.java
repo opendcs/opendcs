@@ -1,5 +1,6 @@
 package decodes.gui;
 import java.awt.*;
+import java.util.List;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -13,6 +14,9 @@ import javax.swing.border.*;
 import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.gui.properties.PropertiesTableModel;
 import decodes.util.PropertySpec;
+import decodes.util.RequirementGroup;
+
+import org.opendcs.gui.GuiConstants;
 
 import java.awt.event.*;
 
@@ -25,7 +29,7 @@ public class PropertiesEditPanel extends JPanel
 {
     private static ResourceBundle genericLabels = null;
     private JScrollPane jScrollPane1 = new JScrollPane();
-    private JTable propertiesTable;
+    public JTable propertiesTable;
     private TitledBorder titledBorder1;
     private JButton editButton = new JButton();
     private JButton addButton = new JButton();
@@ -95,6 +99,30 @@ public class PropertiesEditPanel extends JPanel
                 String pn = ((String) model.getValueAt(modelRow, 0)).toUpperCase();
                 PropertySpec ps = propHash.get(pn);
                 cr.setToolTipText(ps != null ? ps.getDescription() : "");
+                // Check if this property is required and highlight if missing
+                if (ps != null && model.isPropertyRequired(pn)) {
+                    boolean hasValue = value != null && !value.toString().trim().isEmpty();
+                    List<RequirementGroup> groups = model.getPropertyRequirementGroups(pn);
+                    boolean anyGroupSatisfied = true;
+                    
+                    // Check if at least one of the property's requirement groups is satisfied
+                    for (RequirementGroup group : groups) {
+                        if (!model.isRequirementGroupSatisfied(group.getGroupName())) {
+                            anyGroupSatisfied = false;
+                            break;
+                        }
+                    }
+                    
+                    // Highlight empty required fields that are part of unsatisfied groups
+                    if (!hasValue && !anyGroupSatisfied) {
+                        Color c = GuiConstants.RED_MISSING_COLOR;
+                        cr.setOpaque(true);
+                        cr.setBackground(c);
+                    } else {
+                        cr.setOpaque(false);
+                        cr.setBackground(null);
+                    }
+                }
             }
             if (value instanceof Color)
             {
