@@ -1,37 +1,20 @@
 /*
-*  $Id$
-*  
-*  Open Source Software
-*  
-*  $Log$
-*  Revision 1.7  2016/10/07 14:49:25  mmaloney
-*  Updates for Web Report for Gail Monds, LRD.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  Revision 1.6  2015/02/06 18:27:09  mmaloney
-*  The HashMap key should be upper case so that search is case insensitive.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.5  2015/01/14 17:22:51  mmaloney
-*  Polling implementation
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.4  2015/01/06 16:09:32  mmaloney
-*  First cut of Polling Modules
-*
-*  Revision 1.3  2014/08/29 18:24:35  mmaloney
-*  6.1 Schema Mods
-*
-*  Revision 1.2  2014/08/22 17:23:05  mmaloney
-*  6.1 Schema Mods and Initial DCP Monitor Implementation
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.5  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.db;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
@@ -128,7 +111,7 @@ public class TransportMedium extends DatabaseObject
 	  Time zone used for decoding data from this transport medium.
 	*/
 	private String timeZone;
-	
+
 	private String loggerType = null;
 	private int baud = 0;
 	private int stopBits = 0;
@@ -217,8 +200,8 @@ public class TransportMedium extends DatabaseObject
 		return sb.toString();
 	}
 
-	/** 
-	  Set the DecodesScript for this TranportMedium.  
+	/**
+	  Set the DecodesScript for this TranportMedium.
 	  @param ds the DecodesScript
 	*/
 	public void setDecodesScript(DecodesScript ds)
@@ -229,13 +212,13 @@ public class TransportMedium extends DatabaseObject
 	/**
 	* @return the DecodesScript for this TranportMedium.
 	*/
-	public DecodesScript getDecodesScript() 
+	public DecodesScript getDecodesScript()
 	{
 		return decodesScript;
 	}
 
 	/** @return this TransportMedium's ID string.  */
-	public String getMediumId() 
+	public String getMediumId()
 	{
 		return mediumId;
 	}
@@ -260,13 +243,13 @@ public class TransportMedium extends DatabaseObject
 	/** @return this GOES transport medium's time adjustment. */
 	public int getTimeAdjustment() { return timeAdjustment; }
 
-	/** 
-	  Sets this GOES transport medium's time adjustment. 
+	/**
+	  Sets this GOES transport medium's time adjustment.
 	  @param ta the time adjustment
 	*/
 	public void setTimeAdjustment(int ta) { timeAdjustment = ta; }
 
-	/** 
+	/**
 	  Set this object's ID string.  Note that if the medium type
 	  is GOES-Random or GOES-Self-Timed [Question:  what about
 	  if the medium type is simply 'GOES'?] then this is converted
@@ -281,8 +264,8 @@ public class TransportMedium extends DatabaseObject
 		tmKey = makeTmKey(mediumType, mediumId);
 	}
 
-	/** 
-	  Sets the medium type 
+	/**
+	  Sets the medium type
 	  @param typ the type
 	*/
 	public void setMediumType(String typ)
@@ -291,28 +274,28 @@ public class TransportMedium extends DatabaseObject
 		if (mediumId != null)
 			setMediumId(mediumId);
 	}
-	
+
 	/** @return true if this is a GOES self-timed or random transport medium. */
 	public boolean isGoes()
 	{
-		return mediumType != null 
+		return mediumType != null
 			&& mediumType.toLowerCase().startsWith("goes");
 	}
 
-	/** 
+	/**
 	 * @return the timezone or null if none is assigned.
 	*/
 	public String getTimeZone() { return timeZone; }
 
-	/** 
-	  Sets the timezone 
+	/**
+	  Sets the timezone
 	  @param tz string representation of the timezone
 	*/
 	public void setTimeZone(String tz) { timeZone = tz; }
 
 	/**
 	  * Returns a string containing the medium type and ID.
-	  * Used by the PlatformList as a partial key to efficiently search for 
+	  * Used by the PlatformList as a partial key to efficiently search for
 	  * platforms matching a given type and id.
 	  * @return a string containing the medium type and ID.
 	*/
@@ -349,7 +332,7 @@ public class TransportMedium extends DatabaseObject
 			if (pc != null)
 				decodesScript = pc.getScript(scriptName);
 		}
-	
+
 	}
 
 	/**
@@ -395,7 +378,7 @@ public class TransportMedium extends DatabaseObject
 	{
 	}
 
-	
+
 	/**
 	* Compares two TransportMedium objects.
 	  @param obj the other TransportMedium
@@ -409,7 +392,6 @@ public class TransportMedium extends DatabaseObject
 		 || !mediumId.equals(tm.mediumId)
 		 || !TextUtil.strEqualIgnoreCase(scriptName, tm.scriptName))
 		{
-			Logger.instance().debug3("TM differs by type, id, or script name");
 			return false;
 		}
 		if (channelNum != tm.channelNum
@@ -419,15 +401,13 @@ public class TransportMedium extends DatabaseObject
 		 || preamble != tm.preamble
 		 || timeAdjustment != tm.timeAdjustment)
 		{
-			Logger.instance().debug3("TM differs by chan, goes window, or timeadj");
 			return false;
 		}
-		
+
 		if (equipmentModel == null)
 		{
 			if (tm.equipmentModel != null)
 			{
-				Logger.instance().debug3("TM differs by EqModel(a)");
 				return false;
 			}
 		}
@@ -435,22 +415,19 @@ public class TransportMedium extends DatabaseObject
 		{
 			if (tm.equipmentModel == null)
 			{
-				Logger.instance().debug3("TM differs by EqModel(b)");
 				return false;
 			}
 			else if (!equipmentModel.equals(tm.equipmentModel))
 			{
-				Logger.instance().debug3("TM differs by EqModel(c)");
 				return false;
 			}
 		}
 
 		if (!TextUtil.strEqualIgnoreCase(timeZone, tm.timeZone))
 		{
-			Logger.instance().debug3("TM differs by TZ");
 			return false;
 		}
-		
+
 		if (!TextUtil.strEqual(loggerType, tm.loggerType))
 			return false;
 		if (baud != tm.baud
@@ -461,7 +438,7 @@ public class TransportMedium extends DatabaseObject
 		 || !TextUtil.strEqual(username, tm.username)
 		 || !TextUtil.strEqual(password, tm.password))
 			return false;
-		
+
 		return true;
 	}
 
@@ -490,7 +467,7 @@ public class TransportMedium extends DatabaseObject
 		ntm.doLogin = this.doLogin;
 		ntm.username = this.username;
 		ntm.password = this.password;
-		
+
 		return ntm;
 	}
 
@@ -573,17 +550,17 @@ public class TransportMedium extends DatabaseObject
 	{
 		this.password = password;
 	}
-	
+
 	public int hashCode()
 	{
 		return mediumType.hashCode() + mediumId.hashCode();
 	}
-	
+
 	public String toString()
 	{
 		return mediumType + ":" + mediumId;
 	}
-	
+
 	public String getSelector()
 	{
 		if (TextUtil.startsWithIgnoreCase(mediumType, "goes"))
@@ -593,6 +570,5 @@ public class TransportMedium extends DatabaseObject
 		else
 			return "";
 	}
-	
-}
 
+}

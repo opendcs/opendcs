@@ -1,6 +1,24 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.db;
 
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.IridiumPMParser;
@@ -8,7 +26,6 @@ import decodes.datasource.IridiumPMParser;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Date;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
@@ -16,6 +33,7 @@ Data structure for a Platform Config record.
 */
 public class PlatformConfig extends IdDatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* The name of this PlatformConfig.  Note that this is unique among all
 	* the PlatformConfigs in this database.  It is often used to uniquely
@@ -54,25 +72,20 @@ public class PlatformConfig extends IdDatabaseObject
 		equipmentModel = null;
 		numPlatformsUsing = 0;
 		lastReadTime = new Date(0L);
-//System.out.println("Constructed new config.");
 	}
 
-	/** 
-	  Construct with a name.  
+	/**
+	  Construct with a name.
 	  @param name the name
 	*/
 	public PlatformConfig(String name)
 	{
 		this();
 		configName = name;
-//System.out.println("Name Constructor for '" + name + "'");
-//try { throw new Exception("ctor"); }
-//catch(Exception ex)
-//{ ex.printStackTrace(System.out); }
 	}
 
 	/**
-	* Overrides the DatabaseObject's method.  
+	* Overrides the DatabaseObject's method.
 	  @return "PlatformConfig".
 	*/
 	public String getObjectType() {
@@ -95,14 +108,13 @@ public class PlatformConfig extends IdDatabaseObject
 
 		if (!configName.equals(pc.configName))
 		{
-//			Logger.instance().debug3("configNames differ");
 			return false;
 		}
 		if (!TextUtil.strEqual(description, pc.description)
 		 || configSensors.size() != pc.configSensors.size()
 		 || decodesScripts.size() != pc.decodesScripts.size())
 		{
-			Logger.instance().debug3("configs differ on desc, # sensors, or #scripts");
+			log.trace("configs differ on desc, # sensors, or #scripts");
 			return false;
 		}
 
@@ -113,8 +125,7 @@ public class PlatformConfig extends IdDatabaseObject
 
 			if (!cs1.equals(cs2))
 			{
-				Logger.instance().debug3("config sensor " + cs1.sensorNumber
-					+ " differs");
+				log.trace("config sensor {} differs.", cs1.sensorNumber);
 				return false;
 			}
 		}
@@ -124,11 +135,11 @@ public class PlatformConfig extends IdDatabaseObject
 			DecodesScript ds2 = (DecodesScript)pc.decodesScripts.elementAt(i);
 			if (!ds1.equals(ds2))
 			{
-				Logger.instance().debug3("script[" + i + "] differs");
+				log.trace("script[{}] differs", i);
 				return false;
 			}
 		}
-	
+
 		return true;
 	}
 
@@ -211,8 +222,8 @@ public class PlatformConfig extends IdDatabaseObject
 		configSensors.remove(cs);
 	}
 
-	
-	
+
+
 	/**
 	* @return number of sensors in this config.
 	*/
@@ -277,7 +288,7 @@ public class PlatformConfig extends IdDatabaseObject
 	{
 		return(equipmentModel);
 	}
-	
+
 	public String getEquipmentModelName()
 	{
 		if (equipmentModel == null)
@@ -302,15 +313,6 @@ public class PlatformConfig extends IdDatabaseObject
 		if (equipmentModel != null)
 			equipmentModel.prepareForExec();
 
-// MJM 2004 07/02
-// The scripts are now prepared in DecodesScript.decodeMessage()
-// so that unused scripts that may contain errors do not cause exceptions.
-// This also is more efficient.
-//		for(Iterator it = getScripts(); it.hasNext(); )
-//		{
-//			DecodesScript ds = (DecodesScript)it.next();
-//			ds.prepareForExec();
-//		}
 		for(Iterator<ConfigSensor> it = configSensors.iterator(); it.hasNext(); )
 		{
 			ConfigSensor cs = it.next();
@@ -374,11 +376,15 @@ public class PlatformConfig extends IdDatabaseObject
 	*/
 	public PlatformConfig copy()
 	{
-//System.out.println("PlatformConfig copy");
 		PlatformConfig ret = new PlatformConfig(configName);
 		ret.copyFrom(this);
 		try { ret.setId(getId()); }
-		catch(DatabaseException ex) {} // won't happen.
+		catch(DatabaseException ex)
+		{
+			throw new RuntimeException(
+				"Platform config should not be coped due to error setting Id in a place where that shouldn't happen.", ex
+			);
+		} // won't happen.
 		return ret;
 	}
 
@@ -410,8 +416,8 @@ public class PlatformConfig extends IdDatabaseObject
 		}
 	}
 
-	/** 
-	  Make a copy without the database ID 
+	/**
+	  Make a copy without the database ID
 	  @return copy with clear ID
 	*/
 	public PlatformConfig noIdCopy()
@@ -478,9 +484,9 @@ public class PlatformConfig extends IdDatabaseObject
 	{
 		return configName;
 	}
-	
+
 	/**
-	  * Removes all sensors from this platformconfig	  
+	  * Removes all sensors from this platformconfig
 	*/
 	public void removeAllSensors()
 	{
@@ -545,7 +551,7 @@ public class PlatformConfig extends IdDatabaseObject
         return null;
     }
 
-	public void AddGoesParameters(ArrayList<String> pmNames, int startingSensorNumber) 
+	public void AddGoesParameters(ArrayList<String> pmNames, int startingSensorNumber)
 	{
 		int sensorNum = startingSensorNumber;
 	  for(String n : pmNames)
@@ -553,7 +559,7 @@ public class PlatformConfig extends IdDatabaseObject
             ConfigSensor cs = findSensorByName(n);
             if (cs != null)
             {
-				Logger.instance().log(Logger.E_FAILURE, "There is already a sensor named '" + n + "' -- cannot add.");
+				log.error("There is already a sensor named '{}' -- cannot add.", n);
                 continue;
             }
 
@@ -631,4 +637,3 @@ public class PlatformConfig extends IdDatabaseObject
 
 
 }
-

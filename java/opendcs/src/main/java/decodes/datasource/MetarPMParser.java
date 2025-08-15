@@ -1,10 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2011/11/29 16:05:14  mmaloney
-*  Added MetarPMParser
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
@@ -12,9 +19,13 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Calendar;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 
-import ilex.util.Logger;
+
 import ilex.var.Variable;
 
 import decodes.db.Constants;
@@ -25,6 +36,7 @@ import decodes.db.Constants;
 */
 public class MetarPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static SimpleDateFormat sdf = null;
 
 	/** default constructor */
@@ -55,24 +67,24 @@ public class MetarPMParser extends PMParser
 		throws HeaderParseException
 	{
 		byte data[] = msg.getData();
-		
-Logger.instance().debug3("MetarPMParser");
+
+		log.trace("MetarPMParser");
 		// If filename is present, process it.
 		Variable fn = msg.getPM(GoesPMParser.FILE_NAME);
 		if (fn != null)
 		{
 			String filename = fn.getStringValue();
-			Logger.instance().debug3("MetarPMParser Processing filename '" + filename + "'");
+			log.trace("MetarPMParser Processing filename '{}'", filename);
 			int idx = filename.indexOf('.');
 			if (idx <= 4)
 			{
-				Logger.instance().debug1("MetarPMParser - no station-name found before '.'");
+				log.debug("MetarPMParser - no station-name found before '.'");
 				fn = null;
 			}
 			else
 			{
 				String mediumId = filename.substring(idx-4,idx);
-				msg.setPM(GoesPMParser.DCP_ADDRESS, 
+				msg.setPM(GoesPMParser.DCP_ADDRESS,
 					new Variable(mediumId));
 				msg.setMediumId(mediumId);
 				try
@@ -83,17 +95,18 @@ Logger.instance().debug3("MetarPMParser");
 				}
 				catch(Exception ex)
 				{
-					Logger.instance().warning(
-						"METAR Header Parser -- bad date in filename "
-						+ "(requires STATION.YYYYMMDD__HHMM): "
-						+ ex);
+					log.atWarn()
+					   .setCause(ex)
+					   .log("METAR Header Parser -- bad date in filename (requires STATION.YYYYMMDD__HHMM).");
 					fn = null;
 				}
 			}
 		}
 		else
-			Logger.instance().debug3("MetarPMParser - No FILENAME passed.");
-		
+		{
+			log.trace("MetarPMParser - No FILENAME passed.");
+		}
+
 		// Find the start of HEADER_LINE
 		int nnl = 0;
 		int idx = 0;
@@ -103,7 +116,7 @@ Logger.instance().debug3("MetarPMParser");
 		if (idx >=  data.length)
 			throw new HeaderParseException("Error looking for start of header");
 		idx++;
-		
+
 		// If no filename provided process HEADER_LINE
 		if (fn == null)
 		{
@@ -115,41 +128,41 @@ Logger.instance().debug3("MetarPMParser");
 			String mediumId = new String(data,stationStart,idx-stationStart);
 			msg.setPM(GoesPMParser.DCP_ADDRESS, new Variable(mediumId));
 			msg.setMediumId(mediumId);
-			
+
 			try
 			{
 				int dayStart = ++idx;
-Logger.instance().info("MetarPMParser Day starts at char " + dayStart);
+				log.info("MetarPMParser Day starts at char {}", dayStart);
 				int dayNum = ((int)data[idx++] - 48) * 10 + ((int)data[idx++] - 48);
-Logger.instance().info("MetarPMParser dayNum=" + dayNum);
+				log.info("MetarPMParser dayNum={}", dayNum);
 				GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 				cal.setTime(new Date());
 				cal.set(Calendar.DAY_OF_MONTH, dayNum);
 				if (dayNum > cal.get(Calendar.DAY_OF_MONTH))
 					cal.add(Calendar.MONTH, -1);
 				int hour = ((int)data[idx++] - 48) * 10 + ((int)data[idx++] - 48);
-Logger.instance().info("MetarPMParser hour=" + hour);
+				log.info("MetarPMParser hour={}", hour);
 				cal.set(Calendar.HOUR_OF_DAY, hour);
 				int min = ((int)data[idx++] - 48) * 10 + ((int)data[idx++] - 48);
-Logger.instance().info("MetarPMParser min=" + min);
+				log.info("MetarPMParser min={}", min);
 				cal.set(Calendar.MINUTE, min);
 				cal.set(Calendar.SECOND, 0);
 				Date d = cal.getTime();
-Logger.instance().info("MetarPMParser msgTime=" + d);
+				log.info("MetarPMParser msgTime={}", d);
 				msg.setPM(GoesPMParser.MESSAGE_TIME,
 					new Variable(d));
 			}
 			catch(Exception ex)
 			{
-				throw new HeaderParseException("Error parsing date in header");
+				throw new HeaderParseException("Error parsing date in header", ex);
 			}
 		}
-		
+
 		// Find the start of DATA_LINE and set header length.
 		for(; idx < data.length && data[idx] != (byte)'\n'; idx++);
 		if (++idx >= data.length)
 			throw new HeaderParseException("Error looking for data after header");
-		
+
 		msg.setHeaderLength(idx);
 
 		// Length should always be total length - header length
@@ -176,7 +189,7 @@ Logger.instance().info("MetarPMParser msgTime=" + d);
 		return Constants.medium_METAR;
 	}
 
-	/** 
+	/**
 	  NOAAPORT msg length derived from the delimited variable length msg.
 	  @return false
 	*/
