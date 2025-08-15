@@ -1,38 +1,31 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.9  2011/01/07 16:01:56  mmaloney
-*  bugfixes
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.8  2010/09/16 15:03:13  mmaloney
-*  dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.7  2010/09/16 14:49:11  mmaloney
-*  double-click code causing exception. Removed for now.
-*
-*  Revision 1.6  2009/08/12 19:54:57  mjmaloney
-*  usgs merge
-*
-*  Revision 1.5  2008/12/14 00:51:28  mjmaloney
-*  platform count fix
-*
-*  Revision 1.4  2008/11/20 18:49:21  mjmaloney
-*  merge from usgs mods
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Vector;
-import java.util.Iterator;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.ResourceBundle;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.TextUtil;
 import decodes.db.*;
@@ -43,6 +36,7 @@ Panel for selecting a Platform Configuration. Used inside ConfigSelectDialog.
 */
 public class ConfigSelectPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -77,11 +71,13 @@ public class ConfigSelectPanel extends JPanel
 					}
 				}
 			});
-		try {
+		try
+		{
 		    jbInit();
 		}
-		catch(Exception ex) {
-		    ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -116,7 +112,7 @@ public class ConfigSelectPanel extends JPanel
 		repaint();
 	}
 
-	/** 
+	/**
 	  Adds a configuration to the model.
 	  @param ob the new configuration.
 	*/
@@ -128,7 +124,7 @@ public class ConfigSelectPanel extends JPanel
 	}
 
 	/**
-	  Deletes the currently-selected configuration. 
+	  Deletes the currently-selected configuration.
 	*/
 	public void deleteSelection()
 	{
@@ -143,7 +139,7 @@ public class ConfigSelectPanel extends JPanel
 
 	/**
 	  Replaces a configuration with another. Called when the Save button
-	  is pressed in the config edit panel. Recall that the panel edits a 
+	  is pressed in the config edit panel. Recall that the panel edits a
 	  copy of the config. Thus when it is saved, the new (modified) copy
 	  replaces the old one.
 	  @param oldPc the old platform config
@@ -189,8 +185,8 @@ public class ConfigSelectPanel extends JPanel
 class ConfigSelectTableModel extends javax.swing.table.AbstractTableModel
 	implements SortingListTableModel
 {
-	private String colNames[] = 
-	{ 
+	private String colNames[] =
+	{
 		ConfigSelectPanel.dbeditLabels.getString("ConfigSelectPanel.col0"),
 		ConfigSelectPanel.dbeditLabels.getString("ConfigSelectPanel.col1"),
 		ConfigSelectPanel.dbeditLabels.getString("ConfigSelectPanel.col2"),
@@ -211,7 +207,7 @@ class ConfigSelectTableModel extends javax.swing.table.AbstractTableModel
 
 	void refill()
 	{
-		try 
+		try
 		{
 			Database.getDb().platformConfigList.read();
 			Database.getDb().platformConfigList.countPlatformsUsing();
@@ -302,7 +298,7 @@ class ConfigColumnizer
 		switch(c)
 		{
 		case 0: return pc.configName;
-		case 1: return pc.equipmentModel == null ? "" : 
+		case 1: return pc.equipmentModel == null ? "" :
 			pc.equipmentModel.name;
 		case 2: return "" + pc.numPlatformsUsing;
 		case 3: return pc.description;
@@ -339,4 +335,3 @@ class pcColumnComparator implements Comparator
 		}
 	}
 }
-
