@@ -1,108 +1,17 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.5  2015/04/02 18:13:38  mmaloney
-*  Added 'fileRestSeconds' property.
-*  Added PropertySpecs.
-*
-*  Revision 1.4  2014/10/02 18:21:42  mmaloney
-*  FTP Data Source to handle multiple file names.
-*
-*  Revision 1.3  2014/05/30 13:15:35  mmaloney
-*  dev
-*
-*  Revision 1.2  2014/05/28 13:09:30  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.15  2011/11/29 16:06:22  mmaloney
-*  Add "filename" to msg before calling PMP
-*
-*  Revision 1.14  2011/09/27 01:23:08  mmaloney
-*  Enhancements to StreamDataSource for SHEF and NOS Decoding.
-*
-*  Revision 1.13  2011/07/29 14:44:22  mmaloney
-*  Re-added processing for the DoneDir property. Now the done-dir can be set by routing-spec property,
-*  or by the archiveDirName setting in "decodes.properties". The DoneDir property will take precedence
-*  if both are set.
-*
-*  Revision 1.12  2010/12/21 19:21:06  sparab
-*  USGS Dan's changes incorporated to simplify the doneDir property
-*
-*  Revision 1.11  2009/09/12 13:31:27  mjmaloney
-*  USGS Merge
-*
-*  Revision 1.10  2009/05/08 14:30:13  mjmaloney
-*  remove debugs
-*
-*  Revision 1.9  2009/05/06 14:43:41  mjmaloney
-*  fixed USGS archive file processing for done dir.
-*
-*  Revision 1.8  2009/05/06 14:34:52  mjmaloney
-*  dev
-*
-*  Revision 1.7  2009/05/06 14:26:03  mjmaloney
-*  dev
-*
-*  Revision 1.6  2009/05/06 14:01:40  mjmaloney
-*  dev
-*
-*  Revision 1.5  2009/04/17 17:05:18  sjagga
-*  Changes for Decoding AutoPoll related directory data source. Based on new AutoPoll requirements, we will now add two new properties to read the MediumId and Message time stamp from the file name itself using another new property called delimiter.
-*
-*  Revision 1.4  2008/11/20 18:49:18  mjmaloney
-*  merge from usgs mods
-*
-*
-*  satin Fixed to handle files whose file name has the mediumId as part of
-*  its name. This is to handle directories that have the property
-*  NameIsMediumId and handles files whose name has this format:
-*
-*  				<mediumid>
-*  				<mediumid>.<anything>
-*
-*  Revision 1.3  2008/09/26 14:56:53  mjmaloney
-*  Added <all> and <production> network lists
-*
-*  Revision 1.2  2008/06/06 15:10:05  cvs
-*  updates from USGS & fixes to update-check.
-*
-*  Revision 1.9  2008/05/29 01:09:34  satin
-*  Added property to enable/disable done processing.
-*
-*  Revision 1.8  2008/05/28 20:22:29  satin
-*  *** empty log message ***
-*
-*  Revision 1.7  2008/05/27 11:54:44  satin
-*  If DoneDir = none, do not create directory.
-*
-*  Revision 1.6  2008/05/21 18:52:04  satin
-*  Corrected problem in determining whether the files were "onemessagefiles".
-*
-*  Revision 1.5  2008/05/19 13:59:00  satin
-*  Modified so that the "DoneDir" has variables expanded and if 1) it is
-*  processing "OneMessageFile"s and 2) the property "archiveDataFileName"
-*  is set, will use an expanded "DoneDir/archiveDataFileName" as the name
-*  of the archived raw file.  Since it is a one message file, the "SITENAME"
-*  variable is also made available in the expansion.  This allows the user
-*  flexibility in defining where the archived raw data file should be placed.
-*
-*  Revision 1.4  2005/06/21 14:00:51  mjmaloney
-*  Better responsiveness on DDS links for timeout & hangup conditions.
-*
-*  Revision 1.3  2004/08/24 23:52:43  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.2  2004/04/08 19:47:18  satin
-*  For files with multiple messages, modified so that end-of-file
-*  exceptions were properly handled.
-*
-*  Revision 1.1  2003/12/12 17:55:32  mjmaloney
-*  Working implementation of DirectoryDataSource.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.datasource;
 
@@ -111,7 +20,9 @@ import java.util.Vector;
 import java.util.Enumeration;
 import java.io.*;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
@@ -177,6 +88,7 @@ import decodes.util.PropertySpec;
 */
 public class DirectoryDataSource extends DataSourceExec
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	//========================================================================
 	// The following variables are set from properties.
 	//========================================================================
@@ -347,8 +259,7 @@ public class DirectoryDataSource extends DataSourceExec
 		String until, Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{
-		Logger.instance().log(Logger.E_DEBUG1, 
-			"DirectoryDataSource.init() for '" + getName() + "'");
+		log.debug("DirectoryDataSource.init() for '{}'",getName());
 
 		clear();
 
@@ -393,22 +304,6 @@ public class DirectoryDataSource extends DataSourceExec
 				 && !value.equalsIgnoreCase("none"))
 					doneDir = value;
 				
-//				{
-//					doneDir = new File(EnvExpander.expand(value));
-//					if (!doneDir.isDirectory())
-//					{
-//						try { if (!doneDir.mkdirs()) throw new Exception(); }
-//						catch(Exception ex)
-//						{
-//							throw new DataSourceException("Done Directory '"
-//								+ value + "' doesn't exist and cannot be created: "
-//								+ ex);
-//						}
-//					}
-//					Logger.instance().info(
-//						"After processing, files will be moved to '"
-//						+ doneDir.getPath() + "'");
-//				}
 				else
 					doneDir=null;
 			}
@@ -430,8 +325,7 @@ public class DirectoryDataSource extends DataSourceExec
 				try { fileRestSeconds = Integer.parseInt(value); }
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().warning("DirectoryDataSource invalid property '"
-						+ name + "' should be integer. Ignored.");
+					log.atWarn().setCause(ex).log("DirectoryDataSource invalid property '{}' should be integer. Ignored.", name);
 					fileRestSeconds = 0;
 				}
 			}
@@ -454,11 +348,10 @@ public class DirectoryDataSource extends DataSourceExec
 		}
 		catch(InvalidDatabaseException ex)
 		{
-			throw new DataSourceException("Unexpected: " + ex);
+			throw new DataSourceException("Unexpected Error", ex);
 		}
 
 		// Build the filename filter.
-//		final File ddir = doneDir;
 		final String dext = doneExt;
 		final String fext = fileExt;
 		fileFilter = 
@@ -571,8 +464,8 @@ public class DirectoryDataSource extends DataSourceExec
 			if (files != null && files.length > 0)
 			{
 				allProps.setProperty("filename", files[0].getPath());
-Logger.instance().debug3("DirectoryDataSource, added 'filename' property=" 
-+ allProps.getProperty("filename"));
+log.trace("DirectoryDataSource, added 'filename' property={}",
+						  allProps.getProperty("filename"));
 				if (nameIsMediumId)
 				{
 					String name = files[0].getName();
@@ -598,15 +491,14 @@ Logger.instance().debug3("DirectoryDataSource, added 'filename' property="
 				try
 				{
 					// opens file.
-Logger.instance().debug3("DirectoryDataSource 2, added 'filename' property=" 
-+ allProps.getProperty("filename"));
+					log.trace("DirectoryDataSource 2, added 'filename' property={}",
+							  allProps.getProperty("filename"));
 					fileDataSource.init(allProps, null, null, null); 
 					messageExists=true;
 				}
 				catch(DataSourceException ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"DirectoryDataSource: " + ex);
+					log.atError().setCause(ex).log("Unable to initialize file data source.");
 					files[0].renameTo(new File(files[0].getPath() + ".err"));
 					return null;
 				}
@@ -647,11 +539,10 @@ Logger.instance().debug3("DirectoryDataSource 2, added 'filename' property="
 						if (onemessagefile && dbNo != "" && dbNo != null) 
 							p.setProperty("DBNO",dbNo);
 						targetDir = new File(EnvExpander.expand(doneDir,p));
-						Logger.instance().info("File '" + files[0].getPath() 
-							+ "' will be moved to '" + targetDir.getPath() + "'");
+						log.info("File '{}' will be moved to '{}'.",
+						         files[0].getPath(), targetDir.getPath());
 						if (!targetDir.isDirectory() && !targetDir.mkdirs())
-							Logger.instance().warning("Could not create '" 
-								+ targetDir.getPath() + "'");
+							log.warn("Could not create '{}'.", targetDir.getPath());
 						
 						moveFile(files[0], targetDir);
 					}
@@ -661,8 +552,7 @@ Logger.instance().debug3("DirectoryDataSource 2, added 'filename' property="
 			}
 			catch(DataSourceException ex)
 	   		{
-				Logger.instance().log(Logger.E_FAILURE,
-					"DirectoryDataSource: " + ex);
+				log.atError().setCause(ex).log("Unable to retrieve raw message.");
 				fileDataSource.close();
 				files[0].renameTo(new File(files[0].getPath() + ".err"));
 			}
@@ -676,9 +566,7 @@ Logger.instance().debug3("DirectoryDataSource 2, added 'filename' property="
 		try { FileUtil.moveFile(orig, target); }
 		catch(Exception ex)
 		{
-			Logger.instance().failure(
-				"Error moving '" + orig.getPath() + "' to '"
-					+ dir.getPath() + "': " + ex);
+			log.atError().setCause(ex).log("Error moving '{}' to '{}'", orig.getPath(), dir.getPath());
 		}
 	}
 
@@ -694,15 +582,14 @@ Logger.instance().debug3("DirectoryDataSource 2, added 'filename' property="
 			catch(Exception ex)
 			{
 				throw new DataSourceException("Directory '" + directoryName
-					+ "' does not exist and cannot be created: " + ex);
+					+ "' does not exist and cannot be created.", ex);
 			}
 
 		}
 		dirs.add(topdir);
 		if (recursive)
 			expand(topdir);
-Logger.instance().log(Logger.E_DEBUG3,"Expanded '" + topdir.getPath() 
-+ "' to " + dirs.size() + " directories.");
+		log.trace("Expanded '{}' to {} directories.", topdir.getPath(), dirs.size());
 	}
 
 	private void expand(File dir)
