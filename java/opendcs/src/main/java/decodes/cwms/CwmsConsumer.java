@@ -1,6 +1,18 @@
 /*
-*  $Id: CwmsConsumer.java,v 1.13 2020/01/31 19:30:23 mmaloney Exp $
-*  
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+
 *  This is open-source software written by ILEX Engineering, Inc., under
 *  contract to the federal government. You are free to copy and use this
 *  source code for your own purposes, except that no part of this source
@@ -10,63 +22,12 @@
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 *
-*  $Log: CwmsConsumer.java,v $
-*  Revision 1.13  2020/01/31 19:30:23  mmaloney
-*  Improve debugs
-*
-*  Revision 1.12  2018/12/18 15:21:02  mmaloney
-*  Updates for jOOQ
-*
-*  Revision 1.11  2018/05/01 17:35:26  mmaloney
-*  sourceId is now a DbKey
-*
-*  Revision 1.10  2017/08/22 19:29:15  mmaloney
-*  Refactor
-*
-*  Revision 1.9  2017/02/20 19:41:51  mmaloney
-*  The TsdbCompLock code has been moved to RoutingSpecThread.main and run.
-*
-*  Revision 1.8  2015/05/14 13:52:19  mmaloney
-*  RC08 prep
-*
-*  Revision 1.7  2015/04/02 18:08:24  mmaloney
-*  Use DbURI and jdbcOracleDriver if they are defined in CwmsDbConfig.
-*  This (re)allows the use of an XML decodes database writing to CWMS.
-*
-*  Revision 1.6  2014/10/28 18:37:34  mmaloney
-*  Use Platform Sensor Site for location if one is defined.
-*
-*  Revision 1.5  2014/08/22 17:23:11  mmaloney
-*  6.1 Schema Mods and Initial DCP Monitor Implementation
-*
-*  Revision 1.4  2014/06/27 20:00:44  mmaloney
-*  getSiteName fix: It was using the wrong constant.
-*
-*  Revision 1.3  2014/05/30 13:15:35  mmaloney
-*  dev
-*
-*  Revision 1.2  2014/05/28 13:09:31  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.23  2013/04/23 13:25:23  mmaloney
-*  Office ID filtering put back into Java.
-*
-*  Revision 1.22  2013/03/25 19:03:29  mmaloney
-*  Allow clients to monitor events.
-*
-*  Revision 1.21  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
 *
 */
 package decodes.cwms;
 
 import ilex.util.AuthException;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.util.Pair;
 import ilex.util.PropertiesUtil;
 
 import java.io.File;
@@ -77,18 +38,17 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.logging.Level;
 
 import org.opendcs.authentication.AuthSourceService;
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
-import opendcs.util.logging.JulUtils;
 import decodes.consumer.DataConsumer;
 import decodes.consumer.DataConsumerException;
 import decodes.datasource.RawMessage;
@@ -107,13 +67,11 @@ import decodes.decoder.DecodedMessage;
 import decodes.decoder.Sensor;
 import decodes.decoder.TimeSeries;
 import decodes.sql.DbKey;
-import decodes.tsdb.BadConnectException;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.LockBusyException;
 import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbCompLock;
 import decodes.util.DecodesSettings;
@@ -180,7 +138,7 @@ import decodes.util.TSUtil;
 */
 public class CwmsConsumer extends DataConsumer
 {
-	private String module = "CwmsConsumer";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Store the properties of the shefCwmsParam.prop file */
 	private Properties shefCwmsProps;
 	/** The Cwms version used for the time series descriptor */
@@ -192,7 +150,6 @@ public class CwmsConsumer extends DataConsumer
 	private CwmsTimeSeriesDb cwmsTsdb = null;
 	private TsdbCompLock myLock = null;
 	private int msgsProcessed = 0;
-	private boolean lockDeleted = false;
 	
 	private PropertySpec[] myspecs = new PropertySpec[]
 	{
@@ -223,8 +180,6 @@ public class CwmsConsumer extends DataConsumer
 	public void open(String consumerArg, Properties props)
 		throws DataConsumerException
 	{		
-		lockDeleted=false;
-		
 		// Read the CWMS configuration file.
 		initCwmsConfig(props);
 
@@ -239,8 +194,7 @@ public class CwmsConsumer extends DataConsumer
 		}
 		catch(AuthException ex)
 		{
-			String msg = module + " Cannot read DB credentials '" 
-				+ authFileName + "'";			
+			String msg = " Cannot read DB credentials '"+ authFileName + "'";			
 			throw new DataConsumerException(msg,ex);
 		}
 		
@@ -258,14 +212,11 @@ public class CwmsConsumer extends DataConsumer
 			// We set the settings here to CWMS and know we're getting a CWMS TsDb
 			cwmsTsdb = databases.getLegacyDatabase(CwmsTimeSeriesDb.class).get();
 			
-			Logger.instance().info(module + " Connected to CWMS database at "
-				+ cwmsCfg.getDbUri() + " as user " + credentials.getProperty("username"));
+			log.info("Connected to CWMS database at {} as user {}", cwmsCfg.getDbUri(), credentials.getProperty("username"));
 		}
 		catch (DatabaseException ex)
 		{
-			String msg = module + " " + ex;
-			Logger.instance().fatal(msg);
-			throw new DataConsumerException(msg, ex);
+			throw new DataConsumerException("Unable to connect to CWMS Database", ex);
 		}
 
 		// Open and load the SHEF to CWMS Param properties file. This file
@@ -282,20 +233,16 @@ public class CwmsConsumer extends DataConsumer
 	{
 		if (myLock != null)
 		{
-			LoadingAppDAI loadingAppDAO = cwmsTsdb.makeLoadingAppDAO();
-			try
+			
+			try(LoadingAppDAI loadingAppDAO = cwmsTsdb.makeLoadingAppDAO())
 			{
 				loadingAppDAO.releaseCompProcLock(myLock);
 				myLock = null;
 			}
 			catch(DbIoException ex)
 			{
-				Logger.instance().warning("DbIoException releasing lock: " + ex);
+				log.atWarn().setCause(ex).log("DbIoException releasing lock.");
 				myLock = null;
-			}
-			finally
-			{
-				loadingAppDAO.close();
 			}
 		}
 		cwmsTsdb = null;
@@ -323,17 +270,15 @@ public class CwmsConsumer extends DataConsumer
 		}
 		catch(UnknownPlatformException ex)
 		{
-			Logger.instance().warning(module + 
-				" Skipping CWMS ingest for data from "
-				+ "unknown platform: " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Skipping CWMS ingest for data from unknown platform.");
 			return;
 		}
 		Site platformSite = platform.getSite();
 		if (platformSite == null)
 		{
-			Logger.instance().warning(module + 
-					" Skipping CWMS ingest for data from "
-					+ "unknown site, DCP Address = " + tm.getMediumId());
+			log.warn(" Skipping CWMS ingest for data from unknown site, DCP Address = {}", tm.getMediumId());
 			return;
 		}
 		msgsProcessed++;
@@ -354,9 +299,7 @@ public class CwmsConsumer extends DataConsumer
 				Sensor sensor = ts.getSensor();
 				if (sensor == null)
 				{
-					Logger.instance().warning(module 
-									+ " Platform DCP " + tm.getMediumId() 
-									+ " has no sensor configured -- skipping.");
+					log.warn("Platform DCP {} has no sensor configured -- skipping.", tm.getMediumId());
 					continue;
 				}
 				// Office ID from routing spec properties or config value.
@@ -364,12 +307,9 @@ public class CwmsConsumer extends DataConsumer
 				if (timeSeriesDesc == null)
 				{	// Could not create the right time descriptor, skipping this 
 					// msg.
-					Logger.instance().warning(module  
-							+ " Platform Site Name " + platform.getSiteName()
-							+ ", Platform Agency " + platform.getAgency()
-							+ ", DCP Address " + tm.getMediumId() 
-							+ ", sensor " + sensor.getName()
-							+ " Cannot find CWMS or SHEF datatype -- skipping.");
+					log.warn("Platform Site Name {}, Platform Agency {}, DCP Address {}, sensor {}" +
+					         "Cannot find CWMS or SHEF datatype -- skipping.",
+							platform.getSiteName(), platform.getAgency(), tm.getMediumId(), sensor.getName());
 					continue;
 				}
 				String units = ts.getEU().abbr;			
@@ -379,20 +319,7 @@ public class CwmsConsumer extends DataConsumer
 		}
 		catch(Exception ex)
 		{
-			String emsg = module + " Error storing TS data: " + ex;
-			Logger.instance().warning(emsg);
-
-			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			ex.printStackTrace(pw);
-			Logger.instance().warning(sw.toString());
-			// It might be a business rule exception, like improper units.
-			// So don't kill the whole routing spec, just go on.
-//			close();
-//			throw new DataConsumerException(emsg);
-		}
-		finally
-		{
+			log.atWarn().setCause(ex).log("Error storing TS Data.");
 		}
 	}
 	
@@ -424,27 +351,16 @@ public class CwmsConsumer extends DataConsumer
 			}
 			catch(NoSuchObjectException ex)
 			{
-				Logger.instance().info(module + " No time series for '" + timeSeriesDesc
-					+ "' -- will attempt to create.");
+				log.info("No time series for '{}' -- will attempt to create.", timeSeriesDesc);
 				tsid = new CwmsTsId();
-				try { tsid.setUniqueString(timeSeriesDesc); }
-				catch(BadTimeSeriesException ex2)
-				{
-					Logger.instance().warning(module + " Cannot create time series -- bad path '"
-						+ timeSeriesDesc + ": " + ex2);
-					return;
+				try 
+				{ 
+					tsid.setUniqueString(timeSeriesDesc); 
+					timeSeriesDAO.createTimeSeries(tsid);
 				}
-				try { timeSeriesDAO.createTimeSeries(tsid); }
-				catch(NoSuchObjectException ex2)
+				catch(NoSuchObjectException | BadTimeSeriesException ex2)
 				{
-					Logger.instance().warning(module + " Cannot create time series for path '"
-						+ timeSeriesDesc + ": " + ex2);
-					return;
-				}
-				catch(BadTimeSeriesException ex3)
-				{
-					Logger.instance().warning(module + " Cannot create time series for path '"
-						+ timeSeriesDesc + ": " + ex3);
+					log.atWarn().setCause(ex).log("Cannot create time series for path '{}'", timeSeriesDesc);
 					return;
 				}
 			}
@@ -468,8 +384,7 @@ public class CwmsConsumer extends DataConsumer
 			}
 			catch (BadTimeSeriesException ex)
 			{
-				Logger.instance().failure(module + " Cannot save time series for '"
-					+ timeSeriesDesc + "': " + ex);
+				log.atError().setCause(ex).log("Cannot save time series for '{}'", timeSeriesDesc);
 			}
 		}
 		catch(SQLException ex)
@@ -503,30 +418,24 @@ public class CwmsConsumer extends DataConsumer
 	{
 		if (myLock != null)
 		{
-			LoadingAppDAI loadingAppDAO = cwmsTsdb.makeLoadingAppDAO();
-			try
+			try(LoadingAppDAI loadingAppDAO = cwmsTsdb.makeLoadingAppDAO())
 			{
 				myLock.setStatus("msgs:" + msgsProcessed);
 				loadingAppDAO.checkCompProcLock(myLock);
 			}
 			catch(DbIoException ex)
 			{
-				Logger.instance().warning("DbIoException checking lock: " + ex);
+				log.atWarn().setCause(ex).log("DbIoException checking lock.");
 				myLock = null;
 			}
 			catch (LockBusyException ex)
 			{
-				Logger.instance().warning("LockBusyException: " + ex);
-				lockDeleted = true;
+				log.atWarn().setCause(ex).log("LockBusyException.");
 				if (routingSpecThread != null)
 				{
 					routingSpecThread.setCurrentStatus("TSDB Lock Removed");
 					routingSpecThread.shutdown();
 				}
-			}
-			finally
-			{
-				loadingAppDAO.close();
 			}
 		}
 		return "cwms";
@@ -558,7 +467,7 @@ public class CwmsConsumer extends DataConsumer
 		if (s != null && s.trim().length() > 0)
 		{
 			cwmsVersion = s;
-			Logger.instance().debug3("Using rs property version '" + cwmsVersion + "'");
+			log.trace("Using rs property version '{}'", cwmsVersion);
 		}
 	}
 	
@@ -655,7 +564,7 @@ public class CwmsConsumer extends DataConsumer
 		else
 		{
 			timeSeriesDescriptor.append(cwmsVersion);
-Logger.instance().debug3("Using default version '" + cwmsVersion + "'");
+			log.trace("Using default version '{}'", cwmsVersion);
 		}
 		
 		return timeSeriesDescriptor.toString();
@@ -772,9 +681,7 @@ Logger.instance().debug3("Using default version '" + cwmsVersion + "'");
 		{
 			if (!(dbio instanceof CwmsSqlDatabaseIO))
 			{
-				String msg = module + " Cannot load configuration from '"
-					+ configFileName + "': " + ex;
-				Logger.instance().failure(msg);
+				log.atError().setCause(ex).log("Cannot load configuration from '{}'", configFileName);
 			}
 		}
 
@@ -816,9 +723,7 @@ Logger.instance().debug3("Using default version '" + cwmsVersion + "'");
 		}
 		catch(IOException ex)
 		{
-			String msg = module + " Cannot read properties file '" + 
-					shefCwmsMap + "': " + ex + " -- will use defaults only.";
-			Logger.instance().info(msg);
+			log.atInfo().setCause(ex).log("Cannot read properties file '{}'", shefCwmsMap);
 		}
 	}
 	

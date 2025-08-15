@@ -1,90 +1,32 @@
 /*
-* $Id: CwmsGroupHelper.java,v 1.10 2019/12/11 14:36:19 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+
 *  This is open-source software written by Sutron Corporation, under
 *  contract to the federal government. You are free to copy and use this
 *  source code for your own purposes, except that no part of the information
 *  contained in this file may be claimed to be proprietary.
-*
-* Open Source Software
-* 
-* $Log: CwmsGroupHelper.java,v $
-* Revision 1.10  2019/12/11 14:36:19  mmaloney
-* Don't explicitly require CwmsTimeSeriesDb. This module is also used with OpenTsdb.
-*
-* Revision 1.9  2017/12/04 18:58:38  mmaloney
-* CWMS-10012 fixed CWMS problem that could sometimes result in circular dependencies
-* for group computations when a new Time Series was created. When compdepends
-* daemon evaluates the 'T' notification, it needs to prepare each CwmsGroupHelper for
-* expansion so that the regular expressions exist.
-*
-* Revision 1.8  2017/08/22 19:29:49  mmaloney
-* Improve comments
-*
-* Revision 1.7  2017/05/03 17:04:14  mmaloney
-* Improved debugs.
-*
-* Revision 1.6  2017/04/27 21:01:55  mmaloney
-* Combine full/base/sub location/param/version with logical OR.
-*
-* Revision 1.5  2017/04/19 19:23:35  mmaloney
-* CWMS-10609 nested group evaluation in group editor bugfix.
-*
-* Revision 1.4  2017/01/10 21:14:43  mmaloney
-* Enhanced wildcard processing for CWMS as per punchlist for comp-depends project
-* for NWP.
-*
-* Revision 1.3  2016/11/03 18:59:41  mmaloney
-* Implement wildcard evaluation for groups.
-*
-* Revision 1.2  2016/04/22 14:46:21  mmaloney
-* Fix subgroup evaluation. Make it true recursion.
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* Revision 1.10  2013/04/23 13:25:23  mmaloney
-* Office ID filtering put back into Java.
-*
-* Revision 1.9  2013/03/21 18:27:40  mmaloney
-* DbKey Implementation
-*
-* Revision 1.8  2012/07/05 18:24:23  mmaloney
-* tsKey is stored as a long.
-*
-* Revision 1.7  2011/04/27 16:12:38  mmaloney
-* comment
-*
-* Revision 1.6  2011/04/19 19:14:10  gchen
-* (1) Add a line to set Site.explicitList = true in cwmsTimeSeriesDb.java to fix the multiple location entries on Location Selector in TS Group GUI.
-*
-* (2) Fix a bug in getDataType(String standard, String code, int id) method in decodes.db.DataType.java because the data id wasn't set up previously.
-*
-* (3) Fix the null point exception in line 154 in cwmsGroupHelper.java.
-*
-* Revision 1.5  2011/02/04 21:30:48  mmaloney
-* Intersect groups
-*
-* Revision 1.4  2011/02/03 20:00:23  mmaloney
-* Time Series Group Editor Mods
-*
-* Revision 1.3  2011/01/27 19:07:11  mmaloney
-* When expanding group, must compare UPPER for all path string components.
-*
-* Revision 1.2  2011/01/12 18:57:16  mmaloney
-* dev
-*
-* Revision 1.1  2010/11/28 21:05:25  mmaloney
-* Refactoring for CCP Time-Series Groups
-*
 */
 package decodes.cwms;
-
-import ilex.util.Logger;
 
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.DataType;
 import decodes.sql.DbKey;
@@ -94,12 +36,10 @@ import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsGroup;
 
-public class CwmsGroupHelper
-	extends GroupHelper
+public class CwmsGroupHelper extends GroupHelper
 {
-//	private boolean justPrimed = false;
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static String regexSpecial = "<([{\\^-=$!|]})?+.>";
-	private static String module = "CwmsGroupHelper";
 	
 	private ArrayList<Pattern> subLocPatterns = new ArrayList<Pattern>();
 	private ArrayList<Pattern> subParamPatterns = new ArrayList<Pattern>();
@@ -115,15 +55,13 @@ public class CwmsGroupHelper
 	public CwmsGroupHelper(TimeSeriesDb tsdb)
 	{
 		super(tsdb);
-		module = "CwmsGroupHelper";
 	}
 	
 	@Override
 	protected void prepareForExpand(TsGroup tsGroup) throws DbIoException
 	{
-		tsdb.debug2(module + ".prepareForExpand group " + tsGroup.getGroupName()
-			+ ", num SubParam specs: " + tsGroup.getOtherMembers("SubParam").size());
-//		justPrimed = true;
+		log.trace("PrepareForExpand group {}, num SubParam specs: {}",
+				  tsGroup.getGroupName(), tsGroup.getOtherMembers("SubParam").size());
 		// Create and compile the regex objects for subloc, subparam, and subversion.
 		subLocPatterns.clear();
 		ArrayList<String> subLocs = tsGroup.getOtherMembers("SubLocation");
@@ -136,8 +74,7 @@ public class CwmsGroupHelper
 			}
 			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning(module + " cannot compile subloc '" + subLoc 
-					+ "', pattern='" + pat + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot compile subloc '{}', pattern='{}'", subLoc, pat);
 			}
 		}
 		
@@ -152,8 +89,7 @@ public class CwmsGroupHelper
 			}
 			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning(module + " cannot compile baseloc '" + baseLoc 
-					+ "', pattern='" + pat + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot compile baseloc '{}', patttern='{}'", baseLoc, pat);
 			}
 		}
 		
@@ -168,8 +104,7 @@ public class CwmsGroupHelper
 			}
 			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning(module + " cannot compile fullloc '" + fullLoc 
-					+ "', pattern='" + pat + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot compile fullloc '{}', pattern='{}'", fullLoc, pat);
 			}
 		}
 
@@ -181,12 +116,11 @@ public class CwmsGroupHelper
 			try
 			{
 				subParamPatterns.add(Pattern.compile(pat));
-				tsdb.debug2("   Added SubParam pattern '" + pat + "'");
+				log.trace("   Added SubParam pattern '{}'", pat);
 			}
 			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning(module + " cannot compile subparam '" + subPar 
-					+ "', pattern='" + pat + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot compile subparam '{}', pattern='{}'", subPar, pat);
 			}
 		}
 
@@ -198,12 +132,11 @@ public class CwmsGroupHelper
 			try
 			{
 				baseParamPatterns.add(Pattern.compile(pat));
-				tsdb.debug2("   Added BaseParam pattern '" + pat + "'");
+				log.trace("   Added BaseParam pattern '{}'", pat);
 			}
 			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning(module + " cannot compile baseparam '" + basePar 
-					+ "', pattern='" + pat + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot compile baseparam '{}', pattern='{}'", basePar, pat);
 			}
 		}
 		
@@ -215,12 +148,11 @@ public class CwmsGroupHelper
 			try
 			{
 				fullParamPatterns.add(Pattern.compile(pat));
-				tsdb.debug2("   Added FullParam pattern '" + pat + "'");
+				log.trace("   Added FullParam pattern '{}'", pat);
 			}
 			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning(module + " cannot compile fullparam '" + fullPar 
-					+ "', pattern='" + pat + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot compile fullparam '{}', pattern='{}'", fullPar, pat);
 			}
 		}
 
@@ -235,8 +167,7 @@ public class CwmsGroupHelper
 			}
 			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning(module + " cannot compile subversion '" + subVer 
-					+ "', pattern='" + pat + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot compile subversion '{}', pattern='{}'", subVer, pat);
 			}
 		}
 		
@@ -251,8 +182,7 @@ public class CwmsGroupHelper
 			}
 			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning(module + " cannot compile baseversion '" + baseVer 
-					+ "', pattern='" + pat + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot compile baseversion '{}', pattern='{}'", baseVer, pat);
 			}
 		}
 		
@@ -264,12 +194,11 @@ public class CwmsGroupHelper
 			try
 			{
 				fullVersionPatterns.add(Pattern.compile(pat));
-				tsdb.debug2("   Added FullVersion pattern '" + pat + "'");
+				log.trace("   Added FullVersion pattern '{}'", pat);
 			}
 			catch(PatternSyntaxException ex)
 			{
-				tsdb.warning(module + " cannot compile fullversion '" + fullVer 
-					+ "', pattern='" + pat + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot compile fullversion '{}', pattern='{}'", fullVer, pat);
 			}
 		}
 	}
@@ -277,7 +206,7 @@ public class CwmsGroupHelper
 	/**
 	 * Convert the subpart string provided by the user into a string suitable for a
 	 * Java Pattern class. This involves converting asterisk into the pattern
-	 * "[^-]+", meaning one or more occurances of a non-hyphen character. Other
+	 * "[^-]+", meaning one or more occurrences of a non-hyphen character. Other
 	 * special characters are escaped.
 	 * Also, normal alpha chars are converted to upper case so we can do a case insensitive
 	 * compare.
@@ -314,9 +243,6 @@ public class CwmsGroupHelper
 		ArrayList<DbKey> siteIds = tsGroup.getSiteIdList();
 
 		CwmsTsId ctsid = (CwmsTsId)tsid;
-boolean testmode = ctsid.getVersion().equalsIgnoreCase("Combined-raw");
-if (testmode) Logger.instance().debug2("TESTMODE for group=" 
-+ tsGroup.getGroupName() + ", tsid=" + tsid.getUniqueString());
 
 		// User could enter an actual site plus another site with wildcard, then
 		// I would have one actual siteId and one pattern.
@@ -399,7 +325,6 @@ if (testmode) Logger.instance().debug2("TESTMODE for group="
 				return false; // None of the ways of referencing a location match.
 			matches++;
 		}
-if (testmode) Logger.instance().debug2("...passed location filter.");
 
 		ArrayList<DbKey> dtIds = tsGroup.getDataTypeIdList();
 		if (dtIds.size() > 0                 // Full data type (CWMS Param) specified
@@ -412,8 +337,7 @@ if (testmode) Logger.instance().debug2("...passed location filter.");
 			String tsidFullParam = ctsid.getPart("param");
 			if (tsidFullParam == null || tsidFullParam.trim().length() == 0)
 			{
-				Logger.instance().warning(module + " invalid TSID '" + ctsid.getUniqueString() 
-					+ "' has no param part.");
+				log.warn("Invalid TSID '{}' has no param part.", ctsid.getUniqueString());
 				return false;
 			}
 
@@ -489,8 +413,6 @@ if (testmode) Logger.instance().debug2("...passed location filter.");
 			matches++;
 		}
 		
-if (testmode) Logger.instance().debug2("...passed param filter.");
-		
 		ArrayList<String> paramTypes = tsGroup.getOtherMembers("ParamType");
 		if (paramTypes.size() > 0)
 		{
@@ -505,8 +427,6 @@ if (testmode) Logger.instance().debug2("...passed param filter.");
 				return false;
 			matches++;
 		}
-
-if (testmode) Logger.instance().debug2("...passed paramtype filter.");
 
 		ArrayList<String> intervals = tsGroup.getOtherMembers("Interval");
 		if (intervals.size() > 0)
@@ -523,8 +443,6 @@ if (testmode) Logger.instance().debug2("...passed paramtype filter.");
 			matches++;
 		}
 		
-if (testmode) Logger.instance().debug2("...passed interval filter.");
-
 		ArrayList<String> durations = tsGroup.getOtherMembers("Duration");
 		if (durations.size() > 0)
 		{
@@ -540,11 +458,6 @@ if (testmode) Logger.instance().debug2("...passed interval filter.");
 			matches++;
 		}
 		
-if (testmode) Logger.instance().debug2("...passed duration filter.");
-
-if (testmode) Logger.instance().debug2("...numFull=" + fullVersionPatterns.size()
-	+ ", numsub=" + subVersionPatterns.size() + ", numbase=" + baseVersionPatterns.size());
-
 
 		if (fullVersionPatterns.size() > 0
 		 || subVersionPatterns.size() > 0
@@ -565,9 +478,6 @@ if (testmode) Logger.instance().debug2("...numFull=" + fullVersionPatterns.size(
 						if (m.matches())
 						{
 							versionPassed = true;
-if (testmode)
-Logger.instance().debug2("TSID '" + ctsid.getUniqueString() + "' passes full version filter in group "
-	+ tsGroup.getGroupName() + " regex='" + sp.toString() + "'");
 							break;
 						}
 					}
@@ -586,10 +496,6 @@ Logger.instance().debug2("TSID '" + ctsid.getUniqueString() + "' passes full ver
 						if (m.matches())
 						{
 							versionPassed = true;
-if (testmode)
-	Logger.instance().debug2("TSID '" + ctsid.getUniqueString() + "' passes sub version filter in group "
-		+ tsGroup.getGroupName() + " regex='" + sp.toString() + "'");
-
 							break;
 						}
 					}
@@ -608,17 +514,11 @@ if (testmode)
 						if (m.matches())
 						{
 							versionPassed = true;
-if (testmode)
-	Logger.instance().debug2("TSID '" + ctsid.getUniqueString() + "' passes base version filter in group "
-		+ tsGroup.getGroupName() + " regex='" + sp.toString() + "'");
-
 							break;
 						}
 					}
 				}
 			}
-
-if (testmode) Logger.instance().debug2("Result of version filter=" + versionPassed);
 
 			if (!versionPassed)
 				return false;
