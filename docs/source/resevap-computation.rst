@@ -1,4 +1,4 @@
-.. _legacy-resevap-computation:
+.. _resevap-computation:
 .. Unit Constants utilized in ResEvap documentation
 .. |degC| replace:: :math:`{^\circ}C`
 .. |deg| replace:: :math:`{^\circ}`
