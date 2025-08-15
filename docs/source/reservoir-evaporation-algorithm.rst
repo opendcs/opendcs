@@ -100,5 +100,5 @@ Important Notes:
 +-----------+------------------+----------------------------------------------+
 
 .. note::
-   See :ref:`ResEvap Documentation <legacy-resevap-computation>` to better understand how the algorithm behaves.
+   See :ref:`ResEvap Documentation <resevap-computation>` to better understand how the algorithm behaves.
 
