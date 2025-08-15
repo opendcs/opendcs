@@ -1,43 +1,27 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.12  2019/05/10 18:35:26  mmaloney
- * dev
- *
- * Revision 1.11  2019/05/07 13:17:50  mmaloney
- * dev
- *
- * Revision 1.10  2019/04/22 21:26:34  mmaloney
- * dev
- *
- * Revision 1.9  2019/04/22 18:13:53  mmaloney
- * dev
- *
- * Revision 1.8  2019/04/22 17:42:12  mmaloney
- * dev
- *
- * Revision 1.7  2016/03/24 19:01:49  mmaloney
- * Added debug.
- *
- * Revision 1.6  2016/03/09 16:45:52  mmaloney
- * Null Ptr Checks
- *
- * Revision 1.5  2015/11/12 15:17:13  mmaloney
- * Added HEC headers.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.validation;
-
-import ilex.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.function.Function;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dao.CachableDbObject;
 import decodes.db.EngineeringUnit;
@@ -48,9 +32,9 @@ import decodes.sql.DbKey;
 /**
  * Represents a named set of screening-criteria for CWMS.
  */
-public class Screening
-	implements CachableDbObject
+public class Screening implements CachableDbObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** surrogate database key */
 	private DbKey screeningCode = DbKey.NullKey;
 	
@@ -410,8 +394,8 @@ public class Screening
 		if (uc == null)
 			throw new NoConversionException("Cannot derive a converter from '"
 				+ checkUnitsAbbr + "' to '" + paramUnitsAbbr + "'");
-		Logger.instance().debug1("Screening.convertUnits: converting screening units from " + checkUnitsAbbr
-			+ " to " + paramUnitsAbbr);
+		log.debug("Screening.convertUnits: converting screening units from {} to {}.",
+				  checkUnitsAbbr, paramUnitsAbbr);
 		
 		// Descend through all checks and convert the limits to the new units.
 		// then set this.checkUnitsAbbr

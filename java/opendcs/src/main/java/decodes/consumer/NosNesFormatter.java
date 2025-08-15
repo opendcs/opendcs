@@ -1,34 +1,45 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.consumer;
 
-import ilex.util.Logger;
 import ilex.var.NoConversionException;
-import ilex.var.Variable;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
-import lrgs.common.DcpMsg;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.GoesPMParser;
 import decodes.datasource.RawMessage;
-import decodes.datasource.UnknownPlatformException;
 import decodes.db.Constants;
 import decodes.db.Platform;
 import decodes.db.PresentationGroup;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.decoder.DecodedMessage;
-import decodes.decoder.NosDecoder;
 
 /**
  * Generates the NOS NES Format
  */
 public class NosNesFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd yyyy HH:mm:ss");
 	public static final String module = "NosNesFormatter";
 
@@ -55,7 +66,7 @@ public class NosNesFormatter extends OutputFormatter
 		RawMessage rawmsg = msg.getRawMessage();
 		if (rawmsg == null)
 		{
-			Logger.instance().warning(module + " no raw message!");
+			log.warn(" no raw message!");
 			return;
 		}
 
@@ -66,7 +77,7 @@ public class NosNesFormatter extends OutputFormatter
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning(module + " Missing DCP Address!");
+			log.atWarn().setCause(ex).log("Missing DCP Address!");
 			sb.append("        ");
 		}
 		
@@ -78,9 +89,9 @@ public class NosNesFormatter extends OutputFormatter
 				return;
 			sb.append(fc);
 		}
-		catch (NoConversionException e2)
+		catch (NoConversionException ex)
 		{
-			Logger.instance().warning("Unknown message type skipped!");
+			log.atWarn().setCause(ex).log("Unknown message type skipped!");
 			return;
 		}
 
@@ -89,8 +100,6 @@ public class NosNesFormatter extends OutputFormatter
 		// This is a DAPS Status message, so there's no station ID and DCP#
 		// in the message. The station ID should be the same as the NOS
 		// site name. Assume DCP # is 1
-//		sb.append(rawmsg.getPM(NosDecoder.PM_STATION_ID));
-//		sb.append(rawmsg.getPM(NosDecoder.PM_DCP_NUM));
 		String stationId = "xxxxxxx";
 		try
 		{
@@ -106,10 +115,11 @@ public class NosNesFormatter extends OutputFormatter
 				}
 			}
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
-			Logger.instance().warning(
-				"NES output format cannot associate platform: " + e);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("NES output format cannot associate platform.");
 		}
 		sb.append(stationId + "1");
 		

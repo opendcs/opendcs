@@ -34,6 +34,7 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
+    testRuntimeOnly(project(":opendcs-slf4j-provider"))
 }
 
 
@@ -57,7 +58,7 @@ testEngines.each { engine ->
 
 
         enabled = gradle.startParameter.taskNames.contains(":testing:" + project.name + ":test") ||
-                  gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" + taskName)
+                  gradle.startParameter.taskNames.contains(":testing:" + project.name + ":" +task.name)
         doFirst {
             project.mkdir(tmpdir)
         }

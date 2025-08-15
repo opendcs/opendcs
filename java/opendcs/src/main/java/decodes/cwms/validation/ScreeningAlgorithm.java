@@ -1,25 +1,18 @@
-/**
- * $Id$
- * 
- * Copyright 2015 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * 
- * $Log$
- * Revision 1.9  2019/05/13 15:06:39  mmaloney
- * Fixed time zones in screening season selection.
- *
- * Revision 1.8  2019/04/22 13:51:41  mmaloney
- * Added debug
- *
- * Revision 1.7  2017/08/22 19:33:02  mmaloney
- * Improve comments
- *
- * Revision 1.6  2016/02/29 22:14:07  mmaloney
- * Removed nuisance debugs.
- *
- * Revision 1.5  2015/11/12 15:17:12  mmaloney
- * Added HEC headers.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.cwms.validation;
 
 import java.util.Calendar;
@@ -48,11 +41,14 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 @Algorithm(description = "Base-class for screening algorithm.\n" +
 "Implemented by DatchkScreeningAlgorithm and CwmsScreeningAlgorithm.")
-public class ScreeningAlgorithm
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class ScreeningAlgorithm	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 
@@ -119,7 +115,7 @@ public class ScreeningAlgorithm
 			}
 			catch (Exception ex)
 			{
-				throw new DbCompException("No output tsid and can't retrieve: " + ex);
+				throw new DbCompException("No output tsid and can't retrieve." , ex);
 			}
 			finally
 			{
@@ -136,7 +132,7 @@ public class ScreeningAlgorithm
 		screening = getScreening(inputTsid);
 		if (screening == null)
 		{
-			warning("No screening defined for " + inputTsid.getUniqueString());
+			log.warn("No screening defined for {} ", inputTsid.getUniqueString());
 			return;
 		}
 		
@@ -145,7 +141,7 @@ public class ScreeningAlgorithm
 		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(inputTsid.getInterval());
 		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
 
-		debug3("Retrieving additional data needed for checks.");
+		log.trace("Retrieving additional data needed for checks.");
 		ScreeningCriteria prevcrit = null;
 		for(int idx = 0; idx<inputParm.timeSeries.size(); idx++)
 		{
@@ -165,7 +161,7 @@ public class ScreeningAlgorithm
 				prevcrit = crit;
 			}
 		}
-		debug3("additional data done, #times needed=" + needed.size());
+		log.trace("additional data done, #times needed={}",needed.size());
 		
 		if (needed.size() > 0)
 		{
@@ -186,7 +182,7 @@ public class ScreeningAlgorithm
 			}
 			catch (Exception ex)
 			{
-				throw new DbCompException(ex.toString());
+				throw new DbCompException("Unable to fill input time series with required data.",ex);
 			}
 			finally
 			{
@@ -205,12 +201,12 @@ public class ScreeningAlgorithm
 			setOutputUnitsAbbr("output", euAbbr);
 		}
 		
-		if (screening.getCriteriaSeasons() != null)
+		if (screening.getCriteriaSeasons() != null && log.isDebugEnabled())
 		{
-			debug1("There are " + screening.getCriteriaSeasons().size() + " seasons in the screening:");
+			log.debug("There are {} seasons in the screening:", screening.getCriteriaSeasons().size());
 			for(ScreeningCriteria sc : screening.getCriteriaSeasons())
 			{
-				debug1("    " + 
+				log.debug("    {}", 
 					(sc.getSeasonStart() == null ? "<all year>" : 
 						(sc.getSeasonStart().get(Calendar.MONTH) + "/" 
 						 + sc.getSeasonStart().get(Calendar.DAY_OF_MONTH) + " " 
@@ -236,7 +232,7 @@ public class ScreeningAlgorithm
 			screening != null ? screening.findForDate(_timeSliceBaseTime, aggTZ) : null;
 		if (crit == null)
 		{
-			warning("No criteria for time=" + debugSdf.format(_timeSliceBaseTime));
+			log.warn("No criteria for time={}", _timeSliceBaseTime);
 			// Treat no criteria the same as a screening where everything passes.
 			if (inputIsOutput())
 			{
@@ -246,21 +242,22 @@ public class ScreeningAlgorithm
 					return;
 				flags &= (~(CwmsFlags.VALIDITY_MASK | CwmsFlags.TEST_MASK));
 				flags |= (CwmsFlags.SCREENED | CwmsFlags.VALIDITY_OKAY);
-				info("input=output, input flags=0x" 
-					+ Integer.toHexString(inputV.getFlags()) + ", result flags=0x"
-					+ Integer.toHexString(flags));
+				log.info("input=output, input flags=0x{}, result flags=0x{}", 
+						 Integer.toHexString(inputV.getFlags()),
+						 Integer.toHexString(flags));
 				if (flags == inputV.getFlags())
 					return; // No changes to flags. Do not write output.
 			}
 			output.setValue(input);
 			clearFlagBits(output, CwmsFlags.VALIDITY_MASK | CwmsFlags.TEST_MASK);
 			setFlagBits(output, CwmsFlags.SCREENED | CwmsFlags.VALIDITY_OKAY);
-			info("Writing output flags=0x" + Integer.toHexString(output.getFlags()));
+			log.info("Writing output flags=0x{}", Integer.toHexString(output.getFlags()));
 			return;
 		}
 		
-		debug1("Time Slice " + debugSdf.format(_timeSliceBaseTime) + " selected screening season start="
-			+ (crit.getSeasonStart() == null ? "<all year>" : (crit.getSeasonStart().get(Calendar.MONTH) + "/" 
+		log.debug("Time Slice {} selected screening season start={}",
+				_timeSliceBaseTime,
+			 (crit.getSeasonStart() == null ? "<all year>" : (crit.getSeasonStart().get(Calendar.MONTH) + "/" 
 			 + crit.getSeasonStart().get(Calendar.DAY_OF_MONTH) + " " 
 			 + crit.getSeasonStart().getTimeZone().getID())));
 		

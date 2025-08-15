@@ -1,71 +1,20 @@
 /*
-*  $Id$
-*
-*  $State$
-*
-*  $Log$
-*  Revision 1.4  2017/10/10 17:58:33  mmaloney
-*  Added support for TsdbFormatter
-*
-*  Revision 1.3  2015/03/19 13:13:53  mmaloney
-*  Base class method dataSourceCaughtUp() does nothing. It allows certain formatters
-*  & consumers to flush buffers when LRGS Data Source is caught up and is now acting
-*  in real time.
-*
-*  Revision 1.2  2014/05/28 13:09:27  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.3  2013/06/17 19:50:59  mmaloney
-*  Created
-*
-*  Revision 1.2  2009/01/22 00:31:32  mjmaloney
-*  DB Caching improvements to make msgaccess start quicker.
-*  Remove the need to cache the entire database.
-*
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.11  2006/07/18 00:12:16  mmaloney
-*  dev
-*
-*  Revision 1.10  2005/03/15 16:52:00  mjmaloney
-*  Rename Enum to DbEnum for Java 5 compatibility
-*
-*  Revision 1.9  2005/03/15 16:11:25  mjmaloney
-*  Modify 'Enum' for Java 5 compat.
-*
-*  Revision 1.8  2004/08/24 21:01:37  mjmaloney
-*  added javadocs
-*
-*  Revision 1.7  2004/02/29 20:48:52  mjmaloney
-*  Working implementation of DCP Monitor Server
-*
-*  Revision 1.6  2004/02/19 01:52:57  mjmaloney
-*  Hard coded mapping for NullFormatter.
-*
-*  Revision 1.5  2002/05/19 00:22:18  mjmaloney
-*  Deprecated decodes.db.TimeZone and decodes.db.TimeZoneList.
-*  These are now replaced by the java.util.TimeZone class.
-*
-*  Revision 1.4  2002/03/31 21:09:34  mike
-*  bug fixes
-*
-*  Revision 1.3  2001/12/01 20:48:15  mike
-*  error message bug fix.
-*
-*  Revision 1.2  2001/09/14 21:16:42  mike
-*  dev
-*
-*  Revision 1.1  2001/09/09 17:39:42  mike
-*  Created.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
-package decodes.consumer;
 
-import ilex.util.Logger;
+package decodes.consumer;
 
 import java.util.Properties;
 
@@ -78,10 +27,8 @@ import decodes.util.PropertySpec;
 /**
   This is the base-class for all DECODES output formatters.
 */
-public abstract class OutputFormatter
-	implements PropertiesOwner
+public abstract class OutputFormatter implements PropertiesOwner
 {
-	protected Logger logger = Logger.instance();
 	protected RoutingSpecThread rsThread = null;
 	
 	/**
@@ -228,10 +175,6 @@ public abstract class OutputFormatter
 	 */
 	public boolean attemptDecode() { return true; }
 
-	public void setLogger(Logger logger)
-	{
-		this.logger = logger;
-	}
 	
 	/**
 	 * @return true if this formatter uses the timezone setting, false if not.

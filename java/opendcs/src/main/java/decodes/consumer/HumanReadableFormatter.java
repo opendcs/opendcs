@@ -1,6 +1,19 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.consumer;
 
 import java.util.Iterator;
@@ -9,10 +22,12 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.TimedVariable;
 import opendcs.opentsdb.OpenTsdbFlags;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import decodes.cwms.CwmsFlags;
@@ -43,13 +58,12 @@ import decodes.util.PropertySpec;
 */
 public class HumanReadableFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String delimiter;
 	private SimpleDateFormat dateFormat;
 	private SimpleDateFormat tzFormat;
 	private String dateFormatString = Constants.defaultDateFormat_fmt;
-	private String preferredDataType = 
-		DecodesSettings.instance().dataTypeStdPreference;
-//		Constants.datatype_SHEF;
+	private String preferredDataType = DecodesSettings.instance().dataTypeStdPreference;
 	private boolean displayEmpty;
 	private ArrayList<Column> columns;
 	boolean showFlags = false;
@@ -142,7 +156,7 @@ public class HumanReadableFormatter extends OutputFormatter
 
 		StringBuffer sb = new StringBuffer();
 		RawMessage rawmsg = msg.getRawMessage();
-Logger.instance().debug3("HRF.formatMessage showFlags=" + showFlags);
+		log.trace("HRF.formatMessage: showFlags={}" , showFlags);
 		try 
 		{
 			Platform p = rawmsg.getPlatform();
@@ -155,9 +169,6 @@ Logger.instance().debug3("HRF.formatMessage showFlags=" + showFlags);
 
 
 		// Construct column array.
-//		int numColumns = 0;
-//		for(Iterator<TimeSeries> it = msg.getAllTimeSeries(); it.hasNext(); it.next())
-//			numColumns++;
 		columns = new ArrayList<Column>();
 
 		int i=0;
@@ -307,10 +318,7 @@ Logger.instance().debug3("HRF.formatMessage showFlags=" + showFlags);
 				dt = ts.getSensor().getDataType();
 				if (dt == null)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Site '" + siteName +"' Sensor "
-						+ ts.getSensor().getNumber() 
-						+ " has unknown data type!");
+					log.warn("Site '{}' Sensor {} has unknown data type!", siteName, ts.getSensor().getNumber());
 					dt = DataType.getDataType("UNKNOWN", "UNKNOWN");
 				}
 			}
@@ -326,7 +334,8 @@ Logger.instance().debug3("HRF.formatMessage showFlags=" + showFlags);
 
 			dotPos = -1;
 			
-Logger.instance().debug3("Column ctor: ts size=" + timeSeries.size());
+			log.trace("Column ctor: ts size={}", timeSeries.size());
+
 			for(int i=0; i<timeSeries.size(); i++)
 			{
 				TimedVariable tv = timeSeries.sampleAt(i);
@@ -351,7 +360,9 @@ Logger.instance().debug3("Column ctor: ts size=" + timeSeries.size());
 				if (cw > colWidth)
 					colWidth = cw;
 			}
-Logger.instance().debug3("colWidth=" + colWidth + ", dotPos=" + dotPos + ", dataWidth=" + dataWidth + ", flagWidth=" + flagWidth);
+			log.trace("colWidth={}, dotPos={}, dataWidth={}, flagWidth={}",
+				colWidth, dotPos, dataWidth, flagWidth);
+
 			StringBuffer sb = new StringBuffer();
 			for(int i=0; i<colWidth; i++)
 				sb.append(' ');

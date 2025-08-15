@@ -1,37 +1,17 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.2  2014/05/28 13:09:29  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:20:59  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.5  2008/02/10 20:17:32  mmaloney
-*  dev
-*
-*  Revision 1.2  2008/02/10 19:59:02  cvs
-*  dev
-*
-*  Revision 1.1.1.1  2008/01/28 22:06:03  cvs
-*  Imported from open source.
-*
-*  Revision 1.4  2004/08/24 21:01:38  mjmaloney
-*  added javadocs
-*
-*  Revision 1.3  2003/11/19 16:16:20  mjmaloney
-*  Always format BV with 3 decimal places.
-*
-*  Revision 1.2  2003/03/06 18:49:47  mjmaloney
-*  Fixed DR 113 TransmitMonitor formatter problems.
-*
-*  Revision 1.1  2002/10/31 18:53:52  mjmaloney
-*  release prep
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.consumer;
 
@@ -42,11 +22,13 @@ import java.util.Calendar;
 import java.text.SimpleDateFormat;
 import java.text.NumberFormat;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.Variable;
 import ilex.var.NoConversionException;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 
 import decodes.db.*;
 import decodes.decoder.DecodedMessage;
@@ -63,6 +45,7 @@ with one line per DCP message.
 */
 public class TransmitMonitorFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String delimiter;
 	private SimpleDateFormat dateFormat;
 	private String columns;
@@ -152,9 +135,10 @@ public class TransmitMonitorFormatter extends OutputFormatter
 				try { colwidths[i] = Integer.parseInt(st.nextToken()); }
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Invalid width in position " + i + 
-						", 'colwidths' property must be an array of numbers.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Invalid width in position {}" +
+						    ", 'colwidths' property must be an array of numbers.", i);
 					colwidths[i] = 10;
 				}
 			}
@@ -271,10 +255,8 @@ public class TransmitMonitorFormatter extends OutputFormatter
 				Variable v = rawmsg.getPM(colarray[i]);
 				if (v == null)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-						"Message from platform " + nm + "(" + id 
-						+ ") does not have performance measurement '"
-						+ colarray[i] + "'");
+					log.warn("Message from platform {}({}) does not have performance measurement '{}'",
+						     nm, id, colarray[i]);				
 				}
 				else
 					colval = v.toString();

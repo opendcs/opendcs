@@ -1,9 +1,20 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.consumer;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
@@ -14,6 +25,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
@@ -35,6 +49,7 @@ import decodes.util.PropertySpec;
 */
 public class ShefitFormatter extends OutputFormatter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();	
 	private SimpleDateFormat dateFormat;
 	private NumberFormat numberFormat;
 	private String siteNameType = null;
@@ -109,7 +124,6 @@ public class ShefitFormatter extends OutputFormatter
 
 		char platformType = 'I';
 		String dcpId = "unknown";
-//		String platformSiteName = "unknown";
 		Site platformSite = null;
 		try
 		{
@@ -131,11 +145,10 @@ public class ShefitFormatter extends OutputFormatter
 						dcpId = dcpId.substring(0, 8);
 				}
 			}
-//			platformSiteName = platform.getSiteName(false);
 		}
-		catch(UnknownPlatformException e)
+		catch(UnknownPlatformException ex)
 		{
-//			throw new OutputFormatterException(e.toString());
+			log.atError().setCause(ex).log("Unknown platform in format Message");
 		}
 
 		
@@ -163,21 +176,10 @@ public class ShefitFormatter extends OutputFormatter
 				}
 			}
 
-//			String platformName = sensor.getSensorSiteName();
-//			if (platformName == null)
-//				platformName = platformSiteName;
-//			else if (platformSiteName == "unknown")
-//			{
-//				dcpId = platformName;
-//				platformSiteName = platformName;
-//			}
-
-//			EngineeringUnit eu = ts.getEU();
 
 			DataType dt = sensor.getDataType(Constants.datatype_SHEF);
 			String shefCode = dt != null ? dt.getCode() : "XX";
 
-//			String recordingInt = "" + sensor.getRecordingInterval();
 
 			int sz = ts.size();
 			for(int i=0; i<sz; i++)
@@ -188,11 +190,11 @@ public class ShefitFormatter extends OutputFormatter
 
 				double value;
 				try { value = tv.getDoubleValue(); }
-				catch(NoConversionException e)
+				catch(NoConversionException ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Bad sample '" + tv.toString()
-						+ "' in sensor '" + shefCode + "': should be a number.");
+					log.atError()
+					   .setCause(ex)
+					   .log("Bad sample '{}' in sensor '{}': should be a number.", tv.toString(), shefCode);
 					continue;
 				}
 

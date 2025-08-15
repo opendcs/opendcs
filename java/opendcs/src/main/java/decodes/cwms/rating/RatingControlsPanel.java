@@ -1,24 +1,11 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.2  2012/10/30 15:46:37  mmaloney
- * dev
- *
- * Revision 1.1  2012/10/30 01:59:27  mmaloney
- * First cut of rating GUI.
- * 
  * This software was written by Cove Software, LLC ("COVE") under contract 
  * to the United States Government. 
  * 
  * No warranty is provided or implied other than specific contractual terms
  * between COVE and the U.S. Government
  * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
+ * U.S. Army Corps of Engineers, Hydrologic Engineering Center.
  */
 package decodes.cwms.rating;
 
@@ -30,11 +17,15 @@ import java.awt.event.ActionEvent;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
 Control panel at bottom of CWMS Rating GUI.
 */
 public class RatingControlsPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
     JButton refreshButton = new JButton("Refresh");
     JButton exportXmlButton = new JButton("Export XML");
     JButton deleteButton = new JButton("Delete");
@@ -56,7 +47,7 @@ public class RatingControlsPanel extends JPanel
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Cannot initialize RatingControlsPanel");
 		}
 	}
 
