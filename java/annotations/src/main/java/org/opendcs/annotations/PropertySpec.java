@@ -40,17 +40,61 @@ public @interface PropertySpec
     
     /**
      * Marks this property as required. 
-     * If true and no requirementGroup is specified, the property is placed in its own unique group.
+     * If true and no requirementGroups are specified, the property is placed in its own unique group.
      * @return true if this property is required
      */
     boolean required() default false;
     
     /**
-     * Specifies the requirement group this property belongs to.
-     * Properties in the same group are mutually exclusive - only one is required.
-     * Empty string means the property is not part of any requirement group (optional).
+     * Specifies the requirement groups this property belongs to.
+     * A property can belong to multiple requirement groups with different validation types.
+     * Empty array means the property is not part of any requirement group (optional).
+     * If required=true and requirementGroups is empty, a unique individual group is created.
      *
-     * @return the requirement group name, or empty string if optional
+     * @return array of requirement group definitions
      */
-    String requirementGroup() default "";
+    RequirementGroupDef[] requirementGroups() default {};
+    
+    /**
+     * Annotation to define a requirement group
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({})  // This annotation is only used within PropertySpec
+    public @interface RequirementGroupDef
+    {
+        /**
+         * The name of the requirement group
+         * @return group name
+         */
+        String name();
+        
+        /**
+         * The type of requirement validation for this group
+         * @return requirement type
+         */
+        RequirementGroupType type() default RequirementGroupType.ONE_OF;
+        
+        /**
+         * Optional description for this group
+         * @return group description
+         */
+        String description() default "";
+    }
+    
+    /**
+     * Enum defining the types of requirement validation
+     */
+    public enum RequirementGroupType
+    {
+        /** Exactly one property in the group must be satisfied */
+        ONE_OF,
+        /** All properties in the group must be satisfied, or none */
+        ALL_OR_NONE,
+        /** At least one property in the group must be satisfied */
+        AT_LEAST_ONE,
+        /** All properties in the group must be satisfied */
+        ALL_REQUIRED,
+        /** Individual property requirement (for backwards compatibility) */
+        INDIVIDUAL
+    }
 }

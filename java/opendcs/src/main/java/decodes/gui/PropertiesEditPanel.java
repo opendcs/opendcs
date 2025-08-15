@@ -14,6 +14,9 @@ import javax.swing.border.*;
 import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.gui.properties.PropertiesTableModel;
 import decodes.util.PropertySpec;
+import decodes.util.RequirementGroup;
+
+import org.opendcs.gui.GuiConstants;
 
 import java.awt.event.*;
 
@@ -96,9 +99,23 @@ public class PropertiesEditPanel extends JPanel
                 String pn = ((String) model.getValueAt(modelRow, 0)).toUpperCase();
                 PropertySpec ps = propHash.get(pn);
                 cr.setToolTipText(ps != null ? ps.getDescription() : "");
-                if (ps != null && !model.isRequirementGroupSatisfied(ps.getRequirementGroup())) {
-                    if (value == null || value.toString().trim().isEmpty()) {
-                        Color c = new Color(255, 220, 220);
+                // Check if this property is required and highlight if missing
+                if (ps != null && model.isPropertyRequired(pn)) {
+                    boolean hasValue = value != null && !value.toString().trim().isEmpty();
+                    List<RequirementGroup> groups = model.getPropertyRequirementGroups(pn);
+                    boolean anyGroupSatisfied = true;
+                    
+                    // Check if at least one of the property's requirement groups is satisfied
+                    for (RequirementGroup group : groups) {
+                        if (!model.isRequirementGroupSatisfied(group.getGroupName())) {
+                            anyGroupSatisfied = false;
+                            break;
+                        }
+                    }
+                    
+                    // Highlight empty required fields that are part of unsatisfied groups
+                    if (!hasValue && !anyGroupSatisfied) {
+                        Color c = GuiConstants.RED_MISSING_COLOR;
                         cr.setOpaque(true);
                         cr.setBackground(c);
                     } else {

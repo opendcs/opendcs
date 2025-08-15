@@ -16,6 +16,7 @@
 package decodes.tsdb.algo;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
@@ -45,6 +46,7 @@ import decodes.tsdb.VarFlags;
 import decodes.tsdb.ParmRef;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
+import decodes.util.RequirementGroup;
 import decodes.cwms.CwmsFlags;
 import decodes.hdb.HdbFlags;
 
@@ -1653,7 +1655,36 @@ ex.printStackTrace(System.err);
 									final org.opendcs.annotations.PropertySpec propSpec = p.second;
 									final String name = PropertySpec.getPropertyName(f, propSpec);
 									String specType = PropertySpec.getSpecTypeFromAnnotation(propSpec, f);
-									return new PropertySpec(name, specType, propSpec.description(), propSpec.required(), propSpec.requirementGroup());
+									
+									// Create PropertySpec
+									PropertySpec spec = new PropertySpec(name, specType, propSpec.description());
+									
+									// Handle requirement groups
+									org.opendcs.annotations.PropertySpec.RequirementGroupDef[] groupDefs = propSpec.requirementGroups();
+									if (groupDefs != null && groupDefs.length > 0)
+									{
+										// Create RequirementGroup objects from annotations
+										List<RequirementGroup> groups = new ArrayList<>();
+										for (org.opendcs.annotations.PropertySpec.RequirementGroupDef groupDef : groupDefs)
+										{
+											// Convert enum name directly - they have the same names
+											RequirementGroup.RequirementType type = 
+												RequirementGroup.RequirementType.valueOf(groupDef.type().name());
+											
+											RequirementGroup group = new RequirementGroup(groupDef.name(), type, groupDef.description());
+											group.addProperty(name);
+											groups.add(group);
+										}
+										spec.setRequirementGroups(groups);
+										spec.setRequired(true);
+									}
+									else if (propSpec.required())
+									{
+										// If required but no groups specified, create individual requirement
+										spec.setRequired(true);
+									}
+									
+									return spec;
 								})
 								.collect(Collectors.toList())
 								.toArray(new PropertySpec[0]);

@@ -756,31 +756,35 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
             if (ok != JOptionPane.YES_OPTION)
                 return;
         }
+        // Check requirement groups before saving
         PropertiesTableModel model = (PropertiesTableModel)propertiesPanel.propertiesTable.getModel();
-        for (String groupName : model.getRequirementGroups().keySet()) {
-            if (!model.isRequirementGroupSatisfied(groupName)) {
-                List<String> members = model.getRequirementGroups().get(groupName);
-                if(members.size() == 1)
-                {
-                    int r = JOptionPane.showConfirmDialog(this,
-                            CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.missingErr")
-                                    .replace("%s", members.get(0)));
-                    if (r == JOptionPane.CANCEL_OPTION || r == JOptionPane.NO_OPTION || r == JOptionPane.CLOSED_OPTION)
-                        return;
-                    else if (r == JOptionPane.YES_OPTION)
-                        break;
-                }
-                else{
-                    int r = JOptionPane.showConfirmDialog(this,
-                            CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.missingGroupErr")
-                                .replace("%s", groupName + ": " + String.join(", ", members)));
-                    if (r == JOptionPane.CANCEL_OPTION || r == JOptionPane.NO_OPTION || r == JOptionPane.CLOSED_OPTION)
-                        return;
-                    else if (r == JOptionPane.YES_OPTION)
-                        break;
-                }
-
+        List<String> validationErrors = model.getValidationErrors();
+        
+        if (!validationErrors.isEmpty())
+        {
+            // Build detailed error message showing group types and members
+            StringBuilder errorMsg = new StringBuilder();
+            errorMsg.append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationFailed"))
+                    .append("\n\n");
+            
+            // Add each validation error with details
+            for (String error : validationErrors)
+            {
+                errorMsg.append("• ").append(error).append("\n");
             }
+            
+            errorMsg.append("\n")
+                    .append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.fixRequirements"));
+            
+            // Show error dialog with details about requirement groups
+            int r = JOptionPane.showConfirmDialog(this,
+                errorMsg.toString(),
+                CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationError"),
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+            
+            if (r != JOptionPane.OK_OPTION)
+                return;
         }
         saveToObject(editedObject);
 
