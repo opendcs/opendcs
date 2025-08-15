@@ -10,14 +10,13 @@ import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.database.api.dao.PropertiesDAO;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
-import org.opendcs.fixtures.annotations.EnableIfSql;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 
 import decodes.sql.DbKey;
 import opendcs.dai.LoadingAppDAI;
 
 
-public class PropertiesDAOTestIT extends AppTestBase
+class PropertiesDAOTestIT extends AppTestBase
 {
     @ConfiguredField
     OpenDcsDatabase db;

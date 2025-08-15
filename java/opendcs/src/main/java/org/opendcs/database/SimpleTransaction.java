@@ -15,6 +15,7 @@ public final class SimpleTransaction implements DataTransaction
     private final Connection conn;
     private final Handle jdbiHandle;
 
+    @SuppressWarnings("java:S2095") // Close is manged by the closing of this object.
     public SimpleTransaction(Connection conn, Jdbi jdbi)
     {
 

@@ -52,7 +52,7 @@ import org.opendcs.database.api.DatabaseKey;
  * Recommendation: In new code, always compare keys with key1.equals(key2);
  */
 @SuppressWarnings("serial")
-public class DbKey implements DatabaseKey, Comparable<DbKey>, Serializable
+public final class DbKey implements DatabaseKey, Comparable<DbKey>, Serializable
 {
 	/** Immutable internal long integer key value */
 	private long value;

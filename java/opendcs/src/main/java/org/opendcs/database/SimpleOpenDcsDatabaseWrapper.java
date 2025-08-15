@@ -57,7 +57,8 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
             jdbi.registerColumnMapper(DbKey.class,new ColumnMapper<DbKey>() {
 
                 @Override
-                public DbKey map(ResultSet r, int columnNumber, StatementContext ctx) throws SQLException {
+                public DbKey map(ResultSet r, int columnNumber, StatementContext ctx) throws SQLException
+                {
                     return DbKey.createDbKey(r, columnNumber);
                 }
             });
@@ -98,7 +99,7 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
             {
                 if (dao.isAssignableFrom(PropertiesDAO.class))
                 {
-                    return new DaoWrapper<>(() -> new PropertiesDaoImpl());
+                    return new DaoWrapper<>(PropertiesDaoImpl::new);
                 }
                 Optional<Method> daoMakeMethod;
                 if (timeSeriesDb != null)
