@@ -16,9 +16,11 @@
 
 package decodes.datasource;
 
-import org.slf4j.LoggerFactory;
-
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 
 import lrgs.common.DcpMsg;
@@ -33,7 +35,7 @@ import decodes.db.Constants;
 */
 public class IridiumPMParser extends PMParser
 {
-	private static final org.slf4j.Logger logger = LoggerFactory.getLogger(IridiumPMParser.class);
+	private static final Logger logger = OpenDcsLoggerFactory.getLogger();
 	// Performance Measurement tags:
 	public static final String LATITUDE = "latitude";
 	public static final String LONGITUDE = "longitude";
@@ -142,7 +144,7 @@ public class IridiumPMParser extends PMParser
 					{
 						logger.atWarn()
 						  	  .setCause(ex)
-						  	  .log("Bad STAT field in Iridium header '{}'",hdr);
+						  	  .log("Bad STAT field in Iridium header '{}'", hdr);
 					}
 				}
 			}
@@ -160,7 +162,7 @@ public class IridiumPMParser extends PMParser
 				{
 					logger.atWarn()
 						  .setCause(ex)
-						  .log("Bad LAT field in Iridium header '{}'",hdr);
+						  .log("Bad LAT field in Iridium header '{}'", hdr);
 				}
 			}
 			idx = hdr.indexOf("LON=");

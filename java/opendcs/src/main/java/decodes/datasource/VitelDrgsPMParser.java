@@ -1,37 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.5  2004/08/24 23:52:46  mjmaloney
-*  Added javadocs.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.4  2003/12/07 20:36:49  mjmaloney
-*  First working implementation of EDL time stamping.
-*
-*  Revision 1.3  2002/06/03 15:39:00  mjmaloney
-*  DR fixes.
-*
-*  Revision 1.2  2002/06/03 00:54:43  mjmaloney
-*  dev
-*
-*  Revision 1.1  2002/05/21 19:50:19  mjmaloney
-*  Created to handle slightly different header coming from the Vitel DRGS.
-*
-*
-*	5/21/2002 - created based on GoesPMParser
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Calendar;
 import java.text.ParsePosition;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import ilex.util.ArrayUtil;
 import ilex.util.ByteUtil;
 import ilex.var.Variable;
 
@@ -46,6 +38,7 @@ import decodes.db.Constants;
 */
 public class VitelDrgsPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/* Note: This class will use the label strings defined in
 	   GoesPMParser for DCP_ADDRESS, MESSAGE_TIME, MESSAGE_LENGTH,
 	   SIGNAL_STRENGTH, FREQ_OFFSET, MOD_INDEX, QUALITY, CHANNEL,
@@ -76,8 +69,7 @@ public class VitelDrgsPMParser extends PMParser
 		msg.setHeaderLength(36);
 
 		if (data == null || data.length < 36)
-			throw new HeaderParseException(
-				"Header to short, 36 bytes is required");
+			throw new HeaderParseException("Header to short, 36 bytes is required");
 
 		/*
 		 * Parse necessary parameters: DCP addr, length, channel, timestamp
@@ -93,34 +85,31 @@ public class VitelDrgsPMParser extends PMParser
 		msg.setMediumId(dcpAddr);
 
 		String lenfield = new String(data, 31, 5);
-		try 
+		try
 		{
-			msg.setPM(GoesPMParser.MESSAGE_LENGTH, 
+			msg.setPM(GoesPMParser.MESSAGE_LENGTH,
 				new Variable(Long.parseLong(lenfield)));
 		}
-		catch(NumberFormatException e)
+		catch(NumberFormatException ex)
 		{
-			throw new HeaderParseException("Invalid length field '"
-				+ lenfield + '"');
+			throw new HeaderParseException("Invalid length field '" + lenfield + '"', ex);
 		}
 
 		String chanfield = new String(data, 25, 3);
-		try 
+		try
 		{
-			msg.setPM(GoesPMParser.CHANNEL, 
-				new Variable(Long.parseLong(chanfield))); 
+			msg.setPM(GoesPMParser.CHANNEL,
+				new Variable(Long.parseLong(chanfield)));
 		}
-		catch(NumberFormatException e)
+		catch(NumberFormatException ex)
 		{
-			throw new HeaderParseException("Invalid channel field '"
-				+ chanfield + "'");
+			throw new HeaderParseException("Invalid channel field '" + chanfield + "'", ex);
 		}
 
 		String datefield = new String(data, 8, 11);
 		Date d = goesDateFormat.parse(datefield, new ParsePosition(0));
 		if (d == null)
-			throw new HeaderParseException("Invalid timestamp field '"
-				+ datefield + "'");
+			throw new HeaderParseException("Invalid timestamp field '" + datefield + "'");
 		msg.setPM(GoesPMParser.MESSAGE_TIME, new Variable(d));
 
 		/*
@@ -136,7 +125,7 @@ public class VitelDrgsPMParser extends PMParser
 			msg.setPM(GoesPMParser.SIGNAL_STRENGTH,
 				new Variable(Long.parseLong(new String(data, 19, 2))));
 
-			msg.setPM(GoesPMParser.FREQ_OFFSET, 
+			msg.setPM(GoesPMParser.FREQ_OFFSET,
 				new Variable(new String(data, 21, 2)));
 
 			msg.setPM(GoesPMParser.MOD_INDEX, new Variable((char)data[23]));
@@ -145,12 +134,12 @@ public class VitelDrgsPMParser extends PMParser
 
 			msg.setPM(GoesPMParser.SPACECRAFT, new Variable((char)data[28]));
 
-			msg.setPM(GoesPMParser.UPLINK_CARRIER, 
+			msg.setPM(GoesPMParser.UPLINK_CARRIER,
 				new Variable(new String(data, 29, 2)));
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			// Silently allow failures for above.
+			log.atTrace().setCause(ex).log("Unable to set an optional performance measurement.");
 		}
 	}
 
@@ -173,4 +162,3 @@ public class VitelDrgsPMParser extends PMParser
 	}
 
 }
-
