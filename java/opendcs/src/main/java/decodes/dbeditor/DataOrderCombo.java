@@ -1,42 +1,43 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.3  2008/01/03 21:16:40  mmaloney
-*  internationalization
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2004/09/20 14:18:43  mjmaloney
-*  Javadocs
-*
-*  Revision 1.1  2003/11/20 00:59:04  mjmaloney
-*  Add DataOrder to Decoding Script Dialog.
-*  Add elevation, elev-units, and description to site edit panel.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
-import java.awt.*;
 import javax.swing.JComboBox;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
 import decodes.db.Constants;
 
 /**
 This class is a combo-box for data order choices. It allows the owner to
 get/set the data order by the single character codes defined in db.Constants.
 */
-public class DataOrderCombo extends JComboBox
+public class DataOrderCombo extends JComboBox<String>
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static String orders[];
 	static
 	{
 	/** First character of these values MUST agree with dataOrder constants: */
-		orders = new String[]{ 
+		orders = new String[]{
 			genericLabels.getString("Ascending"),
 			genericLabels.getString("Descending"),
 			"Undefined"
@@ -47,12 +48,13 @@ public class DataOrderCombo extends JComboBox
     public DataOrderCombo()
 	{
 		super(orders);
-        try 
+        try
 		{
             jbInit();
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch (Exception ex)
+		{
+        	GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 

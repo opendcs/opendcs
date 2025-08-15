@@ -1,15 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.3  2008/11/20 18:49:21  mjmaloney
-*  merge from usgs mods
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.ResourceBundle;
 
 import ilex.util.TextUtil;
@@ -26,9 +38,9 @@ import decodes.util.DecodesSettings;
 Panel containing a sortable list of Platform Configurations.
 */
 @SuppressWarnings("serial")
-public class ConfigsListPanel extends JPanel
-	implements ListOpsController
+public class ConfigsListPanel extends JPanel implements ListOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -41,14 +53,15 @@ public class ConfigsListPanel extends JPanel
 	/** Constructor. */
     public ConfigsListPanel()
 	{
-        try {
+        try
+		{
 			configSelectPanel = new ConfigSelectPanel();
 		    listOpsPanel = new ListOpsPanel(this);
             jbInit();
         }
-        catch(Exception ex) 
+        catch (Exception ex)
 		{
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -74,9 +87,9 @@ public class ConfigsListPanel extends JPanel
 	//================ from ListOpsController ======================
 
 	/** @return type of entity that this panel edits. */
-	public String getEntityType() 
-	{ 
-		return dbeditLabels.getString("ListPanel.platformConfigEntity"); 
+	public String getEntityType()
+	{
+		return dbeditLabels.getString("ListPanel.platformConfigEntity");
 	}
 
 	/** Called when the 'Open' button is pressed. */
@@ -132,11 +145,13 @@ public class ConfigsListPanel extends JPanel
 				String modelName = em.getName();
 				if ( modelName != null ) {
 					modelName = modelName.trim();
-					try {
-						ob = 
-						Database.getDb().getDbIo().newPlatformConfig(ob, modelName, originator);
-					} catch(DatabaseException ex)
+					try
 					{
+						ob = Database.getDb().getDbIo().newPlatformConfig(ob, modelName, originator);
+					}
+					catch (DatabaseException ex)
+					{
+						log.atTrace().setCause(ex).log("Unable to create new PlatformConfig with DatabaseIO.");
 						ob = new PlatformConfig("Unknown");
 					}
 					ob.equipmentModel = em;
@@ -148,7 +163,7 @@ public class ConfigsListPanel extends JPanel
 			else
 				return;
 		}
-		
+
 		doOpen(ob);
 	}
 
@@ -160,13 +175,14 @@ public class ConfigsListPanel extends JPanel
 		{
 			DbEditorFrame.instance().showError(
 				LoadResourceBundle.sprintf(
-					dbeditLabels.getString("ListPanel.selectCopy"), 
+					dbeditLabels.getString("ListPanel.selectCopy"),
 					getEntityType()));
 			return;
 		}
 		try { pc.read(); }
 		catch(DatabaseException ex)
 		{
+			log.atError().setCause(ex).log(dbeditLabels.getString("ConfigsListPanel.cannotRead"));
 			DbEditorFrame.instance().showError(
 				dbeditLabels.getString("ConfigsListPanel.cannotRead") + ex);
 		}
@@ -178,7 +194,7 @@ public class ConfigsListPanel extends JPanel
 		ob.numPlatformsUsing = 0;
 		EquipmentModel em = ob.getEquipmentModel();
 		String originator = settings.decodesConfigOwner;
-		if ( originator == null || originator.trim().equals("") ) 
+		if ( originator == null || originator.trim().equals("") )
 		{
 	    	newName = JOptionPane.showInputDialog(
 	    		DbEditorFrame.instance(),
@@ -190,7 +206,7 @@ public class ConfigsListPanel extends JPanel
 			{
 				DbEditorFrame.instance().showError(
 					LoadResourceBundle.sprintf(
-						dbeditLabels.getString("ListPanel.alreadyExists"), 
+						dbeditLabels.getString("ListPanel.alreadyExists"),
 						getEntityType()));
 				return;
 			}
@@ -203,14 +219,15 @@ public class ConfigsListPanel extends JPanel
 			newName = " ";
 			if ( em != null ) {
 				String modelName = em.getName();
-				if ( modelName != null ) { 
+				if ( modelName != null ) {
 					modelName = modelName.trim();
 					try {
-						ob = 
+						ob =
 						Database.getDb().getDbIo().newPlatformConfig(ob, modelName, originator);
 						newName = ob.getName();
 					} catch(DatabaseException ex)
 					{
+						log.atTrace().setCause(ex).log("Unable to create new PlatformConfig using DatabaseIO.");
 						newName = "Unknown";
 						ob.configName = newName;
 					}
@@ -290,6 +307,9 @@ public class ConfigsListPanel extends JPanel
 			catch(DatabaseException ex)
 			{
 				if (pc.lastReadTime.getTime() != 0L)
+					log.atError().setCause(ex).log(LoadResourceBundle.sprintf(
+							dbeditLabels.getString("ConfigsListPanel.readError"),
+							pc.configName));
 					parent.showError(
 						LoadResourceBundle.sprintf(
 							dbeditLabels.getString("ConfigsListPanel.readError"),
@@ -316,4 +336,3 @@ public class ConfigsListPanel extends JPanel
 		configSelectPanel.replace(oldPc, newPc);
 	}
 }
-

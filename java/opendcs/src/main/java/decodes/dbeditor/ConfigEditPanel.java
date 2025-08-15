@@ -1,17 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.6  2013/07/12 11:50:15  mmaloney
-*  Dev
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.5  2013/05/20 19:24:20  shweta
-*  fixed bug-- http://jirasvr:8080/browse/TPD-104
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.4  2013/01/08 20:48:27  mmaloney
-*  Relax 100 sensor limit.
-*  Get rid of 'setPreferredSize' calls.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -19,6 +19,11 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,19 +32,14 @@ import java.util.ResourceBundle;
 
 import ilex.gui.Help;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.gui.*;
 import decodes.db.PlatformConfig;
-import decodes.datasource.GoesPMParser;
-import decodes.datasource.IridiumPMParser;
 import decodes.db.ConfigSensor;
-import decodes.db.ScriptSensor;
 import decodes.db.EquipmentModel;
 import decodes.db.Constants;
 import decodes.db.DecodesScript;
 import decodes.db.DecodesScriptException;
-import decodes.db.UnitConverterDb;
 import decodes.util.TimeOfDay;
 import decodes.xml.XmlDatabaseIO;
 import decodes.db.Database;
@@ -52,9 +52,9 @@ import decodes.util.DecodesSettings;
 Editor panel for Platform Configurations.
 This panel is opened from the ConfigListPanel when the user selects 'Open'.
 */
-public class ConfigEditPanel extends DbEditorTab
-       implements ChangeTracker, EntityOpsController
+public class ConfigEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
     static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -159,7 +159,7 @@ public class ConfigEditPanel extends DbEditorTab
         }
         catch(Exception ex)
         {
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -199,7 +199,7 @@ public class ConfigEditPanel extends DbEditorTab
         }
         catch(Exception ex)
         {
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -532,7 +532,7 @@ public class ConfigEditPanel extends DbEditorTab
                                             .scriptType(Constants.scriptTypeDecodes)
                                             .addDefaultSensors()
                                             .build();
-            
+
             if (dsEditDlg == null)
             {
                 dsEditDlg = new DecodingScriptEditDialog(ds, this);
@@ -547,7 +547,7 @@ public class ConfigEditPanel extends DbEditorTab
         }
         catch (DecodesScriptException | IOException ex)
         {
-            throw new RuntimeException("Unable to create Decodes Script for GUI",ex);
+            throw new RuntimeException("Unable to create Decodes Script for GUI", ex);
         }
    }
 
@@ -639,12 +639,13 @@ public class ConfigEditPanel extends DbEditorTab
         // Write the changes out to the database.
         try
         {
-            Logger.instance().debug1("ConfigEditPanel.saveChanges - writing config.");
+            log.debug("ConfigEditPanel.saveChanges - writing config.");
             theConfig.write();
         }
-        catch(DatabaseException e)
+        catch(DatabaseException ex)
         {
-            parent.showError(e.toString());
+            log.atError().setCause(ex).log("Unable to save changes.");
+            parent.showError(ex.toString());
             return false;
         }
 
@@ -664,36 +665,38 @@ public class ConfigEditPanel extends DbEditorTab
                     {
                         if (!p.isComplete())
                         {
-                            Logger.instance().debug1("ConfigEditPanel.saveChanges - reading platform.");
+                            log.debug("ConfigEditPanel.saveChanges - reading platform.");
                             p.read();
                         }
                         p.setConfig(theConfig);
                         {
-                            Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform.");
+                            log.debug("ConfigEditPanel.saveChanges - writing platform.");
                             p.write();
                         }
                     }
-                    catch(DatabaseException e)
+                    catch(DatabaseException ex)
                     {
+                        log.atError().setCause(ex).log("Unable to write platform.");
                         TopFrame.instance().showError(
                             LoadResourceBundle.sprintf(
                                 dbeditLabels.getString(
                                     "ConfigEditPanel.cannotWritePlatform"),
-                                p.makeFileName(), e.toString()));
+                                p.makeFileName(), ex.toString()));
                     }
                 }
             }
-            Logger.instance().debug1("ConfigEditPanel.saveChanges - writing platform list.");
+            log.debug("ConfigEditPanel.saveChanges - writing platform list.");
 
             try
             {
                 db.platformList.write();
             }
-            catch(DatabaseException e)
+            catch(DatabaseException ex)
             {
+                log.atError().setCause(ex).log("Unable to write platform list.");
                 TopFrame.instance().showError(
                     dbeditLabels.getString("ConfigEditPanel.cannotWriteList")
-                    + e.toString());
+                    + ex.toString());
             }
 
         }
@@ -774,7 +777,7 @@ public class ConfigEditPanel extends DbEditorTab
         theConfig.validateDecodingScriptSensors();
     }
 
-   
+
     /**
       Called when the Add Performance Measurements button is pressed.
       Adds the canned GOES DCP parameters used by USGS.
