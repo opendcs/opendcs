@@ -23,6 +23,7 @@ import ilex.util.Pair;
 public class PropertiesDaoImpl implements PropertiesDAO
 {
 
+    private static final String UNABLE_TO_ACQUIRE_JDBI_HANDLE_FROM_TRANSACTION_OBJECT = "Unable to acquire JDBI Handle From transaction object.";
     private static final String THE_ID_COLUMN_MUST_BE_VALID = "The id column must be valid.";
     private static final String A_VALID_DATABASE_IDENTIFIER_IS_REQUIRED = "A valid Database Identifier is required.";
     private static final String A_VALID_PROPERTIES_OBJECT_MUST_BE_PASSED_INTO_THIS_FUNCTION = "A valid properties object must be passed into this function.";
@@ -41,7 +42,7 @@ public class PropertiesDaoImpl implements PropertiesDAO
         
         
         Handle handle = tx.connection(Handle.class)
-                          .orElseThrow(() -> new OpenDcsDataException("Unable to acquire JDBI Handle From transaction object."));
+                          .orElseThrow(() -> new OpenDcsDataException(UNABLE_TO_ACQUIRE_JDBI_HANDLE_FROM_TRANSACTION_OBJECT));
 
         try
         {
@@ -66,7 +67,6 @@ public class PropertiesDaoImpl implements PropertiesDAO
     public void writeProperties(DataTransaction tx, String tableName, String idColumn, String id2Column,
             DatabaseKey parentKey, int key2, Properties props) throws OpenDcsDataException
     {
-        // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'writeProperties' with sorting key");
     }
 
@@ -81,7 +81,7 @@ public class PropertiesDaoImpl implements PropertiesDAO
         final Properties props = new Properties();
 
         Handle handle = tx.connection(Handle.class)
-                          .orElseThrow(() -> new OpenDcsDataException("Unable to acquire JDBI Handle From transaction object."));
+                          .orElseThrow(() -> new OpenDcsDataException(UNABLE_TO_ACQUIRE_JDBI_HANDLE_FROM_TRANSACTION_OBJECT));
 
         try (Query jdbiQuery = handle.createQuery(q).bind("id", parentKey))
         {
@@ -124,7 +124,7 @@ public class PropertiesDaoImpl implements PropertiesDAO
         
         
         Handle handle = tx.connection(Handle.class)
-                          .orElseThrow(() -> new OpenDcsDataException("Unable to acquire JDBI Handle From transaction object."));
+                          .orElseThrow(() -> new OpenDcsDataException(UNABLE_TO_ACQUIRE_JDBI_HANDLE_FROM_TRANSACTION_OBJECT));
 
         try (Update update = handle.createUpdate(q))
         {

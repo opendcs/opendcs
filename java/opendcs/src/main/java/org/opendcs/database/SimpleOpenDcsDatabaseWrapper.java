@@ -54,7 +54,8 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         if (!settings.editDatabaseType.contains("XML"))
         {
             this.jdbi = Jdbi.create(dataSource);
-            jdbi.registerColumnMapper(DbKey.class,new ColumnMapper<DbKey>() {
+            jdbi.registerColumnMapper(DbKey.class,new ColumnMapper<DbKey>()
+            {
 
                 @Override
                 public DbKey map(ResultSet r, int columnNumber, StatementContext ctx) throws SQLException
