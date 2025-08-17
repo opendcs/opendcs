@@ -15,11 +15,11 @@
  *
  */
 
-package decodes.cwms.algo;
+package org.opendcs.algorithms;
 
-final class NotEnoughDataException extends Exception
+public final class NotEnoughDataException extends Exception
 {
-	NotEnoughDataException(String msg)
+	public NotEnoughDataException(String msg)
 	{
 		super(msg);
 	}
