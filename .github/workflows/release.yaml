@@ -84,10 +84,20 @@ jobs:
              -PcentralApiUsername=${{ secrets.mavenCentralUsername != null && secrets.mavenCentralUsername || secrets.ORG_OPENDCS_CENTRALAPI_USERNAME }} \
              -PcentralApiPassword=${{ secrets.mavenCentralPassword != null && secrets.mavenCentralPassword || secrets.ORG_OPENDCS_CENTRALAPI_PASSWORD }} \
              -PsigningKey="${{ secrets.signingKey != null && secrets.signingKey || secrets.SIGNING_KEY }}"
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5.8.0
+        with:
+          tags: |
+            type=sha
+            type=ref,event=tag
+            type=raw,value=${{env.VERSION}}
+            type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD'}}
+            type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD-hhmmss'}}
       - name: create docker images
         run: |
           REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
-          ./build_docker.sh ghcr.io/${REPO} ${VERSION}
+          ./build_docker.sh ghcr.io/${REPO} ${VERSION} "${{steps.meta.outputs.tags}}"
       - name: upload Release
         env:
             GH_TOKEN: "${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}"
@@ -105,7 +115,10 @@ jobs:
       - name: Push images
         run: |
           REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
-          docker push ghcr.io/${REPO}/lrgs:${VERSION}
-          docker push ghcr.io/${REPO}/routingscheduler:${VERSION}
-          docker push ghcr.io/${REPO}/compdepends:${VERSION}
-          docker push ghcr.io/${REPO}/compproc:${VERSION}
+          images=("lrgs"  "routingscheduler"  "compproc" "compdepends")
+          for image in ${images[@]}; do
+            while IFS= read -r version; do
+              docker push ghcr.io/${REPO}/${image}:${version}
+            done <<< "${{steps.meta.outputs.tags}}"
+          done
+          
