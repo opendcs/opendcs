@@ -29,11 +29,13 @@ import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 import opendcs.dai.TimeSeriesDAI;
+import org.opendcs.algorithms.NotEnoughDataException;
+import org.opendcs.algorithms.TimeSeriesUtil;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
@@ -45,7 +47,7 @@ import hec.data.cwmsRating.RatingSet;
 				" evaporation rates and total evaporation as flow")
 public final class InflowEstimationAlgo extends AW_AlgorithmBase
 {
-	private static final Logger LOGGER = LoggerFactory.getLogger(InflowEstimationAlgo.class.getName());
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	private CwmsRatingDao ratingDao;
 	private Connection conn;
@@ -96,7 +98,6 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 			description = "Time Series Identifier for additional outflow time series, Example FTPK.Flow-Evap.Inst.0.0.Rev-NWO-Evap")
 	public NamedVariable outflowTsId6;
 
-	private final List<Double> constituents = new ArrayList<>();
 	private CTimeSeries inflowTs;
 	private CTimeSeries outflowTs1;
 	private CTimeSeries outflowTs2;
@@ -125,13 +126,13 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	@Override
 	protected void beforeTimeSlices() throws DbCompException
 	{
-		debug2("InflowEstimationAlgo::beforeTimeSlices");
+		log.atDebug().log("InflowEstimationAlgo::beforeTimeSlices");
 	}
 
 	@Override
 	protected void doAWTimeSlice() throws DbCompException
 	{
-		debug2("InflowEstimationAlgo::doAWTimeSlice");
+		log.atDebug().log("InflowEstimationAlgo::doAWTimeSlice");
 	}
 
 	private void validateOutput() throws DbCompException
@@ -275,7 +276,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	protected void afterTimeSlices()
 			throws DbCompException
 	{
-		debug2("InflowEstimationAlgo::afterTimeSlices");
+		log.atDebug().log("InflowEstimationAlgo::afterTimeSlices");
 		if(!IntervalOffsetUtil.matchesIntervalOffset(inflowTs, _aggregatePeriodEnd))
 		{
 			return;
@@ -284,7 +285,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		{
 			double release = calculateRelease();
 			double holdout = calculateHoldout();
-			constituents.clear();
+			List<Double> constituents = new ArrayList<>();
 			constituents.add(release);
 			constituents.add(holdout);
 			for(CTimeSeries additionalOutflow : Arrays.asList(outflowTs1, outflowTs2, outflowTs3, outflowTs4,
@@ -306,8 +307,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 		}
 		catch(NotEnoughDataException ex)
 		{
-			LOGGER.atDebug().setCause(ex).log("Not enough data found to perform inflow calculation");
-			debug1("Not enough data found to perform inflow calculation: " + ex.getMessage());
+			log.atDebug().setCause(ex).log("Not enough data found to perform inflow calculation");
 		}
 	}
 
@@ -371,18 +371,7 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 	private void extendTimeSeries(CTimeSeries timeSeries) throws DbCompException
 	{
 		Date start = Date.from(_aggregatePeriodEnd.toInstant().minusSeconds(IntervalCodes.getIntervalSeconds(durationPeriod)));
-		if(timeSeries.findWithin(start, 0) != null && timeSeries.findWithin(_aggregatePeriodEnd, 0) != null)
-		{
-			return;
-		}
-		try
-		{
-			timeSeriesDAO.fillTimeSeries(timeSeries, start, _aggregatePeriodEnd);
-		}
-		catch(DbIoException | BadTimeSeriesException e)
-		{
-			throw new DbCompException("Could not retrieve time series: " + timeSeries.getTimeSeriesIdentifier(), e);
-		}
+		TimeSeriesUtil.extendTimeSeries(timeSeriesDAO, timeSeries, start, _aggregatePeriodEnd);
 	}
 
 	private double calculateHoldout() throws DbCompException, NotEnoughDataException, NoConversionException
@@ -393,18 +382,18 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 			extendTimeSeries(stagePoolTs);
 			TSUtil.convertUnits(stagePoolTs, stagePoolTs.getTimeSeriesIdentifier().getStorageUnits());
 			storageRaw = rate(conn, stagePoolTs, stageStorRatingSet);
-			debug2(_aggregatePeriodEnd + ": rated storage: " + storageRaw);
+			log.atDebug().log(_aggregatePeriodEnd + ": rated storage: " + storageRaw);
 		}
 		else
 		{
 			extendTimeSeries(storageTs);
 			TSUtil.convertUnits(storageTs, storageTs.getTimeSeriesIdentifier().getStorageUnits());
 			storageRaw = getValues(storageTs);
-			debug2(_aggregatePeriodEnd + ": storage ts: " + storageRaw);
+			log.atDebug().log(_aggregatePeriodEnd + ": storage ts: " + storageRaw);
 		}
 		//Units are in m3 - calculated to cms
 		double holdout = calculateHoldout(storageRaw);
-		debug2(_aggregatePeriodEnd + ": averaged holdout: " + holdout);
+		log.atDebug().log(_aggregatePeriodEnd + ": averaged holdout: " + holdout);
 		return holdout;
 	}
 
@@ -451,17 +440,17 @@ public final class InflowEstimationAlgo extends AW_AlgorithmBase
 			extendTimeSeries(tailwaterTs);
 			TSUtil.convertUnits(tailwaterTs, tailwaterTs.getTimeSeriesIdentifier().getStorageUnits());
 			releaseRaw = rate(conn, tailwaterTs, tailwaterReleaseRatingSet);
-			debug2(_aggregatePeriodEnd + ": rated release: " + releaseRaw);
+			log.atDebug().log(_aggregatePeriodEnd + ": rated release: " + releaseRaw);
 		}
 		else
 		{
 			extendTimeSeries(releaseTs);
 			TSUtil.convertUnits(releaseTs, releaseTs.getTimeSeriesIdentifier().getStorageUnits());
 			releaseRaw = getValues(releaseTs);
-			debug2(_aggregatePeriodEnd + ": release ts: " + releaseRaw);
+			log.atDebug().log(_aggregatePeriodEnd + ": release ts: " + releaseRaw);
 		}
 		double release = averageOverTimestep(releaseRaw);
-		debug2(_aggregatePeriodEnd + ": averaged release: " + release);
+		log.atDebug().log(_aggregatePeriodEnd + ": averaged release: " + release);
 		return release;
 	}
 
