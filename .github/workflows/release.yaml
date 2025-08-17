@@ -97,7 +97,7 @@ jobs:
       - name: create docker images
         run: |
           REPO=`echo ${{github.repository_owner}} | tr  '[:upper:]' '[:lower:]'`
-          ./build_docker.sh ghcr.io/${REPO} ${VERSION} ""
+          ./build_docker.sh ghcr.io/${REPO} ${VERSION} "${{steps.meta.outputs.tags}}"
       - name: upload Release
         env:
             GH_TOKEN: "${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}"
