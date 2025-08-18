@@ -1,6 +1,18 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.BorderLayout;
@@ -18,11 +30,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Constants;
 import decodes.db.DataPresentation;
 import decodes.db.DataType;
 import decodes.db.EngineeringUnit;
-//import decodes.db.EquipmentModel;
 import decodes.gui.EUSelectDialog;
 import decodes.gui.GuiDialog;
 
@@ -31,24 +46,23 @@ import decodes.gui.GuiDialog;
  * PresentationGroupEditPanel.
  */
 @SuppressWarnings("serial")
-public class EditPresentationDialog 
-	extends GuiDialog
+public class EditPresentationDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
 	private DataTypeCodeCombo standardCombo = new DataTypeCodeCombo();
 	private JTextField codeField = new JTextField();
 	private JTextField unitsField = new JTextField();
-//	private JTextField equipmentModelField = new JTextField();
-	private JComboBox maxDecCombo = new JComboBox(
+
+	private JComboBox<String> maxDecCombo = new JComboBox<>(
 		new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8" });
 	private JTextField minValueField = new JTextField();
 	private JTextField maxValueField = new JTextField();
 
-	
+
 	private DataPresentation editOb = null;
-//	private EquipmentModel selectedEquipmentModel = null;
 	private boolean cancelled = false;
 	private boolean supportsMinMaxValue = false;
 
@@ -63,7 +77,7 @@ public class EditPresentationDialog
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		this.editOb = editOb;
 		fillFields(editOb);
@@ -80,7 +94,7 @@ public class EditPresentationDialog
 		mainPanel.add(paramPanel, BorderLayout.CENTER);
 		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 		getContentPane().add(mainPanel);
-		
+
 		JButton okButton = new JButton(genericLabels.getString("OK"));
 		okButton.addActionListener(
 			new java.awt.event.ActionListener()
@@ -107,19 +121,19 @@ public class EditPresentationDialog
 		paramPanel.add(
 			new JLabel(dbeditLabels.getString("PresentationGroupEditPanel.dtStandard") + ":"),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.5,
-				GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
+				GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
-		paramPanel.add(standardCombo, 
+		paramPanel.add(standardCombo,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 10), 0, 0));
 
 		paramPanel.add(
 			new JLabel(dbeditLabels.getString("PresentationGroupEditPanel.dtCode") + ":"),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
-		paramPanel.add(codeField, 
+		paramPanel.add(codeField,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 10), 0, 0));
@@ -127,11 +141,9 @@ public class EditPresentationDialog
 		paramPanel.add(
 			new JLabel(genericLabels.getString("units") + ":"),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
-		// MJM Leave editable so user can type 'omit', or perhaps
-		// some EU that doesn't yet exist in the database.
-//		unitsField.setEditable(false);
+
 		paramPanel.add(unitsField,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
@@ -150,36 +162,12 @@ public class EditPresentationDialog
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 5, 5, 10), 0, 0));
 
-//		paramPanel.add(
-//			new JLabel(dbeditLabels.getString("ConfigEditPanel.equipmentModelLabel")),
-//			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-//				GridBagConstraints.EAST, GridBagConstraints.NONE, 
-//				new Insets(5, 10, 5, 2), 0, 0));
-//		equipmentModelField.setEditable(false);
-//		paramPanel.add(equipmentModelField,
-//			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-//				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-//				new Insets(5, 0, 5, 10), 0, 0));
-//		JButton selectEquipmentButton = new JButton(genericLabels.getString("select"));
-//		selectEquipmentButton.addActionListener(
-//			new java.awt.event.ActionListener()
-//			{
-//				public void actionPerformed(ActionEvent e)
-//				{
-//					selectEquipmentPressed();
-//				}
-//			});
-//		paramPanel.add(selectEquipmentButton,
-//			new GridBagConstraints(2, 3, 1, 1, 0.0, 0.5,
-//				GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
-//				new Insets(5, 5, 5, 10), 0, 0));
-		
 		paramPanel.add(
 			new JLabel(dbeditLabels.getString("PresentationGroupEditPanel.maxDec")),
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
-		paramPanel.add(maxDecCombo, 
+		paramPanel.add(maxDecCombo,
 			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 10), 25, 0));
@@ -188,18 +176,18 @@ public class EditPresentationDialog
 			paramPanel.add(
 				new JLabel("Min Value:"),
 				new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-					GridBagConstraints.EAST, GridBagConstraints.NONE, 
+					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(5, 10, 5, 2), 0, 0));
-			paramPanel.add(minValueField, 
+			paramPanel.add(minValueField,
 				new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(5, 0, 5, 10), 25, 0));
 			paramPanel.add(
 				new JLabel("Max Value:"),
 				new GridBagConstraints(0, 5, 1, 1, 0.0, 0.5,
-					GridBagConstraints.NORTHEAST, GridBagConstraints.NONE, 
+					GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 					new Insets(5, 10, 5, 2), 0, 0));
-			paramPanel.add(maxValueField, 
+			paramPanel.add(maxValueField,
 				new GridBagConstraints(1, 5, 1, 1, 1.0, 0.5,
 					GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
 					new Insets(5, 0, 5, 10), 25, 0));
@@ -209,28 +197,14 @@ public class EditPresentationDialog
 			paramPanel.add(
 				new JLabel(dbeditLabels.getString("PresentationGroupEditPanel.maxDec")),
 				new GridBagConstraints(0, 3, 1, 1, 0.0, 0.5,
-					GridBagConstraints.NORTHEAST, GridBagConstraints.NONE, 
+					GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 					new Insets(5, 10, 5, 2), 0, 0));
-			paramPanel.add(maxDecCombo, 
+			paramPanel.add(maxDecCombo,
 				new GridBagConstraints(1, 3, 1, 1, 1.0, 0.5,
 					GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
 					new Insets(5, 0, 5, 10), 25, 0));
 		}
 	}
-
-//	protected void selectEquipmentPressed()
-//	{
-//		EquipmentModelSelectDialog dlg = new EquipmentModelSelectDialog();
-//		if (selectedEquipmentModel != null)
-//			dlg.setSelection(selectedEquipmentModel);
-//		launchDialog(dlg);
-//		if (!dlg.cancelled())
-//		{
-//			selectedEquipmentModel = dlg.getSelectedEquipmentModel();
-//			equipmentModelField.setText(
-//				selectedEquipmentModel == null ? "" : selectedEquipmentModel.name);
-//		}
-//	}
 
 	private void selectUnitsPressed()
 	{
@@ -272,18 +246,7 @@ public class EditPresentationDialog
 			codeField.setText(dt.getCode());
 			codeField.setEditable(false);
 		}
-		
-//		if (dp.getEquipmentModelName() == null)
-//		{
-//			equipmentModelField.setText("");
-//			selectedEquipmentModel = null;
-//		}
-//		else
-//		{
-//			equipmentModelField.setText(dp.getEquipmentModelName());
-//			selectedEquipmentModel = Database.getDb().equipmentModelList.get(
-//				dp.getEquipmentModelName());
-//		}
+
 		unitsField.setText(dp.getUnitsAbbr() == null ? "" : dp.getUnitsAbbr());
 		if (dp.getMaxDecimals() < 0 || dp.getMaxDecimals() > 8)
 			dp.setMaxDecimals(3);
@@ -311,25 +274,21 @@ public class EditPresentationDialog
 			showError(dbeditLabels.getString("PresentationGroupEditPanel.noDataType"));
 			return false;
 		}
-		
+
 		int maxDec = maxDecCombo.getSelectedIndex();
-		
+
 		String unitsAbbr = unitsField.getText().trim();
 		if (unitsAbbr.length() == 0)
 		{
 			showError(dbeditLabels.getString("PresentationGroupEditPanel.noUnits"));
 			return false;
 		}
-		
-//		String emName = equipmentModelField.getText().trim();
-//		if (emName.length() == 0)
-//			emName = null;
-		
+
+
 		editOb.setDataType(DataType.getDataType(standard, code));
 		editOb.setUnitsAbbr(unitsAbbr);
-//		editOb.setEquipmentModelName(emName);
 		editOb.setMaxDecimals(maxDec);
-		
+
 		if (supportsMinMaxValue)
 		{
 			editOb.setMinValue(Constants.undefinedDouble);
@@ -339,23 +298,27 @@ public class EditPresentationDialog
 				try { editOb.setMinValue(Double.parseDouble(s)); }
 				catch(Exception ex)
 				{
-					showError("Invalid min value '" + s + "' -- setting min to undefined.");
+					String msg = "Invalid min value '{}' -- setting min to undefined.";
+					log.atError().setCause(ex).log(msg, s);
+					showError(msg.replace("{}", s));
 				}
 			s = maxValueField.getText().trim();
 			if (s.length() > 0)
 				try { editOb.setMaxValue(Double.parseDouble(s)); }
 				catch(Exception ex)
 				{
-					showError("Invalid max value '" + s + "' -- setting max to undefined.");
+					String msg = "Invalid max value '{}' -- setting max to undefined.";
+					log.atError().setCause(ex).log(msg, s);
+					showError(msg.replace("{}", s));
 				}
 		}
-				
+
 		return true;
 	}
-	
+
 	/**
 	 * Called when Cancel button is pressed.
-	 * 
+	 *
 	 * @param e
 	 *            ignored
 	 */
