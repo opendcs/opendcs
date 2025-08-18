@@ -195,7 +195,7 @@ public class ImportComp
                                     }
                                     catch (NoSuchObjectException ex)
                                     {
-                                        log.info("Time Series for parm '{}' doesn't exist.", parm.getRoleName());
+                                        log.atInfo().setCause(ex).log("Time Series for parm '{}' doesn't exist.", parm.getRoleName());
                                         if (!createTimeSeries)
                                         {
                                             log.warn("... and the -C (create TS) flag was not used.");

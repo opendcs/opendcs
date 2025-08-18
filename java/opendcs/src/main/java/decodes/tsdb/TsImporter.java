@@ -198,8 +198,8 @@ public class TsImporter
             {
                 log.atError()
                    .setCause(ex)
-                   .log("Unable to Initialize current timeseries.", ex);
-                return null;
+                   .log("Unable to Initialize current time series {}", key);
+                throw new RuntimeException("Cannot find or create time series " + key, ex);
             }
         });
         if (currentTS != null && units != null)

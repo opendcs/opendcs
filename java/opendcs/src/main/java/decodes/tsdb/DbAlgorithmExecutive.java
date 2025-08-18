@@ -18,6 +18,7 @@ package decodes.tsdb;
 import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.TreeSet;
@@ -107,6 +108,9 @@ public abstract class DbAlgorithmExecutive
 	protected int maxInterpIntervals = 10;
 
 	public final SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z");
+
+	public static final DateTimeFormatter debugLDTF = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+	public static final DateTimeFormatter debugZDTF = DateTimeFormatter.ISO_ZONED_DATE_TIME;
 	
 	protected Date effectiveStart = null;
 	protected Date effectiveEnd = null;

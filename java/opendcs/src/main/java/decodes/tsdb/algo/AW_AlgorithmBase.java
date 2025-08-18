@@ -227,6 +227,7 @@ public abstract class AW_AlgorithmBase
 				aggregateTimeZone = t_string;
 				aggTZ = tz;
 				aggCal.setTimeZone(aggTZ);
+				// for debugging will should always output UTC
 				debugSdf.setTimeZone(TimeZone.getTimeZone(aggregateTimeZone));
 				debug3("Setting aggregate TimeZone to '" + aggregateTimeZone + "'"
 					+ " current time=" + debugSdf.format(new Date()));
@@ -415,8 +416,6 @@ public abstract class AW_AlgorithmBase
 		throws DbCompException, DbIoException
 	{
 		debugSdf.setTimeZone(TimeZone.getTimeZone(aggregateTimeZone));
-//		debug3("Setting aggregate TimeZone to '" + aggregateTimeZone + "'"
-//			+ " current time=" + debugSdf.format(new Date()));
 
 		int defLogPriority = Logger.instance().getMinLogPriority();
 		if (debugLevel != 0)
