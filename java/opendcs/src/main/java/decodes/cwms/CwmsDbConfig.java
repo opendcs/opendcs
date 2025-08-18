@@ -1,13 +1,17 @@
 /*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.cwms;
 
@@ -15,13 +19,16 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.util.DecodesSettings;
 
 public class CwmsDbConfig
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** URI containing host:portnumber:SID  (tnsName value) */
 	private String DbUri;
 
@@ -30,24 +37,24 @@ public class CwmsDbConfig
 
 	/** The Cwms Time Series descriptor version default value */
 	public String cwmsVersion;
-	
+
 	/** The Cwms Time Series Office ID */
 	public String cwmsOfficeId;
-	
+
 	/** The Cwms Time Series default timezone */
 	public String timeZone;
-	
+
 	/** Path plus name of file containing the Shef to Cwms codes mapping */
 	public String shefCwmsParamFile;
-	
+
 	/** The static instance */
 	private static CwmsDbConfig _instance = null;
-	
+
 	private String module = "CwmsDbConfig";
-	
+
 	/** Private constructor -- call instance() to retrieve singleton. */
 	private CwmsDbConfig()
-	{	
+	{
 		DbUri = null;
 		DbAuthFile = "$DCSTOOL_USERDIR/.decodes.auth";
 		timeZone = "GMT";
@@ -74,21 +81,13 @@ public class CwmsDbConfig
 		throws IOException
 	{
 		fileName = EnvExpander.expand(fileName);
-		Logger.instance().info(module +
-			" Loading config file '" + fileName + "'");
-		try 
+		log.info("Loading config file '{}'.", fileName);
+		try (FileInputStream fis = new FileInputStream(fileName))
 		{
 			Properties rawProps = new Properties();
-			FileInputStream fis = new FileInputStream(fileName);
+
 			rawProps.load(fis);
-			fis.close();
 			PropertiesUtil.loadFromProps(this, rawProps);
-		}
-		catch(IOException ex)
-		{
-			String msg = module +  
-				" Cannot open config file '" + fileName + "': " + ex;
-			throw new IOException(msg);
 		}
 	}
 
@@ -103,7 +102,7 @@ public class CwmsDbConfig
 	}
 
 	/**
-	 *  Path plus Name of file containing encrypted username &amp; password 
+	 *  Path plus Name of file containing encrypted username &amp; password
 	 */
 	public String getDbAuthFile()
 	{
@@ -122,25 +121,25 @@ public class CwmsDbConfig
 			return ds.sqlTimeZone;
 		return timeZone;
 	}
-	
+
 	/** The Cwms Time Series descriptor version default value */
 	public String getCwmsVersion()
 	{
 		return cwmsVersion;
 	}
-	
+
 	/** The Cwms Time Series Office ID */
 	public String getCwmsOfficeId()
 	{
 		return cwmsOfficeId;
 	}
-	
+
 	/** Path plus name of file containing the Shef to Cwms codes mapping */
 	public String getShefCwmsParamFile()
 	{
 		return shefCwmsParamFile;
 	}
-	
+
 	public void initFromDecodesDb(CwmsSqlDatabaseIO cwmsDbIo)
 	{
 		DbUri = cwmsDbIo.getSqlDbLocation();

@@ -1,67 +1,21 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.15  2019/02/26 17:16:44  mmaloney
- * HDB 660
- *
- * Revision 1.14  2018/11/28 21:18:48  mmaloney
- * CWMS JOOQ Migration Mods
- *
- * Revision 1.13  2017/01/24 15:36:27  mmaloney
- * CWMS-10060 added support for DecodesSettings.tsidFetchSize
- *
- * Revision 1.12  2016/11/29 00:53:23  mmaloney
- * Overload lookupSiteID
- *
- * Revision 1.11  2016/11/03 18:59:41  mmaloney
- * Implement wildcard evaluation for groups.
- *
- * Revision 1.10  2016/09/29 18:54:36  mmaloney
- * CWMS-8979 Allow Database Process Record to override decodes.properties and
- * user.properties setting. Command line arg -Dsettings=appName, where appName is the
- * name of a process record. Properties assigned to the app will override the file(s).
- *
- * Revision 1.9  2016/06/07 21:27:29  mmaloney
- * fillCache made public to allow it to be called from ts DAO.
- *
- * Revision 1.8  2016/01/27 21:38:52  mmaloney
- * Removed unneeded debugs.
- *
- * Revision 1.7  2015/05/14 13:52:19  mmaloney
- * RC08 prep
- *
- * Revision 1.6  2015/01/30 20:08:12  mmaloney
- * Improve debug.
- *
- * Revision 1.5  2015/01/22 19:50:59  mmaloney
- * log message improvements
- *
- * Revision 1.4  2014/12/11 20:19:20  mmaloney
- * Debug msg improvement
- *
- * Revision 1.3  2014/07/03 12:41:49  mmaloney
- * debug improvements.
- *
- * Revision 1.2  2014/06/27 20:02:23  mmaloney
- * Fixes for deleting a site. It wasn't being removed from cache.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. 
- * 
- * No warranty is provided or implied other than specific contractual terms
- * between COVE and the U.S. Government
- * 
- * Copyright 2016 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.cwms;
 
 import ilex.util.Location;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.sql.Connection;
@@ -70,6 +24,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -93,6 +50,7 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
  */
 public class CwmsSiteDAO extends SiteDAO
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String officeId = null;
 
 	public CwmsSiteDAO(DatabaseConnectionOwner tsdb, String officeId)
@@ -100,7 +58,7 @@ public class CwmsSiteDAO extends SiteDAO
 		super(tsdb);
 		this.officeId = officeId;
 		siteTableName = "CWMS_V_LOC";
-		siteAttributes = 
+		siteAttributes =
 			"location_code, latitude, longitude, nearest_city, state_initial, "
 			+ "'', time_zone_name, nation_id, elevation, 'm', description, location_id, public_name"
 			+ ", location_type, active_flag, vertical_datum, horizontal_datum, location_type";
@@ -122,7 +80,7 @@ public class CwmsSiteDAO extends SiteDAO
 		site.country = rsSite.getString(8);
 
 		double d = rsSite.getDouble(9);
-//Logger.instance().debug3("CwmsSiteDAO.resultSet2Site read elevation: " + d);
+
 		if (!rsSite.wasNull())
 			site.setElevation(d);
 		site.setElevationUnits(rsSite.getString(10));
@@ -144,7 +102,7 @@ public class CwmsSiteDAO extends SiteDAO
 
 		return site;
 	}
-	
+
 	@Override
 	public synchronized DbKey lookupSiteID( final SiteName siteName )
 		throws DbIoException
@@ -158,7 +116,7 @@ public class CwmsSiteDAO extends SiteDAO
 					SiteName obsn = ob.getName(siteName.getNameType());
 					if (obsn == null)
 						return -1;
-					
+
 					return siteName.getNameValue().toLowerCase().compareTo(
 						obsn.getNameValue().toLowerCase());
 				}
@@ -192,7 +150,7 @@ public class CwmsSiteDAO extends SiteDAO
 				parameters.add(officeId);
 			}
 		}
-		
+
 		try
 		{
 			return getSingleResultOr(q.toString(),
@@ -203,12 +161,11 @@ public class CwmsSiteDAO extends SiteDAO
 		catch(SQLException ex)
 		{
 			String msg = "lookupSiteId - Error in query '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException(msg, ex);
 		}
 	}
 
-	public void writeSite(Site newSite) 
+	public void writeSite(Site newSite)
 		throws DbIoException
 	{
 		// site may have come from XML input, and doesn't yet have an ID.
@@ -231,18 +188,17 @@ public class CwmsSiteDAO extends SiteDAO
 			cwmsName = newSite.getPreferredName();
 			if (cwmsName == null)
 			{
-				warning("write site failed, cannot save site with no CWMS name.");
+				log.warn("write site failed, cannot save site with no CWMS name.");
 				return;
 			}
-			warning("No CWMS name for site. Using preferred name " + cwmsName);
+			log.warn("No CWMS name for site. Using preferred name {}", cwmsName);
 			cwmsName = new SiteName(newSite, Constants.snt_CWMS, cwmsName.getNameValue());
 			newSite.addName(cwmsName);
 		}
 		String state = newSite.state;
 		if (state != null && state.length() > 2)
 		{
-			warning("Invalid state in location '" + cwmsName
-				+ "' -- setting to null");
+			log.warn("Invalid state in location '{}' -- setting to null", cwmsName);
 			state = null;
 		}
 		String tz = newSite.timeZoneAbbr;
@@ -262,23 +218,22 @@ public class CwmsSiteDAO extends SiteDAO
 		{
 			if (DecodesSettings.instance().writeCwmsLocations)
 			{
-				Logger.instance().info("Writing CWMS Location '" + cwmsName.getNameValue() 
-					+ "' with officeId=" + officeId);
+				log.info("Writing CWMS Location '{}', with officeId='{}'", cwmsName.getNameValue(), officeId);
 				CwmsDbLoc cwmsDbLoc = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, conn);
-				
+
 				if (newSite.country == null || newSite.country.trim().length() == 0
 				 || newSite.country.trim().toLowerCase().startsWith("us"))
 					newSite.country = "US"; // required
-				
+
 				// MJM for release 5.3 use the new improved version of store
 				// This allows us to save country and nearest city.
 				cwmsDbLoc.store(
 					conn,
-					officeId, 
-					cwmsName.getNameValue(), 
-					state, 
+					officeId,
+					cwmsName.getNameValue(),
+					state,
 					(String)null,               // countyName
-					tz, 
+					tz,
 					newSite.getProperty("location_type"),
 					dlat,
 					dlon,
@@ -303,32 +258,18 @@ public class CwmsSiteDAO extends SiteDAO
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error in CwmsLocJdbc.store for site '"
-				+ cwmsName.getNameValue() + "': " + ex;
-			failure(msg);
-			msg = 
-				"cwmsDbLoc.store failed for officeId=" + officeId
-				+ ", cwmsName=" + cwmsName.getNameValue()
-				+ ", state=" + state
-				+ ", tz=" + tz
-				+ ", locType=" + newSite.getProperty("location_type")
-				+ ", lat=" + dlat 
-				+ ", lon=" + dlon 
-				+ ", elev=" + delev
-				+ ", vertDatum=" + newSite.getProperty("vertical_datum")
-				+ ", horzDatum=" + newSite.getProperty("horizontal_datum")
-				+ ", pubName=" + newSite.getPublicName()
-				+ ", longName=" + newSite.getBriefDescription()
-				+ ", desc=" + newSite.getDescription()
-				+ ", nearestCity=" + newSite.nearestCity;
-			failure(msg);
-			if (Logger.instance().getLogOutput() != null)
-			{
-				failure("STACK TRACE FOLLOWS:");
-				ex.printStackTrace(Logger.instance().getLogOutput());
-			}
+			log.atError()
+			   .setCause(ex)
+			   .log("Error in CwmsLocJdbc.store for site '{}' officeId={}"
+				  + ", state={}, tz={}, locType={}, lat={}, lon={}, elev="
+				  + ", vertDatum={}, horzDatum={}, pubName={}, longName={}, desc=, nearestCity={}",
+				  cwmsName.getNameValue(), officeId, state, tz, newSite.getProperty("location_type"),
+				  dlat, dlon, delev, newSite.getProperty("vertical_datum"),
+				  newSite.getProperty("horizontal_datum"), newSite.getPublicName(), newSite.getBriefDescription(),
+				  newSite.getDescription(), newSite.nearestCity
+				  );
 		}
-		
+
 		// If this was a newly saved site, have to look up its new ID.
 		if (newSite.getId() == Constants.undefinedId)
 		{
@@ -355,7 +296,7 @@ public class CwmsSiteDAO extends SiteDAO
 				continue;
 			super.insertSiteName(newSite.getId(), sn);
 		}
-		propsDao.writeProperties("site_property", "site_id", 
+		propsDao.writeProperties("site_property", "site_id",
 			newSite.getKey(), newSite.getProperties());
 
 		cache.remove(newSite.getId());
@@ -371,10 +312,10 @@ public class CwmsSiteDAO extends SiteDAO
 
 		if (location_code == null || location_code.isNull())
 		{
-			warning("deleteSite called with null location_code");
+			log.warn("deleteSite called with null location_code");
 			return;
 		}
-		
+
 		Site site;
 		try
 		{
@@ -383,17 +324,17 @@ public class CwmsSiteDAO extends SiteDAO
 		catch (NoSuchObjectException e) { site = null; }
 		if (site == null)
 		{
-			warning("deleteSite cannot read site with location_code=" + location_code);
+			log.warn("deleteSite cannot read site with location_code={}", location_code);
 			return;
 		}
-		
+
 		SiteName cwmsName = site.getName(Constants.snt_CWMS);
 		if (cwmsName == null)
 		{
 			throw new DbIoException("Cannot delete site '" + site.getDisplayName()
 				+ "' because it doesn't have a CWMS name.");
 		}
-		
+
 		String q = "select count(*) from cwms_v_ts_id where upper(location_id) = upper(?)";
 		try (Connection conn = getConnection())
 		{
@@ -420,9 +361,9 @@ public class CwmsSiteDAO extends SiteDAO
 					+ "' because platform '" + p.getDisplayName() + "' has a sensor at this site."
 					+ " Remove this reference before deleting site.");
 			}
-			
-			q = "Deleting location_id '" + cwmsName.getNameValue();
-			Logger.instance().info(q);
+
+			log.info("Deleting location_id '{}'", cwmsName.getNameValue());
+
 
 			q = "delete from sitename where siteid = ?";
 			doModify(q,site.getId());
@@ -435,19 +376,17 @@ public class CwmsSiteDAO extends SiteDAO
 		}
 		catch(SQLException ex)
 		{
-			String msg = "SQL Execution on '" + q + "': " + ex;
-			Logger.instance().warning(msg);
-			throw new DbIoException(msg);
+			throw new DbIoException("Unable to delete site. Error on query '" + q + "'", ex);
 		}
 	}
-	
+
 	@Override
 	public void fillCache()
 		throws DbIoException
 	{
-		debug3("CwmsSiteDAO.fillCache()");
+		log.trace("CwmsSiteDAO.fillCache()");
 
-		
+
 		int nNames[] = new int[1];
 		nNames[0] = 0;
 
@@ -459,7 +398,7 @@ public class CwmsSiteDAO extends SiteDAO
 		{
 			int tsidFetchSize = DecodesSettings.instance().tsidFetchSize;
 			if (tsidFetchSize > 0)
-				setFetchSize(tsidFetchSize); 
+				setFetchSize(tsidFetchSize);
 
 			final List<Site> siteList = getResults(q.toString(), rs ->
 			{
@@ -479,7 +418,7 @@ public class CwmsSiteDAO extends SiteDAO
 				q.append(" and upper(b.DB_OFFICE_ID) = upper(?)");
 				parameters.add(officeId);
 			}
-			
+
 			doQuery(q.toString(), rs ->
 			{
 				DbKey key = DbKey.createDbKey(rs, 1);
@@ -494,8 +433,7 @@ public class CwmsSiteDAO extends SiteDAO
 				String nameValue = rs.getString(3);
 				if (site == null)
 				{
-					warning("SiteName for id=" + key + " (" + nameType + ":"
-						+ nameValue + ") but no matching site.");
+					log.warn("SiteName for id={} ({}:{}) but no matching site.", key, nameType, nameValue);
 					return;
 				}
 				SiteName sn = new SiteName(site, nameType, nameValue);
@@ -516,15 +454,13 @@ public class CwmsSiteDAO extends SiteDAO
 				nProps = propsDao.readPropertiesIntoCache("site_property", cache);
 			}
 
-			debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames[0]
-				+ " names, " + nProps + " properties.");
+			log.debug("Site Cache Filled: {} sites, {} names, {} properties.", cache.size(), nNames[0], nProps);
 			lastCacheFillMsec = System.currentTimeMillis();
 		}
 		catch(SQLException ex)
 		{
-			String msg = "fillCache - Error in query '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "fillCache - Error in query '" + q + "'";
+			throw new DbIoException(msg, ex);
 		}
 		finally
 		{
@@ -544,7 +480,7 @@ public class CwmsSiteDAO extends SiteDAO
 		{
 			return siteId;
 		}
-		
+
 		// If that fails, the super class will search for any matching value
 		// in the SITENAME table.
 		return super.lookupSiteID(nameValue);
@@ -578,7 +514,7 @@ public class CwmsSiteDAO extends SiteDAO
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Unable to retrieve site.",ex);
+			throw new DbIoException("Unable to retrieve site.", ex);
 		}
 	}
 }
