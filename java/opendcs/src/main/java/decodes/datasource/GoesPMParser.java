@@ -118,9 +118,8 @@ public class GoesPMParser extends PMParser
 			Date d = goesDateFormat.parse(datefield, new ParsePosition(0));
 			if (d == null)
 			{
-				String emsg = "Invalid timestamp field '" + datefield + "'";
-				System.err.println(emsg);
-				System.err.println("SDF Pattern '" + goesDateFormat.toPattern() + "'");
+				String emsg = "Invalid timestamp field '" + datefield + 
+							  "'. SDF Pattern '" + goesDateFormat.toPattern() + "'";
 				throw new HeaderParseException(emsg);
 			}
 			msg.setPM(MESSAGE_TIME, new Variable(d));

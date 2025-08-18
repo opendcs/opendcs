@@ -394,7 +394,6 @@ public class FtpDataSource extends DataSourceExec
         catch (IOException ex)
         {
 			log.atWarn().setCause(ex).log("Unable to properly disconnect FTP session.");
-            ex.printStackTrace();
         }
         log.info("{} files downloaded.", downloadedFiles.size());
 	}
