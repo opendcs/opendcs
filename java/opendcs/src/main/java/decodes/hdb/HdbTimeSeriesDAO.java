@@ -1301,7 +1301,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				}
 
 				// Keep track of record number range seen.
-				rrhandle.addRecNum(rec.getRecordNum());
+				// TODO: implement new scheme
+				//rrhandle.addRecNum(rec.getRecordNum());
 
 				// Construct timed variable & add it.
 				TimedVariable tv = new TimedVariable(rec.getValue());
@@ -1311,7 +1312,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				cts.addSample(tv);
 
 				// Remember which tasklist records are in this timeseries.
-				cts.addTaskListRecNum(rec.getRecordNum());
+				// TODO: implement new scheme
+				//cts.addTaskListRecNum(rec.getRecordNum());
 			}
 
 			dataCollection.setTasklistHandle(rrhandle);

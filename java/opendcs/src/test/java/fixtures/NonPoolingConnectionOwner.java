@@ -32,6 +32,7 @@ import opendcs.dai.PlatformStatusDAI;
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
+import opendcs.dai.TaskListDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
@@ -336,9 +337,15 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
     }
 
     @Override
-    public CompDependsNotifyDAI makeCompDependsNotifyDAO() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'makeCompDependsNotifyDAO'");
+    public CompDependsNotifyDAI makeCompDependsNotifyDAO()
+    {
+        return null;
+    }
+
+    @Override
+    public TaskListDAI makeTaskListDao()
+    {
+        return null;
     }
 
     @Override
