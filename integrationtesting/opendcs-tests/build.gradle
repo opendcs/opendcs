@@ -49,8 +49,8 @@ test {
 
 testEngines.each { engine ->
     def tmpdir = "${project.layout.buildDirectory.get()}/runs/${engine}/tmp"
-
-    def task = tasks.register("test"+engine.replace("-",""), Test) { task ->
+    def taskName = "test"+engine.replace("-","")
+    def task = tasks.register(taskName, Test) { task ->
         dependsOn ":install:installDist"
         dependsOn ":opendcs:test"
         //outputs.upToDateWhen {false}
