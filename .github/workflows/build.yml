@@ -27,7 +27,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v5
       - name: Set up JDK
         uses: actions/setup-java@v4.7.1
         with:
@@ -123,7 +123,7 @@ jobs:
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v5
       - name: Build base container images
         run: |
           docker build -t opendcs:test-container --target opendcs_base . 
