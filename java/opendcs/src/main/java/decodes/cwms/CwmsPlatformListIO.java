@@ -61,7 +61,7 @@ public class CwmsPlatformListIO extends PlatformListIO
 
 		CwmsSqlDatabaseIO cwmsDbIo = (CwmsSqlDatabaseIO)getDbio();
 
-		Statement stmt = createStatement();
+		
 
 		// When we read platform list, have to joine it with config so that
 		// we implicitely get the predicate to filter on db_office_code.
@@ -72,9 +72,9 @@ public class CwmsPlatformListIO extends PlatformListIO
 			 "WHERE a.ConfigId = b.id";
 
 		log.trace("Executing '{}'", q);
-		ResultSet rs = stmt.executeQuery(q);
-
-		if (rs != null) {
+		try(Statement stmt = createStatement();
+			ResultSet rs = stmt.executeQuery(q);)
+		{
 			while (rs.next())
 			{
 				DbKey platformId = DbKey.createDbKey(rs, 1);
@@ -133,9 +133,6 @@ public class CwmsPlatformListIO extends PlatformListIO
 
 			}
 		}
-		rs.close();
-		stmt.close();
 		readAllTransportMedia(platformList);
 	}
-
 }

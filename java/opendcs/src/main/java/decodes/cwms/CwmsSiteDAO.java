@@ -433,8 +433,7 @@ public class CwmsSiteDAO extends SiteDAO
 				String nameValue = rs.getString(3);
 				if (site == null)
 				{
-					warning("SiteName for id=" + key + " (" + nameType + ":"
-						+ nameValue + ") but no matching site.");
+					log.warn("SiteName for id={} ({}:{}) but no matching site.", key, nameType, nameValue);
 					return;
 				}
 				SiteName sn = new SiteName(site, nameType, nameValue);
