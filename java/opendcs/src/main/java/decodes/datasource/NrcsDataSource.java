@@ -1,6 +1,20 @@
 /*
- * Opens source software by Cove Software, LLC.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+
+* Opens source software by Cove Software, LLC.
+*/
 package decodes.datasource;
 
 import java.util.ArrayList;
@@ -9,9 +23,10 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import decodes.db.ConfigSensor;
@@ -53,11 +68,9 @@ import decodes.util.PropertySpec;
  *  dataTypeStandard - default="nrcs". This determines which sensor data types to include in the URL.
  *  
  */
-public class NrcsDataSource
-	extends DataSourceExec
+public class NrcsDataSource	extends DataSourceExec
 {
-	private String module = "NrcsDataSource";
-	
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// aggregate list of IDs from all network lists.
 	private ArrayList<String> aggIds = new ArrayList<String>();
 	
@@ -119,8 +132,7 @@ public class NrcsDataSource
 		
 		if (p == null)
 		{
-			log(Logger.E_WARNING, module + " No platform for transport ID '" 
-				+ currentMediumId + "' -- skipped.");
+			log.warn("No platform for transport ID '{}' -- skipped.", currentMediumId);
 			return buildNextWebAddr();
 		}
 
@@ -144,16 +156,15 @@ public class NrcsDataSource
 				s = ps.getProperty("omit");
 			if (TextUtil.str2boolean(s))
 			{
-				log(Logger.E_DEBUG1, module + " omit=true for sensor " + sensNum);
+				log.debug("omit=true for sensor {}", sensNum);
 				continue;
 			}
 			
 			DataType dt = cs.getDataType(dataTypeStandard);
 			if (dt == null)
 			{
-				log(Logger.E_WARNING, module + " trans id '" + currentMediumId 
-					+ "' sensor " + sensNum
-					+ " has no " + dataTypeStandard + " data type -- skipping.");
+				log.warn("Trans id '{}' sensor {} has no {} data type -- skipping.",
+				         currentMediumId, sensNum, dataTypeStandard);
 				continue;
 			}
 			if (numElements++ > 0)
@@ -176,7 +187,7 @@ public class NrcsDataSource
 			String until, Vector<NetworkList> netlists) 
 		throws DataSourceException
 	{
-		log(Logger.E_INFORMATION, module + " initializing ...");
+		log.info("initializing ...");
 		PropertiesUtil.copyProps(myProps, rsProps);
 
 		String s = PropertiesUtil.getIgnoreCase(myProps, "baseUrl");
@@ -215,8 +226,7 @@ public class NrcsDataSource
 				dUntil.before(cal.getTime()); 
 				untilInc--, cal.add(calConst,  -1));
 		}
-		log(Logger.E_INFORMATION, module + " since=" + dSince + ", sinceInc=" + sinceInc
-			+ ", until=" + dUntil + ", untilInc=" + untilInc);
+		log.info(" since={}, sinceInc={}, until={}, untilInc={}", dSince, sinceInc, dUntil, untilInc);
 		
 		aggIds.clear();
 		platforms.clear();
@@ -235,19 +245,17 @@ public class NrcsDataSource
 							platforms.add(nl.getDatabase().platformList.getPlatform(
 								nl.transportMediumType, tid));
 						}
-						catch (DatabaseException e)
+						catch (DatabaseException ex)
 						{
-							String msg = "Cannot search database for platform '" + tid + "': " + e;
-							log(Logger.E_WARNING, module + " " + msg);
-							throw new DataSourceException(msg);
+							String msg = "Cannot search database for platform '" + tid + "'";
+							throw new DataSourceException(msg,ex);
 						}
 					}
 			}
 		
 		if (aggIds.size() == 0)
 		{
-			String msg = module + " init() No medium ids. Will only execute once.";
-			log(Logger.E_INFORMATION, msg);
+			log.info("init() No medium ids. Will only execute once.");
 		}
 		xportIdx = 0;
 		urlsGenerated = 0;
@@ -261,8 +269,7 @@ public class NrcsDataSource
 		}
 		catch(InvalidDatabaseException ex) 
 		{
-			log(Logger.E_INFORMATION, module + " " + ex);
-			throw new DataSourceException(module + " " + ex);
+			throw new DataSourceException("Unable to create WebData Source", ex);
 		}
 	}
 	
@@ -283,15 +290,14 @@ public class NrcsDataSource
 			try { return currentWebDs.getRawMessage(); }
 			catch(DataSourceEndException ex)
 			{
-				log(Logger.E_INFORMATION, module
-					+ " end of '" + currentWebDs.getActiveSource() + "'");
+				log.info("End of '{}'.", currentWebDs.getActiveSource());
 			}
 		}
 
 		String url;
 		while((url = buildNextWebAddr()) != null)
 		{
-			log(Logger.E_DEBUG1, module + " next url '" + url + "'");
+			log.debug("Next url '{}'", url);
 			myProps.setProperty("url", url);
 			myProps.setProperty("mediumid", currentMediumId);
 			try
@@ -300,24 +306,13 @@ public class NrcsDataSource
 				RawMessage ret = currentWebDs.getRawMessage();
 				return ret;
 			}
-			catch(DataSourceException ex)
-			{
-				String msg = module + " cannot open '"
-					+ url + "': " + ex;
-				log(Logger.E_WARNING, msg);
-			}
 			catch(Exception ex)
 			{
-				String msg = module + " cannot open '"
-					+ url + "': " + ex;
-				log(Logger.E_WARNING, msg);
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
+				log.atWarn().setCause(ex).log("Cannot open '{}'.", url);
 			}
 		}
 		// No more medium IDs
-		throw new DataSourceEndException(module 
-			+ " " + aggIds.size() + " medium IDs processed.");
+		throw new DataSourceEndException("" + aggIds.size() + " medium IDs processed.");
 	}
 	
 	@Override

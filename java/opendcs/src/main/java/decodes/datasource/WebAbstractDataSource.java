@@ -1,6 +1,20 @@
 /*
- * Opens source software by Cove Software, LLC.
- */
+* Opens source software by Cove Software, LLC.
+* 
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.datasource;
 
 import java.text.SimpleDateFormat;
@@ -10,18 +24,18 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.Vector;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import ilex.util.EnvExpander;
-import ilex.util.IDateFormat;
-import ilex.util.Logger;
-import ilex.util.PropertiesUtil;
 import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 import decodes.db.NetworkListEntry;
 import decodes.util.PropertySpec;
+import ilex.util.EnvExpander;
+import ilex.util.IDateFormat;
+import ilex.util.PropertiesUtil;
 
 
 /**
@@ -35,8 +49,7 @@ import decodes.util.PropertySpec;
  */
 public class WebAbstractDataSource extends DataSourceExec
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(WebAbstractDataSource.class);
-	private String module = "WebAbstractDataSource";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	
 	// aggregate list of IDs from all network lists.
 	private ArrayList<String> aggIds = new ArrayList<String>();
@@ -110,12 +123,11 @@ public class WebAbstractDataSource extends DataSourceExec
 			String until, Vector<NetworkList> netlists) 
 		throws DataSourceException
 	{
-		log(Logger.E_INFORMATION, module + " initializing ...");
+		log.info("Initializing ...");
 		PropertiesUtil.copyProps(myProps, rsProps);
 
 		if ((abstractUrl = PropertiesUtil.getIgnoreCase(myProps, "AbstractUrl")) == null)
-			throw new DataSourceException(module 
-				+ " Missing required property 'AbstractUrl'!");
+			throw new DataSourceException("Missing required property 'AbstractUrl'!");
 
 		String s = myProps.getProperty("sinceFormat");
 		if (s != null && s.trim().length() > 0)
@@ -141,7 +153,7 @@ public class WebAbstractDataSource extends DataSourceExec
 			}
 			catch(Exception ex)
 			{
-				throw new DataSourceException("Bad Since Time: " + ex.getMessage());
+				throw new DataSourceException("Bad Since Time", ex);
 			}
 		}
 		if (rsUntil != null && rsUntil.trim().length() > 0
@@ -154,7 +166,7 @@ public class WebAbstractDataSource extends DataSourceExec
 			}
 			catch(Exception ex)
 			{
-				throw new DataSourceException("Bad Until Time: " + ex.getMessage());
+				throw new DataSourceException("Bad Until Time", ex);
 			}
 		}
 		
@@ -168,8 +180,7 @@ public class WebAbstractDataSource extends DataSourceExec
 		
 		if (aggIds.size() == 0)
 		{
-			String msg = module + " init() No medium ids. Will only execute once.";
-			log(Logger.E_INFORMATION, msg);
+			log.info("init() No medium ids. Will only execute once.");
 		}
 		xportIdx = 0;
 		urlsGenerated = 0;
@@ -183,8 +194,7 @@ public class WebAbstractDataSource extends DataSourceExec
 		}
 		catch(InvalidDatabaseException ex) 
 		{
-			log(Logger.E_INFORMATION, module + " " + ex);
-			throw new DataSourceException(module + " " + ex, ex);
+			throw new DataSourceException("Unable to create or use WebDataSource to retrieve data.", ex);
 		}
 	}
 	
@@ -205,8 +215,7 @@ public class WebAbstractDataSource extends DataSourceExec
 			try { return currentWebDs.getRawMessage(); }
 			catch(DataSourceEndException ex)
 			{
-				log(Logger.E_INFORMATION, module
-					+ " end of '" + currentWebDs.getActiveSource() + "'");
+				log.info("End of '{}'", currentWebDs.getActiveSource());
 			}
 		}
 
@@ -223,12 +232,11 @@ public class WebAbstractDataSource extends DataSourceExec
 			{
 				log.atWarn()
 				   .setCause(ex)
-				   .log("Cannot open URL '{}'");
+				   .log("Cannot open URL '{}'", url);
 			}
 		}
 		// No more medium IDs
-		throw new DataSourceEndException(module 
-			+ " " + aggIds.size() + " medium IDs processed.");
+		throw new DataSourceEndException("" + aggIds.size() + " medium IDs processed.");
 	}
 	
 	@Override

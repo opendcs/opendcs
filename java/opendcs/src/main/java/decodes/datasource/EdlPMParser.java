@@ -1,64 +1,28 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.3  2015/02/06 19:04:39  mmaloney
-*  POLL STOP should set message time.
-*
-*  Revision 1.2  2015/01/06 16:09:31  mmaloney
-*  First cut of Polling Modules
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.8  2012/09/06 19:03:25  shweta
-*  fixed bug now when Xlinks have seconds embedded in header time.
-*
-*  Revision 1.7  2012/08/10 18:44:12  shweta
-*  Parse Xlink header for GPRSLinks
-*
-*  Revision 1.6  2012/06/25 19:35:29  shweta
-*  reverted back last change
-*
-*  Revision 1.4  2011/07/14 19:49:35  shweta
-*  removed converting station name to uppercase.
-*
-*  Revision 1.3  2010/04/14 19:58:02  mjmaloney
-*  Set GOES ID to Medium ID (kludge)
-*
-*  Revision 1.2  2009/10/25 15:37:40  mjmaloney
-*  SSP Implementation
-*
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.5  2006/08/31 20:43:12  mmaloney
-*  dev
-*
-*  Revision 1.4  2006/08/31 20:42:23  mmaloney
-*  Added debug.
-*
-*  Revision 1.3  2004/08/24 23:52:43  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.2  2003/12/12 17:55:32  mjmaloney
-*  Working implementation of DirectoryDataSource.
-*
-*  Revision 1.1  2003/12/07 20:36:47  mjmaloney
-*  First working implementation of EDL time stamping.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.datasource;
 
 import java.util.Date;
-import java.util.HashMap;
-import java.util.TimeZone;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.Variable;
-import ilex.util.Logger;
-import decodes.datasource.RawMessage;
 import decodes.db.Constants;
 
 /**
@@ -66,6 +30,7 @@ Performance Measurement Parser for USGS EDL Header Lines.
 */
 public class EdlPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Private time/date stamp parsers:
 	private static SimpleDateFormat beginDateTimeSdf = 
 		new SimpleDateFormat("yyyyMMddHHmm Z");
@@ -262,8 +227,7 @@ public class EdlPMParser extends PMParser
 					}
 					catch (Exception ex)
 					{
-						Logger.instance().log(Logger.E_FAILURE,
-							"Unparsable POLL START '" + beginTime + "': Ignored.");
+						log.atError().setCause(ex).log("Unparsable POLL STOP '{}': Ignored", beginTime);
 					}
 				}
 				else if (s.startsWith("POLL STOP"))
@@ -276,8 +240,7 @@ public class EdlPMParser extends PMParser
 					}
 					catch (Exception ex)
 					{
-						Logger.instance().log(Logger.E_FAILURE,
-							"Unparsable POLL STOP '" + beginTime + "': Ignored.");
+						log.atError().setCause(ex).log("Unparsable POLL STOP '{}': Ignored", beginTime);
 					}
 				}
 			}
@@ -315,14 +278,13 @@ public class EdlPMParser extends PMParser
 				beginDate += "0000 +0000"; // HHMM & TZ
 			try
 			{
-				Logger.instance().debug1("Parsing begin date/time '" + beginDate + "'");
+				log.debug("Parsing begin date/time '{}'", beginDate);
 				Date d = beginDateTimeSdf.parse(beginDate);
 				msg.setPM(BEGIN_TIME_STAMP, new Variable(d));
 			}
 			catch (ParseException ex)
 			{
-				Logger.instance()
-					.log(Logger.E_FAILURE, "Unparsable begin time '" + beginTime + "': Ignored.");
+				log.atError().setCause(ex).log("Unparsable begin time '{}': Ignored.", beginTime);
 			}
 		}
 
@@ -369,7 +331,7 @@ public class EdlPMParser extends PMParser
 			}
 			catch (Exception ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE, "Unparsable end time '" + endTime + "': Ignored.");
+				log.atError().setCause(ex).log("Unparsable end time '{}': Ignored.", endTime);
 			}
 		}
 
@@ -402,7 +364,7 @@ public class EdlPMParser extends PMParser
 				xLinkDate += "0000 +0000"; // HHMM & TZ
 			try
 			{
-				Logger.instance().debug1("Parsing xLink date/time '" + xLinkDate + "'");
+				log.debug("Parsing xLink date/time '{}'", xLinkDate);
 
 				if (XLinkTimeHasSecs)
 				{
@@ -419,8 +381,7 @@ public class EdlPMParser extends PMParser
 			}
 			catch (ParseException ex)
 			{
-				Logger.instance()
-					.log(Logger.E_FAILURE, "Unparsable xlink time '" + xLinkTime + "': Ignored.");
+				log.atError().setCause(ex).log("Unparsable xlink time '{}': Ignored.", xLinkTime);
 			}
 		}
 
@@ -443,7 +404,7 @@ public class EdlPMParser extends PMParser
 				if (v != null)
 					mid = mid + "-" + v.getStringValue();
 			}
-			Logger.instance().log(Logger.E_DEBUG3, "Setting EDL File Medium ID to '" + mid + "'");
+			log.trace("Setting EDL File Medium ID to '{}'", mid);
 			msg.setMediumId(mid);
 			msg.setPM(GoesPMParser.DCP_ADDRESS, new Variable(mid));
 		}

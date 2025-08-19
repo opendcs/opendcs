@@ -16,7 +16,8 @@
 
 package decodes.datasource;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.Date;
 import java.text.SimpleDateFormat;
@@ -33,7 +34,7 @@ import decodes.db.Constants;
 */
 public class IridiumPMParser extends PMParser
 {
-	private static final org.slf4j.Logger logger = LoggerFactory.getLogger(IridiumPMParser.class);
+	private static final Logger logger = OpenDcsLoggerFactory.getLogger();
 	// Performance Measurement tags:
 	public static final String LATITUDE = "latitude";
 	public static final String LONGITUDE = "longitude";
