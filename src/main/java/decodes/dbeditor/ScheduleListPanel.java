@@ -352,15 +352,13 @@ class ScheduleEntryTableModel extends AbstractTableModel implements
 
 	void refill() 
 	{
-		ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
-		if (scheduleEntryDAO == null)
+		try (ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO())
 		{
-			Logger.instance().debug1("Cannot write schedule entries. Not supported on this database.");
-			return;
-		}
-
-		try
-		{
+			if (scheduleEntryDAO == null)
+			{
+				Logger.instance().debug1("Cannot write schedule entries. Not supported on this database.");
+				return;
+			}
 			theList.clear();
 			ArrayList<ScheduleEntry> sea = scheduleEntryDAO.listScheduleEntries(null);
 			for(Iterator<ScheduleEntry> seit = sea.iterator(); seit.hasNext(); )
@@ -378,10 +376,6 @@ class ScheduleEntryTableModel extends AbstractTableModel implements
 				LoadResourceBundle.sprintf(
 					dbeditLabels.getString("ScheduleEntryPanel.CannotLoadError"),
 						dbeditLabels.getString("ScheduleEntryPanel.EntityName"), ex));
-		}
-		finally
-		{
-			scheduleEntryDAO.close();
 		}
 	}
 

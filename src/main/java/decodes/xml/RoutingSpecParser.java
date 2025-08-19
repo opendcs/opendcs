@@ -37,6 +37,7 @@
 */
 package decodes.xml;
 
+import org.opendcs.utils.Property;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import java.util.Enumeration;
@@ -218,49 +219,38 @@ public class RoutingSpecParser implements XmlObjectParser, XmlObjectWriter, Tagg
 	{
 		switch(tag)
 		{
-		case outputFormatTag:
-			routingSpec.outputFormat = str;
-			break;
-		case outputTimeZoneAbbrTag:
-			routingSpec.outputTimeZoneAbbr = str;
-			break;
-		case presentationGroupNameTag:
-			routingSpec.presentationGroupName = str;
-			break;
-		case sinceTimeTag:
-			routingSpec.sinceTime = str;
-			break;
-		case untilTimeTag:
-			routingSpec.untilTime = str;
-			break;
-		case consumerTypeTag:
-			routingSpec.consumerType = str;
-			break;
-		case consumerArgTag:
-			routingSpec.consumerArg = str;
-			break;
-		case propertyTag:
-			if (propName == null)
-				throw new SAXException("Property value without name!");
-			routingSpec.getProperties().setProperty(propName, str);
-			propName = null;
-			break;
-		case lastModifyTimeTag:
-/*
-MJM 20031023 - Don't use the LMT contained in XML file. It may not agree
-with the File.lastModified() calls used elsewhere.
-			try
-			{
-				routingSpec.lastModifyTime = 
-					Constants.defaultDateFormat.parse(str);
-			}
-			catch(Exception e)
-			{
-				throw new SAXException("Improper date format '" + str
-					+ "' (should be " + Constants.defaultDateFormat + ")");
-			}
-*/
-			break;
+			case outputFormatTag:
+				routingSpec.outputFormat = str;
+				break;
+			case outputTimeZoneAbbrTag:
+				routingSpec.outputTimeZoneAbbr = str;
+				break;
+			case presentationGroupNameTag:
+				routingSpec.presentationGroupName = str;
+				break;
+			case sinceTimeTag:
+				routingSpec.sinceTime = str;
+				break;
+			case untilTimeTag:
+				routingSpec.untilTime = str;
+				break;
+			case consumerTypeTag:
+				routingSpec.consumerType = str;
+				break;
+			case consumerArgTag:
+				routingSpec.consumerArg = str;
+				break;
+			case propertyTag:
+				if (propName == null)
+				{
+					throw new SAXException("Property value without name!");
+				}
+				routingSpec.getProperties().setProperty(propName, str);
+				propName = null;
+				break;
+			case lastModifyTimeTag: // MJM 20031023 - Don't use the LMT contained in XML file. It may not agree
+				break;
+		
 		}
 	}
 

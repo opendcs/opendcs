@@ -1,61 +1,32 @@
-/**
- * $Id$
- * 
- * Copyright 2017 United States Government.
- * This software was written by Cove Software, LLC (COVE) under contract to the U.S. Government.
- * No warranty is provided except for the specific contract terms between COVE and the Government.
- * 
- * $Log$
- */
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
-import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.ParmRef;
-import ilex.var.TimedVariable;
-import decodes.tsdb.TimeSeriesIdentifier;
+import ilex.var.NamedVariable;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Divide one time series with another using : (a*input1+b)/(c*input2+d). 
-If the denominator is zero then output is not set 
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Multiple one time series with another using : (a*input1+b)*(c*input2+d).")
 public class Multiplication
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input1;	//AW:TYPECODE=i
-	public double input2;	//AW:TYPECODE=i
-	String _inputNames[] = { "input1", "input2" };
-//AW:INPUTS_END
+	@Input
+	public double input1;
+	@Input
+	public double input2;
 
-//AW:LOCALVARS
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double a = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="0")
 	public double b = 0;
+	@org.opendcs.annotations.PropertySpec(value="1.0")
 	public double c = 1.0;
+	@org.opendcs.annotations.PropertySpec(value="0")
 	public double d = 0;
-	String _propertyNames[] = { "a", "b", "c", "d" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -65,12 +36,8 @@ public class Multiplication
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
 
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -79,8 +46,6 @@ public class Multiplication
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -96,9 +61,7 @@ public class Multiplication
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		setOutput(output, (a*input1+b) * (c*input2+d));
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -107,32 +70,6 @@ public class Multiplication
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }

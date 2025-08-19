@@ -3,6 +3,7 @@ package decodes.routing;
 import java.util.Date;
 
 import opendcs.dai.DacqEventDAI;
+import opendcs.dao.DacqEventDAO;
 import opendcs.dao.DatabaseConnectionOwner;
 import decodes.db.Database;
 import decodes.polling.DacqEvent;
@@ -42,9 +43,19 @@ public class DacqEventLogger
 	public void doLog(int priority, String text)
 	{
 		if (parent != null)
+		{
 			parent.doLog(priority, text);
+		}
 		if (priority < Logger.E_INFORMATION)
+		{
 			return;
+		}
+
+		if (fromDacqDao())
+		{
+			return;
+		}
+
 		DacqEvent evt = new DacqEvent();
 		evt.setPlatformId(platformId);
 		evt.setSubsystem(subsystem);
@@ -56,6 +67,24 @@ public class DacqEventLogger
 		writeDacqEvent(evt);
 	}
 	
+	/**
+	 * Verify that we aren't trying to write a log message from DacqEventDAO through
+	 * DacqEventDAO as presumably such messages are due to connection or database issues.
+	 * @return
+	 */
+	private boolean fromDacqDao()
+	{
+		StackTraceElement stackTrace[] = Thread.currentThread().getStackTrace();
+		for (StackTraceElement ste: stackTrace)
+		{
+			if (DacqEventDAO.class.getName().equals(ste.getClassName()))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public void writeDacqEvent(DacqEvent evt)
 	{
 		if (!(Database.getDb().getDbIo() instanceof SqlDatabaseIO))

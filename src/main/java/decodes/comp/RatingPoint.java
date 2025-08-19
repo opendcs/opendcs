@@ -26,7 +26,7 @@ package decodes.comp;
 /**
  * Holds a single double precision point-pair.
  */
-public class RatingPoint implements Comparable
+public class RatingPoint implements Comparable<RatingPoint>
 {
 	/**
 	 * The dependent variable
@@ -60,14 +60,19 @@ public class RatingPoint implements Comparable
 	  @param o the other point
 	  @return 0 if equal, 1 or -1 if not.
 	*/
-	public int compareTo( Object o )
+	public int compareTo (RatingPoint rhs)
 	{
-		RatingPoint rhs = (RatingPoint)o;
 		if (indep < rhs.indep)
 			return -1;
 		else if (indep > rhs.indep)
 			return 1;
 		else 
 			return 0;
+	}
+
+	@Override
+	public String toString()
+	{
+		return String.format("%f -> %f", indep, dep);
 	}
 }

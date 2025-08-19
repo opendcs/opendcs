@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.DeleteTs %*%
+@"%~dp0\decj" decodes.tsdb.DeleteTs %*%

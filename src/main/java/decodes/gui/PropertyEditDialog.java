@@ -9,6 +9,9 @@ import javax.swing.*;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
+import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.PasswordWithShow;
+
 import decodes.dbeditor.TimeZoneSelector;
 import decodes.util.PropertySpec;
 
@@ -19,7 +22,6 @@ import java.util.ResourceBundle;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 
@@ -27,11 +29,9 @@ import ilex.util.TextUtil;
  * Dialog for editing a single property name and value.
  */
 @SuppressWarnings("serial")
-public class PropertyEditDialog 
-	extends GuiDialog
+public class PropertyEditDialog extends GuiDialog
 {
-	private static ResourceBundle genericLabels = 
-		PropertiesEditDialog.getGenericLabels();
+	private static ResourceBundle genericLabels = PropertiesEditDialog.getGenericLabels();
 	private JButton okButton = new JButton();
 	private JButton cancelButton = new JButton();
 	private String name, value;
@@ -46,7 +46,7 @@ public class PropertyEditDialog
 	/**
 	 * Construct dialog with frame owner.
 	 * 
-	 * @param owne the owner frame
+	 * @param owner the owner frame
 	 * @param name the property name
 	 * @param value the property value edited in a JTextField
 	 */
@@ -58,7 +58,7 @@ public class PropertyEditDialog
 	/**
 	 * Construct dialog with frame owner.
 	 * 
-	 * @param owne the owner frame
+	 * @param owner the owner frame
 	 * @param name the property name
 	 * @param value the property value edited in a JTextField
 	 * @param propSpec the Specification for this property
@@ -189,7 +189,7 @@ public class PropertyEditDialog
 		if (name != null 
 		 && name.toLowerCase().contains("password")
 		 && !name.equalsIgnoreCase("passwordCheckerClass"))
-			valueField = new JPasswordField(10);
+			valueField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
 		else if (propSpec != null)
 		{
 			if (propSpec.getType().equals(PropertySpec.BOOLEAN))
@@ -240,6 +240,11 @@ public class PropertyEditDialog
 				ta.setLineWrap(true);
 				ta.setWrapStyleWord(true);
 				valueField = ta;
+			}
+			else if (propSpec.getType().equals(PropertySpec.COLOR))
+			{
+				JColorChooser jc = new JColorChooser();
+				valueField = jc;
 			}
 		}
 
@@ -415,34 +420,80 @@ System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName
 	private String getValueText()
 	{
 		if (valueField instanceof JPasswordField)
-			return new String(((JPasswordField) valueField).getPassword());
+		{
+			return new String(((JPasswordField)valueField).getPassword());
+		}
+		else if (valueField instanceof PasswordWithShow)
+		{
+			return new String(((PasswordWithShow)valueField).getPassword());
+		}
 		else if (valueField instanceof JTextField)
+		{
 			return ((JTextField)valueField).getText();
+		}
 		else if (valueField instanceof JTextArea)
+		{
 			return ((JTextArea)valueField).getText();
+		}
 		else if (valueField instanceof JComboBox)
+		{
 			return ((JComboBox)valueField).getSelectedItem().toString();
-		else return "";
+		}
+		else if (valueField instanceof JColorChooser)
+		{
+			final JColorChooser jc = (JColorChooser)this.valueField;
+			Color c = jc.getColor();
+			return "0x" + Integer.toHexString(c.getRGB()).substring(2) ;
+		}
+		else
+		{
+			return "";
+		}
 	}
 	
 	private void setValue(String value)
 	{
 		if (valueField instanceof JTextField)
+		{
 			((JTextField)valueField).setText(value);
+		}
+		if (valueField instanceof PasswordWithShow)
+		{
+			((PasswordWithShow)valueField).setText(value);
+		}
 		else if (valueField instanceof JTextArea)
+		{
 			((JTextArea)valueField).setText(value);
+		}
 		else if (propSpec != null && propSpec.getType() == PropertySpec.BOOLEAN)
 		{
 			JComboBox trueFalseCombo = (JComboBox)valueField;
 			if (value == null || value.trim().length() == 0)
+			{
 				trueFalseCombo.setSelectedIndex(0);
+			}
 			else if (TextUtil.str2boolean(value))
+			{
 				trueFalseCombo.setSelectedIndex(1);
+			}
 			else
+			{
 				trueFalseCombo.setSelectedIndex(2);
+			}
 		}
 		else if (valueField instanceof JComboBox)
+		{
 			((JComboBox)valueField).setSelectedItem(value);
+		}
+		else if (valueField instanceof JColorChooser)
+		{
+			final JColorChooser jc = (JColorChooser)valueField;
+			if (value.toLowerCase().startsWith("0x"))
+			{
+				int colorValue = Integer.parseInt(value.substring(2), 16);
+				jc.setColor(Color.getColor("",colorValue));
+			}
+		}
 	}
 	
 	

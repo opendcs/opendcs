@@ -2,20 +2,28 @@
 
 # This script initializes a new user for the shared Linux/Unix
 # OPENDCS Installation
-DCSTOOL_HOME=%INSTALL_PATH
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+DCSTOOL_HOME=$(realpath "${APP_PATH}/..")
 export DCSTOOL_HOME
 
 if [ -z "$DCSTOOL_USERDIR" ]
 then
+	echo "DCSTOOL_USERDIR evironment variable not set"
 	if [ -n "$1" ]
 	then
+		echo "\t Using provided directory"
 		DCSTOOL_USERDIR=$1
 	else
-		DCSTOOL_USERDIR=$HOME/opendcs_user
+		echo "\t Using default directory under user home."
+		DCSTOOL_USERDIR=$HOME/.opendcs
 	fi
 fi
 
 echo DCSTOOL_USERDIR=$DCSTOOL_USERDIR
+echo "Using $DCSTOOL_USERDIR as User Directory"
 
 echo "Okay to proceed (y/n)?"
 read x
@@ -27,6 +35,7 @@ fi
 if [ ! -d "$DCSTOOL_USERDIR" ]
 then
 	mkdir -p $DCSTOOL_USERDIR
+	cp $DCSTOOL_HOME/decodes.properties $DCSTOOL_USERDIR/user.properties
 fi
 
 

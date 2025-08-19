@@ -66,14 +66,14 @@ public class DetailReportGenerator
 
 	/** This is the default header to use if no file is provided. */
 	private String defaultHeader = 
-       "<h2 style=\"" + center + "\">LRGS: $HOSTNAME</h2>\n"
+       "<h2 style=\"" + center + "\">LRGS: ${HOSTNAME}</h2>\n"
      + "<div style=\"" + center + "\">\n"
      + "  UTC: $DATE(MMMM dd, yyyy HH:mm:ss) (Day $DATE(DDD))\n"
      + "</div>\n"
      + "<div style=\"" + center + "\">" + labels.getString(
      		"DetailReportGenerator.timeReportedLrgs") +"</div>\n"
-     + "<div style=\"$STATSTYLE\">System Status: $SYSTEMSTAT</div>\n"
-     + "<div style=\"" + center + "\">LRGS Version: $LRGSVERSION</div>\n"
+     + "<div style=\"${STATSTYLE}\">System Status: ${SYSTEMSTAT}</div>\n"
+     + "<div style=\"" + center + "\">LRGS Version: ${LRGSVERSION}</div>\n"
      + "<br>\n";
 
 	/** HTML header to include in report. */

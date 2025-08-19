@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -42,6 +43,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+import javax.swing.SwingWorker;
 
 import opendcs.dai.IntervalDAI;
 import decodes.cwms.CwmsTimeSeriesDb;
@@ -74,7 +76,7 @@ public class ScreeningEditTab extends JPanel
 	private JLabel unitsLabel = new JLabel("(undefined)");
 	private int currentUnitsSystem = 0;
 	private SimpleDateFormat sdf = new SimpleDateFormat("MMM dd");
-	private boolean committed = false;
+	private AtomicBoolean committed = new AtomicBoolean(false);
 	private JButton paramButton = null;
 
 	
@@ -479,7 +481,7 @@ public class ScreeningEditTab extends JPanel
 
 	protected void closePressed()
 	{
-		if (!committed)
+		if (!committed.get())
 		{
 			int r = JOptionPane.showConfirmDialog(frame, "Save Changes?", "Save Changes?", 
 				JOptionPane.YES_NO_CANCEL_OPTION);
@@ -496,10 +498,16 @@ public class ScreeningEditTab extends JPanel
 		for(int idx = 0; idx < seasonsPane.getComponentCount(); idx++)
 			if (!((SeasonCheckPanel)seasonsPane.getComponentAt(idx)).validateFields())
 				return;
-		
+		ArrayList<ScreeningCriteria> seasons = new ArrayList<>();
 		for(int idx = 0; idx < seasonsPane.getComponentCount(); idx++)
-			((SeasonCheckPanel)seasonsPane.getComponentAt(idx)).saveFields();
-		
+		{
+			SeasonCheckPanel scp = (SeasonCheckPanel)seasonsPane.getComponentAt(idx);
+			scp.saveFields();
+			seasons.add(scp.getSeason());
+			
+		}
+		screening.updateActiveFlags(seasons);
+
 		screening.setParamId(paramField.getText().trim());
 		screening.setDurationId((String)durationCombo.getSelectedItem());
 		screening.setParamTypeId((String)paramTypeCombo.getSelectedItem());
@@ -507,31 +515,33 @@ public class ScreeningEditTab extends JPanel
 		screening.setCheckUnitsAbbr(s.substring(1, s.length()-1));
 		screening.setScreeningDesc(descArea.getText());
 
-		ScreeningDAI screeningDAO = null;
-		try
+		final SwingWorker<Void,Void> w = new SwingWorker<Void,Void>()
 		{
-			screeningDAO = frame.getTheDb().makeScreeningDAO();
-			
-			// If screening ID was changed. Need to rename it in the DB before making updates.
-			if (!screening.getScreeningName().equals(screeningIdField.getText()))
+			@Override
+			protected Void doInBackground() throws Exception
 			{
-				screeningDAO.renameScreening(screening.getScreeningName(), screeningIdField.getText());
-				screening.setScreeningName(screeningIdField.getText());
-			}
+				try (ScreeningDAI screeningDAO = frame.getTheDb().makeScreeningDAO())
+				{
+					// If screening ID was changed. Need to rename it in the DB before making updates.
+					if (!screening.getScreeningName().equals(screeningIdField.getText()))
+					{
+						screeningDAO.renameScreening(screening.getScreeningName(), screeningIdField.getText());
+						screening.setScreeningName(screeningIdField.getText());
+					}
 
-			screeningDAO.writeScreening(screening);
-		}
-		catch(Exception ex)
-		{
-			frame.showError("Error writing screening '" + screening.getScreeningName()
-				+ "': " + ex);
-		}
-		finally
-		{
-			if (screeningDAO != null)
-				screeningDAO.close();
-		}
-		committed = true;
+					screeningDAO.writeScreening(screening);
+					committed.set(true);
+				}
+				catch(Exception ex)
+				{
+					frame.showError("Error writing screening '" + screening.getScreeningName()
+						+ "': " + ex);
+				}
+				return null;
+			}
+		};
+		w.execute();
+
 	}
 
 

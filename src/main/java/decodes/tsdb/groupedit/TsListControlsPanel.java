@@ -23,18 +23,20 @@ public class TsListControlsPanel extends JPanel
     String openLabel;
     String newLabel;
     String deleteLabel;
+    String plotLabel;
     String refreshLabel;
 
     JButton openButton = new JButton();
     JButton newButton = new JButton();
     JButton deleteButton = new JButton();
+    JButton plotButton = new JButton();
     JButton refreshButton = new JButton();
     TsListControllers myController;
     GridBagLayout gridBagLayout1 = new GridBagLayout();
 
     /**
       Constructor.
-      @ctl the parent panel.
+      @param ctl the parent panel.
     */
 	public TsListControlsPanel(TsListControllers ctl)
 	{
@@ -48,6 +50,7 @@ public class TsListControlsPanel extends JPanel
 		openLabel = genericResources.getString("open");
 		newLabel = genericResources.getString("new");
 		deleteLabel = genericResources.getString("delete");
+		plotLabel = genericResources.getString("plot");
 		refreshLabel = genericResources.getString("refresh");
 
 		try
@@ -63,36 +66,22 @@ public class TsListControlsPanel extends JPanel
     /** GUI component initialization. */
     private void jbInit() throws Exception {
         openButton.setText(openLabel);
-        //openButton.setIcon(new ImageIcon("tangerine2-icon.gif"));
-        openButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                openButton_actionPerformed(e);
-            }
-        });
+        openButton.addActionListener(this::openButton_actionPerformed);
         this.setLayout(gridBagLayout1);
+
         newButton.setText(newLabel);
-        //newButton.setIcon(new ImageIcon("images/new.gif"));
-        newButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                newButton_actionPerformed(e);
-            }
-        });
+        newButton.addActionListener(this::newButton_actionPerformed);
+
         deleteButton.setText(deleteLabel);
-        //deleteButton.setIcon(new ImageIcon("images/delete.gif"));
-        deleteButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                deleteButton_actionPerformed(e);
-            }
-        });
+        deleteButton.addActionListener(this::deleteButton_actionPerformed);
+
         refreshButton.setText(refreshLabel);
-        //refreshButton.setIcon(new ImageIcon("images/refresh.gif"));
-        refreshButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-            	refreshButton_actionPerformed(e);
-            }
-        });
+        refreshButton.addActionListener(this::refreshButton_actionPerformed);
+
+        plotButton.setText(plotLabel);
+        plotButton.addActionListener(this::plotClicked);
+
 		this.setMinimumSize(new Dimension(571, 50));
-//        this.setPreferredSize(new Dimension(571, 50));
 		this.add(openButton,
 			 new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0
 						, GridBagConstraints.CENTER,
@@ -106,6 +95,11 @@ public class TsListControlsPanel extends JPanel
 						, GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL,
 						new Insets(10, 4, 10, 4), 0, 0));
+        this.add(plotButton,
+                new GridBagConstraints(3, 0, 1, 1, 1.0, 0.0
+                        , GridBagConstraints.CENTER,
+                        GridBagConstraints.HORIZONTAL,
+                        new Insets(10, 4, 10, 4), 0, 0));
 		this.add(refreshButton,
 			 new GridBagConstraints(4, 0, 1, 1, 1.5, 0.0
 						, GridBagConstraints.EAST,
@@ -119,7 +113,7 @@ public class TsListControlsPanel extends JPanel
         */
     void openButton_actionPerformed(ActionEvent e)
     {
-                myController.openPressed();
+        myController.openPressed();
     }
 
         /**
@@ -127,8 +121,8 @@ public class TsListControlsPanel extends JPanel
           @param e ignored.
         */
     void newButton_actionPerformed(ActionEvent e)
-        {
-                myController.newPressed();
+    {
+        myController.newPressed();
     }
 
     /**
@@ -136,8 +130,8 @@ public class TsListControlsPanel extends JPanel
           @param e ignored.
         */
     void deleteButton_actionPerformed(ActionEvent e)
-        {
-                myController.deletePressed();
+    {
+        myController.deletePressed();
     }
 
     /**
@@ -148,6 +142,9 @@ public class TsListControlsPanel extends JPanel
     {
         myController.refresh();
     }
-
+    void plotClicked(ActionEvent e)
+    {
+        myController.plot();
+    }
 
 }

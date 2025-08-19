@@ -1,70 +1,59 @@
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
 
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
 
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Implements a reservoir mass balance
-Output is inflow.
-<p>Inputs are:
-<ul>
-<li>dStor (delta Storage)</li>
-<li>rel (total release from reservoir)</li>
-<li>bStor (delta Bank Storage)</li>
-<li>evap (net reservoir evaporation)</li>
-<li>div (diversion)</li>
-</ul>
-Any of these can be set to be optional by setting a property.
-Storage, evaporation, and bank storage should be in units of acre-ft.
-Rest in units of cfs.
-
-<p>Properties include: 
-<ul> 
-<li>dBStor_MISSING - whether delta bank storage is required (set to fail)
-</li>
-<li>evap_MISSING - whether evaporation is required (set to fail)
-</li>
-<li>div_MISSING - whether diversion is required (set to fail)
-</li>
-</ul>
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Implements a reservoir mass balance\n" +
+		"Output is inflow.\n" +
+		"<p>Inputs are:\n" +
+		"<ul>\n" +
+		"<li>dStor (delta Storage)</li>\n" +
+		"<li>rel (total release from reservoir)</li>\n" +
+		"<li>bStor (delta Bank Storage)</li>\n" +
+		"<li>evap (net reservoir evaporation)</li>\n" +
+		"<li>div (diversion)</li>\n" +
+		"</ul>\n" +
+		"Any of these can be set to be optional by setting a property.\n" +
+		"Storage, evaporation, and bank storage should be in units of acre-ft.\n" +
+		"Rest in units of cfs.\n" +
+		"\n" +
+		"<p>Properties include: \n" +
+		"<ul> \n" +
+		"<li>dBStor_MISSING - whether delta bank storage is required (set to fail)\n" +
+		"</li>\n" +
+		"<li>evap_MISSING - whether evaporation is required (set to fail)\n" +
+		"</li>\n" +
+		"<li>div_MISSING - whether diversion is required (set to fail)\n" +
+		"</li>\n" +
+		"</ul>")
 public class HdbReservoirMassBalance
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	double dStor;	//AW:TYPECODE=id
-	double rel;	//AW:TYPECODE=i
-	double dBStor;	//AW:TYPECODE=id
-	double evap;	//AW:TYPECODE=i
-	double div;	//AW:TYPECODE=i
-	
-	String _inputNames[] = { "dStor", "dBStor", "evap", "rel", "div" };
-//AW:INPUTS_END
+	@Input
+	double dStor;
+	@Input
+	double rel;
+	@Input
+	double dBStor;
+	@Input
+	double evap;
+	@Input
+	double div;
 
-//AW:LOCALVARS
-
-//AW:LOCALVARS_END
-
-//AW:OUTPUTS
+	@Output
 	NamedVariable inflow = new NamedVariable("inflow", 0);
-	String _outputNames[] = { "inflow" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	String dBStor_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	String evap_MISSING = "ignore";
+	@org.opendcs.annotations.PropertySpec(value="ignore")
 	String div_MISSING = "ignore";
-	String _propertyNames[] = { "dBStor_MISSING", "evap_MISSING", "div_MISSING" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -74,12 +63,7 @@ public class HdbReservoirMassBalance
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -88,10 +72,8 @@ public class HdbReservoirMassBalance
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// This code will be executed once before each group of time slices.
 		// For TimeSlice algorithms this is done once before all slices.
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -107,7 +89,6 @@ public class HdbReservoirMassBalance
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// inflow = S(t) - S(t-1) + O + E + (BS(t) - BS(t-1)) + D
 		// or change in storage, release, evap, bank storage and diversion
 
@@ -121,7 +102,6 @@ public class HdbReservoirMassBalance
 		if(!isMissing(div))		in += div;
 		
 		setOutput(inflow, in);
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -129,34 +109,8 @@ public class HdbReservoirMassBalance
 	 */
 	protected void afterTimeSlices()
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }

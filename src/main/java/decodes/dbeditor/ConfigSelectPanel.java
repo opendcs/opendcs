@@ -102,7 +102,10 @@ public class ConfigSelectPanel extends JPanel
 		int r = configTable.getSelectedRow();
 		if (r == -1)
 			return null;
-		return (PlatformConfig)model.getRowObject(r);
+		//Get the correct row from the table model
+		int modelrow = configTable.convertRowIndexToModel(r);
+		ConfigSelectTableModel tablemodel = (ConfigSelectTableModel)configTable.getModel();
+		return (PlatformConfig)tablemodel.getRowObject(modelrow);
 	}
 
 	/** Tells the panel to refresh itself from the database config list. */
@@ -132,7 +135,10 @@ public class ConfigSelectPanel extends JPanel
 		int r = configTable.getSelectedRow();
 		if (r == -1)
 			return;
-		model.deleteAt(r);
+		//Get the correct row from the table model
+		int modelrow = configTable.convertRowIndexToModel(r);
+		ConfigSelectTableModel tablemodel = (ConfigSelectTableModel)configTable.getModel();
+		tablemodel.deleteAt(modelrow);
 	}
 
 	/**

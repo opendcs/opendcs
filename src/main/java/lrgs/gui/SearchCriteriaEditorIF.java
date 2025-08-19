@@ -34,6 +34,8 @@ public interface SearchCriteriaEditorIF
 	/** Fills the search crit with the contents of the GUI controls */
 	public void fillSearchCrit(SearchCriteria searchcrit);
 
+	public SearchCriteria getCurrenCriteria();
+
 	public boolean isChanged();
 
 	public void toFront();

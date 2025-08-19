@@ -14,4 +14,9 @@ public interface CompMetaData
 
 	/** @return a printable name for this object. */
 	public String getObjectName();
+
+	public default String typeString()
+	{
+		return String.format("CompMetaData(type='%s',name='%s')", getObjectType(), getObjectName());
+	}
 }

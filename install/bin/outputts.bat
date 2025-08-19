@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.util.ExportTimeSeries %*%
+@"%~dp0\decj" decodes.util.ExportTimeSeries %*%

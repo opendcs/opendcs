@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.compedit.CAPEdit %*%
+@"%~dp0\decj" decodes.tsdb.compedit.CAPEdit %*%

@@ -43,6 +43,7 @@ import javax.swing.*;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 
 @SuppressWarnings({ "serial", "rawtypes" })
@@ -125,9 +126,12 @@ public class ComputationsFilterPanel extends JPanel
 
 		groupCombo = new JComboBox();
 		groupCombo.addItem("");
-		TsGroupDAI tsGroupDAO = mydb.makeTsGroupDAO();
-		try
+
+		try (TimeSeriesDAI tsDai = mydb.makeTimeSeriesDAO();
+			TsGroupDAI tsGroupDAO = mydb.makeTsGroupDAO();)
 		{
+			// Loading the TsId cache first provides a drastic performance increase
+			tsDai.reloadTsIdCache();
 			groupList = tsGroupDAO.getTsGroupList(null);
 			for(TsGroup grp : groupList)
 				groupCombo.addItem(grp.getGroupId().toString() + " - " + grp.getGroupName());
@@ -136,10 +140,6 @@ public class ComputationsFilterPanel extends JPanel
 		{
 			System.err.println("Error listing groups: " + e1);
 			e1.printStackTrace(System.err);
-		}
-		finally
-		{
-			tsGroupDAO.close();
 		}
 		
 		hideDisabledCheck = new JCheckBox(compLabels.getString("ComputationsFilterPanel.hideDisabled"));

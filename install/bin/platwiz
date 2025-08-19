@@ -2,4 +2,8 @@
 #
 # platwiz - Run the Platform Wizard
 #
-%INSTALL_PATH/bin/decj decodes.platwiz.PlatformWizard $*
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.platwiz.PlatformWizard $*

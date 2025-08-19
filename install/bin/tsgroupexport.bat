@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.ExportGroup %*%
+@"%~dp0\decj" decodes.tsdb.ExportGroup %*%

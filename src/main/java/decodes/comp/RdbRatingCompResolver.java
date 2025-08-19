@@ -5,6 +5,7 @@
 package decodes.comp;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Iterator;
 import java.util.Vector;
 
@@ -83,45 +84,48 @@ public class RdbRatingCompResolver
 			{
 				Logger.instance().debug1("Found RdbFile property='" + rdbfn + "'");
 				File rdbf = new File(dir, EnvExpander.expand(rdbfn));
-				RdbRatingReader rrr = new RdbRatingReader(rdbf.getPath());
-				RatingComputation rc = new RatingComputation(rrr);
-				String sh = ts.getProperty("RdbShef");
-				if (sh == null)
-					sh = ts.getProperty("DepShefCode");
-				if (sh != null)
-					rc.setProperty("DepShefCode", sh);
-				sh = ts.getProperty("ExceedBounds");
-				if (sh != null)
+				try
 				{
-					boolean tf = TextUtil.str2boolean(sh);
-					rc.setBoundsInterp(tf, tf);
-				}
-				rc.setIndepSensorNum(ts.getSensorId());
-				rc.setApplyShifts(false);
-				
-				int depSensorNumber = -1;
-				sh = ts.getProperty("depSensorNumber");
-				if (sh != null)
-				{
-					String mediumId = this.getPlatformContext(msg);
-					try
-					{
-						depSensorNumber = Integer.parseInt(sh);
-					}
-					catch(NumberFormatException ex)
-					{
-						Logger.instance().warning("Platform " + mediumId + " RDB Rating computation for sensor "
-							+ ts.getSensorId() + " has invalid 'depSensorNumber' property '" + sh 
-							+ "' -- ignoring computation.");
-						return null;
-					}
-				}
-				else
-					depSensorNumber = findFreeSensorNum(msg);
-				rc.setDepSensorNum(depSensorNumber);
+					RdbRatingReader rrr = new RdbRatingReader(rdbf.getPath());
+					RatingComputation rc = new RatingComputation(rrr);
 
-				try 
-				{
+					String sh = ts.getProperty("RdbShef");
+					if (sh == null)
+						sh = ts.getProperty("DepShefCode");
+					if (sh != null)
+						rc.setProperty("DepShefCode", sh);
+					sh = ts.getProperty("ExceedBounds");
+					if (sh != null)
+					{
+						boolean tf = TextUtil.str2boolean(sh);
+						rc.setBoundsInterp(tf, tf);
+					}
+					rc.setIndepSensorNum(ts.getSensorId());
+					rc.setApplyShifts(false);
+
+					int depSensorNumber = -1;
+					sh = ts.getProperty("depSensorNumber");
+					if (sh != null)
+					{
+						String mediumId = this.getPlatformContext(msg);
+						try
+						{
+							depSensorNumber = Integer.parseInt(sh);
+						}
+						catch(NumberFormatException ex)
+						{
+							Logger.instance().warning("Platform " + mediumId + " RDB Rating computation for sensor "
+								+ ts.getSensorId() + " has invalid 'depSensorNumber' property '" + sh 
+								+ "' -- ignoring computation.");
+							return null;
+						}
+					}
+					else
+					{
+						depSensorNumber = findFreeSensorNum(msg);
+					}
+					rc.setDepSensorNum(depSensorNumber);
+
 					rc.read();
 					v.add(rc);
 				}
@@ -129,6 +133,11 @@ public class RdbRatingCompResolver
 				{
 					Logger.instance().warning("Cannot read '" + rdbfn
 						+ "': " + ex);
+				}
+				catch (FileNotFoundException ex)
+				{
+					Logger.instance().warning("Unable to find file " + rdbfn);
+					continue;
 				}
 			}
 		}

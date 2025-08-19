@@ -40,6 +40,7 @@ package decodes.tsdb.groupedit;
 
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
+import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 
 import java.awt.BorderLayout;
@@ -391,8 +392,10 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 		ArrayList<TsGroup> tsGroups = new ArrayList<TsGroup>();
 		if (panel.theTsDb != null)
 		{
-			try(TsGroupDAI groupDAO = panel.theTsDb.makeTsGroupDAO())
+			try(TimeSeriesDAI tsDao = panel.theTsDb.makeTimeSeriesDAO();
+				TsGroupDAI groupDAO = panel.theTsDb.makeTsGroupDAO())
 			{
+				tsDao.reloadTsIdCache();
 				tsGroups = groupDAO.getTsGroupList(null);
 				if (tsGroups == null)
 				{

@@ -185,10 +185,12 @@ public class ScpDataSource
 		String action = " connecting to SSH server " + host + ":" + port;
 		try
 		{
+			final String realUserName = EnvExpander.expand(username);
+			final String realPassword = EnvExpander.expand(password);
 			Logger.instance().debug1(module + action);
 			conn.connect();
 			action = " authenticating as user '" + username + "'";
-			boolean isAuthenticated = conn.authenticateWithPassword(username, password);
+			boolean isAuthenticated = conn.authenticateWithPassword(realUserName, realPassword);
 			if (!isAuthenticated)
 				throw new DataSourceException(module + " SSH authentication failed (bad password)");
 			Logger.instance().debug1(module + " Password authentication successfull.");

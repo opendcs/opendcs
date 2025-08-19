@@ -1,63 +1,11 @@
-/*
-*  $Id$
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*  
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.15  2013/02/15 17:26:53  mmaloney
-*  Added 'failIfNoTable' property.
-*
-*  Revision 1.14  2012/11/06 16:11:08  mmaloney
-*  Added tableProps with getter.
-*  properties from the RDB file header are stored here.
-*
-*  Revision 1.13  2012/10/24 23:15:24  mmaloney
-*  Try to build file name with USGS site number first.
-*  If that fails, fall back to preferred site name.
-*
-*  Revision 1.12  2012/09/12 20:53:11  mmaloney
-*  Added filePrefix and fileSuffix properties.
-*
-*  Revision 1.11  2011/05/03 15:22:49  mmaloney
-*  Added 'interp' property to select between log and linear.
-*  When table file doesn't exist, fail silently. Do not through DbCompException because
-*  this leaves FAILED tasklist entries in the queue.
-*
-*  Revision 1.10  2011/02/15 14:48:13  mmaloney
-*  On comp-init, if algorithm throws DbCompException, log a warning but do not put the
-*  stack trace to stderr. This signifies an orderly failure, like a Rating unable to find its rating
-*  file. Only extraordinary things should get a stack trace in nohup.out.
-*
-*  Revision 1.9  2010/08/18 14:04:36  gchen
-*  *** empty log message ***
-*
-*  Revision 1.8  2010/08/17 19:11:58  mmaloney
-*  Cleaned up imports. Added CVS header.
-*
-*  Revision 1.7  2010/08/17 18:48:52  mmaloney
-*  Fail if a tableReader cannot be built, regardless of the reason.
-*
-*/
 package decodes.tsdb.algo;
 
 import java.util.Date;
 import java.io.File;
+import java.io.FileNotFoundException;
 
 import ilex.var.NamedVariable;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.var.TimedVariable;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
 
 //AW:IMPORTS
@@ -87,239 +35,253 @@ Dependent (e.g. FLOW) is called "dep".
  */
 //AW:JAVADOC_END
 public class RdbRating
-	extends decodes.tsdb.algo.AW_AlgorithmBase
-	implements decodes.comp.HasLookupTable
+    extends decodes.tsdb.algo.AW_AlgorithmBase
+    implements decodes.comp.HasLookupTable
 {
 //AW:INPUTS
-	double indep;	//AW:TYPECODE=i
-	String _inputNames[] = { "indep" };
+    double indep;    //AW:TYPECODE=i
+    String _inputNames[] = { "indep" };
 //AW:INPUTS_END
 
 //AW:LOCALVARS
-	LookupTable lookupTable = null;
-	LookupTable shiftTable = null;
-	RdbRatingReader tableReader = null;
-	Date beginTime = null;
-	Date endTime = null;
-	Properties tableProps = new Properties();
-	
-	public void setProperty(String name, String value)
-	{
-		tableProps.setProperty(name, value);
-	}
-	public void addPoint(double indep, double dep)
-	{
-		lookupTable.add(indep, dep);
-	}
-	public void addShift(double indep, double shift)
-	{
-		//shiftTable.add(indep, shift);
-	}
-	public void setXOffset(double xo)
-	{
-		lookupTable.setXOffset(xo);
-	}
-	public void setBeginTime( Date bt )
-	{
-		beginTime = bt;
-	}
-	public void setEndTime( Date et )
-	{
-		endTime = et;
-	}
-	public void clearTable()
-	{
-		lookupTable.clear();
-	}
-	public Properties getTableProps() { return tableProps; }
+    LookupTable lookupTable = null;
+    LookupTable shiftTable = null;
+    RdbRatingReader tableReader = null;
+    Date beginTime = null;
+    Date endTime = null;
+    Properties tableProps = new Properties();
+
+    public void setProperty(String name, String value)
+    {
+        tableProps.setProperty(name, value);
+    }
+    public void addPoint(double indep, double dep)
+    {
+        lookupTable.add(indep, dep);
+    }
+    public void addShift(double indep, double shift)
+    {
+        //shiftTable.add(indep, shift);
+    }
+    public void setXOffset(double xo)
+    {
+        lookupTable.setXOffset(xo);
+    }
+    public void setBeginTime( Date bt )
+    {
+        beginTime = bt;
+    }
+    public void setEndTime( Date et )
+    {
+        endTime = et;
+    }
+    public void clearTable()
+    {
+        lookupTable.clear();
+    }
+    public Properties getTableProps() { return tableProps; }
 
 //AW:LOCALVARS_END
 
 //AW:OUTPUTS
-	NamedVariable dep = new NamedVariable("dep", 0);
-	String _outputNames[] = { "dep" };
+    NamedVariable dep = new NamedVariable("dep", 0);
+    String _outputNames[] = { "dep" };
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
-	boolean exceedLowerBound = false;
-	String tableDir = "$DECODES_INSTALL_DIR/rdb";
-	boolean exceedUpperBound = false;
-	boolean applyShifts = false;
-	boolean failIfNoTable = false;
-	String interp = "log"; // possibilities are log and linear
-	String filePrefix = "";
-	String fileSuffix = ".rdb";
-	String _propertyNames[] = { "exceedLowerBound", "tableDir", "exceedUpperBound", 
-		"applyShifts", "interp", 
-		"filePrefix", "fileSuffix", "failIfNoTable" };
+    boolean exceedLowerBound = false;
+    String tableDir = "$DECODES_INSTALL_DIR/rdb";
+    boolean exceedUpperBound = false;
+    boolean applyShifts = false;
+    boolean failIfNoTable = false;
+    String interp = "log"; // possibilities are log and linear
+    String filePrefix = "";
+    String fileSuffix = ".rdb";
+    String _propertyNames[] = { "exceedLowerBound", "tableDir", "exceedUpperBound",
+        "applyShifts", "interp",
+        "filePrefix", "fileSuffix", "failIfNoTable" };
 //AW:PROPERTIES_END
 
-	// Allow javac to generate a no-args constructor.
+    // Allow javac to generate a no-args constructor.
 
-	/**
-	 * Algorithm-specific initialization provided by the subclass.
-	 */
-	protected void initAWAlgorithm( )
-		throws DbCompException
-	{
+    /**
+     * Algorithm-specific initialization provided by the subclass.
+     */
+    protected void initAWAlgorithm( )
+        throws DbCompException
+    {
 //AW:INIT
-		_awAlgoType = AWAlgoType.TIME_SLICE;
+        _awAlgoType = AWAlgoType.TIME_SLICE;
 //AW:INIT_END
 
 //AW:USERINIT
 //AW:USERINIT_END
-	}
-	
-	/**
-	 * This method is called once before iterating all time slices.
-	 */
-	protected void beforeTimeSlices()
-		throws DbCompException
-	{
+    }
+
+    /**
+     * This method is called once before iterating all time slices.
+     */
+    protected void beforeTimeSlices()
+        throws DbCompException
+    {
 //AW:BEFORE_TIMESLICES
-		// Find the name for the input parameter.
-		tableReader = null;
-		String siteName = getSiteName("indep", Constants.snt_USGS);
-		String tried = "";
-		if (siteName != null)
-		{
-			String fn = tableDir + "/" + filePrefix + siteName + fileSuffix;
-			tried = tried + " " + fn;
-			File f = new File(EnvExpander.expand(fn));
-debug1("trying '" + f.getPath() + "'");
-			if (f.exists())
-			{
-				debug3("Constructing RDB reader for '" + fn + "'");
-				tableReader = new RdbRatingReader(fn);
-			}
-		}
-		if (tableReader == null)
-		{
-			String namePref = DecodesSettings.instance().siteNameTypePreference;
-			if (namePref.equalsIgnoreCase(Constants.snt_USGS))
-				throw new DbCompException("No usgs site name for independent "
-					+ "variable with SDI=" + getSDI("indep"));
-			siteName = getSiteName("indep");
-			if (siteName != null)
-			{
-				String fn = tableDir + "/" + filePrefix + siteName + ".rdb";
-				tried = tried + " " + fn;
-				File f = new File(EnvExpander.expand(fn));
-debug1("trying '" + f.getPath() + "'");
-				if (f.exists())
+        // Find the name for the input parameter.
+        tableReader = null;
+        String siteName = getSiteName("indep", Constants.snt_USGS);
+        String tried = "";
+        if (siteName != null)
+        {
+            String fn = tableDir + "/" + filePrefix + siteName + fileSuffix;
+            tried = tried + " " + fn;
+            File f = new File(EnvExpander.expand(fn));
+			debug1("trying '" + f.getPath() + "'");
+            if (f.exists())
+            {
+                debug3("Constructing RDB reader for '" + fn + "'");
+				try
 				{
-					debug3("Constructing RDB reader for '" + fn + "'");
-					tableReader = new RdbRatingReader(fn);
+                	tableReader = new RdbRatingReader(fn);
 				}
-			}
-		}
-		
-		// MJM regardless of the failure above, fail if we don't have a table-reader.
-		if (tableReader == null)
-		{
-			String msg = "No table file. Tried: " + tried;
-			warning(msg);
-			if (failIfNoTable)
-				throw new DbCompException(msg);
-			return;
-		}
+				catch (FileNotFoundException ex)
+				{
+					throw new DbCompException(String.format("Cannot read %s", fn), ex);
+				}
+            }
+        }
+        if (tableReader == null)
+        {
+            String namePref = DecodesSettings.instance().siteNameTypePreference;
+            if (namePref.equalsIgnoreCase(Constants.snt_USGS))
+                throw new DbCompException("No usgs site name for independent "
+                    + "variable with SDI=" + getSDI("indep"));
+            siteName = getSiteName("indep");
+            if (siteName != null)
+            {
+                String fn = tableDir + "/" + filePrefix + siteName + ".rdb";
+                tried = tried + " " + fn;
+                File f = new File(EnvExpander.expand(fn));
+					debug1("trying '" + f.getPath() + "'");
+                if (f.exists())
+                {
+                    debug3("Constructing RDB reader for '" + fn + "'");
+                    try
+					{
+						tableReader = new RdbRatingReader(fn);
+					}
+					catch (FileNotFoundException ex)
+					{
+						throw new DbCompException(String.format("Cannot read %s", fn), ex);
+					}
+                }
+            }
+        }
 
-		// This code will be executed once before each group of time slices.
-		// For TimeSlice algorithms this is done once before all slices.
-		lookupTable = new LookupTable();
-		lookupTable.setExceedLowerBound(exceedLowerBound);
-		lookupTable.setExceedUpperBound(exceedUpperBound);
-		if (interp.equalsIgnoreCase("linear"))
-			lookupTable.setLookupType(LookupTable.INTERP_LINEAR);
-		else
-			lookupTable.setLookupType(LookupTable.INTERP_LOG);
-		//shiftTable = new LookupTable();
-		//shiftTable.setLookupType(LookupTable.INTERP_TRUNC);
-		//shiftTable.setExceedLowerBound(false);
-		//shiftTable.setExceedUpperBound(false);
-		try
-		{
-			tableReader.readRatingTable(this);
-		}
-		catch(ComputationParseException ex)
-		{
-			String msg = "Cannot read RDB rating table: " + ex;
-			warning(msg);
-			throw new DbCompException(msg);
-		}
+        // MJM regardless of the failure above, fail if we don't have a table-reader.
+        if (tableReader == null)
+        {
+            String msg = "No table file. Tried: " + tried;
+            warning(msg);
+            if (failIfNoTable)
+                throw new DbCompException(msg);
+            return;
+        }
+
+        // This code will be executed once before each group of time slices.
+        // For TimeSlice algorithms this is done once before all slices.
+        lookupTable = new LookupTable();
+        lookupTable.setExceedLowerBound(exceedLowerBound);
+        lookupTable.setExceedUpperBound(exceedUpperBound);
+        if (interp.equalsIgnoreCase("linear"))
+            lookupTable.setLookupType(LookupTable.INTERP_LINEAR);
+        else
+            lookupTable.setLookupType(LookupTable.INTERP_LOG);
+        //shiftTable = new LookupTable();
+        //shiftTable.setLookupType(LookupTable.INTERP_TRUNC);
+        //shiftTable.setExceedLowerBound(false);
+        //shiftTable.setExceedUpperBound(false);
+        try
+        {
+            tableReader.readRatingTable(this);
+        }
+        catch(ComputationParseException ex)
+        {
+            String msg = "Cannot read RDB rating table: " + ex;
+            warning(msg);
+            throw new DbCompException(msg);
+        }
 //AW:BEFORE_TIMESLICES_END
-	}
+    }
 
-	/**
-	 * Do the algorithm for a single time slice.
-	 * AW will fill in user-supplied code here.
-	 * Base class will set inputs prior to calling this method.
-	 * User code should call one of the setOutput methods for a time-slice
-	 * output variable.
-	 *
-	 * @throws DbCompException (or subclass thereof) if execution of this
-	 *        algorithm is to be aborted.
-	 */
-	protected void doAWTimeSlice()
-		throws DbCompException
-	{
+    /**
+     * Do the algorithm for a single time slice.
+     * AW will fill in user-supplied code here.
+     * Base class will set inputs prior to calling this method.
+     * User code should call one of the setOutput methods for a time-slice
+     * output variable.
+     *
+     * @throws DbCompException (or subclass thereof) if execution of this
+     *        algorithm is to be aborted.
+     */
+    protected void doAWTimeSlice()
+        throws DbCompException
+    {
 //AW:TIMESLICE
-		if (tableReader == null)
-			return;
-		try
-		{
-			setOutput(dep, lookupTable.lookup(indep));
-			debug2("Stage = " + indep + ", discharge set to " + dep);
-		}
-		catch(TableBoundsException ex)
-		{
-			warning("Table bounds exceeded on indep value at site "
-				+ getSiteName("indep", null) + ", value was " + indep + " at time " 
-				+ debugSdf.format(_timeSliceBaseTime) + ", indep units="
-				+ this.getParmRef("indep").timeSeries.getUnitsAbbr());
-		}
+        if (tableReader == null)
+            return;
+        try
+        {
+            setOutput(dep, lookupTable.lookup(indep));
+            debug2("Stage = " + indep + ", discharge set to " + dep);
+        }
+        catch(TableBoundsException ex)
+        {
+            warning("Table bounds exceeded on indep value at site "
+                + getSiteName("indep", null) + ", value was " + indep + " at time "
+                + debugSdf.format(_timeSliceBaseTime) + ", indep units="
+                + this.getParmRef("indep").timeSeries.getUnitsAbbr());
+        }
 //GC comment at 2010/08/17
 /*
-		setOutputUnitsAbbr("dep", depUnits);
-*/		
+        setOutputUnitsAbbr("dep", depUnits);
+*/
 //AW:TIMESLICE_END
-	}
+    }
 
-	/**
-	 * This method is called once after iterating all time slices.
-	 */
-	protected void afterTimeSlices()
-	{
+    /**
+     * This method is called once after iterating all time slices.
+     */
+    protected void afterTimeSlices()
+    {
 //AW:AFTER_TIMESLICES
-		// This code will be executed once after each group of time slices.
-		// For TimeSlice algorithms this is done once after all slices.
-		lookupTable = null;
-		//shiftTable = null;
+        // This code will be executed once after each group of time slices.
+        // For TimeSlice algorithms this is done once after all slices.
+        lookupTable = null;
+        //shiftTable = null;
 //AW:AFTER_TIMESLICES_END
-	}
+    }
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
+    /**
+     * Required method returns a list of all input time series names.
+     */
+    public String[] getInputNames()
+    {
+        return _inputNames;
+    }
 
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
+    /**
+     * Required method returns a list of all output time series names.
+     */
+    public String[] getOutputNames()
+    {
+        return _outputNames;
+    }
 
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
+    /**
+     * Required method returns a list of properties that have meaning to
+     * this algorithm.
+     */
+    public String[] getPropertyNames()
+    {
+        return _propertyNames;
+    }
 }

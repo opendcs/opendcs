@@ -82,7 +82,8 @@ public class EquipmentModelSelectPanel extends JPanel
 		int r = eqTable.getSelectedRow();
 		if (r == -1)
 			return null;
-		return model.getEquipmentModelAt(r);
+		int modelRow = eqTable.convertRowIndexToModel(r);
+		return model.getEquipmentModelAt(modelRow);
 	}
 
 	/** Refresh list from database. */
@@ -110,7 +111,8 @@ public class EquipmentModelSelectPanel extends JPanel
 		int r = eqTable.getSelectedRow();
 		if (r == -1)
 			return;
-		model.deleteEquipmentModelAt(r);
+		int modelRow = eqTable.convertRowIndexToModel(r);
+		model.deleteEquipmentModelAt(modelRow);
 	}
 
 	/** Clears any selections made. */
@@ -139,8 +141,9 @@ public class EquipmentModelSelectPanel extends JPanel
 		for(int i=0; i<model.getRowCount(); i++)
 			if (mod.equals(model.getEquipmentModelAt(i)))
 			{
-				eqTable.setRowSelectionInterval(i, i);
-				Rectangle rect = eqTable.getCellRect(i, 0, true);
+				int tableRow = eqTable.convertRowIndexToView(i);
+				eqTable.setRowSelectionInterval(tableRow,tableRow);
+				Rectangle rect = eqTable.getCellRect(tableRow, 0, true);
 				eqTable.scrollRectToVisible(rect);
 				break;
 			}

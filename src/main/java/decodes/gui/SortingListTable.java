@@ -37,11 +37,13 @@ import javax.swing.table.*;
 import javax.swing.table.TableRowSorter;
 
 /**
-This class handles much of the dirty work for tables that appear within
-the DECODES database editor.
-It allows you to specify width-weights for the columns.
-It allows sorting of the table by clicking in the column headers.
- */
+  * This class handles much of the dirty work for tables that appear within
+  * the DECODES database editor.
+  * It allows you to specify width-weights for the columns.
+  * It allows sorting of the table by clicking in the column headers.
+  * @deprecated Swing JTable handles sorting behavior correctly now
+  */
+@Deprecated
 public class SortingListTable extends JTable
 {
 	SortingListTableModel model = null;

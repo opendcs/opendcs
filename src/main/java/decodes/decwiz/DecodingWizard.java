@@ -1,20 +1,19 @@
 package decodes.decwiz;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Properties;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
-import ilex.util.Logger;
-import ilex.cmdline.*;
+import decodes.db.Database;
+import decodes.db.DatabaseException;
+import decodes.db.DatabaseIO;
+import decodes.db.Platform;
+import decodes.db.Site;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesVersion;
-import decodes.db.*;
+import ilex.cmdline.BooleanToken;
+import ilex.cmdline.TokenOptions;
+import ilex.gui.WindowUtility;
+import ilex.util.Logger;
+
+import javax.swing.*;
 
 
 public class DecodingWizard
@@ -30,19 +29,7 @@ public class DecodingWizard
 		decWizFrame = new DecWizFrame();
 		decWizFrame.pack();
 
-		// Center the window
-		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		Dimension frameSize = decWizFrame.getSize();
-		if (frameSize.height > screenSize.height)
-		{
-			frameSize.height = screenSize.height;
-		}
-		if (frameSize.width > screenSize.width)
-		{
-			frameSize.width = screenSize.width;
-		}
-		decWizFrame.setLocation((screenSize.width - frameSize.width) / 2,
-						  (screenSize.height - frameSize.height) / 2);
+		WindowUtility.center(decWizFrame);
 		decWizFrame.createPanels();
 		decWizFrame.switchPanel(0);
 	}
@@ -55,8 +42,6 @@ public class DecodingWizard
 			{
 				try
 				{
-//					UIManager.setLookAndFeel(UIManager.
-//						 getSystemLookAndFeelClassName());
 					decWizFrame.setVisible(true);
 				}
 				catch (Exception exception)

@@ -341,17 +341,17 @@ public class ComputationsListPanel extends ListPanel
 		
 		for(int x : selected)
 		{
-			ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(x);
-			ComputationDAI computationDAO = tsdb.makeComputationDAO();
-			try { ret.add(computationDAO.getComputationById(dc.getComputationId())); }
+			int modelRow = compListTable.convertRowIndexToModel(x);
+			ComputationInList dc = (ComputationInList)compListTableModel.getRowObject(modelRow);
+
+			try (ComputationDAI computationDAO = tsdb.makeComputationDAO();)
+			{
+				ret.add(computationDAO.getComputationById(dc.getComputationId()));
+			}
 			catch(Exception ex)
 			{
 				parentFrame.showError("Cannot read computation with id=" + 
 					dc.getComputationId() + ": " + ex);
-			}
-			finally
-			{
-				computationDAO.close();
 			}
 		}
 		return ret;

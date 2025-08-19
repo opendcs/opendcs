@@ -17,4 +17,4 @@ rem -O owner		Set the platform owner to 'owner'
 rem -N            Only import platforms that have a Newer last-modify-date.
 rem -M updated.out Make a list of platforms that were updated in 'updated.out'.
 rem
-$INSTALL_PATH\bin\decj com.ilexeng.decodes.dbimport.ImportXml -G -I -U -O SFMWD -L -F -S -N -M updated.out %*%
+"%~dp0\decj" com.ilexeng.decodes.dbimport.ImportXml -G -I -U -O SFMWD -L -F -S -N -M updated.out %*%

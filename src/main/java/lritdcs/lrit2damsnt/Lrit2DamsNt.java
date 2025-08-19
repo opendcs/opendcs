@@ -23,8 +23,9 @@ import ilex.util.ByteUtil;
 import ilex.util.DirectoryMonitorThread;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.ServerLock;
+import ilex.util.Logger;
+import ilex.util.FileServerLock;
 import ilex.util.ServerLockable;
 import decodes.tsdb.CompEventSvr;
 import decodes.util.CmdLineArgs;
@@ -76,7 +77,7 @@ public class Lrit2DamsNt
 		
 		// Get the lock file, exit if busy.
 		String lockpath = EnvExpander.expand(lockFileArg.getValue());
-		mylock = new ServerLock(lockpath);
+		mylock = new FileServerLock(lockpath);
 		if (mylock.obtainLock(this) == false)
 		{
 			fatal("Cannot start: lock file busy");

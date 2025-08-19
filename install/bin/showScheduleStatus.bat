@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.platstat.ShowScheduleStatus %*%
+@"%~dp0\decj" decodes.platstat.ShowScheduleStatus %*%

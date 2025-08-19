@@ -1663,13 +1663,6 @@ public class LddsClient extends BasicClient
     public byte[] getStatus()
         throws IOException, ProtocolError, ServerError
     {
-        if (debug != null)
-        {
-            debug.println("getStatus");
-        }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") getStatus");
-
         // Send request
         LddsMessage msg = new LddsMessage(LddsMessage.IdStatus, "?");
         sendData(msg.getBytes());
@@ -1709,13 +1702,6 @@ public class LddsClient extends BasicClient
         {
             return new String[0];
         }
-
-        if (debug != null)
-        {
-            debug.println("getEvent");
-        }
-        Logger.instance().debug2(module +
-            "DDS Connection (" + host + ":" + port + ") getEvents");
 
         // Send request
         LddsMessage msg = new LddsMessage(LddsMessage.IdEvents, "?");

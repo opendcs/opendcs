@@ -5,6 +5,7 @@ package ilex.util;
 
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicReference;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.io.*;
@@ -40,7 +41,7 @@ public abstract class Logger
 	protected int minLogPriority;
 
 	/** singleton instance for logging */
-	private static Logger theLogger = null;
+	private static AtomicReference<Logger> theLogger = new AtomicReference<>(new StderrLogger(""));
 
 	/** used to format dates (default = "MM/DD/YYYY HH:MM:SS") */
 	protected static DateFormat dateFormat
@@ -118,7 +119,7 @@ public abstract class Logger
 	*/
 	public static void setLogger( Logger logger )
 	{
-		theLogger = logger;
+		theLogger.set(logger);
 	}
 
 	/**
@@ -129,9 +130,7 @@ public abstract class Logger
 	*/
 	public static Logger instance( )
 	{
-		if (theLogger == null)
-			theLogger = new StderrLogger("");
-		return theLogger;
+		return theLogger.get();
 	}
 
 	/**
@@ -366,4 +365,3 @@ public abstract class Logger
 		return tz;
 	}
 }
-

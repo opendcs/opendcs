@@ -34,10 +34,12 @@ public class SbdSessionThread extends BasicSvrThread
 	private BufferedOutputStream capOutput = null;
 	private int byteCount = 0;
 	private int numMsgBytes = 0;
+	private int payloadBytes = 0;
 	private boolean ignoreRest = false;
 	private InputStream iStream;
 	private IridiumPMParser iridiumPMP = new IridiumPMParser();
 	private Location location = null;
+	private boolean showPayloadIE = true;
 	
 	/**
 	 * Construct thread to read a single message from the SBD Gateway
@@ -54,6 +56,7 @@ public class SbdSessionThread extends BasicSvrThread
 		super(svr, socket);
 		this.sessionNum = sessionNum;
 		LrgsConfig cfg = LrgsConfig.instance();
+		showPayloadIE = cfg.iridiumIEInPayload;
 		seqNumNF.setGroupingUsed(false);
 		seqNumNF.setMinimumIntegerDigits(5);
 		latLonFormat.setGroupingUsed(false);
@@ -251,6 +254,8 @@ public class SbdSessionThread extends BasicSvrThread
 			hdr.append(",LAT=" + latLonFormat.format(location.getLatitude())
 				+ ",LON=" + latLonFormat.format(location.getLongitude())
 				+ ",RAD=" + latLonFormat.format(location.getRadius()));
+		hdr.append(",PLEN=");
+		hdr.append(payloadBytes);
 		hdr.append(" ");
 		
 		ByteArrayOutputStream msgStream = new ByteArrayOutputStream();
@@ -318,10 +323,19 @@ public class SbdSessionThread extends BasicSvrThread
 					+ "] length too long. Starts at pos=" + byteCount
 					+ " with length=" + elemLen + " but total msg len="
 					+ numMsgBytes);
-			baos.write("IE:".getBytes());
-			baos.write(ByteUtil.toHexString(elemHdr).getBytes());
-			baos.write((byte)' ');
 			
+			// 2 is Payload IE
+			if (elemHdr[0] == 2)
+			{
+				payloadBytes = elemLen;
+			}
+			if (elemHdr[0] != 2 || showPayloadIE)
+			{
+				baos.write("IE:".getBytes());
+				baos.write(ByteUtil.toHexString(elemHdr).getBytes());
+				baos.write((byte)' ');
+			}
+
 			for(int i=0; i<elemLen; i++)
 				baos.write(nextByte());
 		}

@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.hdb.Convert2Group %*%
+@"%~dp0\decj" decodes.hdb.Convert2Group %*%

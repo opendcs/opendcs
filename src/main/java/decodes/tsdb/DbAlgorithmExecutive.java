@@ -1,91 +1,32 @@
-/*
-*  $Id$
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*  
-*  $Log$
-*  Revision 1.17  2019/05/10 18:53:52  mmaloney
-*  dev
-*
-*  Revision 1.16  2019/05/10 18:35:26  mmaloney
-*  dev
-*
-*  Revision 1.15  2018/11/14 15:50:26  mmaloney
-*  Make addTsToParmRef public. Needed for timed computations.
-*
-*  Revision 1.14  2018/01/08 19:34:00  mmaloney
-*  Implement the "Now -" option for computation effective end.
-*
-*  Revision 1.13  2017/11/07 20:26:11  mmaloney
-*  Improved debugs.
-*
-*  Revision 1.12  2017/08/22 19:56:40  mmaloney
-*  Refactor
-*
-*  Revision 1.11  2017/05/31 21:27:18  mmaloney
-*  Improvement to getParmTsId
-*
-*  Revision 1.10  2017/05/25 21:18:45  mmaloney
-*  In DbAlgorithmExecutive, apply roundSec when searching for values in database.
-*  In CTimeSeries.findWithin, the upperbound should be t+fudge/2-1.
-*  See comments in code dated 20170525.
-*
-*  Revision 1.9  2016/12/16 14:37:45  mmaloney
-*  Improved debugs on exceeding max time for missing.
-*
-*  Revision 1.8  2016/09/23 15:57:21  mmaloney
-*  Improve warning messages when MISSING values cannot be recovered because time is too long. The new messages show the relevant limit values.
-*
-*  Revision 1.7  2016/03/24 19:12:14  mmaloney
-*  Refactoring for Python.
-*
-*  Revision 1.6  2016/01/27 22:02:08  mmaloney
-*  Fix for CWMS-7386 that occurs when MISSING=PREV used in conjunction with
-*  automatic deltas.
-*
-*  Revision 1.5  2015/11/18 14:06:23  mmaloney
-*  Get rid of 'getBriefDescription()' after all.
-*
-*  Revision 1.4  2015/10/22 14:01:42  mmaloney
-*  CCP bug fix: If tasklist contained both inputs and output values for a comp,
-*  the old code was not converting the units of the existing values. It was just
-*  writing values in the output units, leaving existing ones alone.
-*
-*  Revision 1.3  2015/08/31 00:38:33  mmaloney
-*  added getDataCollection() method.
-*
-*  Revision 1.2  2015/01/15 19:25:45  mmaloney
-*  RC01
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.74  2013/08/19 12:58:34  mmaloney
-*  dev
-*
-*  Revision 1.73  2013/08/18 19:48:45  mmaloney
-*  Implement EffectiveStart/End relative properties
-*
-*  Revision 1.72  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
-*/
+/**
+ * Copyright 2024 The OpenDCS Consortium and contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package decodes.tsdb;
 
+import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.AnnotationHelpers;
+
 import java.util.HashMap;
 import java.util.GregorianCalendar;
 import java.util.Calendar;
@@ -99,12 +40,9 @@ import ilex.var.NoConversionException;
 import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import decodes.db.Constants;
-import decodes.db.EngineeringUnit;
 import decodes.db.Site;
 import decodes.db.SiteName;
-import decodes.db.UnitConverter;
 import decodes.sql.DbKey;
-import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 import decodes.util.TSUtil;
 
@@ -587,18 +525,51 @@ debug3("DbAlgorithmExec.apply()");
 	}
 
 	/**
-	 * Should be overloaded by subclass to return an array of all input
-	 * parameter names.
-	 * If no input params, return an empty array.
+	 * Can be overridden by downstream classes. Default implementation use the annotations.
+	 * @return
 	 */
-	abstract public String[] getInputNames( );
+	public String[] getInputNames()
+	{
+		return AnnotationHelpers.getFieldsWithAnnotation(this.getClass(), Input.class)
+						 .stream()
+						 .map(p ->
+						 {
+							final Field f = p.first;
+							final Input inputAnno = p.second;
+							String name = inputAnno.name();
+							if (name.isEmpty())
+							{
+								name = f.getName();
+							}
+							return name;
+						 })
+						 .collect(Collectors.toList())
+						 .toArray(new String[0]);
+	}
 	
 	/**
 	 * Should be overloaded by subclass to return an array of all output
 	 * parameter names.
 	 * If no output params, return an empty array.
 	 */
-	abstract public String[] getOutputNames( );
+	public String[] getOutputNames()
+	{
+		return AnnotationHelpers.getFieldsWithAnnotation(this.getClass(), Output.class)
+						 .stream()
+						 .map(p ->
+						 {
+							final Field f = p.first;
+							final Output outputAnno = p.second;
+							String name = outputAnno.name();
+							if (name.isEmpty())
+							{
+								name = f.getName();
+							}
+							return name;
+						 })
+						 .collect(Collectors.toList())
+						 .toArray(new String[0]);
+	}
 
 	/**
 	 * Find widest time range for all input params that are flagged

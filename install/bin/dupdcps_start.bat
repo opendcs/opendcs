@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.dupdcpgui.DuplicateDcpsList %*%
+@"%~dp0\decj" decodes.dupdcpgui.DuplicateDcpsList %*%

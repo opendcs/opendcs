@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.ResourceBundle;
 
+import ilex.gui.Help;
 import ilex.util.LoadResourceBundle;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
@@ -764,9 +765,10 @@ public class ConfigEditPanel extends DbEditorTab
         configsTabbedPane.remove(this);
     }
 
-    /** @see EntityOpsController */
+    @Override
     public void help()
     {
+        Help.open();
     }
 
 

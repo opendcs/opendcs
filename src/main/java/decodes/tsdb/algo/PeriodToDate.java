@@ -12,44 +12,26 @@
  */
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
-import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.ParmRef;
-import ilex.var.TimedVariable;
-import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Output is the accumulation of the input from the start of the period.
-This is an Aggregating algorithm. Unlike most aggregating algorithms,
-the aggregate period must be set by property rather than implied by
-the period of the output.
-The output param, 'periodToDate', must have the same interval as the 
-input.
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Output is the accumulation of the input from the start of the period.\n" +
+		"This is an Aggregating algorithm. Unlike most aggregating algorithms,\n" +
+		"the aggregate period must be set by property rather than implied by\n" +
+		"the period of the output.\n" +
+		"The output param, 'periodToDate', must have the same interval as the \n" +
+		"input.")
 public class PeriodToDate
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	double sum = 0.0;
 	boolean firstTriggerSeen = false;
 	private PropertySpec ratingPropertySpecs[] = 
@@ -64,18 +46,14 @@ public class PeriodToDate
 	}
 	boolean firstCall = true;
 
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable periodToDate = new NamedVariable("periodToDate", 0);
+	@Output
 	public NamedVariable determineAggPeriod = new NamedVariable("determineAggPeriod", 0);
-	String _outputNames[] = { "periodToDate", "determineAggPeriod" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@org.opendcs.annotations.PropertySpec(value="false")
 	public boolean goodQualityOnly = false;
-	String _propertyNames[] = { "goodQualityOnly" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -85,14 +63,9 @@ public class PeriodToDate
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "determineAggPeriod";
-//AW:INIT_END
-
-//AW:USERINIT
 		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -101,7 +74,6 @@ public class PeriodToDate
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		// one-time validation
 		if (firstCall)
 		{
@@ -120,7 +92,6 @@ public class PeriodToDate
 		// This will be called at the beginning of each aggregate period.
 		sum = 0.0;
 		firstTriggerSeen = false;
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -136,7 +107,6 @@ public class PeriodToDate
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		// if this value is a trigger
 		firstTriggerSeen = true;
 		
@@ -148,7 +118,6 @@ public class PeriodToDate
 		
 		if (firstTriggerSeen)
 			setOutput(periodToDate, sum);
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -157,36 +126,10 @@ public class PeriodToDate
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
 		// period.
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }

@@ -266,10 +266,16 @@ public class TsDbGrpListPanel
 		timeSeriesSelectDialog.refresh();
 	}
 
+	@Override
+	public void plot()
+	{
+
+	}
+
 	/**
 	 * Opens a TsGroupDefinitionPanel for the passed Ts Group.
 	 * 
-	 * @param ob - the object to be edited.
+	 * @param tsGroup - the object to be edited.
 	 * @return the TsGroupDefinitionPanel opened.
 	 */
 	public TsGroupDefinitionPanel doOpen(TsGroup tsGroup)

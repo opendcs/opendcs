@@ -1,6 +1,3 @@
-/*
-* $Id$
-*/
 package lrgs.rtstat;
 
 import java.io.*;
@@ -13,6 +10,7 @@ import javax.swing.text.html.*;
 import javax.swing.text.DefaultCaret;
 
 import ilex.util.EnvExpander;
+import org.slf4j.LoggerFactory;
 
 /**
 This is the HTML panel in which the status snapshot is displayed.
@@ -20,12 +18,12 @@ This is the HTML panel in which the status snapshot is displayed.
 public class RtStatPanel
 	extends JPanel
 {
+	private final static org.slf4j.Logger log = LoggerFactory.getLogger(RtStatPanel.class);
 	BorderLayout borderLayout1 = new BorderLayout();
 	TitledBorder titledBorder1;
 	TitledBorder titledBorder2;
 	JScrollPane scrollPane = new JScrollPane();
 	JEditorPane htmlPanel = new JEditorPane();
-	JEditorPane displayed;
 
 	public RtStatPanel()
 	{
@@ -36,7 +34,7 @@ public class RtStatPanel
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			log.error("Exception in RtStatPanel()",ex);
 		}
 		HTMLEditorKit hek = (HTMLEditorKit)htmlPanel.getEditorKit();
 		HTMLDocument doc = (HTMLDocument)hek.createDefaultDocument();
@@ -65,7 +63,7 @@ public class RtStatPanel
 		}
 		catch(Exception ex)
 		{
-//			System.out.println("Cannot set base: " + ex);
+			log.error("Cannot set base url: " , ex);
 		}
 
 		// Tell the panel not to update the scroll-pane position based on the
@@ -114,8 +112,7 @@ public class RtStatPanel
 		}
 		catch (Exception ex)
 		{
-			System.out.println("Error: " + ex);
-			ex.printStackTrace();
+			log.error("Error in setPage ",ex);
 		}
 	}
 

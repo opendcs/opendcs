@@ -24,8 +24,9 @@ import java.net.MalformedURLException;
 
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.ServerLock;
+import ilex.util.Logger;
+import ilex.util.FileServerLock;
 
 /**
 An instance of this class downloads the PDT from an URL into a local file,
@@ -65,7 +66,7 @@ class DownloadPdtThread extends Thread
 		ServerLock mylock = null;
 		/** Optional server lock ensures only one instance runs at a time. */
 		String lockpath = EnvExpander.expand(localfn + ".lock");
-		mylock = new ServerLock(lockpath);
+		mylock = new FileServerLock(lockpath);
 		mylock.setCritical(false);
 		if (!mylock.obtainLock())
 		{

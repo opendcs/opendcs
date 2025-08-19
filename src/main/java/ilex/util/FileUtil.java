@@ -100,16 +100,27 @@ public class FileUtil
 		return total;
 	}
 
+	/**
+	 * Retrieve contents of given file as a String.
+	 * 
+	 * @param f The file desired.
+	 * @return contents if it can be read.
+	 * @throws IOException
+	 */
 	public static String getFileContents(File f)
 		throws IOException
 	{
 		StringBuilder sb = new StringBuilder();
-		FileReader fr = new FileReader(f);
-		int c;
-		while((c = fr.read()) != -1)
-			sb.append((char)c);
-		fr.close();
-		return sb.toString();
+		try(FileReader fr = new FileReader(f);)
+		{
+			int c;
+			while((c = fr.read()) != -1)
+			{
+				sb.append((char)c);
+			}
+			return sb.toString();
+		}
+		
 	}
 	
 	public static byte[] getfileBytes(File f)

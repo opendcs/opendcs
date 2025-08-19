@@ -3,7 +3,11 @@
 */
 package ilex.util;
 
-import java.util.Date;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.io.*;
 import java.nio.channels.FileChannel;
 
@@ -24,7 +28,7 @@ public class FileLogger extends Logger
 	/**
 	* The current output PrintStream
 	*/
-	private PrintStream output = null;
+	private final AtomicReference<PrintStream> output = new AtomicReference<>();
 
 	/**
 	* The filename supplied to the constructor.
@@ -46,6 +50,8 @@ public class FileLogger extends Logger
 	*/
 	private int maxLength = defaultMaxLength;
 
+
+
 	/**
 	* Flag determining whether constructor overwrites or appends.
 	* By default, set to true, meaning that the constructor will append
@@ -55,6 +61,9 @@ public class FileLogger extends Logger
 	public static boolean appendFlag = true;
 
 	private FileChannel fileChan = null;
+	private AtomicBoolean closeOperations = new AtomicBoolean(false);	
+	private BlockingQueue<String> queue = new ArrayBlockingQueue<>(5000); // TODO: intentionally arbitrary number for now.;
+	private Thread writerThread;
 	
 	/**
 	* Construct with a process name and a filename.
@@ -84,11 +93,29 @@ public class FileLogger extends Logger
 		super(procName);
 		this.filename = EnvExpander.expand(filename);
 		this.maxLength = maxLength;
-//		outputFile = new File(EnvExpander.expand(filename));
 		openNewLog();
-		
-//		FileOutputStream fos = new FileOutputStream(outputFile, appendFlag);
-//		output = new PrintStream(fos, true);
+		writerThread = new Thread(() ->
+			{
+				while(closeOperations.get() == false)
+				{
+					try
+					{
+						String msg = queue.poll(1, TimeUnit.SECONDS);
+						PrintStream ps = output.get();
+						if (msg != null && ps != null && !ps.checkError())
+						{
+							ps.println(msg);
+						}
+					}
+					catch (InterruptedException ex)
+					{
+
+					}
+				}
+			},
+			"FileLogger-Writer");
+		writerThread.setDaemon(true);
+		writerThread.start();
 	}
 
 	/**
@@ -96,10 +123,12 @@ public class FileLogger extends Logger
 	*/
 	public void close( )
 	{
-		if (output != null)
-			output.close();
+		PrintStream ps = output.getAndSet(null);
+		if (ps != null)
+		{
+			ps.close();
+		}
 		fileChan = null;
-		output = null;
 	}
 
 	/**
@@ -111,27 +140,15 @@ public class FileLogger extends Logger
 	*/
 	public synchronized void doLog( int priority, String text )
 	{
-		output.println(standardMessage(priority, text));
-		
-		// MJM 2013/05/21: If multiple processes are writing to the same file,
-		// we can get in a situation where 'outputFile' refers to the current
-		// log but output (print stream) refers to the old renamed stream.
-		// The fix is to use the file channel position rather than
-		// File.length().
-		try 
+		try
 		{
-			long pos = fileChan.position();
-//System.out.println("pos=" + pos);
-//			if (outputFile.length() > maxLength)
-			if (pos > maxLength)
-			{
-				// MJM the close and opening of a new file are done inside rotate();
-				rotate();
-			}
+			queue.put(standardMessage(priority, text));
 		}
-		catch(Exception ex)
+		catch (InterruptedException ex)
 		{
-			System.err.println("Error rotating log: " + ex);
+			// NOTE: use of STDERR is intentional here. This is an error with logging itself.
+			System.err.println("Unable to put data in the log message queue.");
+			ex.printStackTrace();
 		}
 	}
 
@@ -165,9 +182,17 @@ public class FileLogger extends Logger
 		outputFile = new File(filename);
 		try
 		{
-			FileOutputStream fos = new FileOutputStream(outputFile, appendFlag);
-			output = new PrintStream(fos, true);
-			fileChan = fos.getChannel();
+			// NOTE: not ideal to have this special case, but it makes setting up the ant
+			// run task easier and makes sure in windows we have a way to send logs to stdout.
+			// I'm pretty sure just CON: worked on the terminal so it's probably some odd
+			// interaction with ant and how the command itself is run.
+			OutputStream os = null;
+			if (filename.equalsIgnoreCase("CON:")) {
+				os = System.out;
+			} else {
+				os = new FileOutputStream(outputFile, appendFlag);
+			}
+			output.set(new PrintStream(os, true));
 		}
 		catch(IOException ex)
 		{
@@ -195,7 +220,7 @@ public class FileLogger extends Logger
 	*/
 	public PrintStream getLogOutput( )
 	{
-		return output;
+		return output.get();
 	}
 
 	/**
@@ -212,4 +237,3 @@ public class FileLogger extends Logger
 		maxLength = len;
 	}
 }
-

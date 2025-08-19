@@ -5,3 +5,6 @@ Dockerfile
 bin
 .github
 .externalToolBuilders
+**/opendcs-installer*
+**/doc.tar.gz
+**/doc

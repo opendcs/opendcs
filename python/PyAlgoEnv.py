@@ -6,8 +6,16 @@ from decodes.tsdb.algo import PythonAlgorithm
 from decodes.tsdb import NoSuchObjectException
 from decodes.tsdb import NoValueException
 
+def get_dcstool_home():
+	ret = os.environ.get("DCSTOOL_HOME")
+	if ret is None:	
+		import java.lang.System as jsys
+		ret = jsys.getProperty("DCSTOOL_HOME", "<DCSTOOL_HOME environment variable or java property is not set>")
+	return ret
+	
 import sys,os
-custom_packages = os.environ.get("DCSTOOL_HOME")+"/bin/opendcs.jar/python-packages"
+
+custom_packages = get_dcstool_home()+"/bin/opendcs.jar/python-packages"
 if custom_packages not in sys.path:
 	sys.path.append(custom_packages)
 # The Java code places the running instance into a static var

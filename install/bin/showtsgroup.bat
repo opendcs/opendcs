@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.TsGroupDisplay %*%
+@"%~dp0\decj" decodes.tsdb.TsGroupDisplay %*%

@@ -11,25 +11,23 @@ public interface TsListControllers
 
         /**
           Called when user presses the 'Open' Button.
-          @param e ignored.
         */
         public void openPressed();
 
         /**
           Called when user presses the 'New' Button.
-          @param e ignored.
         */
         public void newPressed();
 
         /**
           Called when user presses the 'Delete' Button.
-          @param e ignored.
         */
         public void deletePressed();
 
         /**
           Called when user presses the 'refresh' Button.
-          @param e ignored.
         */
         public void refresh();
+
+        public void plot();
 }

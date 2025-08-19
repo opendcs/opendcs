@@ -59,7 +59,7 @@ public class CompDependsNotifyDAO extends DaoBase implements CompDependsNotifyDA
                  + "(select min(DATE_TIME_LOADED) from CP_DEPENDS_NOTIFY)";
         try
         {
-            final CpDependsNotify ret = getSingleResult(q, rs -> rs2cdn(rs));
+            final CpDependsNotify ret = getFirstResult(q, rs -> rs2cdn(rs));
             deleteNotifyRecord(ret);
             return ret;
         }

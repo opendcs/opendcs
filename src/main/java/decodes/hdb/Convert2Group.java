@@ -285,9 +285,6 @@ public class Convert2Group
 		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		try
 		{
-			info("Refreshing TSID Cache...");
-			timeSeriesDAO.reloadTsIdCache();
-			
 			info("Refreshing Computation Cache...");
 			compCache.clear();
 			
@@ -860,4 +857,3 @@ public class Convert2Group
 	}
 
 }
-

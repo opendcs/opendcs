@@ -39,10 +39,10 @@ public class LauncherFrameTest extends GuiTest
     {
         String resourceDir = System.getProperty("resource.dir");
         properties.set("DCSTOOL_USERDIR",resourceDir+"/decodes/launcher/profiles");
-        lf = GuiActionRunner.execute(() -> new LauncherFrame(new String[0]));
+        lf = GuiActionRunner.execute(() -> new LauncherFrame(new String[0], Profile.getDefaultProfile()));
         lf.setExitOnClose(false);
         lf.checkForProfiles();
-        frame = new FrameFixture(lf);
+        frame = new FrameFixture(robot(), lf);
         frame.show();
         pause(new Condition("Gui visible") {
             @Override
@@ -53,7 +53,7 @@ public class LauncherFrameTest extends GuiTest
     }
 
     @AfterEach
-    public void tearDown()
+    public void tearDownEach()
     {
         frame.cleanUp();
     }

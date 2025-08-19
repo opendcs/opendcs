@@ -1,47 +1,22 @@
-/*
-*  $Id$
-*
-*  $State$
-*
-*  $Log$
-*  Revision 1.5  2011/01/10 14:54:51  mmaloney
-*  Fixed bug in COPY feature.
-*
-*  Revision 1.4  2009/08/12 19:53:38  mjmaloney
-*  usgs merge
-*
-*  Revision 1.3  2009/03/25 20:27:23  mjmaloney
-*  Fix bad-error-message bug on creating new pg.
-*
-*  Revision 1.2  2009/01/22 00:31:33  mjmaloney
-*  DB Caching improvements to make msgaccess start quicker.
-*  Remove the need to cache the entire database.
-*
-*  Revision 1.1  2008/04/04 18:21:01  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.7  2008/01/24 13:57:46  mmaloney
-*  modified files for internationalization
-*
-*  Revision 1.6  2008/01/17 15:12:48  mmaloney
-*  Internationalization.
-*
-*  Revision 1.5  2004/09/19 20:09:00  mjmaloney
-*  javadocs added. Removed unused classes.
-*
-*  Revision 1.4  2002/10/31 18:53:12  mjmaloney
-*  Fixed copy() functions for SQL.
-*
-*  Revision 1.3  2001/11/07 21:38:14  mike
-*  dev
-*
-*/
+/**
+ * Copyright 2024 The OpenDCS Consortium and contributors
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.table.*;
-import java.awt.event.*;
 import java.util.ResourceBundle;
 
 import ilex.util.LoadResourceBundle;
@@ -49,13 +24,11 @@ import decodes.gui.TopFrame;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.PresentationGroup;
-import decodes.db.PresentationGroupList;
 
 /**
 Presents a list of presentation groups in the database.
 */
-public class PresentationGroupListPanel extends JPanel
-	implements ListOpsController
+public class PresentationGroupListPanel extends JPanel implements ListOpsController
 {
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
@@ -266,4 +239,3 @@ public class PresentationGroupListPanel extends JPanel
 		}
 	}
 }
-

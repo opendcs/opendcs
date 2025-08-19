@@ -336,7 +336,7 @@ public class SqlDbObjIo
 			warning(this.getClass().getName() + " using connection without initializing the DbIo object first!");
 			connection = _dbio.getConnection();
 		}
-		return connection;
+		return new WrappedConnection(connection, c -> {});
 	}
 
 	public SqlDatabaseIO getDbio()

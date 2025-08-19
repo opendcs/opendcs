@@ -11,7 +11,6 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
@@ -20,14 +19,11 @@ import java.util.logging.Logger;
 
 import javax.management.JMException;
 import javax.management.ObjectName;
-import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
 
 import org.opendcs.jmx.ConnectionPoolMXBean;
 import org.opendcs.jmx.WrappedConnectionMBean;
-import org.opendcs.jmx.connections.JMXTypes;
+import org.opendcs.utils.sql.SqlSettings;
 
 import decodes.db.Constants;
 import decodes.sql.DbKey;
@@ -35,7 +31,6 @@ import decodes.tsdb.BadConnectException;
 import decodes.tsdb.DbIoException;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
-import opendcs.opentsdb.OpenTsdbSettings;
 import opendcs.util.sql.WrappedConnection;
 import usace.cwms.db.dao.ifc.sec.CwmsDbSec;
 import usace.cwms.db.dao.util.connection.ConnectionLoginInfo;
@@ -63,9 +58,6 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
 	private int unknownConnReturned = 0;
     private int connectionsClosedDuringGet = 0;
     private static CwmsDbConnectionPool pool = CwmsDbConnectionPool.getInstance();
-    private static boolean trace = Boolean.parseBoolean(System.getProperty("cwms.connection.pool.trace", "false"));
-
-
 
     /**
      * Get a Pool for a given database.
@@ -84,7 +76,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
                 ret = new CwmsConnectionPool(info);
                 pools.put(info,ret);
 
-                if (trace)
+                if (SqlSettings.TRACE_CONNECTIONS)
                 {
                     final CwmsConnectionPool forHook = ret;
                     Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -252,7 +244,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
                 setCtxDbOfficeId(conn, info);
                 final WrappedConnection wc = new WrappedConnection(conn,(c)->{
                     this.returnConnection(c);
-                },trace);
+                },SqlSettings.TRACE_CONNECTIONS);
                 connectionsOut.add(wc);
                 return wc;
             }
@@ -314,7 +306,7 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
      */
     public synchronized void returnConnection(Connection conn) throws SQLException
     {
-        if(connectionsOut.contains(conn))
+        if (connectionsOut.contains(conn))
         {
             // the lambda handler above handles the count
             connectionsFreed++;
@@ -326,10 +318,16 @@ public final class CwmsConnectionPool implements ConnectionPoolMXBean
         {
             log.warning("Unknown connection returned to my pool.");
             unknownConnReturned++;
-            if(trace)
+            if (SqlSettings.TRACE_CONNECTIONS && !(conn instanceof WrappedConnection))
             {            
                 log.warning("Connection is from");
                 logStackTrace(log,Level.WARNING,Thread.currentThread().getStackTrace(),BEFORE_CUR_THREAD_STACK_CALL+1);
+            }
+            else if (SqlSettings.TRACE_CONNECTIONS)
+            {
+                final WrappedConnection wc = (WrappedConnection)conn;
+                log.warning(() -> "Connection opened from: " + String.join(System.lineSeparator(), wc.getOpenStackTrace()));
+                log.warning(() -> "Connection closed at: " + String.join(System.lineSeparator(), wc.getClosedStackTrace()));
             }
         }
     }

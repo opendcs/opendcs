@@ -1,13 +1,12 @@
 package lrgs.nledit;
 
+import ilex.gui.WindowUtility;
 import ilex.util.LoadResourceBundle;
 
 import javax.swing.UIManager;
-import javax.swing.WindowConstants;
 
 import decodes.util.DecodesSettings;
 
-import java.awt.*;
 import java.util.ResourceBundle;
 
 public class NetlistEditor {
@@ -30,17 +29,7 @@ public class NetlistEditor {
         else {
             frame.validate();
         }
-        //Center the window
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        Dimension frameSize = frame.getSize();
-        if (frameSize.height > screenSize.height) {
-            frameSize.height = screenSize.height;
-        }
-        if (frameSize.width > screenSize.width) {
-            frameSize.width = screenSize.width;
-        }
-        frame.setLocation((screenSize.width - frameSize.width) / 2, (screenSize.height - frameSize.height) / 2);
-        frame.setVisible(true);
+		WindowUtility.center(frame).setVisible(true);
     }
 
 	public void load(String filename)
@@ -91,17 +80,5 @@ public class NetlistEditor {
 		if (args.length > 0)
 			editor.load(args[0]);
 		editor.frame.isStandAlone = true;
-/*		addWindowListener(
-			new WindowAdapter()
-			{
-				public void windowClosed(WindowEvent e)
-				{
-					myframe.cleanupBeforeExit();
-					if (GuiApp.getTopFrame() == myframe)
-						System.exit(0);
-//					exitAction.actionPerformed(null); Can't do this - causes recursion!
-				}
-			});
-*/
     }
 }

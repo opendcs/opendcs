@@ -1,10 +1,12 @@
 package org.opendcs.regression_tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.opendcs.fixtures.helpers.TestResources.getResource;
 
 import java.io.File;
+import java.sql.Connection;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -12,19 +14,29 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ComputationConfigurationRequired;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 import org.opendcs.fixtures.annotations.DecodesConfigurationRequired;
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.fixtures.annotations.TsdbAppRequired;
+import org.opendcs.fixtures.assertions.Waiting;
 import org.opendcs.fixtures.helpers.BackgroundTsDbApp;
 import org.opendcs.fixtures.helpers.Programs;
 import org.opendcs.spi.configuration.Configuration;
 
+import decodes.sql.DbKey;
+import decodes.sql.KeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.CpCompDependsUpdater;
+import decodes.tsdb.DataCollection;
 import decodes.tsdb.TimeSeriesDb;
+import decodes.tsdb.TimeSeriesIdentifier;
+import opendcs.dai.LoadingAppDAI;
+import opendcs.dai.TimeSeriesDAI;
+import opendcs.dao.DaoBase;
 
 /**
  * CompProcTestIT tests importing time-series data.
@@ -119,18 +131,56 @@ public class CompProcTestIT extends AppTestBase
             getResource(config, "CompProc/Precip/input.tsimport"));
         try
         {
-           Thread.sleep(15000); // TODO: eliminate wait
+            final String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
+            Waiting.assertResultWithinTimeFrame((t) ->
+            {
+                final String output = Programs.OutputTs(new File(logDir,"/outputTs.log"), config.getPropertiesFile(),
+                                          environment, exit,
+                                          "01-Jan-2012/00:00", "03-Jan-2012/00:00", "UTC",
+                                          "regtest", tsids);
+                return golden.equals(output);
+            }, 1, TimeUnit.MINUTES, 15, TimeUnit.SECONDS
+            ,"Calculated results were not found within the expected time frame.");
         }
         catch(InterruptedException ex)
         {
             /* do nothing */
         }
+    }
 
-        final String output = Programs.OutputTs(new File(logDir,"/outputTs.log"), config.getPropertiesFile(), 
-                                          environment, exit,
-                                          "01-Jan-2012/00:00", "03-Jan-2012/00:00", "UTC",
-                                          "regtest", tsids);
-        final String golden = IOUtils.toString(goldenFile.toURI().toURL().openStream(), "UTF8");
-        assertEquals(golden,output,"Output Doesn't match expected data.");
+    @Test
+    @TsdbAppRequired(app = ComputationApp.class, appName="compproc_regtest")
+    @ComputationConfigurationRequired({"shared/loading-apps.xml", "CompProc/Precip/comps.xml"})
+    @Disabled("The tasklist table is not mapped to DAO that make this easy to run cross implementation. Remove the sourceid not null constraint on cp_comp_tasklist"
+            + " and you can run it with OpenDCS Postgres implementation. Future work will enable this test.")
+    public void test_bad_recs_cleared() throws Exception
+    {
+        /**
+         * 1. insert into tasklist records with 0 computations enabled.
+         * 2. wait for compproc to remove them.
+         * 
+         * success condition, tasklist entries are removed.
+         */
+        try(TimeSeriesDAI tsDAI = db.makeTimeSeriesDAO();
+            LoadingAppDAI laDAI = db.makeLoadingAppDAO();
+            DaoBase dao = new DaoBase(db,"test");
+            Connection c = db.getConnection();)
+        {
+            KeyGenerator keyGen = db.getKeyGenerator();
+            DbKey appKey = laDAI.lookupAppId("compproc_regtest");
+            TimeSeriesIdentifier tsIdInput = db.makeTsId("TESTSITE1.Stage.Inst.15Minutes.0.raw-nocomps");
+            DbKey inputKey = tsDAI.createTimeSeries(tsIdInput);
+
+            dao.doModify("insert into cp_comp_tasklist(record_num, loading_application_id, ts_id, num_value, date_time_loaded, sample_time, flags) "
+                       + "values (?,?,?,?,?,?,?)",keyGen.getKey("cp_comp_tasklist", c), appKey, inputKey, 1.0,new Date(), new Date(),0);
+
+            DataCollection data = tsDAI.getNewData(appKey);
+            assertTrue(data.isEmpty());
+            assertEquals(0,
+                         dao.getSingleResultOr("select count(ts_id) from cp_comp_tasklist where ts_id=?",
+                                             rs -> rs.getInt(1), -1,
+                                             inputKey),
+                         "Bad records were left in the tasklist.");
+        }
     }
 }

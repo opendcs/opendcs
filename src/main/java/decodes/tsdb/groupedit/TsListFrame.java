@@ -7,7 +7,6 @@
 package decodes.tsdb.groupedit;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import opendcs.opentsdb.OpenTsdbSettings;
 
 import java.awt.BorderLayout;
@@ -22,8 +21,6 @@ import java.util.ResourceBundle;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
-import javax.swing.WindowConstants;
 
 import decodes.gui.PropertiesEditDialog;
 import decodes.gui.TopFrame;
@@ -128,15 +125,9 @@ public class TsListFrame extends TopFrame
 		
 		JButton tsdbPropsButton = 
 			new JButton(groupResources.getString("TsdbListPanel.TsdbProperties"));
-		tsdbPropsButton.addActionListener(
-			new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					tsdbPropsPressed();
-				}
-			});
+		tsdbPropsButton.addActionListener(e ->tsdbPropsPressed());
+
+
 		JPanel p = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 2));
 		p.add(tsdbPropsButton);
 		tsTab.add(p, BorderLayout.NORTH);

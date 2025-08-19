@@ -66,7 +66,11 @@ package ilex.util;
 import java.util.Date;
 import java.util.Calendar;
 import java.util.TimeZone;
+
+import org.opendcs.utils.Property;
+
 import java.util.Properties;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 
 /**
@@ -243,13 +247,38 @@ public class EnvExpander
 			val = "WY"+Integer.toString(year);
 		}
 		else if (name.equalsIgnoreCase("USER"))
+		{
 			val = props.getProperty("user.name");
-		else if (name.equalsIgnoreCase("HOME"))
-			val = props.getProperty("user.home");
-		else {
-			val = props.getProperty(name);
 		}
-		return(val);
+		else if (name.equalsIgnoreCase("HOME"))
+		{
+			val = props.getProperty("user.home");
+		}
+		else
+		{
+			try
+			{
+				val = Property.getRealPropertyValue(name, null, props, System.getenv());
+				/*
+				 * We are looking here for the name object getting returned, not the string value.
+				 * If a different string object is returned than we can assume it was processed even if the value
+				 * is the same and let the user do what they will with configuration
+				 */
+				if (val == name)
+				{
+					final String msg = "property value source was not set. Assuming original behavior and retrieving '%1$s' from provided properties object." +
+											  "This will be removed in future releases and you should update values to ${java.%1$s} at your earliest convenience.";
+					Logger.instance().warning(String.format(msg,name));
+					// revert to original behavior.
+					val = props.getProperty(name);
+				}
+			}
+			catch(IOException ex)
+			{
+				Logger.instance().warning("Could not expand value for property " + name + ": " + ex.getLocalizedMessage());
+			}
+		}
+		return val;
 	}
 
 	/**

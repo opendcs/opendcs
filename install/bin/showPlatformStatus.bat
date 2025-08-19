@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.platstat.ShowPlatformStatus %*%
+@"%~dp0\decj" decodes.platstat.ShowPlatformStatus %*%

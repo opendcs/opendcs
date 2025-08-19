@@ -11,4 +11,9 @@ public interface AuthSource
      * @return Properties object with appropriate parameters for the given source
      */
     public Properties getCredentials();
+
+    public default boolean canWrite()
+    {
+        return false;
+    }
 }

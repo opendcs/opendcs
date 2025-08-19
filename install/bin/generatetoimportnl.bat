@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.dupdcpgui.GenerateToimportNL %*%
+@"%~dp0\decj" decodes.dupdcpgui.GenerateToimportNL %*%

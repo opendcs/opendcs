@@ -94,8 +94,8 @@ public class ProcessEditPanel extends EditPanel
 		panelProps.clear();
 		PropertiesUtil.copyProps(panelProps, cai.getProperties());
 		panelProps.remove("appType");
-		propsPanel.setPropertiesOwner(cai);
-		propsPanel.setProperties(panelProps);
+		propsPanel.getModel().setPropertiesOwner(cai);
+		propsPanel.getModel().setProperties(panelProps);
 		processTypeSelected();
 	}
 
@@ -155,7 +155,7 @@ public class ProcessEditPanel extends EditPanel
 				GridBagConstraints.NORTH, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 20), 0, 0));
 
-		propsPanel = new PropertiesEditPanel(panelProps);
+		propsPanel = PropertiesEditPanel.from(panelProps);
 		propsPanel.setTitle(" "+compeditDescriptions.getString("ProcessEditPanel.PropsPanelTitle")+" ");
 		
 		if (listPanel != null)
@@ -191,7 +191,7 @@ public class ProcessEditPanel extends EditPanel
 		String pt = processTypeCombo.getSelection();
 		if (pt == null || pt.trim().length() == 0)
 		{
-			propsPanel.setPropertiesOwner(null);
+			propsPanel.getModel().setPropertiesOwner(null);
 			return;
 		}
 
@@ -205,7 +205,7 @@ public class ProcessEditPanel extends EditPanel
 			{
 				execClass = procType.getExecClass();
 				propOwner = (PropertiesOwner)execClass.newInstance();
-				propsPanel.setPropertiesOwner(propOwner);
+				propsPanel.getModel().setPropertiesOwner(propOwner);
 			}
 		}
 		catch(ClassCastException ex)
@@ -219,7 +219,7 @@ public class ProcessEditPanel extends EditPanel
 			System.err.println(msg);
 			ex.printStackTrace(System.err);
 		}
-		propsPanel.setPropertiesOwner(propOwner);
+		propsPanel.getModel().setPropertiesOwner(propOwner);
 	}
 
 	/**
@@ -330,7 +330,7 @@ public class ProcessEditPanel extends EditPanel
 		cai.setAppName(nameField.getText());
 		cai.setComment(commentsText.getText());
 		cai.setManualEditApp(manualEditCheck.isSelected());
-		propsPanel.saveChanges();
+		propsPanel.getModel().saveChanges();
 		cai.setProperties(panelProps);
 		String s = processTypeCombo.getSelection().trim();
 		if (s.length() > 0)

@@ -1,0 +1,8 @@
+org.opendcs.decodes.functions.AsciiSelfDescFunctionProvider
+org.opendcs.decodes.functions.CsvFunctionProvider
+org.opendcs.decodes.functions.LatLonFunctionProvider
+org.opendcs.decodes.functions.Nos6MinProvider
+org.opendcs.decodes.functions.NosHourlyProvider
+org.opendcs.decodes.functions.RegexFunctionProvider
+org.opendcs.decodes.functions.SetMissingFunctionProvider
+org.opendcs.decodes.functions.ShefProcessProvider

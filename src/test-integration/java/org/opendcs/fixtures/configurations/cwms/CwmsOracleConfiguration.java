@@ -10,25 +10,19 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.FileUtils;
-import org.jooq.SQLDialect;
-import org.junit.jupiter.api.Assumptions;
 import org.opendcs.fixtures.UserPropertiesBuilder;
 import org.opendcs.fixtures.configurations.opendcs.pg.OpenDCSPGConfiguration;
 import org.opendcs.spi.configuration.Configuration;
-import org.python.antlr.PythonParser.try_stmt_return;
 
-import decodes.cwms.CwmsSqlDatabaseIO;
 import decodes.cwms.CwmsTimeSeriesDb;
-import decodes.db.Database;
-import decodes.db.DatabaseIO;
 import decodes.sql.OracleSequenceKeyGenerator;
 import decodes.tsdb.ComputationApp;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TsdbAppTemplate;
-import decodes.util.DecodesSettings;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
+import opendcs.dao.LoadingAppDao;
 import opendcs.dao.XmitRecordDAO;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
@@ -69,7 +63,6 @@ public class CwmsOracleConfiguration implements Configuration
             log.info("starting CWMS Database");
             cwmsDb.start();
         }
-
         log.info("CWMS Database started.");
         this.dbUrl = cwmsDb.getJdbcUrl();
         dcsUser = System.getProperty("opendcs.cwms.dcsuser.name",cwmsDb.getUsername());
@@ -105,6 +98,10 @@ public class CwmsOracleConfiguration implements Configuration
             configBuilder.build(out);
             FileUtils.copyDirectory(new File("stage/edit-db"),editDb);
             FileUtils.copyDirectory(new File("stage/schema"),new File(userDir,"/schema/"));
+        }
+        try (OutputStream out = new FileOutputStream(new File(userDir,"logfilter.txt")))
+        {
+            out.write("org.jooq\n".getBytes());
         }
     }
 
@@ -189,6 +186,10 @@ public class CwmsOracleConfiguration implements Configuration
             return true;
         }
         else if(dao.equals(CompDependsDAO.class))
+        {
+            return true;
+        }
+        else if(dao.equals(LoadingAppDao.class))
         {
             return true;
         }

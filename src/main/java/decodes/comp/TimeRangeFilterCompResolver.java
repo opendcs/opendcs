@@ -41,7 +41,13 @@ public class TimeRangeFilterCompResolver
 			"(default=48) discard data older than this")
 	};
 
-
+	/**
+	 * Resolves and returns an array based on the provided data collection.
+	 * If the time range filter is not initialized, it returns an empty array.
+	 *
+	 * @param msg the data collection to which the filter will be applied.
+	 * @return an array of Computation objects, or an empty array if no filter is enabled.
+	 */
 	@Override
 	public Computation[] resolve(IDataCollection msg)
 	{
@@ -50,6 +56,13 @@ public class TimeRangeFilterCompResolver
 		return new Computation[] { timeRangeFilter };
 	}
 
+
+	/**
+	 * Initializes the TimeRangeFilter. It configures the filter to discard
+	 * data outside the specified time range.
+	 *
+	 * @param routingSpec the RoutingSpec from which properties are loaded.
+	 */
 	@Override
 	public void init(RoutingSpec routingSpec)
 	{
@@ -88,6 +101,11 @@ public class TimeRangeFilterCompResolver
 			timeRangeFilter = null;
 	}
 
+	/**
+	 * Returns the list of supported property specifications.
+	 *
+	 * @return an array of PropertySpec objects representing the supported properties.
+	 */
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{

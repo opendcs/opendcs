@@ -377,7 +377,10 @@ public class CwmsSiteDAO extends SiteDAO
 		}
 		
 		Site site;
-		try { site = this.getSiteById(location_code); }
+		try
+		{
+			site = this.getSiteById(location_code);
+		}
 		catch (NoSuchObjectException e) { site = null; }
 		if (site == null)
 		{

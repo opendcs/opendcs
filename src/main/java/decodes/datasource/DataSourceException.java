@@ -32,5 +32,9 @@ public class DataSourceException extends DecodesException
 	{
 		super(msg);
 	}
-}
 
+	public DataSourceException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
+}

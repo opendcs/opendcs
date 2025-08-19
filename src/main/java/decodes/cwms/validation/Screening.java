@@ -36,8 +36,8 @@ import ilex.util.Logger;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import java.util.function.Function;
 
 import opendcs.dao.CachableDbObject;
 import decodes.db.EngineeringUnit;
@@ -105,6 +105,46 @@ public class Screening
 		this.checkUnitsAbbr = checkUnitsAbbr;
 	}
 
+	/**
+	 * Updates the screening flags based on List of ScreeningCriteria
+	 * @param season List of ScreeningCriteria to apply
+	 */
+	public void updateActiveFlags(ArrayList<ScreeningCriteria> season)
+	{
+		boolean rangeActive = false;
+		boolean constActive = false;
+		boolean rocActive = false;
+		boolean durMagActive = false;
+		for (ScreeningCriteria crit: season)
+		{
+			if (crit.hasAbs())
+			{
+				rangeActive = true;
+			}
+			if (crit.hasConst())
+			{
+				constActive = true;
+			}
+			if (crit.hasRoc())
+			{
+				rocActive = true;
+			}
+			if (crit.hasDurMag())
+			{
+				durMagActive = true;
+			}
+		}
+
+		setRangeActive(rangeActive);
+		setConstActive(constActive);
+		setRocActive(rocActive);
+		setDurMagActive(durMagActive);
+	}
+
+
+
+
+
 	public DbKey getScreeningCode()
 	{
 		return screeningCode;
@@ -127,7 +167,7 @@ public class Screening
 	
 	/**
 	 * Adds a screening criteria and keeps the set in order.
-	 * @param screeningCriteria
+	 * @param screeningCriteria to be added
 	 */
 	public void add(ScreeningCriteria screeningCriteria)
 	{

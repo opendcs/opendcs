@@ -39,6 +39,7 @@ import ilex.util.LoadResourceBundle;
 import java.awt.*;
 import javax.swing.*;
 
+import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.util.DecodesSettings;
 import decodes.util.PropertiesOwner;
 
@@ -49,7 +50,7 @@ import java.awt.event.*;
 
 /**
 Dialog wrapper for a properties edit panel.
-@see PropertiesEditPanel
+@see PropertiesEditPanelController
 */
 public class PropertiesEditDialog extends JDialog 
 {
@@ -84,7 +85,7 @@ public class PropertiesEditDialog extends JDialog
         		entityName));
 
 		this.entityName = entityName;
-        propertiesEditPanel = new PropertiesEditPanel(properties);
+        propertiesEditPanel = PropertiesEditPanel.from(properties);
 		propertiesEditPanel.setOwnerDialog(this);
 
 		try {
@@ -99,7 +100,7 @@ public class PropertiesEditDialog extends JDialog
     
 	public void setPropertiesOwner(PropertiesOwner propertiesOwner)
 	{
-		propertiesEditPanel.setPropertiesOwner(propertiesOwner);
+		propertiesEditPanel.getModel().setPropertiesOwner(propertiesOwner);
 	}
 
 	/**
@@ -160,7 +161,7 @@ public class PropertiesEditDialog extends JDialog
 	*/
     void okButton_actionPerformed(ActionEvent e)
 	{
-		propertiesEditPanel.saveChanges();
+		propertiesEditPanel.getModel().saveChanges();
 		closeDlg();
 		okPressed = true;
     }

@@ -22,7 +22,7 @@ public class Profile
      * The default profile will always be "decodes.properties" or "user.properties"
      * Depending on the given configuration and will not change for the life of the programs.
      */
-    final static Profile defaultProfile;
+    private final static Profile defaultProfile;
 
     static
     {
@@ -77,6 +77,21 @@ public class Profile
         }
     }
 
+    @Override
+    public boolean equals(Object other)
+    {
+        boolean retVal = false;
+        if (other instanceof Profile)
+        {
+            Profile p = (Profile)other;
+            if (p.getFile().equals(this.getFile()))
+            {
+                retVal = true;
+            }
+        }    
+        return retVal;
+    }
+
     /**
      * Get a specific profile setup for a file.
      * @param file
@@ -85,6 +100,15 @@ public class Profile
     public static Profile getProfile(File file)
     {
         return new Profile(file);
+    }
+
+    /**
+     * Get the default profile based on the environment setup.
+     * @return
+     */
+    public static Profile getDefaultProfile()
+    {
+        return defaultProfile;
     }
 
     /**

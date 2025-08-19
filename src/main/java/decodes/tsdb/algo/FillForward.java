@@ -1,58 +1,37 @@
 package decodes.tsdb.algo;
 
-import java.util.Calendar;
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
-import ilex.var.NamedVariable;
-import decodes.tsdb.BadTimeSeriesException;
-import decodes.tsdb.DbAlgorithmExecutive;
-import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.IntervalCodes;
-import decodes.tsdb.IntervalIncrement;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.ParmRef;
+import decodes.tsdb.DbCompException;
+import decodes.tsdb.IntervalCodes;
+import decodes.tsdb.VarFlags;
+import ilex.var.NamedVariable;
 import ilex.var.TimedVariable;
 import opendcs.opentsdb.Interval;
-import decodes.tsdb.TimeSeriesIdentifier;
 
-//AW:IMPORTS
-// Place an import statements you need here.
-//AW:IMPORTS_END
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:JAVADOC
-/**
-Project an input value by copying it forward in time for the specified number of intervals.
-If NumIntervals <= 0, then project forward until the next input value or until NOW.
- */
-//AW:JAVADOC_END
+import java.util.Date;
+
+@Algorithm(description = "Project an input value by copying it forward in time for the specified number of intervals.\n" +
+		"If NumIntervals <= 0, then project forward until the next input value or until NOW.")
 public class FillForward
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double input;	//AW:TYPECODE=i
-	String _inputNames[] = { "input" };
-//AW:INPUTS_END
+	@Input
+	public double input;
 
-//AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
 	private CTimeSeries inputTS = null;
 	private Interval outputIntv = null;
 	private String outputIntvs = null;
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable output = new NamedVariable("output", 0);
-	String _outputNames[] = { "output" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@org.opendcs.annotations.PropertySpec(value="4")
 	public long numIntervals = 4;
-	String _propertyNames[] = { "numIntervals" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -62,13 +41,8 @@ public class FillForward
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.TIME_SLICE;
-//AW:INIT_END
-
-//AW:USERINIT
 		// Code here will be run once, after the algorithm object is created.
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -77,8 +51,6 @@ public class FillForward
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
-		
 		// Validation
 		inputTS = getParmRef("input").timeSeries;
 		if (inputTS.size() == 0)
@@ -123,7 +95,6 @@ public class FillForward
 		debug3("outputIntv=" + outputIntvs + ", firstTrig=" + debugSdf.format(firstTrig)
 			+ ", lastTrig=" + debugSdf.format(lastTrig));
 		
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -139,7 +110,6 @@ public class FillForward
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 		TimedVariable nextInput = inputTS.findNext(_timeSliceBaseTime);
 		if (nextInput != null)
 			debug1("timeSlice=" + debugSdf.format(_timeSliceBaseTime) 
@@ -179,7 +149,6 @@ debug3("numFill=" + numFill + ", outputTime=" + debugSdf.format(outputTime) + ",
 		}
 		debug1("" + numFill + " values filled.");
 		
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -188,32 +157,6 @@ debug3("numFill=" + numFill + ", outputTime=" + debugSdf.format(outputTime) + ",
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }

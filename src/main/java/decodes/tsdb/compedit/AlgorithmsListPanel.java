@@ -6,7 +6,7 @@
 *  source code for your own purposes, except that no part of the information
 *  contained in this file may be claimed to be proprietary.
 *
-*  Except for specific contractual terms between ILEX and the federal 
+*  Except for specific contractual terms between ILEX and the federal
 *  government, this source code is provided completely without warranty.
 *  For more information contact: info@ilexeng.com
 */
@@ -24,6 +24,9 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import opendcs.dai.AlgorithmDAI;
 
 import decodes.db.Constants;
@@ -31,9 +34,11 @@ import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
 
 import decodes.tsdb.*;
+import decodes.tsdb.compedit.algotab.LoadNewDialog;
 
-public class AlgorithmsListPanel extends ListPanel 
+public class AlgorithmsListPanel extends ListPanel
 {
+	private static final Logger log = LoggerFactory.getLogger(AlgorithmsListPanel.class);
 	JPanel getFieldPanel() {
 		return getJContentPane();
 	}
@@ -43,7 +48,7 @@ public class AlgorithmsListPanel extends ListPanel
 	JTable algoListTable = null;
 
 	AlgoListTableModel algoListTableModel = null;
-	
+
 	private String openErr;
 	private String newInputText;
 	private String newError;
@@ -58,14 +63,14 @@ public class AlgorithmsListPanel extends ListPanel
 		fillLabels();
 		this.add(getJContentPane(), java.awt.BorderLayout.CENTER);
 	}
-	
+
 	private void fillLabels()
 	{
 		openErr = CAPEdit.instance().compeditDescriptions.getString("AlgorithmsListPanel.OpenError");
 		newInputText = CAPEdit.instance().compeditDescriptions.getString("AlgorithmsListPanel.NewInputText");
 		newError = CAPEdit.instance().compeditDescriptions.getString("AlgorithmsListPanel.NewError");
 		cpyErr1 = CAPEdit.instance().compeditDescriptions.getString("AlgorithmsListPanel.CopyError1");
-		cpyErr2 = CAPEdit.instance().compeditDescriptions.getString("AlgorithmsListPanel.CopyError2");	
+		cpyErr2 = CAPEdit.instance().compeditDescriptions.getString("AlgorithmsListPanel.CopyError2");
 		cpyInput = CAPEdit.instance().compeditDescriptions.getString("AlgorithmsListPanel.CopyInput");
 		deleteErr1 = CAPEdit.instance().compeditDescriptions.getString("AlgorithmsListPanel.DeleteError1");
 		deleteErr2 = CAPEdit.instance().compeditDescriptions.getString("AlgorithmsListPanel.DeleteError2");
@@ -73,16 +78,20 @@ public class AlgorithmsListPanel extends ListPanel
 
 	/**
 	 * This method initializes jContentPane
-	 * 
+	 *
 	 * @return javax.swing.JPanel
 	 */
-	protected JPanel getJContentPane() 
+	protected JPanel getJContentPane()
 	{
-		if (jContentPane == null) 
+		if (jContentPane == null)
 		{
 			jContentPane = new JPanel();
 			jContentPane.setLayout(new BorderLayout());
-			jContentPane.add(getButtonPanel(), java.awt.BorderLayout.SOUTH);
+			JPanel buttonPanel = getButtonPanel();
+			JButton checkForNew = new JButton(ResourceBundle.getBundle("ilex/resources/gui").getString("EditorMenuSet.checkForNew"));
+			checkForNew.addActionListener(e -> checkForNew());
+			buttonPanel.add(checkForNew);
+			jContentPane.add(buttonPanel, java.awt.BorderLayout.SOUTH);
 			JScrollPane scrollPane = new JScrollPane(getAlgoListTable());
 
 			jContentPane.add(scrollPane, java.awt.BorderLayout.CENTER);
@@ -90,13 +99,32 @@ public class AlgorithmsListPanel extends ListPanel
 		return jContentPane;
 	}
 
-	protected JTable getAlgoListTable() 
+	private void checkForNew()
 	{
-		if (algoListTableModel == null) 
+
+		LoadNewDialog loadNew = new LoadNewDialog(CAPEdit.instance().getFrame(), CAPEdit.theDb);
+		log.info("Starting Load new dialog");
+		if (loadNew.importNew())
+		{
+			new SwingWorker<Void,Void>()
+			{
+				@Override
+				protected Void doInBackground() throws Exception
+				{
+					AlgorithmsListPanel.this.algoListTableModel.fill();
+					return null;
+				}
+			}.execute();
+		}
+	}
+
+	protected JTable getAlgoListTable()
+	{
+		if (algoListTableModel == null)
 		{
 			algoListTableModel = new AlgoListTableModel();
 			algoListTableModel.fill();
-			algoListTable = new SortingListTable(algoListTableModel, 
+			algoListTable = new SortingListTable(algoListTableModel,
 				AlgoListTableModel.columnWidths);
 			algoListTable.addMouseListener(
 				new MouseAdapter()
@@ -123,14 +151,14 @@ public class AlgorithmsListPanel extends ListPanel
 		}
 		//Get the correct row from the table model
 		int modelrow = algoListTable.convertRowIndexToModel(r);
-		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();			
+		AlgoListTableModel tablemodel = (AlgoListTableModel)algoListTable.getModel();
 		DbCompAlgorithm dca = (DbCompAlgorithm)tablemodel.getRowAlgorithm(modelrow);
 		openEditTab(dca);
 	}
 
 	private void openEditTab(DbCompAlgorithm dca)
 	{
-		JTabbedPane tabbedPane = 
+		JTabbedPane tabbedPane =
 			CAPEdit.instance().getAlgorithmsTab();
 		int n = tabbedPane.getTabCount();
 		for(int idx = 1; idx<n; idx++)
@@ -218,7 +246,7 @@ public class AlgorithmsListPanel extends ListPanel
 		catch(Exception ex)
 		{
 			CAPEdit.instance().getFrame().showError(
-				deleteErr2 + dca.getName() + "': " 
+				deleteErr2 + dca.getName() + "': "
 				+ ex.getMessage());
 		}
 		finally

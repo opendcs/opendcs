@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.alarm.ShowAlarms %*%
+@"%~dp0\decj" decodes.tsdb.alarm.ShowAlarms %*%

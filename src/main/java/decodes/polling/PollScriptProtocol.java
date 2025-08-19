@@ -111,9 +111,9 @@ public class PollScriptProtocol
 		if (PropertiesUtil.getIgnoreCase(properties, "SITENAME") == null)
 			properties.setProperty("SITENAME", tm.platform.getSiteName(false));
 		if (tm.getUsername() != null && tm.getUsername().trim().length() > 0)
-			properties.setProperty("USERNAME", tm.getUsername());
+			properties.setProperty("USERNAME", EnvExpander.expand(tm.getUsername()));
 		if (tm.getPassword() != null && tm.getPassword().trim().length() > 0)
-			properties.setProperty("PASSWORD", tm.getPassword());
+			properties.setProperty("PASSWORD", EnvExpander.expand(tm.getPassword()));
 		
 		// Then read it into memory
 		annotate("Loading script file: " + scriptFile.getPath());

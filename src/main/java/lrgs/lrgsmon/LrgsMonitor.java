@@ -12,6 +12,7 @@ import decodes.util.DecodesVersion;
 import ilex.util.Logger;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
+import ilex.util.FileServerLock;
 import ilex.util.TextUtil;
 import ilex.cmdline.*;
 import lrgs.statusxml.LrgsStatusSnapshotExt;
@@ -136,7 +137,7 @@ public class LrgsMonitor
 	{
 		// Get the server lock, & fail if error.
 		String lockpath = EnvExpander.expand(lockFileName);
-		mylock = new ServerLock(lockpath);
+		mylock = new FileServerLock(lockpath);
 
 		if (mylock.obtainLock() == false)
 		{

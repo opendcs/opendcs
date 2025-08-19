@@ -26,4 +26,14 @@ public class DbCompException extends TsdbException
 	{
 		super(msg);
 	}
+
+	/**
+	 * Constructor with cause.
+	 * @param msg explanatory message
+	 * @param cause upstream exception with additional details.
+	 */
+	public DbCompException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
 }

@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.cwms.rating.CwmsRatingExport %*%
+@"%~dp0\decj" decodes.cwms.rating.CwmsRatingExport %*%

@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.launcher.LauncherFrame %*%
+@"%~dp0\decj" decodes.launcher.LauncherFrame %*%

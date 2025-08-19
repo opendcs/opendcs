@@ -6,4 +6,8 @@
 # options:
 #		-i               Export from 'installed' database (default is edit db)
 #
-%INSTALL_PATH/bin/decj decodes.dbimport.DbExport $*
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.dbimport.DbExport $*

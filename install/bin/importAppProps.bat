@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.ImportAppProperties %*%
+@"%~dp0\decj" decodes.tsdb.ImportAppProperties %*%

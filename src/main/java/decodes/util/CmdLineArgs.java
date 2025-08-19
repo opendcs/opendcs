@@ -1,141 +1,7 @@
-/*
-*  $Id: CmdLineArgs.java,v 1.19 2019/12/11 14:25:36 mmaloney Exp $
-*
-*  $State: Exp $
-*
-*  $Log: CmdLineArgs.java,v $
-*  Revision 1.19  2019/12/11 14:25:36  mmaloney
-*  added setNoInit to facilitate multiple launcher profiles.
-*
-*  Revision 1.18  2019/11/13 15:22:19  mmaloney
-*  Added multiple profiles feature to launcher.
-*
-*  Revision 1.17  2019/10/13 19:30:53  mmaloney
-*  Added noInit arg to allow multiple apps to start within a single JVM.
-*
-*  Revision 1.16  2019/01/28 14:43:16  mmaloney
-*  Default action is to squelch all javax.logging messages.
-*
-*  Revision 1.15  2019/01/22 19:36:34  mmaloney
-*  Added -FL argument to forward the java.logging logger.
-*
-*  Revision 1.14  2019/01/18 16:10:27  mmaloney
-*  dev
-*
-*  Revision 1.13  2019/01/18 16:01:10  mmaloney
-*  dev
-*
-*  Revision 1.12  2019/01/18 15:58:26  mmaloney
-*  dev
-*
-*  Revision 1.11  2019/01/18 15:43:17  mmaloney
-*  dev
-*
-*  Revision 1.10  2019/01/18 15:06:48  mmaloney
-*  dev
-*
-*  Revision 1.9  2019/01/17 20:13:54  mmaloney
-*  dev
-*
-*  Revision 1.8  2019/01/17 20:00:17  mmaloney
-*  dev
-*
-*  Revision 1.7  2019/01/17 16:03:26  mmaloney
-*  debug log forwarding
-*
-*  Revision 1.6  2019/01/15 19:41:19  mmaloney
-*  Remove debug
-*
-*  Revision 1.5  2019/01/11 14:43:16  mmaloney
-*  Move JavaLoggerAdapter to ApplicationSettings
-*
-*  Revision 1.4  2018/02/05 15:54:34  mmaloney
-*  Add fontAdjust feature to increase/decrease font sizes throughout the GUI.
-*
-*  Revision 1.3  2016/01/27 22:09:12  mmaloney
-*  Get rid of error message when "decodes.properties" doesn't exist in a shared implementation for CWMS.
-*
-*  Revision 1.2  2014/06/27 20:33:49  mmaloney
-*  Bug fix: Catch any exception, not just IOException.
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.9  2013/03/28 17:29:09  mmaloney
-*  Refactoring for user-customizable decodes properties.
-*
-*  Revision 1.8  2011/11/18 20:05:25  mmaloney
-*  added setDefaultLogFile method.
-*
-*  Revision 1.7  2009/10/30 20:00:27  mjmaloney
-*  Removed -L from CmdLineArgs.java -- This is an Application Specific Arg
-*
-*  Revision 1.6  2009/10/27 03:51:08  shweta
-*  NoCompFilter token  is defined
-*
-*  Revision 1.2  2009/10/26 07:42:08  shweta
-*  code added to disable computation filter
-*
-*  Revision 1.1  2008/04/04 18:21:07  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.16  2008/01/14 14:56:44  mmaloney
-*  dev
-*
-*  Revision 1.15  2007/12/23 19:45:11  mmaloney
-*  dev
-*
-*  Revision 1.14  2007/12/17 15:35:27  mmaloney
-*  added code to CmdLineArgs to load the decodes.properties file
-*
-*  Revision 1.13  2004/08/27 20:50:29  mjmaloney
-*  javadocs
-*
-*  Revision 1.12  2003/12/23 20:10:18  mjmaloney
-*  Mods to support -a (autoinstall) feature on dbimport.
-*
-*  Revision 1.11  2003/12/10 20:35:03  mjmaloney
-*  Modified time-stamping to support usgs-style time zones.
-*
-*  Revision 1.10  2003/12/07 20:36:52  mjmaloney
-*  First working implementation of EDL time stamping.
-*
-*  Revision 1.9  2003/08/01 19:17:23  mjmaloney
-*  CmdLineArgs now takes default log file in constructor.
-*
-*  Revision 1.8  2003/07/12 16:18:30  mjmaloney
-*  Assume properties file is under install-dir if -P not supplied.
-*
-*  Revision 1.7  2002/04/15 16:58:37  mike
-*  Debug args.
-*
-*  Revision 1.6  2001/11/23 21:18:25  mike
-*  dev
-*
-*  Revision 1.5  2001/10/11 00:34:24  mike
-*  Improve start-up code for different types of databases. DatabaseIO is now
-*  an abstract class rather than an interface. It has a factory method for
-*  creating different database IO instances.
-*
-*  Revision 1.4  2001/09/24 20:43:27  mike
-*  Created FileLogger and added the -l <log-file> argument.
-*
-*  Revision 1.3  2001/08/24 19:35:13  mike
-*  Inherit from the new ilex.cmdline.StdAppSettings (w/o CORBA dependencies).
-*
-*  Revision 1.2  2001/04/23 17:33:19  mike
-*  dev
-*
-*  Revision 1.1  2001/04/21 20:19:23  mike
-*  Added read & write methods to all DatabaseObjects
-*
-*/
 package decodes.util;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.File;
-import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 
@@ -303,8 +169,7 @@ public class CmdLineArgs
         }
         else // the default profile is always at index 0 in Profile.getProfiles
         {
-            profile = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")))
-                             .get(0);
+            profile = Profile.getDefaultProfile();
         }
         File propFile = profile.getFile();
 
@@ -331,20 +196,14 @@ public class CmdLineArgs
         //Load the decodes.properties
         if (!settings.isLoaded())
         {
-            Properties props = new Properties();
             try
             {
-                FileInputStream fis = new FileInputStream(propFile);
-                props.load(fis);
-                fis.close();
+                settings.loadFromProfile(profile);
             }
             catch(Exception ex)
             {
                 Logger.instance().failure("Cannot load decodes properties from '" + propFileName + "': " + ex);
             }
-            settings.loadFromProperties(props);
-            settings.setLastModified(new Date(propFile.lastModified()));
-            settings.setSourceFile(propFile);
         }
 
         // Userdir is needed to support multi-user installations under unix/linux.

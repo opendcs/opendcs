@@ -6,4 +6,8 @@
 # options:
 #	-e               Export from 'editable' database (default is installed)
 #
-%INSTALL_PATH/bin/decj decodes.dbimport.LrgsNetlist $*
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.dbimport.LrgsNetlist $*

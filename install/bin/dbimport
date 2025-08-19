@@ -8,5 +8,8 @@
 #	                 have been done if the files were imported.
 #	-o               Keep OLD records in case of a clash (i.e. don't overwrite
 #	                 existing records with the contents of the XML files.
-#
-%INSTALL_PATH/bin/decj decodes.dbimport.DbImport $*
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.dbimport.DbImport $*

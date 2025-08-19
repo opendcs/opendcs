@@ -127,6 +127,48 @@ The following workflow can be used:
 
 And repeat as required. This works for the GUI and nogui applications.
 
+Debugging OpenDCS from the build
+--------------------------------
+
+There is a `run` target that will allow you to run an OpenDCS application from the build environment.
+the "stage" directory is used as DCSTOOL_HOME and DCSTOOL_USERDIR is the same default as an install.
+
+.. WARNING::
+
+    By using the default behavior you *MAY* be connecting to a live system. Consider that while
+    manipulating any data. 
+
+    If this is a major concern you should set the DCSTOOL_USERDIR for the session ant runs in
+    to point to a directory that only contains profiles that connect to test systems.
+
+.. code-block:: bash
+    # to just run the launcher
+    ant run
+
+    # to run a specific app
+    ant run -Dopendcs.app=compedit
+
+    # to run a specific app with a profile
+    ant run -Dopendcs.app=dbedit -Dopendcs.profile="full path to a profile or .properties file"
+
+    # to run with the java remote debugger enabled
+    ant run -DdebugPort=5006
+
+    # to run with Java Flight Recorder
+    ant run -Dopendcs.jfr=true
+    # recordings will be in the run directory of the build (default build/run)
+    # with the name <opendcs.app>.recording.jfr where opendcs.app is the value of the property provided
+    # or the default "launcher_start" app if the property is not set.
+
+All of the options above can be in any combination.
+
+The logs are set to the highest debug level and printed to stdout.
+
+.. NOTE::
+
+    On linux, ctrl-c of the run task will terminate the application. This does not appear to work correctly on Windows
+    and you will likely need to close the application windows manually.
+
 MBeans
 ======
 
@@ -151,7 +193,7 @@ system you can turn pool tracing on for an application with the following java f
 
 .. code-block:: bash
 
-    DECJ_MAXHEAP="-Dcwms.connection.pool.trace=true" routsched ...
+    DECJ_MAXHEAP="-Dopendcs.connection.pool.trace=true" routsched ...
 
 With tracing on the WrappedConnectionMBean will show where a connection was created from. This useful for identifing 
 what code to fix for connection pool leaks.
@@ -160,7 +202,7 @@ Authentication Sources
 ----------------------
 
 Implementation
-++++++++++++++
+~~~~~~~~~~~~~~
 
 If the simple file based, or environment variable based credential sources are insufficient it is possible to create and 
 load a new source without additional configuration.
@@ -185,7 +227,7 @@ You must also add a file:
 that contains the fully qualified class name of your new AuthSource.
 
 Usage
-+++++
+~~~~~
 
 To acquire the configured credentials the following can be used:
 
@@ -211,6 +253,155 @@ To acquire the configured credentials the following can be used:
     }
     ...
 
+PropertyProvider
+----------------
+
+The PropertyProvider system as added to support EnvExpander retrieving values from sources other than the java `System.properties`.
+The mechanism uses the java ServiceProvider mechanism so downstream users can implement any custom sources they need.
+
+To implement a custom property provider the following class `org.opendcs.spi.properties.PropertyValueProvider`.
+
+.. code-block:: java
+    :linenos:
+
+    package org.opendcs.spi.properties;
+
+    import java.io.IOException;
+    import java.util.Map;
+    import java.util.Properties;
+
+    public interface PropertyValueProvider {
+        /**
+        * Determine if a given string can be processed by this provider
+        * @param value
+        * @return
+        */
+        public boolean canProcess(String value);
+
+        /**
+        * Retrieve property from the provided property or environment map.
+        *
+        * It is permissible for a given implemtation to completely ignore either the properties or
+        * environment map. However, it should be made very clear where data is coming from
+        *
+        * @param value actual value to decipher.
+        *
+        * @param properties Properties to use for the given request.
+        * @param environment Environment map to use for the given request.
+        *
+        * @return the real value, or null if not found.
+        */
+        public String processValue(String value, Properties properties, Map<String,String> env) throws IOException;
+    }
+
+Here is the `EnvironmentPropertyValueProvider` for an example:
+
+.. code-block:: java
+    :linenos:
+
+    package org.opendcs.utils.properties;
+
+    import java.util.Map;
+    import java.util.Properties;
+
+    import org.opendcs.spi.properties.PropertyValueProvider;
+
+    /**
+    * Get the real value of a property from the environment.
+    */
+    public class EnvironmentPropertyValueProvider implements PropertyValueProvider
+    {
+        private static final String prefix = "env.";
+
+        @Override
+        public boolean canProcess(String value)
+        {
+            return value.toLowerCase().startsWith(prefix);
+        }
+
+        /**
+        * Retrieve property from the provided envrionment map
+        * @param value actual value to decipher.
+        *
+        * @param properties ignored in this implementation.
+        * @param environment Environment to use for the given request.
+        *
+        * @return the real value, or null if not found.
+        */
+        @Override
+        public String processValue(String value, Properties props, Map<String,String> environment)
+        {
+            String envVar = value.substring(prefix.length());
+            return environment.get(envVar);
+        }
+
+    }
+
+
+The following prefixes are reserved:
+
++----------+--------------------------------------+
+|<nothing> |no prefix is used for default behavoir|
++----------+--------------------------------------+
+|env       |Values from `System.getenv`           |
++----------+--------------------------------------+
+|java      |Values from `System.getProperty`      |
++----------+--------------------------------------+
+|file      |Values from files on the file system. |
++----------+--------------------------------------+
+
+Custom Decodes Functions
+========================
+
+To create a custom function, implement the following interface `org.opendcs.spi.decodes.DecodesFunctionProvider`, and derive
+your actual function from `decodes.decoder.DecodesFunction`.
+
+Additionally make sure your full class name is in the appropriate
+`META-INF/services/org.opendcs.spi.decodes.DecodesFunctionProvider` file.
+
+.. code-block:: java
+    :linenos:
+
+    package org.opendcs.spi.decodes;
+
+    import decodes.decoder.DecodesFunction;
+
+    public interface DecodesFunctionProvider
+    {
+        /**
+        * Name of the decodes function that will be used in a DecodesScript.
+        * The name is case sensitive. If you function is provided outside of the
+        * OpenDCS distribution, please prefix the name with some sort of organizational identifier.
+        * @return
+        */
+        String getName();
+
+        /**
+        * Create an actual instance of your custom decodes function.
+        * @return Valid and immediately usable instance of a DecodesFunction.
+        */
+        DecodesFunction createInstance();
+    }
+
+Decodes Function Operations
+---------------------------
+
+We will expand this section later. For the moment please review the existing DecodesFunction implementations to
+determine the most appropriate implementation details for your function.
+
+
+Additional Logging
+==================
+
+Similar to the connection pool tracing above, if you are having difficulty with a provider
+you can log missed results with the following feature flag.
+
+.. code-block:: bash
+
+    DECJ_MAXHEAP="-Dopendcs.property.providers.trace=true" routsched ...
+
+This will cause excessive logging and drastically slow execution. We do not recommend
+leaving this setting on for any length of time beyond a debugging session.
 
 Code Analysis
 -------------
@@ -382,13 +573,13 @@ The build
 The build is done in multiple stages. 
 
 Stage 1 Build
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 The build uses the openjdk:8-jdk-bullseye image as it was easier to handle some of the basic dependencies. The documentation is not 
 generated as it wouldn't be easily accessible anyways.
 
 Stage 2 baseline
-^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~
 
 This setups the basic "OpenDCS" install in /opt/opendcs. We use the openjdk:8-jre-alpine to save space for the final image.
 We may experiment in the future with additional image reductions.
@@ -401,7 +592,7 @@ The opendcs user, to avoid running as root, and group are added as well as the d
 The build/stage directory is copied from the build stage
 
 Stage 3+ lrgs
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 LRGSHOME  and LRGS_ADMIN_PASSWORD ENV variable is registered.
 /lrgs_home volume is registered.
@@ -415,3 +606,33 @@ lrgs.sh handles first time setup, copy default config, initial admin user, and s
 
 The lrgs.lock file is currently ignored and docker just kills the process. Currently investigating better ways to 
 handle shutdown. Will likely just add a flag to remove the lock file entirely.
+
+The docker environment now uses the special sequence `lrgsStart -F -k -` to run in the foreground (-F) and use the NoOpServerLock file (-k -)  which causes
+the applications using that Lock to assume it's always valid for them.
+
+Database Scripts
+================
+
+OpenDCS is transitioning to using Flyway to manage database schema installation and upgrades.
+See https://flywaydb.org for detail on the specifics. The following assumes you have read 
+at least some of the documentation.
+
+The following guidance *MUST* be observed:
+
+- DO NOT ALTER a released versioned migration file. For example `src/main/resource/db/opendcs-pg/schema/V6.8__opendcs.sql` is final
+- For each implementation the structure should be as follows:
+  
+  - `src/main/resource/db/<implementation>/callbacks` for the before/after migration handlers
+  - `src/main/resource/db/<implementation>/schema` for the actual versioned migrations
+  - `src/main/resource/db/<implementation>/triggers` for any triggers
+  - and so on. A given implementation may also provide baseline/bootstrap data
+  - Java Migrations, if any, should followed the same structure but within the `src/main/java` folder.
+- Each new change should be add to a new migration file that includes the next version number (listed in `rcnum.txt`).
+  
+  - At the time of writing that would mean V7.0.12, the next would be V7.0.13
+
+- If we end up with a large number of migration and only looking at changes becomes confusing we can create a baseline migration
+  that gathers up all previous changes.
+
+While the actual versioned migrations *MUST* stay the same, the other organization is not final; please open a pull-request
+if you think you have a superior organization for these data.

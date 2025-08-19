@@ -2,4 +2,8 @@
 #
 # usage: emitimport <file1> <file2> ...
 #
-%INSTALL_PATH/bin/decj decodes.dbimport.EmitImport $*
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+
+${APP_PATH}/decj decodes.dbimport.EmitImport $*

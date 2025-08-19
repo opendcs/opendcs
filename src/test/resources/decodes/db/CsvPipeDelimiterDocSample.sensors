@@ -1,0 +1,6 @@
+1, Stage, ft, none;
+2, Humidity, %, none;
+3, Temp, degF, none;
+4, Storage, acft, none;
+5, Precip, in, none;
+6, Zero, raw, none;

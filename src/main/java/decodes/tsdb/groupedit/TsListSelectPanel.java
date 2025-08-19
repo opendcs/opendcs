@@ -182,7 +182,10 @@ public class TsListSelectPanel extends JPanel
 		int r = tsIdListTable.getSelectedRow();
 		if (r == -1)
 			return null;
-		return model.getTSIDAt(r);
+		//Get the correct row from the table model
+		int modelrow = tsIdListTable.convertRowIndexToModel(r);
+		TsIdSelectTableModel tablemodel = (TsIdSelectTableModel)tsIdListTable.getModel();
+		return tablemodel.getTSIDAt(modelrow);
 	}
 
 	/**

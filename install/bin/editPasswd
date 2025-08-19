@@ -1,2 +1,10 @@
-
-%INSTALL_PATH/bin/decj ilex.util.PasswordFileEditor -f $LRGSHOME/.lrgs.passwd
+#!/bin/bash
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
+if [ -z "$LRGSHOME" ] 
+then
+  echo "the environment variable 'LRGSHOME' should be set to a path outside the installation directory."
+  exit 1
+fi
+${APP_PATH}/decj ilex.util.PasswordFileEditor -f $LRGSHOME/.lrgs.passwd

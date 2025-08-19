@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.ResourceBundle;
 
+import ilex.gui.Help;
 import ilex.util.Logger;
 import ilex.util.TextUtil;
 
@@ -62,8 +63,7 @@ public class EquipmentEditPanel extends DbEditorTab
     public EquipmentEditPanel()
 	{
 		Properties props = new Properties();
-		propertiesEditPanel =
-			new PropertiesEditPanel(props);
+		propertiesEditPanel = PropertiesEditPanel.from(props);
         try {
             jbInit();
         }
@@ -99,7 +99,7 @@ public class EquipmentEditPanel extends DbEditorTab
 			enableFields();
 			theObject = origObject.copy();
 			setTopObject(origObject);
-			propertiesEditPanel.setProperties(theObject.properties);
+			propertiesEditPanel.getModel().setProperties(theObject.properties);
 			fillFields();
 		}
 	}
@@ -113,7 +113,7 @@ public class EquipmentEditPanel extends DbEditorTab
 	{
 		enableFields();
 		theObject.copyFrom(imported);
-		propertiesEditPanel.setProperties(theObject.properties);
+		propertiesEditPanel.getModel().setProperties(theObject.properties);
 		fillFields();
 	}
 
@@ -182,7 +182,7 @@ public class EquipmentEditPanel extends DbEditorTab
 		if (TextUtil.isAllWhitespace(theObject.model))
 			theObject.model = null;
 		theObject.equipmentType = equipmentTypeSelector.getSelection();
-		propertiesEditPanel.saveChanges();
+		propertiesEditPanel.getModel().saveChanges();
 		return theObject;
 	}
 
@@ -396,8 +396,9 @@ public class EquipmentEditPanel extends DbEditorTab
 	}
 
 
-	/** Does nothing. */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 }

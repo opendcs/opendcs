@@ -11,8 +11,9 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
 import ilex.util.Logger;
-import ilex.util.ServerLock;
+import ilex.util.FileServerLock;
 import ilex.util.EnvExpander;
+import ilex.util.ServerLock;
 
 public class LritDcsReceiver
 {
@@ -34,7 +35,7 @@ public class LritDcsReceiver
 
 		// Check lock file.
 		String lockpath = EnvExpander.expand(cmdLineArgs.getLockFile());
-		mylock = new ServerLock(lockpath);
+		mylock = new FileServerLock(lockpath);
         if (mylock.obtainLock() == false)
         {
             Logger.instance().log(Logger.E_FATAL,

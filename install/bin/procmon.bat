@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.procmonitor.ProcessMonitor %*%
+@"%~dp0\decj" decodes.tsdb.procmonitor.ProcessMonitor %*%

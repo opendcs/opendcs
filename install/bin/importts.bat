@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.TsImport %*%
+@"%~dp0\decj" decodes.tsdb.TsImport %*%

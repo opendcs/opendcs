@@ -1,7 +1,6 @@
 package decodes.drgsinfogui;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import ilex.gui.WindowUtility;
 
 /**
  * This is the main class for the DRGS Receiver GUI. This GUI
@@ -35,20 +34,7 @@ public class DrgsReceiversList
 		{
 			drgsFrame.validate();
 		}
-		// Center the window
-		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		Dimension frameSize = drgsFrame.getSize();
-		if (frameSize.height > screenSize.height)
-		{
-			frameSize.height = screenSize.height;
-		}
-		if (frameSize.width > screenSize.width)
-		{
-			frameSize.width = screenSize.width;
-		}
-		drgsFrame.setLocation((screenSize.width - frameSize.width) / 2,
-				(screenSize.height - frameSize.height) / 2);
-		drgsFrame.setVisible(true);
+		WindowUtility.center(drgsFrame).setVisible(true);
 	}
 
 	/** Main method */

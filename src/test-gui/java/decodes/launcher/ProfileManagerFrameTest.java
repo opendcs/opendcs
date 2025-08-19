@@ -53,7 +53,7 @@ public class ProfileManagerFrameTest extends GuiTest
         properties.set("DCSTOOL_USERDIR",resourceDir+"/decodes/launcher/profiles");
         pmf = GuiActionRunner.execute(() -> new ProfileManagerFrame());
         pmf.setExitOnClose(false);
-        frame = new FrameFixture(pmf);
+        frame = new FrameFixture(robot(), pmf);
         frame.show();
         pause(new Condition("Gui visible") {
             @Override
@@ -111,7 +111,7 @@ public class ProfileManagerFrameTest extends GuiTest
     }
 
     @AfterEach
-    public void tearDown() throws Exception
+    public void tearDownEach() throws Exception
     {
         frame.cleanUp();
         properties.teardown();

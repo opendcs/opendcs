@@ -19,4 +19,14 @@ public class DbXmlException extends TsdbException
 	{
 		super(msg);
 	}
+
+	/**
+	 * DbXmlException with additional cause.
+	 * @param msg
+	 * @param cause
+	 */
+	public DbXmlException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
 }

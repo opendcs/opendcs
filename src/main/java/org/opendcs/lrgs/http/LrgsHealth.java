@@ -1,28 +1,42 @@
 package org.opendcs.lrgs.http;
 
-import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import lrgs.archive.MsgArchive;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import lrgs.lrgsmain.LrgsMain;
 
+@Path("/health")
 public class LrgsHealth
 {
-    /**
-     * Simple LRGS status report for simple health checks.
-     *
-     * @param ctx Javalin Archive.
-     * @param archive Lrgs MsgArchive to pull stats.
-     * @param lrgs LrgsMain handle to get more information.
-     */
-    public static void get(Context ctx, MsgArchive archive, LrgsMain lrgs)
+    private static final Logger log = LoggerFactory.getLogger(LrgsHealth.class);
+
+    @Context
+    ServletContext servletContext;
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response get()
     {
-        if (lrgs.getDdsServer().statusProvider.getStatusSnapshot().isUsable)
+        log.info("Sending Health status.");
+        LrgsMain lrgs = (LrgsMain)servletContext.getAttribute("lrgs");
+        if (lrgs != null && lrgs.getDdsServer().statusProvider.getStatusSnapshot().isUsable)
         {
-            ctx.status(HttpCode.OK).json("Active");
+            return Response.ok("\"Active\"").build();
         }
         else
         {
-            ctx.status(HttpCode.SERVICE_UNAVAILABLE).json("Inactive");
+            return Response.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
+                           .entity("\"Inactive\"")
+                           .build();
         }
     }
 }

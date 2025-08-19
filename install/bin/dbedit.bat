@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.dbeditor.DecodesDbEditor %*%
+@"%~dp0\decj" decodes.dbeditor.DecodesDbEditor %*%

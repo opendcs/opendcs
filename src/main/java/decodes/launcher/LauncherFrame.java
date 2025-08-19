@@ -1,117 +1,19 @@
-/*
- * $Id: LauncherFrame.java,v 1.19 2020/04/05 21:18:57 cvs Exp $
- *
- * $Log: LauncherFrame.java,v $
- * Revision 1.19  2020/04/05 21:18:57  cvs
- * Show processes button even if not a TSDB.
- *
- * Revision 1.18  2019/12/11 14:38:02  mmaloney
- * Removed dbClassName. This now set as a function of database type.
- *
- * Revision 1.17  2019/11/13 15:11:16  mmaloney
- * Added multiple profiles feature to launcher.
- *
- * Revision 1.16  2019/10/25 15:15:19  mmaloney
- * dev
- *
- * Revision 1.15  2019/10/22 13:16:41  mmaloney
- * dev
- *
- * Revision 1.14  2019/10/22 12:39:39  mmaloney
- * Pass launcher args to launcher actions.
- *
- * Revision 1.13  2019/10/13 19:24:47  mmaloney
- * Prototypes for multi-profile launcher
- *
- * Revision 1.12  2017/08/22 19:53:58  mmaloney
- * Improve comments
- *
- * Revision 1.11  2017/06/13 20:19:32  mmaloney
- * dev
- *
- * Revision 1.10  2017/06/13 20:02:33  mmaloney
- * dev
- *
- * Revision 1.9  2016/07/21 18:13:17  mmaloney
- * Added Platform Monitor and Routing Monitor buttons to launcher.
- *
- * Revision 1.8  2015/07/17 13:28:07  mmaloney
- * Added showComputationEditor boolean.
- *
- * Revision 1.7  2015/05/21 13:26:14  mmaloney
- * RC08
- *
- * Revision 1.6  2015/05/14 13:52:20  mmaloney
- * RC08 prep
- *
- * Revision 1.5  2015/04/03 19:53:27  mmaloney
- * Fixed CWMS-5626 where by some GUIs would silently exit if user had no privilege.
- *
- * Revision 1.4  2015/02/06 18:46:59  mmaloney
- * Config option to not display certain buttons: Time Series, Groups, Run Comps, & Algorithms.
- *
- * Revision 1.3  2014/10/07 12:34:37  mmaloney
- * DecodesSetting.showNetlistEditor
- *
- * Revision 1.2  2014/05/22 12:14:09  mmaloney
- * Disable TS buttons when database is XML.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.8  2013/04/26 14:29:23  mmaloney
- * gif not png.
- *
- * Revision 1.7  2013/04/26 14:22:28  mmaloney
- * Added ts list
- *
- * Revision 1.6  2013/04/09 13:33:14  mmaloney
- * Removed "Retrieval and Decoding" button that doesn't do anything.
- *
- * Revision 1.5  2013/03/26 17:48:18  mmaloney
- * Change title to OPENDCS <version>
- *
- * Revision 1.4  2013/03/25 18:56:03  mmaloney
- * Plug in Process Monitor
- *
- * Revision 1.3  2013/02/28 16:46:24  mmaloney
- * Start pdt maintenance thread.
- *
- * Revision 1.2  2012/07/24 13:41:04  mmaloney
- * Clean up resource strings.
- *
- * Revision 1.1  2012/05/17 15:14:31  mmaloney
- * Initial implementation for USBR.
- *
- *
- * This is open-source software written by Sutron Corporation under
- * contract to the federal government. Anyone is free to copy and use this
- * source code for any purpos, except that no part of the information
- * contained in this file may be claimed to be proprietary.
- *
- * Except for specific contractual terms between Sutron and the federal
- * government, this source code is provided completely without warranty.
- */
+
 package decodes.launcher;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -122,13 +24,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.IntegerToken;
 import ilex.cmdline.TokenOptions;
 import ilex.gui.GuiApp;
+import ilex.gui.WindowUtility;
 import ilex.net.BasicClient;
 import ilex.net.BasicServer;
 import ilex.net.BasicSvrThread;
@@ -189,7 +92,6 @@ public class LauncherFrame
 
     private static ResourceBundle labels = getLabels();
     String myArgs[] = null;
-//    String compArgs[] = null;
     JPanel fullPanel = new JPanel();
     GridBagLayout fullLayout = new GridBagLayout();
 
@@ -264,9 +166,11 @@ public class LauncherFrame
     // this is defined here to that the test can properly check.
     // Future improvements will alter how that test works.
     private Profile profile = null;
+    private final Profile launchProfile;
 
-    public LauncherFrame(String args[])
+    public LauncherFrame(String args[], Profile launchProfile)
     {
+        this.launchProfile = Objects.requireNonNull(launchProfile, "A valid profile must be provided.");
         myArgs = args;
         exitOnClose = true;
         dbEditorFrame = null;
@@ -1034,7 +938,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void run()
                 {
                     launcherFrame.dbEditorFrame = new DbEditorFrame();
-//                    launcherFrame.centerWindow(launcherFrame.dbEditorFrame);
                     launcherFrame.dbEditorFrame.setExitOnClose(false);
                     launcherFrame.dbEditorFrame.addWindowListener(launcherFrame.dbEditorReaper);
                     launcherFrame.dbEditorFrame.setVisible(true);
@@ -1059,7 +962,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             toolkitSetupFrame.toFront();
             return;
         }
-        toolkitSetupFrame = new DecodesSetupFrame(this);
+        toolkitSetupFrame = new DecodesSetupFrame(this, getSelectedProfile());
         toolkitSetupFrame.setExitOnClose(false);
         toolkitSetupFrame.addWindowListener(setupFrameReaper);
         toolkitSetupFrame.setVisible(true);
@@ -1148,22 +1051,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         afterDecodesInit = null;
     }
 
-    // private void centerWindow(JFrame frame)
     private void centerWindow(Window frame)
     {
-        // Center the window
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        Dimension frameSize = frame.getSize();
-        if (frameSize.height > screenSize.height)
-        {
-            frameSize.height = screenSize.height;
-        }
-        if (frameSize.width > screenSize.width)
-        {
-            frameSize.width = screenSize.width;
-        }
-        frame.setLocation((screenSize.width - frameSize.width) / 2,
-            (screenSize.height - frameSize.height) / 2);
+        WindowUtility.center(frame);
     }
 
     static CmdLineArgs cmdLineArgs = new CmdLineArgs(true, "gui.log");
@@ -1224,7 +1114,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         String argsCopy[] = new String[argsArray.size()];
         argsArray.toArray(argsCopy);
-        LauncherFrame frame = new LauncherFrame(argsCopy);
+        LauncherFrame frame = new LauncherFrame(argsCopy, cmdLineArgs.getProfile());
 
         // compArgs is used as argument only to Computations and Test Computations
         // gui.
@@ -1246,18 +1136,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 "Cannot read '" + propFile + "' -- will use defaults.");
         }
 
-        // Center the window
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        Dimension frameSize = frame.getSize();
-        if (frameSize.height > screenSize.height)
-        {
-            frameSize.height = screenSize.height;
-        }
-        if (frameSize.width > screenSize.width)
-        {
-            frameSize.width = screenSize.width;
-        }
-        frame.setLocation(0, 0);
+        WindowUtility.center(frame).setLocation(0, 0);
 
         DecodesInterface.maintainGoesPdt();
 
@@ -1342,14 +1221,15 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         {
             return; // The combo box is getting updated
         }
-        DecodesSettings ProfileSettings = new DecodesSettings();
-        Properties props = new Properties();
-
         try
         {
-            FileInputStream fis = new FileInputStream(profile.getFile());
-            props.load(fis);
-            fis.close();
+            DecodesSettings ProfileSettings = DecodesSettings.fromProfile(profile);
+            boolean dbSupportsTS = ProfileSettings.editDatabaseTypeCode != DecodesSettings.DB_XML;
+            tseditButton.setEnabled(dbSupportsTS);
+            groupEditButton.setEnabled(dbSupportsTS);
+            compeditButton.setEnabled(dbSupportsTS);
+            runcompButton.setEnabled(dbSupportsTS);
+            algoeditButton.setEnabled(dbSupportsTS);
         }
         catch (IOException ex)
         {
@@ -1363,16 +1243,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                                           JOptionPane.ERROR_MESSAGE);
             return;
         }
-
-        ProfileSettings.loadFromProperties(props);
-
-        boolean dbSupportsTS = ProfileSettings.editDatabaseTypeCode != DecodesSettings.DB_XML;
-        tseditButton.setEnabled(dbSupportsTS);
-        groupEditButton.setEnabled(dbSupportsTS);
-        compeditButton.setEnabled(dbSupportsTS);
-        runcompButton.setEnabled(dbSupportsTS);
-        algoeditButton.setEnabled(dbSupportsTS);
-
     }
     // Time Series Button
     private void groupEditButtonPressed()
@@ -1883,7 +1753,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         BasicClient client = null;
 
         Profile profile = cmdLineArgs.getProfile();
-        if (profile == null || !profile.isProfile())
+        if (profile == null)
         {
             throw new Exception("Missing properties file on cmd line");
         }
@@ -2021,29 +1891,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
     }
 
-    static String[] getProfileList()
-    {
-        File userDir = new File(EnvExpander.expand("$DCSTOOL_USERDIR"));
-        File [] profileList = userDir.listFiles(
-            new FilenameFilter()
-            {
-                @Override
-                public boolean accept(File dir, String name)
-                {
-                    // TODO Auto-generated method stub
-                    return TextUtil.endsWithIgnoreCase(name, ".profile");
-                }
-            });
-        String [] names = new String[profileList.length + 1];
-        names[0] = "(default)";
-        for(int idx = 0; idx<profileList.length; idx++)
-        {
-            String n = profileList[idx].getName();
-            names[idx+1] = n.substring(0, n.indexOf(".profile"));
-        }
-        return names;
-    }
-
     // package private so GUI test setup can call.
     void checkForProfiles()
     {
@@ -2074,52 +1921,53 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             }
 
             List<Profile> profiles = Profile.getProfiles(new File(EnvExpander.expand("$DCSTOOL_USERDIR")));
-            Logger.instance().debug3("There are " + profiles.size() + " profiles.");
-
-            if (profiles.size() > 1)
+            if (!profiles.contains(launchProfile))
             {
-                Profile currentProfile = (Profile)profileCombo.getSelectedItem();
-                SwingUtilities.invokeLater(() ->
+                profiles.add(launchProfile);
+            }
+            Logger.instance().debug3("There are " + profiles.size() + " profiles.");
+            /**
+             * This current profile is used for the case of the profile manager adding or removing a profile and needing
+             * to rebuild the combobox entries.
+             */
+            Profile currentProfile = (Profile)profileCombo.getSelectedItem();
+            SwingUtilities.invokeLater(() ->
+            {
+                profileCombo.removeAllItems();
+                for(Profile item : profiles)
                 {
-                    profileCombo.removeAllItems();
-                    for(Profile item : profiles)
-                    {
-                        profileCombo.addItem(item);
-                    }
-                    if (!profilesShown)
-                    {
-                        fullPanel.add(profPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, .1,
-                            GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
-                        fullPanel.getIgnoreRepaint();
-                        profilesShown = true;
-                    }
+                    profileCombo.addItem(item);
+                }
+                if (!profilesShown)
+                {
+                    fullPanel.add(profPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, .1,
+                        GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
+                    fullPanel.getIgnoreRepaint();
+                    profilesShown = true;
+                }
 
-                    if (currentProfile != null)
+                if (currentProfile != null)
+                {
+                    for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
                     {
-                        for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
+                        if (profileCombo.getItemAt(idx).getName().equalsIgnoreCase(currentProfile.getName()))
                         {
-                            if (profileCombo.getItemAt(idx).getName().equalsIgnoreCase(currentProfile.getName()))
-                            {
-                                profileCombo.setSelectedIndex(idx);
-                            }
+                            profileCombo.setSelectedIndex(idx);
                         }
                     }
-                    else
-                    {
-                        profileCombo.setSelectedIndex(0); // set to default
-                    }
-                });
-            }
-            else // only 1 "default" profile
-            {
-                // No harm done if profPanel is currently not displayed.
-                SwingUtilities.invokeLater(() ->
+                }
+                else
                 {
-                    fullPanel.remove(profPanel);
-                    fullPanel.repaint();
-                    profilesShown = false;
-                });
-            }
+                    profileCombo.setSelectedIndex(0); // set to default
+                    for (int idx = 0; idx < profileCombo.getModel().getSize(); idx++)
+                    {
+                        if (profileCombo.getItemAt(idx).equals(this.launchProfile))
+                        {
+                            profileCombo.setSelectedIndex(idx);
+                        }
+                    }
+                }
+            });
         }
         catch(InvocationTargetException | InterruptedException ex)
         {
@@ -2166,13 +2014,13 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
      */
     public Profile getSelectedProfile()
     {
-        return profileCombo == null ? null : (Profile)profileCombo.getSelectedItem();
+        return profileCombo == null ? launchProfile : (Profile)profileCombo.getSelectedItem();
     }
 
     private boolean trySendToProfileLauncher(String cmd)
     {
         profile = getSelectedProfile();
-        if (profile != null && profile.isProfile())
+        if (!profile.equals(launchProfile))
         {
             sendToProfileLauncher(profile, cmd);
             return true;

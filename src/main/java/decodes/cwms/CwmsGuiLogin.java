@@ -81,8 +81,11 @@ public class CwmsGuiLogin
 
 		dlg.setLocation(x, y);
 		dlg.setVisible(true);
+	}
 
-		loginSuccess = dlg.isOK();
+	public boolean wasOk()
+	{
+		return dlg.isOK();
 	}
 
 	public boolean isLoginSuccess() 

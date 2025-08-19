@@ -12,6 +12,7 @@ import decodes.util.DecodesSettings;
 
 import ilex.cmdline.*;
 import ilex.util.Logger;
+import lrgs.db.LrgsConstants;
 import ilex.util.EnvExpander;
 
 public class RtStatCmdLineArgs
@@ -25,6 +26,8 @@ public class RtStatCmdLineArgs
 	private StringToken userArg;
 	private StringToken lrgsMonUrlArg;
 	private StringToken logFileArg;
+	private StringToken passwordArg;
+	private IntegerToken portArg;
 
     public RtStatCmdLineArgs()
 	{
@@ -52,6 +55,12 @@ public class RtStatCmdLineArgs
 		logFileArg = new StringToken( "l", "logfile name", 
 			"", TokenOptions.optSwitch, "");
 		addToken(logFileArg);
+		passwordArg = new StringToken("pw", "Password for initial connection",
+			"", TokenOptions.optSwitch, "");
+		addToken(passwordArg);
+		portArg = new IntegerToken("p", "port for the remote LRGS",
+			"", TokenOptions.optSwitch, LrgsConstants.DEFAULT_LRGS_PORT);
+		addToken(portArg);
     }
 
 	/**
@@ -144,6 +153,17 @@ public class RtStatCmdLineArgs
 	{
 		String x = userArg.getValue();
 		return x.length() > 0 ? x : null;
+	}
+
+	public String getPassword()
+	{
+		final String x = passwordArg.getValue();
+		return x.length() > 0 ? x : null;
+	}
+
+	public int getPort()
+	{
+		return portArg.getValue();
 	}
 
 	public String getLrgsMonUrl()

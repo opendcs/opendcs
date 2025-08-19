@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.tsdb.groupedit.TsDbGrpEditor %*%
+@"%~dp0\decj" decodes.tsdb.groupedit.TsDbGrpEditor %*%

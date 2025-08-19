@@ -2,8 +2,9 @@ package decodes.util;
 
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.ServerLock;
+import ilex.util.Logger;
+import ilex.util.FileServerLock;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -53,7 +54,7 @@ public class DownloadNwsXrefThread extends Thread
 		ServerLock mylock = null;
 		/** Optional server lock ensures only one instance runs at a time. */
 		String lockpath = EnvExpander.expand(localfn + ".lock");
-		mylock = new ServerLock(lockpath);
+		mylock = new FileServerLock(lockpath);
 		mylock.setCritical(false);
 		if (!mylock.obtainLock())
 		{

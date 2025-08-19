@@ -81,7 +81,7 @@ be considered given to "The OpenDCS Consortium" which does not directly take any
 
 ### 6. You are a contractor funded by one of those agencies
 
-Welcome. Please keep reading this document, regardless of the deliverables text in that contract you will be held to our standards and desires.
+Welcome! Please keep reading this document, regardless of the deliverables text in that contract you will be held to our standards and desires.
 
 Management of the project itself is handled by volunteers, regardless of government employee or contractor employee status.
 Your contributions will be reviewed and judged by a combination of volunteers (private citizens,gov't employees), and other contractors also paid to work on the software. We do not currently have a formal structure, but that will likely change in the future.
@@ -111,6 +111,9 @@ The following could result in a ban, of an individual:
 - Harassing anyone participating in the project.
 - Constantly providing contributions that don't meet standards and expecting others to fix it.
 
+## 7. You are a private party wanting to help
+
+Welcome! Pretty much every in section 6 above applies, please follow the project standards.
 
 ## Getting Started
 
@@ -140,7 +143,7 @@ Now you're ready to [clone the repository](https://help.github.com/articles/clon
 
 ### Code Style
 
-There is a checkstyle file, `configs/checkstyle.xml` please follow the established rules. You are welcome to argue for different rules.
+There is a checkstyle file, `configs/checkstyle.xml` please follow the established rules. However, you are welcome to argue for different rules.
 
 You can run `ant checkstyle` to verify your new code. There is a lot of code that hasn't been moved yet so ignore any files that aren't what you worked on. If working on that code please put format changes in separate commits. You will only be required to format your new code to that standard.
 However, if you want to handle the whole file it would be appreciated.
@@ -161,19 +164,21 @@ Once you have made your changes submit a [pull request](https://help.github.com/
 Fill in the PR template as appropriate.
 
 Pull requests should be kept small. If you are doing a larger effort please request merges as you make progress.
-Failure to keep requests small will likely result in denial.
+Failure to keep requests small will likely result in denial with a request to restructure into smaller changes.
 
 A large PR *may* be allowed in the following conditions
 
 1. You coordinate with us about the changes, and we agree they need to be done at once.
 2. You start the PR immediately and continuously update it with existing progress, so we can comment or decided when to merge things.
 3. You add tests as you go to cover all these changes.
+4. You consistently rebase from the default (currently master) branch.
 
-Changes made *must* pass any tests that exist with the built-in Postgres database.
+Changes made *must* pass any tests that exist with the built-in Postgres and XML databases as appropriate to the given change.
+Changes to the tests are valid as required for api changes and the like.
 
 Code Changes *should* have a test provided. Preferably automated, description of a procedure is acceptable.
 
-A trivial change *may* be accepted without changes but comment and approval by other committers. However, tests are preferred.
+A trivial change *may* be accepted without changes by comment and approval by other committers. However, tests are preferred and make it easier to review code.
 
 ### Check Your Changes
 
@@ -181,7 +186,10 @@ Before submitting your pull request, you should run the build process locally fi
 
 We are in the process of improving the build system. Please see the build.xml file for the current recommendations.
 
-We are working on baseline automated tests.
+At a minimum run `ant integration-tests -Dno.docs=true -Dopendcs.test.engine=OpenDCS-XML` (on windows `-D"no.docs=true"`).
+If you are in an environment with docker run `ant integration-tests -Dno.docs=true -Dopendcs.test.engine=OpenDCS-Postgres`.
+
+Test output is in `build/reports` and `build/test/<various folders>`.
 
 
 ### I figured out how to do something where can I document it

@@ -125,7 +125,14 @@ public class CompAppInfo
 	}
 
 	/** @return the comment */
-	public String getComment() { return comment; }
+	public String getComment()
+	{
+		if( comment == null)
+		{
+		   return "";
+		}
+		return comment;
+	}
 
 	/** 
 	 * Sets the comment
@@ -279,7 +286,7 @@ public class CompAppInfo
 				String msg = "Cannot write loading app '" + getAppName()
 					+ "': " + ex;
 				Logger.instance().warning(msg);
-				throw new DatabaseException(msg);
+				throw new DatabaseException(msg, ex);
 			}
 			finally
 			{

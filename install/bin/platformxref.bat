@@ -6,4 +6,4 @@ rem usage: platformxref
 rem options:
 rem		-e   Create cross reference in editable database (default = installed)
 rem
-decj decodes.xml.CreatePlatformXref %*%
+@"%~dp0\decj" decodes.xml.CreatePlatformXref %*%

@@ -1,12 +1,14 @@
 #!/bin/sh
 #OPENDCS
+SCRIPT=$(readlink -f "$0")
+# Absolute path this script is in, thus /home/user/bin
+APP_PATH=$(dirname "$SCRIPT")
 
-DH=%INSTALL_PATH
 
 if [ -z "$LRGSHOME" ] 
 then
-  LRGSHOME=$DH
-  export LRGSHOME
+  echo "Error: The environment variable 'LRGSHOME' is not set.   Set to a path outside the installation directory."
+  exit 1
 fi
 
-%INSTALL_PATH/bin/decj ilex.util.PasswordFileEditor -f $LRGSHOME/.lrgs.passwd.local
+${APP_PATH}/decj ilex.util.PasswordFileEditor -f $LRGSHOME/.lrgs.passwd.local

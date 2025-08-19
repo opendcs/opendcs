@@ -16,6 +16,7 @@ import javax.swing.table.*;
 import javax.swing.border.*;
 import java.util.ResourceBundle;
 
+import ilex.gui.Help;
 import ilex.util.TextUtil;
 
 import decodes.db.*;
@@ -427,9 +428,10 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 		dbtp.remove(this);
 	}
 
-	/** @see EntityOpsController */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 
 //	/**

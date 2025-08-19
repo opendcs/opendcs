@@ -217,17 +217,19 @@ public class SftpDataSource
 		ChannelSftp chanSftp = null;
 		try
 		{
+			final String realUserName = EnvExpander.expand(username);
+			final String realPassword = EnvExpander.expand(password);
 			Logger.instance().debug1(module + action);
 			JSch.setConfig("StrictHostKeyChecking", "no");
 			jsch = new JSch();
 			
 			action = " getting Session";
 			Logger.instance().debug1(module + action);
-			session = jsch.getSession(username, host, port);
+			session = jsch.getSession(realUserName, host, port);
 			
 			action = " setting Session Password";
 			Logger.instance().debug1(module + action);
-			session.setPassword(password);
+			session.setPassword(realPassword);
 			
 			action = " connecting session";
 			Logger.instance().debug1(module + action);

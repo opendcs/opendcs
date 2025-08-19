@@ -42,6 +42,7 @@ public class DbExport
 	<ul>
 	  <li>-i         Export from 'installed' database (default is edit db)</li>
 	  <li>-l logfile Specify log file. Default="./util.log"</li>
+	  <li>-insecure  include usernames/passwords in export. Default=false </li>
 	</ul>
 	@param args command line arguments
 	*/
@@ -51,7 +52,13 @@ public class DbExport
 		Logger.setLogger(new StderrLogger("DbExport"));
 
 		// Parse command line arguments.
+
+		BooleanToken insecureArg = new BooleanToken("insecure", "include passwords and username in output", "", TokenOptions.optSwitch, false);
+		cmdLineArgs.addToken(insecureArg);
 		cmdLineArgs.parseArgs(args);
+
+		 boolean insecure = insecureArg.getValue();
+
 		Logger.instance().log(Logger.E_INFORMATION,
 			"DbExport Starting (" + DecodesVersion.startupTag()
 			+ ") =====================");
@@ -146,7 +153,7 @@ public class DbExport
 			}
 		}
 
-		TopLevelParser.write(System.out, db);
+		TopLevelParser.write(System.out, db, insecure);
 	}
 }
 

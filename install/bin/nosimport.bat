@@ -1,1 +1,1 @@
-@$INSTALL_PATH\bin\decj decodes.dbimport.NosPlatformImport %*%
+@"%~dp0\decj" decodes.dbimport.NosPlatformImport %*%

@@ -9,12 +9,17 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -22,7 +27,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
+import org.slf4j.LoggerFactory;
+
+import ilex.gui.Help;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgFlag;
 import lrgs.common.SearchCriteria;
@@ -44,6 +53,7 @@ import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.InvalidDatabaseException;
 import decodes.db.RoutingSpec;
+import decodes.dbeditor.routing.RSListTableModel;
 import decodes.gui.EnumComboBox;
 import decodes.gui.PropertiesEditPanel;
 import decodes.util.PropertiesOwner;
@@ -57,11 +67,12 @@ public class RoutingSpecEditPanel
 	extends DbEditorTab 
 	implements ChangeTracker, EntityOpsController, PropertiesOwner
 {
+	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecEditPanel.class);
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
 	private EntityOpsPanel entityOpsPanel = new EntityOpsPanel(this);
-	private PropertiesEditPanel propertiesEditPanel = new PropertiesEditPanel(new Properties());
+	private PropertiesEditPanel propertiesEditPanel = PropertiesEditPanel.from(new Properties());
 	private SearchCriteriaEditPanel scEditPanel = new SearchCriteriaEditPanel();
 	private JTextField nameField = new JTextField();
 	private JLabel consumerArgLabel = new JLabel();
@@ -243,8 +254,8 @@ public class RoutingSpecEditPanel
 		consumerTypeSelected();
 		outputFormatSelected();
 
-		propertiesEditPanel.setProperties(editProps);
-		propertiesEditPanel.setPropertiesOwner(this);
+		propertiesEditPanel.getModel().setProperties(editProps);
+		propertiesEditPanel.getModel().setPropertiesOwner(this);
 	}
 
 	/**
@@ -266,7 +277,7 @@ public class RoutingSpecEditPanel
 				(String)presentationGroupCombo.getSelectedItem();
 
 		// Get the properties
-		propertiesEditPanel.saveChanges(); // saves to editProps
+		propertiesEditPanel.getModel().saveChanges(); // saves to editProps
 		
 		theObject.getProperties().clear();
 		PropertiesUtil.copyProps(theObject.getProperties(), editProps);
@@ -293,7 +304,7 @@ public class RoutingSpecEditPanel
 		theObject.getProperties().setProperty("rs.timeApplyTo", timeApplyTo);
 		for(String nln : sc.NetlistFiles)
 		{
-Logger.instance().debug3("Added netlist name '" + nln + "'");
+			Logger.instance().debug3("Added netlist name '" + nln + "'");
 			theObject.networkListNames.add(nln);
 		}
 		
@@ -538,7 +549,7 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		
 		combinedProps = new PropertySpec[propSpecs.size()];
 		propSpecs.toArray(combinedProps);
-		propertiesEditPanel.setPropertiesOwner(this);
+		propertiesEditPanel.getModel().setPropertiesOwner(this);
 	}
 
 	private void adjustSearchCritFor(DataSourceExec currentDataSource)
@@ -605,29 +616,71 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 	public boolean saveChanges()
 	{
 		getDataFromFields();
-		try
+		final String CLOSE_MSG = "Routing Spec Saved.";
+		final TraceDialog dlg = new TraceDialog(this.parent, true);
+		dlg.setCloseText(CLOSE_MSG);
+		final AtomicBoolean result = new AtomicBoolean(false);
+		SwingWorker<Boolean,String> worker = new SwingWorker<Boolean,String>()
 		{
-			theObject.lastModifyTime = new Date();
-			theObject.write();
-		}
-		catch (DatabaseException e)
-		{
-			DbEditorFrame.instance().showError(
-				LoadResourceBundle.sprintf(genericLabels.getString("cannotSave"), getEntityName(),
-					e.toString()));
-			return false;
-		}
 
-		Database.getDb().routingSpecList.remove(origObject);
-		Database.getDb().routingSpecList.add(theObject);
-		parent.getRoutingSpecListPanel().resort();
+			@Override
+			protected Boolean doInBackground() throws Exception
+			{
+				publish("Writing\n\tRouting Spec");
+				theObject.lastModifyTime = new Date();
+				theObject.write();
+				publish("... done\n");
+				RSListTableModel model = parent.getRoutingSpecListPanel().getModel();
+				publish("\t updating list");
+				model.addOrReplace(theObject);
+				publish("... done\n");
 
-		// Make a new copy in case user wants to keep editing.
-		origObject = theObject;
-		theObject = origObject.copy();
-		setTopObject(origObject);
+				// Make a new copy in case user wants to keep editing.
+				origObject = theObject;
+				theObject = origObject.copy();
+				setTopObject(origObject);
+				return true;
+			} 
 
-		return true;
+			@Override
+			protected void process(List<String> chunks)
+			{
+				for (String text: chunks)
+				{
+					dlg.addText(text);
+				}
+			}
+
+			@Override
+			protected void done()
+			{
+				try
+				{
+					if (get())
+					{
+						result.set(true);
+						dlg.addText(CLOSE_MSG);
+					}
+				}
+				catch (Exception ex)
+				{
+					final String msg =
+						LoadResourceBundle.sprintf(genericLabels.getString("cannotSave"), getEntityName(), ex.toString());
+					log.atError()
+					   .setCause(ex)
+					   .log(msg);
+					StringWriter sw = new StringWriter();
+					PrintWriter pw = new PrintWriter(sw);
+					pw.println();
+					pw.println(msg);
+					ex.printStackTrace(pw);
+					dlg.addText(sw.toString());
+				}
+			}
+		};
+		worker.execute();
+		dlg.setVisible(true);
+		return result.get();
 	}
 
 	/** @see EntityOpsController */
@@ -671,9 +724,10 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		tp.remove(this);
 	}
 
-	/** @see EntityOpsController */
+	@Override
 	public void help()
 	{
+		Help.open();
 	}
 
 	@Override
@@ -690,4 +744,3 @@ Logger.instance().debug3("Added netlist name '" + nln + "'");
 		return true;
 	}
 }
-

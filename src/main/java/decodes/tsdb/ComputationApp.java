@@ -105,6 +105,8 @@
 package decodes.tsdb;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -176,7 +178,8 @@ public class ComputationApp
 	private int checkTimedCompsSec = 600;
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
-	private long compRunWaitTime = 1000L;
+	private long compRunWaitTime = 30000L; // wait 30 seconds between runs by default. Drastically reduces system load
+										   // especially with multiple instances pointing to a single database.
 	
 	private static ComputationApp _instance = null;
 	public static ComputationApp instance() { return _instance; }
@@ -515,6 +518,10 @@ public class ComputationApp
 		catch(DbIoException ex)
 		{
 			warning("Database Error while " + action + ": " + ex);
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			warning(sw.toString());
 			shutdownFlag = true;
 			databaseFailed = true;
 		}
@@ -522,8 +529,10 @@ public class ComputationApp
 		{
 			String msg = "Unexpected exception while " + action + ": " + ex;
 			warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			StringWriter sw = new StringWriter();
+			PrintWriter pw = new PrintWriter(sw);
+			ex.printStackTrace(pw);
+			warning(sw.toString());
 			shutdownFlag = true;
 		}
 		resolver = null;
@@ -536,21 +545,7 @@ public class ComputationApp
 	 */
 	private void refillSiteCache()
 	{
-		info("Doing Periodic Cache Maintenance ...");
-		SiteDAI siteDAO = theDb.makeSiteDAO();
-		try
-		{
-			siteDAO.fillCache();
-		}
-		catch (DbIoException ex)
-		{
-			warning("Error filling site cache: " + ex);
-		}
-		finally
-		{
-			siteDAO.close();
-		}
-		
+		/* few apps will actually ever need everything. */
 	}
 
 	/**
@@ -790,13 +785,15 @@ public class ComputationApp
 			+ "(select cmp.computation_id, cmp.date_time_loaded "
 				+ "from cp_comp_property cprop, cp_computation cmp "
 				+ "where cprop.computation_id = cmp.computation_id "
-				+ "and lower(prop_name) = 'timedcompinterval'"
+				+ "and lower(prop_name) = 'timedcompinterval' "
+				+ "and cmp.enabled = 'Y' "
 				+ "and cmp.loading_application_id = " + getAppId() + ") q1"
 			+ " union "
 			+ "(select cmp.computation_id, cmp.date_time_loaded "
 				+ "from cp_computation cmp, cp_algorithm alg, cp_algo_property aprop "
 				+ "where cmp.algorithm_id = alg.algorithm_id and alg.algorithm_id = aprop.algorithm_id "
-				+ "and lower(aprop.prop_name) = 'timedcompinterval'"
+				+ "and lower(aprop.prop_name) = 'timedcompinterval' "
+				+ "and cmp.enabled = 'Y' "
 				+ "and cmp.loading_application_id = " + getAppId() + ")";
 		ResultSet rs = null;
 		HashMap<DbKey,Date> timedCompsLMT = new HashMap<DbKey,Date>();
@@ -1397,4 +1394,3 @@ Logger.instance().debug3("doCMC missing check interval='" + mIntv
 
 
 }
-

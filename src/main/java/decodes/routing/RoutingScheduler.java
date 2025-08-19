@@ -59,9 +59,10 @@ import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
+import ilex.util.ServerLock;
 import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
-import ilex.util.ServerLock;
+import ilex.util.FileServerLock;
 import ilex.util.StderrLogger;
 import ilex.util.TextUtil;
 import ilex.util.ThreadLogger;
@@ -197,7 +198,7 @@ public class RoutingScheduler
 		 * Tell server lock never to exit as a result of lock file I/O error.
 		 */
 		if (windowsSvcArg.getValue())
-			ServerLock.setWindowsService(true);
+			FileServerLock.setWindowsService(true);
 		
 		// Routing Scheduler can survive DB going down.
 		surviveDatabaseBounce = true;
@@ -556,7 +557,7 @@ public class RoutingScheduler
 		if (lockpath != null && lockpath.trim().length() > 0)
 		{
 			lockpath = EnvExpander.expand(lockpath.trim());
-			final ServerLock mylock = new ServerLock(lockpath);
+			final ServerLock mylock = new FileServerLock(lockpath);
 
 			if (mylock.obtainLock() == false)
 			{

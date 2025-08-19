@@ -1,34 +1,20 @@
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 import decodes.util.PropertySpec;
+import org.opendcs.annotations.algorithm.Algorithm;
+import org.opendcs.annotations.algorithm.Input;
+import org.opendcs.annotations.algorithm.Output;
 
-//AW:IMPORTS
-//AW:IMPORTS_END
-
-//AW:JAVADOC
-/**
-Compute Incremental Precip from Cumulative Precip over a specified period.
-Period determined by the interval of the output parameter, specified in computation record.
-
- */
-//AW:JAVADOC_END
+@Algorithm(description = "Compute Incremental Precip from Cumulative Precip over a specified period.\n" +
+		"Period determined by the interval of the output parameter, specified in computation record.\n")
 public class IncrementalPrecip
 	extends AW_AlgorithmBase
 {
-//AW:INPUTS
-	public double cumulativePrecip;	//AW:TYPECODE=i
-	String _inputNames[] = { "cumulativePrecip" };
-//AW:INPUTS_END
+	@Input
+	public double cumulativePrecip;
 
-//AW:LOCALVARS
 	double previousValue = 0.0;
 	private boolean startOfPeriod = true;
 	double tally = 0.0;
@@ -50,19 +36,16 @@ public class IncrementalPrecip
 	{
 		return algoPropertySpecs;
 	}
-//AW:LOCALVARS_END
 
-//AW:OUTPUTS
+	@Output
 	public NamedVariable incrementalPrecip = new NamedVariable("incrementalPrecip", 0);
-	String _outputNames[] = { "incrementalPrecip" };
-//AW:OUTPUTS_END
 
-//AW:PROPERTIES
+	@org.opendcs.annotations.PropertySpec(value="true")
 	public boolean aggLowerBoundClosed = true;
+	@org.opendcs.annotations.PropertySpec(value="true")
 	public boolean aggUpperBoundClosed = true;
+	@org.opendcs.annotations.PropertySpec(value="false")
 	public boolean allowNegative = false;
-	String _propertyNames[] = { "aggLowerBoundClosed", "aggUpperBoundClosed", "allowNegative" };
-//AW:PROPERTIES_END
 
 	// Allow javac to generate a no-args constructor.
 
@@ -72,13 +55,8 @@ public class IncrementalPrecip
 	protected void initAWAlgorithm( )
 		throws DbCompException
 	{
-//AW:INIT
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "incrementalPrecip";
-//AW:INIT_END
-
-//AW:USERINIT
-//AW:USERINIT_END
 	}
 	
 	/**
@@ -87,7 +65,6 @@ public class IncrementalPrecip
 	protected void beforeTimeSlices()
 		throws DbCompException
 	{
-//AW:BEFORE_TIMESLICES
 		previousValue = 0.0;
 		startOfPeriod = true;
 		tally = 0.0;
@@ -97,7 +74,6 @@ public class IncrementalPrecip
 		String inUnits = getInputUnitsAbbr("cumulativePrecip");
 		if (inUnits != null && inUnits.length() > 0)
 			setOutputUnitsAbbr("incrementalPrecip", inUnits);
-//AW:BEFORE_TIMESLICES_END
 	}
 
 	/**
@@ -113,7 +89,6 @@ public class IncrementalPrecip
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//AW:TIMESLICE
 debug3("cumulativePrecip = " + cumulativePrecip + ", at time " + debugSdf.format(_timeSliceBaseTime));
 
 		// Normal case is to ignore negative cumulative inputs. But allow if option set.
@@ -139,7 +114,6 @@ debug3("cumulativePrecip = " + cumulativePrecip + ", at time " + debugSdf.format
 			previousValue = cumulativePrecip;
 			count++;
 		}
-//AW:TIMESLICE_END
 	}
 
 	/**
@@ -148,34 +122,8 @@ debug3("cumulativePrecip = " + cumulativePrecip + ", at time " + debugSdf.format
 	protected void afterTimeSlices()
 		throws DbCompException
 	{
-//AW:AFTER_TIMESLICES
 		if (count >= 2)
 			setOutput(incrementalPrecip, tally);
-//AW:AFTER_TIMESLICES_END
 	}
 
-	/**
-	 * Required method returns a list of all input time series names.
-	 */
-	public String[] getInputNames()
-	{
-		return _inputNames;
-	}
-
-	/**
-	 * Required method returns a list of all output time series names.
-	 */
-	public String[] getOutputNames()
-	{
-		return _outputNames;
-	}
-
-	/**
-	 * Required method returns a list of properties that have meaning to
-	 * this algorithm.
-	 */
-	public String[] getPropertyNames()
-	{
-		return _propertyNames;
-	}
 }
