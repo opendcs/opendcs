@@ -310,7 +310,7 @@ public class SftpDataSource extends DataSourceExec
 		}
 		catch(JSchException ex)
 		{
-			String msg = module + " Error while" + action + ": " + ex;
+			String msg = module + " Error while" + action;
 			throw new DataSourceException(msg, ex);
 		}
 		finally

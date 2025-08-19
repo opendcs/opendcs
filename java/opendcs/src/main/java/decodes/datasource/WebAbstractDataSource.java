@@ -232,7 +232,7 @@ public class WebAbstractDataSource extends DataSourceExec
 			{
 				log.atWarn()
 				   .setCause(ex)
-				   .log("Cannot open URL '{}'");
+				   .log("Cannot open URL '{}'", url);
 			}
 		}
 		// No more medium IDs
