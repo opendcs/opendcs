@@ -493,17 +493,26 @@ public class DecodesScript extends IdDatabaseObject
                 fs = getFormatStatement("ERROR");
                 if (fs == null)
                 {
-                    log.atWarn().setCause(ex).log("Error parsing field and No ERROR statement, terminating script", ex.toString());
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Error parsing field and No ERROR statement, terminating script");
                     throw ex;
                 }
             }
             catch (EndlessLoopException ex)
             {
-                throw new DecoderException("Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated.", ex);
+                throw new DecoderException(
+                    "Platform Config: " + platformConfig.getName() +
+                    ", script <" + scriptName + "> in endless loop  -- terminated.",
+                    ex
+                    );
             }
             catch(Exception ex)  // ING-569
             {
-                log.atError().setCause(ex).log("DecodesScript: Nonspecific exception. Platform Config: "+ platformConfig.getName()+", script <"+scriptName+">.");
+                log.atError()
+                   .setCause(ex)
+                   .log("DecodesScript: Nonspecific exception. Platform Config: " +
+                        platformConfig.getName() + ", script <"+scriptName+">.");
             }
             // All other decoding exception will cause failure.
         }
