@@ -1,15 +1,28 @@
 /*
-*  $Id$
-*  
-*  $Log$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
 import java.util.Date;
 import java.util.Properties;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
 import decodes.db.Constants;
@@ -29,11 +42,12 @@ import decodes.db.Constants;
 */
 public class IdStartPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public String mediumType = Constants.medium_Other;
 	public String delims = " ,";
 	public String headerEnd = "\n";
 	public int hdrLength = 0;
-	
+
 	/** default constructor */
 	public IdStartPMParser()
 	{
@@ -59,14 +73,14 @@ public class IdStartPMParser extends PMParser
 		throws HeaderParseException
 	{
 		String data = new String(msg.getData());
-		
+
 		// Get the ID
 		StringTokenizer st = new StringTokenizer(data, delims);
-		
+
 		String id = st.nextToken().trim();
 		if (id == null)
 			throw new HeaderParseException("No ID present");
-		
+
 		msg.setMediumId(id);
 		msg.setPM(GoesPMParser.DCP_ADDRESS, new Variable(id));
 		msg.setPM(EdlPMParser.STATION, new Variable(id));
@@ -74,7 +88,7 @@ public class IdStartPMParser extends PMParser
 		Date now = new Date();
 		msg.setPM(GoesPMParser.MESSAGE_TIME, new Variable(now));
 			msg.setTimeStamp(now);
-		
+
 		// Set header length by finding the end of header.
 		hdrLength = data.indexOf(headerEnd);
 		if (hdrLength == -1)
@@ -82,11 +96,11 @@ public class IdStartPMParser extends PMParser
 		else
 			hdrLength += headerEnd.length();
 		msg.setHeaderLength(hdrLength);
-		
+
 		msg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(data.length()));
-		
+
 		msg.setPM(GoesPMParser.FAILURE_CODE, new Variable('G'));
-		Logger.instance().debug3("IdStartPMParser: mediumId='" + id + "', hdrLength=" + hdrLength);
+		log.trace("IdStartPMParser: mediumId='{}', hdrLength={}", id, hdrLength);
 	}
 
 	/** @return length as determined by the datacol. */
@@ -106,10 +120,9 @@ public class IdStartPMParser extends PMParser
 	{
 		return mediumType;
 	}
-	
+
 	public boolean containsExplicitLength()
 	{
 		return false;
 	}
 }
-

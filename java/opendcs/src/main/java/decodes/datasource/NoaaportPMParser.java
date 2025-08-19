@@ -1,45 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.8  2004/08/24 23:52:45  mjmaloney
-*  Added javadocs.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.7  2003/12/07 20:36:48  mjmaloney
-*  First working implementation of EDL time stamping.
-*
-*  Revision 1.6  2003/06/17 00:34:00  mjmaloney
-*  StreamDataSource implemented.
-*  FileDataSource re-implemented as a subclass of StreamDataSource.
-*
-*  Revision 1.5  2002/10/25 19:49:04  mjmaloney
-*  Fixed problems in NOAAPORT PM Parser & Socket Stream
-*
-*  Revision 1.4  2002/10/11 18:12:27  mjmaloney
-*  Fixed NoaaportPMParser
-*
-*  Revision 1.3  2002/10/11 01:27:01  mjmaloney
-*  Added SocketStreamDataSource and NoaaportPMParser stuff.
-*
-*  Revision 1.2  2002/09/30 21:25:35  mjmaloney
-*  dev.
-*
-*  Revision 1.1  2002/09/30 19:08:55  mjmaloney
-*  Created.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
 import java.util.GregorianCalendar;
 import java.util.Calendar;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 
 import ilex.util.ByteUtil;
-import ilex.util.Logger;
 import ilex.var.Variable;
 
 import decodes.db.Constants;
@@ -50,18 +35,7 @@ import decodes.db.Constants;
 */
 public class NoaaportPMParser extends PMParser
 {
-	// Do not define these - re-use the definitions in GoesPMParser:
-	//public static final String DCP_ADDRESS = "DcpAddress";
-	//public static final String MESSAGE_TIME = "Time";
-	//public static final String MESSAGE_LENGTH = "Length";
-	//public static final String FAILURE_CODE = "FailureCode";
-	//public static final String SIGNAL_STRENGTH = "SignalStrength";
-	//public static final String FREQ_OFFSET = "FrequencyOffset";
-	//public static final String MOD_INDEX = "ModulationIndex";
-	//public static final String QUALITY = "Quality";
-	//public static final String CHANNEL = "Channel";
-	//public static final String SPACECRAFT = "Spacecraft";
-	//public static final String UPLINK_CARRIER = "UplinkCarrier";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	private static SimpleDateFormat goesDateFormat = null;
 
@@ -121,7 +95,7 @@ public class NoaaportPMParser extends PMParser
 		byte data[] = msg.getData();
 
 		// header=18 will cause decoding to start at the right place.
-		// In NOAAPORT, some of the header fields are at the end of the 
+		// In NOAAPORT, some of the header fields are at the end of the
 		// message. This is OK, they'll just be ignored by the decoder.
 		msg.setHeaderLength(18);
 
@@ -140,7 +114,7 @@ public class NoaaportPMParser extends PMParser
 		dcpAddr = dcpAddr.toUpperCase();
 		msg.setPM(GoesPMParser.DCP_ADDRESS, new Variable(dcpAddr));
 
-		msg.setPM(GoesPMParser.FAILURE_CODE, 
+		msg.setPM(GoesPMParser.FAILURE_CODE,
 			new Variable((char)data[8] == ' ' ? 'G' : '?'));
 
 
@@ -156,7 +130,7 @@ public class NoaaportPMParser extends PMParser
 		catch(NumberFormatException ex)
 		{
 			throw new HeaderParseException("Invalid NOAAPORT time-stamp '"
-				+ new String(data, 9, 9) + "'");
+				+ new String(data, 9, 9) + "'", ex);
 		}
 
 		GregorianCalendar cal = new GregorianCalendar();
@@ -178,7 +152,7 @@ public class NoaaportPMParser extends PMParser
 
 		// Goes Spacecraft (E or W)
 		int iEnd = data.length - 1;
-		while (iEnd > 4 && Character.isWhitespace((char)data[iEnd])) 
+		while (iEnd > 4 && Character.isWhitespace((char)data[iEnd]))
 			--iEnd;
 		msg.setPM(GoesPMParser.SPACECRAFT, new Variable((char)data[iEnd]));
 
@@ -196,10 +170,9 @@ public class NoaaportPMParser extends PMParser
 		}
 		catch(NumberFormatException ex)
 		{
-			throw new HeaderParseException(
-				"Invalid channel field in NOAAPORT trailer '" + sChan + "'");
+			throw new HeaderParseException("Invalid channel field in NOAAPORT trailer '" + sChan + "'", ex);
 		}
-		
+
 		// signal & frequency quality, fake in the IFPD //
 		iEnd -= 7;
 		String sss = new String(data, iEnd, 2);
@@ -210,9 +183,7 @@ public class NoaaportPMParser extends PMParser
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid signal strength field in NOAAPORT trailer '" 
-				+ sss + "' -- ignored");
+			log.atWarn().setCause(ex).log("Invalid signal strength field in NOAAPORT trailer '{}' -- ignored", sss);
 		}
 
 		String fos = new String(data, iEnd+2, 2);
@@ -220,14 +191,14 @@ public class NoaaportPMParser extends PMParser
 			fos = fos.substring(1);
 		try
 		{
-			msg.setPM(GoesPMParser.FREQ_OFFSET, 
+			msg.setPM(GoesPMParser.FREQ_OFFSET,
 				new Variable(Integer.parseInt(fos)));
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid Frequency Offset field in NOAAPORT trailer '" 
-				+ fos + "' -- ignored");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Invalid Frequency Offset field in NOAAPORT trailer '{}' -- ignored.", fos);
 		}
 
 		msg.setMediumId(dcpAddr);
@@ -253,7 +224,7 @@ public class NoaaportPMParser extends PMParser
 		return Constants.medium_Goes; // Noaaport msgs are still from GOES!
 	}
 
-	/** 
+	/**
 	  NOAAPORT msg length derived from the delimited variable length msg.
 	  @return false
 	*/
@@ -262,4 +233,3 @@ public class NoaaportPMParser extends PMParser
 		return false;
 	}
 }
-

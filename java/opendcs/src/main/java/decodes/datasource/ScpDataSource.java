@@ -1,32 +1,38 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.datasource;
-
-//import org.apache.sshd.client.SshClient;
-//import org.apache.sshd.client.future.ConnectFuture;
-//import org.apache.sshd.client.scp.ScpClient;
-//import org.apache.sshd.client.session.ClientSession;
 
 import ch.ethz.ssh2.Connection;
 import ch.ethz.ssh2.SCPClient;
 import ch.ethz.ssh2.SFTPv3Client;
 import ch.ethz.ssh2.SFTPv3FileHandle;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-import ilex.var.Variable;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.net.SocketException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.DataSource;
 import decodes.db.Database;
@@ -34,9 +40,10 @@ import decodes.db.InvalidDatabaseException;
 import decodes.db.NetworkList;
 import decodes.util.PropertySpec;
 
-public class ScpDataSource 
-	extends DataSourceExec
+public class ScpDataSource extends DataSourceExec
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final int SSH_DEFAULT_PORT = 22;
 	private String module = "ScpDataSource";
 	private PropertySpec[] scpDsPropSpecs =
 	{
@@ -60,14 +67,13 @@ public class ScpDataSource
 			+ " in order to link this data with a platform."),
 		new PropertySpec("useSftp", PropertySpec.BOOLEAN, "Use SFTP rather than SCP.")
 	};
-	
+
 	private String host = null;
-	private int port = 22;
+	private int port = SSH_DEFAULT_PORT;
 	private String username = "anon";
 	private String password = null;
 	private String remoteDir = "";
 	private String filenames = "";
-	// String filename = null; Use protected 'filename' from FileDataSource base class.
 	private String localDir = null;
 	private Properties allProps = null;
 	private ArrayList<File> downloadedFiles = new ArrayList<File>();
@@ -88,7 +94,7 @@ public class ScpDataSource
 	{
 		super(ds,db);
 	}
-	
+
 	public boolean setProperty(String name, String value)
 	{
 		if (name.equalsIgnoreCase("host"))
@@ -98,8 +104,7 @@ public class ScpDataSource
 			try { port = Integer.parseInt(value); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning("Non-numeric port '" + value
-					+ "' -- will use default of 21.");
+				log.atWarn().setCause(ex).log("Non-numeric port '{}' -- will use default of {}.", value, port);
 			}
 		}
 		else if (name.equalsIgnoreCase("username"))
@@ -115,8 +120,8 @@ public class ScpDataSource
 		else if (name.equalsIgnoreCase("useSftp"))
 			useSftp = TextUtil.str2boolean(value);
 		return true;
-	}		
-	
+	}
+
 	/**
 	 * Base class returns an empty array for backward compatibility.
 	 */
@@ -131,16 +136,14 @@ public class ScpDataSource
 		for(; xidx < x.length; xidx++)
 			if (!x[xidx].getName().equalsIgnoreCase("filename"))
 				y[yidx++] = x[xidx];
-		
+
 		return PropertiesUtil.combineSpecs(y, scpDsPropSpecs);
 	}
 
 	@Override
 	public void processDataSource() throws InvalidDatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG3, 
-			module + ".processDataSource '" + getName() 
-			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
+		log.trace("processDataSource '{}', args='{}'", getName(), dbDataSource.getDataSourceArg());
 	}
 
 	@Override
@@ -150,7 +153,7 @@ public class ScpDataSource
 		mySince = since;
 		myUntil = until;
 		myNetworkLists = networkLists;
-		
+
 		// Build a complete property set. Routing Spec props override DS props.
 		allProps = new Properties(dbDataSource.arguments);
 		for(Enumeration<?> it = routingSpecProps.propertyNames(); it.hasMoreElements();)
@@ -166,11 +169,11 @@ public class ScpDataSource
 			name = name.trim().toLowerCase();
 			setProperty(name, value);
 		}
-		
+
 		downloadFiles();
 		if (downloadedFiles.size() == 0)
 			throw new DataSourceException(module + " Failed to download any files.");
-		
+
 		openNextFile();
 	}
 
@@ -181,48 +184,44 @@ public class ScpDataSource
 		SCPClient scpCli = null;
 		SFTPv3Client sftpCli = null;
 		Connection conn = new Connection(host, port);
-		
-		String action = " connecting to SSH server " + host + ":" + port;
+
+		String action = "Connecting to SSH server " + host + ":" + port;
 		try
 		{
 			final String realUserName = EnvExpander.expand(username);
 			final String realPassword = EnvExpander.expand(password);
-			Logger.instance().debug1(module + action);
+			log.trace(action);
 			conn.connect();
 			action = " authenticating as user '" + username + "'";
 			boolean isAuthenticated = conn.authenticateWithPassword(realUserName, realPassword);
 			if (!isAuthenticated)
 				throw new DataSourceException(module + " SSH authentication failed (bad password)");
-			Logger.instance().debug1(module + " Password authentication successfull.");
-			
+			log.trace("Password authentication successfull.");
+
 			if (!useSftp)
 			{
-				action = " building SCPSclient";
-				Logger.instance().debug1(module + action);
+				action = "Building SCPSclient";
+				log.trace(action);
 				scpCli = new SCPClient(conn);
 			}
 			else
-			{	
-				action = " building SFTPv3Client";
-				Logger.instance().debug1(module + action);
+			{
+				action = "Building SFTPv3Client";
+				log.trace(action);
 				sftpCli = new SFTPv3Client(conn);
 			}
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().failure(module + " Error while " + action + ": " + ex);
-			if (Logger.instance().getLogOutput() != null)
-				ex.printStackTrace(Logger.instance().getLogOutput());
-
 			try { conn.close(); } catch(Exception ex2) {}
-			throw new DataSourceException(module + " Error while" + action 
-				+ " server=" + host + ":" + port + ", username=" + username + ": " + ex);
+			throw new DataSourceException(module + " Error while" + action
+				+ " server=" + host + ":" + port + ", username=" + username, ex);
 		}
-		
+
 		String fns[] = filenames.split(" ");
 		downloadedFiles.clear();
-		Logger.instance().debug3(module + " there are " + fns.length + " filenames in the list:");
-	
+		log.trace("There are {} filenames in the list:", fns.length);
+
 		for(String filename : fns)
 		{
 			SFTPv3FileHandle handle = null;
@@ -230,22 +229,22 @@ public class ScpDataSource
 			try
 			{
 				File localFile = new File(localDir, filename);
-				action = " opening output file '" + localFile.getPath() + "'";
-				Logger.instance().debug1(module + action);
+				action = "Opening output file '" + localFile.getPath() + "'";
+				log.trace(action);
 				os = new FileOutputStream(localFile);
-	
+
 				if (useSftp)
 				{
-					action = " SFTP opening read-only file '" + filename + "' on server";
-					Logger.instance().debug1(module + action);
+					action = "SFTP opening read-only file '" + filename + "' on server";
+					log.trace(action);
 					handle = sftpCli.openFileRO(filename);
 					byte buf[] = new byte[1024];
-					
+
 					long offset = 0L;
 					int len = 0;
 					int totalLen = 0;
-					action = " SFTP reading data from remote file";
-					Logger.instance().debug1(module + action);
+					action = "SFTP reading data from remote file";
+					log.trace(action);
 					while((len = sftpCli.read(handle, offset, buf, 0, buf.length)) != -1)
 					{
 						os.write(buf, 0, len);
@@ -253,7 +252,7 @@ public class ScpDataSource
 						totalLen += len;
 					}
 					sftpCli.closeFile(handle);
-					Logger.instance().debug1(module + " SFTP Downloaded file '" + filename + "' len=" + totalLen);
+					log.debug("SFTP Downloaded file '{}', len={}", filename, totalLen);
 					downloadedFiles.add(localFile);
 				}
 				else // default uses SCP.
@@ -261,17 +260,15 @@ public class ScpDataSource
 					String remoteFile = remoteDir
 						+ (remoteDir.length() == 0 ? "" : "/")
 						+ filename;
-					action = " SCP downloading remote file '" + remoteFile + "'";
-					Logger.instance().debug1(module + action);
+					action = "SCP downloading remote file '" + remoteFile + "'";
+					log.trace(action);
 					scpCli.get(remoteFile, os);
 					downloadedFiles.add(localFile);
 				}
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning(module + " Error while" + action + ": " + ex);
-				if (Logger.instance().getLogOutput() != null)
-					ex.printStackTrace(Logger.instance().getLogOutput());
+				log.atWarn().setCause(ex).log("Error while {}", action);
 			}
 			finally
 			{
@@ -286,7 +283,7 @@ public class ScpDataSource
 			sftpCli.close();
 		conn.close();
 	}
-	
+
 	/**
 	 * Opens the next file downloaded from FTP by constructing a FileDataSource delegate.
 	 * @throws DataSourceEndException exception if there are no more files
@@ -296,17 +293,17 @@ public class ScpDataSource
 		throws DataSourceException
 	{
 		currentFileDS = null;
-		
+
 		if (downloadedFileIndex >= downloadedFiles.size())
 			throw new DataSourceEndException(module + " All " + downloadedFileIndex
 				+ " files processed.");
-		
+
 		currentFile = downloadedFiles.get(downloadedFileIndex++);
 		currentFileDS = new FileDataSource(this.dbDataSource,db);
 		allProps.setProperty("filename", currentFile.getPath());
 		if (TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(allProps, "NameIsMediumId")))
 			allProps.setProperty("mediumid", currentFile.getName());
-		
+
 		currentFileDS.init(allProps, mySince, myUntil, myNetworkLists);
 	}
 
@@ -321,7 +318,7 @@ public class ScpDataSource
 	}
 
 	@Override
-	public RawMessage getRawMessage() 
+	public RawMessage getRawMessage()
 		throws DataSourceException
 	{
 		if (currentFileDS == null)
@@ -332,20 +329,18 @@ public class ScpDataSource
 		}
 		catch(DataSourceEndException ex)
 		{
-			Logger.instance().info(module + " End of file '" 
-				+ currentFile.getPath() + "'");
+			log.info("End of file '{}'", currentFile.getPath());
 			openNextFile();
 			return getRawMessage(); // recursive call with newly opened file.
 		}
 		catch(DataSourceException ex)
 		{
-			Logger.instance().warning(module + " Error processing file '" 
-				+ currentFile.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log(" Error processing file '{}'", currentFile.getPath());
 			openNextFile();
 			return getRawMessage(); // recursive call with newly opened file.
 		}
 	}
-	
+
 	public static void main(String args[])
 		throws Exception
 	{
@@ -359,7 +354,7 @@ public class ScpDataSource
 		String pw = args[2];
 		String remoteFile = args[3];
 		String localFile = args[4];
-		
+
 		Connection conn = new Connection(host);
 		conn.connect();
 		boolean isAuthenticated = conn.authenticateWithPassword(user, pw);
@@ -368,7 +363,7 @@ public class ScpDataSource
 			System.err.println("Authentication failed.");
 			System.exit(1);
 		}
-		
+
 		SCPClient cli = new SCPClient(conn);
 		OutputStream os = new FileOutputStream(localFile);
 		cli.get(remoteFile, os);

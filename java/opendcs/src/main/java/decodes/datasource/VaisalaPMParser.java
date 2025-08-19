@@ -1,39 +1,23 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.5  2007/12/11 01:05:16  mmaloney
-*  javadoc cleanup
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.4  2004/08/31 16:31:18  mjmaloney
-*  javadoc
-*
-*  Revision 1.3  2004/08/24 23:52:46  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.2  2003/12/07 20:36:49  mjmaloney
-*  First working implementation of EDL time stamping.
-*
-*  Revision 1.1  2002/12/09 20:03:42  mjmaloney
-*  Added
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
-import java.util.HashMap;
-import java.util.Date;
-import java.util.Calendar;
-import java.text.ParsePosition;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 
-import ilex.util.ArrayUtil;
-import ilex.util.Logger;
-import ilex.util.ByteUtil;
-import ilex.var.Variable;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 
@@ -43,6 +27,7 @@ import decodes.db.Constants;
 */
 public class VaisalaPMParser extends GoesPMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** default constructor */
 	public VaisalaPMParser()
 	{
@@ -69,8 +54,7 @@ public class VaisalaPMParser extends GoesPMParser
 
 		if (i < data.length && data[i] == '\n')
 		{
-			Logger.instance().log(Logger.E_DEBUG3, 
-				"Setting header length to " + i);
+			log.trace("Setting header length to {}", i);
 			msg.setHeaderLength(i);
 		}
 	}
@@ -87,4 +71,3 @@ public class VaisalaPMParser extends GoesPMParser
 		return Constants.medium_Goes;
 	}
 }
-

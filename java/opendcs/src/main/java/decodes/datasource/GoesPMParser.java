@@ -1,9 +1,25 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Calendar;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -19,6 +35,7 @@ import decodes.db.Constants;
 */
 public class GoesPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String DCP_ADDRESS = "DcpAddress";
 	public static final String MESSAGE_TIME = "Time";
 	public static final String MESSAGE_LENGTH = "Length";
@@ -36,7 +53,7 @@ public class GoesPMParser extends PMParser
 	public static final String DOMSAT_TIME = "DomsatTime";
 	public static final String DCP_MSG_FLAGS = "DcpMsgFlags";
 	public static final String GPS_SYNC = "GPS";
-	
+
 	public static final String SITE_NAME = "SiteName";
 	public static final String SITE_DESC = "SiteDesc";
 	public static final String FILE_NAME = "filename";
@@ -79,22 +96,20 @@ public class GoesPMParser extends PMParser
 		msg.setPM(DCP_ADDRESS, new Variable(dcpAddr));
 
 		String lenfield = new String(data, 32, 5);
-		try 
+		try
 		{
 			msg.setPM(MESSAGE_LENGTH, new Variable(Long.parseLong(lenfield)));
 		}
-		catch(NumberFormatException e)
+		catch(NumberFormatException ex)
 		{
-			throw new HeaderParseException("Invalid length field '"
-				+ lenfield + '"');
+			throw new HeaderParseException("Invalid length field '" + lenfield + '"', ex);
 		}
 
 		String chanfield = new String(data, 26, 3);
 		try { msg.setPM(CHANNEL, new Variable(Long.parseLong(chanfield))); }
-		catch(NumberFormatException e)
+		catch(NumberFormatException ex)
 		{
-			throw new HeaderParseException("Invalid channel field '"
-				+ chanfield + "'");
+			throw new HeaderParseException("Invalid channel field '" + chanfield + "'", ex);
 		}
 
 		String datefield = new String(data, 8, 11);
@@ -103,9 +118,8 @@ public class GoesPMParser extends PMParser
 			Date d = goesDateFormat.parse(datefield, new ParsePosition(0));
 			if (d == null)
 			{
-				String emsg = "Invalid timestamp field '" + datefield + "'";
-				System.err.println(emsg);
-				System.err.println("SDF Pattern '" + goesDateFormat.toPattern() + "'");
+				String emsg = "Invalid timestamp field '" + datefield + 
+							  "'. SDF Pattern '" + goesDateFormat.toPattern() + "'";
 				throw new HeaderParseException(emsg);
 			}
 			msg.setPM(MESSAGE_TIME, new Variable(d));
@@ -113,22 +127,21 @@ public class GoesPMParser extends PMParser
 		}
 		catch(NumberFormatException ex)
 		{
-			throw new HeaderParseException("Invalid timestamp field '"
-				+ datefield + "': " + ex);
+			throw new HeaderParseException("Invalid timestamp field '" + datefield + "': ", ex);
 		}
 
 		/*
 		 * The rest of the PMs are optional. Don't fail if they can't be
-		 * parsed.
+		 * parsed. However we will log a trace to help identify any possible issues.
 		 */
 
 		try
 		{
 			msg.setPM(FAILURE_CODE, new Variable((char)data[19]));
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			// Silently allow failures for above.
+			log.atTrace().setCause(ex).log("Unable set FAILURE_CODE.");
 		}
 		try
 		{
@@ -136,9 +149,9 @@ public class GoesPMParser extends PMParser
 			long li = Long.parseLong(ss);
 			msg.setPM(SIGNAL_STRENGTH, new Variable(li));
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			// Silently allow failures for above.
+			log.atTrace().setCause(ex).log("Unable to set SIGNAL_STRENGTH.");
 		}
 		try
 		{
@@ -147,7 +160,7 @@ public class GoesPMParser extends PMParser
 			if ( fos.charAt(1) == 'A' ) {
 				li = 10;
 				if ( fos.charAt(0) == '-')
-					li *= -1;			
+					li *= -1;
 			} else {
 				if (fos.charAt(0) == '+')
 					fos = fos.substring(1);
@@ -155,41 +168,41 @@ public class GoesPMParser extends PMParser
 			}
 			msg.setPM(FREQ_OFFSET, new Variable(li));
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			// Silently allow failures for above.
+			log.atTrace().setCause(ex).log("Unable to set FREQUENCY OFFSET.");
 		}
 		try
 		{
 			msg.setPM(MOD_INDEX, new Variable((char)data[24]));
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			// Silently allow failures for above.
+			log.atTrace().setCause(ex).log("Unable to set MOD INDEX.");
 		}
 		try
 		{
 			msg.setPM(QUALITY, new Variable((char)data[25]));
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			// Silently allow failures for above.
+			log.atTrace().setCause(ex).log("Unable to set QUALITY.");
 		}
 		try
 		{
 			msg.setPM(SPACECRAFT, new Variable((char)data[29]));
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			// Silently allow failures for above.
+			log.atTrace().setCause(ex).log("Unable to set SPACE CRAFT.");
 		}
 		try
 		{
 			msg.setPM(UPLINK_CARRIER, new Variable(new String(data, 30, 2)));
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			// Silently allow failures for above.
+			log.atTrace().setCause(ex).log("Unable to set UPLINK CARRIER.");
 		}
 		if (data.length > 37)
 		{
@@ -217,4 +230,3 @@ public class GoesPMParser extends PMParser
 		return Constants.medium_Goes;
 	}
 }
-

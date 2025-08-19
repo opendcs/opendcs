@@ -1,8 +1,21 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.datasource;
 
-
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -12,6 +25,9 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.db.InvalidDatabaseException;
@@ -20,9 +36,9 @@ import decodes.util.PropertySpec;
 
 import com.jcraft.jsch.*;
 
-public class SftpDataSource 
-	extends DataSourceExec
+public class SftpDataSource extends DataSourceExec
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "SftpDataSource";
 	private PropertySpec[] sftpDsPropSpecs =
 	{
@@ -45,15 +61,8 @@ public class SftpDataSource
 		new PropertySpec("deleteFromServer", PropertySpec.BOOLEAN,
 			"FTP Data Source: (default=false) Set to true to delete file from server "
 			+ "after retrieval. (May be disallowed on some servers.)")
-//		new PropertySpec("nameIsMediumId", PropertySpec.BOOLEAN,
-//			"Use with OneMessageFile=true if the downloaded filename is to be treated as a medium ID"
-//			+ " in order to link this data with a platform."),
-//		new PropertySpec("newerThan", PropertySpec.STRING, 
-//			"Either a Date/Time in the format [[[CC]YY] DDD] HH:MM[:SS], "
-//			+ "or a string of the form 'now - N incr',"
-//			+ " where N is an integer and incr is minutes, hours, or days.")
 	};
-	
+
 	private String host = null;
 	private int port = 22;
 	private String username = "anon";
@@ -69,7 +78,6 @@ public class SftpDataSource
 	private String mySince=null, myUntil=null;
 	private Vector<NetworkList> myNetworkLists;
 	private File currentFile = null;
-//	private String newerThan = null;
 
 	/**
 	 * @see decodes.datasource.DataSourceExec#DataSourceExec(DataSource, Database) DataSourceExec Constructor
@@ -80,7 +88,7 @@ public class SftpDataSource
 	public SftpDataSource(DataSource source, Database db) {
 		super(source, db);
 	}
-	
+
 	public boolean setProperty(String name, String value)
 	{
 		if (name.equalsIgnoreCase("host"))
@@ -90,8 +98,7 @@ public class SftpDataSource
 			try { port = Integer.parseInt(value); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning("Non-numeric port '" + value
-					+ "' -- will use default of 22.");
+				log.warn("Non-numeric port '{}' -- will use default of 22.", value);
 				port = 22;
 			}
 		}
@@ -107,11 +114,9 @@ public class SftpDataSource
 			deleteFromServer = TextUtil.str2boolean(value);
 		else if (name.equalsIgnoreCase("filenames"))
 			filenames = value;
-//		else if (name.equalsIgnoreCase("newerThan"))
-//			newerThan = value.trim();
 		return true;
 	}
-	
+
 	class MyProgMon implements SftpProgressMonitor
 	{
 		long count = 0;
@@ -140,7 +145,7 @@ public class SftpDataSource
 		}
 	};
 
-	
+
 	/**
 	 * Base class returns an empty array for backward compatibility.
 	 */
@@ -155,16 +160,14 @@ public class SftpDataSource
 		for(; xidx < x.length; xidx++)
 			if (!x[xidx].getName().equalsIgnoreCase("filename"))
 				y[yidx++] = x[xidx];
-		
+
 		return PropertiesUtil.combineSpecs(y, sftpDsPropSpecs);
 	}
 
 	@Override
 	public void processDataSource() throws InvalidDatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG3, 
-			module + ".processDataSource '" + getName() 
-			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
+		log.trace("processDataSource '{}', args='{}'", getName(), dbDataSource.getDataSourceArg());
 	}
 
 	@Override
@@ -174,7 +177,7 @@ public class SftpDataSource
 		mySince = since;
 		myUntil = until;
 		myNetworkLists = networkLists;
-		
+
 		// Build a complete property set. Routing Spec props override DS props.
 		allProps = new Properties(dbDataSource.arguments);
 		for(Enumeration<?> it = routingSpecProps.propertyNames(); it.hasMoreElements();)
@@ -190,11 +193,11 @@ public class SftpDataSource
 			name = name.trim().toLowerCase();
 			setProperty(name, value);
 		}
-		
+
 		downloadFiles();
 		if (downloadedFiles.size() == 0)
 			throw new DataSourceException(module + " Failed to download any files.");
-		
+
 		openNextFile();
 	}
 
@@ -209,9 +212,9 @@ public class SftpDataSource
 			throw new DataSourceException("Missing required 'username' property.");
 		if (password == null || password.trim().length() == 0)
 			throw new DataSourceException("Missing required 'password' property.");
-		
+
 		// Next download the file using FTP client.
-		String action = " constructing JSch";
+		String action = "Constructing JSch";
 		JSch jsch = null;
 		Session session = null;
 		ChannelSftp chanSftp = null;
@@ -219,51 +222,57 @@ public class SftpDataSource
 		{
 			final String realUserName = EnvExpander.expand(username);
 			final String realPassword = EnvExpander.expand(password);
-			Logger.instance().debug1(module + action);
+			log.trace(action);
 			JSch.setConfig("StrictHostKeyChecking", "no");
 			jsch = new JSch();
-			
-			action = " getting Session";
-			Logger.instance().debug1(module + action);
+
+			action = "Getting Session";
+			log.trace(action);
 			session = jsch.getSession(realUserName, host, port);
-			
-			action = " setting Session Password";
-			Logger.instance().debug1(module + action);
+
+			action = "Setting Session Password";
+			log.trace(action);
 			session.setPassword(realPassword);
-			
-			action = " connecting session";
-			Logger.instance().debug1(module + action);
+
+			action = "Connecting session";
+			log.trace(action);
 			session.connect();
-			
-			action = " configuring session";
+
+			action = "Configuring session";
 			Properties config = new Properties();
 			config.put("StrictHostKeyChecking", "no");
 			session.setConfig(config);
-			
-			action = " getting SFTP channel";
-			Logger.instance().debug1(module + action);
+
+			action = "Getting SFTP channel";
+			log.trace(action);
 			chanSftp = (ChannelSftp)session.openChannel("sftp");
-			
-			action = " connecting SFTP channel";
-			Logger.instance().debug1(module + action);
+
+			action = "Connecting SFTP channel";
+			log.trace(action);
 			chanSftp.connect();
-		
+
 			String remote = remoteDir;
 			if (remote.length() > 0 && !remote.endsWith("/"))
 				remote += "/";
-	
-			action = " constructing progress monitor";
+
+			action = "Constructing progress monitor";
 			MyProgMon myProgMon = new MyProgMon();
-	
-	
+
+
 			downloadedFiles.clear();
 			downloadedFileIndex = 0;
-			
+
 			// split by whitespace* comma
 			String fns[] = filenames.split(" ");
-			Logger.instance().debug1(module + " there are " + fns.length + " filenames in the list:");
-			for(String fn : fns) Logger.instance().debug1(module + "   '" + fn + "'");
-			
+			if (log.isTraceEnabled())
+			{
+				log.trace("There are {} filenames in the list:", fns.length);
+				for(String fn : fns)
+				{
+					log.trace("   '{}'", fn);
+				}
+			}
+
 			String local = localDir;
 			if (local == null || local.length() == 0)
 				local = "$DCSTOOL_USERDIR/tmp";
@@ -271,39 +280,38 @@ public class SftpDataSource
 			File localDirectory = new File(local);
 			if (!localDirectory.isDirectory())
 				localDirectory.mkdirs();
-		
-			
+
+
 			for(String filename : fns)
 			{
 				filename = filename.trim(); // remove any whitespace before or after the comma.
 				String remoteName = remote + filename;
 				File localFile = new File(localDirectory, filename);
-			
+
 				try
 				{
 					myProgMon.count(0L);
-					action = " Downloading remote file '" + remoteName
+					action = "Downloading remote file '" + remoteName
 							+ "' to '" + localFile.getPath() + "'";
-					Logger.instance().debug1(module + action);
+					log.trace(action);
 					chanSftp.get(remoteName, localFile.getPath(), myProgMon, ChannelSftp.OVERWRITE);
-					Logger.instance().debug1(module + action + " SUCCESS, size=" + myProgMon.getCount());
+					log.trace("{} SUCCESS, size={}", action, myProgMon.getCount());
 					downloadedFiles.add(localFile);
-					
-					action = " Deleting '" + remoteName + "' from server";
+
+					action = "Deleting '" + remoteName + "' from server";
 					if (deleteFromServer)
 						chanSftp.rm(remoteName);
 				}
 				catch(SftpException ex)
 				{
-					Logger.instance().warning(module + " Error while " + action + ": " + ex);
+					log.atWarn().setCause(ex).log("Error while {}", action);
 				}
 			}
 		}
 		catch(JSchException ex)
 		{
-			String msg = module + " Error while" + action + ": " + ex;
-			Logger.instance().warning(msg);
-			throw new DataSourceException(msg);
+			String msg = module + " Error while" + action;
+			throw new DataSourceException(msg, ex);
 		}
 		finally
 		{
@@ -312,10 +320,10 @@ public class SftpDataSource
 			if (session != null && session.isConnected())
 				session.disconnect();
 		}
-		
-        Logger.instance().info(module + " " + downloadedFiles.size() + " files downloaded.");
+
+        log.info("{} files downloaded.", downloadedFiles.size());
 	}
-	
+
 	/**
 	 * Opens the next file downloaded from FTP by constructing a FileDataSource delegate.
 	 * @throws DataSourceEndException exception if there are no more files
@@ -325,17 +333,17 @@ public class SftpDataSource
 		throws DataSourceException
 	{
 		currentFileDS = null;
-		
+
 		if (downloadedFileIndex >= downloadedFiles.size())
 			throw new DataSourceEndException(module + " All " + downloadedFileIndex
 				+ " files processed.");
-		
+
 		currentFile = downloadedFiles.get(downloadedFileIndex++);
 		currentFileDS = new FileDataSource(this.dbDataSource,db);
 		allProps.setProperty("filename", currentFile.getPath());
 		if (TextUtil.str2boolean(PropertiesUtil.getIgnoreCase(allProps, "NameIsMediumId")))
 			allProps.setProperty("mediumid", currentFile.getName());
-		
+
 		currentFileDS.init(allProps, mySince, myUntil, myNetworkLists);
 	}
 
@@ -350,7 +358,7 @@ public class SftpDataSource
 	}
 
 	@Override
-	public RawMessage getRawMessage() 
+	public RawMessage getRawMessage()
 		throws DataSourceException
 	{
 		if (currentFileDS == null)
@@ -361,15 +369,13 @@ public class SftpDataSource
 		}
 		catch(DataSourceEndException ex)
 		{
-			Logger.instance().info(module + " End of file '" 
-				+ currentFile.getPath() + "'");
+			log.info("End of file '{}'", currentFile.getPath());
 			openNextFile();
 			return getRawMessage(); // recursive call with newly opened file.
 		}
 		catch(DataSourceException ex)
 		{
-			Logger.instance().warning(module + " Error processing file '" 
-				+ currentFile.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log(" Error processing file '{}'", currentFile.getPath());
 			openNextFile();
 			return getRawMessage(); // recursive call with newly opened file.
 		}

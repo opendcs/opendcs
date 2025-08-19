@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
@@ -7,10 +19,13 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 
 import lrgs.common.DcpMsg;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
 
@@ -43,6 +58,7 @@ import decodes.db.Constants;
 */
 public class CsvPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private SimpleDateFormat sdf = null;
 	public int idcol = 1;
 	public int datetimecol = 2;
@@ -53,7 +69,7 @@ public class CsvPMParser extends PMParser
 	public String mediumType = Constants.medium_Other;
 	public String headerType = "csv";
 	private int hdrLength = 0;
-	
+
 	/** default constructor */
 	public CsvPMParser()
 	{
@@ -65,7 +81,7 @@ public class CsvPMParser extends PMParser
 		PropertiesUtil.loadFromProps(this, props);
 		sdf = new SimpleDateFormat(datetimefmt);
 		sdf.setTimeZone(TimeZone.getTimeZone(timezone));
-		Logger.instance().debug1("CsvPMParser delim='" + delim + "'");
+		log.debug("CsvPMParser delim='{}'", delim);
 	}
 
 	/**
@@ -78,13 +94,13 @@ public class CsvPMParser extends PMParser
 	{
 		if (sdf == null)
 		{
-			Logger.instance().warning("CsvPMParser called without setting props.");
+			log.warn("CsvPMParser called without setting props.");
 			setProperties(new Properties());
 		}
 
 		DcpMsg origMsg = msg.getOrigDcpMsg();
 		String data = new String(msg.getData());
-		
+
 		// Get the ID
 		StringTokenizer st = new StringTokenizer(data, delim);
 		for(int col=0; col<idcol-1 && st.hasMoreElements(); st.nextElement());
@@ -97,12 +113,12 @@ public class CsvPMParser extends PMParser
 		msg.setPM(EdlPMParser.STATION, new Variable(id));
 
 		Date msgTime = null;
-		
+
 		// find the start of the date/time
 		try
 		{
 			int dtstart = 0;
-			for(int ndelims=0; 
+			for(int ndelims=0;
 			    dtstart < data.length() && ndelims < datetimecol-1; ndelims++)
 				dtstart = data.indexOf(delim, dtstart + delim.length());
 			dtstart += delim.length();
@@ -114,15 +130,15 @@ public class CsvPMParser extends PMParser
 		catch(Exception ex)
 		{
 			String err = "CsvPMParser no msg time at column " + datetimecol
-				+ ": " + ex + " expected format='" + sdf.toPattern() + "'";
-			throw new HeaderParseException(err);
+				+ ": expected format='" + sdf.toPattern() + "'";
+			throw new HeaderParseException(err, ex);
 		}
-		
+
 		// Set header length by finding the start of the data column.
 		try
 		{
 			hdrLength = 0;
-			for(int ndelims=0; 
+			for(int ndelims=0;
 				hdrLength < data.length() && ndelims < datacol-1; ndelims++)
 				hdrLength = data.indexOf(delim, hdrLength + delim.length());
 			hdrLength += delim.length();
@@ -131,13 +147,12 @@ public class CsvPMParser extends PMParser
 		}
 		catch(Exception ex)
 		{
-			String err = "CsvPMParser no msg time at column " + datetimecol
-				+ ": " + ex;
-			throw new HeaderParseException(err);
+			String err = "CsvPMParser no msg time at column " + datetimecol;
+			throw new HeaderParseException(err, ex);
 		}
-		
+
 		msg.setPM(GoesPMParser.FAILURE_CODE, new Variable('G'));
-		Logger.instance().debug3("CsvPMParser: mediumId='" + id + "', msg time=" + msgTime);
+		log.trace("CsvPMParser: mediumId='{}', msg time={}", id, msgTime);
 	}
 
 	/** @return length as determined by the datacol. */
@@ -157,10 +172,9 @@ public class CsvPMParser extends PMParser
 	{
 		return mediumType;
 	}
-	
+
 	public boolean containsExplicitLength()
 	{
 		return false;
 	}
 }
-

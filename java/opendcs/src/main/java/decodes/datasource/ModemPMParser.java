@@ -1,43 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1  2008/11/20 18:49:18  mjmaloney
-*  merge from usgs mods
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2008/11/15 01:03:11  mmaloney
-*  Moved from separate trees to common parent
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/09/30 01:09:43  satin
-*  *** empty log message ***
-*
-*  Revision 1.5  2006/08/31 20:43:12  mmaloney
-*  dev
-*
-*  Revision 1.4  2006/08/31 20:42:23  mmaloney
-*  Added debug.
-*
-*  Revision 1.3  2004/08/24 23:52:43  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.2  2003/12/12 17:55:32  mjmaloney
-*  Working implementation of DirectoryDataSource.
-*
-*  Revision 1.1  2003/12/07 20:36:47  mjmaloney
-*  First working implementation of EDL time stamping.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
 import java.util.Date;
-import java.util.HashMap;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 
 import ilex.var.Variable;
-import ilex.util.Logger;
 
-import decodes.datasource.RawMessage;
 import decodes.db.Constants;
 
 /**
@@ -45,21 +32,11 @@ Performance Measurement Parser for USGS EDL Header Lines.
 */
 public class ModemPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Private time/date stamp parsers:
-	private static SimpleDateFormat beginDateTimeSdf = 
-		new SimpleDateFormat("yyyyMMddHHmm Z");
-	static
-	{
-		/*
-		  Note: Begin date & time do not have any indication of time zone.
-		  Therefore assume UTC for now. Later, after a platform & site
-		  association are made, the begin time stamp should be adjusted
-		  according to whatever timezone is in the site record.
-		*/
-//		beginDateTimeSdf.setTimeZone( TimeZone.getTimeZone("UTC") );
-	}
-	private static SimpleDateFormat endTimeSdf =
-		new SimpleDateFormat("yyMMdd HHmmss Z");
+	private static SimpleDateFormat beginDateTimeSdf = new SimpleDateFormat("yyyyMMddHHmm Z");
+
+	private static SimpleDateFormat endTimeSdf = new SimpleDateFormat("yyMMdd HHmmss Z");
 
 	// The following properties can be set by this parser.
 
@@ -70,7 +47,7 @@ public class ModemPMParser extends PMParser
 	public static final String MESSAGE_LENGTH = GoesPMParser.MESSAGE_LENGTH;
 
 	/**
-	  The end time of the message. Set from DEVICE END TIME. Possibly 
+	  The end time of the message. Set from DEVICE END TIME. Possibly
 	  over-ridden by ACTUAL END TIME. Stored as a Date Variable.
 	*/
 	public static final String MESSAGE_TIME = GoesPMParser.MESSAGE_TIME;
@@ -244,15 +221,13 @@ public class ModemPMParser extends PMParser
 				beginDate += "0000 +0000"; // HHMM & TZ
 			try
 			{
-				Logger.instance().debug1("Parsing begin date/time '"
-					+ beginDate + "'");
+				log.debug("Parsing begin date/time '{}'", beginDate);
 				Date d = beginDateTimeSdf.parse(beginDate);
 				msg.setPM(BEGIN_TIME_STAMP, new Variable(d));
 			}
 			catch(ParseException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE, 
-					"Unparsable begin time '" + beginTime + "': Ignored.");
+				log.atError().setCause(ex).log("Unparsable begin time '{}': Ignored.", beginTime);
 			}
 		}
 
@@ -269,18 +244,18 @@ public class ModemPMParser extends PMParser
 			{
 				int i = ++idx;  // idx points to first digit after sign.
 
-				for(; i < endTime.length() 
+				for(; i < endTime.length()
 					&& i-idx <= 4
 					&& Character.isDigit(endTime.charAt(i)); i++);
 				// i now points to first non-digit after TZ
 
 				switch(i-idx)  // i-idx is # of digits after sign.
 				{
-				case 0: 
-					endTime = endTime.substring(0,idx) + "0000"; 
+				case 0:
+					endTime = endTime.substring(0,idx) + "0000";
 					break;
 				case 1: // 1 digit hour? move to position 2 in HHMM:
-					endTime = endTime.substring(0,idx) + "0" 
+					endTime = endTime.substring(0,idx) + "0"
 						+ endTime.charAt(idx) + "00";
 					break;
 				case 2: // HH only, add MM
@@ -293,7 +268,7 @@ public class ModemPMParser extends PMParser
 					endTime = endTime.substring(0, idx+4);
 				}
 			}
-				
+
 			try
 			{
 				msg.setPM(END_TIME_STAMP, new Variable(
@@ -301,8 +276,7 @@ public class ModemPMParser extends PMParser
 			}
 			catch(ParseException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE, "Unparsable end time '"
-					+ endTime + "': Ignored.");
+				log.atError().setCause(ex).log("Unparsable end time '{}': Ignored.", endTime);
 			}
 		}
 
@@ -325,8 +299,7 @@ public class ModemPMParser extends PMParser
 				if (v != null)
 					mid = mid + "-" + v.getStringValue();
 			}
-			Logger.instance().log(Logger.E_DEBUG3,
-				"Setting EDL File Medium ID to '" + mid + "'");
+			log.debug("Setting EDL File Medium ID to '{}'", mid);
 			msg.setMediumId(mid);
 		}
 	}
@@ -348,4 +321,3 @@ public class ModemPMParser extends PMParser
 		return false;
 	}
 }
-

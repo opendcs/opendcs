@@ -1,100 +1,32 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.3  2014/05/30 13:15:34  mmaloney
-*  dev
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2014/05/28 13:09:29  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.4  2009/05/08 14:30:13  mjmaloney
-*  remove debugs
-*
-*  Revision 1.3  2008/11/20 18:49:18  mjmaloney
-*  merge from usgs mods
-*
-*  Revision 1.1  2008/11/15 01:03:12  mmaloney
-*  Moved from separate trees to common parent
-*
-*  Revision 1.18  2008/11/10 17:18:32  satin
-*  *** empty log message ***
-*
-*  Revision 1.17  2008/11/10 15:46:18  satin
-*  *** empty log message ***
-*
-*  Revision 1.16  2008/10/05 12:23:46  satin
-*  Eliminated messages for unknown properties in which the property was valid
-*  but not known in this particular source.
-*
-*  Revision 1.15  2004/08/31 16:31:18  mjmaloney
-*  javadoc
-*
-*  Revision 1.14  2004/08/24 23:52:45  mjmaloney
-*  Added javadocs.
-*
-*  Revision 1.13  2003/11/15 20:16:33  mjmaloney
-*  Use accessor methods for TransportMedium type.
-*  For GOES, don't need to explicitely look for GOES, RD, and ST. The tmKey
-*  in the Platform set will be the same for all three.
-*
-*  Revision 1.12  2003/06/17 00:34:00  mjmaloney
-*  StreamDataSource implemented.
-*  FileDataSource re-implemented as a subclass of StreamDataSource.
-*
-*  Revision 1.11  2003/06/06 01:39:20  mjmaloney
-*  Datasources to handle either datasource or routingspec properties.
-*  Consumers to handle delimiters consistently.
-*  FileConsumer and DirectoryConsumer to handle File Name Templates.
-*
-*  Revision 1.10  2003/03/05 18:13:34  mjmaloney
-*  Fix DR 122 - Base class method in DataSourceExec now makes association to TM.
-*
-*  Revision 1.9  2002/10/25 19:49:04  mjmaloney
-*  Fixed problems in NOAAPORT PM Parser & Socket Stream
-*
-*  Revision 1.8  2002/10/11 01:27:01  mjmaloney
-*  Added SocketStreamDataSource and NoaaportPMParser stuff.
-*
-*  Revision 1.7  2002/08/29 01:33:17  mjmaloney
-*  Bug fixes for Omaha
-*
-*  Revision 1.6  2002/06/03 15:38:59  mjmaloney
-*  DR fixes.
-*
-*  Revision 1.5  2002/06/03 00:54:43  mjmaloney
-*  dev
-*
-*  Revision 1.4  2002/05/21 20:50:10  mjmaloney
-*  dev
-*
-*  Revision 1.3  2002/01/28 02:57:59  mike
-*  dev
-*
-*  Revision 1.2  2002/01/08 22:45:35  mike
-*  1st compilable version of SocketStreamDataSource.
-*  Added validating code to GoesPMParser
-*
-*  Revision 1.1  2002/01/07 12:53:05  mike
-*  interim
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.datasource;
 
 import java.util.Properties;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 import java.util.Enumeration;
 import java.net.Socket;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.AsciiUtil;
 import ilex.util.ArrayUtil;
@@ -119,11 +51,11 @@ import decodes.util.PropertySpec;
   <p>
   Properties for the Data Source are as follows:
   <ul>
-   <li>host - Either a host name or IP address for the server. If this 
+   <li>host - Either a host name or IP address for the server. If this
        property is not present, attempt to use the data source name as the
        host</li>
    <li>port - (default=5001) Port # on server</li>
-   <li>lengthAdj - (default=-1) adjustment to header length for reading 
+   <li>lengthAdj - (default=-1) adjustment to header length for reading
 	   socket. Will read 'adjusted length' bytes following header.</li>
    <li>delimiter - (default " \r\n") used for finding sync'ing stream</li>
    <li>endDelimiter - (default null) marks end of message</li>
@@ -132,7 +64,7 @@ import decodes.util.PropertySpec;
    <li>header - (default "GOES"), either GOES or VITEL. The Vitel DRGS is
 	   slightly different. It does not include the 'failure code', causing
 	   subsequent fields to be shifted by one byte.
-   <li>reconnect - (default=false) tells the data source to attempt a 
+   <li>reconnect - (default=false) tells the data source to attempt a
 	   reconnect if the remote server closes the socket. This behavior has
 	   been seen in the datawise domsat systems.</li>
   </ul>
@@ -141,6 +73,7 @@ import decodes.util.PropertySpec;
 */
 public class SocketStreamDataSource extends DataSourceExec
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String host;
 	int port;
 	PMParser pmp;
@@ -158,20 +91,20 @@ public class SocketStreamDataSource extends DataSourceExec
 
 	static final PropertySpec[] propSpecs =
 	{
-		new PropertySpec("port", PropertySpec.INT, 
+		new PropertySpec("port", PropertySpec.INT,
 			"(default=5001) TCP Port to connect to"),
-		new PropertySpec("host", PropertySpec.HOSTNAME, 
+		new PropertySpec("host", PropertySpec.HOSTNAME,
 			"(required) Host name or IP Address to connect to"),
-		new PropertySpec("header", 
-			PropertySpec.DECODES_ENUM + "TransportMediumType", 
+		new PropertySpec("header",
+			PropertySpec.DECODES_ENUM + "TransportMediumType",
 			"(default GOES) Determines the format of the message header." +
 			" Legacy systems called this 'mediumType'"),
-		new PropertySpec("lengthAdj", PropertySpec.INT, 
+		new PropertySpec("lengthAdj", PropertySpec.INT,
 			"(default=-1) adjustment to header length for reading "
 			+ "socket. Will read 'adjusted length' bytes following header."),
-		new PropertySpec("delimiter", PropertySpec.STRING, 
+		new PropertySpec("delimiter", PropertySpec.STRING,
 				"(default \" \r\n\") used for finding sync'ing stream."),
-		new PropertySpec("endDelimiter", PropertySpec.STRING, 
+		new PropertySpec("endDelimiter", PropertySpec.STRING,
 			"(default null) marks end of message. In legacy"),
 		new PropertySpec("reconnect", PropertySpec.BOOLEAN,
 			"(default=false) if remote server closes socket, attempt to reconnect.")
@@ -210,9 +143,8 @@ public class SocketStreamDataSource extends DataSourceExec
 	public void processDataSource()
 		throws InvalidDatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG1, 
-			"SocketStreamDataSource.processDataSource '" + dbDataSource.getName() 
-			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
+		log.debug("SocketStreamDataSource.processDataSource '{}', args='{}'",
+		          dbDataSource.getName(), dbDataSource.getDataSourceArg());
 	}
 
 
@@ -230,8 +162,7 @@ public class SocketStreamDataSource extends DataSourceExec
 		Vector<NetworkList> networkLists)
 		throws DataSourceException
 	{
-		Logger.instance().log(Logger.E_DEBUG1, 
-			"SocketStreamDataSource.init() for '" + dbDataSource.getName() + "'");
+		log.debug("SocketStreamDataSource.init() for '{}'", dbDataSource.getName());
 
 		// Build a complete property set. Routing Spec props override DS props.
 		Properties allProps = new Properties(dbDataSource.arguments);
@@ -252,30 +183,28 @@ public class SocketStreamDataSource extends DataSourceExec
 
 			name = name.trim().toLowerCase();
 
-			Logger.instance().log(Logger.E_DEBUG1, 
-				"Processing property name='" + name + "', value='" 
-				+ value + "'");
+			log.debug("Processing property name='{}', value='{}'", value);
 
 			if (name.equals("host"))
 				host = value;
 			else if (name.equals("port"))
 			{
 				try { port = Integer.parseInt(value.trim()); }
-				catch(NumberFormatException e)
+				catch(NumberFormatException ex)
 				{
 					throw new DataSourceException("SocketStreamDataSource '"
 						+ host + "': invalid port '" + value
-						+ "' - must be a number");
+						+ "' - must be a number", ex);
 				}
 			}
 			else if (name.equals("lengthadj"))
 			{
 				try { lengthAdj = Integer.parseInt(value.trim()); }
-				catch(NumberFormatException e)
+				catch(NumberFormatException ex)
 				{
 					throw new DataSourceException("SocketStreamDataSource '"
 						+ host + "': invalid length adjustment '" +  value
-						+ "' - must be a number");
+						+ "' - must be a number", ex);
 				}
 			}
 			else if (name.equals("delimiter"))
@@ -286,11 +215,11 @@ public class SocketStreamDataSource extends DataSourceExec
 			      || name.equals("mediumtype"))
 			{
 				try { pmp = PMParser.getPMParser(value.trim()); }
-				catch(HeaderParseException e)
+				catch(HeaderParseException ex)
 				{
 					throw new DataSourceException("SocketStreamDataSource '"
 						+ host + "': invalid header type '" +  value
-						+ "' - not defined in your database: " + e);
+						+ "' - not defined in your database.", ex);
 				}
 			}
 			else if (name.equals("reconnect"))
@@ -315,31 +244,25 @@ public class SocketStreamDataSource extends DataSourceExec
 			}
 			else if (!name.startsWith("java.") && !name.startsWith("sun."))
 			{
-				Logger.instance().warning(
-					"Unknown data source property '" + name + "' ignored.");
+				log.warn("Unknown data source property '{}' ignored", name);
 			}
 		}
 
-		Logger.instance().log(Logger.E_DEBUG3,
-			"SocketStreamDataSource '" + dbDataSource.getName() + "' host=" + host);
+		log.trace("'{}' host='{}'", dbDataSource.getName(), host);
 
-		Logger.instance().log(Logger.E_DEBUG3,
-			"SocketStreamDataSource '" + dbDataSource.getName() + "' lengthAdj="
-			+ lengthAdj + ", delimiter = '" + AsciiUtil.bin2ascii(delimiter)
-			+ "'");
+		log.trace("'{}' lengthAdj={}, delimiter = '{}'",
+				  dbDataSource.getName(), lengthAdj, AsciiUtil.bin2ascii(delimiter));
 
 		if (endDelimiter != null)
-			Logger.instance().log(Logger.E_DEBUG3,
-				"SocketStreamDataSource '" + dbDataSource.getName() 
-				+ "' endDelimiter = '" + AsciiUtil.bin2ascii(endDelimiter)
-				+ "'");
+		{
+			log.trace("'{}' endDelimiter = '{}'", dbDataSource.getName(), AsciiUtil.bin2ascii(endDelimiter));
+		}
 
 		String s = PropertiesUtil.getIgnoreCase(allProps, "OldChannelRanges");
 		if (s != null)
 		{
 			oldChannelRanges = s.equalsIgnoreCase("true");
-			Logger.instance().log(Logger.E_DEBUG1, 
-				"Will use old channel ranges to determine Transport Medium");
+			log.debug("Will use old channel ranges to determine Transport Medium");
 		}
 
 		openConnection();
@@ -386,9 +309,7 @@ public class SocketStreamDataSource extends DataSourceExec
 	private void openConnection()
 		throws DataSourceException
 	{
-		Logger.instance().log(Logger.E_DEBUG2, 
-			"SocketStreamDataSource.openConnection to host '" + host + 
-			"', port=" + port);
+		log.trace("openConnection to host '{}', port={}", host, port);
 
 		try
 		{
@@ -397,11 +318,10 @@ public class SocketStreamDataSource extends DataSourceExec
 			inputStream = new BufferedInputStream(socket.getInputStream(),
 				16000);
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
 			close();
-			throw new DataSourceException("Cannot connect to Socket Stream at '"
-				+ host + '/' + port + ": " + e.toString());
+			throw new DataSourceException("Cannot connect to Socket Stream at '" + host + ':' + port, ex);
 		}
 
 		huntMode = true;
@@ -410,7 +330,7 @@ public class SocketStreamDataSource extends DataSourceExec
 
 	/**
 	  Reads the next raw message from the data source and returns it.
-	  This DataSource will fill in the message data and attempt to 
+	  This DataSource will fill in the message data and attempt to
 	  associate it with a TransportMedium object.
 
 	  @return the next RawMessage from the data source.
@@ -440,10 +360,9 @@ public class SocketStreamDataSource extends DataSourceExec
 				ret.getPM(GoesPMParser.MESSAGE_TIME).getDateValue());
 			chan = ret.getPM(GoesPMParser.CHANNEL).getIntValue();
 		}
-		catch(NoConversionException e) 
+		catch(NoConversionException ex)
 		{
-			throw new DataSourceException(
-				"Bad header format (this should never happen)");
+			throw new DataSourceException("Bad header format (this should never happen)", ex);
 		}
 
 		// Assume GOES Transport Medium type, retrieve platform
@@ -453,13 +372,12 @@ public class SocketStreamDataSource extends DataSourceExec
 			p = db.platformList.getPlatform(
 				Constants.medium_Goes, addrField, ret.getTimeStamp());
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
 			byte[] data = ret.getData();
-			Logger.instance().log(Logger.E_WARNING,
+			log.atWarn().setCause(ex).log(
 				"Cannot read complete platform record for message '"
-				+ (new String(data, 0, data.length > 19 ? 19 : data.length))
-				+ ": " + e);
+				+ (new String(data, 0, data.length > 19 ? 19 : data.length)));
 			p = null;
 		}
 		if (p != null)
@@ -473,12 +391,17 @@ public class SocketStreamDataSource extends DataSourceExec
 		}
 		else // Couldn't find platform using TM
 		{
-			String msg = 
-				"SocketStream-getRawMessage: No platform matching '" 
+			String msg =
+				"SocketStream-getRawMessage: No platform matching '"
 				+ addrField + "' and channel " + chan;
-			Logger.instance().log(Logger.E_WARNING, msg);
 			if (!getAllowNullPlatform())
+			{
 				throw new UnknownPlatformException(msg);
+			}
+			else
+			{
+				log.warn(msg);
+			}
 		}
 
 		return ret;
@@ -519,11 +442,12 @@ public class SocketStreamDataSource extends DataSourceExec
 							inputStream.read();  // throw away 1 byte
 							skipped++;
 							if (skipped % 100 == 0)
-								Logger.instance().log(Logger.E_WARNING, 
-									"SocketStream '" + dbDataSource.getName() 
-									+ "' skipping lots of data, ("
-									+ skipped + ") bytes -- perhaps "
-									+ "delimiter is not correct?");
+							{
+								log.warn(
+									"'{}' skipping lots of data, ({}) bytes -- perhaps " +
+									"delimiter is not correct?",
+									dbDataSource.getName(), skipped);
+							}
 							break;
 						}
 
@@ -531,17 +455,16 @@ public class SocketStreamDataSource extends DataSourceExec
 					{
 						// Fell through, found complete delimiter.
 						huntMode = false;
-						Logger.instance().log(Logger.E_DEBUG3, 
-							"SocketStream '" + dbDataSource.getName() 
-							+ "' found delimiter.");
+						log.trace("'{}' found delimiter.", dbDataSource.getName());
 						inputStream.mark(100);
 					}
 				}
 			}
 			if (skipped>0)
-				Logger.instance().log(Logger.E_WARNING, 
-					"SocketStream '" + dbDataSource.getName() + "' skipped " 
-					+ skipped + " bytes before delim was found.");
+			{
+				log.warn("'{}' skipped {} bytes before delim was found.",
+						 dbDataSource.getName(), skipped);
+			}
 
 			//
 			// At this point we have read the delimiter
@@ -570,10 +493,9 @@ to end-delim.
 					throw new DataSourceException("Socket closed by remote.");
 				else if (n != headerLength)
 				{
-					Logger.instance().log(Logger.E_DEBUG2,
-					  "SocketStreamDataSource Complete header not ready (only " 
-					  + n + " bytes read, need " + headerLength
-					  + "), will try again later.");
+					log.debug("Complete header not ready (only {} bytes read, need {}" +
+					  		  "), will try again later.",
+							  n ,headerLength);
 					inputStream.reset();
 					try { Thread.sleep(50L); }
 					catch(InterruptedException e) {}
@@ -585,12 +507,12 @@ to end-delim.
 				// header.
 				ret = new RawMessage(header, header.length);
 				try { pmp.parsePerformanceMeasurements(ret); }
-				catch(HeaderParseException e)
+				catch(HeaderParseException ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"SocketStreamDataSource Failed to parse header '"
-						+ new String(header) + "': " + e.toString() 
-						+ " -- skipping to next delimiter.");
+					log.atError()
+					   .setCause(ex)
+					   .log("Failed to parse header '{}' -- skipping to next delimiter.",
+					        new String(header));
 					huntMode = true;
 					inputStream.reset();
 					return null;
@@ -603,14 +525,13 @@ to end-delim.
 				catch(NoConversionException e) {}
 				if (len < 0 || len > 16000)
 				{
-					Logger.instance().log(Logger.E_WARNING, 
-						"SocketStreamDataSource '" + dbDataSource.getName() 
-						+ "', scan found invalid message length, skipping.");
+					log.warn("'{}', scan found invalid message length, skipping.",
+							 dbDataSource.getName());
 					huntMode = true;
 					inputStream.reset();
 					return null;
 				}
-	
+
 				len += lengthAdj;
 				ret.data = ArrayUtil.resize(ret.data, header.length + len);
 				n = inputStream.read(ret.data, header.length, len);
@@ -618,43 +539,37 @@ to end-delim.
 			else // headerlength <=0, means we have to use endDelimiter
 			{
 				int len = readToDelimiter(endDelimiter, msgbuf);
-				Logger.instance().log(Logger.E_DEBUG3,
-					"SocketStreamDataSource '" + dbDataSource.getName() 
-					+ "' read " + len + " bytes & then got endDelimiter.");
+				log.trace("'{}' read {} bytes & then got endDelimiter.",
+						  dbDataSource.getName(), len);
 
 				// Always return to hunt mode. We need to find next start Delim.
 				huntMode = true;
 
 				if (len <= 0)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"SocketStreamDataSource Failed frame message after "
-						+ msgbuf.length 
-						+ " bytes -- skipping to next delimiter.");
+					log.error("Failed frame message after {} bytes" +
+					          " -- skipping to next delimiter.",
+							  msgbuf.length);
 					inputStream.reset();
 					return null;
 				}
 				ret = new RawMessage(msgbuf, len);
 				try { pmp.parsePerformanceMeasurements(ret); }
-				catch(HeaderParseException e)
+				catch(HeaderParseException ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"SocketStreamDataSource Failed to parse header: "
-						+ e.toString() + " -- skipping to next delimiter.");
+					log.atError().setCause(ex).log("Failed to parse header: -- skipping to next delimiter.");
 					inputStream.reset();
 					return null;
 				}
 			}
 
-			String addrField = 
+			String addrField =
 				ret.getPM(GoesPMParser.DCP_ADDRESS).getStringValue();
 			if (myNetworkList.size() > 0
 			 && myNetworkList.getEntry(addrField) == null)
 			{
-				Logger.instance().log(Logger.E_DEBUG2, 
-					"SocketStreamDataSource '" + dbDataSource.getName() 
-					+ "', skipping message from '" + addrField
-					+ "' - not in network lists.");
+				log.trace("'{}'', skipping message from '{}' - not in network lists.",
+						  dbDataSource.getName(), addrField);
 				return null;
 			}
 
@@ -663,11 +578,11 @@ to end-delim.
 
 			return ret;
 		}
-		catch(IOException e)
+		catch(IOException ex)
 		{
 			if (reconnect)
-				openConnection();	
-			throw new DataSourceException("Error reading socket: " + e);
+				openConnection();
+			throw new DataSourceException("Error reading socket.", ex);
 		}
 
 	}
@@ -683,7 +598,7 @@ to end-delim.
 	{
 		boolean delimFound = false;
 		byte[] delimTest = new byte[delim.length];
-		
+
 		int buflen = 0;
 		int delimIdx = 0;
 		try
@@ -719,27 +634,23 @@ to end-delim.
 							buflen++;
 							break;
 						}
-	
+
 					if (i == delim.length)
 					{
 						// Fell through, found complete delimiter.
 						delimFound = true;
-						Logger.instance().log(Logger.E_DEBUG3, 
-							"SocketStream '" + dbDataSource.getName() 
-							+ "' found delimiter.");
+						log.trace("'{}' found delimiter.", dbDataSource.getName());
 					}
 				}
 			}
 		}
-		catch(IOException e)
+		catch(IOException ex)
 		{
-			throw new DataSourceException(
-				"SocketStreamDataSource '" + dbDataSource.getName() 
-				+ "': " + e);
+			throw new DataSourceException("Error processing data for '" + dbDataSource.getName() + "'", ex);
 		}
 		return buflen;
 	}
-	
+
 	@Override
 	public PropertySpec[] getSupportedProps()
 	{

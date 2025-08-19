@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.datasource;
 
 import java.io.BufferedInputStream;
@@ -8,10 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,6 +37,9 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.DataSource;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
@@ -33,7 +49,6 @@ import decodes.db.Platform;
 import decodes.util.PropertySpec;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
 
@@ -52,6 +67,7 @@ import ilex.var.Variable;
  */
 public class WebDirectoryDataSource extends DataSourceExec
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public final String module = "WebDirectory";
 	
 	private String directoryUrl = null;
@@ -130,7 +146,7 @@ public class WebDirectoryDataSource extends DataSourceExec
 			catch(Exception ex)
 			{
 				throw new DataSourceException(module + ": bad urlTimePos property '" + s 
-					+ "' (must be integer)");
+					+ "' (must be integer)", ex);
 			}
 		}
 		if ((s = PropertiesUtil.getIgnoreCase(rsProps, "urlIdPos")) != null)
@@ -139,7 +155,7 @@ public class WebDirectoryDataSource extends DataSourceExec
 			catch(Exception ex)
 			{
 				throw new DataSourceException(module + ": bad urlIdPos property '" + s 
-					+ "' (must be integer)");
+					+ "' (must be integer)", ex);
 			}
 		}
 		if ((s = PropertiesUtil.getIgnoreCase(rsProps, "urlTimeFormat")) != null)
@@ -157,7 +173,7 @@ public class WebDirectoryDataSource extends DataSourceExec
 			try { dSince = IDateFormat.parse(since); }
 			catch(Exception ex)
 			{
-				throw new DataSourceException(module + ": bad since time '" + since + "': " + ex);
+				throw new DataSourceException(module + ": bad since time '" + since + "'.", ex);
 			}
 		}
 		else // default to last 24 hours
@@ -169,21 +185,11 @@ public class WebDirectoryDataSource extends DataSourceExec
 			try { dUntil = IDateFormat.parse(until); }
 			catch(Exception ex)
 			{
-				throw new DataSourceException(module + ": bad until time '" + until + "': " + ex);
+				throw new DataSourceException(module + ": bad until time '" + until + "'.", ex);
 			}
 		}
 		else // default to 'now'
 			dUntil = new Date();
-		
-//		if ((s = PropertiesUtil.getIgnoreCase(rsProps, "urlDirectoryInterval")) != null)
-//		{
-//			try { urlDirectoryInterval = Integer.parseInt(s.trim()); }
-//			catch(Exception ex)
-//			{
-//				throw new DataSourceException(module + ": bad urlDirectoryInterval property '" + s 
-//					+ "' (must be integer)");
-//			}
-//		}
 
 		nextDirectoryCal.setTimeZone(urlTimeZone);
 		fileTimeCal.setTimeZone(urlTimeZone);
@@ -198,8 +204,7 @@ public class WebDirectoryDataSource extends DataSourceExec
 		// Subtract an hour because readNextDirectory increments before reading.
 		nextDirectoryCal.add(Calendar.HOUR_OF_DAY, -1);
 		
-		Logger.instance().debug1(module + " since=" + debugSdf.format(dSince) + ", next=" 
-			+ debugSdf.format(nextDirectoryCal.getTime()));
+		log.debug("since={}, next={}" , dSince, nextDirectoryCal.getTime());
 		
 		if (networkLists != null)
 			for(NetworkList nl : networkLists)
@@ -219,21 +224,19 @@ public class WebDirectoryDataSource extends DataSourceExec
 		String filename;
 		while ((filename = getNextFile()) != null)
 		{
-			Logger.instance().debug1(module + " filename '" + filename + "'");
+			log.debug("filename '{}'", filename);
 			
 			// Parse the ID and date/time from the file name
 			String fields[] = filename.split(urlFieldDelimiter);
 			if (fields == null || fields.length < urlIdPos)
 			{
-				Logger.instance().warning(module + " bad filename in directory '" + filename
-					+ "' -- no id field in position " + urlIdPos);
+				log.warn("bad filename in directory '{}' -- no id field in position {}", filename, urlIdPos);
 				continue;
 			}
 			String id = fields[urlIdPos - 1];
 			if (fields == null || fields.length < urlTimePos)
 			{
-				Logger.instance().warning(module + " bad filename in directory '" + filename
-					+ "' -- no time field in position " + urlTimePos);
+				log.warn("Bad filename in directory '{}' -- no time field in position {}", filename, urlTimePos);
 				continue;
 			}
 			Date fileTime = null;
@@ -241,10 +244,12 @@ public class WebDirectoryDataSource extends DataSourceExec
 			{
 				fileTime = fnSdf.parse(fields[urlTimePos-1]);
 			}
-			catch (ParseException e)
+			catch (ParseException ex)
 			{
-				Logger.instance().warning(module + " filename '" + filename 
-					+ "' has unparsable time in position " + urlTimePos);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Filename '{}' has unparsable time in position ",
+					    filename, urlTimePos);
 				continue;
 			}
 			
@@ -256,8 +261,9 @@ public class WebDirectoryDataSource extends DataSourceExec
 			// then subtract a day to the previous day.
 			if (fileTimeCal.get(Calendar.HOUR_OF_DAY) > nextDirectoryCal.get(Calendar.HOUR_OF_DAY))
 				fileTimeCal.add(Calendar.DAY_OF_YEAR, -1);
-Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", corrected fileTime=" 
-+ debugSdf.format(fileTimeCal.getTime()));
+
+			log.debug("\tparsed fileTime={}, corrected fileTime={}", fileTime, fileTimeCal.getTime()); 
+
 			fileTime = fileTimeCal.getTime();
 			
 			// Check to see if this ID is in one of my network lists if not, continue;
@@ -272,8 +278,7 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 				}
 			if (!found)
 			{
-				Logger.instance().debug1(module + " filename '" + filename 
-					+ "' skipped because ID '" + id + "' is not in network lists.");
+				log.debug("Filename '{}' skipped because ID '{}' is not in network lists.", filename, id);
 				continue;
 			}
 			
@@ -298,8 +303,7 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 				{
 					if (!found)
 					{
-						Logger.instance().debug1(module + " url '" + fileUrl 
-							+ "' resulted in an empty file -- skipped.");
+						log.debug("Url '{}' resulted in an empty file -- skipped.", fileUrl);
 						continue;
 					}
 				}
@@ -327,18 +331,17 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 			}
 			catch (MalformedURLException ex)
 			{
-				Logger.instance().warning(module + " bad URL '" + fileUrl + "': " + ex);
+				log.atWarn().setCause(ex).log("bad URL '{}'", fileUrl);
 				continue;
 			}
 			catch (IOException ex)
 			{
-				Logger.instance().warning(module + " Error reading URL '" + fileUrl + "': " + ex);
+				log.atWarn().setCause(ex).log("Error reading URL '{}'", fileUrl);
 				continue;
 			}
 			catch (DatabaseException ex)
 			{
-				Logger.instance().warning(module + " Error looking up platform for TM " 
-						+ mediumType + "':" + id + ": " + ex);
+				log.atWarn().setCause(ex).log("Error looking up platform for TM '{}:{}'", mediumType, id);
 				continue;
 			}
 			catch (UnknownPlatformException ex)
@@ -347,8 +350,7 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 			}
 			catch (Exception ex)
 			{
-				Logger.instance().warning(module + " Unexpected exception reading URL '" 
-						+ fileUrl + "':" + ex);
+				log.atWarn().setCause(ex).log(" Unexpected exception reading URL '{}'", fileUrl);
 				continue;
 			}
 			finally
@@ -395,14 +397,14 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 		if (nextDirectoryTime.after(dUntil))
 			return false;
 		
-		Logger.instance().debug1(module + " reading directory for time " + debugSdf.format(nextDirectoryTime));
+		log.debug("Reading directory for time {}", nextDirectoryTime);
 		
 		Properties urlProps = new Properties();
 		urlProps.setProperty("TZ", urlTimeZone.getID());
 		currentDirUrl = EnvExpander.expand(directoryUrl, urlProps, nextDirectoryTime);
 		try
 		{
-			Logger.instance().debug1(module + " reading URL '" + currentDirUrl + "'");
+			log.debug("Reading URL '{}'", currentDirUrl);
 			URL dirUrl = new URL(currentDirUrl);
 			
 			try (InputStream input = dirUrl.openStream();
@@ -423,27 +425,22 @@ Logger.instance().debug1("\tparsed fileTime=" + debugSdf.format(fileTime) + ", c
 		}
 		catch(MalformedURLException ex)
 		{
-			Logger.instance().warning(module + " Bad URL '" + currentDirUrl + "': " + ex);
+			log.atWarn().setCause(ex).log("Bad URL '{}", currentDirUrl);
 			return false;
 		}
 		catch(FileNotFoundException ex)
 		{
-			Logger.instance().warning(module + " FileNotFound reading URL '" + currentDirUrl + "': " + ex);
+			log.atWarn().setCause(ex).log("FileNotFound reading URL '{}'", currentDirUrl);
 			// Sometimes the depot skips an hour. Keep going unless we're past the until time.
 			return nextDirectoryTime.before(dUntil);
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning(module + " Error reading URL '" + currentDirUrl + "': " + ex);
+			log.atWarn().setCause(ex).log("Error reading URL '{}'", currentDirUrl);
 		}
 		catch(Exception ex)
 		{
-			String msg = module + " Unexpected exception reading URL '" + currentDirUrl + "': " + ex;
-			Logger.instance().warning(msg);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
-			
+			log.atWarn().setCause(ex).log("Unexpected exception reading URL '{}'", currentDirUrl);
 		}
 		
 		return false;
