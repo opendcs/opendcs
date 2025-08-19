@@ -175,7 +175,7 @@ public class GoesPMParser extends PMParser
 		{
 			msg.setPM(MOD_INDEX, new Variable((char)data[24]));
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
 			log.atTrace().setCause(ex).log("Unable to set MOD INDEX.");
 		}
@@ -201,7 +201,7 @@ public class GoesPMParser extends PMParser
 		}
 		catch(Exception ex)
 		{
-			log.atTrace().setCause(ex).log("Unable to set UPLINK CARRIER.")
+			log.atTrace().setCause(ex).log("Unable to set UPLINK CARRIER.");
 		}
 		if (data.length > 37)
 		{

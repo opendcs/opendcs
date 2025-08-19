@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.datasource;
 
 import java.text.ParseException;
@@ -5,7 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.Properties;
 import java.util.Vector;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.Iterator;
 import java.util.Enumeration;
@@ -16,7 +32,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.ParityCheck;
 import ilex.util.PropertiesUtil;
 import ilex.util.AsciiUtil;
@@ -69,7 +84,7 @@ import decodes.util.PropertySpec;
 */
 public abstract class StreamDataSource extends DataSourceExec
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(StreamDataSource.class);
+    private static Logger log = OpenDcsLoggerFactory.getLogger();
     /** Some file data sources can have quite long messages */
     public static final int MAX_MESSAGE_LENGTH = 200000;
 
@@ -212,9 +227,7 @@ public abstract class StreamDataSource extends DataSourceExec
     public void processDataSource()
         throws InvalidDatabaseException
     {
-        log(Logger.E_DEBUG3,
-            "StreamDataSource.processDataSource '" + getName()
-            + "', args='" +dbDataSource.getDataSourceArg()+"'");
+        log.trace("processDataSource '{}', args='{}'", getName(), dbDataSource.getDataSourceArg());
     }
 
 
@@ -243,8 +256,7 @@ public abstract class StreamDataSource extends DataSourceExec
         Vector<NetworkList> networkLists)
         throws DataSourceException
     {
-        log(Logger.E_DEBUG1,
-            "StreamDataSource.init() for '" + getName() + "'");
+        log.debug("init() for '{}'", getName());
 
         // Build a complete property set. Routing Spec props override DS props.
         Properties allProps = routingSpecProps;
@@ -271,12 +283,12 @@ public abstract class StreamDataSource extends DataSourceExec
             if (name.equals("lengthadj"))
             {
                 try { lengthAdj = Integer.parseInt(value.trim()); }
-                catch(NumberFormatException e)
+                catch(NumberFormatException ex)
                 {
                     throw new DataSourceException("StreamDataSource '"
                         + getName()
                         + "': invalid length adjustment '" +  value
-                        + "' - must be a number");
+                        + "' - must be a number", ex);
                 }
             }
             else if (name.equals("delimiter") || name.equals("before"))
@@ -287,12 +299,12 @@ public abstract class StreamDataSource extends DataSourceExec
             {
                 mediumType = value.trim();
                 try { pmp = PMParser.getPMParser(mediumType); }
-                catch(HeaderParseException e)
+                catch(HeaderParseException ex)
                 {
                     throw new DataSourceException("StreamDataSource '"
                         + getName()
                         + "': invalid header type '" + mediumType
-                        + "' - not defined in your database: " + e);
+                        + "' - not defined in your database",ex);
                 }
             }
             else if (name.equals("oldchannelranges"))
@@ -300,9 +312,7 @@ public abstract class StreamDataSource extends DataSourceExec
                 char c = value.length() > 0 ? value.charAt(0) : 'f';
                 oldChannelRanges =
                     c == 'y' || c == 'Y' || c == 't' || c == 'T';
-                log(Logger.E_DEBUG1,
-                    "Stream Data Source '" + getName() + "' "
-                    + "oldChannelRanges=" + oldChannelRanges);
+                log.debug("Stream Data Source '{}' oldChannelRanges={}", getName(), oldChannelRanges);
             }
             else if (name.equals("onemessagefile"))
                 oneMessageFile = TextUtil.str2boolean(value.trim());
@@ -339,15 +349,14 @@ public abstract class StreamDataSource extends DataSourceExec
                 name.equals("donedir") ||
                 name.equals("dbno"))  )
                 {
-//                    Logger.instance().debug2(
-//                    "Stream Data Source '" + dbDataSource.name + "' "
-//                    + "Unknown data source property '" + name + "' ignored.");
+                    log.trace("'{}' Unknown data source property '{}' ignored.", dbDataSource.getName(), name);            
                 }
             }
         }
 
-        log(Logger.E_DEBUG3,
-            "Stream Data Source '" + getName() + "' "
+        if( log.isTraceEnabled())
+        {
+            log.trace("Stream Data Source '" + getName() + "' "
             + "lengthAdj=" + lengthAdj + ", "
             + "before = '" +
                 (startDelimiter != null ? AsciiUtil.bin2ascii(startDelimiter)
@@ -358,7 +367,7 @@ public abstract class StreamDataSource extends DataSourceExec
             + "', shefMode=" + shefMode
             + ", parityCheck=" + parityCheck
             + ", header type=" + (pmp==null?"none":pmp.getHeaderType()));
-
+        }
         // Construct aggregate network list.
         myNetworkList = new NetworkList();
         if (networkLists != null)
@@ -424,7 +433,7 @@ public abstract class StreamDataSource extends DataSourceExec
             }
             catch(UnknownPlatformException ex)
             {
-                log(Logger.E_WARNING, "Message skipped: " + ex);
+                log.atWarn().setCause(ex).log("Message skipped.");
                 ret = null;
             }
         } while(ret == null);
@@ -437,7 +446,7 @@ public abstract class StreamDataSource extends DataSourceExec
             parityCheck.equals("strip") ? 's' : 'n';
         if (pc != 'n')
         {
-            log(Logger.E_DEBUG3, "StreamDataSource parityCheck: " + parityCheck);
+            log.trace("parityCheck: {}", parityCheck);
             for(int idx = ret.getHeaderLength(); idx < ret.data.length; idx++)
             {
                 int c = ret.data[idx] & 0xff;
@@ -483,7 +492,7 @@ public abstract class StreamDataSource extends DataSourceExec
                     catch(ParseException ex)
                     {
                         throw new DataSourceException(
-                            "Bad fileName format (timestamp in the file name could not be parsed)");
+                            "Bad fileName format (timestamp in the file name could not be parsed)", ex);
                     }
                 }
                 else
@@ -495,10 +504,10 @@ public abstract class StreamDataSource extends DataSourceExec
                 chan = v.getIntValue();
 
         }
-        catch(NoConversionException e)
+        catch(NoConversionException ex)
         {
             throw new DataSourceException(
-                "Bad header format (this should never happen)");
+                "Bad header format (this should never happen)",ex);
         }
 
         Platform p = null;
@@ -536,9 +545,14 @@ public abstract class StreamDataSource extends DataSourceExec
                 + " with medium type '" + pmp.getMediumType() + "'";
             if (chan != Constants.undefinedIntKey)
                 msg += " and channel " + chan;
-            log(Logger.E_WARNING, msg);
             if (!getAllowNullPlatform())
+            {
                 throw new UnknownPlatformException(msg);
+            }
+            else
+            {
+                log.warn(msg);
+            }
         }
 
     }
@@ -550,7 +564,7 @@ public abstract class StreamDataSource extends DataSourceExec
     private RawMessage scanForMessage()
         throws DataSourceException
     {
-Logger.instance().debug3("scanForMessage oneMessageFile=" + oneMessageFile + ", mediumId=" + mediumId);
+        log.trace("scanForMessage oneMessageFile={}, mediumId={}", oneMessageFile, mediumId);
         if (oneMessageFile)
             return getEntireFileAsMessage();
         try
@@ -560,7 +574,6 @@ Logger.instance().debug3("scanForMessage oneMessageFile=" + oneMessageFile + ", 
             msgbufLen = 0;
             while(huntMode)
                 checkForMessageStart();
-//Logger.instance().info("StreamDS.scanFM - Have start, shefMode=" + shefMode);
 
 
             if (shefMode)
@@ -574,24 +587,22 @@ Logger.instance().debug3("scanForMessage oneMessageFile=" + oneMessageFile + ", 
                     // the scanner found the start of the _next_ msg. the prev msg type
                     // gets associated with this message.
                     ret.setPM(ShefPMParser.PM_MESSAGE_TYPE, new Variable(prevShefMsgType));
-//Logger.instance().info("StreamDS.scanFM - Have complete SHEF message with buflen=" + msgbufLen
-//+ " '" + new String(msgbuf, 0, msgbufLen) + "'");
                     try { pmp.parsePerformanceMeasurements(ret); }
-                    catch(HeaderParseException e)
+                    catch(HeaderParseException ex)
                     {
-                        log(Logger.E_WARNING,
-                            "StreamDataSource (shefMode) Failed to parse header '"
-                            + new String(msgbuf, 0, 10) + "': " + e.toString()
-                            + " -- skipping to next delimiter.");
+                        log.atWarn()
+                           .setCause(ex)
+                           .log("StreamDataSource (shefMode) Failed to parse header '{}' " +
+                                " -- skipping to next delimiter.",
+                                new String(msgbuf, 0, 10));
                         huntMode = true;
                         return null;
                     }
-//Logger.instance().info("StreamDS.scanFM - returning raw message.");
                     return ret;
                 }
                 else // we just got 1st delimiter in the file, need to scan for the next one.
                 {
-log(Logger.E_DEBUG1, "StreamDS.scanFM - got start of 1st shef message. Will scan for next.");
+                    log.trace("scanFM - got start of 1st shef message. Will scan for next.");
                     startOfStream = false;
                     return null;
                 }
@@ -608,7 +619,7 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - got start of 1st shef message. Will scan
 
             int headerLength = pmp.getHeaderLength();
 
-log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + pmp.containsExplicitLength());
+            log.trace("scanFM - Have start, containsExplicitLength={}", pmp.containsExplicitLength());
             if (pmp.containsExplicitLength())
             {
                 inputStream.mark(headerLength + 64);
@@ -620,10 +631,9 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + p
                 {
                     if (!tryAgainOnEOF())
                         throw new DataSourceEndException("Stream EOF.");
-                    log(Logger.E_DEBUG2,
-                      "StreamDataSource Complete header not ready (only "
-                      + n + " bytes read, need " + headerLength
-                      + "), will try again later.");
+                    log.trace("StreamDataSource Complete header not ready (only {} bytes read, need {}" +
+                              "), will try again later.",
+                              n, headerLength);
                     if (!tryAgainOnEOF())
                         throw new DataSourceEndException("Stream EOF.");
 
@@ -646,12 +656,12 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + p
                 if (savedFileName != null)
                     ret.setPM(GoesPMParser.FILE_NAME, new Variable(savedFileName));
                 try { pmp.parsePerformanceMeasurements(ret); }
-                catch(HeaderParseException e)
+                catch(HeaderParseException ex)
                 {
-                    log(Logger.E_WARNING,
-                        "StreamDataSource Failed to parse header '"
-                        + new String(header) + "': " + e.getMessage()
-                        + " -- skipping to next delimiter.");
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Failed to parse header '{}' -- skipping to next delimiter.",
+                            new String(header));
                     huntMode = true;
 
                     inputStream.reset();
@@ -664,9 +674,7 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + p
                 catch(NoConversionException e) {}
                 if (len < 0 || len > MAX_MESSAGE_LENGTH)
                 {
-                    log(Logger.E_WARNING,
-                        "StreamDataSource '" + getName()
-                        + "', scan found invalid message length, skipping.");
+                    log.warn("'{}', scan found invalid message length, skipping.", getName());
                     huntMode = true;
 
                     inputStream.reset();
@@ -676,8 +684,7 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + p
                 len += lengthAdj;
                 if (len < 0)
                 {
-                    log(Logger.E_WARNING, "len=" + len + ", lengthAdj=" + lengthAdj
-                        + ", headerlen=" + header.length + ", file skipped.");
+                    log.warn("len={}, lengthAdj={}, headerlen={}, file skipped.", len, lengthAdj, header.length);
                     throw new DataSourceEndException("Negative msg length, file skipped.");
                 }
                 ret.data = ArrayUtil.resize(ret.data, header.length + len);
@@ -698,10 +705,8 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + p
                             throw new DataSourceEndException("Stream EOF.");
                         if (System.currentTimeMillis() - start > 5000L)
                         {
-                            Logger.instance().log(Logger.E_WARNING,
-                                "StreamDataSource '" + getName()
-                                + "', Failed to read all msg data (expected "
-                                + len + " bytes, got " + n + ") -- skipped.");
+                            log.warn("'{}', Failed to read all msg data (expected {} bytes, got {}) -- skipped.",
+                                     getName(), len, n);
                             huntMode = true;
                             return null;
                         }
@@ -726,25 +731,19 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + p
             }
             else // No explicit length in header: we have to use endDelimiter.
             {
-//log(Logger.E_DEBUG1,"StreamDS.scanFM no explicit length, hunt for end delim '"
-//+ AsciiUtil.bin2ascii(endDelimiter) + "'");
                 int len = 0;
                 if (endDelimiter != null && endDelimiter.length > 0)
                 {
                     len = readToDelimiter(endDelimiter, msgbuf, false);
                     justGotEndDelimiter = true;
-                    log(Logger.E_DEBUG3,
-                        "StreamDataSource '" + getName()
-                        + "' read " + len + " bytes & then got endDelimiter.");
+                    log.trace("'{}' read {} bytes & then got endDelimiter.", getName(), len);
                 }
                 else // No end delim. Scan to next start delim, then push it back.
                 {
                     len = readToDelimiter(startDelimiter, msgbuf, true);
                     justGotStartDelim = true;
 
-                    log(Logger.E_DEBUG3,
-                        "StreamDataSource '" + getName()
-                        + "' read " + len + " bytes & then got startDelimiter.");
+                    log.trace("'{}' read {} bytes & then got startDelimiter.", getName(), len);
                 }
 
                 // Always return to hunt mode. We need to find next start Delim.
@@ -752,11 +751,7 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + p
 
                 if (len <= 0)
                 {
-                    log(Logger.E_FAILURE,
-                        "StreamDataSource Failed frame message after "
-                        + msgbuf.length
-                        + " bytes -- skipping to next delimiter.");
-//                    inputStream.reset();
+                    log.error("Failed frame message after {} bytes -- skipping to next delimiter.", msgbuf.length);
                     return null;
                 }
                 ret = new RawMessage(msgbuf, len);
@@ -767,18 +762,14 @@ log(Logger.E_DEBUG1, "StreamDS.scanFM - Have start, containsExplicitLength=" + p
                 if (savedFileName != null)
                 {
                     ret.setPM(GoesPMParser.FILE_NAME, new Variable(savedFileName));
-log(Logger.E_DEBUG3, "StreamDataSource added PM '" + GoesPMParser.FILE_NAME
-+ "' with value '" + ret.getPM(GoesPMParser.FILE_NAME) + "'");
+                    log.trace("added PM '{}' with value '{}'",
+                              GoesPMParser.FILE_NAME, ret.getPM(GoesPMParser.FILE_NAME) + "'");
                 }
 
                 try { pmp.parsePerformanceMeasurements(ret); }
-                catch(HeaderParseException e)
+                catch(HeaderParseException ex)
                 {
-                    Logger.instance().log(Logger.E_FAILURE,
-                        "StreamDataSource Failed to parse header: "
-                        + e.toString() + " -- skipping to next delimiter.");
-log(Logger.E_DEBUG3, "StreamDS reset 7");
-//                    inputStream.reset();
+                    log.atError().setCause(ex).log("Failed to parse header -- skipping to next delimiter.");
                     return null;
                 }
             }
@@ -790,10 +781,8 @@ log(Logger.E_DEBUG3, "StreamDS reset 7");
                 if (myNetworkList.size() > 0
                  && myNetworkList.getEntry(addr) == null)
                 {
-                    log(Logger.E_DEBUG2,
-                        "StreamDataSource '" + getName()
-                        + "', skipping message from '" + addr
-                        + "' - not in network lists.");
+                    log.trace("StreamDataSource '{}', skipping message from '{}' - not in network lists.",
+                              getName(), addr);
                     return null;
                 }
             }
@@ -811,10 +800,7 @@ log(Logger.E_DEBUG3, "StreamDS reset 7");
                     close();
                 inputStream = open();
             }
-            String msg = "StreamDataSource '" + getName()
-                + "', IO Error: " + ex;
-            log(Logger.E_WARNING, msg);
-            throw new DataSourceException(msg);
+            throw new DataSourceException("IO Error: "+getName(),ex);
         }
     }
 
@@ -822,9 +808,10 @@ log(Logger.E_DEBUG3, "StreamDS reset 7");
     protected void checkForMessageStart()
         throws IOException, DataSourceException
     {
-log(Logger.E_DEBUG3, "checkForMessageStart() shefMode=" + shefMode + ", startDelim="
-+ (startDelimiter==null?"null":AsciiUtil.bin2ascii(startDelimiter))
-+ ", startDelimLength=" + (startDelimiter==null?0:startDelimiter.length));
+        log.trace("checkForMessageStart() shefMode={}, startDelim={}, startDelimLength={}",
+                  shefMode,
+                  (startDelimiter==null?"null":AsciiUtil.bin2ascii(startDelimiter)),
+                  (startDelimiter==null?0:startDelimiter.length));
         if (shefMode)
         {
             checkForShefStart();
@@ -838,7 +825,7 @@ log(Logger.E_DEBUG3, "checkForMessageStart() shefMode=" + shefMode + ", startDel
             // Assume we're in sync if I'm at the start or just read end delim.
             if (startOfStream || justGotEndDelimiter)
             {
-                log(Logger.E_DEBUG3, "StreamDS - No start delim, assuming sync.");
+                log.trace("No start delim, assuming sync.");
                 huntMode = false;
                 return;
             }
@@ -853,8 +840,7 @@ log(Logger.E_DEBUG3, "checkForMessageStart() shefMode=" + shefMode + ", startDel
             }
             else
             {
-                log(Logger.E_DEBUG3,
-                    "No delimiters, assuming sync");
+                log.trace("No delimiters, assuming sync");
                 huntMode = false;
                 return;
             }
@@ -867,7 +853,7 @@ log(Logger.E_DEBUG3, "checkForMessageStart() shefMode=" + shefMode + ", startDel
             return;
         }
 
-log(Logger.E_DEBUG3, "Hunting for start delimiter...");
+        log.trace("Hunting for start delimiter...");
 
         inputStream.mark(64);
         byte[] delimTest = new byte[startDelimiter.length];
@@ -887,7 +873,6 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
         }
         else // read correct # of bytes
         {
-//Logger.instance().info("delimtest='" + AsciiUtil.bin2ascii(delimTest) + "'");
             int i;
             for(i=0; i<startDelimiter.length; i++)
                 if (startDelimiter[i] != delimTest[i])
@@ -897,11 +882,8 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
 
                     skipped++;
                     if (skipped % 100 == 0)
-                        log(Logger.E_WARNING,
-                            "Stream '" + getName()
-                            + "' skipping lots of data, ("
-                            + skipped + ") bytes -- perhaps "
-                            + "delimiter is not correct?");
+                        log.warn("'{}' skipping lots of data, ({}) bytes -- perhaps delimiter is not correct?",
+                                 getName(), skipped);
                     break;
                 }
 
@@ -909,16 +891,18 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
             {
                 // Fell through, found complete delimiter.
                 huntMode = false;
-                log(Logger.E_DEBUG3,
-                    "Stream '" + getName() + "' found delimiter.");
+                log.trace("'{}' found delimiter.", getName());
                 inputStream.mark(100);
             }
         }
-        if (skipped>0)
-            log(
-                skipped > 4 ? Logger.E_WARNING : Logger.E_DEBUG1,
-                "Stream '" + getName() + "' "
-                + skipped + " bytes skipped. huntMode=" + huntMode);
+        if (skipped > 4)
+        {
+            log.warn("'{}' {} bytes skipped. huntMode={}", getName(), skipped, huntMode);
+        }
+        else if (skipped > 0)
+        {
+            log.debug("'{}' {} bytes skipped. huntMode={}", getName(), skipped, huntMode);
+        }
 
     }
 
@@ -927,7 +911,7 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
     {
         // Delimiter can be one of: \n.E<sp>  \n.ER<sp>  \n.A<sp>  \n.AR<sp>
 
-        log(Logger.E_DEBUG3, "Hunting for start of SHEF message...");
+        log.trace("Hunting for start of SHEF message...");
 
         inputStream.mark(10);
         byte[] delimTest = new byte[5];   // Max length of delimiter is 5 bytes.
@@ -937,7 +921,7 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
             throw new DataSourceEndException("Stream EOF.");
         else if (n < 5)
         {
-            log(Logger.E_DEBUG3, "Stream only returned " + n + " bytes.");
+            log.trace("Stream only returned {} bytes.", n);
             for(int i=0; i<n; i++)
                 msgbuf[msgbufLen++] = delimTest[i];
             huntMode = false;
@@ -945,7 +929,7 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
         }
         else // got 5 bytes. See if it matches a delimiter.
         {
-            log(Logger.E_DEBUG3, "1st byte read '" + (char)delimTest[0] + "'");
+            log.trace("1st byte read '{}'", (char)delimTest[0]);
             int delimNum = 0;
             for(; delimNum < shefDelims.length; delimNum++)
             {
@@ -959,7 +943,7 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
             }
             if (delimNum < shefDelims.length)
             {
-                log(Logger.E_DEBUG3, "found delim number " + delimNum);
+                log.trace("found delim number {}", delimNum);
                 // Found a valid delimiter
                 prevShefMsgType = shefMsgType;
                 shefMsgType = shefDelims[delimNum].charAt(2); // E or A
@@ -986,7 +970,7 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
 
 
     /**
-     * Reads to next occurence of delimiter and returns number of chars read.
+     * Reads to next occurrence of delimiter and returns number of chars read.
      * If buf == null then data is discarded.
      * @param delim the delimiter to look for
      * @param buf the buffer to place data in
@@ -1003,7 +987,6 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
         {
             while(!delimFound)
             {
-                //inputStream.mark(delim.length+1);
                 inputStream.mark(80);
                 int n = inputStream.read(delimTest, 0, delim.length);
 
@@ -1054,23 +1037,18 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
                     {
                         // Fell through, found complete delimiter.
                         delimFound = true;
-                        log(Logger.E_DEBUG3,
-                            "Stream '" + getName()
-                            + "' found delimiter '" + AsciiUtil.bin2ascii(delim) + "'");
+                        log.trace("Stream '{}' found delimiter '{}'", getName(), AsciiUtil.bin2ascii(delim));
                     }
                 }
             }
         }
-        catch(IOException e)
+        catch(IOException ex)
         {
-            String msg = "StreamDataSource.readToDelimiter '" + getName() + "': " + e;
-            log(Logger.E_WARNING, msg);
-            throw new DataSourceException(msg);
+            throw new DataSourceException("Unable to read stream for data source '" + getName() + "'", ex);
         }
-        log(Logger.E_DEBUG3, "StreamDS.readToDelimiter, returning buflen=" + buflen);
+        log.trace("StreamDS.readToDelimiter, returning buflen={}", buflen);
         if (buf != null)
-            log(Logger.E_DEBUG3, "StreamDS buf='" + new String(buf, 0, buflen) + "'");
-//try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
+            log.trace("StreamDS buf='{}'", new String(buf, 0, buflen));
         return buflen;
     }
 
@@ -1115,8 +1093,7 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
         }
         catch(IOException ex)
         {
-            throw new DataSourceException(
-                "StreamDataSource '" + getName() + "': " + ex);
+            throw new DataSourceException("StreamDataSource '" + getName()+"'", ex);
         }
 
         RawMessage ret = new RawMessage(msgbuf, msgbuf.length);
@@ -1124,7 +1101,7 @@ log(Logger.E_DEBUG3, "Hunting for start delimiter...");
         // If mediumId supplied as property, set before parsing header.
         if (mediumId != null && mediumType != null)
         {
-Logger.instance().debug1("oneMessageFile=true, mediumId define as '" + mediumId + "'");
+            log.debug("oneMessageFile=true, mediumId define as '{}'", mediumId);
             ret.setMediumId(mediumId);
             ret.setPM(GoesPMParser.DCP_ADDRESS, new Variable(mediumId));
         }
@@ -1140,11 +1117,9 @@ Logger.instance().debug1("oneMessageFile=true, mediumId define as '" + mediumId 
                 pmp.parsePerformanceMeasurements(ret);
             }
         }
-        catch(HeaderParseException e)
+        catch(HeaderParseException ex)
         {
-            log(Logger.E_FAILURE,
-                "StreamDataSource Failed to parse header: "
-                + e.toString() + " -- message file is invalid.");
+            log.atError().setCause(ex).log("Failed to parse header: -- message file is invalid.");
             return null;
         }
         return ret;
