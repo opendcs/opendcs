@@ -1,12 +1,17 @@
 /*
-*  $Id$
-*  
-*  Open Source software
-*  
-*  $Log$
-*  Revision 1.8  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.db;
 
@@ -68,15 +73,11 @@ public class SiteList extends DatabaseObject
 			if (newSite.getId() != Constants.undefinedId
 			 && newSite.getId() == existingSite.getId())
 			{
-//Logger.instance().debug3("Replacing existing site with id=" + newSite.getId()
-//+ ", " + existingSite.getDisplayName());
 				siteVec.remove(existingSite);
 				break;
 			}
 		}
 		siteVec.add(newSite);
-//Logger.instance().info(
-//"Added site id=" + newSite.getId() + ", "+ newSite.getDisplayName());
 	}
 
 	/**
@@ -214,7 +215,6 @@ public class SiteList extends DatabaseObject
 	{
 		myDatabase.getDbIo().readSiteList(this);
 		_wasRead = true;
-//System.out.println("Read Site List: " + size() + " entries.");
 	}
 
 	public void write()

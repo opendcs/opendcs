@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.db;
 
@@ -7,12 +19,14 @@ import java.util.Enumeration;
 import java.util.Properties;
 import java.util.ArrayList;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.cwms.CwmsConstants;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
 import ilex.util.HasProperties;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -22,10 +36,9 @@ import ilex.util.TextUtil;
  * Each sensor belonging to a particular Platform might have its
  * own Site, and / or it might have its own set of properties.
  */
-public class PlatformSensor 
-	extends DatabaseObject
-	implements HasProperties, PropertiesOwner
+public class PlatformSensor extends DatabaseObject implements HasProperties, PropertiesOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** A unique number for this sensor on this Platform.  */
 	public int sensorNumber;
 
@@ -166,42 +179,34 @@ public class PlatformSensor
 			return false;
 		if (!PropertiesUtil.propertiesEqual(getProperties(), ps.getProperties()))
 		{
-			Logger.instance().debug3("Sensor " + sensorNumber
-				+ " has different properties, this: "
-				+ PropertiesUtil.props2string(getProperties())
-				+ ", that: " + PropertiesUtil.props2string(ps.getProperties()));
+			log.trace("Sensor {} has different properties, this: {}, that: {}",
+					  sensorNumber, PropertiesUtil.props2string(getProperties()),
+					  PropertiesUtil.props2string(ps.getProperties()));
 			return false;
 		}
 		if (site == null)
 		{
 			if (ps.site != null)
 			{
-				Logger.instance().debug3("Sensor " + sensorNumber
-					+ " this has null site, that has site="
-					+ ps.site.getDisplayName());
+				log.trace("Sensor {} this has null site, that has site={}", sensorNumber, ps.site.getDisplayName());
 				return false;
 			}
 		}
 		else if (ps.site == null)
 		{
-			Logger.instance().debug3("Sensor " + sensorNumber
-				+ " this has site=" + site.getDisplayName()
-				+ ", that has null site");
+			log.trace("Sensor {} this has site={} that has null site", sensorNumber, site.getDisplayName());
 			return false;
 		}
 		else if (!TextUtil.strEqualIgnoreCase(site.getDisplayName(),
 			ps.site.getDisplayName()))
 		{
-			Logger.instance().debug3("Sensor " + sensorNumber
-				+ " this different site. this=" + site.getDisplayName()
-				+ ", that=" + ps.site.getDisplayName());
+			log.trace("Sensor {} this different site. this={}, that={}",
+					  sensorNumber, site.getDisplayName(), ps.site.getDisplayName());
 			return false;
 		}
 		else if (usgsDdno != ps.usgsDdno)
 		{
-			Logger.instance().debug3("Sensor " + sensorNumber
-				+ " has different usgsDdno, this=" + usgsDdno
-				+ ", that=" + ps.usgsDdno);
+			log.trace("Sensor {} has different usgsDdno, this={}, that={}", sensorNumber, usgsDdno, ps.usgsDdno);
 			return false;
 		}
 

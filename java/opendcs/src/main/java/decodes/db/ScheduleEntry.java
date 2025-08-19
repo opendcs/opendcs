@@ -1,11 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.db;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.util.Date;
 
-import opendcs.dai.LoadingAppDAI;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.ScheduleEntryDAI;
 
 import decodes.sql.DbKey;
@@ -18,6 +34,7 @@ import decodes.tsdb.DbIoException;
  */
 public class ScheduleEntry extends IdDatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Unique name for this schedule entry */
 	private String name = null;
 	
@@ -118,7 +135,7 @@ public class ScheduleEntry extends IdDatabaseObject
 			ScheduleEntryDAI scheduleEntryDAO = getDatabase().getDbIo().makeScheduleEntryDAO();
 			if (scheduleEntryDAO == null)
 			{
-				Logger.instance().debug1("Cannot write schedule entry. Not supported on this database.");
+				log.debug("Cannot write schedule entry. Not supported on this database.");
 				return;
 			}
 			try
@@ -127,10 +144,8 @@ public class ScheduleEntry extends IdDatabaseObject
 			}
 			catch (DbIoException ex)
 			{
-				String msg = "Cannot write scheduleEntry '" + getName()
-					+ "': " + ex;
-				Logger.instance().warning(msg);
-				throw new DatabaseException(msg);
+				String msg = "Cannot write scheduleEntry '" + getName() + "'";
+				throw new DatabaseException(msg,ex);
 			}
 			finally
 			{
@@ -275,8 +290,6 @@ public class ScheduleEntry extends IdDatabaseObject
 		 || !loadingAppId.equals(se.loadingAppId)
 		 || !routingSpecId.equals(se.routingSpecId))
 		{
-			Logger.instance().debug1("id, appId, or rsId is different this=" + toString() + "\n rhs="
-				+ se.toString());
 			return false;
 		}
 		
@@ -284,14 +297,10 @@ public class ScheduleEntry extends IdDatabaseObject
 		{
 			if (startTime == null || se.startTime == null)
 			{
-				Logger.instance().debug1("one start time is null this=" + toString() + "\n rhs="
-					+ se.toString());
 				return false;
 			}
 			if (!startTime.equals(se.startTime))
 			{
-				Logger.instance().debug1("Start times are null this=" + toString() + "\n rhs="
-					+ se.toString());
 				return false;
 			}
 		}
@@ -303,8 +312,6 @@ public class ScheduleEntry extends IdDatabaseObject
 			if (!TextUtil.strEqual(timezone, se.timezone)
 			 || !TextUtil.strEqual(runInterval, se.runInterval))
 			{
-				Logger.instance().debug1("tz or runInt different this=" + toString() + "\n rhs="
-					+ rhs.toString());
 				return false;
 			}
 		}
@@ -313,8 +320,6 @@ public class ScheduleEntry extends IdDatabaseObject
 		 || !TextUtil.strEqual(loadingAppName, se.loadingAppName)
 		 || !TextUtil.strEqual(routingSpecName, se.routingSpecName))
 		{
-			Logger.instance().debug1("enab, appName or rsName different this=" + toString() + "\n rhs="
-				+ rhs.toString());
 			return false;
 		}
 

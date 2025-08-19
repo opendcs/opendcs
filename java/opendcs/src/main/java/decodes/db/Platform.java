@@ -1,70 +1,29 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.7  2015/04/15 19:59:48  mmaloney
-*  Fixed synchronization bugs when the same data sets are being processed by multiple
-*  routing specs at the same time. Example is multiple real-time routing specs with same
-*  network lists. They will all receive and decode the same data together.
-*
-*  Revision 1.6  2015/04/14 18:57:13  mmaloney
-*  Fixed concurrent modification exception when searching for platform by tm key.
-*
-*  Revision 1.5  2015/03/19 18:00:27  mmaloney
-*  Added debugs in equals() method.
-*
-*  Revision 1.4  2015/02/16 15:35:02  mmaloney
-*  added pollPriority property.
-*
-*  Revision 1.3  2014/12/11 20:21:24  mmaloney
-*  Removed duplicate PropertySpec
-*
-*  Revision 1.2  2014/10/02 14:33:13  mmaloney
-*  Conditional Season Processing
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.15  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.14  2011/06/21 15:19:35  shweta
-*  added diagmostic and timeout properties
-*
-*  Revision 1.13  2011/03/16 19:37:15  shweta
-*  Added method to get diagnostic and timeout properties
-*
-*  Revision 1.12  2011/01/07 16:01:56  mmaloney
-*  bugfixes
-*
-*  Revision 1.11  2009/10/20 15:47:12  mjmaloney
-*  SFWMD debug
-*
-*  Revision 1.10  2009/10/12 18:51:33  mjmaloney
-*  Import for SFWMD
-*
-*  Revision 1.9  2009/10/12 18:36:56  mjmaloney
-*  Import for SFWMD
-*
-*  Revision 1.8  2009/10/12 18:20:42  mjmaloney
-*  Import for SFWMD
-*
-*  Revision 1.7  2009/10/07 17:37:31  mjmaloney
-*  added getTM iterator method.
-*
-*  Revision 1.6  2009/04/30 15:22:11  mjmaloney
-*  Iridium updates
-*
-*  Revision 1.5  2008/11/20 18:49:20  mjmaloney
-*  merge from usgs mods
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
-
 package decodes.db;
 
-import java.util.*;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.Vector;
 
-import ilex.util.*;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.decoder.FieldParseException;
 import decodes.decoder.Season;
 import decodes.sql.DbKey;
@@ -72,15 +31,18 @@ import decodes.util.DecodesSettings;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
+import ilex.util.HasProperties;
+import ilex.util.PropertiesUtil;
+import ilex.util.TextUtil;
+
 /**
  * This encapsulates information about a single DCP platform.
  * The RecordList to which this platform belongs is a data member
  * of this Database's PlatformList object.
  */
-public class Platform
-	extends IdDatabaseObject
-	implements HasProperties, PropertiesOwner
+public class Platform extends IdDatabaseObject implements HasProperties, PropertiesOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// _id is stored in the IdDatabaseObject superclass.
 
 	/** For the database editor to associate platforms to configs by name only. */
@@ -182,7 +144,7 @@ public class Platform
 	
 	/**
 	* No-arg constructor.  This creates a new Platform which belongs to
-	* the current databsae.
+	* the current database.
 	*/
 	public Platform()
 	{
@@ -199,7 +161,10 @@ public class Platform
 	{
 		this();
 		try { this.setId(id); }
-		catch(DatabaseException ex) {} // won't happen.
+		catch(DatabaseException ex) 
+		{ // won't happen, so let's make sure there are problems if it ever does.
+			throw new RuntimeException("Unable to set platform ID, this should never fail at this location.", ex);
+		}
 	}
 
 	/** Clears the platform data back to its originally created empty state. */
@@ -429,14 +394,14 @@ public class Platform
 		if (!isComplete())
 		{
 			try { read(); }
-			catch(DatabaseException e)
+			catch(DatabaseException ex)
 			{
-				if (e instanceof IncompleteDatabaseException)
-					throw (IncompleteDatabaseException)e;
-				else if (e instanceof InvalidDatabaseException)
-					throw (InvalidDatabaseException)e;
+				if (ex instanceof IncompleteDatabaseException)
+					throw (IncompleteDatabaseException)ex;
+				else if (ex instanceof InvalidDatabaseException)
+					throw (InvalidDatabaseException)ex;
 				else
-					throw new InvalidDatabaseException(e.toString());
+					throw new InvalidDatabaseException("Error preparing for exec.",ex);
 			}
 		}
 		PlatformConfig pc = getConfig();
@@ -463,8 +428,8 @@ public class Platform
 			{
 				EnumValue ev = seasonEnum.findEnumValue(seasonAbbr);
 				if (ev == null)
-					Logger.instance().warning("Platform " + getDisplayName()
-						+ " Unknown 'ignoreSeason' property value '" + seasonAbbr + "'");
+					log.warn("Platform {} Unknown 'ignoreSeason' property value '{}'",
+							 getDisplayName(), seasonAbbr);
 				else
 				{
 					try
@@ -473,8 +438,9 @@ public class Platform
 					}
 					catch (FieldParseException ex)
 					{
-						Logger.instance().warning("Platform " + getDisplayName()
-							+ " ignoreSeason: " + ex);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Platform {} ignoreSeason: failed to parse.", getDisplayName());
 						ignoreSeason = null;
 					}
 				}
@@ -483,8 +449,8 @@ public class Platform
 			{
 				EnumValue ev = seasonEnum.findEnumValue(seasonAbbr);
 				if (ev == null)
-					Logger.instance().warning("Platform " + getDisplayName()
-						+ " Unknown 'processSeason' property value '" + seasonAbbr + "'");
+					log.warn("Platform {} Unknown 'processSeason' property value '{}'",
+							 getDisplayName(), seasonAbbr);
 				else
 				{
 					try
@@ -493,8 +459,7 @@ public class Platform
 					}
 					catch (FieldParseException ex)
 					{
-						Logger.instance().warning("Platform " + getDisplayName()
-							+ " processSeason: " + ex);
+						log.atWarn().setCause(ex).log("Platform {} processSeason: failed to parse.",getDisplayName());
 						processSeason = null;
 					}
 				}
@@ -646,48 +611,47 @@ public class Platform
 		if (this == op)
 			return true;
 
-		Logger.instance().debug3("Comparing '" + makeFileName()
-			+ "' to imported '" + op.makeFileName() + "'");
+		log.trace("Comparing '{}' to imported '{}'", op.makeFileName(), op.makeFileName());
 		if ((getSite() == null && op.getSite() != null)
 		 || (getSite() != null && op.getSite() == null)
 		 || (getSite() != null && !getSite().importEquals(op.getSite())))
 		{
-			Logger.instance().debug3("Sites differ");
+			log.trace("Sites differ");
 			return false;
 		}
 
 		if (!TextUtil.strEqual(description, op.description))
 		{
-			Logger.instance().debug3("descriptions differ");
+			log.trace("descriptions differ");
 			return false;
 		}
 		if (!TextUtil.strEqualIgnoreCase(this.getConfigName(), op.getConfigName()))
 		{
-//			Logger.instance().debug3("ConfigNames differ");
+			log.trace("ConfigNames differ");
 			return false;
 		}
 
 		if (!TextUtil.strEqualIgnoreCase(platformDesignator, 
 			op.platformDesignator))
 		{
-			Logger.instance().debug3("Designators differ");
+			log.trace("Designators differ");
 			return false;
 		}
 
 		if (!eqChk(agency, op.agency))
 		{
-			Logger.instance().debug3("agency differs");
+			log.trace("agency differs");
 			return false;
 		}
 		if (!eqChk(expiration, op.expiration))
 		{
-			Logger.instance().debug3("expiration differs");
+			log.trace("expiration differs");
 			return false;
 		}
 
 		if (transportMedia.size() != op.transportMedia.size())
 		{
-			Logger.instance().debug3("tm number differs");
+			log.trace("tm number differs");
 			return false;
 		}
 
@@ -696,14 +660,12 @@ public class Platform
 			TransportMedium optm = op.getTransportMedium(tm.getMediumType());
 			if (optm == null)
 			{
-				Logger.instance().debug3("This has TM type " + optm.getMediumType()
-					+ ", but imported does not.");
+				log.trace("This has TM type {}, but imported does not.", optm.getMediumType());
 				return false;
 			}
 			if (!tm.equals(optm))
 			{
-				Logger.instance().debug3("TM type " + optm.getMediumType()
-					+ "differs.");
+				log.trace("TM type {} differs.", optm.getMediumType());
 				return false;
 			}
 		}
@@ -719,8 +681,7 @@ public class Platform
 
 		if (numthis != numthat)
 		{
-			Logger.instance().debug3("Number of platform sensors differ. "
-				+ "(this has " + numthis + ", that has " + numthat + ")");
+			log.trace("Number of platform sensors differ. (this has {}, that has {})", numthis, numthat);
 			return false;
 		}
 		int n1=platformSensors.size();
@@ -735,7 +696,7 @@ public class Platform
 					continue;
 				else
 				{
-					Logger.instance().debug3("Platform sensor " + thisps.sensorNumber + " differs(a)");
+					log.trace("Platform sensor {} differs(a)", thisps.sensorNumber);
 					return false;
 				}
 			}
@@ -743,12 +704,12 @@ public class Platform
 			{
 				if (thatps == null || thatps.isEmpty())
 				{
-					Logger.instance().debug3("Platform sensor " + thisps.sensorNumber + " differs(b)");
+					log.trace("Platform sensor " + thisps.sensorNumber + " differs(b)");
 					return false;
 				}
 				else if (!thisps.equals(thatps))
 				{
-					Logger.instance().debug3("Platform sensor " + thisps.sensorNumber + " differs(c)");
+					log.trace("Platform sensor {} differs(c)", thisps.sensorNumber);
 					return false;
 				}
 			}
@@ -757,14 +718,14 @@ public class Platform
 		// Check properties for equality.
 		if (!PropertiesUtil.propertiesEqual(properties, op.properties))
 		{
-			Logger.instance().debug3("Platform Properties differ");
+			log.trace("Platform Properties differ");
 			return false;
 		}
 
 		if (platformConfig != null && !platformConfig.equals(
 			op.platformConfig))
 		{
-			Logger.instance().debug3("Configs differ");
+			log.trace("Configs differ");
 			return false;
 		}
 		return true;
@@ -847,7 +808,7 @@ public class Platform
 		// Check properties for equality.
 		if (this.properties.size() != p.properties.size())
 			return false;
-Logger.instance().debug3("Platform.equals, checking props...");
+		log.trace("Platform.equals, checking props...");
 		for(Enumeration it = this.properties.propertyNames(); 
 			it.hasMoreElements(); )
 		{
@@ -856,7 +817,7 @@ Logger.instance().debug3("Platform.equals, checking props...");
 			String v2 = p.properties.getProperty(nm);
 			if (!TextUtil.strEqual(v1, v2))
 			{
-Logger.instance().debug3("   prop '" + nm + "' differs: '" + v1 + "' '" + v2 + "'");
+				log.trace("   prop '{}' differs: '{}' '{}'", nm, v1, v2);
 				return false;
 			}
 		}
@@ -1039,6 +1000,7 @@ Logger.instance().debug3("   prop '" + nm + "' differs: '" + v1 + "' '" + v2 + "
 	 * @return debug level (1...3) if a "debugLevel" properties is assigned
 	 * to this site, or 0 if none.
 	 */
+	@Deprecated
 	public int getDebugLevel()
 	{
 		String s = PropertiesUtil.getIgnoreCase(properties, "debugLevel");

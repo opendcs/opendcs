@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.db;
 import ilex.util.PropertiesUtil;
@@ -12,8 +24,7 @@ import java.util.Properties;
 /**
  * This class encapsulates a DECODES RoutingSpec.
  */
-public class RoutingSpec 
-	extends IdDatabaseObject
+public class RoutingSpec extends IdDatabaseObject
 {
 	// _id is stored in the IdDatabaseObject superclass.
 
@@ -85,10 +96,6 @@ public class RoutingSpec
 	/** Prior to output, time stamps will be converted to this time zone. */
 	public java.util.TimeZone outputTimeZone;
 
-	/** Consumer object that will receive the decoded data. */
-// Not used??
-//	public DataConsumer dataConsumer;
-
 	/**
 	* The list of NetworkLists corresponding to the list of names in
 	* networkListNames.  Note that this will be the empty Vector until
@@ -109,7 +116,6 @@ public class RoutingSpec
 
 		setName(null);
 
-		//dataSourceId = Constants.undefinedId;;
 		enableEquations = false;
 		usePerformanceMeasurements = false;
 		outputFormat = null;
@@ -124,7 +130,6 @@ public class RoutingSpec
 		networkListNames = new Vector<String>();
 		dataSource = null;
 		outputTimeZone = null;
-//		dataConsumer = null;
 		networkLists = new Vector<NetworkList>();
 		_isPrepared = false;
 	}
@@ -207,13 +212,6 @@ public class RoutingSpec
 		 || !TextUtil.strEqualIgnoreCase(rs.outputTimeZoneAbbr, 
 				outputTimeZoneAbbr))
 			return false;
-//System.out.println("equals: checking presentationGroupName");
-//System.out.println("equals: presentationGroupName: '" + rs.presentationGroupName + "' '" + presentationGroupName + "'");
-//System.out.println("equals: Sinces: '" + rs.sinceTime + "' '" + sinceTime + "'");
-//System.out.println("equals: Untils: '" + rs.untilTime + "' '" + untilTime + "'");
-//System.out.println("equals: consumerType: '" + rs.consumerType + "' '" + consumerType + "'");
-//System.out.println("equals: consumerArg: '" + rs.consumerArg + "' '" + consumerArg + "'");
-//System.out.println("equals: isProduction: '" + rs.isProduction + "' '" + isProduction + "'");
 
 		if (!TextUtil.strEqualIgnoreCase(rs.presentationGroupName, 
 				presentationGroupName)
@@ -225,14 +223,12 @@ public class RoutingSpec
 		{
 			return false;
 		}
-//System.out.println("equals: checking datasource");
 		String dsn1 = dataSource != null ? dataSource.getName() : null;
 		String dsn2 = rs.dataSource != null ? rs.dataSource.getName() : null;
 		if (!TextUtil.strEqualIgnoreCase(dsn1, dsn2))
 			return false;
 		if (networkListNames.size() != rs.networkListNames.size())
 			return false;
-//System.out.println("equals: checking netlist names");
 	nextName:
 		for(Iterator<String> it=networkListNames.iterator(); it.hasNext(); )
 		{
@@ -246,7 +242,6 @@ public class RoutingSpec
 			}
 			return false; // fell through
 		}
-//System.out.println("equals: checking properties");
 		if (!PropertiesUtil.propertiesEqual(getProperties(), rs.getProperties()))
 			return false;
 		return true;
@@ -278,10 +273,10 @@ public class RoutingSpec
 				// Not loaded yet? Try to load it.
 				nl = new NetworkList(name);
 				try { nl.read(); }
-				catch(DatabaseException e)
+				catch(DatabaseException ex)
 				{
 					throw new IncompleteDatabaseException(
-						"Cannot load network list '" + nl.name + "': " + e);
+						"Cannot load network list '" + nl.name, ex);
 				}
 				myDatabase.networkListList.add(nl);
 			}
