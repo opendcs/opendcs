@@ -1,8 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.text.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.awt.event.*;
 import java.util.ResourceBundle;
@@ -11,8 +29,9 @@ import java.util.ResourceBundle;
 Dialog to show the trace events for decoding.
 Used in dbedit, platwiz, and decwiz.
 */
-public class TraceDialog extends JDialog 
+public class TraceDialog extends JDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -29,7 +48,7 @@ public class TraceDialog extends JDialog
 	private JScrollPane eventScrollPane = new JScrollPane();
 	private JTextArea eventArea = new JTextArea();
 	private JLabel errorLabel = new JLabel();
-	
+
 	private int maxMessages = 20000;
 	private int numMessages = 0;
 	private String closeText = null;
@@ -41,18 +60,18 @@ public class TraceDialog extends JDialog
 	 */
 	public TraceDialog(JDialog owner, boolean modal)
 	{
-		super(owner, 
-			dbeditLabels.getString("TraceDialog.title"), modal);
-		try 	
+		super(owner, dbeditLabels.getString("TraceDialog.title"), modal);
+		try
 		{
 			jbInit();
 			pack();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch(Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
-	
+
 	public void setTraceType(String type)
 	{
 		setTitle(type + " Trace");
@@ -66,19 +85,19 @@ public class TraceDialog extends JDialog
 	 */
 	public TraceDialog(Frame owner, boolean modal)
 	{
-		super(owner, 
-			dbeditLabels.getString("TraceDialog.title"), modal);
-		try 	
+		super(owner, dbeditLabels.getString("TraceDialog.title"), modal);
+		try
 		{
 			jbInit();
 			pack();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
-	private void jbInit() throws Exception 
+	private void jbInit() throws Exception
 	{
 		//this.setSize(new Dimension(900, 400));
 		panel1.setLayout(borderLayout1);
@@ -114,7 +133,7 @@ public class TraceDialog extends JDialog
 		this.setPreferredSize(new Dimension(370, 680));
 	}
 
-	void closeButton_actionPerformed(ActionEvent e) 
+	void closeButton_actionPerformed(ActionEvent e)
 	{
 		setVisible(false);
 	}

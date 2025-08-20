@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.dbeditor;
@@ -26,8 +26,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.table.TableRowSorter;
 
+import org.opendcs.gui.GuiHelpers;
 import org.opendcs.gui.SearchPanel;
-
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.*;
 import decodes.dbeditor.platform.PlatformSelectTableModel;
@@ -38,6 +40,7 @@ Displays a sorting-list of Platform objects in the database.
 @SuppressWarnings("serial")
 public class PlatformSelectPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	BorderLayout borderLayout1 = new BorderLayout();
 	JScrollPane jScrollPane1 = new JScrollPane();
 	PlatformSelectTableModel model;
@@ -48,7 +51,7 @@ public class PlatformSelectPanel extends JPanel
 
 	public PlatformSelectPanel(Runnable opener, Site site, String mediumType)
 	{
-		if ( site == null ) 
+		if ( site == null )
 			model = new PlatformSelectTableModel(this, mediumType, Database.getDb());
 		else
 			model = new PlatformSelectTableModel(this, site, Database.getDb());
@@ -69,9 +72,9 @@ public class PlatformSelectPanel extends JPanel
 		{
 			jbInit();
 		}
-		catch(Exception ex)
+		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 

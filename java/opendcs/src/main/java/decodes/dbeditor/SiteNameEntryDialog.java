@@ -1,14 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
-import ilex.util.Logger;
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.Site;
@@ -24,6 +40,7 @@ Dialog for entering a new site name.
 */
 public class SiteNameEntryDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -41,9 +58,9 @@ public class SiteNameEntryDialog extends GuiDialog
     private JLabel nameValueLabel = new JLabel();
     private JTextField nameValueField = new JTextField();
     private JLabel usgsDbnoLabel = new JLabel();
-    private JComboBox usgsDbnoCombo;
+    private JComboBox<String> usgsDbnoCombo;
 	private JLabel agencyCodeLabel = new JLabel();
-    private JComboBox agencyCodeCombo;
+    private JComboBox<String> agencyCodeCombo;
 
 	/** Used to validate name &amp; make a Site object after user enters name. */
 	public static SiteFactory siteFactory = new SiteFactory();
@@ -58,7 +75,7 @@ public class SiteNameEntryDialog extends GuiDialog
 	private static String dbnos[] = { "01", "02", "03", "04", "05" };
 
 	/** List of valid agencies in the connected database. */
-	private static String agencies[] = { "USGS", "USBR", "USACE", "NIFC", 
+	private static String agencies[] = { "USGS", "USBR", "USACE", "NIFC",
 		"NOAA", "NOS", "NDBC", "TVA", "NWS", "NFS", "NPS" };
 
 	boolean okPressed = false;
@@ -66,26 +83,28 @@ public class SiteNameEntryDialog extends GuiDialog
 	/** No args constructor. */
     public SiteNameEntryDialog()
 	{
-        super(getDbEditFrame(), 
+        super(getDbEditFrame(),
 			dbeditLabels.getString("SiteNameEntryDialog.title"), true);
-    	usgsDbnoCombo = new JComboBox(dbnos);
-		agencyCodeCombo = new JComboBox(agencies);
+    	usgsDbnoCombo = new JComboBox<>(dbnos);
+		agencyCodeCombo = new JComboBox<>(agencies);
 		theSite = null;
 		theSiteName = null;
-        try {
+        try
+		{
             jbInit();
 			getRootPane().setDefaultButton(okButton);
             pack();
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
         }
 		enableControls();
     }
 
 	/** Initialize the GUI components. */
-    void jbInit() 
-		throws Exception 
+    void jbInit()
+		throws Exception
 	{
         mainPanel.setLayout(mainBorderLayout);
     	mainPanel.setPreferredSize(new Dimension(300, 220));
@@ -121,43 +140,43 @@ public class SiteNameEntryDialog extends GuiDialog
         southPanel.add(okButton, null);
         southPanel.add(cancelButton, null);
         mainPanel.add(centerPanel, BorderLayout.CENTER);
-        centerPanel.add(nameTypeLabel, 
+        centerPanel.add(nameTypeLabel,
 			new GridBagConstraints(0, 0, 1, 1, 0.3, 0.5,
-            	GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE, 
+            	GridBagConstraints.SOUTHEAST, GridBagConstraints.NONE,
 				new Insets(10, 10, 5, 3), 0, 0));
-        centerPanel.add(nameTypeCombo, 
+        centerPanel.add(nameTypeCombo,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.5,
-            	GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL, 
+            	GridBagConstraints.SOUTHWEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 1, 5, 20), 0, 0));
-        centerPanel.add(nameValueLabel, 
+        centerPanel.add(nameValueLabel,
 			new GridBagConstraints(0, 1, 1, 1, 0.3, 0.0,
-            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+            	GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 3), 0, 0));
-        centerPanel.add(nameValueField, 
+        centerPanel.add(nameValueField,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
-            	GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+            	GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 1, 5, 20), 0, 0));
-        centerPanel.add(usgsDbnoLabel, 
+        centerPanel.add(usgsDbnoLabel,
 			new GridBagConstraints(0, 2, 1, 1, 0.3, 0.0,
-            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+            	GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 3), 0, 0));
-        centerPanel.add(usgsDbnoCombo, 
+        centerPanel.add(usgsDbnoCombo,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-            	GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+            	GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 1, 5, 30), 0, 0));
-        centerPanel.add(agencyCodeLabel, 
+        centerPanel.add(agencyCodeLabel,
 			new GridBagConstraints(0, 3, 1, 1, 0.3, 0.5,
-            	GridBagConstraints.NORTHEAST, GridBagConstraints.NONE, 
+            	GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 3), 0, 0));
-        centerPanel.add(agencyCodeCombo, 
+        centerPanel.add(agencyCodeCombo,
 			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.5,
-            	GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, 
+            	GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 1, 5, 30), 0, 0));
 
         nameTypeCombo.addActionListener(
-			new java.awt.event.ActionListener() 
+			new java.awt.event.ActionListener()
 			{
-            	public void actionPerformed(ActionEvent e) 
+            	public void actionPerformed(ActionEvent e)
 				{
                 	nameTypeCombo_actionPerformed();
             	}
@@ -166,8 +185,8 @@ public class SiteNameEntryDialog extends GuiDialog
     	usgsDbnoCombo.setEditable(false);
     }
 
-	/** 
-	  Called when OK button is pressed. 
+	/**
+	  Called when OK button is pressed.
 	  @param e ignored
 	*/
     void okButton_actionPerformed(ActionEvent e)
@@ -185,7 +204,7 @@ public class SiteNameEntryDialog extends GuiDialog
 		// 2012/07/05 CWMS Location Names can contain spaces
 		else if (!nameType.equalsIgnoreCase(Constants.snt_CWMS) && nameValue.indexOf(' ') > 0)
 		{
-			Logger.instance().debug3("SiteNameType='" + nameType + "', value='" + nameValue + "'");
+			log.trace("SiteNameType='{}', value='{}", nameType, nameValue);
 			int r = JOptionPane.showConfirmDialog(this,
 				dbeditLabels.getString("SiteNameEntryDialog.nameFormatErr"),
 				dbeditLabels.getString("SiteNameEntryDialog.nameFormatErrTitle"),
@@ -202,7 +221,7 @@ public class SiteNameEntryDialog extends GuiDialog
 			nameValue = sb.toString();
 			nameValueField.setText(nameValue);
 		}
-			
+
 		String dbno = null;
 		String agencyCode = null;
 		if (nameType.equalsIgnoreCase("USGS"))
@@ -239,6 +258,7 @@ public class SiteNameEntryDialog extends GuiDialog
 		}
 		catch(Exception ex)
 		{
+			log.atError().setCause(ex).log("Unable set site name.");
 			showError(ex.getMessage());
 			theSite = null;
 		}
@@ -251,8 +271,8 @@ public class SiteNameEntryDialog extends GuiDialog
 		dispose();
 	}
 
-	/** 
-	  Called when Cancel button is pressed. 
+	/**
+	  Called when Cancel button is pressed.
 	  @param e ignored
 	*/
     void cancelButton_actionPerformed(ActionEvent e)
@@ -262,7 +282,7 @@ public class SiteNameEntryDialog extends GuiDialog
 		closeDlg();
     }
 
-	/** 
+	/**
 	 * Sets the site to which a name will be added (null to create new site.)
 	 * @param site the site.
 	 */
@@ -291,7 +311,7 @@ public class SiteNameEntryDialog extends GuiDialog
 
 	/**
 	 * Sets initial selection for site name.
-	 * @param siteName the site name, which must be already associated with 
+	 * @param siteName the site name, which must be already associated with
 	 * the previously set site.
 	 */
 	public void setSiteName(SiteName siteName)
