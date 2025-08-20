@@ -1,29 +1,30 @@
-/**
- * Copyright 2024 The OpenDCS Consortium and contributors
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.ResourceBundle;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.RoutingSpec;
@@ -35,7 +36,7 @@ import decodes.dbeditor.routing.RSListTableModel;
 @SuppressWarnings("serial")
 public class RoutingSpecListPanel extends JPanel implements ListOpsController
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecListPanel.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 	private ListOpsPanel listOpsPanel = new ListOpsPanel(this);
@@ -53,7 +54,7 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
         }
         catch (Exception ex)
         {
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -209,14 +210,14 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
             {
                 Database.getDb().getDbIo().deleteRoutingSpec(ob);
             }
-            catch(DatabaseException e)
+            catch (DatabaseException ex)
             {
 				log.atError()
-				   .setCause(e)
+				   .setCause(ex)
 				   .log("Unable to delete routing spec.");
                 DbEditorFrame.instance().showError(
                     RoutingSpecListPanel.dbeditLabels.getString("RoutingSpecListPanel.errorDelete")
-                    + e.toString());
+                    + ex.toString());
             }
             rsSelectPanel.deleteSelection();
         }
@@ -236,20 +237,18 @@ public class RoutingSpecListPanel extends JPanel implements ListOpsController
      */
     private void doOpen(RoutingSpec rs)
     {
-        Logger.instance().debug3("RoutingSpecListPanel.doOpen(" + rs.getName() + ")");
+        log.trace("RoutingSpecListPanel.doOpen({})", rs.getName());
         DbEditorTabbedPane dbtp = parent.getRoutingSpecTabbedPane();
         DbEditorTab tab = dbtp.findEditorFor(rs);
         if (tab != null)
         {
-            Logger.instance().debug3("RoutingSpecListPanel.doOpen "
-                + " already open!");
+            log.trace("RoutingSpecListPanel.doOpen already open!");
             dbtp.setSelectedComponent(tab);
         }
         else
         {
             RoutingSpecEditPanel newTab = new RoutingSpecEditPanel(rs);
-            Logger.instance().debug3("RoutingSpecListPanel.doOpen calling setParent("
-                + (parent == null ? "NULL" : "") + ")");
+            log.trace("RoutingSpecListPanel.doOpen calling setParent({})", (parent == null ? "NULL" : ""));
 
             newTab.setParent(parent);
             String title = rs.getName();

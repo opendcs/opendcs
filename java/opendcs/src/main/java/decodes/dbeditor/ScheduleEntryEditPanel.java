@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import ilex.gui.DateTimeCalendar;
@@ -20,13 +35,15 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.LoadingAppDAI;
 
@@ -40,17 +57,16 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalIncrement;
 
 @SuppressWarnings("serial")
-public class ScheduleEntryEditPanel 
-	extends DbEditorTab 
-	implements ChangeTracker, EntityOpsController
+public class ScheduleEntryEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 	private DbEditorFrame parent = null;
 	private ScheduleEntry origObject = null;
-	
+
 	private JTextField nameField = new JTextField();
-	private JComboBox schedulerDaemonCombo = new JComboBox();
+	private JComboBox<String> schedulerDaemonCombo = new JComboBox<>();
 	private JTextField routingSpecField = new JTextField();
 	private JTextField lastModifiedField = new JTextField();
 	private JCheckBox enabledCheck = new JCheckBox();
@@ -58,7 +74,7 @@ public class ScheduleEntryEditPanel
 	private JRadioButton runContinuouslyRadio = new JRadioButton();
 	private JRadioButton runPeriodicallyRadio = new JRadioButton();
 	private JTextField timeIncField = new JTextField(5);
-	private JComboBox timeUnitCombo = new JComboBox(
+	private JComboBox<String> timeUnitCombo = new JComboBox<>(
 		new String[] { "Minutes", "Hours", "Days" });
 	private DateTimeCalendar startDateTimeCal = null;
 	private Calendar userTzCal = Calendar.getInstance();
@@ -76,14 +92,14 @@ public class ScheduleEntryEditPanel
 		guiInit();
 		fillFields();
 	}
-	
+
 	private void guiInit()
 	{
 		JPanel mainPanel = new JPanel(new GridBagLayout());
 		this.setLayout(new BorderLayout());
 		this.add(mainPanel, BorderLayout.CENTER);
 		this.add(new EntityOpsPanel(this), BorderLayout.SOUTH);
-		
+
 		// Schedule Entry Name
 		mainPanel.add(new JLabel(dbeditLabels.getString("ScheduleEntryPanel.EntityName")
 			+ " " + genericLabels.getString("nameLabel")),
@@ -95,7 +111,7 @@ public class ScheduleEntryEditPanel
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 20), 0, 0));
-		
+
 		// Enabled Checkbox
 		enabledCheck.setText(dbeditLabels.getString("ScheduleEntryPanel.EnabledFor"));
 		mainPanel.add(enabledCheck,
@@ -106,8 +122,8 @@ public class ScheduleEntryEditPanel
 		// Loading App Name
 		// Make a list of loading apps with app-type
 		appsInCombo.clear();
-		LoadingAppDAI loadingAppDAO = Database.getDb().getDbIo().makeLoadingAppDAO();
-		try
+
+		try (LoadingAppDAI loadingAppDAO = Database.getDb().getDbIo().makeLoadingAppDAO())
 		{
 			for(CompAppInfo cai : loadingAppDAO.listComputationApps(false))
 			{
@@ -125,18 +141,16 @@ public class ScheduleEntryEditPanel
 		}
 		catch (DbIoException ex)
 		{
-			parent.showError("Cannot list Routing Scheduler apps: " + ex);
-		}
-		finally
-		{
-			loadingAppDAO.close();
+			final String msg = "Cannot list Routing Scheduler apps";
+			log.atError().setCause(ex).log(msg);
+			parent.showError(msg + ": " + ex);
 		}
 
 		mainPanel.add(schedulerDaemonCombo,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 5), 0, 0));
-		
+
 		// Routing Spec Name
 		routingSpecField.setEditable(false);
 		mainPanel.add(new JLabel(dbeditLabels.getString("ScheduleEntryPanel.TableColumn3") + ":"),
@@ -151,7 +165,7 @@ public class ScheduleEntryEditPanel
 		selectRSButton.addActionListener(
 			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	                selectRoutingSpecPressed();
 	            }
@@ -160,7 +174,7 @@ public class ScheduleEntryEditPanel
 			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(3, 0, 3, 20), 0, 0));
-		
+
 		// Last Modified
 		lastModifiedField.setEditable(false);
 		mainPanel.add(new JLabel(dbeditLabels.getString("NetlistEditPanel.LastModified")),
@@ -171,7 +185,7 @@ public class ScheduleEntryEditPanel
 			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 5), 0, 0));
-	
+
 		// Start Time choices
 		JPanel scheduleArea = new JPanel(new GridBagLayout());
 		mainPanel.add(scheduleArea,
@@ -194,7 +208,7 @@ public class ScheduleEntryEditPanel
 		runContinuouslyRadio.addActionListener(
 			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	            	runContinuouslyRadioPressed();
 	            }
@@ -209,12 +223,12 @@ public class ScheduleEntryEditPanel
 		runOnceRadio.addActionListener(
 			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	            	runOnceRadioPressed();
 	            }
 	        });
-		
+
 		runPeriodicallyRadio.setText(
 			dbeditLabels.getString("ScheduleEntryPanel.RunPeriodially"));
 		JPanel runPeriodicallyPanel = new JPanel(new FlowLayout());
@@ -228,12 +242,12 @@ public class ScheduleEntryEditPanel
 		runPeriodicallyRadio.addActionListener(
 			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	            	runPeriodicallyRadioPressed();
 	            }
 	        });
-		
+
 		// Start Date/Time & TZ are active for Run Once and Run Periodically
 		userTzCal.setTime(new Date());
 		userTzCal.set(Calendar.HOUR_OF_DAY, 0);
@@ -254,7 +268,7 @@ public class ScheduleEntryEditPanel
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 1, 5, 15), 0, 0));
 	}
-	
+
 	protected void runPeriodicallyRadioPressed()
 	{
 		startDateTimeCal.setEnabled(true);
@@ -285,7 +299,7 @@ public class ScheduleEntryEditPanel
 		parent.launchDialog(dlg);
 		if (dlg.isCancelled())
 			return;
-		
+
 		selectedRS = dlg.getSelection();
 		routingSpecField.setText(selectedRS == null ? "" : selectedRS.getName());
 	}
@@ -298,8 +312,8 @@ public class ScheduleEntryEditPanel
 			schedulerDaemonCombo.setSelectedItem(appName);
 		else
 			schedulerDaemonCombo.setSelectedIndex(0); // blank selection at top of list.
-		
-		if (origObject.getRoutingSpecName() == null 
+
+		if (origObject.getRoutingSpecName() == null
 		 || origObject.getRoutingSpecName().trim().length() == 0)
 		{
 			routingSpecField.setText("");
@@ -310,10 +324,10 @@ public class ScheduleEntryEditPanel
 			selectedRS = Database.getDb().routingSpecList.find(origObject.getRoutingSpecName());
 			routingSpecField.setText(origObject.getRoutingSpecName());
 		}
-		
+
 		enabledCheck.setSelected(origObject.isEnabled());
 		lastModifiedField.setText(
-			origObject.getLastModified() == null ? "(never)" : 
+			origObject.getLastModified() == null ? "(never)" :
 			origObject.getLastModified().toString());
 
 		if (origObject.getStartTime() == null)
@@ -329,7 +343,7 @@ public class ScheduleEntryEditPanel
 			if (tzs == null || tzs.trim().length() == 0)
 				tzs = TimeZone.getDefault().getID();
 			tzSelector.setSelectedItem(tzs);
-			
+
 			// The GUI startDateTimeCal will always have UTC.
 			// So copy the fields individually into it.
 			userTzCal.setTimeZone(TimeZone.getTimeZone(tzs));
@@ -362,7 +376,7 @@ public class ScheduleEntryEditPanel
 			}
 		}
 	}
-	
+
 	@Override
 	public String getEntityName()
 	{
@@ -394,7 +408,7 @@ public class ScheduleEntryEditPanel
 			{
 			}
 		}
-		DbEditorTabbedPane scheduleTabbedPane 
+		DbEditorTabbedPane scheduleTabbedPane
 			= parent.getScheduleListTabbedPane();
 		scheduleTabbedPane.remove(this);
 	}
@@ -426,10 +440,12 @@ public class ScheduleEntryEditPanel
 			}
 			catch(Exception ex)
 			{
-				parent.showError(
-					LoadResourceBundle.sprintf(
+				final String msg = LoadResourceBundle.sprintf(
 						dbeditLabels.getString("ScheduleEntryPanel.BadTimeIncr"),
-						timeIncField.getText().trim()));
+						timeIncField.getText().trim());
+				log.atError().setCause(ex).log(msg);
+
+				parent.showError(msg);
 				return false;
 			}
 		}
@@ -447,6 +463,7 @@ public class ScheduleEntryEditPanel
 		}
 		catch (DatabaseException ex)
 		{
+			log.atError().setCause(ex).log("Unable to write scheduled entry.");
 			parent.showError(
 				LoadResourceBundle.sprintf(
 					dbeditLabels.getString("ScheduleEntryPanel.WriteError"),
@@ -461,7 +478,7 @@ public class ScheduleEntryEditPanel
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Pull data from the gui controls and store back into the object.
 	 * If entry == null, use the origObject that was used to populate the panel.
@@ -470,9 +487,9 @@ public class ScheduleEntryEditPanel
 	{
 		if (entry == null)
 			entry = origObject;
-		
+
 		// Note: Can't change the name field.
-		
+
 		// The selected loading app is in the combo.
 		int idx = schedulerDaemonCombo.getSelectedIndex();
 		if (idx == 0)
@@ -485,7 +502,7 @@ public class ScheduleEntryEditPanel
 			entry.setLoadingAppName(appsInCombo.get(idx-1).getAppName());
 			entry.setLoadingAppId(appsInCombo.get(idx-1).getAppId());
 		}
-		
+
 		if (selectedRS == null)
 		{
 			entry.setRoutingSpecId(Constants.undefinedId);
@@ -496,7 +513,7 @@ public class ScheduleEntryEditPanel
 			entry.setRoutingSpecId(selectedRS.getId());
 			entry.setRoutingSpecName(selectedRS.getName());
 		}
-		
+
 		entry.setEnabled(enabledCheck.isSelected());
 
 		// Note: Don't set last modified. It will be set by the DAO that writes
@@ -518,7 +535,7 @@ public class ScheduleEntryEditPanel
 			userTzCal.setTimeZone(TimeZone.getTimeZone(tzs));
 			copyCalFields(utcCal, userTzCal);
 			entry.setStartTime(userTzCal.getTime());
-			
+
 			if (runOnceRadio.isSelected())
 				entry.setRunInterval(null);
 			else
@@ -533,10 +550,9 @@ public class ScheduleEntryEditPanel
 	@Override
 	public void forceClose()
 	{
-		// TODO Auto-generated method stub
-
+		/* no op */
 	}
-	
+
 	private void copyCalFields(Calendar from, Calendar to)
 	{
 		to.set(Calendar.YEAR, from.get(Calendar.YEAR));

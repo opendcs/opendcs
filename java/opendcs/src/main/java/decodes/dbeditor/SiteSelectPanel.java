@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -5,7 +20,10 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 
+import org.opendcs.gui.GuiHelpers;
 import org.opendcs.gui.SearchPanel;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.ResourceBundle;
@@ -16,6 +34,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class SiteSelectPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 	static String descriptionLabel = genericLabels.getString("description");
@@ -24,7 +43,7 @@ public class SiteSelectPanel extends JPanel
 	JScrollPane jScrollPane1 = new JScrollPane();
 	SiteSelectTableModel model;
 	private TableRowSorter<SiteSelectTableModel> sorter;
-	private JTable siteTable;     
+	private JTable siteTable;
 	SiteSelectDialog parentDialog = null;
 	SiteListPanel parentPanel = null;
 
@@ -34,7 +53,7 @@ public class SiteSelectPanel extends JPanel
 		siteTable = new JTable(model);
 		sorter = new TableRowSorter<>(model);
         siteTable.setRowSorter(sorter);
-		
+
 		sorter.setSortKeys(
             Collections.singletonList(
                 new RowSorter.SortKey(getDefaultSortingColumnIndex(), SortOrder.ASCENDING)
@@ -57,11 +76,13 @@ public class SiteSelectPanel extends JPanel
 			}
 		} );
 
-		try {
+		try
+		{
 		    jbInit();
 		}
-		catch(Exception ex) {
-		    ex.printStackTrace();
+		catch (Exception ex)
+		{
+		    GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -160,7 +181,7 @@ public class SiteSelectPanel extends JPanel
 	{
 		this.parentPanel = parentPanel;
 	}
-	
+
 	public void setSelection(SiteName sn)
 	{
 		for(int col=0; col < model.getColumnCount(); col++)
@@ -181,6 +202,3 @@ public class SiteSelectPanel extends JPanel
 		}
 	}
 }
-
-
-

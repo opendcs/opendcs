@@ -1,6 +1,18 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.BorderLayout;
@@ -18,7 +30,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JCheckBox;
@@ -29,7 +40,9 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.gui.Help;
 import lrgs.common.DcpAddress;
@@ -38,7 +51,6 @@ import lrgs.common.SearchCriteria;
 import lrgs.gui.SearchCriteriaEditPanel;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -63,11 +75,9 @@ import decodes.util.PropertySpec;
  * This panel edits an open routing spec. Opened from the RoutingSpecListPanel.
  */
 @SuppressWarnings("serial")
-public class RoutingSpecEditPanel 
-	extends DbEditorTab 
-	implements ChangeTracker, EntityOpsController, PropertiesOwner
+public class RoutingSpecEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController, PropertiesOwner
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecEditPanel.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -95,7 +105,7 @@ public class RoutingSpecEditPanel
 	private Properties editProps = new Properties();
 
 
-	private static PropertySpec rsPropSpecs[] = 
+	private static PropertySpec rsPropSpecs[] =
 	{
 		// Properties implemented directly by RoutingSpecThread:
 		new PropertySpec("noLimits", PropertySpec.BOOLEAN,
@@ -106,14 +116,14 @@ public class RoutingSpecEditPanel
 			"Name of in-line computations config file"),
 		new PropertySpec("usgsSummaryFile", PropertySpec.FILENAME,
 			"Optional USGS-Format Summary File"),
-		new PropertySpec("RawArchivePath", PropertySpec.STRING, 
+		new PropertySpec("RawArchivePath", PropertySpec.STRING,
 			"Path to raw archive file. Defining this turns on the raw-archive function. " +
 			"Example: $DCSTOOL_HOME/raw-archive/fts/$DATE(yyMMdd).fts"),
-		new PropertySpec("RawArchiveStartDelim", PropertySpec.STRING, 
+		new PropertySpec("RawArchiveStartDelim", PropertySpec.STRING,
 			"String placed before each message in the file"),
-		new PropertySpec("RawArchiveEndDelim", PropertySpec.STRING, 
+		new PropertySpec("RawArchiveEndDelim", PropertySpec.STRING,
 			"String placed after each message in the file"),
-		new PropertySpec("RawArchiveMaxAge", PropertySpec.STRING, 
+		new PropertySpec("RawArchiveMaxAge", PropertySpec.STRING,
 			"Example: '1 year'. Files older than this are deleted."),
 		new PropertySpec("debugLevel", PropertySpec.INT,
 			"(default=0) Set to 1, 2, 3 for increasing levels of debug information" +
@@ -124,7 +134,7 @@ public class RoutingSpecEditPanel
 			"(default=true) Set to false to tell this routing spec to NOT attempt to "
 			+ "purge expired events from the database. Also see DecodesSettings.eventPurgeDays")
 	};
-	
+
 	private PropertySpec combinedProps[] = rsPropSpecs;
 
 
@@ -145,21 +155,20 @@ public class RoutingSpecEditPanel
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
 	/**
 	 * This method only called in dbedit. Associates this panel with enclosing
 	 * frame.
-	 * 
+	 *
 	 * @param parent
 	 *            Enclosing frame
 	 */
 	void setParent(DbEditorFrame parent)
 	{
-		Logger.instance().debug3("RoutingSpecEditPanel.setParent("
-			+ (parent == null ? "NULL" : "") + ")");
+		log.trace("RoutingSpecEditPanel.setParent({})", (parent == null ? "NULL" : ""));
 		this.parent = parent;
 		scEditPanel.setTopFrame(parent);
 	}
@@ -175,7 +184,7 @@ public class RoutingSpecEditPanel
 			consumerTypeCombo.setSelection(theObject.consumerType);
 		if (theObject.consumerArg != null)
 			consumerArgsField.setText(theObject.consumerArg);
-		
+
 		productionCheck.setSelected(theObject.isProduction);
 		enableEquationsCheck.setSelected(theObject.enableEquations);
 
@@ -183,7 +192,7 @@ public class RoutingSpecEditPanel
 			outputFormatCombo.setSelection(theObject.outputFormat);
 		if (theObject.outputTimeZoneAbbr != null)
 			outputTimezoneCombo.setTZ(theObject.outputTimeZoneAbbr);
-		
+
 		if (theObject.presentationGroupName != null)
 			presentationGroupCombo.setSelection(theObject.presentationGroupName);
 
@@ -245,8 +254,7 @@ public class RoutingSpecEditPanel
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().warning("Cannot parse searchcrit: " + ex);
-			Logger.instance().warning("searchcrit image was: \n" + scString.toString());
+			log.atWarn().setCause(ex).log("Cannot parse search criteria: {}", scString.toString());
 		}
 
 		// Now the properties edit panel will edit the props with the SC stuff removed.
@@ -272,13 +280,13 @@ public class RoutingSpecEditPanel
 		theObject.enableEquations = enableEquationsCheck.isSelected();
 		theObject.outputFormat = outputFormatCombo.getSelection();
 		theObject.outputTimeZoneAbbr = outputTimezoneCombo.getTZ();
-		theObject.presentationGroupName = 
+		theObject.presentationGroupName =
 			presentationGroupCombo.getSelectedIndex() == 0 ? null :
 				(String)presentationGroupCombo.getSelectedItem();
 
 		// Get the properties
 		propertiesEditPanel.getModel().saveChanges(); // saves to editProps
-		
+
 		theObject.getProperties().clear();
 		PropertiesUtil.copyProps(theObject.getProperties(), editProps);
 		SearchCriteria sc = new SearchCriteria();
@@ -289,25 +297,25 @@ public class RoutingSpecEditPanel
 		{
 			if (sc.getDapsSince() != null) // Daps Since also specified
 				timeApplyTo = "b";
-			else // only LRGS since time specified 
+			else // only LRGS since time specified
 				timeApplyTo = "l";
 		}
 		else if ((theObject.sinceTime = sc.getDapsSince()) != null)
 			timeApplyTo = "m";
-		
+
 		theObject.untilTime = sc.getLrgsUntil();
 		if (theObject.untilTime == null)
 			theObject.untilTime = sc.getDapsUntil();
-		
+
 		theObject.networkListNames.clear();
 		theObject.networkLists.clear();
 		theObject.getProperties().setProperty("rs.timeApplyTo", timeApplyTo);
 		for(String nln : sc.NetlistFiles)
 		{
-			Logger.instance().debug3("Added netlist name '" + nln + "'");
+			log.trace("Added netlist name '{}'", nln);
 			theObject.networkListNames.add(nln);
 		}
-		
+
 		NumberFormat nf = NumberFormat.getIntegerInstance();
 		nf.setMinimumIntegerDigits(4);
 		nf.setGroupingUsed(false);
@@ -326,7 +334,7 @@ public class RoutingSpecEditPanel
 			if (sc.sources[idx] != 0)
 				theObject.getProperties().setProperty("sc:SOURCE_" + nf.format(i++),
 					DcpMsgFlag.sourceValue2Name(sc.sources[idx]));
-		
+
 		if (sc.DapsStatus != SearchCriteria.UNSPECIFIED)
 			theObject.getProperties().setProperty("sc:DAPS_STATUS", "" + sc.DapsStatus);
 		if (sc.spacecraft != SearchCriteria.SC_ANY)
@@ -348,60 +356,60 @@ public class RoutingSpecEditPanel
 		this.add(rsPanel, BorderLayout.CENTER);
 		scEditPanel.setTopFrame(parent);
 		scEditPanel.setAllowRealTime(true);
-		
+
 		rsPanel.add(paramPanel,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.5,
-			GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+			GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 			new Insets(4, 4, 4, 4), 0, 0));
 		propertiesEditPanel.setOwnerFrame(parent);
 		rsPanel.add(propertiesEditPanel,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.5,
-			GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+			GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 			new Insets(4, 4, 4, 4), 0, 0));
 		rsPanel.add(scEditPanel,
 			new GridBagConstraints(0, 1, 2, 1, 1.0, 0.5,
-			GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+			GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 			new Insets(4, 4, 4, 4), 0, 0));
 
 		paramPanel.add(new JLabel(genericLabels.getString("nameLabel")),
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 4, 1, 2), 0, 0));
 		nameField.setEditable(false);
-		paramPanel.add(nameField, 
+		paramPanel.add(nameField,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 1, 10), 0, 0));
-	
+
 		paramPanel.add(new JLabel(dbeditLabels.getString("RoutingSpecEditPanel.dataSource")),
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 4, 1, 2), 0, 0));
-		paramPanel.add(dataSourceCombo, 
+		paramPanel.add(dataSourceCombo,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 1, 10), 0, 0));
 		dataSourceCombo.addActionListener(
 			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	                dataSourceSelected();
 	            }
 	        });
 
 		paramPanel.add(new JLabel(dbeditLabels.getString("RoutingSpecEditPanel.consumerType")),
-			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 4, 1, 2), 0, 0));
-		paramPanel.add(consumerTypeCombo, 
+		paramPanel.add(consumerTypeCombo,
 			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 1, 10), 0, 0));
 		consumerTypeCombo.addActionListener(
 			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	                consumerTypeSelected();
 	            }
@@ -411,47 +419,47 @@ public class RoutingSpecEditPanel
 		// type is selected.
 		consumerArgLabel.setText(dbeditLabels.getString("RoutingSpecEditPanel.consumerArgs"));
 		paramPanel.add(consumerArgLabel,
-			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 4, 1, 2), 0, 0));
-		paramPanel.add(consumerArgsField, 
+		paramPanel.add(consumerArgsField,
 			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 1, 10), 0, 0));
-	
+
 		paramPanel.add(new JLabel(dbeditLabels.getString("RoutingSpecEditPanel.outFormat")),
-			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 4, 1, 2), 0, 0));
 		outputFormatCombo.addActionListener(
 			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	                outputFormatSelected();
 	            }
 	        });
-		paramPanel.add(outputFormatCombo, 
+		paramPanel.add(outputFormatCombo,
 			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(1, 0, 1, 10), 0, 0));
-		
+
 		paramPanel.add(new JLabel(genericLabels.getString("timeZoneLabel")),
-			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(1, 4, 1, 2), 0, 0));
-		paramPanel.add(outputTimezoneCombo, 
+		paramPanel.add(outputTimezoneCombo,
 			new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(1, 0, 1, 10), -30, 0));
-	
+
 		paramPanel.add(new JLabel(dbeditLabels.getString("RoutingSpecEditPanel.presGroup")),
-			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 4, 2, 2), 0, 0));
-		paramPanel.add(presentationGroupCombo, 
+		paramPanel.add(presentationGroupCombo,
 			new GridBagConstraints(1, 6, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(1, 0, 1, 10), 0, 0));
 
 		JPanel checkPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 1));
@@ -460,9 +468,9 @@ public class RoutingSpecEditPanel
 		checkPanel.add(enableEquationsCheck);
 		productionCheck.setText(genericLabels.getString("isProduction"));
 		checkPanel.add(productionCheck);
-		paramPanel.add(checkPanel, 
+		paramPanel.add(checkPanel,
 			new GridBagConstraints(0, 7, 4, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(1, 10, 1, 10), 0, 0));
 	}
 
@@ -489,7 +497,7 @@ public class RoutingSpecEditPanel
 		{
 			try
 			{
-				selectedFormatter = 
+				selectedFormatter =
 					OutputFormatter.makeOutputFormatter(formatName, null, null, null, null);
 				outputTimezoneCombo.setEnabled(selectedFormatter.usesTZ());
 				// Update this PropertiesOwner
@@ -497,8 +505,7 @@ public class RoutingSpecEditPanel
 			}
 			catch (Exception ex)
 			{
-				Logger.instance().warning("Cannot instantiate formatter '" 
-					+ formatName + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot instantiate formatter '{}'", formatName);
 			}
 		}
 		SwingUtilities.invokeLater(
@@ -518,7 +525,7 @@ public class RoutingSpecEditPanel
 		ArrayList<PropertySpec> propSpecs = new ArrayList<PropertySpec>();
 		for(PropertySpec ps : rsPropSpecs)
 			propSpecs.add(ps);
-		
+
 		if (selectedDataSource != null)
 		{
 			try
@@ -530,11 +537,12 @@ public class RoutingSpecEditPanel
 			}
 			catch (InvalidDatabaseException ex)
 			{
-				Logger.instance().warning("Cannot instantiate data source of type '"
-					+ dataSourceCombo.getSelectedItem() + "': " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot instantiate data source of type '{}'", dataSourceCombo.getSelectedItem());
 			}
 		}
-		
+
 		if (selectedFormatter != null)
 		{
 			for(PropertySpec ps : selectedFormatter.getSupportedProps())
@@ -546,7 +554,7 @@ public class RoutingSpecEditPanel
 			for(PropertySpec ps : selectedConsumer.getSupportedProps())
 				propSpecs.add(ps);
 		}
-		
+
 		combinedProps = new PropertySpec[propSpecs.size()];
 		propSpecs.toArray(combinedProps);
 		propertiesEditPanel.getModel().setPropertiesOwner(this);
@@ -573,13 +581,14 @@ public class RoutingSpecEditPanel
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().warning("Cannot instantiate consumer '"
-				+ consumerTypeCombo.getSelectedItem() + "': " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot instantiate consumer '{}'", consumerTypeCombo.getSelectedItem());
 			selectedConsumer = null;
 		}
 		if (selectedConsumer != null)
 			consumerArgLabel.setText(selectedConsumer.getArgLabel());
-		
+
 		// Update this PropertiesOwner
 		rebuildCombinedProps();
 
@@ -597,7 +606,7 @@ public class RoutingSpecEditPanel
 
 	/**
 	 * From ChangeTracker interface.
-	 * 
+	 *
 	 * @return true if changes have been made to this screen since the last time
 	 *         it was saved.
 	 */
@@ -610,7 +619,7 @@ public class RoutingSpecEditPanel
 	/**
 	 * From ChangeTracker interface, save the changes back to the database &amp;
 	 * reset the hasChanged flag.
-	 * 
+	 *
 	 * @return true if object was successfully saved.
 	 */
 	public boolean saveChanges()
@@ -640,7 +649,7 @@ public class RoutingSpecEditPanel
 				theObject = origObject.copy();
 				setTopObject(origObject);
 				return true;
-			} 
+			}
 
 			@Override
 			protected void process(List<String> chunks)
