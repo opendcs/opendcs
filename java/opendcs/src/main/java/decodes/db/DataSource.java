@@ -1,23 +1,35 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.db;
 
 import decodes.datasource.DataSourceExec;
-import decodes.datasource.DataSourceException;
-import decodes.datasource.RawMessage;
 import decodes.sql.DbKey;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.StringTokenizer;
 
 /**
 * This is the database DataSource object.  It holds the raw
@@ -28,6 +40,7 @@ import java.util.StringTokenizer;
 */
 public class DataSource extends IdDatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Note - _id member stored in IdDatabaseObject superclass.
 
 	/** Unique name for this DataSource */
@@ -61,7 +74,7 @@ public class DataSource extends IdDatabaseObject
 	public int numUsedBy;
 
 	private transient String dataSourceArgDisplay = null;
-	
+
 	/**
 	* Constructor.
 	*/
@@ -177,11 +190,11 @@ public class DataSource extends IdDatabaseObject
 				return false;
 		}
 		//Fix the bug with the assigned -1 datasource ID
+		// TODO: create proper DbKey equals instead of an attempt to alter an object in an equals.
 		try {
 			((DataSource)rhs).setId(this.getId());
 			return true;
-		} catch (DatabaseException e) {
-			e.printStackTrace();
+		} catch (DatabaseException ex) {
 			return false;
 		}
 	}
@@ -226,7 +239,7 @@ public class DataSource extends IdDatabaseObject
 	}
 
 	/**
-	  Adds a DataSource to this group.  
+	  Adds a DataSource to this group.
 	  Note that no checking is done to verify that this object is a group.
 	  @param sequenceNum the order in which to try this member
 	  @param member the member
@@ -237,7 +250,7 @@ public class DataSource extends IdDatabaseObject
 			groupMembers.setSize(sequenceNum+1);
 		groupMembers.setElementAt(member, sequenceNum);
 	}
-	
+
 	public void rmGroupMember(String memberName)
 	{
 		for(Iterator<DataSource> dsit = groupMembers.iterator(); dsit.hasNext(); )
@@ -278,7 +291,7 @@ public class DataSource extends IdDatabaseObject
 		}
 		return false;
 	}
-	
+
 	/**
 	* Overrides the DatabaseObject method.
 	*/
@@ -331,26 +344,19 @@ public class DataSource extends IdDatabaseObject
 			{
 				throw new InvalidDatabaseException("Exec class " + mySourceType.getExecClassName() + " Doesn't exist");
 			}
-			Logger.instance().debug2("Making data source delegate '" 
-				+ mySourceType.getValue() + "' class='" + dsClass.getCanonicalName()
-				+ "'");
+			log.trace("Making data source delegate '{}', class='{}'",
+					  mySourceType.getValue(), dsClass.getCanonicalName());
 			//ret = (DataSourceExec)dsClass.newInstance();
 			Constructor<?> execCon = dsClass.getConstructor(DataSource.class, Database.class);
 			ret = (DataSourceExec) execCon.newInstance(this,db);
-			if (ret == null)
-			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"newInstance for class '" + dsClass.getName()
-					+ "' returned null");
-			}
 			ret.processDataSource();
 		}
-		catch(Exception e)
+		catch(Exception ex)
 		{
 			throw new InvalidDatabaseException(
 				"Cannot prepare data source '" + getName() +
 				"': Cannot instantiate a Data Source of type '" + dataSourceType
-				+ "': " + e.toString(),e);
+				+ "'.", ex);
 		}
 		return ret;
 	}
@@ -441,7 +447,7 @@ public class DataSource extends IdDatabaseObject
 			dataSourceArgDisplay = sb.toString();
 		}
 	}
-	
+
 	/**
 	 * Process the data source arge for a list display, don't show delimiters and passwords.
 	 * @return the data source arg formatted for a list display.

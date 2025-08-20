@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.db;
 import decodes.datasource.RawMessage;
@@ -13,7 +25,6 @@ import decodes.decoder.FieldParseException;
 import decodes.decoder.SwitchFormatException;
 import decodes.decoder.EndlessLoopException;
 import decodes.util.DecodesSettings;
-import ilex.util.Logger;
 import ilex.var.Variable;
 
 import java.io.IOException;
@@ -22,6 +33,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 import java.util.function.Supplier;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -32,7 +47,7 @@ import java.util.Optional;
  */
 public class DecodesScript extends IdDatabaseObject
 {
-    public static final Logger logger = Logger.instance();
+    public static final Logger log = OpenDcsLoggerFactory.getLogger();
     public static final EmptyDecodesScriptReader EMPTY_SCRIPT = new EmptyDecodesScriptReader();
     // _id is stored in the IdDatabaseObject superclass.
 
@@ -463,40 +478,42 @@ public class DecodesScript extends IdDatabaseObject
                 fs.execute(dops, decmsg);
                 fs = null;
             }
-            catch(EndOfDataException ex)
+            catch (EndOfDataException ex)
             {
-                logger.log(Logger.E_DEBUG1,
-                "Format statements attempted to read past the end of message.");
+                log.debug("Format statements attempted to read past the end of message.");
                 fs = null;
             }
-            catch(SwitchFormatException ex)
+            catch (SwitchFormatException ex)
             {
-                logger.debug3(ex.toString());
+                log.atTrace().setCause(ex).log("switching format.");
                 fs = ex.getNewFormat();
             }
-            catch(FieldParseException ex)
+            catch (FieldParseException ex)
             {
-                logger.log(Logger.E_DEBUG1, ex.toString());
                 fs = getFormatStatement("ERROR");
                 if (fs == null)
                 {
-                    logger.log(Logger.E_WARNING,
-                        "No ERROR statement, terminating script: "
-                        + ex.toString());
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Error parsing field and No ERROR statement, terminating script");
                     throw ex;
                 }
             }
-            catch(EndlessLoopException ex )
+            catch (EndlessLoopException ex)
             {
-                logger.log(Logger.E_WARNING,
-                        "Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated: " + ex);
-                throw new DecoderException("Platform Config: "+ platformConfig.getName()+", script <"+scriptName+"> in endless loop  -- terminated.");
+                throw new DecoderException(
+                    "Platform Config: " + platformConfig.getName() +
+                    ", script <" + scriptName + "> in endless loop  -- terminated.",
+                    ex
+                    );
             }
-               catch(Exception ex)  // ING-569
-               {
-                    Logger.instance().debug1("DecodesScript: Nonspecific exception. Platform Config: "+ platformConfig.getName()+", script <"+scriptName+">: " + ex);
-//                    throw ex;
-               }
+            catch(Exception ex)  // ING-569
+            {
+                log.atError()
+                   .setCause(ex)
+                   .log("DecodesScript: Nonspecific exception. Platform Config: " +
+                        platformConfig.getName() + ", script <"+scriptName+">.");
+            }
             // All other decoding exception will cause failure.
         }
 
@@ -567,7 +584,7 @@ public class DecodesScript extends IdDatabaseObject
     {
         return replaceSymbols.getOrDefault(value, value);
     }
-    
+
     public void setIncludePMs(ArrayList<String> includePMs)
     {
         this.includePMs = includePMs;
@@ -575,8 +592,8 @@ public class DecodesScript extends IdDatabaseObject
             this.includePMs = null;
         if (this.includePMs != null)
         {
-            logger.debug1("setIncludePMs: includePMs has "
-                         + includePMs.size() + " strings. [0]=" + includePMs.get(0));
+            log.debug("setIncludePMs: includePMs has {} strings. [0]={}",
+                      includePMs.size(), includePMs.get(0));
         }
     }
 
@@ -609,29 +626,31 @@ public class DecodesScript extends IdDatabaseObject
             return;
         }
       nextPM:
-        for(String pmname : includePMs)
+        for(String pmname: includePMs)
         {
-            logger.debug1("addPMs looking for '" + pmname + "'");
+            log.debug("addPMs looking for '{}'", pmname);
             Variable v = rm.getPM(pmname);
             if (v == null)
             {
-                logger.info(
-                    "addPMs: Message for '" + new String(rm.getHeader())
-                    + "' does not have requested performance measurement '" + pmname + "' -- ignored.");
+                log.info(
+                    "addPMs: Message for '{}' does not have requested performance measurement '{}' -- ignored.",
+                    new String(rm.getHeader()), pmname
+                );
                 continue;
             }
-            for (ConfigSensor cs : pc.getSensorVec())
+            for (ConfigSensor cs: pc.getSensorVec())
             {
                 if (cs.sensorName.equalsIgnoreCase(pmname))
                 {
                     decodedMessage.addSample(cs.sensorNumber, v, 0);
-                    logger.debug1("addPM: added pm '" + pmname + "' to sensor " + cs.sensorNumber + " with value '" + v.toString() + "'");
+                    log.debug("addPM: added pm '{}' to sensor {} with value '{}'",
+                              pmname, cs.sensorNumber, v.toString());
                     continue nextPM;
                 }
             }
             // Fell through, no matching sensor:
-            logger.info("addPMs: The platform config for '" + new String(rm.getHeader())
-                + "' does not have a sensor named '" + pmname + "' -- discarded.");
+            log.info("addPMs: The platform config for '{}' does not have a sensor named '{}' -- discarded.",
+                     new String(rm.getHeader()), pmname);
         }
     }
 
@@ -648,7 +667,7 @@ public class DecodesScript extends IdDatabaseObject
     }
 
     /**
-     * Used for starting a new blank decodes script. 
+     * Used for starting a new blank decodes script.
      * @return a Builder object for further operations
      */
     public static DecodesScriptBuilder empty()
@@ -667,7 +686,7 @@ public class DecodesScript extends IdDatabaseObject
     }
 
     /**
-     * Utility class to help with creating DecodesScript objects 
+     * Utility class to help with creating DecodesScript objects
      * and making sure they're in a valid state.
      * @since 2022-11-05
      */
@@ -688,7 +707,7 @@ public class DecodesScript extends IdDatabaseObject
         }
 
         /**
-         * Finalize the creation of a decodes script. After this 
+         * Finalize the creation of a decodes script. After this
          * the script should be ready for decoding operations.
          *
          * Defaults to <b>NOT</b> throwing an exception on a script processing error.
@@ -714,11 +733,11 @@ public class DecodesScript extends IdDatabaseObject
         {
             Objects.requireNonNull(nameSupplier, "nameSupplier cannot be null. Set before calling build.");
             DecodesScript script = new DecodesScript(nameSupplier.get());
-            
+
             Objects.requireNonNull(platformSupplier, "platformSupplier cannot be null. Set before calling build.");
             script.platformConfig = platformSupplier.get();
             Objects.requireNonNull(script.platformConfig, "A valid platform configuration was not available.");
-  
+
             Objects.requireNonNull(scriptType,"Script type cannot be null");
             script.scriptType = scriptType.get();
             try
@@ -743,14 +762,14 @@ public class DecodesScript extends IdDatabaseObject
                 }
                 else
                 {
-                    logger.failure(msg + " " + ex.getLocalizedMessage());
+                    log.atError().setCause(ex).log(msg);
                 }
             }
             return script;
         }
 
         /**
-         * Assign a platform configuration 
+         * Assign a platform configuration
          * @param pc initialized PlatformConfig
          * @return the builder for further operations
          */
@@ -820,7 +839,7 @@ public class DecodesScript extends IdDatabaseObject
                 ss.rawConverter.algorithm = Constants.eucvt_none;
                 ds.addScriptSensor(ss);
             }
-            
+
 
         }
     }

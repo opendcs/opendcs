@@ -1,7 +1,18 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-
 package decodes.db;
 
 import java.util.ArrayList;
@@ -9,23 +20,23 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dao.CachableDbObject;
 
 import ilex.util.HasProperties;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
-import decodes.sql.DbKey;
 import decodes.util.DecodesSettings;
 
 /**
  * This class encapsulates a Site, which is an actual, physical location.
  */
-public class Site extends IdDatabaseObject
-	implements HasProperties, CachableDbObject
+public class Site extends IdDatabaseObject implements HasProperties, CachableDbObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* Static flag -- set in DB editor to prevent platform sites from being
 	* added to the list.
@@ -88,12 +99,12 @@ public class Site extends IdDatabaseObject
 	  characters. May contain newlines.
 	*/
 	private String description = null;
-	
+
 	/**
 	 * Public display name
 	 */
 	private String publicName = null;
-	  
+
 	/**
 	  Used by XML database only. This is the filename from/to which the
 	  site was last read/written. It is used by the editor so it can remove
@@ -103,16 +114,16 @@ public class Site extends IdDatabaseObject
 
 	/** As of DB version 8 Sites can have properties: */
 	private Properties siteProps = new Properties();
-	
+
 	// Links
 	private ArrayList<SiteName> siteNames;
 
 	/** This flag used by the editor to delete abandoned new platforms. */
 	public boolean isNew;
-	
+
 	/** DB Version 10 supports making sites inactive */
 	private boolean active = true;
-	
+
 	/** DB Version 10 supports location types */
 	private String locationType = null;
 
@@ -163,8 +174,8 @@ public class Site extends IdDatabaseObject
 		}
 	}
 
-	/** 
-	  Construct new Site object associated with a particular Platform 
+	/**
+	  Construct new Site object associated with a particular Platform
 	  @param platform A platform that resides at this site.
 	*/
 	public Site(Platform platform)
@@ -179,11 +190,11 @@ public class Site extends IdDatabaseObject
 	public synchronized String getDescription() { return description; }
 
 
-	/** 
-	  Sets the description for this site. 
+	/**
+	  Sets the description for this site.
 	  @param d the description
 	*/
-	public synchronized void setDescription(String d) { description = d; } 
+	public synchronized void setDescription(String d) { description = d; }
 
 	/**
 	  From DatabaseObject interface,
@@ -217,7 +228,7 @@ public class Site extends IdDatabaseObject
 	  @param sn the site name
 	*/
 	public synchronized void addName(SiteName sn)
-	{		
+	{
 		SiteName oldsn = getName(sn.getNameType());
 		if (oldsn != null)
 		{
@@ -225,7 +236,7 @@ public class Site extends IdDatabaseObject
 		}
 
 		sn.site = this;
-		siteNames.add(sn);	
+		siteNames.add(sn);
 	}
 
 	/**
@@ -276,13 +287,13 @@ public class Site extends IdDatabaseObject
 	{
 		if (publicName != null)
 			return publicName;
-		
+
 		SiteName sn = getPreferredName();
 		if (sn == null)
 			return "unknown";
 		return sn.getNameValue();
 	}
-	
+
 	/**
 	 * @param nameValue the name value
 	 * @return true if this site has a name with the passed value (case INsensitive)
@@ -294,7 +305,7 @@ public class Site extends IdDatabaseObject
 				return true;
 		return false;
 	}
-	
+
 	public synchronized String getUniqueName()
 	{
 		SiteName sn = getPreferredName();
@@ -306,7 +317,7 @@ public class Site extends IdDatabaseObject
 	{
 		return siteNames.iterator();
 	}
-	
+
 	/** @return number of names assigned to this site. */
 	public synchronized int getNameCount()
 	{
@@ -325,15 +336,14 @@ public class Site extends IdDatabaseObject
 		if (sn != null)
 		{
 			siteNames.remove(idx);
-//			myDatabase.siteList.rmSiteName(sn);
 		}
 	}
 
 	/** @return the elevation (above mean sea level) for this site. */
 	public synchronized double getElevation() { return elevation; }
 
-	/** 
-	  Sets the elevation (above mean sea level) for this site. 
+	/**
+	  Sets the elevation (above mean sea level) for this site.
 	  @param elev the elevation
 	*/
 	public synchronized void setElevation(double elev) { elevation = elev; }
@@ -341,20 +351,20 @@ public class Site extends IdDatabaseObject
 	/** @return the elevatation units for this site. */
 	public synchronized String getElevationUnits() { return elevationUnits; }
 
-	/** 
-	  Set elevation units for this site. 
+	/**
+	  Set elevation units for this site.
 	  @param eu the units
 	*/
 	public synchronized void setElevationUnits(String eu) { elevationUnits = eu; }
 
-	/** 
-	 * Return the USGS Database Number or null if undefined. 
+	/**
+	 * Return the USGS Database Number or null if undefined.
 	 * The USGS DBNO is stored at the end of the USGS Name in
 	 * the format ssssssss-DBnn, where ssssssss is the site number and
 	 * nn is the DBNO. If it contains no -DB suffix, assume database 01.
-	 * @return the USGS Database Number (defaults to "01" if undefined). 
+	 * @return the USGS Database Number (defaults to "01" if undefined).
 	 */
-	public synchronized String getUsgsDbno() 
+	public synchronized String getUsgsDbno()
 	{
 		SiteName usgsName = getName(Constants.snt_USGS);
 		if (usgsName == null)
@@ -377,7 +387,7 @@ public class Site extends IdDatabaseObject
 		myDatabase.getDbIo().writeSite(this);
 	}
 
-	/** 
+	/**
 	 * Adds a property to this object's meta-data.
 	 * @param name the property name.
 	 * @param value the property value.
@@ -434,76 +444,74 @@ public class Site extends IdDatabaseObject
 		}
 		return description.substring(0, i);
 	}
-	
+
 	public synchronized boolean importEquals(Site os)
 	{
 		if (os == null)
 		{
-			Logger.instance().debug3("Imported site is null");
+			log.trace("Imported site is null");
 			return false;
 		}
-		Logger.instance().debug3("Comparing site '" + this.getDisplayName()
-			+ "' to imported '" + os.getDisplayName() + "'");
+		log.trace("Comparing site '{}' to imported '{}", this.getDisplayName(), os.getDisplayName());
 		if (!TextUtil.strEqualIgnoreCase(latitude, os.latitude))
 		{
-			Logger.instance().debug3("Latitude differs, this='" + latitude
-				+ "', that='" + os.latitude + "'");
+			log.trace("Latitude differs, this='{}', that='{}'", latitude, os.latitude);
 			return false;
 		}
 		if (!TextUtil.strEqualIgnoreCase(longitude, os.longitude))
 		{
-			Logger.instance().debug3("longitude differs");
+			log.trace("longitude differs");
 			return false;
 		}
 		if (!TextUtil.strEqualIgnoreCase(timeZoneAbbr, os.timeZoneAbbr))
 		{
-			Logger.instance().debug3("timeZoneAbbr differs");
+			log.trace("timeZoneAbbr differs");
 			return false;
 		}
 		if (!TextUtil.strEqualIgnoreCase(country, os.country))
 		{
-			Logger.instance().debug3("country differs");
+			log.trace("country differs");
 			return false;
 		}
 		if (!TextUtil.strEqualIgnoreCase(state, os.state))
 		{
-			Logger.instance().debug3("state differs");
+			log.trace("state differs");
 			return false;
 		}
 		if (!TextUtil.strEqualIgnoreCase(nearestCity, os.nearestCity))
 		{
-			Logger.instance().debug3("nearestCity differs");
+			log.trace("nearestCity differs");
 			return false;
 		}
 		if (!TextUtil.strEqualIgnoreCase(region, os.region))
 		{
-			Logger.instance().debug3("region differs");
+			log.trace("region differs");
 			return false;
 		}
 		if (!TextUtil.strEqualIgnoreCase(description, os.description))
 		{
-			Logger.instance().debug3("description differs");
+			log.trace("description differs");
 			return false;
 		}
 		if (!PropertiesUtil.propertiesEqual(siteProps, os.siteProps))
 		{
-			Logger.instance().debug3("site properties differ");
+			log.trace("site properties differ");
 			return false;
 		}
 		if (siteNames.size() != os.siteNames.size())
 		{
-			Logger.instance().debug3("# of site names differs");
+			log.trace("# of site names differs");
 			return false;
 		}
-		for(SiteName sn : siteNames)
+		for(SiteName sn: siteNames)
 		{
 			SiteName ossn = os.getName(sn.getNameType());
 			if (!TextUtil.strEqualIgnoreCase(sn.getNameValue(), ossn.getNameValue()))
 			{
-				Logger.instance().debug3("Name type '" +sn.getNameType() + "' differs");
+				log.trace("Name type '{}'", sn.getNameType());
 				return false;
 			}
-				
+
 		}
 		return true;
 	}
@@ -519,7 +527,7 @@ public class Site extends IdDatabaseObject
 	{
 		this.publicName = publicName;
 	}
-	
+
 	/**
 	 * Remove the name of the given name type
 	 * @param type the name type
@@ -563,6 +571,6 @@ public class Site extends IdDatabaseObject
 	{
 		this.lastModifyTime = lastModifyTime;
 	}
-	
+
 	public synchronized ArrayList<SiteName> getNameArray() { return siteNames; }
 }

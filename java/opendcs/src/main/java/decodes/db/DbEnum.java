@@ -1,101 +1,22 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2014/05/27 12:56:02  mmaloney
-*  cleanup
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.2  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.4  2007/10/16 22:48:10  mmaloney
-*  dev
-*
-*  Revision 1.3  2006/05/22 14:05:39  mmaloney
-*  dev
-*
-*  Revision 1.2  2005/06/04 16:49:27  mjmaloney
-*  dev
-*
-*  Revision 1.1  2005/03/15 16:51:26  mjmaloney
-*  *** empty log message ***
-*
-*  Revision 1.19  2004/08/26 13:29:21  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.18  2004/04/01 22:38:16  mjmaloney
-*  Added 'remove' function, required by reference list editor.
-*
-*  Revision 1.17  2004/02/05 21:50:19  mjmaloney
-*  final release prep for 6.0
-*
-*  Revision 1.16  2003/10/20 20:22:53  mjmaloney
-*  Database changes for DECODES 6.0
-*
-*  Revision 1.15  2002/09/24 13:13:59  mjmaloney
-*  SQL dev.
-*
-*  Revision 1.14  2002/09/19 12:17:28  mjmaloney
-*  SQL Updates.
-*
-*  Revision 1.13  2002/08/26 05:02:59  chris
-*  This file has been superceded by the .pjava version.
-*
-*  Revision 1.1  2002/08/26 04:53:45  chris
-*  Major SQL Database I/O development.
-*
-*  Revision 1.12  2002/07/15 21:38:26  chris
-*  Convert an EnumValue to lowercase before storing it.
-*
-*  Revision 1.11  2002/06/24 03:39:37  chris
-*  Initial changes in support of the SQL database functionality.
-*
-*  Revision 1.10  2002/03/31 21:09:37  mike
-*  bug fixes
-*
-*  Revision 1.9  2001/09/14 21:18:15  mike
-*  dev
-*
-*  Revision 1.8  2001/04/23 20:15:53  mike
-*  dev.
-*
-*  Revision 1.7  2001/04/21 20:19:23  mike
-*  Added read & write methods to all DatabaseObjects
-*
-*  Revision 1.6  2001/04/12 12:30:17  mike
-*  dev
-*
-*  Revision 1.5  2001/04/02 00:42:33  mike
-*  DatabaseObject is now an abstract base-class.
-*
-*  Revision 1.4  2001/03/23 20:22:53  mike
-*  Collection classes are no longer static monostate. Access them through
-*  the current database (Database.getDb().collectionName)
-*
-*  Revision 1.3  2000/12/28 13:55:39  mike
-*  *** empty log message ***
-*
-*  Revision 1.2  2000/12/22 03:52:24  mike
-*  *** empty log message ***
-*
-*  Revision 1.1  2000/12/21 14:31:27  mike
-*  Created.
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.db;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import opendcs.dao.CachableDbObject;
 
@@ -108,12 +29,9 @@ import java.io.Serializable;
  * stored in an EnumValue object.
  * _id is stored in the IdDatabaseObject superclass.
  */
-public class DbEnum 
-    extends IdDatabaseObject
-    implements CachableDbObject, Serializable
+public class DbEnum  extends IdDatabaseObject implements CachableDbObject, Serializable
 {
     private static final long serialVersionUID = -7534343805851676281L;
-    private static final Logger logger = LoggerFactory.getLogger(DbEnum.class);
 
     /** The name of this enumeration. */
     public String enumName;
@@ -126,12 +44,12 @@ public class DbEnum
 
     /** The default value of the enumeration, or null if no default specified. */
     private String defaultValue;
-    
+
     /** Description of what this enum is used for */
     private String description = null;
 
-    /** 
-     * Construct from a name.  The case of the name is preserved. 
+    /**
+     * Construct from a name.  The case of the name is preserved.
      * @param name the name of the enumeration
      */
     public DbEnum(String name)
@@ -146,7 +64,7 @@ public class DbEnum
         defaultValue = null;
     }
 
-    /** 
+    /**
      * Used by SQL database to construct enum with unique numeric key.
      * @param id the unique ID
      * @param name the name
@@ -191,7 +109,7 @@ public class DbEnum
         enumValues.add(ret);
         return ret;
     }
-    
+
     public void addValue(EnumValue ev)
     {
         enumValues.add(ev);
@@ -260,7 +178,7 @@ public class DbEnum
         return enumValues.iterator();
     }
 
-    /** 
+    /**
      * Return an EnumValue by index.
      * @param index the index
      * @return an EnumValue by index, or null if out of range.
@@ -285,7 +203,7 @@ public class DbEnum
     */
     public void sort()
     {
-        Collections.sort(enumValues, 
+        Collections.sort(enumValues,
             new Comparator<EnumValue>()
             {
                 public int compare(EnumValue ev1, EnumValue ev2)
@@ -305,7 +223,7 @@ public class DbEnum
       to findEnumValue.
      * @return the default value or null if none is specified.
      */
-    public String getDefault() 
+    public String getDefault()
     {
         return defaultValue;
     }

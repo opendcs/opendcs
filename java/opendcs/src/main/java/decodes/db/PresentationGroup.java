@@ -1,7 +1,18 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-
 package decodes.db;
 
 import decodes.decoder.*;
@@ -9,10 +20,12 @@ import decodes.util.DecodesSettings;
 
 import java.util.Date;
 import java.util.Vector;
-import java.util.HashMap;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
@@ -22,7 +35,7 @@ import ilex.util.TextUtil;
 */
 public class PresentationGroup extends IdDatabaseObject
 {
-	// Note: _id stored in IdDatabaseObject superclass
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	/**
 	* The name of this PresentationGroup.  Note that this is unique
@@ -53,19 +66,12 @@ public class PresentationGroup extends IdDatabaseObject
 	*/
 	public PresentationGroup parent;
 
-//	/**
-//	* This is constructed during the execution of the prepareForExec()
-//	* method.  This is the combined map of all DP's in this group,
-//	* including the DP's in this group's ancestors, if any.
-//	*/
-//	HashMap<MapKey, DataPresentation> presentationMap = new HashMap<MapKey, DataPresentation>();
-
 	/** internal transient flag to prevent infinite recursion. */
 	private boolean preparing;
 
 	/** Default DP */
 	DataPresentation defaultPresentation = null;
-	
+
 	private boolean _wasRead = false;
 	public boolean wasRead() { return _wasRead; }
 
@@ -111,11 +117,10 @@ public class PresentationGroup extends IdDatabaseObject
 		clearList();
 		preparing = false;
 	}
-	
+
 	public void clearList()
 	{
 		dataPresentations.clear();
-//		presentationMap.clear();
 	}
 
 	/**
@@ -145,20 +150,15 @@ public class PresentationGroup extends IdDatabaseObject
 	*/
 	public void addDataPresentation(DataPresentation dp)
 	{
-//System.out.println("PresentationGroup.addDataPresentation: dt=" 
-//+ dp.dataType.getDisplayName() + ", units=" + dp.unitsAbbr);
 		// MJM If there is a duplicate, remove it first.
 		int n = dataPresentations.size();
 		for(int i = 0; i<n; i++)
 		{
 			DataPresentation edp = dataPresentations.get(i);
-		
+
 			if (edp.getDataType() == dp.getDataType())
-//			 && TextUtil.strEqualIgnoreCase(edp.getEquipmentModelName(),
-//				 dp.getEquipmentModelName()))
 			{
 				dataPresentations.remove(i);
-//System.out.println("PresentationGroup.addDataPresentation: removed duplicate first.");
 				break;
 			}
 		}
@@ -173,7 +173,11 @@ public class PresentationGroup extends IdDatabaseObject
 	{
 		PresentationGroup ret = new PresentationGroup(groupName);
 		try { ret.setId(getId()); }
-		catch(DatabaseException ex) {} // won't happen.
+		catch(DatabaseException ex)
+		{
+			// won't happen.
+			throw new RuntimeException("Unable to set object id in a location where that should always work.", ex);
+		}
 
 		ret.inheritsFrom = this.inheritsFrom;
 		ret.lastModifyTime = new Date();
@@ -266,15 +270,14 @@ public class PresentationGroup extends IdDatabaseObject
 		throws InvalidDatabaseException
 	{
 		if (preparing)
-			throw new InvalidDatabaseException(
-				"Circular reference to presentation group '" +
-				groupName + "'");
+		{
+			throw new InvalidDatabaseException("Circular reference to presentation group '" + groupName + "'");
+		}
 		try
 		{
 			if (!wasRead())
 				read();
-			
-//			addToMap(dataPresentations);
+
 
 			if (inheritsFrom == null || inheritsFrom.length() == 0)
 				parent = null;
@@ -284,17 +287,11 @@ public class PresentationGroup extends IdDatabaseObject
 				parent = myDatabase.presentationGroupList.find(inheritsFrom);
 				parent.prepareForExec();
 
-				// Add parent's DP's to my map, if they're not already there.
-//				addToMap(parent.dataPresentations);
 			}
 		}
 		catch(DatabaseException ex)
 		{
-			String msg = "Cannot read presentation group " + getDisplayName()
-				+ ": " + ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			Logger.instance().failure(msg);
+			log.atError().setCause(ex).log("Cannot read presentation group {}", getDisplayName());
 		}
 		finally
 		{
@@ -318,70 +315,6 @@ public class PresentationGroup extends IdDatabaseObject
 	{
 	}
 
-//	/**
-//	* Used for the key in the presentation element map.
-//	* The key is based on the datatype and (if defined) equipment model.
-//	*/
-//	class MapKey
-//	{
-//		DataType dataType;
-//		String emName;
-//		int myHashCode;
-//
-//		MapKey(DataType dt, String emn)
-//		{
-//			dataType = dt;
-//			emName = emn == null ? "" : emn;
-//			emName = emName.toLowerCase();
-//			myHashCode = dt == null ? 0 : dataType.hashCode();
-//			myHashCode ^= emName.hashCode();
-//		}
-//
-//		public int hashCode()
-//		{
-//			return myHashCode;
-//		}
-//
-//		public boolean equals(Object obj)
-//		{
-//			if (!(obj instanceof MapKey))
-//				return false;
-//			MapKey rhs = (MapKey)obj;
-//			boolean dtEqual = 
-//				(dataType == null && rhs.dataType == null)
-//			 || (dataType != null && rhs.dataType != null 
-//				&& dataType.equals(rhs.dataType));
-//			return dtEqual && emName.equals(rhs.emName);
-//		}
-//	}
-
-//	/**
-//	* This method adds all of the DataPresentation objects in the
-//	* argument to this group's presentationMap HashMap.
-//	*/
-//	private void addToMap(Vector<DataPresentation> dataPresentations)
-//	{
-//		// Make a map of presentation elements in this group.
-//		for(DataPresentation dp : dataPresentations)
-//		{
-//			if (!dp.isPrepared())
-//				dp.prepareForExec();
-//
-////System.out.println("addToMap: Adding datatype='" + dp.dataType.getDisplayName()
-////+ "' to map, with abbr=" + dp.unitsAbbr);
-//
-////			MapKey key = new MapKey(dp.getDataType(), dp.getEquipmentModelName());
-//			MapKey key = new MapKey(dp.getDataType(), "");
-//			if (presentationMap.get(key) != null)
-//				continue;  // Already in the map!
-//
-//			presentationMap.put(key, dp);
-//	
-//			if (dp.getDataType().getCode().equalsIgnoreCase("default"))
-//				defaultPresentation = dp;
-//		}
-//	}
-
 	/**
 	* This overrides the DatabaseObject method.  This reads this
 	* PresentationGroup from the database.
@@ -389,7 +322,6 @@ public class PresentationGroup extends IdDatabaseObject
 	public void read()
 		throws DatabaseException
 	{
-//System.out.println("Reading Presentation Group '" + this.groupName + "'");
 		myDatabase.getDbIo().readPresentationGroup(this);
 		_wasRead = true;
 	}
@@ -420,7 +352,7 @@ public class PresentationGroup extends IdDatabaseObject
 			for (DataPresentation dp : dataPresentations)
 				if (dp.getDataType().equals(dt))
 					return dp;
-			
+
 			// MJM OpenDCS 6.5 For CWMS, try to match Base Param only.
 			int idx = -1;
 			if (dt.getStandard().equalsIgnoreCase(Constants.datatype_CWMS)
@@ -431,7 +363,7 @@ public class PresentationGroup extends IdDatabaseObject
 					if (dp.getDataType().equals(paseParam))
 						return dp;
 			}
-	
+
 			// Recursively search parent groups.
 			if (parent != null)
 				return parent.findDataPresentation(dt);
@@ -442,7 +374,7 @@ public class PresentationGroup extends IdDatabaseObject
 			initDefaultPresentation();
 		return defaultPresentation;
 	}
-	
+
 	public DataPresentation findDataPresentation(Sensor sensor)
 	{
 		for (DataPresentation dp : dataPresentations)
@@ -456,7 +388,7 @@ public class PresentationGroup extends IdDatabaseObject
 					return dp;
 			}
 		}
-		
+
 		// MJM OpenDCS 6.5 For CWMS, try to match Base Param only.
 		int idx = -1;
 		DataType dt = sensor.getDataType(Constants.datatype_CWMS);
