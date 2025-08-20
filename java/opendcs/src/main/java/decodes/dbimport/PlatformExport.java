@@ -1,25 +1,36 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbimport;
 
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
 import ilex.util.TextUtil;
 import ilex.xml.XmlOutputStream;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.Properties;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.common.DcpAddress;
 import decodes.db.Constants;
@@ -42,6 +53,7 @@ database and writes them to standard output in XML format.
 */
 public class PlatformExport
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
 	static StringToken netlistArg = new StringToken("n", "Network-List",
 		"", TokenOptions.optSwitch|TokenOptions.optMultiple, "");
@@ -49,13 +61,13 @@ public class PlatformExport
 			"", TokenOptions.optSwitch, "");
 	static StringToken siteArg = new StringToken("s", "[SiteNameType:]SiteNameValue",
 		"", TokenOptions.optSwitch|TokenOptions.optMultiple, "");
-	static BooleanToken allArg = new BooleanToken("a", "All-Platforms", 
+	static BooleanToken allArg = new BooleanToken("a", "All-Platforms",
 		"", TokenOptions.optSwitch, false);
 	static StringToken configArg = new StringToken("c", "Config-Name",
 		"", TokenOptions.optSwitch|TokenOptions.optMultiple, "");
-	static StringToken dbLocArg = new StringToken("E", 
+	static StringToken dbLocArg = new StringToken("E",
 		"Explicit Database Location", "", TokenOptions.optSwitch, "");
-	static StringToken newerThanFileArg = new StringToken("N", 
+	static StringToken newerThanFileArg = new StringToken("N",
 		"Newer Than File", "", TokenOptions.optSwitch, "");
 	static StringToken platOwnerArg = new StringToken("O", "Platform Owner", "",
 		TokenOptions.optSwitch, "");
@@ -67,7 +79,7 @@ public class PlatformExport
 	 * Each USACE district controls its own netlist, so this will get the preferred name for
 	 * the distrcit.
 	 */
-	static BooleanToken dcpmonNameArg = new BooleanToken("M", "Copy Preferred name to 'dcpmon' name", 
+	static BooleanToken dcpmonNameArg = new BooleanToken("M", "Copy Preferred name to 'dcpmon' name",
 		"", TokenOptions.optSwitch, false);
 
 
@@ -105,7 +117,6 @@ public class PlatformExport
 	public static void main(String args[])
 		throws IOException, DecodesException
 	{
-		Logger.setLogger(new StderrLogger("PlatformExport"));
 
 		// Parse command line arguments.
 		cmdLineArgs.parseArgs(args);
@@ -119,11 +130,11 @@ public class PlatformExport
 
 		String dbloc = dbLocArg.getValue();
 		if (dbloc.length() > 0)
-			dbio = DatabaseIO.makeDatabaseIO(settings.DB_XML, dbloc);
+			dbio = DatabaseIO.makeDatabaseIO(DecodesSettings.DB_XML, dbloc);
 		else
 			dbio = DatabaseIO.makeDatabaseIO(
 				settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-		
+
 		// Standard Database Initialization for all Apps:
 		Site.explicitList = false; // YES Sites automatically added to SiteList
 		db.setDbIo(dbio);
@@ -138,7 +149,6 @@ public class PlatformExport
 		db.platformList.read();
 		db.networkListList.read();
 
-		Logger lg = Logger.instance();
 		Vector<Platform> platforms;
 
 		long newerThanMsec = 0L;
@@ -147,14 +157,17 @@ public class PlatformExport
 		{
 			File f = new File(fn);
 			if (f.exists())
-				newerThanMsec = f.lastModified();	
+			{
+				newerThanMsec = f.lastModified();
+			}
 			else
-				Logger.instance().info("File '" + fn 
-					+ "' doesn't exist, so accepting all platform dates.");
+			{
+				log.info("File '{}' doesn't exist, so accepting all platform dates.", fn);
+			}
 		}
 
 		lrgs.common.NetworkList lrgsNetlist = null;
-		
+
 		if (allArg.getValue())
 		{
 			platforms = db.platformList.getPlatformVector();
@@ -176,19 +189,17 @@ public class PlatformExport
 						lrgs.common.NetworkListItem lnli =
 							(lrgs.common.NetworkListItem)it.next();
 						Platform p = db.platformList.getPlatform(
-								Constants.medium_Goes, 
+								Constants.medium_Goes,
 								lnli.addr.toString(), new Date());
 						if (p == null)
 						{
 							p = db.platformList.getPlatform(
-									Constants.medium_GoesST, 
+									Constants.medium_GoesST,
 									lnli.addr.toString(), new Date());
 						}
 						if (p == null)
 						{
-							lg.log(Logger.E_WARNING,
-							"No such platform '" + lnli.addr.toString() +
-							"' -- skipped.");
+							log.warn("No such platform '{}' -- skipped.", lnli.addr.toString());
 							continue;
 						}
 
@@ -197,13 +208,11 @@ public class PlatformExport
 
 						if (!platforms.contains(p))
 							platforms.add(p);
-					}	
+					}
 				}
 				else
 				{
-					lg.log(Logger.E_FAILURE,
-							"No such network list '" + lrgsnl.getValue() +
-							"' -- skipped.");
+					log.error("No such network list '{}' -- skipped.", lrgsnl.getValue());
 				}
 			}
 			else
@@ -217,11 +226,10 @@ public class PlatformExport
 					NetworkList nl = db.networkListList.find(s);
 					if (nl == null)
 					{
-						lg.log(Logger.E_FAILURE,
-							"No such network list '" + s + "' -- skipped.");
+						log.error("No such network list '{}' -- skipped.", s);
 						continue;
 					}
-		
+
 					for(Iterator<NetworkListEntry> it = nl.iterator(); it.hasNext(); )
 					{
 						NetworkListEntry nle = it.next();
@@ -231,9 +239,7 @@ public class PlatformExport
 
 						if (p == null)
 						{
-							lg.log(Logger.E_WARNING,
-								"No such platform '" + nle.transportId+
-								"' -- skipped.");
+							log.warn("No such platform '{}' -- skipped.", nle.transportId);
 							continue;
 						}
 
@@ -251,10 +257,10 @@ public class PlatformExport
 				String s = siteArg.getValue(i);
 				if (s.length() == 0)
 					continue;
-				
+
 				String nameType = settings.siteNameTypePreference;
 				String nameValue = s;
-				
+
 				int colon = s.indexOf(':');
 				if (colon > 0)
 				{
@@ -268,18 +274,17 @@ public class PlatformExport
 				// find site 's'
 				if (site == null)
 				{
-					lg.log(Logger.E_FAILURE,
-						"No such site with name type '" + nameType + "' and nameValue '" + nameValue + "' -- skipped.");
+					log.error("No such site with name type '{}' and nameValue '{}' -- skipped.",
+							  nameType, nameValue);
 					continue;
 				}
-				Logger.instance().debug3("Found site with nameType '" + nameType + "' and name value '"
-					+ nameValue + "' with ID=" + site.getId());
+				log.trace("Found site with nameType '{}' and name value '{}' with ID={}",
+						  nameType, nameValue, site.getId());
 				Vector<Platform> pvec = db.platformList.getPlatforms(site);
 
 				if (pvec.size() == 0)
 				{
-					lg.log(Logger.E_WARNING,
-						"No platform for site '" + s + "' -- skipped.");
+					log.warn("No platform for site '{}' -- skipped.", s);
 					continue;
 				}
 				for(Platform p : pvec)
@@ -305,12 +310,12 @@ public class PlatformExport
 					if (newerThanMsec > p.lastModifyTime.getTime())
 						continue;
 					String pcn = p.getConfigName();
-					if (pcn != null && s.equalsIgnoreCase(pcn) 
+					if (pcn != null && s.equalsIgnoreCase(pcn)
 					 && !platforms.contains(p))
 						platforms.add(p);
 				}
 			}
-			
+
 			String pnfArg = platNameFileArg.getValue();
 			if (pnfArg != null && pnfArg.length() > 0)
 			{
@@ -320,6 +325,8 @@ public class PlatformExport
 					System.err.println("Cannot read platform list from '" + pnfArg + "'");
 					System.exit(1);
 				}
+				// should be in try-with-resources, but the below is messier than what I want to deal with
+				// at the moment.
 				LineNumberReader lnr = new LineNumberReader(
 					new FileReader(pnf));
 				String line = null;
@@ -343,7 +350,7 @@ public class PlatformExport
 						Platform p = pit.next();
 						if (p.getSite() == null)
 							continue;
-						if (!TextUtil.strEqualIgnoreCase(designator, 
+						if (!TextUtil.strEqualIgnoreCase(designator,
 							p.getPlatformDesignator()))
 							continue;
 						for(Iterator<SiteName> sit = p.getSite().getNames();
@@ -365,7 +372,7 @@ public class PlatformExport
 
 		String newOwner = platOwnerArg.getValue();
 		if (newOwner.length() == 0) newOwner = null;
-		
+
 		XmlOutputStream xos = new XmlOutputStream(System.out,
 			XmlDbTags.Database_el);
 		xos.writeXmlHeader();
@@ -377,7 +384,7 @@ public class PlatformExport
 			p.read();   // Read all platform data from the database
 			if (newOwner != null)
 				p.setAgency(newOwner);
-			
+
 			// MJM 20170106 The following code handles the -M argument. This is added
 			// for MVR DCP Monitor. If no "dcpmon" name  is present, one is added
 			// from the network list.
@@ -394,7 +401,7 @@ public class PlatformExport
 					NetworkList nl = db.networkListList.find(nlName);
 					if (nl == null)
 						continue;
-					
+
 					NetworkListEntry nle = nl.getEntry(p);
 					if (nle != null && nle.getPlatformName() != null && nle.getPlatformName().length() > 0)
 					{
@@ -413,22 +420,14 @@ public class PlatformExport
 							psite.addName(dcpmonName = new SiteName(psite, "dcpmon", lnli.name));
 							break;
 						}
-//else System.err.println("   Not equal to dcpaddr '" + lnli.addr + "'");
 					}
-//if (dcpmonName == null) System.err.println("dcp addr '" + dcpAddr + "' not in netlist.");
 				}
 			}
-			
+
 			PlatformParser pp = new PlatformParser(p);
 			pp.writeXml(xos);
-			
-			//newDb.platformList.add(p);
 		}
 		xos.endElement(XmlDbTags.Database_el);
 
-		// Output platform data as XML.
-		//Database.setDb(newDb);
-		//TopLevelParser.write(System.out, newDb);
 	}
 }
-

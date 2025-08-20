@@ -1,9 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbimport;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Iterator;
@@ -18,12 +31,10 @@ import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.opentsdb.Interval;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.SAXException;
 
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
-import ilex.util.TeeLogger;
 import ilex.cmdline.*;
 import decodes.sql.DbKey;
 import decodes.sql.PlatformListIO;
@@ -48,7 +59,7 @@ DECODES database.
 */
 public class DbImport
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(DbImport.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	/**
 	This program imports XML files into the database.
@@ -106,7 +117,6 @@ public class DbImport
 		BooleanToken platformRelatedOnlyArg = new BooleanToken("p",
 			"Import ONLY platform-related elements. (default=import all.)", "",
 			TokenOptions.optSwitch, false);
-			Logger.setLogger(new StderrLogger("DbImport"));
 		CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
 
 		cmdLineArgs.addToken(validateOnlyArg);
@@ -125,14 +135,6 @@ public class DbImport
 		cmdLineArgs.addToken(platformRelatedOnlyArg);
 		// Parse command line arguments.
 		cmdLineArgs.parseArgs(args);
-		// Send WARNING & higher messages to stderr, file logger set by args.
-		Logger fileLogger = Logger.instance();
-		String procname = fileLogger.getProcName();
-		Logger stderrLogger = new StderrLogger(procname);
-		stderrLogger.setMinLogPriority(Logger.E_WARNING);
-		stderrLogger.setUseDateTime(false);
-		Logger teeLogger = new TeeLogger(procname, fileLogger, stderrLogger);
-		Logger.setLogger(teeLogger);
 
 		log.info("DbImport Starting ({}) ======================", DecodesVersion.startupTag());
 
@@ -285,13 +287,12 @@ public class DbImport
 			else
 			{
 				log.info("\t'{}/{}'", settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-				theDbio = DatabaseIO.makeDatabaseIO(
-					settings.editDatabaseTypeCode, settings.editDatabaseLocation);
+				theDbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode, settings.editDatabaseLocation);
 			}
 		}
 		catch (IOException ex)
 		{
-			throw new DatabaseException("Unable to initialize target database.");
+			throw new DatabaseException("Unable to initialize target database.", ex);
 		}
 
 		// Standard Database Initialization for all Apps:
@@ -343,7 +344,7 @@ public class DbImport
 		}
 		catch (DbIoException ex)
 		{
-			log.warn("Cannot list loading apps.", ex);
+			log.atWarn().setCause(ex).log("Cannot list loading apps.");
 		}
 		finally
 		{
@@ -362,7 +363,7 @@ public class DbImport
 			}
 			catch(DbIoException ex)
 			{
-				log.warn("Cannot list schedule entries.", ex);
+				log.atWarn().setCause(ex).log("Cannot list schedule entries.", ex);
 				theDb.schedEntryList.clear();
 			}
 			finally
@@ -392,7 +393,7 @@ public class DbImport
 				}
 				catch (DbIoException ex)
 				{
-					log.warn("Cannot delete schedule entry.", ex);
+					log.atWarn().setCause(ex).log("Cannot delete schedule entry.");
 				}
 				finally
 				{
@@ -635,7 +636,8 @@ public class DbImport
 				{
 					log.atError()
 					   .setCause(ex)
-					   .log("Platform {} has an invalid site configuration. Platform will be imported without a site", plat.getDcpAddress());
+					   .log("Platform {} has an invalid site configuration. Platform will " +
+					        "be imported without a site", plat.getDcpAddress());
 					plat.setSite(null);
 				}
 			}
@@ -707,8 +709,8 @@ public class DbImport
 
 		if (validateOnly)
 		{
-			log.info("The following messages indicate what WOULD BE modified in the"
-				+ " database. No changes will actually been made.");
+			log.info("The following messages indicate what WOULD BE modified in the" +
+					 " database. No changes will actually been made.");
 		}
 
 		if (EnumParser.enumParsed)
@@ -882,24 +884,6 @@ public class DbImport
 				log.info("Adding New Platform '{}'", newPlat.makeFileName());
 				theDb.platformList.add(newPlat);
 
-//				if (oldTmMatch != null)
-//				{
-//					info("Match for tm '" + oldTmMatch.toString() + "' -- will remove from old platform with id="
-//						+ oldTmMatch.getId());
-//					// use case 5 No match for (site,desig) but there is a match for TM.
-//					// Need to cause the old TMs to be removed from existing platform.
-//					for(Iterator<TransportMedium> tmit = newPlat.getTransportMedia(); tmit.hasNext(); )
-//					{
-//						TransportMedium newTM = tmit.next();
-//						TransportMedium oldTM = oldTmMatch.getTransportMedium(newTM.getMediumType());
-//						if (oldTM != null && newTM.getMediumId().equals(oldTM.getMediumId()))
-//							tmit.remove();
-//					}
-//					if (oldTmMatch.transportMedia.size() > 0)
-//						newObjects.add(oldTmMatch);
-//					else if (!DbKey.isNull(oldTmMatch.getId()))
-//						toDelete.add(oldTmMatch);
-//				}
 				newObjects.add(newPlat);
 				if (log.isTraceEnabled())
 				{
@@ -1242,9 +1226,8 @@ public class DbImport
 
 		if (validateOnly)
 		{
-			log.info(
-				"Previous messages indicate what WOULD HAVE BEEN modified in the"
-				+ " database. No changes have actually been made.");
+			log.info("Previous messages indicate what WOULD HAVE BEEN modified in the" +
+					 " database. No changes have actually been made.");
 		}
 	}
 
@@ -1856,29 +1839,5 @@ public class DbImport
 	private void dumpDTS(String when)
 	{
 		return;
-//		DbEnum dts = theDb.enumList.getEnum(Constants.enum_DataTypeStd);
-//		if (dts == null)
-//		{
-//			info("dumpDTS " + when + " there is no enum " + Constants.enum_DataTypeStd);
-//			return;
-//		}
-//		info("dumpDTS " + when + " enum " + Constants.enum_DataTypeStd + " has the following members:");
-//		for(Iterator<EnumValue> evit = dts.iterator(); evit.hasNext(); )
-//		{
-//			EnumValue ev = evit.next();
-//			info("    " + ev.getValue() + " " + ev.getDescription());
-//		}
 	}
-// Debug method:
-//	private void showEnums(String when)
-//	{
-//		System.out.println(when
-//			+ ", enumList.size() = " + theDb.enumList.size());
-//		for(Iterator eit = theDb.enumList.iterator(); eit.hasNext(); )
-//		{
-//			decodes.db.Enum en = (decodes.db.Enum)eit.next();
-//			System.out.println("\tEnum '"
-//				+ en.enumName + "' size=" + en.size());
-//		}
-//	}
 }
