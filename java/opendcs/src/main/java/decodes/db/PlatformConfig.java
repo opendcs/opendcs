@@ -382,7 +382,7 @@ public class PlatformConfig extends IdDatabaseObject
 		catch(DatabaseException ex)
 		{
 			throw new RuntimeException(
-				"Platform config should not be coped due to error setting Id in a place where that shouldn't happen.", ex
+				"Platform config could not be copied due to error setting Id in a place where that shouldn't happen.", ex
 			);
 		} // won't happen.
 		return ret;

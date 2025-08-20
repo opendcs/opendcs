@@ -463,7 +463,7 @@ public class Platform extends IdDatabaseObject implements HasProperties, Propert
 					}
 					catch (FieldParseException ex)
 					{
-						log.atWarn().setCause(ex).log("Platform {} processSeason: failed to parse.");
+						log.atWarn().setCause(ex).log("Platform {} processSeason: failed to parse.", getDisplayName());
 						processSeason = null;
 					}
 				}
