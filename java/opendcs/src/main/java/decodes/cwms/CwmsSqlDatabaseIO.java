@@ -1,0 +1,148 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+package decodes.cwms;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+import opendcs.dai.IntervalDAI;
+import opendcs.dai.SiteDAI;
+import decodes.db.*;
+import decodes.sql.SqlDatabaseIO;
+import decodes.sql.SqlDbObjIo;
+import decodes.util.DecodesSettings;
+
+/**
+ * This class extends decodes.sql.SqlDatabaseIO for reading/writing the
+ * USACE (U.S. Army Corps of Engineers) CWMS (Corps Water Management System)
+ * database, which is hosted on an Oracle DBMS.<p>
+ */
+public class CwmsSqlDatabaseIO extends SqlDatabaseIO
+{
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	public final static String module = "CwmsSqlDatabaseIO";
+	/** The office ID associated with this connection. This implicitly
+	 * filters the records that are visible.
+	 */
+	private final String dbOfficeId;
+	private String sqlDbLocation = null;
+	
+	
+ 	/**
+ 	* Constructor for CwmsSqlDatabaseIO
+	 * @param dataSource the DataSource for connecting to the database
+	 * @param settings the DecodesSettings
+	 * @throws DatabaseException if there is an issue with the database connection
+ 	*/
+	public CwmsSqlDatabaseIO(javax.sql.DataSource dataSource, DecodesSettings settings) throws DatabaseException
+	{
+		// No-args base class ctor doesn't connect to DB.
+		super(dataSource, settings);
+		this.dbOfficeId = settings.CwmsOfficeId;
+        writeDateFmt = new SimpleDateFormat(
+			"'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')");
+		DecodesSettings.instance().sqlTimeZone = "GMT";
+        writeDateFmt.setTimeZone(TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone));
+
+		/* 
+		 * Oracle does not require a COMMIT after each block of nested SELECTs.
+		 * The following causes the parent class to do this.
+		 */
+		commitAfterSelect = false;
+
+		// Likewise we need a special platform IO to do office ID filtering.
+		_platformListIO = new CwmsPlatformListIO(this, _configListIO, _equipmentModelListIO);
+
+		// Make sure the CWMS name type enumeration exists.
+		DbEnum nameTypeList = Database.getDb().enumList.getEnum(
+			Constants.enum_SiteName);
+		if (nameTypeList != null && nameTypeList.findEnumValue(Constants.snt_CWMS) == null)
+		{
+			try
+			{
+				nameTypeList.addValue(Constants.snt_CWMS, "CWMS Site Names", null, null);
+			}
+			catch(Exception ex) {}
+		}
+
+		// Oracle 11g requires that backslashes NOT be escaped in SQL strings.
+		SqlDbObjIo.escapeBackslash = false;
+		_isOracle = true;
+	}
+
+	/** @return 'CWMS'. */
+	public String getDatabaseType()
+	{
+		return "CWMS";
+	}
+
+	public String getOfficeId()
+	{
+		return dbOfficeId;
+	}
+
+	public String getSqlDbLocation()
+	{
+		return sqlDbLocation;
+	}
+	
+	public boolean isCwms() { return true; }
+	
+	@Override
+	public SiteDAI makeSiteDAO()
+	{
+		return new CwmsSiteDAO(this, dbOfficeId);
+	}
+	
+	@Override
+	public IntervalDAI makeIntervalDAO()
+	{
+		return new CwmsIntervalDAO(this, dbOfficeId);
+	}
+
+	@Override
+	public Connection getConnection() throws SQLException
+	{
+		try
+		{
+			return super.getConnection();
+		}
+		catch(SQLException ex)
+		{
+			throw new RuntimeException("Error retrieving connection",ex);
+		}
+	}
+
+
+	@Override
+	public void freeConnection(Connection con)
+	{
+		try
+		{
+			con.close();
+		}
+		catch(SQLException ex)
+		{
+			log.atWarn().setCause(ex).log("Unable to close returned connection", ex);
+		}
+	}
+	
+}

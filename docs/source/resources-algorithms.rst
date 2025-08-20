@@ -680,7 +680,7 @@ The minSamplesNeeded by default is 1.
    :width: 600
 
 ToIrregularUsingPattern
---------------------
+-----------------------
 
 The ToIrregularusingPattern Algorithm generates a new time series data set from an existing
 irregular or regular interval time series data set. The times for the new time series are
@@ -695,7 +695,7 @@ are interpolated.
 
 Interpolation of the three data types is illustrated below.
 
-.. image:: ./media/resources/algorithms/im-30-comp-ToIrregular.JPG
+.. image:: ./media/resources/algorithms/im-30-comp-ToIrregular.png
    :alt:  algorithm ToIrregularUsingPattern
    :width: 500
 
@@ -741,15 +741,13 @@ BridgeClearance
 
 Exec Class: decodes.tsdb.algo.BridgeClearance
 
+Computes bridge clearance by subtracting waterlevel from constant 'lowChord'.
+Make sure that the waterlevel and low chord are consistent. If one is a stage
+above arbitrary datum, then they both must be. Likewise, if one is an elevation
+above sea level, the other must be also.
+
+
 .. image:: ./media/resources/algorithms/im-042-excel-bridgeclearance.JPG
-   :alt: algorithm bridge clearance
-   :width: 600
-
-.. image:: ./media/resources/algorithms/im-043-comptest-bridgeclearance.JPG
-   :alt: algorithm bridge clearance
-   :width: 600
-
-.. image:: ./media/resources/algorithms/im-044-comp-bridgeclearance.JPG
    :alt: algorithm bridge clearance
    :width: 600
 
@@ -820,7 +818,7 @@ Exec Class: decodes.tsdb.algo.VirtualGage
 ... more content coming soon ...
 
 RelativeHumidity
------------
+----------------
 
 Exec Class: decodes.tsdb.algo.RelativeHumidity
 
@@ -845,8 +843,6 @@ By default the following criteria are met or assumed in the algorithm.
 ... more content coming soon ...
 
 
-
-
 Standard - Arithmetic - Hidden 
 ==============================
 
@@ -862,17 +858,15 @@ Standard - Hydrologic Specific - Hidden
 CWMS Only - Hydrologic
 ======================
 
-+-----------------------+-------------------------------------------------------+
-|**Algorithm**          |**Description**                                        |
-+=======================+=======================================================+
-|CwmsRatingMultiIndep   |Implements CWMS Rating Computations                    |
-+-----------------------+-------------------------------------------------------+
-|CwmsRatingSingleIndep  |Implements CWMS Rating Computations                    |
-+-----------------------+-------------------------------------------------------+
-|CwmsScreening          |CWMS Validation with CWMS Screening Records            |
-+-----------------------+-------------------------------------------------------+
-|DatchkScreening        |CWMS Validation with DATCHK files                      |
-+-----------------------+-------------------------------------------------------+
+.. csv-table::
+    :header: "Algorithm", "Description"
+    :widths: 20, 80
+
+    "CwmsRatingMultiIndep", "Implements CWMS Rating Computations"
+    "CwmsRatingSingleIndep", "Implements CWMS Rating Computations"
+    "CwmsScreening", "CWMS Validation with CWMS Screening Records"
+    "DatchkScreening", "CWMS Validation with DATCHK files"
+    "ResEvapAlgorithm", "Calculates Reservoir Water Temperature Profiles and Evaporation"
 
 CwmsRatingMultiIndep
 --------------------
@@ -893,6 +887,8 @@ DatchkScreening
 ---------------
 
 Exec Class: decodes.cwms.validation.DatchkScreeningAlgorithm
+
+.. include:: reservoir-evaporation-algorithm.rst
 
 HDB Only - Hydrologic
 =====================
@@ -967,4 +963,3 @@ Java Algorithms
 ===============
 
 There are examples in the OpenDCS source code <https://github.com/opendcs/opendcs/tree/master/src/main/java/decodes/tsdb/algo>
-

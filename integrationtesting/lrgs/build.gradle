@@ -1,0 +1,46 @@
+plugins {
+    id 'opendcs.java-conventions'
+    id 'opendcs.deps-conventions'
+    id 'opendcs.sonar-conventions'
+}
+
+
+dependencies {
+    implementation project(":opendcs")
+    testRuntimeOnly project(":opendcs-slf4j-provider");
+    implementation project(":testing:fixtures")
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.commons.io)
+    testImplementation(libs.apache.derby)
+    testImplementation(libs.io.github.hakky54)
+    testImplementation(libs.webcompere.system.stubs.jupiter)
+}
+
+
+jacocoTestReport {
+    dependsOn test
+    additionalSourceDirs files(project(":opendcs").sourceSets.main.java.srcDirs)
+    //additionalClassDirs files(project(":opendcs").sourceSets.main.output)
+    sourceSets project(":opendcs").sourceSets.main
+    def excludes = [
+                "**/easy_install/**",
+                "**/python_packages",
+                "**/certifi/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/requests/**",
+                "**/chardet/**",
+                "**/urllib3/**",
+                "**/idna/**",
+                "**/pkg_resources/**",
+                "**/decodes/**",
+                "**/covesw/**"
+            ]
+
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: excludes)
+        }))
+    }
+}

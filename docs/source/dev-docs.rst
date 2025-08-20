@@ -18,86 +18,74 @@ Overview
 The purpose of this document is to describe how different technologies are used for OpenDCS development.
 Extra attention is given to testing and using OpenDCS within containers.
 
-The Ant Build
-=============
+The Gradle Build
+================
 
 Basics
 ------
 
-Primarily due to history ant is used to manage the build of OpenDCS. The minimum version of Ant required 1.10.12 due to the use 
-of a setting to generate friendlier reports from the junit tests.
+OpenDCS now uses gradle to perform builds, test, and deployment/distribution operations.
 
-The simplest way to verify the build is working is to run the following 'target':
+The simplest way to verify the build is working is to run the following 'task':
 
 .. code-block:: bash
 
-    ant test
+    ./gradlew test
 
-This will download all of the required dependencies, compile the code and run the available unit tests.
-An html report of the tests will be available in :code:`build/reports/junit/test/`
+Except for the integration tests in integrationtesting/opendcs-tests standard output directories are
+use for various reports such as Junit or Jacoco. For the integration tests output reports are organized by
+implementation.
 
-The bulk of output from various targets will go into directories under :code:`build`
+The integration tests are only run if explicitly called out:
 
-The basic workflow of the build is to do the following in the order of the following table. NOTE:
-See build.xml and common.xml for full details. common.xml lists created paths in properties at 
-the top of the file.
+.. code-block:: bash
 
-+-------------------------+----------------------------------------------------------------------+
-|Target                   |Purpose                                                               |
-+=========================+======================================================================+
-|download-ivy             |Download the required Apache Ivy jars to handle dependency management.|
-+-------------------------+----------------------------------------------------------------------+
-|init-ivy                 |Setup ant task from ivy jars                                          |
-+-------------------------+----------------------------------------------------------------------+
-|resolve                  |Retrieve dependencies and organize classpaths for build               |
-+-------------------------+----------------------------------------------------------------------+
-|compile                  |Compiles the OpenDCS source from `src/main/java` and syncs resource   |
-|                         |files into output directories under `build`                           |
-+-------------------------+----------------------------------------------------------------------+
-|jar                      |Bundles the main OpenDCS compiled code and resources into a .jar file.|
-+-------------------------+----------------------------------------------------------------------+
-|compile-test             |Compiles the test source code into class files                        |
-+-------------------------+----------------------------------------------------------------------+
-|test                     |Runs the junit5 test system and generates a report. The exit code of  |
-|                         |the build will be 0 on success, and 1 on failure                      |
-+-------------------------+----------------------------------------------------------------------+
+    ./gradlew :testing:opendcs-test:test --info -Popendcs.test.engine=OpenDCS-XML
 
-Additional targets that can be run for testing.
+.. WARNING::
+
+    DO NOT RUN THESE TESTS AGAINST A PRODUCTION DATABASE.
+    The test engine assumes it has complete control of the database it's pointed at and given may
+    destroy anything it requires to verify operations.
+
+The option opendcs.test.engine is required and the following values are supported
+
++------------------+---------------------------------------------------------+
+| Value            | Notes                                                   |
++------------------+---------------------------------------------------------+
+|OpenDCS-XML       |Test operations of the XML database                      |
++------------------+---------------------------------------------------------+
+|OpenDCS-Postgres  |Test operations against the reference Postgres Database. |
+|                  |Requires docker installed.                               |
++------------------+---------------------------------------------------------+
+|CWMS-Oracle       |Requires an existing CWMS + CCP Schema setup             |
++------------------+---------------------------------------------------------+
+
+Distribution tasks are used to prepare for release
 
 +-------------------------+-------------------------------------------------------------------------+
-|Target                   |Purpose                                                                  |
+|Task                     |Purpose                                                                  |
 +=========================+=========================================================================+
-|gui-test                 |Runs available tests on GUI elements. Requires an active                 |
-|                         | desktop/windowing system or something like xvfb (X virtual frame buffer)|
+|:install:distZip         |Creates the application distribution.                                    |
 +-------------------------+-------------------------------------------------------------------------+
-|integration-test         |Runs tests against an active complete system.                            |
-|                         | See `integration_test_infra`_ for more details                          |
+|:install:distTar         |Same as above but as tar instead of zip.                                 |
 +-------------------------+-------------------------------------------------------------------------+
-
-During general development work you can pass :code:`-Dno.docs=true` on the ant commandline to skip doc generation
-
-Other targets of integration-test
-
-+-------------------------+-------------------------------------------------------------------------+
-|Target                   |Purpose                                                                  |
-+=========================+=========================================================================+
-|stage                    |Preps the directory `stage` for creating the installer jar               |
-+-------------------------+-------------------------------------------------------------------------+
-|opendcs                  |Generates the install jar using izpack                                   |
-+-------------------------+-------------------------------------------------------------------------+
-|release                  |Generates and signs release artifacts for upload                         |
+|:install:installDist     |Generates and signs release artifacts for upload                         |
 |                         |requires `-Dgpg.key.id` command line option                              |
 +-------------------------+-------------------------------------------------------------------------+
+
+Building Documentation
+-----------------------
+
+.. code-block:: bash
+
+    ./gradlew buildDocs
+
 
 Debugging OpenDCS
 -----------------
 
-All of the test tasks above can have :code:`-DdebugPort=<port number>`, where :code:`<port number>` is 
-an integer between 1025 and 65534 without the < and > added to the ant command line. Thyen Your IDE can then attach to the JVM running 
-the tests.
-
-While we are trying to add more formal unit tests it is still often easier, and generally required while development, to step through
-the code while manually testing things.
+To debug any of the test tasks use the stand gradle option of `--debug-jvm` and attached to port 5005 as appropriate to your environment.
 
 If you have an installation of OpenDCS already it can also be debugged in a similar way. NOTE: this is
 known to work on linux/mac.
@@ -120,17 +108,17 @@ The following workflow can be used:
 .. code-block:: bash
 
     # <see issue and make tweaks to code>
-    ant jar
-    cp build/lib/opendcs.jar <your current $DCSTOOL_HOME>/bin
+    ./gradlew build
+    cp java/opendcs/build/libs/opendcs-<version>.jar <your current $DCSTOOL_HOME>/bin
     DECJ_MAXHEAP="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=<port>" <app>
 
 
-And repeat as required. This works for the GUI and nogui applications.
+And repeat as required. This works for the GUI and non gui applications.
 
 Debugging OpenDCS from the build
 --------------------------------
 
-There is a `run` target that will allow you to run an OpenDCS application from the build environment.
+There is a `runApp` task that will allow you to run an OpenDCS application from the build environment.
 the "stage" directory is used as DCSTOOL_HOME and DCSTOOL_USERDIR is the same default as an install.
 
 .. WARNING::
@@ -138,31 +126,32 @@ the "stage" directory is used as DCSTOOL_HOME and DCSTOOL_USERDIR is the same de
     By using the default behavior you *MAY* be connecting to a live system. Consider that while
     manipulating any data. 
 
-    If this is a major concern you should set the DCSTOOL_USERDIR for the session ant runs in
+    If this is a major concern you should set the DCSTOOL_USERDIR for the session gradle runs in
     to point to a directory that only contains profiles that connect to test systems.
 
 .. code-block:: bash
+
     # to just run the launcher
-    ant run
+    ./gradlew runApp
 
     # to run a specific app
-    ant run -Dopendcs.app=compedit
+    ./gradlew runApp -Popendcs.app=compedit
 
     # to run a specific app with a profile
-    ant run -Dopendcs.app=dbedit -Dopendcs.profile="full path to a profile or .properties file"
+    ./gradlew runApp -Popendcs.app=dbedit -Popendcs.profile="full path to a profile or .properties file"
 
     # to run with the java remote debugger enabled
-    ant run -DdebugPort=5006
+    ./gradlew runApp -Popendcs.debug=5006
 
     # to run with Java Flight Recorder
-    ant run -Dopendcs.jfr=true
+    ./gradlew runApp -Popendcs.jfr=true
     # recordings will be in the run directory of the build (default build/run)
     # with the name <opendcs.app>.recording.jfr where opendcs.app is the value of the property provided
     # or the default "launcher_start" app if the property is not set.
 
 All of the options above can be in any combination.
 
-The logs are set to the highest debug level and printed to stdout.
+The logs are set to the highest debug level and printed to stdout. You may need to add the gradle option `--info` to see the log information.
 
 .. NOTE::
 
@@ -413,18 +402,21 @@ to run each do the following:
 .. code-block:: bash
 
     # SpotBugs
-    ant spotbugs
+    ./gradlew spotbugsMain
     # output will be in build/reports/spotbugs/spotbugs.html
 
     # Checkstyle
-    ant Checkstyle
+    ./gradlew checkstyleMain
     # output will output to the terminal
 
     # CPD
-    ant cpd
-    # output will be in build/reports/pmd/cpd/cpd.txt
+    ./gradlew cpd
+    # output will be in build/reports/cpd.xml
 
 Only CPD is fast. checkstyle and SpotBugs are rather slow.
+
+Additionally SonarCloud will be used as part of the CI/CD pipeline on Github, results will be automatically linked
+through a comment in pull requests.
 
 .. _integration_test_infra:
 
@@ -449,16 +441,42 @@ Implementations should derive from :code:`org.opendcs.fixtures.spi.configuration
 and implement any required setup. All `Configurations` are given a temporary directory to create the `DCSTOOL_USERDIR` contents.
 Application logs are all written into this directory.
 
-Currently Implemented are OpenDCS-XML and OpenDCS-Postgres. OpenDCS-Postgres uses the (Testcontainers)[https://java.testcontainers.org] library
-which requires docker. OpenDCS-XML only depends on the file system.
+The Currently Implemented engines are demonstrated below.  OpenDCS-Postgres, CWMS-Oracle, and OpenDCS-Oracle use the (Testcontainers)[https://java.testcontainers.org] library which requires docker. OpenDCS-XML only depends on the file system.
 
-To run either use the following command:
+To run use the following commands:
 
 .. code-block:: bash
 
-    ant integration-test -Dno.doc=true -Dopendcs.test.engine=OpenDCS-XML
+    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-XML
     # or 
-    ant integration-test -Dno.doc=true -Dopendcs.test.engine=OpenDCS-Postgres
+    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-Postgres
+    # or 
+    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=OpenDCS-Oracle
+    # or 
+    ./gradlew :testing:opendcs-test:test -Popendcs.test.engine=CWMS-Oracle
+
+Algorithm tests
+---------------
+
+Algorithm tests are a suite of regression tests designed to ensure that all algorithms are functioning correctly across builds and updates. These tests validate the correctness and stability of algorithmic computations by comparing the actual outputs against expected results.
+
+To run the algorithm tests, execute the following command:
+
+.. code-block:: bash
+
+    ./gradlew :testing:opendcs-tests:test --tests org.opendcs.regression_tests.AlgorithmTestsIT.test_algorithm_operations
+
+This will run the full suite of algorithm tests.
+
+If you want to run a specific test, you can use the following command with the `-P` argument to filter the test by name:
+
+.. code-block:: bash
+
+    ./gradlew :testing:opendcs-tests:test --tests org.opendcs.regression_tests.AlgorithmTestsIT.test_algorithm_operations -P"opendcs.test.algorithm.filter=ResEvapTest1"
+
+Replace `ResEvapTest1` with the name of the specific test you want to run. This allows for targeted testing of individual algorithms, which is useful during development or debugging.
+
+Note: some tests may require -P"opendcs.test.engine=CWMS-Oracle"
 
 Adding tests
 ------------
@@ -505,6 +523,129 @@ At the Class and method level the following annotations are available.
 |                                            |Method level, or both in which  |
 |                                            |case the sets will be merged    |
 +--------------------------------------------+--------------------------------+
+
+Creating additional tests
+--------------------------
+
+The sections below describe how to add new decoding and algorithm tests by adding files to specific directories.
+
+Testing the Decodes Language
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Adding Decoding Tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To add new tests for the Decoding language and functions, developers need to create four files in the `./opendcs/java/opendcs/src/test/resources/decodes/db` directory:
+
+1. **`.assertions` file**:  
+    - Purpose: Defines the expected output for the test to validate the Decoding.
+    - Example:  
+      .. code-block:: csv
+
+         #sensor number, time (ISO8601), expected value (double or string), precision, message
+         1,2014-03-01T12:00:00Z,23.95,  0.0, Expected value not parsed (sensor 1)
+         1,2014-03-01T13:00:00Z,23.96,  0.0, Expected value not parsed (sensor 1)
+         1,2014-03-01T14:00:00Z,23.97,  0.0, Expected value not parsed (sensor 1)
+         2,2014-03-01T12:00:00Z,17.2,  0.0, Expected value not parsed (sensor 2)
+         2,2014-03-01T13:00:00Z,16.9,  0.0, Expected value not parsed (sensor 2)
+         2,2014-03-01T14:00:00Z,15.2,  0.0, Expected value not parsed (sensor 2)
+         3,2014-03-01T12:00:00Z,98.1,  0.0, Expected value not parsed (sensor 3)
+         3,2014-03-01T13:00:00Z,98.1,  0.0, Expected value not parsed (sensor 3)
+         3,2014-03-01T14:00:00Z,98.2,  0.0, Expected value not parsed (sensor 3)
+         4,2014-03-01T12:00:00Z,8252,  0.0, Expected value not parsed (sensor 4)
+         4,2014-03-01T13:00:00Z,8252,  0.0, Expected value not parsed (sensor 4)
+         4,2014-03-01T14:00:00Z,8252,  0.0, Expected value not parsed (sensor 4)
+         5,2014-03-01T12:00:00Z,0.0,  0.0, Expected value not parsed (sensor 5)
+         5,2014-03-01T13:00:00Z,0.0,  0.0, Expected value not parsed (sensor 5)
+         5,2014-03-01T14:00:00Z,0.0,  0.0, Expected value not parsed (sensor 5)
+         6,2014-03-01T12:00:00Z,0.0,  0.0, Expected value not parsed (sensor 6)
+         6,2014-03-01T13:00:00Z,0.0,  0.0, Expected value not parsed (sensor 6)
+         6,2014-03-01T14:00:00Z,0.0,  0.0, Expected value not parsed (sensor 6)
+
+2. **`.decodescript` file**:  
+    - Purpose: Contains the Decodes script that defines how the input data should be processed.  
+    - Example:  
+      .. code-block:: text
+
+         csv: 3(/, F(D,A,10,4), x, F(T,A,8), csv(1, 2, 4, 5, 6, 3))
+
+3. **`.input` file**:  
+    - Purpose: Provides the raw input data to be decoded.  
+    - Example:  
+      .. code-block:: text
+
+         # Ignored header line
+         03/01/2014 12:00:00 23.95, 17.2, 8252, 0, 0, 98.1
+         03/01/2014 13:00:00 23.96, 16.9, 8252, 0, 0, 98.1
+         03/01/2014 14:00:00 23.97, 15.2, 8252, 0, 0, 98.2
+
+4. **`.sensors` file**:  
+    - Purpose: Describes the sensors and their configurations used in the decoding process.  
+    - Example:  
+      .. code-block:: csv
+
+         #sensor number, sensor name, units, description
+         1, Stage, ft, none
+         2, Humidity, %, none
+         3, Temp, degF, none
+         4, Storage, acft, none
+         5, Precip, in, none
+         6, Zero, raw, none
+
+By adding these files, developers can create tests to ensure the correctness and reliability of the Decodes language including new or modified Decodes Functions.
+
+Algorithms
+~~~~~~~~~~
+- **Purpose**: This section describes how to test algorithmic implementations for solving specific problems or performing computations.
+
+Adding Tests for Algorithms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To add new tests for algorithms, developers need to create a new directory within `./opendcs/integrationtesting/opendcs-tests/src/test/resources/data/Comps`. This folder must be titled with the name of the algorithm you wish to test.
+
+Within this directory, you can create subdirectories named `Test1`, `Test2`, etc., for each test case. Each test directory can contain the following resources required to run the test:
+
+1. **Rating Tables**:  
+    - Location: `rating` folder within the test directory.  
+    - Purpose: Contains rating tables required for the computation.  
+    - Format: Stored as `.xml` files.
+    - Note: You can create the `rating.xml` file using the `exportRating` command.
+
+2. **Time Series Data**:  
+    - Location: `timeseries` folder within the test directory.  
+    - Structure:  
+        - `input` directory: Contains `.tsimport` files defining the input time series for the computation.  
+          Example `.tsimport` file:  
+          .. code-block:: text
+
+             TSID:TESTSITE1.Speed-Wind.Inst.1Hour.0.Rev-AWC
+             SET:TZ=UTC
+             SET:UNITS=kph
+             2024/10/04-24:00:00,20.5200000000,0
+             2024/10/05-01:00:00,20.5200000000,0
+             2024/10/05-02:00:00,22.3199999999,0
+             2024/10/05-03:00:00,24.1200000001,0
+             2024/10/05-04:00:00,25.9200000000,0
+             2024/10/05-05:00:00,63.0000000001,0
+             2024/10/05-06:00:00,59.4000000000,0
+             2024/10/05-07:00:00,50.0400000001,0
+             2024/10/05-08:00:00,40.6800000000,0
+             2024/10/05-09:00:00,59.4000000000,0
+             2024/10/05-10:00:00,38.8800000000,0
+             2024/10/05-11:00:00,20.5200000000,0
+             2024/10/05-12:00:00,25.9200000000,0
+             2024/10/05-13:00:00,18.3600000000,0
+             2024/10/05-14:00:00,16.5600000001,0
+
+          You can create this file using the `outputts` command.
+
+        - `output` directory: Contains `.tsimport` files defining the output time series generated by the computation.  
+        - `expectedOutputs` directory: Contains `.tsimport` files defining the expected output time series for validation.
+
+3. **Computation Configuration**:  
+    - File: `comp.xml`  
+    - Purpose: This file defines the setup for the computation and the tests that need to be run. It specifies the algorithm configuration and links the input, output, and expected output time series.  
+    - Note: You can create the `comp.xml` file using the `compexport` command.
+
+By organizing the algorithm test resources in this structure, developers can easily manage algorithm tests.
 
 
 Extension and other Junit information

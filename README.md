@@ -1,5 +1,7 @@
 ![current build](https://github.com/opendcs/opendcs/actions/workflows/build.yml/badge.svg)
 
+[Docker documentation](README.docker.md)
+
 # OpenDCS 
 
 OpenDCS is a tool for doing the following:
@@ -50,27 +52,57 @@ can be scary we would like to encourage you to join us anyways.
 
 # Compiling
 
-- Installing Ant and adding to your PATH
-  - Follow the instructions listed [here](https://ant.apache.org/manual/install.html)
-  - Ant version 1.10.12 or higher is required.
-- OpenDCS 7.x targets Java 8. A JDK 8 is recommended for build though 11 and 17 will work, except for the generating the installer.
-- Our runtime target is Java 8, however we will support 11 and 17 at runtime (NOTE: the installer doesn't currently work with 17)
+- OpenDCS is compiled using the gradle wrapper 'gradlew'
+- OpenDCS 7.x targets Java 8. A JDK 8 is recommended for build though 11 and 17 will work
+- Our runtime target is Java 8, however we will support 11 and 17 at runtime
+
+in the following examples replace `./gradlew` with `gradlew` if you are using windows.
+
+To build the file opendcs.jar run the following command:
+
+`./gradlew :opendcs:jar` 
+
+output is here:
+
+java/opendcs/build/libs/opendcs-main.99.main-SNAPSHOT.jar
 
 
-To build the file opendcs.jar run the following:
+If you want to build a distribution run:
 
-`ant jar`
+`./gradlew distZip`
 
-If you want to build the installer run:
+or
 
-`ant opendcs`
+`./gradlew distTar`
+
+output is here:
+
+opendcs/install/build/distributions/opendcs-main.99.main-SNAPSHOT.zip
 
 To get a simple baseline environment going:
 
-`ant run`
+`./gradlew runApp --info`
 
 This will start the "launcher_start" application and do an initial setup of an XML database suitable for DECODES operations
 going that you can use for manual and exploratory testing.
+
+The table below lists features of the runApp task.
+
+| Option | Default Value | Description |
+| --- | --- | --- |
+| `opendcs.app` | `launcher_start` | Application to run |
+| `opendcs.profile` | `default` | Profile to use |
+| `opendcs.lang` | - | Language to use |
+| `opendcs.arg` | - | Additional application arguments |
+| `opendcs.jfr` | `false` | Enable Java Flight Recorder |
+| `opendcs.debug` | `0` | Debug port number |
+
+Here is an example:
+
+```bat
+gradlew runApp -Popendcs.app=rs -Popendcs.profile="%appdata%\.opendcs\xml.profile" -Popendcs.arg=issue877 -Popendcs.debug=5005
+```
+
 
 # General Development
 
@@ -78,38 +110,48 @@ To verify everything can work on your system run the following:
 
 ```
 # General tests
-ant test
+./gradlew test
+
 # NOTE: this will flash a few interfaces onto your display, let the task finish or the tests get stuck. 
 # However, you can just run through the GUIs to finish the tests. Though be aware if you don't follow the 
 # programmed script the task may return failure.
 
+a report of tests is stored here: opendcs/java/opendcs/build/reports/tests/test
+
 # Test the GUI (NOTE: leave your hands off the keyboard and mouse or the runner gets confused.)
-ant gui-test -Dno.docs=true
+./gradlew test -Pno.docs=true
 
 # Tests of a "live" system.
-ant integration-test -Dno.docs=true -Dopendcs.test.engine=OpenDCS-XML
+./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-XML
 # and if you have docker
-ant integration-test -Dno.docs=true -Dopendcs.test.engine=OpenDCS-Postgres
+./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=OpenDCS-Postgres
+# CWMS-Oracle (more memory hungry)
+./gradlew :testing:opendcs-tests:test -Pno.docs=true -Popendcs.test.engine=CWMS-Oracle
 
 #To test the LRGS
-ant lrgs-test -Dno.docs=true
+gradlew testing:lrgs:test -Pno.docs=true
 ```
 
 This will run all of the various tests and let you know you have everything setup such that you can start development.
 
-For all test tasks you can add `-DdebugPort=<a port number>` and the JVMs started will wait for a debug connection.
-Beware that gui-test and integration-test depend on test running, so you will have to attach the remote debugger twice.
-This is a current limitation of the ant build.
+For all test tasks you can add `--debug-jvm` and the JVMs started will wait for a debug connection on port 5005.
 
 To run a specific test only use:
 
 ```
-ant <test target> -Dtests=<Test class name>
+./gradlew <test target> --tests # See [gradle documentation ](https://docs.gradle.org/current/userguide/java_testing.html#simple_name_pattern) for more detail
+
+example with debugging:
+
+gradlew clean :testing:opendcs-tests:test -Pno.docs=true  -Popendcs.test.engine=OpenDCS-XML  --tests org.opendcs.regression_tests.ImportXmlNetworkListTestIT --debug-jvm
+
+
 ```
 
 It is possible a file glob will work in the tests parameter above but we have not tested this.
 
 See https://opendcs-env.readthedocs.io/en/latest/dev-docs.html for guidance on some of the newer components.
+
 
 # IDE integration
 
@@ -121,10 +163,16 @@ If you wish to help in this way please created additional targets and required f
 
 To create the appropriate project files for VS Code or Eclipse you can run the following task:
 
-`ant eclipse-ide-files`
+`./gradlew opendcs:eclipse`
+
+Or you can use the VS Code gradle integration.
 
 This will create the appropriate .project and .classpath files for intellisense to behave correctly.
 
 ## Intellij
 
-See https://github.com/opendcs/opendcs/wiki/Coding-OpenDCS-with-IntelliJ for guidance in setting up intellij.
+Intellij detects the gradle project and has a Gradle tool window.
+
+Some gradle tasks require a python environment.  Here is an example that launches inteliJ from a conda environment to have python enabled.
+(base) C:\>conda activate karl
+(karl) C:\project\opendcs>C:\Programs\ideaIC-2022.1.win\bin\idea64.exe

@@ -1,0 +1,134 @@
+[versions]
+#General/Shared Versions
+oracle = { strictly = "23.5.0.24.07" }
+postgres = "42.7.7"
+commons-logging = "1.0.4"
+commons-net = "3.3"
+dom4j = { strictly = "2.1.4" }
+ganymed-ssh = "build210"
+apache-poi="5.0.0"
+jcalendar="1.3.2"
+jfree="1.0.13"
+jython="2.7.4"
+jep="2.4.1"
+jama="1.0.2"
+dropwizard="4.1.0-rc2"
+passay="1.3.1"
+jsch="0.1.55"
+aspectj="1.8.10"
+json="20231013"
+slf4j-api= { strictly = "2.0.17" }
+jetty = "9.4.56.v20240826"
+jetty-jsp = "9.2.30.v20200428"
+jersey = "2.40"
+servlet-api = "4.0.1"
+javax-javaee-api = "7.0"
+# CWMS Dep version
+cwms-db = "9.3.5"
+cwms-db-codegen = { strictly = "7.0.0-OpenDCS" }
+monolith = { strictly = "2.0.2" }
+cwms-ratings = "1.1.0"
+nucleus = "1.1.1"
+# to upgrade past this version requires java 11 -->
+jdbi = "3.39.1"
+flywaydb = "9.8.1"
+sun-mailapi="1.6.7"
+hakky54-ssl = "9.1.0"
+mock-server = "5.15.0"
+
+#test deps
+junit = "5.10.2"
+commons-io = "2.11.0"
+derby = "10.14.2.0"
+webcompere = "2.0.2"
+jackson = "2.18.2"
+greenmail = "1.6.5"
+
+# integration test deps
+testcontainers = "1.20.4"
+hec-testcontainers-cwms = "2.0.0"
+
+# manual test deps
+gherkin-kiwi = "1.0.0-M11"
+
+[libraries]
+gherkin-kiwi = { module = "org.opendcs.testing:gradle-plugin", version.ref="gherkin-kiwi" }
+oracle-ojdbc8 = { module = "com.oracle.database.jdbc:ojdbc8", version.ref = "oracle" }
+oracle-ucp = { module = "com.oracle.database.jdbc:ucp", version.ref = "oracle" }
+postgresql = { module ="org.postgresql:postgresql", version.ref = "postgres"}
+commons-logging = { module = "commons-logging:commons-logging", version.ref = "commons-logging" }
+commons-net = { module = "commons-net:commons-net", version.ref="commons-net" }
+dom4j = { module = "org.dom4j:dom4j", version.ref="dom4j" }
+ganymed-ssh = { module = "ch.ethz.ganymed:ganymed-ssh2", version.ref="ganymed-ssh" }
+apache-poi = { module = "org.apache.poi:poi", version.ref="apache-poi" }
+jcalendar = { module = "com.toedter:jcalendar", version.ref="jcalendar" }
+jfree-jcommon = { module = "jfree:jcommon", version.ref = "jfree" }
+jfree-jfreechart = { module = "jfree:jfreechart", version.ref = "jfree" }
+jython-standalone = { module = "org.python:jython-standalone", version.ref ="jython" }
+scijava-jep = { module = "org.scijava:jep", version.ref="jep" }
+jama = { module = "gov.nist.math:jama", version.ref="jama" }
+dropwizard-metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref="dropwizard" }
+passay = { module = "org.passay:passay", version.ref="passay" }
+sun-mailapi = { module = "com.sun.mail:jakarta.mail", version.ref="sun-mailapi" }
+org-jcraft-jsch = { module = "com.jcraft:jsch", version.ref="jsch" }
+org-aspectj-aspectjrt = { module = "org.aspectj:aspectjrt", version.ref="aspectj" }
+org-json-json = { module = "org.json:json", version.ref="json" }
+org-slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-api" }
+org-eclipse-jetty-jsp = { module = "org.eclipse.jetty:jetty-jsp", version.ref="jetty-jsp" }
+org-eclipse-jetty-annotations = { module = "org.eclipse.jetty:jetty-annotations", version.ref="jetty" }
+org-eclipse-jetty-server = { module = "org.eclipse.jetty:jetty-server", version.ref="jetty" }
+org-eclipse-jetty-servlets = { module = "org.eclipse.jetty:jetty-servlets", version.ref="jetty" }
+org-eclipse-jetty-webapp = { module = "org.eclipse.jetty:jetty-webapp", version.ref="jetty" }
+javax-servlet = { module = "javax.servlet:javax.servlet-api", version.ref="servlet-api" }
+javax-javaee-api = { module = "javax:javaee-api", version.ref="javax-javaee-api" }
+jersey-containers = { module = "org.glassfish.jersey.containers:jersey-container-servlet", version.ref="jersey" }
+jersey-inject = { module ="org.glassfish.jersey.inject:jersey-hk2", version.ref="jersey" }
+org-jdbi3-core = { module = "org.jdbi:jdbi3-core", version.ref = "jdbi" }
+org-jdbi3-sqlobject = { module = "org.jdbi:jdbi3-sqlobject", version.ref = "jdbi" }
+org-jdbi3-postgres = { module = "org.jdbi:jdbi3-postgres", version.ref = "jdbi" }
+org-jdbi3-oracle = { module = "org.jdbi:jdbi3-oracle12", version.ref = "jdbi" }
+org-flywaydb-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flywaydb" }
+io-github-hakky54 = { module = "io.github.hakky54:sslcontext-kickstart", version.ref="hakky54-ssl" }
+
+# CWMS
+cwms-db-jooq = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "cwms-db" }
+cwms-db-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen", version.ref = "cwms-db-codegen" }
+cwms-db-aspects = { module = "mil.army.usace.hec:cwms-db-aspects", version.ref = "cwms-db" }
+cwms-db-dao = { module = "mil.army.usace.hec:cwms-db-dao", version.ref = "cwms-db" }
+hec-db-jdbc = { module = "mil.army.usace.hec:hec-db-jdbc", version.ref = "cwms-db" }
+hec-monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "monolith" }
+hec-cwms-ratings-core = { module = "mil.army.usace.hec:hec-cwms-ratings-core", version.ref = "cwms-ratings" }
+hec-nucleus-metadata = { module = "mil.army.usace.hec:hec-nucleus-metadata", version.ref = "nucleus" }
+
+# test deps
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine" }
+junit-platform-commons = { module = "org.junit.platform:junit-platform-commons" }
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine" }
+junit-params = { module = "org.junit.jupiter:junit-jupiter-params" }
+
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+apache-derby = { module = "org.apache.derby:derby", version.ref = "derby" }
+webcompere-system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "webcompere" }
+fasterxml-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+greenmail = { module = "com.icegreen:greenmail", version.ref = "greenmail" }
+org-mock-server = { module = "org.mock-server:mockserver-junit-jupiter-no-dependencies", version.ref = "mock-server" }
+
+org-slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j-api" }
+#integration test deps
+
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref="testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref="testcontainers" }
+testcontainers-oracle-free = { module = "org.testcontainers:oracle-free", version.ref="testcontainers" }
+hec-testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "hec-testcontainers-cwms" }
+
+[bundles]
+junit = [ "junit-api", "junit-engine", "junit-params" ]
+junit-platform = [ "junit-platform-launcher", "junit-platform-engine", "junit-platform-commons" ]
+jdbi = [ "org-jdbi3-core", "org-jdbi3-sqlobject", "org-jdbi3-postgres", "org-jdbi3-oracle" ]
+oracle = [ "oracle-ojdbc8" , "oracle-ucp" ]
+jersey = [ "org-eclipse-jetty-jsp", "org-eclipse-jetty-annotations", "org-eclipse-jetty-server", 
+            "org-eclipse-jetty-servlets", "org-eclipse-jetty-webapp", "javax-servlet",
+            "javax-javaee-api", "jersey-containers","jersey-inject" ] 

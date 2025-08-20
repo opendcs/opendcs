@@ -1,0 +1,170 @@
+plugins
+{
+    id 'opendcs.deps-conventions'
+    id 'opendcs.publishing-conventions'
+    id 'distribution'
+}
+
+configurations
+{
+    annotations
+    opendcs
+    docs
+}
+
+dependencies
+{
+    annotations(project(":opendcs-annotations"))
+    opendcs(project(":opendcs"))
+    opendcs(project(":opendcs-slf4j-provider"))
+    opendcs(project(":lrgs-web"))
+    docs(project(path: ":docs", configuration: 'docs'))
+}
+
+distributions
+{
+    main
+    {
+        distributionBaseName = 'opendcs'
+        contents
+        {
+            exclude '**/scripts'
+            into('bin')
+            {
+                from ('src/main/dist/scripts')
+                
+                filePermissions
+                {
+                    user
+                    {
+                        write = true;
+                        execute = true
+                    }
+                    group
+                    {
+                        write = false;
+                        execute = true
+                    }
+                    other
+                    {
+                        read = true
+                        execute = true
+                    }
+                }
+                from(configurations.opendcs)
+                {
+                    include "**/opendcs-${version}.jar"
+                    rename("opendcs-${version}.jar",'opendcs.jar')
+                }
+            }
+            filePermissions
+            {
+                user
+                {
+                    write = true;
+                    read = true
+                }
+                group
+                {
+                    write = false;
+                    read = true
+                }
+                other
+                {
+                    read = true
+                    write = false
+                }
+            }
+
+            into('dep')
+            {
+                from configurations.annotations
+                from configurations.opendcs
+                exclude "**/opendcs-${version}.jar"
+            }
+            into('doc')
+            {
+                from configurations.docs
+            }
+
+            into('schema') {
+                from "${rootDir}/schema"
+            }
+        }
+    }
+}
+
+if (shouldSign) {
+    signing {
+        sign distZip
+        sign distTar
+    }
+
+    task signDist {
+        dependsOn signDistTar
+        dependsOn signDistZip
+    }
+}
+
+// We don't publish the install distribution to maven central.
+project.tasks.findAll { task -> task.name.startsWith("publish")}.each { task -> task.enabled = false }
+
+def javaVersion = Double.parseDouble(project.findProperty("org.gradle.java.version") ?: "1.8" )
+
+task runApp(type: Exec) {
+    dependsOn installDist
+    def runDir = "${project.layout.getBuildDirectory().dir("run").get()}"
+    doFirst {
+        project.mkdir(runDir)
+    }
+    def binDir = "${installDist.destinationDir}/bin/${File.separator}"
+
+    def ext = osWin ? ".bat": ""
+    def app = project.findProperty( "opendcs.app" )?: 'launcher_start'
+    def profile = project.findProperty("opendcs.profile") ?: "default"
+    def lang = project.findProperty("opendcs.lang")
+    def appArgs = project.findProperty("opendcs.arg")
+    def useJfr = project.findProperty("opendcs.jfr") ? true : false
+    def debugPort = Integer.parseInt(project.findProperty("opendcs.debug") ?: "0")
+
+    var decjOpts = "-Dopendcs.connection.pool.trace=true" // always trace connections during dev
+    println("Using app ${app}")
+    if (osWin) {
+        executable "cmd"
+        args "/c", binDir+app+ext, "-d3", "-l", "CON:"
+    } else {
+        executable binDir+app
+        args "-d3", "-l", "/dev/stdout"
+    }
+    if (!profile.equals("default")) {
+        args += ["-P", profile]
+    }
+
+    if (appArgs != null) {
+        args += appArgs
+    }
+
+    if (lang != null) {
+        decjOpts +=" -Duser.language=${lang} "
+    }
+
+    if (debugPort > 0) {
+        decjOpts += " -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${debugPort} "
+    }
+
+    if (useJfr && (javaVersion >= 11)) {
+        decjOpts += "-XX:StartFlightRecording=disk=true,dumponexit=true,filename=${runDir}/${app}.${profile}.recording.jfr,settings=profile"
+    } else if (useJfr) {
+        logger.warn("Unable to run Flight Recorder on JDKs below 8. Use an 11 or higher JDK for running flight recorder.")
+    }
+
+    environment "DECJ_OPTS", decjOpts
+    environment "DCSTOOL_HOME": file(installDist.destinationDir)
+    environment "DECODES_INSTALL_DIR": file(installDist.destinationDir)
+    environment "PATH": (files (file(binDir),
+                               file(System.getenv("JAVA_HOME")+"/bin"),
+                               "${environment.PATH}".split(File.pathSeparator)
+                               ).asPath)
+
+    workingDir runDir
+}

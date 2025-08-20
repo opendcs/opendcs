@@ -2,7 +2,7 @@
 LRGS Installation and Setup
 ###########################
 
-This Document is part of the OpenDCS Software Suite for environmental
+This document is part of the OpenDCS Software Suite for environmental
 data acquisition and processing. The project home is:
 https://github.com/opendcs/opendcs
 
@@ -19,10 +19,11 @@ What is the LRGS?
 The letters LRGS stand for Local Readout Ground Station. The primary purpose of this component is to get data from
 satellite sources, a DRGS (Direct Readout Ground Station) or an HRIT (High Rate Information Transfer).
 
-See The legacy lrgs user guide for additional information <./legacy-lrgs-userguide.rst>
+See the legacy LRGS user guide for additional information :doc:`Legacy LRGS User Guide <legacy-lrgs-userguide>`.
 
-While this is still a reasonable description the LRGS can take data from Satellites (HRIT, DRGS, NOAAport), Irridium,
-, HRIT files, or another LRGS (DDS Protocol), and any network device that implements the DAMS-NT protocol as 
+
+The LRGS can take data from Satellites (HRIT, DRGS, NOAAport, Irridium), HRIT files, 
+or another LRGS (DDS Protocol), and any network device that implements the DAMS-NT protocol as 
 built-in sources.
 
 Users can also provide custom sources to the LRGS.
@@ -53,77 +54,23 @@ Install Java
 The minimum Java is 8. However, we recommend a Java 11 Runtime to take advantage of performance
 improvements to java.
 
+The following example uses the "main-nightly" release. This release will include any new features
+but may be unstable. Substitute for a specific release, such as 7.0.14 in any environments that require
+stability
+
 .. code-block:: bash
     
     sudo dnf install java-11-openjdk-headless
 
-Download and install OpenDCS
+Download and extract OpenDCS
 ----------------------------
 
 .. code-block:: bash
 
-    curl -O -L https://github.com/opendcs/opendcs/releases/download/7.0.12/opendcs-installer-7.0.12.jar
-    sudo java -jar opendcs-installer-7.0.12.jar
-    # /opt/opendcs/<version> is the recommend installation directory
-
-Example:
-
-.. code-block:: bash
-
-    [rocky@localhost ~]$ sudo java -jar opendcs-installer-7.0.12.jar
-    Welcome to the installation of OPENDCS Open Data Collection System 7.0.12!
-    - OpenDCS Team <https://github.com/opendcs/opendcs>
-    - Cove Software, LLC <info@covesw.com>
-    - U.S. Army Corps of Engineers <Webmaster-HEC@usace.army.mil>
-    - U.S. Bureau of Reclamation <hdbsupport@precisionwre.com>
-    The homepage is at: https://github.com/opendcs/opendcs
-    press 1 to continue, 2 to quit, 3 to redisplay
-    1
-    Select target path [/home/rocky]
-    /opt/opendcs/7.0.12
-    press 1 to continue, 2 to quit, 3 to redisplay
-    1
-
-    Select the packs you want to install:
-
-    [<required>] OpenDCS Base (OPENDCS Java Archive (jar) and scripts necessary for all installations. This will not modify your existing database or configuration files.
-    IMPORTANT: For a new installation, you should also select the Template Database.)
-    [x] XML Database Template (Initial Empty Database This is required for a new install. This will not overwrite any existing files.)
-    input 1 to select, 0 to deselect:
-
-    [x] Docs (PDF and HTML Documentation to go in the 'doc' subdirectory.)
-    input 1 to select, 0 to deselect:
-
-    [x] TSDB Computation Components (Time Series and Computation Database Components)
-    input 1 to select, 0 to deselect:
-
-    [x] Open Time Series Database Schema and Components (Scripts and DDL for building Open TSDB Database)
-    input 1 to select, 0 to deselect:
-
-    [ ] Corps Water Management System (CWMS) Components (Schema, Scripts, and Jars for CWMS)
-    input 1 to select, 0 to deselect:
-
-    [ ] Bureau of Reclamation Hydrologic Database (HDB) Components (Schema, Scripts, and Jars for HDB)
-    input 1 to select, 0 to deselect:
-
-    [x] LRGS (Open LRGS (Local Readout Ground Station) supplies raw data acquisition functions.)
-    input 1 to select, 0 to deselect:
-
-
-    ...pack selection done.
-    press 1 to continue, 2 to quit, 3 to redisplay
-    1
-    [ Starting to unpack ]
-    [ Processing package: OpenDCS Base (1/6) ]
-    [ Processing package: XML Database Template (2/6) ]
-    [ Processing package: Docs (3/6) ]
-    [ Processing package: TSDB Computation Components (4/6) ]
-    [ Processing package: Open Time Series Database Schema and Components (5/6) ]
-    [ Processing package: LRGS (6/6) ]
-    [ Unpacking finished ]
-    Install was successful
-    application installed on /opt/opendcs/7.0.12
-    [ Console installation done ]
+    mkdir -p /opt/opendcs/main-nightly
+    cd /opt/opendcs/main-nightly
+    curl -O -L https://github.com/opendcs/opendcs/releases/download/main-nightly/opendcs-main-nightly.tar
+    tar -xf opendcs-main-nightly.tar
 
 Initial Setup
 -------------
@@ -138,22 +85,22 @@ appropriate directories.
     mkdir -p .opendcs/lrgs
     # Now copy the initial configuration
     cd .opendcs/lrgs
-    cp /opt/opendcs/7.0.12/lrgs.conf .
-    cp /opt/opendcs/7.0.12/ddsrecv.conf .
-    cp /opt/opendcs/7.0.12/drgsconf.xml .
-    cp -r /opt/opendcs/7.0.12/netlist .
-    cp -r /opt/opendcs/7.0.12/users .
+    cp /opt/opendcs/main-nightly/lrgs.conf .
+    cp /opt/opendcs/main-nightly/ddsrecv.conf .
+    cp /opt/opendcs/main-nightly/drgsconf.xml .
+    cp -r /opt/opendcs/main-nightly/netlist .
+    cp -r /opt/opendcs/main-nightly/users .
     # The Rocky Linux 9 Raspberry Pi image has a firewall on by default.
     # OpenDCS does not recommend turning the firewall off. Allow Port 16003
     # to be used.
     sudo firewall-cmd --zone=public --add-port=16003/tcp --permanent
 
     
-You will need to set your environment. Add the following to .bashrc, if using bash. Otherwise adjust to your choosen shell.
+You will need to set your environment. Add the following to .bashrc, if using bash. Otherwise adjust to your chosen shell.
 
 .. code-block:: bash
 
-    export PATH=$PATH:/opt/opendcs/7.0.12/bin
+    export PATH=$PATH:/opt/opendcs/main-nightly/bin
     export DCSTOOL_USERDIR=$HOME/.opendcs
     export LRGSHOME=$DCSTOOL_USERDIR/lrgs
 
@@ -164,17 +111,16 @@ You will need to set your environment. Add the following to .bashrc, if using ba
     source ~/.bashrc
     
 
-Now set the LRGS Admin Password::
+Now set the LRGS Admin Password:
 
 .. code-block:: bash
 
-    #For random Generation:
+    #For random generation:
     if [ "$LRGS_ADMIN_PASSWORD" == "" ]; then
         LRGS_ADMIN_PASSWORD=`tr -cd '[:alnum:]' < /dev/urandom | fold -w30 | head -n1`
         echo "Admin Password is $LRGS_ADMIN_PASSWORD"
         echo "This will not be printed on subsequent runs"
     fi
-    
     cat `<<EOF | editPasswd
         adduser lrgsadmin
         $LRGS_ADMIN_PASSWORD
@@ -184,6 +130,37 @@ Now set the LRGS Admin Password::
         write
         quit
     EOF
+
+
+Below is a Windows equivalent batch file:
+
+.. code-block:: bat
+
+    @echo off
+
+    set DCSTOOL_USERDIR=%appdata%\.opendcs
+    set LRGSHOME=%DCSTOOL_USERDIR%\lrgs
+
+    echo %LRGSHOME%
+    :: create empty password file
+    type nul > %LRGSHOME%\.lrgs.passwd
+
+    for /f "delims=" %%A in ('powershell -NoProfile -Command " -join ((48..57) + (65..90) + (97..122) | Get-Random -Count 16 | ForEach-Object {[char]$_})"') do (
+        set "LRGS_ADMIN_PASSWORD=%%A"
+    )
+    echo Password is: %LRGS_ADMIN_PASSWORD%
+
+    (
+    echo adduser lrgsadmin
+    echo %LRGS_ADMIN_PASSWORD%
+    echo %LRGS_ADMIN_PASSWORD%
+    echo addrole lrgsadmin dds
+    echo addrole lrgsadmin admin
+    echo write
+    echo quit
+    ) | call editPasswd
+
+
 
 .. code-block:: bash
     
@@ -225,15 +202,93 @@ Installation - docker
 
 .. code-block:: bash
 
-    docker pull ghcr.io/opendcs/opendcs/lrgs:7.0.13-rc05
+    docker pull ghcr.io/opendcs/opendcs/lrgs:main-nightly
     
     docker volume create lrgs_home
     # A default password will be generated and in the logs
-    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home ghcr.io/opendcs/opendcs/lrgs:7.0.13-rc05
+    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home ghcr.io/opendcs/lrgs:main-nightly
     # or if you wish to manually set the password
-    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home -e LRGS_ADMIN_PASSWORD="<password>" ghcr.io/opendcs/opendcs/lrgs:7.0.13-rc05
+    docker run -d --name lrgs -p 16003:16003 -v lrgs_home:/lrgs_home -e LRGS_ADMIN_PASSWORD="<password>" ghcr.io/opendcs/lrgs:main-nightly
 
 Connecting
 ##########
 
 Now that you have an initial LRGS you can use the RtStat program (LRGS Status in the launcher) to connect to your LRGS at the host and port 16003.
+
+
+
+TLS
+###
+
+The LRGS can now serve and receive DDS messages over TLS. This provides for confidentiality and especially integrity of 
+the messages set and received. At this time the LRGS can either serve all DDS request over TLS or none.
+
+Future work will implement "STARTTLS" and the ability to serve DDS from two ports.
+
+For client usage, the TLS settings are determined per client connection.
+
+Server
+======
+
+To serve DDS data over make use of TLS create a java keystore file of a certificate and configure the LRGS to use it.
+If you have a certificate with key and the full trust chain you can do the following to create the keystore:
+
+.. code-block:: bash
+    
+    keytool -importkeystore -noprompt \
+        -alias lrgs  \
+        -destkeystore lrgs.ks \
+        -deststorepass lrgspass \
+        -srckeystore lrgs.p12 \
+        -srcstoretype JKS \
+        -srcstorepass lrgspass # this password will depend on how the source .p12 file was created
+
+in your lrgs.conf file set the following properties (also available in the GUI)
+
+.. code-block:: text
+
+    keyStoreFile=$LRGSHOME/lrgs.p12 # or where you have placed the file
+    keyStorePassword=lrgspass
+    ddsServerTlsMode=TLS
+    # or START_TLS
+    # or NONE
+
+
+In the GUI
+
+.. image:: ./media/start/lrgs/01-rtstat-dds-server-with-tls.png
+   :alt: Enable TLS on DDS Server
+   :width: 700
+
+Client
+======
+
+The client uses a combination of the following sources when determining certificate trust:
+
+1. The current JVMs certificate keystore
+2. The system's certificate store
+3. The file $DCSTOOL_USERDIR/local_trust.p12
+
+
+The local_trust.p12 file is created automatically. For example, if you connect to an LRGS with with RtStat and
+the server is not already trusted, you will receive a prompt with the certificate information asking if you want
+to trust the server certificate.
+
+Backend processing applications will log an error message with the host name if the certificate is not already trusted.
+If necessary, you can manually add trust to the local_trust.p12 file with the keytool command similar to the 
+Server certificate above. 
+
+The password is `local_trust`. Given the limited security (no more or less than the system or java keystores) only
+public certificates should be put in the local_trust keystore.
+
+To configure the LRGS to connect with TLS to a given LRGS server, check the TLS box and save the configuration. 
+The LRGS will need to be restarted.
+
+.. image:: ./media/start/lrgs/02-rtstat-dds-client-config-dialog.png
+   :alt: DDS Configuration Dialog with TLS Option
+   :width: 700
+
+For Routing Specs, documented later, there is a "lrgs.tls" property that can be set to one of the same options to enable 
+TLS for those connections.
+
+For `START_TLS` OpenDCS clients consider failure to establish the TLS connection an unrecoverable error.

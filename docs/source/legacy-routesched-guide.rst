@@ -61,7 +61,7 @@ more information.
 +--------------+-------------------------------------------------+
 |Environment   |Retreieves arbitrary variable from the           |
 |              |application environment using                    |
-|              |`${env.VARIABLE_NAME}`                            |
+|              |`${env.VARIABLE_NAME}`                           |
 +--------------+-------------------------------------------------+
 |Java          |Retrieves abritary variable from the application |
 |Properties    |`System.properties` using                        |
@@ -71,6 +71,7 @@ more information.
 |              |using `${file.PATH}` where path is suitable for  |
 |              |`new File(String path)`. Assumes text file.      |
 +--------------+-------------------------------------------------+
+
 
 The property value sources can be nested as needed; however, it is prefered to use a single provider per property.
 

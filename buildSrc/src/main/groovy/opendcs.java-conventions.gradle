@@ -1,0 +1,111 @@
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'checkstyle'
+    id 'eclipse'
+    // NOTE: external plugin version is specified in implementation dependency artifact of the project's build file
+    id 'jacoco'
+}
+
+
+
+eclipse {
+    classpath {
+       downloadSources=true
+       downloadJavadoc = true
+    }
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
+configurations {
+    pmd
+}
+
+dependencies {
+    pmd 'net.sourceforge.pmd:pmd-core:6.55.0'
+    pmd 'net.sourceforge.pmd:pmd-doc:6.55.0'
+    pmd 'net.sourceforge.pmd:pmd-java:6.55.0'
+    pmd 'net.sourceforge.pmd:pmd-java8:6.55.0'
+}
+
+test
+{
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = "0.8.9"
+}
+
+jacocoTestReport {
+    reports {
+        xml.required = true
+    }
+}
+
+checkstyle {
+    configFile = file("${rootDir}/config/checkstyle.xml")
+    sourceSets = []
+}
+
+
+if (JavaVersion.current() >= JavaVersion.VERSION_11) {
+    plugins.apply('com.github.spotbugs')
+    spotbugs {
+        ignoreFailures = true
+        toolVersion = '4.9.1'
+        reportsDir = file("$buildDir/reports/spotbugs")
+        effort = com.github.spotbugs.snom.Effort.MAX
+        excludeFilter = file("${rootDir}/spotbugs-filter.xml")
+    }
+
+    spotbugsMain {
+        reports {
+            xml {
+                required = true
+                outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.xml")
+                //withMessages = true
+            }
+            html {
+                //withMessages = true
+                required = true
+                outputLocation = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+                stylesheet = 'fancy-hist.xsl'
+            }
+        }
+    }
+
+}
+else {
+    task spotbugsMain {
+        doFirst {
+            logger.lifecycle("spotbugsMain requires Java 11 or higher")
+        }
+    }
+}
+
+task cpd {
+    doLast {
+        project.mkdir("$buildDir/reports")
+        ant.taskdef(name: "cpd",
+                    classname: "net.sourceforge.pmd.cpd.CPDTask",
+                    classpath: configurations.pmd.asPath
+        )
+        ant.cpd(minimumTokenCount: 100, outputFile: "$buildDir/reports/cpd.xml",
+                format: "xml", encoding: "UTF-8", ignoreAnnotations: true) {
+            fileset(dir: "src", includes: "**/*.java")
+        }
+    }
+}
+tasks.findAll { task -> task.name.startsWith("spotbugs")}.each { task -> task.enabled = gradle.startParameter.taskNames.contains(task.name) }
+tasks.findAll { task -> task.name.startsWith("checkstyle")}.each { task -> task.enabled = gradle.startParameter.taskNames.contains(task.name) }
