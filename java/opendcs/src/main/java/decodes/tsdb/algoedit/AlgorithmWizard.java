@@ -908,6 +908,7 @@ public class AlgorithmWizard
 		TopFrame algowizFrame = initTopFrame();
 //		algowizFrame.centerOnScreen();
 		algowizFrame.setVisible(true);
+		algowizFrame.toFront();
 	}
 
 	protected JPanel getPropPanel()
