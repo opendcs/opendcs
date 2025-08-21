@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<CompMetaData>
+  <Algorithm name="InflowEstimationAlgo">
+    <Comment>
+      Reservoir Inflow calculation based on an algorithm developed by NWP,
+      Which utilizes storage change, releases, and additional outflows to calculate release
+      based on the output time series duration.
+    </Comment>
+    <ExecClass>decodes.cwms.algo.InflowEstimationAlgo</ExecClass>
+    <AlgoProperty name="stagepool_storage_rating"></AlgoProperty>
+    <AlgoProperty name="tailwater_to_release_rating"></AlgoProperty>
+    <AlgoParm roleName="tailwater_tsid">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="storage_tsid">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="stage_pool_tsid">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="release_tsid">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outflow_1">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outflow_2">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outflow_3">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outflow_4">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outflow_5">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="outflow_6">
+      <ParmType>i</ParmType>
+    </AlgoParm>
+    <AlgoParm roleName="inflow">
+      <ParmType>o</ParmType>
+    </AlgoParm>
+  </Algorithm>
+  <Computation name="3HourInflowEstimationAlgo">
+    <Comment></Comment>
+    <Enabled>false</Enabled>
+    <AlgorithmName>InflowEstimationAlgo</AlgorithmName>
+    <LastModified>2025-08-15 15:15:19 PDT</LastModified>
+    <ValidStart>2024-01-03 00:15:00 UTC</ValidStart>
+    <ValidEnd>2024-01-05 00:00:00 UTC</ValidEnd>
+    <CompProperty name="stagepool_storage_rating">
+      BLU.Elev-Forebay;Area.Standard.CENWP
+    </CompProperty>
+    <CompParm roleName="outflow_1">
+      <SiteDataType>
+        <SiteName NameType="CWMS">BLU</SiteName>
+        <DataType Standard="CWMS" code="Flow-Evap"/>
+      </SiteDataType>
+      <Interval>0</Interval>
+      <TableSelector>Inst.0.MIXED-COMPUTED-REV</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="outflow_2">
+      <SiteDataType></SiteDataType>
+      <Interval></Interval>
+      <TableSelector></TableSelector>
+      <DeltaT></DeltaT>
+    </CompParm>
+    <CompParm roleName="outflow_3">
+      <SiteDataType></SiteDataType>
+      <Interval></Interval>
+      <TableSelector></TableSelector>
+      <DeltaT></DeltaT>
+    </CompParm>
+    <CompParm roleName="outflow_4">
+      <SiteDataType></SiteDataType>
+      <Interval></Interval>
+      <TableSelector></TableSelector>
+      <DeltaT></DeltaT>
+    </CompParm>
+    <CompParm roleName="outflow_5">
+      <SiteDataType></SiteDataType>
+      <Interval></Interval>
+      <TableSelector></TableSelector>
+      <DeltaT></DeltaT>
+    </CompParm>
+    <CompParm roleName="outflow_6">
+      <SiteDataType></SiteDataType>
+      <Interval></Interval>
+      <TableSelector></TableSelector>
+      <DeltaT></DeltaT>
+    </CompParm>
+    <CompParm roleName="release_tsid">
+      <SiteDataType>
+        <SiteName NameType="CWMS">BLU</SiteName>
+        <DataType Standard="CWMS" code="Flow-Out"/>
+      </SiteDataType>
+      <Interval>0</Interval>
+      <TableSelector>Inst.0.MIXED-COMPUTED-REV</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="stage_pool_tsid">
+      <SiteDataType></SiteDataType>
+      <Interval></Interval>
+      <TableSelector></TableSelector>
+      <DeltaT></DeltaT>
+    </CompParm>
+    <CompParm roleName="storage_tsid">
+      <SiteDataType>
+        <SiteName NameType="CWMS">BLU</SiteName>
+        <DataType Standard="cwms" code="Stor"/>
+      </SiteDataType>
+      <Interval>0</Interval>
+      <TableSelector>Inst.0.MIXED-COMPUTED-REV</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+    <CompParm roleName="tailwater_tsid">
+      <SiteDataType></SiteDataType>
+      <Interval></Interval>
+      <TableSelector></TableSelector>
+      <DeltaT></DeltaT>
+    </CompParm>
+    <CompParm roleName="inflow">
+      <SiteDataType>
+        <SiteName NameType="CWMS">BLU</SiteName>
+        <DataType Standard="CWMS" code="Flow-In"/>
+      </SiteDataType>
+      <Interval>15Minutes</Interval>
+      <TableSelector>Ave.3Hours.MIXED-COMPUTED-REV</TableSelector>
+      <DeltaT>0</DeltaT>
+      <DeltaTUnits>Seconds</DeltaTUnits>
+    </CompParm>
+  </Computation>
+</CompMetaData>
