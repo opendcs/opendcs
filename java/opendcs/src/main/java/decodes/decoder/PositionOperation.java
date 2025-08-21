@@ -1,42 +1,30 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*	$State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*	$Log$
-*	Revision 1.2  2010/09/13 19:30:36  mmaloney
-*	Scan should always jump to the specified label if the scan fails, even if the scan ran out of data.
-*	
-*	Revision 1.1  2008/04/04 18:21:01  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.4  2007/12/11 01:05:17  mmaloney
-*	javadoc cleanup
-*	
-*	Revision 1.3  2004/08/31 16:31:21  mjmaloney
-*	javadoc
-*	
-*	Revision 1.2  2001/05/21 13:38:50  mike
-*	dev
-*	
-*	Revision 1.1  2001/05/06 22:53:18  mike
-*	Added
-*	
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decoder;
 
-import ilex.util.Logger;
-
-import java.io.*;
-import java.util.Vector;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
 PositionOperation implements the nP operator, which moves the character to
 the nth character on the current line.
 */
-public class PositionOperation extends DecodesOperation 
+public class PositionOperation extends DecodesOperation
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	  Constructor.
 	  @param  position the desired position on the line.
@@ -56,11 +44,10 @@ public class PositionOperation extends DecodesOperation
 	  @param msg store decoded values here.
 	  @throws DecoderException or subclass if error detected.
 	*/
-	public void execute(DataOperations dd, DecodedMessage msg) 
+	public void execute(DataOperations dd, DecodedMessage msg)
 		throws DecoderException
 	{
-		Logger.instance().log(Logger.E_DEBUG3, "Positioning to " + repetitions);
+		log.trace("Positioning to {}", repetitions);
 		dd.position(repetitions);
 	}
 }
-

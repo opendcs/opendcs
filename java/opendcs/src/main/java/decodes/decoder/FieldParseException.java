@@ -30,5 +30,13 @@ public class FieldParseException extends DecoderException
 	{
 		super(msg);
 	}
-}
 
+	/**
+	  Construct the exception.
+	  @param msg the message
+	*/
+	public FieldParseException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
+}

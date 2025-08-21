@@ -1,5 +1,17 @@
 /*
-*	$Id: NumberParser.java,v 1.4 2020/01/31 19:36:08 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decoder;
 
@@ -8,7 +20,9 @@ import ilex.var.Variable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.PseudoBinary;
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
@@ -20,8 +34,8 @@ formats.
 */
 public class NumberParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private char dataType;
-	private int pbinaryMask;
 
 	// Constants for datatype:
 
@@ -60,13 +74,12 @@ public class NumberParser
 	/** Pseudobinary to hex */
 	public static final char PBINARY_HEX 			 = 'r';
 
-	
+
 	/** default constructor */
 	public NumberParser()
 	{
 		// setup defaults
 		dataType = ASCII_FMT;
-		pbinaryMask = 0x3f;		/* low order 6 bits */
 	}
 
 	/**
@@ -93,8 +106,7 @@ public class NumberParser
 		 && type != PBINARY_ATON
 		 && type != PBINARY_SONTEK
 		 && type != PBINARY_HEX)
-			throw new ScriptFormatException(
-				"Unknown field data-type '" + type + "'");
+			throw new ScriptFormatException("Unknown field data-type '" + type + "'");
 		dataType = type;
 	}
 
@@ -110,10 +122,13 @@ public class NumberParser
 	public int parseIntValue(byte[] field)
 		throws FieldParseException
 	{
-		try { return parseDataValue(field).getIntValue(); }
-		catch(NoConversionException nce)
+		try
 		{
-			throw new FieldParseException("Field requires an integer");
+			return parseDataValue(field).getIntValue();
+		}
+		catch (NoConversionException nce)
+		{
+			throw new FieldParseException("Field requires an integer", nce);
 		}
 	}
 
@@ -130,10 +145,10 @@ public class NumberParser
 			throw new FieldParseException("Attempt to parse a null field value.");
 		switch(dataType)
 		{
-		case ASCII_FMT:	
+		case ASCII_FMT:
 		case ASCII_ZERO:
-			return parseAsciiDataValue(field);		
-			
+			return parseAsciiDataValue(field);
+
 		case PBINARY_FMT:
 		case SIGNED_PBINARY_FMT:
 			return parsePBinaryDataValue(field);
@@ -158,24 +173,23 @@ public class NumberParser
 		case BIN_SIGNED_LSB:
 		case BIN_UNSIGNED_LSB:
 			return parsePureBinary(field);
-			
+
 		case PBINARY_ATON:
 			return parseAtonString(field);
-		
+
 		case PBINARY_SONTEK:
 			return parseSontekString(field);
-		
+
 		case PBINARY_HEX:
 			return pseudoBinToHex(field);
-		
 
-		
+
+
 		default:
-			throw new FieldParseException("Unknown data type '" + dataType
-				+ "'");
+			throw new FieldParseException("Unknown data type '" + dataType + "'");
 		}
 	}
-	
+
 	private Variable parseAsciiDataValue(byte[] field)
 		throws FieldParseException
 	{
@@ -192,15 +206,7 @@ public class NumberParser
 		// Verify that starts with + or - followed by digit or '.'
 		if ( n < field.length && (field[n] == '+' || field[n] == '-' ))
 			n++;
-		
-//		//if it is empty field
-//		if(field[n] == ',')
-//		{
-//			String str = "";
-//			n++;
-//			return new Variable(str);
-//		}
-		
+
 		if ( n == field.length
 		 || ( !Character.isDigit((char)field[n]) && field[n] != '.' ) )
 			throw new FieldParseException("no start digit");
@@ -212,8 +218,7 @@ public class NumberParser
 			n++;
 			// Now we must have a digit
 			if (n == field.length || !Character.isDigit((char)field[n]))
-				throw new FieldParseException(
-					"no start digit after decimal point");
+				throw new FieldParseException("no start digit after decimal point");
 		}
 
 		// Skip initial digits
@@ -251,8 +256,7 @@ public class NumberParser
 						&& Character.isDigit((char)field[n]))
 						n++;
 				}
-				else throw new FieldParseException(
-					"Expected exponent digits");
+				else throw new FieldParseException("Expected exponent digits");
 			}
 		}
 		int end = n;
@@ -262,8 +266,7 @@ public class NumberParser
 			if (Character.isWhitespace((char)field[n]))
 				n++;
 			else
-				throw new FieldParseException(
-					"Garbage in field after number");
+				throw new FieldParseException("Garbage in field after number");
 
 		String s = new String(field, start, end-start);
 		if (s.startsWith("+"))
@@ -271,30 +274,30 @@ public class NumberParser
 
 		if (decPoints == 0 && !exponential)
 		{
-			try 
+			try
 			{
-				long x = Long.parseLong(s); 
-				return new Variable(x); 
+				long x = Long.parseLong(s);
+				return new Variable(x);
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				throw new FieldParseException(e.toString());
+				throw new FieldParseException("Unable to parse field as Long.", ex);
 			}
 		}
 		else
 		{
-			try 
+			try
 			{
-				double x = Double.parseDouble(s); 
-				return new Variable(x); 
+				double x = Double.parseDouble(s);
+				return new Variable(x);
 			}
-			catch (Exception e)
+			catch (Exception ex)
 			{
-				throw new FieldParseException(e.toString());
+				throw new FieldParseException("Unable to parse field as Double.", ex);
 			}
 		 }
 	}
-	
+
 	private Variable parsePureBinary(byte[] field)
 	{
 		// If this is an LSB-First type, put the data in MSB-first order.
@@ -305,7 +308,7 @@ public class NumberParser
 		else
 			for(int i=0; i<field.length; i++)
 				f[i] = field[i];
-		
+
 		// Convert it to a long integer
 		long lv = (long)f[0];
 
@@ -315,7 +318,7 @@ public class NumberParser
 		{
 			lv &= 0xffL;
 		}
-		
+
 		// shift & copy in remaining bytes
 		for (int i=1; i<f.length; i++)
 		{
@@ -323,7 +326,7 @@ public class NumberParser
 			int b = f[i] & 0xff;
 			lv = lv | b;
 		}
-		
+
 		return new Variable(lv);
 	}
 
@@ -338,8 +341,7 @@ public class NumberParser
 		{
 			int c = (int)field[0];
 			if (c < 0x3F)   // 0x40 is the value of '@'
-				throw new FieldParseException("Illegal character '" 
-					+ c + "' in pseudo binary data field.");
+				throw new FieldParseException("Illegal character '" + c + "' in pseudo binary data field.");
 			result = (long)(c & 0x1f);
 			if ((c & 0x20) != 0)
 				sign = -1;
@@ -348,8 +350,7 @@ public class NumberParser
 		{
 			int c = (int)field[0];
 			if (c < 0x3F)   // 0x40 is the value of '@'
-				throw new FieldParseException("Illegal character '" 
-					+ c + "' in pseudo binary data field.");
+				throw new FieldParseException("Illegal character '" + c + "' in pseudo binary data field.");
 			result = (long)(c & 0x3f);
 		}
 
@@ -357,8 +358,7 @@ public class NumberParser
 		{
 			int c = (int)field[i];
 			if (c < 0x3F)   // 0x40 is the value of '@' 3F == ?
-				throw new FieldParseException("Illegal character '" 
-					+ c + "' in pseudo binary data field.");
+				throw new FieldParseException("Illegal character '" + c + "' in pseudo binary data field.");
 
 			result <<= 6;
 			result += (long)(c & 0x3f);
@@ -374,7 +374,7 @@ public class NumberParser
 
 		return new Variable(result);
 	}
-	
+
 
 	private Variable parseLabargeDataValue(byte[] field)
 		throws FieldParseException
@@ -416,7 +416,7 @@ public class NumberParser
 			int n = 0;
 			double factor1;
 			double val = 0.0;
-	
+
 			if ( (field[n] & 0x08) != 0 )
 				factor1 = -1;
 			else
@@ -430,19 +430,19 @@ public class NumberParser
 			else
 				val = 0;
 			n++;
-	
+
 			int ival = ( field[n] & 0x3f );
 			val += ( (double) ival) * 64;
 			n++;
 			ival = ( field[n] & 0x3f );
 			val += ( float)ival;
 			val *= factor1;
-	
+
 			return new Variable(val);
 		}
 		catch(Exception ex)
 		{
-			throw new FieldParseException("Error parsing BC field: " + ex);
+			throw new FieldParseException("Error parsing BC field.", ex);
 		}
 	}
 
@@ -491,16 +491,16 @@ public class NumberParser
 
 		return new Variable((double)ival * factor1);
 	}
-	
+
 	private Variable parseAtonString(byte[] field)
 			throws FieldParseException
 	{
-Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len=" + field.length);
+		log.debug("parseAtonString field='{}', len={}", new String(field), field.length);
 		String result = "";
 		int fieldIndex = 0;
 		DecimalFormat dFormat = new DecimalFormat("0.000");
-		
-		// ==================================== 
+
+		// ====================================
 		// MJM New Header Code:
 		NumberFormat dp1 = NumberFormat.getNumberInstance();
 		dp1.setGroupingUsed(false);
@@ -517,12 +517,12 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 		NumberFormat i8 = NumberFormat.getIntegerInstance();
 		i8.setGroupingUsed(false);
 		i8.setMinimumIntegerDigits(8);
-		
+
 		StringBuilder header = new StringBuilder();
 		for(int idx = 3; idx < 11; idx++)
 			header.append((char)field[idx]);
 		header.append('\n');
-		
+
 		int x = PseudoBinary.decodePB(new String(field, 12, 2), false); // MM
 		header.append(i2.format(x) + ' ');
 		x = PseudoBinary.decodePB(new String(field, 14, 2), false);     // DD
@@ -540,7 +540,7 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 		header.append(i8.format(x) + ' ');
 		x = PseudoBinary.decodePB(new String(field, 27, 3), false);     // 8 dig binary #
 		header.append(i8.format(x) + ' ');
-		
+
 		double d = PseudoBinary.decodePB(new String(field, 30, 2), false) * .1;
 		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
 
@@ -555,10 +555,10 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 
 		d = PseudoBinary.decodePB(new String(field, 39, 2), true) * .1;
 		header.append(TextUtil.setLengthRightJustify(dp1.format(d), 5) + ' ');
-		
+
 		d = PseudoBinary.decodePB(new String(field, 41, 2), false) * .001;
 		header.append(TextUtil.setLengthRightJustify(dp3.format(d), 7) + ' ');
-		
+
 		d = PseudoBinary.decodePB(new String(field, 43, 2), false) * .01;
 		header.append(TextUtil.setLengthRightJustify(dp2.format(d), 6) + ' ');
 
@@ -568,180 +568,9 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 		x = PseudoBinary.decodePB(new String(field, 48, 3), false);
 		header.append(TextUtil.setLengthRightJustify(i2.format(x), 5) + '\n');
 
-		Logger.instance().debug1("mike's header '" + header.toString() + "'");
+		log.debug("header: '{}'", header.toString());
 		result = result + header.toString();
-		// ==================================== 
 
-// Old Inscrutable Sutron Code:
-//		//first 10 characters are type and id 
-//		for(fieldIndex=0; fieldIndex<11;fieldIndex++)
-//		{
-//			if(fieldIndex>2)
-//				result += (char)field[fieldIndex];
-//		}
-//		//if(field[charCount]=='-')
-//			result += "\n";
-//			
-//Logger.instance().debug1("\tafter type & id, result='" + result + "'");
-//		String strResult = "";
-//		for(fieldIndex = 12; fieldIndex < 24; fieldIndex++)
-//		{
-//			String temp = "";
-//			temp += (char)field[fieldIndex];
-//			temp += (char)field[++fieldIndex];
-//
-//			int number = PseudoBinary.decodePB(temp, false);
-//			strResult = number+"";
-//			if(strResult.length()<2)
-//				strResult = "0" + strResult;
-//			
-//			result += strResult + " ";
-//Logger.instance().debug1("aton fld " + fieldIndex + ", num=" + number + ", tostr='" + strResult
-//+ ", total result='" + result + "'");
-//		}
-//		
-//		for(fieldIndex = 24; fieldIndex < 30; fieldIndex++)
-//		{
-//			String temp = "";
-//			temp += (char)field[fieldIndex];
-//			temp += (char)field[++fieldIndex];
-//			temp += (char)field[++fieldIndex];
-//
-//			int number = PseudoBinary.decodePB(temp, false);
-//			strResult = number+"";
-//			String zeros = "";
-//			if(strResult.length()<9)
-//				for(int i = strResult.length(); i<8; i++)
-//					zeros += "0";
-//			strResult = zeros + strResult;
-//			if(fieldIndex!=29)
-//				result += strResult + " ";
-//			else
-//				result += strResult;
-//Logger.instance().debug1("aton fld " + fieldIndex + ", num=" + number + ", tostr='" + strResult
-//		+ ", total result='" + result + "'");
-//		}
-//		
-//		for(fieldIndex = 30; fieldIndex < 51; fieldIndex++)
-//		{
-//			String temp = "";
-//			temp += (char)field[fieldIndex];
-//			temp += (char)field[++fieldIndex];
-//			if(fieldIndex+1==34 || fieldIndex+1==47 || fieldIndex+1==50)
-//				temp += (char)field[++fieldIndex];
-//			boolean signed = fieldIndex != 36 && fieldIndex != 42 && fieldIndex != 44;
-//			int number = PseudoBinary.decodePB(temp, signed);
-//			double dnum;
-//Logger.instance().info("fieldIndex=" + fieldIndex + ", temp='" + temp + "', integer=" + number);
-//			
-//			if(fieldIndex == 31 || fieldIndex == 34 || fieldIndex == 36 || fieldIndex == 38 || fieldIndex == 40)
-//			{
-//				dnum = number*0.1;
-//				String dstr = dp1.format(dnum);
-//				
-////				strResult = dFormat.format(dnum);
-//Logger.instance().info("fieldIndex=" + fieldIndex + ", dstr=" + dstr + ", len=" + strResult.length());
-//
-////				if (fieldIndex == 34)
-////					dstr = TextUtil.setLengthRightJustify(dstr, 7);
-////				else if (fieldIndex == )
-//
-//				//remove extra digits or fill in with blanks
-//				if(fieldIndex==34 && strResult.length()<7)
-//				{
-//					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;
-//Logger.instance().info("   after rm extra digits 1: '" + strResult + "'");
-//				}
-//				else if(fieldIndex==34 && strResult.length()>7)
-//				{
-//					strResult = strResult.substring(0,7);
-//Logger.instance().info("   after rm extra digits 2: '" + strResult + "'");
-//				}
-//				else if(strResult.length()<7)
-//				{
-//					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;
-//				}
-//				else if(strResult.length()>7)
-//				{
-//					strResult = strResult.substring(0,7);
-//				}
-//				//remove trailing zeros or decimal point
-////				if(strResult.contains("."))
-////				{
-////Logger.instance().info("    before rm trail 0 & .: '" + strResult + "'");
-////					while(strResult.endsWith("0"))
-////						strResult = strResult.substring(0, strResult.length() - 1);
-////					strResult = " " + strResult;
-////					
-////					if (strResult.endsWith("."))
-////						strResult = strResult.substring(0, strResult.length() - 1);
-////						
-////Logger.instance().info("     after rm trail 0 & .: '" + strResult + "'");
-////				}
-//			}
-//			else if(fieldIndex == 42)
-//			{
-//				dnum = number*0.001;
-//				strResult = dFormat.format(dnum);
-//				//remove extra digits or fill in with blanks
-//				if(strResult.length()<8)
-//				{
-//					strResult = String.format("%"+(8-strResult.length())+"s", "")+strResult;
-//				}
-//				else if(strResult.length()>8)
-//				{
-//					strResult = strResult.substring(0,8);
-//				}
-//			}
-//			else if(fieldIndex == 44)
-//			{
-//				DecimalFormat df = new DecimalFormat("0.00");
-//				dnum = number*0.01;
-//				strResult = df.format(dnum);
-//				
-//				//remove extra digits or fill in with blanks
-//				if(strResult.length()<7)
-//				{
-//					strResult = String.format("%"+(7-strResult.length())+"s", "")+strResult;	
-//				}
-//				else if(strResult.length()>7)
-//				{
-//					strResult = strResult.substring(0,6);
-//				}
-//			}
-//			else 
-//			{
-//				dnum = number;
-//				strResult = dnum+"";
-//				//remove extra digits or fill in with blanks
-//				if(strResult.length()<6)
-//				{
-//					strResult = String.format("%"+(6-strResult.length())+"s", "")+strResult;
-//				}
-//				else if(strResult.length()>6)
-//				{
-//					strResult = strResult.substring(0,6);
-//				}
-//				//remove trailing zeros or decimal point
-//				if(strResult.contains("."))
-//				{
-//					if( strResult.charAt(strResult.length()-1)=='0')
-//					{
-//						strResult = strResult.replace("0", "");
-//						strResult = " " + strResult;
-//					}
-//					if(strResult.indexOf('.')==(strResult.length()-1))
-//					{
-//						strResult = strResult.replace(".","");
-//						strResult = " " + strResult;
-//					}
-//				}
-//			}
-//Logger.instance().info("Final strResult=" + strResult);
-//			result += strResult;// + " ";
-//		}
-//		result = result + "\n";
-		
 		//processing data
 		String strResult = "";
 		for(fieldIndex = 52; fieldIndex < field.length-1; fieldIndex++)
@@ -751,18 +580,18 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 				if(fieldIndex>field.length-2)
 					break;
 				String temp = "";
-				
+
 				temp += (char)field[fieldIndex++];
 				temp += (char)field[fieldIndex++];
-				
-				//the first three values in each bin/line are 
+
+				//the first three values in each bin/line are
 				//represented by three bytes of pseudo-binary
 				if(i==0 || i==1 || i==2 && fieldIndex < field.length-1)
 				{
 					temp += (char)field[fieldIndex++];
 				}
 				int number = PseudoBinary.decodePB(temp, true);
-				
+
 				double dnum = 0.000;
 				String blank = "";
 				if(i==0 || i==1 || i==2)
@@ -770,12 +599,12 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 					dnum = number*0.001;
 					strResult = dnum + "";
 					strResult = dFormat.format(dnum);
-					
+
 					for(int j = strResult.length(); j<8; j++)
 						blank += " ";
-					strResult = blank + strResult; 
+					strResult = blank + strResult;
 				}
-				else 
+				else
 				{
 					dnum = number;
 					strResult = dnum + "";
@@ -783,8 +612,8 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 						strResult = "0.000";
 					for(int j = strResult.length(); j<6; j++)
 						blank += " ";
-					strResult = blank + strResult; 
-				}				
+					strResult = blank + strResult;
+				}
 				result += strResult;// + " ";
 			}
 			result = result + "\n";
@@ -792,30 +621,28 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 		return new Variable(result);
 	}
 
-		
+
 	private Variable parseSontekString(byte[] field)
 			throws FieldParseException
 	{
-//		String result = "";
 		StringBuilder result = new StringBuilder();
 		int pos = 0;
-//		DecimalFormat dFormat = new DecimalFormat("0.000");
-		//first 10 characters are type and id 
+		//first 10 characters are type and id
 		for(pos=0; pos<11;pos++)
 		{
 			if(pos>2)
 				result.append((char)field[pos]);
 		}
-		
+
 		//skip flag
 		pos++;
-		
+
 		result.append("\n");
 		String intString = "";
-		
+
 		String pbChar = "";
 		String blank = "";
-		
+
 		//first two bytes of the first header
 		pbChar += (char)field[pos];
 		pbChar += (char)field[++pos];
@@ -824,24 +651,24 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 		intString = n+"";
 		for(int j = intString.length(); j<4; j++)
 			blank += " ";
-		intString = blank + intString; 
+		intString = blank + intString;
 		result.append(intString);
 		pbChar = "";
-		
+
 		//not encoded chars of the first header
 		for(int i = 0; i < 5; i++)
 		{
 			pbChar += (char)field[++pos];
 		}
 		result.append("       " + pbChar);
-		
+
 		//the rest of the first header
 		for(pos = 19; pos < 41; pos++)
 		{
 			String temp = "";
 			temp += (char)field[pos];
 			temp += (char)field[++pos];
-			
+
 			int number = (int)PseudoBinary.decodePB(temp, false);
 			intString = number+"";
 			blank="";
@@ -857,30 +684,30 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 			if(pos>32)
 				for(int j = intString.length(); j<2; j++)
 					blank += " ";
-			intString = blank + intString; 
+			intString = blank + intString;
 			result.append(intString);
 		}
 		result.append("\n");
-		
+
 		//skip header flag and process second header
 		for(pos = 42; pos < 52; pos++)
 		{
 			String temp = "";
 			temp += (char)field[pos];
 			temp += (char)field[++pos];
-			
+
 			int number = (int)PseudoBinary.decodePB(temp, false);
-			
+
 			intString = number+"";
 			blank="";
-			
+
 			for(int j = intString.length(); j<6; j++)
 				blank += " ";
-			intString = blank + intString; 
+			intString = blank + intString;
 			result.append(intString);
 		}
 		result.append("\n");
-		
+
 		//skip flag and process third header
 		for(pos = 53; pos < 80; pos++)
 		{
@@ -896,69 +723,66 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 				number = PseudoBinary.decodePB(temp, false);
 			intString = number+"";
 			blank="";
-			
+
 			for(int j = intString.length(); j<7; j++)
 				blank += " ";
-			intString = blank + intString; 
+			intString = blank + intString;
 			result.append(intString);
 		}
-		
+
 		result.append("\n");
-		
+
 		//skip flag and process fourth header
 		for(pos = 81; pos < 113; pos++)
 		{
 			String temp = "";
 			temp += (char)field[pos];
 			temp += (char)field[++pos];
-			
+
 			int number = PseudoBinary.decodePB(temp, false);
 			intString = number+"";
 			blank="";
-			
+
 			for(int j = intString.length(); j<4; j++)
 				blank += " ";
-			intString = blank + intString; 
+			intString = blank + intString;
 			result.append(intString);
 		}
-		
-		//data processing 
+
+		//data processing
 		boolean firstCell = true;
 		int velocityLen = 2;
 		for(pos = 113; pos < field.length-2; pos++) // incr here gobbles the plus sign
 		{
 			result.append("\n");
-			
+
 			if (firstCell)
 			{
 				// Count # of chars to the next '+'
 				int idx = 0;
 				for(; idx < 17 && (char)field[pos + ++idx] != '+'; );
-//					System.out.println("\t" + (char)field[pos + idx]);
-//				System.out.println("celLen = " + idx);
 				if (idx == 14)
 					velocityLen = 2;
 				else if (idx == 16)
 					velocityLen = 3;
 				firstCell = false;
 			}
-//System.out.println("velocityLen=" + velocityLen);
-			
+
 			// Cell #
 			String bin = "";
 			bin += (char)field[++pos];
-			
+
 			int b = PseudoBinary.decodePB(bin, false);
-			
+
 			bin = b +"";
 			if(bin.length()==1)
 				bin = "  " + bin;
 			else
 				bin = " " + bin;
 			result.append(bin);
-			
+
 			// Each cell has: velocity 1, velocity 2, std dev 1, std dev 2, amp 1, amp 2
-			
+
 			// Get the 2 velocity measurements
 			for(int i = 0; i < 2; i++)
 			{
@@ -980,11 +804,11 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 			{
 				if(pos>field.length-3)
 					break;
-				
+
 				String temp = "";
 				temp += (char)field[++pos];
 				temp += (char)field[++pos];
-				
+
 				int number = PseudoBinary.decodePB(temp, true);
 				intString = number+"";
 				blank="";
@@ -999,7 +823,7 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 			}
 		}
 		return new Variable(result.toString());
-	} 
+	}
 
 	private Variable pseudoBinToHex(byte[] field)
 		throws FieldParseException
@@ -1017,21 +841,21 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 		{
 			int c = (int)field[i];
 			if (c < 0x3F)   // 0x40 is the value of '@'
-				throw new FieldParseException("Illegal character '" 
+				throw new FieldParseException("Illegal character '"
 					+ c + "' in pseudo binary data field.");
 			result = (long)(c & 0x3f);
-			
+
 			int ch = (int)field[++i];
-			
+
 			if (ch < 0x3F)   // 0x40 is the value of '@' 3F == ?
-				throw new FieldParseException("Illegal character '" 
+				throw new FieldParseException("Illegal character '"
 					+ ch + "' in pseudo binary data field.");
 
 			result <<= 6;
-			result += (long)(ch & 0x3f);	
-	
+			result += (long)(ch & 0x3f);
+
 			hexResult = Long.toHexString(result);
-			
+
 			if(hexResult.length() == 2)
 				hexResult = "0" + hexResult;
 			else if(hexResult.length() == 1)
@@ -1040,28 +864,5 @@ Logger.instance().debug1("parseAtonString field='" + new String(field) + "', len
 		}
 		String s = hex.toUpperCase();
 		return new Variable(s);
-	}
-	
-	// Test main
-	public static void main(String args[])
-		throws Exception
-	{
-		NumberParser np = new NumberParser();
-		np.setDataType(BIN_SIGNED_MSB);
-		byte[] field = args[0].getBytes();
-		Variable v = np.parseDataValue(field);
-		System.out.println("BIN_SIGNED_MSB Parsed '" + args[0] + "' to: " + v);
-
-		np.setDataType(BIN_UNSIGNED_MSB);
-		v = np.parseDataValue(field);
-		System.out.println("BIN_UNSIGNED_MSB Parsed '" + args[0] + "' to: " + v);
-		
-		np.setDataType(BIN_SIGNED_LSB);
-		v = np.parseDataValue(field);
-		System.out.println("BIN_SIGNED_LSB Parsed '" + args[0] + "' to: " + v);
-
-		np.setDataType(BIN_UNSIGNED_LSB);
-		v = np.parseDataValue(field);
-		System.out.println("BIN_UNSIGNED_LSB Parsed '" + args[0] + "' to: " + v);
 	}
 }

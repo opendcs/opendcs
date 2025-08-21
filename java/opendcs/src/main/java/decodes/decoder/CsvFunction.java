@@ -1,12 +1,29 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.decoder;
 
-import ilex.util.Logger;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.DecodesScript;
 
@@ -22,11 +39,12 @@ import decodes.db.DecodesScript;
  * It uses the DataOperations object to process the telemetry data byte by byte
  * and the DecodedMessage to store the extracted samples for each sensor.
  */
-public class CsvFunction
-	extends DecodesFunction
+public class CsvFunction extends DecodesFunction
 {
-	private ArrayList<Integer> sensorNumbers = new ArrayList<Integer>();
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "csv";
+
+	private ArrayList<Integer> sensorNumbers = new ArrayList<Integer>();
 	private String argList = null;
 	private String delimiter = ",";
 
@@ -75,8 +93,8 @@ public class CsvFunction
 	public void execute(DataOperations dd, DecodedMessage decmsg) throws DecoderException
 	{
 		StringBuilder sb = new StringBuilder();
-		
-		trace("Executing with args '" + argList + "' #sensors=" + sensorNumbers.size());
+
+		log.trace("Executing with args '{}' #sensors={}", argList, sensorNumbers.size());
 		int col = 0;
 		int fieldStart = dd.getBytePos();
 		try
@@ -86,9 +104,9 @@ public class CsvFunction
 				char c = (char)dd.curByte();
 				if (c == '\n' || c=='\r')
 				{
-					processColumn(col++, sb.toString().trim(), decmsg, dd.getCurrentLine(), 
+					processColumn(col++, sb.toString().trim(), decmsg, dd.getCurrentLine(),
 						fieldStart, dd);
-					trace("End of line seen.");
+					log.trace("End of line seen.");
 					break;
 				}
 				if (dd.checkString(delimiter))
@@ -108,10 +126,10 @@ public class CsvFunction
 			String s = sb.toString().trim();
 			if (s.length() > 0)
 				processColumn(col++, s, decmsg, dd.getCurrentLine(), fieldStart, dd);
-			trace("End of message reached");
+			log.trace("End of message reached");
 			throw ex;
 		}
-		
+
 	}
 
 	/**
@@ -133,7 +151,7 @@ public class CsvFunction
 		int sensorNumber = sensorNumbers.get(col);
 		if (sensorNumber < 0)
 			return;
-		trace("Processing column " + col + " value='" + sample + "'");
+		log.trace("Processing column {}, value='{}'", col, sample);
 		boolean isMissing =script.isMissingSymbol(sample) || sample.startsWith("M");
 		if (sample.length() == 0 || isMissing || sample.startsWith("/"))
 		{
@@ -144,40 +162,42 @@ public class CsvFunction
 				TimedVariable tv = decmsg.addSample(sensorNumber, v, linenum);
 				if (tv != null && DecodesScript.trackDecoding)
 				{
-					DecodedSample ds = new DecodedSample(this, 
+					DecodedSample ds = new DecodedSample(this,
 						fieldStart, dd.getBytePos(),
 						tv, decmsg.getTimeSeries(sensorNumber));
 					script.addDecodedSample(ds);
 				}
 			}
 			else
-				trace("    value is flagged as missing");
+				log.trace("value is flagged as missing");
 			return;
 		}
 		try
 		{
 			String real = script.getReplacement(sample);
-			trace("Turning " + sample + " -> " + real);
-			double x = Double.parseDouble(real); 
+			log.trace( "Turning {} -> {}", sample, real);
+			double x = Double.parseDouble(real);
 			Variable v = new Variable(x);
 			TimedVariable tv = decmsg.addSample(sensorNumber, v, linenum);
 			if (tv != null && DecodesScript.trackDecoding)
 			{
-				DecodedSample ds = new DecodedSample(this, 
+				DecodedSample ds = new DecodedSample(this,
 					fieldStart, dd.getBytePos(),
 					tv, decmsg.getTimeSeries(sensorNumber));
 				script.addDecodedSample(ds);
 			}
-			trace("    Added value " + x);
+			log.trace("Added value {}", x);
 		}
 		catch (NumberFormatException ex)
 		{
-			warning(" line " + linenum + " Cannot parse sample data '" + sample + "' for sensor "
-				+ sensorNumber + " -- ignored.");
+			log.atWarn()
+			   .setCause(ex)
+			   .log("line {} Cannot parse sample data '{}' for sensor {} -- ignored.",
+			   		linenum, sample, sensorNumber);
 			Variable v = new Variable("m");
 			v.setFlags(v.getFlags() | IFlags.IS_ERROR);
 			decmsg.addSample(sensorNumber, v, linenum);
-			trace("    Value flagged as error");
+			log.trace( "Value flagged as error");
 			return;
 		}
 	}
@@ -225,33 +245,13 @@ public class CsvFunction
 				}
 				catch(Exception ex)
 				{
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Unable to parse sensor '{}'", t);
 					sensorNumbers.add(-1);
 				}
 			}
 		}
-		trace("Instantiated from argument '" + argString + "' -- # sensors=" 
-			+ sensorNumbers.size());
+		log.trace("Instantiated from argument '{}' -- # sensors={}", argString, sensorNumbers.size());
 	}
-
-	/**
-	 * Logs a debug trace message for monitoring the execution of the function.
-	 *
-	 * @param s the message to be logged at debug level.
-	 */
-	private void trace(String s)
-	{
-		Logger.instance().debug3(module + " " + s);
-	}
-
-	/**
-	 * Logs a warning message in case of errors or issues during the execution
-	 * of the function.
-	 *
-	 * @param s the warning message to be logged.
-	 */
-	private void warning(String s)
-	{
-		Logger.instance().warning(module + " " + s);
-	}
-
 }

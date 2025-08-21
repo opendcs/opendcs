@@ -1,12 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decoder;
 
 import java.util.Iterator;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.PropertiesUtil;
-import ilex.util.Logger;
 import decodes.db.Constants;
 import decodes.db.ConfigSensor;
 import decodes.db.Database;
@@ -24,6 +38,7 @@ into a single object for use by the decoder.
 */
 public class Sensor
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The ConfigSensor */
 	public ConfigSensor configSensor;
 	/** The ScriptSensor */
@@ -40,7 +55,7 @@ public class Sensor
 
 	/**
 	  Constructor.
-	  @param  cfg the ConfigSensor object 
+	  @param  cfg the ConfigSensor object
 	  @param  scr the ScriptSensor object
 	  @param  plat the PlatformSensor object
 	*/
@@ -144,7 +159,7 @@ public class Sensor
 			return Constants.recordingModeUndefined;
 		return configSensor.recordingMode;
 	}
-		
+
 	public int getRecordingInterval()
 	{
 		if (configSensor == null)
@@ -172,7 +187,7 @@ public class Sensor
 	  If this method returns null, use the site name associated with the
 	  platform.
 	  @return sensor-specific site name if one is defined or null
-	  if not. 
+	  if not.
 	*/
 	public String getSensorSiteName()
 	{
@@ -185,7 +200,7 @@ public class Sensor
 	/**
 	  If this method returns null, use the site name associated with the
 	  platform.
-	  @return sensor-specific site if one is defined or null if not. 
+	  @return sensor-specific site if one is defined or null if not.
 	*/
 	public Site getSensorSite()
 	{
@@ -250,10 +265,10 @@ public class Sensor
 			try { ret = Double.parseDouble(s); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"Cannot retrieve minimum for sensor # " + getNumber()
-					+ " (" + getName() + "): invalid number format '"
-					+ s + "'");
+				log.atError()
+				   .setCause(ex)
+				   .log("Cannot retrieve minimum for sensor # {} ({}): invalid number format '{}'",
+				   	 	getNumber(), getName(), s);
 				return Constants.undefinedDouble;
 			}
 		}
@@ -278,10 +293,10 @@ public class Sensor
 			try { ret = Double.parseDouble(s); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-					"Cannot retrieve maximum for sensor # " + getNumber()
-					+ " (" + getName() + "): invalid number format '"
-					+ s + "'");
+				log.atError()
+				   .setCause(ex)
+				   .log("Cannot retrieve maximum for sensor # {} ({}): invalid number format '{}'",
+						getNumber(), getName(), s);
 				return Constants.undefinedDouble;
 			}
 		}
@@ -303,7 +318,7 @@ public class Sensor
 		if (isPrepared)
 			return;
 		isPrepared = true;
-		
+
 		DbEnum seasonEnum = Database.getDb().enumList.getEnum(Constants.enum_Season);
 		if (seasonEnum != null)
 		{
@@ -312,8 +327,10 @@ public class Sensor
 			{
 				EnumValue ev = seasonEnum.findEnumValue(seasonAbbr);
 				if (ev == null)
-					Logger.instance().warning("Sensor " + getDisplayName()
-						+ " Unknown 'ignoreSeason' property value '" + seasonAbbr + "'");
+				{
+					log.warn("Sensor {} Unknown 'ignoreSeason' property value '{}'",
+							 getDisplayName(), seasonAbbr);
+				}
 				else
 				{
 					try
@@ -322,8 +339,9 @@ public class Sensor
 					}
 					catch (FieldParseException ex)
 					{
-						Logger.instance().warning("Sensor " + getDisplayName()
-							+ " ignoreSeason: " + ex);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Sensor {} ignoreSeason.", getDisplayName());
 						ignoreSeason = null;
 					}
 				}
@@ -332,8 +350,10 @@ public class Sensor
 			{
 				EnumValue ev = seasonEnum.findEnumValue(seasonAbbr);
 				if (ev == null)
-					Logger.instance().warning("Sensor " + getDisplayName()
-						+ " Unknown 'processSeason' property value '" + seasonAbbr + "'");
+				{
+					log.warn("Sensor {} Unknown 'processSeason' property value '{}'",
+							 getDisplayName(), seasonAbbr);
+				}
 				else
 				{
 					try
@@ -342,8 +362,9 @@ public class Sensor
 					}
 					catch (FieldParseException ex)
 					{
-						Logger.instance().warning("Sensor " + getDisplayName()
-							+ " processSeason: " + ex);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Sensor {} processSeason.", getDisplayName());
 						processSeason = null;
 					}
 				}
@@ -364,7 +385,4 @@ public class Sensor
 			prepareForExec();
 		return processSeason;
 	}
-
 }
-
-

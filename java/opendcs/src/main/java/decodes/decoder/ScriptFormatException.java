@@ -33,12 +33,23 @@ public class ScriptFormatException extends DecoderException
 	*/
 	public ScriptFormatException(String msg)
 	{
-		super(msg);
+		this(msg, null);
+	}
+
+	/**
+	  Construct the exception.
+	  @param msg the message
+	  @param cause the cause
+	*/
+	public ScriptFormatException(String msg, Throwable cause)
+	{
+		super(msg, cause);
 		statement = NO_STATEMENT;
 		operation = NO_OPERATION;
 		idx = -1;
-
 	}
+
+
 
 	/**
 	 * Contains information about an error on a format statement.

@@ -1,62 +1,36 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* 2023/08/04 Baoyu Yin
-* Fixed wrong timestamps for U1 data for the first 0-5 minutes during day change - ING -681
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* 2023/02/21 Baoyu Yin
-* Adding raw messages to the printout messages - ING 633
-*
-* 2023/02/15 Baoyu Yin
-* Fixing issues with twos complement and undefined number - ING629 & ING 631
-*
-* 2023/02/08 Baoyu Yin
-* Fixing First Temperature and Second Temperature in WL sensors - ING622
-*
-* 2023/01/09 Baoyu Yin
-* Adding codes for Q2 decoding
-*
-* ING-545  2022/06/06  Jim Pantos
-* Facilitate 3 byte conductivity
-*
-* Revision 1.2  2014/05/28 13:09:26  mmaloney
-* dev
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* Revision 1.3  2011/09/27 01:24:48  mmaloney
-* Enhancements for SHEF and NOS Decoding.
-*
-* Revision 1.2  2011/09/21 18:27:08  mmaloney
-* Updates to NOS decoding.
-*
-* Revision 1.1  2011/08/26 19:49:34  mmaloney
-* Implemented the NOS decoders.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decoder;
 
 import java.util.Calendar;
 import java.util.Date;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.Variable;
 import decodes.db.DecodesScript;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
-import decodes.decoder.DataOperations;
-import decodes.decoder.DecodedMessage;
-import decodes.decoder.DecodesFunction;
-import java.util.Arrays;
 import decodes.datasource.RawMessage;
 
 /** Handles NOS 6-minute message format. */
-public class Nos6Min
-        extends NosDecoder 
+public class Nos6Min extends NosDecoder
 {
+        private static final Logger log = OpenDcsLoggerFactory.getLogger();
         public static final String module = "Nos6Min";
 
         public Nos6Min()
@@ -69,25 +43,25 @@ public class Nos6Min
                 return new Nos6Min();
         }
 
-        public String getFuncName() 
-        { 
-                return module; 
+        public String getFuncName()
+        {
+                return module;
         }
 
         public boolean isValid(int wl)
-        { 
-                // Discard ??? (262143) or @@@ (0) from decoding 
+        {
+                // Discard ??? (262143) or @@@ (0) from decoding
 	        return (wl != 262143 && wl != 0) ? true : false;
         }
 
         public boolean isValidU1(int wl)
-        { 
-                // Discard ?? (4095) or @@ (0) from U1 decoding 
+        {
+                // Discard ?? (4095) or @@ (0) from U1 decoding
 	        return (wl != 4095 && wl != 0) ? true : false;
         }
 
         public boolean isValidOffset(int x)
-        { 
+        {
 	        return (x != 63) ? true : false;
         }
 
@@ -111,7 +85,7 @@ public class Nos6Min
                         throw new DecoderException(module + " function cannot be called with null config.");
 
                 char msgType = (char)dd.curByte();
-                if (msgType != 'P') 
+                if (msgType != 'P')
                 {
                         RawMessage ErrRawM = msg.getRawMessage();
                         byte[] ErrRawData = ErrRawM.getData();
@@ -130,7 +104,7 @@ public class Nos6Min
                 dd.forwardspace();
                 msg.getRawMessage().setPM(PM_DCP_NUM, new Variable(dcpNum));
 
-                Logger.instance().info(module + ": stationId=" + stationId + ", dcpNum=" + dcpNum);
+                log.info("stationId={}, dcpNum={}", stationId, dcpNum);
 
 
                 double datumOffset = getDouble(3, false);
@@ -142,8 +116,8 @@ public class Nos6Min
                 int systemStatus = getInt(2, false);
                 msg.getRawMessage().setPM(PM_SYSTEM_STATUS, new Variable(systemStatus));
                 int timeOffset = getInt(1, false);
-                Logger.instance().info(module + ": dataumOffset=" + datumOffset + 
-                        ", sensorOffset=" + sensorOffset + ", timeOffset=" + timeOffset);
+                log.info("dataumOffset={}, sensorOffset={}, timeOffset={}",
+                         datumOffset, sensorOffset, timeOffset);
                 boolean haveBV = false;
 
                 initSensorIndeces();
@@ -162,7 +136,7 @@ public class Nos6Min
                 while(dd.moreChars())
                 {
                         char flag = (char)dd.curByte();
-                        Logger.instance().debug3(module + " flag=" + flag);
+                        log.trace("flag={}", flag);
                         dd.forwardspace();
                         switch(flag)
                         {
@@ -177,37 +151,36 @@ public class Nos6Min
                                 if (firstTime)
                                 {
                                         msg.getRawMessage().setPM(PM_STATION_TIME, new Variable(dataTime));
-                                        Logger.instance().info(module + " Set station time to " + cal.getTime());
+                                        log.info("Set station time to {}", cal.getTime());
                                         firstTime = false;
                                 }
                                 cal.add(Calendar.MINUTE, -6);
                                 redundantDataTime = cal.getTime();
                                 cal.add(Calendar.MINUTE, 6);
-                                Logger.instance().info(module + " daynum=" + x + ", hr=" + y 
-                                        + ", min=" + timeOffset + ", dataTime=" + dataTime 
-                                        + ", redundantTime=" + redundantDataTime);
+                                log.info("daynum={}, hr={}, min={}, dataTime={}, redundantTime={}",
+                                         x, y, timeOffset, dataTime, redundantDataTime);
                                 break;
                         case '1': // PWL Aqua Track = Acousitic Water Level
                         case '(': // Air Gap
                                 wl = getInt(3, false);
-                                
+
                                 sigma = getInt(2, false);
                                 outlier = getInt(1, false);
 
-                                // For the second DCP Air Gap data, there are no AQT1 or AQT2.                          
+                                // For the second DCP Air Gap data, there are no AQT1 or AQT2.
                                 if (Qcount ==0)
                                 {
                                    x = getInt(2, true); // AQT1
-                                   y = getInt(2, true); // AQT2                                
+                                   y = getInt(2, true); // AQT2
                                 }
-                                else 
+                                else
                                 {
                                    x = 999999;
                                    y = 999999;
                                 }
-                                
+
                                 sensorNum = getSensorNumber(
-                                        flag == '1' ? 'A' : 
+                                        flag == '1' ? 'A' :
                                         flag == '(' ? 'Q' : 'A', config);
                                 if (sensorNum == -1)
                                         continue;
@@ -217,9 +190,8 @@ public class Nos6Min
 		         	if (isValid(wl))
                                    msg.addSampleWithTime(sensorNum, v, dataTime, 1);
 				else
-				   Logger.instance().warning(module +
-				       	": Aqua or Air Gap WL sensor data is discarded for station "
-                	                + stationId + dcpNum + " WL= " + wl);
+				   log.warn("Aqua or Air Gap WL sensor data is discarded for station {}{} WL={}",
+                	                    stationId, dcpNum, wl);
 
                                 Qcount++;
                                 break;
@@ -234,9 +206,8 @@ public class Nos6Min
 		         	if (isValid(wl))
                                    msg.addSampleWithTime(sensorNum, v, dataTime, 1);
 				else
-				   Logger.instance().warning(module +
-				       	": BWL sensor data is discarded for station "
-                	                + stationId + dcpNum + " WL= " + wl);
+				   log.warn("BWL sensor data is discarded for station {}{} WL={}",
+                	                    stationId, dcpNum, wl);
                                 break;
 
                         // The redundant blocks are all handled the same. We have
@@ -253,29 +224,24 @@ public class Nos6Min
                                 v.setFlags(v.getFlags() | NosDecoder.FLAG_REDUNDANT);
                                 if (sensorNum != -1) // sensor number already set from previous flag
                                 {
-			           // Discard ??? (262143) or @@@ (0) from decoding 
+			           // Discard ??? (262143) or @@@ (0) from decoding
 				   if ( isValid(Integer.valueOf(v.getStringValue())) )
 				   {
                                         msg.addSampleWithTime(sensorNum, v, redundantDataTime, 1);
 			           }
 				   else
 			           {
-					Logger.instance().warning(module +
-				        	": Redundant WL sensor data is discarded for station "
-                	                        + stationId + " with WL= " + v);
+					log.warn("Redundant WL sensor data is discarded for station {} with WL= {}",
+                	                         stationId, v);
 			           }
                                 }
                                 break;
 
                         case '3': // Wind speed, dir, gust
                                 x = getInt(2, false);
-                                y = getInt(2, false); 
+                                y = getInt(2, false);
                                 z = getInt(2, false);
-/*
-                                if (x == 4095) x = 999999;
-                                if (y == 4095) y = 999999;
-                                if (z == 4095) z = 999999;
-*/
+
                                 ancSensor = getSensorNumber('C', config);
                                 if (ancSensor == -1)
                                         continue;
@@ -316,9 +282,8 @@ public class Nos6Min
 		         	if (isValid(wl))
                                    msg.addSampleWithTime(sensorNum, v, dataTime, 1);
 				else
-				   Logger.instance().warning(module +
-				       	": SAE WL sensor data is discarded for station "
-                	                + stationId + dcpNum + " WL= " + wl);
+				   log.warn("SAE WL sensor data is discarded for station {}{} WL= {}",
+                	                    stationId, dcpNum, wl);
                                 break;
                         case '/': // unused flag
                                 break;
@@ -340,9 +305,8 @@ public class Nos6Min
 		         	if (isValid(wl))
                                    msg.addSampleWithTime(sensorNum, v, dataTime, 1);
 				else
-				   Logger.instance().warning(module +
-				       	": MWWL sensor data is discarded for station "
-                	                + stationId + dcpNum + " WL= " + wl);
+				   log.warn("MWWL sensor data is discarded for station {}{} WL= {}",
+                	                    stationId, dcpNum, wl);
                                 break;
                         case '9': // Rel Hum
                                 v = getNumber(2, false);
@@ -391,9 +355,8 @@ public class Nos6Min
 		         	if (isValid(wl))
                                    msg.addSampleWithTime(sensorNum, v, dataTime, 1);
 				else
-				   Logger.instance().warning(module +
-				       	": Pressure WL data is discarded for station "
-                	                + stationId + dcpNum + " WL= " + wl);
+				   log.warn("Pressure WL data is discarded for station {}{} WL= {}",
+                	                    stationId, dcpNum, wl);
                                 break;
                         case '&': // Paroscientific #2 - Pressure WL (T1, T2, T3)
                                 wl = getInt(3, false);
@@ -406,9 +369,8 @@ public class Nos6Min
 		         	if (isValid(wl))
                                    msg.addSampleWithTime(sensorNum, v, dataTime, 1);
 				else
-				   Logger.instance().warning(module +
-				       	": Pressure WL data is discarded for station "
-                	                + stationId + dcpNum + " WL= " + wl);
+				   log.warn("Pressure WL data is discarded for station {}{} WL= {}",
+                	                    stationId, dcpNum, wl);
                                 break;
                         case ',': // Unused flag
                                 break;
@@ -431,7 +393,7 @@ public class Nos6Min
                                         ancSensor = getSensorNumber('O', config);
                                         if (ancSensor == -1)
                                                 continue;
-                                        msg.addSampleWithTime(ancSensor, 
+                                        msg.addSampleWithTime(ancSensor,
                                                 new Variable("" + x + "," + y), dataTime, 1);
                                 }
                 else if (c2 == '7')
@@ -460,9 +422,8 @@ public class Nos6Min
 					// if hourOffset/minOffset is greater than 23/59, discard the data
 					if (hourOffset > 23 || minOffset > 59)
 					{
-						Logger.instance().warning(module +
-						" U1 Time offset is not correct for station: "
-						+ stationId);
+						log.warn(" U1 Time offset is not correct for station: {}",
+                                                         stationId);
 					}
 					else
 					{
@@ -474,9 +435,9 @@ public class Nos6Min
 						}
 						else
 						{
-						   Logger.instance().warning(module +
-						      " U1 contains ?? or @@ in the raw data for station or wrong offset ?: "
-					              + stationId);
+						   log.warn("U1 contains ?? or @@ in the raw data for station" +
+                                                            " or wrong offset ?: ",
+					                    stationId);
 						}
 					}
                                         cal.add(Calendar.MINUTE, -1);
@@ -485,9 +446,11 @@ public class Nos6Min
                                 break;
                         default:
                                 if (!Character.isWhitespace(flag))
-                                        Logger.instance().warning(module + " Unrecognized flag char '" + flag + "'");
+                                {
+                                        log.warn("Unrecognized flag char '{}'", flag);
+                                }
                         }
                 }
-                Logger.instance().debug3(module + " end of message");
+                log.trace("end of message");
         }
 }

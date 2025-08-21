@@ -1,61 +1,28 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.2  2008/11/20 18:49:25  mjmaloney
-*  merge from usgs mods
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/11/15 01:03:46  mmaloney
-*  Moved from separate trees to common parent
-*
-*  Revision 1.11  2008/10/05 12:28:54  satin
-*  Made the code "N" in the check operation case insensitive.
-*
-*  Revision 1.10  2008/03/25 18:39:52  satin
-*  Corrected the statements that set the "case sensitive" flag.
-*  (The comparison on the property variable should  have been a string
-*  comparison. )
-*
-*  Revision 1.9  2008/02/11 14:33:26  mmaloney
-*  Removed misleading comment.
-*
-*  Revision 1.8  2008/02/07 15:42:33  satin
-*  Added code to make format labels case-sensitive if the DECODES
-*  property "decodesFormatLabelMode" equals "case-sensitive".
-*
-*  Revision 1.7  2004/08/27 21:12:24  mjmaloney
-*  javadocs
-*
-*  Revision 1.6  2004/02/05 22:03:34  mjmaloney
-*  Remove extraneous debugs
-*
-*  Revision 1.5  2003/12/12 02:07:20  mjmaloney
-*  EDL testing.
-*
-*  Revision 1.4  2002/11/24 20:07:24  mjmaloney
-*  Fixed DR 86 whereby C('5', ...), the '5' was taken as repeat factor.
-*
-*  Revision 1.3  2001/08/19 19:33:21  mike
-*  dev
-*
-*  Revision 1.2  2001/05/21 13:38:50  mike
-*  dev
-*
-*  Revision 1.1  2001/05/06 22:53:03  mike
-*  dev
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decoder;
 
 import ilex.util.ArgumentTokenizer;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.DecodesScript;
 import decodes.db.FormatStatement;
 import decodes.util.DecodesSettings;
-import ilex.util.Logger;
 
 /**
 DecodesCheckCommand is a DecodesOperation that checks the
@@ -63,6 +30,8 @@ current locat
 */
 class CheckOperation extends DecodesOperation
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	private int numChars;
 	private FormatStatement newFormat;
 	private char checkFor;
@@ -87,11 +56,11 @@ class CheckOperation extends DecodesOperation
 
 		numChars = 1;
 		checkString = null;
-		
+
 		DecodesSettings settings = DecodesSettings.instance();
 		if ( settings.decodesFormatLabelMode.equals("case-sensitive" ) )
 			labelIsCaseSensitive = true;
-		
+
 		ArgumentTokenizer tokenizer = new ArgumentTokenizer(args, !labelIsCaseSensitive);
 
 		String what = tokenizer.getNextToken();
@@ -147,28 +116,28 @@ class CheckOperation extends DecodesOperation
 	  @param dd DataOperations containing message context
 	  @param msg DecodedMessage in which to store results
 	*/
-	public void execute(DataOperations dd, DecodedMessage msg) 
+	public void execute(DataOperations dd, DecodedMessage msg)
 		throws DecoderException
 	{
 		int pos = dd.getBytePos();
 		boolean found = false;
-		switch(checkFor) 
+		switch(checkFor)
 		{
 		case CHECK_FOR_NUMBER:
 			found = dd.checkNum(numChars);
-			Logger.instance().debug3("check(number), pos=" + pos + ", result=" + found);
+			log.trace("check(number), pos={}, result={}", pos, found);
 			break;
 		case CHECK_FOR_SIGN:
 			found = dd.checkSign();
-			Logger.instance().debug3("check(sign), pos=" + pos + ", result=" + found);
+			log.trace("check(sign), pos={}, result={}", pos, found);
 			break;
 		case CHECK_FOR_STRING:
 			found = dd.checkString(checkString);
-			Logger.instance().debug3("check('" + checkString + "'), pos=" + pos + ",result=" + found);
+			log.trace("check('{}'), pos={}, result={}", checkString, pos, found);
 			break;
 		}
 
-		if ( !found ) 
+		if ( !found )
 			throw new SwitchFormatException(newFormat);
 	}
 }
