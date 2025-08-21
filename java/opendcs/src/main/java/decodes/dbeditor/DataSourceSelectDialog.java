@@ -1,22 +1,17 @@
 /*
-*	$Id$
-*
-*	$Log$
-*	Revision 1.1  2008/04/04 18:21:00  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.5  2008/01/24 16:41:55  mmaloney
-*	fixed files for internationalization
-*	
-*	Revision 1.4  2008/01/03 21:16:40  mmaloney
-*	internationalization
-*	
-*	Revision 1.3  2004/09/20 14:18:43  mjmaloney
-*	Javadocs
-*	
-*	Revision 1.2  2004/07/05 13:45:40  mjmaloney
-*	Added pull-down list for selecting data source group members.
-*	
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -25,7 +20,10 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.DataSource;
 
 /**
@@ -33,6 +31,7 @@ Dialog class in which to select a data source.
 */
 public class DataSourceSelectDialog extends JDialog 
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -60,12 +59,14 @@ public class DataSourceSelectDialog extends JDialog
 	public DataSourceSelectDialog(Frame frame, String title, boolean modal) 
 	{
 		super(frame, title, modal);
-		try {
+		try
+		{
 			jbInit();
 			pack();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch(Exception ex) 
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
