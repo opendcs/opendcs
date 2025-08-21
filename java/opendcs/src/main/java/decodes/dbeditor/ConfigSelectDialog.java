@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -9,11 +21,16 @@ import java.awt.event.*;
 import java.util.ResourceBundle;
 import javax.swing.border.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.PlatformConfig;
 
 /** Dialog for selecting a configuration from a list. */
 public class ConfigSelectDialog extends JDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -32,9 +49,9 @@ public class ConfigSelectDialog extends JDialog
     ConfigSelectPanel configSelectPanel = new ConfigSelectPanel();
 	PlatformConfig config;
 
-	/** 
+	/**
 	  Construct new dialog.
-	  @param ctl the owner of this dialog to receive a call-back when a 
+	  @param ctl the owner of this dialog to receive a call-back when a
 	  selection has been made.
 	*/
     public ConfigSelectDialog(JFrame parent, ConfigSelectController ctl)
@@ -45,9 +62,9 @@ public class ConfigSelectDialog extends JDialog
 		configSelectPanel.setParentDialog(this);
 	}
 
-	/** 
+	/**
 	  Construct new dialog with dialog parent.
-	  @param parent the owner of this dialog to receive a call-back when a 
+	  @param parent the owner of this dialog to receive a call-back when a
 	  selection has been made.
 	*/
     public ConfigSelectDialog(JDialog parent)
@@ -60,13 +77,15 @@ public class ConfigSelectDialog extends JDialog
 	private void allInit()
 	{
 		config = null;
-        try {
+        try
+		{
             jbInit();
 			getRootPane().setDefaultButton(selectButton);
             pack();
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch (Exception ex)
+		{
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 

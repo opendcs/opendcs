@@ -1,15 +1,31 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.gui.WindowUtility;
 import lrgs.gui.DecodesInterface;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
 import ilex.cmdline.*;
 import decodes.util.*;
 import decodes.db.*;
@@ -19,19 +35,20 @@ The MAIN class for the DECODES Database Editor.
 */
 public class DecodesDbEditor
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     boolean packFrame = false;
     static Frame theFrame = null;
     static Properties theProperties = new Properties();
     public static boolean turnOffPopUps = false;
     private static ResourceBundle genericLabels = null;
     private static ResourceBundle dbeditLabels = null;
-    
+
     /**Construct the application*/
     public DecodesDbEditor()
     {
         genericLabels = getGenericLabels();
         dbeditLabels = getDbeditLabels();
-        
+
         DbEditorFrame frame = new DbEditorFrame();
         theFrame = frame;
         decodes.gui.GuiApp.topFrame = frame;
@@ -54,7 +71,7 @@ public class DecodesDbEditor
      * @return resource bundle containing generic labels for the selected
      * language.
      */
-    public static ResourceBundle getGenericLabels() 
+    public static ResourceBundle getGenericLabels()
     {
         if (genericLabels == null)
         {
@@ -81,11 +98,11 @@ public class DecodesDbEditor
     }
 
     static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "dbedit.log");
-    static StringToken dbLocArg = new StringToken("E", 
+    static StringToken dbLocArg = new StringToken("E",
         "Explicit Database Location", "", TokenOptions.optSwitch, "");
     //To turn on or off the "Are you sure..." pop ups
-    static StringToken turnOnOffPopUps = new StringToken("T", 
-    "Turn on or off the 'Are you sure...' pop ups - (Values: On -or- Off)", 
+    static StringToken turnOnOffPopUps = new StringToken("T",
+    "Turn on or off the 'Are you sure...' pop ups - (Values: On -or- Off)",
     "", TokenOptions.optSwitch, "On");
     static
     {
@@ -98,21 +115,20 @@ public class DecodesDbEditor
     public static void main(String[] args)
         throws Exception
     {
-        Logger.setLogger(new StderrLogger("DecodesDbEditor"));
+
 
         // Parse command line arguments.
         try { cmdLineArgs.parseArgs(args); }
         catch(IllegalArgumentException ex)
         {
+            log.atError().setCause(ex).log("Unable to process command line arguments.");
             System.exit(1);
         }
 
-        Logger.instance().log(Logger.E_INFORMATION,
-            "DecodesDbEditor Starting (" + DecodesVersion.startupTag()
-            + ") =====================");
+        log.info("DecodesDbEditor Starting ({}) =====================", DecodesVersion.startupTag());
 
         DecodesSettings settings = DecodesSettings.instance();
-        
+
         DecodesInterface.setGUI(true);
 
         // Construct the database and the interface specified by properties.
@@ -165,21 +181,16 @@ public class DecodesDbEditor
         db.dataSourceList.read();
         System.out.print("Netlist, "); System.out.flush();
         db.networkListList.read();
-        //db.eqTableList.read();
         System.out.println("Database initialized.");
-        
-        
 
-//        fixObjectReferences(db);
-//
         //This flag is used to turn on or off some of the pop ups - specially
         //the ones on the Decoding Scripts
         String onOffPopUps = turnOnOffPopUps.getValue();
         if (onOffPopUps.equalsIgnoreCase("OFF"))
             DecodesDbEditor.turnOffPopUps = true;
-        
+
         DecodesInterface.maintainGoesPdt();
-        
+
         new DecodesDbEditor();
     }
 
@@ -190,56 +201,4 @@ public class DecodesDbEditor
     {
         return theFrame;
     }
-
-//    /**
-//     * Establishes and/or consolidates object references depending on the
-//     * type of database interface that was used.
-//     * @deprecated this method currently does nothing.
-//     */
-//    private static void fixObjectReferences(Database db)
-//    {
-//        if (db.getDbIo().getDatabaseType().equalsIgnoreCase("SQL"))
-//        {
-//            // TODO - for SQL may need to use key relations to establish
-//            // references
-//            return;
-//        }
-//        else // XML database
-//        {
-//            // Platform objects contain a copy of configurations. Replace
-//            // these with references to the configs stored in the config
-//            // list.
-//            // While doing this, update the platform counts in the configs.
-///*
-//            for(Iterator it = db.platformList.iterator(); it.hasNext(); )
-//            {
-//                // If config in platform has same name as a config in the
-//                // list, replace the platform's copy with the one in the
-//                // list. Else, add the platform's config to the list.
-//                Platform p = (Platform)it.next();
-//                PlatformConfig pc = p.platformConfig;
-//                if (pc != null)
-//                {
-//                    PlatformConfig listpc =
-//                        db.platformConfigList.get(pc.configName);
-//                    if (listpc != null)
-//                    {
-////System.out.println("# Script from Platform's pc = " + pc.decodesScripts.size());
-////System.out.println("# Script from PlatformConfig rec = " + listpc.decodesScripts.size());
-//
-//                        p.platformConfig = listpc;
-//                        listpc.numPlatformsUsing++;
-//                    }
-//                    else
-//                    {
-//                        db.platformConfigList.add(pc);
-//                        pc.numPlatformsUsing = 1;
-//                    }
-//                }
-//            }
-//*/
-//        }
-//
-//
-//    }
 }

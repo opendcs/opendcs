@@ -1,7 +1,18 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -9,9 +20,10 @@ import java.awt.event.*;
 import java.util.ResourceBundle;
 import javax.swing.*;
 
-import ilex.util.Logger;
-import ilex.util.LoadResourceBundle;
-import decodes.gui.*;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.sql.DecodesDatabaseVersion;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
@@ -23,6 +35,7 @@ It contains nested tabbed panes for each of the types of objects.
 */
 public class DbEditorFrame extends decodes.gui.TopFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	JPanel contentPane;
 	JMenuBar jMenuBar1 = new JMenuBar();
 	JMenu jMenuFile = new JMenu();
@@ -69,7 +82,7 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 	JPanel sourcesListTab = new JPanel();
 	SourcesListPanel sourcesListPanel = new SourcesListPanel();
 	SiteListPanel siteListPanel = new SiteListPanel();
-	
+
 	JPanel scheduleTab = new JPanel(new BorderLayout());
 	JPanel scheduleListTab = new JPanel(new BorderLayout());
 	DbEditorTabbedPane scheduleTabbedPane = new DbEditorTabbedPane();
@@ -87,10 +100,13 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 		genericLabels = DecodesDbEditor.getGenericLabels();
 		dbeditLabels = DecodesDbEditor.getDbeditLabels();
 
-		try { jbInit(); }
-		catch(Exception e)
+		try
 		{
-				e.printStackTrace();
+			jbInit();
+		}
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		siteListPanel.setParent(this);
 		platformListPanel.setParent(this);
@@ -123,7 +139,7 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 	 * @return resource bundle containing generic labels for the selected
 	 * language.
 	 */
-	public static ResourceBundle getGenericLabels() 
+	public static ResourceBundle getGenericLabels()
 	{
 		if (genericLabels == null)
 		{
@@ -146,8 +162,8 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 	}
 
 	/**Component initialization*/
-	private void jbInit() 
-		throws Exception	
+	private void jbInit()
+		throws Exception
 	{
 		//setIconImage(
 		//	Toolkit.getDefaultToolkit().createImage(
@@ -249,10 +265,9 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 		jMenuBar1.add(jMenuHelp);
 		this.setJMenuBar(jMenuBar1);
 
-//		contentPane.add(statusBar, BorderLayout.SOUTH);
 		contentPane.add(topLevelTabs, BorderLayout.CENTER);
 		sitesTab.add(sitesTabbedPane, BorderLayout.CENTER);
-		sitesTabbedPane.add(sitesListTab, 
+		sitesTabbedPane.add(sitesListTab,
 			genericLabels.getString("list"));
 		sitesListTab.add(siteListPanel, BorderLayout.CENTER);
 		topLevelTabs.add(platformsTab,
@@ -266,7 +281,7 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 		topLevelTabs.add(configsTab,
 			dbeditLabels.getString("dbedit.configsTabLabel"));
 		configsTab.add(configsTabbedPane, BorderLayout.CENTER);
-		configsTabbedPane.add(configsListTab, 
+		configsTabbedPane.add(configsListTab,
 			genericLabels.getString("list"));
 		configsListTab.add(configsListPanel, BorderLayout.CENTER);
 		topLevelTabs.add(equipmentTab,
@@ -293,7 +308,7 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 		sourcesTabbedPane.add(sourcesListTab,
 			genericLabels.getString("list"));
 		sourcesListTab.add(sourcesListPanel, BorderLayout.CENTER);
-		
+
 		topLevelTabs.add(netlistTab,
 			dbeditLabels.getString("dbedit.netlistsTabLabel"));
 		netlistTab.add(netlistTabbedPane, BorderLayout.CENTER);
@@ -317,7 +332,7 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 	}
 
 	/**File | Exit action performed*/
-	public void jMenuFileExit_actionPerformed(ActionEvent e) 
+	public void jMenuFileExit_actionPerformed(ActionEvent e)
 	{
 		if (canClose())
 		{
@@ -331,7 +346,7 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 				dispose();
 		}
 	}
-	
+
 	public boolean canClose()
 	{
 		DbEditorTab openEd;
@@ -388,26 +403,26 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 						repaint();
 						showError(dbeditLabels.getString("dbedit.errmsgPleaseClose"));
 					}
-					
+
 				});
 			return false;
 		}
 		else
 			return true;
-		
+
 	}
 
 	/**Help | About action performed
 		@param e ignored.
 	*/
-	public void jMenuHelpAbout_actionPerformed(ActionEvent e) 
+	public void jMenuHelpAbout_actionPerformed(ActionEvent e)
 	{
 		JDialog dlg = ResourceFactory.instance().getAboutDialog(
 			this, "DBEDIT", "DECODES DB Editor");
 		Dimension dlgSize = dlg.getPreferredSize();
 		Dimension frmSize = getSize();
 		Point loc = getLocation();
-		dlg.setLocation((frmSize.width - dlgSize.width) / 2 + loc.x, 
+		dlg.setLocation((frmSize.width - dlgSize.width) / 2 + loc.x,
 			(frmSize.height - dlgSize.height) / 2 + loc.y);
 		dlg.setVisible(true);
 	}
@@ -507,7 +522,7 @@ public class DbEditorFrame extends decodes.gui.TopFrame
 	{
 		return routingTabbedPane;
 	}
-	
+
 	public ScheduleListPanel getScheduleListPanel()
 	{
 		return scheduleListPanel;
