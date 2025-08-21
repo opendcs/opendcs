@@ -808,7 +808,6 @@ public class Platform extends IdDatabaseObject implements HasProperties, Propert
 		// Check properties for equality.
 		if (this.properties.size() != p.properties.size())
 			return false;
-		log.trace("Platform.equals, checking props...");
 		for(Enumeration it = this.properties.propertyNames(); 
 			it.hasMoreElements(); )
 		{
@@ -817,7 +816,6 @@ public class Platform extends IdDatabaseObject implements HasProperties, Propert
 			String v2 = p.properties.getProperty(nm);
 			if (!TextUtil.strEqual(v1, v2))
 			{
-				log.trace("   prop '{}' differs: '{}' '{}'", nm, v1, v2);
 				return false;
 			}
 		}
