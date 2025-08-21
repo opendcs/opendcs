@@ -19,6 +19,10 @@ import java.awt.*;
 import javax.swing.*;
 import java.util.ResourceBundle;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.TextUtil;
 import ilex.util.LoadResourceBundle;
 
@@ -28,16 +32,14 @@ import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.EquipmentModel;
 import decodes.util.DecodesSettings;
-import org.slf4j.LoggerFactory;
 
 /**
 Panel containing a sortable list of Platform Configurations.
 */
 @SuppressWarnings("serial")
-public class ConfigsListPanel extends JPanel
-	implements ListOpsController
+public class ConfigsListPanel extends JPanel implements ListOpsController
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ConfigsListPanel.class);
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
     BorderLayout borderLayout1 = new BorderLayout();
@@ -49,14 +51,15 @@ public class ConfigsListPanel extends JPanel
 	/** Constructor. */
     public ConfigsListPanel()
 	{
-        try {
+        try 
+		{
 			configSelectPanel = new ConfigSelectPanel(this::openPressed);
 		    listOpsPanel = new ListOpsPanel(this);
             jbInit();
         }
         catch(Exception ex) 
 		{
-            log.atInfo().log("Error  initializing ConfigsListPanel",ex);
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -140,11 +143,13 @@ public class ConfigsListPanel extends JPanel
 				String modelName = em.getName();
 				if ( modelName != null ) {
 					modelName = modelName.trim();
-					try {
-						ob = 
-						Database.getDb().getDbIo().newPlatformConfig(ob, modelName, originator);
-					} catch(DatabaseException ex)
+					try 
 					{
+						ob = Database.getDb().getDbIo().newPlatformConfig(ob, modelName, originator);
+					} 
+					catch(DatabaseException ex)
+					{
+						log.atTrace().setCause(ex).log("Unable to create new PlatformConfig with DatabaseIO.");
 						ob = new PlatformConfig("Unknown");
 					}
 					ob.equipmentModel = em;
@@ -175,8 +180,9 @@ public class ConfigsListPanel extends JPanel
 		try { pc.read(); }
 		catch(DatabaseException ex)
 		{
-			DbEditorFrame.instance().showError(
-				dbeditLabels.getString("ConfigsListPanel.cannotRead") + ex);
+			String msg = LoadResourceBundle.sprintf(dbeditLabels.getString("ConfigsListPanel.cannotRead"), pc.configName);
+			log.atError().setCause(ex).log(msg);	
+			DbEditorFrame.instance().showError(msg + ex);
 		}
 
 		String newName = null;
@@ -219,6 +225,7 @@ public class ConfigsListPanel extends JPanel
 						newName = ob.getName();
 					} catch(DatabaseException ex)
 					{
+						log.atTrace().setCause(ex).log("Unable to create new PlatformConfig using DatabaseIO.");
 						newName = "Unknown";
 						ob.configName = newName;
 					}
@@ -298,11 +305,11 @@ public class ConfigsListPanel extends JPanel
 			catch(DatabaseException ex)
 			{
 				if (pc.lastReadTime.getTime() != 0L)
-					parent.showError(
-						LoadResourceBundle.sprintf(
-							dbeditLabels.getString("ConfigsListPanel.readError"),
-							pc.configName)
-						+ ex);
+				{
+					String msg = LoadResourceBundle.sprintf(dbeditLabels.getString("ConfigsListPanel.readError"),pc.configName);
+					log.atError().setCause(ex).log(msg);
+					parent.showError(msg + ex);
+				}
 			}
 			ConfigEditPanel newTab = new ConfigEditPanel(pc);
 			newTab.setParent(parent);
