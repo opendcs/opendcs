@@ -13,10 +13,8 @@ import decodes.cwms.CwmsConstants;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
 import decodes.cwms.rating.CwmsRatingDao;
-import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.MissingAction;
 import decodes.tsdb.ParmRef;
@@ -42,9 +40,9 @@ import hec.data.cwmsRating.RatingSet;
 
 
 @Algorithm(
-		description = "Preform Reservoir Evaporation calculation based on an algorithm developed by NWDM," +
-				" Which utilizes air temp, air speed, solar radiation, and water temperature profiles to return" +
-				" evaporation rates and total evaporation as flow")
+		description = "Reservoir Inflow calculation based on an algorithm developed by NWP," +
+				" Which utilizes storage change, releases, and additional outflows to calculate release " +
+				" based on the output time series duration.")
 public final class InflowEstimationAlgo extends AW_AlgorithmBase
 {
 	private static final Logger log = OpenDcsLoggerFactory.getLogger();
