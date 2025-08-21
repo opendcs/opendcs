@@ -1,9 +1,20 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dcpmon;
 
-import ilex.util.Logger;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -15,6 +26,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.archive.MsgValidatee;
 import lrgs.archive.MsgValidator;
@@ -37,10 +51,9 @@ import decodes.util.PdtEntry;
 This class is used by a routing spec to ingest transmission records
 into the database for the web DCP Monitor application.
 */
-public class DcpMonitorConsumer 
-	extends DataConsumer
-	implements MsgValidatee
+public class DcpMonitorConsumer extends DataConsumer implements MsgValidatee
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** time stamp of last RawMessage received */
 	Date lastTimeStamp;
 
@@ -48,9 +61,9 @@ public class DcpMonitorConsumer
 	public static final String module = "DcpMonitorConsumer";
 	private SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z");
 	enum Action { Ignore, Save, ReplaceExisting, ModifyExisting };
-	
+
 	private MsgValidator msgValidator = null;
-	
+
 	/** Constructor */
 	public DcpMonitorConsumer()
 	{
@@ -68,7 +81,7 @@ public class DcpMonitorConsumer
 	public void open(String consumerArg, Properties props)
 		throws DataConsumerException
 	{
-		Logger.instance().debug1("DcpMonitorConsumer.open()");
+		log.debug("DcpMonitorConsumer.open()");
 		DcpMonitorConfig cfg = DcpMonitorConfig.instance();
 		msgValidator = new MsgValidator(this, Pdt.instance(),
 			ChannelMap.instance());
@@ -88,7 +101,7 @@ public class DcpMonitorConsumer
 			msgValidator.shutdown();
 		msgValidator = null;
 	}
-	
+
 	public void finalize()
 	{
 		close();
@@ -116,33 +129,34 @@ public class DcpMonitorConsumer
 			dcpMsg = rawMsg.getOrigDcpMsg();
 			if (dcpMsg == null)
 			{
-				error(rawMsg, 
-					"rawMsg without DcpMsg ignored. " + "Medium ID=" + rawMsg.getMediumId());
+				error(rawMsg,"rawMsg without DcpMsg ignored. Medium ID={}", rawMsg.getMediumId());
 				return;
 			}
-			Logger.instance().debug3("DcpMonitorConsumer.startMessage() hdr=" + dcpMsg.getHeader()
-				+ ", flags=0x" + Integer.toHexString(dcpMsg.getFlagbits()));
-		
-			
+			log.trace("DcpMonitorConsumer.startMessage() hdr={}, flags=0x{}",
+					  dcpMsg.getHeader(), Integer.toHexString(dcpMsg.getFlagbits()));
+
+
 			lastTimeStamp = xmitTime = dcpMsg.getXmitTime();
 			if (xmitTime == null)
 			{
-				error(rawMsg, "DcpMonitorConsumer: rawMsg with no time stamp ignored. " +
-					"Medium ID=" + rawMsg.getMediumId());
+				error(rawMsg,
+					  "DcpMonitorConsumer: rawMsg with no time stamp ignored. Medium ID={}",
+					  rawMsg.getMediumId());
 				return;
 			}
-			
+
 			DcpAddress dcpAddress = dcpMsg.getDcpAddress();
 			failureCode = dcpMsg.getFailureCode();
 			XRWriteThread xrWriteThread = DcpMonitor.instance().getXrWriteThread();
 			DcpMsg existingMsg = xrWriteThread.find(dcpMsg, xmitTime);
-			
+
 			Action action = Action.Ignore;
 			switch(failureCode)
 			{
 			case (char)0: // shouldn't happen. It's a bug if it does.
-				error(rawMsg, "DcpMonitorConsumer: rawMsg with no Failure Code ignored. " +
-					"Medium ID=" + rawMsg.getMediumId());
+				error(rawMsg,
+					  "DcpMonitorConsumer: rawMsg with no Failure Code ignored. Medium ID={}",
+					  rawMsg.getMediumId());
 				action = Action.Ignore;
 				break;
 			case 'M':
@@ -153,47 +167,45 @@ public class DcpMonitorConsumer
 				if (existingMsg != null)
 				{
 					if (existingMsg.getFailureCode() == '?')
-						logAction(action = Action.ReplaceExisting, 
+						logAction(action = Action.ReplaceExisting,
 							dcpAddress, xmitTime, "new message has failure code 'G'"
 							+ " and existing one is '?'.");
 					else // failure code should be 'G'
-						logAction(action = Action.Ignore, 
+						logAction(action = Action.Ignore,
 							dcpAddress, xmitTime, "new message has failure code 'G'"
 							+ " but an existing 'G' is already stored.");
 				}
 				else
-					logAction(action = Action.Save, 
+					logAction(action = Action.Save,
 						dcpAddress, xmitTime, "this msg failureCode='G'. No existing msg stored.");
 				break;
 			case '?':
 				if (existingMsg != null)
 				{
-					logAction(action = Action.Ignore, dcpAddress, xmitTime, 
+					logAction(action = Action.Ignore, dcpAddress, xmitTime,
 						"new message has failure code '?'"
-						+ " but an existing msg is already stored with failure code "
-						+ failureCode);
+						+ " but an existing msg is already stored with failure code {}",
+						failureCode);
 					action = Action.Ignore;
 				}
 				else
-					logAction(action = Action.Save, 
+					logAction(action = Action.Save,
 						dcpAddress, xmitTime, "this msg failureCode='?'. No existing msg stored.");
 				break;
 			default: // Must by some type of status code
 				if (existingMsg == null)
 				{
-					logAction(action = Action.Ignore, dcpAddress, xmitTime, 
-						" received status code '" + failureCode
-						+ "' but no existing message is stored.");
+					logAction(action = Action.Ignore, dcpAddress, xmitTime,
+						" received status code '{}' but no existing message is stored.", failureCode);
 				}
 				else
 				{
 					existingMsg.addXmitFailureCode(failureCode);
-					logAction(action = Action.ModifyExisting, dcpAddress, xmitTime, 
-						" added status code '" + failureCode
-						+ "'.");
+					logAction(action = Action.ModifyExisting, dcpAddress, xmitTime,
+						" added status code '{}'.", failureCode);
 				}
 			}
-			
+
 			if (action == Action.Ignore)
 				return;
 			else if (action == Action.ModifyExisting)
@@ -207,14 +219,14 @@ public class DcpMonitorConsumer
 					xrWriteThread.enqueue(existingMsg);
 				return;
 			}
-			
+
 			// Get platform info from PDT or DECODES DB.
 			dcpMsg.setBattVolt(getBattVolt(msg));
 
 			// Validator will set XmitWindow if it can.
 			if (dcpMsg != null)
 				msgValidator.validateMsg(dcpMsg, null, new Date());
-			
+
 			if (action == Action.ReplaceExisting)
 			{
 				if (xrWriteThread.replace(existingMsg, dcpMsg))
@@ -223,8 +235,7 @@ public class DcpMonitorConsumer
 				// existing message's ID so that DAO will do an update.
 				dcpMsg.setRecordId(existingMsg.getRecordId());
 			}
-			// else action == Save
-			
+
 			// If queue full (probably due to backlog during startup), keep trying
 			// for up to 2 minutes.
 			long endTry = System.currentTimeMillis() + 120000L;
@@ -232,9 +243,7 @@ public class DcpMonitorConsumer
 			{
 				if (xrWriteThread.enqueue(dcpMsg))
 					return;
-				Logger.instance().warning(
-					"Queue full, retrieval thread will pause until "
-					+ debugSdf.format(new Date(endTry)));
+				log.warn("Queue full, retrieval thread will pause until {}", new Date(endTry));
 				try { Thread.sleep(2000L); }
 				catch(InterruptedException ex) {}
 			}
@@ -242,27 +251,20 @@ public class DcpMonitorConsumer
 		}
 		catch(NullPointerException ex)
 		{
-			
-			Logger.instance().failure(module + 
-				" NullPointerException in DcpMonitor Consumer: " + ex);
-			if (Logger.instance().getLogOutput() != null)
-				ex.printStackTrace(Logger.instance().getLogOutput());
+
+			log.atError().setCause(ex).log(" NullPointerException in DcpMonitor Consumer.");
 			return;
 		}
 	}
 
-	private void error(RawMessage rawmsg, String reason)
+	private void error(RawMessage rawmsg, String reason, Object... args)
 	{
-		Logger.instance().warning("DCPMon Input problem: '" 
-			+ (new String(rawmsg.getHeader())) + "': " + reason);
+		log.error("DCPMon Input problem: '{}':" + reason, (new String(rawmsg.getHeader())), args);
 	}
-	
-	private void logAction(Action action, DcpAddress dcpAddress, Date xmitTime, String reason)
+
+	private void logAction(Action action, DcpAddress dcpAddress, Date xmitTime, String reason, Object...args)
 	{
-		if (Logger.instance().getMinLogPriority() == Logger.E_DEBUG3)
-			Logger.instance().debug3(module + " " + action + " message for "
-				+ dcpAddress + " at time " + debugSdf.format(xmitTime)
-				+ " because " + reason);
+		log.trace("{} message for {} at time {} because {}" + reason,  action, dcpAddress, xmitTime, args);
 	}
 
 	/**
@@ -340,7 +342,10 @@ public class DcpMonitorConsumer
 					if (bv > 0.0 && bv < 20.)
 						return (float)bv;
 				}
-				catch(ilex.var.NoConversionException ex) {}
+				catch(ilex.var.NoConversionException ex)
+				{
+					log.atTrace().setCause(ex).log("Bad Battery Voltage Value.");
+				}
 			}
 		}
 		// Either couldn't find BV or it was in a bad format.
@@ -356,7 +361,7 @@ public class DcpMonitorConsumer
 
 	@Override
 	public void useValidationResults(char failureCode, String explanation,
-			DcpMsg msg, LrgsInputInterface src, Date msgTimeStamp, 
+			DcpMsg msg, LrgsInputInterface src, Date msgTimeStamp,
 			PdtEntry pdtEntry)
 	{
 		// The only validation code we use is 'V'. All others are supplied
@@ -381,4 +386,3 @@ public class DcpMonitorConsumer
         catch (NoConversionException ex) { return dflt; }
 	}
 }
-

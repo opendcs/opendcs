@@ -1,23 +1,28 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dcpmon;
 
-import ilex.util.Logger;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.XmitRecordDAI;
 import opendcs.dao.DatabaseConnectionOwner;
@@ -27,7 +32,7 @@ import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 
 /**
-This class is responsible for writing XmitRecords to the SQL database.
+This class is responsible for writing XmitRimport ilex.util.Logger;ecords to the SQL database.
 It maintains a queue. XmitRecords are only written after they've lived
 in the queue for agesec seconds. The reason is that we may get several
 DCP 'Messages' that effect the same XmitRecord (DAPS Status Messages,
@@ -37,6 +42,7 @@ it is written to the database. This reduces the number of database writes.
 */
 public class XRWriteThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String module = "XRWriteThread";
 
 	/** The age in msec that entries must be to be archived to database */
@@ -85,9 +91,9 @@ public class XRWriteThread extends Thread
 	{
 		_shutdown = true;
 	}
-	
+
 	int callNum = 0;
-	
+
 	/**
 	 * Add an xmit record to the queue. First search the queue to see if
 	 * it is already present. If it is do nothing.
@@ -96,12 +102,11 @@ public class XRWriteThread extends Thread
 	public synchronized boolean enqueue(DcpMsg xr)
 	{
 		int sz = q.size();
-Logger.instance().debug3("XRWriteThread.enqueue: " + xr.getHeader() + " queue.size=" + sz 
-	+", failureCodes=" + xr.getXmitFailureCodes());
+		log.trace("XRWriteThread.enqueue: {} queue.size={}, failureCodes={}",
+				  xr.getHeader(), sz, xr.getXmitFailureCodes());
 		if (sz > queueMaxSize)
 		{
-			Logger.instance().warning("Cannot enqueue: queue "
-				+ "size is too big (" + sz + ")");
+			log.warn("Cannot enqueue: queue size is too big ({})", sz);
 			return false;
 		}
 
@@ -110,17 +115,19 @@ Logger.instance().debug3("XRWriteThread.enqueue: " + xr.getHeader() + " queue.si
 				return true; // already in queue
 
 		q.add(new XRWrapper(xr));
-		
+
 		if ((++callNum % 100) == 0)
-		  Logger.instance().debug1("Enqueue: Q size = " + (sz = q.size()));
-		
+		{
+		  log.debug("Enqueue: Q size = {}", (sz = q.size()));
+		}
+
 		numQueued++;
 		lastMsgMsec = xr.getXmitTime().getTime();
-		
+
 		return true;
 	}
 
-int dCallNum = 0;
+	int dCallNum = 0;
 	/**
 	 * If there is an XmitRecord on the queue for longer than ageToArchiveMS,
 	 * or if we are shutting down, return it.
@@ -138,7 +145,9 @@ int dCallNum = 0;
 		{
 			q.poll();
 			if ((++dCallNum % 100) == 0)
-				Logger.instance().debug1("Dequeue: Q size = " + sz);
+			{
+				log.debug("Dequeue: Q size = {}", sz);
+			}
 			return xrw.xr;
 		}
 		else
@@ -165,7 +174,7 @@ int dCallNum = 0;
 		DatabaseConnectionOwner dbo = (DatabaseConnectionOwner)Database.getDb().getDbIo();
 		try(XmitRecordDAI xmitRecordDao = dbo.makeXmitRecordDao(31))
 		{
-			return xmitRecordDao.findDcpTranmission(mediumType, mediumId, xmitTime); 
+			return xmitRecordDao.findDcpTranmission(mediumType, mediumId, xmitTime);
 		}
 		catch(DbIoException ex)
 		{
@@ -173,7 +182,7 @@ int dCallNum = 0;
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Not synchronized, must only be called from within a synchronized method.
 	 * If match is still in the queue, return its wrapper. Otherwise return null
@@ -200,12 +209,12 @@ int dCallNum = 0;
 	/** The Thread run method. */
 	public void run()
 	{
-		dcpMonitor.info(module + " started.");
-		
+		log.info(module + " started.");
+
 		DatabaseConnectionOwner dbo = (DatabaseConnectionOwner)Database.getDb().getDbIo();
-		
+
 		// 4/30/19 setNumDaysStorage will call deleteOldTableData. After that, call delete periodically.
-		
+
 		long lastDeleteOld = System.currentTimeMillis();
 
 		while(!_shutdown)
@@ -215,7 +224,7 @@ int dCallNum = 0;
 			{
 				xmitRecordDao.setNumDaysStorage(DcpMonitorConfig.instance().numDaysStorage);
 				processQueue(xmitRecordDao);
-				
+
 				if (System.currentTimeMillis() - lastDeleteOld > MS_PER_DAY)
 				{
 					try
@@ -224,16 +233,12 @@ int dCallNum = 0;
 					}
 					catch (DbIoException ex)
 					{
-						Logger.instance().failure("Exception in deleteOldTableData: " + ex);
-						if (Logger.instance().getLogOutput() != null)
-						{
-							ex.printStackTrace(Logger.instance().getLogOutput());
-						}
+						log.atError().setCause(ex).log("Exception in deleteOldTableData.");
 					}
 				}
 			}
 		}
-		dcpMonitor.info(module + " exiting.");
+		log.info(module + " exiting.");
 	}
 
 	public synchronized void processQueue(XmitRecordDAI xmitRecordDao)
@@ -249,17 +254,17 @@ int dCallNum = 0;
 		{
 			if (dcpMonitor.isIgnoreInvalidAddr() && xr.hasXmitFailureCode('I'))
 			{
-				Logger.instance().info("XRWriteThread.processQueue ignoring message with header '"
-					+ xr.getHeader() + "' because it has an Invalid DCP Address.");
+				log.info("XRWriteThread.processQueue ignoring message with header '{}'" +
+						 " because it has an Invalid DCP Address.",
+						 xr.getHeader());
 				continue;
 			}
-			
+
 			if (xr.getXmitTime() != null
 			 && (System.currentTimeMillis() - xr.getXmitTime().getTime()
 				 > DcpMonitorConfig.instance().numDaysStorage * MS_PER_DAY))
 			{
-				Logger.instance().warning("Discarding too-old message: "
-					+ xr.getHeader());
+				log.warn("Discarding too-old message: {}", xr.getHeader());
 				continue;
 			}
 			try
@@ -273,7 +278,7 @@ int dCallNum = 0;
 			}
 		}
 	}
-	
+
 	/**
 	 * If the existing message is still in the queue, replace it with the passed
 	 * replacement and return true. Otherwise return false.
@@ -283,7 +288,7 @@ int dCallNum = 0;
 	 */
 	public synchronized boolean replace(DcpMsg existing, DcpMsg replacement)
 	{
-		XRWrapper xrw = findInQueue(XmitMediumType.flags2type(existing.getFlagbits()), 
+		XRWrapper xrw = findInQueue(XmitMediumType.flags2type(existing.getFlagbits()),
 			existing.getDcpAddress().toString(), existing.getXmitTime());
 		if (xrw != null)
 		{
@@ -302,7 +307,7 @@ int dCallNum = 0;
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning(module + " getLastLocalRecvTime: " + ex);
+			log.atWarn().setCause(ex).log("Error in getLastLocalRecvTime.");
 			return null;
 		}
 	}

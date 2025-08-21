@@ -1,18 +1,28 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dcpmon;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import java.io.File;
 import java.util.Enumeration;
 import java.util.Properties;
 
-//import decodes.dcpmon_old.DcpGroup;
-//import decodes.dcpmon_old.DcpGroupList;
-
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 
 /**
@@ -22,6 +32,7 @@ file.
 */
 public class DcpMonitorConfig
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Number of days to store data for. */
 	public int numDaysStorage = 5;
 
@@ -127,7 +138,7 @@ public class DcpMonitorConfig
 		PropertiesUtil.loadFromProps(this, props, ignorePfx);
 		this.rawProps = props;
 		lastLoadTime = System.currentTimeMillis();
-Logger.instance().info("DcpMonitorConfig.loadFromProperties: dcpmonNameType='" + dcpmonNameType + "'");
+		log.info("DcpMonitorConfig.loadFromProperties: dcpmonNameType='{}'", dcpmonNameType);
 	}
 
 	/**
@@ -138,8 +149,6 @@ Logger.instance().info("DcpMonitorConfig.loadFromProperties: dcpmonNameType='" +
 	public boolean checkAndLoadNetworkLists()
 	{
 		Enumeration<Object> kenum = rawProps.keys();
-//		DcpGroupList dgl = DcpGroupList.instance();
-//		dgl.uncheckAll();
 		boolean anyChanges = false;
 		while(kenum.hasMoreElements())
 		{
@@ -160,41 +169,9 @@ Logger.instance().info("DcpMonitorConfig.loadFromProperties: dcpmonNameType='" +
 						gName = gName.substring(idx);
 					if (gName.toLowerCase().endsWith(".nl"))
 						gName = gName.substring(0,gName.length()-3);
-
-//					DcpGroup dg = dgl.getGroup(gName);
-//					if (dg != null)
-//					{
-//						if (dg.checkForChange())
-//							anyChanges = true;
-//					}
-//					else
-//					{
-//						dgl.addLrgsNetworkList(gName, f, key);
-//						anyChanges = true;
-//					}
-				}
-				else
-				{
-//					String gName = v;
-//					DcpGroup dg = dgl.getGroup(gName);
-//					if (dg != null)
-//					{
-//						if (dg.checkForChange())
-//							anyChanges = true;
-//					}
-//					else
-//					{
-//						dgl.addDecodesNetworkList(v, key);
-//						anyChanges = true;
-//					}
 				}
 			}
 		}
-//		if (dgl.removeUnchecked())
-//			anyChanges = true;
-//
-//		dgl.sort();
-
 		return anyChanges;
 	}
 
