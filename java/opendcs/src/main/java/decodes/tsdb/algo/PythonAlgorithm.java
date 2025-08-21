@@ -156,7 +156,7 @@ import ilex.var.TimedVariable;
 import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.util.DecodesSettings;
 
-import static decodes.db.DecodesScript.logger;
+import static decodes.db.DecodesScript.log;
 
 //AW:IMPORTS
 // Place an import statements you need here.

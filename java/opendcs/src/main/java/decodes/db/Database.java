@@ -1,17 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.db;
 
-import ilex.util.Logger;
 import opendcs.util.functional.ThrowingRunnable;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.opendcs.utils.logging.Timer;
-import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.CompAppInfo;
@@ -28,7 +41,7 @@ import decodes.util.DecodesSettings;
 
 public class Database extends DatabaseObject
 {
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(Database.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static Database _theDb = null;  // Static 'current' instance
 
 	// Collection classes that represent this database:
@@ -40,8 +53,6 @@ public class Database extends DatabaseObject
 	public EnumList			  enumList;
 
 	public NetworkListList	   networkListList;
-
-//	public PMConfigList		  pMConfigList;
 
 	public PlatformList		  platformList;
 
@@ -221,13 +232,10 @@ public class Database extends DatabaseObject
 		siteList.write();
 		platformConfigList.write();
 		equipmentModelList.write();
-		// equationSpecList.write();
 		routingSpecList.write();
 		dataSourceList.write();
 		networkListList.write();
 		presentationGroupList.write();
-		// eqTableList.write();
-		// pMConfigList.write();
 
 		for(Iterator it = platformList.iterator(); it.hasNext(); )
 		{
@@ -265,10 +273,7 @@ public class Database extends DatabaseObject
 		}
 		catch(DatabaseException ex)
 		{
-			String msg = "Cannot read enum: " + enumName + ": " + ex;
-			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Cannot read enum: '{}'.", enumName);
 			return null;
 		}
 	}
@@ -280,10 +285,7 @@ public class Database extends DatabaseObject
 			try { presentationGroupList.read(); }
 			catch(DatabaseException ex)
 			{
-				String msg = "Cannot read presentation group list: " + ex;
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
-				Logger.instance().failure(msg);
+				log.atError().setCause(ex).log("Cannot read presentation group list.");
 			}
 		}
 		return presentationGroupList;
