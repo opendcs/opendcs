@@ -256,89 +256,34 @@ public class DecodesScriptEditPanel extends JPanel implements SampleMessageOwner
 		initColors();
 	}
 
+	private void parseColorSetting(String colorString, int index, String settingName) 
+	{
+		if (colorString != null && !colorString.trim().isEmpty()) 
+		{
+			try 
+			{
+				colorValues[index] = Integer.parseInt(colorString.trim(), 16);
+			}
+			catch (NumberFormatException ex) 
+			{
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid setting '{}': {} ignored.", settingName, colorString);
+			}
+		}
+	}
+
 	void initColors()
 	{
 		DecodesSettings settings = DecodesSettings.instance();
-		if (settings.decodeScriptColor1 != null && settings.decodeScriptColor1.trim().length() > 0)
-		{
-			try { colorValues[0] = Integer.parseInt(settings.decodeScriptColor1.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Invalid setting 'decodesScriptColor1: {} ignored.", settings.decodeScriptColor1);
-			}
-		}
-		if (settings.decodeScriptColor2 != null && settings.decodeScriptColor2.trim().length() > 0)
-		{
-			try { colorValues[1] = Integer.parseInt(settings.decodeScriptColor2.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Invalid setting 'decodesScriptColor2: {} ignored.", settings.decodeScriptColor2);
-			}
-		}
-		if (settings.decodeScriptColor3 != null && settings.decodeScriptColor3.trim().length() > 0)
-		{
-			try { colorValues[2] = Integer.parseInt(settings.decodeScriptColor3.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Invalid setting 'decodesScriptColor3: {} ignored.", settings.decodeScriptColor3);
-			}
-		}
-		if (settings.decodeScriptColor4 != null && settings.decodeScriptColor4.trim().length() > 0)
-		{
-			try { colorValues[3] = Integer.parseInt(settings.decodeScriptColor4.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Invalid setting 'decodesScriptColor4: {} ignored.", settings.decodeScriptColor4);
-			}
-		}
-		if (settings.decodeScriptColor5 != null && settings.decodeScriptColor5.trim().length() > 0)
-		{
-			try { colorValues[4] = Integer.parseInt(settings.decodeScriptColor5.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Invalid setting 'decodesScriptColor5: {} ignored.", settings.decodeScriptColor5);
-			}
-		}
-		if (settings.decodeScriptColor6 != null && settings.decodeScriptColor6.trim().length() > 0)
-		{
-			try { colorValues[5] = Integer.parseInt(settings.decodeScriptColor6.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Invalid setting 'decodesScriptColor6: {} ignored.", settings.decodeScriptColor6);
-			}
-		}
-		if (settings.decodeScriptColor7 != null && settings.decodeScriptColor7.trim().length() > 0)
-		{
-			try { colorValues[6] = Integer.parseInt(settings.decodeScriptColor7.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Invalid setting 'decodesScriptColor7: {} ignored.", settings.decodeScriptColor7);
-			}
-		}
-		if (settings.decodeScriptColor8 != null && settings.decodeScriptColor8.trim().length() > 0)
-		{
-			try { colorValues[7] = Integer.parseInt(settings.decodeScriptColor8.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				log.atWarn()
-				   .setCause(ex)
-				   .log("Invalid setting 'decodesScriptColor8: {} ignored.", settings.decodeScriptColor8);
-			}
-		}
+		parseColorSetting(settings.decodeScriptColor1, 0, "decodesScriptColor1");
+    	parseColorSetting(settings.decodeScriptColor2, 1, "decodesScriptColor2");
+    	parseColorSetting(settings.decodeScriptColor3, 2, "decodesScriptColor3");
+    	parseColorSetting(settings.decodeScriptColor4, 3, "decodesScriptColor4");
+		parseColorSetting(settings.decodeScriptColor5, 4, "decodesScriptColor5");
+    	parseColorSetting(settings.decodeScriptColor6, 5, "decodesScriptColor6");
+		parseColorSetting(settings.decodeScriptColor7, 6, "decodesScriptColor7");
+    	parseColorSetting(settings.decodeScriptColor8, 7, "decodesScriptColor8");
 
 		for(int i=0; i<colorValues.length; i++)
 		{

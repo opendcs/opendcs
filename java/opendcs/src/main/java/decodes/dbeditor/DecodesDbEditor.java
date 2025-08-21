@@ -121,7 +121,7 @@ public class DecodesDbEditor
         try { cmdLineArgs.parseArgs(args); }
         catch(IllegalArgumentException ex)
         {
-            log.atError().setCause(ex).log("Unable to process command line arguements.");
+            log.atError().setCause(ex).log("Unable to process command line arguments.");
             System.exit(1);
         }
 
