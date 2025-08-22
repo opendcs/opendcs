@@ -4,9 +4,13 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.TreeSet;
 
 import javax.swing.table.AbstractTableModel;
@@ -18,6 +22,7 @@ import decodes.gui.TopFrame;
 import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
+import decodes.util.RequirementGroup;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 
@@ -39,6 +44,12 @@ public class PropertiesTableModel extends AbstractTableModel
      private boolean changed;
 
      private HashMap<String, PropertySpec> propHash = null;
+     
+     /** Map of requirement group names to consolidated RequirementGroup objects */
+     private Map<String, RequirementGroup> requirementGroups = new HashMap<>();
+     
+     /** Map of property names to their requirement groups for quick lookup */
+     private Map<String, List<RequirementGroup>> propertyToGroups = new HashMap<>();
 
      /** Constructs a new table model for the passed Properties set. */
      public PropertiesTableModel(Properties properties)
@@ -51,6 +62,97 @@ public class PropertiesTableModel extends AbstractTableModel
 
      public HashMap<String,PropertySpec> getPropHash() {
         return propHash;
+     }
+     
+     /**
+      * Get all requirement groups including individually required properties
+      * @return Map of requirement group names to RequirementGroup objects
+      */
+     public Map<String, RequirementGroup> getRequirementGroups() {
+         return new HashMap<>(requirementGroups);
+     }
+     
+     /**
+      * Check if a property is required (either individually or as part of a group)
+      * @param propertyName The name of the property to check
+      * @return true if the property is in any requirement group
+      */
+     public boolean isPropertyRequired(String propertyName) {
+         List<RequirementGroup> groups = propertyToGroups.get(propertyName.toUpperCase());
+         return groups != null && !groups.isEmpty();
+     }
+     
+     /**
+      * Get the requirement groups for a specific property
+      * @param propertyName The name of the property
+      * @return List of RequirementGroup objects this property belongs to
+      */
+     public List<RequirementGroup> getPropertyRequirementGroups(String propertyName) {
+         List<RequirementGroup> groups = propertyToGroups.get(propertyName.toUpperCase());
+         return groups != null ? new ArrayList<>(groups) : new ArrayList<>();
+     }
+     
+     /**
+      * Check if a requirement group is satisfied based on current property values
+      * @param groupName The name of the requirement group
+      * @return true if the group's requirements are satisfied
+      */
+     public boolean isRequirementGroupSatisfied(String groupName) {
+         RequirementGroup group = requirementGroups.get(groupName);
+         if (group == null) {
+             return true; // No such group is considered satisfied
+         }
+         
+         // Get list of property names that have non-empty values
+         List<String> providedProperties = new ArrayList<>();
+         for (String propertyName : group.getPropertyNames()) {
+             String value = getCurrentPropValue(propertyName);
+             if (value != null && !value.trim().isEmpty()) {
+                 providedProperties.add(propertyName);
+             }
+         }
+         
+         return group.isSatisfied(providedProperties);
+     }
+     
+     /**
+      * Get validation errors for all requirement groups
+      * @return List of validation error messages
+      */
+     public List<String> getValidationErrors() {
+         List<String> errors = new ArrayList<>();
+         
+         // Get list of all provided properties
+         List<String> providedProperties = new ArrayList<>();
+         for (StringPair sp : props) {
+             if (sp.second != null && !sp.second.trim().isEmpty()) {
+                 providedProperties.add(sp.first);
+             }
+         }
+         
+         // Check each requirement group
+         for (RequirementGroup group : requirementGroups.values()) {
+             String error = group.getValidationError(providedProperties);
+             if (error != null) {
+                 errors.add(error);
+             }
+         }
+         
+         return errors;
+     }
+     
+     /**
+      * Get all unsatisfied requirement groups
+      * @return List of requirement group names that are not satisfied
+      */
+     public List<String> getUnsatisfiedRequirementGroups() {
+         List<String> unsatisfied = new ArrayList<>();
+         for (String groupName : requirementGroups.keySet()) {
+             if (!isRequirementGroupSatisfied(groupName)) {
+                 unsatisfied.add(groupName);
+             }
+         }
+         return unsatisfied;
      }
 
      /**
@@ -65,6 +167,67 @@ public class PropertiesTableModel extends AbstractTableModel
      public void setPropHash(HashMap<String, PropertySpec> propHash)
      {
          this.propHash = propHash;
+         
+         // Build consolidated requirement groups from property specs
+         requirementGroups.clear();
+         propertyToGroups.clear();
+         
+         if (propHash != null)
+         {
+             // First pass: collect all requirement groups from all properties
+             for (PropertySpec spec : propHash.values())
+             {
+                 List<RequirementGroup> specGroups = spec.getRequirementGroups();
+                 String propNameUpper = spec.getName().toUpperCase();
+                 
+                 for (RequirementGroup specGroup : specGroups)
+                 {
+                     String groupName = specGroup.getGroupName();
+                     
+                     // Get or create the consolidated group
+                     RequirementGroup consolidatedGroup = requirementGroups.get(groupName);
+                     if (consolidatedGroup == null)
+                     {
+                         // Create new group with same type and description as first occurrence
+                         consolidatedGroup = new RequirementGroup(
+                             groupName, 
+                             specGroup.getType(),
+                             specGroup.getDescription()
+                         );
+                         requirementGroups.put(groupName, consolidatedGroup);
+                     }
+                     
+                     // Add this property to the consolidated group
+                     consolidatedGroup.addProperty(spec.getName());
+                     
+                     // Track which groups this property belongs to
+                     List<RequirementGroup> propGroups = propertyToGroups.get(propNameUpper);
+                     if (propGroups == null)
+                     {
+                         propGroups = new ArrayList<>();
+                         propertyToGroups.put(propNameUpper, propGroups);
+                     }
+                     if (!propGroups.contains(consolidatedGroup))
+                     {
+                         propGroups.add(consolidatedGroup);
+                     }
+                 }
+             }
+         }
+         
+         if(log.isDebugEnabled())
+         {
+             log.debug("Requirement groups: {} groups found", requirementGroups.size());
+             for (Map.Entry<String, RequirementGroup> entry : requirementGroups.entrySet())
+             {
+                 RequirementGroup group = entry.getValue();
+                 log.debug("  Group '{}' ({}): {}", 
+                     group.getGroupName(), 
+                     group.getType(),
+                     group.getPropertyNames());
+             }
+         }
+         
          for (String ucName : propHash.keySet())
          {
              boolean found = false;
@@ -388,5 +551,63 @@ public class PropertiesTableModel extends AbstractTableModel
     public PropertiesOwner getPropertiesOwner()
     {
         return this.propertiesOwner;
+    }
+    
+    /**
+     * Get a human-readable description of the requirement status for a property
+     * @param propertyName The name of the property
+     * @return Description of requirements, or empty string if none
+     */
+    public String getPropertyRequirementDescription(String propertyName)
+    {
+        List<RequirementGroup> groups = getPropertyRequirementGroups(propertyName);
+        if (groups.isEmpty())
+        {
+            return "";
+        }
+        
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < groups.size(); i++)
+        {
+            if (i > 0) sb.append("; ");
+            
+            RequirementGroup group = groups.get(i);
+            switch (group.getType())
+            {
+                case INDIVIDUAL:
+                    sb.append("Required");
+                    break;
+                case ONE_OF:
+                    sb.append("One of: ").append(group.getPropertyNames());
+                    break;
+                case ALL_OR_NONE:
+                    sb.append("All or none of: ").append(group.getPropertyNames());
+                    break;
+                case AT_LEAST_ONE:
+                    sb.append("At least one of: ").append(group.getPropertyNames());
+                    break;
+                case ALL_REQUIRED:
+                    sb.append("All required: ").append(group.getPropertyNames());
+                    break;
+            }
+        }
+        
+        return sb.toString();
+    }
+    
+    /**
+     * Check if all requirement groups are satisfied
+     * @return true if all requirements are met
+     */
+    public boolean areAllRequirementsSatisfied()
+    {
+        for (String groupName : requirementGroups.keySet())
+        {
+            if (!isRequirementGroupSatisfied(groupName))
+            {
+                return false;
+            }
+        }
+        return true;
     }
  }

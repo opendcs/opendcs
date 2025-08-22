@@ -2,18 +2,15 @@ package decodes.tsdb.compedit;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.TimeZone;
-import java.util.Properties;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.List;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import decodes.gui.PropertiesEditDialog;
+import decodes.gui.properties.PropertiesTableModel;
+import decodes.util.PropertySpec;
 import opendcs.dai.ComputationDAI;
 import ilex.gui.DateTimeCalendar;
 import ilex.util.AsciiUtil;
@@ -673,8 +670,9 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
         if (compParmTableModel == null)
         {
             compParmTableModel = new CompParmTableModel(this);
-            compParmTable = new SortingListTable(compParmTableModel,
-                compParmTableModel.columnWidths);
+            compParmTable = new JTable(compParmTableModel);
+            compParmTable.setAutoCreateRowSorter(true);
+            compParmTable.getRowSorter().toggleSortOrder(0);
             compParmTable.addMouseListener(
                 new MouseAdapter()
                 {
@@ -758,7 +756,36 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
             if (ok != JOptionPane.YES_OPTION)
                 return;
         }
-
+        // Check requirement groups before saving
+        PropertiesTableModel model = (PropertiesTableModel)propertiesPanel.propertiesTable.getModel();
+        List<String> validationErrors = model.getValidationErrors();
+        
+        if (!validationErrors.isEmpty())
+        {
+            // Build detailed error message showing group types and members
+            StringBuilder errorMsg = new StringBuilder();
+            errorMsg.append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationFailed"))
+                    .append("\n\n");
+            
+            // Add each validation error with details
+            for (String error : validationErrors)
+            {
+                errorMsg.append("• ").append(error).append("\n");
+            }
+            
+            errorMsg.append("\n")
+                    .append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.fixRequirements"));
+            
+            // Show error dialog with details about requirement groups
+            int r = JOptionPane.showConfirmDialog(this,
+                errorMsg.toString(),
+                CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationError"),
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+            
+            if (r != JOptionPane.OK_OPTION)
+                return;
+        }
         saveToObject(editedObject);
 
         ComputationDAI computationDAO = CAPEdit.instance().theDb.makeComputationDAO();
@@ -1094,7 +1121,8 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                     .getString("ComputationsEditPanel.DeleteError1"));
             return;
         }
-        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(r);
+        int modelRow = compParmTable.convertRowIndexToModel(r);
+        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(modelRow);
         int ok = JOptionPane.showConfirmDialog(this,
                 LoadResourceBundle.sprintf(CAPEdit.instance().compeditDescriptions
                 .getString("ComputationsEditPanel.DeleteError2")
@@ -1112,7 +1140,9 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                     .getString("ComputationsEditPanel.EditError"));
             return;
         }
-        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(r);
+        int modelRow = compParmTable.convertRowIndexToModel(r);
+
+        DbCompParm dcp = (DbCompParm)compParmTableModel.getRowObject(modelRow);
 
         CompParmDialog compParmDialog =
             new CompParmDialog(dcp.isInput(), siteSelectPanel);
