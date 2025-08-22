@@ -1,18 +1,18 @@
-/**
- * Copyright 2024 The OpenDCS Consortium and contributors
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -25,7 +25,9 @@ import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
 
-import org.slf4j.LoggerFactory;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.gui.Help;
 import ilex.util.LoadResourceBundle;
@@ -42,7 +44,7 @@ Opened from the SourceListPanel.
 */
 public class SourceEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(SourceEditPanel.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
     static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -107,9 +109,7 @@ public class SourceEditPanel extends DbEditorTab implements ChangeTracker, Entit
         }
         catch(Exception ex)
         {
-			log.atError()
-			   .setCause(ex)
-			   .log("Error creating Data Source Edit Panel.");
+			GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -242,7 +242,7 @@ public class SourceEditPanel extends DbEditorTab implements ChangeTracker, Entit
                 }
                 catch(Exception ex)
                 {
-                    log.error("Error setting properties for '{}'",dsType,ex);
+                     log.atError().setCause(ex).log("Error setting properties for '{}'", dsType);
                 }
             }
         }
@@ -374,12 +374,13 @@ public class SourceEditPanel extends DbEditorTab implements ChangeTracker, Entit
         {
             dataSource.write();
         }
-        catch(DatabaseException e)
+        catch(DatabaseException ex)
         {
+            log.atError().setCause(ex).log("Unable to save data source.");
             TopFrame.instance().showError(
                 LoadResourceBundle.sprintf(
                     genericLabels.getString("cannotSave"),
-                    getEntityName(), e.toString()));
+                    getEntityName(), ex.toString()));
             return false;
         }
         affectedItems = new ArrayList<DatabaseObject>();
@@ -416,9 +417,9 @@ public class SourceEditPanel extends DbEditorTab implements ChangeTracker, Entit
                 {
                     affectedItems.add(ds);
                     try { ds.write(); }
-                    catch (DatabaseException e)
+                    catch (DatabaseException ex)
                     {
-                        log.warn("Cannot write data source '{}'",ds.getName(),e.toString());
+                        log.atWarn().setCause(ex).log("Cannot write data source '{}'", ds.getName());
                     }
                 }
             }
@@ -453,9 +454,9 @@ public class SourceEditPanel extends DbEditorTab implements ChangeTracker, Entit
                 {
                     rs.write();
                 }
-                catch (DatabaseException e)
+                catch (DatabaseException ex)
                 {
-                    log.warn("Cannot write routing spec '{}'", rs.getName(),e);
+                    log.atWarn().setCause(ex).log("Cannot write data source spec '{}'", rs.getName());
                 }
             }
         }
