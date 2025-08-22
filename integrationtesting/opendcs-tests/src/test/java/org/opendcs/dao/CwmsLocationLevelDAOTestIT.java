@@ -26,7 +26,6 @@ import opendcs.dao.LocationLevelDAO.LocationLevelSpec;
  * Integration tests for CwmsLocationLevelDAO
  * These tests require a real CWMS database connection
  */
-@EnableIfDaoSupported(CwmsLocationLevelDAO.class)
 public class CwmsLocationLevelDAOTestIT extends AppTestBase
 {
     @ConfiguredField
@@ -52,6 +51,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
+    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
     public void testGetLatestLocationLevelValue_Basic() throws Exception
     {
         if (dao == null) 
@@ -96,6 +96,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
+    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
     public void testGetLatestLocationLevelValue_WithUnitConversion() throws Exception
     {
         if (dao == null) 
@@ -144,6 +145,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
+    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
     public void testGetLocationLevelSpecs() throws Exception
     {
         if (dao == null) 
@@ -174,6 +176,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
+    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
     public void testTransactionSupport() throws Exception
     {
         if (dao == null) 
@@ -206,6 +209,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
+    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
     public void testCaching() throws Exception
     {
         if (dao == null) 
@@ -284,6 +288,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
+    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
     public void testSeparateCacheManagement() throws Exception
     {
         if (dao == null) 
@@ -328,6 +333,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
+    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
     public void testErrorHandling_InvalidLocationId() throws Exception
     {
         if (dao == null) 
@@ -354,6 +360,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
+    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
     public void testInterfaceCompatibility() throws Exception
     {
         // Test that CwmsLocationLevelDAO properly implements LocationLevelDAI
