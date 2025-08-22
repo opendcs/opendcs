@@ -1,28 +1,17 @@
 /*
-*	$Id$
-*
-*	$Log$
-*	Revision 1.3  2008/09/26 20:49:02  mjmaloney
-*	Added <all> and <production> network lists
-*	
-*	Revision 1.2  2008/09/26 14:56:54  mjmaloney
-*	Added <all> and <production> network lists
-*	
-*	Revision 1.1  2008/04/04 18:21:01  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.5  2008/01/24 16:41:56  mmaloney
-*	fixed files for internationalization
-*	
-*	Revision 1.4  2008/01/14 14:56:43  mmaloney
-*	dev
-*	
-*	Revision 1.3  2004/09/20 14:18:48  mjmaloney
-*	Javadocs
-*	
-*	Revision 1.2  2004/07/05 14:30:05  mjmaloney
-*	Added network list selection dialog.
-*	
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -31,6 +20,10 @@ import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.LoadResourceBundle;
 
@@ -42,6 +35,7 @@ Dialog for selecting network list names.
 */
 public class NetworkListSelectDialog extends JDialog 
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -56,7 +50,7 @@ public class NetworkListSelectDialog extends JDialog
 	JPanel jPanel3 = new JPanel();
 	JLabel jLabel2 = new JLabel();
 	FlowLayout flowLayout2 = new FlowLayout();
-	JComboBox networkListCombo = new JComboBox();
+	JComboBox<String> networkListCombo = new JComboBox<>();
 
 	private boolean _isOK = false;
 
@@ -69,12 +63,14 @@ public class NetworkListSelectDialog extends JDialog
 	public NetworkListSelectDialog(Frame frame, String title, boolean modal) 
 	{
 		super(frame, title, modal);
-		try {
+		try 
+		{
 			jbInit();
 			pack();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch(Exception ex) 
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 
 		fillValuesFromDatabase();
@@ -109,7 +105,6 @@ public class NetworkListSelectDialog extends JDialog
 		jPanel1.add(okButton, null);
 		jPanel1.add(cancelButton, null);
 		panel1.add(jPanel2, BorderLayout.NORTH);
-		//jPanel2.add(jLabel1, null);
 		panel1.add(jPanel3, BorderLayout.CENTER);
 		jPanel3.add(jLabel2, null);
 		jPanel3.add(networkListCombo, null);

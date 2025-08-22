@@ -1,9 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
 import java.util.ResourceBundle;
-import javax.swing.JLabel;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.LoadResourceBundle;
 
@@ -15,6 +33,7 @@ Displays a sorting-list of Platform objects in the database.
  */
 public class PlatformListPanel extends JPanel implements ListOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
 	ListOpsPanel listOpsPanel;
@@ -28,10 +47,12 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 		parent = null;
 		listOpsPanel = new ListOpsPanel(this);
 		listOpsPanel.enableCopy(true);
-		try {
+		try 
+		{
 			jbInit();
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		} catch (Exception ex) 
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -73,11 +94,14 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 		} 
 		else 
 		{
-			try {
+			try 
+			{
 				p.read();
 				doOpen(p);
 			} 
-			catch (Exception ex) {
+			catch (Exception ex) 
+			{
+				log.atError().setCause(ex).log("Unable to read platform {}", p.makeFileName());
 				TopFrame.instance().showError(
 						LoadResourceBundle.sprintf(
 								dbeditLabels.getString("PlatformListPanel.cannotOpen"),
@@ -113,12 +137,13 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 			if (!p.isComplete())
 			{
 				try { p.read(); }
-				catch (DatabaseException e)
+				catch (DatabaseException ex)
 				{
+					log.atError().setCause(ex).log("Unable to copy platform {}", p.makeFileName());
 					TopFrame.instance().showError(
 							LoadResourceBundle.sprintf(
 									dbeditLabels.getString("PlatformListPanel.cannotRead"),
-									p.makeFileName(), e.toString()));
+									p.makeFileName(), ex.toString()));
 					return;
 				}
 			}
@@ -149,12 +174,14 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 					JOptionPane.YES_NO_OPTION);
 			if (ok == JOptionPane.YES_OPTION) {
 				platformSelectPanel.deletePlatform(ob);
-				try {
+				try 
+				{
 					Database.getDb().platformList.write();
-				} catch (DatabaseException e) {
-					TopFrame.instance().showError(
-							dbeditLabels.getString("PlatformListPanel.errorDeleting")
-									+ e);
+				} catch (DatabaseException ex) 
+				{
+					String msg = dbeditLabels.getString("PlatformListPanel.errorDeleting");
+					log.atError().setCause(ex).log(msg);
+					TopFrame.instance().showError(msg + ex);
 				}
 			}
 		}

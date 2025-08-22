@@ -1,24 +1,25 @@
 /*
-*  $Id$
-*
-*  $State$
-*
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.3  2004/09/20 14:18:46  mjmaloney
-*  Javadocs
-*
-*  Revision 1.2  2001/11/01 01:02:51  mike
-*  Equipment list & edit panels.
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
-
 package decodes.dbeditor;
 
-import java.awt.*;
 import javax.swing.JComboBox;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 
@@ -27,6 +28,7 @@ Combo box for selecting from constant list of Equipement Types.
 */
 public class EquipmentTypeSelector extends JComboBox
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static String equipTypes[] = {
 		Constants.eqType_dcp, Constants.eqType_sensor,
 		Constants.eqType_transport };
@@ -35,11 +37,13 @@ public class EquipmentTypeSelector extends JComboBox
     public EquipmentTypeSelector()
 	{
 		super(equipTypes);
-        try {
+        try 
+		{
             jbInit();
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch(Exception ex) 
+		{
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 

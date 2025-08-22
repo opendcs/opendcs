@@ -1,3 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
+
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -24,12 +40,16 @@ import javax.swing.border.Border;
 import javax.swing.JScrollPane;
 import javax.swing.JFileChooser;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+
 import ilex.gui.CheckBoxList;
 import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.LoadResourceBundle;
 
 import decodes.db.*;
@@ -46,6 +66,7 @@ This class implements the dialog displayed for File - Export.
 */
 public class ImportDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 	
@@ -114,9 +135,9 @@ public class ImportDialog extends GuiDialog
 			jbInit();
 			pack();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -235,9 +256,8 @@ public class ImportDialog extends GuiDialog
 		}
 		catch(Exception ex)
 		{
-			String msg = 
-				dbeditLabels.getString("ImportDialog.ScanButtonError2")+" " + ex;
-			Logger.instance().failure(msg);
+			String msg = dbeditLabels.getString("ImportDialog.ScanButtonError2");
+			log.atError().setCause(ex).log(msg);
 			showError(msg);
 		}
 		finally
@@ -253,8 +273,7 @@ public class ImportDialog extends GuiDialog
 	private void initStageDb()
 		throws SAXException, ParserConfigurationException, DatabaseException, IOException
 	{
-		Logger.instance().debug3(
-				dbeditLabels.getString("ImportDialog.InitStageDebug"));
+		log.trace(dbeditLabels.getString("ImportDialog.InitStageDebug"));
 		stageDb = new decodes.db.Database();
 		Database.setDb(stageDb);
 		Path tmpPath = FileUtil.createEmptyTempDirectory("edit-db");
@@ -288,8 +307,7 @@ public class ImportDialog extends GuiDialog
 	private void importFile(String fn)
 		throws SAXException, IOException
 	{
-		Logger.instance().info(
-				dbeditLabels.getString("ImportDialog.ImportFileDialog") + fn + "'");
+		log.info(dbeditLabels.getString("ImportDialog.ImportFileDialog") + fn + "'");
 		DatabaseObject ob = topParser.parse(new File(fn));
 
 		// Some file types are invalid in dbedit
@@ -331,12 +349,6 @@ public class ImportDialog extends GuiDialog
 		{
 			Platform p = (Platform)it.next();
 			addDBO(p, false);
-//			Site s = p.getSite();
-//			if (s != null)
-//				addDBO(s, true);
-//			PlatformConfig pc = p.getConfig();
-//			if (pc != null)
-//				addDBO(pc, true);
 		}
 		for(Iterator it = stageDb.siteList.iterator(); it.hasNext(); )
 		{
@@ -483,12 +495,13 @@ public class ImportDialog extends GuiDialog
 				editDb.platformList.getByFileName(impp.makeFileName());
 			PlatformEditPanel pep;
 			if (editp != null)
-{Logger.instance().debug3("Opening existing platform"+" " + impp.makeFileName());
+			{
+				log.trace("Opening existing platform {}", impp.makeFileName());
 				pep = platformListPanel.doOpen(editp);
-}
+			}
 			else
 			{
-Logger.instance().debug3("Opening panel for new platform."+" ");
+				log.trace("Opening panel for new platform.");
 				pep = platformListPanel.doNew();
 			}
 			pep.setImportedPlatform(impp);
@@ -532,6 +545,7 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 				}
 				catch(DecodesException ex) 
 				{
+					log.atError().setCause(ex).log(dbeditLabels.getString("ImportDialog.OpenError"));
 					showError(
 							dbeditLabels.getString("ImportDialog.OpenError") + ex);
 					return null;
@@ -638,8 +652,9 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 				}
 				catch(DecodesException ex) 
 				{
-					showError(dbeditLabels.getString("ImportDialog.ImportError")
-							+" " + ex);
+					String msg = dbeditLabels.getString("ImportDialog.ImportError");
+					log.atError().setCause(ex).log(msg);
+					showError(msg+ " " + ex);
 					return;
 				}
 			}
@@ -708,8 +723,6 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 								IdDatabaseObject dbo = 
 									(IdDatabaseObject)cdo.getDBO();
 
-// NO - import platform last so that sites & configs are assigned IDs.
-//								importDBO(dbo);
 								n_imported++;
 								if (dbo instanceof Platform)
 								{
@@ -779,7 +792,9 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 							}
 							catch(DatabaseException ex)
 							{
-								showError("Error on import: " + ex);
+								final String msg = "Error on import.";
+								log.atError().setCause(ex).log(msg);
+								showError(msg + ex);
 								n_errors++;
 							}
 						}

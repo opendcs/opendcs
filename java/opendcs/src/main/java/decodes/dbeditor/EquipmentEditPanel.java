@@ -1,7 +1,18 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
-
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -12,8 +23,11 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.ResourceBundle;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.gui.Help;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import decodes.db.EquipmentModel;
@@ -28,9 +42,9 @@ import decodes.gui.*;
 Edit Panel for Equipment Model objects.
 These are opened from the EquipmentListPanel.
 */
-public class EquipmentEditPanel extends DbEditorTab
-	implements ChangeTracker, EntityOpsController
+public class EquipmentEditPanel extends DbEditorTab	implements ChangeTracker, EntityOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -64,11 +78,13 @@ public class EquipmentEditPanel extends DbEditorTab
 	{
 		Properties props = new Properties();
 		propertiesEditPanel = PropertiesEditPanel.from(props);
-        try {
+        try 
+		{
             jbInit();
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch(Exception ex) 
+		{
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -254,10 +270,11 @@ public class EquipmentEditPanel extends DbEditorTab
 			theObject.validate();
 			theObject.write();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
+			log.atError().setCause(ex).log("Could not save EquipmentModel");
 			TopFrame.instance().showError(
-				dbeditLabels.getString("EquipmentEditPanel.cannotSave") + e);
+				dbeditLabels.getString("EquipmentEditPanel.cannotSave") + ex);
 			return false;
 		}
 
@@ -294,11 +311,11 @@ public class EquipmentEditPanel extends DbEditorTab
 	    			pc.equipmentModel = theObject;
 	    			pc.write();
 				}
-				catch(DatabaseException e)
+				catch(DatabaseException ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Could not update PlatformConfig '"
-						+ pc.makeFileName() + "': " + e);
+					log.atError()
+					   .setCause(ex)
+					   .log("Could not update PlatformConfig '{}'", pc.makeFileName());
 				}
 			}
 
@@ -327,11 +344,11 @@ public class EquipmentEditPanel extends DbEditorTab
 					pc.equipmentModel = theObject;
 					p.write();
 				}
-				catch(DatabaseException e)
+				catch(DatabaseException ex)
 				{
-					Logger.instance().log(Logger.E_FAILURE,
-						"Could not update Platform '"
-						+ p.makeFileName() + "': " + e);
+					log.atError()
+					   .setCause(ex)
+					   .log("Could not update Platform '{}'", p.makeFileName());
 				}
 			}
 		}
