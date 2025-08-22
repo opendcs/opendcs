@@ -20,13 +20,16 @@ import javax.swing.*;
 import java.util.ResourceBundle;
 import javax.swing.border.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.PlatformConfig;
-import org.slf4j.LoggerFactory;
 
 /** Dialog for selecting a configuration from a list. */
 public class ConfigSelectDialog extends JDialog
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ConfigSelectDialog.class);
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -66,7 +69,7 @@ public class ConfigSelectDialog extends JDialog
             pack();
         }
         catch(Exception ex) {
-            log.atInfo().log("Error in allInit() ",ex);
+             GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 

@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor.platform;
 
 import java.util.ArrayList;
@@ -5,6 +20,9 @@ import java.util.ResourceBundle;
 import java.util.Vector;
 
 import javax.swing.table.AbstractTableModel;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -16,15 +34,14 @@ import decodes.db.TransportMedium;
 import decodes.dbeditor.PlatformSelectPanel;
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
-import ilex.util.Logger;
+
 
 public class PlatformSelectTableModel extends AbstractTableModel
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private Database db;
-    private Site site;
     private PlatformSelectPanel panel;
     private PlatformSelectColumnizer columnizer;    
-    //	private Vector vec;
     private final ArrayList<Platform> platformList = new ArrayList<>();
     String mediumType = null;
 
@@ -84,8 +101,6 @@ public class PlatformSelectTableModel extends AbstractTableModel
     public PlatformSelectTableModel(PlatformSelectPanel panel, Site site, Database db)    
     {
         this(panel, db);
-        
-        this.site = site;
         
         Vector<Platform> fvec = db.platformList.getPlatformVector();
         SiteName usgsName = site.getName(Constants.snt_USGS);
@@ -155,7 +170,7 @@ public class PlatformSelectTableModel extends AbstractTableModel
         db.platformList.removePlatform(oldp);
         if (!platformList.remove(oldp))
         {
-            Logger.instance().debug3("oldp was not in list.");
+            log.trace("oldp was not in list.");
         }
         addPlatform(newp);
         fireTableDataChanged();
@@ -233,7 +248,6 @@ public class PlatformSelectTableModel extends AbstractTableModel
                         || mediumType.equalsIgnoreCase("polled-tcp")
                         || mediumType.equalsIgnoreCase("incoming-tcp");
             }
-    //System.out.println("psc mt=" + mediumType + ", isGOES=" + isGOES + ", isPoll=" + isPoll);
         }
 
         public Object getColumn(Platform p, int c)

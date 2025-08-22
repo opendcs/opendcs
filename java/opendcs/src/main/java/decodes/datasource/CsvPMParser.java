@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.datasource;
 
@@ -9,8 +21,10 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.text.SimpleDateFormat;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.common.DcpMsg;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.Variable;
 
@@ -43,6 +57,7 @@ import decodes.db.Constants;
 */
 public class CsvPMParser extends PMParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private SimpleDateFormat sdf = null;
 	public int idcol = 1;
 	public int datetimecol = 2;
@@ -65,7 +80,7 @@ public class CsvPMParser extends PMParser
 		PropertiesUtil.loadFromProps(this, props);
 		sdf = new SimpleDateFormat(datetimefmt);
 		sdf.setTimeZone(TimeZone.getTimeZone(timezone));
-		Logger.instance().debug1("CsvPMParser delim='" + delim + "'");
+		log.debug("CsvPMParser delim='{}'", delim);
 	}
 
 	/**
@@ -78,7 +93,7 @@ public class CsvPMParser extends PMParser
 	{
 		if (sdf == null)
 		{
-			Logger.instance().warning("CsvPMParser called without setting props.");
+			log.warn("CsvPMParser called without setting props.");
 			setProperties(new Properties());
 		}
 
@@ -114,8 +129,8 @@ public class CsvPMParser extends PMParser
 		catch(Exception ex)
 		{
 			String err = "CsvPMParser no msg time at column " + datetimecol
-				+ ": " + ex + " expected format='" + sdf.toPattern() + "'";
-			throw new HeaderParseException(err);
+				+ " expected format='" + sdf.toPattern() + "'";
+			throw new HeaderParseException(err,ex);
 		}
 		
 		// Set header length by finding the start of the data column.
@@ -131,13 +146,12 @@ public class CsvPMParser extends PMParser
 		}
 		catch(Exception ex)
 		{
-			String err = "CsvPMParser no msg time at column " + datetimecol
-				+ ": " + ex;
-			throw new HeaderParseException(err);
+			String err = "CsvPMParser no msg time at column " + datetimecol;
+			throw new HeaderParseException(err,ex);
 		}
 		
 		msg.setPM(GoesPMParser.FAILURE_CODE, new Variable('G'));
-		Logger.instance().debug3("CsvPMParser: mediumId='" + id + "', msg time=" + msgTime);
+		log.trace("CsvPMParser: mediumId='{}', msg time={}", id, msgTime);
 	}
 
 	/** @return length as determined by the datacol. */

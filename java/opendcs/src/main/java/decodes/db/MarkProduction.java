@@ -1,46 +1,27 @@
 /*
-*  $Id$
-*
-*  $State$
-*
-*  $Log$
-*  Revision 1.2  2013/03/28 17:29:09  mmaloney
-*  Refactoring for user-customizable decodes properties.
-*
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2006/04/14 12:36:07  mmaloney
-*  DecodesSettings now uses ilex.util.PropertiesUtil to load & save. This will
-*  make it easier to add new properties. DatabaseType has been renamed with a
-*  'Code' suffix.
-*
-*  Revision 1.5  2004/08/26 13:29:24  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.4  2003/11/15 19:51:04  mjmaloney
-*  Remove obsolete PlatformList.noHash ref.
-*
-*  Revision 1.3  2003/08/01 19:17:23  mjmaloney
-*  CmdLineArgs now takes default log file in constructor.
-*
-*  Revision 1.2  2002/10/06 14:23:57  mjmaloney
-*  SQL Development.
-*
-*  Revision 1.1  2001/11/23 21:18:22  mike
-*  dev
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.db;
 
 import java.util.Iterator;
-import java.util.Properties;
-import java.io.FileInputStream;
 
-import ilex.util.StderrLogger;
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.cmdline.*;
-
+import ilex.util.StderrLogger;
 import decodes.util.*;
 
 /**
@@ -48,6 +29,7 @@ import decodes.util.*;
  */
 public class MarkProduction
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Default constructor. */
 	MarkProduction()
 	{
@@ -71,13 +53,10 @@ public class MarkProduction
 	{
 		boolean isProduction = true;
 
-		Logger.setLogger(new StderrLogger("DecodesDbEditor"));
-
 		// Parse command line arguments.
 		cmdLineArgs.parseArgs(args);
 
-		Logger.instance().log(Logger.E_INFORMATION,
-			"MarkProduction Starting =====================================");
+		log.info("MarkProduction Starting =====================================");
 		if (tfArg.getValue().equalsIgnoreCase("false"))
 			isProduction = false;
 
@@ -99,16 +78,6 @@ public class MarkProduction
 			p.isProduction = isProduction;
 			p.write();
 		}
-		//for(Iterator it = db.eqTableList.iterator(); it.hasNext(); )
-		//{
-		//	EqTable p = (EqTable)it.next();
-		//	p.isProduction = isProduction;
-		//}
-		//for(Iterator it = db.equationSpecList.iterator(); it.hasNext(); )
-		//{
-		//	EquationSpec p = (EquationSpec)it.next();
-		//	p.isProduction = isProduction;
-		//}
 		for(Iterator it = db.presentationGroupList.iterator(); it.hasNext(); )
 		{
 			PresentationGroup p = (PresentationGroup)it.next();
@@ -121,8 +90,5 @@ public class MarkProduction
 			p.isProduction = isProduction;
 			p.write();
 		}
-
-		// Re-write the database.
-		//db.write();
 	}
 }
