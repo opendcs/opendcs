@@ -102,7 +102,7 @@ public class PlatformListPanel extends JPanel implements ListOpsController
 			}
 			catch (Exception ex)
 			{
-				log.atError().setCause(ex).log("Unabel to read platform {}", p.makeFileName());
+				log.atError().setCause(ex).log("Unable to read platform {}", p.makeFileName());
 				TopFrame.instance().showError(
 						LoadResourceBundle.sprintf(
 								dbeditLabels.getString("PlatformListPanel.cannotOpen"),
