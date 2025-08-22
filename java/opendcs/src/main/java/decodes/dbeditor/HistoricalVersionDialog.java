@@ -1,36 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log$
-*  Revision 1.2  2008/06/26 15:01:20  cvs
-*  Updates for HDB, and misc other improvements.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:21:00  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.9  2008/01/11 22:14:45  mmaloney
-*  Internationalization
-*  ~Dan
-*
-*  Revision 1.8  2004/09/20 14:18:47  mjmaloney
-*  Javadocs
-*
-*  Revision 1.7  2001/12/03 13:17:13  mike
-*  Fixed dialog-size bug.
-*
-*  Revision 1.6  2001/09/14 21:18:15  mike
-*  dev
-*
-*  Revision 1.5  2001/05/03 02:14:39  mike
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.util.Date;
 import java.util.ResourceBundle;
@@ -42,12 +33,12 @@ import decodes.gui.GuiDialog;
 Dialog called from PlatformEditPanel when user presses the button to
 make a historical version.
 */
-public class HistoricalVersionDialog extends GuiDialog 
+public class HistoricalVersionDialog extends GuiDialog
 {
-	
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
-	
+
     JPanel jPanel1 = new JPanel();
     JLabel jLabel1 = new JLabel();
     JLabel jLabel2 = new JLabel();
@@ -84,38 +75,40 @@ public class HistoricalVersionDialog extends GuiDialog
 		myController = ctl;
 		this.currentVersion = currentVersion;
 
-        try {
+        try
+        {
             jbInit();
             pack();
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch (Exception ex)
+        {
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
 	/** JBuilder-generated method to initialize the GUI components */
     void jbInit() throws Exception {
         this.setModal(true);
-        this.setTitle(  
+        this.setTitle(
     			dbeditLabels.getString("HistoricalVersionDialog.Title"));
         this.getContentPane().setLayout(borderLayout1);
         jPanel1.setLayout(flowLayout2);
         jLabel1.setHorizontalAlignment(SwingConstants.CENTER);
-        jLabel1.setText(  
+        jLabel1.setText(
     			dbeditLabels.getString("HistoricalVersionDialog.CreateLabel"));
-        jLabel2.setText(  
+        jLabel2.setText(
     			dbeditLabels.getString("HistoricalVersionDialog.PlatformLabel"));
         platformNameField.setBackground(Color.white);
         platformNameField.setPreferredSize(new Dimension(130, 21));
         platformNameField.setEditable(false);
         platformNameField.setText(currentVersion.makeFileName());
-        jLabel3.setText("   " +   
+        jLabel3.setText("   " +
     			dbeditLabels.getString("HistoricalVersionDialog.ExpirationDateLabel"));
         jPanel2.setLayout(gridBagLayout1);
-        jLabel4.setText("   "+   
+        jLabel4.setText("   "+
     			dbeditLabels.getString("HistoricalVersionDialog.ExpirationTimeLabel"));
         jPanel3.setLayout(flowLayout1);
-        createButton.setText(   
+        createButton.setText(
     			dbeditLabels.getString("HistoricalVersionDialog.CreateButton"));
         createButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -134,13 +127,13 @@ public class HistoricalVersionDialog extends GuiDialog
         explanationField.setLineWrap(true);
         explanationField.setBorder(BorderFactory.createEtchedBorder());
         explanationField.setMinimumSize(new Dimension(474, 105));
-        explanationField.setText(   
+        explanationField.setText(
     			dbeditLabels.getString("HistoricalVersionDialog.Explanation"));
         explanationField.setEditable(false);
-        jLabel6.setText(   
+        jLabel6.setText(
     			dbeditLabels.getString("HistoricalVersionDialog.DateFormat"));
         jLabel7.setHorizontalAlignment(SwingConstants.LEFT);
-        jLabel7.setText(   
+        jLabel7.setText(
     			dbeditLabels.getString("HistoricalVersionDialog.TimeFormat"));
         jPanel2.setMinimumSize(new Dimension(486, 200));
         jPanel2.setPreferredSize(new Dimension(486, 200));
@@ -168,8 +161,8 @@ public class HistoricalVersionDialog extends GuiDialog
         jPanel3.add(cancelButton, null);
     }
 
-	/** 
-	  Called when Create button is pressed. 
+	/**
+	  Called when Create button is pressed.
 	  @param e ignored
 	*/
     void createButton_actionPerformed(ActionEvent e)
@@ -184,6 +177,7 @@ public class HistoricalVersionDialog extends GuiDialog
 		}
 		catch(Exception ex)
 		{
+            log.atError().setCause(ex).log("Unable to create historical version.");
 			showError(ex.toString());
 		}
     }
@@ -195,8 +189,8 @@ public class HistoricalVersionDialog extends GuiDialog
 		dispose();
 	}
 
-	/** 
-	  Called when Cancel button is pressed. 
+	/**
+	  Called when Cancel button is pressed.
 	  @param e ignored
 	*/
     void cancelButton_actionPerformed(ActionEvent e)

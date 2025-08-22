@@ -1,7 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
@@ -10,6 +30,7 @@ import java.util.ResourceBundle;
  */
 public class ListOpsPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -19,11 +40,10 @@ public class ListOpsPanel extends JPanel
 	private JButton copyButton = new JButton();
 	private JButton refreshButton = new JButton();
 	private ListOpsController myController;
-//	private JButton wizardButton = new JButton();
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @ctl the parent panel.
 	 */
 	public ListOpsPanel(ListOpsController ctl)
@@ -36,7 +56,7 @@ public class ListOpsPanel extends JPanel
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -98,9 +118,6 @@ public class ListOpsPanel extends JPanel
 		this.add(copyButton, new GridBagConstraints(2, 0, 1, 1, 1.0, 0.0,
 			GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 			new Insets(10, 4, 10, 4), 0, 0));
-//		this.add(wizardButton, new GridBagConstraints(4, 0, 1, 1, 1.0, 0.0,
-//			GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-//			new Insets(10, 4, 10, 4), 0, 0));
 		this.add(refreshButton, new GridBagConstraints(5, 0, 1, 1, 1.5, 0.0,
 			GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(10, 4,
 				10, 4), 18, 0));
@@ -109,7 +126,7 @@ public class ListOpsPanel extends JPanel
 
 	/**
 	 * Call with true if the 'Copy' button should be enabled.
-	 * 
+	 *
 	 * @param yn
 	 *            true if the 'Copy' button should be enabled.
 	 */
@@ -120,7 +137,7 @@ public class ListOpsPanel extends JPanel
 
 	/**
 	 * Called when user presses the 'Open' Button.
-	 * 
+	 *
 	 * @param e
 	 *            ignored.
 	 */
@@ -131,7 +148,7 @@ public class ListOpsPanel extends JPanel
 
 	/**
 	 * Called when user presses the 'New' Button.
-	 * 
+	 *
 	 * @param e
 	 *            ignored.
 	 */
@@ -142,7 +159,7 @@ public class ListOpsPanel extends JPanel
 
 	/**
 	 * Called when user presses the 'Copy' Button.
-	 * 
+	 *
 	 * @param e
 	 *            ignored.
 	 */
@@ -153,7 +170,7 @@ public class ListOpsPanel extends JPanel
 
 	/**
 	 * Called when user presses the 'Delete' Button.
-	 * 
+	 *
 	 * @param e
 	 *            ignored.
 	 */
@@ -164,7 +181,7 @@ public class ListOpsPanel extends JPanel
 
 	/**
 	 * Called when user presses the 'Help' Button.
-	 * 
+	 *
 	 * @param e
 	 *            ignored.
 	 */

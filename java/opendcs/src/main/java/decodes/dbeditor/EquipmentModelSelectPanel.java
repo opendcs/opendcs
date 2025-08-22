@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -11,9 +23,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
-import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+import java.util.ResourceBundle;
 
 import decodes.db.*;
 import decodes.gui.*;
@@ -23,6 +38,7 @@ Panel for selecting an equipment model.
 */
 public class EquipmentModelSelectPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -57,11 +73,13 @@ public class EquipmentModelSelectPanel extends JPanel
 			}
 		} );
 
-		try {
+		try
+		{
 		    jbInit();
 		}
-		catch(Exception ex) {
-		    ex.printStackTrace();
+		catch (Exception ex)
+		{
+		    GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -153,7 +171,8 @@ public class EquipmentModelSelectPanel extends JPanel
 class EquipmentModelSelectTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
-	private String colNames[] = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private String colNames[] =
 	{
 		EquipmentModelSelectPanel.genericLabels.getString("name"),
 		EquipmentModelSelectPanel.genericLabels.getString("type"),
@@ -208,10 +227,14 @@ class EquipmentModelSelectTableModel extends AbstractTableModel
 	{
 		EquipmentModel eqMod = (EquipmentModel)eqMods.elementAt(index);
 		eqMods.remove(index);
-		try { Database.getDb().getDbIo().deleteEquipmentModel(eqMod); }
-		catch(DatabaseException e)
+		try
 		{
-			TopFrame.instance().showError(e.toString());
+			Database.getDb().getDbIo().deleteEquipmentModel(eqMod);
+		}
+		catch(DatabaseException ex)
+		{
+			log.atError().setCause(ex).log("Unable to delete equipment model.");
+			TopFrame.instance().showError(ex.toString());
 		}
 		Database.getDb().equipmentModelList.remove(eqMod);
 		fireTableDataChanged();

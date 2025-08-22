@@ -1,5 +1,17 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -10,11 +22,15 @@ import java.awt.event.ActionListener;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Properties;
 import java.util.Vector;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
 import ilex.util.PropertiesUtil;
 
 import decodes.db.Constants;
@@ -25,7 +41,6 @@ import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.gui.GuiDialog;
 import decodes.gui.PropertiesEditPanel;
-import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.util.DecodesSettings;
 
 /**
@@ -34,6 +49,7 @@ from the "Edit Sensor Info" button on the platform edit panel.
 */
 public class PlatformSensorEditDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -66,7 +82,7 @@ public class PlatformSensorEditDialog extends GuiDialog
 	JLabel configMaxLabel = new JLabel();
 	JTextField configMaxField = new JTextField();
 	JLabel usgsDdnoLabel = new JLabel();
-	JComboBox usgsDdnoCombo = new JComboBox();
+	JComboBox<String> usgsDdnoCombo = new JComboBox<>();
 	GridBagLayout gridBagLayout2 = new GridBagLayout();
 	PropertiesEditPanel propsPanel = PropertiesEditPanel.from(new Properties());
 	GridBagLayout gridBagLayout3 = new GridBagLayout();
@@ -95,9 +111,9 @@ public class PlatformSensorEditDialog extends GuiDialog
 			jbInit();
 			pack();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		selectedSite = null;
 		theProperties = null;
@@ -105,8 +121,7 @@ public class PlatformSensorEditDialog extends GuiDialog
 
 	public PlatformSensorEditDialog()
 	{
-		this(new Frame(), 
-			dbeditLabels.getString("PlatformSensorEditDialog.title"), true);
+		this(new Frame(), dbeditLabels.getString("PlatformSensorEditDialog.title"), true);
 	}
 
 	private void jbInit() throws Exception
@@ -360,10 +375,6 @@ public class PlatformSensorEditDialog extends GuiDialog
 			sn == null ? dbeditLabels.getString("PlatformSensorEditDialog.inherited") :
 			sn.getNameType() + ":" + sn.getNameValue());
 
-//		actualSiteField.setText(ps.site == null ? 
-//			dbeditLabels.getString("PlatformSensorEditDialog.inherited") :
-//			ps.site.getPreferredName().makeFileName());
-
 		String x = PropertiesUtil.rmIgnoreCase(theProperties, "min");
 		platformMinField.setText(x == null ? "" : x);
 
@@ -371,16 +382,16 @@ public class PlatformSensorEditDialog extends GuiDialog
 		platformMaxField.setText(x == null ? "" : x);
 
 		configMinField.setText(
-			cs.absoluteMin == Constants.undefinedDouble ? "" 
+			cs.absoluteMin == Constants.undefinedDouble ? ""
 			: ("" + cs.absoluteMin));
 
 		configMaxField.setText(
-			cs.absoluteMax == Constants.undefinedDouble ? "" 
+			cs.absoluteMax == Constants.undefinedDouble ? ""
 			: ("" + cs.absoluteMax));
 
 		String validDdnos[] = ps.getValidDdnos();
 		int currentDdno = ps.getUsgsDdno();
-		Vector ddnos = new Vector();
+		Vector<String> ddnos = new Vector<>();
 		int curpos = -1;
 		for (int i=0; validDdnos != null && i < validDdnos.length; i++)
 		{
@@ -421,8 +432,8 @@ public class PlatformSensorEditDialog extends GuiDialog
 			try { double d = Double.parseDouble(x); }
 			catch(NumberFormatException ex)
 			{
-				showError(
-					dbeditLabels.getString("PlatformSensorEditDialog.badMinError"));
+				log.atError().setCause(ex).log(dbeditLabels.getString("PlatformSensorEditDialog.badMinError"));
+				showError(dbeditLabels.getString("PlatformSensorEditDialog.badMinError"));
 				return false;
 			}
 			platformSensor.getProperties().setProperty("min", x);
@@ -434,8 +445,8 @@ public class PlatformSensorEditDialog extends GuiDialog
 			try { double d = Double.parseDouble(x); }
 			catch(NumberFormatException ex)
 			{
-				showError(
-					dbeditLabels.getString("PlatformSensorEditDialog.badMaxError"));
+				log.atError().setCause(ex).log(dbeditLabels.getString("PlatformSensorEditDialog.badMaxError"));
+				showError(dbeditLabels.getString("PlatformSensorEditDialog.badMaxError"));
 				return false;
 			}
 			platformSensor.getProperties().setProperty("max", x);
@@ -453,15 +464,15 @@ public class PlatformSensorEditDialog extends GuiDialog
 				ddno = x.substring(0,x.indexOf('-')).trim();
 			else
 				ddno = x;
-			try 
+			try
 			{
 				int i = Integer.parseInt(ddno);
 				platformSensor.setUsgsDdno(i);
 			}
 			catch(NumberFormatException ex)
 			{
-				showError(
-					dbeditLabels.getString("PlatformSensorEditDialog.badDdnoError"));
+				log.atError().setCause(ex).log(dbeditLabels.getString("PlatformSensorEditDialog.badDdnoError"));
+				showError(dbeditLabels.getString("PlatformSensorEditDialog.badDdnoError"));
 				return false;
 			}
 		}
@@ -479,21 +490,13 @@ public class PlatformSensorEditDialog extends GuiDialog
 		closeDlg();
 	}
 
-	
+
 	/** Closes the dialog. */
 	void closeDlg()
 	{
 		setVisible(false);
 		dispose();
 	}
-
-
-//	public static void main(String args[])
-//	{
-//		PlatformSensorEditDialog dlg = new PlatformSensorEditDialog();
-//		dlg.setVisible(true);
-//	}
-//
 
 	/**
 	 * Called when the select-site button is pressed.
@@ -510,7 +513,6 @@ public class PlatformSensorEditDialog extends GuiDialog
 			actualSiteField.setText(
 				sn == null ? dbeditLabels.getString("PlatformSensorEditDialog.inherited") :
 				sn.getNameType() + ":" + sn.getNameValue());
-//				selectedSite.getPreferredName().makeFileName());
 		}
 	}
 

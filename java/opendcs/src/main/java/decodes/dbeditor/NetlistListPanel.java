@@ -1,48 +1,43 @@
-/**
- * Copyright 2024 The OpenDCS Consortium and contributors
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.table.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Comparator;
-import java.util.Collections;
 import java.util.ResourceBundle;
 
 import decodes.gui.*;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
 import decodes.db.NetworkList;
-import decodes.db.NetworkListEntry;
-import decodes.db.NetworkListList;
 import decodes.dbeditor.networklist.NetlistListTableModel;
 import ilex.util.LoadResourceBundle;
 
 /**
 Dbedit panel that shows a sorting list of network lists in the database.
 */
-public class NetlistListPanel extends JPanel
-    implements ListOpsController
+public class NetlistListPanel extends JPanel implements ListOpsController
 {
-    private static final Logger log = LoggerFactory.getLogger(NetlistListPanel.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
     static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -82,9 +77,7 @@ public class NetlistListPanel extends JPanel
         }
         catch(Exception ex)
         {
-            log.atError()
-               .setCause(ex)
-               .log("Failed to create NetlistPanel.");
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -207,11 +200,13 @@ public class NetlistListPanel extends JPanel
         {
             ob.write();
         }
-        catch(DatabaseException e)
+        catch(DatabaseException ex)
         {
-            TopFrame.instance().showError(
-                dbeditLabels.getString("NetlistListPanel.CopyError2")
-                + ob.name + "': " + e);
+            log.atError()
+               .setCause(ex)
+               .log(dbeditLabels.getString("NetlistListPanel.CopyError2")+"{}'", ob.name);
+            TopFrame.instance()
+                    .showError(dbeditLabels.getString("NetlistListPanel.CopyError2") + ob.name + "': " + ex);
             return;
         }
         tableModel.addNetworkList(ob);

@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -7,28 +19,28 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.gui.*;
 import java.awt.event.*;
-import java.util.Iterator;
 import java.util.ResourceBundle;
 
 import ilex.gui.Help;
-import ilex.util.LoadResourceBundle;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
-
 import decodes.db.*;
 import decodes.gui.UnitsComboBox;
-import decodes.util.DecodesSettings;
 import decodes.cwms.CwmsSqlDatabaseIO;
 
 /**
 Panel for editing a Site object.
 Opened from the SiteListPanel.
 */
-public class SiteEditPanel extends DbEditorTab
-	implements ChangeTracker, EntityOpsController
+public class SiteEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -97,10 +109,9 @@ public class SiteEditPanel extends DbEditorTab
             jbInit();
 			TableColumnAdjuster.adjustColumnWidths(siteNameTable,
 				new int[] { 20, 80 });
-//			TableColumn tc = siteNameTable.getColumnModel().getColumn(0);
-//			tc.setCellEditor(new SiteNameTypeEditor());
+
 		    siteNameTable.getTableHeader().setReorderingAllowed(false);
-		    
+
 		    siteNameTable.addMouseListener(
     			new MouseAdapter()
     			{
@@ -114,8 +125,9 @@ public class SiteEditPanel extends DbEditorTab
     			});
 
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch (Exception ex)
+		{
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -149,7 +161,7 @@ public class SiteEditPanel extends DbEditorTab
 		}
 	}
 
-	/** 
+	/**
 	  This method only called in dbedit.
 	  Associates this panel with enclosing frame.
 	  @param parent   Enclosing frame
@@ -350,9 +362,9 @@ public class SiteEditPanel extends DbEditorTab
         descPanel.add(descriptionArea, BorderLayout.CENTER);
 
 
-        overallPanel.add(namesPanel, 
+        overallPanel.add(namesPanel,
 			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.2,
-            GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+            GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 			new Insets(0, 0, 0, 0), 0, 0));
 
         overallPanel.add(locInfoPanel,
@@ -360,14 +372,14 @@ public class SiteEditPanel extends DbEditorTab
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
 
-        overallPanel.add(descPanel, 
+        overallPanel.add(descPanel,
 			new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
-            GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+            GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 			new Insets(0, 0, 0, 0), 0, 0));
 
 		 overallPanel.add(propsPanel,
 			new GridBagConstraints(0, 2, 2, 1, 1.0, 1.0,
-            GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+            GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 			new Insets(0, 0, 0, 0), 0, 0));
 
         jScrollPane1.getViewport().add(siteNameTable, null);
@@ -401,16 +413,16 @@ public class SiteEditPanel extends DbEditorTab
 				dbeditLabels.getString("SiteEditPanel.selectNameEdit"));
 			return;
 		}
-		
+
 		SiteName sn = theSite.getNameAt(idx);
-		if (sn != null && isCwms 
+		if (sn != null && isCwms
 		 && sn.getNameType().equalsIgnoreCase(Constants.snt_CWMS))
 		{
 			((TopFrame)getParentFrame()).showError(
 				"Cannot modify the CWMS name.");
 			return;
 		}
-		
+
 		SiteNameEntryDialog dlg = new SiteNameEntryDialog();
 		dlg.setSite(theSite);
 		dlg.setSiteName(model.getRowObject(idx));
@@ -437,7 +449,7 @@ public class SiteEditPanel extends DbEditorTab
 		}
 
 		SiteName sn = theSite.getNameAt(idx);
-		if (sn != null && isCwms 
+		if (sn != null && isCwms
 		 && sn.getNameType().equalsIgnoreCase(Constants.snt_CWMS))
 		{
 			((TopFrame)getParentFrame()).showError(
@@ -498,8 +510,8 @@ public class SiteEditPanel extends DbEditorTab
 		}
 		catch(NumberFormatException ex)
 		{
-			TopFrame.instance().showError(
-				dbeditLabels.getString("SiteEditPanel.badElev"));
+			log.atError().setCause(ex).log(dbeditLabels.getString("SiteEditPanel.badElev"));
+			TopFrame.instance().showError(dbeditLabels.getString("SiteEditPanel.badElev"));
 			return true;
 		}
 
@@ -533,8 +545,8 @@ public class SiteEditPanel extends DbEditorTab
 		try { theSite.setElevation(getEnteredElevation()); }
 		catch(NumberFormatException ex)
 		{
-			TopFrame.instance().showError(
-				dbeditLabels.getString("SiteEditPanel.badElev"));
+			log.atError().setCause(ex).log(dbeditLabels.getString("SiteEditPanel.badElev"));
+			TopFrame.instance().showError(dbeditLabels.getString("SiteEditPanel.badElev"));
 			return false;
 		}
 
@@ -564,7 +576,7 @@ public class SiteEditPanel extends DbEditorTab
 	}
 
 	/**
-	 * From ChangeTracker interface, save the changes back to the database 
+	 * From ChangeTracker interface, save the changes back to the database
 	 * &amp; reset the hasChanged flag.
 	 * @return true if object was successfully saved.
 	 */
@@ -577,9 +589,10 @@ public class SiteEditPanel extends DbEditorTab
 		{
 			theSite.write();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			TopFrame.instance().showError(e.toString());
+			log.atError().setCause(ex).log("Unable to write site.");
+			TopFrame.instance().showError(ex.toString());
 			return false;
 		}
 		return true;
@@ -687,7 +700,7 @@ public class SiteEditPanel extends DbEditorTab
 	{
 		model.redisplay();
 	}
-	
+
 	public SiteNamesTableModel getModel()
 	{
 		return model;
@@ -703,7 +716,7 @@ public class SiteEditPanel extends DbEditorTab
 class SiteNamesTableModel extends AbstractTableModel
 {
 	private Site site;
-	private String colNames[] = 
+	private String colNames[] =
 	{
 		SiteEditPanel.genericLabels.getString("type"),
 		SiteEditPanel.genericLabels.getString("identifier")

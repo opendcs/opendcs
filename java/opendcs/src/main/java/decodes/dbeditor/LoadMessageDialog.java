@@ -1,8 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -21,6 +35,8 @@ import javax.swing.border.*;
 
 import org.opendcs.gui.x509.X509CertificateVerifierDialog;
 import org.opendcs.utils.WebUtility;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.BorderLayout;
@@ -56,7 +72,7 @@ import decodes.util.DecodesSettings;
  */
 public class LoadMessageDialog extends GuiDialog
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(LoadMessageDialog.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 	JButton okButton = new JButton();
@@ -93,12 +109,12 @@ public class LoadMessageDialog extends GuiDialog
 
 	// Retain Last data source used from one call to the next.
 	private static int lastDataSourceIdx = -1;
-	
+
 	private SampleMessageOwner sampleMessageOwner = null;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param frame
 	 *            the parent frame
 	 * @param title
@@ -154,7 +170,7 @@ public class LoadMessageDialog extends GuiDialog
 
 	/**
 	 * Sets the target Text Area we are to fill.
-	 * 
+	 *
 	 * @param area
 	 *            The area.
 	 */
@@ -188,7 +204,7 @@ public class LoadMessageDialog extends GuiDialog
 				cancelButtonPressed();
 			}
 		});
-		
+
 		autoCloseCheck.setText(dbeditLabels.getString("LoadMessageDialog.CloseCheck")
 			+ "                        ");
 		GridLayout gridLayout1 = new GridLayout();
@@ -201,7 +217,7 @@ public class LoadMessageDialog extends GuiDialog
 				selectFileButtonPressed();
 			}
 		});
-		
+
 		channelField.setFont(new java.awt.Font("Monospaced", 0, 12));
 		dcpAddressCombo.setFont(new java.awt.Font("Monospaced", 0, 12));
 		loadFromFileButton.setText(dbeditLabels.getString("LoadMessageDialog.LoadButton"));
@@ -246,49 +262,49 @@ public class LoadMessageDialog extends GuiDialog
 		jPanel2.add(cancelButton, null);
 		panel1.add(jPanel3, BorderLayout.CENTER);
 		jPanel3.add(whereToLoadFromPanel, null);
-		whereToLoadFromPanel.add(loadFromLrgsButton, 
+		whereToLoadFromPanel.add(loadFromLrgsButton,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
-		whereToLoadFromPanel.add(lrgsCombo, 
+		whereToLoadFromPanel.add(lrgsCombo,
 			new GridBagConstraints(1, 0, 3, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 10), 0, 0));
 		whereToLoadFromPanel.add(
-			new JLabel(dbeditLabels.getString("LoadMessageDialog.Address")), 
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new JLabel(dbeditLabels.getString("LoadMessageDialog.Address")),
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 2), 0, 0));
 		whereToLoadFromPanel.add(dcpAddressCombo,
-			new GridBagConstraints(1, 1, 1, 1, 0.75, 0.0, 
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 1, 1, 1, 0.75, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 0), 50, 0));
 		whereToLoadFromPanel.add(
 			new JLabel(dbeditLabels.getString("LoadMessageDialog.ChannelLabel")),
-			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 2), 0, 0));
-		whereToLoadFromPanel.add(channelField, 
+		whereToLoadFromPanel.add(channelField,
 			new GridBagConstraints(3, 1, 1, 1, 0.25, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 10), 10, 0));
-		
-		whereToLoadFromPanel.add(loadFromFileButton, 
+
+		whereToLoadFromPanel.add(loadFromFileButton,
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(10, 10, 5, 2), 0, 0));
 		whereToLoadFromPanel.add(
 			new JLabel(dbeditLabels.getString("LoadMessageDialog.Path")),
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 2), 0, 0));
-		whereToLoadFromPanel.add(filePathField, 
+		whereToLoadFromPanel.add(filePathField,
 			new GridBagConstraints(1, 3, 2, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 5), 10, 0));
-		whereToLoadFromPanel.add(selectFileButton, 
+		whereToLoadFromPanel.add(selectFileButton,
 			new GridBagConstraints(3, 3, 1, 1, 0.0, 0.0,
-				GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, 
+				GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
 				new Insets(5, 5, 5, 0), 0, 0));
 
 		whereToLoadFromPanel.add(loadFromUrlButton,
@@ -414,7 +430,7 @@ public class LoadMessageDialog extends GuiDialog
 			int idx = dcpaddr.indexOf(' ');
 			if (idx > 0)
 				dcpaddr = dcpaddr.substring(0,idx);
-			
+
 			int chan = -1;
 			String s = channelField.getText().trim();
 			if (s.length() > 0)
@@ -422,18 +438,19 @@ public class LoadMessageDialog extends GuiDialog
 				try
 				{
 					chan = Integer.parseInt(s);
-					resultsArea.append(dbeditLabels
-						.getString("LoadMessageDialog.ValidChannelResults") + "\n");
+					resultsArea.append(dbeditLabels.getString("LoadMessageDialog.ValidChannelResults") + "\n");
 				}
 				catch (NumberFormatException ex)
 				{
+					log.atError()
+					   .setCause(ex)
+					   .log("'{}{}", s,dbeditLabels.getString("LoadMessageDialog.ValidateError3"));
 					showError("'" + s + dbeditLabels.getString("LoadMessageDialog.ValidateError3"));
 					return;
 				}
 			}
 			else
-				resultsArea.append(dbeditLabels.getString("LoadMessageDialog.ValidateError4")
-					+ "\n");
+				resultsArea.append(dbeditLabels.getString("LoadMessageDialog.ValidateError4") + "\n");
 
 			resultsArea.append(dbeditLabels.getString("LoadMessageDialog.Initializing") + " \n");
 			String dsname = (String) lrgsCombo.getSelectedItem();
@@ -453,7 +470,6 @@ public class LoadMessageDialog extends GuiDialog
 			try
 			{
 				myDSE = myDS.makeDelegate();
-//				rsProps.setProperty("single", "true");
 				rsProps.setProperty("dcpaddress", dcpaddr);
 				if (chan != -1)
 					rsProps.setProperty("channel", "&" + chan);
@@ -462,6 +478,7 @@ public class LoadMessageDialog extends GuiDialog
 			}
 			catch (InvalidDatabaseException ex)
 			{
+				log.atError().setCause(ex).log(dbeditLabels.getString("LoadMessageDialog.ValidateError7") + "{}'", myDS.getName());
 				showError(dbeditLabels.getString("LoadMessageDialog.ValidateError7")
 					+ myDS.getName() + "': " + ex);
 				return;
@@ -504,20 +521,19 @@ public class LoadMessageDialog extends GuiDialog
 
 	/**
 	 * Displays error message in a sub-dialog
-	 * 
+	 *
 	 * @param msg
 	 *            the message
 	 */
 	public void showError(String msg)
 	{
-		Logger.instance().failure(msg);
 		JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60),
 			dbeditLabels.getString("LoadMessageDialog.Error"), JOptionPane.ERROR_MESSAGE);
 	}
 
 	/**
 	 * Called from thread when a raw message is found.
-	 * 
+	 *
 	 * @param rawMsg
 	 *            the raw message to display in the area.
 	 */
@@ -554,24 +570,18 @@ public class LoadMessageDialog extends GuiDialog
 			public void run()
 			{
 				if (hasBinary)
-					TopFrame.getDbEditFrame().showError(
-						"Binary data in input has been replaced with '$' for display.");
-				// StringBuffer sb = new StringBuffer(rm.toString());
-				// for(int i=0; i<sb.length(); i++)
-				// {
-				// if (sb.charAt(i) == '\r')
-				// sb.setCharAt(i, (char)0x00AE);
-				// }
+				{
+					TopFrame.getDbEditFrame().showError("Binary data in input has been replaced with '$' for display.");
+				}
+
 				sampleMessageOwner.setRawMessage(sb.toString());
 
 				if (lmd.autoCloseCheck.isSelected())
 					lmd.closeDlg();
 				else
 				{
-					lmd.resultsArea.append(dbeditLabels.getString("LoadMessageDialog.Success")
-						+ "\n");
-					lmd.resultsArea.append(dbeditLabels
-						.getString("LoadMessageDialog.PressToCancel"));
+					lmd.resultsArea.append(dbeditLabels.getString("LoadMessageDialog.Success") + "\n");
+					lmd.resultsArea.append(dbeditLabels.getString("LoadMessageDialog.PressToCancel"));
 					lmd.loadMessageThread = null;
 				}
 			}
@@ -580,7 +590,7 @@ public class LoadMessageDialog extends GuiDialog
 
 	/**
 	 * Appends a one-line message to the progress area.
-	 * 
+	 *
 	 * @param m
 	 *            the message.
 	 */
@@ -616,17 +626,16 @@ public class LoadMessageDialog extends GuiDialog
 
 	/**
 	 * Sets the DCP address field externally.
-	 * 
+	 *
 	 * @param addr
 	 *            the DCP address
 	 */
 	public static void addDcpAddress(String addr)
 	{
-//		dcpAddressCombo.setText(addr == null ? "" : addr);
 		dcpAddressCombo.addItem(addr);
 		dcpAddressCombo.setSelectedIndex(0);
 	}
-	
+
 	public static void clearDcpAddresses()
 	{
 		dcpAddressCombo.removeAllItems();
@@ -635,7 +644,7 @@ public class LoadMessageDialog extends GuiDialog
 
 	/**
 	 * Sets the GOES channel field externally.
-	 * 
+	 *
 	 * @param chan
 	 *            the channel number, use -1 if no selection.
 	 */
@@ -646,7 +655,7 @@ public class LoadMessageDialog extends GuiDialog
 
 	/**
 	 * Sets initial state for GOES checkbox
-	 * 
+	 *
 	 * @param yn
 	 *            true if GOES should be selected.
 	 */
@@ -670,7 +679,7 @@ public class LoadMessageDialog extends GuiDialog
 	{
 		this.sampleMessageOwner = sampleMessageOwner;
 	}
-	
+
 	public void reset()
 	{
 		resultsArea.setText("");
@@ -685,6 +694,7 @@ public class LoadMessageDialog extends GuiDialog
  */
 class LoadMessageThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -712,8 +722,7 @@ class LoadMessageThread extends Thread
 			try
 			{
 				if (!no_init)
-					dse.init(rsProps, "now - " + back + " hours", "now - " + prevback + " hours",
-						new Vector());
+					dse.init(rsProps, "now - " + back + " hours", "now - " + prevback + " hours", new Vector());
 				RawMessage rawMsg = dse.getRawMessage();
 				if (rawMsg != null)
 				{
@@ -736,6 +745,9 @@ class LoadMessageThread extends Thread
 			}
 			catch (DataSourceException ex)
 			{
+				log.atError()
+				   .setCause(ex)
+				   .log(dbeditLabels.getString("LoadMessageDialog.RunError1")+"{}'", dse.getName());
 				parent.notifyError(dbeditLabels.getString("LoadMessageDialog.RunError1")
 					+ dse.getName() + "': " + ex);
 				shutdown = true;

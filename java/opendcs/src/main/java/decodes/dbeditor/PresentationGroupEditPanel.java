@@ -1,6 +1,18 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.text.NumberFormat;
@@ -13,6 +25,11 @@ import javax.swing.*;
 import java.awt.event.*;
 
 import javax.swing.table.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import javax.swing.border.*;
 import java.util.ResourceBundle;
 
@@ -30,9 +47,9 @@ import decodes.xml.XmlDatabaseIO;
  * PresentationGroupListPanel.
  */
 @SuppressWarnings("serial")
-public class PresentationGroupEditPanel extends DbEditorTab implements
-	ChangeTracker, EntityOpsController
+public class PresentationGroupEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -59,13 +76,13 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
 	/**
 	 * Construct new panel to edit specified object.
-	 * 
+	 *
 	 * @param ob
 	 *            the object to edit in this panel.
 	 */
@@ -85,14 +102,14 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
 	/**
 	 * This method only called in dbedit. Associates this panel with enclosing
 	 * frame.
-	 * 
+	 *
 	 * @param parent Enclosing frame
 	 */
 	void setParent(DbEditorFrame parent)
@@ -115,14 +132,14 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 
 	/**
 	 * Gets the data from the fields & puts it back into the object.
-	 * 
+	 *
 	 * @return the internal copy of the object being edited.
 	 */
 	private boolean getDataFromFields()
 	{
 		theObject.inheritsFrom = inheritsFromCombo.getSelectedIndex() == 0
 			? null : (String)inheritsFromCombo.getSelectedItem();
-		
+
 		theObject.isProduction = isProductionCheckBox.isSelected();
 
 		theObject.clearList();
@@ -168,7 +185,7 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 			});
 
 		JPanel peButtonPanel = new JPanel(new GridBagLayout());
-		
+
 		JButton editPEButton = new JButton(genericLabels.getString("edit"));
 		editPEButton.addActionListener(
 			new java.awt.event.ActionListener()
@@ -178,83 +195,62 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 					editPEPressed();
 				}
 			});
-		
+
 		JPanel pePanel = new JPanel(new BorderLayout());
 
 		JPanel titlePanel = new JPanel(new GridBagLayout());
 		isProductionCheckBox.setText(dbeditLabels.getString("PresentationGroupEditPanel.production"));
 		nameField.setEditable(false);
 		titledBorder1 = new TitledBorder("");
-		
+
 		pePanel.setBorder(
 			new TitledBorder(dbeditLabels.getString("PresentationGroupEditPanel.elements")));
-			
+
 		this.setLayout(new BorderLayout());
 		JPanel topPanel = new JPanel(new BorderLayout());
-		
+
 		this.add(entityOpsPanel, BorderLayout.SOUTH);
 		this.add(topPanel, BorderLayout.CENTER);
-		
+
 		topPanel.add(pePanel, BorderLayout.CENTER);
-		
-//		topPanel.add(jSplitPane1, BorderLayout.CENTER);
-//		jSplitPane1.add(pePanel, JSplitPane.TOP);
-		
+
 		pePanel.add(peButtonPanel, BorderLayout.EAST);
-		
-		peButtonPanel.add(addPresentationButton, 
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+
+		peButtonPanel.add(addPresentationButton,
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 8, 4, 8), 0, 0));
-		peButtonPanel.add(editPEButton, 
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+		peButtonPanel.add(editPEButton,
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 8, 4, 8), 0, 0));
-		peButtonPanel.add(deletePresentationButton, 
-			new GridBagConstraints(0, 2, 1, 1, 0.0, 1.0, 
+		peButtonPanel.add(deletePresentationButton,
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 1.0,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 8, 4, 8), 0, 0));
-		
+
 		JScrollPane peScrollPane = new JScrollPane();
 		pePanel.add(peScrollPane, BorderLayout.CENTER);
-		
-		
-//		JPanel rrPanel = new JPanel(new BorderLayout());
-//		rrPanel.setBorder(BorderFactory.createLineBorder(SystemColor.controlText, 1));
-//		jSplitPane1.add(rrPanel, JSplitPane.BOTTOM);
-//		JPanel rrButtonPanel = new JPanel(new GridBagLayout());
-//		rrPanel.add(rrButtonPanel, BorderLayout.EAST);
-//		rrButtonPanel.add(addRoundingRuleButton, new GridBagConstraints(0, 0, 1, 1,
-//			0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-//			new Insets(4, 8, 4, 8), 0, 0));
-//		rrButtonPanel.add(deleteRoundingRuleButton, new GridBagConstraints(0, 1, 1,
-//			1, 0.0, 1.0, GridBagConstraints.NORTH,
-//			GridBagConstraints.HORIZONTAL, new Insets(4, 8, 4, 8), 0, 0));
-//		rrPanel.add(roundingRulesTitlePanel, BorderLayout.NORTH);
-//		roundingRulesTitlePanel.add(new JLabel(dbeditLabels.getString("PresentationGroupEditPanel.rr")), null);
-//		roundingRulesTitlePanel.add(dataTypeField, null);
-//		JScrollPane rrScrollPane = new JScrollPane();
-//		rrPanel.add(rrScrollPane, BorderLayout.CENTER);
-		
+
 		topPanel.add(titlePanel, BorderLayout.NORTH);
 		titlePanel.add(new JLabel(dbeditLabels.getString("PresentationGroupEditPanel.groupName")),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(6, 15, 9, 0), 0, 0));
-		titlePanel.add(nameField, 
+		titlePanel.add(nameField,
 			new GridBagConstraints(1, 0, 1, 1, 0.5, 0.0,
-			GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 			new Insets(6, 0, 9, 10), 0, 0));
-		titlePanel.add(new JLabel(dbeditLabels.getString("PresentationGroupEditPanel.inheritsFrom")), 
+		titlePanel.add(new JLabel(dbeditLabels.getString("PresentationGroupEditPanel.inheritsFrom")),
 			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(6, 15, 9, 0), 0, 0));
-		titlePanel.add(inheritsFromCombo, 
-			new GridBagConstraints(3, 0, 1, 1, 0.5, 0.0, 
+		titlePanel.add(inheritsFromCombo,
+			new GridBagConstraints(3, 0, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(6, 0, 9, 2), 60, 0));
-		titlePanel.add(isProductionCheckBox, 
-			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0, 
+		titlePanel.add(isProductionCheckBox,
+			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(6, 20, 9, 10), 0, 0));
 
@@ -270,7 +266,7 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 				}
 			});
 
-		
+
 	}
 
 	protected void editPEPressed()
@@ -302,7 +298,7 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 		launchDialog(dlg);
 		if (dlg.isCancelled())
 			return;
-		
+
 		if (dataPresentationTableModel.findByDataType(newPres.getDataType()) != null)
 		{
 			parent.showError(
@@ -325,7 +321,7 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 			return;
 		}
 
-		int rsp = JOptionPane.showConfirmDialog(this, 
+		int rsp = JOptionPane.showConfirmDialog(this,
 			dbeditLabels.getString("PresentationGroupEditPanel.confirmDelete"),
 			dbeditLabels.getString("PresentationGroupEditPanel.confirmDeleteTitle"),
 			JOptionPane.YES_NO_OPTION);
@@ -335,7 +331,7 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 
 	/**
 	 * From ChangeTracker interface.
-	 * 
+	 *
 	 * @return true if changes have been made to this screen since the last time
 	 *         it was saved.
 	 */
@@ -348,7 +344,7 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 	/**
 	 * From ChangeTracker interface, save the changes back to the database &amp;
 	 * reset the hasChanged flag.
-	 * 
+	 *
 	 * @return true if object was successfully saved.
 	 */
 	public boolean saveChanges()
@@ -362,9 +358,10 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 			theObject.lastModifyTime = new Date();
 			theObject.write();
 		}
-		catch (DatabaseException e)
+		catch (DatabaseException ex)
 		{
-			DbEditorFrame.instance().showError(e.toString());
+			log.atError().setCause(ex).log("Unable to save presentation group.");
+			DbEditorFrame.instance().showError(ex.toString());
 			return false;
 		}
 
@@ -381,7 +378,6 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 		if (idx >= 0 && idx < dataPresentationTable.getRowCount())
 		{
 			dataPresentationTable.setRowSelectionInterval(idx, idx);
-//			valueChanged(null);
 		}
 		return true;
 	}
@@ -433,79 +429,11 @@ public class PresentationGroupEditPanel extends DbEditorTab implements
 	{
 		Help.open();
 	}
-
-//	/**
-//	 * Called when list selection made in dataPresentationTable. Populates the
-//	 * lower part of the screen with the rouding rules for the selected
-//	 * data-presentation.
-//	 * 
-//	 * @param e
-//	 *            ignored.
-//	 */
-//	public void valueChanged(ListSelectionEvent e)
-//	{
-//		int idx = dataPresentationTable.getSelectedRow();
-//		if (idx == dpIdx)
-//			return;
-//		dpIdx = idx;
-//		if (dpIdx == -1)
-//			setRoundingRulesView(null);
-//		else
-//			setRoundingRulesView(dataPresentationTableModel.getObjectAt(dpIdx));
-//	}
-
-//	/**
-//	 * Populates the lower part of the screen with the rouding rules for the
-//	 * selected data-presentation.
-//	 */
-//	private void setRoundingRulesView(DataPresentation dp)
-//	{
-//		roundingRulesTableModel.setObject(dp);
-//		if (dp != null)
-//			dataTypeField.setText(dp.getDataType().toString());
-//	}
-
-//	/**
-//	 * Called when the 'Select Equipment Model' button is pressed.
-//	 * 
-//	 * @param e
-//	 *            ignored.
-//	 */
-//	void equipmentModelButton_actionPerformed(ActionEvent e)
-//	{
-//		int idx = dataPresentationTable.getSelectedRow();
-//		DataPresentation dp = null;
-//		if (idx != -1)
-//			dp = dataPresentationTableModel.getObjectAt(idx);
-//		if (idx == -1 || dp == null)
-//		{
-//			DbEditorFrame.instance().showError(
-//				dbeditLabels
-//					.getString("PresentationGroupEditPanel.selectPresEq"));
-//			return;
-//		}
-//
-//		EquipmentModelSelectDialog dlg = new EquipmentModelSelectDialog();
-//		if (dp.getEquipmentModelName() != null && dp.getEquipmentModelName().length() > 0)
-//			dlg.setSelection(Database.getDb().equipmentModelList
-//				.get(dp.getEquipmentModelName()));
-//
-//		launchDialog(dlg);
-//		if (!dlg.cancelled())
-//		{
-//			EquipmentModel mod = dlg.getSelectedEquipmentModel();
-//			if (mod == null)
-//				dp.setEquipmentModelName("");
-//			else
-//				dp.setEquipmentModelName(mod.name);
-//			dataPresentationTable.repaint();
-//		}
-//	}
 }
 
 @SuppressWarnings("serial")
-class DataPresentationTableModel 
-	extends AbstractTableModel 
+class DataPresentationTableModel
+	extends AbstractTableModel
 	implements SortingListTableModel
 {
 	static String columnNames[] =
@@ -541,12 +469,12 @@ class DataPresentationTableModel
 		dps.addAll(ob.dataPresentations);
 		fireTableDataChanged();
 	}
-	
+
 	void rowUpdated(int row)
 	{
 		fireTableDataChanged();
 	}
-	
+
 	void add(DataPresentation dp)
 	{
 		dps.add(dp);
@@ -604,7 +532,7 @@ class DataPresentationTableModel
 			return "";
 		}
 	}
-	
+
 	/**
 	 * @return the data presentation for the passed data type, or null if none exists.
 	 * @param dt the data type
@@ -657,120 +585,3 @@ class DataPresentationTableModel
 		return dps.get(row);
 	}
 }
-
-//class RoundingRulesTableModel extends AbstractTableModel
-//{
-//	static String columnNames[] =
-//	{
-//		PresentationGroupEditPanel.dbeditLabels
-//			.getString("PresentationGroupEditPanel.upperLim"),
-//		PresentationGroupEditPanel.dbeditLabels
-//			.getString("PresentationGroupEditPanel.sigdig") };
-//
-//	private DataPresentation theObject;
-//
-//	public RoundingRulesTableModel(DataPresentation ob)
-//	{
-//		setObject(theObject);
-//	}
-//
-//	public void setObject(DataPresentation ob)
-//	{
-//		theObject = ob;
-//		fillValues();
-//	}
-//
-//	public void fillValues()
-//	{
-//		fireTableDataChanged();
-//	}
-//
-//	public int getRowCount()
-//	{
-//		return theObject == null ? 0 : theObject.roundingRules.size();
-//	}
-//
-//	public int getColumnCount()
-//	{
-//		return columnNames.length;
-//	}
-//
-//	public String getColumnName(int col)
-//	{
-//		return columnNames[col];
-//	}
-//
-//	public RoundingRule getObjectAt(int r)
-//	{
-//		if (r < 0 || r >= getRowCount())
-//			return null;
-//		return (RoundingRule) theObject.roundingRules.elementAt(r);
-//	}
-//
-//	public Object getValueAt(int r, int c)
-//	{
-//		RoundingRule rr = getObjectAt(r);
-//		if (rr == null)
-//			return null;
-//
-//		switch (c)
-//		{
-//		case 0:
-//			if (rr.getUpperLimit() == Double.MAX_VALUE)
-//				return "max";
-//			else
-//				return "" + rr.getUpperLimit();
-//		case 1:
-//			return "" + rr.sigDigits;
-//		default:
-//			return "";
-//		}
-//	}
-//
-//	public boolean isCellEditable(int r, int c)
-//	{
-//		return true;
-//	}
-//
-//	public void setValueAt(Object aValue, int r, int c)
-//	{
-//		String s = (String) aValue;
-//		RoundingRule rr = getObjectAt(r);
-//		if (rr == null)
-//			return;
-//
-//		if (c == 0 && s.equalsIgnoreCase("max"))
-//			rr.setUpperLimit(Double.MAX_VALUE);
-//		else
-//		{
-//			double v = 0.0;
-//			try
-//			{
-//				v = Double.parseDouble(s);
-//			}
-//			catch (NumberFormatException e)
-//			{
-//				DbEditorFrame
-//					.instance()
-//					.showError(
-//						columnNames[c]
-//							+ " "
-//							+ PresentationGroupEditPanel.dbeditLabels
-//								.getString("PresentationGroupEditPanel.mustBeNumber"));
-//				return;
-//			}
-//
-//			switch (c)
-//			{
-//			case 0:
-//				rr.setUpperLimit(v);
-//				break;
-//			case 1:
-//				rr.sigDigits = (int) v;
-//				break;
-//			}
-//		}
-//
-//		fireTableCellUpdated(r, c);
-//	}
-//}

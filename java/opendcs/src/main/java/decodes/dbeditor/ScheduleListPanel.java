@@ -1,7 +1,21 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.awt.BorderLayout;
@@ -22,6 +36,10 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.ScheduleEntryDAI;
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -37,12 +55,13 @@ import decodes.tsdb.NoSuchObjectException;
 /**
  * This JPanel contains a list of ScheduleEntry objects and allow the user to
  * open, new, copy, delete, and refresh.
- * 
+ *
  * @author mmaloney Mike Maloney Cove Software, LLC
  */
 @SuppressWarnings("serial")
 public class ScheduleListPanel extends JPanel implements ListOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	private ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -59,13 +78,13 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
 	/**
 	 * Sets the parent frame object. Each list panel needs to know this.
-	 * 
+	 *
 	 * @param parent
 	 *            the DbEditorFrame
 	 */
@@ -92,8 +111,8 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 				}
 			}
 		});
-		
-		
+
+
 		this.setLayout(new BorderLayout());
 		JLabel titleLabel = new JLabel(
 			dbeditLabels.getString("ScheduleEntryPanel.DefinedLists"));
@@ -102,7 +121,7 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 
 		JPanel tablePanel = new JPanel(new BorderLayout());
 		this.add(tablePanel, BorderLayout.CENTER);
-		
+
 		JScrollPane tableScrollPane = new JScrollPane();
 		tablePanel.add(tableScrollPane, BorderLayout.CENTER);
 		tableScrollPane.getViewport().add(scheduleEntryTable, null);
@@ -144,7 +163,9 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 			}
 			catch (Exception ex)
 			{
-				parent.showError("Cannot (re)load schedule entry " + se.getName() + ": " + ex);
+				final String msg = "Cannot (re)load schedule entry {}";
+				log.atError().setCause(ex).log(msg, se.getName());
+				parent.showError(msg.replace("{}", se.getName()) + ": " + ex);
 			}
 		}
 	}
@@ -178,7 +199,7 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 				return se;
 		return null;
 	}
-	
+
 	/**
 	 * Make a copy of the passed object but with the new name
 	 * @param se the object to copy
@@ -196,10 +217,10 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 		ret.setEnabled(se.isEnabled());
 		ret.setLoadingAppName(se.getLoadingAppName());
 		ret.setRoutingSpecName(se.getRoutingSpecName());
-		
+
 		return ret;
 	}
-	
+
 	@Override
 	public void copyPressed()
 	{
@@ -233,6 +254,7 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 		}
 		catch (DatabaseException ex)
 		{
+			log.atError().setCause(ex).log("Unable to save copied scheduled entry.");
 			TopFrame.instance().showError(
 				LoadResourceBundle.sprintf(
 					dbeditLabels.getString("ScheduleEntryPanel.SaveError"),
@@ -242,7 +264,7 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 		tableModel.add(ob);
 		doOpen(ob);
 	}
-	
+
 	@Override
 	public void deletePressed()
 	{
@@ -305,7 +327,7 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 	{
 		this.tableModel.resort();
 	}
-	
+
 	/**
 	 * Called from the edit panel after a schedule entry is saved.
 	 * @param se the schedule entry just saved.
@@ -326,9 +348,9 @@ public class ScheduleListPanel extends JPanel implements ListOpsController
 }
 
 @SuppressWarnings("serial")
-class ScheduleEntryTableModel extends AbstractTableModel implements
-	SortingListTableModel
+class ScheduleEntryTableModel extends AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -343,20 +365,20 @@ class ScheduleEntryTableModel extends AbstractTableModel implements
 	private int lastSortColumn = -1;
 	ArrayList<ScheduleEntry> theList = new ArrayList<ScheduleEntry>();
 
-	public ScheduleEntryTableModel() 
+	public ScheduleEntryTableModel()
 	{
 		super();
 		refill();
 		this.sortByColumn(0);
 	}
 
-	void refill() 
+	void refill()
 	{
 		try (ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO())
 		{
 			if (scheduleEntryDAO == null)
 			{
-				Logger.instance().debug1("Cannot write schedule entries. Not supported on this database.");
+				log.debug("Cannot write schedule entries. Not supported on this database.");
 				return;
 			}
 			theList.clear();
@@ -372,6 +394,7 @@ class ScheduleEntryTableModel extends AbstractTableModel implements
 		}
 		catch(DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to load scheduled entries.");
 			TopFrame.instance().showError(
 				LoadResourceBundle.sprintf(
 					dbeditLabels.getString("ScheduleEntryPanel.CannotLoadError"),
@@ -424,28 +447,23 @@ class ScheduleEntryTableModel extends AbstractTableModel implements
 
 	void deleteObject(ScheduleEntry ob)
 	{
-		ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
-		if (scheduleEntryDAO == null)
+		try (ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();)
 		{
-			Logger.instance().debug1("Cannot delete schedule entry. Not supported on this database.");
-			return;
-		}
-
-		try
-		{
+			if (scheduleEntryDAO == null)
+			{
+				log.debug("Cannot delete schedule entry. Not supported on this database.");
+				return;
+			}
 			scheduleEntryDAO.deleteScheduleEntry(ob);
 			theList.remove(ob);
 			resort();
 		}
 		catch(DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to delete scheduled entry.");
 			TopFrame.instance().showError(
 				LoadResourceBundle.sprintf(
 					dbeditLabels.getString("ScheduleEntryPanel.CannotDeleteError"), ex));
-		}
-		finally
-		{
-			scheduleEntryDAO.close();
 		}
 
 		fireTableDataChanged();
@@ -469,7 +487,7 @@ class ScheduleEntryTableModel extends AbstractTableModel implements
 		case 2: return ob.getRoutingSpecName();
 		case 3: return ob.isEnabled() ?
 			genericLabels.getString("yes") : genericLabels.getString("no");
-		case 4: return ob.getLastModified() == null ? "" : 
+		case 4: return ob.getLastModified() == null ? "" :
 			Constants.defaultDateFormat.format(ob.getLastModified());
 		default:
 			return "";

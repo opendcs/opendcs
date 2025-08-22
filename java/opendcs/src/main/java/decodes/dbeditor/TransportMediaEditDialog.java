@@ -1,29 +1,18 @@
 /*
- *  $Id$
- *
- *  $Log$
- *  Revision 1.4  2016/08/13 17:44:00  mmaloney
- *  Incoming-Tcp transport Medium type.
- *
- *  Revision 1.3  2015/01/14 17:22:51  mmaloney
- *  Polling implementation
- *
- *  Revision 1.2  2015/01/06 16:09:32  mmaloney
- *  First cut of Polling Modules
- *
- *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- *  OPENDCS 6.0 Initial Checkin
- *
- *  Revision 1.5  2013/03/21 18:27:40  mmaloney
- *  DbKey Implementation
- *
- *  Revision 1.4  2009/08/12 19:56:02  mjmaloney
- *  usgs merge
- *
- *  Revision 1.3  2008/11/20 18:49:21  mjmaloney
- *  merge from usgs mods
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -36,7 +25,10 @@ import javax.swing.border.*;
 import javax.swing.table.AbstractTableModel;
 
 import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.GuiHelpers;
 import org.opendcs.gui.PasswordWithShow;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.ResourceBundle;
 
@@ -46,7 +38,6 @@ import decodes.polling.Parity;
 import decodes.db.*;
 import decodes.gui.*;
 import decodes.util.TimeOfDay;
-import decodes.util.DecodesSettings;
 
 
 
@@ -56,6 +47,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class TransportMediaEditDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -65,19 +57,16 @@ public class TransportMediaEditDialog extends GuiDialog
 	private JTextField transmitDurationField = new JTextField();
 	private JTextField channelNumberField = new JTextField();
 	private JTextField mediumIdField = new JTextField();
-	private EnumComboBox mediumTypeCombo = 
+	private EnumComboBox mediumTypeCombo =
 		new EnumComboBox(Constants.enum_TMType, Constants.medium_GoesST);
 	private DecodesScriptCombo decodesScriptCombo;
 	Platform myPlatform;
 	TransportMedium myTM;
-//	EquipmentModel selectedEquipmentModel;
-//	EquipmentModelCombo equipmentModelCombo = new EquipmentModelCombo();
 	AbstractTableModel listModel;
 	JTextField timeAdjustmentField = new JTextField();
-	JComboBox transmitIntervalCombo = new JComboBox(new String[]
+	JComboBox<String> transmitIntervalCombo = new JComboBox<>(new String[]
 	{ "04:00:00", "03:00:00", "02:00:00", "01:00:00", "00:30:00", "00:15:00", "00:12:00" });
-	JComboBox preambleCombo = new JComboBox(new String[]
-	{ "Short", "Long", "Unknown" });
+	JComboBox<String> preambleCombo = new JComboBox<>(new String[]{ "Short", "Long", "Unknown" });
 	JLabel timeZoneLabel = new JLabel();
 	TimeZoneSelector timeZoneCombo = new TimeZoneSelector();
 	private JPanel typeSpecificParamsPanel = new JPanel(new BorderLayout());
@@ -86,19 +75,16 @@ public class TransportMediaEditDialog extends GuiDialog
 	private JPanel polledModemParamsPanel = new JPanel(new GridBagLayout());
 	private EnumComboBox loggerTypeTcpCombo = new EnumComboBox(Constants.enum_LoggerType, "");
 	private EnumComboBox loggerTypeModemCombo = new EnumComboBox(Constants.enum_LoggerType, "");
-	private JComboBox baudCombo = new JComboBox(
-		new Integer[] { 300, 1200, 2400, 4800, 9600} );
-	private JComboBox parityCombo = new JComboBox(
+	private JComboBox<Integer> baudCombo = new JComboBox<>(new Integer[] { 300, 1200, 2400, 4800, 9600} );
+	private JComboBox<Parity> parityCombo = new JComboBox<>(
 		new Parity[] { Parity.None, Parity.Even, Parity.Odd,
 			Parity.Mark, Parity.Space, Parity.Unknown } );
-	private JComboBox stopbitsCombo = new JComboBox(
-		new Integer[] { 0, 1, 2} );
-	private JComboBox databitsCombo = new JComboBox(
-		new Integer[] { 7, 8 } );
+	private JComboBox<Integer> stopbitsCombo = new JComboBox<>(new Integer[] { 0, 1, 2});
+	private JComboBox<Integer> databitsCombo = new JComboBox<>(new Integer[] { 7, 8 } );
 	private JCheckBox polledTcpDoLoginCheck = new JCheckBox();
 	private JTextField polledTcpUserName = new JTextField();
 	private PasswordWithShow polledTcpPassword = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
-	
+
 	private JCheckBox polledModemDoLoginCheck = new JCheckBox();
 	private JTextField polledModemUserName = new JTextField();
 	private PasswordWithShow polledModemPassword = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
@@ -110,7 +96,7 @@ public class TransportMediaEditDialog extends GuiDialog
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param platform
 	 *            the platform being edited.
 	 * @param tm
@@ -124,12 +110,6 @@ public class TransportMediaEditDialog extends GuiDialog
 		super(getDbEditFrame(), "", true);
 		myPlatform = platform;
 		myTM = tm;
-//		selectedEquipmentModel = null;
-//		if (DecodesSettings.instance().editDatabaseTypeCode == DecodesSettings.DB_NWIS)
-//		{
-//			selectedEquipmentModel = platform.getConfig().getEquipmentModel();
-//			myTM.equipmentModel = selectedEquipmentModel;
-//		}
 		this.listModel = listModel;
 		decodesScriptCombo = new DecodesScriptCombo(myPlatform.getConfig(), myTM);
 
@@ -140,7 +120,7 @@ public class TransportMediaEditDialog extends GuiDialog
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		fillFields();
 		getRootPane().setDefaultButton(okButton);
@@ -150,7 +130,6 @@ public class TransportMediaEditDialog extends GuiDialog
 	private void fillFields()
 	{
 		mediumIdField.setText(myTM.getMediumId());
-//		equipmentModelCombo.set(myTM.equipmentModel);
 		platformNameField.setText(myPlatform.makeFileName());
 		transmitTimeField.setText(myTM.assignedTime != -1 ? TimeOfDay
 			.seconds2hhmmss(myTM.assignedTime) : "");
@@ -171,9 +150,7 @@ public class TransportMediaEditDialog extends GuiDialog
 		if (myTM.getTimeZone() == null)
 			myTM.setTimeZone("UTC");
 		timeZoneCombo.setTZ(myTM.getTimeZone());
-		
-//System.out.println("loggerType=" + myTM.getLoggerType() + ", doLogin=" + myTM.isDoLogin()
-//+ ", username=" + myTM.getUsername() + ", passwd=" + myTM.getPassword());
+
 		loggerTypeTcpCombo.setSelection(myTM.getLoggerType());
 		loggerTypeModemCombo.setSelection(myTM.getLoggerType());
 		polledTcpDoLoginCheck.setSelected(myTM.isDoLogin());
@@ -186,9 +163,9 @@ public class TransportMediaEditDialog extends GuiDialog
 		parityCombo.setSelectedItem(Parity.fromCode(myTM.getParity()));
 		stopbitsCombo.setSelectedItem((Integer)myTM.getStopBits());
 		databitsCombo.setSelectedItem((Integer)myTM.getDataBits());
-		
+
 		previousSpecialParamsPanel = null;
-		
+
 		mediumTypeSelected();
 	}
 
@@ -255,41 +232,41 @@ public class TransportMediaEditDialog extends GuiDialog
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 1), 0, 0));
-		sharedParamsPanel.add(mediumTypeCombo, 
+		sharedParamsPanel.add(mediumTypeCombo,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 10), 0, 0));
 
 		mediumIdField.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.mediumIdTT"));
 		mediumIdLabel.setText(dbeditLabels.getString("TransportMediaEditDialog.mediumId"));
 		sharedParamsPanel.add(mediumIdLabel,
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 1), 0, 0));
 		sharedParamsPanel.add(mediumIdField,
-			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 10), 40, 0));
 
 		decodesScriptCombo.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.scriptTT"));
 		sharedParamsPanel.add(
 			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.script")),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 1), 0, 0));
-		sharedParamsPanel.add(decodesScriptCombo, 
+		sharedParamsPanel.add(decodesScriptCombo,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 10), 0, 0));
-		
+
 		timeZoneLabel.setText(genericLabels.getString("timeZoneLabel"));
-		sharedParamsPanel.add(timeZoneLabel, 
+		sharedParamsPanel.add(timeZoneLabel,
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 1), 0, 0));
 		sharedParamsPanel.add(timeZoneCombo,
-			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 10), -80, 0));
 
 		timeAdjustmentField.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.timeAdjTT"));
@@ -307,65 +284,65 @@ public class TransportMediaEditDialog extends GuiDialog
 			new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 2, 2, 10), 0, 0));
-		
+
 
 		// The goesParamsPanel is visible when one of the GOES medium types is selected.
-		centerPanel.add(typeSpecificParamsPanel, 
-			new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, 
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+		centerPanel.add(typeSpecificParamsPanel,
+			new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(0, 0, 0, 0), 5, 0));
 		typeSpecificParamsPanel.add(goesParamsPanel, BorderLayout.CENTER);
 		goesParamsPanel.setBorder(new TitledBorder(
 			dbeditLabels.getString("TransportMediaEditDialog.goesBorder")));
-		
+
 		channelNumberField.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.channelNumTT"));
 		goesParamsPanel.add(
-			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.channelNum")), 
+			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.channelNum")),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 2), 0, 0));
 		goesParamsPanel.add(channelNumberField,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 40, 0));
 
 		transmitTimeField.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.1stXmitTimeTT"));
 		goesParamsPanel.add(
-			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.1stXmitTime")), 
+			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.1stXmitTime")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 2), 0, 0));
-		goesParamsPanel.add(transmitTimeField, 
+		goesParamsPanel.add(transmitTimeField,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 60, 0));
 		goesParamsPanel.add(new JLabel("(HH:MM:SS)"),
-			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 2, 2, 10), 0, 0));
 
 		transmitIntervalCombo.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.xmitIntervalTT"));
 		transmitIntervalCombo.setEditable(true);
 		goesParamsPanel.add(
-			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.xmitInterval")), 
+			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.xmitInterval")),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 2), 0, 0));
 		goesParamsPanel.add(transmitIntervalCombo,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 60, 0));
-		goesParamsPanel.add(new JLabel("(HH:MM:SS)"), 
-			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0, 
+		goesParamsPanel.add(new JLabel("(HH:MM:SS)"),
+			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 2, 2, 10), 0, 0));
 
 		transmitDurationField.setToolTipText(dbeditLabels
 			.getString("TransportMediaEditDialog.xmitDurationTT"));
 		goesParamsPanel.add(
-			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.xmitDuration")), 
+			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.xmitDuration")),
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 2), 0, 0));
 		goesParamsPanel.add(transmitDurationField,
 			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
@@ -376,7 +353,7 @@ public class TransportMediaEditDialog extends GuiDialog
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 2, 2, 10), 0, 0));
 
-		
+
 		preambleCombo.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.preambleTT"));
 		goesParamsPanel.add(
 			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.preamble")),
@@ -395,11 +372,11 @@ public class TransportMediaEditDialog extends GuiDialog
 		polledTcpParamsPanel.add(
 			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.loggerType")),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		polledTcpParamsPanel.add(loggerTypeTcpCombo,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 10), 0, 0));
 		polledTcpDoLoginCheck.addActionListener(
 			new ActionListener()
@@ -415,78 +392,78 @@ public class TransportMediaEditDialog extends GuiDialog
 		polledTcpDoLoginCheck.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.doLoginTT"));
 		polledTcpParamsPanel.add(polledTcpDoLoginCheck,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 0, 0));
 		polledTcpParamsPanel.add(
 			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.username")),
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		polledTcpParamsPanel.add(polledTcpUserName,
 			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 120, 0));
 		polledTcpParamsPanel.add(
 			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.password")),
 			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		polledTcpParamsPanel.add(polledTcpPassword,
 			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 120, 0));
-	
+
 		// polledModemParamsPanel is visible when "polled-modem" medium type is selected.
 		polledModemParamsPanel.setBorder(new TitledBorder(
 			dbeditLabels.getString("TransportMediaEditDialog.polledModemBorder")));
 		polledModemParamsPanel.add(
 			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.loggerType")),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		loggerTypeModemCombo.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.loggerTypeTT"));
 		polledModemParamsPanel.add(loggerTypeModemCombo,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 10), 0, 0));
 		polledModemParamsPanel.add(
 			new JLabel("Baud:"),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		baudCombo.setEditable(true);
 		polledModemParamsPanel.add(baudCombo,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
 		polledModemParamsPanel.add(
 			new JLabel("Parity:"),
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		polledModemParamsPanel.add(parityCombo,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
 		polledModemParamsPanel.add(
 			new JLabel("Stop Bits:"),
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		polledModemParamsPanel.add(stopbitsCombo,
 			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
 		polledModemParamsPanel.add(
 			new JLabel("Data Bits:"),
 			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		polledModemParamsPanel.add(databitsCombo,
 			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
-		
+
 		polledModemDoLoginCheck.addActionListener(
 			new ActionListener()
 			{
@@ -501,25 +478,25 @@ public class TransportMediaEditDialog extends GuiDialog
 		polledModemDoLoginCheck.setToolTipText(dbeditLabels.getString("TransportMediaEditDialog.doLoginTT"));
 		polledModemParamsPanel.add(polledModemDoLoginCheck,
 			new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 0, 0));
 		polledModemParamsPanel.add(
 			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.username")),
 			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		polledModemParamsPanel.add(polledModemUserName,
 			new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 120, 0));
 		polledModemParamsPanel.add(
 			new JLabel(dbeditLabels.getString("TransportMediaEditDialog.password")),
 			new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		polledModemParamsPanel.add(polledModemPassword,
 			new GridBagConstraints(1, 7, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 120, 0));
 	}
 
@@ -533,7 +510,7 @@ public class TransportMediaEditDialog extends GuiDialog
 			return; // Shouldn't happen
 
 		typeSpecificParamsPanel.removeAll();
-		
+
 		if (previousSpecialParamsPanel == polledTcpParamsPanel)
 		{
 			loggerTypeModemCombo.setSelectedIndex(loggerTypeTcpCombo.getSelectedIndex());
@@ -548,18 +525,11 @@ public class TransportMediaEditDialog extends GuiDialog
 			polledTcpUserName.setText(polledModemUserName.getText());
 			polledTcpPassword.setText(new String(polledModemPassword.getPassword()));
 		}
-		
+
 		if (tmType.toLowerCase().startsWith("goes"))
 		{
 			typeSpecificParamsPanel.add(previousSpecialParamsPanel = goesParamsPanel, BorderLayout.CENTER);
 			mediumIdLabel.setText(dbeditLabels.getString("TransportMediaEditDialog.DcpAddress"));
-
-//			// Enable all fields
-//			transmitTimeField.setEnabled(true);
-//			transmitDurationField.setEnabled(true);
-//			channelNumberField.setEnabled(true);
-//			transmitIntervalCombo.setEnabled(true);
-//			preambleCombo.setEnabled(true);
 		}
 		else if (tmType.toLowerCase().equals(Constants.medium_PolledTcp)
 			  || tmType.toLowerCase().equals("incoming-tcp"))
@@ -582,13 +552,6 @@ public class TransportMediaEditDialog extends GuiDialog
 		else
 		{
 			mediumIdLabel.setText(dbeditLabels.getString("TransportMediaEditDialog.mediumId"));
-
-//			// Disable the GOES fields.
-//			transmitTimeField.setEnabled(false);
-//			transmitDurationField.setEnabled(false);
-//			channelNumberField.setEnabled(false);
-//			transmitIntervalCombo.setEnabled(false);
-//			preambleCombo.setEnabled(false);
 		}
 		pack();
 	}
@@ -617,6 +580,7 @@ public class TransportMediaEditDialog extends GuiDialog
 			}
 			catch (NumberFormatException nfe)
 			{
+				log.atError().setCause(nfe).log("Invalid channel {}", chan);
 				TopFrame.instance().showError(
 					LoadResourceBundle.sprintf(
 						dbeditLabels.getString("TransportMediaEditDialog.invalidChannel"), chan));
@@ -624,9 +588,10 @@ public class TransportMediaEditDialog extends GuiDialog
 			}
 		}
 
+		String s = null;
 		try
 		{
-			String s = transmitTimeField.getText();
+			s = transmitTimeField.getText();
 			myTM.assignedTime = !TextUtil.isAllWhitespace(s) ? TimeOfDay.hhmmss2seconds(s) : -1;
 
 			s = transmitDurationField.getText();
@@ -646,6 +611,7 @@ public class TransportMediaEditDialog extends GuiDialog
 		}
 		catch (NumberFormatException nfe)
 		{
+			log.atError().setCause(nfe).log("Invalid field value {}", s);
 			TopFrame.instance().showError(nfe.toString());
 			return;
 		}
@@ -657,7 +623,7 @@ public class TransportMediaEditDialog extends GuiDialog
 		String tmType = (String) mediumTypeCombo.getSelectedItem();
 		if (tmType.toLowerCase().equals("polled-tcp") || tmType.toLowerCase().equals("incoming-tcp"))
 		{
-			String s = loggerTypeTcpCombo.getSelection();
+			s = loggerTypeTcpCombo.getSelection();
 			myTM.setLoggerType(s == null || s.trim().length()==0 ? null : s);
 			myTM.setDoLogin(polledTcpDoLoginCheck.isSelected());
 			s = polledTcpUserName.getText();
@@ -673,7 +639,7 @@ public class TransportMediaEditDialog extends GuiDialog
 		}
 		else if (tmType.toLowerCase().equals("polled-modem"))
 		{
-			String s = loggerTypeModemCombo.getSelection();
+			s = loggerTypeModemCombo.getSelection();
 			myTM.setLoggerType(s == null || s.trim().length()==0 ? null : s);
 			myTM.setDoLogin(polledModemDoLoginCheck.isSelected());
 			s = polledModemUserName.getText();

@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -16,6 +31,11 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import javax.swing.BorderFactory;
 import javax.swing.border.Border;
 import javax.swing.JRadioButton;
@@ -29,7 +49,6 @@ import java.util.ResourceBundle;
 import ilex.util.LoadResourceBundle;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.xml.XmlOutputStream;
 import ilex.xml.XmlObjectWriter;
 
@@ -50,6 +69,7 @@ This class implements the dialog displayed for File - Export.
 */
 public class ExportDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -74,7 +94,7 @@ public class ExportDialog extends GuiDialog
 	private TitledBorder titledBorder1 = new TitledBorder("");
 	private Border border1 = BorderFactory.createEtchedBorder(Color.white,
 		new Color(165, 163, 151));
-	private Border border2 = new TitledBorder(border1, 
+	private Border border2 = new TitledBorder(border1,
 		dbeditLabels.getString("ExportDialog.what"));
 	private GridLayout gridLayout1 = new GridLayout();
 	private JRadioButton entireDbRadio = new JRadioButton();
@@ -90,7 +110,7 @@ public class ExportDialog extends GuiDialog
 	private TitledBorder titledBorder2 = new TitledBorder("");
 	private Border border3 = BorderFactory.createEtchedBorder(Color.white,
 		new Color(165, 163, 151));
-	private Border border4 = new TitledBorder(border3, 
+	private Border border4 = new TitledBorder(border3,
 		dbeditLabels.getString("ExportDialog.where"));
 	private BorderLayout borderLayout4 = new BorderLayout();
 	private JPanel resultsPanel = new JPanel();
@@ -98,7 +118,7 @@ public class ExportDialog extends GuiDialog
 	private TitledBorder titledBorder3 = new TitledBorder("");
 	private Border border5 = BorderFactory.createEtchedBorder(Color.white,
 		new Color(165, 163, 151));
-	private Border border6 = new TitledBorder(border5, 
+	private Border border6 = new TitledBorder(border5,
 		dbeditLabels.getString("ExportDialog.results"));
 	private JScrollPane resultsScrollPane = new JScrollPane();
 	private JTextArea resultsArea = new JTextArea();
@@ -114,17 +134,16 @@ public class ExportDialog extends GuiDialog
 	 */
 	public ExportDialog()
 	{
-		super(getDbEditFrame(), 
-			dbeditLabels.getString("ExportDialog.title"), true);
+		super(getDbEditFrame(), dbeditLabels.getString("ExportDialog.title"), true);
 		try
 		{
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 			jbInit();
 			pack();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		entireDbRadio.setSelected(true);
 		allPlatformsRadio.setSelected(false);
@@ -250,7 +269,6 @@ public class ExportDialog extends GuiDialog
 				entireDbRadio_actionPerformed(e);
 			}
 		});
-//		selectPlatformButton.setPreferredSize(new Dimension(100, 27));
 		selectPlatformButton.setText(genericLabels.getString("select"));
 		selectPlatformButton.addActionListener(new ActionListener()
 		{
@@ -260,10 +278,6 @@ public class ExportDialog extends GuiDialog
 			}
 		});
 		exportButtonPanel.setPreferredSize(new Dimension(110, 50));
-//		resultsScrollPane.setVerticalScrollBarPolicy(JScrollPane.
-//			VERTICAL_SCROLLBAR_ALWAYS);
-//		resultsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.
-//			HORIZONTAL_SCROLLBAR_NEVER);
 		getContentPane().add(panel1);
 		panel1.add(southButtonPanel, java.awt.BorderLayout.SOUTH);
 		southButtonPanel.add(quitButton);
@@ -326,18 +340,17 @@ public class ExportDialog extends GuiDialog
 		File f = new File(fn);
 		if (f.exists())
 		{
-			int r =  JOptionPane.showConfirmDialog(this, 
+			int r =  JOptionPane.showConfirmDialog(this,
 				LoadResourceBundle.sprintf(
 					genericLabels.getString("overwriteConfirm"), fn));
 			if (r != JOptionPane.YES_OPTION)
 				return;
 		}
-		FileOutputStream fos = null;
-		try
+
+		try (FileOutputStream fos = new FileOutputStream(f))
 		{
 			resultsArea.setText("");
-			fos = new FileOutputStream(f);
-			XmlOutputStream xos = new XmlOutputStream(fos, 
+			XmlOutputStream xos = new XmlOutputStream(fos,
 				XmlDbTags.Database_el);
 			xos.writeXmlHeader();
 			if (entireDbRadio.isSelected())
@@ -353,9 +366,9 @@ public class ExportDialog extends GuiDialog
 					try { p.read(); }
 					catch(DatabaseException ex)
 					{
-						Logger.instance().warning(
-							"Export Cannot read platform '" 
-							+ p.makeFileName() + "' -- skipped.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Export Cannot read platform '{}' -- skipped.", p.makeFileName());
 						continue;
 					}
 				}
@@ -383,9 +396,9 @@ public class ExportDialog extends GuiDialog
 					try { p.read(); }
 					catch(DatabaseException ex)
 					{
-						Logger.instance().warning(
-							"Export Cannot read platform '" + p.makeFileName() 
-							+ "' -- skipped.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Export Cannot read platform '{}' -- skipped.", p.makeFileName());
 						continue;
 					}
 					PlatformParser pp = new PlatformParser(p);
@@ -400,26 +413,30 @@ public class ExportDialog extends GuiDialog
 			else if (platformsInNetlistRadio.isSelected())
 			{
 				String nlname = (String)netlistCombo.getSelectedItem();
-				NetworkList nl = 
+				NetworkList nl =
 					Database.getDb().networkListList.getNetworkList(nlname);
 				PlatformList pl = Database.getDb().platformList;
 				for(Iterator it = nl.iterator(); it.hasNext(); )
 				{
 					NetworkListEntry nle = (NetworkListEntry)it.next();
 					Platform p = null;
-					try 
+					try
 					{
 						p = pl.getPlatform(nl.transportMediumType,
 							nle.transportId, new Date());
 						if (p == null)
 						{
-							Logger.instance().warning("List contains '" + nl.transportMediumType 
-								+ ":" + nle.transportId + "' but no matching platform in database -- skipped.");
+							log.warn("List contains '{}:{}' but no matching platform in database -- skipped.",
+									 nl.transportMediumType, nle.transportId);
 							continue;
 						}
 						p.read();
 					}
-					catch(DatabaseException ex) { p = null; }
+					catch(DatabaseException ex)
+					{
+						log.atTrace().setCause(ex).log("Unable to find platform.");
+						p = null;
+					}
 					if (p == null)
 						result(
 							LoadResourceBundle.sprintf(
@@ -456,9 +473,9 @@ public class ExportDialog extends GuiDialog
 							try { p.read(); }
 							catch(DatabaseException ex)
 							{
-								Logger.instance().warning(
-									"Export Cannot read platform '" 
-									+ p.makeFileName() + "' -- skipped.");
+								log.atWarn()
+								   .setCause(ex)
+								   .log("Export Cannot read platform '{}' -- skipped.", p.makeFileName());
 								break;
 							}
 							PlatformParser pp = new PlatformParser(p);
@@ -472,14 +489,8 @@ public class ExportDialog extends GuiDialog
 		}
 		catch(IOException ex)
 		{
-			result(
-				dbeditLabels.getString("ExportDialog.ioError") + ex);
-		}
-		finally
-		{
-			if (fos != null)
-				try { fos.close(); }
-				catch(Exception ex) {}
+			log.atError().setCause(ex).log(dbeditLabels.getString("ExportDialog.ioError"));
+			result(dbeditLabels.getString("ExportDialog.ioError") + ex);
 		}
 	}
 
