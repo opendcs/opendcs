@@ -1,21 +1,36 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
 import javax.xml.parsers.ParserConfigurationException;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.SAXException;
 
 import javax.swing.DefaultListModel;
-import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -27,23 +42,15 @@ import javax.swing.border.Border;
 import javax.swing.JScrollPane;
 import javax.swing.JFileChooser;
 
-import ilex.gui.CheckableItem;
 import ilex.gui.CheckBoxList;
 import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.LoadResourceBundle;
-import ilex.xml.XmlOutputStream;
-import ilex.xml.XmlObjectWriter;
-
 import decodes.db.*;
 import decodes.gui.TopFrame;
 import decodes.gui.GuiDialog;
 import decodes.util.DecodesException;
-import decodes.xml.DatabaseParser;
-import decodes.xml.PlatformParser;
-import decodes.xml.XmlDbTags;
 import decodes.xml.XmlDatabaseIO;
 import decodes.xml.TopLevelParser;
 
@@ -53,36 +60,37 @@ This class implements the dialog displayed for File - Export.
 */
 public class ImportDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
-	
-	
+
+
 	private JPanel topLevelPanel = new JPanel();
 	private BorderLayout topLevelBorderLayout = new BorderLayout();
 
 	private JPanel fileSelectPanel = new JPanel();
 	private GridBagLayout fileSelectGBLayout = new GridBagLayout();
-	private JLabel ftiLabel = new JLabel(  
+	private JLabel ftiLabel = new JLabel(
 			dbeditLabels.getString("ImportDialog.FileLabel"));
 	private JTextField ftiField = new JTextField();
-	private JButton browseButton = new JButton(  
+	private JButton browseButton = new JButton(
 			dbeditLabels.getString("ImportDialog.Browse"));
-	private JButton scanButton = new JButton(  
+	private JButton scanButton = new JButton(
 			dbeditLabels.getString("ImportDialog.ScanButton"));
 
 	private JPanel recordSelectPanel = new JPanel();
 	private BorderLayout recordSelectBorderLayout = new BorderLayout();
 	private Border rseb = BorderFactory.createEtchedBorder(Color.white,
 		new Color(165, 163, 151));
-	private Border recordSelectBorder = 
-		new TitledBorder(rseb,   
+	private Border recordSelectBorder =
+		new TitledBorder(rseb,
 				dbeditLabels.getString("ImportDialog.ImportBorder"));
 	private JPanel allNonePanel = new JPanel();
 	private FlowLayout allNoneFlowLayout = new FlowLayout(
 		java.awt.FlowLayout.LEFT, 15, 5);
-	private JButton allButton = new JButton(   
+	private JButton allButton = new JButton(
 			dbeditLabels.getString("ImportDialog.AllButton"));
-	private JButton noneButton = new JButton(   
+	private JButton noneButton = new JButton(
 			dbeditLabels.getString("ImportDialog.NoneButton"));
 
 	private JScrollPane objectListScrollPane = new JScrollPane();
@@ -92,9 +100,9 @@ public class ImportDialog extends GuiDialog
 	private JPanel okCancelPanel = new JPanel();
 	private FlowLayout okCancelFlowLayout = new FlowLayout(
 		java.awt.FlowLayout.CENTER, 15, 5);
-	private JButton importButton = new JButton(   
+	private JButton importButton = new JButton(
 			dbeditLabels.getString("ImportDialog.ImportButton"));
-	private JButton cancelButton = new JButton(   
+	private JButton cancelButton = new JButton(
 			dbeditLabels.getString("ImportDialog.CancelButton"));
 
 	static private JFileChooser fileChooser = new JFileChooser(
@@ -112,18 +120,16 @@ public class ImportDialog extends GuiDialog
 	 */
 	public ImportDialog()
 	{
-		super(getDbEditFrame(),    
-				dbeditLabels.getString("ImportDialog.Title"), 
-			true);
+		super(getDbEditFrame(), dbeditLabels.getString("ImportDialog.Title"), true);
 		try
 		{
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 			jbInit();
 			pack();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -155,21 +161,21 @@ public class ImportDialog extends GuiDialog
 			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 5, 5, 5), 0, 0));
-		scanButton.setToolTipText(    
+		scanButton.setToolTipText(
 				dbeditLabels.getString("ImportDialog.ScanButtonTT"));
 
 		recordSelectPanel.setLayout(recordSelectBorderLayout);
 		recordSelectPanel.setBorder(recordSelectBorder);
 		recordSelectPanel.add(allNonePanel, java.awt.BorderLayout.NORTH);
-		recordSelectPanel.add(objectListScrollPane, 
+		recordSelectPanel.add(objectListScrollPane,
 			java.awt.BorderLayout.CENTER);
 
 		allNonePanel.setLayout(allNoneFlowLayout);
 		allNonePanel.add(allButton);
 		allNonePanel.add(noneButton);
-		allButton.setToolTipText(    
+		allButton.setToolTipText(
 				dbeditLabels.getString("ImportDialog.AllButtonTT"));
-		noneButton.setToolTipText(    
+		noneButton.setToolTipText(
 				dbeditLabels.getString("ImportDialog.NoneButtonTT"));
 
 		objectListScrollPane.getViewport().add(objectList);
@@ -179,7 +185,7 @@ public class ImportDialog extends GuiDialog
 		okCancelPanel.add(cancelButton);
 		importButton.setToolTipText(
 				dbeditLabels.getString("ImportDialog.ImportButtonTT"));
-		
+
 		browseButton.setPreferredSize(new Dimension(100, 27));
 		browseButton.addActionListener(
 			new ActionListener()
@@ -284,9 +290,8 @@ public class ImportDialog extends GuiDialog
 		}
 		catch(Exception ex)
 		{
-			String msg = 
-				dbeditLabels.getString("ImportDialog.ScanButtonError2")+" " + ex;
-			Logger.instance().failure(msg);
+			String msg = dbeditLabels.getString("ImportDialog.ScanButtonError2");
+			log.atError().setCause(ex).log(msg);
 			showError(msg);
 		}
 		finally
@@ -295,14 +300,13 @@ public class ImportDialog extends GuiDialog
 		}
 	}
 
-	/** 
-	 * Initialize the staging database. XML files will be read into this. 
+	/**
+	 * Initialize the staging database. XML files will be read into this.
 	 */
 	private void initStageDb()
 		throws SAXException, ParserConfigurationException
 	{
-		Logger.instance().debug3(
-				dbeditLabels.getString("ImportDialog.InitStageDebug"));
+		log.trace(dbeditLabels.getString("ImportDialog.InitStageDebug"));
 		stageDb = new decodes.db.Database();
 		Database.setDb(stageDb);
 		stageDbIo = new XmlDatabaseIO("");
@@ -319,7 +323,7 @@ public class ImportDialog extends GuiDialog
 			for(Iterator vit = en.iterator(); vit.hasNext(); )
 			{
 				EnumValue ev = (EnumValue)vit.next();
-				EnumValue stageEv = stageEnum.replaceValue(ev.getValue(), 
+				EnumValue stageEv = stageEnum.replaceValue(ev.getValue(),
 					ev.getDescription(), ev.getExecClassName(), ev.getEditClassName());
 				stageEv.setSortNumber(ev.getSortNumber());
 			}
@@ -332,8 +336,7 @@ public class ImportDialog extends GuiDialog
 	private void importFile(String fn)
 		throws SAXException, IOException
 	{
-		Logger.instance().info(
-				dbeditLabels.getString("ImportDialog.ImportFileDialog") + fn + "'");
+		log.info(dbeditLabels.getString("ImportDialog.ImportFileDialog") + fn + "'");
 		DatabaseObject ob = topParser.parse(new File(fn));
 
 		// Some file types are invalid in dbedit
@@ -375,12 +378,6 @@ public class ImportDialog extends GuiDialog
 		{
 			Platform p = (Platform)it.next();
 			addDBO(p, false);
-//			Site s = p.getSite();
-//			if (s != null)
-//				addDBO(s, true);
-//			PlatformConfig pc = p.getConfig();
-//			if (pc != null)
-//				addDBO(pc, true);
 		}
 		for(Iterator it = stageDb.siteList.iterator(); it.hasNext(); )
 		{
@@ -389,13 +386,13 @@ public class ImportDialog extends GuiDialog
 		}
 		for(PlatformConfig pc : stageDb.platformConfigList.values())
 			addDBO(pc, false);
-		for(Iterator it = stageDb.presentationGroupList.iterator(); 
+		for(Iterator it = stageDb.presentationGroupList.iterator();
 			it.hasNext(); )
 		{
 			PresentationGroup p = (PresentationGroup)it.next();
 			addDBO(p, false);
 		}
-		for(Iterator it = stageDb.dataSourceList.iterator(); 
+		for(Iterator it = stageDb.dataSourceList.iterator();
 			it.hasNext(); )
 		{
 			DataSource p = (DataSource)it.next();
@@ -441,8 +438,7 @@ public class ImportDialog extends GuiDialog
 		int n = listmod.size();
 		if (n == 0)
 		{
-			showError(
-					dbeditLabels.getString("ImportDialog.ImportButtonError1"));
+			showError(dbeditLabels.getString("ImportDialog.ImportButtonError1"));
 			return;
 		}
 
@@ -500,15 +496,15 @@ public class ImportDialog extends GuiDialog
 				}
 			}
 		}
-		JOptionPane.showMessageDialog(this, 
+		JOptionPane.showMessageDialog(this,
 			AsciiUtil.wrapString(
 					dbeditLabels.getString("ImportDialog.ImportButtonConfirm3")
 					, 60), dbeditLabels.getString(
-					"ImportDialog.ImportButtonConfirm4"), 
+					"ImportDialog.ImportButtonConfirm4"),
 			JOptionPane.INFORMATION_MESSAGE);
 		closeDlg();
 	}
-		
+
 	/**
 	 * Opens the database object for editing.
 	 * The object may already exist in this database, in which case the
@@ -523,16 +519,17 @@ public class ImportDialog extends GuiDialog
 			PlatformListPanel platformListPanel = parent.getPlatformListPanel();
 
 			Platform impp = (Platform)dbo;
-			Platform editp = 
+			Platform editp =
 				editDb.platformList.getByFileName(impp.makeFileName());
 			PlatformEditPanel pep;
 			if (editp != null)
-{Logger.instance().debug3("Opening existing platform"+" " + impp.makeFileName());
+			{
+				log.trace("Opening existing platform {}", impp.makeFileName());
 				pep = platformListPanel.doOpen(editp);
-}
+			}
 			else
 			{
-Logger.instance().debug3("Opening panel for new platform."+" ");
+				log.trace("Opening panel for new platform."+" ");
 				pep = platformListPanel.doNew();
 			}
 			pep.setImportedPlatform(impp);
@@ -543,7 +540,7 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 			ConfigsListPanel clPanel = parent.getConfigsListPanel();
 
 			PlatformConfig imppc = (PlatformConfig)dbo;
-			PlatformConfig editpc = 
+			PlatformConfig editpc =
 				editDb.platformConfigList.get(imppc.getName());
 			if (editpc == null)
 			{
@@ -568,16 +565,15 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 			{
 				try
 				{
-					edits = SiteNameEntryDialog.siteFactory.makeNewSite(
-						imps.getPreferredName(), editDb);
+					edits = SiteNameEntryDialog.siteFactory.makeNewSite(imps.getPreferredName(), editDb);
 					edits.isNew = true;
 					editDb.siteList.addSite(edits);
 					siteListPanel.siteSelectPanel.addSite(edits);
 				}
-				catch(DecodesException ex) 
+				catch (DecodesException ex)
 				{
-					showError(
-							dbeditLabels.getString("ImportDialog.OpenError") + ex);
+					log.atError().setCause(ex).log(dbeditLabels.getString("ImportDialog.OpenError"));
+					showError(dbeditLabels.getString("ImportDialog.OpenError") + ex);
 					return null;
 				}
 			}
@@ -598,7 +594,7 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 			EquipmentListPanel elPanel = parent.getEquipmentListPanel();
 
 			EquipmentModel impem = (EquipmentModel)dbo;
-			EquipmentModel editem = 
+			EquipmentModel editem =
 				editDb.equipmentModelList.get(impem.getName());
 			if (editem == null)
 			{
@@ -624,7 +620,7 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 		{
 			PlatformListPanel platformListPanel = parent.getPlatformListPanel();
 			Platform impp = (Platform)dbo;
-			Platform oldp = 
+			Platform oldp =
 				editDb.platformList.getByFileName(impp.makeFileName());
 
 			if (oldp != null)
@@ -645,7 +641,7 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 			ConfigsListPanel clPanel = parent.getConfigsListPanel();
 
 			PlatformConfig imppc = (PlatformConfig)dbo;
-			PlatformConfig oldpc = 
+			PlatformConfig oldpc =
 				editDb.platformConfigList.get(imppc.getName());
 			if (oldpc != null)
 			{
@@ -674,16 +670,16 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 			{
 				try
 				{
-					edits = SiteNameEntryDialog.siteFactory.makeNewSite(
-						imps.getPreferredName(), editDb);
+					edits = SiteNameEntryDialog.siteFactory.makeNewSite(imps.getPreferredName(), editDb);
 					edits.isNew = true;
 					editDb.siteList.addSite(edits);
 					siteListPanel.siteSelectPanel.addSite(edits);
 				}
-				catch(DecodesException ex) 
+				catch(DecodesException ex)
 				{
-					showError(dbeditLabels.getString("ImportDialog.ImportError")
-							+" " + ex);
+
+					log.atError().setCause(ex).log(dbeditLabels.getString("ImportDialog.ImportError"));
+					showError(dbeditLabels.getString("ImportDialog.ImportError") + " " + ex);
 					return;
 				}
 			}
@@ -700,7 +696,7 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 			EquipmentListPanel elPanel = parent.getEquipmentListPanel();
 
 			EquipmentModel impem = (EquipmentModel)dbo;
-			EquipmentModel editem = 
+			EquipmentModel editem =
 				editDb.equipmentModelList.get(impem.getName());
 			if (editem != null)
 			{
@@ -726,7 +722,7 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 	private void importAll()
 	{
 		final JobDialog dlg =
-			new JobDialog(this, 
+			new JobDialog(this,
 					dbeditLabels.getString("ImportDialog.JobDialogTitle"), true);
 		dlg.setCanCancel(true);
 
@@ -747,13 +743,11 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 							(CheckableDatabaseObject)listmod.get(i);
 						if (cdo.isSelected())
 						{
-							try 
+							try
 							{
-								IdDatabaseObject dbo = 
+								IdDatabaseObject dbo =
 									(IdDatabaseObject)cdo.getDBO();
 
-// NO - import platform last so that sites & configs are assigned IDs.
-//								importDBO(dbo);
 								n_imported++;
 								if (dbo instanceof Platform)
 								{
@@ -774,9 +768,9 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 									Platform.configSoftLink = false;
 									PlatformConfig pc = p.getConfig();
 									Platform.configSoftLink = true;
-									
+
 									EquipmentModel em = null; // josue added this line
-									
+
 									if (pc != null)
 									{
 										dlg.addToProgress(
@@ -786,11 +780,11 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 										dlg.addToProgress(
 												dbeditLabels.getString("ImportDialog.JobDialogImportDone"));
 										n_imported++;
-										
+
 										em = pc.equipmentModel; // josue added this line
 									}
+
 									
-									//EquipmentModel em = pc.equipmentModel; // josue commented out this line
 									if (em != null)
 									{
 										dlg.addToProgress(
@@ -823,17 +817,19 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 							}
 							catch(DatabaseException ex)
 							{
-								showError("Error on import: " + ex);
+								final String msg = "Error on import.";
+								log.atError().setCause(ex).log(msg);
+								showError(msg + ex);
 								n_errors++;
 							}
 						}
 					}
 					dlg.addToProgress(
-						"" + n_imported 
+						"" + n_imported
 						+ " "+
 						LoadResourceBundle.sprintf(
 								dbeditLabels.getString(
-								"ImportDialog.JobDialogRecords1"), n_errors) 
+								"ImportDialog.JobDialogRecords1"), n_errors)
 						+ " errors were encountered). ");
 					dlg.addToProgress(
 							dbeditLabels.getString(
@@ -849,4 +845,3 @@ Logger.instance().debug3("Opening panel for new platform."+" ");
 		closeDlg();
 	}
 }
-

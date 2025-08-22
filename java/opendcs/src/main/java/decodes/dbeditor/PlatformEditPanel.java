@@ -1,33 +1,18 @@
 /*
- *  $Id$
- *  
- *  Open Source Software
- *  
- *  $Log$
- *  Revision 1.6  2017/03/03 19:11:34  mmaloney
- *  Changed 'Channel' to more generic 'Selector' so that it is meaningful for EDLs.
- *
- *  Revision 1.5  2015/04/15 19:59:46  mmaloney
- *  Fixed synchronization bugs when the same data sets are being processed by multiple
- *  routing specs at the same time. Example is multiple real-time routing specs with same
- *  network lists. They will all receive and decode the same data together.
- *
- *  Revision 1.4  2015/03/19 18:02:03  mmaloney
- *  Fixed caching of lists so that when platform is committed, the in-memory lists are updated.
- *
- *  Revision 1.3  2015/01/14 17:22:51  mmaloney
- *  Polling implementation
- *
- *  Revision 1.2  2014/08/29 18:24:35  mmaloney
- *  6.1 Schema Mods
- *
- *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- *  OPENDCS 6.0 Initial Checkin
- *
- *  Revision 1.6  2013/03/21 18:27:40  mmaloney
- *  DbKey Implementation
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -35,6 +20,11 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -46,7 +36,6 @@ import ilex.gui.Help;
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
 import ilex.util.PropertiesUtil;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.gui.*;
 import decodes.db.*;
@@ -58,9 +47,9 @@ Panel to edit an open Platform object.
 Opened from PlatformListPanel. Also used by PlatformWizard.
  */
 public class PlatformEditPanel extends DbEditorTab
-implements HistoricalVersionController, ChangeTracker, EntityOpsController,
-ConfigSelectController
+	implements HistoricalVersionController, ChangeTracker, EntityOpsController, ConfigSelectController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -132,7 +121,7 @@ ConfigSelectController
 	public PlatformEditPanel()
 	{
 		super();
-		try 
+		try
 		{
 			transportTableModel = new TransportListTableModel();
 			transportMediaTable = new JTable(transportTableModel);
@@ -146,7 +135,7 @@ ConfigSelectController
 			TableColumnAdjuster.adjustColumnWidths(transportMediaTable,
 					new int[] { 25, 25, 35, 15 });
 			entityOpsPanel = new EntityOpsPanel(this);
-			
+
 			transportMediaTable.addMouseListener(new MouseAdapter()
 			{
 				public void mouseClicked(MouseEvent e)
@@ -164,11 +153,12 @@ ConfigSelectController
 						sensorInfoPressed();
 				}
 			});
-			
-			
+
+
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -189,7 +179,7 @@ ConfigSelectController
 	public PlatformEditPanel(boolean inDbEdit)
 	{
 		super();
-		try 
+		try
 		{
 			this.inDbEdit = inDbEdit;
 			transportTableModel = new TransportListTableModel();
@@ -205,21 +195,20 @@ ConfigSelectController
 					new int[] { 25, 25, 35, 15 });
 			entityOpsPanel = new EntityOpsPanel(this);
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
-	/** 
-	  Sets the platform that this panel is editing. 
+	/**
+	  Sets the platform that this panel is editing.
 	  @param p the platform to edit
 	 */
 	public void setPlatform(Platform p)
 	{
 		origPlatform = p;
 		thePlatform = p.copy();
-		//MJM 2006 05/12
-		//		setTopObject(origPlatform);
 		setTopObject(thePlatform);
 		transportTableModel.setPlatform(thePlatform);
 		refConfig = thePlatform.getConfig();
@@ -322,7 +311,7 @@ ConfigSelectController
 		chooseConfigButton.addActionListener(
 				new java.awt.event.ActionListener()
 				{
-					public void actionPerformed(ActionEvent e) 
+					public void actionPerformed(ActionEvent e)
 					{
 						chooseConfigButtonPressed();
 					}
@@ -332,7 +321,7 @@ ConfigSelectController
 		editConfigButton.addActionListener(
 				new java.awt.event.ActionListener()
 				{
-					public void actionPerformed(ActionEvent e) 
+					public void actionPerformed(ActionEvent e)
 					{
 						editConfigButton_actionPerformed();
 					}
@@ -418,9 +407,9 @@ ConfigSelectController
 		sensorInfoButton.setText(
 				dbeditLabels.getString("PlatformEditPanel.editSensor"));
 		sensorInfoButton.addActionListener(
-				new java.awt.event.ActionListener() 
+				new java.awt.event.ActionListener()
 				{
-					public void actionPerformed(ActionEvent e) 
+					public void actionPerformed(ActionEvent e)
 					{
 						sensorInfoPressed();
 					}
@@ -444,67 +433,67 @@ ConfigSelectController
 		});
 		this.add(jPanel7, BorderLayout.CENTER);
 		jPanel7.add(jPanel1, BorderLayout.NORTH);
-		jPanel1.add(topLeftPanel, 
+		jPanel1.add(topLeftPanel,
 				new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-						GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 						new Insets(4, 4, 4, 4), 0, 0));
 
 		// Top Left Panel with Site, Designator, Config, Owner & Properties
-		topLeftPanel.add(siteLabel, 
+		topLeftPanel.add(siteLabel,
 				new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-						GridBagConstraints.EAST, GridBagConstraints.NONE, 
+						GridBagConstraints.EAST, GridBagConstraints.NONE,
 						new Insets(3, 0, 3, 4), 0, 0));
-		topLeftPanel.add(siteNameField, 
+		topLeftPanel.add(siteNameField,
 				new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 						new Insets(3, 0, 3, 0), 112, 0));
 		if (inDbEdit)
-			topLeftPanel.add(chooseSiteButton, 
+			topLeftPanel.add(chooseSiteButton,
 					new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-							GridBagConstraints.WEST, GridBagConstraints.NONE, 
+							GridBagConstraints.WEST, GridBagConstraints.NONE,
 							new Insets(3, 10, 3, 0), 9, 0));
 
-		topLeftPanel.add(designatorLabel, 
+		topLeftPanel.add(designatorLabel,
 				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-						GridBagConstraints.EAST, GridBagConstraints.NONE, 
+						GridBagConstraints.EAST, GridBagConstraints.NONE,
 						new Insets(3, 0, 3, 4), 0, 0));
-		topLeftPanel.add(designatorField, 
+		topLeftPanel.add(designatorField,
 				new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
-						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 						new Insets(3, 0, 3, 0), 112, 0));
 
-		topLeftPanel.add(configLabel, 
+		topLeftPanel.add(configLabel,
 				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-						GridBagConstraints.EAST, GridBagConstraints.NONE, 
+						GridBagConstraints.EAST, GridBagConstraints.NONE,
 						new Insets(3, 0, 3, 4), 0, 0));
-		topLeftPanel.add(configField, 
+		topLeftPanel.add(configField,
 				new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 						new Insets(3, 0, 3, 0), 112, 0));
 		if (inDbEdit)
 		{
-			topLeftPanel.add(chooseConfigButton, 
+			topLeftPanel.add(chooseConfigButton,
 					new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
-							GridBagConstraints.WEST, GridBagConstraints.NONE, 
+							GridBagConstraints.WEST, GridBagConstraints.NONE,
 							new Insets(3, 10, 3, 5), 9, 0));
-			topLeftPanel.add(editConfigButton, 
+			topLeftPanel.add(editConfigButton,
 					new GridBagConstraints(3, 2, 1, 1, 0.0, 0.0,
-							GridBagConstraints.WEST, GridBagConstraints.NONE, 
+							GridBagConstraints.WEST, GridBagConstraints.NONE,
 							new Insets(3, 0, 3, 15), 9, 0));
 		}
 
-		topLeftPanel.add(ownerLabel, 
+		topLeftPanel.add(ownerLabel,
 				new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-						GridBagConstraints.EAST, GridBagConstraints.NONE, 
+						GridBagConstraints.EAST, GridBagConstraints.NONE,
 						new Insets(3, 5, 3, 4), 0, 0));
-		topLeftPanel.add(ownerAgencyField, 
+		topLeftPanel.add(ownerAgencyField,
 				new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 						new Insets(3, 0, 3, 0), 112, 0));
 
-		topLeftPanel.add(platformPropertiesButton, 
+		topLeftPanel.add(platformPropertiesButton,
 				new GridBagConstraints(0, 4, 3, 1, 0.0, 0.0,
-						GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+						GridBagConstraints.CENTER, GridBagConstraints.NONE,
 						new Insets(5, 0, 5, 0), 117, 0));
 
 
@@ -529,14 +518,14 @@ ConfigSelectController
 		jPanel4.add(jScrollPane1, BorderLayout.CENTER);
 		jPanel7.add(jPanel8, BorderLayout.CENTER);
 		jPanel8.add(jPanel6, null);
-		jPanel6.add(jScrollPane3, 
+		jPanel6.add(jScrollPane3,
 				new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-						GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 						new Insets(4, 5, 4, 5), 0, 0));
 
-		jPanel6.add(sensorInfoButton, 
+		jPanel6.add(sensorInfoButton,
 				new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-						GridBagConstraints.NORTH, GridBagConstraints.NONE, 
+						GridBagConstraints.NORTH, GridBagConstraints.NONE,
 						new Insets(2, 12, 2, 12), 0, 0));
 
 		jScrollPane3.getViewport().add(platformSensorTable, null);
@@ -563,9 +552,9 @@ ConfigSelectController
 		{
 			thePlatform.setSite(site);
 			siteNameField.setText(thePlatform.getSiteName());
-			
+
 			/*  For USGS, use the name type as the agency code */
-			if ( thePlatform.getSiteName().indexOf('-') > 0 
+			if ( thePlatform.getSiteName().indexOf('-') > 0
 			 && Database.getDb().getDbIo().isNwis())
 			{
 				String[] comp = thePlatform.getSiteName().split("-");
@@ -613,8 +602,8 @@ ConfigSelectController
 
 		// Call ConfigsListPanel.doOpen. This creates the config edit panel.
 		ConfigEditPanel cfgEditPanel = parent.getConfigsListPanel().doOpen(cfg);
-		
-		// Build list of transport media for user to select from if loading a 
+
+		// Build list of transport media for user to select from if loading a
 		// sample message.
 		boolean didGoes = false;
 		String pname = siteNameField.getText();
@@ -625,7 +614,7 @@ ConfigSelectController
 		{
 			TransportMedium tm = transportTableModel.getObjectAt(row);
 			if (tm.isGoes())
-			{	
+			{
 				if (didGoes)
 					continue;
 				didGoes = true;
@@ -635,7 +624,7 @@ ConfigSelectController
 			tmSelectList.add(s);
 		}
 		cfgEditPanel.setTmSelectList(tmSelectList);
-		
+
 		// Make the Config tab the currently selected tab
 		parent.activateConfigsTab();
 	}
@@ -648,7 +637,7 @@ ConfigSelectController
 		launchDialog(dlg);
 	}
 
-	/** 
+	/**
 	  Makes a historical version of the platform with specified expiration.
 	  @param expiration the expiration date/time.
 	 */
@@ -680,8 +669,8 @@ ConfigSelectController
 			return;
 		}
 		PlatformSensor ps = sensorTableModel.getObjectAt(r);
-		PlatformSensorEditDialog dlg = 
-			new PlatformSensorEditDialog(parent, 
+		PlatformSensorEditDialog dlg =
+			new PlatformSensorEditDialog(parent,
 					dbeditLabels.getString("PlatformEditPanel.editPlatInfoDlgTitle"),
 					true);
 		dlg.fillFields(ps, refConfig.getSensor(ps.sensorNumber));
@@ -784,9 +773,9 @@ ConfigSelectController
 				for (Platform p : Database.getDb().platformList.getPlatformVector())
 				{
 					TransportMedium existingTM = p.getTransportMedium(tmType);
-					
+
 					if (existingTM != null && TextUtil.strEqualIgnoreCase(tmId, existingTM.getMediumId())
-					 && p != origPlatform 
+					 && p != origPlatform
 					 && p.expiration == null)
 					{
 						// This TM matches an existing different platform, and neither this nor
@@ -799,7 +788,7 @@ ConfigSelectController
 					}
 				}
 			}
-		
+
 		getDataFromFields();
 
 		// Write the changes out to the database.
@@ -833,15 +822,15 @@ ConfigSelectController
 						listStr.append(netlist.name + ", ");
 					}
 			}
-			
+
 			if (affectedLists.size() != 0)
 			{
 				String m = "The network lists: "
 					+ listStr.toString()
 					+ "contain this Platform. Do you want to update the lists with "
 					+ "the new transport medium ID?";
-				int res = JOptionPane.showConfirmDialog(null, 
-					AsciiUtil.wrapString(m, 60), 
+				int res = JOptionPane.showConfirmDialog(null,
+					AsciiUtil.wrapString(m, 60),
 					"Update Network List?", JOptionPane.YES_NO_OPTION);
 				if(res == JOptionPane.OK_OPTION)
 				{
@@ -850,9 +839,9 @@ ConfigSelectController
 						lta.netlist.removeEntry(lta.oldTm.getMediumId());
 						if (lta.newTm != null)
 						{
-							NetworkListEntry nle = 
+							NetworkListEntry nle =
 								new NetworkListEntry(lta.netlist, lta.newTm.getMediumId());
-						
+
 							Site s = thePlatform.getSite();
 							String sn = null;
 							if (s != null)
@@ -881,13 +870,14 @@ ConfigSelectController
 							lta.netlist.addEntry(nle);
 							lta.netlist.write();
 						}
-					}				
+					}
 				}
 			}
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			parent.showError(e.toString());
+			log.atError().setCause(ex).log("Unable to save platform changes.");
+			parent.showError(ex.toString());
 			return false;
 		}
 
@@ -905,8 +895,8 @@ ConfigSelectController
 		return true;
 	}
 
-	/** 
-	  Moves data from fields back into the Platform. 
+	/**
+	  Moves data from fields back into the Platform.
 	  @return the internal copy of the platform being edited.
 	 */
 	public Platform getDataFromFields()
@@ -963,7 +953,7 @@ ConfigSelectController
 				}
 			}
 		}
-		DbEditorTabbedPane platformsTabbedPane 
+		DbEditorTabbedPane platformsTabbedPane
 		= parent.getPlatformsTabbedPane();
 		platformsTabbedPane.remove(this);
 	}
@@ -981,7 +971,7 @@ ConfigSelectController
 			PlatformListPanel plp = parent.getPlatformListPanel();
 			plp.abandonNewPlatform(origPlatform);
 		}
-		DbEditorTabbedPane platformsTabbedPane 
+		DbEditorTabbedPane platformsTabbedPane
 		= parent.getPlatformsTabbedPane();
 		platformsTabbedPane.remove(this);
 	}
@@ -1013,6 +1003,7 @@ ConfigSelectController
 			try { config.read(); }
 			catch(DatabaseException ex)
 			{
+				log.atError().setCause(ex).log("Unable to read config {}", config.configName);
 				parent.showError(
 						LoadResourceBundle.sprintf(
 								dbeditLabels.getString(
@@ -1109,7 +1100,7 @@ class TransportListTableModel extends AbstractTableModel
 		return (TransportMedium)media.elementAt(r);
 	}
 
-	/** 
+	/**
 	  Adds new transport medium to the vector.
 	  @param ob the TM to add.
 	 */
@@ -1135,6 +1126,7 @@ Model for the table of sensor information
  */
 class SensorInfoTableModel extends AbstractTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static String columnNames[] =
 	{
 		PlatformEditPanel.genericLabels.getString("sensor"),
@@ -1153,8 +1145,8 @@ class SensorInfoTableModel extends AbstractTableModel
 		thePlatform = null;
 	}
 
-	/** 
-	  Sets the platform being edited. 
+	/**
+	  Sets the platform being edited.
 	  @param p the platform
 	 */
 	void setPlatform(Platform p, PlatformConfig pc)
@@ -1198,12 +1190,12 @@ class SensorInfoTableModel extends AbstractTableModel
 					thePlatform.getPlatformSensor(cs.sensorNumber);
 				if (ps != null)
 				{
-					Logger.instance().debug3("Using existing platform sensor #" + cs.sensorNumber);
+					log.trace("Using existing platform sensor #{}", cs.sensorNumber);
 					ps.guiCheck = true;
 				}
 				else // (ps == null)
 				{
-					Logger.instance().debug3("Adding new sensor from config #" + cs.sensorNumber + ", " + cs.sensorName);
+					log.trace("Adding new sensor from config #{}, {}", cs.sensorNumber, cs.sensorName);
 					ps = new PlatformSensor(thePlatform, cs.sensorNumber);
 					thePlatform.addPlatformSensor(ps);
 					ps.guiCheck = true;
@@ -1215,7 +1207,7 @@ class SensorInfoTableModel extends AbstractTableModel
 							int ddid = Integer.parseInt(ddids[0].substring(0,ddids[0].indexOf('-')).trim());
 							ps.setUsgsDdno(ddid);
 						}
-					} 			
+					}
 				}
 			}
 		}
@@ -1241,8 +1233,8 @@ class SensorInfoTableModel extends AbstractTableModel
 	/** @return number of columns */
 	public int getColumnCount() { return columnNames.length; }
 
-	/** 
-	  @return value at specified row/column as a string. 
+	/**
+	  @return value at specified row/column as a string.
 	  @param r row
 	  @param c column
 	 */
@@ -1329,7 +1321,7 @@ class ListTmAssoc
 	TransportMedium oldTm;
 	TransportMedium newTm;
 	NetworkList netlist;
-	
+
 	public ListTmAssoc(TransportMedium oldTm, TransportMedium newTm, NetworkList netlist)
 	{
 		super();
