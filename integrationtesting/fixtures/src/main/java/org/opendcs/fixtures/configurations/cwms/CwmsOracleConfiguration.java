@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -170,12 +171,12 @@ public class CwmsOracleConfiguration implements Configuration
             
             log.info("Location level test data loaded successfully");
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
             // Don't fail the entire setup if test data can't be loaded
             // Tests are designed to handle missing data gracefully
-            log.warn("Could not load location level test data: " + e.getMessage());
-            log.debug("Location level test data error details:", e);
+            log.warning("Could not load location level test data: " + ex.getMessage());
+            log.log(Level.FINE, "Location level test data error details:", ex);
         }
     }
     
