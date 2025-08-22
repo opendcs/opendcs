@@ -445,9 +445,9 @@ public class LoadMessageDialog extends GuiDialog
 					String msg = dbeditLabels.getString("LoadMessageDialog.ValidateError3");
 					log.atError()
 					   .setCause(ex)
-					   .log("'{}'{}", s,msg);
+					   .log("{}'{}", s,msg);
 
-					showError("'" + s +"'"+ msg);
+					showError("'" + s + msg);
 					return;
 				}
 			}
@@ -482,8 +482,8 @@ public class LoadMessageDialog extends GuiDialog
 			catch (InvalidDatabaseException ex)
 			{
 				String msg = dbeditLabels.getString("LoadMessageDialog.ValidateError7");
-				log.atError().setCause(ex).log(msg + "'{}'", myDS.getName());
-				showError(msg+ " '" + myDS.getName() + "': " + ex);
+				log.atError().setCause(ex).log(msg + "{}'", myDS.getName());
+				showError(msg+ "'" + myDS.getName() + ": " + ex);
 				return;
 			}
 
@@ -752,8 +752,8 @@ class LoadMessageThread extends Thread
 				String msg = dbeditLabels.getString("LoadMessageDialog.RunError1");
 				log.atError()
 				   .setCause(ex)
-				   .log(msg+" '{}'", dse.getName());
-				parent.notifyError(msg + " '" + dse.getName() + "': " + ex);
+				   .log(msg+"' {}", dse.getName());
+				parent.notifyError(msg + "' " + dse.getName() + "': " + ex);
 				shutdown = true;
 			}
 		}
