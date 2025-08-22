@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor;
 
 import ilex.gui.DateTimeCalendar;
@@ -16,11 +31,14 @@ import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -40,17 +58,16 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalIncrement;
 
 @SuppressWarnings("serial")
-public class ScheduleEntryEditPanel 
-	extends DbEditorTab 
-	implements ChangeTracker, EntityOpsController
+public class ScheduleEntryEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 	private DbEditorFrame parent = null;
 	private ScheduleEntry origObject = null;
 	
 	private JTextField nameField = new JTextField();
-	private JComboBox schedulerDaemonCombo = new JComboBox();
+	private JComboBox<String> schedulerDaemonCombo = new JComboBox<>();
 	private JTextField routingSpecField = new JTextField();
 	private JTextField lastModifiedField = new JTextField();
 	private JCheckBox enabledCheck = new JCheckBox();
@@ -58,7 +75,7 @@ public class ScheduleEntryEditPanel
 	private JRadioButton runContinuouslyRadio = new JRadioButton();
 	private JRadioButton runPeriodicallyRadio = new JRadioButton();
 	private JTextField timeIncField = new JTextField(5);
-	private JComboBox timeUnitCombo = new JComboBox(
+	private JComboBox<String> timeUnitCombo = new JComboBox<>(
 		new String[] { "Minutes", "Hours", "Days" });
 	private DateTimeCalendar startDateTimeCal = null;
 	private Calendar userTzCal = Calendar.getInstance();
@@ -106,8 +123,8 @@ public class ScheduleEntryEditPanel
 		// Loading App Name
 		// Make a list of loading apps with app-type
 		appsInCombo.clear();
-		LoadingAppDAI loadingAppDAO = Database.getDb().getDbIo().makeLoadingAppDAO();
-		try
+		
+		try(LoadingAppDAI loadingAppDAO = Database.getDb().getDbIo().makeLoadingAppDAO())
 		{
 			for(CompAppInfo cai : loadingAppDAO.listComputationApps(false))
 			{
@@ -125,11 +142,9 @@ public class ScheduleEntryEditPanel
 		}
 		catch (DbIoException ex)
 		{
-			parent.showError("Cannot list Routing Scheduler apps: " + ex);
-		}
-		finally
-		{
-			loadingAppDAO.close();
+			final String msg = "Cannot list Routing Scheduler apps";
+			log.atError().setCause(ex).log(msg);
+			parent.showError(msg + ": " + ex);
 		}
 
 		mainPanel.add(schedulerDaemonCombo,
@@ -426,10 +441,11 @@ public class ScheduleEntryEditPanel
 			}
 			catch(Exception ex)
 			{
-				parent.showError(
-					LoadResourceBundle.sprintf(
+				final String msg = LoadResourceBundle.sprintf(
 						dbeditLabels.getString("ScheduleEntryPanel.BadTimeIncr"),
-						timeIncField.getText().trim()));
+						timeIncField.getText().trim());
+				log.atError().setCause(ex).log(msg);
+				parent.showError(msg);
 				return false;
 			}
 		}
@@ -447,6 +463,7 @@ public class ScheduleEntryEditPanel
 		}
 		catch (DatabaseException ex)
 		{
+			log.atError().setCause(ex).log("Unable to write scheduled entry.");
 			parent.showError(
 				LoadResourceBundle.sprintf(
 					dbeditLabels.getString("ScheduleEntryPanel.WriteError"),
@@ -533,7 +550,7 @@ public class ScheduleEntryEditPanel
 	@Override
 	public void forceClose()
 	{
-		// TODO Auto-generated method stub
+		/* no op */
 
 	}
 	
