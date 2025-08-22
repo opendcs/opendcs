@@ -26,7 +26,7 @@ import opendcs.dao.LocationLevelDAO.LocationLevelSpec;
  * Integration tests for CwmsLocationLevelDAO
  * These tests require a real CWMS database connection
  */
-@EnableIfDaoSupported({CwmsLocationLevelDAO.class})
+@EnableIfDaoSupported(CwmsLocationLevelDAO.class)
 public class CwmsLocationLevelDAOTestIT extends AppTestBase
 {
     @ConfiguredField
