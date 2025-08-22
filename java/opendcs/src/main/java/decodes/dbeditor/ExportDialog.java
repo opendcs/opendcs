@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -26,11 +41,15 @@ import javax.swing.JTextArea;
 import javax.swing.JFileChooser;
 import java.util.ResourceBundle;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+
 import ilex.util.LoadResourceBundle;
 
-import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.xml.XmlOutputStream;
+import ilex.util.EnvExpander;
 import ilex.xml.XmlObjectWriter;
 
 import decodes.db.Database;
@@ -50,6 +69,7 @@ This class implements the dialog displayed for File - Export.
 */
 public class ExportDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -71,7 +91,6 @@ public class ExportDialog extends GuiDialog
 	private JTextField outputFileField = new JTextField();
 	private JButton chooseButton = new JButton();
 	private JPanel jPanel1 = new JPanel();
-	private TitledBorder titledBorder1 = new TitledBorder("");
 	private Border border1 = BorderFactory.createEtchedBorder(Color.white,
 		new Color(165, 163, 151));
 	private Border border2 = new TitledBorder(border1, 
@@ -114,17 +133,16 @@ public class ExportDialog extends GuiDialog
 	 */
 	public ExportDialog()
 	{
-		super(getDbEditFrame(), 
-			dbeditLabels.getString("ExportDialog.title"), true);
+		super(getDbEditFrame(), dbeditLabels.getString("ExportDialog.title"), true);
 		try
 		{
 			setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 			jbInit();
 			pack();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		entireDbRadio.setSelected(true);
 		allPlatformsRadio.setSelected(false);
@@ -250,7 +268,6 @@ public class ExportDialog extends GuiDialog
 				entireDbRadio_actionPerformed(e);
 			}
 		});
-//		selectPlatformButton.setPreferredSize(new Dimension(100, 27));
 		selectPlatformButton.setText(genericLabels.getString("select"));
 		selectPlatformButton.addActionListener(new ActionListener()
 		{
@@ -260,10 +277,6 @@ public class ExportDialog extends GuiDialog
 			}
 		});
 		exportButtonPanel.setPreferredSize(new Dimension(110, 50));
-//		resultsScrollPane.setVerticalScrollBarPolicy(JScrollPane.
-//			VERTICAL_SCROLLBAR_ALWAYS);
-//		resultsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.
-//			HORIZONTAL_SCROLLBAR_NEVER);
 		getContentPane().add(panel1);
 		panel1.add(southButtonPanel, java.awt.BorderLayout.SOUTH);
 		southButtonPanel.add(quitButton);
@@ -332,11 +345,9 @@ public class ExportDialog extends GuiDialog
 			if (r != JOptionPane.YES_OPTION)
 				return;
 		}
-		FileOutputStream fos = null;
-		try
+		try (FileOutputStream fos = new FileOutputStream(f))
 		{
 			resultsArea.setText("");
-			fos = new FileOutputStream(f);
 			XmlOutputStream xos = new XmlOutputStream(fos, 
 				XmlDbTags.Database_el);
 			xos.writeXmlHeader();
@@ -353,9 +364,9 @@ public class ExportDialog extends GuiDialog
 					try { p.read(); }
 					catch(DatabaseException ex)
 					{
-						Logger.instance().warning(
-							"Export Cannot read platform '" 
-							+ p.makeFileName() + "' -- skipped.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Export Cannot read platform '{}' -- skipped.", p.makeFileName());
 						continue;
 					}
 				}
@@ -383,9 +394,9 @@ public class ExportDialog extends GuiDialog
 					try { p.read(); }
 					catch(DatabaseException ex)
 					{
-						Logger.instance().warning(
-							"Export Cannot read platform '" + p.makeFileName() 
-							+ "' -- skipped.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Export Cannot read platform '{}' -- skipped.", p.makeFileName());
 						continue;
 					}
 					PlatformParser pp = new PlatformParser(p);
@@ -413,13 +424,17 @@ public class ExportDialog extends GuiDialog
 							nle.transportId, new Date());
 						if (p == null)
 						{
-							Logger.instance().warning("List contains '" + nl.transportMediumType 
-								+ ":" + nle.transportId + "' but no matching platform in database -- skipped.");
+							log.warn("List contains '{}:{}' but no matching platform in database -- skipped.",
+									 nl.transportMediumType, nle.transportId);
 							continue;
 						}
 						p.read();
 					}
-					catch(DatabaseException ex) { p = null; }
+					catch(DatabaseException ex)
+					{ 
+						log.atTrace().setCause(ex).log("Unable to find platform.");
+						p = null; 
+					}
 					if (p == null)
 						result(
 							LoadResourceBundle.sprintf(
@@ -456,9 +471,9 @@ public class ExportDialog extends GuiDialog
 							try { p.read(); }
 							catch(DatabaseException ex)
 							{
-								Logger.instance().warning(
-									"Export Cannot read platform '" 
-									+ p.makeFileName() + "' -- skipped.");
+								log.atWarn()
+								   .setCause(ex)
+								   .log("Export Cannot read platform '{}' -- skipped.", p.makeFileName());
 								break;
 							}
 							PlatformParser pp = new PlatformParser(p);
@@ -472,15 +487,10 @@ public class ExportDialog extends GuiDialog
 		}
 		catch(IOException ex)
 		{
-			result(
-				dbeditLabels.getString("ExportDialog.ioError") + ex);
+			log.atError().setCause(ex).log(dbeditLabels.getString("ExportDialog.ioError"));			result(
+			dbeditLabels.getString("ExportDialog.ioError") + ex);
 		}
-		finally
-		{
-			if (fos != null)
-				try { fos.close(); }
-				catch(Exception ex) {}
-		}
+		
 	}
 
 	public void chooseButton_actionPerformed(ActionEvent e)
