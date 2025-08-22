@@ -118,6 +118,9 @@ public class CwmsOracleConfiguration implements Configuration
             createPropertiesFile(configBuilder, this.propertiesFile);
             profile = Profile.getProfile(this.propertiesFile);
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
+            
+            // Load location level test data for integration tests
+            loadLocationLevelTestData();
         }
 
 
@@ -149,6 +152,33 @@ public class CwmsOracleConfiguration implements Configuration
         }
     }
 
+    /**
+     * Load location level test data for integration tests
+     */
+    private void loadLocationLevelTestData()
+    {
+        try
+        {
+            log.info("Loading location level test data for integration tests");
+            String testDataSql = IOUtils.resourceToString("/database/cwms_location_level_test_data.sql", StandardCharsets.UTF_8);
+            
+            // Replace placeholder with actual office
+            testDataSql = testDataSql.replace("&DEFAULT_OFFICE", cwmsDb.getOfficeId());
+            
+            // Execute as CWMS_20 user to have proper permissions
+            cwmsDb.executeSQL(testDataSql, "CWMS_20");
+            
+            log.info("Location level test data loaded successfully");
+        }
+        catch (Exception e)
+        {
+            // Don't fail the entire setup if test data can't be loaded
+            // Tests are designed to handle missing data gracefully
+            log.warn("Could not load location level test data: " + e.getMessage());
+            log.debug("Location level test data error details:", e);
+        }
+    }
+    
     private void createPropertiesFile(UserPropertiesBuilder configBuilder, File propertiesFile) throws Exception
     {
         configBuilder.withEditDatabaseType("CWMS");
@@ -275,6 +305,10 @@ public class CwmsOracleConfiguration implements Configuration
             return true;
         }
         else if(dao.equals(LoadingAppDao.class))
+        {
+            return true;
+        }
+        else if(dao.equals(decodes.cwms.CwmsLocationLevelDAO.class))
         {
             return true;
         }
