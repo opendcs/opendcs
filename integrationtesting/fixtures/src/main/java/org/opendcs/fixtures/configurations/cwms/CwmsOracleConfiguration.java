@@ -173,10 +173,10 @@ public class CwmsOracleConfiguration implements Configuration
         }
         catch (Exception ex)
         {
-            // Don't fail the entire setup if test data can't be loaded
-            // Tests are designed to handle missing data gracefully
-            log.warning("Could not load location level test data: " + ex.getMessage());
-            log.log(Level.FINE, "Location level test data error details:", ex);
+            // Log the error with full stack trace at warning level so we can see it
+            log.log(Level.WARNING, "Could not load location level test data: " + ex.getMessage(), ex);
+            // Re-throw to see the actual error
+            throw new RuntimeException("Failed to load location level test data", ex);
         }
     }
     

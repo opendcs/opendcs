@@ -30,9 +30,9 @@ BEGIN
             DBMS_OUTPUT.PUT_LINE('Test location may already exist: ' || SQLERRM);
     END;
     
-    -- Create Stage location level spec
+    -- Create Stage location level spec first
     BEGIN
-        CWMS_LEVEL.STORE_LOCATION_LEVEL_LOCALLY(
+        CWMS_LEVEL.STORE_LOCATION_LEVEL(
             P_LOCATION_LEVEL_ID => 'TEST_LOCATION.Stage.Constant.Test',
             P_LEVEL_VALUE      => 123.45,
             P_LEVEL_UNITS      => 'ft',
@@ -40,11 +40,8 @@ BEGIN
             P_LEVEL_COMMENT    => 'Test stage level for LocationLevelDAO integration tests',
             P_ATTRIBUTE_VALUE  => NULL,
             P_ATTRIBUTE_UNITS  => NULL,
-            P_ATTRIBUTE_ID     => NULL,
-            P_INTERVAL_ORIGIN  => NULL,
-            P_INTERVAL_MINUTES => 0,
+            P_ATTRIBUTE_PARAMETER_ID => NULL,
             P_INTERPOLATE      => 'F',
-            P_TSID             => NULL,
             P_OFFICE_ID        => '&DEFAULT_OFFICE'
         );
         DBMS_OUTPUT.PUT_LINE('Created TEST_LOCATION stage level');
@@ -55,7 +52,7 @@ BEGIN
     
     -- Create Flow location level spec
     BEGIN
-        CWMS_LEVEL.STORE_LOCATION_LEVEL_LOCALLY(
+        CWMS_LEVEL.STORE_LOCATION_LEVEL(
             P_LOCATION_LEVEL_ID => 'TEST_LOCATION.Flow.Constant.Test',
             P_LEVEL_VALUE      => 500.0,
             P_LEVEL_UNITS      => 'cfs',
@@ -63,11 +60,8 @@ BEGIN
             P_LEVEL_COMMENT    => 'Test flow level for LocationLevelDAO integration tests',
             P_ATTRIBUTE_VALUE  => NULL,
             P_ATTRIBUTE_UNITS  => NULL,
-            P_ATTRIBUTE_ID     => NULL,
-            P_INTERVAL_ORIGIN  => NULL,
-            P_INTERVAL_MINUTES => 0,
+            P_ATTRIBUTE_PARAMETER_ID => NULL,
             P_INTERPOLATE      => 'F',
-            P_TSID             => NULL,
             P_OFFICE_ID        => '&DEFAULT_OFFICE'
         );
         DBMS_OUTPUT.PUT_LINE('Created TEST_LOCATION flow level');
@@ -78,7 +72,7 @@ BEGIN
     
     -- Create a metric stage level for unit conversion testing
     BEGIN
-        CWMS_LEVEL.STORE_LOCATION_LEVEL_LOCALLY(
+        CWMS_LEVEL.STORE_LOCATION_LEVEL(
             P_LOCATION_LEVEL_ID => 'TEST_LOCATION.Stage-Metric.Constant.Test',
             P_LEVEL_VALUE      => 37.64,  -- ~123.45 ft in meters
             P_LEVEL_UNITS      => 'm',
@@ -86,11 +80,8 @@ BEGIN
             P_LEVEL_COMMENT    => 'Test stage level in metric units',
             P_ATTRIBUTE_VALUE  => NULL,
             P_ATTRIBUTE_UNITS  => NULL,
-            P_ATTRIBUTE_ID     => NULL,
-            P_INTERVAL_ORIGIN  => NULL,
-            P_INTERVAL_MINUTES => 0,
+            P_ATTRIBUTE_PARAMETER_ID => NULL,
             P_INTERPOLATE      => 'F',
-            P_TSID             => NULL,
             P_OFFICE_ID        => '&DEFAULT_OFFICE'
         );
         DBMS_OUTPUT.PUT_LINE('Created TEST_LOCATION metric stage level');
@@ -127,7 +118,7 @@ BEGIN
     
     -- Create cache test location level (for caching tests)
     BEGIN
-        CWMS_LEVEL.STORE_LOCATION_LEVEL_LOCALLY(
+        CWMS_LEVEL.STORE_LOCATION_LEVEL(
             P_LOCATION_LEVEL_ID => 'CACHE_TEST.Stage.Constant.Test',
             P_LEVEL_VALUE      => 99.99,
             P_LEVEL_UNITS      => 'ft',
@@ -135,11 +126,8 @@ BEGIN
             P_LEVEL_COMMENT    => 'Test level for cache testing',
             P_ATTRIBUTE_VALUE  => NULL,
             P_ATTRIBUTE_UNITS  => NULL,
-            P_ATTRIBUTE_ID     => NULL,
-            P_INTERVAL_ORIGIN  => NULL,
-            P_INTERVAL_MINUTES => 0,
+            P_ATTRIBUTE_PARAMETER_ID => NULL,
             P_INTERPOLATE      => 'F',
-            P_TSID             => NULL,
             P_OFFICE_ID        => '&DEFAULT_OFFICE'
         );
         DBMS_OUTPUT.PUT_LINE('Created CACHE_TEST level');
