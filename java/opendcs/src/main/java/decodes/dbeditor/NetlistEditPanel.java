@@ -1,24 +1,28 @@
-/**
- * Copyright 2024 The OpenDCS Consortium and contributors
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.table.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.awt.event.*;
 import java.io.File;
@@ -46,6 +50,7 @@ import decodes.util.PdtEntry;
 @SuppressWarnings("serial")
 public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
     static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -99,7 +104,7 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
         }
         catch (Exception ex)
         {
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -351,13 +356,14 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
         }
         catch (IOException ex)
         {
-            parent.showError("Cannot open or parse network list '" + f.getPath() + "': " + ex);
+            final String msg = "Cannot open or parse network list '{}'";
+            log.atError().setCause(ex).log(msg, f.getPath());
+            parent.showError(msg.replace("{}", f.getPath()) + ": " + ex);
         }
     }
 
     protected void selectFromPdtButtonPressed()
     {
-        System.out.println("Select From PDT Pressed.");
         if (pdtSelectDialog == null)
             pdtSelectDialog = new PdtSelectDialog(null);
         launchDialog(pdtSelectDialog);
@@ -431,10 +437,9 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
             // Update the table
             tableModel.refresh(theObject);
         }
-        catch (DatabaseException e1)
+        catch (DatabaseException ex)
         {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
+            log.atError().setCause(ex).log("Unable to modify network list entries.");
         }
     }
 
@@ -463,8 +468,8 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
                 tm = p.getTransportMedium(Constants.medium_GoesRD);
             if (tm == null)
             {
-                System.out.println(dbeditLabels.getString("NetlistEditPanel.GOESTransport") + " "
-                    + toAdd[i].makeFileName() + " -- " + mediumTypeCombo.getSelection());
+                log.trace(dbeditLabels.getString("NetlistEditPanel.GOESTransport") + "{} -- {} ",
+                          toAdd[i].makeFileName(), mediumTypeCombo.getSelection());
                 continue;
             }
 
@@ -549,10 +554,10 @@ public class NetlistEditPanel extends DbEditorTab implements ChangeTracker, Enti
         {
             theObject.write();
         }
-        catch (DatabaseException e)
+        catch (DatabaseException ex)
         {
-            TopFrame.instance().showError(
-                dbeditLabels.getString("NetlistEditPanel.SaveError") + " " + e);
+            log.atError().setCause(ex).log(dbeditLabels.getString("NetlistEditPanel.SaveError"));
+            TopFrame.instance().showError(dbeditLabels.getString("NetlistEditPanel.SaveError") + " " + ex);
             return false;
         }
 

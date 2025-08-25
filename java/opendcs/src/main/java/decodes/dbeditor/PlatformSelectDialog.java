@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -7,6 +19,10 @@ import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 import javax.swing.border.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.ResourceBundle;
 
@@ -20,6 +36,7 @@ Used by both Db Editor for import/export and for network list building.
 */
 public class PlatformSelectDialog extends JDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -42,21 +59,21 @@ public class PlatformSelectDialog extends JDialog
         super(owner, "", true);
 		init(mediumType);
     }
-	
+
 	public PlatformSelectDialog(Site site, String mediumType )
     {
         super(TopFrame.instance(), "", true);
         selectPanel = new PlatformSelectPanel(this::openPressed,site, mediumType);
 		plat = null;
-        try 
+        try
 		{
             jbInit();
 			getRootPane().setDefaultButton(selectButton);
             pack();
         }
-        catch(Exception ex) 
+        catch (Exception ex)
 		{
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
 		cancelled = false;
     }
@@ -71,26 +88,26 @@ public class PlatformSelectDialog extends JDialog
 	{
 		selectPanel = new PlatformSelectPanel(this::openPressed,null,mediumType);
 		plat = null;
-        try 
+        try
 		{
             jbInit();
 			getRootPane().setDefaultButton(selectButton);
             pack();
         }
-        catch(Exception ex) 
+        catch(Exception ex)
 		{
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
 		cancelled = false;
 	}
 
-	
+
 	/** Initialize GUI components. */
-	void jbInit() throws Exception 
+	void jbInit() throws Exception
 	{
-        titledBorder1 = 
+        titledBorder1 =
 			new TitledBorder(BorderFactory.createLineBorder(
-				new Color(153, 153, 153),2), 
+				new Color(153, 153, 153),2),
 				dbeditLabels.getString("PlatformSelectDialog.title"));
         border1 = BorderFactory.createCompoundBorder(
 			titledBorder1,BorderFactory.createEmptyBorder(5,5,5,5));
@@ -135,8 +152,8 @@ public class PlatformSelectDialog extends JDialog
 
 	}
 
-	/** 
-	  Called when Select button is pressed. 
+	/**
+	  Called when Select button is pressed.
 	  @param e ignored
 	*/
     void selectButton_actionPerformed(ActionEvent e)
@@ -152,8 +169,8 @@ public class PlatformSelectDialog extends JDialog
 		dispose();
 	}
 
-	/** 
-	  Called when Cancel button is pressed. 
+	/**
+	  Called when Cancel button is pressed.
 	  @param e ignored
 	*/
     void cancelButton_actionPerformed(ActionEvent e)
@@ -178,8 +195,8 @@ public class PlatformSelectDialog extends JDialog
 		return selectPanel.getSelectedPlatforms();
 	}
 
-	/** 
-	  Called with true if multiple selection is to be allowed. 
+	/**
+	  Called with true if multiple selection is to be allowed.
 	  @param ok true if multiple selection is to be allowed.
 	*/
 	public void setMultipleSelection(boolean ok)
