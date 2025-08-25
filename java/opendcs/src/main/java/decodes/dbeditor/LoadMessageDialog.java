@@ -1,8 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor;
 
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -21,7 +35,10 @@ import javax.swing.border.*;
 
 import org.opendcs.gui.x509.X509CertificateVerifierDialog;
 import org.opendcs.utils.WebUtility;
-import org.slf4j.LoggerFactory;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -56,7 +73,7 @@ import decodes.util.DecodesSettings;
  */
 public class LoadMessageDialog extends GuiDialog
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(LoadMessageDialog.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 	JButton okButton = new JButton();
@@ -362,7 +379,6 @@ public class LoadMessageDialog extends GuiDialog
 	{
 		if (loadFromFileButton.isSelected())
 		{
-			// parent.sampleMessageArea.setText("");
 			File f = new File(filePathField.getText());
 			try
 			{
@@ -379,7 +395,6 @@ public class LoadMessageDialog extends GuiDialog
 				}
 				fr.close();
 				sampleMessageOwner.setRawMessage(sb.toString());
-				// parent.sampleMessageArea.setText(sb.toString());
 				closeDlg();
 			}
 			catch (IOException ex)
@@ -427,7 +442,12 @@ public class LoadMessageDialog extends GuiDialog
 				}
 				catch (NumberFormatException ex)
 				{
-					showError("'" + s + dbeditLabels.getString("LoadMessageDialog.ValidateError3"));
+					String msg = dbeditLabels.getString("LoadMessageDialog.ValidateError3");
+					log.atError()
+					   .setCause(ex)
+					   .log("{}'{}", s,msg);
+
+					showError("'" + s + msg);
 					return;
 				}
 			}
@@ -453,7 +473,6 @@ public class LoadMessageDialog extends GuiDialog
 			try
 			{
 				myDSE = myDS.makeDelegate();
-//				rsProps.setProperty("single", "true");
 				rsProps.setProperty("dcpaddress", dcpaddr);
 				if (chan != -1)
 					rsProps.setProperty("channel", "&" + chan);
@@ -462,8 +481,9 @@ public class LoadMessageDialog extends GuiDialog
 			}
 			catch (InvalidDatabaseException ex)
 			{
-				showError(dbeditLabels.getString("LoadMessageDialog.ValidateError7")
-					+ myDS.getName() + "': " + ex);
+				String msg = dbeditLabels.getString("LoadMessageDialog.ValidateError7");
+				log.atError().setCause(ex).log(msg + "{}'", myDS.getName());
+				showError(msg+ "'" + myDS.getName() + ": " + ex);
 				return;
 			}
 
@@ -510,7 +530,6 @@ public class LoadMessageDialog extends GuiDialog
 	 */
 	public void showError(String msg)
 	{
-		Logger.instance().failure(msg);
 		JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60),
 			dbeditLabels.getString("LoadMessageDialog.Error"), JOptionPane.ERROR_MESSAGE);
 	}
@@ -556,12 +575,6 @@ public class LoadMessageDialog extends GuiDialog
 				if (hasBinary)
 					TopFrame.getDbEditFrame().showError(
 						"Binary data in input has been replaced with '$' for display.");
-				// StringBuffer sb = new StringBuffer(rm.toString());
-				// for(int i=0; i<sb.length(); i++)
-				// {
-				// if (sb.charAt(i) == '\r')
-				// sb.setCharAt(i, (char)0x00AE);
-				// }
 				sampleMessageOwner.setRawMessage(sb.toString());
 
 				if (lmd.autoCloseCheck.isSelected())
@@ -685,6 +698,7 @@ public class LoadMessageDialog extends GuiDialog
  */
 class LoadMessageThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -712,8 +726,7 @@ class LoadMessageThread extends Thread
 			try
 			{
 				if (!no_init)
-					dse.init(rsProps, "now - " + back + " hours", "now - " + prevback + " hours",
-						new Vector());
+					dse.init(rsProps, "now - " + back + " hours", "now - " + prevback + " hours",new Vector());
 				RawMessage rawMsg = dse.getRawMessage();
 				if (rawMsg != null)
 				{
@@ -736,8 +749,11 @@ class LoadMessageThread extends Thread
 			}
 			catch (DataSourceException ex)
 			{
-				parent.notifyError(dbeditLabels.getString("LoadMessageDialog.RunError1")
-					+ dse.getName() + "': " + ex);
+				String msg = dbeditLabels.getString("LoadMessageDialog.RunError1");
+				log.atError()
+				   .setCause(ex)
+				   .log(msg+"' {}", dse.getName());
+				parent.notifyError(msg + "' " + dse.getName() + "': " + ex);
 				shutdown = true;
 			}
 		}
