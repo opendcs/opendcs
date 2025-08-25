@@ -47,6 +47,7 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -315,7 +316,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             conn = tsdb.getConnection();
             DbKey siteID = siteDAO.lookupSiteID(reservoirId);
             site = siteDAO.getSiteById(siteID);
-            locLevDAO = new CwmsLocationLevelDAO((CwmsTimeSeriesDb) tsdb, conn);
+            locLevDAO = new CwmsLocationLevelDAO((CwmsTimeSeriesDb) tsdb);
         }
         catch (DbIoException | NoSuchObjectException ex)
         {
@@ -337,11 +338,11 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
 
         if (secchi == 0){
             if (LocationLevel != null){
-                try
+                try (org.opendcs.database.api.DataTransaction tx = locLevDAO.getTransaction())
                 {
-                    secchi = locLevDAO.getLatestLocationLevelValue(LocationLevel, "ft", "in").getLevelValue();
+                    secchi = locLevDAO.getLatestLocationLevelValue(tx, LocationLevel, "ft").getLevelValue();
                 }
-                catch (DbIoException ex)
+                catch (OpenDcsDataException ex)
                 {
                     throw new DbCompException("Failed to load Location Level " + LocationLevel, ex);
                 }

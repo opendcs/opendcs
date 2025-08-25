@@ -3,11 +3,16 @@ package org.opendcs.dao;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 
-import java.util.Date;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
@@ -18,30 +23,60 @@ import decodes.cwms.CwmsLocationLevelDAO;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.tsdb.TimeSeriesDb;
 import opendcs.dai.LocationLevelDAI;
-import opendcs.dao.LocationLevelDAO;
-import opendcs.dao.LocationLevelDAO.LocationLevelValue;
-import opendcs.dao.LocationLevelDAO.LocationLevelSpec;
+
+import decodes.db.LocationLevelValue;
+import decodes.db.LocationLevelSpec;
+
+import org.opendcs.fixtures.annotations.EnableIfTsDb;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Integration tests for CwmsLocationLevelDAO
  * These tests require a real CWMS database connection
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CwmsLocationLevelDAOTestIT extends AppTestBase
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
     @ConfiguredField
     private TimeSeriesDb tsDb;
     
     @ConfiguredField
     private OpenDcsDatabase db;
+
+    private LocationLevelDAI dao;
+    private static boolean testDataLoaded = false;
     
-    private CwmsLocationLevelDAO dao;
+    @BeforeAll
+    public void setupTestData() throws Exception
+    {
+        if (tsDb instanceof CwmsTimeSeriesDb && !testDataLoaded)
+        {
+            try
+            {
+                log.info("Loading location level test data for integration tests");
+                loadLocationLevelTestData();
+                testDataLoaded = true;
+                log.info("Location level test data loaded successfully");
+            }
+            catch (Exception ex)
+            {
+                log.error("Failed to load test data: " + ex.getMessage(), ex);
+                throw ex;
+            }
+        }
+    }
     
     @BeforeEach
     public void setUp() throws Exception
     {
         if (tsDb instanceof CwmsTimeSeriesDb)
         {
-            dao = new CwmsLocationLevelDAO((CwmsTimeSeriesDb) tsDb);
+            Optional<LocationLevelDAI>  dai = db.getDao(LocationLevelDAI.class);
+            assertTrue(dai.isPresent(), "Unable to retrieve LocationLevelDAI instance from database.");
+            dao = dai.get();
         }
         else
         {
@@ -51,7 +86,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
-    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
+    @EnableIfTsDb({"CWMS-Oracle"})
     public void testGetLatestLocationLevelValue_Basic() throws Exception
     {
         if (dao == null) 
@@ -63,9 +98,9 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         // Test data is created during container initialization
         String testLocationLevelId = "TEST_LOCATION.Stage.Constant.Test";
         
-        try
+        try (DataTransaction tx = db.newTransaction())
         {
-            LocationLevelValue value = dao.getLatestLocationLevelValue(testLocationLevelId);
+            LocationLevelValue value = dao.getLatestLocationLevelValue(tx, testLocationLevelId);
             
             // Test passes whether data exists or not
             // If value is not null, verify its structure
@@ -86,7 +121,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             
             // Verify method doesn't throw exception for non-existent location
             assertDoesNotThrow(() -> {
-                dao.getLatestLocationLevelValue("NONEXISTENT.Stage.Constant.Test");
+                dao.getLatestLocationLevelValue(tx, "NONEXISTENT.Stage.Constant.Test");
             });
         }
         finally
@@ -96,7 +131,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
-    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
+    @EnableIfTsDb({"CWMS-Oracle"})
     public void testGetLatestLocationLevelValue_WithUnitConversion() throws Exception
     {
         if (dao == null) 
@@ -106,10 +141,10 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         
         String testLocationLevelId = "TEST_LOCATION.Stage.Constant.Test";
         
-        try
+        try (DataTransaction tx = db.newTransaction())
         {
             // First check if we have any data
-            LocationLevelValue baseValue = dao.getLatestLocationLevelValue(testLocationLevelId);
+            LocationLevelValue baseValue = dao.getLatestLocationLevelValue(tx, testLocationLevelId);
             
             // Skip unit conversion test if no data exists
             assumeTrue(baseValue != null, 
@@ -117,10 +152,10 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             
             // Test conversion from feet to meters
             LocationLevelValue valueInFeet = dao.getLatestLocationLevelValue(
-                testLocationLevelId, "ft", null);
+                tx, testLocationLevelId, "ft");
             
             LocationLevelValue valueInMeters = dao.getLatestLocationLevelValue(
-                testLocationLevelId, "m", null);
+                tx, testLocationLevelId, "m");
             
             if (valueInFeet != null && valueInMeters != null)
             {
@@ -145,7 +180,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
-    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
+    @EnableIfTsDb({"CWMS-Oracle"})
     public void testGetLocationLevelSpecs() throws Exception
     {
         if (dao == null) 
@@ -155,9 +190,9 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         
         String testLocationId = "TEST_LOCATION";
         
-        try
+        try (DataTransaction tx = db.newTransaction())
         {
-            List<LocationLevelSpec> specs = dao.getLocationLevelSpecs(testLocationId);
+            List<LocationLevelSpec> specs = dao.getLocationLevelSpecs(tx, testLocationId);
             
             assertNotNull(specs, "Specs list should not be null");
             
@@ -176,7 +211,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
-    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
+    @EnableIfTsDb({"CWMS-Oracle"})
     public void testTransactionSupport() throws Exception
     {
         if (dao == null) 
@@ -223,7 +258,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
-    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
+    @EnableIfTsDb({"CWMS-Oracle"})
     public void testErrorHandling_InvalidLocationId() throws Exception
     {
         if (dao == null) 
@@ -231,13 +266,13 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             return; // Skip for non-CWMS databases
         }
         
-        try
+        try (DataTransaction tx = db.newTransaction())
         {
             // Use an invalid location ID format
             String invalidLocationId = "INVALID_FORMAT";
             
             // Should not throw exception, just return null
-            LocationLevelValue value = dao.getLatestLocationLevelValue(invalidLocationId);
+            LocationLevelValue value = dao.getLatestLocationLevelValue(tx, invalidLocationId);
             
             // Most likely will be null for invalid ID
             // But if not null, it means the ID exists (unlikely for this test ID)
@@ -250,7 +285,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     }
     
     @Test
-    @EnableIfDaoSupported(CwmsLocationLevelDAO.class)
+    @EnableIfTsDb({"CWMS-Oracle"})
     public void testInterfaceCompatibility() throws Exception
     {
         // Test that CwmsLocationLevelDAO properly implements LocationLevelDAI
@@ -259,28 +294,70 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             return; // Skip for non-CWMS databases
         }
         
-        try
+        try (DataTransaction tx = db.newTransaction())
         {
             // Use the DAO through the interface
             LocationLevelDAI daiInterface = dao;
             
             String testLocationLevelId = "TEST_LOCATION.Stage.Constant.Test";
             
-            // All interface methods should work
-            LocationLevelValue value = daiInterface.getLatestLocationLevelValue(testLocationLevelId);
+            // All interface methods should work with transactions
+            LocationLevelValue value = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId);
             
-            LocationLevelValue valueWithUnits = daiInterface.getLatestLocationLevelValue(
-                testLocationLevelId, "ft", null);
+            LocationLevelValue valueWithUnits = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId, "ft");
             
-            List<LocationLevelSpec> specs = daiInterface.getLocationLevelSpecs("TEST_LOCATION");
-            
-            daiInterface.clearCache();
+            List<LocationLevelSpec> specs = daiInterface.getLocationLevelSpecs(tx, "TEST_LOCATION");
             
             // No exceptions should be thrown
         }
         finally
         {
             dao.close();
+        }
+    }
+
+    /**
+     * Load location level test data for integration tests
+     */
+    private void loadLocationLevelTestData() throws Exception
+    {
+        if (!(tsDb instanceof CwmsTimeSeriesDb))
+        {
+            log.info("Not a CWMS database, skipping test data load");
+            return;
+        }
+        
+        CwmsTimeSeriesDb cwmsDb = (CwmsTimeSeriesDb) tsDb;
+        String officeId = cwmsDb.getDbOfficeId();
+        
+        log.info("Loading test data for office: " + officeId);
+        
+        // Load the SQL script
+        String testDataSql = IOUtils.resourceToString("/database/cwms_location_level_test_data.sql", StandardCharsets.UTF_8);
+        
+        // Replace placeholder with actual office
+        testDataSql = testDataSql.replace("DEFAULT_OFFICE", officeId);
+        
+        // Execute the SQL using the database connection
+        try (DataTransaction tx = db.newTransaction())
+        {
+            java.sql.Connection conn = tx.connection(java.sql.Connection.class)
+                .orElseThrow(() -> new RuntimeException("JDBC Connection not available"));
+            
+            try (java.sql.CallableStatement stmt = conn.prepareCall(testDataSql))
+            {
+                log.debug("Executing PL/SQL block to create test data...");
+                stmt.execute();
+                
+                // Commit the transaction to persist the test data
+                conn.commit();
+                log.info("Test data loaded and committed successfully");
+            }
+        }
+        catch (Exception ex)
+        {
+            log.error("Failed to load location level test data: " + ex.getMessage(), ex);
+            throw new RuntimeException("Failed to load location level test data", ex);
         }
     }
 }

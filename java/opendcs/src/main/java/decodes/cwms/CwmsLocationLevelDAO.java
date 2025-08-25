@@ -3,10 +3,12 @@ package decodes.cwms;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
-import opendcs.dao.*;
+import opendcs.dao.DatabaseConnectionOwner;
+import opendcs.dao.DaoHelper;
+import opendcs.dai.LocationLevelDAI;
+import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.slf4j.Logger;
@@ -15,23 +17,29 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import decodes.db.Database;
 import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverter;
-import decodes.sql.DbKey;
-import decodes.tsdb.DbIoException;
 import decodes.util.DecodesException;
 import ilex.var.NoConversionException;
+
+import decodes.db.LocationLevelValue;
+import decodes.db.LocationLevelSpec;
+
+import opendcs.dao.DaoBase;
 
 /**
  * Data Access Object for CWMS Location Level data.
  * This class provides methods to read and store location level data
  * directly from/to the CWMS database.
  *
- * Extends LocationLevelDAO base class and implements stateless pattern.
+ * Implements LocationLevelDAI interface following stateless pattern.
+ * All operations require a DataTransaction for true stateless behavior.
  */
-public class CwmsLocationLevelDAO extends LocationLevelDAO
+public class CwmsLocationLevelDAO extends DaoBase implements LocationLevelDAI
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    private static final String MODULE = "CwmsLocationLevelDAO";
     
-    private String dbOfficeId = null;
+    private final DatabaseConnectionOwner db;
+    private final String dbOfficeId;
     
     // Base queries for location level operations using AV_LOCATION_LEVEL view
     private static final String LOCATION_LEVEL_SPEC_QUERY = 
@@ -41,53 +49,82 @@ public class CwmsLocationLevelDAO extends LocationLevelDAO
         "ATTRIBUTE_VALUE, ATTRIBUTE_UNIT, ATTRIBUTE_PARAMETER_ID " +
         "FROM CWMS_20.AV_LOCATION_LEVEL " +
         "WHERE LOCATION_ID = ?";
-    
+
     /**
      * Constructor
-     * @param tsdb The database connection owner
+     * @param db The database connection owner
      */
-    public CwmsLocationLevelDAO(DatabaseConnectionOwner tsdb)
+    public CwmsLocationLevelDAO(DatabaseConnectionOwner db)
     {
-        super(tsdb, "CwmsLocationLevelDAO");
-        if (tsdb instanceof CwmsTimeSeriesDb)
+        super(db, MODULE);
+        this.db = db;
+        if (db instanceof CwmsTimeSeriesDb)
         {
-            this.dbOfficeId = ((CwmsTimeSeriesDb)tsdb).getDbOfficeId();
+            this.dbOfficeId = ((CwmsTimeSeriesDb)db).getDbOfficeId();
+        }
+        else
+        {
+            this.dbOfficeId = null;
         }
     }
     
     /**
-     * Constructor with existing connection for transactions
-     * @param tsdb The database connection owner
-     * @param conn Existing database connection to use
-     */
-    public CwmsLocationLevelDAO(DatabaseConnectionOwner tsdb, Connection conn)
-    {
-        super(tsdb, "CwmsLocationLevelDAO", conn);
-        if (tsdb instanceof CwmsTimeSeriesDb)
-        {
-            this.dbOfficeId = ((CwmsTimeSeriesDb)tsdb).getDbOfficeId();
-        }
-    }
-    
-    /**
-     * Read location level specification for a given location
-     * @param locationId The CWMS location identifier
-     * @return List of LocationLevelSpec objects
-     * @throws DbIoException on database error
+     * Get a transaction for database operations
+     * @return A new DataTransaction
+     * @throws OpenDcsDataException if unable to get connection
      */
     @Override
-    public List<LocationLevelSpec> getLocationLevelSpecs(String locationId) 
-        throws DbIoException
+    public DataTransaction getTransaction() throws OpenDcsDataException
     {
         try
         {
-            return executeLocationLevelSpecsQuery(this, locationId);
+            return new SimpleTransaction(db.getConnection());
         }
-        catch(SQLException ex)
+        catch (SQLException ex)
         {
-            throw new DbIoException("Error reading location level specs for " + locationId, ex);
+            throw new OpenDcsDataException("Unable to get connection.", ex);
         }
     }
+    
+    /**
+     * Get location level value with transaction support
+     * @param tx The data transaction
+     * @param locationLevelId The location level identifier
+     * @return The latest LocationLevelValue or null if none found
+     * @throws OpenDcsDataException on database error
+     */
+    @Override
+    public LocationLevelValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId)
+        throws OpenDcsDataException
+    {
+        return getLatestLocationLevelValue(tx, locationLevelId, null);
+    }
+    
+    /**
+     * Get location level value with transaction support and unit conversion
+     * @param tx The data transaction
+     * @param locationLevelId The location level identifier
+     * @param targetUnits The desired units for the value
+     * @return The latest LocationLevelValue or null if none found
+     * @throws OpenDcsDataException on database error
+     */
+    @Override
+    public LocationLevelValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId,
+        String targetUnits) throws OpenDcsDataException
+    {
+        Connection conn = tx.connection(Connection.class)
+            .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
+        
+        try (DaoHelper helper = new DaoHelper(this.db, MODULE + "-transaction", conn))
+        {
+            return executeLocationLevelQuery(helper, locationLevelId, targetUnits);
+        }
+        catch (SQLException ex)
+        {
+            throw new OpenDcsDataException("Error retrieving location level value", ex);
+        }
+    }
+    
     
     /**
      * Read location level specification for a given location with transaction support
@@ -103,7 +140,7 @@ public class CwmsLocationLevelDAO extends LocationLevelDAO
         Connection conn = tx.connection(Connection.class)
             .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
         
-        try (DaoHelper helper = new DaoHelper(this.db, module + "-transaction", conn))
+        try (DaoHelper helper = new DaoHelper(this.db, MODULE + "-transaction", conn))
         {
             return executeLocationLevelSpecsQuery(helper, locationId);
         }
@@ -113,40 +150,20 @@ public class CwmsLocationLevelDAO extends LocationLevelDAO
         }
     }
     
-    /**
-     * Read location level specification for a given location with DaoHelper
-     * This method is kept for backward compatibility and internal use
-     * @param helper The DaoHelper with transaction connection
-     * @param locationId The CWMS location identifier
-     * @return List of LocationLevelSpec objects
-     * @throws DbIoException on database error
-     */
-    public List<LocationLevelSpec> getLocationLevelSpecs(DaoHelper helper, String locationId) 
-        throws DbIoException
-    {
-        try
-        {
-            return executeLocationLevelSpecsQuery(helper, locationId);
-        }
-        catch(SQLException ex)
-        {
-            throw new DbIoException("Error reading location level specs for " + locationId, ex);
-        }
-    }
     
     /**
      * Common helper method to execute location level specs query
-     * @param dao The DAO to use for the query (can be this or a DaoHelper)
+     * @param helper The DaoHelper to use for the query
      * @param locationId The CWMS location identifier
      * @return List of LocationLevelSpec objects
      * @throws SQLException on database error
      */
-    private List<LocationLevelSpec> executeLocationLevelSpecsQuery(DaoBase dao, String locationId)
+    private List<LocationLevelSpec> executeLocationLevelSpecsQuery(DaoHelper helper, String locationId)
         throws SQLException
     {
         List<LocationLevelSpec> specs = new ArrayList<>();
         
-        dao.doQuery(LOCATION_LEVEL_SPEC_QUERY, rs -> {
+        helper.doQuery(LOCATION_LEVEL_SPEC_QUERY, rs -> {
             LocationLevelSpec spec = new LocationLevelSpec();
             spec.setLocationLevelId(rs.getString("LOCATION_LEVEL_ID"));
             spec.setSpecifiedLevelId(rs.getString("SPECIFIED_LEVEL_ID"));
@@ -173,36 +190,12 @@ public class CwmsLocationLevelDAO extends LocationLevelDAO
             }
             
             specs.add(spec);
-            specCache.put(spec);
         }, locationId);
         
         return specs;
     }
 
     
-    /**
-     * Query the database for the latest location level value
-     * Implementation of abstract method from LocationLevelDAO
-     * @param locationLevelId The location level identifier
-     * @param targetUnits The desired units for the value
-     * @param sourceUnitsIn The source units to filter by
-     * @return The latest LocationLevelValue or null if none found
-     * @throws DbIoException on database error
-     */
-    @Override
-    protected LocationLevelValue queryLatestLocationLevelValue(
-        String locationLevelId, String targetUnits, String sourceUnitsIn)
-        throws DbIoException
-    {
-        try
-        {
-            return executeLocationLevelQuery(this, locationLevelId, targetUnits, sourceUnitsIn);
-        }
-        catch(SQLException ex)
-        {
-            throw new DbIoException("Error getting latest location level value for " + locationLevelId, ex);
-        }
-    }
     
     /**
      * Convert value from one unit to another using OpenDCS unit converter
@@ -234,82 +227,37 @@ public class CwmsLocationLevelDAO extends LocationLevelDAO
     }
     
     /**
-     * Query the database for the latest location level value using a helper
-     * Implementation of abstract method from LocationLevelDAO for transaction support
-     * @param helper The DaoHelper with transaction connection
+     * Common helper method to execute location level query using DaoHelper
+     * @param helper The DaoHelper to use for the query
      * @param locationLevelId The location level identifier
      * @param targetUnits The desired units for the value
-     * @param sourceUnitsIn The source units to filter by
-     * @return The latest LocationLevelValue or null if none found
-     * @throws DbIoException on database error
-     */
-    @Override
-    protected LocationLevelValue queryLatestLocationLevelValue(
-        DaoHelper helper, String locationLevelId, String targetUnits, String sourceUnitsIn)
-        throws DbIoException
-    {
-        try
-        {
-            return executeLocationLevelQuery(helper, locationLevelId, targetUnits, sourceUnitsIn);
-        }
-        catch(SQLException ex)
-        {
-            throw new DbIoException("Error getting latest location level value for " + locationLevelId, ex);
-        }
-    }
-    
-    /**
-     * Common helper method to execute location level query using either DaoBase or DaoHelper
-     * @param dao The DAO to use for the query (can be this or a DaoHelper)
-     * @param locationLevelId The location level identifier
-     * @param targetUnits The desired units for the value
-     * @param sourceUnitsIn The source units to filter by
      * @return The latest LocationLevelValue or null if none found
      * @throws SQLException on database error
      */
-    private LocationLevelValue executeLocationLevelQuery(DaoBase dao, String locationLevelId,
-                                                         String targetUnits, String sourceUnitsIn) throws SQLException
+    private LocationLevelValue executeLocationLevelQuery(DaoHelper helper, String locationLevelId,
+                                                         String targetUnits) throws SQLException
     {
         // Build query based on whether we're filtering by source units
         String query;
         Object[] params;
+
+        query =
+            "SELECT CONSTANT_LEVEL AS LOCATION_LEVEL_VALUE, " +
+            "LEVEL_DATE AS LOCATION_LEVEL_DATE, LEVEL_UNIT " +
+            "FROM CWMS_20.AV_LOCATION_LEVEL " +
+            "WHERE LOCATION_LEVEL_ID = ? AND UNIT_SYSTEM = SI " +
+            "ORDER BY LEVEL_DATE DESC " +
+            "FETCH FIRST 1 ROWS ONLY";
+        params = new Object[] { locationLevelId };
+
+        final String[] sourceUnits = new String[] { null };
         
-        if (sourceUnitsIn != null && !sourceUnitsIn.isEmpty())
-        {
-            query = 
-                "SELECT CONSTANT_LEVEL AS LOCATION_LEVEL_VALUE, " +
-                "LEVEL_DATE AS LOCATION_LEVEL_DATE, LEVEL_UNIT " +
-                "FROM CWMS_20.AV_LOCATION_LEVEL " +
-                "WHERE LOCATION_LEVEL_ID = ? " +
-                "AND LEVEL_UNIT = ? " +
-                "ORDER BY LEVEL_DATE DESC " +
-                "FETCH FIRST 1 ROWS ONLY";
-            params = new Object[] { locationLevelId, sourceUnitsIn };
-        }
-        else
-        {
-            query = 
-                "SELECT CONSTANT_LEVEL AS LOCATION_LEVEL_VALUE, " +
-                "LEVEL_DATE AS LOCATION_LEVEL_DATE, LEVEL_UNIT " +
-                "FROM CWMS_20.AV_LOCATION_LEVEL " +
-                "WHERE LOCATION_LEVEL_ID = ? " +
-                "ORDER BY LEVEL_DATE DESC " +
-                "FETCH FIRST 1 ROWS ONLY";
-            params = new Object[] { locationLevelId };
-        }
-        
-        final String[] sourceUnits = {sourceUnitsIn};
-        
-        return dao.getSingleResultOr(query, rs -> {
+        return helper.getSingleResultOr(query, rs -> {
             LocationLevelValue value = new LocationLevelValue();
             double levelValue = rs.getDouble("LOCATION_LEVEL_VALUE");
             String dbUnits = rs.getString("LEVEL_UNIT");
-            
-            // Use database units if sourceUnits not specified
-            if (sourceUnits[0] == null || sourceUnits[0].isEmpty())
-            {
-                sourceUnits[0] = dbUnits;
-            }
+
+            sourceUnits[0] = dbUnits;
             
             // Perform unit conversion if needed
             if (targetUnits != null && !targetUnits.isEmpty() && 
@@ -341,4 +289,12 @@ public class CwmsLocationLevelDAO extends LocationLevelDAO
     }
     
     
+    /**
+     * Close the DAO and free resources
+     */
+    @Override
+    public void close()
+    {
+        // Nothing to close in stateless implementation
+    }
 }

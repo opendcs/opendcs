@@ -2,7 +2,8 @@
 -- This script creates test location levels in the CWMS database
 -- It's executed during test container initialization
 
--- Create test location levels using CWMS stored procedures
+DECLARE
+    v_office_id VARCHAR2(16) := 'DEFAULT_OFFICE';
 BEGIN
     -- First ensure the test location exists
     BEGIN
@@ -22,7 +23,7 @@ BEGIN
             P_COUNTY_NAME  => 'Test County',
             P_STATE_INITIAL => 'TS',
             P_ACTIVE       => 'T',
-            P_OFFICE_ID    => '&DEFAULT_OFFICE'
+            P_OFFICE_ID    => v_office_id
         );
     EXCEPTION
         WHEN OTHERS THEN
@@ -42,7 +43,7 @@ BEGIN
             P_ATTRIBUTE_UNITS  => NULL,
             P_ATTRIBUTE_PARAMETER_ID => NULL,
             P_INTERPOLATE      => 'F',
-            P_OFFICE_ID        => '&DEFAULT_OFFICE'
+            P_OFFICE_ID        => v_office_id
         );
         DBMS_OUTPUT.PUT_LINE('Created TEST_LOCATION stage level');
     EXCEPTION
@@ -62,7 +63,7 @@ BEGIN
             P_ATTRIBUTE_UNITS  => NULL,
             P_ATTRIBUTE_PARAMETER_ID => NULL,
             P_INTERPOLATE      => 'F',
-            P_OFFICE_ID        => '&DEFAULT_OFFICE'
+            P_OFFICE_ID        => v_office_id
         );
         DBMS_OUTPUT.PUT_LINE('Created TEST_LOCATION flow level');
     EXCEPTION
@@ -82,7 +83,7 @@ BEGIN
             P_ATTRIBUTE_UNITS  => NULL,
             P_ATTRIBUTE_PARAMETER_ID => NULL,
             P_INTERPOLATE      => 'F',
-            P_OFFICE_ID        => '&DEFAULT_OFFICE'
+            P_OFFICE_ID        => v_office_id
         );
         DBMS_OUTPUT.PUT_LINE('Created TEST_LOCATION metric stage level');
     EXCEPTION
@@ -108,7 +109,7 @@ BEGIN
             P_COUNTY_NAME  => 'Test County',
             P_STATE_INITIAL => 'TS',
             P_ACTIVE       => 'T',
-            P_OFFICE_ID    => '&DEFAULT_OFFICE'
+            P_OFFICE_ID    => v_office_id
         );
     EXCEPTION
         WHEN OTHERS THEN
@@ -128,7 +129,7 @@ BEGIN
             P_ATTRIBUTE_UNITS  => NULL,
             P_ATTRIBUTE_PARAMETER_ID => NULL,
             P_INTERPOLATE      => 'F',
-            P_OFFICE_ID        => '&DEFAULT_OFFICE'
+            P_OFFICE_ID        => v_office_id
         );
         DBMS_OUTPUT.PUT_LINE('Created CACHE_TEST level');
     EXCEPTION

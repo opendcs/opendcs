@@ -119,9 +119,6 @@ public class CwmsOracleConfiguration implements Configuration
             createPropertiesFile(configBuilder, this.propertiesFile);
             profile = Profile.getProfile(this.propertiesFile);
             mp.loadBaselineData(profile, dcsUser, dcsUserPassword);
-            
-            // Load location level test data for integration tests
-            loadLocationLevelTestData();
         }
 
 
@@ -150,33 +147,6 @@ public class CwmsOracleConfiguration implements Configuration
         try (OutputStream out = new FileOutputStream(new File(userDir,"logfilter.txt")))
         {
             out.write("org.jooq".getBytes());
-        }
-    }
-
-    /**
-     * Load location level test data for integration tests
-     */
-    private void loadLocationLevelTestData()
-    {
-        try
-        {
-            log.info("Loading location level test data for integration tests");
-            String testDataSql = IOUtils.resourceToString("/database/cwms_location_level_test_data.sql", StandardCharsets.UTF_8);
-            
-            // Replace placeholder with actual office
-            testDataSql = testDataSql.replace("&DEFAULT_OFFICE", cwmsDb.getOfficeId());
-            
-            // Execute as CWMS_20 user to have proper permissions
-            cwmsDb.executeSQL(testDataSql, "CWMS_20");
-            
-            log.info("Location level test data loaded successfully");
-        }
-        catch (Exception ex)
-        {
-            // Log the error with full stack trace at warning level so we can see it
-            log.log(Level.WARNING, "Could not load location level test data: " + ex.getMessage(), ex);
-            // Re-throw to see the actual error
-            throw new RuntimeException("Failed to load location level test data", ex);
         }
     }
     
