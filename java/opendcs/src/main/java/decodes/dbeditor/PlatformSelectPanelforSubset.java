@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -9,11 +21,11 @@ import javax.swing.table.*;
 import java.util.Vector;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
 import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.gui.*;
 import decodes.db.*;
@@ -23,6 +35,7 @@ Displays a sorting-list of Platform objects in the database.
 */
 public class PlatformSelectPanelforSubset extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -47,7 +60,7 @@ public class PlatformSelectPanelforSubset extends JPanel
         }
         catch(Exception ex)
 		{
-            ex.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -125,9 +138,9 @@ public class PlatformSelectPanelforSubset extends JPanel
 	}
 }
 
-class PlatformSelectTableModelforSubset extends AbstractTableModel
-	implements SortingListTableModel
+class PlatformSelectTableModelforSubset extends AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static String columnNames[] =
 	{
 		PlatformSelectPanelforSubset.genericLabels.getString("platform"),
@@ -172,9 +185,10 @@ class PlatformSelectTableModelforSubset extends AbstractTableModel
 			Database.getDb().getDbIo().deletePlatform(ob);
                   }
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			TopFrame.instance().showError(e.toString());
+			log.atError().setCause(ex).log("Unable to delete platform.");
+			TopFrame.instance().showError(ex.toString());
 		}
 		fireTableDataChanged();
 	}

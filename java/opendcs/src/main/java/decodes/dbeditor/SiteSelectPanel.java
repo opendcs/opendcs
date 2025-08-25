@@ -1,9 +1,28 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.table.TableRowSorter;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import org.opendcs.gui.SearchPanel;
 
@@ -16,6 +35,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class SiteSelectPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 	static String descriptionLabel = genericLabels.getString("description");
@@ -57,11 +77,13 @@ public class SiteSelectPanel extends JPanel
 			}
 		} );
 
-		try {
+		try 
+		{
 		    jbInit();
 		}
-		catch(Exception ex) {
-		    ex.printStackTrace();
+		catch(Exception ex) 
+		{
+		    GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
