@@ -232,10 +232,13 @@ public class PresentationGroupListPanel extends JPanel implements ListOpsControl
 			catch(DatabaseException ex)
 			{
 				if (!isNew)
+				{
+					log.atError().setCause(ex).log(	"Cannot open presentation group '{}'", pg.getDisplayName());
 					DbEditorFrame.instance().showError(
 						"Cannot open presentation group '"
 						+ pg.getDisplayName()
 						+ "'");
+				}
 			}
 		}
 		DbEditorTab tab = dbtp.findEditorFor(pg);

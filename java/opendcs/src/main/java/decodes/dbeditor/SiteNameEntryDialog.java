@@ -204,7 +204,7 @@ public class SiteNameEntryDialog extends GuiDialog
 		// 2012/07/05 CWMS Location Names can contain spaces
 		else if (!nameType.equalsIgnoreCase(Constants.snt_CWMS) && nameValue.indexOf(' ') > 0)
 		{
-			log.trace("SiteNameType='{}', value='{}", nameType, nameValue);
+			log.trace("SiteNameType='{}', value='{}'", nameType, nameValue);
 			int r = JOptionPane.showConfirmDialog(this,
 				dbeditLabels.getString("SiteNameEntryDialog.nameFormatErr"),
 				dbeditLabels.getString("SiteNameEntryDialog.nameFormatErrTitle"),
