@@ -1,10 +1,27 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.ResourceBundle;
 
 import ilex.util.LoadResourceBundle;
@@ -15,10 +32,9 @@ import decodes.db.*;
  * Shows a sorting list of sites in the database editor.
  */
 @SuppressWarnings("serial")
-public class SiteListPanel 
-	extends JPanel 
-	implements ListOpsController
+public class SiteListPanel extends JPanel implements ListOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -37,14 +53,14 @@ public class SiteListPanel
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		listOpsPanel.enableCopy(false);
 	}
 
 	/**
 	 * Sets the parent frame object. Each list panel needs to know this.
-	 * 
+	 *
 	 * @param parent
 	 *            the DbEditorFrame
 	 */
@@ -87,6 +103,7 @@ public class SiteListPanel
 			}
 			catch (DatabaseException ex)
 			{
+				log.atError().setCause(ex).log("Unable to open site.");
 			}
 			doOpen(site);
 		}
@@ -150,7 +167,7 @@ public class SiteListPanel
 
 	/**
 	 * Opens a SiteEditPanel for the passed site.
-	 * 
+	 *
 	 * @param site
 	 *            the site to open.
 	 * @return the new SiteEditPanel
