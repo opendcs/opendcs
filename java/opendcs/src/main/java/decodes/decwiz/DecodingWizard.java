@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.decwiz;
 
 import decodes.db.Database;
@@ -11,13 +26,16 @@ import decodes.util.DecodesVersion;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.TokenOptions;
 import ilex.gui.WindowUtility;
-import ilex.util.Logger;
 
 import javax.swing.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 
 public class DecodingWizard
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	boolean packFrame = false;
 	private DecWizFrame decWizFrame;
 
@@ -55,8 +73,8 @@ public class DecodingWizard
 
 	/** The command line arguments */
 	static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "decwiz.log");
-	static BooleanToken noLimitsArg = new BooleanToken("m", 
-		"Do NOT apply Sensor min/max limits.", "", 
+	static BooleanToken noLimitsArg = new BooleanToken("m",
+		"Do NOT apply Sensor min/max limits.", "",
 		TokenOptions.optSwitch, false);
 
 	static
@@ -74,9 +92,7 @@ public class DecodingWizard
 		// Parse command line arguments.
 		cmdLineArgs.parseArgs(args);
 
-		Logger.instance().info(
-			"Decoding Wizard Starting (" + DecodesVersion.startupTag()
-			+ ") =====================");
+		log.info("Decoding Wizard Starting ({}) =====================", DecodesVersion.startupTag());
 
 		// Initialize settings from properties file
 		DecodesSettings settings = DecodesSettings.instance();
@@ -86,41 +102,38 @@ public class DecodingWizard
 		{
 			Database db = new decodes.db.Database();
 			Database.setDb(db);
-			DatabaseIO dbio = null; 
-			dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
-				settings.editDatabaseLocation);
+			DatabaseIO dbio = null;
+			dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode, settings.editDatabaseLocation);
 
 			Platform.configSoftLink = false;
-			System.out.print("Reading DB: "); System.out.flush();
+			log.info("Reading DB: ");
 			db.setDbIo(dbio);
-			System.out.print("Enum, "); System.out.flush();
+			log.info("Enum, ");
 			db.enumList.read();
-			System.out.print("DataType, "); System.out.flush();
+			log.info("DataType, ");
 			db.dataTypeSet.read();
-			System.out.print("EU, "); System.out.flush();
+			log.info("EU, ");
 			db.engineeringUnitList.read();
 
 			// Note: ExplicitList false means everytime a Site is created,
 			// it is automatically added to list. I want this because the
 			// site list will then get populated when I read the platform list.
 			Site.explicitList = false;
-			System.out.print("Site, "); System.out.flush();
+			log.info("Site, ");
 			db.siteList.read();
-			System.out.print("Plat, "); System.out.flush();
+			log.info("Plat, ");
 			db.platformList.read();
-		
-			System.out.println("DONE.");
+
+			log.info("DONE.");
 
 			db.presentationGroupList.read();
-//			db.routingSpecList.read();
-//			db.networkListList.read();
+			DecodingWizard decwiz = new DecodingWizard();
+			decwiz.show();
 		}
 		catch(DatabaseException ex)
 		{
-			Logger.instance().fatal("Cannot initialize DECODES database: "+ex);
+			log.atError().setCause(ex).log("Cannot initialize DECODES database.");
 			System.exit(1);
 		}
-		DecodingWizard decwiz = new DecodingWizard();
-		decwiz.show();
 	}
 }
