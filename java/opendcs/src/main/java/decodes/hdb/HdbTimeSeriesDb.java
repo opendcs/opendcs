@@ -344,9 +344,9 @@ public class HdbTimeSeriesDb extends TimeSeriesDb
 			}
 			try(ResultSet rs2 = dao.doQuery(q))
 			{
-				if (rs2.next())
+				if (rs.next())
 				{
-					hsdi = new HdbSiteDatatype(DbKey.createDbKey(rs2, 1), siteId, datatypeId);
+					hsdi = new HdbSiteDatatype(DbKey.createDbKey(rs, 1), siteId, datatypeId);
 					hdbSdiCache.add(hsdi);
 					return hsdi.getSdi();
 				}

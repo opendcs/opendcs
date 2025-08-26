@@ -50,8 +50,6 @@ public class Observation
     /**
      * From Mike Neilson, I did consider putting these calls into try with resources; however, it's a nested mess
      * So I'm focusing on the log update.
-     * TODO: update to bind vars.
-     * NOTE: in main consider use of jdbi
      */
     public void process()
     {
