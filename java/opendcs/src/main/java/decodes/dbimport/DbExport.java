@@ -1,26 +1,34 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.dbimport;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Vector;
-import java.util.Properties;
-import java.util.Iterator;
-import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
 import ilex.cmdline.*;
 
 import decodes.tsdb.DbIoException;
 import decodes.util.*;
 import decodes.db.*;
-import decodes.xml.XmlDatabaseIO;
 import decodes.xml.TopLevelParser;
 
 /**
@@ -29,6 +37,7 @@ Writes output to stdout.
 */
 public class DbExport
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
 
 	static
@@ -49,19 +58,18 @@ public class DbExport
 	public static void main(String args[])
 		throws IOException, DecodesException
 	{
-		Logger.setLogger(new StderrLogger("DbExport"));
+
 
 		// Parse command line arguments.
 
-		BooleanToken insecureArg = new BooleanToken("insecure", "include passwords and username in output", "", TokenOptions.optSwitch, false);
+		BooleanToken insecureArg = new BooleanToken("insecure", "include passwords and username in output",
+													"", TokenOptions.optSwitch, false);
 		cmdLineArgs.addToken(insecureArg);
 		cmdLineArgs.parseArgs(args);
 
-		 boolean insecure = insecureArg.getValue();
+		boolean insecure = insecureArg.getValue();
 
-		Logger.instance().log(Logger.E_INFORMATION,
-			"DbExport Starting (" + DecodesVersion.startupTag()
-			+ ") =====================");
+		log.info("DbExport Starting ({}) =====================", DecodesVersion.startupTag());
 
 		DecodesSettings settings = DecodesSettings.instance();
 
@@ -70,9 +78,8 @@ public class DbExport
 		Database.setDb(db);
 		DatabaseIO dbio;
 
-		dbio = DatabaseIO.makeDatabaseIO(
-			settings.editDatabaseTypeCode, settings.editDatabaseLocation);
-		
+		dbio = DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode, settings.editDatabaseLocation);
+
 		// Standard Database Initialization for all Apps:
 		Site.explicitList = false; // YES Sites automatically added to SiteList
 		db.setDbIo(dbio);
@@ -89,25 +96,20 @@ public class DbExport
 		db.dataSourceList.read();
 		db.presentationGroupList.read();
 		db.routingSpecList.read();
-		
-		LoadingAppDAI loadingAppDAO = dbio.makeLoadingAppDAO();
-		try
+
+		try (LoadingAppDAI loadingAppDAO = dbio.makeLoadingAppDAO())
 		{
 			db.loadingAppList.addAll(loadingAppDAO.listComputationApps(false));
 		}
 		catch(DbIoException ex)
 		{
-			Logger.instance().warning("Cannot list loading apps: " + ex);
+			log.atWarn().setCause(ex).log("Cannot list loading apps.");
 			db.loadingAppList.clear();
 		}
-		finally
-		{
-			loadingAppDAO.close();
-		}
-		
+
 		ScheduleEntryDAI scheduleEntryDAO = dbio.makeScheduleEntryDAO();
 		if (scheduleEntryDAO == null)
-			Logger.instance().debug1("Cannot export schedule entries. Not supported on this database.");
+			log.debug("Cannot export schedule entries. Not supported on this database.");
 		else
 		{
 			try
@@ -116,7 +118,7 @@ public class DbExport
 			}
 			catch(DbIoException ex)
 			{
-				Logger.instance().warning("Cannot list schedule entries: " + ex);
+				log.atWarn().setCause(ex).log("Cannot list schedule entries.");
 				db.schedEntryList.clear();
 			}
 			finally
@@ -125,7 +127,6 @@ public class DbExport
 			}
 		}
 
-		Logger lg = Logger.instance();
 		Vector<Platform> platforms = db.platformList.getPlatformVector();
 
 		// Completely read all platform data from the database
@@ -134,12 +135,10 @@ public class DbExport
 			try { p.read(); }
 			catch(Exception ex)
 			{
-				String msg = "Error reading platform '"
-					+ p.makeFileName() + "': " + ex;
-				System.err.println(msg);
+				log.atError().setCause(ex).log("Error reading platform '{}'", p.makeFileName());
 			}
 		}
-		
+
 		// Likewise, completely read all presentation groups
 		Vector<PresentationGroup> pgs = db.presentationGroupList.getVector();
 		for(PresentationGroup pg : pgs)
@@ -147,13 +146,10 @@ public class DbExport
 			try { pg.read(); }
 			catch(Exception ex)
 			{
-				String msg = "Error reading presentation group '"
-					+ pg.getDisplayName() + "': " + ex;
-				System.err.println(msg);
+				log.atError().setCause(ex).log("Error reading presentation group '{}'",  pg.getDisplayName());
 			}
 		}
 
 		TopLevelParser.write(System.out, db, insecure);
 	}
 }
-
