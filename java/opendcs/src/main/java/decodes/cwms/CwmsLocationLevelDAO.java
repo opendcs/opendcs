@@ -245,7 +245,7 @@ public class CwmsLocationLevelDAO extends DaoBase implements LocationLevelDAI
             "SELECT CONSTANT_LEVEL AS LOCATION_LEVEL_VALUE, " +
             "LEVEL_DATE AS LOCATION_LEVEL_DATE, LEVEL_UNIT " +
             "FROM CWMS_20.AV_LOCATION_LEVEL " +
-            "WHERE LOCATION_LEVEL_ID = ? AND UNIT_SYSTEM = SI " +
+            "WHERE LOCATION_LEVEL_ID = ? AND UNIT_SYSTEM = 'SI' " +
             "ORDER BY LEVEL_DATE DESC " +
             "FETCH FIRST 1 ROWS ONLY";
         params = new Object[] { locationLevelId };

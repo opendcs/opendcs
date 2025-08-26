@@ -96,7 +96,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         
         // This test verifies the method executes without error
         // Test data is created during container initialization
-        String testLocationLevelId = "TEST_LOCATION.Stage.Constant.Test";
+        String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
         
         try (DataTransaction tx = db.newTransaction())
         {
@@ -121,7 +121,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             
             // Verify method doesn't throw exception for non-existent location
             assertDoesNotThrow(() -> {
-                dao.getLatestLocationLevelValue(tx, "NONEXISTENT.Stage.Constant.Test");
+                dao.getLatestLocationLevelValue(tx, "NONEXISTENT.Stage.Const.0.Test");
             });
         }
         finally
@@ -139,7 +139,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             return; // Skip for non-CWMS databases
         }
         
-        String testLocationLevelId = "TEST_LOCATION.Stage.Constant.Test";
+        String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
         
         try (DataTransaction tx = db.newTransaction())
         {
@@ -219,7 +219,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             return; // Skip for non-CWMS databases
         }
         
-        String testLocationLevelId = "TEST_LOCATION.Stage.Constant.Test";
+        String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
         String testLocationId = "TEST_LOCATION";
         
         DataTransaction tx = null;
@@ -299,7 +299,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             // Use the DAO through the interface
             LocationLevelDAI daiInterface = dao;
             
-            String testLocationLevelId = "TEST_LOCATION.Stage.Constant.Test";
+            String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
             
             // All interface methods should work with transactions
             LocationLevelValue value = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId);
@@ -349,9 +349,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
                 log.debug("Executing PL/SQL block to create test data...");
                 stmt.execute();
                 
-                // Commit the transaction to persist the test data
-                conn.commit();
-                log.info("Test data loaded and committed successfully");
+                log.info("Test data loaded successfully");
             }
         }
         catch (Exception ex)
