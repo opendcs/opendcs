@@ -1,103 +1,35 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2017/05/31 21:25:46  mmaloney
- * Changed TABSEL_PART back to Table Selector
- *
- * Revision 1.2  2016/07/20 15:38:51  mmaloney
- * Remove unneeded debug.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.23  2013/05/28 13:14:04  mmaloney
- * ILEXPROJECTS-147 bug fix. Must also check interval when comparing to parm.
- *
- * Revision 1.22  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- * Revision 1.21  2012/08/23 19:04:34  mmaloney
- * Implement methods to write to the tasklist table from Java.
- *
- * Revision 1.20  2012/08/15 16:07:47  mmaloney
- * Consistency in calling setDisplayName for HdbTsId objects.
- *
- * Revision 1.19  2012/08/15 15:53:18  mmaloney
- * Consistency in calling setDisplayName for HdbTsId objects.
- *
- * Revision 1.18  2012/08/14 18:15:56  mmaloney
- * display name
- *
- * Revision 1.17  2012/08/14 18:06:58  mmaloney
- * Allow display name to be set in unique string.
- *
- * Revision 1.16  2012/08/13 17:49:22  mmaloney
- * dev
- *
- * Revision 1.15  2012/08/13 17:43:39  mmaloney
- * dev
- *
- * Revision 1.14  2012/08/01 17:01:27  mmaloney
- * debug.
- *
- * Revision 1.13  2012/08/01 14:24:34  mmaloney
- * Implement equals(Object) to allow storage in HashSet.
- *
- * Revision 1.12  2012/07/30 21:14:50  mmaloney
- * In HDB, after setting a TSID's datatype, have to invalidate SDI to force a new lookup.
- *
- * Revision 1.11  2012/07/30 21:10:39  mmaloney
- * In HDB, after setting a TSID's datatype, have to invalidate SDI to force a new lookup.
- *
- * Revision 1.10  2012/07/27 12:51:43  mmaloney
- * Null ptr in copyNoKey
- *
- * Revision 1.9  2012/07/23 15:21:31  mmaloney
- * Refactor group evaluation for HDB.
- *
- * Revision 1.8  2012/07/05 18:24:57  mmaloney
- * tsKey is stored as a long.
- *
- * Revision 1.7  2012/06/18 15:15:14  mmaloney
- * Moved TS ID cache to base class.
- *
- * Revision 1.6  2012/06/13 16:27:16  mmaloney
- * remove debugs
- *
- * Revision 1.5  2012/06/13 14:38:30  mmaloney
- * dev
- *
- * Revision 1.4  2012/06/12 18:39:11  mmaloney
- * dev
- *
- * Revision 1.3  2012/06/12 18:31:33  mmaloney
- * dev
- *
- * Revision 1.2  2012/06/12 18:27:40  mmaloney
- * dev
- *
- * Revision 1.1  2012/06/07 19:01:23  mmaloney
- * Implement HdbTsId
- *
- * Revision 1.5  2012/05/31 19:52:43  mmaloney
- * Implemented CP_TS_ID table reads.
- *
- * 
- * This is open-source software written by Sutron Corporation under
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+
+ * Portions of this software were written by Sutron Corporation under
  * contract to the federal government. Anyone is free to copy and use this
  * source code for any purpos, except that no part of the information
  * contained in this file may be claimed to be proprietary.
  *
- * Except for specific contractual terms between Sutron and the federal 
+ * Except for specific contractual terms between Sutron and the federal
  * government, this source code is provided completely without warranty.
 
  */
 package decodes.hdb;
 
 import opendcs.opentsdb.Interval;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.IntervalList;
@@ -106,24 +38,22 @@ import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.DbCompParm;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 
 /**
  * This class holds a time-series identifier for HDB.
- * 
+ *
  * In HDB, a time-series is identified with a string with the following form:
  *    Site.DataType.Interval.TableSelector[.ModelId[.ModelRunId]]
  * For real data, there are only 4 parts.
  * For modeled data, the ModelId must be specified, and (if this is
  * an out specifying output, such as outputts) the ModelRunId can
  * also be specified.
- * 
+ *
  */
 public class HdbTsId implements TimeSeriesIdentifier
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public int getModelId()
 	{
 		return modelId;
@@ -146,34 +76,34 @@ public class HdbTsId implements TimeSeriesIdentifier
 
 	/** The ts_id from the CP_TS_ID table */
 	private DbKey tsId = Constants.undefinedId;
-	
+
 	/** The site_datatype_id from CP_TS_ID. This is different from ts_id. */
 	private DbKey sdi = Constants.undefinedId;
-	
+
 	/** interval from CP_TS_ID */
 	private String interval = null;
-	
+
 	/** Either "R_" or "M_" (real vs. modeled). From CP_TS_ID.table_selector */
 	private String tabsel = null;
-	
+
 	/** From CP_TS_ID.model_id. This is different from model_run_id. */
 	int modelId = Constants.undefinedIntKey;
-	
+
 	/** output programs like outputts need to completely specify model-run-id
 	 * Note that this is not stored in CP_TS_ID because it's not used by the CP.
 	 */
 	int modelRunId = Constants.undefinedIntKey;
-	
+
 	/** For cases where we populate from a string, hold site-name separately */
 	private String siteName;
-	
+
 	// External links derived from the above info:
 	private Site site = null;
 	private DataType dataType = null;
 	private String displayName = null;
 	private String unitsAbbr = null;
 	private String desc = null;
-	
+
 	// Constant strings for the parts of a time series identifier
 	public static final String SITE_PART = "Site";
 	public static final String DATATYPE_PART = "DataType";
@@ -183,9 +113,9 @@ public class HdbTsId implements TimeSeriesIdentifier
 	public static final String MODELRUNID_PART = "ModelRunId"; // only used for output programs
 
 	/** This determines the columns and labels in the GUI: */
-	public static final String tsIdParts[] = { SITE_PART, DATATYPE_PART, 
+	public static final String tsIdParts[] = { SITE_PART, DATATYPE_PART,
 		INTERVAL_PART, TABSEL_PART, MODELID_PART };
-	
+
 	/** used for caching */
 	private long readTime = 0L;
 
@@ -198,12 +128,12 @@ public class HdbTsId implements TimeSeriesIdentifier
 	{
 		setUniqueString(uniqueId);
 	}
-	
+
 	public String[] getParts()
 	{
 		return HdbTsId.tsIdParts;
 	}
-	
+
 	@Override
 	public String getUniqueString()
 	{
@@ -228,7 +158,7 @@ public class HdbTsId implements TimeSeriesIdentifier
 			if (endParen > 0)
 				displayName = displayName.substring(0,  endParen);
 			setDisplayName(displayName);
-			
+
 		}
 		String parts[] = uniqueId.split("\\.");
 		if (parts.length >= 1)
@@ -305,8 +235,9 @@ public class HdbTsId implements TimeSeriesIdentifier
 			try { modelId = Integer.parseInt(value); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning("Attempt to set modelId to '" + value 
-					+ "': ModelId must be numeric.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Attempt to set modelId to '{}': ModelId must be numeric.", value);
 			}
 		}
 		else if (part.equalsIgnoreCase(MODELRUNID_PART))
@@ -314,13 +245,15 @@ public class HdbTsId implements TimeSeriesIdentifier
 			try { modelRunId = Integer.parseInt(value); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning("Attempt to set modelRunId to '" + value 
-					+ "': ModelRunId must be numeric.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Attempt to set modelRunId to '{}': ModelRunId must be numeric.", value);
 			}
 		}
 		else
-			Logger.instance().warning("Unknown Time Series Identifier part '"
-				+ part + "' -- ignored");
+		{
+			log.warn("Unknown Time Series Identifier part '{}' -- ignored", part);
+		}
 	}
 
 	@Override
@@ -347,7 +280,7 @@ public class HdbTsId implements TimeSeriesIdentifier
 		}
 		else if (part.equalsIgnoreCase(INTERVAL_PART))
 			return interval;
-		else if (part.equalsIgnoreCase(TABSEL_PART) 
+		else if (part.equalsIgnoreCase(TABSEL_PART)
 			|| part.equalsIgnoreCase("table_selector")) // legacy
 			return tabsel;
 		else if (part.equalsIgnoreCase(MODELID_PART))
@@ -356,8 +289,7 @@ public class HdbTsId implements TimeSeriesIdentifier
 			return "" + modelRunId;
 		else
 		{
-			Logger.instance().warning("Unknown Time Series Identifier part '"
-				+ part + "' -- ignored");
+			log.warn("Unknown Time Series Identifier part '{}' -- ignored", part);
 			return "";
 		}
 	}
@@ -483,14 +415,12 @@ public class HdbTsId implements TimeSeriesIdentifier
 	@Override
 	public void setDisplayName(String nm)
 	{
-//Logger.instance().info("Set display name to '" + nm + "'");
 		displayName = nm;
 	}
-	
+
 	@Override
 	public void checkValid() throws BadTimeSeriesException
 	{
-//Logger.instance().info("HdbTsId.checkValid");
 		if (site == null)
 			throw new BadTimeSeriesException("Site unassigned");
 		if (dataType == null)
@@ -507,7 +437,7 @@ public class HdbTsId implements TimeSeriesIdentifier
 			}
 		if (!ok)
 			throw new BadTimeSeriesException("Invalid HDB interval '" + interval + "'");
-		
+
 		if (tabsel == null)
 			throw new BadTimeSeriesException("Table Selector unassigned");
 		ok = false;
@@ -557,22 +487,22 @@ public class HdbTsId implements TimeSeriesIdentifier
 		DataType pdt = parm.getDataType();
 		if (pdt == null || !pdt.equals(dataType))
 			return false;
-		
+
 		// MJM ILEXPROJECTS-147 Bug Fix - must also check interval in HDB.
 		String pint = parm.getInterval();
 		if (pint == null || !pint.equalsIgnoreCase(interval))
 			return false;
-		
+
 		String pts = parm.getTableSelector();
 		if (TextUtil.strCompareIgnoreCase(pts, tabsel) != 0)
 			return false;
 		if (tabsel != null && tabsel.equalsIgnoreCase("M_")
 		 && parm.getModelId() != modelId)
 			return false;
-		
+
 		return true;
 	}
-	
+
 	@Override
 	public boolean equals(Object rhs)
 	{
@@ -582,8 +512,6 @@ public class HdbTsId implements TimeSeriesIdentifier
 		if (this == rhs)
 			ret = true;
 		ret = this.compareTo((HdbTsId)rhs) == 0;
-Logger.instance().info("HdbTsId.equals: this='" + getUniqueString() + "' rhs='" 
-+ ((HdbTsId)rhs).getUniqueString() + ", returning " + ret);
 		return ret;
 	}
 
@@ -592,10 +520,10 @@ Logger.instance().info("HdbTsId.equals: this='" + getUniqueString() + "' rhs='"
 	{
 		return getUniqueString();
 	}
-	
+
 	@Override
 	public String toString() { return this.getUniqueString(); }
-	
+
 	@Override
 	public int hashCode() { return toString().hashCode(); }
 

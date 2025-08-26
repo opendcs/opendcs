@@ -1,13 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 
@@ -23,11 +36,12 @@ adds them to Flaming Gorge Inflow to get Unregulated Inflow
 //AW:JAVADOC_END
 public class FLGUUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double FTRWDeltaStorage;	//AW:TYPECODE=i
 	public double FTRWEvap;			//AW:TYPECODE=i
 	public double FLGUInflow;			//AW:TYPECODE=i
-	
+
 	String _inputNames[] = { "FTRWDeltaStorage", "FTRWEvap", "FLGUInflow" };
 //AW:INPUTS_END
 
@@ -62,7 +76,7 @@ public class FLGUUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:USERINIT
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -88,8 +102,8 @@ public class FLGUUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:TIMESLICE
 		double sum = 0.0;
 		sum = FTRWDeltaStorage + FTRWEvap;
-		
-debug3("doAWTimeSlice, sum=" + sum + " unreg =" + (FLGUInflow + sum));
+
+		log.trace("doAWTimeSlice, sum={}, unreg = {}", sum, (FLGUInflow + sum));
 
 		setOutput(unreg, FLGUInflow + sum);
 //AW:TIMESLICE_END

@@ -1,6 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb;
-
-import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -10,6 +23,9 @@ import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.sql.OracleDateParser;
 import oracle.jdbc.OracleResultSet;
@@ -30,34 +46,33 @@ import oracle.sql.DATE;
  * 	120 112 7 12 10 54 18
  * Also, we have a mix of DATE and TIMESTAMP WITH TIMEZONE so we
  * sometimes don't know the underlying SQL data type.
- * 
+ *
  * The only reliable way to retrieve the date/time correctly is to
  * set session timezone on startup to whatever timezone the DATEs are stored in.
  * Then try to parse from a string in a variety of formats.
- * 
+ *
  * Experimentally, I have determined that ResultSet.getTimestamp does not
  * produce correct results in Oracle for either DATE or TIMESTAMP WITH TIME ZONE.
- * 
+ *
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class HdbOracleDateParser
-	extends OracleDateParser
+public class HdbOracleDateParser extends OracleDateParser
 {
-	
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public HdbOracleDateParser(TimeZone tz)
 	{
 		super(tz);
 		module = "HdbOracleDateParser";
-Logger.instance().info("Constructing " + module);
+		log.info("Constructing {}", module);
 	}
-	
+
 	private Date convertDATE(DATE oracleDate)
 	{
 		byte []db = oracleDate.getBytes();
 		if (db.length < 7)
 			return null;
 		int yearByte = (int)db[1] & 0xff; // avoid sign extension!
-		
+
 		cal.clear();
 		cal.set(Calendar.YEAR, ((int)db[0] - 100)*100 + (yearByte - 100));
 		cal.set(Calendar.MONTH, (int)db[2] - 1);
@@ -66,18 +81,9 @@ Logger.instance().info("Constructing " + module);
 		cal.set(Calendar.MINUTE, (int)db[5] - 1);
 		cal.set(Calendar.SECOND, (int)db[6] - 1);
 		Date ret = cal.getTime();
-//		Logger.instance().debug3(module + " Oracle DATE Bytes for "
-//			+ cal.getTimeZone().getID() + ": "
-//			+ (int)db[0] + " "
-//			+ yearByte + " "
-//			+ (int)db[2] + " "
-//			+ (int)db[3] + " "
-//			+ (int)db[4] + " "
-//			+ (int)db[5] + " "
-//			+ (int)db[6] + " date=" + ret);
 		return ret;
 	}
-	
+
 	public Date getTimeStamp(ResultSet rs, int column)
 	{
 		String s;
@@ -92,7 +98,7 @@ Logger.instance().info("Constructing " + module);
 			columnName = metaData.getColumnName(column);
 			if (s == null || rs.wasNull())
 				return null;
-			
+
 			if (sqlDataType.equals("DATE"))
 				return convertDATE(((OracleResultSet)rs).getDATE(column));
 		}
@@ -106,11 +112,11 @@ Logger.instance().info("Constructing " + module);
 			}
 			catch (SQLException e2)
 			{
-				Logger.instance().warning(module + " Error Attempt to get date as String and Timestamp both failed: " + e2);
+				log.atWarn().setCause(e2).log("Error Attempt to get date as String and Timestamp both failed.");
 				return null;
 			}
 		}
-		try 
+		try
 		{
 			Date d = oracleTimestampZFmt.parse(s);
 			return d;
@@ -139,13 +145,13 @@ Logger.instance().info("Constructing " + module);
 		}
 		catch(SQLException ex)
 		{
-			Logger.instance().warning(module + 
-				" Cannot parse " + columnName 
-				+ " string '" + s + "' and cannot get as Timestamp: " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log(" Cannot parse {} string '{}' and cannot get as Timestamp: ", columnName, s);
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Convert a Java Date object into an Oracle DATE in the database time zone.
 	 * @param d the Java date object

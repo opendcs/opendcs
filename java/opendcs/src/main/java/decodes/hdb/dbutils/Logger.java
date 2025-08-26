@@ -16,8 +16,9 @@ import java.text.*;
     @author Mark A. Bogner 
 
     Date: 18-April-2001
-
+  @deprecated please use the project standard slf4j logger and backend configuration to control logging.
 */
+@Deprecated
 public class Logger
 {
 

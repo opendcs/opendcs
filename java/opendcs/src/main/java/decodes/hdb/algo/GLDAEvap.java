@@ -1,14 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
 import java.util.GregorianCalendar;
 
-import ilex.var.NamedVariableList;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
@@ -46,8 +59,8 @@ average monthly temperature
 Output is net evaporation as a volume, plus the component evaporations of
 gross, river, streamside, terrace, remaining.
 
-<p>Properties include: 
-<ul> 
+<p>Properties include:
+<ul>
 <li>ignoreTimeSeries - completely ignore changes to any timeseries value from evapCoeff, and always lookup from database.
 </li>
 </ul>
@@ -55,9 +68,9 @@ gross, river, streamside, terrace, remaining.
 
  */
 //AW:JAVADOC_END
-public class GLDAEvap
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class GLDAEvap extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double area;	//AW:TYPECODE=i
 	public double elev;	//AW:TYPECODE=i
@@ -66,7 +79,7 @@ public class GLDAEvap
 	public double terraceEvapCoeff;	//AW:TYPECODE=i
 	public double aveTemp;	//AW:TYPECODE=i
 	public double avePrecip;	//AW:TYPECODE=i
-	
+
 	String _inputNames[] = { "area", "elev", "grossEvapCoeff",
 			"streamEvapCoeff", "terraceEvapCoeff", "aveTemp", "avePrecip"};
 //AW:INPUTS_END
@@ -86,7 +99,7 @@ public class GLDAEvap
 	public NamedVariable streamsideEvap = new NamedVariable("streamsideEvap", 0);
 	public NamedVariable terraceEvap = new NamedVariable("terraceEvap", 0);
 	public NamedVariable remainingEvap = new NamedVariable("remainingEvap", 0);
-	String _outputNames[] = { "netEvap", "grossEvap", "riverEvap", 
+	String _outputNames[] = { "netEvap", "grossEvap", "riverEvap",
 			"streamsideEvap", "terraceEvap", "remainingEvap" };
 //AW:OUTPUTS_END
 
@@ -99,7 +112,7 @@ public class GLDAEvap
 	public String terraceEvapCoeff_missing = "ignore";
 	public String aveTemp_missing = "ignore";
 	public String avePrecip_missing = "ignore";
-	
+
 	String _propertyNames[] = { "ignoreTimeSeries", "area_missing", "elev_missing",
 			"grossEvapCoeff_missing", "streamEvapCoeff_missing", "terraceEvapCoeff_missing",
 			"aveTemp_missing", "avePrecip_missing" };
@@ -118,10 +131,10 @@ public class GLDAEvap
 //AW:INIT_END
 
 //AW:USERINIT
-		
+
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -134,14 +147,14 @@ public class GLDAEvap
 		if (firstCall)
 		{
 			firstCall = false;
-			
+
 			// Find the name for the input parameter.
 			// Cast to int was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 			// Cast to int was moded by M. Bogner March 2013 for the 5.3 CP upgrade project
-			// because the surrogate keys where changed to a dbkey object 
+			// because the surrogate keys where changed to a dbkey object
 			//int elev_sdi = (int) getSDI("elev").getValue();
 			DbKey elev_sdi = getSDI("elev");
-			debug3("Constructing HDB ratings for evap ratings");
+			log.trace("Constructing HDB ratings for evap ratings");
 			riverRatingTable = new HDBRatingTable(tsdb,"Lake Powell River Area",elev_sdi);
 			streamRatingTable = new HDBRatingTable(tsdb,"Lake Powell Streamside Area",elev_sdi);
 			terraceRatingTable = new HDBRatingTable(tsdb,"Lake Powell Terrace Area",elev_sdi);
@@ -170,7 +183,7 @@ public class GLDAEvap
 			deleteAllOutputs();
 			return;
 		}
-		if (ignoreTimeSeries) {	
+		if (ignoreTimeSeries) {
 			grossEvapCoeff = getCoeff("grossEvapCoeff");
 			streamEvapCoeff= getCoeff("streamEvapCoeff");
 			terraceEvapCoeff = getCoeff("terraceEvapCoeff");
@@ -178,38 +191,38 @@ public class GLDAEvap
 			avePrecip = getCoeff("avePrecip");
 		}
 		//gross evap is whole area times coeff divided by length of current month in days * 12 in/ft
-		double gevap = area*grossEvapCoeff/(daysInMonth*12); 
+		double gevap = area*grossEvapCoeff/(daysInMonth*12);
 
 		//river evap is river area times coeff divided by length of current month in days * 12 in/ft
 		RatingStatus rs = riverRatingTable.doRating(elev, _timeSliceBaseTime);
 		double riverArea = rs.dep;
 		double rivevap = riverArea*grossEvapCoeff/(daysInMonth*12);
-		
+
 		//streamside evap is streamside area times coeff times ave temp divided by length of current month in days * 12 in/ft
 		rs = streamRatingTable.doRating(elev, _timeSliceBaseTime);
 		double streamArea = rs.dep;
 		double sevap =  streamArea*streamEvapCoeff*aveTemp/(daysInMonth*12);
-		
+
 		//terrace evap is terrace area times coeff times ave temp divided by length of current month in days * 12 in/ft
 		rs = terraceRatingTable.doRating(elev, _timeSliceBaseTime);
 		double terraceArea = rs.dep;
 		double tevap = terraceArea*terraceEvapCoeff*aveTemp/(daysInMonth*12);
-		
+
 		//remaining evap is remaining area * avePrecip divided by length of current month in days * 12 in/ft,
 		//all assumed to evaporate
 		double remevap = (area - riverArea - streamArea- terraceArea)*
 		                 avePrecip/(daysInMonth*12);
 
-		debug3("doAWTimeSlice gevap=" + gevap+ ", rivevap=" + rivevap+
-				", sevap=" + sevap+ ", tevap=" + tevap+ ", remevap=" + remevap);
-				
+		log.trace("doAWTimeSlice gevap={}, rivevap={}, sevap={} tevap={}, remevap={}",
+				  gevap, rivevap, sevap, tevap, remevap);
+
 		setOutput(grossEvap, gevap);
 		setOutput(riverEvap, rivevap);
 		setOutput(streamsideEvap, sevap);
 		setOutput(terraceEvap, tevap);
 		setOutput(remainingEvap, remevap);
-		
-		setOutput(netEvap, gevap - rivevap - sevap - tevap - remevap);		
+
+		setOutput(netEvap, gevap - rivevap - sevap - tevap - remevap);
 //AW:TIMESLICE_END
 	}
 

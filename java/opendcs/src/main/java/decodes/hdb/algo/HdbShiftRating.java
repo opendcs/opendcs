@@ -1,13 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
@@ -17,6 +26,10 @@ import decodes.sql.DbKey;
 //AW:IMPORTS
 import decodes.tsdb.RatingStatus;
 import decodes.util.PropertySpec;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.hdb.HDBRatingTable;
 //AW:IMPORTS_END
 
@@ -38,14 +51,14 @@ Time Interpolated Shift: lookup shifts separated in time, do
    linear interpolations in time.
 Time Interpolated Variable Shift: linear interpolate shifts from stage,
    do linear interpolations in time from the resulting shifts
-   
-The shift, if any, is added to the indep value, and then the dep value is found via 
+
+The shift, if any, is added to the indep value, and then the dep value is found via
 a "Stage Flow" rating table type.
  */
 //AW:JAVADOC_END
-public class HdbShiftRating
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class HdbShiftRating extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double indep;	//AW:TYPECODE=i
 	String _inputNames[] = { "indep" };
@@ -70,8 +83,8 @@ public class HdbShiftRating
 	public String lookupTableType = "Stage Flow";
 	String _propertyNames[] = { "variableShift", "singleShift", "shiftTableType", "lookupTableType" };
 //AW:PROPERTIES_END
-	
-	private PropertySpec shiftRatingPropertySpecs[] = 
+
+	private PropertySpec shiftRatingPropertySpecs[] =
 	{
 		new PropertySpec("singleShift", PropertySpec.NUMBER,
 			"(default=0) If variableShift==false, then this number provides a constant shift for all lookups."),
@@ -104,7 +117,7 @@ public class HdbShiftRating
 //AW:USERINIT
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -120,7 +133,7 @@ public class HdbShiftRating
 			// this line was moded by M. Bogner March 2013 for the 5.3 CP upgrade project
 			// because the surrogate keys in the CP were changed to an object
 			DbKey indep_sdi = getSDI("indep");
-			debug3("Constructing Shift and Rating tables for sdi " + indep_sdi);
+			log.trace("Constructing Shift and Rating tables for sdi {}", indep_sdi);
 			//default non extrapolation of lookups is fine here.
 			ShiftTable = new HDBRatingTable(tsdb,shiftTableType,indep_sdi);
 			RatingTable = new HDBRatingTable(tsdb,lookupTableType,indep_sdi);
@@ -159,21 +172,19 @@ public class HdbShiftRating
 				// user wants a shift from the database
 				RatingStatus shiftRS = ShiftTable.doRating(indep,_timeSliceBaseTime);
 				indep = indep + shiftRS.dep;
-				
-				debug3("Lookup Shift result: " +
-						shiftRS.dep + " resulting indep: "+ indep);
+
+				log.trace("Lookup Shift result: {} resulting indep: {}", shiftRS.dep, indep);
 				setOutput(shift, shiftRS.dep);
 			} else
 			{
 				//user input shift, default 0
 				indep = indep + singleShift;
-				debug3("Constant shift result:" +
-						singleShift + " resulting indep: "+ indep);
+				log.trace("Constant shift result: {} resulting indep: {}", singleShift, indep);
 				setOutput(shift, singleShift);
 			}
 			RatingStatus rs = RatingTable.doRating(indep,_timeSliceBaseTime);
 
-			debug3("Flow result:" +	rs.dep);
+			log.trace("Flow result: {}", rs.dep);
 			setOutput(dep, rs.dep);
 		}
 //AW:TIMESLICE_END
