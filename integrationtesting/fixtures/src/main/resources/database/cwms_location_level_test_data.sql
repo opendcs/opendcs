@@ -140,4 +140,3 @@ BEGIN
     COMMIT;
     DBMS_OUTPUT.PUT_LINE('Location level test data setup complete');
 END;
-/
