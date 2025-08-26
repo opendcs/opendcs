@@ -28,11 +28,10 @@ import opendcs.dai.XmitRecordDAI;
 import opendcs.dao.DatabaseConnectionOwner;
 import decodes.db.Database;
 import decodes.tsdb.DbIoException;
-import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsg;
 
 /**
-This class is responsible for writing XmitRimport ilex.util.Logger;ecords to the SQL database.
+This class is responsible for writing XmitRecords to the SQL database.
 It maintains a queue. XmitRecords are only written after they've lived
 in the queue for agesec seconds. The reason is that we may get several
 DCP 'Messages' that effect the same XmitRecord (DAPS Status Messages,
