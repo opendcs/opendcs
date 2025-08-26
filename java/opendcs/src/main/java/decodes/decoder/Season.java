@@ -1,25 +1,18 @@
-/**
- * $Id: Season.java,v 1.3 2020/02/27 22:06:41 mmaloney Exp $
- * 
- * $Log: Season.java,v $
- * Revision 1.3  2020/02/27 22:06:41  mmaloney
- * Fixed bug having to do with evaluation 1 digit months. For certain dates it wasn't
- * evaluating inclusion correctly.
- *
- * Revision 1.2  2014/10/02 14:35:46  mmaloney
- * Conditional Season Processing
- *
- * Revision 1.1  2014/09/25 18:09:15  mmaloney
- * Added Seasons Enum with Editor.
- *
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to the United States Government. No warranty is provided or implied other
- * than specific contractual terms between COVE and the U.S. Government.
- *
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- * All rights reserved.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.decoder;
 
 import java.text.SimpleDateFormat;
@@ -67,8 +60,6 @@ public class Season
 		if (modified && tz != null)
 			sdf.setTimeZone(TimeZone.getTimeZone(tz));
 		String test = sdf.format(d);
-//System.out.println("Season(" + abbr + ").isInSeason start='" + start 
-//+ "' end='" + end + "' d=" + d + ", test='" + test + "'");
 		// date/times are all normalized to date format. Do a string compare.
 		if (start.equals(end))
 			// Special case -- season is all year.

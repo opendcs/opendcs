@@ -1,13 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.decoder;
 
 import java.util.Vector;
 import java.util.ArrayList;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+
 import ilex.util.ArrayUtil;
-import ilex.util.Logger;
-import ilex.util.TextUtil;
 import decodes.datasource.RawMessage;
 import decodes.util.DecodesSettings;
 import decodes.db.FormatStatement;
@@ -21,6 +37,8 @@ by the script operations.
 */
 public class DataOperations 
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final Marker MODULE = MarkerFactory.getMarker("data-ops");
 	private RawMessage rawMsg;
 	private byte[] data;      // buffer contained within rawMsg
 	private int bytePos;      // byte position within data.
@@ -61,10 +79,11 @@ public class DataOperations
 		begLineBytePos = new Vector<Integer>();
 		begLineBytePos.add(0);
 		settings = DecodesSettings.instance();
-if (data.length >=2)
-Logger.instance().debug3("DataOperations instantiated with length=" + data.length
-+ ", last 2 chars = '" + (char)data[data.length-2] + "' '" + (char)data[data.length-1]
-+ "'");
+		if (data.length >=2)
+		{
+		log.trace(MODULE, "DataOperations instantiated with length={}, last 2 chars = '{}' '{}'",
+					  data.length, (char)data[data.length-2], (char)data[data.length-1]);
+		}
 	}
 
 	/** @return the RawMessage reference. */
@@ -510,50 +529,6 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 		return false;
 	}
 
-//	/**
-//	  Returns a 'field' of data. The field starts at the current byte
-//	  and continues for specified number of characters or until the
-//	  specified delimiter is found. Set 'delimiter' to (byte)0xff to
-//	  mean un-delimited.
-//	  Fields always implicitely end when the end-of-line is encountered.
-//	  @param length number of bytes in field length
-//	  @param delimiter or 0xff if there is none.
-//	  @return byte array containing the field data
-//	  @deprecated Use the version with a string delimiter
-//	*/
-//	byte[] getField(int length, byte delimiter)
-//		throws EndOfDataException
-//	{
-//		byte b[] = new byte[length];
-//		int i;
-//		boolean signDelim = (delimiter==(byte)'+' || delimiter==(byte)'-');
-//
-//		for(i=0; i < length; i++ ) 
-//		{
-//			if ( moreChars() ) 
-//			{
-// 				byte c = curByte();
-//
-// 				if (c == NL                      // EOL
-//				 || (delimiter != 0xff           // There IS a delimiter
-//				  && ((!signDelim && c == delimiter)
-//				   || (signDelim && i>0 && (c==(byte)'+' || c==(byte)'-')))))
-//				{
-//					break;
-//				}
-// 				//if ( c != NL && (delimiter == 0xff || c != delimiter))
-//				else
-//				{
-//					b[i] = c;
-//					forwardspace();
-//				}
-//				//else  // end of field reached!
-//				//	break;
-//			}
-//		}
-//		return i==length ? b : ArrayUtil.getField(b, 0, i);
-//	}
-
 	/**
 	 * Provides default isBinary = false.
 	 * @see getField(int length, String delim, boolean isBinary,boolean isString)
@@ -570,7 +545,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 	  a set of specified delimiter characters is found. Pass null as
 	  'delimiter' to mean un-delimited.
 	  <p>
-	  Fields always implicitely end when the end-of-line is encountered.
+	  Fields always implicitly end when the end-of-line is encountered.
 	  @param length number of bytes in field length
 	  @param delim String containing delimiter characters or null
 	  @return byte array containing the field data
@@ -579,7 +554,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 		boolean isString)
 		throws EndOfDataException
 	{
-Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.length);
+		log.trace(MODULE, "getField pos={}, data.length={}", bytePos, data.length);
 		checkPosition(); // Will throw if we're already past end of data.
 		byte b[] = new byte[length];
 		int i;
@@ -681,9 +656,8 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 		relBytePos++;
 		if ( ++bytePos > data.length ) 
 		{
-			String msg = "Attempt to move past end of data (pos="
-				+ bytePos + ", length="+data.length+")";
-			Logger.instance().debug3(msg);
+			String msg = "Attempt to move past end of data (pos=" + bytePos + ", length="+data.length+")";
+			log.trace(msg);
 			throw new EndOfDataException(msg);
 		}
 
@@ -765,12 +739,6 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 	/** Sets the current line number within data. (1 == first line) */
 	public void setCurrentLine(int ln) { curLine = ln; }
 
-	private void printPosition()
-	{
-		int lineNum = curLine+1;
-		System.out. println("Line: "+lineNum+" Position: "+getRelBytePos());
-	}
-	
 	/**
 	 * Called when every format statement starts to verify that an endless loop
 	 * is not occurring. This method will throw ScriptException if this format
