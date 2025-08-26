@@ -1,17 +1,35 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.gui;
 
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
 import opendcs.dai.TimeSeriesDAI;
-import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Calendar;
 
 public class TimeSeriesChartFrame extends JFrame
 {
-    private final static org.slf4j.Logger log = LoggerFactory.getLogger(TimeSeriesChartFrame.class);
+    private final static Logger log = OpenDcsLoggerFactory.getLogger();
     private final TimeSeriesDAI timeSeriesDAO;
     private final TimeSeriesIdentifier[] tsids;
     public TimeSeriesChartFrame(TimeSeriesDb db, TimeSeriesIdentifier[] tsids )
@@ -20,7 +38,8 @@ public class TimeSeriesChartFrame extends JFrame
         this.tsids = tsids;
     }
 
-    public void plot(){
+    public void plot()
+    {
         try
         {
             Calendar calendar = Calendar.getInstance();
@@ -43,9 +62,10 @@ public class TimeSeriesChartFrame extends JFrame
             pack();
             setVisible(true);
 
-        }catch(Exception e)
+        }
+        catch(Exception ex)
         {
-            log.atError().log("Error plotting data ",e);
+            log.atError().setCause(ex).log("Error plotting data.");
         }
     }
 

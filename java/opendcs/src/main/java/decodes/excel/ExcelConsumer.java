@@ -1,7 +1,21 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.excel;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import java.io.File;
@@ -11,7 +25,6 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -29,6 +42,8 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.apache.poi.ss.usermodel.CellType;
 
 import decodes.consumer.DataConsumer;
@@ -47,18 +62,19 @@ import decodes.decoder.TimeSeries;
  * in the Routing Spec Network List. The user will supply the directory
  * where the xls files will be created. This is going to be the
  * consumer argument. If no consumer arg is supplied the xls files will be
- * created on the DCSTOOL install dir. 
- * 
+ * created on the DCSTOOL install dir.
+ *
  * Note: if the routing spec is going to be ran on real time the following
  * property needs to be set on the routing spec properties section:
  * 	msgPerXlsFile with value of true
  *
- * When setting the Routing Spec with this Consumer need to use the 
+ * When setting the Routing Spec with this Consumer need to use the
  * Null Formatter
- * 
+ *
  */
 public class ExcelConsumer extends DataConsumer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The Directory where the xls files will be stored */
 	private String xlsFilesDirectory;
 	/** The directory as a File object. */
@@ -77,7 +93,7 @@ public class ExcelConsumer extends DataConsumer
 	private final String dateFormatString = "MM/dd/yy HH:mm";
 	private SimpleDateFormat dateFormat;
 	private TimeZone timeZoneObj;
-	
+
 	public ExcelConsumer()
 	{
 		super();
@@ -87,7 +103,7 @@ public class ExcelConsumer extends DataConsumer
 		excelWorkBookList = null;
 		timeZoneObj = null;
 	}
-	
+
 	/**
 	  Opens and initializes the Excel consumer.
 	  @param consumerArg directory where the xls files will be placed.
@@ -109,7 +125,7 @@ public class ExcelConsumer extends DataConsumer
 
 		//Get Routing Spec properties
 		//Get the msgPerXlsFile property - used when running on real time
-		String s = 
+		String s =
 			PropertiesUtil.getIgnoreCase(props,"msgperxlsfile");
 		if (s != null && s.equalsIgnoreCase("true"))
 		{
@@ -131,12 +147,12 @@ public class ExcelConsumer extends DataConsumer
 	 * consumer is no longer needed.
 	 * This method will write out an excel "xls" file for every site found
 	 * on the network list. Notice that if the msgperxlsfile property is set
-	 * to true on the routing spec properties this method does not do 
+	 * to true on the routing spec properties this method does not do
 	 * anything. The workbook was written on the startMessage method
 	 */
 	public void close()
 	{
-		//If the msgperxlsfile is true - do nothing - this means that the 
+		//If the msgperxlsfile is true - do nothing - this means that the
 		//routing spec is running on real time and we want to create an
 		//excel file per msg - this was done on the endMessage method.
 		if (msgPerXlsFile == false)
@@ -146,7 +162,7 @@ public class ExcelConsumer extends DataConsumer
 	}
 
 	/**
-	 * Use when running routing spec in real time with the 
+	 * Use when running routing spec in real time with the
 	 * msgperxlsfile property set
 	 */
 	public void endMessage()
@@ -171,7 +187,7 @@ public class ExcelConsumer extends DataConsumer
 	  This method is called at the beginning of each decoded message. We do all
 	  the IO work here: the println method does nothing.
 	  Use a NullFormatter when using ExcelConsumer.
-	  This method will construct an excel file for every DCP on the 
+	  This method will construct an excel file for every DCP on the
 	  Routing Spec Network List.
 
 	  @param msg The message to be written.
@@ -192,17 +208,13 @@ public class ExcelConsumer extends DataConsumer
 		}
 		catch(UnknownPlatformException ex)
 		{
-			Logger.instance().warning(module + 
-					" Skipping Excel ingest for data from "
-					+ "unknown platform: " + ex);
+			log.atWarn().setCause(ex).log("Skipping Excel ingest for data from unknown platform.");
 			return;
 		}
 		Site platformSite = platform.getSite();
 		if (platformSite == null)
 		{
-			Logger.instance().warning(module + 
-					" Skipping Excel ingest for data from "
-					+ "unknown site, DCP Address = " + tm.getMediumId());
+			log.warn("Skipping Excel ingest for data from unknown site, DCP Address = {}" + tm.getMediumId());
 			return;
 		}
 		//Get the site name used to identify the workbooks
@@ -210,9 +222,9 @@ public class ExcelConsumer extends DataConsumer
 		String nameOfSite = siteName.getDisplayName();
 		if (nameOfSite == null || nameOfSite.equals(""))
 		{	//Just in case - we should never get in here
-			Logger.instance().warning(module + 
-					" Skipping Excel ingest for data from "
-					+ "unknown site, DCP Address = " + tm.getMediumId());
+			log.error("Skipping Excel ingest for data from unknown site, DCP Address = {}." +
+					  " This was the last attempt to determine an address.",
+					  tm.getMediumId());
 			return;
 		}
 		//We need to create an ExcelWorkBook obj for every site that is
@@ -228,11 +240,11 @@ public class ExcelConsumer extends DataConsumer
 											platformSite.getDescription());
 			excelWorkBookList.put(nameOfSite,ewb);
 		}
-		//Here - verify if we have an ExcelColumn already created with 
+		//Here - verify if we have an ExcelColumn already created with
 		//this sensor, if we do just append the timeseries samples to it.
 		//if we do not have this sensor create a new ExcelColumn and
 		//add it to the excelColumnHash map list of the ExcelWorkBook
-		HashMap<Integer, ExcelColumn> excelColumnHash = 
+		HashMap<Integer, ExcelColumn> excelColumnHash =
 												ewb.getExcelColumnHash();
 		for(Iterator it = msg.getAllTimeSeries(); it.hasNext(); )
 		{
@@ -244,7 +256,7 @@ public class ExcelConsumer extends DataConsumer
 			//sensor
 			//if it is found - append time series to it, otherwise create
 			//a new ExcelColumn and add it to the workbookobj hash map
-			ExcelColumn excelColumn = 
+			ExcelColumn excelColumn =
 								(ExcelColumn)excelColumnHash.get(sensorNum);
 			if (excelColumn == null)
 			{
@@ -260,7 +272,7 @@ public class ExcelConsumer extends DataConsumer
 
 	/**
 	 * Create the xls header.
-	 * 
+	 *
 	 * @param wb
 	 * @param sheet
 	 */
@@ -268,50 +280,50 @@ public class ExcelConsumer extends DataConsumer
 			String aPart, String ePart)
 	{	//Create a row for the APart, Rows are 0 based.
 		// Create a cell for the APART = A. position: row 0, column "cell" 0
-		createStringCell(wb, sheet, (short)0, (short)0, 
+		createStringCell(wb, sheet, (short)0, (short)0,
 				HorizontalAlignment.RIGHT, "A");
 		//Create a cell for the BPART = B. position: row 1, column "cell" 0
-		createStringCell(wb, sheet, (short)1, (short)0, 
+		createStringCell(wb, sheet, (short)1, (short)0,
 				HorizontalAlignment.RIGHT, "B");
 		//Create a cell for the CPART = C. position: row 2, column "cell" 0
-		createStringCell(wb, sheet, (short)2, (short)0, 
+		createStringCell(wb, sheet, (short)2, (short)0,
 				HorizontalAlignment.RIGHT, "C");
 		//Create a cell for the EPART = E. position: row 3, column "cell" 0
-		createStringCell(wb, sheet, (short)3, (short)0, 
+		createStringCell(wb, sheet, (short)3, (short)0,
 				HorizontalAlignment.RIGHT, "E");
 		//Create a cell for the FPART = F. position: row 4, column "cell" 0
-		createStringCell(wb, sheet, (short)4, (short)0, 
+		createStringCell(wb, sheet, (short)4, (short)0,
 				HorizontalAlignment.RIGHT, "F");
 		//Create a cell for the Units. position: row 5, column "cell" 0
-		createStringCell(wb, sheet, (short)5, (short)0, 
+		createStringCell(wb, sheet, (short)5, (short)0,
 				HorizontalAlignment.RIGHT, "Units");
 		//Create a cell for the Type. position: row 6, column "cell" 0
-		createStringCell(wb, sheet, (short)6, (short)0, 
+		createStringCell(wb, sheet, (short)6, (short)0,
 				HorizontalAlignment.RIGHT, "Type");
-		
+
 		//SET the timezone
 		//TimeZone = As defined in DECODES for this Routing Spec
 		//position row - 2, column "cell" - 1
-		createStringCell(wb, sheet, (short)2, (short)1, 
+		createStringCell(wb, sheet, (short)2, (short)1,
 				HorizontalAlignment.RIGHT, timeZoneObj.getID());
 		//.getDisplayName());
-		
-		//TODO value for the APART ??? FOR NOW is the first line of 
-		//the Platform description 
-	    //Row 0 cell 1 
-		//APART - User Defined for each DECODES Site 
+
+		//TODO value for the APART ??? FOR NOW is the first line of
+		//the Platform description
+	    //Row 0 cell 1
+		//APART - User Defined for each DECODES Site
 	    //(Can be left blank)
-		createStringCell(wb, sheet, (short)0, (short)1, 
+		createStringCell(wb, sheet, (short)0, (short)1,
 				HorizontalAlignment.LEFT, aPart);
-		
+
 		//TODO value for the EPART ??? FOR NOW is the first line of the
 		//Site description
 		//Row 3 cell 1
 		//EPART = User Defined for each DECODES Site (Can be left blank)
-		createStringCell(wb, sheet, (short)3, (short)1, 
+		createStringCell(wb, sheet, (short)3, (short)1,
 				HorizontalAlignment.LEFT, ePart);
 	}
-	
+
 	/**
 	 * Create the rest of the header
 	 * @param rowNum
@@ -320,7 +332,7 @@ public class ExcelConsumer extends DataConsumer
 	 * @param wb
 	 * @param sheet
 	 */
-	private void createSensorHeaderRow(short rowNum, 
+	private void createSensorHeaderRow(short rowNum,
 			short columnNumIn, String columnType,
 			HSSFWorkbook wb, HSSFSheet sheet)
 	{
@@ -329,45 +341,45 @@ public class ExcelConsumer extends DataConsumer
 		{
 			if (columnType.equalsIgnoreCase(SITE_NAME_HEADER_COLUMN))
 			{
-				createStringCell(wb, sheet, rowNum, columnNum, 
+				createStringCell(wb, sheet, rowNum, columnNum,
 						HorizontalAlignment.RIGHT, col.siteNameCell);
 			}
 			else if (columnType.equalsIgnoreCase(SENSOR_NAME_HEADER_COLUMN))
 			{
-				createStringCell(wb, sheet, rowNum, columnNum, 
+				createStringCell(wb, sheet, rowNum, columnNum,
 						HorizontalAlignment.RIGHT, col.sensorName);
 			}
 			else if (columnType.equalsIgnoreCase(FPART_VALUES_HEADER_COLUMN))
 			{
-				createStringCell(wb, sheet, rowNum, columnNum, 
+				createStringCell(wb, sheet, rowNum, columnNum,
 						HorizontalAlignment.RIGHT, col.fPart);
 			}
 			else if (columnType.equalsIgnoreCase(UNITS_ABBR_HEADER_COLUMN))
 			{
-				createStringCell(wb, sheet, rowNum, columnNum, 
+				createStringCell(wb, sheet, rowNum, columnNum,
 						HorizontalAlignment.RIGHT, col.euAbbr);
 			}
 			else if (columnType.equalsIgnoreCase(TYPE_VALUES_HEADER_COLUMN))
 			{
-				createStringCell(wb, sheet, rowNum, columnNum, 
+				createStringCell(wb, sheet, rowNum, columnNum,
 						HorizontalAlignment.RIGHT, col.type);
 			}
 			columnNum++;
-		}		
+		}
 	}
-	
+
 	/**
      * Creates a cell to hold an String value. Also aligns it in a certain way.
-     * It also sets the value. 
+     * It also sets the value.
      *
      * @param wb        the workbook
-     * @param sheet     the workbook sheet 
+     * @param sheet     the workbook sheet
      * @param rowNum    the row number to create the cell in
      * @param column    the column number to create the cell in
      * @param align     the alignment for the cell.
      * @param value		the value to set the cell to
      */
-	private void createStringCell(HSSFWorkbook wb, HSSFSheet sheet, 
+	private void createStringCell(HSSFWorkbook wb, HSSFSheet sheet,
 			short rowNum, short column, HorizontalAlignment align, String value)
 	{
 		if (value != null)
@@ -379,37 +391,8 @@ public class ExcelConsumer extends DataConsumer
 		cellStyle.setAlignment(align);
 		cell.setCellStyle(cellStyle);
 	}
-    
-	private void createDateCell(HSSFWorkbook wb, HSSFSheet sheet, 
-			short rowNum, short column, HorizontalAlignment align, Date value)
-	{
-		GregorianCalendar cal;
-		cal = new GregorianCalendar(timeZoneObj);
-		cal.setTime(value);
-		//Calendar cal = new Calendar();
-		//cal.setTimeZone(timeZoneObj);
-		
-		//It is important to create a new cell style from the 
-		//workbook otherwise you can end up
-	    //modifying the built in style and effecting not only this cell but 
-		//other cells.
-		HSSFRow row = sheet.createRow(rowNum);
-		HSSFCell cell = row.createCell(column);
-		//cell.setCellValue(value);
-//		cell.setCellType(HSSFCell.CELL_TYPE_NUMERIC);
-		cell.setCellType(CellType.NUMERIC);
-		cell.setCellValue(cal);
-		HSSFDataFormat format = wb.createDataFormat();
-		//cell.setCellValue(new Date());
-	    HSSFCellStyle cellStyle = wb.createCellStyle();
-//	    cellStyle.setDataFormat(
-//	    		HSSFDataFormat.getBuiltinFormat("m/d/yy h:mm"));
-	    cellStyle.setDataFormat(format.getFormat("MM/dd/yy HH:mm"));
-	    cellStyle.setAlignment(align);
-	    cell.setCellStyle(cellStyle);
-	}
-	
-	private void createNumberCell(HSSFWorkbook wb, HSSFSheet sheet, 
+
+	private void createNumberCell(HSSFWorkbook wb, HSSFSheet sheet,
 			short rowNum, short column, HorizontalAlignment align, double value)
 	{
 		HSSFRow row = sheet.createRow(rowNum);
@@ -422,8 +405,8 @@ public class ExcelConsumer extends DataConsumer
 	    cellStyle.setAlignment(align);
 	    cell.setCellStyle(cellStyle);
 	}
-	
-	private void createIndexCell(HSSFWorkbook wb, HSSFSheet sheet, 
+
+	private void createIndexCell(HSSFWorkbook wb, HSSFSheet sheet,
 			short rowNum, short column, HorizontalAlignment align, int value)
 	{
 		HSSFRow row = sheet.createRow(rowNum);
@@ -435,15 +418,15 @@ public class ExcelConsumer extends DataConsumer
 	    cellStyle.setAlignment(align);
 	    cell.setCellStyle(cellStyle);
 	}
-	
+
 	/**
-	 * This method writes out the given work book. It will use the 
+	 * This method writes out the given work book. It will use the
 	 * directory given as a consumer arg with the site name and
 	 * current date/time for the xls file name.
-	 * 
+	 *
 	 * @param wb
 	 */
-	private void writeWorkBook(HSSFWorkbook wb) 
+	private void writeWorkBook(HSSFWorkbook wb)
 	{
 		if (wb != null)
 		{
@@ -451,40 +434,32 @@ public class ExcelConsumer extends DataConsumer
 			String siteName = wb.getSheetName(0);
 			Date currentDate = new Date();
 			DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSS");
-			String xlsFileName = siteName + "-" + 
+			String xlsFileName = siteName + "-" +
 						dateFormat.format(currentDate) + ".xls";
-			FileOutputStream fileOut;
-			try
+
+			try (FileOutputStream fileOut= new FileOutputStream(xlsFilesDirectory
+											+ File.separator + xlsFileName))
 			{
-				fileOut = new FileOutputStream(xlsFilesDirectory
-											+ File.separator + xlsFileName);
 				wb.write(fileOut);
-			    fileOut.close();
-			} catch (FileNotFoundException ex)
+			}
+			catch (IOException ex)
 			{
-				String errMsg = module + " Can not create xls file for " +
-						" site " + siteName + " " + ex.toString();
-				Logger.instance().warning(errMsg);
-			} catch (IOException ex)
-			{
-				String errMsg = module + " Can not create xls file for " +
-				" site " + siteName + " " + ex.toString();
-				Logger.instance().warning(errMsg);
+				log.atError().setCause(ex).log("Can not create xls file for  site {}", siteName);
 			}
 		}
 		else
-			Logger.instance().warning(module + " Workbook is null");
+			log.warn("Workbook is null");
 	}
-	
+
 	/**
 	 * Fill out a workbook for every site on the Routing Spec Network list.
 	 * The excelWorkBookList will contain a workbook obj for every site and
 	 * a hash map with all the columns needed to fill out this workbook.
-	 * 
+	 *
 	 */
 	private void generateWorkBook()
 	{
-		Collection<ExcelWorkBook> xlsWorkBookList = 
+		Collection<ExcelWorkBook> xlsWorkBookList =
 					(Collection<ExcelWorkBook>)excelWorkBookList.values();
 		//Loop through the ExcelWorkBook List
 		for (ExcelWorkBook ewb : xlsWorkBookList)
@@ -497,12 +472,12 @@ public class ExcelConsumer extends DataConsumer
 				HSSFSheet sheet = wb.getSheetAt(0);
 				//Get the list of ExcelColumn objects (contains all columns)
 				Collection<ExcelColumn> tcolumns =
-				//columns = 
+				//columns =
 					(Collection<ExcelColumn>)ewb.getExcelColumnHash().values();
 				columns = new ArrayList<ExcelColumn>(tcolumns);
 				Collections.sort(columns, new SensorColumnComparator());
 				//Fill out workbook
-				fillOutWorkBook(wb, sheet, ewb.getPlatDesc(), 
+				fillOutWorkBook(wb, sheet, ewb.getPlatDesc(),
 														ewb.getSiteDesc());
 				//Write the xls file to the file system
 				writeWorkBook(wb);
@@ -565,17 +540,15 @@ public class ExcelConsumer extends DataConsumer
 		while ((d = findNextDate()) != null)
 		{ // Index under type
 			sampleColumnNum = 0;
-//			createStringCell(wb, sheet, sampleRowNum, sampleColumnNum,
-//					HSSFCellStyle.ALIGN_RIGHT, "" + rowIndex);
+
 			createIndexCell(wb, sheet, sampleRowNum, sampleColumnNum,
 					HorizontalAlignment.RIGHT, rowIndex);
-			
+
 			sampleColumnNum++;
 
 			createStringCell(wb, sheet, sampleRowNum, sampleColumnNum,
 					HorizontalAlignment.RIGHT, dateFormat.format(d));
-//			createDateCell(wb, sheet, sampleRowNum, sampleColumnNum,
-//										HSSFCellStyle.ALIGN_RIGHT, d);
+
 			//dateFormat.
 			sampleColumnNum++;
 			for (ExcelColumn col : columns)
@@ -585,7 +558,7 @@ public class ExcelConsumer extends DataConsumer
 					s = col.nextSample();
 				else
 					s = col.getBlankSample();
-				
+
 				try {
 					double val = Double.valueOf(s);
 					createNumberCell(wb, sheet, sampleRowNum, sampleColumnNum,
@@ -603,12 +576,6 @@ public class ExcelConsumer extends DataConsumer
 			sampleRowNum++;
 			rowIndex++;
 		}
-		// Ajust the width of the second columns
-		//sheet.autoSizeColumn((short) 0);
-		//sheet.autoSizeColumn((short) 1);
-		//System.out.println("column 1 = " + sheet.getColumnWidth((short)1));
-		//sheet.setColumnWidth((short)1,(short)12);
-	
 	}
 	/** @return next date in any time series */
 	private Date findNextDate()

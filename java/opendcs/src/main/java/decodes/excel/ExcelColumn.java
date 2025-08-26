@@ -1,10 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.excel;
 
-import ilex.util.Logger;
 import ilex.var.TimedVariable;
 
 import java.util.Comparator;
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -18,6 +35,7 @@ import decodes.decoder.TimeSeries;
  */
 public class ExcelColumn
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String preferredDataType = Constants.datatype_SHEF;
 	private String module;
 	TimeSeries timeSeries;
@@ -29,14 +47,14 @@ public class ExcelColumn
 	String euAbbr;
 	int dotPos;
 	String siteName;
-	
+
 	Site site;
 	String siteNameCell;//the B PART
 	String fPart;//raw or rev - comes from sensor properties
 				//default to raw
 	String type;//INST-VAL for all except PC which is PER-CUM
 	int sensorNumber;
-	
+
 	/** Initialize the ExcelColumn constructor class */
 	public ExcelColumn(TimeSeries ts, String nameOfSite)
 	{
@@ -49,14 +67,14 @@ public class ExcelColumn
 
 		sensorName = ts.getSensor().getName();
 		sensorNumber = ts.getSensor().getNumber();
-		
+
 		//Get the fpart from sensor properties - raw or rev
 		fPart = ts.getSensor().getProperty("fpart");
 		if (fPart == null)
 		{
 			fPart = "raw";
 		}
-		
+
 		if (sensorName == null)
 			sensorName = "unknown";
 
@@ -69,10 +87,8 @@ public class ExcelColumn
 			dt = ts.getSensor().getDataType();
 			if (dt == null)
 			{
-				Logger.instance().log(Logger.E_WARNING,
-					" " + module + " Site '" + siteName +"' Sensor "
-					+ ts.getSensor().configSensor.sensorNumber 
-					+ " has unknown data type!");
+				log.warn(" Site '{}' Sensor {} has unknown data type!",
+						 siteName, ts.getSensor().configSensor.sensorNumber);
 				dt = DataType.getDataType("UNKNOWN", "UNKNOWN");
 			}
 		}
@@ -89,13 +105,13 @@ public class ExcelColumn
 			type = "PER-CUM";
 		else
 			type = "INST-VAL";
-		
+
 		initColumnData();
 	}
 
 	/**
 	 * Add more TimeSeries samples to this sensor
-	 * 
+	 *
 	 * @param ts
 	 */
 	public void appendTimeSeries(TimeSeries ts)
@@ -120,27 +136,24 @@ public class ExcelColumn
 		}
 		initColumnData();
 	}
-	
+
 	/**
-	 * 
+	 *
 	 *
 	 */
 	private void initColumnData()
 	{
 		dotPos = -1;
 		for(int i=0; i<timeSeries.size(); i++)
-//		for(Iterator it = timeSeries.formattedSamplesIterator(); 
-//			it.hasNext(); )
 		{
 			String s = timeSeries.formattedSampleAt(i);
-//			String s = (String)it.next();
 			if (s.length() > colWidth)
 				colWidth = s.length();
 			int dp = s.indexOf('.');
 			if (dp == -1)
 			{
 				String trimmed = s.trim();
-				if (trimmed.length() > 0 && 
+				if (trimmed.length() > 0 &&
 						!Character.isDigit(trimmed.charAt(0)))
 					dp = 0;
 				else
@@ -156,10 +169,9 @@ public class ExcelColumn
 
 		// sort time series into ascending order.
 		timeSeries.setDataOrder(Constants.dataOrderAscending);
-		//timeSeries.setDataOrder(Constants.dataOrderDescending);
 		timeSeries.sort();
 	}
-	
+
 	public String getBlankSample()
 	{
 		return blankSample;
@@ -193,7 +205,7 @@ public class ExcelColumn
 		}
 		while(sb.length() < colWidth-2)
 			sb.append(' ');
-		
+
 		s = sb.toString();
 		return s;
 	}
@@ -203,7 +215,7 @@ public class ExcelColumn
 class SensorColumnComparator implements Comparator
 {
 	public SensorColumnComparator()
-	{	
+	{
 	}
 	public int compare(Object se1, Object se2)
 	{
