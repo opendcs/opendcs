@@ -1,18 +1,31 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
-import decodes.sql.DbKey;
 
 //AW:IMPORTS
 // Place an import statements you need here.
@@ -24,9 +37,9 @@ import decodes.tsdb.ParmRef;
 Type a javadoc-style comment describing the algorithm class.
  */
 //AW:JAVADOC_END
-public class BeginofPeriodAlg
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class BeginofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double input;	//AW:TYPECODE=i
 	String _inputNames[] = { "input" };
@@ -70,7 +83,7 @@ public class BeginofPeriodAlg
 		// Code here will be run once, after the algorithm object is created.
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -103,7 +116,7 @@ public class BeginofPeriodAlg
 		// Enter code to be executed at each time-slice.
 		if ((count == 0) && (!isMissing(input)))
 		{
-		debug3("BeginofPeriodAlg: FOUND first record");
+			log.trace("BeginofPeriodAlg: FOUND first record");
 			value_out = input;
 			date_out = _timeSliceBaseTime;
 			count++;
@@ -132,7 +145,10 @@ public class BeginofPeriodAlg
 		long milly_diff = date_out.getTime() - _aggregatePeriodBegin.getTime();
 		long milly_window = 0;
 		ParmRef parmRef = getParmRef("output");
-		if (parmRef == null) warning("Unknown aggregate control output variable 'OUTPUT'");
+		if (parmRef == null)
+		{
+			log.warn("Unknown aggregate control output variable 'OUTPUT'");
+		}
 		String intstr = parmRef.compParm.getInterval();
 		if (intstr.equalsIgnoreCase("hour"))
 		     milly_window = req_window_period * (MS_PER_HOUR / 60L);
@@ -144,10 +160,10 @@ public class BeginofPeriodAlg
 		     milly_window = req_window_period * MS_PER_DAY * 31;
 		  else if (intstr.equalsIgnoreCase("wy"))
 		     milly_window = req_window_period * MS_PER_DAY * 31;
-		if ((milly_diff > milly_window) && (req_window_period != 0)) 
+		if ((milly_diff > milly_window) && (req_window_period != 0))
 		{
 		 do_setoutput = false;
-		 debug1("BeginofPeriodAlg: NO OUTPUT: " + _aggregatePeriodBegin + "  SDI:" + getSDI("input"));
+		 log.debug("BeginofPeriodAlg: NO OUTPUT: {} SDI: {}", _aggregatePeriodBegin, getSDI("input"));
 		}
 		//  now check to see if record within desired window
 		if (intstr.equalsIgnoreCase("hour"))
@@ -160,17 +176,17 @@ public class BeginofPeriodAlg
 		     milly_window = desired_window_period * MS_PER_DAY * 31;
 		  else if (intstr.equalsIgnoreCase("wy"))
 		     milly_window = desired_window_period * MS_PER_DAY * 31;
-		if ((milly_diff > milly_window) && (desired_window_period != 0)) 
+		if ((milly_diff > milly_window) && (desired_window_period != 0))
 		{
 		//  set the data flags to w
 		setHdbDerivationFlag(output,"w");
 		}
-		debug3("BeginofPeriodAlg:  WINDOW: " + milly_window + "  DIFF: " + milly_diff + "PERIOD: " + req_window_period);
+		log.trace("BeginofPeriodAlg:  WINDOW: {}  DIFF: {} PERIOD: {}", milly_window, milly_diff, req_window_period);
 		if (do_setoutput)
 		{
 		    /* added to allow users to automatically set the Validation column  */
 		    if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));
-		    debug3("BeginofPeriodAlg: SETTING OUTPUT: DOING A SETOutput");
+		    log.trace("BeginofPeriodAlg: SETTING OUTPUT: DOING A SETOutput");
 		    setOutput(output,value_out);
 		}
 		//  now if there is no record to output then delete if it exists

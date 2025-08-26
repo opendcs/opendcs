@@ -1,79 +1,24 @@
 /*
-*  $Id$
+* Where Applicable, Copyright Sutron
+* Where Applicable, Copyright Cove Software LLC
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by Cove Software LLC under
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*
+*  Portions of this software were written by Cove Software LLC under
 *  contract to Sutron and the federal government. You are free to copy and use this
 *  source code for your own purposes, except that no part of the information
 *  contained in this file may be claimed to be proprietary.
-*
-*  This source code is provided completely without warranty.
-*  
-*  $Log$
-*  Revision 1.5  2018/03/30 14:59:19  mmaloney
-*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
-*
-*  Revision 1.4  2016/11/03 19:01:21  mmaloney
-*  Refactoring for group evaluation to make HDB work the same way as CWMS.
-*
-*  Revision 1.3  2016/09/29 18:54:35  mmaloney
-*  CWMS-8979 Allow Database Process Record to override decodes.properties and
-*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
-*  name of a process record. Properties assigned to the app will override the file(s).
-*
-*  Revision 1.2  2014/08/22 17:23:09  mmaloney
-*  6.1 Schema Mods and Initial DCP Monitor Implementation
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.16  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.15  2012/09/07 19:59:04  mmaloney
-*  Bug fix, resolve first input then use THAT tsid to resolve outputs.
-*
-*  Revision 1.14  2012/08/27 18:04:23  mmaloney
-*  If a matching single comp is disabled, it must be excluded from execution.
-*
-*  Revision 1.13  2012/08/22 19:27:58  mmaloney
-*  Improvements to report format.
-*
-*  Revision 1.12  2012/08/22 13:31:33  mmaloney
-*  Improvements to report format.
-*
-*  Revision 1.11  2012/08/22 13:19:02  mmaloney
-*  Improvements to report format.
-*
-*  Revision 1.10  2012/08/22 13:01:46  mmaloney
-*  Added report feature.
-*
-*  Revision 1.9  2012/08/21 22:05:49  mmaloney
-*  dev
-*
-*  Revision 1.8  2012/08/21 22:01:43  mmaloney
-*  dev
-*
-*  Revision 1.7  2012/08/21 12:48:32  mmaloney
-*  dev
-*
-*  Revision 1.6  2012/08/21 12:30:30  mmaloney
-*  dev
-*
-*  Revision 1.5  2012/08/21 12:29:40  mmaloney
-*  dev
-*
-*  Revision 1.4  2012/08/20 20:27:28  mmaloney
-*  dev
-*
-*  Revision 1.3  2012/08/20 20:23:50  mmaloney
-*  dev
-*
-*  Revision 1.2  2012/08/20 20:20:34  mmaloney
-*  dev
-*
-*  Revision 1.1  2012/08/20 20:09:12  mmaloney
-*  Implement HDB Convert2Group utility.
-*
 */
 package decodes.hdb;
 
@@ -88,6 +33,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
@@ -97,7 +45,6 @@ import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
@@ -125,9 +72,9 @@ import decodes.db.Constants;
 This is the main class for the utility that converts non-group computations
 to group computations.
 */
-public class Convert2Group
-	extends TsdbAppTemplate
+public class Convert2Group extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Local caches for computations, groups, cp_comp_depends:
 	private ArrayList<DbComputation> compCache = new ArrayList<DbComputation>();
 	private GroupHelper groupHelper = null;
@@ -143,7 +90,7 @@ public class Convert2Group
 	private StringToken compIdsArg = new StringToken("", "Computation-IDs",
 		"", TokenOptions.optArgument | TokenOptions.optRequired, "");
 	private File disposedSingleFile = null;
-	
+
 	private String compName = "";
 	private PrintStream reportPS = null;
 	private int reportIndent = 0;
@@ -182,7 +129,7 @@ public class Convert2Group
 			System.err.println("This utility is for HDB only. Cannot run on other database types.");
 			System.exit(1);
 		}
-		
+
 		String reportName = EnvExpander.expand(reportFileArg.getValue());
 		try
 		{
@@ -190,13 +137,13 @@ public class Convert2Group
 		}
 		catch (FileNotFoundException ex)
 		{
-			System.err.println("Cannot open report file '" + reportName + "': " + ex);
+			log.atError().setCause(ex).log("Cannot open report file '{}'", reportName);
 			System.exit(1);
 		}
-		
+
 		report("============== Convert2Group Starting " + (new Date())
 			+ " =============");
-		
+
 		groupHelper = theDb.makeGroupHelper();
 		groupHelper.setGroupCacheDumpDir(null); // Do not dump groups tofile.
 
@@ -207,7 +154,7 @@ public class Convert2Group
 		}
 		report("Single computations that are converted to group will be "
 			+ (deleteSingle ? "deleted." : "disabled."));
-		
+
 		s = disposedSingleArg.getValue();
 		if (s != null && s.length() > 0)
 		{
@@ -225,7 +172,7 @@ public class Convert2Group
 			try { compId = DbKey.createDbKey(Long.parseLong(arg)); }
 			catch(NumberFormatException ex)
 			{
-				warning("Bad compID[" + argIdx + "] '" + arg + "'. Must be integer. Skipped.");
+				log.atWarn().setCause(ex).log("Bad compID[{}] '{}'. Must be integer. Skipped.", argIdx, arg);
 				continue;
 			}
 			processComp(compId);
@@ -253,13 +200,6 @@ public class Convert2Group
 		app.execute(args);
 	}
 
-	public void warning(String msg)
-	{
-		Logger.instance().warning(compName + " " + msg);
-		for(int i=0; i<reportIndent; i++)
-			reportPS.print("    ");
-		reportPS.println(msg);
-	}
 	private void report(String msg)
 	{
 		if (msg.length() > 0)
@@ -267,14 +207,6 @@ public class Convert2Group
 		for(int i=0; i<reportIndent; i++)
 			reportPS.print("    ");
 		reportPS.println(msg);
-	}
-	public void info(String x)
-	{
-		Logger.instance().info(compName + " " + x);
-	}
-	private void debug(String x)
-	{
-		Logger.instance().debug3(compName + " " + x);
 	}
 
 	private void refreshCaches()
@@ -285,9 +217,9 @@ public class Convert2Group
 		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		try
 		{
-			info("Refreshing Computation Cache...");
+			log.info("Refreshing Computation Cache...");
 			compCache.clear();
-			
+
 			// Note: This daemon processes comps for a mix of app IDs.
 			List<String> compNames = loadingAppDao.listComputationsByApplicationId(
 				Constants.undefinedId, false);
@@ -301,31 +233,26 @@ public class Convert2Group
 				}
 				catch (NoSuchObjectException ex)
 				{
-					warning("Computation '" + nm 
-						+ "' could not be read: " + ex);
+					log.atWarn().setCause(ex).log("Computation '{}' could not be read.", nm);
 				}
 			}
-			info("After loading, " + compCache.size()
-				+ " computations in cache.");
+			log.info("After loading, {} computations in cache.", compCache.size());
 
-			info("Refreshing Group Cache...");
+			log.info("Refreshing Group Cache...");
 			String q = "SELECT GROUP_ID FROM TSDB_GROUP";
 			ArrayList<DbKey> grpIds = new ArrayList<DbKey>();
 			ResultSet rs = loadingAppDao.doQuery(q);
 			while(rs != null && rs.next())
 				grpIds.add(DbKey.createDbKey(rs, 1));
-				
+
 			tsGroupDAO.fillCache();
 
-			info("Expanding Groups in Cache...");
+			log.info("Expanding Groups in Cache...");
 			groupHelper.evalAll();
 		}
 		catch (Exception ex)
 		{
-			String msg = "Error refreshing caches: " + ex;
-			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Error refreshing caches.");
 		}
 		finally
 		{
@@ -335,7 +262,7 @@ public class Convert2Group
 			computationDAO.close();
 		}
 	}
-	
+
 
 	/**
 	 * Processes a group Computation from the command line.
@@ -346,12 +273,12 @@ public class Convert2Group
 	{
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
 		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
-		
+
 		// Fetch the computation from my cache.
 		DbComputation groupComp = getCompFromCache(compId);
 		if (groupComp == null)
 		{
-			warning("No computation with ID " + compId + " -- skipped.");
+			log.warn("No computation with ID {} -- skipped.", compId);
 			return;
 		}
 		compName = "Computation-" + compId + " (" + groupComp.getName() + ")";
@@ -359,7 +286,7 @@ public class Convert2Group
 		report("Processing " + compName);
 		report("");
 		reportIndent = 1;
-		
+
 		// If not a group comp, issue warning and skip.
 		if (groupComp.getGroupId() == Constants.undefinedId)
 		{
@@ -390,7 +317,7 @@ public class Convert2Group
 					continue;
 				if (matchesParmsAndAlgo(concreteComp, singleComp))
 				{
-					report("Comp-" + singleComp.getId() + " (" + singleComp.getName() 
+					report("Comp-" + singleComp.getId() + " (" + singleComp.getName()
 						+ ") has matching algorithm and parameters.");
 					reportIndent++;
 					if (matchesProps(concreteComp, singleComp)
@@ -417,13 +344,13 @@ public class Convert2Group
 			}
 		}
 		reportIndent--;
-		
+
 		if (toDispose.size() == 0)
 		{
 			report("Group computation matched no single computation. No changes will be made.");
 			return;
 		}
-		
+
 		// 'mustExclude' contains TSIDs that ARE members of the group but must be prevented
 		// from triggering this group computation. To do this, we have to create an exclusion
 		// group with these TSID, create a copy of the original group just for this computation,
@@ -449,22 +376,22 @@ public class Convert2Group
 			if (!testMode.getValue())
 				tsGroupDAO.writeTsGroup(toExclude);
 			report("");
-			
+
 			// Create a new TsGroup just for this computation "comp-" + compId + "-group"
 			TsGroup compGroup = new TsGroup();
 			compGroup.setGroupName("comp-" + compId + "-group");
 			compGroup.setGroupType("comp-select");
 			compGroup.setDescription("Special group for " + compName);
-			compGroup.addSubGroup(tsGroupDAO.getTsGroupById(groupComp.getGroupId()), 'A');	
+			compGroup.addSubGroup(tsGroupDAO.getTsGroupById(groupComp.getGroupId()), 'A');
 			compGroup.addSubGroup(toExclude, 'S');
 			report("Creating new group '" + compGroup.getGroupName() + "' just for this computation.");
 			report("The new group will include the original group and exclude the above TSIDs");
 			if (!testMode.getValue())
 				tsGroupDAO.writeTsGroup(compGroup);
-			
+
 			// Change the group computation to use the new group.
 			groupComp.setGroup(compGroup);
-			report("Comp-" + compId + " will be modified with group assignment set to '" 
+			report("Comp-" + compId + " will be modified with group assignment set to '"
 				+ compGroup.getGroupName() + "'");
 		}
 
@@ -475,11 +402,11 @@ public class Convert2Group
 		}
 		catch (IOException ex)
 		{
-			warning("Cannot save '" + disposedSingleFile.getPath() + "': " + ex);
-			warning("Aborting!");
+			log.atWarn().setCause(ex).log("Cannot save '{}'", disposedSingleFile.getPath());
+			log.warn("Aborting!");
 			return;
 		}
-		
+
 		report("");
 		report((deleteSingle ? "Deleting " : "Disabling ") + "the following computations:");
 		reportIndent++;
@@ -487,7 +414,7 @@ public class Convert2Group
 		{
 			String id = "Computation(" + disposeComp.getId() + ") '" + disposeComp.getName() + "'";
 			report(id);
-	
+
 			if (!testMode.getValue())
 			{
 				if (deleteSingle)
@@ -501,11 +428,11 @@ public class Convert2Group
 					}
 					catch (ConstraintException ex)
 					{
-						warning("Cannot delete " + id + ": " + ex + " -- will disable.");
+						log.atWarn().setCause(ex).log("Cannot delete {} -- will disable.", id );
 						// fall through
 					}
 				}
-			
+
 				// fell through, either !deleteSingle or unable to delete.
 				// Mark the computation as disabled and save it.
 				if (!testMode.getValue())
@@ -516,13 +443,13 @@ public class Convert2Group
 			}
 		}
 		reportIndent--;
-		
+
 		// Enable the group (if not testmode)
 		report("Enabling " + compName);
 		groupComp.setEnabled(true);
 		if (!testMode.getValue())
 			computationDAO.writeComputation(groupComp);
-		
+
 		tsGroupDAO.close();
 		computationDAO.close();
 	}
@@ -537,16 +464,16 @@ public class Convert2Group
 	private ArrayList<DbComputation> makeConcreteClones(DbComputation groupComp)
 		throws DbIoException
 	{
-		info("Expanding inputs from group.");
+		log.info("Expanding inputs from group.");
 		ArrayList<DbComputation> ret = new ArrayList<DbComputation>();
-		
+
 		// If not a group comp just add the completely-specified parms.
 		TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
 		TsGroup grp = tsGroupDAO.getTsGroupById(groupComp.getGroupId());
 		tsGroupDAO.close();
 		if (grp == null)
 		{
-			warning("Invalid group ID + " + groupComp.getGroupId() + ": no matching group -- skipped.");
+			log.warn("Invalid group ID + {}: no matching group -- skipped.", groupComp.getGroupId());
 			return null;
 		}
 		report("Computation IS a group computation.");
@@ -563,15 +490,15 @@ public class Convert2Group
 		}
 		return ret;
 	}
-	
+
 	private DbComputation makeConcreteClone(DbComputation comp, TimeSeriesIdentifier tsid)
 		throws DbIoException
 	{
 		DbComputation tcomp = comp.copyNoId();
 		tcomp.setId(comp.getId());
 
-		info("Checking ts=" + tsid.getUniqueString());
-		
+		log.info("Checking ts={}", tsid.getUniqueString());
+
 		TimeSeriesIdentifier firstInputTsid = null;
 
 		// Process each input parm first to determine if this TS is a potential trigger.
@@ -582,12 +509,12 @@ public class Convert2Group
 				continue;
 
 			// Transform the group TSID by the parm
-			info("Checking input parm " + parm.getRoleName()
+			log.atInfo().log(() -> "Checking input parm " + parm.getRoleName()
 				+ " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
 				+ " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
 				+ " dt=" + parm.getDataType() + " siteId=" + parm.getSiteId()
 				+ " siteName=" + parm.getSiteName());
-			
+
 			try
 			{
 				TimeSeriesIdentifier ttsid = theDb.transformTsidByCompParm(
@@ -600,21 +527,24 @@ public class Convert2Group
 					firstInputTsid = ttsid;
 			}
 			catch(BadTimeSeriesException ex)
-			{ /* Won't happen because createTS flag is false */ }
+			{
+				/* Won't happen because createTS flag is false */
+				log.atError().setCause(ex).log("An error that shouldn't happen, has.");
+			}
 			catch(NoSuchObjectException ex)
 			{
 				// The TS, after transformation by the parm, doesn't exist in the DB.
 				// Therefore it is not a candidate for this param.
-				debug("TS " + tsid.getUniqueString() +" not a candidate for comp.");
+				log.atDebug().setCause(ex).log("TS {} not a candidate for comp.", tsid.getUniqueString());
 				return null;
 			}
 		}
 		if (firstInputTsid == null)
 		{
-			warning("No input parms!");
+			log.warn("No input parms!");
 			return null;
 		}
-		
+
 		// All input params are transformed and they all exist in the DB.
 		// Now transform the output params from the first input.
 		for(Iterator<DbCompParm> parmit = tcomp.getParms(); parmit.hasNext(); )
@@ -623,12 +553,12 @@ public class Convert2Group
 			if (!parm.isOutput())
 				continue;
 
-			info("Checking output parm " + parm.getRoleName()
+			log.atInfo().log(() -> "Checking output parm " + parm.getRoleName()
 				+ " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
 				+ " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
 				+ " dt=" + parm.getDataType() + " siteId=" + parm.getSiteId()
 				+ " siteName=" + parm.getSiteName());
-			
+
 			try
 			{
 				theDb.transformTsidByCompParm(
@@ -639,16 +569,19 @@ public class Convert2Group
 					null); // ts display name (not important here)
 			}
 			catch(BadTimeSeriesException ex)
-			{ 
-				warning("Cannot create output time series: " + ex);
+			{
+				log.atWarn().setCause(ex).log("Cannot create output time series.");
 				return null;
 			}
 			catch(NoSuchObjectException ex)
-			{ /* Won't happen because createTS flag is true */ }
+			{
+				/* Won't happen because createTS flag is true */
+				log.atError().setCause(ex).log("Unable error that should happen, has.");
+			}
 		}
-		
+
 		tcomp.triggeringTsid = tsid;
-		info("Successfully created concrete clone of group comp.");
+		log.info("Successfully created concrete clone of group comp.");
 		return tcomp;
 	}
 
@@ -663,7 +596,7 @@ public class Convert2Group
 		// Shouldn't happen, the parm will have at least one input defined.
 		return null;
 	}
-	
+
 	/**
 	 * Ensure that only one copy of a given cloned computation exists in
 	 * each evaluation. Example: Adding A and B; both A and B are present in the
@@ -675,7 +608,7 @@ public class Convert2Group
 	 * @param comp the concrete cloned computation
 	 * @return the computation in the list if exact match is found
 	 */
-	private void 
+	private void
 		addIfNotAlreadyPresent(ArrayList<DbComputation> results, DbComputation comp)
 	{
 		DbCompParm parm2Test = getFirstInput(comp);
@@ -688,12 +621,12 @@ public class Convert2Group
 			DbCompParm firstParmInList = inList.getParm(role);
 			if (firstParmInList == null)
 				return; // Shouldn't happen. Same algo will have same roles.
-			
+
 			// If the 1st parms in both comps are equal, then they are the same.
 			if (firstParmInList.equals(parm2Test))
 			{
-				debug("Resolver: Duplicate comp in cycle: "
-					+ comp.getName() + ", 1st input: " + firstParmInList.getSiteDataTypeId());
+				log.debug("Resolver: Duplicate comp in cycle: {}, 1st input: {}",
+						  comp.getName(), firstParmInList.getSiteDataTypeId());
 				return;
 			}
 		}
@@ -709,38 +642,38 @@ public class Convert2Group
 	 */
 	private boolean matchesParmsAndAlgo(DbComputation grpComp, DbComputation singleComp)
 	{
-		debug("matchesParmsAndAlgo Comparing comps " + grpComp.getId() + " and " + singleComp.getId());
+		log.debug("matchesParmsAndAlgo Comparing comps {} and {}", grpComp.getId(), singleComp.getId());
 		if (grpComp.getAlgorithmId() != singleComp.getAlgorithmId())
 			return false;
-		debug("    algos are the same");
-		
+		log.debug("algos are the same");
+
 		ArrayList<DbCompParm> grpParms = grpComp.getParmList();
 		ArrayList<DbCompParm> singleParms = singleComp.getParmList();
 		if (grpParms.size() != singleParms.size())
 			return false;
-		debug("    same number of parms");
-		
+		log.debug("same number of parms");
+
 		// For every grpParm there must be a matching singleParm
 	nextGrpParm:
 		for(DbCompParm grpParm : grpParms)
 		{
 			for(DbCompParm singleParm : singleParms)
 			{
-				debug("   comparing grp:" + grpParm + ", single:" + singleParm);
+				log.debug("comparing grp: {}, single: {}", grpParm, singleParm);
 				if (grpParm.equals(singleParm))
 				{
-					debug("    parm '" + grpParm.getRoleName() + "' is the same.");
+					log.debug("parm '{}' is the same.", grpParm.getRoleName());
 					continue nextGrpParm;
 				}
-				else debug("Not EQUAL");
+				else log.debug("Not EQUAL");
 			}
 			// Fell through. There is no match for this grpParm.
 			return false;
 		}
-		debug("    matchesParmsAndAlgo returning true!");
+		log.debug("matchesParmsAndAlgo returning true!");
 		return true;
 	}
-	
+
 	/**
 	 * Compare the fully-evaluated properties used for the passed computations.
 	 * @param grpComp the computation as derived from the group
@@ -753,7 +686,7 @@ public class Convert2Group
 		String[] builtInPropNames = { "aggUpperBoundClosed", "aggLowerBoundClosed",
 			"aggregateTimeZone", "noAggregateFill", "aggPeriodInterval",
 			"interpDeltas", "maxInterpIntervals" };
-		
+
 		try
 		{
 			DbAlgorithmExecutive grpExec = grpComp.getExecutive();
@@ -764,11 +697,11 @@ public class Convert2Group
 			}
 			if (!(grpExec instanceof AW_AlgorithmBase))
 			{
-				warning(grpExec.getClass().getName() + " is not a subclass of AW_AlgorithmBase");
+				log.warn("{} is not a subclass of AW_AlgorithmBase", grpExec.getClass().getName());
 				return false;
 			}
 			AW_AlgorithmBase grpBase = (AW_AlgorithmBase)grpExec;
-			
+
 			DbAlgorithmExecutive singleExec = singleComp.getExecutive();
 			if (singleExec == null)
 			{
@@ -777,11 +710,11 @@ public class Convert2Group
 			}
 			if (!(singleExec instanceof AW_AlgorithmBase))
 			{
-				warning(singleExec.getClass().getName() + " is not a subclass of AW_AlgorithmBase");
+				log.warn("{} is not a subclass of AW_AlgorithmBase", singleExec.getClass().getName());
 				return false;
 			}
 			AW_AlgorithmBase singleBase = (AW_AlgorithmBase)singleExec;
-			
+
 			String propNames[] = grpBase.getPropertyNames();
 			for(String propName : propNames)
 				if (!TextUtil.strEqualIgnoreCase(grpBase.getEvaluatedProperty(propName),
@@ -797,7 +730,7 @@ public class Convert2Group
 		}
 		catch (DbCompException ex)
 		{
-			warning("Cannot initialize computation: " + ex);
+			log.atWarn().setCause(ex).log("Cannot initialize computation.");
 			return false;
 		}
 	}
@@ -812,7 +745,7 @@ public class Convert2Group
 				return comp;
 		return null;
 	}
-	
+
 	private void expandComputationInputs(DbComputation comp)
 		throws DbIoException
 	{
@@ -823,18 +756,21 @@ public class Convert2Group
 			DbCompParm parm = parmit.next();
 			if (parm.isInput() && parm.getSiteId() == Constants.undefinedId)
 			{
-				info("Expanding input parm '" + parm.getRoleName() + "' in comp '" + comp.getName() + "'");
+				log.info("Expanding input parm '{}' in comp '{}'", parm.getRoleName(), comp.getName());
 				try { theDb.expandSDI(parm); }
 				catch(NoSuchObjectException ex)
 				{
+					log.atTrace()
+					   .setCause(ex)
+					   .log("Unable to expand '{}' for '{}' likely innocuous.", parm.getRoleName(),comp.getName());
 					// Do nothing, it may be a group parm with no SDI specified.
 				}
-				info("After expanding, siteId=" + parm.getSiteId() + ", sitename='" + parm.getSiteName() + "'");
+				log.info("After expanding, siteId={}, sitename='{}'", parm.getSiteId(), parm.getSiteName());
 			}
 		}
 	}
-	
-	
+
+
 	private void saveDisposedCompsAndAlgos(ArrayList<DbComputation> toDispose)
 		throws DbIoException, IOException
 	{

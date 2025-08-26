@@ -1,36 +1,43 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-// this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
-// new class handles surrogate keys as an object
-import decodes.sql.DbKey;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import decodes.hdb.HdbFlags;
-
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 
-import ilex.util.DatePair;
 import decodes.tsdb.ParmRef;
 import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
-import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
 import decodes.hdb.dbutils.RBASEUtils;
 
@@ -41,7 +48,7 @@ import decodes.hdb.dbutils.RBASEUtils;
 	"MIN_VALUES_REQUIRED: Number: the required number of records that must exist\n" +
 	"for calculation to succeed Value 0 means ALL interval observations must exist\n\n" +
 	"MIN_VALUES_DESIRED: Number: will set flag field for result if # of inputs are &lt;= this value\n\n" +
-	"VALIDATION_FLAG: set the validation flag on output record\n\n" + 
+	"VALIDATION_FLAG: set the validation flag on output record\n\n" +
 	"OBSERVATIONS_CALCULATION : true/false : use exact number of interval\n" +
 	"observations to calculate flow is only programmed to work for hourly and\n" +
 	"FLOW_FACTOR: Number: use as multiplier for flow to volume factor (2.0,1.98) :\n" +
@@ -50,6 +57,7 @@ import decodes.hdb.dbutils.RBASEUtils;
 	"NO_ROUNDING: if no rounding in the calculation is desired; default is FALSE")
 public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 
@@ -159,7 +167,7 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		ParmRef parmRef = getParmRef("input");
 		if (parmRef == null)
 		{
-			warning("FlowToVolumeAlg: Unknown aggregate control output variable 'INPUT'");
+			log.warn("FlowToVolumeAlg: Unknown aggregate control output variable 'INPUT'");
 			return;
 		}
 		String input_interval = parmRef.compParm.getInterval();
@@ -167,7 +175,7 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		parmRef = getParmRef("output");
 		if (parmRef == null)
 		{
-			warning("FlowToVolumeAlg: Unknown aggregate control output variable 'OUTPUT'");
+			log.warn("FlowToVolumeAlg: Unknown aggregate control output variable 'OUTPUT'");
 			return;
 		}
 		String output_interval = parmRef.compParm.getInterval();
@@ -188,11 +196,12 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			if (mvr_count < 0 || mvd_count < 0)
 			{
 
-				warning("FlowToVolumeAlg-"
-					+ alg_ver
-					+ " Warning: Illegal negative setting of minimum values criteria for non-Month aggregates");
-				warning("FlowToVolumeAlg-" + alg_ver
-					+ " Warning: Minimum values criteria for non-Month aggregates set to 1");
+				log.warn("FlowToVolumeAlg-{} Warning: Illegal negative setting of minimum values " +
+						 "criteria for non-Month aggregates",
+						 alg_ver);
+				log.warn("FlowToVolumeAlg-{} Warning: Minimum values criteria for non-Month " +
+						 "aggregates set to 1",
+						 alg_ver);
 				if (mvd_count < 0)
 					mvd_count = 1;
 				if (mvr_count < 0)
@@ -202,10 +211,12 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				&& mvr_count == 0)
 			{
 
-				warning("FlowToVolumeAlg-" + alg_ver
-					+ " Warning: Illegal zero setting of minimum values criteria for instant/hour aggregates");
-				warning("FlowToVolumeAlg-" + alg_ver
-					+ " Warning: Minimum values criteria for instant/hour aggregates set to 1");
+				log.warn("FlowToVolumeAlg-{} Warning: Illegal zero setting of minimum values " +
+						 "criteria for instant/hour aggregates",
+						 alg_ver);
+				log.warn("FlowToVolumeAlg-{} Warning: Minimum values criteria for instant/hour " +
+						 "aggregates set to 1",
+						 alg_ver);
 				mvr_count = 1;
 			}
 		}
@@ -249,11 +260,11 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			}
 			else if (mvr_count == 0 && !input_interval.equalsIgnoreCase("day"))
 			{
-				warning("FlowToVolumeAlg-" + alg_ver
-					+ " Warning: Illegal zero setting of minimum values criteria for " + input_interval
-					+ " to daily aggregates");
-				warning("FlowToVolumeAlg-" + alg_ver
-					+ " Warning: Minimum values criteria for daily aggregates set to 1");
+				log.warn("FlowToVolumeAlg-{} Warning: Illegal zero setting of minimum values criteria for {} " +
+						 "to daily aggregates",
+						 alg_ver, input_interval);
+				log.warn("FlowToVolumeAlg-{} Warning: Minimum values criteria for daily aggregates set to 1",
+						 alg_ver);
 				if (mvd_count == 0)
 					mvd_count = 1;
 				if (mvr_count == 0)
@@ -284,8 +295,8 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		double average_flow = tally / (double) total_count;
 		double daily_count = (double) total_count;
 		double hourly_count = (double) daily_count / 24.00;
-		debug3(" Total Count: " + total_count + "   daily_count: " + daily_count + "   hourly Count: "
-			+ hourly_count);
+		log.trace(" Total Count: {}   daily_count: {}   hourly Count: {}",
+				  total_count, daily_count, hourly_count);
 		String day_multiplier = " ( to_date('" + (String) dbobj.get("SD_EDT") + "','dd-MM-yyyy HH24:MI') - "
 			+ "to_date('" + (String) dbobj.get("SD_SDT") + "','dd-MM-yyyy HH24:MI') )";
 
@@ -314,35 +325,35 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 		// now do the query for all the needed data
 		status = db.performQuery(query, dbobj);
-		debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+		log.trace(" SQL STRING:{}   DBOBJ: {} STATUS:  {}", query, dbobj.toString(), status);
 
 		// see if there was an error
 		if (status.startsWith("ERROR"))
 		{
 
-			warning(" FlowToVolumeAlg-" + alg_ver + ":  Failed due to following oracle error");
-			warning(" FlowToVolumeAlg-" + alg_ver + ": " + status);
+			log.warn("FlowToVolumeAlg-{}:  Failed due to following oracle error", alg_ver);
+			log.warn("FlowToVolumeAlg-{}: {}", alg_ver, status);
 			return;
 		}
 		//
-		debug3("FlowToVolumeAlg-" + alg_ver + "  " + _aggregatePeriodEnd + " SDI: " + getSDI("input")
-			+ "  MVR: " + mvr_count + " RecordCount: " + total_count);
+		log.trace("FlowToVolumeAlg-{}  {} SDI: {}  MVR: {} RecordCount: {}",
+				  alg_ver, _aggregatePeriodBegin, getSDI("input"), mvr_count, total_count);
 		// now see how many records were found for this aggregate
 		// and see if this calc is in current period and if partial calc is set
 		is_current_period = ((String) dbobj.get("is_current_period")).equalsIgnoreCase("Y");
 		if (!is_current_period && total_count < mvr_count)
 		{
 			do_setoutput = false;
-			debug1("FlowToVolumeAlg-" + alg_ver + ":  Minimum required records not met for historic period: "
-				+ _aggregatePeriodEnd + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: "
-				+ total_count);
+			log.debug("FlowToVolumeAlg-{}:  Minimum required records not met for historic " +
+					  "period: {} SDI: {}  MVR: {} RecordCount: {}",
+					  alg_ver, _aggregatePeriodEnd, getSDI("input"), mvr_count, total_count);
 		}
 		if (is_current_period && !partial_calculations && total_count < mvr_count)
 		{
 			do_setoutput = false;
-			debug1("FlowToVolumeAlg-" + alg_ver + ":  Minimum required records not met for current period: "
-				+ _aggregatePeriodEnd + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: "
-				+ total_count);
+			log.debug("FlowToVolumeAlg-{}:  Minimum required records not met for current " +
+					  "period: {} SDI: {}  MVR: {} RecordCount: {}",
+				      alg_ver, _aggregatePeriodEnd, getSDI("input"), mvr_count, total_count);
 		}
 		//
 		//
@@ -369,7 +380,7 @@ public class FlowToVolumeAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
 			}
 
-			debug3("FlowToVolumeAlg: Derivation FLAGS: " + flags);
+			log.trace("FlowToVolumeAlg: Derivation FLAGS: {}", flags);
 			if (flags != null)
 				setHdbDerivationFlag(output, flags);
 			Double volume = Double.valueOf(dbobj.get("volume").toString());

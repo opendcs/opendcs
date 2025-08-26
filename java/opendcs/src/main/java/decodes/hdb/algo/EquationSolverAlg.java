@@ -1,26 +1,37 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 
 import decodes.util.PropertySpec;
 //AW:IMPORTS
 import decodes.hdb.dbutils.*;
-import decodes.hdb.HdbFlags;
 import decodes.hdb.HdbTsId;
 
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 //AW:IMPORTS_END
 
@@ -28,15 +39,16 @@ import java.text.SimpleDateFormat;
 /**
 Takes up to 5 input values labeled input1 ... input5.
 Takes the values of these inputs and replaces the reference of these
-inputs in the computation's defined equation and the equation is then 
-submitted to ORACLE to be evaluated.  The equation specification is simple 
+inputs in the computation's defined equation and the equation is then
+submitted to ORACLE to be evaluated.  The equation specification is simple
 yet must be an acceptable ORACLE statement.
 
-ie  the three times the input1 squared equation is:   3*power(<<input1>>,2) 
+ie  the three times the input1 squared equation is:   3*power(<<input1>>,2)
  */
 //AW:JAVADOC_END
 public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double input1;	//AW:TYPECODE=i
 	public double input2;	//AW:TYPECODE=i
@@ -50,11 +62,11 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
     boolean do_setoutput = true;
     Connection conn = null;
 
-    private PropertySpec[] esaProps = 
+    private PropertySpec[] esaProps =
     {
-    	new PropertySpec("equation", PropertySpec.LONGSTRING, 
+    	new PropertySpec("equation", PropertySpec.LONGSTRING,
     		"The database equation to execute at each time slice"),
-    	new PropertySpec("validation_flag", PropertySpec.STRING, 
+    	new PropertySpec("validation_flag", PropertySpec.STRING,
     		"If set, output values will be flagged with this flag.")
     };
 
@@ -72,14 +84,9 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:OUTPUTS_END
 
 //AW:PROPERTIES
-//	public String input1_MISSING = "ignore";
-//	public String input2_MISSING = "ignore";
-//	public String input3_MISSING = "ignore";
-//	public String input4_MISSING = "ignore";
-//	public String input5_MISSING = "ignore";
     public String validation_flag = "";
     public String equation = "";
- 
+
 	String _propertyNames[] = { "equation", "validation_flag" };
 //AW:PROPERTIES_END
 
@@ -97,7 +104,7 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:USERINIT
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -125,7 +132,7 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		String new_equation = equation.replaceAll("<<INPUT", "<<input");
 		String tsbt_time = "to_date('" + sdf.format(_timeSliceBaseTime) + "','dd-mon-yyyy HH24:mi')";
 		new_equation = new_equation.replaceAll("<<tsbt>>", tsbt_time);
-		
+
 		// MJM 2017-04-30 replace with "null" if missing.
 		// Note: if we get to here and value is missing, it means that missing action = ignore.
 		String repl = !isMissing(input1) ? (Double.valueOf(input1)).toString() : "null";
@@ -139,9 +146,9 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				HdbTsId hdbTsid = (HdbTsId)tsid;
 				new_equation = new_equation.replaceAll("<<input1_sdi>>", "" + hdbTsid.getSdi());
 				new_equation = new_equation.replaceAll("<<input1_interval>>", hdbTsid.getInterval());
-				new_equation = new_equation.replaceAll("<<input1_modelid>>", 
+				new_equation = new_equation.replaceAll("<<input1_modelid>>",
 					"" + hdbTsid.getModelId());
-				new_equation = new_equation.replaceAll("<<input1_modelrunid>>", 
+				new_equation = new_equation.replaceAll("<<input1_modelrunid>>",
 						"" + hdbTsid.getModelRunId());
 			}
 		}
@@ -156,13 +163,13 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				HdbTsId hdbTsid = (HdbTsId)tsid;
 				new_equation = new_equation.replaceAll("<<input2_sdi>>", "" + hdbTsid.getSdi());
 				new_equation = new_equation.replaceAll("<<input2_interval>>", hdbTsid.getInterval());
-				new_equation = new_equation.replaceAll("<<input2_modelid>>", 
+				new_equation = new_equation.replaceAll("<<input2_modelid>>",
 					"" + hdbTsid.getModelId());
-				new_equation = new_equation.replaceAll("<<input2_modelrunid>>", 
+				new_equation = new_equation.replaceAll("<<input2_modelrunid>>",
 						"" + hdbTsid.getModelRunId());
 			}
 		}
-		
+
 		repl = !isMissing(input3) ? (Double.valueOf(input3)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input3>>", repl);
 		if (!isMissing(input3))
@@ -174,13 +181,13 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				HdbTsId hdbTsid = (HdbTsId)tsid;
 				new_equation = new_equation.replaceAll("<<input3_sdi>>", "" + hdbTsid.getSdi());
 				new_equation = new_equation.replaceAll("<<input3_interval>>", hdbTsid.getInterval());
-				new_equation = new_equation.replaceAll("<<input3_modelid>>", 
+				new_equation = new_equation.replaceAll("<<input3_modelid>>",
 					"" + hdbTsid.getModelId());
-				new_equation = new_equation.replaceAll("<<input3_modelrunid>>", 
+				new_equation = new_equation.replaceAll("<<input3_modelrunid>>",
 						"" + hdbTsid.getModelRunId());
 			}
 		}
-		
+
 		repl = !isMissing(input4) ? (Double.valueOf(input4)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input4>>", repl);
 		if (!isMissing(input4))
@@ -192,14 +199,14 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				HdbTsId hdbTsid = (HdbTsId)tsid;
 				new_equation = new_equation.replaceAll("<<input4_sdi>>", "" + hdbTsid.getSdi());
 				new_equation = new_equation.replaceAll("<<input4_interval>>", hdbTsid.getInterval());
-				new_equation = new_equation.replaceAll("<<input4_modelid>>", 
+				new_equation = new_equation.replaceAll("<<input4_modelid>>",
 					"" + hdbTsid.getModelId());
-				new_equation = new_equation.replaceAll("<<input4_modelrunid>>", 
+				new_equation = new_equation.replaceAll("<<input4_modelrunid>>",
 						"" + hdbTsid.getModelRunId());
 			}
 		}
 
-		
+
 		repl = !isMissing(input5) ? (Double.valueOf(input5)).toString() : "null";
 		new_equation = new_equation.replaceAll("<<input5>>", repl);
 		if (!isMissing(input5))
@@ -211,42 +218,28 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				HdbTsId hdbTsid = (HdbTsId)tsid;
 				new_equation = new_equation.replaceAll("<<input5_sdi>>", "" + hdbTsid.getSdi());
 				new_equation = new_equation.replaceAll("<<input5_interval>>", hdbTsid.getInterval());
-				new_equation = new_equation.replaceAll("<<input5_modelid>>", 
+				new_equation = new_equation.replaceAll("<<input5_modelid>>",
 					"" + hdbTsid.getModelId());
-				new_equation = new_equation.replaceAll("<<input5_modelrunid>>", 
+				new_equation = new_equation.replaceAll("<<input5_modelrunid>>",
 						"" + hdbTsid.getModelRunId());
 			}
 		}
 
 		if (new_equation.contains("<<loading_application_id>>"))
-			new_equation = new_equation.replaceAll("<<loading_application_id>>", 
+			new_equation = new_equation.replaceAll("<<loading_application_id>>",
 				tsdb.getAppId().toString());
 		if (new_equation.contains("<<computation_id>>"))
 			new_equation = new_equation.replaceAll("<<computation_id>>", comp.getId().toString());
 		if (new_equation.contains("<<algorithm_id>>"))
-			new_equation = new_equation.replaceAll("<<algorithm_id>>", 
+			new_equation = new_equation.replaceAll("<<algorithm_id>>",
 				comp.getAlgorithmId().toString());
-		
-		debug3("doAWTimeSlice input1=" + input1 + ", input2=" + input2);
+
+		log.trace("doAWTimeSlice input1={}, input2={}", input1, input2);
 
 		/* THis modification done by M. Bogner 30-SEP-2011 */
 		/* need to reset the set output flag must be done for each time series */
 		do_setoutput = true;
-		
-		// MJM: The following doesn't hurt, but if any needed values are still
-		// missing, we wouldn't get to this point.
-		
-		// now if any needed values are missing then don't set the output
-//		if (isMissing(input1) && !input1_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
-//		if (isMissing(input2) && !input2_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
-//		if (isMissing(input3) && !input3_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
-//		if (isMissing(input4) && !input4_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
-//		if (isMissing(input5) && !input5_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
+
 
 		if (do_setoutput)
 		// Then continue with evaluation the equation
@@ -261,13 +254,14 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			String query = "select " + new_equation + " result_value from dual";
 			// now do the query for all the needed data
 			status = db.performQuery(query, dbobj);
-			debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+			log.trace(" SQL STRING:{}   DBOBJ: {} STATUS:  {}",
+					  query, dbobj.toString(), status);
 
 			// see if there was an error
 			if (status.startsWith("ERROR"))
 			{
-				warning(" EquationSolver:  FAILED due to following oracle error");
-				warning(" EquationSolver: " + status);
+				log.warn("EquationSolver:  FAILED due to following oracle error");
+				log.warn("EquationSolver: {}", status);
 				return;
 			}
 			//
@@ -275,8 +269,8 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			{
 				do_setoutput = false;
 				;
-				warning(" EquationSolver:  " + comp.getName() + " : " + query
-					+ "  Query FAILED due to NULL Equation result. ");
+				log.warn("EquationSolver:  {} : {}  Query FAILED due to NULL Equation result. ",
+						 comp.getName(), query);
 			}
 			else
 			{
