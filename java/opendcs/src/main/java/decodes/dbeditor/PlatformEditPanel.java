@@ -1,33 +1,18 @@
 /*
- *  $Id$
- *  
- *  Open Source Software
- *  
- *  $Log$
- *  Revision 1.6  2017/03/03 19:11:34  mmaloney
- *  Changed 'Channel' to more generic 'Selector' so that it is meaningful for EDLs.
- *
- *  Revision 1.5  2015/04/15 19:59:46  mmaloney
- *  Fixed synchronization bugs when the same data sets are being processed by multiple
- *  routing specs at the same time. Example is multiple real-time routing specs with same
- *  network lists. They will all receive and decode the same data together.
- *
- *  Revision 1.4  2015/03/19 18:02:03  mmaloney
- *  Fixed caching of lists so that when platform is committed, the in-memory lists are updated.
- *
- *  Revision 1.3  2015/01/14 17:22:51  mmaloney
- *  Polling implementation
- *
- *  Revision 1.2  2014/08/29 18:24:35  mmaloney
- *  6.1 Schema Mods
- *
- *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- *  OPENDCS 6.0 Initial Checkin
- *
- *  Revision 1.6  2013/03/21 18:27:40  mmaloney
- *  DbKey Implementation
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.*;
@@ -42,11 +27,14 @@ import java.util.Iterator;
 import java.util.Date;
 import java.util.ResourceBundle;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.gui.Help;
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
 import ilex.util.PropertiesUtil;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.gui.*;
 import decodes.db.*;
@@ -57,10 +45,9 @@ import decodes.util.DecodesSettings;
 Panel to edit an open Platform object.
 Opened from PlatformListPanel. Also used by PlatformWizard.
  */
-public class PlatformEditPanel extends DbEditorTab
-implements HistoricalVersionController, ChangeTracker, EntityOpsController,
-ConfigSelectController
+public class PlatformEditPanel extends DbEditorTab implements HistoricalVersionController, ChangeTracker, EntityOpsController, ConfigSelectController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -167,8 +154,9 @@ ConfigSelectController
 			
 			
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch(Exception ex) 
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -205,8 +193,9 @@ ConfigSelectController
 					new int[] { 25, 25, 35, 15 });
 			entityOpsPanel = new EntityOpsPanel(this);
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch(Exception ex) 
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -885,9 +874,10 @@ ConfigSelectController
 				}
 			}
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			parent.showError(e.toString());
+			log.atError().setCause(ex).log("Unable to save platform changes.");
+			parent.showError(ex.toString());
 			return false;
 		}
 
@@ -1013,6 +1003,7 @@ ConfigSelectController
 			try { config.read(); }
 			catch(DatabaseException ex)
 			{
+				log.atError().setCause(ex).log("Unable to read config {}", config.configName);
 				parent.showError(
 						LoadResourceBundle.sprintf(
 								dbeditLabels.getString(
@@ -1135,6 +1126,7 @@ Model for the table of sensor information
  */
 class SensorInfoTableModel extends AbstractTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static String columnNames[] =
 	{
 		PlatformEditPanel.genericLabels.getString("sensor"),
@@ -1198,12 +1190,12 @@ class SensorInfoTableModel extends AbstractTableModel
 					thePlatform.getPlatformSensor(cs.sensorNumber);
 				if (ps != null)
 				{
-					Logger.instance().debug3("Using existing platform sensor #" + cs.sensorNumber);
+					log.trace("Using existing platform sensor #{}", cs.sensorNumber);
 					ps.guiCheck = true;
 				}
 				else // (ps == null)
 				{
-					Logger.instance().debug3("Adding new sensor from config #" + cs.sensorNumber + ", " + cs.sensorName);
+					log.trace("Adding new sensor from config #{}, {}", cs.sensorNumber, cs.sensorName);
 					ps = new PlatformSensor(thePlatform, cs.sensorNumber);
 					thePlatform.addPlatformSensor(ps);
 					ps.guiCheck = true;

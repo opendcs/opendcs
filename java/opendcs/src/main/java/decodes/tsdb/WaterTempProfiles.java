@@ -244,7 +244,7 @@ final public class WaterTempProfiles
                 {
                     CTimeSeries tseryCopy = timeSeriesDAO.makeTimeSeries(tsery.getTimeSeriesIdentifier());
                     tseryCopy.addSample(tsery.sampleAt(idx));
-                    tseries.addTimeSeries(tsery);
+                    tseries.addTimeSeries(tseryCopy);
                 }
                 catch (DuplicateTimeSeriesException | NoSuchObjectException | DbIoException  ex)
                 {

@@ -1,21 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.datasource;
 
-import java.util.HashMap;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Calendar;
 import java.util.Properties;
 import java.util.TimeZone;
-import java.text.ParsePosition;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import ilex.util.ArrayUtil;
-import ilex.util.ByteUtil;
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.Variable;
 import decodes.db.Constants;
 
@@ -25,26 +33,13 @@ import decodes.db.Constants;
 */
 public class MBFirePMParser extends PMParser
 {
-	// Do not define these - re-use the definitions in GoesPMParser:
-	//public static final String DCP_ADDRESS = "DcpAddress";
-	//public static final String MESSAGE_TIME = "Time";
-	//public static final String MESSAGE_LENGTH = "Length";
-	//public static final String FAILURE_CODE = "FailureCode";
-	//public static final String SIGNAL_STRENGTH = "SignalStrength";
-	//public static final String FREQ_OFFSET = "FrequencyOffset";
-	//public static final String MOD_INDEX = "ModulationIndex";
-	//public static final String QUALITY = "Quality";
-	//public static final String CHANNEL = "Channel";
-	//public static final String SPACECRAFT = "Spacecraft";
-	//public static final String UPLINK_CARRIER = "UplinkCarrier";
-
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private SimpleDateFormat dateFormat = null;
 	private static final String dateFmtStr = "MMM dd, yyyy      HH";
 
 	/** default constructor */
 	public MBFirePMParser()
 	{
-//		Logger.instance().debug3("MBFirePMParser ctor");
 		dateFormat = new SimpleDateFormat(dateFmtStr);
 		java.util.TimeZone jtz=java.util.TimeZone.getTimeZone("GMT-06:00");
 		dateFormat.setCalendar(Calendar.getInstance(jtz));
@@ -55,7 +50,6 @@ public class MBFirePMParser extends PMParser
 	public void parsePerformanceMeasurements(RawMessage msg)
 		throws HeaderParseException
 	{
-//Logger.instance().info("MBFirePMP: parsePMs");;
 		byte data[] = msg.getData();
 		StringBuilder idbuf = new StringBuilder();
 		int idx = 0;
@@ -72,7 +66,7 @@ public class MBFirePMParser extends PMParser
 			throw new HeaderParseException("Blank or comment line");
 
 		msg.setMediumId(ids);
-Logger.instance().debug3("MBFirePMP: mediumId = '" + ids + "'");
+		log.trace("MBFirePMP: mediumId = '{}'",ids);
 		while(idx<data.length && (char)data[idx] == ' ')
 			idx++;
 		if (data.length < idx + dateFmtStr.length())
@@ -81,23 +75,23 @@ Logger.instance().debug3("MBFirePMP: mediumId = '" + ids + "'");
 
 		try
 		{
-Logger.instance().debug3("MBFirePMP: parsing date string = '" + datestr+ "'");
+			log.trace("MBFirePMP: parsing date string = '{}'", datestr);
 			Variable tv = new Variable(dateFormat.parse(datestr));
 			msg.setPM(GoesPMParser.MESSAGE_TIME, tv);
 		}
 		catch(ParseException ex)
 		{
-			Logger.instance().warning("Bad date format '" + datestr + "'");
+			log.atWarn().setCause(ex).log("Bad date format '{}'", datestr);
 		}
 
 		int headerlen = idx + dateFmtStr.length();
 		msg.setHeaderLength(headerlen);
-Logger.instance().debug3("MBFirePMP: header len = " + headerlen);
+		log.trace("MBFirePMP: header len = {}", headerlen);
 
 		// Length should always be total length - 29
 		int datalen = data.length - headerlen;
 		msg.setPM(GoesPMParser.MESSAGE_LENGTH, new Variable(datalen));
-Logger.instance().debug3("MBFirePMP: msg len = " + datalen);
+		log.trace("MBFirePMP: msg len = {}", datalen);
 	}
 
 	/**
@@ -137,7 +131,7 @@ Logger.instance().debug3("MBFirePMP: msg len = " + datalen);
 		{
 			TimeZone tz = TimeZone.getTimeZone(s);
 			if (tz == null)
-				Logger.instance().warning("MBFirePMParser invalid webtz property '" + s + "' -- using GMT-06:00.");
+				log.warn("MBFirePMParser invalid webtz property '{}' -- using GMT-06:00.", s);
 			else
 				dateFormat.setTimeZone(tz);
 		}

@@ -1,19 +1,30 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
+
 package decodes.db;
 
 import java.io.IOException;
-import java.io.FileInputStream;
-import java.util.Properties;
 import javax.xml.parsers.ParserConfigurationException;
 
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
 import ilex.cmdline.*;
-
+import ilex.util.StderrLogger;
 import decodes.util.*;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import org.xml.sax.SAXException;
 
@@ -23,6 +34,7 @@ import org.xml.sax.SAXException;
  */
 public class Netlist2Lrgs
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Default constructor. */
     public Netlist2Lrgs()
     {
@@ -53,8 +65,6 @@ public class Netlist2Lrgs
 		throws IOException, DecodesException,
 		       SAXException, ParserConfigurationException
 	{
-		Logger.setLogger(new StderrLogger("Netlist2Lrgs"));
-
 		// Parse command line arguments.
 		cmdLineArgs.parseArgs(args);
 
@@ -80,15 +90,6 @@ public class Netlist2Lrgs
 
 		// Initialize standard collections:
 		db.enumList.read();
-//		db.timeZoneList.read();
-//		db.dataTypeSet.read();
-//		db.engineeringUnitList.read();
-//		db.siteList.read();
-//		db.platformList.read();
-//		db.platformConfigList.read();
-//		db.equipmentModelList.read();
-//		db.equationSpecList.read();
-//		db.eqTableList.read();
 
         db.networkListList.read();
 
@@ -98,8 +99,7 @@ public class Netlist2Lrgs
             NetworkList nl = db.networkListList.find(nlname);
             if (nl == null)
             {
-                Logger.instance().log(Logger.E_FATAL,
-                    "No such network list " + nlname);
+                log.error("No such network list {}", nlname);
                 break;
             }
             nl.read();

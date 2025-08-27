@@ -1,10 +1,20 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.db;
 
-import ilex.util.Logger;
-import ilex.util.TextUtil;
 
 import java.io.File;
 import java.util.Collection;
@@ -12,12 +22,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 /**
 A NetworkList is a collection of transport media. The most common
 type is a list of GOES DCP addresses.
  */
 public class NetworkList extends IdDatabaseObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// _id is stored in the IdDatabaseObject superclass.
 
 	/** Unique name of this network list. */
@@ -250,12 +264,6 @@ public class NetworkList extends IdDatabaseObject
 		// MJM 5/30/2014 Why not allow it to create a legacy netlist regardless
 		// of type? There may be some use for this later as LRGS becomes more flexible.
 
-//		if (transportMediumType.equalsIgnoreCase(Constants.medium_Goes) ||
-//				transportMediumType.equalsIgnoreCase(Constants.medium_GoesRD ) ||
-//				transportMediumType.equalsIgnoreCase(Constants.medium_GoesST) ||
-//				transportMediumType.equalsIgnoreCase(Constants.medium_IRIDIUM) ||
-//				transportMediumType.equalsIgnoreCase(Constants.medium_EDL))
-//		{
 			// Translate new NetworkList into old LRGS netlist format:
 			legacyNetworkList = new lrgs.common.NetworkList();
 
@@ -290,21 +298,12 @@ public class NetworkList extends IdDatabaseObject
 				}
 				catch(NumberFormatException nfe)
 				{
-					Logger.instance().log(Logger.E_WARNING,
-							"Network List '" + name
-							+ "' has improper DCP address '" + nle.transportId +
-					"' - must be 8 hex digits -- skipped.");
+					log.atWarn()
+				   .setCause(nfe)
+				   .log("Network List '{}' has improper DCP address '{}' - must be 8 hex digits -- skipped.",
+				        name, nle.transportId);
 				}
 			}
-//		}
-//		else
-//		{
-//			Logger.instance().log(Logger.E_WARNING,
-//					"NetworkList:prepareForExec - Network List '" + name
-//					+ "' did not create legacyNetworkList, transport medium type is "
-//					+ "not of a GOES type. Type is " + transportMediumType +
-//			" Ignore this message if you want to use a type other than Goes.");
-//		}
 	}
 
 	/**
@@ -368,17 +367,6 @@ public class NetworkList extends IdDatabaseObject
 	public boolean contains(Platform p)
 	{
 		return getEntry(p) != null;
-//		TransportMedium ptm = p.getTransportMedium(transportMediumType);
-//		if (ptm == null)
-//			return false;
-//		String pmi = ptm.getMediumId();
-//		for(Iterator<NetworkListEntry> nleit = iterator(); nleit.hasNext(); )
-//		{
-//			NetworkListEntry nle = nleit.next();
-//			if (pmi.equalsIgnoreCase(nle.getTransportId()))
-//				return true;
-//		}
-//		return false;
 	}
 	
 	/**

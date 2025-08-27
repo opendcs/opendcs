@@ -645,6 +645,11 @@ public abstract class TimeSeriesDb implements HasProperties, DatabaseConnectionO
         return v ? "'Y'" : "'N'";
     }
 
+    /**
+     * wraps a string in single quotes for use in an SQL statement.
+     * If the string is null, returns 'NULL'.
+     * If the string contains a single quote, it is escaped by doubling it.
+     */
     public String sqlString(String field)
     {
         if (field == null)

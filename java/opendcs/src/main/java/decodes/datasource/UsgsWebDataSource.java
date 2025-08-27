@@ -1,6 +1,20 @@
 /*
- * Opens source software by Cove Software, LLC.
- */
+* Opens source software by Cove Software, LLC.
+*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.datasource;
 
 import java.text.SimpleDateFormat;
@@ -9,9 +23,10 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import decodes.db.ConfigSensor;
@@ -53,10 +68,9 @@ import decodes.util.PropertySpec;
  * 	baseUrl - The base URL for USGS data.
  *  dataTypeStandard - default="usgs". This determines which sensor data types to include in the URL.
  */
-public class UsgsWebDataSource
-	extends DataSourceExec
+public class UsgsWebDataSource extends DataSourceExec
 {
-	private String module = "UsgsWebDataSource";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	
 	// aggregate list of IDs from all network lists.
 	private ArrayList<String> aggIds = new ArrayList<String>();
@@ -115,8 +129,7 @@ public class UsgsWebDataSource
 		
 		if (p == null)
 		{
-			log(Logger.E_WARNING, module + " No platform for transport ID '" 
-				+ currentMediumId + "' -- skipped.");
+			log.warn(" No platform for transport ID '{}' -- skipped.", currentMediumId);
 			return buildNextWebAddr();
 		}
 		
@@ -131,21 +144,21 @@ public class UsgsWebDataSource
 			}
 		if (!isAllDigits)
 		{
-			log(Logger.E_WARNING, "Medium ID '" + currentMediumId + "' is not a valid USGS site number. "
-				+ "Will attempt to use USGS Site Name from site record.");
+			log.warn("Medium ID '{}' is not a valid USGS site number. " +
+			         "Will attempt to use USGS Site Name from site record.",
+				     currentMediumId);
 			
 			Site site = p.getSite();
 			if (site == null)
 			{
-				log(Logger.E_WARNING, module + " Platform for transport ID '" 
-					+ currentMediumId + "' has no site record -- skipped.");
+				log.warn("Platform for transport ID '{}' has no site record -- skipped.", currentMediumId);
 				return buildNextWebAddr();
 			}
 			SiteName sn = site.getName(Constants.snt_USGS);
 			if (sn == null)
 			{
-				log(Logger.E_WARNING, module + " Platform for transport ID '" 
-					+ currentMediumId + "' has no USGS site name -- will try medium ID.");
+				log.warn("Platform for transport ID '{}' has no USGS site name -- will try medium ID.",
+						 currentMediumId);
 			}
 			else
 				siteNum = sn.getNameValue();
@@ -174,7 +187,7 @@ public class UsgsWebDataSource
 				s = ps.getProperty("omit");
 			if (TextUtil.str2boolean(s))
 			{
-				log(Logger.E_DEBUG1, module + " omit=true for sensor " + sensNum);
+				log.debug("omit=true for sensor {}", sensNum);
 				continue;
 			}
 			
@@ -193,9 +206,8 @@ public class UsgsWebDataSource
 				}
 				if (dt == null)
 				{
-					log(Logger.E_INFORMATION, module + " trans id '" + currentMediumId 
-						+ "' sensor " + sensNum
-						+ " has no " + dataTypeStandard + " data type -- skipping.");
+					log.info("trans id '{}' sensor {} has no {} data type -- skipping.",
+							 currentMediumId, sensNum, dataTypeStandard);
 					continue;
 				}
 			}
@@ -219,7 +231,7 @@ public class UsgsWebDataSource
 			String until, Vector<NetworkList> netlists) 
 		throws DataSourceException
 	{
-		log(Logger.E_INFORMATION, module + " initializing ...");
+		log.info("Initializing ...");
 		PropertiesUtil.copyProps(myProps, rsProps);
 		
 		if (routingSpecThread.getRoutingSpec().outputTimeZone != null)
@@ -238,7 +250,7 @@ public class UsgsWebDataSource
 			new Date(System.currentTimeMillis() - 3600000L * 24);
 
 		dUntil = until != null ? IDateFormat.parse(until) : new Date();
-		log(Logger.E_INFORMATION, module + " since=" + dSince + ", until=" + dUntil);
+		log.info("since={}, until={}", dSince, dUntil);
 		
 		aggIds.clear();
 		platforms.clear();
@@ -257,20 +269,17 @@ public class UsgsWebDataSource
 							platforms.add(nl.getDatabase().platformList.getPlatform(
 								nl.transportMediumType, tid));
 						}
-						catch (DatabaseException e)
+						catch (DatabaseException ex)
 						{
-							String msg = "Cannot search database for platform '" + tid + "': " + e;
-							log(Logger.E_WARNING, module + " " + msg);
-							throw new DataSourceException(msg);
+							String msg = "Cannot search database for platform '" + tid;
+							throw new DataSourceException(msg,ex);
 						}
 					}
 			}
 		
 		if (aggIds.size() == 0)
 		{
-			String msg = module + " init() No medium ids.";
-			log(Logger.E_WARNING, msg);
-			throw new DataSourceException(msg);
+			throw new DataSourceException("init() No medium ids.");
 		}
 		xportIdx = 0;
 		urlsGenerated = 0;
@@ -286,8 +295,7 @@ public class UsgsWebDataSource
 		}
 		catch(InvalidDatabaseException ex) 
 		{
-			log(Logger.E_INFORMATION, module + " " + ex);
-			throw new DataSourceException(module + " " + ex);
+			throw new DataSourceException("Unable to create WebDataSource to retrieve USGS Data", ex);
 		}
 	}
 	
@@ -308,15 +316,14 @@ public class UsgsWebDataSource
 			try { return currentWebDs.getRawMessage(); }
 			catch(DataSourceEndException ex)
 			{
-				log(Logger.E_INFORMATION, module
-					+ " end of '" + currentWebDs.getActiveSource() + "'");
+				log.info("End of '{}'", currentWebDs.getActiveSource());
 			}
 		}
 
 		String url;
 		while((url = buildNextWebAddr()) != null)
 		{
-			log(Logger.E_DEBUG1, module + " next url '" + url + "'");
+			log.debug("Next url '{}'", url);
 			myProps.setProperty("url", url);
 			myProps.setProperty("mediumid", currentMediumId);
 			try
@@ -325,24 +332,13 @@ public class UsgsWebDataSource
 				RawMessage ret = currentWebDs.getRawMessage();
 				return ret;
 			}
-			catch(DataSourceException ex)
-			{
-				String msg = module + " cannot open '"
-					+ url + "': " + ex;
-				log(Logger.E_WARNING, msg);
-			}
 			catch(Exception ex)
 			{
-				String msg = module + " cannot open '"
-					+ url + "': " + ex;
-				log(Logger.E_WARNING, msg);
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
+				log.atWarn().setCause(ex).log("Unable to Retrieve next raw from '" + url + "'", ex);
 			}
 		}
 		// No more medium IDs
-		throw new DataSourceEndException(module 
-			+ " " + aggIds.size() + " medium IDs processed.");
+		throw new DataSourceEndException("" + aggIds.size() + " medium IDs processed.");
 	}
 	
 	@Override

@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -9,26 +21,25 @@ import javax.swing.border.*;
 import javax.swing.table.*;
 import decodes.gui.*;
 import java.awt.event.*;
-import java.util.Iterator;
 import java.util.ResourceBundle;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.gui.Help;
-import ilex.util.LoadResourceBundle;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 
 import decodes.db.*;
-import decodes.gui.UnitsComboBox;
-import decodes.util.DecodesSettings;
 import decodes.cwms.CwmsSqlDatabaseIO;
 
 /**
 Panel for editing a Site object.
 Opened from the SiteListPanel.
 */
-public class SiteEditPanel extends DbEditorTab
-	implements ChangeTracker, EntityOpsController
+public class SiteEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -97,8 +108,6 @@ public class SiteEditPanel extends DbEditorTab
             jbInit();
 			TableColumnAdjuster.adjustColumnWidths(siteNameTable,
 				new int[] { 20, 80 });
-//			TableColumn tc = siteNameTable.getColumnModel().getColumn(0);
-//			tc.setCellEditor(new SiteNameTypeEditor());
 		    siteNameTable.getTableHeader().setReorderingAllowed(false);
 		    
 		    siteNameTable.addMouseListener(
@@ -114,8 +123,9 @@ public class SiteEditPanel extends DbEditorTab
     			});
 
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch(Exception ex) 
+		{
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -498,8 +508,9 @@ public class SiteEditPanel extends DbEditorTab
 		}
 		catch(NumberFormatException ex)
 		{
-			TopFrame.instance().showError(
-				dbeditLabels.getString("SiteEditPanel.badElev"));
+			String msg = dbeditLabels.getString("SiteEditPanel.badElev");
+			log.atError().setCause(ex).log(msg);
+			TopFrame.instance().showError(msg);
 			return true;
 		}
 
@@ -533,8 +544,9 @@ public class SiteEditPanel extends DbEditorTab
 		try { theSite.setElevation(getEnteredElevation()); }
 		catch(NumberFormatException ex)
 		{
-			TopFrame.instance().showError(
-				dbeditLabels.getString("SiteEditPanel.badElev"));
+			String msg = dbeditLabels.getString("SiteEditPanel.badElev");
+			log.atError().setCause(ex).log(msg);
+			TopFrame.instance().showError(msg);
 			return false;
 		}
 
@@ -577,9 +589,10 @@ public class SiteEditPanel extends DbEditorTab
 		{
 			theSite.write();
 		}
-		catch(DatabaseException e)
+		catch(DatabaseException ex)
 		{
-			TopFrame.instance().showError(e.toString());
+			log.atError().setCause(ex).log("Unable to write site.");
+			TopFrame.instance().showError(ex.toString());
 			return false;
 		}
 		return true;

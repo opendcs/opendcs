@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
@@ -8,7 +20,10 @@ import javax.swing.*;
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
-import ilex.util.Logger;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Constants;
 import decodes.db.Database;
 import decodes.db.Site;
@@ -24,6 +39,7 @@ Dialog for entering a new site name.
 */
 public class SiteNameEntryDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -41,9 +57,9 @@ public class SiteNameEntryDialog extends GuiDialog
     private JLabel nameValueLabel = new JLabel();
     private JTextField nameValueField = new JTextField();
     private JLabel usgsDbnoLabel = new JLabel();
-    private JComboBox usgsDbnoCombo;
+    private JComboBox<String> usgsDbnoCombo;
 	private JLabel agencyCodeLabel = new JLabel();
-    private JComboBox agencyCodeCombo;
+    private JComboBox<String> agencyCodeCombo;
 
 	/** Used to validate name &amp; make a Site object after user enters name. */
 	public static SiteFactory siteFactory = new SiteFactory();
@@ -68,17 +84,19 @@ public class SiteNameEntryDialog extends GuiDialog
 	{
         super(getDbEditFrame(), 
 			dbeditLabels.getString("SiteNameEntryDialog.title"), true);
-    	usgsDbnoCombo = new JComboBox(dbnos);
-		agencyCodeCombo = new JComboBox(agencies);
+    	usgsDbnoCombo = new JComboBox<>(dbnos);
+		agencyCodeCombo = new JComboBox<>(agencies);
 		theSite = null;
 		theSiteName = null;
-        try {
+        try 
+		{
             jbInit();
 			getRootPane().setDefaultButton(okButton);
             pack();
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch(Exception ex) 
+		{
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
 		enableControls();
     }
@@ -185,7 +203,7 @@ public class SiteNameEntryDialog extends GuiDialog
 		// 2012/07/05 CWMS Location Names can contain spaces
 		else if (!nameType.equalsIgnoreCase(Constants.snt_CWMS) && nameValue.indexOf(' ') > 0)
 		{
-			Logger.instance().debug3("SiteNameType='" + nameType + "', value='" + nameValue + "'");
+			log.trace("SiteNameType='{}', value='{}'", nameType, nameValue);
 			int r = JOptionPane.showConfirmDialog(this,
 				dbeditLabels.getString("SiteNameEntryDialog.nameFormatErr"),
 				dbeditLabels.getString("SiteNameEntryDialog.nameFormatErrTitle"),
@@ -239,6 +257,7 @@ public class SiteNameEntryDialog extends GuiDialog
 		}
 		catch(Exception ex)
 		{
+			log.atError().setCause(ex).log("Unable set site name.");
 			showError(ex.getMessage());
 			theSite = null;
 		}

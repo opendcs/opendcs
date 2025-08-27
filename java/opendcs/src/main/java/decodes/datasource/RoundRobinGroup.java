@@ -1,8 +1,17 @@
 /*
-*  $Id$
-*
-*  $State$
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.datasource;
 
@@ -11,9 +20,8 @@ import java.util.Vector;
 import java.util.Iterator;
 import java.util.Date;
 
-import ilex.util.Logger;
-import ilex.util.IDateFormat;
-import ilex.util.PropertiesUtil;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.DataSource;
 import decodes.db.Database;
@@ -22,15 +30,15 @@ import decodes.db.InvalidDatabaseException;
 /**
 RoundRobinGroup implements the data source interface. It manages a
 group of coordinate data sources and requests data from each in 
-a round robin fashiion.  
+a round robin fashion.  
 <p>
 RoundRobinGroup is designed to manage a group of datasource interfaces.
 It will process all the data available from one data source and then
 move on to the next one.
 */
-public class RoundRobinGroup
-	extends DataSourceExec
+public class RoundRobinGroup extends DataSourceExec
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	Properties props;          // Properties from routing spec
 	String since, until;       // Since & until time from routing spec
 	Vector networkLists;       // Network Lists from routing spec
@@ -60,7 +68,6 @@ public class RoundRobinGroup
 		activeMember = null;
 		lastInitAttempt = 0L;
 		lastTimeStamp = null;
-//		initPeriod = 10 * 1000L;         // 10 sec
 		initPeriod = 0;
 		delegates = new Vector<DataSourceExec>();
 	}
@@ -83,9 +90,8 @@ public class RoundRobinGroup
 	public void processDataSource()
 		throws InvalidDatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG1, 
-			"Initializing RoundRobinGroup for '" + dbDataSource.getName() 
-			+ "', args='" +dbDataSource.getDataSourceArg()+"'");
+		log.debug("Initializing RoundRobinGroup for '{}', args='{}'",
+		          dbDataSource.getName(), dbDataSource.getDataSourceArg());
 
 		// This is a data-source-group, call prepareForExec() for all members
 		for(Iterator it = dbDataSource.groupMembers.iterator(); it.hasNext(); )
@@ -93,8 +99,7 @@ public class RoundRobinGroup
 			DataSource ds = (DataSource)it.next();
 			if (ds != null)  // there may be empty slots.
 			{
-				Logger.instance().log(Logger.E_DEBUG1,
-					"Making delegate for '" + ds.getName() + "'");
+				log.debug("Making delegate for '{}'", ds.getName());
 				DataSourceExec del = ds.makeDelegate(); // recursion!
 				del.setAllowNullPlatform(getAllowNullPlatform());
 				del.setAllowDapsStatusMessages(getAllowDapsStatusMessages());
@@ -123,9 +128,7 @@ public class RoundRobinGroup
 		// Parse data source properties.
 		activeMember = null;
 		findActiveMember();
-		Logger.instance().log(Logger.E_DEBUG1, 
-			"RoundRobinGroup.init() for '" + dbDataSource.getName() 
-			+ "' since='" + since + "' until= '" + until);
+		log.debug("RoundRobinGroup.init() for '{}' since='{}' until='{}", dbDataSource.getName(), since, until);
 	}
 
 	/**
@@ -158,11 +161,11 @@ public class RoundRobinGroup
 				activeMember = ds;
 				return;
 			}
-			catch(DataSourceException e)
+			catch(DataSourceException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING, 
-					"Could not initialize data source '" 
-					+ ds.dbDataSource.getName() + "': " + e);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Could not initialize data source '{}'", ds.dbDataSource.getName());
 			}
 		}
 	}
@@ -190,18 +193,15 @@ public class RoundRobinGroup
 		if (activeMember == null && now - lastInitAttempt >= initPeriod)
 		{
 			// No active member. Periodically attempt to get one.
-			Logger.instance().log(Logger.E_DEBUG1, 
-				"Group '" + dbDataSource.getName() + 
-				"' Attempting to find a group member.");
+			log.debug("Group '{}' Attempting to find a group member.", dbDataSource.getName());
 
 			findActiveMember();
 
 			// If no success, pause a couple seconds.
 			if (activeMember == null)
 			{
-				Logger.instance().log(Logger.E_FAILURE, 
-					"No data sources in group '" + dbDataSource.getName()
-					+ "' are available now. Will retry later.");
+				log.error("No data sources in group '{}' are available now. Will retry later.",
+						  dbDataSource.getName());
 				try { Thread.sleep(2000L); }
 				catch(InterruptedException ie) {};
 			}
@@ -214,28 +214,22 @@ public class RoundRobinGroup
 			try
 			{
 				RawMessage ret = activeMember.getRawMessage();
-//				lastTimeStamp = ret.getTimeStamp();
 				if ( ret == null )
 					close();
 				return ret;
 			}
-			catch(DataSourceEndException e)
+			catch(DataSourceEndException ex)
 			{
-				Logger.instance().log(Logger.E_INFORMATION, 
-					"DataSource '" + activeMember.getName()
-					+ "' End of Data Stream: " + e.getMessage());
-				close();
-				throw e;
+				log.info("DataSource '{}' End of Data Stream.", activeMember.getName());
+				throw ex;
 			}
 			catch(UnknownPlatformException upex)
 			{
 				throw upex;
 			}
-			catch(DataSourceException e)
+			catch(DataSourceException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING, 
-					"DataSource '" + activeMember.getName()
-					+ "' failed: " + e);
+				log.atWarn().setCause(ex).log("DataSource '{}' failed.", activeMember.getName());
 				close();
 			}
 		}
@@ -288,10 +282,10 @@ public class RoundRobinGroup
 	{
 		if (activeMember != null)
 		{
-			Logger.instance().debug1("Aborting active LRGS member.");
+			log.debug("Aborting active LRGS member.");
 			activeMember.abortGetRawMessage();
 		}
 		else
-			Logger.instance().debug1("No currently active data source member.");
+			log.debug("No currently active data source member.");
 	}
 }
