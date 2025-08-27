@@ -1,6 +1,18 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbeditor;
 
 import java.awt.BorderLayout;
@@ -18,8 +30,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -29,8 +44,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 
-import org.slf4j.LoggerFactory;
-
 import ilex.gui.Help;
 import lrgs.common.DcpAddress;
 import lrgs.common.DcpMsgFlag;
@@ -38,7 +51,6 @@ import lrgs.common.SearchCriteria;
 import lrgs.gui.SearchCriteriaEditPanel;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -63,11 +75,9 @@ import decodes.util.PropertySpec;
  * This panel edits an open routing spec. Opened from the RoutingSpecListPanel.
  */
 @SuppressWarnings("serial")
-public class RoutingSpecEditPanel 
-	extends DbEditorTab 
-	implements ChangeTracker, EntityOpsController, PropertiesOwner
+public class RoutingSpecEditPanel extends DbEditorTab implements ChangeTracker, EntityOpsController, PropertiesOwner
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecEditPanel.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -145,7 +155,7 @@ public class RoutingSpecEditPanel
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -158,8 +168,7 @@ public class RoutingSpecEditPanel
 	 */
 	void setParent(DbEditorFrame parent)
 	{
-		Logger.instance().debug3("RoutingSpecEditPanel.setParent("
-			+ (parent == null ? "NULL" : "") + ")");
+		log.trace("RoutingSpecEditPanel.setParent({})", (parent == null ? "NULL" : ""));
 		this.parent = parent;
 		scEditPanel.setTopFrame(parent);
 	}
@@ -245,8 +254,7 @@ public class RoutingSpecEditPanel
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().warning("Cannot parse searchcrit: " + ex);
-			Logger.instance().warning("searchcrit image was: \n" + scString.toString());
+			log.atWarn().setCause(ex).log("Cannot parse search criteria: {}", scString.toString());
 		}
 
 		// Now the properties edit panel will edit the props with the SC stuff removed.
@@ -304,7 +312,7 @@ public class RoutingSpecEditPanel
 		theObject.getProperties().setProperty("rs.timeApplyTo", timeApplyTo);
 		for(String nln : sc.NetlistFiles)
 		{
-			Logger.instance().debug3("Added netlist name '" + nln + "'");
+			log.trace("Added netlist name '{}'", nln);
 			theObject.networkListNames.add(nln);
 		}
 		
@@ -497,8 +505,7 @@ public class RoutingSpecEditPanel
 			}
 			catch (Exception ex)
 			{
-				Logger.instance().warning("Cannot instantiate formatter '" 
-					+ formatName + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot instantiate formatter '{}'", formatName);
 			}
 		}
 		SwingUtilities.invokeLater(
@@ -530,8 +537,9 @@ public class RoutingSpecEditPanel
 			}
 			catch (InvalidDatabaseException ex)
 			{
-				Logger.instance().warning("Cannot instantiate data source of type '"
-					+ dataSourceCombo.getSelectedItem() + "': " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Cannot instantiate data source of type '{}'", dataSourceCombo.getSelectedItem());
 			}
 		}
 		
@@ -573,8 +581,9 @@ public class RoutingSpecEditPanel
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().warning("Cannot instantiate consumer '"
-				+ consumerTypeCombo.getSelectedItem() + "': " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot instantiate consumer '{}'", consumerTypeCombo.getSelectedItem());
 			selectedConsumer = null;
 		}
 		if (selectedConsumer != null)

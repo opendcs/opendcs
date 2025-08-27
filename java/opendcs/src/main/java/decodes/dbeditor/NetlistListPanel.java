@@ -18,10 +18,10 @@ package decodes.dbeditor;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.table.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Comparator;
 import java.util.Collections;
@@ -39,10 +39,9 @@ import ilex.util.LoadResourceBundle;
 /**
 Dbedit panel that shows a sorting list of network lists in the database.
 */
-public class NetlistListPanel extends JPanel
-    implements ListOpsController
+public class NetlistListPanel extends JPanel implements ListOpsController
 {
-    private static final Logger log = LoggerFactory.getLogger(NetlistListPanel.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
     static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -82,9 +81,7 @@ public class NetlistListPanel extends JPanel
         }
         catch(Exception ex)
         {
-            log.atError()
-               .setCause(ex)
-               .log("Failed to create NetlistPanel.");
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -207,11 +204,11 @@ public class NetlistListPanel extends JPanel
         {
             ob.write();
         }
-        catch(DatabaseException e)
+        catch(DatabaseException ex)
         {
-            TopFrame.instance().showError(
-                dbeditLabels.getString("NetlistListPanel.CopyError2")
-                + ob.name + "': " + e);
+            String msg = dbeditLabels.getString("NetlistListPanel.CopyError2");
+            log.atError().setCause(ex).log(msg+"{}", ob.name);
+            TopFrame.instance().showError(msg + ob.name + "': " + ex);
             return;
         }
         tableModel.addNetworkList(ob);
