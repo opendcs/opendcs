@@ -7,7 +7,7 @@ import java.util.List;
 
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DaoHelper;
-import opendcs.dai.LocationLevelDAI;
+import org.opendcs.database.dai.SiteReferenceMetaData;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -20,8 +20,8 @@ import decodes.db.UnitConverter;
 import decodes.util.DecodesException;
 import ilex.var.NoConversionException;
 
-import decodes.db.LocationLevelValue;
-import decodes.db.LocationLevelSpec;
+import org.opendcs.model.cwms.LocationLevelValue;
+import org.opendcs.model.cwms.LocationLevelSpec;
 
 import opendcs.dao.DaoBase;
 
@@ -33,7 +33,7 @@ import opendcs.dao.DaoBase;
  * Implements LocationLevelDAI interface following stateless pattern.
  * All operations require a DataTransaction for true stateless behavior.
  */
-public class CwmsLocationLevelDAO extends DaoBase implements LocationLevelDAI
+public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaData
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final String MODULE = "CwmsLocationLevelDAO";
@@ -296,5 +296,6 @@ public class CwmsLocationLevelDAO extends DaoBase implements LocationLevelDAI
     public void close()
     {
         // Nothing to close in stateless implementation
+        throw new UnsupportedOperationException("CwmsLocationLevelDAO is stateless and does not need to be closed.");
     }
 }

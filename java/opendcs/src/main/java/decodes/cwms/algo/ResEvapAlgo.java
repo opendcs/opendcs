@@ -337,19 +337,15 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         }
 
         if (secchi == 0){
-            if (LocationLevel != null){
-                try (org.opendcs.database.api.DataTransaction tx = locLevDAO.getTransaction())
-                {
-                    secchi = locLevDAO.getLatestLocationLevelValue(tx, LocationLevel, "ft").getLevelValue();
-                }
-                catch (OpenDcsDataException ex)
-                {
-                    throw new DbCompException("Failed to load Location Level " + LocationLevel, ex);
-                }
-
+            try (org.opendcs.database.api.DataTransaction tx = locLevDAO.getTransaction())
+            {
+                secchi = locLevDAO.getLatestLocationLevelValue(tx, LocationLevel, "ft").getLevelValue();
+            }
+            catch (OpenDcsDataException ex)
+            {
+                throw new DbCompException("Failed to load Location Level " + LocationLevel, ex);
             }
         }
-        locLevDAO.close();
 
         //initialized Water Temperature Profiles
         dailyWTP = new WaterTempProfiles(startDepth, depthIncrement);

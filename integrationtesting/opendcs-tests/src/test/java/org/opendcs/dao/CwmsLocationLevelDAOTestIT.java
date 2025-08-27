@@ -17,15 +17,13 @@ import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
-import org.opendcs.fixtures.annotations.EnableIfDaoSupported;
 
-import decodes.cwms.CwmsLocationLevelDAO;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.tsdb.TimeSeriesDb;
-import opendcs.dai.LocationLevelDAI;
+import org.opendcs.database.dai.SiteReferenceMetaData;
 
-import decodes.db.LocationLevelValue;
-import decodes.db.LocationLevelSpec;
+import org.opendcs.model.cwms.LocationLevelValue;
+import org.opendcs.model.cwms.LocationLevelSpec;
 
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -46,7 +44,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     @ConfiguredField
     private OpenDcsDatabase db;
 
-    private LocationLevelDAI dao;
+    private SiteReferenceMetaData dao;
     private static boolean testDataLoaded = false;
     
     @BeforeAll
@@ -74,7 +72,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     {
         if (tsDb instanceof CwmsTimeSeriesDb)
         {
-            Optional<LocationLevelDAI>  dai = db.getDao(LocationLevelDAI.class);
+            Optional<SiteReferenceMetaData>  dai = db.getDao(SiteReferenceMetaData.class);
             assertTrue(dai.isPresent(), "Unable to retrieve LocationLevelDAI instance from database.");
             dao = dai.get();
         }
@@ -111,11 +109,11 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
                 assertEquals(testLocationLevelId, value.getLocationLevelId(), 
                     "Location level ID should match request");
                 
-                System.out.println("Found test data for location: " + testLocationLevelId);
+                log.info("Found test data for location: " + testLocationLevelId);
             }
             else
             {
-                System.out.println("No test data found for location: " + testLocationLevelId + 
+                log.info("No test data found for location: " + testLocationLevelId +
                     " (this is OK - test verifies method executes without error)");
             }
             
@@ -123,10 +121,6 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             assertDoesNotThrow(() -> {
                 dao.getLatestLocationLevelValue(tx, "NONEXISTENT.Stage.Const.0.Test");
             });
-        }
-        finally
-        {
-            dao.close();
         }
     }
     
@@ -173,10 +167,6 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
                 }
             }
         }
-        finally
-        {
-            dao.close();
-        }
     }
     
     @Test
@@ -204,10 +194,6 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
                 assertNotNull(spec.getParameterId(), "Parameter ID should not be null");
             }
         }
-        finally
-        {
-            dao.close();
-        }
     }
     
     @Test
@@ -221,12 +207,9 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         
         String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
         String testLocationId = "TEST_LOCATION";
-        
-        DataTransaction tx = null;
-        try
+
+        try (DataTransaction tx = db.newTransaction())
         {
-            tx = db.newTransaction();
-            
             // Test getLatestLocationLevelValue with transaction
             LocationLevelValue value = dao.getLatestLocationLevelValue(
                 tx, testLocationLevelId);
@@ -240,21 +223,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             // For read-only operations, we don't need to commit
             // Just verify the methods execute without errors
         }
-        finally
-        {
-            if (tx != null)
-            {
-                try
-                {
-                    tx.close();
-                }
-                catch (Exception e)
-                {
-                    // Ignore close errors in test
-                }
-            }
-            dao.close();
-        }
+
     }
     
     @Test
@@ -278,10 +247,6 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             // But if not null, it means the ID exists (unlikely for this test ID)
             // Either way, no exception should be thrown
         }
-        finally
-        {
-            dao.close();
-        }
     }
     
     @Test
@@ -297,7 +262,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         try (DataTransaction tx = db.newTransaction())
         {
             // Use the DAO through the interface
-            LocationLevelDAI daiInterface = dao;
+            SiteReferenceMetaData daiInterface = dao;
             
             String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
             
@@ -309,10 +274,6 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             List<LocationLevelSpec> specs = daiInterface.getLocationLevelSpecs(tx, "TEST_LOCATION");
             
             // No exceptions should be thrown
-        }
-        finally
-        {
-            dao.close();
         }
     }
 
@@ -333,7 +294,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         log.info("Loading test data for office: " + officeId);
         
         // Load the SQL script
-        String testDataSql = IOUtils.resourceToString("/database/cwms_location_level_test_data.sql", StandardCharsets.UTF_8);
+        String testDataSql = IOUtils.resourceToString("/data/cwms/cwms_location_level_test_data.sql", StandardCharsets.UTF_8);
         
         // Replace placeholder with actual office
         testDataSql = testDataSql.replace("DEFAULT_OFFICE", officeId);

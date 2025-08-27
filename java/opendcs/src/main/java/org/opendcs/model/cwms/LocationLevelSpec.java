@@ -1,4 +1,4 @@
-package decodes.db;
+package org.opendcs.model.cwms;
 
 import decodes.sql.DbKey;
 import opendcs.dao.CachableDbObject;

@@ -1,13 +1,12 @@
-package opendcs.dai;
+package org.opendcs.database.dai;
 
-import decodes.tsdb.DbIoException;
-import decodes.db.LocationLevelValue;
-import decodes.db.LocationLevelSpec;
+import opendcs.dai.DaiBase;
+import org.opendcs.model.cwms.LocationLevelValue;
+import org.opendcs.model.cwms.LocationLevelSpec;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
 
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -17,7 +16,7 @@ import java.util.List;
  * 
  * All operations are stateless and require a DataTransaction.
  */
-public interface LocationLevelDAI extends DaiBase, OpenDcsDao
+public interface SiteReferenceMetaData extends OpenDcsDao
 {
     
     /**
