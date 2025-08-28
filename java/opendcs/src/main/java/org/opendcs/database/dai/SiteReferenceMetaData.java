@@ -1,8 +1,7 @@
 package org.opendcs.database.dai;
 
-import opendcs.dai.DaiBase;
-import org.opendcs.model.cwms.LocationLevelValue;
-import org.opendcs.model.cwms.LocationLevelSpec;
+import org.opendcs.model.SiteReferenceValue;
+import org.opendcs.model.SiteReferenceSpecification;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -26,7 +25,7 @@ public interface SiteReferenceMetaData extends OpenDcsDao
      * @return The latest LocationLevelValue or null if none found
      * @throws OpenDcsDataException on database error
      */
-    LocationLevelValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId)
+    SiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId)
         throws OpenDcsDataException;
     
     /**
@@ -37,8 +36,8 @@ public interface SiteReferenceMetaData extends OpenDcsDao
      * @return The latest LocationLevelValue or null if none found
      * @throws OpenDcsDataException on database error
      */
-    LocationLevelValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId,
-        String targetUnits) throws OpenDcsDataException;
+    SiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId,
+                                                       String targetUnits) throws OpenDcsDataException;
     
     /**
      * Read location level specifications with transaction support
@@ -47,7 +46,7 @@ public interface SiteReferenceMetaData extends OpenDcsDao
      * @return List of LocationLevelSpec objects
      * @throws OpenDcsDataException on database error
      */
-    List<LocationLevelSpec> getLocationLevelSpecs(DataTransaction tx, String locationId)
+    List<? extends SiteReferenceSpecification> getLocationLevelSpecs(DataTransaction tx, String locationId)
         throws OpenDcsDataException;
     
     /**

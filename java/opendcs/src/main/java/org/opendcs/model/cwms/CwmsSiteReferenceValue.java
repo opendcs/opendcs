@@ -2,6 +2,7 @@ package org.opendcs.model.cwms;
 
 import decodes.sql.DbKey;
 import opendcs.dao.CachableDbObject;
+import org.opendcs.model.SiteReferenceValue;
 
 import java.util.Date;
 
@@ -9,7 +10,7 @@ import java.util.Date;
  * Inner class representing a Location Level Value
  * Implements CachableDbObject for caching support
  */
-public class LocationLevelValue implements CachableDbObject
+public class CwmsSiteReferenceValue implements CachableDbObject, SiteReferenceValue
 {
     private String locationLevelId;
     private double levelValue;
@@ -19,10 +20,10 @@ public class LocationLevelValue implements CachableDbObject
     private String comment;
     private String cacheKey;
 
-    public LocationLevelValue() {}
+    public CwmsSiteReferenceValue() {}
 
-    public LocationLevelValue(String locationLevelId, double levelValue,
-                              Date levelDate, String units)
+    public CwmsSiteReferenceValue(String locationLevelId, double levelValue,
+                                  Date levelDate, String units)
     {
         this.locationLevelId = locationLevelId;
         this.levelValue = levelValue;

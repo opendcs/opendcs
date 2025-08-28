@@ -20,8 +20,8 @@ import decodes.db.UnitConverter;
 import decodes.util.DecodesException;
 import ilex.var.NoConversionException;
 
-import org.opendcs.model.cwms.LocationLevelValue;
-import org.opendcs.model.cwms.LocationLevelSpec;
+import org.opendcs.model.cwms.CwmsSiteReferenceValue;
+import org.opendcs.model.cwms.CwmsSiteReferenceSpecification;
 
 import opendcs.dao.DaoBase;
 
@@ -94,7 +94,7 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
      * @throws OpenDcsDataException on database error
      */
     @Override
-    public LocationLevelValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId)
+    public CwmsSiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId)
         throws OpenDcsDataException
     {
         return getLatestLocationLevelValue(tx, locationLevelId, null);
@@ -109,8 +109,8 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
      * @throws OpenDcsDataException on database error
      */
     @Override
-    public LocationLevelValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId,
-        String targetUnits) throws OpenDcsDataException
+    public CwmsSiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId,
+                                                              String targetUnits) throws OpenDcsDataException
     {
         Connection conn = tx.connection(Connection.class)
             .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
@@ -134,7 +134,7 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
      * @throws OpenDcsDataException on database error
      */
     @Override
-    public List<LocationLevelSpec> getLocationLevelSpecs(DataTransaction tx, String locationId)
+    public List<CwmsSiteReferenceSpecification> getLocationLevelSpecs(DataTransaction tx, String locationId)
         throws OpenDcsDataException
     {
         Connection conn = tx.connection(Connection.class)
@@ -158,13 +158,13 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
      * @return List of LocationLevelSpec objects
      * @throws SQLException on database error
      */
-    private List<LocationLevelSpec> executeLocationLevelSpecsQuery(DaoHelper helper, String locationId)
+    private List<CwmsSiteReferenceSpecification> executeLocationLevelSpecsQuery(DaoHelper helper, String locationId)
         throws SQLException
     {
-        List<LocationLevelSpec> specs = new ArrayList<>();
+        List<CwmsSiteReferenceSpecification> specs = new ArrayList<>();
         
         helper.doQuery(LOCATION_LEVEL_SPEC_QUERY, rs -> {
-            LocationLevelSpec spec = new LocationLevelSpec();
+            CwmsSiteReferenceSpecification spec = new CwmsSiteReferenceSpecification();
             spec.setLocationLevelId(rs.getString("LOCATION_LEVEL_ID"));
             spec.setSpecifiedLevelId(rs.getString("SPECIFIED_LEVEL_ID"));
             spec.setParameterId(rs.getString("PARAMETER_ID"));
@@ -234,8 +234,8 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
      * @return The latest LocationLevelValue or null if none found
      * @throws SQLException on database error
      */
-    private LocationLevelValue executeLocationLevelQuery(DaoHelper helper, String locationLevelId,
-                                                         String targetUnits) throws SQLException
+    private CwmsSiteReferenceValue executeLocationLevelQuery(DaoHelper helper, String locationLevelId,
+                                                             String targetUnits) throws SQLException
     {
         // Build query based on whether we're filtering by source units
         String query;
@@ -253,7 +253,7 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
         final String[] sourceUnits = new String[] { null };
         
         return helper.getSingleResultOr(query, rs -> {
-            LocationLevelValue value = new LocationLevelValue();
+            CwmsSiteReferenceValue value = new CwmsSiteReferenceValue();
             double levelValue = rs.getDouble("LOCATION_LEVEL_VALUE");
             String dbUnits = rs.getString("LEVEL_UNIT");
 

@@ -2,6 +2,7 @@ package org.opendcs.model.cwms;
 
 import decodes.sql.DbKey;
 import opendcs.dao.CachableDbObject;
+import org.opendcs.model.SiteReferenceSpecification;
 
 import java.util.Date;
 
@@ -9,7 +10,7 @@ import java.util.Date;
  * Inner class representing a Location Level Specification
  * Implements CachableDbObject for caching support
  */
-public class LocationLevelSpec implements CachableDbObject
+public class CwmsSiteReferenceSpecification implements CachableDbObject, SiteReferenceSpecification
 {
     private DbKey key = DbKey.NullKey;
     private String locationLevelId;
@@ -27,7 +28,7 @@ public class LocationLevelSpec implements CachableDbObject
     private String attributeUnit;
     private String attributeParameterId;
 
-    public LocationLevelSpec()
+    public CwmsSiteReferenceSpecification()
     {
     }
 
