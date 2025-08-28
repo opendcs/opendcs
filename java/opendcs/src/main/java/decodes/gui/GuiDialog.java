@@ -157,7 +157,6 @@ public class GuiDialog extends JDialog
 			try (FileInputStream fis = new FileInputStream(changeTrackFile))
 			{
 				locSizeProps.load(fis);
-				fis.close();
 				String s = locSizeProps.getProperty("x");
 				int x = s != null ? Integer.parseInt(s) : curLoc.x;
 				s = locSizeProps.getProperty("y");

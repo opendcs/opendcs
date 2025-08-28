@@ -15,7 +15,6 @@
 */
 package decodes.gui;
 
-import decodes.sql.PlatformListIO;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.VarFlags;
 import ilex.var.NoConversionException;
@@ -23,7 +22,6 @@ import ilex.var.TimedVariable;
 
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.util.ArrayList;
