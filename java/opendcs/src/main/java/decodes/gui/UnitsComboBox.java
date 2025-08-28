@@ -1,16 +1,17 @@
 /*
-*  $Id$
-*
-*  $Log$
-*  Revision 1.1  2008/04/04 18:21:03  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.2  2004/08/31 16:30:26  mjmaloney
-*  javadocs
-*
-*  Revision 1.1  2003/11/20 18:33:41  mjmaloney
-*  Created UnitsComboBox
-*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.gui;
 
@@ -19,11 +20,9 @@ import java.util.Collections;
 import java.util.Vector;
 import javax.swing.JComboBox;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import decodes.db.EngineeringUnit;
-import decodes.db.EngineeringUnitList;
 import decodes.db.Database;
 
 

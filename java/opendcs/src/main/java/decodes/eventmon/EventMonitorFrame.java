@@ -1,73 +1,57 @@
-/**
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. No warranty is provided or implied 
- * other than specific contractual terms between COVE and the U.S. Government
- * 
- * Copyright 2017 U.S. Government.
- *
- * $Log$
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.eventmon;
 
-import ilex.gui.EventsPanel;
-import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
-import ilex.util.ProcWaiterThread;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSplitPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 
-import opendcs.dai.ComputationDAI;
-import opendcs.dai.LoadingAppDAI;
-import opendcs.dai.ScheduleEntryDAI;
-import decodes.db.Database;
 import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
 import decodes.polling.DacqEvent;
 import decodes.tsdb.CompAppInfo;
-import decodes.tsdb.CompFilter;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
 
@@ -77,19 +61,16 @@ import decodes.util.DecodesSettings;
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
 @SuppressWarnings("serial")
-public class EventMonitorFrame 
-	extends TopFrame
+public class EventMonitorFrame extends TopFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DacqEventTableModel model = null;
 	ResourceBundle genericLabels = null;
 	ResourceBundle eventmonLabels = null;
-//	private static ResourceBundle compeditLabels = null;
 	private SortingListTable dacqEventTable = null;
-//	private AppInfoStatus selectedProc = null;
-//	private ArrayList<ProcessEditDialog> editDialogs = new ArrayList<ProcessEditDialog>();
 	private TimeSeriesDb tsdb = null;
-	private JComboBox processCombo = new JComboBox();
-	private JComboBox severityCombo = new JComboBox(
+	private JComboBox<String> processCombo = new JComboBox<>();
+	private JComboBox<String> severityCombo = new JComboBox<>(
 		new String[] { "INFO", "WARNING", "FAILURE", "FATAL" });
 	private JTextField containingField = new JTextField();
 	
@@ -123,7 +104,7 @@ public class EventMonitorFrame
 		this.setTitle(eventmonLabels.getString("frameTitle"));
 		model = new DacqEventTableModel(this);
 		
-		model.reload(null, null, null, Logger.E_INFORMATION, null);
+		model.reload(null, null, null, -1, null);
 		
 		processCombo.addItem("<any>");
 		ArrayList<CompAppInfo> apps = new ArrayList<CompAppInfo>();
@@ -268,7 +249,6 @@ public class EventMonitorFrame
 				showError("Invalid since time '" + s + "' -- must be in format: " + timeFormat);
 				return;
 			}
-//System.out.println("Since=" + since);
 		}
 		
 		Date until = null;
@@ -278,17 +258,13 @@ public class EventMonitorFrame
 			try { until = sdf.parse(s); }
 			catch(ParseException ex)
 			{
+				log.atError().setCause(ex).log("Unable to parse {}, must be in format: {}", s, timeFormat);
 				showError("Invalid until time '" + s + "' -- must be in format: " + timeFormat);
 				return;
 			}
-//System.out.println("Until=" + until);
 		}
 		
-		s = (String)severityCombo.getSelectedItem();
-		int minSeverity = 
-			s.equals("INFO") ? Logger.E_INFORMATION :
-			s.equals("WARNING") ? Logger.E_WARNING :
-			s.equals("FAILURE") ? Logger.E_FAILURE : Logger.E_FATAL;
+		int minSeverity = -1; // Log is no longer viewed in this way.
 
 		String containing = containingField.getText().trim();
 		if (containing.length() == 0)

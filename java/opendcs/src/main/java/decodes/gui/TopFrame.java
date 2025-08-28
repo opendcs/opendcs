@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.gui;
 
@@ -14,6 +26,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -31,7 +46,6 @@ import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.AsciiUtil;
 
 /**
@@ -40,6 +54,7 @@ import ilex.util.AsciiUtil;
 */
 public class TopFrame extends JFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static TopFrame _instance;
 	
 	protected boolean exitOnClose = false;
@@ -73,8 +88,6 @@ public class TopFrame extends JFrame
 		statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 1));
 		statusPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
 		jframeContentPane.add(statusPanel, BorderLayout.SOUTH);
-//		statusPanel.setPreferredSize(new Dimension(this.getWidth(), 16));
-//		statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
 		
 		statusPanel.add(dbNameLabel = new JLabel());
 		statusPanel.add(dbStatusLabel = new JLabel());
@@ -149,11 +162,11 @@ public class TopFrame extends JFrame
 
 	/** 
 	  Starts a modal error dialog with the passed message. 
+	   Does NOT log to the standard logger
 	  @param msg the error message
 	*/
 	public void showError(String msg)
 	{
-		Logger.instance().log(Logger.E_FAILURE, msg);
 		JOptionPane.showMessageDialog(this,
 			AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
 	}
@@ -222,9 +235,9 @@ public class TopFrame extends JFrame
 		if (!tmpDir.isDirectory())
 			if (!tmpDir.mkdirs())
 			{
-				Logger.instance().warning(
-					"Cannot track GUI size & location changes because '"
-					+ tmpDir.getPath() + "' does not exist and cannot be created.");
+				log.warn("Cannot track GUI size & location changes because '{}' " +
+						 "does not exist and cannot be created.",
+						 tmpDir.getPath());
 			}
 		String name = (TopFrame.profileName == null ? "" : (TopFrame.profileName+"-"))
 			+ frameTitle + ".loc";
@@ -235,12 +248,9 @@ public class TopFrame extends JFrame
 		Dimension curSize = getSize();
 		if (changeTrackFile.canRead())
 		{
-			FileInputStream fis;
-			try
+			try(FileInputStream fis = new FileInputStream(changeTrackFile))
 			{
-				fis = new FileInputStream(changeTrackFile);
 				locSizeProps.load(fis);
-				fis.close();
 				String s = locSizeProps.getProperty("x");
 				int x = s != null ? Integer.parseInt(s) : curLoc.x;
 				s = locSizeProps.getProperty("y");
@@ -251,10 +261,9 @@ public class TopFrame extends JFrame
 				int w = s != null ? Integer.parseInt(s) : curSize.width;
 				setBounds(x,y,w,h);
 			}
-			catch (Exception e1)
+			catch (Exception ex)
 			{
-				Logger.instance().warning("Cannot read size & loc file '"
-					+ changeTrackFile.getPath() + "': " + e1);
+				log.atWarn().setCause(ex).log("Cannot read size & loc file '{}'", changeTrackFile.getPath());
 			}
 		}
 		else
@@ -303,16 +312,13 @@ public class TopFrame extends JFrame
 	}
 	private void saveLocSize()
 	{
-		try
+		try(FileOutputStream fos = new FileOutputStream(changeTrackFile))
 		{
-			FileOutputStream fos = new FileOutputStream(changeTrackFile);
 			locSizeProps.store(fos, null);
-			fos.close();
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot write to '" + changeTrackFile.getPath()
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot write to '{}'", changeTrackFile.getPath());
 			changeTrackFile = null;
 		}
 	}
