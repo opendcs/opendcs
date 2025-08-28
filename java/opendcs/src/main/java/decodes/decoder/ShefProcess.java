@@ -162,11 +162,11 @@ public class ShefProcess extends DecodesFunction
 					}
 					formatType = c;
 					lineContext = LineContext.FormatExt;
-					log.warn("position={} Got type = '{}}' expecting extension", idx, c);
+					log.warn("position={} Got type = '{}' expecting extension", idx, c);
 				}
 				else
 				{
-					log.warn("position={} Unexpected format type '" + c + "' -- ignoring line.", idx, c);
+					log.warn("position={} Unexpected format type '{}' -- ignoring line.", idx, c);
 					lineContext = LineContext.IgnoreLine;
 				}
 				continue;
@@ -180,7 +180,7 @@ public class ShefProcess extends DecodesFunction
 				}
 				else if (!Character.isDigit(c))
 				{
-					log.warn("position={} Unexpexted continuation character '{}' -- ignored.", idx, c);
+					log.warn("position={} Unexpected continuation character '{}' -- ignored.", idx, c);
 				}
 				continue;
 			case InComment:
