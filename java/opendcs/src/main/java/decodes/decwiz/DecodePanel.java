@@ -47,7 +47,6 @@ import decodes.decoder.DecoderException;
 import decodes.decoder.SummaryReportGenerator;
 import decodes.decoder.TimeSeries;
 import decodes.dbeditor.TraceDialog;
-import decodes.dbeditor.TraceLogger;
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
 
@@ -535,7 +534,7 @@ public class DecodePanel extends DecWizPanel
 		}
 		catch(Exception ex)
 		{
-			String msg = "Unexpected exception" + ex;
+			String msg = "Unexpected exception";
 			log.atError().setCause(ex).log(msg);
 			showError(msg + ": " + ex);
 		}

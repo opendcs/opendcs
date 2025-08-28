@@ -29,6 +29,7 @@ import ilex.gui.WindowUtility;
 
 import javax.swing.*;
 
+import org.opendcs.gui.GuiHelpers;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -62,9 +63,9 @@ public class DecodingWizard
 				{
 					decWizFrame.setVisible(true);
 				}
-				catch (Exception exception)
+				catch (Exception ex)
 				{
-					exception.printStackTrace();
+					GuiHelpers.logGuiComponentInit(log, ex);
 				}
 
 			}

@@ -204,7 +204,6 @@ public class DecWizFrame extends TopFrame
         catch (Exception ex)
         {
             log.atError().setCause(ex).log("Exception in activate.");
-            ex.printStackTrace();
         }
         panelContainer.add(jp);
 
