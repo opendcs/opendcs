@@ -19,6 +19,7 @@ import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
 
 import decodes.cwms.CwmsTimeSeriesDb;
+import decodes.cwms.CwmsLocationLevelDAO;
 import decodes.tsdb.TimeSeriesDb;
 import org.opendcs.database.dai.SiteReferenceMetaData;
 
@@ -44,7 +45,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     @ConfiguredField
     private OpenDcsDatabase db;
 
-    private SiteReferenceMetaData dao;
+    private CwmsLocationLevelDAO dao;
     private static boolean testDataLoaded = false;
     
     @BeforeAll
@@ -74,7 +75,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         {
             Optional<SiteReferenceMetaData>  dai = db.getDao(SiteReferenceMetaData.class);
             assertTrue(dai.isPresent(), "Unable to retrieve LocationLevelDAI instance from database.");
-            dao = dai.get();
+            dao = (CwmsLocationLevelDAO) dai.get();
         }
         else
         {
