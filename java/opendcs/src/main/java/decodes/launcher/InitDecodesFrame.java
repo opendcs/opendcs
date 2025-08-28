@@ -1,9 +1,17 @@
 /*
- * $Id$
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  *
- * $Log$
- * Revision 1.1  2012/05/17 15:14:31  mmaloney
- * Initial implementation for USBR.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
  *
  *
  * This is open-source software written by Sutron Corporation under
@@ -11,7 +19,7 @@
  * source code for any purpos, except that no part of the information
  * contained in this file may be claimed to be proprietary.
  *
- * Except for specific contractual terms between Sutron and the federal 
+ * Except for specific contractual terms between Sutron and the federal
  * government, this source code is provided completely without warranty.
  */
 package decodes.launcher;
@@ -21,10 +29,16 @@ import ilex.util.EnvExpander;
 import java.awt.*;
 import java.util.ResourceBundle;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.util.ResourceFactory;
 
-public class InitDecodesFrame extends JFrame 
+public class InitDecodesFrame extends JFrame
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle labels;
     JPanel logoPanel = new JPanel();
     BorderLayout borderLayout1 = new BorderLayout();
@@ -40,7 +54,8 @@ public class InitDecodesFrame extends JFrame
     public InitDecodesFrame(ResourceBundle labels)
 	{
     	this.labels = labels;
-        try {
+        try
+        {
             jbInit();
         	versionLabel.setText(ResourceFactory.instance().startTag());
 			ImageIcon logo = new ImageIcon(
@@ -48,8 +63,9 @@ public class InitDecodesFrame extends JFrame
 			logoPanel.add(new JLabel(logo));
 			this.setSize(440, 300);
         }
-        catch(Exception e) {
-            e.printStackTrace();
+        catch(Exception ex)
+        {
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
     private void jbInit() throws Exception {
@@ -79,7 +95,7 @@ public class InitDecodesFrame extends JFrame
 		emptyPanelw.add(new JLabel(" "));
 		emptyPanelw.setBackground(Color.white);
         this.getContentPane().add(emptyPanelw, BorderLayout.WEST);
-		
+
 
         jPanel2.add(jLabel1, null);
         jPanel2.add(jLabel2, null);
