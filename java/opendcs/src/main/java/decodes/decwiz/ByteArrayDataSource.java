@@ -1,33 +1,38 @@
-/**
- * $Id$
- * 
- * Open Source Software
- * 
- * $Log$
- * Revision 1.2  2014/05/28 13:09:31  mmaloney
- * dev
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.4  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.decwiz;
 
 import java.util.Date;
 import java.util.Properties;
 import java.util.Vector;
-import ilex.util.Logger;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.Variable;
 
 import decodes.datasource.*;
 import decodes.db.*;
 
-public class ByteArrayDataSource
-	extends DataSourceExec
+public class ByteArrayDataSource extends DataSourceExec
 {
+	private static final String CANNOT_PARSE_AS_EITHER_USGS_EDL_OR_GOES_MSG =
+						"Cannot parse as either USGS-EDL or GOES msg.";
+	private static final String UNEXPECTED_ERROR_PARSING_HEADER = "Unexpected error parsing header.";
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	byte[] bytes;
 	PMParser pmParser = null;
 	RawMessage rawMessage = null;
@@ -54,7 +59,7 @@ public class ByteArrayDataSource
 		return "ByteArrayDataSource";
 	}
 
-	/** 
+	/**
 	  Return currently active source. Groups should override this to delegate
 	  to the active member.
 	  @return currently active source.
@@ -72,7 +77,7 @@ public class ByteArrayDataSource
 	/**
 	 * Does nothing.
 	 */
-	public void init(Properties routingSpecProps, String since, 
+	public void init(Properties routingSpecProps, String since,
 		String until, Vector networkLists)
 	{
 	}
@@ -84,7 +89,7 @@ public class ByteArrayDataSource
 
 	/**
 	  Reads the next raw message from the data source and returns it.
-	  This DataSource will fill in the message data and attempt to 
+	  This DataSource will fill in the message data and attempt to
 	  associate it with a TransportMedium object.
 
 	  @return the next RawMessage object from the data source.
@@ -100,7 +105,7 @@ public class ByteArrayDataSource
 		rawMessage = new RawMessage(bytes, bytes.length);
 		return rawMessage;
 	}
-	
+
 
 	public void associatePlatform()
 		throws DataSourceException
@@ -110,15 +115,15 @@ public class ByteArrayDataSource
 		try
 		{ tm = rawMessage.getTransportMedium();}
 		catch ( UnknownPlatformException ue ) { tm = null; };
-		try 
+		try
 		{
-			if ( tm == null ) { 	
+			if ( tm == null ) {
 				plat = Database.getDb().platformList.getPlatform(
-					pmParser.getMediumType(), rawMessage.getMediumId(), 
+					pmParser.getMediumType(), rawMessage.getMediumId(),
 					rawMessage.getTimeStamp());
 			} else {
 				plat = Database.getDb().platformList.getPlatform(
-					tm.getMediumType(), tm.getMediumId(), 
+					tm.getMediumType(), tm.getMediumId(),
 					rawMessage.getTimeStamp());
 			}
 		}
@@ -126,8 +131,8 @@ public class ByteArrayDataSource
 		{
 			String msg = "Cannot read platform for medium type '"
 				+ pmParser.getMediumType() + "' with ID '"
-				+ rawMessage.getMediumId() + "': " + ex;
-			throw new DataSourceException(msg);
+				+ rawMessage.getMediumId();
+			throw new DataSourceException(msg, ex);
 		}
 
 		if (plat == null)
@@ -139,11 +144,11 @@ public class ByteArrayDataSource
 		}
 
 		rawMessage.setPlatform(plat);
-		tm = resolveTransportMedium(plat, 
+		tm = resolveTransportMedium(plat,
 			rawMessage.getMediumId(), -1, false);
 		rawMessage.setTransportMedium(tm);
 	}
-			
+
 	public void parseHeader()
 		throws HeaderParseException
 	{
@@ -155,7 +160,7 @@ public class ByteArrayDataSource
 		}
 		catch(HeaderParseException ex)
 		{
-			Logger.instance().warning("Cannot parse as USGS-EDL: " + ex);
+			log.atWarn().setCause(ex).log("Cannot parse as USGS-EDL.");
 		}
 
 		try
@@ -168,21 +173,17 @@ public class ByteArrayDataSource
 		}
 		catch(HeaderParseException ex)
 		{
-			String msg = "Cannot parse as either USGS-EDL or GOES msg - "
-				+ ex;
-			Logger.instance().failure(msg);
+			String msg = CANNOT_PARSE_AS_EITHER_USGS_EDL_OR_GOES_MSG;
 			pmParser = null;
-			throw new HeaderParseException(msg);
+			throw new HeaderParseException(msg, ex);
 		}
 		catch(Exception ex)
 		{
-			String msg = "Unexpected error parsing header: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace();
-			throw new HeaderParseException(msg);
+			String msg = UNEXPECTED_ERROR_PARSING_HEADER;
+			throw new HeaderParseException(msg, ex);
 		}
 	}
-	
+
 	public void parseHeader(String mediumType)
 		throws HeaderParseException
 	{
@@ -194,7 +195,7 @@ public class ByteArrayDataSource
 		}
 		catch(HeaderParseException ex)
 		{
-			Logger.instance().warning("Cannot parse as USGS-EDL types: " + ex);
+			log.atWarn().setCause(ex).log("Cannot parse as USGS-EDL types.");
 		}
 
 		try
@@ -207,18 +208,14 @@ public class ByteArrayDataSource
 		}
 		catch(HeaderParseException ex)
 		{
-			String msg = "Cannot parse as either USGS-EDL or GOES msg - "
-				+ ex;
-			Logger.instance().failure(msg);
+			String msg = CANNOT_PARSE_AS_EITHER_USGS_EDL_OR_GOES_MSG;
 			pmParser = null;
-			throw new HeaderParseException(msg);
+			throw new HeaderParseException(msg, ex);
 		}
 		catch(Exception ex)
 		{
-			String msg = "Unexpected error parsing header: " + ex;
-			System.err.println(msg);
-			ex.printStackTrace();
-			throw new HeaderParseException(msg);
+			String msg = UNEXPECTED_ERROR_PARSING_HEADER;
+			throw new HeaderParseException(msg, ex);
 		}
 	}
 }

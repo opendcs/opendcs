@@ -1,8 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.decwiz;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -12,16 +26,17 @@ import java.util.Vector;
 import javax.swing.*;
 import javax.swing.border.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.ArrayUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import decodes.db.*;
-import decodes.gui.TopFrame;
 import decodes.gui.EnumComboBox;
 import decodes.dbeditor.SiteSelectDialog;
 import decodes.dbeditor.PlatformSelectDialog;
 import decodes.datasource.DataSourceException;
-import decodes.datasource.PMParser;
 import decodes.datasource.RawMessage;
 import decodes.datasource.HeaderParseException;
 import decodes.datasource.UnknownPlatformException;
@@ -32,15 +47,15 @@ This panel is the first panel in the decoding wizard. Here the
 user enters the file and if necessary, the platform and site
 identifications.
 */
-public class FileIdPanel 
-	extends DecWizPanel
+public class FileIdPanel extends DecWizPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JLabel filenameLabel = new JLabel();
 	private JTextField filenameField = new JTextField();
 	private JButton browseButton = new JButton();
 	private JButton scanButton = new JButton();
 	private JLabel mediumTypeLabel = new JLabel();
-	private EnumComboBox mediumTypeCombo = 
+	private EnumComboBox mediumTypeCombo =
 		new EnumComboBox(Constants.enum_TMType, "data-logger");
 	private JLabel siteLabel = new JLabel();
 	private JTextField siteField = new JTextField();
@@ -54,7 +69,7 @@ public class FileIdPanel
 	private JLabel modifiedLabel = new JLabel();
 	private JTextField lastModifiedField = new JTextField();
 	private JLabel debugLevelLabel = new JLabel();
-	private String dblev[] = { "No Debug Info", "Least Verbose", 
+	private String dblev[] = { "No Debug Info", "Least Verbose",
 		"More Verbose", "Most Verbose" };
 	private JComboBox debugLevelCombo = new JComboBox(dblev);
 	private JLabel scriptLabel = new JLabel("Decoding Script:");
@@ -63,11 +78,11 @@ public class FileIdPanel
 	private JComboBox scriptCombo = new JComboBox();
 	private GridBagLayout fieldsLayout = new GridBagLayout();
 	private JLabel formatLabel = new JLabel();
-	private EnumComboBox decodeFormatCombo = 
+	private EnumComboBox decodeFormatCombo =
 		new EnumComboBox(Constants.enum_OutputFormat, "stdmsg");
 	private BorderLayout rawDataLayout = new BorderLayout();
 	private JPanel rawDataPanel = new JPanel(rawDataLayout);
-	private Border rawDataBorder = 
+	private Border rawDataBorder =
 		new TitledBorder(
 			BorderFactory.createLineBorder(new Color(153, 153, 153),2),
 			"Raw Data");
@@ -93,9 +108,9 @@ public class FileIdPanel
 			jbInit();
 			fillPresentationCombo();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		String fmt = DecodesSettings.instance().decwizOutputFormat;
 		if (fmt != null && fmt.length() > 0)
@@ -194,118 +209,118 @@ public class FileIdPanel
 		rawDataArea.setFont(
 			new Font("Monospaced", Font.PLAIN, oldfont.getSize()));
 
-		this.add(filenameLabel, 
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+		this.add(filenameLabel,
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(10, 15, 3, 2), 0, 0));
-		this.add(filenameField, 
-			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, 
+		this.add(filenameField,
+			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 0, 3, 0), 0, 0));
-		this.add(browseButton, 
-			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
+		this.add(browseButton,
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(10, 5, 3, 5), 0, 0));
-		this.add(scanButton, 
-			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0, 
+		this.add(scanButton,
+			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(10, 5, 3, 10), 0, 0));
 
-		this.add(fileSizeLabel, 
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
+		this.add(fileSizeLabel,
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
-		this.add(fileSizeField, 
+		this.add(fileSizeField,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 0), 0, 0));
-		this.add(bytesLabel, 
-			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, 
+		this.add(bytesLabel,
+			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(3, 5, 3, 0), 0, 0));
 
-		this.add(modifiedLabel, 
+		this.add(modifiedLabel,
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
-		this.add(lastModifiedField, 
+		this.add(lastModifiedField,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 0), 0, 0));
 
-		this.add(mediumTypeLabel, 
+		this.add(mediumTypeLabel,
 			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
-		this.add(mediumTypeCombo, 
+		this.add(mediumTypeCombo,
 			new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 0), 0, 0));
 
-		this.add(siteLabel, 
+		this.add(siteLabel,
 			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
-		this.add(siteField, 
+		this.add(siteField,
 			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 0), 0, 0));
-		this.add(siteSelectButton, 
+		this.add(siteSelectButton,
 			new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(3, 5, 3, 0), 0, 0));
 
-		this.add(platformLabel, 
-			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0, 
+		this.add(platformLabel,
+			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
-		this.add(platformField, 
+		this.add(platformField,
 			new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 0), 0, 0));
-		this.add(platformSelectButton, 
-			new GridBagConstraints(2, 5, 1, 1, 0.0, 0.0, 
+		this.add(platformSelectButton,
+			new GridBagConstraints(2, 5, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(3, 5, 3, 0), 0, 0));
 
-		this.add(scriptLabel, 
+		this.add(scriptLabel,
 			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
-		this.add(scriptCombo, 
+		this.add(scriptCombo,
 			new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 0), 0, 0));
 
-		this.add(formatLabel, 
+		this.add(formatLabel,
 			new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
-		this.add(decodeFormatCombo, 
+		this.add(decodeFormatCombo,
 			new GridBagConstraints(1, 7, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 0), 0, 0));
 
-		this.add(presentationGroupLabel, 
+		this.add(presentationGroupLabel,
 			new GridBagConstraints(0, 8, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
-		this.add(pgCombo, 
+		this.add(pgCombo,
 			new GridBagConstraints(1, 8, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 0), 0, 0));
 
-		this.add(debugLevelLabel, 
-			new GridBagConstraints(0, 9, 1, 1, 0.0, 0.0, 
+		this.add(debugLevelLabel,
+			new GridBagConstraints(0, 9, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(3, 15, 3, 2), 0, 0));
-		this.add(debugLevelCombo, 
-			new GridBagConstraints(1, 9, 1, 1, 1.0, 0.0, 
+		this.add(debugLevelCombo,
+			new GridBagConstraints(1, 9, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 0), 0, 0));
 
 		this.add(rawDataPanel,
-			new GridBagConstraints(0, 10, 4, 1, 1.0, 1.0, 
+			new GridBagConstraints(0, 10, 4, 1, 1.0, 1.0,
 				GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH,
 				new Insets(10, 5, 5, 5), 0, 0));
 	}
@@ -357,23 +372,24 @@ public class FileIdPanel
 	{
 		byte fileBytes[] = null;
 		String currentFile = filenameField.getText();
-		if ( fileLoaded ) {
-			if ( lastFile == null || !currentFile.equals(lastFile) ) 
+		if (fileLoaded)
+		{
+			if (lastFile == null || !currentFile.equals(lastFile))
 				fileLoaded = false;
 		}
-		if ( !fileLoaded ) {
+		if (!fileLoaded)
+		{
 			lastFile = currentFile;
 			File f = new File(filenameField.getText());
 			if (!f.canRead())
-				showError("The selected file '" + f.getPath() 
+				showError("The selected file '" + f.getPath()
 					+ "' is not readable.");
 			lastModifiedField.setText("" + new Date(f.lastModified()));
-			FileReader fr = null;
+
 			rawDataArea.setText("");
 			fileBytes = new byte[(int)f.length()];
-			try
+			try (FileReader fr = new FileReader(f))
 			{
-				fr = new FileReader(f);
 				char cbuf[] = new char[256];
 				int totalBytes = 0;
 				int n;
@@ -386,10 +402,10 @@ public class FileIdPanel
 						if (initialWhiteSpace
 						 && !Character.isWhitespace(cbuf[i]))
 							initialWhiteSpace = false;
-	
+
 						if (!initialWhiteSpace)
 							fileBytes[fileBytesIndex++] = (byte)cbuf[i];
-	
+
 						if (cbuf[i] == '\r')
 							cbuf[i] = (char)0x00AE;
 					}
@@ -406,26 +422,24 @@ public class FileIdPanel
 			}
 			catch(Exception ex)
 			{
+				log.atError().setCause(ex).log("Error reading '{}'", f.getPath());
 				showError("Error reading " + f.getPath()
 					+ ": " + ex);
 			}
-			finally
-			{
-				if (fr != null)
-					try { fr.close(); } catch(Exception ex) {}
-			}
 			fileLoaded = true;
-		} else {
+		}
+		else
+		{
 			String out = getRawData().replaceAll("\u00AE","\r");
 			fileBytes =  out.getBytes();
 		}
 		rawMessage = null;
-		try 
+		try
 		{
 			ByteArrayDataSource bads = new ByteArrayDataSource(fileBytes);
 			rawMessage = bads.getRawMessage();
 			if ( transportMedium != null ) {
-				rawMessage.setTransportMedium(transportMedium);		
+				rawMessage.setTransportMedium(transportMedium);
 				bads.parseHeader();
 			} else {
 				String boxTM = (String)mediumTypeCombo.getSelectedItem();
@@ -444,7 +458,9 @@ public class FileIdPanel
 		}
 		catch(HeaderParseException ex)
 		{
+			log.atError().setCause(ex).log("Unable to parse header.");
 			if ( transportMedium == null && selectedSite == null ) {
+
 				showError("Cannot parse header as a USGS-EDL or GOES message."
 				+ " You must set the Medium Type, Platform, and Script "
 				+ "manually.");
@@ -452,14 +468,16 @@ public class FileIdPanel
 		}
 		catch(UnknownPlatformException ex)
 		{
+			log.atError().setCause(ex).log("No Platform found.");
 			if ( transportMedium == null && selectedSite == null ) {
-				showError(ex.getMessage() 
+				showError(ex.getMessage()
 					+ " You must set the Medium Type, Platform, and Site "
 					+ "manually.");
 			}
 		}
 		catch(DataSourceException ex)
 		{
+			log.atError().setCause(ex).log("Unable to get platform record.");
 			if ( transportMedium == null && selectedSite == null ) {
 				showError("Database IO Error reading platform record: " + ex
 					+ " You must set the Medium Type, Platform, and Site "
@@ -467,7 +485,6 @@ public class FileIdPanel
 			}
 		}
 
-//		getSavePanel().setChoosers();
 		getDecodePanel().clearData();
 	}
 
@@ -518,6 +535,7 @@ public class FileIdPanel
 		try { selectedPlatform.read(); }
 		catch(DatabaseException ex)
 		{
+			log.atError().setCause(ex).log("Cannot read platform data.");
 			showError("Cannot read platform data: " + ex);
 			return;
 		}
@@ -539,8 +557,8 @@ public class FileIdPanel
 	{
 	}
 
-	/** 
-	 * Called when this panel is de-activated. 
+	/**
+	 * Called when this panel is de-activated.
 	 * @return true if a valid file has been loaded and associated.
 	 */
 	public boolean deactivate()
@@ -556,10 +574,7 @@ public class FileIdPanel
 	private void debugLevelComboSelected()
 	{
 		int lev = debugLevelCombo.getSelectedIndex();
-		Logger.instance().setMinLogPriority(
-			lev == 0 ? Logger.E_INFORMATION :
-			lev == 1 ? Logger.E_DEBUG1 :
-			lev == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
+		log.warn("Setting the log level in this way is no longer supported.");
 	}
 	private void fillPresentationCombo()
 	{

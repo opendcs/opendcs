@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.drgsinfogui;
 
 import java.awt.GridBagConstraints;
@@ -17,8 +32,10 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.WindowConstants;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 
 import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
@@ -27,10 +44,11 @@ import decodes.gui.TopFrame;
  * This class displays the DRGS Receiver GUI Application.
  * It contains all the functions to read and write the
  * DRGS Receiver Identification XML file.
- * 
+ *
  */
 public class DrgsReceiversListFrame extends TopFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public String module = "DrgsReceiversListFrame";
 	private DrgsReceiversListTableModel drgsTableModel;
 	private SortingListTable drgsListTable;
@@ -48,11 +66,11 @@ public class DrgsReceiversListFrame extends TopFrame
 	public String descriptionColumn = "Description";
 	public String contactColumn = "Contact";
 	public String phoneColumn = "Phone #";
-	
+
 	public DrgsReceiversListFrame()
 	{
 		drgsTableModel = new DrgsReceiversListTableModel(this);
-		drgsListTable = new SortingListTable(drgsTableModel, 
+		drgsListTable = new SortingListTable(drgsTableModel,
 						new int[] {20, 40, 40, 40, 40, 40});
 		drgsListTable.getTableHeader().setReorderingAllowed(false);
 		drgsListTable.getSelectionModel().setSelectionMode(
@@ -72,7 +90,7 @@ public class DrgsReceiversListFrame extends TopFrame
 			}
 		});
 	}
-	
+
 	private void jbInit()
 	{
 		JPanel mainPanel = new JPanel();
@@ -82,7 +100,7 @@ public class DrgsReceiversListFrame extends TopFrame
 		JButton deleteButton = new JButton(deleteButtonLabel);
 		JButton saveAllButton = new JButton(saveAllButtonLabel);
 		JButton quitButton = new JButton(quitButtonLabel);
-		
+
 		this.setTitle(frameTitle);
 		this.setSize(780,600);
 		this.setContentPane(mainPanel);
@@ -123,7 +141,7 @@ public class DrgsReceiversListFrame extends TopFrame
 		});
 		mainPanel.setLayout(new GridBagLayout());
 		drgsJScrollPane.getViewport().add(drgsListTable, null);
-		
+
 		mainPanel.add(drgsJScrollPane, new GridBagConstraints(
 				0, 0, 1, 4, 1.0, 1.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(20, 12, 4, 5), 0, 0));
@@ -147,20 +165,20 @@ public class DrgsReceiversListFrame extends TopFrame
 				GridBagConstraints.NONE,
 				new Insets(10, 12, 20, 12), 16, 0));
 	}
-	
+
 	private void newButton_actionPerformed(ActionEvent e)
 	{
 		DrgsReceiverDialog dlg = new DrgsReceiverDialog(this);
 		//Open dialog
 		this.launchDialog(dlg);
 	}
-	
+
 	private void editButton_actionPerformed(ActionEvent e)
 	{
 		int r = drgsListTable.getSelectedRow();
 		if (r == -1)
 		{
-			String msg = 
+			String msg =
 				"Select DRGS Receiver record, then press Edit.";
 			JOptionPane.showMessageDialog(this,
 					msg, "Error!", JOptionPane.ERROR_MESSAGE);
@@ -176,17 +194,16 @@ public class DrgsReceiversListFrame extends TopFrame
 		}
 		else
 		{
-			Logger.instance().failure(module 
-					+ " The select DRGS Receiver rec is null.");
+			log.error("The select DRGS Receiver rec is null.");
 		}
 	}
-	
+
 	private void deleteButton_actionPerformed(ActionEvent e)
 	{
 		int r = drgsListTable.getSelectedRow();
 		if (r == -1)
 		{
-			String msg = 
+			String msg =
 				"Select record, then press Delete.";
 			JOptionPane.showMessageDialog(this,
 					msg, "Error!", JOptionPane.ERROR_MESSAGE);
@@ -198,8 +215,8 @@ public class DrgsReceiversListFrame extends TopFrame
 			int ok = JOptionPane.showConfirmDialog(this,
 					"Are you sure you want to delete this record?"
 					, "Choose an option",
-					JOptionPane.YES_NO_OPTION);	
-		
+					JOptionPane.YES_NO_OPTION);
+
 			if (ok == JOptionPane.YES_OPTION)
 			{
 				//remove drgs record from table model list
@@ -208,12 +225,12 @@ public class DrgsReceiversListFrame extends TopFrame
 			}
 		}
 	}
-	
+
 	private void saveAllButton_actionPerformed(ActionEvent e)
 	{
 		save();
 	}
-	
+
 	private boolean save()
 	{
 		boolean result = true;
@@ -224,8 +241,8 @@ public class DrgsReceiversListFrame extends TopFrame
 		{
 			return true;
 		}
-		
-		ArrayList<DrgsReceiverIdent> drgsRecvList = new 
+
+		ArrayList<DrgsReceiverIdent> drgsRecvList = new
 											ArrayList<DrgsReceiverIdent>(vec);
 		//save DRGS List to XML file
 		try
@@ -235,13 +252,14 @@ public class DrgsReceiversListFrame extends TopFrame
 			String msg = "DRGS Information saved to '"
 				+ DrgsReceiverIo.drgsRecvXmlFname + "' and html.";
 			JOptionPane.showMessageDialog(this,
-				AsciiUtil.wrapString(msg, 60), "Info!", 
+				AsciiUtil.wrapString(msg, 60), "Info!",
 				JOptionPane.INFORMATION_MESSAGE);
-			
+
 			DrgsReceiverDialog.MODIFIED = false;
 		}
 		catch(IOException ex)
 		{
+			log.atError().setCause(ex).log("Cannot write '{}'", DrgsReceiverIo.drgsRecvXmlFname);
 			//Error - display error msg
 			showError("Can not write '" + DrgsReceiverIo.drgsRecvXmlFname
 				+ " (and HTML): " + ex);
@@ -249,7 +267,7 @@ public class DrgsReceiversListFrame extends TopFrame
 		}
 		return result;
 	}
-	
+
 	private void doClose()
 	{
 		//if (needToSave)
@@ -259,7 +277,7 @@ public class DrgsReceiversListFrame extends TopFrame
 			if (r == JOptionPane.CANCEL_OPTION)
 				return;
 			else if (r == JOptionPane.YES_OPTION)
-			{ 
+			{
 				if (!save())
 					return;
 			} else if (r == JOptionPane.NO_OPTION)

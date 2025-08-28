@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.dupdcpgui;
 
 import ilex.cmdline.StringToken;
@@ -7,6 +22,9 @@ import ilex.util.EnvExpander;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.LoadingAppDAI;
 import decodes.db.Database;
@@ -18,56 +36,56 @@ import decodes.util.CmdLineArgs;
 
 /**
  * This class is the main class for the Duplicate DCPs GUI.
- * This GUI will find the duplicate DCPs, allow the user to 
- * assign the import district and create temporary network 
- * list .nl file for each district. These .nl file will be used when 
- * performing the pxport command on the combine-from-hub.sh 
- * script. In addition, this GUI will save the controlling 
+ * This GUI will find the duplicate DCPs, allow the user to
+ * assign the import district and create temporary network
+ * list .nl file for each district. These .nl file will be used when
+ * performing the pxport command on the combine-from-hub.sh
+ * script. In addition, this GUI will save the controlling
  * district information in a text file.
- * 
+ *
  * The controlling-district.txt and the distname-TOIMPORT.nl
  * files are stored in DECODES_INSTALL_DIR/dcptoimport directory.
- * 
+ *
  * This class takes three arguments:
  * The dcpmon.conf file with its location
- * (Optional) - a pdts_compressed.txt file (used to find description for 
+ * (Optional) - a pdts_compressed.txt file (used to find description for
  * platforms that do not have one and PDT owner "agency")
- * (Optional) - a NWS file (hads.txt file) (used to find NWSHB5 code, nws 
- * description) 
- * 
+ * (Optional) - a NWS file (hads.txt file) (used to find NWSHB5 code, nws
+ * description)
+ *
  * Caveat: The way the District names and network list names are matched
  * is by subtracting the -RIVERGAGES-DAS from the network list name and
- * this gives us the District Name. If we need to implement this 
+ * this gives us the District Name. If we need to implement this
  * Combine SQL functionality in other place - We must set the District
  * names with the Network list names so that the Duplicate DCPs GUI can
- * work fine. 
- * In addition, the .nl files needs to be on the location as the 
+ * work fine.
+ * In addition, the .nl files needs to be on the location as the
  * dcpmon.conf file.
- * 
+ *
  * This code goes along with the combine-from-hub.sh script.
  * If this script changes we need to verify this code.
  */
-public class DuplicateDcpsGUI 
-    extends TsdbAppTemplate
+public class DuplicateDcpsGUI extends TsdbAppTemplate
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private String module = "DuplicateDcpsList";
     private DuplicateDcpsFrame dupDcpsFrame;
     private String dcpMonConf;
     private ArrayList<NetworkList> groups = new ArrayList<NetworkList>();
     public static final String GROUP_DELIMITER_NAME = "-RIVERGAGES-DAS";
-    
+
     //PDT File used in case there is no description when displaying
     //the records in the table
-    private StringToken pdtFileArg = new StringToken("T", 
+    private StringToken pdtFileArg = new StringToken("T",
         "pdt file (full file system path, " +
         "fill descriptions if empty and PDT Owner Column)", "",
-        TokenOptions.optSwitch, 
+        TokenOptions.optSwitch,
         "$LRGSHOME/pdt");
     //NWS File used to get information for the dcps
-    private StringToken nwsFileArg = new StringToken("w", 
+    private StringToken nwsFileArg = new StringToken("w",
         "nwshb5 file (full file system path, " +
         "fill NWSHB5 name column and NWS description Column)", "",
-        TokenOptions.optSwitch, 
+        TokenOptions.optSwitch,
         "$DECODES_INSTALL_DIR/hads");
     private boolean _shutdown = false;
 
@@ -104,37 +122,36 @@ public class DuplicateDcpsGUI
                     NetworkList netlist = Database.getDb().networkListList.find(listName);
                     if (netlist == null)
                     {
-                        System.err.println("AppInfo specifies non-existent network list '" + nm + "'");
+                        log.error("AppInfo specifies non-existent network list '{}'", nm);
                         continue;
                     }
                     groups.add(netlist);
                 }
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            System.err.println("Error in init: " + e);
-            e.printStackTrace();
+            log.atError().setCause(ex).log("Error in init.");
         }
         finally
         {
             loadingAppDAO.close();
         }
-        
+
         dupDcpsFrame = new DuplicateDcpsFrame(this);
-        
+
         // TODO - use my status files to track changes to size & position.
         WindowUtility.center(dupDcpsFrame);
     }
 
-    
+
     /** Return the PDT file full path */
     public String getPdtFilePath()
     {
         return EnvExpander.expand(pdtFileArg.getValue());
     }
-    
-    
+
+
     /** Return the NWS file full path */
     public String getNwsFilePath()
     {
