@@ -1,32 +1,58 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.dbeditor;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.Vector;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
-import java.util.Properties;
-import java.util.Vector;
-import java.util.ResourceBundle;
 
-import ilex.util.LoadResourceBundle;
-import ilex.util.PropertiesUtil;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import decodes.db.Constants;
 import decodes.db.ConfigSensor;
+import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.PlatformSensor;
 import decodes.db.Site;
 import decodes.db.SiteName;
 import decodes.gui.GuiDialog;
 import decodes.gui.PropertiesEditPanel;
-import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.util.DecodesSettings;
+import ilex.util.PropertiesUtil;
 
 /**
 This class is the dialog for editing platform sensor info. It is called
@@ -34,6 +60,7 @@ from the "Edit Sensor Info" button on the platform edit panel.
 */
 public class PlatformSensorEditDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -66,7 +93,7 @@ public class PlatformSensorEditDialog extends GuiDialog
 	JLabel configMaxLabel = new JLabel();
 	JTextField configMaxField = new JTextField();
 	JLabel usgsDdnoLabel = new JLabel();
-	JComboBox usgsDdnoCombo = new JComboBox();
+	JComboBox<String> usgsDdnoCombo = new JComboBox<>();
 	GridBagLayout gridBagLayout2 = new GridBagLayout();
 	PropertiesEditPanel propsPanel = PropertiesEditPanel.from(new Properties());
 	GridBagLayout gridBagLayout3 = new GridBagLayout();
@@ -95,9 +122,9 @@ public class PlatformSensorEditDialog extends GuiDialog
 			jbInit();
 			pack();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		selectedSite = null;
 		theProperties = null;
@@ -360,10 +387,6 @@ public class PlatformSensorEditDialog extends GuiDialog
 			sn == null ? dbeditLabels.getString("PlatformSensorEditDialog.inherited") :
 			sn.getNameType() + ":" + sn.getNameValue());
 
-//		actualSiteField.setText(ps.site == null ? 
-//			dbeditLabels.getString("PlatformSensorEditDialog.inherited") :
-//			ps.site.getPreferredName().makeFileName());
-
 		String x = PropertiesUtil.rmIgnoreCase(theProperties, "min");
 		platformMinField.setText(x == null ? "" : x);
 
@@ -380,7 +403,7 @@ public class PlatformSensorEditDialog extends GuiDialog
 
 		String validDdnos[] = ps.getValidDdnos();
 		int currentDdno = ps.getUsgsDdno();
-		Vector ddnos = new Vector();
+		Vector<String> ddnos = new Vector<>();
 		int curpos = -1;
 		for (int i=0; validDdnos != null && i < validDdnos.length; i++)
 		{
@@ -421,8 +444,9 @@ public class PlatformSensorEditDialog extends GuiDialog
 			try { double d = Double.parseDouble(x); }
 			catch(NumberFormatException ex)
 			{
-				showError(
-					dbeditLabels.getString("PlatformSensorEditDialog.badMinError"));
+				String msg = dbeditLabels.getString("PlatformSensorEditDialog.badMinError");
+				log.atError().setCause(ex).log(msg);
+				showError(msg);
 				return false;
 			}
 			platformSensor.getProperties().setProperty("min", x);
@@ -434,8 +458,8 @@ public class PlatformSensorEditDialog extends GuiDialog
 			try { double d = Double.parseDouble(x); }
 			catch(NumberFormatException ex)
 			{
-				showError(
-					dbeditLabels.getString("PlatformSensorEditDialog.badMaxError"));
+				String msg = dbeditLabels.getString("PlatformSensorEditDialog.badMaxError");
+				showError(msg);
 				return false;
 			}
 			platformSensor.getProperties().setProperty("max", x);
@@ -460,8 +484,9 @@ public class PlatformSensorEditDialog extends GuiDialog
 			}
 			catch(NumberFormatException ex)
 			{
-				showError(
-					dbeditLabels.getString("PlatformSensorEditDialog.badDdnoError"));
+				String msg = dbeditLabels.getString("PlatformSensorEditDialog.badDdnoError");
+				log.atError().setCause(ex).log(msg);
+				showError(msg);
 				return false;
 			}
 		}
@@ -488,13 +513,6 @@ public class PlatformSensorEditDialog extends GuiDialog
 	}
 
 
-//	public static void main(String args[])
-//	{
-//		PlatformSensorEditDialog dlg = new PlatformSensorEditDialog();
-//		dlg.setVisible(true);
-//	}
-//
-
 	/**
 	 * Called when the select-site button is pressed.
 	 */
@@ -510,7 +528,6 @@ public class PlatformSensorEditDialog extends GuiDialog
 			actualSiteField.setText(
 				sn == null ? dbeditLabels.getString("PlatformSensorEditDialog.inherited") :
 				sn.getNameType() + ":" + sn.getNameValue());
-//				selectedSite.getPreferredName().makeFileName());
 		}
 	}
 

@@ -1,11 +1,24 @@
-/** 
- * Reworked from open-source code in USGS repository and USACE HEC repository.
- * 
- * Open Source Software written by Cove Software, LLC under contract to the
- * U.S. Government.
- * 
- * Copyright 2014 U.S. Government
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+* 
+* Reworked from open-source code in USGS repository and USACE HEC repository.
+* 
+* Open Source Software written by Cove Software, LLC under contract to the
+* U.S. Government.
+* 
+*/
 package decodes.dbeditor;
 
 import java.text.SimpleDateFormat;
@@ -51,10 +64,11 @@ import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.ResourceBundle;
 
-import ilex.util.Logger;
-import ilex.util.TeeLogger;
 import ilex.var.TimedVariable;
 import decodes.util.DecodesSettings;
 import decodes.util.DecodesException;
@@ -89,10 +103,9 @@ import decodes.decoder.TokenPosition;
  * Panel for editing a decoding script.
  */
 @SuppressWarnings("serial")
-public class DecodesScriptEditPanel 
-	extends JPanel
-	implements SampleMessageOwner
+public class DecodesScriptEditPanel	extends JPanel implements SampleMessageOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
 
@@ -199,15 +212,6 @@ public class DecodesScriptEditPanel
 		props.setProperty("includeSensorNum", "true");
 		guiInit();
 		
-		if (traceLogger == null)
-		{
-			Logger lg = Logger.instance();
-			traceLogger = new TraceLogger(lg.getProcName());
-			TeeLogger teeLogger = new TeeLogger(lg.getProcName(), lg, traceLogger);
-			// teeLogger.setMinLogPriority(Logger.E_DEBUG3);
-			traceLogger.setMinLogPriority(Logger.E_DEBUG3);
-			Logger.setLogger(teeLogger);
-		}
 	}
 
 	public void setTraceDialog(TraceDialog dlg)
@@ -256,82 +260,33 @@ public class DecodesScriptEditPanel
 			headerTypeCombo.setSelectedIndex(0);
 		initColors();
 	}
-	
+
+	private void parseColorSetting(String colorString, int index, String settingName) 
+	{
+		if (colorString != null && !colorString.trim().isEmpty()) 
+		{
+			try 
+			{
+				colorValues[index] = Integer.parseInt(colorString.trim(), 16);
+			} catch (NumberFormatException ex) 
+			{
+				log.atWarn()
+					.setCause(ex)
+					.log("Invalid setting '{}': {} ignored.", settingName, colorString);
+			}
+		}
+	}
 	void initColors()
 	{
 		DecodesSettings settings = DecodesSettings.instance();
-		if (settings.decodeScriptColor1 != null && settings.decodeScriptColor1.trim().length() > 0)
-		{
-			try { colorValues[0] = Integer.parseInt(settings.decodeScriptColor1.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("Invalid setting 'decodesScriptColor1: "
-					+ settings.decodeScriptColor1 + " ignored.");
-			}
-		}
-		if (settings.decodeScriptColor2 != null && settings.decodeScriptColor2.trim().length() > 0)
-		{
-			try { colorValues[1] = Integer.parseInt(settings.decodeScriptColor2.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("Invalid setting 'decodesScriptColor2: "
-					+ settings.decodeScriptColor2 + " ignored.");
-			}
-		}
-		if (settings.decodeScriptColor3 != null && settings.decodeScriptColor3.trim().length() > 0)
-		{
-			try { colorValues[2] = Integer.parseInt(settings.decodeScriptColor3.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("Invalid setting 'decodesScriptColor3: "
-					+ settings.decodeScriptColor3 + " ignored.");
-			}
-		}
-		if (settings.decodeScriptColor4 != null && settings.decodeScriptColor4.trim().length() > 0)
-		{
-			try { colorValues[3] = Integer.parseInt(settings.decodeScriptColor4.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("Invalid setting 'decodesScriptColor4: "
-					+ settings.decodeScriptColor4 + " ignored.");
-			}
-		}
-		if (settings.decodeScriptColor5 != null && settings.decodeScriptColor5.trim().length() > 0)
-		{
-			try { colorValues[4] = Integer.parseInt(settings.decodeScriptColor5.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("Invalid setting 'decodesScriptColor5: "
-					+ settings.decodeScriptColor5 + " ignored.");
-			}
-		}
-		if (settings.decodeScriptColor6 != null && settings.decodeScriptColor6.trim().length() > 0)
-		{
-			try { colorValues[5] = Integer.parseInt(settings.decodeScriptColor6.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("Invalid setting 'decodesScriptColor6: "
-					+ settings.decodeScriptColor6 + " ignored.");
-			}
-		}
-		if (settings.decodeScriptColor7 != null && settings.decodeScriptColor7.trim().length() > 0)
-		{
-			try { colorValues[6] = Integer.parseInt(settings.decodeScriptColor7.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("Invalid setting 'decodesScriptColor7: "
-					+ settings.decodeScriptColor7 + " ignored.");
-			}
-		}
-		if (settings.decodeScriptColor8 != null && settings.decodeScriptColor8.trim().length() > 0)
-		{
-			try { colorValues[7] = Integer.parseInt(settings.decodeScriptColor8.trim(), 16); }
-			catch(NumberFormatException ex)
-			{
-				Logger.instance().warning("Invalid setting 'decodesScriptColor8: "
-					+ settings.decodeScriptColor8 + " ignored.");
-			}
-		}
+		parseColorSetting(settings.decodeScriptColor1, 0, "decodesScriptColor1");
+    	parseColorSetting(settings.decodeScriptColor2, 1, "decodesScriptColor2");
+    	parseColorSetting(settings.decodeScriptColor3, 2, "decodesScriptColor3");
+    	parseColorSetting(settings.decodeScriptColor4, 3, "decodesScriptColor4");
+		parseColorSetting(settings.decodeScriptColor5, 4, "decodesScriptColor5");
+    	parseColorSetting(settings.decodeScriptColor6, 5, "decodesScriptColor6");
+		parseColorSetting(settings.decodeScriptColor7, 6, "decodesScriptColor7");
+    	parseColorSetting(settings.decodeScriptColor8, 7, "decodesScriptColor8");				
 		
 		for(int i=0; i<colorValues.length; i++)
 		{
@@ -546,7 +501,6 @@ public class DecodesScriptEditPanel
 			JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
 		decodedDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		decodedDataTable.getColumnModel().getColumn(0).setPreferredWidth(160);
-//		decodedDataScrollPane.getViewport().add(decodedDataTable);
 
 		JPanel decodedDataPanel = new JPanel(new BorderLayout());
 		decodedDataPanel.setBorder(new TitledBorder(
@@ -648,26 +602,6 @@ public class DecodesScriptEditPanel
 			if (samp.getSample() == tv)
 				return samp;
 		return null;
-	}
-	
-	private void colorRawData()
-	{
-		// TODO Clear all the styles from the JTextPane
-		// StyledDocument.setCharacterAttributes(0, lenOfTextPane,
-		//   attrForPlainBlack, true);
-		
-		// TODO
-		for(DecodedSample decSamp : theScript.getDecodedSamples())
-		{
-			int sensorNum = decSamp.getTimeSeries().getSensorNumber();
-			// TODO determine the color from the sensor.
-			// This is in the decoded data table model.
-			TokenPosition rawDataPos = decSamp.getRawDataPosition();
-			// StyledDocument.setCharacterAttributes(
-			// rawDataPos.getStart(), rawDataPos.getEnd() - rawDataPos.getStart(),
-			// sampleColorAttrs, false);
-			// Note use false for replace: leave font style & size unchanged.
-		}
 	}
 	
 	
@@ -899,7 +833,6 @@ public class DecodesScriptEditPanel
 
 		getDataFromFields();
 
-//		String s = rawMessagePane.getText();
 		// MJM 2021-11-09 USBR 993 fix highlighting on Windows.
 		// Note: On Windoze, a StyledDocument counts \r\n as a single char. The underlying JTextPane
 		// counts it as 2. Thus I have to get the sample text from the StyledDocument, otherwise
@@ -909,10 +842,9 @@ public class DecodesScriptEditPanel
 		{
 			s = rawMessagePane.getStyledDocument().getText(0, rawMessagePane.getStyledDocument().getLength());
 		}
-		catch (BadLocationException e)
+		catch (BadLocationException ex)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.atError().setCause(ex).log("Unable to style document.");
 			return;
 		}
 		
@@ -945,9 +877,9 @@ public class DecodesScriptEditPanel
 					pmParser = PMParser.getPMParser(mt);
 					mediumType = mt;
 				}
-				catch (HeaderParseException e1)
+				catch (HeaderParseException ex)
 				{
-					e1.printStackTrace();
+					log.atError().setCause(ex).log("Unable parse header for performance measurements.");
 				}
 		}
 
@@ -982,12 +914,11 @@ public class DecodesScriptEditPanel
 			{
 				pmParser.parsePerformanceMeasurements(rawMessage);
 				headerLength = rawMessage.getHeaderLength();
-				Logger.instance().info("Header type '" + mediumType 
-					+ "' length=" + pmParser.getHeaderLength());
+				log.info("Header type '{}' length={}", mediumType, pmParser.getHeaderLength());
 				for(Iterator<String> pmnit = rawMessage.getPMNames(); pmnit.hasNext(); )
 				{
 					String pmn = pmnit.next();
-					Logger.instance().info("  PM:" + pmn + "=" + rawMessage.getPM(pmn));
+					log.info("  PM:{}={}", pmn, rawMessage.getPM(pmn));
 				}
 			}
 			catch (HeaderParseException ex)
@@ -1003,7 +934,7 @@ public class DecodesScriptEditPanel
 				// script id is known by context. (SED - 06/11/2008)
 				rawMessage.setMediumId("11111111");
 				edlPMParser.parsePerformanceMeasurements(rawMessage);
-				Logger.instance().info("" + ex + " -- will process as EDL file with no header.");
+				log.atInfo().setCause(ex).log(" -- will process as EDL file with no header.");
 			}
 			Date timeStamp;
 			try
@@ -1012,6 +943,7 @@ public class DecodesScriptEditPanel
 			}
 			catch (Exception ex)
 			{
+				log.atTrace().setCause(ex).log("Unable to parse a message time. Using current time.");
 				timeStamp = new Date();
 			}
 
@@ -1022,8 +954,7 @@ public class DecodesScriptEditPanel
 
 			DecodesScript.trackDecoding = true;
 			DecodedMessage dm = theScript.decodeMessage(rawMessage);
-			Logger.instance().debug1("After decoding there are " 
-				+ theScript.getDecodedSamples().size() + " decoded samples.");
+			log.debug("After decoding there are {} decoded samples.", theScript.getDecodedSamples().size());
 			
 			decodedDataTableModel.clear();
 			decodedDataTableModel.setDecodedData(dm);
@@ -1092,8 +1023,9 @@ public class DecodesScriptEditPanel
 		}
 		catch (DecodesException ex)
 		{
-			TopFrame.instance().showError(
-				dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding") + ex);
+			String msg = dbeditLabels.getString("DecodingScriptEditPanel.errorDecoding");
+			log.atError().setCause(ex).log(msg);	
+			TopFrame.instance().showError(msg + ex);
 			return;
 		}
 	}
@@ -1140,10 +1072,9 @@ public class DecodesScriptEditPanel
 			sdoc.remove(0, sdoc.getLength());
 			sdoc.insertString(0, msgData, normalRawDataStyle);
 		}
-		catch (BadLocationException e)
+		catch (BadLocationException ex)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.atError().setCause(ex).log("Unable to set raw message.");
 		}
 	}
 	
@@ -1307,6 +1238,7 @@ class FormatStatementTableModel extends AbstractTableModel
 
 class UnitConversionTableModel extends AbstractTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static String columnNames[] =
 	{ "#", DecodesScriptEditPanel.genericLabels.getString("name"),
 		DecodesScriptEditPanel.genericLabels.getString("units"),
@@ -1466,7 +1398,6 @@ class UnitConversionTableModel extends AbstractTableModel
 		}
 		else if (c == 3)
 		{
-//			int oldn = this.getNumCoeffs(uc.algorithm);
 			uc.algorithm = s;
 			int newn = this.getNumCoeffs(uc.algorithm);
 			double defaults[] =
@@ -1499,11 +1430,11 @@ class UnitConversionTableModel extends AbstractTableModel
 				uc.coefficients[c - 4] = d;
 				fireTableCellUpdated(r, c);
 			}
-			catch (NumberFormatException e)
+			catch (NumberFormatException ex)
 			{
-				TopFrame.instance().showError(
-					DecodesScriptEditPanel.dbeditLabels
-						.getString("DecodingScriptEditPanel.coeffNumber"));
+				String msg = DecodesScriptEditPanel.dbeditLabels.getString("DecodingScriptEditPanel.coeffNumber");
+				log.atError().setCause(ex).log(msg);
+				TopFrame.instance().showError(msg);
 			}
 		}
 	}

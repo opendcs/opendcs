@@ -24,9 +24,12 @@ import java.util.ResourceBundle;
 import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.*;
 import org.opendcs.gui.SearchPanel;
-import org.slf4j.LoggerFactory;
 
 /**
 Panel for selecting a Platform Configuration. Used inside ConfigSelectDialog.
@@ -34,7 +37,7 @@ Panel for selecting a Platform Configuration. Used inside ConfigSelectDialog.
 public class ConfigSelectPanel extends JPanel
 {
 	static ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ConfigSelectPanel.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	BorderLayout borderLayout1 = new BorderLayout();
 	JScrollPane jScrollPane1 = new JScrollPane();
@@ -73,11 +76,13 @@ public class ConfigSelectPanel extends JPanel
 				}
 			}
 		});
-		try {
+		try
+		{
 		    jbInit();
 		}
-		catch(Exception ex) {
-		    log.atInfo().log("Error initializing ConfigSelectPanel",ex);
+		catch(Exception ex) 
+		{
+		    GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 

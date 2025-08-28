@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.dbimport;
 
 import java.io.IOException;
@@ -5,12 +20,12 @@ import java.util.Vector;
 
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 
-import ilex.util.Logger;
-import ilex.util.StderrLogger;
 import ilex.cmdline.*;
 
 import decodes.tsdb.DbIoException;
@@ -24,6 +39,7 @@ Writes output to stdout.
 */
 public class DbExport
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "util.log");
 
 	static
@@ -44,8 +60,6 @@ public class DbExport
 	public static void main(String args[])
 		throws IOException, DecodesException
 	{
-		Logger.setLogger(new StderrLogger("DbExport"));
-
 		// Parse command line arguments.
 
 		BooleanToken insecureArg = new BooleanToken("insecure", "include passwords and username in output", "", TokenOptions.optSwitch, false);
@@ -54,9 +68,7 @@ public class DbExport
 
 		 boolean insecure = insecureArg.getValue();
 
-		Logger.instance().log(Logger.E_INFORMATION,
-			"DbExport Starting (" + DecodesVersion.startupTag()
-			+ ") =====================");
+		log.info("DbExport Starting ({}) =====================", DecodesVersion.startupTag());
 
 		DecodesSettings settings = DecodesSettings.instance();
 		Site.explicitList = false; // YES Sites automatically added to SiteList
@@ -66,24 +78,20 @@ public class DbExport
 		db.initializeForEditing();
 		Database.setDb(db);
 		
-		LoadingAppDAI loadingAppDAO = db.getDbIo().makeLoadingAppDAO();
-		try
+		
+		try(LoadingAppDAI loadingAppDAO = db.getDbIo().makeLoadingAppDAO())
 		{
 			db.loadingAppList.addAll(loadingAppDAO.listComputationApps(false));
 		}
 		catch(DbIoException ex)
 		{
-			Logger.instance().warning("Cannot list loading apps: " + ex);
+			log.atWarn().setCause(ex).log("Cannot list loading apps");
 			db.loadingAppList.clear();
-		}
-		finally
-		{
-			loadingAppDAO.close();
 		}
 		
 		ScheduleEntryDAI scheduleEntryDAO = db.getDbIo().makeScheduleEntryDAO();
 		if (scheduleEntryDAO == null)
-			Logger.instance().debug1("Cannot export schedule entries. Not supported on this database.");
+			log.debug("Cannot export schedule entries. Not supported on this database.");
 		else
 		{
 			try
@@ -92,7 +100,8 @@ public class DbExport
 			}
 			catch(DbIoException ex)
 			{
-				Logger.instance().warning("Cannot list schedule entries: " + ex);
+
+				log.atWarn().setCause(ex).log("Cannot list schedule entries.");
 				db.schedEntryList.clear();
 			}
 			finally
@@ -101,7 +110,6 @@ public class DbExport
 			}
 		}
 
-		Logger lg = Logger.instance();
 		Vector<Platform> platforms = db.platformList.getPlatformVector();
 
 		// Completely read all platform data from the database
@@ -110,9 +118,7 @@ public class DbExport
 			try { p.read(); }
 			catch(Exception ex)
 			{
-				String msg = "Error reading platform '"
-					+ p.makeFileName() + "': " + ex;
-				System.err.println(msg);
+				log.atError().setCause(ex).log("Error reading platform '{}'", p.makeFileName());
 			}
 		}
 		
@@ -123,9 +129,7 @@ public class DbExport
 			try { pg.read(); }
 			catch(Exception ex)
 			{
-				String msg = "Error reading presentation group '"
-					+ pg.getDisplayName() + "': " + ex;
-				System.err.println(msg);
+				log.atError().setCause(ex).log("Error reading presentation group '{}'",  pg.getDisplayName());
 			}
 		}
 

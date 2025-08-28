@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.decoder;
 
-import ilex.util.Logger;
 import ilex.var.Variable;
 
 import java.util.Calendar;
@@ -9,14 +23,17 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.ConfigSensor;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.PlatformConfig;
 
-public abstract class NosDecoder
-	extends DecodesFunction
+public abstract class NosDecoder extends DecodesFunction
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String PM_STATION_ID = "NOS_STATION_ID";
 	public static final String PM_DCP_NUM = "NOS_DCP_NUM";
 	/** Performance Measurement Label */
@@ -117,8 +134,7 @@ public abstract class NosDecoder
 				
 			}
 		}
-		Logger.instance().warning(module + " Unknown sensor type '"
-			+ sensorType + "' dcpNum=" + dcpNum);
+		log.warn("Unknown sensor type '{}' dcpNum={}", sensorType, dcpNum);
 		return -1;
 	}
 
@@ -132,14 +148,13 @@ public abstract class NosDecoder
 				: NumberParser.PBINARY_FMT);
 			byte []field = dataOps.getField(nbytes, null);
 			Variable result = numberParser.parseDataValue(field);
-			Logger.instance().debug3(module + " parsing field '"
-				+ new String(field) + "' result = " + result);
+			log.trace("parsing field '{}' result = {}", new String(field), result);
 			return result;
 		}
 		catch(Exception ex)
 		{
 			throw new DecoderException(module + " cannot get number len=" + nbytes
-				+ " at position " + startPos + ": " + ex);
+				+ " at position " + startPos, ex);
 		}
 	}
 
@@ -154,7 +169,7 @@ public abstract class NosDecoder
 		catch(Exception ex)
 		{
 			throw new DecoderException(module + " cannot get integer len=" + nbytes
-				+ " at position " + startPos + ": " + ex);
+				+ " at position " + startPos, ex);
 		}
 	}
 	

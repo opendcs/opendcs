@@ -27,6 +27,9 @@ import javax.swing.JScrollPane;
 import javax.swing.table.TableRowSorter;
 
 import org.opendcs.gui.SearchPanel;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 
 import decodes.db.*;
@@ -38,6 +41,7 @@ Displays a sorting-list of Platform objects in the database.
 @SuppressWarnings("serial")
 public class PlatformSelectPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	BorderLayout borderLayout1 = new BorderLayout();
 	JScrollPane jScrollPane1 = new JScrollPane();
 	PlatformSelectTableModel model;
@@ -71,7 +75,7 @@ public class PlatformSelectPanel extends JPanel
 		}
 		catch(Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
