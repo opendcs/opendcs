@@ -1,13 +1,7 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
- * between COVE and Alberta ESRD.
- *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,40 +17,41 @@
 package decodes.polling;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.spi.LoggingEventBuilder;
 
 import decodes.db.TransportMedium;
 import ilex.net.BasicClient;
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 
-public class DigiConnectPortManager 
-	extends Thread
-	implements StreamReaderOwner
+public class DigiConnectPortManager extends Thread implements StreamReaderOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static String module = "DigiPortManager";
 	private boolean _shutdown = false;
-	
+
 	/** Number of ms to pause if config request queue is empty. */
 	private long PAUSE_MSEC = 100L;
-	
+
 	/** Number of ms for a calling thread to wait to successfully enqueue a config request. */
 	private long ENQUEUE_WAIT_MS = 5000L;
-	
+
 	/** Calling threads wait this long for a configuration to succeed. */
 	public static final long WAIT_FOR_CONFIG_MS = 60000L;
-	
+
 	public static final long MaxConsecutiveConfigFails = 10;
-	
+
 	private DigiConnectPortPool parent = null;
-	private byte[] digiPrompt = "#>".getBytes(); 
+	private byte[] digiPrompt = "#>".getBytes();
 	private String captured = null;
 	public static String EOL = "\r"; // "\r\0";
-	
+
 	/** The queue holding configuration tasks to be done. */
-	private ArrayBlockingQueue<AllocatedSerialPort> configQueue = 
+	private ArrayBlockingQueue<AllocatedSerialPort> configQueue =
 		new ArrayBlockingQueue<AllocatedSerialPort>(500);
 
 	private int consecutiveConfigFails = 0;
@@ -66,24 +61,24 @@ public class DigiConnectPortManager
 		this.parent = parent;
 		setName(module);
 	}
-	
-	
+
+
 	@Override
 	public void run()
 	{
 		while (!_shutdown)
 		{
 			AllocatedSerialPort asp = configQueue.poll();
-			
+
 			if (asp != null)
 				processPort(asp);
-			
+
 			try { sleep(PAUSE_MSEC); } catch(InterruptedException ex) {}
 		}
 	}
-	
+
 	public void shutdown() { _shutdown = true; }
-	
+
 	/**
 	 * Called from a polling thread to configure the port. This will be executed inside
 	 * a different thread from 'this'. Enqueue a message and wait for 'this' thread to
@@ -97,7 +92,7 @@ public class DigiConnectPortManager
 		if (!tryEnqueue(asp))
 			return false;
 		long timeout = System.currentTimeMillis() + WAIT_FOR_CONFIG_MS;
-		while(System.currentTimeMillis() < timeout 
+		while(System.currentTimeMillis() < timeout
 			&& asp.ioPort.getConfigureState() == PollingThreadState.Waiting)
 		{
 			try { Thread.sleep(PAUSE_MSEC); }
@@ -114,25 +109,25 @@ public class DigiConnectPortManager
 			return false;
 		}
 	}
-	
+
 	private boolean tryEnqueue(AllocatedSerialPort asp)
 	{
 		try
 		{
 			if (configQueue.offer(asp, ENQUEUE_WAIT_MS, TimeUnit.MILLISECONDS) == false)
 			{
-				Logger.instance().warning(module + " Timeout trying to enqueue config request.");
+				log.warn("Timeout trying to enqueue config request.");
 				return false;
 			}
 		}
 		catch (InterruptedException e)
 		{
-			Logger.instance().warning(module + " Interrupted while enqueing config request.");
+			log.warn("Interrupted while enqueing config request.");
 			return false;
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Called from the run loop after an entry is dequeued.
 	 * Attempt to use Telnet interface to configure the passed port with the
@@ -148,55 +143,39 @@ public class DigiConnectPortManager
 		String cmd = null;
 		try
 		{
-			Logger.instance().debug2(module + " connecting to " + telnetCon.getName());
+			log.trace("connecting to {}" + telnetCon.getName());
 			telnetCon.connect();
-			
-			Logger.instance().debug3(module + " spawning StreamReader to read telnet 23 port.");
-			
+
+			log.trace("spawning StreamReader to read telnet 23 port.");
+
 			streamReader = new StreamReader(telnetCon.getInputStream(), this);
 			streamReader.setCapture(true);
 			streamReader.start();
-//			try { sleep(500L); } catch(InterruptedException ex) {}
-			
+
 			// Login with supplied username & password
 			cmd = "(initial connect)";
 			if (!sendAndAwaitResponse(null, 5, "login:".getBytes(), telnetCon, streamReader))
 			{
 				byte[] sessionBuf = streamReader.getSessionBuf();
-				throw new IOException("Never got login prompt from digiconnect device " 
+				throw new IOException("Never got login prompt from digiconnect device "
 					+ parent.getDigiIpAddr() + ", received " + sessionBuf.length + " bytes: "
 					+ AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
 			}
 			cmd = parent.getDigiUserName()+EOL;
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, "Password:".getBytes(), telnetCon, streamReader))
-				throw new IOException("Never got password prompt from digiconnect device " 
+				throw new IOException("Never got password prompt from digiconnect device "
 					+ parent.getDigiIpAddr());
 			cmd = parent.getDigiPassword()+EOL;
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
 			{
 				if (!sendAndAwaitResponse(EOL.getBytes(), 3, digiPrompt, telnetCon, streamReader))
-					throw new IOException("Never got initial prompt after login from digiconnect device " 
+					throw new IOException("Never got initial prompt after login from digiconnect device "
 						+ parent.getDigiIpAddr());
 			}
-			
+
 			// Build command to send to telnet with settings in transport medium.
 			StringBuilder cmdb = new StringBuilder("set serial port=" + asp.ioPort.getPortNum()
 				+ " flowcontrol=none");
-			
-			// KLUDGE - Sometimes the modem goes catatonic. A baud rate change seems to kick it in the
-			// head.
-//			int toggleBaud = asp.transportMedium.getBaud() == 1200 ? 9600 : 1200;
-//			cmd = cmdb.toString() + " baud=" + toggleBaud + EOL;
-//			Logger.instance().debug1(module + " KLUDGE sending '" + cmd + "'");
-//			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
-//			{
-//				Logger.instance().failure(module + " KLUDGE failure!");
-//				// Failed to get prompt after sending show serial command.
-//				asp.ioPort.setConfigureState(PollingThreadState.Failed);
-//				return;
-//			}
-//			asp.basicClient.sendData("AT\r".getBytes());
-//			try { Thread.sleep(1000L); } catch(InterruptedException ex) {}
 
 			// End of Kludge, build actual params for this session
 			if (asp.transportMedium.getBaud() > 0)
@@ -209,33 +188,34 @@ public class DigiConnectPortManager
 			if (parity != Parity.Unknown)
 				cmdb.append(" parity=" + parity.toString().toLowerCase());
 			cmd = cmdb.toString() + EOL;
-			
+
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
 			{
 				throw new IOException("No response or invalid response to set serial");
 			}
-			
+
 			cmd = "show serial port=" + asp.ioPort.getPortNum() + EOL;
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
 				throw new IOException("No response or invalid response to show serial");
-			
+
 			if (!verifySettings(asp.ioPort.getPortNum(), asp.transportMedium))
 				throw new IOException("verify settings failed. Response was '" + captured + "'");
-			
+
 			asp.ioPort.setConfigureState(PollingThreadState.Success);
 			consecutiveConfigFails = 0;
 		}
 		catch (Exception ex)
 		{
 			consecutiveConfigFails++;
-			Logger.instance().failure(module + " Error sending '" + cmd
-				+ "' to digi device " + telnetCon.getName() + ", consecutive failure=" 
-				+ consecutiveConfigFails + ": " + ex);
+			log.atError()
+			   .setCause(ex)
+			   .log("Error sending '{}' to digi device {}, consecutive failure={}",
+			   		cmd, telnetCon.getName(), consecutiveConfigFails);
 			asp.ioPort.setConfigureState(PollingThreadState.Failed);
 		}
 		finally
 		{
-			Logger.instance().debug3(module + " Closing telnet 23 to digi.");		
+			log.trace("Closing telnet 23 to digi.");
 			if (streamReader != null)
 			{
 				streamReader.shutdown();
@@ -250,12 +230,10 @@ public class DigiConnectPortManager
 
 	private void tryRebootDigi()
 	{
-		String s = "There have been " + consecutiveConfigFails 
-			+ " consecutive configuration failures. Rebooting digi device.";
-		Logger.instance().warning(s);
-		System.out.println((new Date()).toString() + " " + s);
+		log.warn("There have been {} consecutive configuration failures. Rebooting digi device.",
+				 consecutiveConfigFails);
 		consecutiveConfigFails = 0;
-		
+
 		// Connect to telnet port 23 on digi device.
 		BasicClient telnetCon = new BasicClient(parent.getDigiIpAddr(), 23);
 		StreamReader streamReader = null;
@@ -263,36 +241,36 @@ public class DigiConnectPortManager
 		boolean success = false;
 		try
 		{
-			Logger.instance().info(module + ".tryRebootDigi() connecting to " + telnetCon.getName());
+			log.info("tryRebootDigi() connecting to {}", telnetCon.getName());
 			telnetCon.connect();
-			
-			Logger.instance().info(module + ".tryRebootDigi() spawning StreamReader to read telnet 23 port.");
-			
+
+			log.info("tryRebootDigi() spawning StreamReader to read telnet 23 port.");
+
 			streamReader = new StreamReader(telnetCon.getInputStream(), this);
 			streamReader.setCapture(true);
 			streamReader.start();
-			
+
 			// Login with supplied username & password
 			cmd = "(initial connect)";
 			if (!sendAndAwaitResponse(null, 5, "login:".getBytes(), telnetCon, streamReader))
 			{
 				byte[] sessionBuf = streamReader.getSessionBuf();
-				throw new IOException("Never got login prompt from digiconnect device " 
+				throw new IOException("Never got login prompt from digiconnect device "
 					+ parent.getDigiIpAddr() + ", received " + sessionBuf.length + " bytes: "
 					+ AsciiUtil.bin2ascii(streamReader.getSessionBuf()));
 			}
 			cmd = parent.getDigiUserName()+EOL;
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, "Password:".getBytes(), telnetCon, streamReader))
-				throw new IOException("Never got password prompt from digiconnect device " 
+				throw new IOException("Never got password prompt from digiconnect device "
 					+ parent.getDigiIpAddr());
 			cmd = parent.getDigiPassword()+EOL;
 			if (!sendAndAwaitResponse(cmd.getBytes(), 5, digiPrompt, telnetCon, streamReader))
 			{
 				if (!sendAndAwaitResponse(EOL.getBytes(), 3, digiPrompt, telnetCon, streamReader))
-					throw new IOException("Never got initial prompt after login from digiconnect device " 
+					throw new IOException("Never got initial prompt after login from digiconnect device "
 						+ parent.getDigiIpAddr());
 			}
-			
+
 			cmd = "boot action=reset" + EOL;
 			telnetCon.sendData(cmd.getBytes());
 
@@ -302,12 +280,13 @@ public class DigiConnectPortManager
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().failure(module + ".tryRebootDigi() Error sending '" + cmd
-				+ "' to digi device " + telnetCon.getName() + ": " + ex);
+			log.atError()
+			   .setCause(ex)
+			   .log("tryRebootDigi() Error sending '{}' to digi device {}", cmd, telnetCon.getName());
 		}
 		finally
 		{
-			Logger.instance().info(module + ".tryRebootDigi() Closing telnet 23 to digi.");		
+			log.info("tryRebootDigi() Closing telnet 23 to digi.");
 			if (streamReader != null)
 			{
 				streamReader.shutdown();
@@ -317,14 +296,14 @@ public class DigiConnectPortManager
 		}
 		if (success)
 		{
-			Logger.instance().info(module + ".tryRebootDigi() Successfully rebooted "
-				+ parent.getDigiIpAddr() + " -- will wait 30 sec before continuing.");
+			log.info("tryRebootDigi() Successfully rebooted {} -- will wait 30 sec before continuing.",
+					 parent.getDigiIpAddr());
 			// Digi takes about 30 sec to reboot.
 			try { sleep(30000L); } catch(InterruptedException ex) {}
-			Logger.instance().info(module + ".tryRebootDigi() Continuing after digi reboot.");
+			log.info("tryRebootDigi() Continuing after digi reboot.");
 		}
 		else
-			Logger.instance().failure(module + ".tryRebootDigi() -- reboot failed.");
+			log.info("tryRebootDigi() -- reboot failed.");
 	}
 
 
@@ -350,22 +329,19 @@ public class DigiConnectPortManager
 			streamReader.setCapture(true);
 		if (toSend != null)
 			telnetCon.sendData(toSend);
-		
+
 		PatternMatcher expectPat[] = new PatternMatcher[] { new PatternMatcher(expect) };
 		boolean found = streamReader.wait(seconds, expectPat);
-		
-		streamReader.setCapture(false);
-		
-		captured = new String(streamReader.getCapturedData());
-		Logger.instance().log(
-			found ? Logger.E_DEBUG2 : Logger.E_WARNING,
-			" Sent " 
-			+ (toSend == null ? "nothing" : ("'"+new String(toSend)+"'"))
-			+ " to digi device " + telnetCon.getName()
-			+ " and received response '" + AsciiUtil.bin2ascii(streamReader.getCapturedData()) + "'."
-			+ (found ? "" : " Expected '" + 
-				AsciiUtil.bin2ascii(expect) + "'"));
 
+		streamReader.setCapture(false);
+
+		captured = new String(streamReader.getCapturedData());
+		LoggingEventBuilder le = found ? log.atTrace() : log.atWarn();
+		le.log(" Sent {} to digi device {} and recieved response '{}'. {}",
+			  (toSend == null ? "nothing" : ("'"+new String(toSend)+"'")),
+			  telnetCon.getName(),
+			  AsciiUtil.bin2ascii(streamReader.getCapturedData()),
+			  (found ? "" : " Expected '" + AsciiUtil.bin2ascii(expect) + "'"));
 		return found;
 	}
 
@@ -381,27 +357,26 @@ public class DigiConnectPortManager
 		// Scan the captured string for settings that match TM.
 		// There should be two lines of the format:
 		//       port    baudrate     databits    stopbits    parity    flowcontrol^M^M
-	    //       1       19200            8           1      none           none^M^M	
+	    //       1       19200            8           1      none           none^M^M
 		if (captured == null)
 		{
-			Logger.instance().warning(module + " verifySettings failed. No response"
-				+ " to show serial.");
+			log.warn("verifySettings failed. No response to show serial.");
 			return false;
 		}
 		String cap = new String(captured);
 		// Split the string with whitespace as delimiter
 		String tokens[] = cap.split("\\s+");
-		
+
 		int idx=0;
 		for(; idx < tokens.length && !tokens[idx].equals("flowcontrol"); idx++);
 		if (idx >= tokens.length-5)
 		{
-			Logger.instance().warning(module + " verifySettings failed. Not enough"
-				+ " tokens in response to show serial, #tokens=" + tokens.length
-				+ "flowcontrol' found at token " + idx + ", data returned: " + cap);
+			log.warn("verifySettings failed. Not enough tokens in response to show serial, #tokens={} " +
+					 "flowcontrol found at token {}, data returned: {}",
+					 tokens.length, idx, cap);
 			return false;
 		}
-		
+
 		String parsing = "port number";
 		String tok = tokens[idx+1];
 		try
@@ -409,55 +384,56 @@ public class DigiConnectPortManager
 			tok = tokens[idx+1];
 			if (portNum != Integer.parseInt(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected port " + portNum + " but incorrect"
-					+ " port in response: " + cap);
+				log.warn("verifySettings failed. Expected port {} but incorrect port in response: {}",
+						 portNum, cap);
 				return false;
 			}
 			parsing = "baud";
 			tok = tokens[idx+2];
 			if (tm.getBaud() > 0 && tm.getBaud() != Integer.parseInt(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected baud=" + tm.getBaud() + ". Incorrect"
-					+ " baud in response: " + cap);
+				log.warn("verifySettings failed. Expected baud={}. Incorrect" +
+						 " baud in response: {}",
+						 tm.getBaud(), cap);
 				return false;
 			}
 			parsing = "databits";
 			tok = tokens[idx+3];
 			if (tm.getDataBits() > 0 && tm.getDataBits() != Integer.parseInt(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected databits=" + tm.getDataBits() + ". Incorrect"
-					+ " databits in response: " + cap);
+				log.warn("verifySettings failed. Expected databits={}. Incorrect" +
+						 " databits in response: {}",
+						 tm.getDataBits(), cap);
 				return false;
 			}
 			parsing = "stopbits";
 			tok = tokens[idx+4];
 			if (tm.getStopBits() > 0 && tm.getStopBits() != Integer.parseInt(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected stopbits=" + tm.getStopBits() + ". Incorrect"
-					+ " stopbits in response: " + cap);
+				log.warn("verifySettings failed. Expected stopbits={}. Incorrect" +
+						 " stopbits in response: {}",
+						 tm.getStopBits(), cap);
 				return false;
 			}
 			Parity tmParity = Parity.fromCode(tm.getParity());
 			tok = tokens[idx+5];
 			if (tmParity != Parity.Unknown && tmParity != Parity.fromString(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected parity=" + tm.getParity() + ". Incorrect"
-					+ " parity in response: " + cap);
+				log.warn("verifySettings failed. Expected parity={}. Incorrect" +
+						 " parity in response: {}",
+						 tm.getParity(), cap);
 				return false;
 			}
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning(module + " verifySettings failed. "
-				+ "Expected integer while parsing " + parsing + "tok='" + tok + "' Full Response was: " + cap);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("verifySettings failed. Expected integer while parsing {} tok='{}' Full Response was: {}",
+			   		parsing, tok, cap);
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -465,16 +441,14 @@ public class DigiConnectPortManager
 	@Override
 	public void inputError(Exception ex)
 	{
-		// TODO Auto-generated method stub
-		
+		/* do nothing */
 	}
 
 
 	@Override
 	public void inputClosed()
 	{
-		// TODO Auto-generated method stub
-		
+		/* do nothing */
 	}
 
 

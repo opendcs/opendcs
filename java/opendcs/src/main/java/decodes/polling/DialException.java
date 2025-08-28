@@ -39,6 +39,12 @@ public class DialException extends PollException
 		this.portError = portError;
 	}
 
+	public DialException(String msg, Throwable cause, boolean portError)
+	{
+		super(msg, cause);
+		this.portError = portError;
+	}
+
 	public boolean isPortError()
 	{
 		return portError;

@@ -1,13 +1,7 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
- * between COVE and Alberta ESRD.
- *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,25 +16,28 @@
  */
 package decodes.polling;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import java.util.ArrayList;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.TransportMedium;
 
 public class TcpClientPortPool extends PortPool
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private int maxSockets = 32;
 	public static final String module = "TcpClientPortPool";
 	private ArrayList<IOPort> ioPorts = new ArrayList<IOPort>();
 	private int portNum = 0;
-	
+
 	public TcpClientPortPool()
 	{
 		super(module);
-		Logger.instance().debug1("Constructing " + module);
+		log.debug("Constructing {}", module);
 	}
 
 	@Override
@@ -52,12 +49,12 @@ public class TcpClientPortPool extends PortPool
 		{
 			try { maxSockets = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
-			{	
-				throw new ConfigException(module + " invalid availablePorts value '" + s 
-					+ "'. Expected integer number of simultaneous sockets.");
+			{
+				throw new ConfigException(module + " invalid availablePorts value '" + s
+					+ "'. Expected integer number of simultaneous sockets.", ex);
 			}
 		}
-		Logger.instance().debug1(module + " will allow " + maxSockets + " simultaneous polling sessions.");
+		log.debug("will allow {} simultaneous polling sessions.", maxSockets);
 	}
 
 	@Override
@@ -67,7 +64,7 @@ public class TcpClientPortPool extends PortPool
 			return null;
 		IOPort iop = new IOPort(this, portNum++, new TcpDialer());
 		ioPorts.add(iop);
-		Logger.instance().debug3(module + " allocating IOPort");
+		log.trace("allocating IOPort");
 		return iop;
 	}
 
@@ -93,7 +90,7 @@ public class TcpClientPortPool extends PortPool
 	public void configPort(IOPort ioPort, TransportMedium tm) throws DialException
 	{
 		// Nothing to do here.
-		
+
 	}
 
 	@Override
