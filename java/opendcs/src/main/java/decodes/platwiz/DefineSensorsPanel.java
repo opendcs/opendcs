@@ -280,7 +280,7 @@ public class DefineSensorsPanel extends JPanel implements WizardPanel
 		}
 		catch(PanelException ex)
 		{
-			log.atError().setCause(ex).log("Unable to show panel.");
+			log.atError().setCause(ex).log("Unabel to show panel.");
 			PlatformWizard.instance().getFrame().showError(ex.toString());
 		}
 	}
