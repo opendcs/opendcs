@@ -1,27 +1,44 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.decwiz;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Vector;
+
+import javax.annotation.processing.Filer;
 import javax.swing.*;
 import javax.swing.border.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.ArrayUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import decodes.db.*;
-import decodes.gui.TopFrame;
 import decodes.gui.EnumComboBox;
 import decodes.dbeditor.SiteSelectDialog;
 import decodes.dbeditor.PlatformSelectDialog;
 import decodes.datasource.DataSourceException;
-import decodes.datasource.PMParser;
 import decodes.datasource.RawMessage;
 import decodes.datasource.HeaderParseException;
 import decodes.datasource.UnknownPlatformException;
@@ -32,9 +49,9 @@ This panel is the first panel in the decoding wizard. Here the
 user enters the file and if necessary, the platform and site
 identifications.
 */
-public class FileIdPanel 
-	extends DecWizPanel
+public class FileIdPanel extends DecWizPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JLabel filenameLabel = new JLabel();
 	private JTextField filenameField = new JTextField();
 	private JButton browseButton = new JButton();
@@ -93,9 +110,9 @@ public class FileIdPanel
 			jbInit();
 			fillPresentationCombo();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		String fmt = DecodesSettings.instance().decwizOutputFormat;
 		if (fmt != null && fmt.length() > 0)
@@ -108,7 +125,6 @@ public class FileIdPanel
 	{
 		this.setLayout(fieldsLayout);
 		filenameLabel.setText("Input File:");
-		//filenameField.setPreferredSize(new Dimension(180, 27));
 		filenameField.setToolTipText("Name of file to decode.");
 		filenameField.setText("");
 		filenameField.addActionListener(new ActionListener()
@@ -137,10 +153,7 @@ public class FileIdPanel
 			}
 		});
 		mediumTypeLabel.setText("Medium Type:");
-		//mediumTypeCombo.setPreferredSize(new Dimension(150, 27));
-		//decodeFormatCombo.setPreferredSize(new Dimension(150, 27));
 		siteLabel.setText("Site:");
-		//siteField.setPreferredSize(new Dimension(150, 27));
 		siteField.setToolTipText("Name of site from which data originates.");
 		siteField.setText("");
 		siteSelectButton.setPreferredSize(new Dimension(100, 27));
@@ -154,7 +167,6 @@ public class FileIdPanel
 		});
 		platformLabel.setToolTipText("Platform that generated this data.");
 		platformLabel.setText("Platform:");
-		//platformField.setPreferredSize(new Dimension(150, 27));
 		platformSelectButton.setPreferredSize(new Dimension(100, 27));
 		platformSelectButton.setText("Select");
 		platformSelectButton.addActionListener(new ActionListener()
@@ -174,12 +186,10 @@ public class FileIdPanel
 			});
 
 		fileSizeLabel.setText("File Size:");
-		//fileSizeField.setPreferredSize(new Dimension(150, 27));
 		fileSizeField.setEditable(false);
 		fileSizeField.setText("0");
 		bytesLabel.setText("(bytes)");
 		modifiedLabel.setText("Last Modified:");
-		//lastModifiedField.setPreferredSize(new Dimension(150, 27));
 		lastModifiedField.setEditable(false);
 		lastModifiedField.setText("");
 		debugLevelLabel.setText("Debug Level:");
@@ -357,23 +367,23 @@ public class FileIdPanel
 	{
 		byte fileBytes[] = null;
 		String currentFile = filenameField.getText();
-		if ( fileLoaded ) {
+		if ( fileLoaded ) 
+		{
 			if ( lastFile == null || !currentFile.equals(lastFile) ) 
 				fileLoaded = false;
 		}
-		if ( !fileLoaded ) {
+		if ( !fileLoaded ) 
+		{
 			lastFile = currentFile;
 			File f = new File(filenameField.getText());
 			if (!f.canRead())
 				showError("The selected file '" + f.getPath() 
 					+ "' is not readable.");
 			lastModifiedField.setText("" + new Date(f.lastModified()));
-			FileReader fr = null;
 			rawDataArea.setText("");
 			fileBytes = new byte[(int)f.length()];
-			try
+			try(FileReader fr = new FileReader(f))
 			{
-				fr = new FileReader(f);
 				char cbuf[] = new char[256];
 				int totalBytes = 0;
 				int n;
@@ -406,16 +416,14 @@ public class FileIdPanel
 			}
 			catch(Exception ex)
 			{
+				log.atError().setCause(ex).log("Error reading '{}'", f.getPath());
 				showError("Error reading " + f.getPath()
 					+ ": " + ex);
 			}
-			finally
-			{
-				if (fr != null)
-					try { fr.close(); } catch(Exception ex) {}
-			}
 			fileLoaded = true;
-		} else {
+		} 
+		else 
+		{
 			String out = getRawData().replaceAll("\u00AE","\r");
 			fileBytes =  out.getBytes();
 		}
@@ -444,6 +452,7 @@ public class FileIdPanel
 		}
 		catch(HeaderParseException ex)
 		{
+			log.atError().setCause(ex).log("Unable to parse header.");
 			if ( transportMedium == null && selectedSite == null ) {
 				showError("Cannot parse header as a USGS-EDL or GOES message."
 				+ " You must set the Medium Type, Platform, and Script "
@@ -452,6 +461,7 @@ public class FileIdPanel
 		}
 		catch(UnknownPlatformException ex)
 		{
+			log.atError().setCause(ex).log("No Platform found.");
 			if ( transportMedium == null && selectedSite == null ) {
 				showError(ex.getMessage() 
 					+ " You must set the Medium Type, Platform, and Site "
@@ -460,6 +470,7 @@ public class FileIdPanel
 		}
 		catch(DataSourceException ex)
 		{
+			log.atError().setCause(ex).log("Unable to get platform record.");
 			if ( transportMedium == null && selectedSite == null ) {
 				showError("Database IO Error reading platform record: " + ex
 					+ " You must set the Medium Type, Platform, and Site "
@@ -467,7 +478,6 @@ public class FileIdPanel
 			}
 		}
 
-//		getSavePanel().setChoosers();
 		getDecodePanel().clearData();
 	}
 
@@ -518,6 +528,7 @@ public class FileIdPanel
 		try { selectedPlatform.read(); }
 		catch(DatabaseException ex)
 		{
+			log.atError().setCause(ex).log("Cannot read platform data.");
 			showError("Cannot read platform data: " + ex);
 			return;
 		}
@@ -556,10 +567,7 @@ public class FileIdPanel
 	private void debugLevelComboSelected()
 	{
 		int lev = debugLevelCombo.getSelectedIndex();
-		Logger.instance().setMinLogPriority(
-			lev == 0 ? Logger.E_INFORMATION :
-			lev == 1 ? Logger.E_DEBUG1 :
-			lev == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
+		log.warn("Setting the log level in this way is no longer supported.");
 	}
 	private void fillPresentationCombo()
 	{
