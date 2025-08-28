@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.platwiz;
 
 import ilex.util.LoadResourceBundle;
@@ -8,6 +23,11 @@ import java.util.ResourceBundle;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 
 import decodes.db.Constants;
@@ -25,12 +45,12 @@ import decodes.xml.TopLevelParser;
 /**
 This class implements the final 'save' panel in the platform wizard.
 */
-public class SavePanel extends JPanel
-	implements WizardPanel
+public class SavePanel extends JPanel implements WizardPanel
 {
-	private static ResourceBundle genericLabels = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle genericLabels =
 		PlatformWizard.getGenericLabels();
-	private static ResourceBundle platwizLabels = 
+	private static ResourceBundle platwizLabels =
 		PlatformWizard.getPlatwizLabels();
 	JPanel jPanel1 = new JPanel();
 	TitledBorder titledBorder1;
@@ -48,21 +68,22 @@ public class SavePanel extends JPanel
 
 
 	/** Default constructor. */
-	public SavePanel() 
+	public SavePanel()
 	{
-		try 
+		try
 		{
 			jbInit();
 			jFileChooser.setCurrentDirectory(
 				new File(System.getProperty("user.dir")));
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch(Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
 	/** Initialize GUI components. */
-	void jbInit() throws Exception 
+	void jbInit() throws Exception
 	{
 		titledBorder1 = new TitledBorder(BorderFactory.createEtchedBorder(Color.white,new Color(165, 163, 151)),
 				platwizLabels.getString("SavePanel.summaryActions"));
@@ -73,27 +94,23 @@ public class SavePanel extends JPanel
 		jPanel1.setLayout(borderLayout1);
 		jPanel2.setBorder(titledBorder2);
 		jPanel2.setLayout(gridBagLayout1);
-//		writeToDbButton.setPreferredSize(new Dimension(250, 23));
 		writeToDbButton.setText(platwizLabels.getString("SavePanel.writeToDB"));
 		writeToDbButton.addActionListener(new SavePanel_writeToDbButton_actionAdapter(this));
-//		writeToXmlFileButton.setPreferredSize(new Dimension(250, 23));
 		writeToXmlFileButton.setText(platwizLabels.getString("SavePanel.writeToXML"));
 		writeToXmlFileButton.addActionListener(new SavePanel_writeToXmlFileButton_actionAdapter(this));
 		summaryArea.setEditable(false);
 		summaryArea.setText("");
-//		validateButton.setPreferredSize(new Dimension(250, 23));
-		validateButton.setText(
-				platwizLabels.getString("SavePanel.validatePlatform"));
-    validateButton.addActionListener(new SavePanel_validateButton_actionAdapter(this));
-    this.add(jPanel1,	new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0
-						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(11, 6, 0, 6), 520, 311));
+		validateButton.setText(platwizLabels.getString("SavePanel.validatePlatform"));
+		validateButton.addActionListener(new SavePanel_validateButton_actionAdapter(this));
+		this.add(jPanel1,	new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0
+			,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(11, 6, 0, 6), 520, 311));
 		this.add(jPanel2,	 new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
-						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(9, 6, 13, 6), 0, 0));
+			,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(9, 6, 13, 6), 0, 0));
 		jPanel2.add(writeToDbButton,		   new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
             ,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 0, 4, 0), 0, 0));
 		jPanel2.add(writeToXmlFileButton,		   new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0
             ,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 0, 8, 0), 0, 0));
-    jPanel2.add(validateButton,  new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0
+	    jPanel2.add(validateButton,  new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0
             ,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(4, 0, 4, 0), 0, 0));
 		jPanel1.add(jScrollPane1, BorderLayout.CENTER);
 		jScrollPane1.getViewport().add(summaryArea, null);
@@ -124,8 +141,8 @@ public class SavePanel extends JPanel
 		}
 		catch(DecodesException ex)
 		{
-			TopFrame.instance().showError(
-			platwizLabels.getString("SavePanel.couldNotWriteDB") + ex);
+			log.atError().setCause(ex).log(platwizLabels.getString("SavePanel.couldNotWriteDB"));
+			TopFrame.instance().showError(platwizLabels.getString("SavePanel.couldNotWriteDB") + ex);
 		}
 	}
 
@@ -155,6 +172,10 @@ public class SavePanel extends JPanel
 		}
 		catch(Exception ex)
 		{
+			log.atError().setCause(ex).log(LoadResourceBundle.sprintf(
+					platwizLabels.getString
+					("SavePanel.cannotWriteErr"),
+					output.getPath()));
 			TopFrame.instance().showError(
 					LoadResourceBundle.sprintf(
 					platwizLabels.getString
@@ -172,7 +193,7 @@ public class SavePanel extends JPanel
 	  Called when validate button is pressed.
 	  @param e ignored
 	*/
-	void validateButton_actionPerformed(ActionEvent e) 
+	void validateButton_actionPerformed(ActionEvent e)
 	{
 		validatePlatform();
 	}

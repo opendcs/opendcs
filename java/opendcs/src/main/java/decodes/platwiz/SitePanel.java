@@ -1,44 +1,31 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*	$Log$
-*	Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*	OPENDCS 6.0 Initial Checkin
-*	
-*	Revision 1.2  2008/06/06 15:10:06  cvs
-*	updates from USGS & fixes to update-check.
-*	
-*	Revision 1.8  2008/05/19 14:31:15  satin
-*	Defaulted site name to current one assigned to platform.
-*	
-*	Revision 1.7  2008/01/25 16:16:29  mmaloney
-*	modified files for internationalization
-*	
-*	Revision 1.6  2007/09/11 02:48:01  mmaloney
-*	added code to the new button so that the site entry dialog pops up
-*	
-*	Revision 1.4  2007/02/05 15:35:00  mmaloney
-*	dev
-*	
-*	Revision 1.3  2004/09/08 12:24:22  mjmaloney
-*	javadoc
-*	
-*	Revision 1.2  2004/08/09 15:07:37  mjmaloney
-*	dev
-*	
-*	Revision 1.1	2004/08/02 13:48:47	mjmaloney
-*	dev
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.platwiz;
 
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
-import decodes.db.Database;
 import decodes.db.Platform;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -48,16 +35,16 @@ import decodes.dbeditor.SiteNameEntryDialog;
 import decodes.dbeditor.SiteSelectDialog;
 import decodes.gui.TopFrame;
 
-/** 
+/**
 The SitePanel.
 This is a thin layer around decodes.dbeditor.SiteEditPanel.
 */
-public class SitePanel extends JPanel
-	implements WizardPanel
+public class SitePanel extends JPanel implements WizardPanel
 {
-	private static ResourceBundle genericLabels = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle genericLabels =
 		PlatformWizard.getGenericLabels();
-	private static ResourceBundle platwizLabels = 
+	private static ResourceBundle platwizLabels =
 		PlatformWizard.getPlatwizLabels();
 	TitledBorder titledBorder1;
 	TitledBorder titledBorder2;
@@ -72,12 +59,15 @@ public class SitePanel extends JPanel
 	JButton newButton = new JButton();
 
 	/** Constructs the SitePanel for the platform wizard */
-	public SitePanel() {
-		try {
+	public SitePanel()
+	{
+		try
+		{
 			jbInit();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -92,7 +82,6 @@ public class SitePanel extends JPanel
 		siteNameField.setPreferredSize(new Dimension(150, 20));
 		siteNameField.setEditable(false);
 		siteNameField.setText("");
-//		selectSiteButton.setPreferredSize(new Dimension(85, 23));
 		selectSiteButton.setText(genericLabels.getString("select"));
 		selectSiteButton.addActionListener(new SitePanel_selectSiteButton_actionAdapter(this));
 		newButton.setPreferredSize(new Dimension(85, 23));
@@ -138,11 +127,11 @@ public class SitePanel extends JPanel
 			siteEditPanel.setSite(s);
 			SiteName sn = s == null ? null : s.getPreferredName();
 			siteNameField.setText(sn == null ? "" : sn.toString());
-		}	
+		}
 		siteEditPanel.redisplayModel();
 	}
 
-	/** 
+	/**
 	  Called when user leaves this panel.
 	  @return true if Site record is valid.
 	*/
@@ -178,11 +167,13 @@ public class SitePanel extends JPanel
 			try { p.getSite().read(); }
 			catch(DatabaseException ex)
 			{
+				log.atError().setCause(ex).log("Unable to read in selected site.");
 				TopFrame.instance().showError(ex.toString());
 			}
 			try { activate(); }
 			catch(PanelException ex)
 			{
+				log.atError().setCause(ex).log("Unable to update panel.");
 				TopFrame.instance().showError(ex.toString());
 			}
 		}
@@ -192,7 +183,7 @@ public class SitePanel extends JPanel
 	  Called when New button is pressed.
 	  @param e ignored
 	*/
-	void newButton_actionPerformed(ActionEvent e) 
+	void newButton_actionPerformed(ActionEvent e)
 	{
 		Platform p = PlatformWizard.instance().getPlatform();
 		//p.site = new Site(p);
@@ -210,6 +201,7 @@ public class SitePanel extends JPanel
 		try { activate(); }
 		catch(PanelException ex)
 		{
+			log.atError().setCause(ex).log("Unable to update panel.");
 			TopFrame.instance().showError(ex.toString());
 		}
 	}
