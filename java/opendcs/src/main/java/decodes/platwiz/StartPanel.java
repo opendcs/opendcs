@@ -1,79 +1,18 @@
 /*
- *  $Id$
- *
- *  $Log$
- *  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- *  OPENDCS 6.0 Initial Checkin
- *
- *  Revision 1.5  2009/11/19 15:38:56  mjmaloney
- *  Bugfix reading platform multiple times.
- *
- *  Revision 1.4  2008/06/06 15:10:06  cvs
- *  updates from USGS & fixes to update-check.
- *
- *  Revision 1.22  2008/05/21 18:58:39  satin
- *  Defaulted the GOES random channel and USGS station number if they exist.
- *
- *  Revision 1.21  2008/03/22 00:49:34  satin
- *  This panel assumed that the platform id and medium id for a EDL
- *  device is the station number.  It should be
- *  	<station number>-<deviceid>-<deviceNo>
- *
- *  Revision 1.20  2008/01/25 16:16:29  mmaloney
- *  modified files for internationalization
- *
- *  Revision 1.19  2007/09/10 20:58:46  mmaloney
- *  updated
- *
- *  Revision 1.18  2007/06/15 11:27:10  mmaloney
- *  Fixed bug about updating the transport media channel on first screen after going through all the screens.
- *
- *  Revision 1.17  2005/09/08 20:24:17  mjmaloney
- *  bug fixes:
- *  Null pointer in config edit when no config selected.
- *  Query user on quit without save.
- *  Query user before overwriting an existing platform with an empty one.
- *
- *  Revision 1.16  2004/12/12 20:25:59  mjmaloney
- *  Backed out changes from 1.14.
- *
- *  Revision 1.15  2004/12/12 20:15:35  mjmaloney
- *  dev
- *
- *  Revision 1.14  2004/12/12 20:12:57  mjmaloney
- *  Remove button for local DB -- this is an implicit operation.
- *
- *  Revision 1.13  2004/09/06 13:42:02  mjmaloney
- *  bug-fixes
- *
- *  Revision 1.12  2004/08/27 20:29:54  mjmaloney
- *  Platform Wizard complete
- *
- *  Revision 1.11  2004/08/27 18:40:58  mjmaloney
- *  Platwiz work
- *
- *  Revision 1.10  2004/08/09 15:07:37  mjmaloney
- *  dev
- *
- *  Revision 1.9  2004/08/02 13:48:48  mjmaloney
- *  dev
- *
- *  Revision 1.8  2004/07/28 20:54:39  mjmaloney
- *  dev
- *
- *  Revision 1.7  2004/07/28 15:39:47  mjmaloney
- *  dev
- *
- *  Revision 1.6  2004/07/28 15:37:28  mjmaloney
- *  dev
- *
- *  Revision 1.5  2004/07/28 15:32:43  mjmaloney
- *  GUI Mods.
- *
- *  Revision 1.4  2004/07/28 15:06:15  mjmaloney
- *  dev
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.platwiz;
 
 import java.awt.*;
@@ -83,6 +22,10 @@ import java.util.Vector;
 import java.util.ResourceBundle;
 
 import javax.swing.border.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.AsciiUtil;
 
@@ -100,12 +43,12 @@ import decodes.dbeditor.PlatformSelectDialogforSubset;
 /**
 Initial wizard panel. Gather info about what the user wants to do.
 */
-public class StartPanel extends JPanel
-	implements WizardPanel
+public class StartPanel extends JPanel implements WizardPanel
 {
-	private static ResourceBundle genericLabels = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle genericLabels =
 				PlatformWizard.getGenericLabels();
-	private static ResourceBundle platwizLabels = 
+	private static ResourceBundle platwizLabels =
 				PlatformWizard.getPlatwizLabels();
 	TitledBorder titledBorder1;
 	TitledBorder titledBorder2;
@@ -127,10 +70,8 @@ public class StartPanel extends JPanel
 	JPanel jPanel2 = new JPanel();
 	JButton hadsButton = new JButton();
 	JButton dapsPdtButton = new JButton();
-	JComboBox decodesRepositoryCombo = new JComboBox(
-			new String[] {"http://hqsun2.er.usgs.gov/decodesrep",
-			"http://www.ilexengineering.com/decodesrep",
-			"http://hq.usace.army.mil/decodesrep"});
+	JComboBox<String> decodesRepositoryCombo = new JComboBox<>(
+			new String[] {"Unfortunately, there are currently no decodes repositories"});
 	JButton myEditDbButton = new JButton();
 	GridBagLayout gridBagLayout1 = new GridBagLayout();
 
@@ -143,11 +84,13 @@ public class StartPanel extends JPanel
 	/** Construct the StartPanel */
 	public StartPanel()
 	{
-		try {
+		try
+		{
 			jbInit();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		goesSTChannel = -1;
 		goesRDChannel = -1;
@@ -371,8 +314,8 @@ public class StartPanel extends JPanel
 				try { goesRDChannel = Integer.parseInt(s); }
 				catch(NumberFormatException ex)
 				{
-					PlatformWizard.instance().showError(
-					platwizLabels.getString("StartPanel.randomChErr"));
+					log.atError().setCause(ex).log(platwizLabels.getString("StartPanel.randomChErr"));
+					PlatformWizard.instance().showError(platwizLabels.getString("StartPanel.randomChErr"));
 					return false;
 				}
 			}
@@ -385,8 +328,8 @@ public class StartPanel extends JPanel
 				try { goesSTChannel = Integer.parseInt(s); }
 				catch(NumberFormatException ex)
 				{
-					PlatformWizard.instance().showError(
-							platwizLabels.getString("StartPanel.selfChErr"));
+					log.atError().setCause(ex).log(platwizLabels.getString("StartPanel.selfChErr"));
+					PlatformWizard.instance().showError(platwizLabels.getString("StartPanel.selfChErr"));
 					return false;
 				}
 			}
@@ -400,7 +343,7 @@ public class StartPanel extends JPanel
 					AsciiUtil.wrapString(
 					platwizLabels.getString("StartPanel.platExistMsg"),
 					50),
-					platwizLabels.getString("StartPanel.platOverwriteMsg"), 
+					platwizLabels.getString("StartPanel.platOverwriteMsg"),
 					JOptionPane.YES_NO_CANCEL_OPTION);
 				if (choice == JOptionPane.YES_OPTION)
 				{
@@ -412,7 +355,7 @@ public class StartPanel extends JPanel
 				// else fall through & initialize a new platform.
 			}
 		}
-		//Find out if we have a Platform created already, if we do, use it. 
+		//Find out if we have a Platform created already, if we do, use it.
 		Platform p = PlatformWizard.instance().getPlatform();
 		if (p == null)
 			p = new Platform();
@@ -421,7 +364,7 @@ public class StartPanel extends JPanel
 			try { p.read(); }
 			catch(DatabaseException ex)
 			{
-				ex.printStackTrace();
+				log.atError().setCause(ex).log("Unable to read platform.");
 			}
 		}
 		String dcpaddr = getDcpAddress();
@@ -431,16 +374,16 @@ public class StartPanel extends JPanel
 			if (processGoesST())
 			{
 				//If we have a Platform, find the transport media and
-				//updated it					
-				TransportMedium tm = 
+				//updated it
+				TransportMedium tm =
 					p.getTransportMedium(Constants.medium_GoesST);
-				int tmIndex = p.transportMedia.indexOf(tm); 
+				int tmIndex = p.transportMedia.indexOf(tm);
 				if (tm == null)
 				{	//Create Transport Media
 					tm = new TransportMedium(p,
 								Constants.medium_GoesST, dcpaddr);
 					tm.scriptName = "ST";
-					tm.channelNum = goesSTChannel;						
+					tm.channelNum = goesSTChannel;
 					p.transportMedia.add(tm);
 				}
 				else
@@ -448,21 +391,21 @@ public class StartPanel extends JPanel
 					tm.channelNum = goesSTChannel;
 					//Update the transportMedia
 					if (tmIndex != -1)
-						p.transportMedia.set(tmIndex, tm);						
+						p.transportMedia.set(tmIndex, tm);
 				}
 			}
 			if (processGoesRD())
 			{
-				TransportMedium tm = 
+				TransportMedium tm =
 					p.getTransportMedium(Constants.medium_GoesRD);
-				int tmIndex = p.transportMedia.indexOf(tm); 
+				int tmIndex = p.transportMedia.indexOf(tm);
 				if (tm == null)
 				{	//Create Transport Media
 					tm = new TransportMedium(p,
 								Constants.medium_GoesRD, dcpaddr);
 					tm.scriptName = "ST";
 					tm.channelNum = goesRDChannel;
-					p.transportMedia.add(tm);	
+					p.transportMedia.add(tm);
 				}
 				else
 				{
@@ -482,9 +425,9 @@ public class StartPanel extends JPanel
 					platwizLabels.getString("StartPanel.USGSSiteIdErr"));
 				return false;
 			}
-			TransportMedium tm = 
+			TransportMedium tm =
 				p.getTransportMedium(Constants.medium_EDL);
-			int tmIndex = p.transportMedia.indexOf(tm); 
+			int tmIndex = p.transportMedia.indexOf(tm);
 			if (tm == null)
 			{
 				String mediumId = null;
@@ -496,22 +439,21 @@ public class StartPanel extends JPanel
 				}
 				if ( mediumId == null )
 					mediumId = siteId;
-				
+
 				tm = new TransportMedium(p,
 						Constants.medium_EDL, mediumId);
 				tm.scriptName = "EDL";
-				p.transportMedia.add(tm);	
+				p.transportMedia.add(tm);
 			}
 			else
 			{
-//				tm.setMediumId(siteId);
 				//Update the transportMedia
 				if (tmIndex != -1)
 					p.transportMedia.set(tmIndex, tm);
 			}
 		}
 		PlatformWizard.instance().setPlatform(p);
-			
+
 		return true;
 	}
 
@@ -586,7 +528,7 @@ public class StartPanel extends JPanel
 				goesPlat = Database.getDb().platformList.getPlatform(
 					Constants.medium_Goes, dcpaddr);
 			}
-	
+
 			// If USGS Site ID was entered, look it up.
 			if (edlCheck.isSelected() && siteNum.length() > 0)
 			{
@@ -596,6 +538,7 @@ public class StartPanel extends JPanel
 		}
 		catch(DatabaseException ex)
 		{
+			log.atTrace().setCause(ex).log("Unable to look up GOES Id in current database.");
 			return false;
 		}
 
@@ -606,7 +549,7 @@ public class StartPanel extends JPanel
 	}
 
 	/** Called when My Editable Database is pressed. */
-	void myEditDbButton_actionPerformed(ActionEvent e) 
+	void myEditDbButton_actionPerformed(ActionEvent e)
 	{
 		// If we previously had a complete platform, set it to incomplete
 		// to force it to be re-read from the database (overwriting any
@@ -628,7 +571,7 @@ public class StartPanel extends JPanel
 				goesPlat = Database.getDb().platformList.getPlatform(
 					Constants.medium_Goes, dcpaddr);
 			}
-	
+
 			// If USGS Site ID was entered, look it up.
 			if (edlCheck.isSelected() && siteNum.length() > 0)
 			{
@@ -640,7 +583,7 @@ public class StartPanel extends JPanel
 							if (  edlPlat.getDcpAddress() != null )
 								pvec.removeElementAt(j);
 					}
-					if ( pvec.size() == 1 ) 
+					if ( pvec.size() == 1 )
 						edlPlat = pvec.elementAt(0);
 					else if ( pvec.size() > 1 ) {
 						PlatformSelectDialogforSubset psdlg = new
@@ -652,12 +595,11 @@ public class StartPanel extends JPanel
 						edlPlat = null;
 				} else
 						edlPlat = null;
-//				edlPlat = Database.getDb().platformList.getPlatform(
-//					Constants.medium_EDL, siteNum);
 			}
 		}
 		catch(DatabaseException ex)
 		{
+			log.atError().setCause(ex).log("Unable to run edit db button.");
 			PlatformWizard.instance().showError(ex.toString());
 			return;
 		}
@@ -673,9 +615,9 @@ public class StartPanel extends JPanel
 			int choice = JOptionPane.showOptionDialog(
 				PlatformWizard.instance().getFrame(),
 				platwizLabels.getString("StartPanel.dcpAddrEDLIdErr"),
-				platwizLabels.getString("StartPanel.platformConflict"), 
+				platwizLabels.getString("StartPanel.platformConflict"),
 				JOptionPane.YES_NO_CANCEL_OPTION,
-				JOptionPane.QUESTION_MESSAGE, 
+				JOptionPane.QUESTION_MESSAGE,
 				(Icon)null,
 				options,
 				options[2]);
@@ -683,24 +625,19 @@ public class StartPanel extends JPanel
 			if (choice == JOptionPane.YES_OPTION) // GOES
 			{
 				PlatformWizard.instance().setPlatform(goesPlat);
-//				Set the seft time channel number
-				String s = stChanField.getText().trim();
-				//if (selfTimedCheck.isSelected() && s.length() == 0)
-				//if (s.length() == 0)
-				//{
-					//----
-					TransportMedium tm = 
-						goesPlat.getTransportMedium(Constants.medium_GoesST);
-					if (tm != null)
-					{
-						stChanField.setText(""+tm.channelNum);
-					}
-					tm = goesPlat.getTransportMedium(Constants.medium_GoesRD);
-					if ( tm != null ) {
-						rdChanField.setText(""+tm.channelNum);
-					}
-					//-----	
-				//}
+
+
+				TransportMedium tm =
+					goesPlat.getTransportMedium(Constants.medium_GoesST);
+				if (tm != null)
+				{
+					stChanField.setText(""+tm.channelNum);
+				}
+				tm = goesPlat.getTransportMedium(Constants.medium_GoesRD);
+				if ( tm != null ) {
+					rdChanField.setText(""+tm.channelNum);
+				}
+
 			}
 			else if (choice == JOptionPane.NO_OPTION) // EDL
 				PlatformWizard.instance().setPlatform(edlPlat);
@@ -710,28 +647,21 @@ public class StartPanel extends JPanel
 		else if (goesPlat != null)
 		{
 			PlatformWizard.instance().setPlatform(goesPlat);
-			//Set the seft time channel number
-			String s = stChanField.getText().trim();
-			//if (selfTimedCheck.isSelected() && s.length() == 0)
-			//if (s.length() == 0)
-			//{
-				//----
-				TransportMedium tm = 
-					goesPlat.getTransportMedium(Constants.medium_GoesST);
-				if (tm != null)
-				{	
-					stChanField.setText(""+tm.channelNum);
-				}
-				tm = goesPlat.getTransportMedium(Constants.medium_GoesRD);
-				if ( tm != null ) {
-					rdChanField.setText(""+tm.channelNum);
-				}
-				if ( goesPlat.getSite() != null ) {
-					if ( goesPlat.getSite() != null )
-						usgsSiteNumField.setText(goesPlat.getSite().getDisplayName());
-				}
-				//-----	
-			//}
+
+			TransportMedium tm =
+				goesPlat.getTransportMedium(Constants.medium_GoesST);
+			if (tm != null)
+			{
+				stChanField.setText(""+tm.channelNum);
+			}
+			tm = goesPlat.getTransportMedium(Constants.medium_GoesRD);
+			if ( tm != null ) {
+				rdChanField.setText(""+tm.channelNum);
+			}
+			if ( goesPlat.getSite() != null ) {
+				if ( goesPlat.getSite() != null )
+					usgsSiteNumField.setText(goesPlat.getSite().getDisplayName());
+			}
 		}
 		else if (edlPlat != null)
 			PlatformWizard.instance().setPlatform(edlPlat);

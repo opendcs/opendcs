@@ -1,8 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.platwiz;
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.ResourceBundle;
 import java.util.Vector;
@@ -15,6 +34,7 @@ The top-level frame for the platform wizard GUI.
 */
 public class Frame1 extends TopFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle genericLabels = null;
 	private static ResourceBundle platwizLabels = null;
 	JPanel contentPane;
@@ -48,17 +68,19 @@ public class Frame1 extends TopFrame
 	public static boolean exitOnClose = true;
 
 	/** default constructor. */
-	public Frame1() 
+	public Frame1()
 	{
 		genericLabels = PlatformWizard.getGenericLabels();
 		platwizLabels = PlatformWizard.getPlatwizLabels();
-		//enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		try {
+
+		try
+		{
 			jbInit();
 			initPanels();
 		}
-		catch(Exception e) {
-			e.printStackTrace();
+		catch(Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 
 		// Default operation is to do nothing when user hits 'X' in upper
@@ -85,13 +107,10 @@ public class Frame1 extends TopFrame
 		statusBar.setText(" ");
 		topPanel.setDebugGraphicsOptions(0);
 		topPanel.setLayout(borderLayout2);
-		//nextButton.setMinimumSize(new Dimension(80, 23));
 		nextButton.setPreferredSize(new Dimension(110, 23));
 		nextButton.setText(platwizLabels.getString("frame1.next"));
 		nextButton.addActionListener(new Frame1_nextButton_actionAdapter(this));
 		prevButton.setEnabled(false);
-		//prevButton.setMaximumSize(new Dimension(80, 23));
-		//prevButton.setMinimumSize(new Dimension(80, 23));
 		prevButton.setPreferredSize(new Dimension(110, 23));
 		prevButton.setText(platwizLabels.getString("frame1.previous"));
 		prevButton.addActionListener(new Frame1_prevButton_actionAdapter(this));
@@ -118,8 +137,7 @@ public class Frame1 extends TopFrame
 		descriptionArea.setMinimumSize(new Dimension(205, 60));
 		descriptionArea.setPreferredSize(new Dimension(205, 60));
 		descriptionArea.setEditable(false);
-		descriptionArea.setText(
-				platwizLabels.getString("frame1.panelDescHere"));
+		descriptionArea.setText(platwizLabels.getString("frame1.panelDescHere"));
 		descriptionArea.setLineWrap(true);
 		descriptionArea.setWrapStyleWord(true);
 		slideNumLabel.setText("(1/9)");
@@ -191,15 +209,14 @@ public class Frame1 extends TopFrame
 		if (curPanel != -1)
 		{
 			JPanel jp = (JPanel)panels.elementAt(curPanel);
-			try 
+			try
 			{
 				if (!((WizardPanel)jp).deactivate())
 					return;
 			}
 			catch(PanelException ex)
 			{
-				System.err.println("Exception in deactivate: " + ex);
-				ex.printStackTrace();
+				log.atError().setCause(ex).log("Exception in deactivate.");
 			}
 			panelsContainer.setVisible(false);
 			panelsContainer.remove(jp);
@@ -209,8 +226,7 @@ public class Frame1 extends TopFrame
 		try { ((WizardPanel)jp).activate(); }
 		catch(PanelException ex)
 		{
-			System.err.println("Exception in activate: " + ex);
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Exception in activate.");
 		}
 		panelsContainer.add(jp);
 		panelTitle.setText(((WizardPanel)jp).getPanelTitle());
@@ -225,7 +241,7 @@ public class Frame1 extends TopFrame
 	  Called when Quite button is pressed.
 	  @param e ignored
 	*/
-	void quitButton_actionPerformed(ActionEvent e) 
+	void quitButton_actionPerformed(ActionEvent e)
 	{
 		if (!PlatformWizard.instance().saved)
 		{
@@ -262,17 +278,17 @@ public class Frame1 extends TopFrame
 		panels.add(new SelectDevicePanel());
 
 		ScriptEditPanel sep = new ScriptEditPanel();
-		sep.setNameType("ST", 
+		sep.setNameType("ST",
 				platwizLabels.getString("frame1.selfTimedMsgDesc"));
 		panels.add(sep);
 
 		sep = new ScriptEditPanel();
-		sep.setNameType("RD", 
+		sep.setNameType("RD",
 				platwizLabels.getString("frame1.randomTimedMsgDesc"));
 		panels.add(sep);
 
 		sep = new ScriptEditPanel();
-		sep.setNameType("EDL", 
+		sep.setNameType("EDL",
 				platwizLabels.getString("frame1.USGSEDLFilesDesc"));
 		panels.add(sep);
 

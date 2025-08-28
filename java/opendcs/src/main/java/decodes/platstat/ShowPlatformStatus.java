@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.platstat;
 
 import java.text.SimpleDateFormat;
@@ -6,6 +21,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.gui.DecodesInterface;
 
@@ -21,15 +39,15 @@ import decodes.db.PlatformStatus;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.CmdLineArgs;
 
-public class ShowPlatformStatus 
-	extends TsdbAppTemplate
+public class ShowPlatformStatus extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String module = "ShowPlatformStatus";
-	private StringToken netlistArg = new StringToken("n", "Network List Name", "", 
+	private StringToken netlistArg = new StringToken("n", "Network List Name", "",
 		TokenOptions.optSwitch, "");
-	private StringToken errorArg = new StringToken("e", "Error #hours or 'current'", "", 
+	private StringToken errorArg = new StringToken("e", "Error #hours or 'current'", "",
 		TokenOptions.optSwitch, "");
-	private StringToken tzArg = new StringToken("z", "Time Zone", "", 
+	private StringToken tzArg = new StringToken("z", "Time Zone", "",
 		TokenOptions.optSwitch, "");
 	private StringToken sortArg = new StringToken("s", "Sort option (n=name, c=last contact, "
 		+ "m=last message, e=last error", "", TokenOptions.optSwitch, "n");
@@ -43,19 +61,19 @@ public class ShowPlatformStatus
 	}
 
 	@Override
-	protected void runApp() 
+	protected void runApp()
 		throws Exception
 	{
 		SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss");
 		if (tzArg.getValue().length() > 0)
 			sdf.setTimeZone(TimeZone.getTimeZone(tzArg.getValue()));
-		
+
 		NetworkList netlist = null;
 		if (netlistArg.getValue().length() > 0)
 			netlist = Database.getDb().networkListList.find(netlistArg.getValue());
-		
+
 		PlatformStatusDAI platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();
-		
+
 		boolean currentErrorsOnly = false;
 		int errorHours = -1;
 		if (errorArg.getValue().length() > 0)
@@ -67,13 +85,13 @@ public class ShowPlatformStatus
 				try { errorHours = Integer.parseInt(errorArg.getValue()); }
 				catch(NumberFormatException ex)
 				{
-					System.err.println("Invalid -e argument. Should be # of hours or 'current'");
+					log.atError().setCause(ex).log("Invalid -e argument. Should be # of hours or 'current'");
 					errorHours = -1;
 					System.exit(1);
 				}
 			}
 		}
-		
+
 		ArrayList<PlatformStatus> pslist = platformStatusDAO.listPlatformStatus();
 		Collections.sort(pslist, new PlatStatComparator(sortArg.getValue().charAt(0),
 			reverseSortArg.getValue()));
@@ -85,10 +103,10 @@ public class ShowPlatformStatus
 			Platform platform = Database.getDb().platformList.getById(ps.getPlatformId());
 			if (netlist != null && !netlist.contains(platform))
 				continue;
-			
+
 			if (ps.getLastContactTime() == null)
 				continue;
-			
+
 			// Current errors only. Skip stations with no errors and stations where the
 			// last error was before the last contact.
 			if (currentErrorsOnly &&
@@ -103,7 +121,7 @@ public class ShowPlatformStatus
 				if (d / 3600000L >= errorHours)
 					continue;
 			}
-			
+
 			String pname = platform == null ? "unknown" : platform.getDisplayName();
 			line.append(TextUtil.setLengthLeftJustify(pname, 20));
 			line.append(", ");
@@ -142,14 +160,14 @@ public class ShowPlatformStatus
 		DecodesInterface.silent = true;
 		tp.execute(args);
 	}
-	
+
 	@Override
 	public void tryConnect()
 	{
 		// This app doesn't need the TSDB and must operate with just DECODES even
 		// under XML.
 	}
-	
+
 	@Override
 	public void closeDb()
 	{
@@ -159,7 +177,7 @@ public class ShowPlatformStatus
 	public synchronized void createDatabase() {}
 }
 
-class PlatStatComparator implements Comparator<PlatformStatus> 
+class PlatStatComparator implements Comparator<PlatformStatus>
 {
 	char sortArg = 'n';
 	boolean reverse = false;
@@ -167,12 +185,12 @@ class PlatStatComparator implements Comparator<PlatformStatus>
 	{
 		if ("scne".indexOf(sortArg) < 0)
 			sortArg = 'm';
-		
+
 		this.sortArg = sortArg;
 		this.reverse = reverse;
-		
+
 	}
-	
+
 	@Override
 	public int compare(PlatformStatus ps1, PlatformStatus ps2)
 	{
@@ -224,5 +242,5 @@ class PlatStatComparator implements Comparator<PlatformStatus>
 		}
 		return reverse ? -r : r;
 	}
-	
+
 }
