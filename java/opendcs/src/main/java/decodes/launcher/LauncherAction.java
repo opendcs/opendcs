@@ -1,22 +1,19 @@
-/**
- * $Id$
- * 
- * Copyright 2017 U.S. Government
- * 
- * $Log$
- * Revision 1.3  2019/10/25 15:15:19  mmaloney
- * dev
- *
- * Revision 1.2  2019/10/22 12:39:39  mmaloney
- * Pass launcher args to launcher actions.
- *
- * Revision 1.1  2017/06/13 20:02:33  mmaloney
- * dev
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.launcher;
-
-import ilex.util.Logger;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -24,21 +21,24 @@ import java.awt.event.WindowEvent;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.util.DecodesException;
 
-public abstract class LauncherAction
-	extends WindowAdapter
+public abstract class LauncherAction extends WindowAdapter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	protected String buttonLabel = null;
-	
+
 	protected ImageIcon imageIcon = null;
-	
+
 	private JFrame visibleFrame = null;
 
 	private LauncherFrame launcherFrame = null;
-	
+
 	protected String launcherArgs[] = {};
-	
+
 	protected String tag = "";
 
 
@@ -68,7 +68,7 @@ public abstract class LauncherAction
 			visibleFrame.toFront();
 			return;
 		}
-		
+
 		// DB init in progress!
 		if (launcherFrame.afterDecodesInit != null)
 			return;
@@ -87,11 +87,9 @@ public abstract class LauncherAction
 					}
 					catch (Exception ex)
 					{
-						String msg = "Cannot launch " + buttonLabel + ": " + ex;
-						Logger.instance().warning(msg);
-						System.err.println(msg);
-						ex.printStackTrace();
-						launcherFrame.showError(msg);
+						String msg = "Cannot launch " + buttonLabel;
+						log.atError().setCause(ex).log(msg);
+						launcherFrame.showError(msg + ": "+ ex);
 					}
 				}
 			};
@@ -99,17 +97,17 @@ public abstract class LauncherAction
 		}
 		catch (DecodesException ex)
 		{
-			Logger.instance().failure("Cannot initialize DECODES: '" + ex);
+			log.atError().setCause(ex).log("Cannot initialize DECODES.");
 		}
 	}
 
 	/**
 	 * Concrete subclass overloads this to create the JFrame.
-	 * 
+	 *
 	 * @return
 	 */
 	protected abstract JFrame launchFrame();
-	
+
 	public String getButtonLabel()
 	{
 		return buttonLabel;
@@ -128,13 +126,13 @@ public abstract class LauncherAction
 	{
 		this.launcherFrame = launcherFrame;
 	}
-	
+
  	public void windowClosed(WindowEvent ev)
  	{
- 		Logger.instance().debug1(buttonLabel + " window closed.");
+		log.trace("{} window closed.", buttonLabel);
  		visibleFrame = null;
  	}
- 	
+
  	public void setLauncherArgs(String launcherArgs[])
  	{
  		this.launcherArgs = launcherArgs;

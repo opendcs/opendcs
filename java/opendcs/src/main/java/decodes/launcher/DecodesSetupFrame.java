@@ -1,8 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.launcher;
 
 import java.awt.*;
 
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.awt.event.*;
 import java.util.Objects;
@@ -11,16 +30,15 @@ import java.io.*;
 
 import ilex.gui.WindowUtility;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import decodes.gui.TopFrame;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 
 @SuppressWarnings("serial")
-public class DecodesSetupFrame
-    extends TopFrame
+public class DecodesSetupFrame extends TopFrame
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle labels = getLabels();
     private static ResourceBundle genericLabels = getGenericLabels();
     private JPanel jPanel3 = new JPanel();
@@ -58,9 +76,9 @@ public class DecodesSetupFrame
             pack();
             populateDecodesPropsTab();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            e.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
         trackChanges("DecodesSetupFrame");
         _lastInstance = this;
@@ -157,9 +175,9 @@ public class DecodesSetupFrame
         }
         catch (IOException ex)
         {
-            Logger.instance().failure(
-                "Cannot save DECODES Properties File '" + profile.getFile().getAbsolutePath() + "': "
-                + ex);
+            log.atError()
+               .setCause(ex)
+               .log("Cannot save DECODES Properties File '{}'", profile.getFile().getAbsolutePath());
         }
         if (launcherFrame != null)
         {
@@ -181,8 +199,9 @@ public class DecodesSetupFrame
         }
         catch (IOException ex)
         {
-            Logger.instance().failure(
-                "Cannot open DECODES Properties File '" + profile.getFile().getAbsolutePath() + "': " + ex);
+            log.atError()
+               .setCause(ex)
+               .log("Cannot open DECODES Properties File '{}'", profile.getFile().getAbsolutePath());
         }
     }
 }
