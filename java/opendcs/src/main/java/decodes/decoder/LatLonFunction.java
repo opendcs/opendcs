@@ -1,24 +1,33 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.decoder;
 
-import ilex.util.Logger;
-import ilex.util.TextUtil;
 import ilex.var.Variable;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.LineNumberReader;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.datasource.RawMessage;
-import decodes.db.Constants;
-import decodes.db.DataType;
 import decodes.db.DecodesScript;
-import decodes.util.DecodesSettings;
 
 /**
  * This function parses ASCII latitude and longitude that are frequently
@@ -40,9 +49,9 @@ import decodes.util.DecodesSettings;
  * After executing, the cursor is left after the last sensor block that was
  * successfully parsed.
  */
-public class LatLonFunction
-	extends DecodesFunction 
+public class LatLonFunction	extends DecodesFunction 
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "LatLon";
 	
 	/** Pattern for a degrees minutes seconds, all inside capture groups */
@@ -93,8 +102,10 @@ public class LatLonFunction
 		{
 			// Get the label, minute offset, minute index and sensor data
 			foundBlock = true;
-			trace("Sensor Block at (" + blockMatcher.start() + "," + blockMatcher.end() + "): "
-				+ "'" + blockMatcher.group(0) + "'");
+			log.trace("Sensor Block at ({},{}): '{}'",
+					  blockMatcher.start(),
+					  blockMatcher.end(),
+					  blockMatcher.group(0));
 			endProcessingIdx = blockMatcher.end();
 			
 			char ns = blockMatcher.group(1).charAt(0);
@@ -112,7 +123,7 @@ public class LatLonFunction
 			catch(NumberFormatException ex)
 			{
 				// shouldn't happen
-				warning("Bad latitude '" + blockMatcher.group(0) + "': " + ex);
+				log.atWarn().setCause(ex).log("Bad latitude '{}'", blockMatcher.group(0));
 			}
 			char ew = blockMatcher.group(5).charAt(0);
 			sign = (ew == 'W' || ns == 'w') ? -1 : 1;
@@ -127,7 +138,7 @@ public class LatLonFunction
 			catch(NumberFormatException ex)
 			{
 				// shouldn't happen
-				warning("Bad latitude '" + blockMatcher.group(0) + "': " + ex);
+				log.atWarn().setCause(ex).log("Bad longitude '{}'", blockMatcher.group(0));
 			}
 			
 			if (storeInSite)
@@ -140,8 +151,8 @@ public class LatLonFunction
 				decmsg.addSample(lonSensorNum, new Variable(longitude), lineNumber);
 			}
 			else
-				info("parsed '" + blockMatcher.group(0)
-					+ "' latitude=" + latitude + ", longitude=" + longitude);
+				log.info("parsed '{}' latitude={}, longitude={}",
+						 blockMatcher.group(0), latitude, longitude);
 			
 		}
 		
@@ -152,7 +163,7 @@ public class LatLonFunction
 		
 		if(!foundBlock)
 		{
-			trace("No match found.");
+			log.trace("No match found.");
 		}
 		return endProcessingIdx;
 	}
@@ -183,34 +194,10 @@ public class LatLonFunction
 			dd.forwardspace();
 		}
 		String toParse = sb.toString();
-		trace("Processing '" + toParse + "'");
+		log.trace("Processing '{}'", toParse);
 		
 		int finishIdx = parse(toParse, decmsg);
 		dd.setBytePos(startPos + finishIdx);
-	}
-
-	private void trace(String s)
-	{
-		if (testMode)
-			System.out.println(module + " " + s);
-		else
-			Logger.instance().debug3(module + " " + s);
-	}
-
-	private void info(String s)
-	{
-		if (testMode)
-			System.out.println(module + " " + s);
-		else
-			Logger.instance().info(module + " " + s);
-	}
-
-	private void warning(String s)
-	{
-		if (testMode)
-			System.out.println(module + " " + s);
-		else
-			Logger.instance().warning(module + " " + s);
 	}
 
 	
@@ -251,55 +238,9 @@ public class LatLonFunction
 			{
 				throw new ScriptFormatException(module
 					+ " Bad argument '" + argString
-					+ "'. Expected lat and lon integers, separated by comma.");
+					+ "'. Expected lat and lon integers, separated by comma.",ex);
 			}
 		}
 	}
 	
-	public void setTestMode(boolean testMode)
-	{
-		this.testMode = testMode;
-	}
-	
-	/**
-	 * Main method for test. Pass name of a file containing ascii self-describing
-	 * messages, one per line.
-	 * @param args single argument filename
-	 * @throws Exception
-	 */
-	public static void main(String[] args)
-		throws Exception
-	{
-		File file = new File(args[0]);
-		LineNumberReader lnr = new LineNumberReader(
-			new FileReader(file));
-		String line;
-		AsciiSelfDescFunction asdf = new AsciiSelfDescFunction();
-		LatLonFunction llf = new LatLonFunction();
-		asdf.setTestMode(true);
-		llf.setTestMode(true);
-		
-		while((line = lnr.readLine()) != null)
-		{
-			System.out.println("=============");
-			System.out.println(line);
-			System.out.println();
-			RawMessage rawMsg = new RawMessage(line.getBytes());
-			rawMsg.setHeaderLength(37);
-			DataOperations dataOps = new DataOperations(rawMsg);
-			// If the high-data rate status byte is present, skip it.
-			if ((char)dataOps.curByte() != ':')
-				dataOps.forwardspace();
-			asdf.execute(dataOps, null);
-			llf.execute(dataOps, null);
-			System.out.println("Processed " + 
-				(dataOps.getBytePos()+rawMsg.getHeaderLength()) + " characters out of " + 
-				line.length() + ".");
-			
-//			int len = asdp.parse(line.substring(37), null);
-//			System.out.println("Processed " + (len+37) + " characters out of " + line.length() + ".");
-		}
-	}
-
-
 }
