@@ -81,7 +81,7 @@
     <CompProperty name="zeroElevation">2034</CompProperty>
     <CompProperty name="rating">TESTSITE1.Elev;Area.Linear.Step</CompProperty>
     <CompProperty name="reservoirId">TESTSITE1</CompProperty>
-    <CompProperty name="LocationLevel">FTPK.Depth.Const.0.Secchi Depth</CompProperty>
+    <CompProperty name="LocationLevel">TESTSITE1.Depth.Const.0.Secchi Depth</CompProperty>
     <CompProperty name="wtpTsId">
       FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap-test
     </CompProperty>

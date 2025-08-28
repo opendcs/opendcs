@@ -1,10 +1,10 @@
 -- SQL script to load location level data for ResEvap Test2
--- This creates a location level FTPK.Depth.Const.0.Secchi Depth with value 13 ft
+-- This creates a location level TESTSITE1.Depth.Const.0.Secchi Depth with value 13 ft
 
 DECLARE
     l_office_id VARCHAR2(16) := 'DEFAULT_OFFICE';
-    l_location_id VARCHAR2(57) := 'FTPK';
-    l_location_level_id VARCHAR2(256) := 'FTPK.Depth.Const.0.Secchi Depth';
+    l_location_id VARCHAR2(57) := 'TESTSITE1';
+    l_location_level_id VARCHAR2(256) := 'TESTSITE1.Depth.Const.0.Secchi Depth';
     l_parameter_id VARCHAR2(49) := 'Depth';
     l_parameter_type_id VARCHAR2(16) := 'Const';
     l_duration_id VARCHAR2(16) := '0';

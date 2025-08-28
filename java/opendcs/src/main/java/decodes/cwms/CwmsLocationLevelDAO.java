@@ -11,6 +11,8 @@ import org.opendcs.database.dai.SiteReferenceMetaData;
 import org.opendcs.database.SimpleTransaction;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.model.SiteReferenceSpecification;
+import org.opendcs.model.SiteReferenceValue;
 import org.slf4j.Logger;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
@@ -94,7 +96,7 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
      * @throws OpenDcsDataException on database error
      */
     @Override
-    public CwmsSiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId)
+    public SiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId)
         throws OpenDcsDataException
     {
         return getLatestLocationLevelValue(tx, locationLevelId, null);
@@ -109,8 +111,8 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
      * @throws OpenDcsDataException on database error
      */
     @Override
-    public CwmsSiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId,
-                                                              String targetUnits) throws OpenDcsDataException
+    public SiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId,
+                                                          String targetUnits) throws OpenDcsDataException
     {
         Connection conn = tx.connection(Connection.class)
             .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
@@ -134,7 +136,7 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
      * @throws OpenDcsDataException on database error
      */
     @Override
-    public List<CwmsSiteReferenceSpecification> getLocationLevelSpecs(DataTransaction tx, String locationId)
+    public List<? extends SiteReferenceSpecification> getLocationLevelSpecs(DataTransaction tx, String locationId)
         throws OpenDcsDataException
     {
         Connection conn = tx.connection(Connection.class)

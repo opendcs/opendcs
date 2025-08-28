@@ -101,7 +101,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         
         try (DataTransaction tx = db.newTransaction())
         {
-            CwmsSiteReferenceValue value = dao.getLatestLocationLevelValue(tx, testLocationLevelId);
+            CwmsSiteReferenceValue value = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(tx, testLocationLevelId);
             
             // Test passes whether data exists or not
             // If value is not null, verify its structure
@@ -141,17 +141,17 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         try (DataTransaction tx = db.newTransaction())
         {
             // First check if we have any data
-            CwmsSiteReferenceValue baseValue = dao.getLatestLocationLevelValue(tx, testLocationLevelId);
+            CwmsSiteReferenceValue baseValue = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(tx, testLocationLevelId);
             
             // Skip unit conversion test if no data exists
             assumeTrue(baseValue != null, 
                 "Skipping unit conversion test - no data found for " + testLocationLevelId);
             
             // Test conversion from feet to meters
-            CwmsSiteReferenceValue valueInFeet = dao.getLatestLocationLevelValue(
+            CwmsSiteReferenceValue valueInFeet = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(
                 tx, testLocationLevelId, "ft");
             
-            CwmsSiteReferenceValue valueInMeters = dao.getLatestLocationLevelValue(
+            CwmsSiteReferenceValue valueInMeters = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(
                 tx, testLocationLevelId, "m");
             
             if (valueInFeet != null && valueInMeters != null)
@@ -185,7 +185,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         
         try (DataTransaction tx = db.newTransaction())
         {
-            List<CwmsSiteReferenceSpecification> specs = dao.getLocationLevelSpecs(tx, testLocationId);
+            List<CwmsSiteReferenceSpecification> specs = (List<CwmsSiteReferenceSpecification>) dao.getLocationLevelSpecs(tx, testLocationId);
             
             assertNotNull(specs, "Specs list should not be null");
             
@@ -214,11 +214,11 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         try (DataTransaction tx = db.newTransaction())
         {
             // Test getLatestLocationLevelValue with transaction
-            CwmsSiteReferenceValue value = dao.getLatestLocationLevelValue(
+            CwmsSiteReferenceValue value = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(
                 tx, testLocationLevelId);
             
             // Test getLocationLevelSpecs with transaction
-            List<CwmsSiteReferenceSpecification> specs = dao.getLocationLevelSpecs(
+            List<CwmsSiteReferenceSpecification> specs = (List<CwmsSiteReferenceSpecification>) dao.getLocationLevelSpecs(
                 tx, testLocationId);
             
             assertNotNull(specs, "Specs should not be null even if empty");
@@ -244,7 +244,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             String invalidLocationId = "INVALID_FORMAT";
             
             // Should not throw exception, just return null
-            CwmsSiteReferenceValue value = dao.getLatestLocationLevelValue(tx, invalidLocationId);
+            CwmsSiteReferenceValue value =  (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(tx, invalidLocationId);
             
             // Most likely will be null for invalid ID
             // But if not null, it means the ID exists (unlikely for this test ID)

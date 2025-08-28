@@ -48,6 +48,7 @@ import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.model.cwms.CwmsSiteReferenceValue;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -339,7 +340,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         if (secchi == 0){
             try (org.opendcs.database.api.DataTransaction tx = locLevDAO.getTransaction())
             {
-                secchi = locLevDAO.getLatestLocationLevelValue(tx, LocationLevel, "ft").getLevelValue();
+                secchi = ((CwmsSiteReferenceValue) locLevDAO.getLatestLocationLevelValue(tx, LocationLevel, "ft")).getLevelValue();
             }
             catch (OpenDcsDataException ex)
             {
