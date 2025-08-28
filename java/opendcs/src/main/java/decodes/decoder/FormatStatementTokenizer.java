@@ -1,9 +1,20 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.decoder;
 
-import ilex.util.Logger;
 import decodes.db.DecodesScript;
 import decodes.db.FormatStatement;
 
@@ -13,11 +24,8 @@ FormatStatementTokenizer parses out DecodesOperations from a format statement.
 public class FormatStatementTokenizer
 {
 	private String fmtStatementText;
-//	String origString;
 	private DecodesScript myScript;
 	private int offset = 0;
-	private char quoteChar = (char)0;
-	private boolean escaped = false;
 	private int lastTokenStart = 0;
 	private int wholeStatementOffset = 0;
 	private FormatStatement formatStatement = null;
@@ -189,51 +197,17 @@ public class FormatStatementTokenizer
 				fmtStatementText, op, lastTokenStart);
 		}
 
-		// After the above, the last char processed is one of:
-		// - delimiter between this op & the next
-		// - right paren after op or function argument
-		if (c != ',' && c != (char)0) // not a delimiter or end of line
-		{
-//			if ((c = nextChar()) != ',' && c != (char)0)
-//				pushback();
-		}
 		
 		int tokenStart = wholeStatementOffset+lastTokenStart;
 		int tokenEnd = wholeStatementOffset+offset;
 		if (c == ',')
 			tokenEnd--; // Don't include comma delimiter in token
 
-//		Logger.instance().debug3("FST returning op "
-//			+ ret.getClass().getName() + " repetitions=" + ret.repetitions
-//			+ " args='" + args + "' start=" + tokenStart
-//			+ ", end=" + tokenEnd);
 		ret.setTokenPosition(new TokenPosition(tokenStart, tokenEnd));
 		ret.setFormatStatement(formatStatement);
 		
 		return ret;
 	}
-
-	/**
-	  Removes all spaces that are not inside a quoted string. This saves
-	  the tokenizer of checking for them.
-	  @param s the input string
-	  @return the collapsed string
-	*/
-	private String removeSpaces(String s)
-	{
-		StringBuffer sb = new StringBuffer();
-		boolean instring = false;
-
-		for ( int i = 0; i < s.length(); i++ ) 
-		{
-			if ( s.charAt(i) == '\'') 
-				instring = !instring;
-			if (instring || !Character.isWhitespace(s.charAt(i)))
-				sb.append(s.charAt(i));
-		}
-		return(sb.toString());
-	}
-
 
 	/**
 	 * Gets the arguments within parens after an opcode or function name.

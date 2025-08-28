@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.decoder;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.Variable;
@@ -14,6 +28,9 @@ import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.RawMessage;
 import decodes.db.Constants;
@@ -41,11 +58,11 @@ import decodes.util.DecodesSettings;
  * After executing, the cursor is left after the last sensor block that was
  * successfully parsed.
  */
-public class AsciiSelfDescFunction
-	extends DecodesFunction 
+public class AsciiSelfDescFunction extends DecodesFunction
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "AsciiSelfDesc";
-	
+
 	/** Pattern for a floating point number optionally preceded by a sign */
 	public static final String floatNumber = "[+-]?\\d*\\.?[\\dM/]+";
 
@@ -63,32 +80,32 @@ public class AsciiSelfDescFunction
 	 *   <li>4: String containing one or more sensor values</li>
 	 * </ul>
 	 */
-	public static final String sensorBlock = 
+	public static final String sensorBlock =
 		"^\\s*:(\\w+)\\s+(\\d+)\\s*#(\\d+)((?:\\s*" + floatNumber + ")+)";
 	// Note -- this is too permissive:
 	//		"[^:]*:(\\w+)\\s+(\\d+)\\s*#(\\d+)([^:]*)";
-	
+
 	/**
 	 * Many have a BATTLOAD block at the end of the message with an optional
 	 * MOFF (typically zero) and a single battery load sample.
 	 */
 	public static final String battloadBlock =
 		"^\\s*:(\\w+)\\s+(?:\\d+\\s+)?" + capFloatNumber;
-	
+
 	private Pattern sensorBlockPat = Pattern.compile(sensorBlock);
 	private Pattern capFloatNumberPat = Pattern.compile(capFloatNumber);
 	private Pattern battloadBlockPat = Pattern.compile(battloadBlock);
 	private HashMap<String, Integer> labelSensorNumMap = new HashMap<String, Integer>();
-	
+
 	private boolean testMode = false;
 	private int lineNumber = 1; // line number where first block starts
 	private boolean processMOFF = DecodesSettings.instance().asciiSelfDescProcessMOFF;
-	
+
 	public AsciiSelfDescFunction()
 	{
 	}
-	
-	
+
+
 	/**
 	 * Parse the passed message.
 	 * @param msg the message in a single string
@@ -98,46 +115,49 @@ public class AsciiSelfDescFunction
 	{
 		int numBlocks = 0;
 		int endProcessingIdx = 0;
-		
+
 		// The sensor block pattern must be at the beginning of data so that
 		// we don't eat characters not part of a sensor block.
 		// So recreate the block matcher for each time through.
 		String parseData = msgData;
 		for(Matcher blockMatcher = sensorBlockPat.matcher(parseData);
-			blockMatcher.find(); 
-			parseData = msgData.substring(endProcessingIdx), 
+			blockMatcher.find();
+			parseData = msgData.substring(endProcessingIdx),
 			blockMatcher = sensorBlockPat.matcher(parseData))
 		{
 			numBlocks++;
-			
+
 			// Get the label, minute offset, minute index and sensor data
-			trace("Sensor Block at " + endProcessingIdx + ", block extent=("
-				+ blockMatcher.start() + "," + blockMatcher.end() + "): "
-				+ "'" + blockMatcher.group(0) + "'");
+			log.trace("Sensor Block at {}, block extent=({},{}): '{}'",
+					  endProcessingIdx, blockMatcher.start(), blockMatcher.end(), blockMatcher.group(0));
 			endProcessingIdx += blockMatcher.end();
 			String label = blockMatcher.group(1);
-			trace("\tSensor Label '" + label + "'");
+			log.trace( "Sensor Label '{}'", label);
 			int moff = -1;
 			String smoff = blockMatcher.group(2);
-			trace("\tMinute Offset '" + smoff + "'");
+			log.trace("Minute Offset '{}'", smoff);
 			try { moff = Integer.parseInt(smoff); }
 			catch(NumberFormatException ex)
 			{
 				moff = -1;
-				warning("Invalid minute offset '" + smoff + "'.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid minute offset '{}'", smoff);
 			}
 			int mint = -1;
 			String smint = blockMatcher.group(3);
-			trace("\tMinute Interval '" + smint + "'");
+			log.trace("Minute Interval '{}'", smint);
 			try { mint = Integer.parseInt(smint); }
 			catch(NumberFormatException ex)
 			{
 				mint = -1;
-				warning("Invalid minute offset '" + smint + "'.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid minute interval '{}'", smint);
 			}
-			
+
 			String sensorData = blockMatcher.group(4);
-			trace("\tSensor Data '" + sensorData + "'");
+			log.trace("Sensor Data '{}'", sensorData);
 			TimeSeries ts = null;
 			int sensorNumber = -1;
 			if (decmsg != null)
@@ -145,11 +165,11 @@ public class AsciiSelfDescFunction
 				ts = mapLabel2TimeSeries(label, decmsg);
 
 				if (ts == null)
-					warning("Cannot map sensor for label '" + label + "' -- values will be discarded.");
+					log.warn("Cannot map sensor for label '{}' -- values will be discarded.", label);
 				else
 				{
 					sensorNumber = ts.getSensorNumber();
-				
+
 					if (processMOFF && moff > 0)
 					{
 						// Reset 'current' time to 'message' time minus offset.
@@ -161,17 +181,16 @@ public class AsciiSelfDescFunction
 						msec -= (moff * 60000L);
 						Date timeStamp = new Date(msec);
 						decmsg.getTimer().setComplete(timeStamp);
-						trace("After Minute OFFset " + moff + ", timer=" + timeStamp);
+						log.trace("After Minute OFFset {}, timer={}", moff, timeStamp);
 					}
 					if (mint != -1)
 					{
-						trace("Setting interval for sensor " + sensorNumber + " to " 
-							+ mint + " minutes.");
+						log.trace( "Setting interval for sensor {} to {} minutes.", sensorNumber, mint);
 						decmsg.setTimeInterval(sensorNumber, mint*60);
 					}
 				}
 			}
-			
+
 			Matcher sampleMatcher = capFloatNumberPat.matcher(sensorData);
 			boolean sampleFound = false;
 			int numSamples = 0;
@@ -179,7 +198,7 @@ public class AsciiSelfDescFunction
 			{
 				sampleFound = true;
 				String sample = sampleMatcher.group(1);
-				trace("\t\tsample[" + (numSamples++) + "]: " + sample);
+				log.trace("tsample[{}]: {}",  numSamples++, sample);
 				if (ts != null)
 				{
 					if (sample.startsWith("M") || sample.startsWith("/"))
@@ -192,50 +211,58 @@ public class AsciiSelfDescFunction
 					}
 					try
 					{
-						double x = Double.parseDouble(sample); 
+						double x = Double.parseDouble(sample);
 						Variable v = new Variable(x);
 						if (sensorNumber != -1)
 							decmsg.addSample(sensorNumber, v, lineNumber);
 					}
 					catch (NumberFormatException ex)
 					{
-						warning("Cannot parse sample data '" + sample + "' for sensor label '"
-							+ label + "' sensorNumber=" + sensorNumber + " -- ignored.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Cannot parse sample data '{}' for sensor label '{}'" +
+						   		" sensorNumber={} -- ignored.",
+								sample, label, sensorNumber);
 					}
 				}
 			}
 			if (!sampleFound)
-				trace("\t\tNo samples found.");
+			{
+				log.trace("No samples found.");
+			}
 		}
-		
+
 		Matcher blockMatcher = battloadBlockPat.matcher(msgData.substring(endProcessingIdx));
-		if (blockMatcher.find()) 
+		if (blockMatcher.find())
 		{
 			// Get the label, minute offset, minute index and sensor data
 			numBlocks++;
-			trace("Battload block at (" + 
-				endProcessingIdx+blockMatcher.start() + "," + 
-				endProcessingIdx+blockMatcher.end() + "): "
-				+ "'" + blockMatcher.group(0) + "'");
+			log.trace("Battload block at ({},{}): '{}'",
+					  endProcessingIdx+blockMatcher.start(),
+					  endProcessingIdx+blockMatcher.end(),
+					  blockMatcher.group(0));
 			endProcessingIdx += blockMatcher.end();
 			String label = blockMatcher.group(1);
 			String sample = blockMatcher.group(2);
-			trace("\tBattload Sensor Label '" + label + "' value=" + sample);
+			log.trace("Battload Sensor Label '{}' value={}", label, sample);
 			if (decmsg != null)
 				{
 				TimeSeries ts = mapLabel2TimeSeries(label, decmsg);
 				if (ts != null)
 				{
-					try 
+					try
 					{
-						double x = Double.parseDouble(sample); 
+						double x = Double.parseDouble(sample);
 						Variable v = new Variable(x);
 						decmsg.addSample(ts.getSensorNumber(), v, lineNumber);
 					}
 					catch (NumberFormatException ex)
 					{
-						warning("Cannot parse battload sample data '" + sample + "' for sensor label '"
-							+ label + "' sensorNumber=" + ts.getSensorNumber() + " -- ignored.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Cannot parse battload sample data '{}' for sensor label '{}'" +
+						   		" sensorNumber={} -- ignored.",
+								sample, label, ts.getSensorNumber());
 					}
 				}
 			}
@@ -244,11 +271,11 @@ public class AsciiSelfDescFunction
 		while(endProcessingIdx < msgData.length()
 			&& Character.isWhitespace(msgData.charAt(endProcessingIdx)))
 			endProcessingIdx++;
-		
-		trace("Processed " + numBlocks + " blocks.");
+
+		log.trace("Processed {} blocks.", numBlocks);
 		return endProcessingIdx;
 	}
-	
+
 	private TimeSeries mapLabel2TimeSeries(String label, DecodedMessage decmsg)
 	{
 		// Find the time series for this label, using the mapping described above.
@@ -299,7 +326,7 @@ public class AsciiSelfDescFunction
 
 
 	@Override
-	public void execute(DataOperations dd, DecodedMessage decmsg) 
+	public void execute(DataOperations dd, DecodedMessage decmsg)
 		throws DecoderException
 	{
 		// Get from here to end of message into a String
@@ -312,29 +339,13 @@ public class AsciiSelfDescFunction
 			dd.forwardspace();
 		}
 		String toParse = sb.toString();
-		trace("Processing '" + toParse + "'");
-		
+		log.trace("Processing '{}'", toParse);
+
 		int finishIdx = parse(toParse, decmsg);
 		dd.setBytePos(startPos + finishIdx);
 	}
 
-	private void trace(String s)
-	{
-		if (testMode)
-			System.out.println(module + " " + s);
-		else
-			Logger.instance().debug3(module + " " + s);
-	}
 
-	private void warning(String s)
-	{
-		if (testMode)
-			System.out.println(module + " " + s);
-		else
-			Logger.instance().warning(module + " " + s);
-	}
-
-	
 	/**
 	 * The argument contains a map of message sensor labels to DECODES sensor
 	 * numbers, separated by comma.
@@ -350,7 +361,7 @@ public class AsciiSelfDescFunction
 	 * </ul>
 	 */
 	@Override
-	public void setArguments(String argString, DecodesScript script) 
+	public void setArguments(String argString, DecodesScript script)
 		throws ScriptFormatException
 	{
 		StringTokenizer st = new StringTokenizer(argString, ",");
@@ -359,7 +370,7 @@ public class AsciiSelfDescFunction
 			String labnum = st.nextToken();
 			int idx = labnum.indexOf('=');
 			if (idx == -1)
-				throw new ScriptFormatException(module 
+				throw new ScriptFormatException(module
 					+ " invalid label/sensor map '" + labnum + "'. Expect label=sensorNum");
 			try
 			{
@@ -375,12 +386,12 @@ public class AsciiSelfDescFunction
 			}
 			catch(Exception ex)
 			{
-				throw new ScriptFormatException(module 
-					+ " invalid label/sensor map '" + labnum + "': " + ex);
+				throw new ScriptFormatException(module
+					+ " invalid label/sensor map '" + labnum + "'", ex);
 			}
 		}
 	}
-	
+
 	/**
 	 * Main method for test. Pass name of a file containing ascii self-describing
 	 * messages, one per line.
@@ -396,7 +407,7 @@ public class AsciiSelfDescFunction
 		String line;
 		AsciiSelfDescFunction asdp = new AsciiSelfDescFunction();
 		asdp.setTestMode(true);
-		
+
 		while((line = lnr.readLine()) != null)
 		{
 			System.out.println("=============");
@@ -409,12 +420,10 @@ public class AsciiSelfDescFunction
 			if ((char)dataOps.curByte() != ':')
 				dataOps.forwardspace();
 			asdp.execute(dataOps, null);
-			System.out.println("Processed " + 
-				(dataOps.getBytePos()+rawMsg.getHeaderLength()) + " characters out of " + 
+			System.out.println("Processed " +
+				(dataOps.getBytePos()+rawMsg.getHeaderLength()) + " characters out of " +
 				line.length() + ".");
-			
-//			int len = asdp.parse(line.substring(37), null);
-//			System.out.println("Processed " + (len+37) + " characters out of " + line.length() + ".");
+
 		}
 	}
 

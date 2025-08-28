@@ -1,55 +1,36 @@
 /*
-* $Id$
-* 
-* $Log$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* 2023/02/21 Baoyu Yin
-* Adding raw messages to the printout messages - ING 633
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* 2023/02/15 Baoyu Yin
-* Fixing issues with twos complement and undefined number - ING629 & ING 631
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* 2023/02/08 Baoyu Yin
-* Change L1 decoding (ING-625)
-*
-* 2023/01/09 Baoyu Yin
-* Comment out 1 hour time shift for Redundant Paroscientific #2 (ING-615)
-*
-* Revision 1.2  2014/05/28 13:09:26  mmaloney
-* dev
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* Revision 1.3  2011/09/27 01:24:48  mmaloney
-* Enhancements for SHEF and NOS Decoding.
-*
-* Revision 1.2  2011/09/21 18:27:08  mmaloney
-* Updates to NOS decoding.
-*
-* Revision 1.1  2011/08/26 19:49:34  mmaloney
-* Implemented the NOS decoders.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decoder;
 
 import java.util.Calendar;
 import java.util.Date;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.Variable;
 import decodes.db.DecodesScript;
 import decodes.db.Platform;
 import decodes.db.PlatformConfig;
-import decodes.decoder.DataOperations;
-import decodes.decoder.DecodedMessage;
-import decodes.decoder.DecodesFunction;
 import decodes.datasource.RawMessage;
 
 /** Handles NOS Hourly message format. */
-public class NosHourly
-        extends NosDecoder 
+public class NosHourly extends NosDecoder
 {
+        private static final Logger log = OpenDcsLoggerFactory.getLogger();
         public static final String module = "NosHourly";
 
         public NosHourly()
@@ -62,9 +43,9 @@ public class NosHourly
                 return new NosHourly();
         }
 
-        public String getFuncName() 
-        { 
-                return module; 
+        public String getFuncName()
+        {
+                return module;
         }
 
         /**
@@ -87,12 +68,12 @@ public class NosHourly
                         throw new DecoderException(module + " function cannot be called with null config.");
 
                 char msgType = (char)dd.curByte();
-                if (msgType != 'N') 
+                if (msgType != 'N')
                 {
                         RawMessage ErrRawM = msg.getRawMessage();
                         byte[] ErrRawData = ErrRawM.getData();
                         String RawDataString = new String(ErrRawData);
-                        System.out.println("The following Hourly Raw Message may have an issue: " + RawDataString);
+                        log.trace("The following Hourly Raw Message may have an issue: {}", RawDataString);
 
                         throw new DecoderException(module + " requires 'N' in first char.");
                 }
@@ -106,7 +87,7 @@ public class NosHourly
                 dd.forwardspace();
                 msg.getRawMessage().setPM(PM_DCP_NUM, new Variable(dcpNum));
 
-                Logger.instance().info(module + ": stationId=" + stationId + ", dcpNum=" + dcpNum);
+                log.info("stationId={}, dcpNum={}", stationId, dcpNum);
 
                 double datumOffset = getDouble(3, false);
                 if ((int)datumOffset == 262143) datumOffset = 999999;
@@ -122,8 +103,8 @@ public class NosHourly
 
                 // Time offset 1 byte
                 int timeOffset = getInt(1, false);
-                Logger.instance().info(module + ": dataumOffset=" + datumOffset + 
-                        ", sensorOffset=" + sensorOffset + ", timeOffset=" + timeOffset);
+                log.info("dataumOffset={}, sensorOffset={}, timeOffset={}",
+                         datumOffset, sensorOffset, timeOffset);
                 boolean haveBV = false;
 
                 initSensorIndeces();
@@ -139,7 +120,7 @@ public class NosHourly
                 while(dd.moreChars())
                 {
                         char flag = (char)dd.curByte();
-                        Logger.instance().debug3(module + " flag=" + flag);
+                        log.trace("flag={}", flag);
                         dd.forwardspace();
                         switch(flag)
                         {
@@ -155,14 +136,14 @@ public class NosHourly
                                 {
                                         msg.getRawMessage().setPM(PM_STATION_TIME, new Variable(dataTime));
                                         firstTime = false;
-                                        Logger.instance().info(module + " Set station time to " + cal.getTime());
+                                        log.trace("Set station time to {}", cal.getTime());
                                 }
-                                Logger.instance().info(module + " Set calendar to " + cal.getTime());
+                                log.trace("Set calendar to {}", cal.getTime());
                                 break;
                         case '1': // PWL Aqua Track = Acousitic Water Level
                         case '(': // Air Gap
                                 sensorNum = getSensorNumber(
-                                        flag == '1' ? 'A' : 
+                                        flag == '1' ? 'A' :
                                         flag == '(' ? 'Q' : 'A', config);
                                 if (sensorNum == -1)
                                         continue;
@@ -190,8 +171,8 @@ public class NosHourly
                                 cal.setTime(dataTime);
                                 for(int i=0; i<10; i++)
                                 {
-                                        msg.addSampleWithTime(sensorNum, 
-                                                new Variable(offset*250 + getInt(2, false)), 
+                                        msg.addSampleWithTime(sensorNum,
+                                                new Variable(offset*250 + getInt(2, false)),
                                                 cal.getTime(), 1);
                                         cal.add(Calendar.MINUTE, -6);
                                 }
@@ -230,11 +211,7 @@ public class NosHourly
                                 x = getInt(2, false); // speed
                                 y = getInt(2, false); // dir
                                 z = getInt(2, false); // gust
-/*
-                                if (x == 4095) x = 999999;
-                                if (y == 4095) y = 999999;
-                                if (z == 4095) z = 999999;
-*/
+
                                 v = new Variable("" + x + "," + y + "," + z);
                                 // Determine if 1 or 10 values are present by checking for a
                                 // flag where the 2nd wind sample would start.
@@ -284,8 +261,6 @@ public class NosHourly
                                         continue;
                                 getAncillary(ancSensor, cal, dataTime, false, msg, dd);
                                 break;
-//                      case '+': // Frequency #1 -- Ignore as per comment from Sudha
-//                              break;
                         case '!': // Shaft Angle Encoder (SAE)
                                 sensorNum = getSensorNumber('V', config);
                                 if (sensorNum == -1)
@@ -351,7 +326,7 @@ public class NosHourly
                                 ancSensor = getSensorNumber('L', config);
                                 if (ancSensor == -1)
                                     continue;
-                               
+
                                 getAncillary(ancSensor, cal, dataTime, false, msg, dd);
                                 // Phil says that after VB, increment DCP number and reset sensor indeces
 
@@ -419,16 +394,18 @@ public class NosHourly
                                         ancSensor = getSensorNumber('O', config);
                                         if (ancSensor == -1)
                                                 continue;
-                                        msg.addSampleWithTime(ancSensor, 
+                                        msg.addSampleWithTime(ancSensor,
                                                 new Variable("" + x + "," + y), dataTime, 1);
                                 }
                                 break;
                         default:
                                 if (!Character.isWhitespace(flag))
-                                        Logger.instance().warning(module + " Unrecognized flag char '" + flag + "'");
+                                {
+                                        log.warn("Unrecognized flag char '{}'", flag);
+                                }
                         }
                 }
-                Logger.instance().debug3(module + " end of message");
+                log.trace("end of message");
         }
 
 
