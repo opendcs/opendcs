@@ -23,6 +23,8 @@ import decodes.cwms.CwmsLocationLevelDAO;
 import decodes.tsdb.TimeSeriesDb;
 import org.opendcs.database.dai.SiteReferenceMetaData;
 
+import org.opendcs.model.SiteReferenceValue;
+import org.opendcs.model.SiteReferenceSpecification;
 import org.opendcs.model.cwms.CwmsSiteReferenceValue;
 import org.opendcs.model.cwms.CwmsSiteReferenceSpecification;
 
@@ -268,11 +270,11 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
             
             // All interface methods should work with transactions
-            CwmsSiteReferenceValue value = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId);
+            SiteReferenceValue value = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId);
             
-            CwmsSiteReferenceValue valueWithUnits = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId, "ft");
+            SiteReferenceValue valueWithUnits = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId, "ft");
             
-            List<CwmsSiteReferenceSpecification> specs = daiInterface.getLocationLevelSpecs(tx, "TEST_LOCATION");
+            List<? extends SiteReferenceSpecification> specs = daiInterface.getLocationLevelSpecs(tx, "TEST_LOCATION");
             
             // No exceptions should be thrown
         }

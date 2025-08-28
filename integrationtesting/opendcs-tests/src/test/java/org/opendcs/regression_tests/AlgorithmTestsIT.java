@@ -14,7 +14,11 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.Collection;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -66,6 +70,8 @@ import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 import ilex.var.TimedVariable;
 import ilex.util.FileUtil;
+import org.opendcs.database.api.DataTransaction;
+import org.opendcs.database.api.OpenDcsDatabase;
 
 import hec.data.RatingException;
 
@@ -77,6 +83,9 @@ public class AlgorithmTestsIT extends AppTestBase
 
     @ConfiguredField
     private TimeSeriesDb tsDb;
+    
+    @ConfiguredField
+    private OpenDcsDatabase db;
 
     /**
      * This just tests that timeseries can be saved to the database, retrieved, and totally deleted.
@@ -180,6 +189,11 @@ public class AlgorithmTestsIT extends AppTestBase
                             assumeFalse("Test is disabled by config file for: " + substring, !substring.equals(testEngine));
                         }
                     }
+                }
+                else if (name.endsWith(".sql"))
+                {
+                    log.info("Found SQL file: " + comp_data.getAbsolutePath());
+                    executeSqlFile(comp_data);
                 }
             }
             loadRatingimport(buildFilePath(test.getAbsolutePath(),"rating"));
@@ -301,6 +315,62 @@ public class AlgorithmTestsIT extends AppTestBase
                     log.error(ex.getMessage(), ex);
                 }
             }
+        }
+    }
+    
+    /**
+     * Execute SQL file in the database for test setup
+     * @param sqlFile The SQL file to execute
+     */
+    private void executeSqlFile(File sqlFile)
+    {
+        if (db == null)
+        {
+            log.warn("OpenDcsDatabase not available, skipping SQL file execution: " + sqlFile.getName());
+            return;
+        }
+        
+        try
+        {
+            // Read the SQL file content
+            String sqlContent = new String(Files.readAllBytes(sqlFile.toPath()), StandardCharsets.UTF_8);
+            
+            // Replace office ID placeholder if this is a CWMS database
+            if (tsDb instanceof CwmsTimeSeriesDb)
+            {
+                CwmsTimeSeriesDb cwmsDb = (CwmsTimeSeriesDb) tsDb;
+                String officeId = cwmsDb.getDbOfficeId();
+                sqlContent = sqlContent.replace("DEFAULT_OFFICE", officeId);
+            }
+            
+            // Execute the SQL using a transaction
+            try (DataTransaction tx = db.newTransaction())
+            {
+                Connection conn = tx.connection(Connection.class)
+                    .orElseThrow(() -> new RuntimeException("JDBC Connection not available in this transaction."));
+                
+                // Split by semicolons to handle multiple statements
+                String[] statements = sqlContent.split(";");
+                
+                for (String sql : statements)
+                {
+                    sql = sql.trim();
+                    if (!sql.isEmpty())
+                    {
+                        try (Statement stmt = conn.createStatement())
+                        {
+                            log.debug("Executing SQL statement from file: " + sqlFile.getName());
+                            stmt.execute(sql);
+                        }
+                    }
+                }
+                log.info("Successfully executed SQL file: " + sqlFile.getName());
+            }
+        }
+        catch (Exception ex)
+        {
+            log.error("Failed to execute SQL file " + sqlFile.getName() + ": " + ex.getMessage(), ex);
+            // Don't fail the test, just log the error
         }
     }
 }
