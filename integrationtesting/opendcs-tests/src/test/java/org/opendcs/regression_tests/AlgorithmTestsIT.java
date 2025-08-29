@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Statement;
+import java.sql.CallableStatement;
 import java.util.Collection;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -349,20 +350,12 @@ public class AlgorithmTestsIT extends AppTestBase
                 Connection conn = tx.connection(Connection.class)
                     .orElseThrow(() -> new RuntimeException("JDBC Connection not available in this transaction."));
                 
-                // Split by semicolons to handle multiple statements
-                String[] statements = sqlContent.split(";");
-                
-                for (String sql : statements)
+                // Use CallableStatement to execute the SQL (handles PL/SQL blocks properly)
+                try (CallableStatement stmt = conn.prepareCall(sqlContent))
                 {
-                    sql = sql.trim();
-                    if (!sql.isEmpty())
-                    {
-                        try (Statement stmt = conn.createStatement())
-                        {
-                            log.debug("Executing SQL statement from file: " + sqlFile.getName());
-                            stmt.execute(sql);
-                        }
-                    }
+                    log.info("Executing SQL from file: " + sqlFile.getName());
+                    log.debug("SQL Content: " + sqlContent.substring(0, Math.min(200, sqlContent.length())) + "...");
+                    stmt.execute();
                 }
                 log.info("Successfully executed SQL file: " + sqlFile.getName());
             }
