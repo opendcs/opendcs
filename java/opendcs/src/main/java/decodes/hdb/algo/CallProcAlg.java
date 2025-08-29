@@ -1,19 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 
 
 import decodes.hdb.dbutils.*;
-import decodes.hdb.HdbFlags;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -21,6 +29,8 @@ import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Takes up to 5 input values labeled input1 ... input5.\n" +
 "The callproc property will have all the proper procedure call elements already established, \n" +
@@ -28,6 +38,7 @@ import org.opendcs.annotations.algorithm.Output;
  "The <input1> ... <input5> and <tsbt> can be used if you want to use the procedure call dynamically.")
 public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input1;
 	@Input
@@ -114,7 +125,7 @@ public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		{
 			new_proccall = new_proccall.replaceAll("<<input5>>",(Double.valueOf(input5)).toString());
 		}
-		debug3("doAWTimeSlice input1=" + input1 +", input2=" + input2);
+		log.trace("doAWTimeSlice input1={}, input2={}", input1, input2);
 
 		do_setoutput = true;
 		if (do_setoutput)
@@ -128,7 +139,7 @@ public class CallProcAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				String dt_fmt = "dd-MMM-yyyy HH:mm";
 				// now do the procedure call with all the needed data
 				db.callProc(new_proccall,dbobj);
-				debug3(" Proc Call  STRING:" + new_proccall + "   DBOBJ: " + dbobj.toString() );
+				log.trace("Proc Call  STRING:{},   DBOBJ: {}", new_proccall, dbobj.toString() );
 			 }
 			 catch (SQLException ex)
 			 {
