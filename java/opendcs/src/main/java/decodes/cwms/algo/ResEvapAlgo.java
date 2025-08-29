@@ -145,7 +145,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
 //	public String MaxTempDepthId;
 
     @org.opendcs.annotations.PropertySpec(name = "wtpTsId", propertySpecType = PropertySpec.STRING,
-            description = "Base String for water Temperature Profiles, Example FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap")
+            description = "Base String for water Temperature Profiles, Example FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap", required = true)
     public String wtpTsId;
     @org.opendcs.annotations.PropertySpec(name = "reservoirId", propertySpecType = PropertySpec.STRING,
             description = "Location ID of reservoir")
@@ -154,13 +154,27 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             description = "Average secchi depth of reservoir in feet")
     public double secchi;
     @org.opendcs.annotations.PropertySpec(name = "zeroElevation", propertySpecType = PropertySpec.NUMBER,
-            description = "Streambed elevation of reservoir in feet")
+            description = "Streambed elevation of reservoir in feet",
+    requirementGroups = {@org.opendcs.annotations.PropertySpec.RequirementGroupDef(
+                name = "Location2",
+                type = org.opendcs.annotations.PropertySpec.RequirementGroupType.ALL_REQUIRED)})
     public double zeroElevation;
     @org.opendcs.annotations.PropertySpec(name = "latitude", propertySpecType = PropertySpec.NUMBER,
-            description = "Latitude of reservoir")
+            description = "Latitude of reservoir",
+            requirementGroups = {@org.opendcs.annotations.PropertySpec.RequirementGroupDef(
+                name = "Location",
+                type = org.opendcs.annotations.PropertySpec.RequirementGroupType.AT_LEAST_ONE
+)})
     public double latitude;
     @org.opendcs.annotations.PropertySpec(name = "longitude", propertySpecType = PropertySpec.NUMBER,
-            description = "Longitude of reservoir")
+            description = "Longitude of reservoir",
+            requirementGroups = {@org.opendcs.annotations.PropertySpec.RequirementGroupDef(
+            name = "Location",
+            type = org.opendcs.annotations.PropertySpec.RequirementGroupType.AT_LEAST_ONE
+    ),
+     @org.opendcs.annotations.PropertySpec.RequirementGroupDef(
+             name = "Location2",
+             type = org.opendcs.annotations.PropertySpec.RequirementGroupType.ALL_REQUIRED)})
     public double longitude;
     @org.opendcs.annotations.PropertySpec(name = "windShear", propertySpecType = PropertySpec.STRING,
             description = "Windshear equation to be utilized in computation")

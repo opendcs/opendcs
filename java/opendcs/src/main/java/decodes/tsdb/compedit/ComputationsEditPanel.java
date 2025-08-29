@@ -11,6 +11,7 @@ import javax.swing.border.TitledBorder;
 import decodes.gui.PropertiesEditDialog;
 import decodes.gui.properties.PropertiesTableModel;
 import decodes.util.PropertySpec;
+import decodes.util.PropertyGroupValidator;
 import opendcs.dai.ComputationDAI;
 import ilex.gui.DateTimeCalendar;
 import ilex.util.AsciiUtil;
@@ -758,7 +759,10 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
         }
         // Check requirement groups before saving
         PropertiesTableModel model = (PropertiesTableModel)propertiesPanel.propertiesTable.getModel();
-        List<String> validationErrors = model.getValidationErrors();
+        PropertyGroupValidator validator = model.getGroupValidator();
+        List<String> validationErrors = validator != null ? 
+            validator.getValidationErrors(model.getCurrentPropertiesMap()) : 
+            new ArrayList<>();
         
         if (!validationErrors.isEmpty())
         {

@@ -15,6 +15,7 @@ import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.gui.properties.PropertiesTableModel;
 import decodes.util.PropertySpec;
 import decodes.util.RequirementGroup;
+import decodes.util.PropertyGroupValidator;
 
 import org.opendcs.gui.GuiConstants;
 
@@ -100,14 +101,15 @@ public class PropertiesEditPanel extends JPanel
                 PropertySpec ps = propHash.get(pn);
                 cr.setToolTipText(ps != null ? ps.getDescription() : "");
                 // Check if this property is required and highlight if missing
-                if (ps != null && model.isPropertyRequired(pn)) {
+                PropertyGroupValidator validator = model.getGroupValidator();
+                if (ps != null && validator != null && validator.isPropertyRequired(pn)) {
                     boolean hasValue = value != null && !value.toString().trim().isEmpty();
-                    List<RequirementGroup> groups = model.getPropertyRequirementGroups(pn);
+                    List<RequirementGroup> groups = validator.getPropertyRequirementGroups(pn);
                     boolean anyGroupSatisfied = true;
                     
                     // Check if at least one of the property's requirement groups is satisfied
                     for (RequirementGroup group : groups) {
-                        if (!model.isRequirementGroupSatisfied(group.getGroupName())) {
+                        if (!validator.isRequirementGroupSatisfied(group.getGroupName(), model.getCurrentPropertiesMap())) {
                             anyGroupSatisfied = false;
                             break;
                         }

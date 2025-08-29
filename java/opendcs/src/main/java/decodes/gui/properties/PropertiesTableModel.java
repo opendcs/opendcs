@@ -23,6 +23,7 @@ import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 import decodes.util.RequirementGroup;
+import decodes.util.PropertyGroupValidator;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 
@@ -50,6 +51,9 @@ public class PropertiesTableModel extends AbstractTableModel
      
      /** Map of property names to their requirement groups for quick lookup */
      private Map<String, List<RequirementGroup>> propertyToGroups = new HashMap<>();
+     
+     /** Validator for property groups and requirements */
+     private PropertyGroupValidator groupValidator;
 
      /** Constructs a new table model for the passed Properties set. */
      public PropertiesTableModel(Properties properties)
@@ -65,94 +69,23 @@ public class PropertiesTableModel extends AbstractTableModel
      }
      
      /**
-      * Get all requirement groups including individually required properties
-      * @return Map of requirement group names to RequirementGroup objects
+      * Get the property group validator
+      * @return PropertyGroupValidator instance or null if not initialized
       */
-     public Map<String, RequirementGroup> getRequirementGroups() {
-         return new HashMap<>(requirementGroups);
+     public PropertyGroupValidator getGroupValidator() {
+         return groupValidator;
      }
      
      /**
-      * Check if a property is required (either individually or as part of a group)
-      * @param propertyName The name of the property to check
-      * @return true if the property is in any requirement group
+      * Get current properties as a Map for validation
+      * @return Map of property names to their values
       */
-     public boolean isPropertyRequired(String propertyName) {
-         List<RequirementGroup> groups = propertyToGroups.get(propertyName.toUpperCase());
-         return groups != null && !groups.isEmpty();
-     }
-     
-     /**
-      * Get the requirement groups for a specific property
-      * @param propertyName The name of the property
-      * @return List of RequirementGroup objects this property belongs to
-      */
-     public List<RequirementGroup> getPropertyRequirementGroups(String propertyName) {
-         List<RequirementGroup> groups = propertyToGroups.get(propertyName.toUpperCase());
-         return groups != null ? new ArrayList<>(groups) : new ArrayList<>();
-     }
-     
-     /**
-      * Check if a requirement group is satisfied based on current property values
-      * @param groupName The name of the requirement group
-      * @return true if the group's requirements are satisfied
-      */
-     public boolean isRequirementGroupSatisfied(String groupName) {
-         RequirementGroup group = requirementGroups.get(groupName);
-         if (group == null) {
-             return true; // No such group is considered satisfied
-         }
-         
-         // Get list of property names that have non-empty values
-         List<String> providedProperties = new ArrayList<>();
-         for (String propertyName : group.getPropertyNames()) {
-             String value = getCurrentPropValue(propertyName);
-             if (value != null && !value.trim().isEmpty()) {
-                 providedProperties.add(propertyName);
-             }
-         }
-         
-         return group.isSatisfied(providedProperties);
-     }
-     
-     /**
-      * Get validation errors for all requirement groups
-      * @return List of validation error messages
-      */
-     public List<String> getValidationErrors() {
-         List<String> errors = new ArrayList<>();
-         
-         // Get list of all provided properties
-         List<String> providedProperties = new ArrayList<>();
+     public Map<String, String> getCurrentPropertiesMap() {
+         Map<String, String> propertiesMap = new HashMap<>();
          for (StringPair sp : props) {
-             if (sp.second != null && !sp.second.trim().isEmpty()) {
-                 providedProperties.add(sp.first);
-             }
+             propertiesMap.put(sp.first, sp.second);
          }
-         
-         // Check each requirement group
-         for (RequirementGroup group : requirementGroups.values()) {
-             String error = group.getValidationError(providedProperties);
-             if (error != null) {
-                 errors.add(error);
-             }
-         }
-         
-         return errors;
-     }
-     
-     /**
-      * Get all unsatisfied requirement groups
-      * @return List of requirement group names that are not satisfied
-      */
-     public List<String> getUnsatisfiedRequirementGroups() {
-         List<String> unsatisfied = new ArrayList<>();
-         for (String groupName : requirementGroups.keySet()) {
-             if (!isRequirementGroupSatisfied(groupName)) {
-                 unsatisfied.add(groupName);
-             }
-         }
-         return unsatisfied;
+         return propertiesMap;
      }
 
      /**
@@ -213,6 +146,18 @@ public class PropertiesTableModel extends AbstractTableModel
                      }
                  }
              }
+             
+             // Create the PropertyGroupValidator with the requirement groups
+             PropertyGroupValidator.Builder builder = new PropertyGroupValidator.Builder();
+             for (RequirementGroup group : requirementGroups.values())
+             {
+                 builder.addRequirementGroup(group);
+             }
+             groupValidator = builder.build();
+         }
+         else
+         {
+             groupValidator = null;
          }
          
          if(log.isDebugEnabled())
@@ -560,7 +505,8 @@ public class PropertiesTableModel extends AbstractTableModel
      */
     public String getPropertyRequirementDescription(String propertyName)
     {
-        List<RequirementGroup> groups = getPropertyRequirementGroups(propertyName);
+        List<RequirementGroup> groups = groupValidator != null ? 
+           groupValidator.getPropertyRequirementGroups(propertyName) : new ArrayList<>();
         if (groups.isEmpty())
         {
             return "";
@@ -603,7 +549,7 @@ public class PropertiesTableModel extends AbstractTableModel
     {
         for (String groupName : requirementGroups.keySet())
         {
-            if (!isRequirementGroupSatisfied(groupName))
+            if (groupValidator != null && !groupValidator.isRequirementGroupSatisfied(groupName, getCurrentPropertiesMap()))
             {
                 return false;
             }
