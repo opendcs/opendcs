@@ -1,33 +1,43 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-
-//AW:IMPORTS
-import decodes.hdb.HdbFlags;
 
 //AW:IMPORTS_END
 
 //AW:JAVADOC
 /**
-This algorithm is an Advanced  mass balance calculation for inflow as: 
-Delta Storage + Total Release + Delta Bank Storage + evaporation 
+This algorithm is an Advanced  mass balance calculation for inflow as:
+Delta Storage + Total Release + Delta Bank Storage + evaporation
 - all incoming diversions + all outgoing diversions
 
 (up to 5 diversions of each type)
 
-If any of the input properties are set to "fail" then the inflow 
+If any of the input properties are set to "fail" then the inflow
 will not be calculated and/or the inflow will be deleted.
 
-If all of the inputs do not exist because of a delete the inflow will 
+If all of the inputs do not exist because of a delete the inflow will
 be deleted if the output exists regardless of the property settings.
 
 This algorithm written by M. Bogner, August 2008
@@ -37,6 +47,7 @@ Modified by M. Bogner May 2009 to add additional delete logic and version contro
 //AW:JAVADOC_END
 public class InflowAdvancedAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double total_release;	//AW:TYPECODE=i
 	public double delta_storage;	//AW:TYPECODE=i
@@ -86,7 +97,7 @@ public class InflowAdvancedAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	public String diver_out4_missing = "ignore";
 	public String diver_out5_missing = "ignore";
         public String validation_flag = "";
- 
+
 	String _propertyNames[] = { "total_release_missing", "delta_storage_missing", "validation_flag",
 		"evap_missing","delta_bs_missing","diver_in1_missing","diver_in2_missing","diver_in3_missing",
 		"diver_in4_missing","diver_in5_missing","diver_out1_missing","diver_out2_missing",
@@ -107,7 +118,7 @@ public class InflowAdvancedAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:USERINIT
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -161,28 +172,32 @@ public class InflowAdvancedAlg extends decodes.tsdb.algo.AW_AlgorithmBase
              inflow_calculation = inflow_calculation + diver_out4;
 	   if (!isMissing(diver_out5))
              inflow_calculation = inflow_calculation + diver_out5;
-	   if (	
-		isMissing(total_release) && isMissing(delta_storage)  && 
-		isMissing(evap) && isMissing(delta_bs)  && 
+	   if (
+		isMissing(total_release) && isMissing(delta_storage)  &&
+		isMissing(evap) && isMissing(delta_bs)  &&
 		isMissing(diver_in1) && isMissing(diver_in2)  && isMissing(diver_in3) &&
-		isMissing(diver_in4) && isMissing(diver_in5)  && 
+		isMissing(diver_in4) && isMissing(diver_in5)  &&
 		isMissing(diver_out1) && isMissing(diver_out2)  && isMissing(diver_out3) &&
 		isMissing(diver_out4) && isMissing(diver_out5)
-	   ) do_setoutput = false; 
+	   ) do_setoutput = false;
 
 	   if (do_setoutput)
 	   {
 
-		debug3("InflowAdvancedAlg-" + alg_ver + ": total_release=" + total_release +", delta_storage=" + delta_storage);
+			log.trace("InflowAdvancedAlg-{}: total_release={}, delta_storage={}",
+					  alg_ver, total_release, delta_storage);
 
-		/* added to allow users to automatically set the Validation column  */
-		if (validation_flag.length() > 0) setHdbValidationFlag(inflow,validation_flag.charAt(1));
-		setOutput(inflow,inflow_calculation);
+			/* added to allow users to automatically set the Validation column  */
+			if (validation_flag.length() > 0)
+			{
+				setHdbValidationFlag(inflow,validation_flag.charAt(1));
+			}
+			setOutput(inflow,inflow_calculation);
 	   }
 	   else
 	   {
-		debug3("InflowAdvancedAlg-" + alg_ver + ": Deleting inflow");
-		deleteOutput(inflow);
+			log.trace("InflowAdvancedAlg-{}: Deleting inflow", alg_ver);
+			deleteOutput(inflow);
 	   }
 //AW:TIMESLICE_END
 	}

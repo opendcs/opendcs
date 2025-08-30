@@ -1,19 +1,28 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-
-
-//AW:IMPORTS
-import decodes.hdb.HdbFlags;
 
 //AW:IMPORTS_END
 
@@ -21,11 +30,11 @@ import decodes.hdb.HdbFlags;
 /**
 This algorithm calculates the Glen Canyon Bank Storage Mass Balance
 
-The calculation for the Bank storage is Inflow minus the total Releases, 
+The calculation for the Bank storage is Inflow minus the total Releases,
 delta storage, and evaporation
 
 If inputs Delta Storage or Total Release Above or Total Release Below
-or  ithe Evap do not exist or have been deleted and the 
+or  ithe Evap do not exist or have been deleted and the
 DELTA_STORAGE_MISSING or the TOTAL_RELEASE_MISSING or EVAP_MISSING,
 or INFLOW_MISSING properties are set to "fail" then the BANK STORAGE
 will not be calculated and/or the BANK STORAGE will be deleted.
@@ -40,6 +49,7 @@ Modified by M. Bogner May 2009 to add additional delete logic and version contro
 //AW:JAVADOC_END
 public class GlenDeltaBSMBAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double inflow;		//AW:TYPECODE=i
 	public double total_release;	//AW:TYPECODE=i
@@ -67,7 +77,7 @@ public class GlenDeltaBSMBAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	public String evap_missing = "ignore";
 	public String inflow_missing = "ignore";
         public String validation_flag = "";
- 
+
 	String _propertyNames[] = { "total_release_missing", "delta_storage_missing", "validation_flag",
 		"evap_missing","inflow_missing"};
 //AW:PROPERTIES_END
@@ -86,7 +96,7 @@ public class GlenDeltaBSMBAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 //AW:USERINIT
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -130,17 +140,21 @@ public class GlenDeltaBSMBAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
         if (do_setoutput)
         {
-		debug3("GlenDeltaBSMBAlg-" + alg_ver + ": total_release= " + total_release +", delta_storage= " + delta_storage);
-		debug3("GlenDeltaBSMBAlg-" + alg_ver + ": inflow= " + inflow +", evap= " + evap);
-		debug3("GlenDeltaBSMBAlg-" + alg_ver + ": bs_calculation= " + bs_calculation);
-                /* added to allow users to automatically set the Validation column  */
-                if (validation_flag.length() > 0) setHdbValidationFlag(delta_bs,validation_flag.charAt(1));
-		setOutput(delta_bs,bs_calculation);
+			log.trace("GlenDeltaBSMBAlg-{}: total_release= {}, delta_storage= {}",
+					  alg_ver, total_release, delta_storage);
+			log.trace("GlenDeltaBSMBAlg-{}: inflow= {} evap= {}", alg_ver, inflow, evap);
+			log.trace("GlenDeltaBSMBAlg-{}: bs_calculation= {}", alg_ver, bs_calculation);
+			/* added to allow users to automatically set the Validation column  */
+			if (validation_flag.length() > 0)
+			{
+				setHdbValidationFlag(delta_bs,validation_flag.charAt(1));
+			}
+			setOutput(delta_bs,bs_calculation);
         }
         else
         {
-                debug3("GlenDeltaBSMBAlg-" + alg_ver + ": Deleting Delta Bank Storage output");
-                deleteOutput(delta_bs);
+			log.trace("GlenDeltaBSMBAlg-{}: Deleting Delta Bank Storage output", alg_ver);
+			deleteOutput(delta_bs);
         }
 
 //AW:TIMESLICE_END

@@ -1,28 +1,40 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-// this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
-// new class handles surrogate keys as an object
-import decodes.sql.DbKey;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.tsdb.ParmRef;
 
 
 @Algorithm(description = "Copies input to output at EndofPeriod based on interval window")
 public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 
@@ -34,7 +46,7 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
-	
+
 	@PropertySpec(value = "0")
 	public long desired_window_period = 0;
 	@PropertySpec(value = "0")
@@ -102,23 +114,25 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		// and do nothibg else but return
 		if (total_count == 0)
 		{
-			debug3(" EndofPeriodALg: No records found for this period: " + _aggregatePeriodEnd + "  SDI: "
-				+ getSDI("input"));
+			log.trace(" EndofPeriodALg: No records found for this period: {}  SDI: {}",
+					  _aggregatePeriodEnd, getSDI("input"));
 			deleteOutput(output);
 			return;
 		}
 
-		debug3("EndofPeriodALg:" + "  aggLowerBoundClosed: " + aggLowerBoundClosed
-			+ "  aggUpperBoundClosed: " + aggUpperBoundClosed);
-		debug3("EndofPeriodALg:" + "  aggregatePeriodBegin: " + debugSdf.format(_aggregatePeriodBegin)
-			+ "  aggregatePeriodEnd: " + debugSdf.format(_aggregatePeriodEnd));
-		debug3(" EndofPeriodALg: Last found for this period: " + debugSdf.format(date_out) + "  SDI: " + getSDI("input"));
+		log.trace("EndofPeriodALg:  aggLowerBoundClosed: {}  aggUpperBoundClosed: {}",
+				  aggLowerBoundClosed, aggUpperBoundClosed);
+		log.trace("EndofPeriodALg: aggregatePeriodBegin: {}  aggregatePeriodEnd: {}",
+				  _aggregatePeriodBegin, _aggregatePeriodEnd);
+		log.trace("EndofPeriodALg: Last found for this period: {}  SDI: ", date_out, getSDI("input"));
 
 		long milly_diff = _aggregatePeriodEnd.getTime() - date_out.getTime();
 		long milly_window = 0;
 		ParmRef parmRef = getParmRef("output");
 		if (parmRef == null)
-			warning("Unknown aggregate control output variable 'OUTPUT'");
+		{
+			log.warn("Unknown aggregate control output variable 'OUTPUT'");
+		}
 		String intstr = parmRef.compParm.getInterval();
 		if (intstr.equalsIgnoreCase("hour"))
 			milly_window = req_window_period * (MS_PER_HOUR / 60L);
@@ -133,8 +147,8 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		if ((milly_diff > milly_window) && (req_window_period != 0))
 		{
 			do_setoutput = false;
-			debug1(" EndofPeriodALg: OUTPUT FALSE DUE to Window exceeded: " + _aggregatePeriodEnd + "  SDI: "
-				+ getSDI("input"));
+			log.debug(" EndofPeriodALg: OUTPUT FALSE DUE to Window exceeded: {}  SDI: ",
+					  _aggregatePeriodEnd, getSDI("input"));
 		}
 		// now check to see if record within desired window
 		if (intstr.equalsIgnoreCase("hour"))
@@ -152,10 +166,10 @@ public class EndofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			// set the data flags to w
 			setHdbDerivationFlag(output, "w");
 		}
-		debug3("WINDOW: " + milly_window + "  DIFF: " + milly_diff + "PERIOD: " + desired_window_period);
+		log.trace("WINDOW: {}  DIFF: {} PERIOD: {}", milly_window, milly_diff, desired_window_period);
 		if (do_setoutput)
 		{
-			debug3(" EndofPeriod : SETTING OUTPUT: DOING A SETOutput");
+			log.trace(" EndofPeriod : SETTING OUTPUT: DOING A SETOutput");
 			/* added to allow users to automatically set the Validation column */
 			if (validation_flag.length() > 0)
 				setHdbValidationFlag(output, validation_flag.charAt(1));

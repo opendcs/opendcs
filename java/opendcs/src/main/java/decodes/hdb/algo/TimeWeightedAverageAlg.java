@@ -1,39 +1,44 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-// this new import was added by M. Bogner Martch 2013 for the 5.3 CP upgrade project
-// where the surrogate keys (like SDI) were changed form a long to a DbKey class
-import decodes.sql.DbKey;
-
-
-
 //AW:IMPORTS
 // Place an import statements you need here.
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-
-import decodes.hdb.HdbFlags;
 
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.text.DecimalFormat;
 
-import ilex.util.DatePair;
 import decodes.tsdb.ParmRef;
 import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
 import decodes.hdb.dbutils.RBASEUtils;
-import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
 
 //AW:IMPORTS_END
@@ -51,9 +56,9 @@ validation_flag: string: default empty: the validation flag value to be sent to 
 
  */
 //AW:JAVADOC_END
-public class TimeWeightedAverageAlg
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class TimeWeightedAverageAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double input;	//AW:TYPECODE=i
 	String _inputNames[] = { "input" };
@@ -63,7 +68,7 @@ public class TimeWeightedAverageAlg
 	// Enter any local class variables needed by the algorithm.
 // version 1.0.05 modification to fix date math for previous and next data window
 // version 1.0.06 modification to fix CP 3.0 Upgrade issues, by M. Bogner Aug 2012
-// previous version worked on Solaris but not on Linux 
+// previous version worked on Solaris but not on Linux
 // version 1.0.07 modification for CP 5.3 Upgrade project, by M. Bogner March 2013
 // where the surrogate keys (like SDI) were changed from a long to a DbKey class
         String alg_ver = "1.0.07";
@@ -115,7 +120,7 @@ public class TimeWeightedAverageAlg
 		// Code here will be run once, after the algorithm object is created.
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -153,24 +158,24 @@ public class TimeWeightedAverageAlg
 	{
 //AW:TIMESLICE
 		// Enter code to be executed at each time-slice.
-                if ((total_count == 0) && (!isMissing(input)))
-                {
-		  if (_timeSliceBaseTime.equals(_aggregatePeriodBegin))
- 		  {
-                    debug3("FOUND First begin date"+ _timeSliceBaseTime);
-		    have_beginning_record = true;
-		    index = -1;
-                  }
- 		}
-                if (!isMissing(input))
+		if ((total_count == 0) && (!isMissing(input)))
 		{
-                  index++;
-                  total_count++;
-                  value_out[index] = input;
-                  date_out [index] = _timeSliceBaseTime;
-		  debug3( "Index:  " + index + "  Value:  " + input + "  DATE: " + _timeSliceBaseTime);
+			if (_timeSliceBaseTime.equals(_aggregatePeriodBegin))
+			{
+				log.trace("FOUND First begin date {}", _timeSliceBaseTime);
+				have_beginning_record = true;
+				index = -1;
+			}
+ 		}
+		if (!isMissing(input))
+		{
+			index++;
+			total_count++;
+			value_out[index] = input;
+			date_out [index] = _timeSliceBaseTime;
+			log.trace( "Index:  {}  Value:  {}  DATE: {}", index, input, _timeSliceBaseTime);
 		}
- 
+
 
 //AW:TIMESLICE_END
 	}
@@ -194,47 +199,55 @@ public class TimeWeightedAverageAlg
 //
 		do_setoutput = true;
 		ParmRef parmRef = getParmRef("input");
-		if (parmRef == null) 
+		if (parmRef == null)
 		{
-		   warning("Unknown aggregate control output variable 'INPUT'");
+		   log.warn("Unknown aggregate control output variable 'INPUT'");
 		   return;
 		}
 		String input_interval = parmRef.compParm.getInterval();
-                String table_selector = parmRef.compParm.getTableSelector();
+		String table_selector = parmRef.compParm.getTableSelector();
 
 		parmRef = getParmRef("output");
-		if (parmRef == null) 
+		if (parmRef == null)
 		{
-		   warning("Unknown aggregate control output variable 'OUTPUT'");
+		   log.warn("Unknown aggregate control output variable 'OUTPUT'");
 		   return;
 		}
 		String output_interval = parmRef.compParm.getInterval();
 //
 //
-                TimeZone tz = TimeZone.getTimeZone("GMT");
-                GregorianCalendar cal = new GregorianCalendar(tz);
-                GregorianCalendar cal1 = new GregorianCalendar();
-                cal1.setTime(_aggregatePeriodBegin);
-                cal.set(cal1.get(Calendar.YEAR),cal1.get(Calendar.MONTH),cal1.get(Calendar.DAY_OF_MONTH),0,0);
-                mvr_count = min_values_required;
-                mvd_count = min_values_desired;
+		TimeZone tz = TimeZone.getTimeZone("GMT");
+		GregorianCalendar cal = new GregorianCalendar(tz);
+		GregorianCalendar cal1 = new GregorianCalendar();
+		cal1.setTime(_aggregatePeriodBegin);
+		cal.set(cal1.get(Calendar.YEAR),cal1.get(Calendar.MONTH),cal1.get(Calendar.DAY_OF_MONTH),0,0);
+		mvr_count = min_values_required;
+		mvd_count = min_values_desired;
 
 //		first see if there are bad negative min settings for other than a monthly aggregate...
-		if ( !output_interval.equalsIgnoreCase("month")) 
+		if ( !output_interval.equalsIgnoreCase("month"))
 		{
 		   if (mvr_count < 0 || mvd_count < 0)
 		   {
 
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Illegal negative setting of minimum values criteria for non-Month aggregates");
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Minimum values criteria for non-Month aggregates set to 1");
+		     log.warn("TWAINTERPALG-{} Warning: Illegal negative setting of minimum values criteria " +
+			 		  "for non-Month aggregates",
+					  alg_ver);
+		     log.warn("TWAINTERPALG-{} Warning: Minimum values criteria for non-Month aggregates set to 1",
+			 		  alg_ver);
 		     if (mvd_count < 0) mvd_count = 1;
 		     if (mvr_count < 0) mvr_count = 1;
 		   }
-		   if ((input_interval.equalsIgnoreCase("instant") || output_interval.equalsIgnoreCase("hour")) && mvr_count == 0) 
+		   if ((input_interval.equalsIgnoreCase("instant") ||
+		   		output_interval.equalsIgnoreCase("hour")) &&
+				 mvr_count == 0)
 		   {
 
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Illegal zero setting of minimum values criteria for instant/hour aggregates");
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Minimum values criteria for instant/hour aggregates set to 1");
+		     log.warn("TWAINTERPALG-{} Warning: Illegal zero setting of minimum values criteria " +
+			 		  "for instant/hour aggregates",
+					  alg_ver);
+		     log.warn("TWAINTERPALG-{} Warning: Minimum values criteria for instant/hour aggregates set to 1",
+			 		  alg_ver);
 		     mvr_count = 1;
 		   }
 		}
@@ -251,7 +264,7 @@ public class TimeWeightedAverageAlg
 		}
 
 //		check and set minimums for monthly aggregates
-		if ( output_interval.equalsIgnoreCase("month")) 
+		if ( output_interval.equalsIgnoreCase("month"))
 		{
 		   int days = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
 		   //  now if the required numbers are negative then calculate based on total days in month
@@ -262,17 +275,18 @@ public class TimeWeightedAverageAlg
 		}
 //
 //		check and set minimums for daily aggregates
-		if ( output_interval.equalsIgnoreCase("day")) 
+		if ( output_interval.equalsIgnoreCase("day"))
 		{
-		   if (mvr_count == 0 && input_interval.equalsIgnoreCase("hour")) 
+		   if (mvr_count == 0 && input_interval.equalsIgnoreCase("hour"))
 		   {
 		     mvr_count = 24;
 		   }
 		   else if (mvr_count == 0)
 		   {
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Illegal zero setting of minimum values criteria for " 
-		     + input_interval + " to daily aggregates");
-		     warning("TWAINTERPALG-"+alg_ver+" Warning: Minimum values criteria for daily aggregates set to 1");
+		     log.warn("TWAINTERPALG-{} Warning: Illegal zero setting of minimum values criteria for " +
+		     		  "{} to daily aggregates",
+					  alg_ver, input_interval);
+		     log.warn("TWAINTERPALG-{} Warning: Minimum values criteria for daily aggregates set to 1", alg_ver);
 		     if (mvd_count == 0) mvd_count = 1;
 		     if (mvr_count == 0) mvr_count = 1;
 		   }
@@ -313,216 +327,225 @@ public class TimeWeightedAverageAlg
 		// see if there was an error
 		if (status.startsWith("ERROR"))
 		{
-		   warning(status);
+		   log.warn(status);
 		   return;
 		}
-                debug3(" ICPQ SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+		log.trace(" ICPQ SQL STRING:{}   DBOBJ: {} STATUS:  {}", query, dbobj.toString(), status);
 		//
-		debug3("TWAINTERP- " + alg_ver + " : " +  getSDI("input") + " " + _aggregatePeriodBegin  + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+		log.trace("TWAINTERP- {} : {} {}  MVR: {} RecordCount: {}",
+				  alg_ver, getSDI("input"), _aggregatePeriodBegin, mvr_count, total_count);
 		//
 		// now see how many records were found for this aggregate
 		//  and see if this calc is in current period and if partial calc is set
-		if (total_count == 0) 
+		if (total_count == 0)
 		{
-		   debug2("TWAINTERP- " + alg_ver + " : Cannot do Computation due to 0 records: " + getSDI("input") + " " + _aggregatePeriodBegin );
+		   log.trace("TWAINTERP- {} : Cannot do Computation due to 0 records: {} {}",
+		   			 alg_ver, getSDI("input"), _aggregatePeriodBegin );
 		   do_setoutput = false;
 		}
 		is_current_period = ((String)dbobj.get("is_current_period")).equalsIgnoreCase("Y");
 		if (!is_current_period && total_count < mvr_count)
 		{
-		   debug2("TWAINTERP- " + alg_ver + " : Minimum required records not met for historic period: " + getSDI("input") + " " + _aggregatePeriodBegin  + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+		   log.trace("TWAINTERP- {} : Minimum required records not met for historic period: {} {} " +
+		   			 "MVR: {} RecordCount: {}",
+		   		 	 alg_ver, getSDI("input"), _aggregatePeriodBegin, mvr_count, total_count);
 		   do_setoutput = false;
 		}
 		if (is_current_period && !partial_calculations && total_count < mvr_count)
 		{
-		   debug2("TWAINTERP- " + alg_ver + " : Minimum required records not met for current period: " + getSDI("input") + " " + _aggregatePeriodBegin  + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+		   log.trace("TWAINTERP- {} : Minimum required records not met for current period: {} {} " +
+		   			 "MVR: {} RecordCount: {}",
+		   			 alg_ver, getSDI("input"), _aggregatePeriodBegin, mvr_count, total_count);
 		   do_setoutput = false;
 		}
 		//
 //
 
 		if (do_setoutput)  // then we are still ok so continue with the calculation
-            	{
-                   // declare some common variables to do the interpolation
-                   Double new_window_value; 
-                   Date new_window_sdt;
-                   long milly_diff_total;
-                   long milly_diff_end;
-                   double val_diff;
-                   float   percent_diff;
-                   double interpolated_value;
+		{
+			// declare some common variables to do the interpolation
+			Double new_window_value;
+			Date new_window_sdt;
+			long milly_diff_total;
+			long milly_diff_end;
+			double val_diff;
+			float   percent_diff;
+			double interpolated_value;
 //
-		//  if we don't have a begininning period record go get the record before and interpoplate
-                if (!have_beginning_record)
-		 {
-                  // now go get the last record of the previous interval
-//                   Date previousWindowSDT = new Date( _aggregatePeriodBegin.getTime() - MS_PER_HOUR);
-		   cal2.setTime(_aggregatePeriodBegin);
-                   //debug3("previous window calendar before rollback: " + cal2.toString());
-		   cal2.add(calIntervalRoll,-1);
+			//  if we don't have a begininning period record go get the record before and interpoplate
+			if (!have_beginning_record)
+		 	{
+				// now go get the last record of the previous interval
+				cal2.setTime(_aggregatePeriodBegin);
+				cal2.add(calIntervalRoll,-1);
 
-                   //debug3("previous window calendar: " + cal2.toString());
-                   Date previousWindowSDT = cal2.getTime();
-                   Date previousWindowEDT = previousWindowSDT;
-                   debug3("Interval: " + output_interval + " PWSDT: " + previousWindowSDT);
-                   rbu.getStandardDates(sdi,output_interval,previousWindowSDT,previousWindowEDT,dt_fmt);
-                   // do the first record in next interval query to get the start_date_time and value
-                   query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') pwsdt, value pwdv from " +
-                           " ( select start_date_time,value,rank() " +
-                           " over(order by start_date_time desc ) rn from " + table_selector + input_interval.toLowerCase() +
-                           " where site_datatype_id = " + getSDI("input") +
-                           " and start_date_time >= " +  "to_date('" +  (String) dbobj.get("SD_SDT") +
-                           "','dd-mon-yyyy HH24:MI')" +
-                           " and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
-                           "','dd-mon-yyyy HH24:MI')) where rn = 1";
-                   status = db.performQuery(query,dbobj);
-                   debug3(" BBOP SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
-                   //
-                   if (status.startsWith("ERROR"))
-                   {
-                     warning(status);
-                     return;
-                   }
+				Date previousWindowSDT = cal2.getTime();
+				Date previousWindowEDT = previousWindowSDT;
+				log.trace("Interval: {} PWSDT: {}", output_interval, previousWindowSDT);
+				rbu.getStandardDates(sdi,output_interval,previousWindowSDT,previousWindowEDT,dt_fmt);
+				// do the first record in next interval query to get the start_date_time and value
+				query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') pwsdt, value pwdv from " +
+						" ( select start_date_time,value,rank() " +
+						" over(order by start_date_time desc ) rn from " + table_selector + input_interval.toLowerCase() +
+						" where site_datatype_id = " + getSDI("input") +
+						" and start_date_time >= " +  "to_date('" +  (String) dbobj.get("SD_SDT") +
+						"','dd-mon-yyyy HH24:MI')" +
+						" and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
+						"','dd-mon-yyyy HH24:MI')) where rn = 1";
+				status = db.performQuery(query,dbobj);
+				log.trace(" BBOP SQL STRING:{}   DBOBJ: {} STATUS:  {}", query, dbobj.toString(), status);
+				//
+				if (status.startsWith("ERROR"))
+				{
+					warning(status);
+					return;
+				}
 
-                   // now see if this next interval query worked if not then we can't continue!!!
-                   if (((String)dbobj.get("PWDV")).length() != 0)
-                   {
-                   // now get the date, value of first record in previous interval to see if it passes muster
-                   new_window_value = Double.valueOf(dbobj.get("pwdv").toString());
-                   new_window_sdt   = new Date(dbobj.get("pwsdt").toString());
-                   // now do the interpolation of the eop of previous period to the BOP for this period
-                   milly_diff_total = date_out[1].getTime() - new_window_sdt.getTime();
-                   milly_diff_end = date_out[1].getTime() - _aggregatePeriodBegin.getTime();
-                   val_diff = value_out[1] - new_window_value;
-                   percent_diff =  (float) milly_diff_end / (float) milly_diff_total;
-                   interpolated_value = value_out[1] + (val_diff * percent_diff);
-                   debug3(" NWSDT: " + new_window_sdt + " NWVal: " + new_window_value  + " Val_diff: " + val_diff);
-                   //
-
- 
-                   // now set the first value in the array to the interpolated value as well as BOP date
-                   value_out[0] = interpolated_value;
-                   date_out[0] = _aggregatePeriodBegin;
- 		   }
-
-		   else 
-		   {
-			debug2("TWAINTERP- " + alg_ver + " : Cannot do Computation due to lack of EOP record: " + getSDI("input") + " " + _aggregatePeriodEnd );
-			do_setoutput = false;
-		   }
+				// now see if this next interval query worked if not then we can't continue!!!
+				if (((String)dbobj.get("PWDV")).length() != 0)
+				{
+					// now get the date, value of first record in previous interval to see if it passes muster
+					new_window_value = Double.valueOf(dbobj.get("pwdv").toString());
+					new_window_sdt   = new Date(dbobj.get("pwsdt").toString());
+					// now do the interpolation of the eop of previous period to the BOP for this period
+					milly_diff_total = date_out[1].getTime() - new_window_sdt.getTime();
+					milly_diff_end = date_out[1].getTime() - _aggregatePeriodBegin.getTime();
+					val_diff = value_out[1] - new_window_value;
+					percent_diff =  (float) milly_diff_end / (float) milly_diff_total;
+					interpolated_value = value_out[1] + (val_diff * percent_diff);
+					log.trace(" NWSDT: {} NWVal: {} Val_diff: {}", new_window_sdt, new_window_value, val_diff);
+					//
 
 
- 		 }
+					// now set the first value in the array to the interpolated value as well as BOP date
+					value_out[0] = interpolated_value;
+					date_out[0] = _aggregatePeriodBegin;
+				}
+				else
+				{
+					log.trace("TWAINTERP- {} : Cannot do Computation due to lack of EOP record: {} {}",
+							  alg_ver, getSDI("input"), _aggregatePeriodEnd );
+					do_setoutput = false;
+				}
+
+
+			}
 //
 		//  now go get the eop record and interpolate the end value
 
 
-                if (do_setoutput)  // value in the interval passed the test so continue with next step
-                 { // block for getting BOP next period
-                   // now go get the first record of the next interval
-//                   Date nextWindowSDT = new Date( _aggregatePeriodEnd.getTime() + MS_PER_HOUR);
-		   cal2.setTime(_aggregatePeriodBegin);
-		   cal2.add(calIntervalRoll,1);
+			if (do_setoutput)  // value in the interval passed the test so continue with next step
+			{ // block for getting BOP next period
+				// now go get the first record of the next interval
 
-                   Date nextWindowSDT = cal2.getTime();
-                   Date nextWindowEDT = nextWindowSDT;
-                   debug3("Interval: " + output_interval + " NWSDT: " + nextWindowSDT);
-                   rbu.getStandardDates(sdi,output_interval,nextWindowSDT,nextWindowEDT,dt_fmt);
-                   // do the first record in next interval query to get the start_date_time and value
-                   query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') nwsdt, value nwdv from " +
-                           " ( select start_date_time,value,rank() " +
-                           " over(order by start_date_time) rn from " + table_selector + input_interval.toLowerCase() +
-                           " where site_datatype_id = " + getSDI("input") +
-                           " and start_date_time >= " +  "to_date('" +  (String) dbobj.get("SD_SDT") +
-                           "','dd-mon-yyyy HH24:MI')" +
-                           " and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
-                           "','dd-mon-yyyy HH24:MI')) where rn = 1";
-                   status = db.performQuery(query,dbobj);
-                   debug3(" NBOP SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+				cal2.setTime(_aggregatePeriodBegin);
+				cal2.add(calIntervalRoll,1);
+
+				Date nextWindowSDT = cal2.getTime();
+				Date nextWindowEDT = nextWindowSDT;
+				log.trace("Interval: {} NWSDT: {}", output_interval, nextWindowSDT);
+				rbu.getStandardDates(sdi,output_interval,nextWindowSDT,nextWindowEDT,dt_fmt);
+				// do the first record in next interval query to get the start_date_time and value
+				query = "select to_char(start_date_time,'dd-mon-yyyy HH24:MI') nwsdt, value nwdv from " +
+						" ( select start_date_time,value,rank() " +
+						" over(order by start_date_time) rn from " + table_selector + input_interval.toLowerCase() +
+						" where site_datatype_id = " + getSDI("input") +
+						" and start_date_time >= " +  "to_date('" +  (String) dbobj.get("SD_SDT") +
+					"','dd-mon-yyyy HH24:MI')" +
+					" and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
+					"','dd-mon-yyyy HH24:MI')) where rn = 1";
+				status = db.performQuery(query,dbobj);
+				log.trace(" NBOP SQL STRING:{}   DBOBJ: {} STATUS:  {}", query, dbobj.toString(), status);
 		   //
-                   // now see if this next interval query worked if not then we can't continue!!!
-                   if (status.startsWith("ERROR")) 
-		   {
-		     warning(status);
-		     return;
-		   }
-                   // now see if this next interval query returned a record if not then we can't continue!!!
-                   if (((String)dbobj.get("NWDV")).length() != 0)
-                   {
-                   // now get the date, value of first record in next interval to see if it passes muster
-                   new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
-                   new_window_sdt   = new Date(dbobj.get("nwsdt").toString());
-                   // now do the interpolation of the eop of this period to the BOP for next period
-			debug3(new_window_sdt + "  " + index);
-                   milly_diff_total = new_window_sdt.getTime() - date_out[index].getTime();
-                   milly_diff_end = _aggregatePeriodEnd.getTime() - date_out[index].getTime();
-                   val_diff = new_window_value - value_out[index];
-                   percent_diff =  (float) milly_diff_end / (float) milly_diff_total;
-                   interpolated_value = value_out[index] + (val_diff * percent_diff);
-                   debug3(" Millydiff_T:  " + milly_diff_total  + " Millydiff_End: " + milly_diff_end  + " PERCENT_diff: " + percent_diff);
-                   debug3(" NWSDT: " + new_window_sdt + " NWVal: " + new_window_value  + " Val_diff: " + val_diff);
-                   debug3(" Interpolated Value: " + interpolated_value );
-                   //
-  
-		   // now set the last value in the array to the interpolated value as well as eop date
-		   index++;
-                   value_out[index] = interpolated_value;
-                   date_out[index] = _aggregatePeriodEnd;
- 		   }
+				// now see if this next interval query worked if not then we can't continue!!!
+				if (status.startsWith("ERROR"))
+				{
+					log.warn(status);
+					return;
+				}
+				// now see if this next interval query returned a record if not then we can't continue!!!
+				if (((String)dbobj.get("NWDV")).length() != 0)
+				{
+					// now get the date, value of first record in next interval to see if it passes muster
+					new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
+					new_window_sdt   = new Date(dbobj.get("nwsdt").toString());
+					// now do the interpolation of the eop of this period to the BOP for next period
+					log.trace("new window = {} index={}", new_window_sdt, index);
+					milly_diff_total = new_window_sdt.getTime() - date_out[index].getTime();
+					milly_diff_end = _aggregatePeriodEnd.getTime() - date_out[index].getTime();
+					val_diff = new_window_value - value_out[index];
+					percent_diff =  (float) milly_diff_end / (float) milly_diff_total;
+					interpolated_value = value_out[index] + (val_diff * percent_diff);
+					log.trace("Millydiff_T:  " + milly_diff_total  + " Millydiff_End: " + milly_diff_end  + " PERCENT_diff: ",
+							  milly_diff_total, milly_diff_end, percent_diff);
+					log.trace("NWSDT: {} NWVal: {} Val_diff: {}", new_window_sdt, new_window_value, val_diff);
+					log.trace("Interpolated Value: {}", interpolated_value );
+					//
 
-		   else 
-		   {
-			debug2("TWAINTERP-"+alg_ver+": Cannot do Computation due to lack of EOP record: " + getSDI("input") + " " + _aggregatePeriodEnd );
-			do_setoutput = false;
-		   }
+		  			// now set the last value in the array to the interpolated value as well as eop date
+		   			index++;
+					value_out[index] = interpolated_value;
+					date_out[index] = _aggregatePeriodEnd;
+				}
+				else
+				{
+					log.trace("TWAINTERP-{}: Cannot do Computation due to lack of EOP record: {} {}",
+							  alg_ver, getSDI("input"), _aggregatePeriodEnd);
+					do_setoutput = false;
+				}
 
 
                  } // end of block for BOP next period
                 //
 
-		}  // end of big block to continue the calculation	
+		}  // end of big block to continue the calculation
 
 		//
 		// calculate and set the weighted average if all is successful and set the flags appropriately
-		if (do_setoutput) 
+		if (do_setoutput)
 		{
- 		   double weighted_average = 0.0D;
- 		   double total_area = 0.0D;
-		   double time_diff  = 0.0D;
-		   double midpoint = 0.0D;
+			double weighted_average = 0.0D;
+			double total_area = 0.0D;
+			double time_diff  = 0.0D;
+			double midpoint = 0.0D;
 
-		   // now do the area calculation:  which is the sum of the area of the midpoints of the collected
-                   // data points (mipoint * time) and all divided by the total time 
-                   for (int i =0; i < index ; i++)
-		   {
-		      debug3("Index: " + i + value_out[i] + "  " + value_out[i+1] + "  " + date_out[i+1].getTime() + "  " + date_out[i].getTime());
-		      midpoint =   (value_out[i+1] + value_out[i]) / 2 ;
-		      time_diff =  date_out[i+1].getTime() - date_out[i].getTime(); 
-		      total_area = total_area + (midpoint * time_diff)/MS_PER_DAY;
-		      debug3("Index: " + i + "  MidPt: " + midpoint + "  timediff: " + time_diff + "  T.A.: " + total_area);
+			// now do the area calculation:  which is the sum of the area of the midpoints of the collected
+			// data points (mipoint * time) and all divided by the total time
+			for (int i =0; i < index ; i++)
+		   	{
+				log.trace("Index: {}:{} {} {} {}",
+						  i, value_out[i], value_out[i+1], date_out[i+1].getTime(), date_out[i].getTime());
+				midpoint =   (value_out[i+1] + value_out[i]) / 2 ;
+				time_diff =  date_out[i+1].getTime() - date_out[i].getTime();
+				total_area = total_area + (midpoint * time_diff)/MS_PER_DAY;
+				log.trace("Index: {}  MidPt: {}  timediff: {}  T.A.: {}", i, midpoint, time_diff, total_area);
 
-		   }
-		   time_diff = ((double) _aggregatePeriodEnd.getTime() - (double) _aggregatePeriodBegin.getTime())/(double)MS_PER_DAY;
-		   weighted_average = total_area / time_diff;
-		   debug3("TWAINTERP-"+alg_ver+": ENDTIME : " +  _aggregatePeriodEnd + "  BEGIN_TIME: " + _aggregatePeriodBegin);
-		   debug3("TWAINTERP-"+alg_ver+": TOTAL TIME: " + time_diff);
-		   debug2("TWAINTERP-"+alg_ver+": WEIGHTED_AVERAGE: " + weighted_average + " TOTALAREA: " + total_area  );
-		   //  set the dataflags appropriately	
-		   if (total_count < mvd_count) flags = flags + "n";
-                   if (is_current_period && total_count < mvr_count)
-                   //  now we have a partial calculation, so do what needs to be done for partials
-                   {
-                     setHdbValidationFlag(output,'T');
-                     // call the RBASEUtils merge method to add a "seed record" to cp_historic_computations table
+		   	}
+			time_diff = ((double) _aggregatePeriodEnd.getTime() - (double) _aggregatePeriodBegin.getTime())/(double)MS_PER_DAY;
+			weighted_average = total_area / time_diff;
+			log.trace("TWAINTERP-{}: ENDTIME : {}  BEGIN_TIME: {}",
+					  alg_ver, _aggregatePeriodEnd, _aggregatePeriodBegin);
+			log.trace("TWAINTERP-{}: TOTAL TIME: {}", alg_ver, time_diff);
+			log.trace("TWAINTERP-{}: WEIGHTED_AVERAGE: {} TOTALAREA: {}", alg_ver, weighted_average, total_area);
+			//  set the dataflags appropriately
+			if (total_count < mvd_count)
+			{
+				flags = flags + "n";
+			}
+			if (is_current_period && total_count < mvr_count)
+			//  now we have a partial calculation, so do what needs to be done for partials
+			{
+				setHdbValidationFlag(output,'T');
+				// call the RBASEUtils merge method to add a "seed record" to cp_historic_computations table
 //   getSDI method casted to int since it was changed sometime to a long, M. Bogner Aug 2012
 // getValue method add to getSDI method because surrogate keys (like SDI) were changed to DbKey object for 5.3 CP project
-                     //rbu.merge_cp_hist_calc(comp.getAppId(),(int) getSDI("input"),input_interval,_aggregatePeriodBegin,
-                     rbu.merge_cp_hist_calc( (int) comp.getAppId().getValue(),(int) getSDI("input").getValue(),input_interval,_aggregatePeriodBegin,
-                     _aggregatePeriodEnd,"dd-MM-yyyy HH:mm",tsdb.getWriteModelRunId(),table_selector);
+				//rbu.merge_cp_hist_calc(comp.getAppId(),(int) getSDI("input"),input_interval,_aggregatePeriodBegin,
+				rbu.merge_cp_hist_calc( (int) comp.getAppId().getValue(),(int) getSDI("input").getValue(),input_interval,_aggregatePeriodBegin,
+				_aggregatePeriodEnd,"dd-MM-yyyy HH:mm",tsdb.getWriteModelRunId(),table_selector);
 
-                   }
+			}
 
-		   debug3("FLAGS: " + flags);
+		   log.trace("FLAGS: {}", flags);
 		   if (flags != null) setHdbDerivationFlag(output,flags);
 		   //
                    /* added to allow users to automatically set the Validation column  */

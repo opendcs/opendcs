@@ -1,4 +1,18 @@
-//  The DataObject class will be contained in the some package
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.dbutils;
 
 // include all necessary imports here
@@ -9,8 +23,10 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
-/**  Public class DataObject is intended to hold in a hashtable hash 
+
+/**  Public class DataObject is intended to hold in a hashtable hash
      all the data that is pertinent to this instance of this class.
      This class is intented to be utilized to store any type of data
      that the user may need.  Simple key, value pairs, property files,
@@ -21,9 +37,9 @@ import java.util.Properties;
       Date:   03-April-2001
 
 */
-public class DataObject  
+public class DataObject
 {
-
+  private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
     // instance object hash stores all the key object pairs for this class
     private Hashtable hash  = null;
 
@@ -39,7 +55,7 @@ public class DataObject
 
 /** DataObject Constructor that takes a hashtable as an input
     and will be used as the basis of the new DataObject
-    
+
     @author Mark A. Bogner
     @version 1.0
     @param _hash  The input Hashtable object that will be used to populat
@@ -60,7 +76,7 @@ public class DataObject
 
     @author  Mark A. Bogner
     @version 1.0
-    @param _key  The input String variable _key is used as the key in the 
+    @param _key  The input String variable _key is used as the key in the
     hastable put function.  The _key input variable is used in uppercase so the
     user can specify this key in either upper or lower case.
     @param _value Input Parameter _value is the object that will be stored in
@@ -68,16 +84,16 @@ public class DataObject
     Date:   03-April-2001
 
     */
-    public void put(String _key, Object _value) 
+    public void put(String _key, Object _value)
     {
-    
+
       // put the uppercase of the _key String and the value into the has table
       hash.put(_key.toUpperCase(), _value);
 //System.out.println("Adding key '" + _key.toUpperCase() + "' with value=" + _value);
     }  // end of put method
 
 
-    /** Method get retrieves a particular hashtable entry based on the 
+    /** Method get retrieves a particular hashtable entry based on the
         input parameter _key.  The Hashtable hash entries all all stored
         in the Hashtable with the key in uppercase so the get method uses
         an uppercase of the input parameter.
@@ -91,7 +107,7 @@ public class DataObject
     Date:   03-April-2001
 
     */
-    public Object get(String _key) 
+    public Object get(String _key)
     {
       // return the hashtable object that is stored for the uppercase value of
       // the key
@@ -99,44 +115,42 @@ public class DataObject
     } // End of get method
 
 
-    /** Method addPropertyFile adds properties from a file to the existing 
-        
+    /** Method addPropertyFile adds properties from a file to the existing
+
      @author  Mark A. Bogner
      @version 1.0
      Date:   03-April-2001
      @param  _propertyFile  The input string that is the file that will be
      loaded into a Properties object and then transfered into the Hashtable
-     hash object 
+     hash object
 
     */
     public void addPropertyFile(String _propertyFile) throws Exception
     {
        //  use a Properties object, load the property file into it,
-       //  then get the elements out and put it into the Hashtable hash. 
+       //  then get the elements out and put it into the Hashtable hash.
        Properties prop = new Properties();
        try
        {
          prop.load(new BufferedInputStream(new FileInputStream(_propertyFile)));
          // now add all the properties to the main hashtable hash
-         for (Enumeration e = prop.propertyNames() ; e.hasMoreElements() ;) 
+         for (Enumeration e = prop.propertyNames() ; e.hasMoreElements() ;)
          {
                String key = (String) e.nextElement();
                hash.put(key.toUpperCase(),prop.getProperty(key));
          }
 
        }
-       catch (Exception e)
+       catch (Exception ex)
        {
-         System.out.println("Unable to open Property File to add properties");
-         System.out.println(e.getMessage());
-         e.printStackTrace();
+          log.atError().setCause(ex).log("Unable to open Property File to add properties");
        }
     }  // end of method addPropertyFile
 
 
     /** Method toString return the contents of the DataObjects hashtable hash by
         utilizing the toString method of a Hashtable object
-        
+
      @author  Mark A. Bogner
      @version 1.0
      @return Returns the String representation of the whole classes hashtable hash
@@ -152,8 +166,8 @@ public class DataObject
      } // end of method toString
 
 
-    /** Method getTable returns the DataObjects hashtable hash 
-        
+    /** Method getTable returns the DataObjects hashtable hash
+
      @author  Mark A. Bogner
      @version 1.0
      @return Returns the String representation of the whole classes hashtable hash
