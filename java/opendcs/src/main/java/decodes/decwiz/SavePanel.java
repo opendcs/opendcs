@@ -1,15 +1,24 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decwiz;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
-import java.util.Calendar;
 import java.util.Properties;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,6 +26,10 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.io.IOException;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.EnvExpander;
 import decodes.gui.TopFrame;
@@ -27,22 +40,22 @@ import decodes.db.TransportMedium;
 /**
 This class is the 3rd panel in the decoding wizard.
 */
-public class SavePanel 
-	extends DecWizPanel
+public class SavePanel extends DecWizPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JLabel rawLabel = new JLabel();
 	private JTextField rawField = new JTextField();
 	private JButton browseRawButton = new JButton();
 	private String append_overwrite[] = { "Append", "Overwrite" };
-	private JComboBox rawCombo = new JComboBox(append_overwrite);
+	private JComboBox<String> rawCombo = new JComboBox<>(append_overwrite);
 	private JLabel saveLabel = new JLabel();
 	private JTextField saveDecodedField = new JTextField();
 	private JButton browseDecodedButton = new JButton();
-	private JComboBox decodedCombo = new JComboBox(append_overwrite);
+	private JComboBox<String> decodedCombo = new JComboBox<>(append_overwrite);
 	private JLabel saveSummaryLabel = new JLabel();
 	private JTextField saveSummaryField = new JTextField();
 	private JButton browseSummaryButton = new JButton();
-	private JComboBox summaryCombo = new JComboBox(append_overwrite);
+	private JComboBox<String> summaryCombo = new JComboBox<>(append_overwrite);
 	private GridBagLayout gridBagLayout1 = new GridBagLayout();
 	private JButton doSaveButton = new JButton("Save Files");
 
@@ -59,19 +72,19 @@ public class SavePanel
 	{
 		super();
 
-//	Setup default directory  for raw data file chooser 
+		//	Setup default directory  for raw data file chooser
 
 		String path = EnvExpander.expand(
 				DecodesSettings.instance().decwizRawDataDir);
 		rawDataFileChooser = new JFileChooser(path);
 
-//	Setup default directory for decoded data file chooser 
+		//	Setup default directory for decoded data file chooser
 
 		path = EnvExpander.expand(
 			DecodesSettings.instance().decwizDecodedDataDir);
 		decodedDataFileChooser = new JFileChooser(path);
 
-//	Setup default directory for summary data file chooser 
+		//	Setup default directory for summary data file chooser
 		path = EnvExpander.expand(DecodesSettings.instance().decwizSummaryLog);
 		summaryFileChooser = new JFileChooser(path);
 
@@ -79,12 +92,12 @@ public class SavePanel
 		{
 			jbInit();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 
-//	Set up the default file name for the summary file
+		//	Set up the default file name for the summary file
 
 		String fn = EnvExpander.expand(DecodesSettings.instance().decwizSummaryLog.trim());
 		File f = new File(fn);
@@ -124,7 +137,7 @@ public class SavePanel
 		this.add(rawCombo, new GridBagConstraints(3, 0, 1, 1, 0.0, 0.5
 			, GridBagConstraints.SOUTHWEST, GridBagConstraints.NONE,
 			new Insets(20, 5, 5, 10), 0, 0));
-		
+
 		this.add(saveLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
 			, GridBagConstraints.EAST, GridBagConstraints.NONE,
 			new Insets(5, 10, 5, 2), 0, 0));
@@ -132,11 +145,11 @@ public class SavePanel
 			, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 			new Insets(5, 0, 5, 0), 0, 0));
 		this.add(browseDecodedButton,
-			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 5), 0, 0));
 		this.add(decodedCombo,
-			new GridBagConstraints(3, 1, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(3, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 5, 5, 10), 0, 0));
 
@@ -150,12 +163,12 @@ public class SavePanel
 			, GridBagConstraints.WEST, GridBagConstraints.NONE,
 			new Insets(5, 10, 20, 5), 0, 0));
 		this.add(summaryCombo,
-			new GridBagConstraints(3, 2, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(3, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
 				new Insets(5, 5, 5, 10), 0, 0));
 
 		this.add(doSaveButton,
-			new GridBagConstraints(0, 3, 4, 1, 0.0, 0.5, 
+			new GridBagConstraints(0, 3, 4, 1, 0.0, 0.5,
 				GridBagConstraints.NORTH, GridBagConstraints.NONE,
 				new Insets(20, 15, 20, 15), 0, 0));
 
@@ -212,7 +225,7 @@ public class SavePanel
 	public void setChoosers()
 	{
 		Date lastTime = getDecodePanel().getLastTimeOfDecodedData();
-		if ( lastTime == null ) 
+		if ( lastTime == null )
 			lastTime = new Date();
 		String tzname = "UTC";
 		TransportMedium tm = getFileIdPanel().getTransportMedium();
@@ -230,7 +243,7 @@ public class SavePanel
 		String df = null;
 
 		String dir = archiveDir;
-		if ( dir == null || dir.isEmpty() ) 
+		if ( dir == null || dir.isEmpty() )
 			dir = DecodesSettings.instance().decwizRawDataDir;
 		dir = EnvExpander.expand(dir,p,lastTime,tzname);
 		File f = new File(dir);
@@ -245,7 +258,7 @@ public class SavePanel
 		rawField.setText(output.getPath());
 
 		dir = archiveDir;
-		if ( dir == null || dir.isEmpty() ) 
+		if ( dir == null || dir.isEmpty() )
 			dir = DecodesSettings.instance().decwizSummaryLog;
 		dir = EnvExpander.expand(dir,p,lastTime,tzname);
 		f = new File(dir);
@@ -261,7 +274,7 @@ public class SavePanel
 		saveSummaryField.setText(output.getPath());
 
 		dir = DecodesSettings.instance().decwizDecodedDataDir;
-		if ( dir == null || dir.isEmpty() ) 
+		if ( dir == null || dir.isEmpty() )
 			dir = "${HOME}";
 		else {
 			dir = EnvExpander.expand(dir,p,lastTime,tzname);
@@ -284,7 +297,7 @@ public class SavePanel
 
 	private void browseRawButtonPressed()
 	{
-		if (rawDataFileChooser.showSaveDialog(this) 
+		if (rawDataFileChooser.showSaveDialog(this)
 			== JFileChooser.APPROVE_OPTION)
 		{
 			File f = rawDataFileChooser.getSelectedFile();
@@ -294,7 +307,7 @@ public class SavePanel
 
 	private void browseDecodedButtonPressed()
 	{
-		if (decodedDataFileChooser.showSaveDialog(this) 
+		if (decodedDataFileChooser.showSaveDialog(this)
 			== JFileChooser.APPROVE_OPTION)
 		{
 			File f = decodedDataFileChooser.getSelectedFile();
@@ -304,7 +317,7 @@ public class SavePanel
 
 	private void browseSummaryButtonPressed()
 	{
-		if (summaryFileChooser.showSaveDialog(this) 
+		if (summaryFileChooser.showSaveDialog(this)
 			== JFileChooser.APPROVE_OPTION)
 		{
 			File f = summaryFileChooser.getSelectedFile();
@@ -315,19 +328,18 @@ public class SavePanel
 
 	private void doSaveButtonPressed()
 	{
-		FileOutputStream fos = null;
-		FileLock flock = null;
+
+
 		String fn = rawField.getText().trim();
 
 		boolean append = (rawCombo.getSelectedIndex() == 0);
 		int filesSaved = 0;
 		if (fn.length() > 0)
 		{
-			try
-			{
-				fos = new FileOutputStream(fn, append);
+			try(FileOutputStream fos = new FileOutputStream(fn, append);
 				FileChannel chan = fos.getChannel();
-				flock = chan.tryLock();
+				FileLock flock = chan.tryLock();)
+			{
 				String s = getFileIdPanel().getRawData();
 				String out = s.replaceAll("\u00AE","\r");
 				fos.write(out.getBytes());
@@ -335,78 +347,54 @@ public class SavePanel
 			}
 			catch(IOException ex)
 			{
+				log.atError().setCause(ex).log("Cannot save raw data to '{}'", fn);
 				showError("Cannot save raw data to '" + fn + "': " + ex);
-			}
-			finally
-			{
-				if (flock != null)
-					try { flock.release(); } catch(Exception ex) {}
-				if (fos != null)
-					try { fos.close(); } catch(Exception ex) {}
 			}
 			File f = new File(getFileIdPanel().getFilePath());
 			f.delete();
 		}
 
-		fos = null;
-		flock = null;
 		fn = saveSummaryField.getText().trim();
 		append = (summaryCombo.getSelectedIndex() == 0);
 		if (fn.length() > 0)
 		{
-			try
-			{
-				fos = new FileOutputStream(fn, append);
+			try(FileOutputStream fos = new FileOutputStream(fn, append);
 				FileChannel chan = fos.getChannel();
-				flock = chan.tryLock();
+				FileLock flock = chan.tryLock();)
+			{
 				String s = getDecodePanel().getSummaryData();
 				fos.write(s.getBytes());
 				filesSaved++;
 			}
 			catch(IOException ex)
 			{
+				log.atError().setCause(ex).log("Cannot save summary data to '{}'", fn);
 				showError("Cannot save summary data to '" + fn + "': " + ex);
-			}
-			finally
-			{
-				if (flock != null)
-					try { flock.release(); } catch(Exception ex) {}
-				if (fos != null)
-					try { fos.close(); } catch(Exception ex) {}
 			}
 		}
 
-		fos = null;
-		flock = null;
 		fn = saveDecodedField.getText().trim();
 		append = (decodedCombo.getSelectedIndex() == 0);
 		if (fn.length() > 0)
 		{
-			try
-			{
-				fos = new FileOutputStream(fn, append);
+			try(FileOutputStream fos = new FileOutputStream(fn, append);
 				FileChannel chan = fos.getChannel();
-				flock = chan.tryLock();
+				FileLock flock = chan.tryLock();)
+			{
 				String s = getDecodePanel().getDecodedData();
 				fos.write(s.getBytes());
 				filesSaved++;
 			}
 			catch(IOException ex)
 			{
+				log.atError().setCause(ex).log("Cannot save decoded data to '{}'", fn);
 				showError("Cannot save decoded data to '" + fn + "': " + ex);
 			}
-			finally
-			{
-				if (flock != null)
-					try { flock.release(); } catch(Exception ex) {}
-				if (fos != null)
-					try { fos.close(); } catch(Exception ex) {}
-			}
 		}
-		
+
 		if (filesSaved > 0)
-			JOptionPane.showMessageDialog(TopFrame.instance(), 
-			"" + filesSaved + " Files saved.", "Files Saved", 
+			JOptionPane.showMessageDialog(TopFrame.instance(),
+			"" + filesSaved + " Files saved.", "Files Saved",
 			JOptionPane.INFORMATION_MESSAGE);
 	}
 }

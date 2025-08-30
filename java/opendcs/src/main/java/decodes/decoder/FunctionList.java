@@ -1,14 +1,17 @@
 /*
-*  $Id$
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.decoder;
 
@@ -17,8 +20,8 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 
 import org.opendcs.spi.decodes.DecodesFunctionProvider;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
 This class holds an expandable collection of 'functions' that can be
@@ -26,7 +29,7 @@ used inside DECODES format statements.
 */
 public class FunctionList
 {
-	private static final Logger log = LoggerFactory.getLogger(FunctionList.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	private static final ServiceLoader<DecodesFunctionProvider> loader = ServiceLoader.load(DecodesFunctionProvider.class);
 	/** A set of functions available to the tokenizer. */
@@ -43,9 +46,9 @@ public class FunctionList
 			if (functions.containsKey(name))
 			{
 				DecodesFunction func = functions.get(name);
-				log.atWarn().log("Decodes Function List already contains a function named '{}' from '{}'."
-								+"New Function is from class '{}'. Keeping first loaded.",
-								 name, func.getClass().getName(), newFunc.getClass().getName());
+				log.warn("Decodes Function List already contains a function named '{}' from '{}'." +
+						 "New Function is from class '{}'. Keeping first loaded.",
+						 name, func.getClass().getName(), newFunc.getClass().getName());
 			}
 			else
 			{

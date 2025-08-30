@@ -1,13 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decoder;
 
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+
 import java.util.ArrayList;
 import ilex.util.ArrayUtil;
-import ilex.util.Logger;
-import ilex.util.TextUtil;
 import decodes.datasource.RawMessage;
 import decodes.util.DecodesSettings;
 import decodes.db.FormatStatement;
@@ -19,8 +35,11 @@ message. As well as holding the position within the RawMessage, it provides
 primitive operations for checking, scanning, parsing, etc., which are used
 by the script operations.
 */
-public class DataOperations 
+public class DataOperations
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static final Marker MODULE = MarkerFactory.getMarker("data-ops");
+
 	private RawMessage rawMsg;
 	private byte[] data;      // buffer contained within rawMsg
 	private int bytePos;      // byte position within data.
@@ -32,9 +51,9 @@ public class DataOperations
 	private static final byte CR = (byte)'\n';
 	private DecodesSettings settings = null;
 	public byte[] getDataBuffer() { return data; }
-	
+
 	// This data structure is used to detect endless loops.
-	class FormatPosition 
+	class FormatPosition
 	{
 		FormatStatement fs;
 		int pos;
@@ -44,7 +63,7 @@ public class DataOperations
 			this.pos = pos;
 		}
 	};
-	private ArrayList<FormatPosition> formatPositions = 
+	private ArrayList<FormatPosition> formatPositions =
 		new ArrayList<FormatPosition>();
 
 	/**
@@ -61,10 +80,11 @@ public class DataOperations
 		begLineBytePos = new Vector<Integer>();
 		begLineBytePos.add(0);
 		settings = DecodesSettings.instance();
-if (data.length >=2)
-Logger.instance().debug3("DataOperations instantiated with length=" + data.length
-+ ", last 2 chars = '" + (char)data[data.length-2] + "' '" + (char)data[data.length-1]
-+ "'");
+		if (data.length >=2)
+		{
+			log.trace(MODULE, "DataOperations instantiated with length={}, last 2 chars = '{}' '{}'",
+					  data.length, (char)data[data.length-2], (char)data[data.length-1]);
+		}
 	}
 
 	/** @return the RawMessage reference. */
@@ -87,17 +107,17 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 
 		if ( n >= 0 )
 			forward = true;
-		else 
+		else
 		{
 			forward = false;
 			n *= -1;
 		}
 
-		while ( n-- > 0 ) 
+		while ( n-- > 0 )
 		{
 			if ( forward )
 				forwardspace();
-			else 
+			else
 				backspace();
 		}
 	}
@@ -134,7 +154,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 	/**
 	  Skips 'n' lines of data. 'n' may be positive or negative.
 
-	  @param n number of lines 
+	  @param n number of lines
 	  @throws EndOfDataException if this would place cursor past end of data.
 	  @throws ScriptException if this place curser bevfore start of data.
 	*/
@@ -158,7 +178,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 				try
 				{
 					// goto first char on the next line.
-					while (moreChars() && (c = curByte()) != NL) 
+					while (moreChars() && (c = curByte()) != NL)
 						forwardspace();
 					if (moreChars())
 						forwardspace();
@@ -171,7 +191,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 			while ( bytePos > 0 && n-- > 0 )
 			{
 				// goto first char on previous line.
-				while (bytePos > 0 && (c = curByte()) != NL) 
+				while (bytePos > 0 && (c = curByte()) != NL)
 					backspace();
 				backspace();
 				while (bytePos > 0 && (c = curByte()) != NL)
@@ -190,7 +210,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 	boolean checkChar(byte c)
 		throws EndOfDataException
 	{
-		return ( c == curByte() ); 
+		return ( c == curByte() );
 	}
 
 	/**
@@ -200,8 +220,8 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 	boolean checkSign()
 		throws EndOfDataException
 	{
-		return ( curByte() == '+' || curByte() == '-' ); 
-	}	
+		return ( curByte() == '+' || curByte() == '-' );
+	}
 
 	/**
 	  Returns true if string matches the current data.
@@ -230,7 +250,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 		{
 			i = 0;  // force false return
 		}
-			
+
 		restorePosition();
 		return i == n;  // successfully fell through loop without mismatch?
 	}
@@ -259,7 +279,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 				if ( !( Character.isDigit(c) || c == '.'
 				        || c == '+' || c == '-') )
 					break;
-				forwardspace(); 
+				forwardspace();
 			}
 			catch(EndOfDataException e) { break; }
 		}
@@ -287,20 +307,20 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 		{
 			try
 			{
-				int intPseudo = (int)curByte();						
-				if(!(intPseudo==47) & !(intPseudo >=63) &(intPseudo <=127))				
+				int intPseudo = (int)curByte();
+				if(!(intPseudo==47) & !(intPseudo >=63) &(intPseudo <=127))
 					break;
-				forwardspace(); 
+				forwardspace();
 			}
 			catch(EndOfDataException e) { break; }
 		}
 
-		restorePosition();		
+		restorePosition();
 		return i == n;
 	}
-	
+
 	/**
-	  Returns true if the passed character 'c' is present in the next n 
+	  Returns true if the passed character 'c' is present in the next n
 	  bytes of data.
 	  Leaves the cursor where the scan operation completed or failed.
 	  @param n number of characters
@@ -308,7 +328,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 	  @return true if found.
 	  @throws EndOfDataException if current position is passed end of message.
 	*/
-	boolean scanChar(int n, byte c) 
+	boolean scanChar(int n, byte c)
 		throws EndOfDataException
 	{
 		checkPosition(); // Will throw if we're already past end of data.
@@ -322,7 +342,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 		while ( moreChars() && n-- > 0 )
 		{
 			if (!settings.scanPastEOL && data[bytePos] == NL)
-				break; 
+				break;
 			try
 			{
 				if (c == curByte())
@@ -338,7 +358,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 	/**
 	  Scans 'n' characters for a digit or sign-character, returns true if found,
 	  false otherwise.
-	  The cursor where the sign-or-digit was found or at the end of the 
+	  The cursor where the sign-or-digit was found or at the end of the
 	  n-character scan if not.
 	  @param n number of characters
 	  @return true if found.
@@ -373,7 +393,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 	/**
 	  Scans 'n' characters for a + or - sign-character, returns true if found,
 	  false otherwise.
-	  The cursor is left where the sign was found or at the end of the 
+	  The cursor is left where the sign was found or at the end of the
 	  n-character scan if not.
 	  @param n number of characters
 	  @return true if found.
@@ -441,7 +461,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 		return false;
 	}
 
-	
+
 	/**
 	  Scans 'n' characters for an pseudo binary character.
 	  @param n number of characters
@@ -473,7 +493,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 		}
 		return false;
 	}
-	
+
 	/**
 	  Scans 'n' characters for the specified string & returns true if found.
 	  The cursor is left at the beginning of the string (if found) or at
@@ -506,53 +526,9 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 				catch(EndOfDataException e) { return false; }
 			}
 		}
-	
+
 		return false;
 	}
-
-//	/**
-//	  Returns a 'field' of data. The field starts at the current byte
-//	  and continues for specified number of characters or until the
-//	  specified delimiter is found. Set 'delimiter' to (byte)0xff to
-//	  mean un-delimited.
-//	  Fields always implicitely end when the end-of-line is encountered.
-//	  @param length number of bytes in field length
-//	  @param delimiter or 0xff if there is none.
-//	  @return byte array containing the field data
-//	  @deprecated Use the version with a string delimiter
-//	*/
-//	byte[] getField(int length, byte delimiter)
-//		throws EndOfDataException
-//	{
-//		byte b[] = new byte[length];
-//		int i;
-//		boolean signDelim = (delimiter==(byte)'+' || delimiter==(byte)'-');
-//
-//		for(i=0; i < length; i++ ) 
-//		{
-//			if ( moreChars() ) 
-//			{
-// 				byte c = curByte();
-//
-// 				if (c == NL                      // EOL
-//				 || (delimiter != 0xff           // There IS a delimiter
-//				  && ((!signDelim && c == delimiter)
-//				   || (signDelim && i>0 && (c==(byte)'+' || c==(byte)'-')))))
-//				{
-//					break;
-//				}
-// 				//if ( c != NL && (delimiter == 0xff || c != delimiter))
-//				else
-//				{
-//					b[i] = c;
-//					forwardspace();
-//				}
-//				//else  // end of field reached!
-//				//	break;
-//			}
-//		}
-//		return i==length ? b : ArrayUtil.getField(b, 0, i);
-//	}
 
 	/**
 	 * Provides default isBinary = false.
@@ -563,7 +539,7 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 	{
 		return getField(length, delim, false, false);
 	}
-	
+
 	/**
 	  Returns a 'field' of data. The field starts at the current byte
 	  and continues for specified number of characters or until one of
@@ -579,14 +555,14 @@ Logger.instance().debug3("DataOperations instantiated with length=" + data.lengt
 		boolean isString)
 		throws EndOfDataException
 	{
-Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.length);
+		log.trace(MODULE, "getField pos={}, data.length={}", bytePos, data.length);
 		checkPosition(); // Will throw if we're already past end of data.
 		byte b[] = new byte[length];
 		int i;
 
-		for(i=0; i < length; i++ ) 
+		for(i=0; i < length; i++ )
 		{
-			if ( moreChars() ) 
+			if ( moreChars() )
 			{
  				byte c = curByte();
 
@@ -599,14 +575,14 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 				{
 					break;
 				}
-				else if (i>0 
+				else if (i>0
 				 && delim != null
-				 && delim.indexOf('!') >= 0 
+				 && delim.indexOf('!') >= 0
 				 && !isNumberChar(c))
 				{
 					break;
 				}
-				
+
 				b[i] = c;
 				forwardspace();
 			}
@@ -619,7 +595,7 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 	private boolean isNumberChar(byte b)
 	{
 		char c = (char)b;
-		return Character.isDigit(c) || c == '.' 
+		return Character.isDigit(c) || c == '.'
 		 || c == '+' || c == '-'
 		 || c == 'e' || c == 'E';
 	}
@@ -629,7 +605,7 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 	*/
 	public void skipWhiteSpace()
 	{
-		while( bytePos < data.length 
+		while( bytePos < data.length
 		 &&  (  data[bytePos] == (byte)' ' || data[bytePos] == (byte)'\t'
 		     || data[bytePos] == (byte)'\r' || data[bytePos] == (byte)'\n'
 			 || data[bytePos] == (byte)0x00AE))
@@ -650,17 +626,17 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 	}
 
 	/**
-	  If currently past end of data, throws EndOfDataException, else 
+	  If currently past end of data, throws EndOfDataException, else
 	  does nothing.
 	*/
 	private void checkPosition()
 		throws EndOfDataException
 	{
-		if ( bytePos >= data.length ) 
+		if ( bytePos >= data.length )
 			throw new EndOfDataException(
 				"Attempt to read past end of data (length="+data.length+")");
 	}
-	
+
 	/**
 	  @return current byte, without changing the position.
 	*/
@@ -679,11 +655,10 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 		throws EndOfDataException
 	{
 		relBytePos++;
-		if ( ++bytePos > data.length ) 
+		if ( ++bytePos > data.length )
 		{
-			String msg = "Attempt to move past end of data (pos="
-				+ bytePos + ", length="+data.length+")";
-			Logger.instance().debug3(msg);
+			String msg = "Attempt to move past end of data (pos=" + bytePos + ", length="+data.length+")";
+			log.trace(msg);
 			throw new EndOfDataException(msg);
 		}
 
@@ -705,7 +680,7 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 	private void backspace()
 		throws ScriptException, EndOfDataException
 	{
-		if ( --bytePos < 0 ) 
+		if ( --bytePos < 0 )
 			throw new ScriptException("Attempt to read before start of data");
 
 		// Backed up to EOL of previous line? decrement line.
@@ -754,7 +729,7 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 		}
 		else if ( dataLineNum > 0 && dataLineNum < begLineBytePos.size() ) {
 			int begLinePos = begLineBytePos.elementAt(dataLineNum).intValue();
-			relPos = bytePos - begLinePos + 1;		
+			relPos = bytePos - begLinePos + 1;
 		}
 		return(relPos);
 	}
@@ -765,12 +740,6 @@ Logger.instance().debug3("getField pos=" + bytePos + ", data.length=" + data.len
 	/** Sets the current line number within data. (1 == first line) */
 	public void setCurrentLine(int ln) { curLine = ln; }
 
-	private void printPosition()
-	{
-		int lineNum = curLine+1;
-		System.out. println("Line: "+lineNum+" Position: "+getRelBytePos());
-	}
-	
 	/**
 	 * Called when every format statement starts to verify that an endless loop
 	 * is not occurring. This method will throw ScriptException if this format

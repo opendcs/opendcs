@@ -1,17 +1,29 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.decoder;
 
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.StringTokenizer;
 import java.util.Date;
 import java.util.TimeZone;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.ArrayUtil;
 import ilex.util.ByteUtil;
 import ilex.util.IDateFormat;
@@ -20,7 +32,6 @@ import ilex.var.Variable;
 import ilex.var.IFlags;
 
 import decodes.db.*;
-import hec.util.TextUtil;
 
 /**
 FieldOperation is a DecodesOperation that extracts and parses a field 
@@ -29,6 +40,7 @@ on fields in the DECODES User Guide for details.
 */
 class FieldOperation extends DecodesOperation
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger(); 
 	/** field-type is the 1st arg inside the parenthesis for the field op */
 	private String field_type;
 
@@ -37,9 +49,6 @@ class FieldOperation extends DecodesOperation
 
 	/** length is the 3rd argument inside the parenthesis for the field op */
 	private int field_length;
-
-//	/** length may be optionally folled by a delimiter */
-//	private byte field_delimiter;
 
 	/** Any character in this string can serve as a delimiter */
 	private String delimiter;
@@ -176,7 +185,7 @@ class FieldOperation extends DecodesOperation
 			try { field_length = Integer.parseInt(s.substring(0,pos)); }
 			catch (NumberFormatException nfe)
 			{
-				throw new ScriptFormatException("Field length must be a number");
+				throw new ScriptFormatException("Field length must be a number", nfe);
 			}
 	
 			if ( pos < s.length() )     // There was a 'd' in the length field
@@ -271,17 +280,9 @@ class FieldOperation extends DecodesOperation
 		throws DecoderException
 	{
 		if (sensorNumber == -1 && (field_type.equals("s") || event))
+		{
 			throw new ScriptException("Invalid sensor number in field "+currentField);
-//			throw new ScriptException("No time-series for sensor " 
-//				+ sensorNumber);
-
-//		Logger.instance().log(Logger.E_DEBUG3,
-//			"Executing FieldOperation, type=" + field_type
-//			+ ", sensor=" + sensorNumber
-//			+ ", repetitions=" + repetitions
-//			+ ", length=" + field_length 
-//		 	+ ", delim='" + (field_delimiter==0 ? 'N' : (char)field_delimiter) 
-//			+ "'");
+		}
 
 		boolean isString = (data_type=='S'||data_type=='s');
 		for (int n=0; n < repetitions; n++) 
@@ -314,10 +315,11 @@ class FieldOperation extends DecodesOperation
 				field = dd.getField(field_length, delimiter, isBinary, isString);
 
 
-			if (field != null && numberParser != null)
-				Logger.instance().log(Logger.E_DEBUG3,
-				"Field Parse: data='" + new String(field) + "', fieldType="
-				+ field_type + ", dataType=" + numberParser.getDataType());
+			if (field != null && numberParser != null && log.isTraceEnabled())
+			{
+				log.trace("Field Parse: data='{}', fieldType={}, dataType={}",
+						  new String(field), field_type, numberParser.getDataType());
+			}
 
 			
 			if ( is_blank(field) && !isString && !isZformat )
@@ -334,20 +336,21 @@ class FieldOperation extends DecodesOperation
 					{
 						v = new Variable("m");
 						v.setFlags(v.getFlags() | IFlags.IS_MISSING);
-						Logger.instance().debug3("found missing symbol '" + s + "'");
+						log.trace("found missing symbol '{}'", s);
 					}
 					else
 					{
 						v = numberParser.parseDataValue(field);
-						Logger.instance().debug3("field parsed to '" + v + "'");
+						log.trace("field parsed to '{}'", v);
 					}
 				}
 				catch(FieldParseException ex)
 				{
 					if(isZformat && s!=null && s.equalsIgnoreCase(""))
+					{
 						s = "//";
-					Logger.instance().debug1("Field Parse Exception: "
-						+ ex.getMessage());
+					}
+					log.atDebug().setCause(ex).log("Field Parse Exception.");
 					v = new Variable("e");
 					v.setFlags(v.getFlags() | IFlags.IS_ERROR);
 				}
@@ -368,10 +371,8 @@ class FieldOperation extends DecodesOperation
 			else if (field_type.equals("f")) // Format Label Field
 			{
 				String label = new String(field);
-				Logger.instance().log(Logger.E_DEBUG3,
-					"Searching for format label '" + label + "'");
-				FormatStatement newFormat = 
-					decodesScript.getFormatStatement(label);
+				log.trace("Searching for format label '{}'", label);
+				FormatStatement newFormat = decodesScript.getFormatStatement(label);
 				if (newFormat == null)
 				{
 					// Try to find an error handler
@@ -474,8 +475,8 @@ class FieldOperation extends DecodesOperation
 				
 				parseDate(field, rts);
 
-				Logger.instance().debug3("Setting message date messageTime=" + rts.getTime() 
-					+ ", currentTime=" + msg.getTimer().getTime() + ", timeWasTruncated=" + msg.timeWasTruncated);
+				log.trace("Setting message date messageTime={}, currentTime={}, timeWasTruncated={}",
+						  rts.getTime(), msg.getTimer().getTime(), msg.timeWasTruncated);
 				msg.setMessageTime(rts.getTime());
 			}
 			else if ( field_type.equals("mn") )  // Month Field
@@ -558,15 +559,14 @@ class FieldOperation extends DecodesOperation
 				
 				parseTime(field, rts);
 
-				Logger.instance().debug3("Setting message time messageTime=" + rts.getTime() 
-					+ ", currentTime=" + msg.getTimer().getTime() + ", timeWasTruncated=" + msg.timeWasTruncated);
+				log.trace("Setting message time messageTime={}, currentTime={}, timeWasTruncated={}",
+						  rts.getTime(), msg.getTimer().getTime(), msg.timeWasTruncated);
 				msg.setMessageTime(rts.getTime());
 			}
 			else if (field_type.equals("ti") ) 
 			{
 				if (sensorNumber == -1)
-					throw new ScriptFormatException(
-						"Time-Interval field must have sensor number");
+					throw new ScriptFormatException("Time-Interval field must have sensor number");
 				try
 				{
 					int sod = IDateFormat.getSecondOfDay(new String(field));
@@ -574,7 +574,7 @@ class FieldOperation extends DecodesOperation
 				}
 				catch(IllegalArgumentException ex)
 				{
-					throw new FieldParseException("Bad time interval value");
+					throw new FieldParseException("Bad time interval value", ex);
 				}
 			}
  			// Minute Interval (positive or negative)
@@ -587,16 +587,17 @@ class FieldOperation extends DecodesOperation
 				try
 				{
 					int m = numberParser.parseIntValue(field);
-					if (field_type.equals("mint-") 
-					 && decodesScript.getDataOrder() == Constants.dataOrderAscending)
+					if (field_type.equals("mint-") &&
+						decodesScript.getDataOrder() == Constants.dataOrderAscending)
+					{
 						m = -m;
-					Logger.instance().log(Logger.E_DEBUG3,
-						"Setting interval for sensor " + sensorNumber + " to " + (m*60) + " seconds.");
+					}
+					log.trace("Setting interval for sensor {} to {} seconds", sensorNumber, (m*60));
 					msg.setTimeInterval(sensorNumber, m*60);
 				}
 				catch(IllegalArgumentException ex)
 				{
-					throw new FieldParseException("Bad minute interval value");
+					throw new FieldParseException("Bad minute interval value", ex);
 				}
 			}
 			else if (field_type.equals("moff") )  // Minute Offset
@@ -614,13 +615,11 @@ class FieldOperation extends DecodesOperation
 					msec -= (m * 60000L);
 					Date timeStamp = new Date(msec);
 					msg.getTimer().setComplete(timeStamp);
-					Logger.instance().log(Logger.E_DEBUG3,
-						"Set Minute OFFset to " + m + ", current timer="
-						+ loggerDateFmt.format(timeStamp));
+					log.trace("Set Minute OFFset to {}, current timer={}", m, timeStamp);
 				}
 				catch(IllegalArgumentException ex)
 				{
-					throw new FieldParseException("Bad minute interval value");
+					throw new FieldParseException("Bad minute interval value", ex);
 				}
 			}
 			else if (field_type.equals("to") ) 
@@ -639,9 +638,11 @@ class FieldOperation extends DecodesOperation
 				String sfield = new String(field);
 				String tzid = mapSpecialTz(sfield);
 				if (tzid == null)
+				{
 					tzid = sfield;
+				}
 				msg.getTimer().setTimeZoneName(tzid);
-				Logger.instance().debug3("Set Time Zone to '" + tzid + "' (" + msg.getTimer().getTimeZoneName() + ")");
+				log.trace("Set Time Zone to '{}' ({})", tzid, msg.getTimer().getTimeZoneName());
 			}
 		}
 	}
@@ -742,7 +743,8 @@ class FieldOperation extends DecodesOperation
 				rts.decrementDay();
 			if (stat != msg.getTimer().getStatus())
 				msg.upgradeStoredTimes();
-			Logger.instance().debug3("After M field with month=" + rts.getMonth() + ", day=" + rts.getDayOfMonth() + ", dayOfYear=" + rts.getDayOfYear() + ", incr=" + increment);
+			log.trace("After M field with month={}, day={}, dayOfYear={}, incr={}",
+					  rts.getMonth(), rts.getDayOfMonth(), rts.getDayOfYear(), increment);
 			rts.incrementDay();
 			msg.justGotNonYearField();
 			break;
@@ -791,8 +793,7 @@ class FieldOperation extends DecodesOperation
 				d = numberParser.parseIntValue(ArrayUtil.getField(field, 8, 2));
 			}
 			else
-				throw new FieldParseException(
-					"Date format 1 bad date format '" + field + "'");
+				throw new FieldParseException("Date format 1 bad date format '" + field + "'");
 
 			rts.setYear(y);
 			rts.setMonth(m);
@@ -821,8 +822,7 @@ class FieldOperation extends DecodesOperation
 				d = numberParser.parseIntValue(ArrayUtil.getField(field, 4, 3));
 			}
 			else
-				throw new FieldParseException(
-					"Date format 2 bad data '" + field + "'");
+				throw new FieldParseException("Date format 2 bad data '" + field + "'");
 
 			if (y != -1)
 				rts.setYear(y);
@@ -833,7 +833,7 @@ class FieldOperation extends DecodesOperation
 				GregorianCalendar gc = new GregorianCalendar();
 				if ( curYear != 1970 && !gc.isLeapYear(curYear) )
 				{
-					throw new FieldParseException("Found day 366 for non-leap year "+curYear+".");
+					throw new FieldParseException("Found day 366 for non-leap year " + curYear + ".");
 				}
 			}
 			rts.setDayOfYear(d);
@@ -851,12 +851,11 @@ class FieldOperation extends DecodesOperation
 				d = numberParser.parseIntValue(ArrayUtil.getField(field, 3, 2));
 			}
 			else
-				throw new FieldParseException(
-					"Date format 3 bad data '" + field + "'");
+				throw new FieldParseException("Date format 3 bad data '" + field + "'");
 
 			rts.setMonth(m);
 			rts.setDayOfMonth(d);
-			Logger.instance().debug3("After M field with month=" + m + ", day=" + d + ", dayOfYear=" + rts.getDayOfYear());
+			log.trace("After M field with month={}, day={}, dayOfYear={}", m, d, rts.getDayOfYear());
 			break;
 
 		case 4: // mmddyy, mm/dd/yy
@@ -873,8 +872,7 @@ class FieldOperation extends DecodesOperation
 					field_length == 8 ? 2 : 4));
 			}
 			else
-				throw new FieldParseException(
-					"Date format 4 bad data '" + field + "'");
+				throw new FieldParseException("Date format 4 bad data '" + field + "'");
 
 			rts.setYear(y);
 			rts.setMonth(m);
@@ -906,13 +904,13 @@ class FieldOperation extends DecodesOperation
 	{
 		int h=0, m=0, s=0;
 
-//	Set standard time delimiters
+		//	Set standard time delimiters
 		String delimiters = "[\\s:\\x2e-]"; // Time delimiters: ':',' ','.','-' 
 
-//	Convert time field to String
+		//	Convert time field to String
 		String tf = new String (ArrayUtil.getField(field,0, field.length));
 
-//	Check for am/pm designators
+		//	Check for am/pm designators
 		int ampmIndex = tf.toLowerCase().indexOf("am");
 		if ( ampmIndex > 0 ) {
 			AMSet = true;
@@ -927,7 +925,7 @@ class FieldOperation extends DecodesOperation
 			}
 		}
 
-//	Eliminate trailing spaces
+		//	Eliminate trailing spaces
 
 		int spaceIndex = tf.lastIndexOf(' ');
 		while ( spaceIndex == tf.length()-1 )
@@ -936,13 +934,12 @@ class FieldOperation extends DecodesOperation
 			spaceIndex = tf.lastIndexOf(' ');
 		}
 
-//	See if there are standard delimiters
+		//	See if there are standard delimiters
 
-    String tm[] = tf.split(delimiters);
-		if ( tm.length == 1 ) {
-
-//		No delimiters - analyze length to determine field format
-
+	    String tm[] = tf.split(delimiters);
+		if ( tm.length == 1 )
+		{
+			//		No delimiters - analyze length to determine field format
 			field = tf.getBytes();
 			if (field.length <= 2) // m or mm
 			{
@@ -974,17 +971,20 @@ class FieldOperation extends DecodesOperation
 					}
 				}
 			}
-		} else if ( tm.length > 1 ) {
-//		Has delimeter(:,.,-,or space)
+		}
+		else if ( tm.length > 1 )
+		{
+		//		Has delimeter(:,.,-,or space)
 			if ( tm.length > 2 ) 		// Has a second
 				s = numberParser.parseIntValue(tm[2].getBytes());
 			if ( tm.length > 1 ) 	 //  Has a minute
 				m = numberParser.parseIntValue(tm[1].getBytes());
 			h = numberParser.parseIntValue(tm[0].getBytes());
 		}
-		if ( h < 0 || h > 24 || m < 0 || m > 59 || s < 0 || s >59 ) 
-					throw new FieldParseException("Bad time format '" + 
-						new String(field) + "'");
+		if ( h < 0 || h > 24 || m < 0 || m > 59 || s < 0 || s >59 )
+		{
+			throw new FieldParseException("Bad time format '" + new String(field) + "'");
+		}
 		rts.setHour(h);
 		rts.setMinute(m);
 		rts.setSecond(s);
@@ -1003,14 +1003,6 @@ class FieldOperation extends DecodesOperation
 		 || decodesScript.isMissingSymbol(s);
 	}
 
-	public static void main(String args[])
-	{
-		FieldArgsTokenizer fat = new FieldArgsTokenizer(args[0]);
-		String tok;
-		int i=0;
-		while((tok = fat.nextToken()) != null)
-			System.out.println("Token[" + (i++) + "] = '" + tok + "'");
-	}
 }
 
 class FieldArgsTokenizer
@@ -1078,4 +1070,3 @@ class FieldArgsTokenizer
 			return null;
 	}
 }
-

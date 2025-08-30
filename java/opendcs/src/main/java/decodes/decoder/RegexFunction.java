@@ -1,19 +1,34 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.decoder;
 
 import decodes.db.DecodesScript;
-import decodes.sql.PlatformListIO;
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 import ilex.var.Variable;
-import org.slf4j.LoggerFactory;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class RegexFunction
-	extends DecodesFunction
+public class RegexFunction extends DecodesFunction
 {
-	private final static org.slf4j.Logger log = LoggerFactory.getLogger(PlatformListIO.class);
+	private final static Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "regex";
 	private String argString = null;
 
@@ -36,7 +51,7 @@ public class RegexFunction
 	@Override
 	public void execute(DataOperations dd, DecodedMessage decmsg) throws DecoderException
 	{
-		log.trace("Executing with args '" + argString + "'");
+		log.trace("Executing with args '{}'", argString);
 		int sensorNumber = getSensorNumber();
 
 		Pattern pattern = Pattern.compile(this.argString);
@@ -67,7 +82,7 @@ public class RegexFunction
 		}
 		else
 		{
-			log.warn("    value is flagged as missing");
+			log.warn("value is flagged as missing");
 		}
 	}
 
@@ -83,13 +98,13 @@ public class RegexFunction
 		int idxStart = argString.indexOf(grpPrefix);
 		if(idxStart == -1)
 		{
-			throw new DecoderException("Could not find named sensor group in the regex "+ argString);
+			throw new DecoderException("Could not find named sensor group in the regex " + argString);
 		}
 
 		int idxEnd = argString.indexOf(">",idxStart);
 		if( idxEnd == -1)
 		{
-			throw new DecoderException("Did not find expected closing '>' in named capture group "+ argString);
+			throw new DecoderException("Did not find expected closing '>' in named capture group " + argString);
 		}
 		String number = argString.substring(idxStart+grpPrefix.length(),idxEnd);
 		return  Integer.parseInt(number);
@@ -115,6 +130,4 @@ public class RegexFunction
 	{
 		this.argString = argString;
 	}
-	
-
 }

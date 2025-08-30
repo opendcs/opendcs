@@ -1,10 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.gui;
-
-import ilex.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import javax.swing.JComboBox;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.EnumValue;
 import decodes.db.DbEnum;
@@ -14,12 +30,13 @@ import decodes.db.Database;
 Extends JComboBox to display the choice of values for a DECODES enumeration.
 */
 @SuppressWarnings("serial")
-public class EnumComboBox extends JComboBox
+public class EnumComboBox extends JComboBox<String>
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String enumName;
 	private DbEnum dbEnum;
 
-	/** 
+	/**
 	  Constructor used where user has already made a selection.
 	  @param enumName the name of the enumeration.
 	  @param currentValue the current setting for the combo box.
@@ -33,7 +50,7 @@ public class EnumComboBox extends JComboBox
 		setSelection(currentValue);
 	}
 
-	/** 
+	/**
 	  Constructor that uses default value.
 	  @param enumName the name of the enumeration.
 	*/
@@ -46,7 +63,7 @@ public class EnumComboBox extends JComboBox
 		dbEnum = Database.getDb().getDbEnum(enumName);
 		if (dbEnum == null)
 		{
-			Logger.instance().warning("EnumComboBox with invalid enumName '" + enumName + "'");
+			log.warn("EnumComboBox with invalid enumName '{}'", enumName);
 			return;
 		}
 
@@ -74,7 +91,7 @@ public class EnumComboBox extends JComboBox
 			setSelectedIndex(0);
 			return;
 		}
-		
+
 		int n = getItemCount();
 		for(int i = 0; i < n; i++)
 		{
@@ -102,7 +119,7 @@ public class EnumComboBox extends JComboBox
 			return null;
 		return dbEnum.findEnumValue(s);
 	}
-	
+
 	/**
 	 * This method returns all items in the combobox in Arraylist<String>.
 	 * @return ArrayList<String> . Array list populated with values from combobox.
@@ -114,7 +131,7 @@ public class EnumComboBox extends JComboBox
 		{
 			allItems.add((String)this.getItemAt(i));
 		}
-		
+
 		return allItems;
 	}
 }

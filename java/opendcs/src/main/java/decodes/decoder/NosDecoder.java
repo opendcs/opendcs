@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.decoder;
 
-import ilex.util.Logger;
 import ilex.var.Variable;
 
 import java.util.Calendar;
@@ -9,14 +23,17 @@ import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.ConfigSensor;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.PlatformConfig;
 
-public abstract class NosDecoder
-	extends DecodesFunction
+public abstract class NosDecoder extends DecodesFunction
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String PM_STATION_ID = "NOS_STATION_ID";
 	public static final String PM_DCP_NUM = "NOS_DCP_NUM";
 	/** Performance Measurement Label */
@@ -28,16 +45,16 @@ public abstract class NosDecoder
 	/** Performance Measurement Label */
 	public static final String PM_NOS_BATTERY = "BATTERY_VOLTAGE";
 	public static final String PM_STATION_TIME = "NOS_STATION_TIME";
-	
+
 	public static final String module = "NosDecoder";
-	
+
 	/** This var-flag indicates that the value is redundant. */
 	public static final int FLAG_REDUNDANT = 0x10;
-	
+
 	protected GregorianCalendar cal = new GregorianCalendar();
 	protected NumberParser numberParser = new NumberParser();
 	protected transient DataOperations dataOps = null;
-	
+
 	protected int sensorIndex[] = new int[26];
 	protected int dcpNum = 0;
 	protected int primaryDcpNum = 0;
@@ -49,14 +66,14 @@ public abstract class NosDecoder
 		cal.setTimeZone(TimeZone.getTimeZone("UTC"));
 		initSensorIndeces();
 	}
-	
+
 	/** Sets all the sensor indeces to zero */
 	protected void initSensorIndeces()
 	{
 		for(int i=0; i<26; i++)
 			sensorIndex[i] = 0;
 	}
-	
+
 
 
 	/** Initialize the internal calendar to the Windows (9210) Epcoh */
@@ -70,7 +87,7 @@ public abstract class NosDecoder
 		cal.set(Calendar.SECOND, 0);
 		cal.set(Calendar.MILLISECOND, 0);
 	}
-	
+
 	/**
 	 * Sets an arbitrary day number since the epoch.
 	 * Day number is in range 0...4095, which is a little more than 11 years.
@@ -111,14 +128,13 @@ public abstract class NosDecoder
 				continue;
 			if (dt.getCode().charAt(0) == sensorType)
 			{
-				return cs.sensorNumber 
+				return cs.sensorNumber
 					+ (dcpNum-1)*100
 					+ (sensorIndex[(int)sensorType - (int)'A']++);
-				
+
 			}
 		}
-		Logger.instance().warning(module + " Unknown sensor type '"
-			+ sensorType + "' dcpNum=" + dcpNum);
+		log.warn("Unknown sensor type '{}' dcpNum={}", sensorType, dcpNum);
 		return -1;
 	}
 
@@ -128,18 +144,17 @@ public abstract class NosDecoder
 		int startPos = dataOps.getBytePos();
 		try
 		{
-			numberParser.setDataType(signed ? NumberParser.SIGNED_PBINARY_FMT 
+			numberParser.setDataType(signed ? NumberParser.SIGNED_PBINARY_FMT
 				: NumberParser.PBINARY_FMT);
 			byte []field = dataOps.getField(nbytes, null);
 			Variable result = numberParser.parseDataValue(field);
-			Logger.instance().debug3(module + " parsing field '"
-				+ new String(field) + "' result = " + result);
+			log.trace("parsing field '{}' result = {}", new String(field), result);
 			return result;
 		}
 		catch(Exception ex)
 		{
 			throw new DecoderException(module + " cannot get number len=" + nbytes
-				+ " at position " + startPos + ": " + ex);
+				+ " at position " + startPos, ex);
 		}
 	}
 
@@ -154,10 +169,10 @@ public abstract class NosDecoder
 		catch(Exception ex)
 		{
 			throw new DecoderException(module + " cannot get integer len=" + nbytes
-				+ " at position " + startPos + ": " + ex);
+				+ " at position " + startPos, ex);
 		}
 	}
-	
+
 	protected double getDouble(int nbytes, boolean signed)
 		throws DecoderException
 	{
@@ -169,7 +184,7 @@ public abstract class NosDecoder
 		catch(Exception ex)
 		{
 			throw new DecoderException(module + " cannot get double len=" + nbytes
-				+ " at position " + startPos + ": " + ex);
+				+ " at position " + startPos, ex);
 		}
 	}
 

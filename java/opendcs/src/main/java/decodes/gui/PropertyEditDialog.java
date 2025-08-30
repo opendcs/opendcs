@@ -1,6 +1,18 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.gui;
 
 import java.awt.*;
@@ -10,7 +22,10 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
 import org.opendcs.gui.GuiConstants;
+import org.opendcs.gui.GuiHelpers;
 import org.opendcs.gui.PasswordWithShow;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.dbeditor.TimeZoneSelector;
 import decodes.util.PropertySpec;
@@ -31,6 +46,7 @@ import ilex.util.TextUtil;
 @SuppressWarnings("serial")
 public class PropertyEditDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle genericLabels = PropertiesEditDialog.getGenericLabels();
 	private JButton okButton = new JButton();
 	private JButton cancelButton = new JButton();
@@ -45,7 +61,7 @@ public class PropertyEditDialog extends GuiDialog
 
 	/**
 	 * Construct dialog with frame owner.
-	 * 
+	 *
 	 * @param owner the owner frame
 	 * @param name the property name
 	 * @param value the property value edited in a JTextField
@@ -54,10 +70,10 @@ public class PropertyEditDialog extends GuiDialog
 	{
 		this(owner, name, value, null);
 	}
-	
+
 	/**
 	 * Construct dialog with frame owner.
-	 * 
+	 *
 	 * @param owner the owner frame
 	 * @param name the property name
 	 * @param value the property value edited in a JTextField
@@ -75,7 +91,7 @@ public class PropertyEditDialog extends GuiDialog
 
 	/**
 	 * Construct dialog with dialog owner.
-	 * 
+	 *
 	 * @param owner the owner dialog
 	 * @param name the property name
 	 * @param value the property value edited in a JTextField
@@ -84,10 +100,10 @@ public class PropertyEditDialog extends GuiDialog
 	{
 		this(owner, name, value, null);
 	}
-	
+
 	/**
 	 * Construct dialog with dialog owner.
-	 * 
+	 *
 	 * @param owner the owner dialog
 	 * @param name the property name
 	 * @param value the property value edited in a JTextField
@@ -102,11 +118,11 @@ public class PropertyEditDialog extends GuiDialog
 		this.propSpec = propSpec;
 		init(name, value);
 	}
-	
+
 
 	/**
 	 * Post-Initialize dialog with name & value.
-	 * 
+	 *
 	 * @param name the property name
 	 * @param value the property value edited in a JTextField
 	 */
@@ -122,12 +138,12 @@ public class PropertyEditDialog extends GuiDialog
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		nameField.setText(name);
 		setValue(value);
 		pack();
-		
+
 		addWindowListener(new WindowAdapter()
 		{
 			boolean started = false;
@@ -148,7 +164,7 @@ public class PropertyEditDialog extends GuiDialog
 		setTitle(genericLabels.getString("PropertyEditDialog.editPropertyValue"));
 		JPanel mainPanel = new JPanel(borderLayout1);
 		getContentPane().add(mainPanel);
-		JPanel southButtonPanel = 
+		JPanel southButtonPanel =
 			new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
 		mainPanel.add(southButtonPanel, BorderLayout.SOUTH);
 
@@ -172,21 +188,21 @@ public class PropertyEditDialog extends GuiDialog
 		southButtonPanel.add(cancelButton, null);
 
 		JPanel centerPropPanel = new JPanel(new GridBagLayout());
-		centerPropPanel.add(new JLabel(genericLabels.getString("name") + ":"), 
+		centerPropPanel.add(new JLabel(genericLabels.getString("name") + ":"),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(10, 10, 5, 2), 0, 0));
-		centerPropPanel.add(nameField, 
+		centerPropPanel.add(nameField,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 0, 5, 10), 0, 0));
-		
-		centerPropPanel.add(new JLabel(genericLabels.getString("PropertyEditDialog.value")), 
+
+		centerPropPanel.add(new JLabel(genericLabels.getString("PropertyEditDialog.value")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 10, 5, 2), 0, 0));
 
-		if (name != null 
+		if (name != null
 		 && name.toLowerCase().contains("password")
 		 && !name.equalsIgnoreCase("passwordCheckerClass"))
 			valueField = new PasswordWithShow(GuiConstants.DEFAULT_PASSWORD_WITH);
@@ -216,7 +232,7 @@ public class PropertyEditDialog extends GuiDialog
 						selectPressed();
 					}
 				});
-				centerPropPanel.add(selectButton, 
+				centerPropPanel.add(selectButton,
 					new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
 						GridBagConstraints.WEST, GridBagConstraints.NONE,
 						new Insets(5, 5, 5, 10), 0, 0));
@@ -281,13 +297,12 @@ public class PropertyEditDialog extends GuiDialog
 			}
 			else // It is dynamic
 			{
-//				nameField.setEditable(true);
 				descArea.setText(propSpec.getDescription());
 				descArea.setLineWrap(true);
 				descArea.setWrapStyleWord(true);
 				descArea.setEditable(true);
 				JScrollPane jsp = new JScrollPane(descArea,
-					JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, 
+					JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 				jsp.setPreferredSize(new Dimension(190, 66));
 				jsp.setBorder(new TitledBorder("Description"));
@@ -311,7 +326,7 @@ public class PropertyEditDialog extends GuiDialog
 			fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 		else if (propSpec.getType().equals(PropertySpec.FILENAME))
 			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		if (fileChooser.showDialog(this, 
+		if (fileChooser.showDialog(this,
 			genericLabels.getString("select")) == JFileChooser.APPROVE_OPTION)
 		{
 			File f = fileChooser.getSelectedFile();
@@ -342,6 +357,7 @@ public class PropertyEditDialog extends GuiDialog
 				try { Long.parseLong(nv); }
 				catch(Exception ex)
 				{
+					log.atError().setCause(ex).log("Invalid integer value '{}'", nv);
 					showError("Invalid integer value '" + nv + "'!");
 					return;
 				}
@@ -351,6 +367,7 @@ public class PropertyEditDialog extends GuiDialog
 				try { Double.parseDouble(nv); }
 				catch(Exception ex)
 				{
+					log.atError().setCause(ex).log("Invalid number value '{}'", nv);
 					showError("Invalid number value '" + nv + "'!");
 					return;
 				}
@@ -378,8 +395,8 @@ public class PropertyEditDialog extends GuiDialog
 			{
 				propSpec.setDescription(desc);
 				changed = true;
-System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName()
-	+ "' description=" + propSpec.getDescription());
+				log.trace("PropertyEditDialog.okPressed: set prop '{}' description={}",
+						  propSpec.getName(), propSpec.getDescription());
 			}
 		}
 		if (!value.equals(nv))
@@ -416,7 +433,7 @@ System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName
 		changed = false;
 		closeDlg();
 	}
-	
+
 	private String getValueText()
 	{
 		if (valueField instanceof JPasswordField)
@@ -450,7 +467,7 @@ System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName
 			return "";
 		}
 	}
-	
+
 	private void setValue(String value)
 	{
 		if (valueField instanceof JTextField)
@@ -495,6 +512,4 @@ System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName
 			}
 		}
 	}
-	
-	
 }

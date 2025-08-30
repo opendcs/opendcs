@@ -1,5 +1,17 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decoder;
 
@@ -9,10 +21,13 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
@@ -25,11 +40,12 @@ and optionally in a routing spec.
 */
 public class SummaryReportGenerator
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String newline;
 	private StringBuilder sb;
 	private String pageDelim;
 	private NumberFormat numberFormat;
-	private SimpleDateFormat dateFormat = 
+	private SimpleDateFormat dateFormat =
 		new SimpleDateFormat("yyyy/MM/dd HH:mm");
 	private String timeZoneString = "UTC";
 
@@ -52,7 +68,7 @@ public class SummaryReportGenerator
 	}
 
 	/**
-	 * Sets the page delimiter. 
+	 * Sets the page delimiter.
 	 * This is printed at the beginnning of each report.
 	 * Default is a single form-feed character.
 	 * @param pageDelim the page delimiter.
@@ -81,8 +97,7 @@ public class SummaryReportGenerator
 	{
 		Platform plat = decmsg.getPlatform();
 		if (plat == null)
-			throw new DecoderException(
-				"Cannot generate summary without platform record.");
+			throw new DecoderException("Cannot generate summary without platform record.");
 		Site platSite = plat.getSite();
 
 		sb.setLength(0);
@@ -96,7 +111,7 @@ public class SummaryReportGenerator
 		{
 			TimeSeries ts = (TimeSeries)tsit.next();
 			Site tsSite = ts.getSensor().getSensorSite();
-			if (tsSite != null && tsSite != platSite 
+			if (tsSite != null && tsSite != platSite
 			 && !extraSites.contains(tsSite))
 				extraSites.add(tsSite);
 		}
@@ -107,7 +122,7 @@ public class SummaryReportGenerator
 		return sb.toString();
 	}
 
-	private void genForSensorsAt(DecodedMessage decmsg, Site site, 
+	private void genForSensorsAt(DecodedMessage decmsg, Site site,
 		String source, Site platSite)
 	{
 		SiteName siteName = site.getName(Constants.snt_USGS);
@@ -116,7 +131,7 @@ public class SummaryReportGenerator
 
 		sb.append(pageDelim);
 		sb.append("Summary of Data Converted from <" + source
-			+ "> for station <" + siteName.getDisplayName() + ">" 
+			+ "> for station <" + siteName.getDisplayName() + ">"
 			+ newline + newline);
 
 		// Generate separate page for each sensor at a different site.
@@ -181,7 +196,7 @@ public class SummaryReportGenerator
 			if ((tv.getFlags() & IFlags.IS_MISSING) == 0)
 				vars.add(ts.sampleAt(i));
 		}
-		Collections.sort(vars, 
+		Collections.sort(vars,
 			new Comparator<TimedVariable>()
 			{
 				public int compare(TimedVariable tv1, TimedVariable tv2)
@@ -247,7 +262,7 @@ public class SummaryReportGenerator
 					}
 					catch(NoConversionException ex)
 					{
-						Logger.instance().warning("Skipped non numeric sample.");
+						log.atWarn().setCause(ex).log("Skipped non numeric sample.");
 					}
 				}
 
@@ -267,7 +282,7 @@ public class SummaryReportGenerator
 					}
 					numMissed += n;
 				}
-				
+
 				if (gapSize > largestGap)
 					largestGap = gapSize;
 				lastMsec = msec;
@@ -277,7 +292,7 @@ public class SummaryReportGenerator
 				summaryEndTime = tv.getTime();
 			}
 
-			int expected = interval == 0 ? -1 : 
+			int expected = interval == 0 ? -1 :
 				(int)((summaryEndTime.getTime() - startTime.getTime()) / interval + 1);
 			String valueString;
 			if (minValue == Double.MAX_VALUE)
@@ -299,7 +314,7 @@ public class SummaryReportGenerator
 			if (gapStart > 0L)
 			{
 				int missed = (int)(gapSize / interval) - 1;
-				printSampleLine(endLineNum, endLineNum, 
+				printSampleLine(endLineNum, endLineNum,
 					new Date(gapStart), new Date(gapEnd),
 					missed, 0, 0, missed, 0, gapSize, "(** LARGE DATA GAP **)");
 			}
@@ -309,12 +324,12 @@ public class SummaryReportGenerator
 	private void dividerLine()
 	{
 		sb.append(
-"==========================================================================================================================" 
+"=========================================================================================================================="
 			+ newline);
 	}
 
-	private void printSampleLine(int startLineNum, int endLineNum, 
-		Date startTime, Date endTime, 
+	private void printSampleLine(int startLineNum, int endLineNum,
+		Date startTime, Date endTime,
 		int expected, int numActual, int numErrors,
 		int numMissed, int numOutLim,
 		long largestGap, String valueString)

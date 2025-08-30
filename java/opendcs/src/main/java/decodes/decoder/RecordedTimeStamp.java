@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.decoder;
 
@@ -8,8 +20,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Date;
 import java.util.TimeZone;
-
-import ilex.util.Logger;
 
 /**
 RecordedTimeStamp is used in the decoding process to set date and time
@@ -45,16 +55,15 @@ public class RecordedTimeStamp
 
 	/*
 	  The following are for internal tracking of individual date fields:
-	  Transition from TIME_OF_DAY to TIME_OF_YEAR when 
+	  Transition from TIME_OF_DAY to TIME_OF_YEAR when
 		(haveMonth && haveMDay) | haveYDay;
-	  Transition from COMPLETE when 
+	  Transition from COMPLETE when
 		(haveYear && ((haveMonth && haveMDay) | haveYDay);
 	*/
 	private boolean haveYear;
 	private boolean haveMonth;
 	private boolean haveMDay;
 	private boolean haveYDay;
-	private int currentDOY = -1;
 	private int currentMonth = -1;
 	private int currentDOM = -1;
 
@@ -71,8 +80,8 @@ public class RecordedTimeStamp
 	private boolean tzIsManual;
 
 	boolean dayJustSet;
-	
-	private SimpleDateFormat logsdf = 
+
+	private SimpleDateFormat logsdf =
 		new SimpleDateFormat("yyyy MMM/dd HH:mm:ss z");
 
 	/**
@@ -107,7 +116,6 @@ public class RecordedTimeStamp
 		haveMDay = false;
 		haveYDay = false;
 		dayJustSet = false;
-		currentDOY = -1;
 		currentMonth = -1;
 		currentDOM = -1;
 	}
@@ -158,7 +166,6 @@ public class RecordedTimeStamp
 
 	public int setYear(int y)
 	{
-		int origY = y;
 		if (y < 70)
 			y += 2000;
 		else if (y < 100)
@@ -167,13 +174,13 @@ public class RecordedTimeStamp
 		int doy = 0;
 		if( haveYDay ) {
 			/* If the day-of-year was used, before changing the year,
-			 get the current value, which reflects the absolute day 
+			 get the current value, which reflects the absolute day
 			 offset of this day.  When the year is changed, this day
 			 will be reset to handle any leap-year conversions */
 			 doy = cal.get(Calendar.DAY_OF_YEAR);
 		}
 		cal.set(Calendar.YEAR, y);
-		if ( haveYDay ) 
+		if ( haveYDay )
 			cal.set(Calendar.DAY_OF_YEAR, doy);
 		else if (haveMonth && haveMDay) {
 			cal.set(Calendar.DAY_OF_MONTH, currentDOM);
@@ -190,9 +197,9 @@ public class RecordedTimeStamp
 	public boolean getHaveYear() { return haveYear; }
 
 	public int getYear() { return cal.get(Calendar.YEAR); }
-	
+
 	public int getMonth() { return (cal.get(Calendar.MONTH) - Calendar.JANUARY) + 1; }
-	
+
 	public int getDayOfMonth() { return cal.get(Calendar.DAY_OF_MONTH); }
 
 	/**
@@ -238,14 +245,13 @@ public class RecordedTimeStamp
 	*/
 	public int setDayOfYear(int doy)
 	{
-		currentDOY = doy;
 		haveYDay = true;
 		if ( !haveYear && doy == 366 ) {
 			/*  If the year has not been set, it has defaulted to the EPOCH
 					year ( usually 1970 ) which is not a leap year.  So a doy of
 					366, will be normalized to day 1 of the next year which is not
 					good.  So, force the year to be a leap year by incrementing the
-					year until the year is a leap year so that day 366 exists. It 
+					year until the year is a leap year so that day 366 exists. It
 					is assumed that the correct leap year will eventually be set.
 			*/
 			while ( !cal.isLeapYear(cal.get(Calendar.YEAR) ) )
@@ -254,24 +260,24 @@ public class RecordedTimeStamp
 		cal.set(Calendar.DAY_OF_YEAR, doy);
 		if (status < TIME_OF_YEAR)
 			status = haveYear ? COMPLETE : TIME_OF_YEAR;
-			
+
 		return status;
 	}
-	public void incrementDay() 
+	public void incrementDay()
 	{
 		if (haveYDay)
 			cal.add(Calendar.DAY_OF_YEAR, 1);
 		else
 			cal.add(Calendar.DAY_OF_MONTH, 1);
 	}
-	public void decrementDay() 
+	public void decrementDay()
 	{
 		if (haveYDay)
 			cal.add(Calendar.DAY_OF_YEAR, -1);
 		else
 			cal.add(Calendar.DAY_OF_MONTH, -1);
 	}
-	public void incrementYear() 
+	public void incrementYear()
 	{
 		cal.add(Calendar.YEAR, 1);
     }
@@ -286,7 +292,6 @@ public class RecordedTimeStamp
 	*/
 	public int setHour(int hr)
 	{
-		int origHr = hr;
 		if (pm && hr < 12)
 			hr += 12;
 		else if (pmWasSet && !pm && hr == 12)
@@ -315,7 +320,7 @@ public class RecordedTimeStamp
 		cal.set(Calendar.MINUTE, min);
 		return status;
 	}
-	
+
 	public int getMinute() { return cal.get(Calendar.MINUTE); }
 
 	/**
@@ -392,7 +397,7 @@ public class RecordedTimeStamp
 	/**
 	  Call this method to adjust previously recorded partial times after
 	  completing the time-stamp.
-	  @return the offset to the start of the day in the current day/year 
+	  @return the offset to the start of the day in the current day/year
 	  in this time-stamp.
 	*/
 	public long getDayMsecOffset()
@@ -403,7 +408,7 @@ public class RecordedTimeStamp
 		tcal.set(Calendar.SECOND, 0);
 		/*
 		  If year not yet set, return true time-off year, disregarding timezone.
-		  Example 1AM on Jan 1 should yield 3600000, regardless of timezone. 
+		  Example 1AM on Jan 1 should yield 3600000, regardless of timezone.
 		  If year IS set, then I'm completing the time stamp. The msec offset
 		  must then be a true UTC time value.
 		*/

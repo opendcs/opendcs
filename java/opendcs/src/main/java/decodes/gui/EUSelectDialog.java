@@ -1,16 +1,17 @@
 /*
-*  $Id: EUSelectDialog.java,v 1.2 2020/01/31 19:36:48 mmaloney Exp $
-*  
-*  $Log: EUSelectDialog.java,v $
-*  Revision 1.2  2020/01/31 19:36:48  mmaloney
-*  Support double-click
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2010/12/09 17:36:00  mmaloney
-*  Created
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.gui;
 
@@ -27,6 +28,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.EngineeringUnit;
 import decodes.dbeditor.DbEditorFrame;
 import decodes.rledit.EUTableModel;
@@ -35,15 +40,16 @@ import decodes.rledit.EUTableModel;
 @SuppressWarnings("serial")
 public class EUSelectDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JButton selectButton = null;
 	private JTable euTable = null;
     private static String title = "Select Units";
     private EngineeringUnit selection = null;
     private EUTableModel euTableModel = null;
 
-	/** 
+	/**
 	  Construct new dialog.
-	  @param ctl the owner of this dialog to receive a call-back when a 
+	  @param ctl the owner of this dialog to receive a call-back when a
 	  selection has been made.
 	*/
     public EUSelectDialog(JFrame parent)
@@ -52,9 +58,9 @@ public class EUSelectDialog extends GuiDialog
 		allInit();
 	}
 
-	/** 
+	/**
 	  Construct new dialog with dialog parent.
-	  @param ctl the owner of this dialog to receive a call-back when a 
+	  @param ctl the owner of this dialog to receive a call-back when a
 	  selection has been made.
 	*/
     public EUSelectDialog(JDialog parent)
@@ -73,12 +79,12 @@ public class EUSelectDialog extends GuiDialog
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
     }
 
 	/** Initializes GUI components */
-    void jbInit() throws Exception 
+    void jbInit() throws Exception
     {
     	ResourceBundle genericLabels = DbEditorFrame.getGenericLabels();
     	ResourceBundle dbeditLabels = DbEditorFrame.getDbeditLabels();
@@ -121,9 +127,9 @@ public class EUSelectDialog extends GuiDialog
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
-      
+
         getContentPane().add(mainPanel);
-        
+
         euTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -151,7 +157,7 @@ public class EUSelectDialog extends GuiDialog
 		{
 			//Get the correct row from the table model
 			int modelrow = euTable.convertRowIndexToModel(idx);
-			EUTableModel tablemodel = (EUTableModel)euTable.getModel();			
+			EUTableModel tablemodel = (EUTableModel)euTable.getModel();
 			selection = (EngineeringUnit)tablemodel.getRowObject(modelrow);
 		}
 		closeDlg();
@@ -179,13 +185,4 @@ public class EUSelectDialog extends GuiDialog
 	{
 		return selection;
 	}
-
-//	/** Sets current selection. */
-//	public void setSelection(String name)
-//	{
-//		if (name == null)
-//			configSelectPanel.clearSelection();
-//		else
-//			configSelectPanel.setSelection(name);
-//	}
 }
