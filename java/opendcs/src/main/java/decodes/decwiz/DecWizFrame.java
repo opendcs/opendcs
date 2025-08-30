@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.decwiz;
 
 import java.awt.*;
@@ -5,11 +20,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.gui.TopFrame;
 import decodes.db.Database;
 
 public class DecWizFrame extends TopFrame
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private JPanel contentPane;
     private BorderLayout borderLayout1 = new BorderLayout();
     private JPanel southPanel = new JPanel();
@@ -34,9 +54,9 @@ public class DecWizFrame extends TopFrame
             setDefaultCloseOperation(EXIT_ON_CLOSE);
             jbInit();
         }
-        catch (Exception exception)
+        catch (Exception ex)
         {
-            exception.printStackTrace();
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -170,8 +190,7 @@ public class DecWizFrame extends TopFrame
             }
             catch (Exception ex)
             {
-                System.err.println("Exception in deactivate: " + ex);
-                ex.printStackTrace();
+                log.atError().setCause(ex).log("Exception in activate.");
             }
             panelContainer.setVisible(false);
             panelContainer.remove(jp);
@@ -184,8 +203,7 @@ public class DecWizFrame extends TopFrame
         }
         catch (Exception ex)
         {
-            System.err.println("Exception in activate: " + ex);
-            ex.printStackTrace();
+            log.atError().setCause(ex).log("Exception in activate.");
         }
         panelContainer.add(jp);
 

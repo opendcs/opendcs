@@ -1,38 +1,4 @@
 /**
- * $Id$
- * 
- * $Log$
- * Revision 1.12  2015/12/02 21:16:28  mmaloney
- * Numerous improvements for retrieval for the Oriole page. Addition of XmitRecSpec
- * bean with just the info required by Oriole.
- *
- * Revision 1.11  2015/07/27 18:34:06  mmaloney
- * Fixed ignoreInvalidAddr feature and fine-tuned the start time.
- *
- * Revision 1.10  2015/07/17 13:26:37  mmaloney
- * Added ignoreInvalidAddr feature.
- *
- * Revision 1.9  2015/02/06 18:59:50  mmaloney
- * Numerous reliability improvements.
- *
- * Revision 1.8  2015/01/24 15:13:59  mmaloney
- * Poll cleanup.
- *
- * Revision 1.7  2015/01/16 16:11:04  mmaloney
- * RC01
- *
- * Revision 1.6  2014/12/11 20:24:07  mmaloney
- * Logging mods.
- *
- * Revision 1.5  2014/11/19 16:05:40  mmaloney
- * dev
- *
- * Revision 1.4  2014/09/15 13:59:42  mmaloney
- * DCP Mon Daemon Impl
- *
- * Revision 1.3  2014/08/22 17:23:06  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
  *
  * Copyright 2014 Cove Software, LLC
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -50,7 +16,6 @@
 package decodes.dcpmon;
 
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -61,6 +26,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.common.DcpMsg;
 import lrgs.gui.DecodesInterface;
@@ -80,9 +48,9 @@ import decodes.util.PropertySpec;
 /**
 Main class for DCP Monitor Server
 */
-public class DcpMonitor
-	extends RoutingScheduler
+public class DcpMonitor	extends RoutingScheduler
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private XRWriteThread xrWriteThread = null;
 	private DcpMonitorConfig dcpMonitorConfig = new DcpMonitorConfig();
 	private static DcpMonitor _instance = null;
@@ -221,7 +189,7 @@ public class DcpMonitor
 		try { hostname = InetAddress.getLocalHost().getHostName(); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot determine hostname, will use 'localhost': " + ex);
+			log.atWarn().setCause(ex).log("Cannot determine hostname, will use 'localhost'.");
 			hostname = "localhost";
 		}
 	}
@@ -240,7 +208,7 @@ public class DcpMonitor
 		String s = appInfo.getProperty("ignoreInvalidAddr");
 		if (s != null && s.trim().length() > 0)
 			ignoreInvalidAddr = TextUtil.str2boolean(s);
-		info("ignoreInvalidAddr=" + ignoreInvalidAddr);
+		log.info("ignoreInvalidAddr={}", ignoreInvalidAddr);
 		
 		// Put my consumer type into the consumer type enum.
 		Database db = Database.getDb();
@@ -249,13 +217,13 @@ public class DcpMonitor
 			"Custom consumer for the DCP Monitor Application",
 			"decodes.dcpmon.DcpMonitorConsumer", null);
 		
-		info("Initializing Routing Spec.");
+		log.info("Initializing Routing Spec.");
 		
 		RoutingSpec dbRoutingSpec = Database.getDb().routingSpecList.find("dcpmon");
 		DcpMonRoutingSpec rtRoutingSpec = null;
 		if (dbRoutingSpec == null)
 		{
-			failure("Cannot find required routing spec 'dcpmon'. Create this in the" +
+			log.error("Cannot find required routing spec 'dcpmon'. Create this in the" +
 				" DECODES database before starting the daemon.");
 			shutdownFlag = true;
 			return;
@@ -295,13 +263,11 @@ public class DcpMonitor
 		if (lastLocalRecvTime == null || lastLocalRecvTime.before(recoverLimit))
 		{
 			lastLocalRecvTime = recoverLimit;
-			info("First run, defaulting lastLocalRecvTime to " 
-				+ debugSdf.format(lastLocalRecvTime));
+			log.info("First run, defaulting lastLocalRecvTime to {}", lastLocalRecvTime);
 		}
 		if (lastLocalRecvTime.after(rtSince))
 			rtSince = lastLocalRecvTime;
-		debug("lastLocalRecvTime=" + debugSdf.format(lastLocalRecvTime)
-			+", rtSince=" + debugSdf.format(rtSince));
+		log.debug("lastLocalRecvTime={}, rtSince={}", lastLocalRecvTime, rtSince);
 		
 		rtRoutingSpec.sinceTime = IDateFormat.toString(rtSince, false);
 		rtRoutingSpec.untilTime = null;
@@ -321,9 +287,11 @@ public class DcpMonitor
 		try (ScheduleEntryDAI scheduleEntryDAO = sqlDbIo.makeScheduleEntryDAO())
 		{
 			dcpMonSched = scheduleEntryDAO.listScheduleEntries(appInfo);
-			info("Read DCP Mon Schedule: " + dcpMonSched.size() + " entries:");
-			for(ScheduleEntry se : dcpMonSched)
-				info("\tid=" + se.getId() + ", name='" + se.getName() + "'");
+			log.info("Read DCP Mon Schedule: {} entries.", dcpMonSched.size());
+			if (log.isInfoEnabled())
+			{
+				dcpMonSched.forEach(se -> log.info("\tid={}, name='{}'", se.getId(), se.getName()));
+			}
 			for(ScheduleEntry se : dcpMonSched)
 				if (se.getName().equalsIgnoreCase("dcpmon-realtime"))
 				{	rtScheduleEntry = se;
@@ -332,7 +300,7 @@ public class DcpMonitor
 			if (rtScheduleEntry == null)
 			{
 				rtScheduleEntry = new ScheduleEntry("dcpmon-realtime");
-				info("Creating new schedule entry '" + rtScheduleEntry.getName() + "'");
+				log.info("Creating new schedule entry '{}'", rtScheduleEntry.getName());
 			}
 			rtScheduleEntry.setLoadingAppId(getAppId());
 			rtScheduleEntry.setRoutingSpecId(rtRoutingSpec.getId());
@@ -357,9 +325,8 @@ public class DcpMonitor
 				RoutingSpec recRoutingSpec = new DcpMonRoutingSpec();
 				recRoutingSpec.setName("dcpmon-recover");
 				RoutingSpec.copy(recRoutingSpec, rtRoutingSpec);
-				info("Creating recovery routing spec '" + recRoutingSpec.getName()
-					+ "' to handle data from " + debugSdf.format(lastLocalRecvTime)
-					+ " to " + debugSdf.format(rtSince));
+				log.info("Creating recovery routing spec '{}' to handle data from {} to {}",
+						 recRoutingSpec.getName(), lastLocalRecvTime, rtSince);
 				Database.getDb().routingSpecList.add(recRoutingSpec);
 				recRoutingSpec.sinceTime = IDateFormat.toString(lastLocalRecvTime, false);
 				recRoutingSpec.untilTime = IDateFormat.toString(rtSince, false);
@@ -374,7 +341,7 @@ public class DcpMonitor
 				if (recScheduleEntry == null)
 				{
 					recScheduleEntry = new ScheduleEntry("dcpmon-recover");
-					info("Creating new schedule entry '" + recScheduleEntry.getName() + "'");
+					log.info("Creating new schedule entry '{}'", recScheduleEntry.getName());
 				}
 				recScheduleEntry.setLoadingAppId(getAppId());
 				recScheduleEntry.setRoutingSpecId(recRoutingSpec.getId());
@@ -386,7 +353,7 @@ public class DcpMonitor
 				try { scheduleEntryDAO.writeScheduleEntry(recScheduleEntry); }
 				catch(DbIoException ex)
 				{
-					failure("Cannot write recScheduleEntry: " + ex);
+					log.atError().setCause(ex).log("Cannot write recScheduleEntry.");
 					databaseFailed = true;
 					shutdownFlag = true;
 					return;
@@ -397,7 +364,7 @@ public class DcpMonitor
 		}
 		catch (DbIoException ex)
 		{
-			failure("Error while " + action + ": " + ex);
+			log.atError().setCause(ex).log("Error while {}", action);
 			databaseFailed = true;
 			shutdownFlag = true;
 			return;
@@ -426,34 +393,15 @@ public class DcpMonitor
 
 	public void handleDbIoException(String doingWhat, Throwable ex)
 	{
-		String msg = "Error " + doingWhat + ": " + ex;
-		failure(msg);
-		System.err.println("\n" + (new Date()) + " " + msg);
-		ex.printStackTrace();
+		log.atError().setCause(ex).log("Error {}", doingWhat);
 		shutdownFlag = true;
 		databaseFailed = true;
 	}
 
-    public void info(String msg)
-    {
-    	Logger.instance().info("DCPMON " + msg);
-    }
-    public void warning(String msg)
-    {
-    	Logger.instance().warning("DCPMON " + msg);
-    }
-    public void failure(String msg)
-    {
-    	Logger.instance().failure("DCPMON " + msg);
-    }
-    public void debug(String msg)
-    {
-    	Logger.instance().debug1("DCPMON " + msg);
-    }
     public void setStatus(String status)
     {
     	this.status = status;
-    	info(status);
+    	log.info(status);
     }
 
     public XRWriteThread getXrWriteThread()
@@ -461,11 +409,6 @@ public class DcpMonitor
 		return xrWriteThread;
 	}
     
-    @Override
-    public void setThreadLogger(Thread thread, Logger logger)
-    {
-    	// Don't want thread loggers for dcpmon. Do nothing.
-    }
     @Override
     protected void loadConfig(Properties properties)
     {
@@ -509,7 +452,7 @@ public class DcpMonitor
 			if (recoveryScheduleEntryExec.getRunState() == RunState.shutdown
 			 || recoveryScheduleEntryExec.getRunState() == RunState.complete)
 			{
-				info("Recovery thread is now complete.");
+				log.info("Recovery thread is now complete.");
 				recoveryScheduleEntryExec = null;
 			}
 			else if (lastRecovered != null && lastRecovered.getXmitTime() != null)

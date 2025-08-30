@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.decoder;
 
@@ -8,8 +20,6 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Date;
 import java.util.TimeZone;
-
-import ilex.util.Logger;
 
 /**
 RecordedTimeStamp is used in the decoding process to set date and time
@@ -54,7 +64,6 @@ public class RecordedTimeStamp
 	private boolean haveMonth;
 	private boolean haveMDay;
 	private boolean haveYDay;
-	private int currentDOY = -1;
 	private int currentMonth = -1;
 	private int currentDOM = -1;
 
@@ -107,7 +116,6 @@ public class RecordedTimeStamp
 		haveMDay = false;
 		haveYDay = false;
 		dayJustSet = false;
-		currentDOY = -1;
 		currentMonth = -1;
 		currentDOM = -1;
 	}
@@ -158,7 +166,6 @@ public class RecordedTimeStamp
 
 	public int setYear(int y)
 	{
-		int origY = y;
 		if (y < 70)
 			y += 2000;
 		else if (y < 100)
@@ -238,7 +245,6 @@ public class RecordedTimeStamp
 	*/
 	public int setDayOfYear(int doy)
 	{
-		currentDOY = doy;
 		haveYDay = true;
 		if ( !haveYear && doy == 366 ) {
 			/*  If the year has not been set, it has defaulted to the EPOCH
@@ -286,7 +292,6 @@ public class RecordedTimeStamp
 	*/
 	public int setHour(int hr)
 	{
-		int origHr = hr;
 		if (pm && hr < 12)
 			hr += 12;
 		else if (pmWasSet && !pm && hr == 12)

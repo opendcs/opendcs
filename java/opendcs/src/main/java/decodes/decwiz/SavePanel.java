@@ -1,15 +1,24 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.decwiz;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
-import java.util.Calendar;
 import java.util.Properties;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,6 +26,10 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.io.IOException;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.EnvExpander;
 import decodes.gui.TopFrame;
@@ -27,22 +40,22 @@ import decodes.db.TransportMedium;
 /**
 This class is the 3rd panel in the decoding wizard.
 */
-public class SavePanel 
-	extends DecWizPanel
+public class SavePanel extends DecWizPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JLabel rawLabel = new JLabel();
 	private JTextField rawField = new JTextField();
 	private JButton browseRawButton = new JButton();
 	private String append_overwrite[] = { "Append", "Overwrite" };
-	private JComboBox rawCombo = new JComboBox(append_overwrite);
+	private JComboBox<String> rawCombo = new JComboBox<>(append_overwrite);
 	private JLabel saveLabel = new JLabel();
 	private JTextField saveDecodedField = new JTextField();
 	private JButton browseDecodedButton = new JButton();
-	private JComboBox decodedCombo = new JComboBox(append_overwrite);
+	private JComboBox<String> decodedCombo = new JComboBox<>(append_overwrite);
 	private JLabel saveSummaryLabel = new JLabel();
 	private JTextField saveSummaryField = new JTextField();
 	private JButton browseSummaryButton = new JButton();
-	private JComboBox summaryCombo = new JComboBox(append_overwrite);
+	private JComboBox<String> summaryCombo = new JComboBox<>(append_overwrite);
 	private GridBagLayout gridBagLayout1 = new GridBagLayout();
 	private JButton doSaveButton = new JButton("Save Files");
 
@@ -79,9 +92,9 @@ public class SavePanel
 		{
 			jbInit();
 		}
-		catch (Exception exception)
+		catch (Exception ex)
 		{
-			exception.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 
 //	Set up the default file name for the summary file
@@ -315,19 +328,16 @@ public class SavePanel
 
 	private void doSaveButtonPressed()
 	{
-		FileOutputStream fos = null;
-		FileLock flock = null;
 		String fn = rawField.getText().trim();
 
 		boolean append = (rawCombo.getSelectedIndex() == 0);
 		int filesSaved = 0;
 		if (fn.length() > 0)
 		{
-			try
-			{
-				fos = new FileOutputStream(fn, append);
+			try(FileOutputStream fos =new FileOutputStream(fn, append);
 				FileChannel chan = fos.getChannel();
-				flock = chan.tryLock();
+				FileLock flock = chan.tryLock();)
+			{
 				String s = getFileIdPanel().getRawData();
 				String out = s.replaceAll("\u00AE","\r");
 				fos.write(out.getBytes());
@@ -335,72 +345,50 @@ public class SavePanel
 			}
 			catch(IOException ex)
 			{
+				log.atError().setCause(ex).log("Cannot save raw data to '{}'", fn);
 				showError("Cannot save raw data to '" + fn + "': " + ex);
 			}
-			finally
-			{
-				if (flock != null)
-					try { flock.release(); } catch(Exception ex) {}
-				if (fos != null)
-					try { fos.close(); } catch(Exception ex) {}
-			}
+			
 			File f = new File(getFileIdPanel().getFilePath());
 			f.delete();
 		}
 
-		fos = null;
-		flock = null;
 		fn = saveSummaryField.getText().trim();
 		append = (summaryCombo.getSelectedIndex() == 0);
 		if (fn.length() > 0)
 		{
-			try
-			{
-				fos = new FileOutputStream(fn, append);
+			try(FileOutputStream fos = new FileOutputStream(fn, append);
 				FileChannel chan = fos.getChannel();
-				flock = chan.tryLock();
+				FileLock flock = chan.tryLock();)
+			{
+				
 				String s = getDecodePanel().getSummaryData();
 				fos.write(s.getBytes());
 				filesSaved++;
 			}
 			catch(IOException ex)
 			{
+				log.atError().setCause(ex).log("Cannot save summary data to '{}'", fn);
 				showError("Cannot save summary data to '" + fn + "': " + ex);
-			}
-			finally
-			{
-				if (flock != null)
-					try { flock.release(); } catch(Exception ex) {}
-				if (fos != null)
-					try { fos.close(); } catch(Exception ex) {}
 			}
 		}
 
-		fos = null;
-		flock = null;
 		fn = saveDecodedField.getText().trim();
 		append = (decodedCombo.getSelectedIndex() == 0);
 		if (fn.length() > 0)
 		{
-			try
-			{
-				fos = new FileOutputStream(fn, append);
+			try(FileOutputStream fos = new FileOutputStream(fn, append);
 				FileChannel chan = fos.getChannel();
-				flock = chan.tryLock();
+				FileLock flock = chan.tryLock();)
+			{
 				String s = getDecodePanel().getDecodedData();
 				fos.write(s.getBytes());
 				filesSaved++;
 			}
 			catch(IOException ex)
 			{
+				log.atError().setCause(ex).log("Cannot save decoded data to '{}'", fn);
 				showError("Cannot save decoded data to '" + fn + "': " + ex);
-			}
-			finally
-			{
-				if (flock != null)
-					try { flock.release(); } catch(Exception ex) {}
-				if (fos != null)
-					try { fos.close(); } catch(Exception ex) {}
 			}
 		}
 		

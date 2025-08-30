@@ -1,17 +1,33 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.drgsinfogui;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.xml.DomHelper;
 import ilex.xml.XmlOutputStream;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -34,6 +50,7 @@ import org.w3c.dom.NodeList;
  */
 public class DrgsReceiverIo
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static String module = "DrgsReceiverIo";
 	private static String drgsDir = 
 		EnvExpander.expand("$DECODES_INSTALL_DIR/drgsident");
@@ -114,9 +131,9 @@ public class DrgsReceiverIo
 		}
 		catch (Exception ex) 
 		{
-			Logger.instance().failure(module + ":convertXmlToHtml " +
-				" can not generate HTML version of the DRGS Recv XML file. " 
-				+ ex.getMessage());
+			log.atError()
+			   .setCause(ex)
+			   .log("convertXmlToHtml  can not generate HTML version of the DRGS Recv XML file.");
 		}	
 	}
 
@@ -200,18 +217,14 @@ public class DrgsReceiverIo
 	 */
 	private static void writeXslToFile(String buffer)
 	{
-		FileWriter fw;
-		try
+		
+		try(FileWriter fw = new FileWriter(drgsRecvXsl))
 		{
-			fw = new FileWriter(drgsRecvXsl);
 			fw.write(buffer);
 			fw.flush();
-			fw.close();
-		} catch (IOException e)
+		} catch (IOException ex)
 		{
-			Logger.instance().failure(module
-					+ e.getMessage());
-			
+			log.atError().setCause(ex).log("Failed to write DRGS Recv XSL information.");
 		}
 	}
 	
@@ -231,8 +244,7 @@ public class DrgsReceiverIo
 		Document doc = readDrgsXMLFile(drgsRecvXmlFname);
 		if (doc == null)
 		{
-			Logger.instance().debug1(module + 
-					":readDrgsReceiverInfo document is null");
+			log.debug("readDrgsReceiverInfo document is null");
 		}
 		else
 		{
@@ -263,8 +275,7 @@ public class DrgsReceiverIo
 		}
 		catch(ilex.util.ErrorException ex)
 		{
-			Logger.instance().failure(module + ":readDrgsXMLFile " 
-					+ ex.getMessage());
+			log.atError().setCause(ex).log("Unable to read Drgs XML File" );
 		}
 		return doc;
 	}
@@ -283,10 +294,10 @@ public class DrgsReceiverIo
 		if (!drgsIdentElement.getNodeName().equalsIgnoreCase(
 													DrgsIdentTags.drgsIdent))
 		{
-			String s = module 
-				+ ": Wrong type of DRGS Receiver Identification XML file " +
+			String s =  
+				 "Wrong type of DRGS Receiver Identification XML file " +
 				"-- Cannot Read Info. Root element is not 'drgsident'.";
-			Logger.instance().failure(s);
+			log.error(s);
 		}
 		else
 		{
