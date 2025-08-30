@@ -1,23 +1,18 @@
-/**
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract 
- * to the United States Government. No warranty is provided or implied 
- * other than specific contractual terms between COVE and the U.S. Government
- * 
- * Copyright 2017 U.S. Government.
- *
- * $Log$
- * Revision 1.3  2018/03/30 14:13:32  mmaloney
- * Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
- *
- * Revision 1.2  2017/09/05 18:35:33  mmaloney
- * dev
- *
- * Revision 1.1  2017/06/27 13:44:33  mmaloney
- * Added for 6.4
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.eventmon;
 
 import ilex.util.TextUtil;
@@ -30,6 +25,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import javax.swing.table.AbstractTableModel;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.LoadingAppDAI;
@@ -51,25 +49,26 @@ import decodes.util.DecodesSettings;
 public class DacqEventTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String[] colnames = null;
 	int [] widths = { 10, 10, 6, 8, 8, 10, 48 };
 	private int sortColumn = 0;
 	private ArrayList<DacqEvent> events = new ArrayList<DacqEvent>();
 	private EventMonitorFrame frame = null;
 	private HashMap<DbKey, CompAppInfo> appMap = new HashMap<DbKey, CompAppInfo>();
-	
+
 	/** Maps Sched Entry Status ID to routing spec name */
 	private HashMap<DbKey, String> ses2rsname = new HashMap<DbKey, String>();
-	
+
 	private ArrayList<CompAppInfo> allApps = null;
-	
+
 	public DacqEventTableModel(EventMonitorFrame frame)
 	{
 		this.frame = frame;
-		colnames = new String[] 
+		colnames = new String[]
 		{
 			frame.eventmonLabels.getString("process_col"),
-			frame.eventmonLabels.getString("evttime_col") 
+			frame.eventmonLabels.getString("evttime_col")
 				+ "(" + DecodesSettings.instance().guiTimeZone + ")",
 			frame.eventmonLabels.getString("severity_col"),
 			frame.eventmonLabels.getString("rs_col"),
@@ -79,10 +78,10 @@ public class DacqEventTableModel extends AbstractTableModel
 			frame.eventmonLabels.getString("evttext_col")
 		};
 	}
-	
+
 	/**
 	 * Reload event list and apply filters specified by user
-	 * @param appName 
+	 * @param appName
 	 * @param since
 	 * @param until
 	 * @param minSeverity
@@ -95,7 +94,7 @@ public class DacqEventTableModel extends AbstractTableModel
 		ScheduleEntryDAI schedDAO = sqldbio.makeScheduleEntryDAO();
 		RoutingSpecList rslist = decodes.db.Database.getDb().routingSpecList;
 		DacqEventDAI evtDAO = sqldbio.makeDacqEventDAO();
-		
+
 		try
 		{
 			allApps = loadingAppDAO.listComputationApps(false);
@@ -107,7 +106,7 @@ public class DacqEventTableModel extends AbstractTableModel
 				if (appName != null && app.getAppName().equalsIgnoreCase(appName))
 					filterAppId = app.getAppId();
 			}
-			
+
 			ses2rsname.clear();
 			ArrayList<ScheduleEntry> schedEntries = schedDAO.listScheduleEntries(null);
 			ArrayList<ScheduleEntryStatus> stati = schedDAO.readScheduleStatus(null);
@@ -120,7 +119,7 @@ public class DacqEventTableModel extends AbstractTableModel
 							ses2rsname.put(ses.getId(), rs.getDisplayName());
 						break;
 					}
-			
+
 			// Read the events and apply filters
 			events.clear();
 			evtDAO.readEventsAfter(since, events);
@@ -131,19 +130,17 @@ public class DacqEventTableModel extends AbstractTableModel
 				 || (since != null && evt.getEventTime().before(since))
 				 || (until != null && evt.getEventTime().after(until))
 				 || minSeverity > evt.getEventPriority()
-				 || (containing != null && 
+				 || (containing != null &&
 				 		!evt.getEventText().toLowerCase().contains(containing.toLowerCase())))
 				{
-//System.out.println("Filtered out evt=" + evt.getEventTime() + ", since=" + since + ", until=" + until);
 					evtit.remove();
 				}
 			}
-			
+
 		}
 		catch (DbIoException ex)
 		{
-			System.err.println(ex.toString());
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Unable to reload events.");
 		}
 		finally
 		{
@@ -153,13 +150,13 @@ public class DacqEventTableModel extends AbstractTableModel
 		}
 		sortByColumn(sortColumn);
 	}
-	
+
 	@Override
 	public int getColumnCount()
 	{
 		return colnames.length;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return colnames[col];
@@ -170,7 +167,7 @@ public class DacqEventTableModel extends AbstractTableModel
 	{
 		return events.size();
 	}
-	
+
 	private String getAppName(DbKey appId)
 	{
 		CompAppInfo app = appMap.get(appId);
@@ -178,13 +175,13 @@ public class DacqEventTableModel extends AbstractTableModel
 //else System.out.println("retrieved appId=" + appId + " '" +app.getAppName() + "'");
 		return app == null ? "" : app.getAppName();
 	}
-	
+
 	private String getRsName(DbKey sesId)
 	{
 		String ret = ses2rsname.get(sesId);
 		return ret == null ? "" : ret;
 	}
-	
+
 	private String getPlatName(DbKey platId)
 	{
 		if (DbKey.isNull(platId))
@@ -198,12 +195,12 @@ public class DacqEventTableModel extends AbstractTableModel
 	{
 		return getColumnValue(getEvtAt(row), col);
 	}
-	
+
 	public String getColumnValue(DacqEvent evt, int col)
 	{
 		switch(col)
 		{
-		case 0: return getAppName(evt.getAppId()) 
+		case 0: return getAppName(evt.getAppId())
 			+ (evt.getSubsystem() != null ? ("/" + evt.getSubsystem()) : "");
 		case 1: return evt.getTimeStr();
 		case 2: return evt.getPriorityStr();
@@ -228,7 +225,7 @@ public class DacqEventTableModel extends AbstractTableModel
 	{
 		return events.get(row);
 	}
-	
+
 	public DacqEvent getEvtAt(int row)
 	{
 		return events.get(row);
@@ -245,7 +242,7 @@ class EvtComparator implements Comparator<DacqEvent>
 {
 	private int sortColumn = 0;
 	private DacqEventTableModel model = null;
-	
+
 	EvtComparator(int sortColumn, DacqEventTableModel model)
 	{
 		this.sortColumn = sortColumn;

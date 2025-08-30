@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.gui;
 
@@ -25,13 +37,15 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.dbeditor.DbEditorFrame;
 import decodes.platwiz.PlatformWizard;
 import decodes.sql.SqlDatabaseIO;
 import decodes.util.DecodesSettings;
 import decodes.util.ResourceFactory;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.AsciiUtil;
 
 /**
@@ -40,8 +54,9 @@ import ilex.util.AsciiUtil;
 */
 public class TopFrame extends JFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static TopFrame _instance;
-	
+
 	protected boolean exitOnClose = false;
 	private File changeTrackFile = null;
 	private boolean trackingChanges = false;
@@ -53,8 +68,8 @@ public class TopFrame extends JFrame
 	JLabel dbNameLabel = null, dbStatusLabel = null;
 	public static String profileName = null;
 
-	/** 
-	  Constructor sets the singleton instance on first call. 
+	/**
+	  Constructor sets the singleton instance on first call.
 	*/
     public TopFrame()
 	{
@@ -63,24 +78,22 @@ public class TopFrame extends JFrame
 		ImageIcon tkIcon = new ImageIcon(
 			ResourceFactory.instance().getIconPath());
 		setIconImage(tkIcon.getImage());
-		
+
 		appContentPane = new JPanel(new BorderLayout());
 
 		jframeContentPane = super.getContentPane();
 		jframeContentPane.setLayout(new BorderLayout());
 		jframeContentPane.add(appContentPane, BorderLayout.CENTER);
-		
+
 		statusPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 1));
 		statusPanel.setBorder(new BevelBorder(BevelBorder.LOWERED));
 		jframeContentPane.add(statusPanel, BorderLayout.SOUTH);
-//		statusPanel.setPreferredSize(new Dimension(this.getWidth(), 16));
-//		statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.X_AXIS));
-		
+
 		statusPanel.add(dbNameLabel = new JLabel());
 		statusPanel.add(dbStatusLabel = new JLabel());
 		setStatusBar();
     }
-    
+
 	/**
 	 * Return the pane for applications to use.
 	 */
@@ -92,11 +105,11 @@ public class TopFrame extends JFrame
 
 	public void setStatusBar()
 	{
-		final String dbName = 
+		final String dbName =
 			(profileName != null ? ("(Profile " + profileName + ") ") : "")
 			+ DecodesSettings.instance().editDatabaseType + " "
 			+ DecodesSettings.instance().editDatabaseLocation;
-		
+
 		String s = "(Not initialized)";
 		if (DecodesSettings.instance().editDatabaseTypeCode == DecodesSettings.DB_XML)
 			s = "";
@@ -126,11 +139,11 @@ public class TopFrame extends JFrame
 			});
 	}
 
-	/** 
+	/**
 	  The constructor MUST be called prior to calling this method. Since
 	  each GUI will have a different concrete subclass of TopFrame, we
 	  can't construct the singleton here.
-	  @return the singleton instance. 
+	  @return the singleton instance.
 	*/
 	public static TopFrame instance()
 	{
@@ -147,17 +160,17 @@ public class TopFrame extends JFrame
 		return _instance != null;
 	}
 
-	/** 
-	  Starts a modal error dialog with the passed message. 
+	/**
+	  Starts a modal error dialog with the passed message.
+	  Does NOT log to the standard logger
 	  @param msg the error message
 	*/
 	public void showError(String msg)
 	{
-		Logger.instance().log(Logger.E_FAILURE, msg);
 		JOptionPane.showMessageDialog(this,
 			AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
 	}
-	
+
 	public int showConfirm(String title, String msg, int option)
 	{
 		return JOptionPane.showConfirmDialog(this, AsciiUtil.wrapString(msg, 60),
@@ -195,13 +208,10 @@ public class TopFrame extends JFrame
 
 	/** @return the tabbed pane for TS Groups */
 	public JTabbedPane getTsGroupsListTabbedPane() { return null; }
-	
+
 	/** @return the panel for TS Groups */
 	public JPanel getTsGroupsListPanel() { return null; }
-	
-	/** @return the data type standard */
-//	public static String getDataTypeStandard() { return null; }
-	
+
 	public void setExitOnClose(boolean tf)
 	{
 		exitOnClose = tf;
@@ -225,25 +235,22 @@ public class TopFrame extends JFrame
 		if (!tmpDir.isDirectory())
 			if (!tmpDir.mkdirs())
 			{
-				Logger.instance().warning(
-					"Cannot track GUI size & location changes because '"
-					+ tmpDir.getPath() + "' does not exist and cannot be created.");
+				log.warn("Cannot track GUI size & location changes because '{}' " +
+						 "does not exist and cannot be created.",
+						 tmpDir.getPath());
 			}
 		String name = (TopFrame.profileName == null ? "" : (TopFrame.profileName+"-"))
 			+ frameTitle + ".loc";
 		changeTrackFile = new File(tmpDir, name);
-		
+
 		locSizeProps = new Properties();
 		Point curLoc = getLocation();
 		Dimension curSize = getSize();
 		if (changeTrackFile.canRead())
 		{
-			FileInputStream fis;
-			try
+			try (FileInputStream fis = new FileInputStream(changeTrackFile))
 			{
-				fis = new FileInputStream(changeTrackFile);
 				locSizeProps.load(fis);
-				fis.close();
 				String s = locSizeProps.getProperty("x");
 				int x = s != null ? Integer.parseInt(s) : curLoc.x;
 				s = locSizeProps.getProperty("y");
@@ -254,16 +261,15 @@ public class TopFrame extends JFrame
 				int w = s != null ? Integer.parseInt(s) : curSize.width;
 				setBounds(x,y,w,h);
 			}
-			catch (Exception e1)
+			catch (Exception ex)
 			{
-				Logger.instance().warning("Cannot read size & loc file '"
-					+ changeTrackFile.getPath() + "': " + e1);
+				log.atWarn().setCause(ex).log("Cannot read size & loc file '{}'", changeTrackFile.getPath());
 			}
 		}
 		else
 		{
 			int offsetX=0, offsetY=0;
-		
+
 			if (TopFrame.profileName != null)
 			{
 				offsetX = 15;
@@ -287,7 +293,7 @@ public class TopFrame extends JFrame
 				}
 			});
 	}
-	
+
 	private synchronized void sizeChanged(Dimension d)
 	{
 		if (changeTrackFile == null)
@@ -306,16 +312,13 @@ public class TopFrame extends JFrame
 	}
 	private void saveLocSize()
 	{
-		try
+		try (FileOutputStream fos = new FileOutputStream(changeTrackFile))
 		{
-			FileOutputStream fos = new FileOutputStream(changeTrackFile);
 			locSizeProps.store(fos, null);
-			fos.close();
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot write to '" + changeTrackFile.getPath()
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot write to '{}'", changeTrackFile.getPath());
 			changeTrackFile = null;
 		}
 	}
@@ -328,17 +331,17 @@ public class TopFrame extends JFrame
 			title = title + " (" + profileName + ")";
 		super.setTitle(title);
 	}
-	
+
 	/**
 	 * Used by Launcher to determine if it's ok to close an app's frame.
 	 * Each app should overload, check for open elements that have changes that need
 	 * to be saved, and if any, bring this frame to the fore and issue a warning.
-	 * Default implementation here always returns true. 
+	 * Default implementation here always returns true.
 	 * @return false if there are unsaved edits, true if closing does no harm.
 	 */
 	public boolean canClose()
 	{
 		return true;
 	}
-	
+
 }

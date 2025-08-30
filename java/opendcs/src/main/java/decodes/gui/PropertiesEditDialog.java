@@ -1,36 +1,17 @@
 /*
-*  $Id: PropertiesEditDialog.java,v 1.2 2020/01/31 19:37:27 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $State: Exp $
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  $Log: PropertiesEditDialog.java,v $
-*  Revision 1.2  2020/01/31 19:37:27  mmaloney
-*  Added isOkPressed() so callers can know if ok or cancel was hit.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.1  2008/04/04 18:21:03  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.9  2008/01/24 13:57:47  mmaloney
-*  modified files for internationalization
-*
-*  Revision 1.8  2004/08/31 16:30:24  mjmaloney
-*  javadocs
-*
-*  Revision 1.7  2004/08/09 15:07:59  mjmaloney
-*  Upgrades to support platform wizard
-*
-*  Revision 1.6  2004/05/07 13:58:32  mjmaloney
-*  Set dialog title.
-*
-*  Revision 1.5  2001/10/25 12:57:06  mike
-*  Config Editor Polishing.
-*
-*  Revision 1.4  2001/05/04 01:26:56  mike
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.gui;
 
@@ -38,6 +19,10 @@ import ilex.util.LoadResourceBundle;
 
 import java.awt.*;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.util.DecodesSettings;
@@ -52,8 +37,9 @@ import java.awt.event.*;
 Dialog wrapper for a properties edit panel.
 @see PropertiesEditPanelController
 */
-public class PropertiesEditDialog extends JDialog 
+public class PropertiesEditDialog extends JDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle genericLabels = null;
     JPanel panel1 = new JPanel();
     JPanel jPanel1 = new JPanel();
@@ -79,7 +65,7 @@ public class PropertiesEditDialog extends JDialog
 	{
         super(GuiApp.topFrame, "Properties for " + entityName, true);
         genericLabels = getGenericLabels();
-        
+
         this.setTitle(LoadResourceBundle.sprintf(
         		genericLabels.getString("PropertiesEditDialog.title"),
         		entityName));
@@ -88,16 +74,18 @@ public class PropertiesEditDialog extends JDialog
         propertiesEditPanel = PropertiesEditPanel.from(properties);
 		propertiesEditPanel.setOwnerDialog(this);
 
-		try {
+		try
+		{
             jbInit();
             pack();
 			entityNameField.requestFocus();
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch (Exception ex)
+		{
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
-    
+
 	public void setPropertiesOwner(PropertiesOwner propertiesOwner)
 	{
 		propertiesEditPanel.getModel().setPropertiesOwner(propertiesOwner);
@@ -107,7 +95,7 @@ public class PropertiesEditDialog extends JDialog
 	 * @return resource bundle containing generic labels for the selected
 	 * language.
 	 */
-	public static ResourceBundle getGenericLabels() 
+	public static ResourceBundle getGenericLabels()
 	{
 		if (genericLabels == null)
 		{
@@ -117,7 +105,7 @@ public class PropertiesEditDialog extends JDialog
 		}
 		return genericLabels;
 	}
-	
+
 	/** Initializes GUI components. */
     void jbInit() throws Exception {
         panel1.setLayout(borderLayout1);
@@ -155,7 +143,7 @@ public class PropertiesEditDialog extends JDialog
     }
 
 	/**
-	  Called when OK button pressed. 
+	  Called when OK button pressed.
 	  Saves the changes and closes the dialog.
 	  param e ignored.
 	*/
@@ -174,7 +162,7 @@ public class PropertiesEditDialog extends JDialog
 	}
 
 	/**
-	  Called when cancel button pressed. 
+	  Called when cancel button pressed.
 	  Closes the dialog without save.
 	  param e ignored.
 	*/
