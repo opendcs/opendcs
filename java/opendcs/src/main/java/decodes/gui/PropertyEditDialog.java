@@ -1,6 +1,18 @@
 /*
- *  $Id$
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.gui;
 
 import java.awt.*;
@@ -11,6 +23,9 @@ import javax.swing.border.TitledBorder;
 
 import org.opendcs.gui.GuiConstants;
 import org.opendcs.gui.PasswordWithShow;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.dbeditor.TimeZoneSelector;
 import decodes.util.PropertySpec;
@@ -31,6 +46,7 @@ import ilex.util.TextUtil;
 @SuppressWarnings("serial")
 public class PropertyEditDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle genericLabels = PropertiesEditDialog.getGenericLabels();
 	private JButton okButton = new JButton();
 	private JButton cancelButton = new JButton();
@@ -122,7 +138,7 @@ public class PropertyEditDialog extends GuiDialog
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		nameField.setText(name);
 		setValue(value);
@@ -281,7 +297,6 @@ public class PropertyEditDialog extends GuiDialog
 			}
 			else // It is dynamic
 			{
-//				nameField.setEditable(true);
 				descArea.setText(propSpec.getDescription());
 				descArea.setLineWrap(true);
 				descArea.setWrapStyleWord(true);
@@ -342,6 +357,7 @@ public class PropertyEditDialog extends GuiDialog
 				try { Long.parseLong(nv); }
 				catch(Exception ex)
 				{
+					log.atError().setCause(ex).log("Invalid integer value '{}'", nv);
 					showError("Invalid integer value '" + nv + "'!");
 					return;
 				}
@@ -351,6 +367,7 @@ public class PropertyEditDialog extends GuiDialog
 				try { Double.parseDouble(nv); }
 				catch(Exception ex)
 				{
+					log.atError().setCause(ex).log("Invalid number value '{}'", nv);
 					showError("Invalid number value '" + nv + "'!");
 					return;
 				}
@@ -378,8 +395,8 @@ public class PropertyEditDialog extends GuiDialog
 			{
 				propSpec.setDescription(desc);
 				changed = true;
-System.out.println("PropertyEditDialog.okPressed: set prop '" + propSpec.getName()
-	+ "' description=" + propSpec.getDescription());
+				log.trace("PropertyEditDialog.okPressed: set prop '{}' description={}",
+						  propSpec.getName(), propSpec.getDescription());
 			}
 		}
 		if (!value.equals(nv))
