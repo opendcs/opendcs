@@ -15,6 +15,7 @@
 */
 package decodes.gui;
 import java.awt.*;
+import java.util.List;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -33,6 +34,8 @@ import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.gui.properties.PropertiesTableModel;
 import decodes.util.PropertySpec;
 
+import org.opendcs.gui.GuiConstants;
+
 import java.awt.event.*;
 
 /**
@@ -45,7 +48,7 @@ public class PropertiesEditPanel extends JPanel
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle genericLabels = null;
     private JScrollPane jScrollPane1 = new JScrollPane();
-    private JTable propertiesTable;
+    public JTable propertiesTable;
     private TitledBorder titledBorder1;
     private JButton editButton = new JButton();
     private JButton addButton = new JButton();
@@ -115,6 +118,15 @@ public class PropertiesEditPanel extends JPanel
                 String pn = ((String) model.getValueAt(modelRow, 0)).toUpperCase();
                 PropertySpec ps = propHash.get(pn);
                 cr.setToolTipText(ps != null ? ps.getDescription() : "");
+                // Check if this property violates requirements and should be highlighted
+                if (ps != null && model.isMissingPropertyViolatingRequirements(pn)) {
+                    Color c = GuiConstants.RED_MISSING_COLOR;
+                    cr.setOpaque(true);
+                    cr.setBackground(c);
+                } else {
+                    cr.setOpaque(false);
+                    cr.setBackground(null);
+                }
             }
             if (value instanceof Color)
             {
