@@ -11,7 +11,8 @@ import javax.swing.border.TitledBorder;
 import decodes.gui.PropertiesEditDialog;
 import decodes.gui.properties.PropertiesTableModel;
 import decodes.util.PropertySpec;
-import decodes.util.PropertyGroupValidator;
+import org.opendcs.annotations.PropertySpecValidator;
+import org.opendcs.annotations.PropertySpecHelper;
 import opendcs.dai.ComputationDAI;
 import ilex.gui.DateTimeCalendar;
 import ilex.util.AsciiUtil;
@@ -757,38 +758,33 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
             if (ok != JOptionPane.YES_OPTION)
                 return;
         }
-        // Check requirement groups before saving
+        // Validate properties using annotation-based system
         PropertiesTableModel model = (PropertiesTableModel)propertiesPanel.propertiesTable.getModel();
-        PropertyGroupValidator validator = model.getGroupValidator();
-        List<String> validationErrors = validator != null ? 
-            validator.getValidationErrors(model.getCurrentPropertiesMap()) : 
-            new ArrayList<>();
-        
-        if (!validationErrors.isEmpty())
+        if (!model.areAllRequirementsSatisfied()) 
         {
-            // Build detailed error message showing group types and members
-            StringBuilder errorMsg = new StringBuilder();
-            errorMsg.append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationFailed"))
-                    .append("\n\n");
+            PropertySpecValidator.ValidationResult result = PropertySpecValidator.validateClass(
+                model.annotatedClass != null ? model.annotatedClass : Object.class,
+                model.getCurrentPropertiesMap()
+            );
             
-            // Add each validation error with details
-            for (String error : validationErrors)
+            if (!result.isValid()) 
             {
-                errorMsg.append("• ").append(error).append("\n");
+                StringBuilder errorMsg = new StringBuilder();
+                errorMsg.append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationFailed"))
+                        .append("\n\n")
+                        .append(result.getErrorMessage())
+                        .append("\n\n")
+                        .append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.fixRequirements"));
+                
+                int r = JOptionPane.showConfirmDialog(this,
+                    errorMsg.toString(),
+                    CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationError"),
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+                
+                if (r != JOptionPane.OK_OPTION)
+                    return;
             }
-            
-            errorMsg.append("\n")
-                    .append(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.fixRequirements"));
-            
-            // Show error dialog with details about requirement groups
-            int r = JOptionPane.showConfirmDialog(this,
-                errorMsg.toString(),
-                CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.validationError"),
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.WARNING_MESSAGE);
-            
-            if (r != JOptionPane.OK_OPTION)
-                return;
         }
         saveToObject(editedObject);
 
@@ -1090,6 +1086,8 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
             {
                 ((AW_AlgorithmBase)executive).initForGUI();
                 propertiesPanel.getModel().setPropertiesOwner((AW_AlgorithmBase)executive);
+                // Set the algorithm class for annotation-based validation
+                propertiesPanel.getModel().setAnnotatedClass(cls);
             }
         }
         catch (Exception ex)

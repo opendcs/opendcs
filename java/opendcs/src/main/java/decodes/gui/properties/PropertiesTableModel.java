@@ -22,9 +22,10 @@ import decodes.gui.TopFrame;
 import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
-import decodes.util.RequirementGroup;
-import decodes.util.PropertyGroupValidator;
 import ilex.util.StringPair;
+import org.opendcs.annotations.PropertySpecValidator;
+import org.opendcs.annotations.PropertySpecHelper;
+import org.opendcs.annotations.PropertyRequirementGroup;
 import ilex.util.TextUtil;
 
 public class PropertiesTableModel extends AbstractTableModel
@@ -46,14 +47,11 @@ public class PropertiesTableModel extends AbstractTableModel
 
      private HashMap<String, PropertySpec> propHash = null;
      
-     /** Map of requirement group names to consolidated RequirementGroup objects */
-     private Map<String, RequirementGroup> requirementGroups = new HashMap<>();
+     /** The algorithm or component class for annotation-based validation */
+     public Class<?> annotatedClass = null;
      
-     /** Map of property names to their requirement groups for quick lookup */
-     private Map<String, List<RequirementGroup>> propertyToGroups = new HashMap<>();
-     
-     /** Validator for property groups and requirements */
-     private PropertyGroupValidator groupValidator;
+     /** Validator for annotation-based requirement groups */
+     private PropertySpecValidator annotationValidator = null;
 
      /** Constructs a new table model for the passed Properties set. */
      public PropertiesTableModel(Properties properties)
@@ -69,12 +67,18 @@ public class PropertiesTableModel extends AbstractTableModel
      }
      
      /**
-      * Get the property group validator
-      * @return PropertyGroupValidator instance or null if not initialized
+      * Set the annotated class for requirement validation
+      * @param clazz The class with PropertySpec annotations
       */
-     public PropertyGroupValidator getGroupValidator() {
-         return groupValidator;
+     public void setAnnotatedClass(Class<?> clazz) {
+         this.annotatedClass = clazz;
+         if (clazz != null) {
+             this.annotationValidator = new PropertySpecValidator(clazz);
+         } else {
+             this.annotationValidator = null;
+         }
      }
+     
      
      /**
       * Get current properties as a Map for validation
@@ -101,94 +105,25 @@ public class PropertiesTableModel extends AbstractTableModel
      {
          this.propHash = propHash;
          
-         // Build consolidated requirement groups from property specs
-         requirementGroups.clear();
-         propertyToGroups.clear();
-         
          if (propHash != null)
          {
-             // First pass: collect all requirement groups from all properties
-             for (PropertySpec spec : propHash.values())
+             for (String ucName : propHash.keySet())
              {
-                 List<RequirementGroup> specGroups = spec.getRequirementGroups();
-                 String propNameUpper = spec.getName().toUpperCase();
-                 
-                 for (RequirementGroup specGroup : specGroups)
+                 boolean found = false;
+                 for (StringPair prop : props)
                  {
-                     String groupName = specGroup.getGroupName();
-                     
-                     // Get or create the consolidated group
-                     RequirementGroup consolidatedGroup = requirementGroups.get(groupName);
-                     if (consolidatedGroup == null)
+                     if (prop.first.equalsIgnoreCase(ucName))
                      {
-                         // Create new group with same type and description as first occurrence
-                         consolidatedGroup = new RequirementGroup(
-                             groupName, 
-                             specGroup.getType(),
-                             specGroup.getDescription()
-                         );
-                         requirementGroups.put(groupName, consolidatedGroup);
-                     }
-                     
-                     // Add this property to the consolidated group
-                     consolidatedGroup.addProperty(spec.getName());
-                     
-                     // Track which groups this property belongs to
-                     List<RequirementGroup> propGroups = propertyToGroups.get(propNameUpper);
-                     if (propGroups == null)
-                     {
-                         propGroups = new ArrayList<>();
-                         propertyToGroups.put(propNameUpper, propGroups);
-                     }
-                     if (!propGroups.contains(consolidatedGroup))
-                     {
-                         propGroups.add(consolidatedGroup);
+                         found = true;
+                         break;
                      }
                  }
-             }
-             
-             // Create the PropertyGroupValidator with the requirement groups
-             PropertyGroupValidator.Builder builder = new PropertyGroupValidator.Builder();
-             for (RequirementGroup group : requirementGroups.values())
-             {
-                 builder.addRequirementGroup(group);
-             }
-             groupValidator = builder.build();
-         }
-         else
-         {
-             groupValidator = null;
-         }
-         
-         if(log.isDebugEnabled())
-         {
-             log.debug("Requirement groups: {} groups found", requirementGroups.size());
-             for (Map.Entry<String, RequirementGroup> entry : requirementGroups.entrySet())
-             {
-                 RequirementGroup group = entry.getValue();
-                 log.debug("  Group '{}' ({}): {}", 
-                     group.getGroupName(), 
-                     group.getType(),
-                     group.getPropertyNames());
-             }
-         }
-         
-         for (String ucName : propHash.keySet())
-         {
-             boolean found = false;
-             for (StringPair prop : props)
-             {
-                 if (prop.first.equalsIgnoreCase(ucName))
+                 if (!found)
                  {
-                     found = true;
-                     break;
+                     StringPair sp = new StringPair(propHash.get(ucName).getName(), "");
+                     props.add(sp);
+                     log.trace("Added spec'ed property '{}'", sp.first);
                  }
-             }
-             if (!found)
-             {
-                 StringPair sp = new StringPair(propHash.get(ucName).getName(), "");
-                 props.add(sp);
-                 log.trace("Added spec'ed property '{}'", sp.first);
              }
          }
          // Now remove the unassigned props that are no longer spec'ed
@@ -334,7 +269,8 @@ public class PropertiesTableModel extends AbstractTableModel
              return;
          }
          props.set(row, prop);
-         fireTableRowsUpdated(row, row);
+         // Fire table data changed to update requirement validation highlighting
+         fireTableDataChanged();
          changed = true;
      }
 
@@ -499,61 +435,31 @@ public class PropertiesTableModel extends AbstractTableModel
     }
     
     /**
-     * Get a human-readable description of the requirement status for a property
-     * @param propertyName The name of the property
-     * @return Description of requirements, or empty string if none
-     */
-    public String getPropertyRequirementDescription(String propertyName)
-    {
-        List<RequirementGroup> groups = groupValidator != null ? 
-           groupValidator.getPropertyRequirementGroups(propertyName) : new ArrayList<>();
-        if (groups.isEmpty())
-        {
-            return "";
-        }
-        
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < groups.size(); i++)
-        {
-            if (i > 0) sb.append("; ");
-            
-            RequirementGroup group = groups.get(i);
-            switch (group.getType())
-            {
-                case INDIVIDUAL:
-                    sb.append("Required");
-                    break;
-                case ONE_OF:
-                    sb.append("One of: ").append(group.getPropertyNames());
-                    break;
-                case ALL_OR_NONE:
-                    sb.append("All or none of: ").append(group.getPropertyNames());
-                    break;
-                case AT_LEAST_ONE:
-                    sb.append("At least one of: ").append(group.getPropertyNames());
-                    break;
-                case ALL_REQUIRED:
-                    sb.append("All required: ").append(group.getPropertyNames());
-                    break;
-            }
-        }
-        
-        return sb.toString();
-    }
-    
-    /**
-     * Check if all requirement groups are satisfied
+     * Check if all required properties are satisfied
      * @return true if all requirements are met
      */
     public boolean areAllRequirementsSatisfied()
     {
-        for (String groupName : requirementGroups.keySet())
+        if (annotationValidator != null) 
         {
-            if (groupValidator != null && !groupValidator.isRequirementGroupSatisfied(groupName, getCurrentPropertiesMap()))
-            {
-                return false;
-            }
+            PropertySpecValidator.ValidationResult result = 
+                annotationValidator.validate(getCurrentPropertiesMap());
+            return result.isValid();
         }
         return true;
+    }
+    
+    /**
+     * Check if a missing property violates any requirement groups and should be highlighted
+     * @param propertyName The property name (case-insensitive)
+     * @return true if the property should be highlighted as violating requirements
+     */
+    public boolean isMissingPropertyViolatingRequirements(String propertyName)
+    {
+        if (annotationValidator != null) 
+        {
+            return annotationValidator.isMissingPropertyViolatingRequirements(propertyName, getCurrentPropertiesMap());
+        }
+        return false;
     }
  }

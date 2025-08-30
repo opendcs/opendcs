@@ -46,6 +46,7 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.AlgorithmRequirements;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -54,6 +55,20 @@ import org.slf4j.Logger;
         description = "Perform Reservoir Evaporation calculation based on an algorithm developed by NWDM," +
                 " Which utilizes air temp, air speed, solar radiation, and water temperature profiles to return" +
                 " evaporation rates and total evaporation as flow")
+@AlgorithmRequirements(
+        groups = {
+            @AlgorithmRequirements.RequirementGroup(
+                name = "Location",
+                type = AlgorithmRequirements.RequirementType.AT_LEAST_ONE,
+                properties = {"latitude", "longitude"}
+            ),
+            @AlgorithmRequirements.RequirementGroup(
+                name = "Location2", 
+                type = AlgorithmRequirements.RequirementType.ALL_REQUIRED,
+                properties = {"zeroElevation", "longitude"}
+            )
+        }
+)
 final public class ResEvapAlgo extends AW_AlgorithmBase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -154,27 +169,13 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             description = "Average secchi depth of reservoir in feet")
     public double secchi;
     @org.opendcs.annotations.PropertySpec(name = "zeroElevation", propertySpecType = PropertySpec.NUMBER,
-            description = "Streambed elevation of reservoir in feet",
-    requirementGroups = {@org.opendcs.annotations.PropertySpec.RequirementGroupDef(
-                name = "Location2",
-                type = org.opendcs.annotations.PropertySpec.RequirementGroupType.ALL_REQUIRED)})
+            description = "Streambed elevation of reservoir in feet")
     public double zeroElevation;
     @org.opendcs.annotations.PropertySpec(name = "latitude", propertySpecType = PropertySpec.NUMBER,
-            description = "Latitude of reservoir",
-            requirementGroups = {@org.opendcs.annotations.PropertySpec.RequirementGroupDef(
-                name = "Location",
-                type = org.opendcs.annotations.PropertySpec.RequirementGroupType.AT_LEAST_ONE
-)})
+            description = "Latitude of reservoir")
     public double latitude;
     @org.opendcs.annotations.PropertySpec(name = "longitude", propertySpecType = PropertySpec.NUMBER,
-            description = "Longitude of reservoir",
-            requirementGroups = {@org.opendcs.annotations.PropertySpec.RequirementGroupDef(
-            name = "Location",
-            type = org.opendcs.annotations.PropertySpec.RequirementGroupType.AT_LEAST_ONE
-    ),
-     @org.opendcs.annotations.PropertySpec.RequirementGroupDef(
-             name = "Location2",
-             type = org.opendcs.annotations.PropertySpec.RequirementGroupType.ALL_REQUIRED)})
+            description = "Longitude of reservoir")
     public double longitude;
     @org.opendcs.annotations.PropertySpec(name = "windShear", propertySpecType = PropertySpec.STRING,
             description = "Windshear equation to be utilized in computation")

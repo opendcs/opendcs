@@ -14,8 +14,6 @@ import javax.swing.border.*;
 import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.gui.properties.PropertiesTableModel;
 import decodes.util.PropertySpec;
-import decodes.util.RequirementGroup;
-import decodes.util.PropertyGroupValidator;
 
 import org.opendcs.gui.GuiConstants;
 
@@ -100,30 +98,14 @@ public class PropertiesEditPanel extends JPanel
                 String pn = ((String) model.getValueAt(modelRow, 0)).toUpperCase();
                 PropertySpec ps = propHash.get(pn);
                 cr.setToolTipText(ps != null ? ps.getDescription() : "");
-                // Check if this property is required and highlight if missing
-                PropertyGroupValidator validator = model.getGroupValidator();
-                if (ps != null && validator != null && validator.isPropertyRequired(pn)) {
-                    boolean hasValue = value != null && !value.toString().trim().isEmpty();
-                    List<RequirementGroup> groups = validator.getPropertyRequirementGroups(pn);
-                    boolean anyGroupSatisfied = true;
-                    
-                    // Check if at least one of the property's requirement groups is satisfied
-                    for (RequirementGroup group : groups) {
-                        if (!validator.isRequirementGroupSatisfied(group.getGroupName(), model.getCurrentPropertiesMap())) {
-                            anyGroupSatisfied = false;
-                            break;
-                        }
-                    }
-                    
-                    // Highlight empty required fields that are part of unsatisfied groups
-                    if (!hasValue && !anyGroupSatisfied) {
-                        Color c = GuiConstants.RED_MISSING_COLOR;
-                        cr.setOpaque(true);
-                        cr.setBackground(c);
-                    } else {
-                        cr.setOpaque(false);
-                        cr.setBackground(null);
-                    }
+                // Check if this property violates requirements and should be highlighted
+                if (ps != null && model.isMissingPropertyViolatingRequirements(pn)) {
+                    Color c = GuiConstants.RED_MISSING_COLOR;
+                    cr.setOpaque(true);
+                    cr.setBackground(c);
+                } else {
+                    cr.setOpaque(false);
+                    cr.setBackground(null);
                 }
             }
             if (value instanceof Color)
