@@ -17,7 +17,6 @@
 package decodes.polling;
 
 import java.io.IOException;
-import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -361,8 +360,7 @@ public class DigiConnectPortManager extends Thread implements StreamReaderOwner
 	    //       1       19200            8           1      none           none^M^M
 		if (captured == null)
 		{
-			Logger.instance().warning(module + " verifySettings failed. No response"
-				+ " to show serial.");
+			log.warn("verifySettings failed. No response to show serial.");
 			return false;
 		}
 		String cap = new String(captured);
@@ -373,9 +371,9 @@ public class DigiConnectPortManager extends Thread implements StreamReaderOwner
 		for(; idx < tokens.length && !tokens[idx].equals("flowcontrol"); idx++);
 		if (idx >= tokens.length-5)
 		{
-			Logger.instance().warning(module + " verifySettings failed. Not enough"
-				+ " tokens in response to show serial, #tokens=" + tokens.length
-				+ "flowcontrol' found at token " + idx + ", data returned: " + cap);
+			log.warn("verifySettings failed. Not enough tokens in response to show serial, #tokens={} " +
+					 "flowcontrol found at token {}, data returned: {}",
+					 tokens.length, idx, cap);
 			return false;
 		}
 
@@ -386,52 +384,53 @@ public class DigiConnectPortManager extends Thread implements StreamReaderOwner
 			tok = tokens[idx+1];
 			if (portNum != Integer.parseInt(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected port " + portNum + " but incorrect"
-					+ " port in response: " + cap);
+				log.warn("verifySettings failed. Expected port {} but incorrect port in response: {}",
+						 portNum, cap);
 				return false;
 			}
 			parsing = "baud";
 			tok = tokens[idx+2];
 			if (tm.getBaud() > 0 && tm.getBaud() != Integer.parseInt(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected baud=" + tm.getBaud() + ". Incorrect"
-					+ " baud in response: " + cap);
+				log.warn("verifySettings failed. Expected baud={}. Incorrect" +
+						 " baud in response: {}",
+						 tm.getBaud(), cap);
 				return false;
 			}
 			parsing = "databits";
 			tok = tokens[idx+3];
 			if (tm.getDataBits() > 0 && tm.getDataBits() != Integer.parseInt(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected databits=" + tm.getDataBits() + ". Incorrect"
-					+ " databits in response: " + cap);
+				log.warn("verifySettings failed. Expected databits={}. Incorrect" +
+						 " databits in response: {}",
+						 tm.getDataBits(), cap);
 				return false;
 			}
 			parsing = "stopbits";
 			tok = tokens[idx+4];
 			if (tm.getStopBits() > 0 && tm.getStopBits() != Integer.parseInt(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected stopbits=" + tm.getStopBits() + ". Incorrect"
-					+ " stopbits in response: " + cap);
+				log.warn("verifySettings failed. Expected stopbits={}. Incorrect" +
+						 " stopbits in response: {}",
+						 tm.getStopBits(), cap);
 				return false;
 			}
 			Parity tmParity = Parity.fromCode(tm.getParity());
 			tok = tokens[idx+5];
 			if (tmParity != Parity.Unknown && tmParity != Parity.fromString(tok))
 			{
-				Logger.instance().warning(module + " verifySettings failed. "
-					+ "Expected parity=" + tm.getParity() + ". Incorrect"
-					+ " parity in response: " + cap);
+				log.warn("verifySettings failed. Expected parity={}. Incorrect" +
+						 " parity in response: {}",
+						 tm.getParity(), cap);
 				return false;
 			}
 		}
 		catch(NumberFormatException ex)
 		{
-			Logger.instance().warning(module + " verifySettings failed. "
-				+ "Expected integer while parsing " + parsing + "tok='" + tok + "' Full Response was: " + cap);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("verifySettings failed. Expected integer while parsing {} tok='{}' Full Response was: {}",
+			   		parsing, tok, cap);
 			return false;
 		}
 
@@ -442,16 +441,14 @@ public class DigiConnectPortManager extends Thread implements StreamReaderOwner
 	@Override
 	public void inputError(Exception ex)
 	{
-		// TODO Auto-generated method stub
-
+		/* do nothing */
 	}
 
 
 	@Override
 	public void inputClosed()
 	{
-		// TODO Auto-generated method stub
-
+		/* do nothing */
 	}
 
 
