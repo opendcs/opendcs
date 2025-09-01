@@ -1,13 +1,7 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
- * between COVE and Alberta ESRD.
- *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +17,6 @@
 package decodes.polling;
 
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,9 +35,7 @@ import decodes.db.TransportMedium;
  * Wait 2 sec.
  * Send "ATZ".
  */
-public class ModemDialer 
-	extends Dialer
-	implements StreamReaderOwner
+public class ModemDialer extends Dialer implements StreamReaderOwner
 {
 	public String module = "ModemDialer";
 	public static String EOL = "\r";
@@ -60,7 +51,7 @@ public class ModemDialer
 	private PatternMatcher  OK[] = new PatternMatcher[]
 		{ new PatternMatcher("OK".getBytes()) };
 	private PollingThread pollingThread = null;
-	
+
 	/**
 	 * E0 = turn off echo.
 	 * Q0 = Don't be quiet. Send us OK responses.
@@ -85,11 +76,11 @@ public class ModemDialer
 		streamReader.start();
 		String what = "sending initial CRs";
 		boolean portError = true;
-		
+
 		OutputStream outs = ioPort.getOut();
 		if (outs == null)
 			throw new DialException(module + " No OutputStream.", false);
-		
+
 		try
 		{
 			outs.write(EOL.getBytes());
@@ -98,7 +89,7 @@ public class ModemDialer
 			outs.write(EOL.getBytes());
 			outs.flush();
 			try { Thread.sleep(500L); } catch(InterruptedException ex) {}
-			
+
 			streamReader.flushBacklog();
 			String init = modemInitString+EOL;
 			String msg = module + " sending '" + AsciiUtil.bin2ascii(init.getBytes()) + "' to modem on port "
@@ -146,7 +137,7 @@ public class ModemDialer
 		}
 		catch (IOException ex)
 		{
-			throw new DialException("IOException while " + what + ": " + ex, portError);
+			throw new DialException("IOException while " + what, ex, portError);
 		}
 		catch(DialException ex)
 		{
@@ -154,10 +145,8 @@ public class ModemDialer
 		}
 		catch(Exception ex)
 		{
-			String msg = " Unexpected Exception while " + what + ": " + ex;
-			System.err.println((new Date()).toString() + msg);
-			ex.printStackTrace(System.err);
-			throw new DialException(msg, portError);
+			String msg = " Unexpected Exception while " + what;
+			throw new DialException(msg, ex, portError);
 		}
 		finally
 		{
@@ -170,28 +159,6 @@ public class ModemDialer
 	{
 		if (ioPort == null || ioPort.getOut() == null)
 			return; // must already be in the process of shutting down.
-// The +++ ATZ sequence is not necessary. Modem will hangup when we drop DTR.
-//		try
-//		{
-////			String msg = module + " sending '" + Break + "' to modem on port " + ioPort.getPortNum();
-//			pollingThread.debug2(msg);
-//			pollingThread.annotate(msg);
-//			ioPort.getOut().write(Break.getBytes());
-//			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
-//			msg = module + " sending '" + AsciiUtil.bin2ascii(Hangup.getBytes()) + "' to modem on port "
-//				+ ioPort.getPortNum();
-//			pollingThread.debug1(msg);
-//			pollingThread.annotate(msg);
-//			if (ioPort.getOut() != null)
-//				try { ioPort.getOut().write(Hangup.getBytes()); }
-//				catch(Exception ex) {}
-//			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
-//		}
-//		catch(IOException ex)
-//		{
-//			Logger.instance().warning(module + " Error while disconnecting: " + ex);
-//		}
-//		Logger.instance().debug2(module + " disconnect complete.");	
 	}
 
 	@Override
@@ -207,9 +174,7 @@ public class ModemDialer
 		pollingThread.annotate(module + " Input closed.");
 		_inputClosed = true;
 	}
-	
+
 	@Override
 	public String getModule() { return pollingThread.getModule() + "" + module; }
-
-
 }
