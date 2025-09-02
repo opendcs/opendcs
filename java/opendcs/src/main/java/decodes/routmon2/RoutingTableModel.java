@@ -1,64 +1,18 @@
-/**
- * $Id$
- * 
- * Open Source Software
- * 
- * $Log$
- * Revision 1.5  2017/11/21 14:39:45  mmaloney
- * For equals() don't compare interval or time zone if continuous is selected.
- *
- * Revision 1.4  2017/11/20 19:26:52  mmaloney
- * Fix 2 bugs: Selecting RS Run was messing up the panel header. RS Runs in the middle panel were not sorted in descending last-modify-time order like they should have been.
- *
- * Revision 1.3  2016/08/05 14:53:36  mmaloney
- * Station and Routing Status GUI updates.
- *
- * Revision 1.2  2016/07/20 15:40:53  mmaloney
- * First routmon impl.
- *
- * Revision 1.1  2016/06/27 15:15:41  mmaloney
- * Initial checkin.
- *
- * Revision 1.4  2016/06/07 22:03:51  mmaloney
- * Numeric sort on app ID in proc monitor.
- *
- * Revision 1.3  2015/06/04 21:37:40  mmaloney
- * Added control buttons to process monitor GUI.
- *
- * Revision 1.2  2015/05/14 13:52:19  mmaloney
- * RC08 prep
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.9  2013/03/25 19:21:15  mmaloney
- * cleanup
- *
- * Revision 1.8  2013/03/25 18:14:44  mmaloney
- * dev
- *
- * Revision 1.7  2013/03/25 17:50:54  mmaloney
- * dev
- *
- * Revision 1.6  2013/03/25 17:13:11  mmaloney
- * dev
- *
- * Revision 1.5  2013/03/25 16:58:38  mmaloney
- * dev
- *
- * Revision 1.4  2013/03/25 15:02:20  mmaloney
- * dev
- *
- * Revision 1.3  2013/03/23 18:14:07  mmaloney
- * dev
- *
- * Revision 1.2  2013/03/23 18:01:03  mmaloney
- * dev
- *
- * Revision 1.1  2013/03/23 15:33:55  mmaloney
- * dev
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.routmon2;
 
 import ilex.util.TextUtil;
@@ -88,26 +42,26 @@ class RoutingTableModel extends AbstractTableModel
 	private ArrayList<RSBean> beans = new ArrayList<RSBean>();
 	private RSColumnizer columnizer = new RSColumnizer();
 	private RoutingMonitorFrame frame = null;
-	
+
 	public RoutingTableModel(RoutingMonitorFrame frame)
 	{
 		this.frame = frame;
-		colnames = new String[]{ 
-			RoutingMonitorFrame.procmonLabels.getString("enabled"), 
-			RoutingMonitorFrame.genericLabels.getString("name"), 
-			RoutingMonitorFrame.procmonLabels.getString("process"), 
+		colnames = new String[]{
+			RoutingMonitorFrame.procmonLabels.getString("enabled"),
+			RoutingMonitorFrame.genericLabels.getString("name"),
+			RoutingMonitorFrame.procmonLabels.getString("process"),
 			RoutingMonitorFrame.procmonLabels.getString("interval"),
 			RoutingMonitorFrame.procmonLabels.getString("lastAct"),
 			RoutingMonitorFrame.procmonLabels.getString("lastMsg"),
 			RoutingMonitorFrame.procmonLabels.getString("lastStats") };
 	}
-	
+
 	@Override
 	public int getColumnCount()
 	{
 		return colnames.length;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return colnames[col];
@@ -117,26 +71,12 @@ class RoutingTableModel extends AbstractTableModel
 	{
 		return col == 6;
 	}
-//	public void setValueAt(Object value, int row, int col)
-//	{
-//		if (col != 0)
-//			return;
-//		if (row >= apps.size())
-//			return;
-//		
-//		try { ap.setRetrieveEvents((Boolean)value); }
-//		catch(ProcMonitorException ex)
-//		{
-//			frame.showError(ex.getMessage());
-//			super.setValueAt(Boolean.FALSE, row, col);
-//		}
-//	}
-	
+
 	public Class getColumnClass(int col)
 	{
 		return col == 0 ? Boolean.class : String.class;
 	}
-	
+
 	@Override
 	public int getRowCount()
 	{
@@ -162,13 +102,13 @@ class RoutingTableModel extends AbstractTableModel
 	{
 		return beans.get(row);
 	}
-	
+
 	public RSBean getRSAt(int row)
 	{
 		return (RSBean)getRowObject(row);
 	}
-	
-	
+
+
 	public void addBean(RSBean bean)
 	{
 		synchronized(this)
@@ -214,29 +154,21 @@ class RoutingTableModel extends AbstractTableModel
 			beans.add(new RSBean(se));
 			numChanges++;
 		}
-		
-//System.out.println("Retrieved " + seStatuses.size() + " statuses.");
+
 	nextStatus:
 		for(ScheduleEntryStatus ses : seStatuses)
 		{
-//System.out.println("...Status for SE " + ses.getScheduleEntryName() 
-//+ " starting at " + ses.getRunStart() + " with LMT=" + ses.getLastModified());
 			for(RSBean bean : beans)
 			{
-//System.out.println("......Checking against bean for '" + bean.getScheduleEntry().getName() + "'");
 				if (ses.getScheduleEntryName().equalsIgnoreCase(bean.getScheduleEntry().getName()))
 				{
-//System.out.println(".........Match, bean already has " + bean.getRunHistory().size() + " runs.");
 					for(int idx = 0; idx < bean.getRunHistory().size(); idx++)
 					{
 						ScheduleEntryStatus beanSes = bean.getRunHistory().get(idx);
-//System.out.println("............run["+ idx + "] start=" + beanSes.getRunStart() 
-//+ ", LMT=" + beanSes.getLastModified());
 						if (ses.getRunStart().equals(beanSes.getRunStart()))
 						{
 							if (ses.getLastModified().after(beanSes.getLastModified()))
 							{
-//System.out.println("...............Doing Update");
 								bean.getRunHistory().set(idx, ses);
 								bean.setModified(true);
 								numChanges++;
@@ -244,19 +176,18 @@ class RoutingTableModel extends AbstractTableModel
 							continue nextStatus;
 						}
 					}
-//System.out.println("...............Fell through, adding");
 					// Fell through. This is a new run
 					int insertPoint = 0;
 					for(; insertPoint < bean.getRunHistory().size(); insertPoint++)
 						if (ses.getLastModified().after(bean.getRunHistory().get(insertPoint).getLastModified()))
 							break;
-					
+
 					bean.getRunHistory().add(insertPoint, ses);
 					continue nextStatus;
 				}
 			}
 		}
-		
+
 		// Any beans not checked are no longer in the database. Remove from list.
 		for(Iterator<RSBean> beanit = beans.iterator(); beanit.hasNext(); )
 		{
@@ -267,7 +198,7 @@ class RoutingTableModel extends AbstractTableModel
 				numChanges++;
 			}
 		}
-		
+
 		if (numChanges > 0)
 		{
 			SwingUtilities.invokeLater(
@@ -281,24 +212,9 @@ class RoutingTableModel extends AbstractTableModel
 				});
 
 		}
-		
-//System.out.println("RTM.merge: after doing merge...");
-//for(RSBean bean : beans)
-//{
-//System.out.println("bean " + bean.getRsName() + " has " + bean.getRunHistory().size() + " runs.");
-//}
-		
+
 		return numChanges;
 	}
-	
-//	/**
-//	 * Call from swing thread
-//	 */
-//	public void updated()
-//	{
-//System.out.println("RTM.updated");
-//		fireTableDataChanged();
-//	}
 
 	public ArrayList<RSBean> getBeans()
 	{
@@ -313,7 +229,7 @@ class RoutingTableModel extends AbstractTableModel
 			if (beans.get(idx) == selectedRS)
 				return idx;
 		return -1;
-	}	
+	}
 }
 
 class RSColumnizer
@@ -323,7 +239,7 @@ class RSColumnizer
 	{
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
-	
+
 	public Object getColumnObject(RSBean rsb, int col)
 	{
 		switch(col)
@@ -333,12 +249,12 @@ class RSColumnizer
 					? (rsb.getRsName() + " (manual)") : rsb.getRsName();
 		case 2: return rsb.getAppName();
 		case 3: return rsb.getInterval();
-		case 4: 
+		case 4:
 			{
 				Date t = rsb.getLastActivityTime();
 				return t != null ? sdf.format(t) : "-";
 			}
-		case 5: 
+		case 5:
 			{
 				Date t = rsb.getLastMsgTime();
 				return t != null ? sdf.format(t) : "-";
@@ -363,7 +279,7 @@ class RsComparator implements Comparator<RSBean>
 {
 	private int sortColumn = 0;
 	RSColumnizer columnizer = null;
-	
+
 	RsComparator(int sortColumn, RSColumnizer columnizer)
 	{
 		this.sortColumn = sortColumn;
