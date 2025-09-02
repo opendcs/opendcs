@@ -1,5 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.rledit;
 
@@ -9,12 +21,18 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.*;
 
-import ilex.util.*;
 import decodes.db.*;
 import decodes.decoder.Season;
 import decodes.gui.SortingListTable;
+import ilex.util.AsciiUtil;
+import ilex.util.LoadResourceBundle;
+import ilex.util.TextUtil;
 
 /**
 RefListFrame is the GUI application for Reference List Editor.
@@ -24,8 +42,8 @@ units, EU conversions and data type equivalencies.
 @SuppressWarnings("serial")
 public class RefListFrame extends JFrame
 {
-	private static ResourceBundle genericLabels = 
-		RefListEditor.getGenericLabels();
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
 	private static ResourceBundle labels = RefListEditor.getLabels();
 	private JPanel contentPane;
 	private JMenuBar jMenuBar1 = new JMenuBar();
@@ -42,7 +60,7 @@ public class RefListFrame extends JFrame
 	private JMenuItem mi_saveToDb = new JMenuItem();
 	private JTextArea jTextArea1 = new JTextArea();
 	private BorderLayout borderLayout2 = new BorderLayout();
-	
+
 	private JPanel jPanel1 = new JPanel();
 	private JScrollPane jScrollPane1 = new JScrollPane();
 	private EnumTableModel enumTableModel = new EnumTableModel();
@@ -60,7 +78,7 @@ public class RefListFrame extends JFrame
 	private JComboBox enumComboBox = new JComboBox();
 	private BorderLayout borderLayout3 = new BorderLayout();
 	private JTextArea jTextArea2 = new JTextArea();
-	
+
 	private JPanel jPanel3 = new JPanel();
 	private JScrollPane jScrollPane2 = new JScrollPane();
 	private EUTableModel euTableModel = new EUTableModel();
@@ -75,7 +93,7 @@ public class RefListFrame extends JFrame
 	private GridBagLayout gridBagLayout2 = new GridBagLayout();
 	private BorderLayout borderLayout4 = new BorderLayout();
 	private JTextArea jTextArea3 = new JTextArea();
-	
+
 	private JPanel jPanel4 = new JPanel();
 	private JScrollPane jScrollPane3 = new JScrollPane();
 	private EUCnvTableModel ucTableModel = new EUCnvTableModel();
@@ -87,7 +105,7 @@ public class RefListFrame extends JFrame
 	private JButton undoDelEuCnvtButton = new JButton();
 	private GridBagLayout gridBagLayout3 = new GridBagLayout();
 	private Border border4;
-	
+
 	private DTEquivTableModel dteTableModel = new DTEquivTableModel();
 	private JTable dteTable = new SortingListTable(dteTableModel,null);
 	private JButton addDTEButton = new JButton();
@@ -95,7 +113,7 @@ public class RefListFrame extends JFrame
 	private JButton deleteDTEButton = new JButton();
 	private JButton undoDeleteDTEButton = new JButton();
 	private Border border5;
-	
+
 	private Border border6;
 	private Border border7;
 
@@ -120,13 +138,14 @@ public class RefListFrame extends JFrame
 	public RefListFrame()
 	{
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		try 
+		try
 		{
 			jbInit();
 			initControls();
 		}
-		catch(Exception e) {
-			e.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 
 		// Default operation is to do nothing when user hits 'X' in upper
@@ -201,7 +220,7 @@ public class RefListFrame extends JFrame
 		rlTabbedPane.setTabPlacement(JTabbedPane.TOP);
 		mi_saveToDb.setText(labels.getString("RefListFrame.saveToDB"));
 		mi_saveToDb.addActionListener(new RefListFrame_mi_saveToDb_actionAdapter(this));
-		
+
 		jTextArea1.setBackground(Color.white);
 		jTextArea1.setFont(new java.awt.Font("Serif", 0, 14));
 		jTextArea1.setBorder(border5);
@@ -227,9 +246,6 @@ public class RefListFrame extends JFrame
 		deleteEnumValButton.setPreferredSize(new Dimension(122, 23));
 		deleteEnumValButton.setText(genericLabels.getString("delete"));
 		deleteEnumValButton.addActionListener(new RefListFrame_deleteEnumValButton_actionAdapter(this));
-//		selectEnumValDefaultButton.setMaximumSize(new Dimension(122, 23));
-//		selectEnumValDefaultButton.setMinimumSize(new Dimension(122, 23));
-//		selectEnumValDefaultButton.setPreferredSize(new Dimension(122, 23));
 		selectEnumValDefaultButton.setText(labels.getString("RefListFrame.setDefault"));
 		selectEnumValDefaultButton.addActionListener(new RefListFrame_selectEnumValDefaultButton_actionAdapter(this));
 		upEnumValButton.setMaximumSize(new Dimension(122, 23));
@@ -247,7 +263,7 @@ public class RefListFrame extends JFrame
 		enumComboBox.setMinimumSize(new Dimension(160, 19));
 		enumComboBox.setPreferredSize(new Dimension(160, 19));
 		enumComboBox.addActionListener(new RefListFrame_enumComboBox_actionAdapter(this));
-		
+
 		EUTab.setLayout(borderLayout3);
 		jTextArea2.setFont(new java.awt.Font("Serif", 0, 14));
 		jTextArea2.setBorder(border6);
@@ -273,18 +289,11 @@ public class RefListFrame extends JFrame
 		deleteEUButton.setText(genericLabels.getString("delete"));
 		deleteEUButton.addActionListener(new RefListFrame_deleteEUButton_actionAdapter(this));
 		undoDeleteEnumValButton.setEnabled(false);
-//		undoDeleteEnumValButton.setMaximumSize(new Dimension(122, 23));
-//		undoDeleteEnumValButton.setMinimumSize(new Dimension(122, 23));
-//		undoDeleteEnumValButton.setPreferredSize(new Dimension(122, 23));
 		undoDeleteEnumValButton.setText(labels.getString("RefListFrame.undoDelete"));
 		undoDeleteEnumValButton.addActionListener(new RefListFrame_undoDeleteEnumValButton_actionAdapter(this));
 		undoDeleteEUButton.setEnabled(false);
-//		undoDeleteEUButton.setMaximumSize(new Dimension(122, 23));
-//		undoDeleteEUButton.setMinimumSize(new Dimension(122, 23));
-//		undoDeleteEUButton.setPreferredSize(new Dimension(122, 23));
 		undoDeleteEUButton.setText(labels.getString("RefListFrame.undoDelete"));
 		undoDeleteEUButton.addActionListener(new RefListFrame_undoDeleteEUButton_actionAdapter(this));
-		
 		EuCnvtTab.setLayout(borderLayout4);
 		jTextArea3.setFont(new java.awt.Font("Serif", 0, 14));
 		jTextArea3.setBorder(border7);
@@ -310,12 +319,9 @@ public class RefListFrame extends JFrame
 		deleteEUCnvtButton.setPreferredSize(new Dimension(122, 23));
 		deleteEUCnvtButton.setText(genericLabels.getString("delete"));
 		deleteEUCnvtButton.addActionListener(new RefListFrame_deleteEUCnvtButton_actionAdapter(this));
-//		undoDelEuCnvtButton.setMaximumSize(new Dimension(122, 23));
-//		undoDelEuCnvtButton.setMinimumSize(new Dimension(122, 23));
-//		undoDelEuCnvtButton.setPreferredSize(new Dimension(122, 23));
 		undoDelEuCnvtButton.setText(labels.getString("RefListFrame.undoDelete"));
 		undoDelEuCnvtButton.addActionListener(new RefListFrame_undoDelEuCnvtButton_actionAdapter(this));
-		
+
 
 
 
@@ -341,8 +347,8 @@ public class RefListFrame extends JFrame
 		undoDeleteDTEButton.addActionListener(new RefListFrame_undoDeleteDTEButton_actionAdapter(this));
 
 		contentPane.setFont(new java.awt.Font("Dialog", 0, 14));
-	EuCnvtTab.setBorder(BorderFactory.createEmptyBorder());
-	jMenuFile.add(mi_saveToDb);
+		EuCnvtTab.setBorder(BorderFactory.createEmptyBorder());
+		jMenuFile.add(mi_saveToDb);
 		jMenuFile.add(jMenuFileExit);
 		jMenuHelp.add(jMenuHelpAbout);
 		jMenuBar1.add(jMenuFile);
@@ -350,28 +356,28 @@ public class RefListFrame extends JFrame
 		this.setJMenuBar(jMenuBar1);
 		contentPane.add(statusBar, BorderLayout.SOUTH);
 		contentPane.add(rlTabbedPane, BorderLayout.CENTER);
-		
+
 		rlTabbedPane.add(EnumTab,	 labels.getString("RefListFrame.enumTab"));
 		EnumTab.add(jTextArea1, BorderLayout.NORTH);
 		EnumTab.add(jPanel1, BorderLayout.CENTER);
 		jPanel1.add(jScrollPane1,	 new GridBagConstraints(0, 1, 1, 7, 1.0, 1.0
 						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 8, 12, 0), 10, -98));
 		jScrollPane1.getViewport().add(enumTable, null);
-		
+
 		rlTabbedPane.add(EUTab,	labels.getString("RefListFrame.EngUnitsTab"));
 		EUTab.add(jTextArea2, BorderLayout.NORTH);
 		EUTab.add(jPanel3, BorderLayout.CENTER);
 		jPanel3.add(jScrollPane2,	new GridBagConstraints(0, 0, 1, 4, 1.0, 1.0
 						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(18, 10, 13, 0), 18, -56));
 		jScrollPane2.getViewport().add(euTable, null);
-		
+
 		rlTabbedPane.add(EuCnvtTab,	labels.getString("RefListFrame.euConvTab"));
 		EuCnvtTab.add(jTextArea3, BorderLayout.NORTH);
 		EuCnvtTab.add(jPanel4, BorderLayout.CENTER);
 		jPanel4.add(jScrollPane3,	new GridBagConstraints(0, 0, 1, 4, 1.0, 1.0
 						,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(21, 11, 10, 0), 25, -90));
 		jScrollPane3.getViewport().add(ucTable, null);
-		
+
 		JPanel dtTab = new JPanel(new BorderLayout());
 		JTextArea dtTabDescArea = new JTextArea();
 		dtTabDescArea.setFont(new java.awt.Font("Serif", 0, 14));
@@ -386,7 +392,7 @@ public class RefListFrame extends JFrame
 		JScrollPane dtePanelScrollPane = new JScrollPane();
 		dtePanelScrollPane.getViewport().add(dteTable, null);
 		dtePanelCenter.add(dtePanelScrollPane,	 new GridBagConstraints(0, 0, 1, 4, 1.0, 1.0,
-			GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+			GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 			new Insets(17, 15, 10, 0), 27, -77));
 		dtTab.add(dtePanelCenter, BorderLayout.CENTER);
 		rlTabbedPane.add(dtTab,	labels.getString("RefListFrame.dataTypeEquivTab"));
@@ -408,7 +414,7 @@ public class RefListFrame extends JFrame
 		seasonsPanelScrollPane.getViewport().add(seasonsTable, null);
 		seasonsPanelCenter.add(seasonsPanelScrollPane,
 			new GridBagConstraints(0, 0, 1, 5, 1.0, 1.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, 
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(17, 15, 10, 0), 27, -77));
 		seasonsTab.add(seasonsPanelCenter, BorderLayout.CENTER);
 		JButton addSeasonButton = new JButton(genericLabels.getString("add"));
@@ -423,9 +429,9 @@ public class RefListFrame extends JFrame
 			});
 		seasonsPanelCenter.add(addSeasonButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 5, 5, 5), 0, 0));
-		
+
 		JButton editSeasonButton = new JButton(genericLabels.getString("edit"));
 		editSeasonButton.addActionListener(
 			new ActionListener()
@@ -438,9 +444,9 @@ public class RefListFrame extends JFrame
 			});
 		seasonsPanelCenter.add(editSeasonButton,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 5, 5, 5), 0, 0));
-		
+
 		JButton deleteSeasonButton = new JButton(genericLabels.getString("delete"));
 		deleteSeasonButton.addActionListener(
 			new ActionListener()
@@ -453,7 +459,7 @@ public class RefListFrame extends JFrame
 			});
 		seasonsPanelCenter.add(deleteSeasonButton,
 			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 5, 5, 5), 0, 0));
 
 		JButton seasonUpButton = new JButton(labels.getString("RefListFrame.moveUp"));
@@ -468,7 +474,7 @@ public class RefListFrame extends JFrame
 			});
 		seasonsPanelCenter.add(seasonUpButton,
 			new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 5, 5, 5), 0, 0));
 
 		JButton seasonDownButton = new JButton(labels.getString("RefListFrame.moveDown"));
@@ -483,12 +489,12 @@ public class RefListFrame extends JFrame
 			});
 		seasonsPanelCenter.add(seasonDownButton,
 			new GridBagConstraints(1, 4, 1, 1, 0.0, 0.0,
-				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 5, 5, 5), 0, 0));
-		
+
 		rlTabbedPane.add(seasonsTab, labels.getString("SeasonsTab.tabName"));
-		
-		
+
+
 		//====================================
 		jPanel1.add(editEnumValButton,		new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
@@ -496,10 +502,10 @@ public class RefListFrame extends JFrame
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
 		jPanel1.add(jPanel2,	 new GridBagConstraints(0, 0, 2, 1, 1.0, 0.1
 						,GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, new Insets(14, 18, 14, 12), 0, 7));
-		
+
 		jPanel2.add(jLabel1, null);
 		jPanel2.add(enumComboBox, null);
-		
+
 		jPanel1.add(addEnumValButton,		new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
 		jPanel1.add(downEnumValButton,	 new GridBagConstraints(1, 7, 1, 1, 0.0, 0.0
@@ -510,7 +516,7 @@ public class RefListFrame extends JFrame
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
 		jPanel1.add(undoDeleteEnumValButton,	 new GridBagConstraints(1, 4, 1, 1, 0.0, 0.0
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
-		
+
 		jPanel3.add(addEUButton,		new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(15, 20, 5, 20), 0, 0));
 		jPanel3.add(undoDeleteEUButton,	 new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0
@@ -519,7 +525,7 @@ public class RefListFrame extends JFrame
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
 		jPanel3.add(editEUButton,	 new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 20, 5, 20), 0, 0));
-		
+
 		jPanel4.add(addEUCnvtButton,		new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(15, 16, 5, 12), 0, 0));
 		jPanel4.add(editEUCnvtButton,	 new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0
@@ -528,14 +534,14 @@ public class RefListFrame extends JFrame
 						,GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(5, 16, 5, 12), 0, 0));
 		jPanel4.add(undoDelEuCnvtButton,	 new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0
 						,GridBagConstraints.NORTH, GridBagConstraints.NONE, new Insets(5, 16, 5, 12), 0, 0));
-		
-		dtePanelCenter.add(addDTEButton, 
+
+		dtePanelCenter.add(addDTEButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.5,
-				GridBagConstraints.SOUTH, GridBagConstraints.NONE, 
+				GridBagConstraints.SOUTH, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 20), 0, 0));
 		dtePanelCenter.add(editDTEButton,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.NONE, 
+				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 20), 0, 0));
 		dtePanelCenter.add(deleteDTEButton,
 			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
@@ -553,7 +559,7 @@ public class RefListFrame extends JFrame
 		if (row == -1)
 		{
 			showError(
-				labels.getString("SeasonsTab.noSelection") + " " + 
+				labels.getString("SeasonsTab.noSelection") + " " +
 				labels.getString("RefListFrame.moveDown"));
 			return;
 		}
@@ -568,7 +574,7 @@ public class RefListFrame extends JFrame
 		if (row == -1)
 		{
 			showError(
-				labels.getString("SeasonsTab.noSelection") + " " + 
+				labels.getString("SeasonsTab.noSelection") + " " +
 				labels.getString("RefListFrame.moveUp"));
 			return;
 		}
@@ -631,16 +637,16 @@ public class RefListFrame extends JFrame
 		}
 	}
 
-	/** 
+	/**
 	 * File | Exit action performed.
 	 * @param e ignored
 	 */
-	public void jMenuFileExit_actionPerformed(ActionEvent e) 
+	public void jMenuFileExit_actionPerformed(ActionEvent e)
 	{
 		if (enumsChanged || unitsChanged || convertersChanged || dtsChanged || seasonsChanged)
 		{
 			int r = JOptionPane.showConfirmDialog(this,
-				labels.getString("RefListFrame.unsavedChangesQues"), 
+				labels.getString("RefListFrame.unsavedChangesQues"),
 				labels.getString("RefListFrame.confirmExit"),
 				JOptionPane.YES_NO_OPTION);
 			if (r != JOptionPane.YES_OPTION)
@@ -662,7 +668,6 @@ public class RefListFrame extends JFrame
 		dlg.setModal(true);
 		dlg.pack();
 		dlg.setVisible(true);
-//		dlg.show();
 	}
 
 	/**
@@ -864,7 +869,7 @@ public class RefListFrame extends JFrame
 				return;
 			}
 
-			EngineeringUnit eu = 
+			EngineeringUnit eu =
 				Database.getDb().engineeringUnitList.getByAbbr(abbr);
 			if (eu != null)
 			{
@@ -1223,15 +1228,15 @@ public class RefListFrame extends JFrame
 				db.dataTypeSet.write();
 				dtsChanged = false;
 			}
-			
+
 			JOptionPane.showConfirmDialog(this, labels.getString("RefListFrame.changesWritten"),
 				"Info", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE);
 		}
 		catch(DatabaseException ex)
 		{
-			showError(LoadResourceBundle.sprintf(labels.getString(
-					"RefListFrame.writingErr"),what) + ex);
-			ex.printStackTrace();
+			final String msg = LoadResourceBundle.sprintf(labels.getString("RefListFrame.writingErr"),what);
+			log.atError().setCause(ex).log(msg);
+			showError(msg + ex);
 		}
 	}
 
