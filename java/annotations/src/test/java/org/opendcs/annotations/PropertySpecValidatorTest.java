@@ -1,13 +1,10 @@
-package org.opendcs.utils;
+package org.opendcs.annotations;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
-import org.opendcs.annotations.AlgorithmRequirements;
-import org.opendcs.annotations.PropertyRequirementGroup;
-import org.opendcs.annotations.PropertySpec;
-import org.opendcs.annotations.PropertySpecValidator;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.opendcs.utils.PropertyRequirementGroup;
+import org.opendcs.utils.PropertySpecValidator;
 
 import java.util.HashMap;
 import java.util.List;
@@ -16,26 +13,26 @@ import java.util.Map;
 public class PropertySpecValidatorTest 
 {
     // Test class using new class-level requirements API with multiple groups
-    @AlgorithmRequirements(
+    @PropertyRequirements(
         groups = {
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "auth",
-                type = AlgorithmRequirements.RequirementType.ONE_OF,
+                type = PropertyRequirements.RequirementType.ONE_OF,
                 properties = {"username", "apiKey", "certificate"}
             ),
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "database",
-                type = AlgorithmRequirements.RequirementType.ALL_REQUIRED,
+                type = PropertyRequirements.RequirementType.ALL_REQUIRED,
                 properties = {"host", "port", "database"}
             ),
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "contact",
-                type = AlgorithmRequirements.RequirementType.AT_LEAST_ONE,
+                type = PropertyRequirements.RequirementType.AT_LEAST_ONE,
                 properties = {"email", "phone"}
             ),
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "proxy",
-                type = AlgorithmRequirements.RequirementType.ALL_OR_NONE,
+                type = PropertyRequirements.RequirementType.ALL_OR_NONE,
                 properties = {"proxyHost", "proxyPort"}
             )
         }
@@ -93,11 +90,11 @@ public class PropertySpecValidatorTest
     }
     
     // Test class mixing both approaches
-    @AlgorithmRequirements(
+    @PropertyRequirements(
         groups = {
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "options",
-                type = AlgorithmRequirements.RequirementType.AT_LEAST_ONE,
+                type = PropertyRequirements.RequirementType.AT_LEAST_ONE,
                 properties = {"option1", "option2", "option3"}
             )
         }
@@ -118,28 +115,28 @@ public class PropertySpecValidatorTest
     }
     
     // Test class with multiple groups of same type
-    @AlgorithmRequirements(
+    @PropertyRequirements(
         groups = {
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "primaryAuth",
-                type = AlgorithmRequirements.RequirementType.ONE_OF,
+                type = PropertyRequirements.RequirementType.ONE_OF,
                 properties = {"username", "email"},
                 description = "Primary authentication method"
             ),
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "secondaryAuth",
-                type = AlgorithmRequirements.RequirementType.ONE_OF,
+                type = PropertyRequirements.RequirementType.ONE_OF,
                 properties = {"token", "apiKey"},
                 description = "Secondary authentication method"
             ),
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "serverSettings",
-                type = AlgorithmRequirements.RequirementType.ALL_REQUIRED,
+                type = PropertyRequirements.RequirementType.ALL_REQUIRED,
                 properties = {"host", "port"}
             ),
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "databaseSettings",
-                type = AlgorithmRequirements.RequirementType.ALL_REQUIRED,
+                type = PropertyRequirements.RequirementType.ALL_REQUIRED,
                 properties = {"dbName", "dbUser", "dbPassword"}
             )
         }
@@ -197,8 +194,8 @@ public class PropertySpecValidatorTest
         // proxy group satisfied by providing none (ALL_OR_NONE)
         
         PropertySpecValidator.ValidationResult result = validator.validate(properties);
-        assertTrue(result.isValid());
-        assertTrue(result.getErrors().isEmpty());
+        Assertions.assertTrue(result.isValid());
+        Assertions.assertTrue(result.getErrors().isEmpty());
     }
     
     @Test
@@ -212,11 +209,11 @@ public class PropertySpecValidatorTest
         properties.put("email", "test@example.com");
         
         PropertySpecValidator.ValidationResult result = validator.validate(properties);
-        assertFalse(result.isValid());
-        assertFalse(result.getErrors().isEmpty());
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertFalse(result.getErrors().isEmpty());
         
         String errorMessage = result.getErrorMessage();
-        assertTrue(errorMessage.contains("apiUrl"));
+        Assertions.assertTrue(errorMessage.contains("apiUrl"));
     }
     
     @Test
@@ -232,11 +229,11 @@ public class PropertySpecValidatorTest
         properties.put("email", "test@example.com");
         
         PropertySpecValidator.ValidationResult result = validator.validate(properties);
-        assertFalse(result.isValid());
+        Assertions.assertFalse(result.isValid());
         
         String errorMessage = result.getErrorMessage();
-        assertTrue(errorMessage.contains("auth"));
-        assertTrue(errorMessage.contains("exactly one"));
+        Assertions.assertTrue(errorMessage.contains("auth"));
+        Assertions.assertTrue(errorMessage.contains("exactly one"));
     }
     
     @Test
@@ -251,11 +248,11 @@ public class PropertySpecValidatorTest
         properties.put("email", "test@example.com");
         
         PropertySpecValidator.ValidationResult result = validator.validate(properties);
-        assertFalse(result.isValid());
+        Assertions.assertFalse(result.isValid());
         
         String errorMessage = result.getErrorMessage();
-        assertTrue(errorMessage.contains("database"));
-        assertTrue(errorMessage.contains("all"));
+        Assertions.assertTrue(errorMessage.contains("database"));
+        Assertions.assertTrue(errorMessage.contains("all"));
     }
     
     @Test
@@ -269,11 +266,11 @@ public class PropertySpecValidatorTest
         // No contact method provided (violates AT_LEAST_ONE)
         
         PropertySpecValidator.ValidationResult result = validator.validate(properties);
-        assertFalse(result.isValid());
+        Assertions.assertFalse(result.isValid());
         
         String errorMessage = result.getErrorMessage();
-        assertTrue(errorMessage.contains("contact"));
-        assertTrue(errorMessage.contains("at least one"));
+        Assertions.assertTrue(errorMessage.contains("contact"));
+        Assertions.assertTrue(errorMessage.contains("at least one"));
     }
     
     @Test
@@ -290,29 +287,29 @@ public class PropertySpecValidatorTest
         // missing proxyPort
         
         PropertySpecValidator.ValidationResult result = validator.validate(properties);
-        assertFalse(result.isValid());
+        Assertions.assertFalse(result.isValid());
         
         String errorMessage = result.getErrorMessage();
-        assertTrue(errorMessage.contains("proxy"));
-        assertTrue(errorMessage.contains("all or none"));
+        Assertions.assertTrue(errorMessage.contains("proxy"));
+        Assertions.assertTrue(errorMessage.contains("all or none"));
     }
     
     @Test
     public void testIsPropertyRequired() 
     {
         // Test required property
-        assertTrue(validator.isPropertyRequired("apiUrl"));
+        Assertions.assertTrue(validator.isPropertyRequired("apiUrl"));
         
         // Test property in requirement group
-        assertTrue(validator.isPropertyRequired("username"));
-        assertTrue(validator.isPropertyRequired("host"));
+        Assertions.assertTrue(validator.isPropertyRequired("username"));
+        Assertions.assertTrue(validator.isPropertyRequired("host"));
         
         // Test optional property
-        assertFalse(validator.isPropertyRequired("optional"));
+        Assertions.assertFalse(validator.isPropertyRequired("optional"));
         
         // Test case insensitivity
-        assertTrue(validator.isPropertyRequired("APIURL"));
-        assertTrue(validator.isPropertyRequired("USERNAME"));
+        Assertions.assertTrue(validator.isPropertyRequired("APIURL"));
+        Assertions.assertTrue(validator.isPropertyRequired("USERNAME"));
     }
     
     @Test
@@ -320,21 +317,21 @@ public class PropertySpecValidatorTest
     {
         // Property in one group
         List<PropertyRequirementGroup> groups = validator.getGroupsForProperty("username");
-        assertEquals(1, groups.size());
-        assertEquals("auth", groups.get(0).getGroupName());
+        Assertions.assertEquals(1, groups.size());
+        Assertions.assertEquals("auth", groups.get(0).getGroupName());
         
         // Property not in any group (but required)
         groups = validator.getGroupsForProperty("apiUrl");
-        assertEquals(1, groups.size());
-        assertTrue(groups.get(0).getGroupName().startsWith("_required_"));
+        Assertions.assertEquals(1, groups.size());
+        Assertions.assertTrue(groups.get(0).getGroupName().startsWith("_required_"));
         
         // Optional property
         groups = validator.getGroupsForProperty("optional");
-        assertTrue(groups.isEmpty());
+        Assertions.assertTrue(groups.isEmpty());
         
         // Test case insensitivity
         groups = validator.getGroupsForProperty("USERNAME");
-        assertEquals(1, groups.size());
+        Assertions.assertEquals(1, groups.size());
     }
     
     @Test
@@ -349,22 +346,22 @@ public class PropertySpecValidatorTest
         properties.put("email", "test@example.com");
         
         // Test missing required property - should violate
-        assertTrue(validator.isMissingPropertyViolatingRequirements("apiUrl", new HashMap<>()));
+        Assertions.assertTrue(validator.isMissingPropertyViolatingRequirements("apiUrl", new HashMap<>()));
         
         // Test property with value - should not violate
-        assertFalse(validator.isMissingPropertyViolatingRequirements("apiUrl", properties));
+        Assertions.assertFalse(validator.isMissingPropertyViolatingRequirements("apiUrl", properties));
         
         // Test missing property in satisfied ONE_OF group - should not violate
-        assertFalse(validator.isMissingPropertyViolatingRequirements("apiKey", properties));
+        Assertions.assertFalse(validator.isMissingPropertyViolatingRequirements("apiKey", properties));
         
         // Test missing property in unsatisfied ALL_REQUIRED group - should violate
         Map<String, String> partialProps = new HashMap<>();
         partialProps.put("host", "localhost");
         // missing port and database
-        assertTrue(validator.isMissingPropertyViolatingRequirements("port", partialProps));
+        Assertions.assertTrue(validator.isMissingPropertyViolatingRequirements("port", partialProps));
         
         // Test optional property - should not violate
-        assertFalse(validator.isMissingPropertyViolatingRequirements("optional", properties));
+        Assertions.assertFalse(validator.isMissingPropertyViolatingRequirements("optional", properties));
     }
     
     @Test
@@ -381,7 +378,7 @@ public class PropertySpecValidatorTest
         PropertySpecValidator.ValidationResult result = 
             PropertySpecValidator.validateClass(TestAlgorithm.class, props);
         
-        assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
     }
     
     @Test
@@ -395,14 +392,14 @@ public class PropertySpecValidatorTest
         // Missing apiUrl
         
         PropertySpecValidator.ValidationResult result = validator.validate(properties);
-        assertFalse(result.isValid());
+        Assertions.assertFalse(result.isValid());
         
         List<PropertySpecValidator.ValidationError> errors = result.getErrors();
-        assertTrue(errors.size() >= 3); // At least 3 violations
+        Assertions.assertTrue(errors.size() >= 3); // At least 3 violations
         
         String errorMessage = result.getErrorMessage();
-        assertNotNull(errorMessage);
-        assertTrue(errorMessage.length() > 0);
+        Assertions.assertNotNull(errorMessage);
+        Assertions.assertTrue(errorMessage.length() > 0);
     }
     
     @Test
@@ -412,20 +409,20 @@ public class PropertySpecValidatorTest
         
         Map<String, String> props = new HashMap<>();
         PropertySpecValidator.ValidationResult result = simpleValidator.validate(props);
-        assertFalse(result.isValid());
-        assertTrue(result.getErrors().size() == 2);
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertTrue(result.getErrors().size() == 2);
         
         props.put("requiredField1", "value1");
         result = simpleValidator.validate(props);
-        assertFalse(result.isValid());
+        Assertions.assertFalse(result.isValid());
         
         props.put("requiredField2", "value2");
         result = simpleValidator.validate(props);
-        assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
         
         props.put("optionalField", "optional");
         result = simpleValidator.validate(props);
-        assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
     }
     
     @Test
@@ -435,22 +432,22 @@ public class PropertySpecValidatorTest
         
         Map<String, String> props = new HashMap<>();
         PropertySpecValidator.ValidationResult result = mixedValidator.validate(props);
-        assertFalse(result.isValid());
+        Assertions.assertFalse(result.isValid());
         
         // Add mandatory property
         props.put("mandatoryProp", "required");
         result = mixedValidator.validate(props);
-        assertFalse(result.isValid());
+        Assertions.assertFalse(result.isValid());
         
         // Add one option
         props.put("option1", "opt1");
         result = mixedValidator.validate(props);
-        assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
         
         // Add more options (should still pass)
         props.put("option2", "opt2");
         result = mixedValidator.validate(props);
-        assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
     }
     
     @Test
@@ -461,20 +458,20 @@ public class PropertySpecValidatorTest
         Map<String, String> props = new HashMap<>();
         
         // When no properties are set, username/apiKey/certificate violate oneOf requirement
-        assertTrue(validator.isMissingPropertyViolatingRequirements("username", props));
-        assertTrue(validator.isMissingPropertyViolatingRequirements("apiKey", props));
+        Assertions.assertTrue(validator.isMissingPropertyViolatingRequirements("username", props));
+        Assertions.assertTrue(validator.isMissingPropertyViolatingRequirements("apiKey", props));
         
         // proxyHost and proxyPort don't violate allOrNone when both are missing
-        assertFalse(validator.isMissingPropertyViolatingRequirements("proxyHost", props));
-        assertFalse(validator.isMissingPropertyViolatingRequirements("proxyPort", props));
+        Assertions.assertFalse(validator.isMissingPropertyViolatingRequirements("proxyHost", props));
+        Assertions.assertFalse(validator.isMissingPropertyViolatingRequirements("proxyPort", props));
         
         // Add username - now apiKey doesn't violate
         props.put("username", "value");
-        assertFalse(validator.isMissingPropertyViolatingRequirements("apiKey", props));
+        Assertions.assertFalse(validator.isMissingPropertyViolatingRequirements("apiKey", props));
         
         // Add proxyHost - now proxyPort violates allOrNone
         props.put("proxyHost", "proxy");
-        assertTrue(validator.isMissingPropertyViolatingRequirements("proxyPort", props));
+        Assertions.assertTrue(validator.isMissingPropertyViolatingRequirements("proxyPort", props));
     }
     
     @Test
@@ -485,16 +482,16 @@ public class PropertySpecValidatorTest
         Map<String, String> props = new HashMap<>();
         
         // Both required fields should be highlighted when missing
-        assertTrue(validator.isMissingPropertyViolatingRequirements("requiredField1", props));
-        assertTrue(validator.isMissingPropertyViolatingRequirements("requiredField2", props));
+        Assertions.assertTrue(validator.isMissingPropertyViolatingRequirements("requiredField1", props));
+        Assertions.assertTrue(validator.isMissingPropertyViolatingRequirements("requiredField2", props));
         
         // Optional field should not be highlighted
-        assertFalse(validator.isMissingPropertyViolatingRequirements("optionalField", props));
+        Assertions.assertFalse(validator.isMissingPropertyViolatingRequirements("optionalField", props));
         
         // Add requiredField1 - it's no longer violating
         props.put("requiredField1", "value1");
-        assertFalse(validator.isMissingPropertyViolatingRequirements("requiredField1", props));
-        assertTrue(validator.isMissingPropertyViolatingRequirements("requiredField2", props));
+        Assertions.assertFalse(validator.isMissingPropertyViolatingRequirements("requiredField1", props));
+        Assertions.assertTrue(validator.isMissingPropertyViolatingRequirements("requiredField2", props));
     }
     
     @Test
@@ -514,36 +511,36 @@ public class PropertySpecValidatorTest
         props.put("dbPassword", "pass");
         
         PropertySpecValidator.ValidationResult result = multiValidator.validate(props);
-        assertTrue(result.isValid());
+        Assertions.assertTrue(result.isValid());
         
         // Test violation of first ONE_OF group
         props.put("email", "test@example.com"); // Violates primaryAuth ONE_OF
         result = multiValidator.validate(props);
-        assertFalse(result.isValid());
-        assertTrue(result.getErrorMessage().contains("primaryAuth"));
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertTrue(result.getErrorMessage().contains("primaryAuth"));
         
         props.remove("email");
         
         // Test violation of second ONE_OF group
         props.put("apiKey", "key456"); // Violates secondaryAuth ONE_OF
         result = multiValidator.validate(props);
-        assertFalse(result.isValid());
-        assertTrue(result.getErrorMessage().contains("secondaryAuth"));
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertTrue(result.getErrorMessage().contains("secondaryAuth"));
         
         props.remove("apiKey");
         
         // Test missing from first ALL_REQUIRED group
         props.remove("port");
         result = multiValidator.validate(props);
-        assertFalse(result.isValid());
-        assertTrue(result.getErrorMessage().contains("serverSettings"));
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertTrue(result.getErrorMessage().contains("serverSettings"));
         
         props.put("port", "8080");
         
         // Test missing from second ALL_REQUIRED group
         props.remove("dbPassword");
         result = multiValidator.validate(props);
-        assertFalse(result.isValid());
-        assertTrue(result.getErrorMessage().contains("databaseSettings"));
+        Assertions.assertFalse(result.isValid());
+        Assertions.assertTrue(result.getErrorMessage().contains("databaseSettings"));
     }
 }

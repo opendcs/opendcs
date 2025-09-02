@@ -3,16 +3,12 @@ package decodes.tsdb.compedit;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
-import java.util.List;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
-import decodes.gui.PropertiesEditDialog;
 import decodes.gui.properties.PropertiesTableModel;
-import decodes.util.PropertySpec;
-import org.opendcs.annotations.PropertySpecValidator;
-import org.opendcs.annotations.PropertySpecHelper;
+import org.opendcs.utils.PropertySpecValidator;
 import opendcs.dai.ComputationDAI;
 import ilex.gui.DateTimeCalendar;
 import ilex.util.AsciiUtil;
@@ -23,8 +19,6 @@ import ilex.util.LoadResourceBundle;
 import decodes.db.Constants;
 import decodes.dbeditor.SiteSelectPanel;
 import decodes.gui.PropertiesEditPanel;
-import decodes.gui.SortingListTable;
-import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbAlgorithmExecutive;

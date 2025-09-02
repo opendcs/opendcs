@@ -4,13 +4,10 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.Set;
 import java.util.TreeSet;
 
 import javax.swing.table.AbstractTableModel;
@@ -23,9 +20,7 @@ import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 import ilex.util.StringPair;
-import org.opendcs.annotations.PropertySpecValidator;
-import org.opendcs.annotations.PropertySpecHelper;
-import org.opendcs.annotations.PropertyRequirementGroup;
+import org.opendcs.utils.PropertySpecValidator;
 import ilex.util.TextUtil;
 
 public class PropertiesTableModel extends AbstractTableModel

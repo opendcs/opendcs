@@ -13,7 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.opendcs.annotations;
+package org.opendcs.utils;
+
+import org.opendcs.annotations.PropertyRequirements;
+import org.opendcs.annotations.PropertySpec;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -34,10 +37,10 @@ public class PropertySpecHelper
         Map<String, PropertyRequirementGroup> groups = new HashMap<>();
         
         // First, process class-level requirements
-        AlgorithmRequirements classReqs = clazz.getAnnotation(AlgorithmRequirements.class);
+        PropertyRequirements classReqs = clazz.getAnnotation(PropertyRequirements.class);
         if (classReqs != null)
         {
-            for (AlgorithmRequirements.RequirementGroup groupDef : classReqs.groups())
+            for (PropertyRequirements.RequirementGroup groupDef : classReqs.groups())
             {
                 PropertyRequirementGroup.GroupType type = convertAlgorithmRequirementType(groupDef.type());
                 PropertyRequirementGroup group = new PropertyRequirementGroup(
@@ -155,7 +158,7 @@ public class PropertySpecHelper
      * Convert AlgorithmRequirements.RequirementType to PropertyRequirementGroup.GroupType
      */
     private static PropertyRequirementGroup.GroupType convertAlgorithmRequirementType(
-            AlgorithmRequirements.RequirementType type)
+            PropertyRequirements.RequirementType type)
     {
         switch (type)
         {

@@ -46,7 +46,7 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.opendcs.annotations.AlgorithmRequirements;
+import org.opendcs.annotations.PropertyRequirements;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -55,16 +55,16 @@ import org.slf4j.Logger;
         description = "Perform Reservoir Evaporation calculation based on an algorithm developed by NWDM," +
                 " Which utilizes air temp, air speed, solar radiation, and water temperature profiles to return" +
                 " evaporation rates and total evaporation as flow")
-@AlgorithmRequirements(
+@PropertyRequirements(
         groups = {
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "Location",
-                type = AlgorithmRequirements.RequirementType.AT_LEAST_ONE,
+                type = PropertyRequirements.RequirementType.AT_LEAST_ONE,
                 properties = {"latitude", "longitude"}
             ),
-            @AlgorithmRequirements.RequirementGroup(
+            @PropertyRequirements.RequirementGroup(
                 name = "Location2", 
-                type = AlgorithmRequirements.RequirementType.ALL_REQUIRED,
+                type = PropertyRequirements.RequirementType.ALL_REQUIRED,
                 properties = {"zeroElevation", "longitude"}
             )
         }
