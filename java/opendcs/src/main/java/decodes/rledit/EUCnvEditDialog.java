@@ -1,50 +1,42 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*	$Log$
-*	Revision 1.1  2008/04/04 18:21:04  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.6  2008/02/10 20:17:33  mmaloney
-*	dev
-*	
-*	Revision 1.2  2008/02/01 15:20:40  cvs
-*	modified files for internationalization
-*	
-*	Revision 1.5  2004/12/21 14:46:05  mjmaloney
-*	Added javadocs
-*	
-*	Revision 1.4  2004/04/20 20:08:18  mjmaloney
-*	Working reference list editor, required several mods to SQL code.
-*	
-*	Revision 1.3  2004/04/12 17:53:12  mjmaloney
-*	Implemented edit functions for Unit Converters.
-*	
-*	Revision 1.2  2004/04/09 18:59:42  mjmaloney
-*	dev.
-*	
-*	Revision 1.1  2004/02/03 15:19:53  mjmaloney
-*	Working GUI prototype complete.
-*	
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.rledit;
 
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.util.*;
 
 import decodes.db.*;
-import ilex.util.*;
+import ilex.util.AsciiUtil;
+import ilex.util.LoadResourceBundle;
 
 /**
 This dialog is used for adding or editing an EU conversion.
 */
 public class EUCnvEditDialog extends JDialog
 {
-	private static ResourceBundle genericLabels = 
-		RefListEditor.getGenericLabels();
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
 	private static ResourceBundle labels = RefListEditor.getLabels();
 	private JPanel panel1 = new JPanel();
 	private BorderLayout borderLayout1 = new BorderLayout();
@@ -57,9 +49,9 @@ public class EUCnvEditDialog extends JDialog
 	private JLabel jLabel4 = new JLabel();
 	private JTextField equationField = new JTextField();
 	private JLabel jLabel5 = new JLabel();
-	private JComboBox fromComboBox = new JComboBox();
-	private JComboBox toComboBox = new JComboBox();
-	private JComboBox algorithmComboBox = new JComboBox(
+	private JComboBox<String> fromComboBox = new JComboBox<>();
+	private JComboBox<String> toComboBox = new JComboBox<>();
+	private JComboBox<String> algorithmComboBox = new JComboBox<>(
 		new String[] { "none", "linear", "usgs", "poly-5"});
 	private JLabel jLabel6 = new JLabel();
 	private JLabel jLabel7 = new JLabel();
@@ -96,12 +88,14 @@ public class EUCnvEditDialog extends JDialog
 		coeffField[3] = new JTextField();
 		coeffField[4] = new JTextField();
 		coeffField[5] = new JTextField();
-		try {
+		try
+		{
 			jbInit();
 			pack();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 
 		myUC = null;
@@ -163,7 +157,7 @@ public class EUCnvEditDialog extends JDialog
 	/**
 	 * No args constructor for JBuilder.
 	 */
-	public EUCnvEditDialog() 
+	public EUCnvEditDialog()
 	{
 		this(null, "", false);
 	}
@@ -261,7 +255,7 @@ public class EUCnvEditDialog extends JDialog
 	 * how many coefficients are allowed.
 	 * @param e ignored
 	 */
-	void algorithmComboBox_actionPerformed(ActionEvent e) 
+	void algorithmComboBox_actionPerformed(ActionEvent e)
 	{
 		String s = (String)algorithmComboBox.getSelectedItem();
 		if (s.equals("none"))
@@ -310,7 +304,7 @@ public class EUCnvEditDialog extends JDialog
 	 * Called when OK button is pressed.
 	 * @param e ignored.
 	 */
-	void okButton_actionPerformed(ActionEvent e) 
+	void okButton_actionPerformed(ActionEvent e)
 	{
 		String newFrom = (String)fromComboBox.getSelectedItem();
 		if (newFrom.length() == 0)
@@ -332,7 +326,7 @@ public class EUCnvEditDialog extends JDialog
 				newFrom, newTo);
 			if (uc != null)
 			{
-				showError(LoadResourceBundle.sprintf(labels.getString(						
+				showError(LoadResourceBundle.sprintf(labels.getString(
 						"EUCnvEditDialog.convertionModErr"),
 						newFrom, newTo));
 				return;
@@ -372,9 +366,10 @@ public class EUCnvEditDialog extends JDialog
 					catch(NumberFormatException ex)
 					{
 						myUC.coefficients[i] = Constants.undefinedDouble;
-						showError(labels.getString("EUCnvEditDialog.coefficient") + 
-							(char)((byte)'A' + i) + labels.getString(
-									"EUCnvEditDialog.coeffErr"));
+						final String msg = labels.getString("EUCnvEditDialog.coefficient") +
+										   (char)((byte)'A' + i) + labels.getString("EUCnvEditDialog.coeffErr");
+						log.atError().setCause(ex).log(msg);
+						showError(msg);
 						return;
 					}
 				}
@@ -388,7 +383,7 @@ public class EUCnvEditDialog extends JDialog
 	 * Called when cancel button is pressed.
 	 * @param e ignored.
 	 */
-	void cancelButton_actionPerformed(ActionEvent e) 
+	void cancelButton_actionPerformed(ActionEvent e)
 	{
 		_wasChanged = false;
 		closeDlg();
