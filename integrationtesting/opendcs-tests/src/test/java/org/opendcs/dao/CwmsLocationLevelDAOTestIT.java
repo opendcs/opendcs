@@ -31,6 +31,10 @@ import org.opendcs.model.cwms.CwmsSiteReferenceSpecification;
 import org.opendcs.fixtures.annotations.EnableIfTsDb;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
+import java.util.Date;
+import java.util.Calendar;
+import decodes.tsdb.CTimeSeries;
+import ilex.var.TimedVariable;
 
 /**
  * Integration tests for CwmsLocationLevelDAO
@@ -97,7 +101,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         
         // This test verifies the method executes without error
         // Test data is created during container initialization
-        String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
+        String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
         
         try (DataTransaction tx = db.newTransaction())
         {
@@ -136,7 +140,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             return; // Skip for non-CWMS databases
         }
         
-        String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
+        String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
         
         try (DataTransaction tx = db.newTransaction())
         {
@@ -181,7 +185,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             return; // Skip for non-CWMS databases
         }
         
-        String testLocationId = "TEST_LOCATION";
+        String testLocationId = "FTPK-Lower";
         
         try (DataTransaction tx = db.newTransaction())
         {
@@ -208,8 +212,8 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             return; // Skip for non-CWMS databases
         }
         
-        String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
-        String testLocationId = "TEST_LOCATION";
+        String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
+        String testLocationId = "FTPK-Lower";
 
         try (DataTransaction tx = db.newTransaction())
         {
@@ -267,16 +271,278 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             // Use the DAO through the interface
             SiteReferenceMetaData daiInterface = dao;
             
-            String testLocationLevelId = "TEST_LOCATION.Stage.Const.0.Test";
+            String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
             
             // All interface methods should work with transactions
             SiteReferenceValue value = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId);
             
             SiteReferenceValue valueWithUnits = daiInterface.getLatestLocationLevelValue(tx, testLocationLevelId, "ft");
             
-            List<? extends SiteReferenceSpecification> specs = daiInterface.getLocationLevelSpecs(tx, "TEST_LOCATION");
+            List<? extends SiteReferenceSpecification> specs = daiInterface.getLocationLevelSpecs(tx, "FTPK-Lower");
             
             // No exceptions should be thrown
+        }
+    }
+    
+    @Test
+    @EnableIfTsDb({"CWMS-Oracle"})
+    public void testGetLocationLevelRange() throws Exception
+    {
+        if (dao == null) 
+        {
+            return; // Skip for non-CWMS databases
+        }
+        
+        String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
+        
+        // Create a time range for testing
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_YEAR, -30); // 30 days ago
+        Date startTime = cal.getTime();
+        Date endTime = new Date(); // Now
+        
+        try (DataTransaction tx = db.newTransaction())
+        {
+            // Test basic retrieval without unit conversion
+            CTimeSeries timeSeries = dao.getLocationLevelRange(tx, testLocationLevelId, 
+                                                                startTime, endTime, null);
+            
+            assertNotNull(timeSeries, "Time series should not be null");
+            assertEquals(testLocationLevelId, timeSeries.getDisplayName(), 
+                         "Display name should match location level ID");
+            
+            // Check if we have any samples
+            int sampleCount = timeSeries.size();
+            log.info("Retrieved {} samples for location level {}", sampleCount, testLocationLevelId);
+            
+            // If we have samples, verify their structure
+            if (sampleCount > 0)
+            {
+                TimedVariable firstSample = timeSeries.sampleAt(0);
+                assertNotNull(firstSample, "First sample should not be null");
+                assertNotNull(firstSample.getTime(), "Sample time should not be null");
+                
+                // Verify samples are within the requested time range
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    TimedVariable sample = timeSeries.sampleAt(i);
+                    Date sampleTime = sample.getTime();
+                    assertTrue(!sampleTime.before(startTime) && !sampleTime.after(endTime),
+                              "Sample time should be within requested range");
+                }
+                
+                // Verify samples are ordered by time
+                if (sampleCount > 1)
+                {
+                    for (int i = 1; i < sampleCount; i++)
+                    {
+                        Date prevTime = timeSeries.sampleAt(i-1).getTime();
+                        Date currTime = timeSeries.sampleAt(i).getTime();
+                        assertTrue(!currTime.before(prevTime),
+                                  "Samples should be ordered by time");
+                    }
+                }
+            }
+        }
+    }
+    
+    @Test
+    @EnableIfTsDb({"CWMS-Oracle"})
+    public void testGetLocationLevelRange_WithUnitConversion() throws Exception
+    {
+        if (dao == null) 
+        {
+            return; // Skip for non-CWMS databases
+        }
+        
+        String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
+        
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_YEAR, -7); // 7 days ago
+        Date startTime = cal.getTime();
+        Date endTime = new Date();
+        
+        try (DataTransaction tx = db.newTransaction())
+        {
+            // Get values in meters (SI units)
+            CTimeSeries timeSeriesMeters = dao.getLocationLevelRange(tx, testLocationLevelId, 
+                                                                     startTime, endTime, "m");
+            
+            // Get values in feet
+            CTimeSeries timeSeriesFeet = dao.getLocationLevelRange(tx, testLocationLevelId,
+                                                                   startTime, endTime, "ft");
+            
+            assertNotNull(timeSeriesMeters, "Time series in meters should not be null");
+            assertNotNull(timeSeriesFeet, "Time series in feet should not be null");
+            
+            // If we have data, verify units are set correctly
+            if (timeSeriesMeters.size() > 0)
+            {
+                assertEquals("m", timeSeriesMeters.getUnitsAbbr(), 
+                            "Units should be meters when requested");
+            }
+            
+            if (timeSeriesFeet.size() > 0)
+            {
+                assertEquals("ft", timeSeriesFeet.getUnitsAbbr(),
+                            "Units should be feet when requested");
+                
+                // If both have data, verify conversion is correct
+                if (timeSeriesMeters.size() > 0 && timeSeriesFeet.size() > 0 &&
+                    timeSeriesMeters.size() == timeSeriesFeet.size())
+                {
+                    TimedVariable meterSample = timeSeriesMeters.sampleAt(0);
+                    TimedVariable feetSample = timeSeriesFeet.sampleAt(0);
+                    
+                    if (Math.abs(meterSample.getDoubleValue()) > 0.001)
+                    {
+                        // 1 meter = 3.28084 feet
+                        double expectedFeet = meterSample.getDoubleValue() * 3.28084;
+                        assertEquals(expectedFeet, feetSample.getDoubleValue(), 0.01,
+                                    "Conversion from meters to feet should be accurate");
+                    }
+                }
+            }
+        }
+    }
+    
+    @Test
+    @EnableIfTsDb({"CWMS-Oracle"})
+    public void testGetLocationLevelAtTime_ExactMatch() throws Exception
+    {
+        if (dao == null) 
+        {
+            return; // Skip for non-CWMS databases
+        }
+        
+        String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
+        
+        try (DataTransaction tx = db.newTransaction())
+        {
+            // First get the latest value to know what time we have data for
+            CwmsSiteReferenceValue latestValue = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(
+                tx, testLocationLevelId);
+            
+            // Skip test if no data exists
+            assumeTrue(latestValue != null && latestValue.getLevelDate() != null,
+                      "Skipping exact match test - no data found for " + testLocationLevelId);
+            
+            Date knownTime = latestValue.getLevelDate();
+            
+            // Test retrieving value at exact time (requireSpecificTime = true)
+            CwmsSiteReferenceValue exactValue = (CwmsSiteReferenceValue) dao.getLocationLevelAtTime(
+                tx, testLocationLevelId, knownTime, true, null);
+            
+            assertNotNull(exactValue, "Should find value at known time with exact match");
+            assertEquals(knownTime, exactValue.getLevelDate(),
+                        "Date should match exactly when requireSpecificTime is true");
+            assertEquals(latestValue.getLevelValue(), exactValue.getLevelValue(), 0.001,
+                        "Value should match the known value");
+            
+            // Test that requesting a slightly different time with exact match returns null
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(knownTime);
+            cal.add(Calendar.MINUTE, -1); // 1 minute before
+            Date differentTime = cal.getTime();
+
+            CwmsSiteReferenceValue noMatch = (CwmsSiteReferenceValue) dao.getLocationLevelAtTime(
+                tx, testLocationLevelId, differentTime, true, null);
+            
+            // May or may not be null depending on whether there's data at that exact time
+            if (noMatch != null)
+            {
+                assertEquals(differentTime, noMatch.getLevelDate(),
+                            "If value found, date should match exactly");
+            }
+        }
+    }
+    
+    @Test
+    @EnableIfTsDb({"CWMS-Oracle"})
+    public void testGetLocationLevelAtTime_PreviousValue() throws Exception
+    {
+        if (dao == null) 
+        {
+            return; // Skip for non-CWMS databases
+        }
+        
+        String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
+        
+        try (DataTransaction tx = db.newTransaction())
+        {
+            // Get a recent time
+            Date requestedTime = new Date();
+            
+            // Test retrieving previous value (requireSpecificTime = false)
+            CwmsSiteReferenceValue previousValue = (CwmsSiteReferenceValue) dao.getLocationLevelAtTime(
+                tx, testLocationLevelId, requestedTime, false, null);
+            
+            if (previousValue != null)
+            {
+                assertNotNull(previousValue.getLevelDate(), 
+                             "Level date should not be null");
+                assertTrue(!previousValue.getLevelDate().after(requestedTime),
+                          "Previous value date should not be after requested time");
+                
+                log.info("Found previous value at {} for requested time {}",
+                        previousValue.getLevelDate(), requestedTime);
+            }
+            else
+            {
+                log.info("No previous value found for location: " + testLocationLevelId);
+            }
+            
+            // Test with unit conversion
+            CwmsSiteReferenceValue previousValueFeet = (CwmsSiteReferenceValue) dao.getLocationLevelAtTime(
+                tx, testLocationLevelId, requestedTime, false, "ft");
+            
+            if (previousValueFeet != null)
+            {
+                assertEquals("ft", previousValueFeet.getUnits(),
+                            "Units should be feet when requested");
+            }
+        }
+    }
+    
+    @Test
+    @EnableIfTsDb({"CWMS-Oracle"})
+    public void testGetLocationLevelAtTime_WithUnitConversion() throws Exception
+    {
+        if (dao == null) 
+        {
+            return; // Skip for non-CWMS databases
+        }
+        
+        String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
+        Date requestedTime = new Date();
+        
+        try (DataTransaction tx = db.newTransaction())
+        {
+            // Get value in meters
+            CwmsSiteReferenceValue valueMeters = (CwmsSiteReferenceValue) dao.getLocationLevelAtTime(
+                tx, testLocationLevelId, requestedTime, false, "m");
+            
+            // Get value in feet
+            CwmsSiteReferenceValue valueFeet = (CwmsSiteReferenceValue) dao.getLocationLevelAtTime(
+                tx, testLocationLevelId, requestedTime, false, "ft");
+            
+            if (valueMeters != null && valueFeet != null)
+            {
+                assertEquals("m", valueMeters.getUnits(), "Units should be meters");
+                assertEquals("ft", valueFeet.getUnits(), "Units should be feet");
+                
+                // Verify conversion is correct (1 meter = 3.28084 feet)
+                if (Math.abs(valueMeters.getLevelValue()) > 0.001)
+                {
+                    double expectedFeet = valueMeters.getLevelValue() * 3.28084;
+                    assertEquals(expectedFeet, valueFeet.getLevelValue(), 0.01,
+                                "Conversion from meters to feet should be accurate");
+                }
+                
+                // Both should have the same timestamp
+                assertEquals(valueMeters.getLevelDate(), valueFeet.getLevelDate(),
+                            "Both values should have the same timestamp");
+            }
         }
     }
 

@@ -26,6 +26,16 @@ import org.opendcs.model.cwms.CwmsSiteReferenceValue;
 import org.opendcs.model.cwms.CwmsSiteReferenceSpecification;
 
 import opendcs.dao.DaoBase;
+import java.util.Date;
+import java.sql.Timestamp;
+import java.sql.CallableStatement;
+import java.sql.Types;
+import java.sql.ResultSet;
+import decodes.tsdb.CTimeSeries;
+import ilex.var.TimedVariable;
+import decodes.sql.DbKey;
+import decodes.db.Constants;
+import oracle.jdbc.OracleTypes;
 
 /**
  * Data Access Object for CWMS Location Level data.
@@ -290,6 +300,209 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
         }, null, params);
     }
     
+    
+    /**
+     * Read a range of location level values in time and store them in a CTimeSeries object
+     * Uses CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL_VALUES procedure
+     * @param tx The data transaction
+     * @param locationLevelId The location level identifier
+     * @param startTime The start time for the range
+     * @param endTime The end time for the range
+     * @param targetUnits Optional target units for conversion
+     * @return CTimeSeries containing the location level values
+     * @throws OpenDcsDataException on database error
+     */
+    public CTimeSeries getLocationLevelRange(DataTransaction tx, String locationLevelId,
+                                              Date startTime, Date endTime, String targetUnits)
+        throws OpenDcsDataException
+    {
+        Connection conn = tx.connection(Connection.class)
+            .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
+        
+        CTimeSeries timeSeries = new CTimeSeries(Constants.undefinedId, "inst", "R_");
+        timeSeries.setDisplayName(locationLevelId);
+        
+        try (CallableStatement cstmt = conn.prepareCall(
+            "{ call CWMS_20.CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL_VALUES(?, ?, ?, ?, ?, ?, ?) }"))
+        {
+            // Set input parameters
+            cstmt.setString(1, locationLevelId);                           // p_location_level_id
+            cstmt.setString(2, "SI");                                      // p_unit_system
+            cstmt.setTimestamp(3, new Timestamp(startTime.getTime()));     // p_start_time
+            cstmt.setTimestamp(4, new Timestamp(endTime.getTime()));       // p_end_time
+            cstmt.setString(5, null);                                      // p_timezone (null for database default)
+            cstmt.setString(6, dbOfficeId);                                // p_office_id
+            
+            // Register output parameter for cursor
+            cstmt.registerOutParameter(7, OracleTypes.CURSOR);             // p_results
+            
+            // Execute the procedure
+            cstmt.execute();
+            
+            // Process the result set
+            try (ResultSet rs = (ResultSet) cstmt.getObject(7))
+            {
+                if (rs != null)
+                {
+                    String dbUnits = null;
+                    while (rs.next())
+                    {
+                        Timestamp levelDate = rs.getTimestamp("DATE_TIME");
+                        double levelValue = rs.getDouble("VALUE");
+                        int qualityCode = rs.getInt("QUALITY_CODE");
+                        
+                        // Get units from first record
+                        if (dbUnits == null)
+                        {
+                            dbUnits = rs.getString("UNIT_ID");
+                            if (dbUnits == null) dbUnits = "m"; // Default to meters for SI
+                        }
+                        
+                        // Perform unit conversion if needed
+                        double finalValue = levelValue;
+                        if (targetUnits != null && !targetUnits.isEmpty() && 
+                            !dbUnits.equalsIgnoreCase(targetUnits))
+                        {
+                            try
+                            {
+                                finalValue = convertUnits(levelValue, dbUnits, targetUnits);
+                                timeSeries.setUnitsAbbr(targetUnits);
+                            }
+                            catch (Exception ex)
+                            {
+                                log.warn("Failed to convert units from {} to {}: {}",
+                                        dbUnits, targetUnits, ex.getMessage());
+                                timeSeries.setUnitsAbbr(dbUnits);
+                            }
+                        }
+                        else
+                        {
+                            timeSeries.setUnitsAbbr(dbUnits);
+                        }
+                        
+                        // Create TimedVariable and add to time series
+                        TimedVariable tv = new TimedVariable(finalValue);
+                        tv.setTime(levelDate);
+                        tv.setFlags(qualityCode);
+                        timeSeries.addSample(tv);
+                    }
+                }
+            }
+            
+            return timeSeries;
+        }
+        catch (SQLException ex)
+        {
+            throw new OpenDcsDataException("Error retrieving location level range for " + locationLevelId, ex);
+        }
+    }
+    
+    /**
+     * Get location level value at a specific time or the previous value if not found
+     * Uses CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL__2 procedure
+     * @param tx The data transaction
+     * @param locationLevelId The location level identifier  
+     * @param requestedTime The time to retrieve the value for
+     * @param requireSpecificTime If true, only return value at exact time; if false, return previous value if no exact match
+     * @param targetUnits Optional target units for conversion
+     * @return LocationLevelValue at the requested time or null if none found
+     * @throws OpenDcsDataException on database error
+     */
+    public SiteReferenceValue getLocationLevelAtTime(DataTransaction tx, String locationLevelId,
+                                                      Date requestedTime, boolean requireSpecificTime,
+                                                      String targetUnits)
+        throws OpenDcsDataException
+    {
+        Connection conn = tx.connection(Connection.class)
+            .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
+        
+        try (CallableStatement cstmt = conn.prepareCall(
+            "{ call CWMS_20.CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL__2(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }"))
+        {
+            // Set input parameters
+            cstmt.setString(1, null);                                            // p_location_level_value (OUT)
+            cstmt.registerOutParameter(1, Types.DOUBLE);
+            
+            cstmt.setString(2, null);                                            // p_level_unit (OUT)
+            cstmt.registerOutParameter(2, Types.VARCHAR);
+            
+            cstmt.setString(3, null);                                            // p_date_time (OUT)
+            cstmt.registerOutParameter(3, Types.TIMESTAMP);
+            
+            cstmt.setString(4, null);                                            // p_quality_code (OUT)
+            cstmt.registerOutParameter(4, Types.INTEGER);
+            
+            cstmt.setString(5, null);                                            // p_location_id (OUT)
+            cstmt.registerOutParameter(5, Types.VARCHAR);
+            
+            cstmt.setString(6, null);                                            // p_parameter_id (OUT)
+            cstmt.registerOutParameter(6, Types.VARCHAR);
+            
+            cstmt.setString(7, null);                                            // p_parameter_type_id (OUT)
+            cstmt.registerOutParameter(7, Types.VARCHAR);
+            
+            cstmt.setString(8, null);                                            // p_duration_id (OUT)
+            cstmt.registerOutParameter(8, Types.VARCHAR);
+            
+            cstmt.setString(9, null);                                            // p_specified_level_id (OUT)
+            cstmt.registerOutParameter(9, Types.VARCHAR);
+            
+            cstmt.setString(10, locationLevelId);                                // p_location_level_id (IN)
+            cstmt.setString(11, "SI");                                          // p_unit_system (IN)
+            cstmt.setTimestamp(12, new Timestamp(requestedTime.getTime()));     // p_level_date (IN)
+            cstmt.setString(13, null);                                          // p_timezone (IN)
+            cstmt.setString(14, requireSpecificTime ? "T" : "F");              // p_match_time (IN) T=exact, F=previous
+            cstmt.setString(15, dbOfficeId);                                    // p_office_id (IN)
+            
+            // Execute the procedure
+            cstmt.execute();
+            
+            // Get the output values
+            Double levelValue = cstmt.getObject(1, Double.class);
+            if (levelValue == null)
+            {
+                return null; // No value found
+            }
+            
+            String dbUnits = cstmt.getString(2);
+            Timestamp actualLevelDate = cstmt.getTimestamp(3);
+            Integer qualityCode = cstmt.getObject(4, Integer.class);
+            
+            // Create the result object
+            CwmsSiteReferenceValue value = new CwmsSiteReferenceValue();
+            value.setLocationLevelId(locationLevelId);
+            value.setLevelDate(actualLevelDate);
+            value.setQualityCode(qualityCode != null ? qualityCode : 0);
+            
+            // Perform unit conversion if needed
+            double finalValue = levelValue;
+            String finalUnits = dbUnits != null ? dbUnits : "m";
+            
+            if (targetUnits != null && !targetUnits.isEmpty() && 
+                dbUnits != null && !dbUnits.equalsIgnoreCase(targetUnits))
+            {
+                try
+                {
+                    finalValue = convertUnits(levelValue, dbUnits, targetUnits);
+                    finalUnits = targetUnits;
+                }
+                catch (Exception ex)
+                {
+                    log.warn("Failed to convert units from {} to {}: {}",
+                            dbUnits, targetUnits, ex.getMessage());
+                }
+            }
+            
+            value.setLevelValue(finalValue);
+            value.setUnits(finalUnits);
+            
+            return value;
+        }
+        catch (SQLException ex)
+        {
+            throw new OpenDcsDataException("Error retrieving location level at time for " + locationLevelId, ex);
+        }
+    }
     
     /**
      * Close the DAO and free resources
