@@ -1,27 +1,35 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.syncgui;
 
-import java.util.Date;
 import java.io.InputStream;
 import java.io.LineNumberReader;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-
-import decodes.syncgui.District;
-import decodes.syncgui.FileList;
-import decodes.syncgui.PlatList;
-import ilex.util.Logger;
 
 /**
  * A district database archived at a known time.
  */
-public class DistrictDBSnap
-	implements DownloadReader
+public class DistrictDBSnap implements DownloadReader
 {
-	/** Formatter used to print and parse the directory names containing
-	   snapshots. */
-	//public static SimpleDateFormat dateFormat
-	//	= new SimpleDateFormat("yyyy-MM-dd.HHmm");
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	/**
 	 * The district owning this database
@@ -33,28 +41,28 @@ public class DistrictDBSnap
 
 	/** The archive date */
 	private String archiveDate;
-	
+
 	/** Contains names of site files. */
 	private FileList siteFiles;
-	
+
 	/** List of Platform Config Files.  */
 	private FileList configFiles;
-	
+
 	/** List of data source files.  */
 	private FileList dataSourceFiles;
-	
+
 	/** List of equipment model files. */
 	private FileList equipmentFiles;
-	
+
 	/** List of network list files. */
 	private FileList netlistFiles;
-	
+
 	/** List of presentation group files. */
 	private FileList presentationFiles;
-	
+
 	/** List of routing spec files. */
 	private FileList routingFiles;
-	
+
 	/** List of platforms. */
 	private PlatList platList;
 
@@ -71,7 +79,7 @@ public class DistrictDBSnap
 		this.myDistrict = dist;
 		this.dirName = dirName;
 		this.archiveDate = archiveDate;
-		siteFiles = new FileList(this, "site"); 
+		siteFiles = new FileList(this, "site");
 		configFiles =  new FileList(this, "config");
 		dataSourceFiles =  new FileList(this, "datasource");
 		equipmentFiles =  new FileList(this, "equipment");
@@ -135,7 +143,7 @@ public class DistrictDBSnap
 	 * @return true if the file list has previously been read.
 	 */
 	public boolean isExpanded() { return _isExpanded; }
-	
+
 	/**
 	 * Reads the file list produced by "tar cvf ..." in the snapshot
 	 * directory. Each line will be the name of a file prefaced by the
@@ -145,7 +153,7 @@ public class DistrictDBSnap
 	public void readFileList( InputStream strm )
 		throws IOException
 	{
-		Logger.instance().debug1("Reading file list for " + toString());
+		log.debug("Reading file list for {}", toString());
 
 		LineNumberReader lnr = new LineNumberReader(
 			new InputStreamReader(strm));
@@ -190,15 +198,6 @@ public class DistrictDBSnap
 				routingFiles.addName(name);
 		}
 
-/*
-System.out.println("Finished reading " + siteFiles.size() + " sites, "
-+ configFiles.size() + " configs, "
-+ dataSourceFiles.size() + " sources, "
-+ equipmentFiles.size() + " equips, "
-+ netlistFiles.size() + " netlists,"
-+ presentationFiles.size() + " PGs, "
-+ routingFiles.size() + "RS's");
-*/
 		_isExpanded = true;
 	}
 

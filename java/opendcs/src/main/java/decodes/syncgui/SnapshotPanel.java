@@ -1,9 +1,28 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.syncgui;
 
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.EnvExpander;
 import ilex.util.AsciiUtil;
@@ -18,6 +37,7 @@ Panel shown on right side of GUI when a snapshot directory is selected.
 */
 public class SnapshotPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	JLabel jLabel1 = new JLabel();
 	JTextField districtField = new JTextField();
 	JLabel jLabel2 = new JLabel();
@@ -42,12 +62,15 @@ public class SnapshotPanel extends JPanel
 	JButton getZipSnapButton = new JButton();
 	JTextArea jTextArea3 = new JTextArea();
 
-	public SnapshotPanel() {
-		try {
+	public SnapshotPanel()
+	{
+		try
+		{
 			jbInit();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -176,7 +199,7 @@ public class SnapshotPanel extends JPanel
 			SyncConfig.instance().getHubHome() + "/"
 			+ snapshot.getDistrict().getName() + "/"
 			+ snapshot.getDirName() + "/db.zip";
-			
+
 		FileDownloadDialog dlg = new FileDownloadDialog(
 			SyncGuiFrame.instance(), "District Database Download", true);
 
@@ -259,7 +282,7 @@ public class SnapshotPanel extends JPanel
 				SyncConfig.instance().getHubHome() + "/"
 				+ snapshot.getDistrict().getName() + "/"
 				+ snapshot.getDirName() + "/db.zip";
-			
+
 			FileDownloadDialog dlg = new FileDownloadDialog(
 				SyncGuiFrame.instance(), "District Database Download", true);
 
@@ -288,7 +311,6 @@ public class SnapshotPanel extends JPanel
 		jFileChooser.setDialogTitle("Save Database Snapshot Zip File as ...");
 		String dbPath = EnvExpander.expand("$DECODES_INSTALL_DIR/"
 				+ snapshot.getDistrict().getName() + "-db.zip");
-//System.out.println("Setting chooser selection to '" + dbPath + "'");
 		jFileChooser.setSelectedFile(new File(dbPath));
 		jFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		if (jFileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION)
