@@ -1,3 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import java.awt.BorderLayout;
@@ -21,6 +37,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Site;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -33,10 +52,8 @@ import decodes.tsdb.alarm.AlarmLimitSet;
 import decodes.tsdb.alarm.AlarmScreening;
 import decodes.util.DecodesSettings;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import opendcs.dai.AlarmDAI;
-import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.AlarmDAO;
 
@@ -52,10 +69,10 @@ public class ScreeningListPanel extends JPanel
 	{
 		super(new BorderLayout());
 		this.parentFrame = parent;
-		
+
 		guiInit();
 	}
-	
+
 	private void guiInit()
 	{
 		model = new ScreeningListTableModel(this);
@@ -63,7 +80,7 @@ public class ScreeningListPanel extends JPanel
 		JScrollPane scrollPane = new JScrollPane(screeningTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		this.add(scrollPane, BorderLayout.CENTER);
-		
+
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		this.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -77,7 +94,7 @@ public class ScreeningListPanel extends JPanel
 					openPressed();
 				}
 			});
-		buttonPanel.add(openButton, 
+		buttonPanel.add(openButton,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 10, 4, 4), 0, 0));
@@ -92,11 +109,11 @@ public class ScreeningListPanel extends JPanel
 					newPressed();
 				}
 			});
-		buttonPanel.add(newButton, 
+		buttonPanel.add(newButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 4, 4, 4), 0, 0));
-		
+
 		JButton copyButton = new JButton(parentFrame.genericLabels.getString("copy"));
 		copyButton.addActionListener(
 			new ActionListener()
@@ -107,7 +124,7 @@ public class ScreeningListPanel extends JPanel
 					copyPressed();
 				}
 			});
-		buttonPanel.add(copyButton, 
+		buttonPanel.add(copyButton,
 			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 4, 4, 4), 0, 0));
@@ -122,7 +139,7 @@ public class ScreeningListPanel extends JPanel
 					deletePressed();
 				}
 			});
-		buttonPanel.add(deleteButton, 
+		buttonPanel.add(deleteButton,
 			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 4, 4, 4), 0, 0));
@@ -137,12 +154,12 @@ public class ScreeningListPanel extends JPanel
 					refreshPressed();
 				}
 			});
-		buttonPanel.add(refreshButton, 
+		buttonPanel.add(refreshButton,
 			new GridBagConstraints(5, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 4, 4, 10), 0, 0));
-		
-		
+
+
 		screeningTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -155,8 +172,8 @@ public class ScreeningListPanel extends JPanel
 				}
 			});
 	}
-	
-	
+
+
 	protected void deletePressed()
 	{
 		int row = screeningTable.getSelectedRow();
@@ -169,21 +186,21 @@ public class ScreeningListPanel extends JPanel
 		}
 
 		AlarmScreening scrn = model.getScreeningAt(row);
-		
+
 		if (parentFrame.isBeingEdited(scrn))
 		{
 			parentFrame.showError(parentFrame.eventmonLabels.getString("isBeingEdited"));
 			return;
 		}
-		
+
 		int choice = parentFrame.showConfirm(parentFrame.genericLabels.getString("confirm"),
 			LoadResourceBundle.sprintf(
-				parentFrame.genericLabels.getString("confirmDelete"), 
-				parentFrame.eventmonLabels.getString("screening")), 
+				parentFrame.genericLabels.getString("confirmDelete"),
+				parentFrame.eventmonLabels.getString("screening")),
 				JOptionPane.YES_NO_OPTION);
 		if (choice != JOptionPane.YES_OPTION)
 			return;
-		
+
 		model.delete(row);
 	}
 
@@ -200,34 +217,34 @@ public class ScreeningListPanel extends JPanel
 		String name = askUniqueName();
 		if (name == null)
 			return;
-		
+
 		AlarmScreening scrn = model.getScreeningAt(row);
 		AlarmScreening copy = new AlarmScreening();
 		copy.copyFrom(scrn);
 		for(AlarmLimitSet als : copy.getLimitSets())
 			als.setLimitSetId(DbKey.NullKey);
-		
+
 		copy.setScreeningName(name);
-		
+
 		parentFrame.editAlarmScreening(copy);
 	}
-	
+
 	protected void newPressed()
 	{
 		String name = askUniqueName();
 		if (name == null)
 			return;
-		
+
 		AlarmScreening scrn = new AlarmScreening();
 		scrn.setScreeningName(name);
 
 		parentFrame.editAlarmScreening(scrn);
 	}
-	
+
 	/**
 	 * Ask user for unique group name.
 	 * Show an error message if name already exists.
-	 * 
+	 *
 	 * @return null if not successful, unique name if ok.
 	 */
 	String askUniqueName()
@@ -236,7 +253,7 @@ public class ScreeningListPanel extends JPanel
 			parentFrame.eventmonLabels.getString("enterScreeningName"));
 		if (name == null || name.trim().length() == 0)
 			return null;
-		
+
 		for(AlarmScreening scrn : model.screenings)
 			if (scrn.getScreeningName().equalsIgnoreCase(name))
 			{
@@ -264,7 +281,7 @@ public class ScreeningListPanel extends JPanel
 	{
 		model.reload();
 	}
-	
+
 	public boolean nameExists(String screeningName)
 	{
 		for(AlarmScreening scrn : model.screenings)
@@ -275,14 +292,13 @@ public class ScreeningListPanel extends JPanel
 }
 
 @SuppressWarnings("serial")
-class ScreeningListTableModel extends AbstractTableModel
-	implements SortingListTableModel
+class ScreeningListTableModel extends AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String[] colnames = new String[8];
 	int [] widths = { 8, 16, 10, 13, 13, 14, 14, 14 };
 	private int sortColumn = 0;
 	ArrayList<AlarmScreening> screenings = new ArrayList<AlarmScreening>();
-//	private AlarmConfig alarmConfig = new AlarmConfig();
 	private ScreeningListPanel parentPanel = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
@@ -305,20 +321,21 @@ class ScreeningListTableModel extends AbstractTableModel
 	{
 		if (row < 0 || row >= screenings.size())
 			return;
-		
+
 		AlarmScreening scrn = screenings.get(row);
 		SqlDatabaseIO sqldbio = (SqlDatabaseIO)decodes.db.Database.getDb().getDbIo();
 		AlarmDAO alarmDAO = new AlarmDAO(sqldbio);
-		
+
 		try
 		{
-			
+
 			alarmDAO.deleteScreening(scrn.getScreeningId());
 			screenings.remove(row);
 			fireTableDataChanged();
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to delete alarm screening.");
 			parentPanel.parentFrame.showError("Cannot delete alarm screening: " + ex);
 		}
 		finally
@@ -332,7 +349,7 @@ class ScreeningListTableModel extends AbstractTableModel
 		SqlDatabaseIO sqldbio = (SqlDatabaseIO)decodes.db.Database.getDb().getDbIo();
 		AlarmDAI alarmDAO = sqldbio.makeAlarmDAO();
 		SiteDAI siteDAO = sqldbio.makeSiteDAO();
-		
+
 		try
 		{
 			ArrayList<AlarmScreening> tscrns = alarmDAO.getAllScreenings();
@@ -344,19 +361,20 @@ class ScreeningListTableModel extends AbstractTableModel
 					try { site = siteDAO.getSiteById(tscrn.getSiteId()); }
 					catch (NoSuchObjectException ex)
 					{
-						Logger.instance().warning("Screening with id=" + tscrn.getKey() + " '"
-							+ tscrn.getScreeningName() + "' has invalid site ID=" + tscrn.getSiteId()
-							+ " -- will set to null.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Screening with id={} '{}' has invalid site ID={} -- will set to null.",
+						   		tscrn.getKey(), tscrn.getScreeningName(), tscrn.getSiteId());
 						tscrn.setSiteId(DbKey.NullKey);
 						site = null;
 					}
 					if (site != null)
 						tscrn.getSiteNames().add(site.getPreferredName());
 				}
-				
+
 				if (!DbKey.isNull(tscrn.getDatatypeId()))
 					tscrn.setDataType(decodes.db.Database.getDb().dataTypeSet.getById(tscrn.getDatatypeId()));
-				
+
 				if (!DbKey.isNull(tscrn.getAlarmGroupId()))
 				{
 					AlarmGroup grp = parentPanel.parentFrame.groupListPanel.getGroupById(tscrn.getAlarmGroupId());
@@ -364,7 +382,7 @@ class ScreeningListTableModel extends AbstractTableModel
 						tscrn.setGroupName(grp.getName());
 				}
 			}
-			
+
 			// Remove anything with null key == a new screening not yet saved.
 			for(Iterator<AlarmScreening> scrit = screenings.iterator(); scrit.hasNext(); )
 			{
@@ -374,13 +392,14 @@ class ScreeningListTableModel extends AbstractTableModel
 			}
 			// Now add in all the existing screenings
 			screenings.addAll(tscrns);
-			
+
 			// TODO what about if a screening has an edit panel and is open. Changes will be lost.
 
 			sortByColumn(sortColumn);
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to read screenings.");
 			parentPanel.parentFrame.showError("Cannot read screenings: " + ex);
 		}
 		finally
@@ -412,7 +431,7 @@ class ScreeningListTableModel extends AbstractTableModel
 	{
 		return getColumnValue(getScreeningAt(row), col);
 	}
-	
+
 	public AlarmScreening getScreeningAt(int row)
 	{
 		return (AlarmScreening)getRowObject(row);
@@ -456,13 +475,13 @@ class ScreeningComparator implements Comparator<AlarmScreening>
 {
 	private int sortColumn = 0;
 	private ScreeningListTableModel model = null;
-	
+
 	ScreeningComparator(int sortColumn, ScreeningListTableModel model)
 	{
 		this.sortColumn = sortColumn;
 		this.model = model;
 	}
-	
+
 	@Override
 	public int compare(AlarmScreening evt1, AlarmScreening evt2)
 	{

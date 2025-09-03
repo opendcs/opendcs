@@ -1,3 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import java.awt.BorderLayout;
@@ -29,6 +45,9 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.db.Constants;
@@ -65,9 +84,9 @@ import opendcs.dai.DataTypeDAI;
 import opendcs.dai.LoadingAppDAI;
 
 @SuppressWarnings("serial")
-public class ScreeningEditPanel 
-	extends JPanel
+public class ScreeningEditPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private AlarmEditFrame parentFrame = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	private AlarmScreening screening = null;
@@ -90,36 +109,36 @@ public class ScreeningEditPanel
 	private boolean committed = false;
 	private String seasonNames[];
 	private Season seasons[];
-	
-	
+
+
 	public ScreeningEditPanel(AlarmEditFrame parentFrame)
 	{
 		super(new BorderLayout());
 		this.parentFrame = parentFrame;
-		
+
 		TimeZone guiTimeZone = TimeZone.getTimeZone(DecodesSettings.instance().guiTimeZone);
 		sdf.setTimeZone(guiTimeZone);
-		
+
 		Calendar cal = Calendar.getInstance(guiTimeZone);
 		cal.set(Calendar.HOUR_OF_DAY, 0);
 		cal.set(Calendar.MINUTE, 0);
 		cal.set(Calendar.SECOND, 0);
 
-		startDateTimeCal = new DateTimeCalendar("("+guiTimeZone.getID()+")", cal.getTime(), "dd/MMM/yyyy", 
+		startDateTimeCal = new DateTimeCalendar("("+guiTimeZone.getID()+")", cal.getTime(), "dd/MMM/yyyy",
 			guiTimeZone.getID());
-		
+
 		defaultSeason.setAbbr("(default)");
 		guiInit();
 	}
-	
 
 
-	
+
+
 	private void guiInit()
 	{
 		JPanel north = new JPanel(new GridBagLayout());
 		this.add(north, BorderLayout.NORTH);
-		
+
 		// LINE 1: Screening Name and Enabled
 		north.add(new JLabel(parentFrame.eventmonLabels.getString("screening") + ":"),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
@@ -150,8 +169,8 @@ public class ScreeningEditPanel
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 2, 1, 2), 0, 0));
 
-		
-		
+
+
 		// LINE 2 Datatype & Site
 		north.add(new JLabel(parentFrame.genericLabels.getString("dataType")+":"),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
@@ -161,7 +180,7 @@ public class ScreeningEditPanel
 			new GridBagConstraints(1, 1, 1, 1, 0.4, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 1, 2), 0, 0));
-		
+
 		datatypeField.addFocusListener(
 			new FocusListener()
 			{
@@ -176,9 +195,9 @@ public class ScreeningEditPanel
 					if (!datatypeField.getText().equals(prevDatatypeValue))
 						datatypeEntered();
 				}
-				
+
 			});
-		
+
 		datatypeField.addActionListener(
 			new ActionListener()
 			{
@@ -188,7 +207,7 @@ public class ScreeningEditPanel
 					datatypeEntered();
 				}
 			});
-				
+
 		JButton datatypeButton = new JButton(parentFrame.genericLabels.getString("select"));
 		datatypeButton.addActionListener(
 			new ActionListener()
@@ -203,7 +222,7 @@ public class ScreeningEditPanel
 			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(1, 2, 1, 10), 0, 0));
-		
+
 		north.add(new JLabel(parentFrame.genericLabels.getString("site") + ":"),
 			new GridBagConstraints(3, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -251,7 +270,7 @@ public class ScreeningEditPanel
 			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(1, 2, 1, 10), 0, 0));
-		
+
 		north.add(new JLabel(parentFrame.genericLabels.getString("units") + ":"),
 			new GridBagConstraints(3, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -282,7 +301,7 @@ public class ScreeningEditPanel
 			new GridBagConstraints(1, 3, 2, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 1, 2), 0, 0));
-		
+
 		// Fill in the Process combo with list of apps.
 		LoadingAppDAI appDAO = TsdbAppTemplate.theDb.makeLoadingAppDAO();
 		try
@@ -295,10 +314,10 @@ public class ScreeningEditPanel
 				appCombo.addItem("" + cai.getAppId() + ": " + cai.getAppName());
 			}
 		}
-		catch (DbIoException e1)
+		catch (DbIoException ex)
 		{
-			parentFrame.showError("Cannot list computation apps: " + e1);
-			e1.printStackTrace();
+			log.atError().setCause(ex).log("Unable to list computation apps.");
+			parentFrame.showError("Cannot list computation apps: " + ex);
 		}
 		north.add(new JLabel("Loading App:"),
 			new GridBagConstraints(3, 3, 1, 1, 0.0, 0.0,
@@ -339,18 +358,18 @@ public class ScreeningEditPanel
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(1, 1, 1, 5), 0, 0));
 		lastModifiedField.setEditable(false);
-		
+
 		north.add(new JLabel(""),
 			new GridBagConstraints(5, 6, 1, 1, 0.0, 1.0,
 					GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH,
 					new Insets(2, 2, 1, 5), 0, 0));
 
-	
+
 		// Center is a Tabbed pane of Seasons
 		seasonsPane.setBorder(new TitledBorder("Seasons"));
 		this.add(seasonsPane, BorderLayout.CENTER);
-		
-		
+
+
 		// East contains buttons to add & delete seasons.
 		JPanel east = new JPanel(new GridBagLayout());
 		this.add(east, BorderLayout.EAST);
@@ -397,11 +416,11 @@ public class ScreeningEditPanel
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 4, 2, 4), 0, 0));
 
-		
+
 		// South is Commit and Close buttons
 		JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
 		this.add(south, BorderLayout.SOUTH);
-		
+
 		JButton commitButton = new JButton("Commit");
 		commitButton.addActionListener(
 			new ActionListener()
@@ -427,12 +446,11 @@ public class ScreeningEditPanel
 		south.add(closeButton);
 	}
 
-	
+
 	protected void startTimeChecked()
 	{
-		// TODO Auto-generated method stub
 		startDateTimeCal.setEnabled(startTimeCheck.isSelected());
-			
+
 	}
 
 
@@ -449,16 +467,8 @@ public class ScreeningEditPanel
 		if (units == null || units.trim().length() == 0)
 			unitsField.setText("");
 		else
-			unitsField.setText(units);	
+			unitsField.setText(units);
 	}
-
-
-//	protected void unitsPressed()
-//	{
-//		// TODO Auto-generated method stub
-//		
-//	}
-
 
 	protected void emailGroupPressed()
 	{
@@ -470,8 +480,8 @@ public class ScreeningEditPanel
 		String sel = emailGroupField.getText().trim();
 		if (sel.length() == 0)
 			sel = grpNames[0];
-		
-		sel = (String)JOptionPane.showInputDialog(parentFrame, "Select Alarm Email Group:", 
+
+		sel = (String)JOptionPane.showInputDialog(parentFrame, "Select Alarm Email Group:",
 			"Group Selection", JOptionPane.QUESTION_MESSAGE, null, grpNames, sel);
 		if (sel == null)
 			return;
@@ -486,8 +496,8 @@ public class ScreeningEditPanel
 	{
 		if (parentFrame.parentTsdbApp.theDb.isCwms())
 		{
-			LocSelectDialog locSelectDialog = 
-					new LocSelectDialog(CAPEdit.instance().getFrame(), 
+			LocSelectDialog locSelectDialog =
+					new LocSelectDialog(CAPEdit.instance().getFrame(),
 						(CwmsTimeSeriesDb)parentFrame.parentTsdbApp.theDb,
 						SelectionMode.CompEditGroup);
 
@@ -529,7 +539,7 @@ public class ScreeningEditPanel
 			startDateTimeCal.setDate(sdt);
 		startTimeCheck.setSelected(sdt != null);
 		startTimeChecked();
-		
+
 		ArrayList<SiteName> sns = screening.getSiteNames();
 		if (sns.size() == 0)
 		{
@@ -539,23 +549,23 @@ public class ScreeningEditPanel
 		{
 			siteNameField.setText(sns.get(0).getNameValue());
 		}
-		
-		screeningIdField.setText(DbKey.isNull(screening.getScreeningId()) ? "" 
+
+		screeningIdField.setText(DbKey.isNull(screening.getScreeningId()) ? ""
 			: screening.getScreeningId().toString());
 		Date lmt = screening.getLastModified();
 		lastModifiedField.setText(lmt == null ? "" : sdf.format(lmt));
 		String desc = screening.getDescription();
 		descArea.setText(desc == null ? "" : desc);
-		
+
 		seasonsPane.removeAll();
 		for(AlarmLimitSet limitSet : screening.getLimitSets())
 		{
 			SeasonPanel seasonPanel = new SeasonPanel(parentFrame, this);
 			seasonPanel.setLimitSet(limitSet);
-			seasonsPane.add(seasonPanel, 
+			seasonsPane.add(seasonPanel,
 				limitSet.getSeason() == null ? "default" : limitSet.getSeason().getAbbr());
 		}
-		
+
 		if (DbKey.isNull(screening.getAppId()))
 			appCombo.setSelectedIndex(0);
 		else
@@ -571,7 +581,7 @@ public class ScreeningEditPanel
 			}
 		}
 	}
-	
+
 
 	protected void sortSeasonsPressed()
 	{
@@ -608,7 +618,7 @@ public class ScreeningEditPanel
 		}
 		SeasonPanel scp = (SeasonPanel)seasonsPane.getSelectedComponent();
 		AlarmLimitSet limitSet = scp.getLimitSet();
-		
+
 		String seasonName = limitSet.getSeasonName() == null ? "(default)" :
 			limitSet.getSeasonName();
 		int res = JOptionPane.showConfirmDialog(parentFrame,
@@ -619,7 +629,7 @@ public class ScreeningEditPanel
 		seasonsPane.remove(scp);
 	}
 
-	
+
 	Season selectSeason(String curSelection)
 	{
 		if (seasonNames == null)
@@ -635,7 +645,7 @@ public class ScreeningEditPanel
 			seasonNames[0] = defaultSeason.getAbbr();
 			seasons = new Season[seasonEnum.size()+1];
 			seasons[0] = defaultSeason;
-	
+
 			int idx = 1;
 			for(Iterator<EnumValue> it = seasonEnum.values().iterator(); it.hasNext(); idx++)
 			{
@@ -648,24 +658,21 @@ public class ScreeningEditPanel
 				}
 				catch (FieldParseException ex)
 				{
-					// Auto-generated catch block
-					System.err.println("Error setting season from enum value '" 
-						+ ev.getValue() + "': " + ex);
-					ex.printStackTrace(System.err);
+					log.atError().setCause(ex).log("Error setting season from enum value '{}'", ev.getValue());
 					seasonNames[idx] = "bad season";
 					continue;
 				}
 				seasonNames[idx] = season.getAbbr() + " - " + season.getStart();
 			}
 		}
-		
+
 		int curIdx = 0;
 		for(int idx = 1; curSelection != null && idx < seasonNames.length; idx++)
 			if (TextUtil.startsWithIgnoreCase(seasonNames[idx], curSelection))
 				curIdx = idx;
-		
-		Object obj = JOptionPane.showInputDialog(parentFrame, 
-			"Select Season:", "Select Season", 
+
+		Object obj = JOptionPane.showInputDialog(parentFrame,
+			"Select Season:", "Select Season",
 			JOptionPane.QUESTION_MESSAGE, null, seasonNames, seasonNames[curIdx]);
 		if (obj == null)
 			return null;
@@ -681,7 +688,7 @@ public class ScreeningEditPanel
 		}
 		return selectedSeason;
 	}
-	
+
 	SeasonPanel getPanelFor(Season season)
 	{
 		for(int idx = 0; idx < seasonsPane.getComponentCount(); idx++)
@@ -693,29 +700,29 @@ public class ScreeningEditPanel
 		}
 		return null;
 	}
-	
+
 	protected void addSeasonPressed()
 	{
 		Season selectedSeason = selectSeason(null);
 		if (selectedSeason == null)
 			return;
-		
+
 		SeasonPanel scp = getPanelFor(selectedSeason);
 		if (scp != null)
 		{
 			seasonsPane.setSelectedComponent(scp);
 			return;
 		}
-		
+
 		SeasonPanel newPanel = new SeasonPanel(parentFrame, this);
 		AlarmLimitSet limitSet = new AlarmLimitSet();
 		limitSet.setSeason(selectedSeason);
 		newPanel.setLimitSet(limitSet);
-		
+
 		seasonsPane.add(newPanel, selectedSeason.getAbbr());
 		seasonsPane.setSelectedComponent(newPanel);
 	}
-	
+
 	/**
 	 * Compare seasons and allow for either to be null.
 	 * @param s1
@@ -738,7 +745,7 @@ public class ScreeningEditPanel
 		{
 			if (changesMade())
 			{
-				int r = JOptionPane.showConfirmDialog(parentFrame, "Save Changes?", "Save Changes?", 
+				int r = JOptionPane.showConfirmDialog(parentFrame, "Save Changes?", "Save Changes?",
 					JOptionPane.YES_NO_CANCEL_OPTION);
 				if (r == JOptionPane.CANCEL_OPTION)
 					return;
@@ -748,8 +755,9 @@ public class ScreeningEditPanel
 		}
 		catch(BadScreeningException ex)
 		{
-			int r = JOptionPane.showConfirmDialog(parentFrame, 
-				"There are errors in the unsaved fields on this panel. Exit without save?", 
+			log.atError().setCause(ex).log("Bad screening, user was prompted to exist without save or stay.");
+			int r = JOptionPane.showConfirmDialog(parentFrame,
+				"There are errors in the unsaved fields on this panel. Exit without save?",
 				"Exit without save?", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (r != JOptionPane.YES_OPTION)
 				return;
@@ -757,7 +765,7 @@ public class ScreeningEditPanel
 
 		parentFrame.closeScreening(this);
 	}
-	
+
 	/**
 	 * @return true if changes made to any data.
 	 */
@@ -768,7 +776,7 @@ public class ScreeningEditPanel
 		fieldsToScreening(scrn);
 		return !scrn.equals(screening);
 	}
-	
+
 	/**
 	 * Transcribe the current field settings back to the passed (temporary) screening object.
 	 * @throws BadScreeningException if any errors found in the screening or limit sets.
@@ -778,7 +786,7 @@ public class ScreeningEditPanel
 	{
 		if (screeningNameField.getText().trim().length() == 0)
 			throw new BadScreeningException("Screening Name cannot be blank!");
-		
+
 		String dtcode = datatypeField.getText().trim();
 		if (dtcode.length() == 0)
 			throw new BadScreeningException("Data Type cannot be blank!");
@@ -791,14 +799,14 @@ public class ScreeningEditPanel
 		}
 		catch (Exception ex)
 		{
-			throw new BadScreeningException("Invalid data type '" + dtcode + "': " + ex);
+			throw new BadScreeningException("Invalid data type '" + dtcode + "'", ex);
 		}
 		finally
 		{
 			dtDao.close();
 		}
-		
-		
+
+
 		String s = siteNameField.getText().trim();
 		if (s.length() == 0)
 		{
@@ -810,15 +818,14 @@ public class ScreeningEditPanel
 			try
 			{
 				scrn.setSiteId(parentFrame.parentTsdbApp.getTsdb().lookupSiteID(s));
-				
+
 			}
-			catch (DbIoException e)
+			catch (DbIoException ex)
 			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.atError().setCause(ex).log("Unable to lookup or set screening site id.");
 			}
 		}
-		
+
 		s = emailGroupField.getText().trim();
 		if (s.length() == 0)
 		{
@@ -834,12 +841,12 @@ public class ScreeningEditPanel
 					scrn.setAlarmGroupId(grp.getAlarmGroupId());
 				}
 		}
-		
+
 		s = descArea.getText().trim();
 		scrn.setDescription(s.length() == 0 ? null : s);
-		
+
 		scrn.setStartDateTime(startTimeCheck.isSelected() ? startDateTimeCal.getDate() : null);
-		
+
 		scrn.getLimitSets().clear();
 		for(int idx = 0; idx < seasonsPane.getComponentCount(); idx++)
 		{
@@ -849,7 +856,7 @@ public class ScreeningEditPanel
 			scp.fieldsToLimitSet(als);
 			scrn.addLimitSet(als);
 		}
-		
+
 		int appIdx = appCombo.getSelectedIndex();
 		if (appIdx == 0)
 			scrn.setAppId(DbKey.NullKey);
@@ -868,7 +875,7 @@ public class ScreeningEditPanel
 		// If the parse succeeds, then there are no errors. Copy the data back into
 		// the actual screening objects associated with this panel and season panels.
 		// Then write the screening to the database.
-		
+
 		AlarmScreening scrn = new AlarmScreening();
 		scrn.setScreeningId(screening.getScreeningId());
 		try
@@ -877,13 +884,14 @@ public class ScreeningEditPanel
 		}
 		catch(BadScreeningException ex)
 		{
+			log.atError().setCause(ex).log("Unable to update screening from form fields.");
 			parentFrame.showError(ex.toString());
 			return;
 		}
-		
+
 		if (DbKey.isNull(scrn.getAppId()))
 		{
-			if (parentFrame.showConfirm("Confirm No App", 
+			if (parentFrame.showConfirm("Confirm No App",
 				"You have not associated this screening with a Loading App."
 				+ " That means it cannot be executed by any computation. You should associate"
 				+ " the screening the the comp-proc application ID that executes the computation."
@@ -891,7 +899,7 @@ public class ScreeningEditPanel
 					== JOptionPane.NO_OPTION)
 				return;
 		}
-		
+
 		// Write the screening to the database.
 		AlarmDAI alarmDAO = parentFrame.parentTsdbApp.getTsdb().makeAlarmDAO();
 		try
@@ -904,13 +912,14 @@ public class ScreeningEditPanel
 		}
 		catch(Exception ex)
 		{
+			log.atError().setCause(ex).log("Unable to save screening to database.");
 			parentFrame.showError("Error writing screening to database: " + ex);
 		}
 		finally
 		{
 			alarmDAO.close();
 		}
-		
+
 		// Validation and parse passed. Data is sitting in the temporary screening.
 		// Copy it back to the actual object being edited.
 		screening.copyFrom(scrn);
@@ -925,11 +934,11 @@ public class ScreeningEditPanel
 		String newDT = null;
 		if (parentFrame.parentTsdbApp.theDb.isCwms())
 		{
-			ParamSelectDialog paramSelectDialog = 
+			ParamSelectDialog paramSelectDialog =
 				new ParamSelectDialog(parentFrame, parentFrame.parentTsdbApp.theDb,
 					SelectionMode.CompEditGroup);
 			paramSelectDialog.setCurrentValue(datatypeField.getText());
-	
+
 			parentFrame.launchDialog(paramSelectDialog);
 			if (!paramSelectDialog.isCancelled())
 			{
@@ -939,7 +948,7 @@ public class ScreeningEditPanel
 		}
 		else if (parentFrame.parentTsdbApp.theDb.isHdb())
 		{
-			HdbDatatypeSelectDialog dlg = new HdbDatatypeSelectDialog(parentFrame, 
+			HdbDatatypeSelectDialog dlg = new HdbDatatypeSelectDialog(parentFrame,
 				(HdbTimeSeriesDb)parentFrame.parentTsdbApp.theDb);
 			dlg.setCurrentValue(datatypeField.getText());
 			parentFrame.launchDialog(dlg);
@@ -959,8 +968,8 @@ public class ScreeningEditPanel
 		}
 	}
 
-	
-	
+
+
 	protected void renamePressed()
 	{
 		String newName = JOptionPane.showInputDialog("Enter new unique name:");
@@ -973,20 +982,14 @@ public class ScreeningEditPanel
 		}
 		screeningNameField.setText(newName);
 	}
-	
-	
-	
+
+
+
 
 	public AlarmScreening getScreening()
 	{
 		return screening;
 	}
-//
-//	public JTabbedPane getSeasonsPane()
-//	{
-//		return seasonsPane;
-//	}
-
 
 	public void setSeasonTabLabel(SeasonPanel seasonPanel, String abbr)
 	{

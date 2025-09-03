@@ -1,22 +1,19 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:52:59  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.3  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:57  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import java.awt.*;
@@ -39,9 +36,11 @@ import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.AlarmDAI;
 import opendcs.dao.AlarmDAO;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -56,9 +55,9 @@ import decodes.util.DecodesSettings;
 import decodes.db.Database;
 
 @SuppressWarnings("serial")
-public class AlarmEditPanel 
-	extends JPanel
+public class AlarmEditPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JTextField nameField = new JTextField();
 	private JTextField lastModifiedField = new JTextField();
 	AlarmEditFrame parentFrame = null;
@@ -71,7 +70,7 @@ public class AlarmEditPanel
 	private AlarmGroup editedGroup = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	boolean changed = false;
-	
+
 	public AlarmEditPanel(AlarmEditFrame parentFrame)
 	{
 		this.parentFrame = parentFrame;
@@ -80,7 +79,7 @@ public class AlarmEditPanel
 
 		guiInit();
 	}
-	
+
 	private void guiInit()
 	{
 		JPanel northPanel = new JPanel(new GridBagLayout());
@@ -121,7 +120,7 @@ public class AlarmEditPanel
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 10), 0, 0));
 		this.add(northPanel, BorderLayout.NORTH);
-		
+
 		JPanel southPanel = new JPanel(new FlowLayout());
 		JButton commitButton = new JButton(parentFrame.genericLabels.getString("commit"));
 		commitButton.addActionListener(
@@ -149,7 +148,7 @@ public class AlarmEditPanel
 
 		JPanel centerPanel = new JPanel(new GridBagLayout());
 		this.add(centerPanel, BorderLayout.CENTER);
-		
+
 		JPanel emailListPanel = new JPanel(new BorderLayout());
 		emailListPanel.setBorder(new TitledBorder(parentFrame.eventmonLabels.getString("emailAddrs")));
 		centerPanel.add(emailListPanel,
@@ -159,7 +158,7 @@ public class AlarmEditPanel
 		JScrollPane emailScrollPane = new JScrollPane(emailList,
 			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		emailListPanel.add(emailScrollPane, BorderLayout.CENTER);
-		
+
 		JPanel emailButtonPanel = new JPanel(new GridBagLayout());
 		emailListPanel.add(emailButtonPanel, BorderLayout.EAST);
 		JButton addEmailButton = new JButton(parentFrame.genericLabels.getString("add"));
@@ -176,7 +175,7 @@ public class AlarmEditPanel
 			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.5,
 				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		JButton editEmailButton = new JButton(parentFrame.genericLabels.getString("edit"));
 		editEmailButton.addActionListener(
 			new ActionListener()
@@ -191,7 +190,7 @@ public class AlarmEditPanel
 			new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		JButton delEmailButton = new JButton(parentFrame.genericLabels.getString("delete"));
 		delEmailButton.addActionListener(
 			new ActionListener()
@@ -231,7 +230,7 @@ public class AlarmEditPanel
 		JScrollPane fileMonScrollPane = new JScrollPane(fileMonTable,
 			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		fileMonPanel.add(fileMonScrollPane, BorderLayout.CENTER);
-		
+
 		JPanel fileMonButtonPanel = new JPanel(new GridBagLayout());
 		fileMonPanel.add(fileMonButtonPanel, BorderLayout.EAST);
 		JButton addFileMonButton = new JButton(parentFrame.genericLabels.getString("add"));
@@ -248,7 +247,7 @@ public class AlarmEditPanel
 			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.5,
 				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		JButton editFileMonButton = new JButton(parentFrame.genericLabels.getString("edit"));
 		editFileMonButton.addActionListener(
 			new ActionListener()
@@ -263,7 +262,7 @@ public class AlarmEditPanel
 			new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		JButton delFileMonButton = new JButton(parentFrame.genericLabels.getString("delete"));
 		delFileMonButton.addActionListener(
 			new ActionListener()
@@ -278,7 +277,7 @@ public class AlarmEditPanel
 			new GridBagConstraints(0, 2, 1, 1, 1.0, 0.5,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		fileMonTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -290,7 +289,7 @@ public class AlarmEditPanel
 					}
 				}
 			});
-		
+
 		//==============================
 		JPanel procMonPanel = new JPanel(new BorderLayout());
 		procMonPanel.setBorder(new TitledBorder(
@@ -304,7 +303,7 @@ public class AlarmEditPanel
 		JScrollPane procMonScrollPane = new JScrollPane(procMonTable,
 			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		procMonPanel.add(procMonScrollPane, BorderLayout.CENTER);
-		
+
 		JPanel procMonButtonPanel = new JPanel(new GridBagLayout());
 		procMonPanel.add(procMonButtonPanel, BorderLayout.EAST);
 		JButton addProcMonButton = new JButton(parentFrame.genericLabels.getString("add"));
@@ -321,7 +320,7 @@ public class AlarmEditPanel
 			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.5,
 				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		JButton editProcMonButton = new JButton(parentFrame.genericLabels.getString("edit"));
 		editProcMonButton.addActionListener(
 			new ActionListener()
@@ -336,7 +335,7 @@ public class AlarmEditPanel
 			new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		JButton delProcMonButton = new JButton(parentFrame.genericLabels.getString("delete"));
 		delProcMonButton.addActionListener(
 			new ActionListener()
@@ -351,7 +350,7 @@ public class AlarmEditPanel
 			new GridBagConstraints(0, 2, 1, 1, 1.0, 0.5,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		procMonTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -365,13 +364,13 @@ public class AlarmEditPanel
 			});
 
 	}
-	
+
 	protected void changeNamePressed()
 	{
 		String name = parentFrame.groupListPanel.askUniqueName();
 		if (name == null)
 			return;
-		
+
 		nameField.setText(name);
 		changed = true;
 	}
@@ -390,8 +389,8 @@ public class AlarmEditPanel
 		procMonModel.set(grp);
 		changed = false;
 	}
-	
-	
+
+
 	protected void delProcMonPressed()
 	{
 		int idx = procMonTable.getSelectedRow();
@@ -444,7 +443,7 @@ public class AlarmEditPanel
 			parentFrame.showError(parentFrame.eventmonLabels.getString("selectBeforeDelete") + "");
 			return;
 		}
-		
+
 		emailListModel.remove(idx);
 		changed = true;
 	}
@@ -472,7 +471,7 @@ public class AlarmEditPanel
 				return;
 			}
 		}
-		
+
 		emailListModel.setElementAt(addr, idx);
 		changed = true;
 	}
@@ -544,7 +543,7 @@ public class AlarmEditPanel
 	{
 		if (changed)
 		{
-			int answer = JOptionPane.showConfirmDialog(parentFrame, 
+			int answer = JOptionPane.showConfirmDialog(parentFrame,
 				parentFrame.eventmonLabels.getString("saveBeforeClose"));
 			if (answer == JOptionPane.CANCEL_OPTION)
 				return;
@@ -565,7 +564,7 @@ public class AlarmEditPanel
 			String ea = emailListModel.elementAt(idx);
 			editedGroup.getEmailAddrs().add(new EmailAddr(ea));
 		}
-		
+
 		AlarmDAI alarmDAO = new AlarmDAO((SqlDatabaseIO)Database.getDb().getDbIo());
 		try
 		{
@@ -574,8 +573,8 @@ public class AlarmEditPanel
 		}
 		catch (DbIoException ex)
 		{
-			parentFrame.showError(parentFrame.eventmonLabels.getString("dbWriteError")
-				+ ": " + ex);
+			log.atError().setCause(ex).log(parentFrame.eventmonLabels.getString("dbWriteError"));
+			parentFrame.showError(parentFrame.eventmonLabels.getString("dbWriteError") + ": " + ex);
 		}
 		finally
 		{
@@ -610,12 +609,12 @@ implements SortingListTableModel
 		colnames[2] = parentPanel.parentFrame.genericLabels.getString("enable") + "?";
 		colnames[3] = parentPanel.parentFrame.genericLabels.getString("description");
 	}
-	
+
 	public void set(AlarmGroup grp)
 	{
 		data = grp.getFileMonitors();
 	}
-	
+
 	public void add(FileMonitor fm)
 	{
 		data.add(fm);
@@ -634,18 +633,18 @@ implements SortingListTableModel
 	{
 		return colnames.length;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return colnames[col];
 	}
-	
+
 	@Override
 	public int getRowCount()
 	{
 		return data.size();
 	}
-	
+
 	@Override
 	public Object getValueAt(int row, int col)
 	{
@@ -663,7 +662,7 @@ implements SortingListTableModel
 		switch(col)
 		{
 		case 0: return fm.getPath();
-		case 1: return Logger.priorityName[fm.getPriority()];
+		case 1: return "TODO?";
 		case 2: return "" + fm.isEnabled();
 		case 3: return fm.getDescription();
 		default: return "";
@@ -725,7 +724,7 @@ implements SortingListTableModel
 		colnames[2] = parentPanel.parentFrame.genericLabels.getString("enable") + "?";
 		colnames[3] = parentPanel.parentFrame.eventmonLabels.getString("summary");
 	}
-	
+
 	public void set(AlarmGroup grp)
 	{
 		data = grp.getProcessMonitors();
@@ -737,7 +736,7 @@ implements SortingListTableModel
 			data.remove(idx);
 		sortByColumn(sortColumn);
 	}
-	
+
 	public void add(ProcessMonitor pm)
 	{
 		data.add(pm);
@@ -749,18 +748,18 @@ implements SortingListTableModel
 	{
 		return colnames.length;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return colnames[col];
 	}
-	
+
 	@Override
 	public int getRowCount()
 	{
 		return data.size();
 	}
-	
+
 	@Override
 	public Object getValueAt(int row, int col)
 	{
@@ -820,4 +819,3 @@ class ProcMonComparator implements Comparator<ProcessMonitor>
 			model.getColumnValue(pm2, sortColumn));
 	}
 }
-
