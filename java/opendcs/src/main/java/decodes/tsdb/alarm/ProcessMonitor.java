@@ -1,28 +1,20 @@
 /*
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:53:00  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.5  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.4  2017/05/18 12:28:42  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.3  2017/05/17 20:36:25  mmaloney
- * First working version.
- *
- * Revision 1.2  2017/03/21 12:17:10  mmaloney
- * First working XML and SQL I/O.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm;
-
-import ilex.util.Logger;
 
 import java.util.ArrayList;
 
@@ -39,17 +31,17 @@ public class ProcessMonitor
 {
 	/** The application ID of the process being monitored. */
 	private DbKey appId = DbKey.NullKey;
-	
+
 	ArrayList<AlarmEvent> defs = new ArrayList<AlarmEvent>();
-	
+
 	private boolean enabled = true;
-	
+
 	/** Reference to the app info matching the appId */
 	private transient CompAppInfo appInfo = null;
-	
+
 	/** When read from an xml file, appId will be null and process name will be set. */
 	private transient String xmlProcName = null;
-	
+
 	private transient boolean changed = true;
 	private transient String summary = "";
 
@@ -59,7 +51,7 @@ public class ProcessMonitor
 		super();
 		this.appId = appId;
 	}
-	
+
 	public ProcessMonitor copy()
 	{
 		ProcessMonitor ret = new ProcessMonitor(this.appId);
@@ -108,7 +100,7 @@ public class ProcessMonitor
 			makeSummary();
 		return summary;
 	}
-	
+
 	public void setChanged(boolean changed)
 	{
 		this.changed = changed;
@@ -124,7 +116,7 @@ public class ProcessMonitor
 				sb.append(", ");
 			String pat = def.getPattern();
 			if (pat == null) pat = "<any>";
-			sb.append(Logger.priorityName[def.getPriority()] + ":" + pat);
+			sb.append("PLACEHOLDER:" + pat);
 		}
 		summary = sb.toString();
 	}

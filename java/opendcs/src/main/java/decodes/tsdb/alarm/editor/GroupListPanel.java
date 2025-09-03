@@ -1,29 +1,22 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/06/10 19:27:50  mmaloney
- * Added Screenings to Alarm Editor
- *
- * Revision 1.2  2019/05/10 18:35:26  mmaloney
- * dev
- *
- * Revision 1.1  2019/03/05 14:52:59  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:57  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.awt.BorderLayout;
@@ -47,6 +40,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dao.AlarmDAO;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -58,8 +54,7 @@ import decodes.tsdb.alarm.AlarmGroup;
 import decodes.util.DecodesSettings;
 
 @SuppressWarnings("serial")
-public class GroupListPanel
-	extends JPanel
+public class GroupListPanel extends JPanel
 {
 	AlarmEditFrame parentFrame = null;
 	private SortingListTable alarmGroupTable = null;
@@ -69,10 +64,10 @@ public class GroupListPanel
 	{
 		super(new BorderLayout());
 		this.parentFrame = parent;
-		
+
 		guiInit();
 	}
-	
+
 	private void guiInit()
 	{
 		model = new GroupListTableModel(this);
@@ -80,7 +75,7 @@ public class GroupListPanel
 		JScrollPane scrollPane = new JScrollPane(alarmGroupTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		this.add(scrollPane, BorderLayout.CENTER);
-		
+
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		this.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -94,7 +89,7 @@ public class GroupListPanel
 					openPressed();
 				}
 			});
-		buttonPanel.add(openButton, 
+		buttonPanel.add(openButton,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 10, 4, 4), 0, 0));
@@ -109,11 +104,11 @@ public class GroupListPanel
 					newPressed();
 				}
 			});
-		buttonPanel.add(newButton, 
+		buttonPanel.add(newButton,
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 4, 4, 4), 0, 0));
-		
+
 		JButton copyButton = new JButton(parentFrame.genericLabels.getString("copy"));
 		copyButton.addActionListener(
 			new ActionListener()
@@ -124,7 +119,7 @@ public class GroupListPanel
 					copyPressed();
 				}
 			});
-		buttonPanel.add(copyButton, 
+		buttonPanel.add(copyButton,
 			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 4, 4, 4), 0, 0));
@@ -139,7 +134,7 @@ public class GroupListPanel
 					deletePressed();
 				}
 			});
-		buttonPanel.add(deleteButton, 
+		buttonPanel.add(deleteButton,
 			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(4, 4, 4, 4), 0, 0));
@@ -154,12 +149,12 @@ public class GroupListPanel
 					refreshPressed();
 				}
 			});
-		buttonPanel.add(refreshButton, 
+		buttonPanel.add(refreshButton,
 			new GridBagConstraints(5, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 4, 4, 10), 0, 0));
-		
-		
+
+
 		alarmGroupTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -173,8 +168,8 @@ public class GroupListPanel
 			});
 
 	}
-	
-	
+
+
 	protected void deletePressed()
 	{
 		int row = alarmGroupTable.getSelectedRow();
@@ -187,21 +182,21 @@ public class GroupListPanel
 		}
 
 		AlarmGroup grp = model.getGroupAt(row);
-		
+
 		if (parentFrame.isBeingEdited(grp))
 		{
 			parentFrame.showError(parentFrame.eventmonLabels.getString("isBeingEdited"));
 			return;
 		}
-		
+
 		int choice = parentFrame.showConfirm(parentFrame.genericLabels.getString("confirm"),
 			LoadResourceBundle.sprintf(
-				parentFrame.genericLabels.getString("confirmDelete"), 
-				parentFrame.eventmonLabels.getString("alarmGroup")), 
+				parentFrame.genericLabels.getString("confirmDelete"),
+				parentFrame.eventmonLabels.getString("alarmGroup")),
 				JOptionPane.YES_NO_OPTION);
 		if (choice != JOptionPane.YES_OPTION)
 			return;
-		
+
 		model.delete(grp);
 		model.reload();
 	}
@@ -219,33 +214,33 @@ public class GroupListPanel
 		String name = askUniqueName();
 		if (name == null)
 			return;
-		
+
 		AlarmGroup grp = model.getGroupAt(row);
 		AlarmGroup copy = grp.noIdCopy();
 		copy.setName(name);
-		
+
 		parentFrame.editAlarmGroup(copy);
 	}
-	
-	
-	
+
+
+
 
 	protected void newPressed()
 	{
 		String name = askUniqueName();
 		if (name == null)
 			return;
-		
+
 		AlarmGroup grp = new AlarmGroup(DbKey.NullKey);
 		grp.setName(name);
 
 		parentFrame.editAlarmGroup(grp);
 	}
-	
+
 	/**
 	 * Ask user for unique group name.
 	 * Show an error message if name already exists.
-	 * 
+	 *
 	 * @return null if not successful, unique name if ok.
 	 */
 	String askUniqueName()
@@ -254,7 +249,7 @@ public class GroupListPanel
 			parentFrame.eventmonLabels.getString("enterGroupName"));
 		if (name == null || name.trim().length() == 0)
 			return null;
-		
+
 		for(AlarmGroup grp : model.getAlarmConfig().getGroups())
 			if (grp.getName().equalsIgnoreCase(name))
 			{
@@ -282,7 +277,7 @@ public class GroupListPanel
 	{
 		model.reload();
 	}
-	
+
 	public AlarmGroup getGroupById(DbKey groupId)
 	{
 		return model.getGroupById(groupId);
@@ -291,9 +286,9 @@ public class GroupListPanel
 }
 
 @SuppressWarnings("serial")
-class GroupListTableModel extends AbstractTableModel
-	implements SortingListTableModel
+class GroupListTableModel extends AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String[] colnames = new String[3];
 	int [] widths = { 15, 60, 25 };
 	private int sortColumn = 0;
@@ -315,7 +310,7 @@ class GroupListTableModel extends AbstractTableModel
 	{
 		return alarmConfig.getGroupById(groupId);
 	}
-	
+
 	public ArrayList<AlarmGroup> getGroupList()
 	{
 		return alarmConfig.getGroups();
@@ -325,13 +320,14 @@ class GroupListTableModel extends AbstractTableModel
 	{
 		SqlDatabaseIO sqldbio = (SqlDatabaseIO)decodes.db.Database.getDb().getDbIo();
 		AlarmDAO alarmDAO = new AlarmDAO(sqldbio);
-		
+
 		try
 		{
 			alarmDAO.deleteAlarmGroup(grp.getAlarmGroupId());
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to delete alarm group.");
 			parentPanel.parentFrame.showError("Cannot delete alarm group: " + ex);
 		}
 		finally
@@ -344,18 +340,24 @@ class GroupListTableModel extends AbstractTableModel
 	{
 		SqlDatabaseIO sqldbio = (SqlDatabaseIO)decodes.db.Database.getDb().getDbIo();
 		AlarmDAO alarmDAO = new AlarmDAO(sqldbio);
-		
+
 		try
 		{
 			alarmDAO.check(alarmConfig);
 			sortByColumn(sortColumn);
-			Logger.instance().debug1("After reload there are " + alarmConfig.getGroups().size() + " groups.");
-for(AlarmGroup grp : alarmConfig.getGroups())
-Logger.instance().debug1("ID=" + grp.getAlarmGroupId() + ", " + grp.getName() 
-+ ", " + new Date(grp.getLastModifiedMsec()));
+			log.debug("After reload there are {} groups.", alarmConfig.getGroups().size());
+			if (log.isDebugEnabled())
+			{
+				for(AlarmGroup grp : alarmConfig.getGroups())
+				{
+					log.debug("ID={}, {},{}",
+							  grp.getAlarmGroupId(), grp.getName(), new Date(grp.getLastModifiedMsec()));
+				}
+			}
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to read alarm config.");
 			parentPanel.parentFrame.showError("Cannot read alarm config: " + ex);
 		}
 		finally
@@ -386,7 +388,7 @@ Logger.instance().debug1("ID=" + grp.getAlarmGroupId() + ", " + grp.getName()
 	{
 		return getColumnValue(getGroupAt(row), col);
 	}
-	
+
 	public AlarmGroup getGroupAt(int row)
 	{
 		return (AlarmGroup)getRowObject(row);
@@ -429,13 +431,13 @@ class GroupComparator implements Comparator<AlarmGroup>
 {
 	private int sortColumn = 0;
 	private GroupListTableModel model = null;
-	
+
 	GroupComparator(int sortColumn, GroupListTableModel model)
 	{
 		this.sortColumn = sortColumn;
 		this.model = model;
 	}
-	
+
 	@Override
 	public int compare(AlarmGroup evt1, AlarmGroup evt2)
 	{
