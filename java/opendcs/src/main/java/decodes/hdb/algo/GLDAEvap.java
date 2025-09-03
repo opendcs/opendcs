@@ -1,18 +1,25 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
 import java.util.GregorianCalendar;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-// this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
-// new class handles surrogate keys as an object
 import decodes.sql.DbKey;
 import decodes.tsdb.RatingStatus;
 import decodes.hdb.HDBRatingTable;
@@ -20,6 +27,8 @@ import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Implements the Powell Evaporation Computation.\n\n" +
 
@@ -50,9 +59,9 @@ import org.opendcs.annotations.algorithm.Output;
 "<li>ignoreTimeSeries - completely ignore changes to any timeseries value from evapCoeff, and always lookup from database.\n" +
 "</li>\n" +
 "</ul>")
-public class GLDAEvap
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class GLDAEvap extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double area;
 	@Input
@@ -135,7 +144,7 @@ public class GLDAEvap
 			// because the surrogate keys where changed to a dbkey object 
 			//int elev_sdi = (int) getSDI("elev").getValue();
 			DbKey elev_sdi = getSDI("elev");
-			debug3("Constructing HDB ratings for evap ratings");
+			log.trace("Constructing HDB ratings for evap ratings");
 			riverRatingTable = new HDBRatingTable(tsdb,"Lake Powell River Area",elev_sdi);
 			streamRatingTable = new HDBRatingTable(tsdb,"Lake Powell Streamside Area",elev_sdi);
 			terraceRatingTable = new HDBRatingTable(tsdb,"Lake Powell Terrace Area",elev_sdi);
@@ -193,8 +202,8 @@ public class GLDAEvap
 		double remevap = (area - riverArea - streamArea- terraceArea)*
 		                 avePrecip/(daysInMonth*12);
 
-		debug3("doAWTimeSlice gevap=" + gevap+ ", rivevap=" + rivevap+
-				", sevap=" + sevap+ ", tevap=" + tevap+ ", remevap=" + remevap);
+		log.trace("doAWTimeSlice gevap={}, rivevap={}, sevap={} tevap={}, remevap={}",
+				  gevap, rivevap, sevap, tevap, remevap);
 				
 		setOutput(grossEvap, gevap);
 		setOutput(riverEvap, rivevap);

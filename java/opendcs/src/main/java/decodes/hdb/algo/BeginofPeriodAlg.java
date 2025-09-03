@@ -2,28 +2,25 @@ package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
-import decodes.sql.DbKey;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.tsdb.ParmRef;
 
 @Algorithm(description = "Type a javadoc-style comment describing the algorithm class.")
-public class BeginofPeriodAlg
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class BeginofPeriodAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {	
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 
@@ -83,7 +80,7 @@ public class BeginofPeriodAlg
 		// Enter code to be executed at each time-slice.
 		if ((count == 0) && (!isMissing(input)))
 		{
-		debug3("BeginofPeriodAlg: FOUND first record");
+		log.trace("BeginofPeriodAlg: FOUND first record");
 			value_out = input;
 			date_out = _timeSliceBaseTime;
 			count++;
@@ -110,7 +107,10 @@ public class BeginofPeriodAlg
 		long milly_diff = date_out.getTime() - _aggregatePeriodBegin.getTime();
 		long milly_window = 0;
 		ParmRef parmRef = getParmRef("output");
-		if (parmRef == null) warning("Unknown aggregate control output variable 'OUTPUT'");
+		if (parmRef == null)
+		{ 
+			log.warn("Unknown aggregate control output variable 'OUTPUT'");
+		}
 		String intstr = parmRef.compParm.getInterval();
 		if (intstr.equalsIgnoreCase("hour"))
 		     milly_window = req_window_period * (MS_PER_HOUR / 60L);
@@ -125,7 +125,7 @@ public class BeginofPeriodAlg
 		if ((milly_diff > milly_window) && (req_window_period != 0)) 
 		{
 		 do_setoutput = false;
-		 debug1("BeginofPeriodAlg: NO OUTPUT: " + _aggregatePeriodBegin + "  SDI:" + getSDI("input"));
+		 log.debug("BeginofPeriodAlg: NO OUTPUT: {} SDI: {}", _aggregatePeriodBegin, getSDI("input"));
 		}
 		//  now check to see if record within desired window
 		if (intstr.equalsIgnoreCase("hour"))
@@ -143,12 +143,12 @@ public class BeginofPeriodAlg
 		//  set the data flags to w
 		setHdbDerivationFlag(output,"w");
 		}
-		debug3("BeginofPeriodAlg:  WINDOW: " + milly_window + "  DIFF: " + milly_diff + "PERIOD: " + req_window_period);
+		log.trace("BeginofPeriodAlg:  WINDOW: {}  DIFF: {} PERIOD: {}", milly_window, milly_diff, req_window_period);
 		if (do_setoutput)
 		{
 		    /* added to allow users to automatically set the Validation column  */
 		    if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));
-		    debug3("BeginofPeriodAlg: SETTING OUTPUT: DOING A SETOutput");
+		    log.trace("BeginofPeriodAlg: SETTING OUTPUT: DOING A SETOutput");
 		    setOutput(output,value_out);
 		}
 		//  now if there is no record to output then delete if it exists

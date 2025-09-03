@@ -1,41 +1,49 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 // this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
 // new class handles surrogate keys as an object
-import decodes.sql.DbKey;
 
 import decodes.tsdb.ParmRef;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-import decodes.hdb.HdbFlags;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import ilex.util.DatePair;
-import decodes.tsdb.ParmRef;
 import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
-import decodes.tsdb.DbCompException;
 import decodes.hdb.dbutils.RBASEUtils;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Class which interpolates the End-Of-Period value")
-public class EOPInterpAlg
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class EOPInterpAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 
@@ -109,8 +117,8 @@ public class EOPInterpAlg
 		{
 			value_out = input;
 			date_out = _timeSliceBaseTime;
-                        debug2("EOPINTERP- " + alg_ver + "  TimeSlice  VALUE: " + input);
-                        total_count++;
+            log.trace("EOPINTERP- {}  TimeSlice  VALUE: {}", alg_ver, input);
+            total_count++;
 		}
 	}
 
@@ -135,7 +143,8 @@ public class EOPInterpAlg
 //
 		// first see if the closest EOP record is within the windowing specs
 //
-		debug2 ("EOPINTERP- " + alg_ver + "  Period_BEG:  " + _aggregatePeriodBegin + "  Period_END: " + _aggregatePeriodEnd + "  Last Date:  " + date_out);
+		log.trace("EOPINTERP- {}  Period_BEG:  {}  Period_END: {}  Last Date: {}",
+				  alg_ver, _aggregatePeriodBegin, _aggregatePeriodEnd, date_out);
 		long milly_diff = _aggregatePeriodEnd.getTime() - date_out.getTime();
 		long milly_window = 0;
 		Double new_window_value = 0D;
@@ -162,7 +171,7 @@ public class EOPInterpAlg
 		if ((milly_diff > milly_window) && (req_window_period != 0)) 
 		{
 		 do_setoutput = false;
-		 debug2("EOPINTERP- " + alg_ver + " : SETTING OUTPUT FLAG TO FALSE");
+		  log.trace("EOPINTERP- {} : SETTING OUTPUT FLAG TO FALSE", alg_ver);
 		}
 		//  now check to see if before EOP record within desired window
 		if (intstr_out.equalsIgnoreCase("hour"))
@@ -181,7 +190,8 @@ public class EOPInterpAlg
 			setHdbDerivationFlag(output,"w");
 		}
 		//
-		debug2("EOPINTERP- " + alg_ver + " WINDOW: " + milly_window + "  DIFF: " + milly_diff + "PERIOD: " + desired_window_period);
+		log.trace("EOPINTERP- {} WINDOW: {}  DIFF: {} PERIOD: {}",
+				  alg_ver, milly_window, milly_diff, desired_window_period);
 		//
 		if (do_setoutput)  // value in the interval passed the test so continue with next step
 		{ // block for getting BOP next period
@@ -213,7 +223,8 @@ public class EOPInterpAlg
 			{
 				String dt_fmt = "dd-MMM-yyyy HH:mm";
 				RBASEUtils rbu = new RBASEUtils(dbobj,conn);
-				debug2("EOPINTERP- " + alg_ver + "  Interval: " + intstr_out + " NWSDT: " + nextWindowSDT);
+				log.trace("EOPINTERP- {}  Interval: {} NWSDT: {}",
+				  alg_ver, intstr_out, nextWindowSDT);
 				
 				rbu.getStandardDates(sdi,intstr_out,nextWindowSDT,nextWindowEDT,dt_fmt);
 				
@@ -221,7 +232,10 @@ public class EOPInterpAlg
 				SimpleDateFormat sdf = new SimpleDateFormat(dt_fmt);
 				do_setoutput = true;
 				parmRef = getParmRef("input");
-				if (parmRef == null) warning("Unknown aggregate control output variable 'INPUT'");
+				if (parmRef == null) 
+				{
+					log.warn("Unknown aggregate control output variable 'INPUT'");
+				}	
 				String input_interval = parmRef.compParm.getInterval();
 						String table_selector = parmRef.compParm.getTableSelector();
 
@@ -237,18 +251,20 @@ public class EOPInterpAlg
 					" and start_date_time < " +  "to_date('" + (String) dbobj.get("SD_EDT")  +
 				"','dd-mon-yyyy HH24:MI')) where rn = 1";
 				status = db.performQuery(query,dbobj);
-				debug2("EOPINTERP- " + alg_ver + " SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+				log.trace("EOPINTERP- {} SQL STRING:{}   DBOBJ: {} STATUS:  {}",
+				  alg_ver, query, dbobj.toString(), status);
 				// now see if this next interval query worked if not then we can't continue!!!
 				if (((String)dbobj.get("NWDV")).length() == 0)
 				{
 					do_setoutput = false;
-							debug2("EOPINTERP- " + alg_ver + " : Cannot do Computation due to lack of EOP record: " + getSDI("input") + " " + _aggregatePeriodEnd );
+					log.trace("EOPINTERP- {}: Cannot do Computation due to lack of EOP record: {} {}",
+				   	  		  alg_ver, getSDI("input"), _aggregatePeriodEnd );
 
 				}
 				if (status.startsWith("ERROR"))
 				{
-					warning("EOPInterpAlg terminated due to following ORACLE ERROR");
-					warning(status);
+					log.warn("EOPInterpAlg terminated due to following ORACLE ERROR");
+            		log.warn(status);
 					return;
 				}
 			}
@@ -261,7 +277,7 @@ public class EOPInterpAlg
 		//  now continue with calculation if do_setoutput is still true
 		if (do_setoutput) // we have a good record and a next record so do the calculation 
 		{  
-			debug2 ("EOPINTERP- " + alg_ver + "  " + dbobj.toString());
+			log.trace("EOPINTERP- {} {}", alg_ver, dbobj.toString());
 			//
 			// now get the date, value of first record in next interval to see if it passes muster
 			new_window_value = Double.valueOf(dbobj.get("nwdv").toString());
@@ -282,7 +298,8 @@ public class EOPInterpAlg
 			if ((milly_diff > milly_window) && (req_window_period != 0)) 
 			{
 		 	   do_setoutput = false;
-			   debug1("EOPINTERP- " + alg_ver + " : OUTPUT FALSE DUE TO WINDOW EXCEEDED:  " + _aggregatePeriodBegin + "  SDI: " + getSDI("input"));
+			    log.debug("EOPINTERP- {} : OUTPUT FALSE DUE TO WINDOW EXCEEDED:  {}  SDI: {}",
+			   			 alg_ver, _aggregatePeriodBegin, getSDI("input"));
 			}
 			//  now check to see if the after EOP record within desired window
 			if (intstr_out.equalsIgnoreCase("hour"))
@@ -305,14 +322,15 @@ public class EOPInterpAlg
 		//
 		if (do_setoutput)
 		{
-		        debug2("EOPINTERP- " + alg_ver + ": SETTING OUTPUT: DOING A SETOutput");
+		    log.trace("EOPINTERP- {}: SETTING OUTPUT: DOING A SETOutput", alg_ver);
 			// now do the interpolation of the eop of this period to the BOP for next period
 			long milly_diff_total = new_window_sdt.getTime() - date_out.getTime();
 			long milly_diff_end = _aggregatePeriodEnd.getTime() - date_out.getTime();
 			double val_diff = new_window_value - value_out;
 			float	percent_diff =  (float) milly_diff_end / (float) milly_diff_total;
 			value_out = value_out + (val_diff * percent_diff);
-			debug2("EOPINTERP- " + alg_ver + " NWSDT: " + new_window_sdt + " NWVal: " + new_window_value  + " Val_diff: " + val_diff);
+			log.trace("EOPINTERP- {} NWSDT: {} NWVal: {} Val_diff: {}",
+					  alg_ver, new_window_sdt, new_window_value, val_diff);
 			//
                         /* added to allow users to automatically set the Validation column  */
                         if (validation_flag.length() > 0) setHdbValidationFlag(output,validation_flag.charAt(1));
