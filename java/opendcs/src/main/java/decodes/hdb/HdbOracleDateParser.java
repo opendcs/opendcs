@@ -1,6 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb;
-
-import ilex.util.Logger;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -14,6 +27,9 @@ import java.util.TimeZone;
 import decodes.sql.OracleDateParser;
 import oracle.jdbc.OracleResultSet;
 import oracle.sql.DATE;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Oracle DATE objects are commonly used to store timestamp info.
@@ -40,15 +56,15 @@ import oracle.sql.DATE;
  * 
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class HdbOracleDateParser
-	extends OracleDateParser
+public class HdbOracleDateParser extends OracleDateParser
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	
 	public HdbOracleDateParser(TimeZone tz)
 	{
 		super(tz);
 		module = "HdbOracleDateParser";
-Logger.instance().info("Constructing " + module);
+		log.info("Constructing {}", module);
 	}
 	
 	private Date convertDATE(DATE oracleDate)
@@ -66,15 +82,6 @@ Logger.instance().info("Constructing " + module);
 		cal.set(Calendar.MINUTE, (int)db[5] - 1);
 		cal.set(Calendar.SECOND, (int)db[6] - 1);
 		Date ret = cal.getTime();
-//		Logger.instance().debug3(module + " Oracle DATE Bytes for "
-//			+ cal.getTimeZone().getID() + ": "
-//			+ (int)db[0] + " "
-//			+ yearByte + " "
-//			+ (int)db[2] + " "
-//			+ (int)db[3] + " "
-//			+ (int)db[4] + " "
-//			+ (int)db[5] + " "
-//			+ (int)db[6] + " date=" + ret);
 		return ret;
 	}
 	
@@ -106,7 +113,7 @@ Logger.instance().info("Constructing " + module);
 			}
 			catch (SQLException e2)
 			{
-				Logger.instance().warning(module + " Error Attempt to get date as String and Timestamp both failed: " + e2);
+				log.atWarn().setCause(e2).log("Error Attempt to get date as String and Timestamp both failed.");
 				return null;
 			}
 		}
@@ -139,9 +146,9 @@ Logger.instance().info("Constructing " + module);
 		}
 		catch(SQLException ex)
 		{
-			Logger.instance().warning(module + 
-				" Cannot parse " + columnName 
-				+ " string '" + s + "' and cannot get as Timestamp: " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot parse {} string '{}' and cannot get as Timestamp: ", columnName, s);
 			return null;
 		}
 	}

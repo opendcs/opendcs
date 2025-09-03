@@ -1,43 +1,45 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
-// this new import was added by M. Bogner March 2013 for the 5.3 CP upgrade project
-// the surrogate keys where changed from a long to a DbKey object
-import decodes.sql.DbKey;
 
-
-// Place an import statements you need here.
 import java.util.TimeZone;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
-
-import decodes.hdb.HdbFlags;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 
-import ilex.util.DatePair;
 import decodes.tsdb.ParmRef;
 import decodes.hdb.dbutils.DBAccess;
 import decodes.hdb.dbutils.DataObject;
-import decodes.tsdb.DbCompException;
 import decodes.util.DecodesSettings;
-//import decodes.tsdb.DbCompConfig;
 import decodes.hdb.dbutils.RBASEUtils;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "PowerToEnergyALg - calculates Energy base on power readings converted\n" +
 "to hourly Megawatt rates\n\n" +
@@ -46,9 +48,9 @@ import org.opendcs.annotations.algorithm.Output;
 "min_values_required: number: default 1: the minimum number of observations required to perform computation\n" +
 "min_values_desired: number: default 0: the minimum number of observations desired to perform computation\n" +
 "validation_flag: string: default empty: the validation flag value to be sent to the database\n")
-public class PowerToEnergyAlg
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class PowerToEnergyAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 
@@ -146,7 +148,8 @@ public class PowerToEnergyAlg
 		// and do nothibg else but return
 		if (total_count == 0)
 		{
-		   debug3("PowerToEnergyAlg: No records for period: " + _aggregatePeriodEnd + " SDI: " + getSDI("input"));
+		   log.trace("PowerToEnergyAlg: No records for period: {} SDI: {}",
+		   			 _aggregatePeriodEnd, getSDI("input"));
 		   deleteOutput(output);
                    return;
 		}
@@ -154,17 +157,17 @@ public class PowerToEnergyAlg
 		do_setoutput = true;
 		ParmRef parmRef = getParmRef("input");
 		if (parmRef == null) 
-                {
-		   warning("PowerToEnergyAlg: Unknown aggregate control output variable 'INPUT'");
-                   return;
+        {
+			log.warn("PowerToEnergyAlg: Unknown aggregate control output variable 'INPUT'");
+            return;
 		}
 		String input_interval = parmRef.compParm.getInterval();
 		String table_selector = parmRef.compParm.getTableSelector();
 		parmRef = getParmRef("output");
 		if (parmRef == null) 
-                {
-		   warning("PowerToEnergyAlg: Unknown aggregate control output variable 'OUTPUT'");
-                   return;
+        {
+		   	log.warn("PowerToEnergyAlg: Unknown aggregate control output variable 'OUTPUT'");
+            return;
 		}
 		String output_interval = parmRef.compParm.getInterval();
 //
@@ -184,16 +187,24 @@ public class PowerToEnergyAlg
 		   if (mvr_count < 0 || mvd_count < 0)
 		   {
 
-		     warning("PowerToEnergyAlg-"+alg_ver+": Warning: Illegal negative setting of minimum values criteria for non-Month aggregates");
-		     warning("PowerToEnergyAlg-"+alg_ver+": Warning: Minimum values criteria for non-Month aggregates set to 1");
+		     log.warn("PowerToEnergyAlg-{}: Warning: Illegal negative setting of minimum values criteria " +
+			 		  "for non-Month aggregates",
+					  alg_ver);
+		     log.warn("PowerToEnergyAlg-{}: Warning: Minimum values criteria for non-Month aggregates " +
+			 		  "set to 1",
+					  alg_ver);
 		     if (mvd_count < 0) mvd_count = 1;
 		     if (mvr_count < 0) mvr_count = 1;
 		   }
 		   if ((input_interval.equalsIgnoreCase("instant") || output_interval.equalsIgnoreCase("hour")) && mvr_count == 0) 
 		   {
 
-		     warning("PowerToEnergyAlg-"+alg_ver+": Warning: Illegal zero setting of minimum values criteria for instant/hour aggregates");
-		     warning("PowerToEnergyAlg-"+alg_ver+": Warning: Minimum values criteria for instant/hour aggregates set to 1");
+		     log.warn("PowerToEnergyAlg-{}: Warning: Illegal zero setting of minimum values criteria " +
+						 "for instant/hour aggregates",
+						 alg_ver);
+		    log.warn("PowerToEnergyAlg-{}: Warning: Minimum values criteria for instant/hour " +
+						 "aggregates set to 1",
+						 alg_ver);
 		     mvr_count = 1;
 		   }
 		}
@@ -229,9 +240,10 @@ public class PowerToEnergyAlg
 		   }
 		   else if (mvr_count == 0 && !input_interval.equalsIgnoreCase("day") )
 		   {
-		     warning("PowerToEnergyAlg-"+alg_ver+": Warning: Illegal zero setting of minimum values criteria for " 
-		     + input_interval + " to daily aggregates");
-		     warning("PowerToEnergyAlg-"+alg_ver+": Warning: Minimum values criteria for daily aggregates set to 1");
+		     log.warn("PowerToEnergyAlg-{}: Warning: Illegal zero setting of minimum values criteria for " +
+		     		  "{} to daily aggregates",
+					  alg_ver, input_interval);
+		     log.warn("PowerToEnergyAlg-{}: Warning: Minimum values criteria for daily aggregates set to 1", alg_ver);
 		     if (mvd_count == 0) mvd_count = 1;
 		     if (mvr_count == 0) mvr_count = 1;
 		   }
@@ -256,8 +268,8 @@ public class PowerToEnergyAlg
 	
 			String status = null;
 	//              important that you standardize the dates based on the input interval
-					debug3(" Input Interval:" + input_interval + "   PeriodBegin: " + _aggregatePeriodBegin + " PeriodEnd:  " 
-			+ _aggregatePeriodEnd);
+			log.trace("Input Interval: {}   PeriodBegin: {} PeriodEnd: {}",
+				  input_interval, _aggregatePeriodBegin, _aggregatePeriodEnd);
 
 					
 					rbu.getStandardDates(sdi,input_interval,_aggregatePeriodBegin,_aggregatePeriodEnd,dt_fmt);
@@ -275,30 +287,35 @@ public class PowerToEnergyAlg
 					"','dd-MM-yyyy HH24:MI')) is_current_period from dual";
 					// now do the query for all the needed data
 			status = db.performQuery(query,dbobj);
-					debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+			log.trace(" SQL STRING:{}   DBOBJ: {} STATUS:  {}", query, dbobj.toString(), status);
 
 			// see if there was an error
 			if (status.startsWith("ERROR"))
-					{
+			{
 
-			warning(" PowerToEnergyAlg-"+alg_ver+":  Failed due to following oracle error");
-			warning(" PowerToEnergyAlg-"+alg_ver+": " +  status);
-			return;
+				log.warn(" PowerToEnergyAlg-{}:  Failed due to following oracle error", alg_ver);
+		   	 	log.warn(" PowerToEnergyAlg-{}: {}", alg_ver, status);
+			 	return;
 			}
 	//
-			debug3("PowerToEnergyAlg-"+alg_ver+ "  " + _aggregatePeriodEnd + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			log.trace("PowerToEnergyAlg-{} {} SDI: {}  MVR: {} RecordCount: {}",
+				  alg_ver, _aggregatePeriodEnd, getSDI("input"), mvr_count, total_count);
 			// now see how many records were found for this aggregate
 			//  and see if this calc is in current period and if partial calc is set
 			is_current_period = ((String)dbobj.get("is_current_period")).equalsIgnoreCase("Y");
 			if (!is_current_period && total_count < mvr_count)
 					{
 			do_setoutput = false;
-			debug1("PowerToEnergyAlg-"+alg_ver+": Minimum required records not met for historic period: " + _aggregatePeriodEnd + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			log.debug("PowerToEnergyAlg-{}: Minimum required records not met for historic period: {} SDI: {} " +
+		   			 " MVR: {} RecordCount: {}",
+		   			 alg_ver, _aggregatePeriodEnd, getSDI("input"), mvr_count, total_count);
 			}
 			if (is_current_period && !partial_calculations && total_count < mvr_count)
-					{
-			do_setoutput = false;
-			debug1("PowerToEnergyAlg-"+alg_ver+": Minimum required records not met for current period: " + _aggregatePeriodEnd + " SDI: " + getSDI("input") + "  MVR: " + mvr_count + " RecordCount: " + total_count);
+			{
+			  do_setoutput = false;
+			  log.debug("PowerToEnergyAlg-{}: Minimum required records not met for current period: {} SDI: {} " +
+		   			 " MVR: {} RecordCount: {}",
+		   			 alg_ver, _aggregatePeriodEnd, getSDI("input"), mvr_count, total_count);
 			}
 	//
 			//
@@ -321,7 +338,7 @@ public class PowerToEnergyAlg
 
 					}
 
-			debug3("PowerToEnergyAlg-"+alg_ver+": Derivation FLAGS: " + flags);
+			log.trace("PowerToEnergyAlg-{}: Derivation FLAGS: {}", alg_ver, flags);
 			if (flags != null)
 			{	
 					setHdbDerivationFlag(output,flags);

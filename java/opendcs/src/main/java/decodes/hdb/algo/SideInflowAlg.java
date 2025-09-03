@@ -1,21 +1,29 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-
-import decodes.hdb.HdbFlags;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 
 @Algorithm(description = "This algorithm is an Side Inflow mass balance calculation for inflow as:\n" +  
@@ -34,6 +42,7 @@ import decodes.hdb.HdbFlags;
 // Modified by M. Bogner May 2009 to add additional delete logic and version control
 public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double total_rel_above;
 	@Input
@@ -112,14 +121,15 @@ public class SideInflowAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
 	if (do_setoutput)
 	{
-		debug3("SideInflowAlg-" + alg_ver + ": total_releaseabove=" + total_rel_above +", delta_storage=" + delta_storage);
+		log.trace("SideInflowAlg-{}: total_releaseabove={}, delta_storage={}",
+				  alg_ver, total_rel_above, delta_storage);
 		/* added to allow users to automatically set the Validation column  */
 		if (validation_flag.length() > 0) setHdbValidationFlag(side_inflow,validation_flag.charAt(1));
 		setOutput(side_inflow,inflow_calculation);
 	}
 	else
 	{
-		debug3("SideInflowAlg-" + alg_ver + ": Deleting side_inflow output");
+		log.trace("SideInflowAlg-{}: Deleting side_inflow output", alg_ver);
 		deleteOutput(side_inflow);
 	}
 	}
