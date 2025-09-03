@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -51,9 +65,13 @@ import opendcs.dao.DaoBase;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DbObjectCache;
 import opendcs.dao.DbObjectCache.CacheIterator;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 
 public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// TODO: Integrate the cache with the methods below.
 	protected static DbObjectCache<TimeSeriesIdentifier> cache =
 		new DbObjectCache<TimeSeriesIdentifier>(60 * 60 * 1000L, false);
@@ -103,7 +121,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	@Override
 	public FailableResult<TimeSeriesIdentifier,TsdbException> findTimeSeriesIdentifier(String uniqueString, boolean ignoreCacheTime)
 	{
-		debug3("getTimeSeriesIdentifier for '" + uniqueString + "'");
+		log.trace("getTimeSeriesIdentifier for '{}'", uniqueString);
 
 		try
 		{
@@ -116,7 +134,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				int endParen = displayName.indexOf(')');
 				if (endParen > 0)
 					displayName = displayName.substring(0,  endParen);
-				debug3("using display name '" + displayName + "', unique str='" + uniqueString + "'");
+				log.trace("using display name '{}', unique str='{}'", displayName, uniqueString);
 			}
 
 			HdbTsId ret = (HdbTsId)cache.getByUniqueName(uniqueString);
@@ -124,7 +142,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			{
 				if (displayName != null)
 				{
-					debug3("Setting display name to '" + displayName + "'");
+					log.trace("Setting display name to '{}'", displayName);
 					ret.setDisplayName(displayName);
 				}
 				return FailableResult.success(ret);
@@ -161,7 +179,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				}
 			}
 
-			debug3("cache does not have '" + uniqueString + "'");
+			log.trace("cache does not have '{}'", uniqueString);
 
 			String q = "SELECT TS_ID "
 				+ "FROM CP_TS_ID "
@@ -172,17 +190,16 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			{
 				q = q + " AND MODEL_ID = " + htsid.getPart(HdbTsId.MODELID_PART);
 			}
-			try
+			try(ResultSet rs = doQuery(q))
 			{
-				ResultSet rs = doQuery(q);
-				if (rs != null && rs.next())
+				if (rs.next())
 				{
 					htsid.setKey(DbKey.createDbKey(rs, 1));
 				}
 				else
 				{
 					String msg = "No CP_TS_ID for '" + htsid.getUniqueString() + "' NoSuchObject";
-					warning(msg);
+					log.warn(msg);
 					return FailableResult.failure(new NoSuchObjectException(msg));
 				}
 			}
@@ -203,7 +220,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				tsId.modelRunId = htsid.modelRunId;
 				if (displayName != null)
 				{
-					debug3("Setting display name to '" + displayName + "'");
+					log.trace("Setting display name to '{}'", displayName);
 					tsId.setDisplayName(displayName);
 				}
 			}
@@ -220,19 +237,16 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	{
 		String q = tsidQuery + tsidJoinClause + " and a.ts_id = " + key;
 
-		try
+		try(ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
-			if (rs != null && rs.next())
+			if (rs.next())
 			{
 				return FailableResult.success(rs2TsId(rs));
 			}
 		}
 		catch(Exception ex)
 		{
-			System.err.println(ex.toString());
-			ex.printStackTrace(System.err);
-			return FailableResult.failure(new DbIoException("Error looking up TS Info for ts_id =" + key + ": " + ex));
+			return FailableResult.failure(new DbIoException("Error looking up TS Info for ts_id =" + key, ex));
 		}
 		return FailableResult.failure(new NoSuchObjectException("No time-series with ts_code=" + key));
 	}
@@ -265,8 +279,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(NoSuchObjectException ex)
 		{
-			warning("TSID with key=" + tsid.getKey() + " has reference to non-existant site ID="
-				+ siteId + ", ignored.");
+			log.warn("TSID with key={} has reference to non-existant site ID={}, ignored.",
+					 tsid.getKey(), siteId);
 			throw ex;
 		}
 		DataType dt = DataType.getDataType(DbKey.createDbKey(rs, 7));
@@ -305,6 +319,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			}
 			catch(NoSuchObjectException ex)
 			{
+				log.atTrace().setCause(ex).log("Unable to fill Time Series Meta Data.");
 				return;
 			}
 		}
@@ -340,21 +355,19 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		if (tabsel.equals("M_"))
 			q = q + " and model_id = " + modelId;
 
-		try
+		try(ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
-			if (rs == null || !rs.next())
+			if (!rs.next())
 			{
-				warning("Cannot read meta data for '" + q + "'");
+				log.warn("Cannot read meta data for '{}'", q);
 				throw new NoSuchObjectException(q);
 			}
 			return DbKey.createDbKey(rs, 1);
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Error in '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "Error in '" + q;
+			throw new DbIoException(msg,ex);
 		}
 	}
 
@@ -408,9 +421,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			q = q + " and model_run_id = " + ts.getModelRunId();
 		}
 
-		try
+		try(ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
 			int numAdded = 0;
 			while (rs.next())
 			{
@@ -428,7 +440,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					try { tv.setValue(unitConverter.convert(value)); }
 					catch (DecodesException ex)
 					{
-						warning("fillTimeSeries: " + ex);
+						log.atWarn().setCause(ex).log("fillTimeSeries: unable to convert value.");
 					}
 				}
 				tv.setTime(timeStamp);
@@ -445,10 +457,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(SQLException ex)
 		{
-			String msg= "Error reading data with query '" + q
-				+ "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg= "Error reading data with query '" + q + "'";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -490,9 +500,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				String q = qbase + sb.toString();
 				sb.setLength(0);
 				start = end;
-				try
+				try(ResultSet rs = doQuery(q))
 				{
-					ResultSet rs = doQuery(q);
 					while (rs.next())
 					{
 						Date timeStamp = db.getFullDate(rs, 1);
@@ -509,7 +518,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 							try { tv.setValue(unitConverter.convert(value)); }
 							catch (DecodesException ex)
 							{
-								warning("fillTimeSeries: " + ex);
+								log.atWarn().setCause(ex).log("fillTimeSeries: Unable to convert value.");
 							}
 						}
 
@@ -520,10 +529,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				}
 				catch(SQLException ex)
 				{
-					String msg= "Error reading data with query '" + q
-						+ "': " + ex;
-					warning(msg);
-					throw new DbIoException(msg);
+					String msg= "Error reading data with query '" + q + "'";
+					throw new DbIoException(msg, ex);
 				}
 			}
 			else if (end < size)
@@ -556,9 +563,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 		UnitConverter unitConverter = db.makeUnitConverterForRead(ts);
 
-		try
+		try(ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
 			if (!rs.next())
 				return null;  // There is no previous value.
 
@@ -571,7 +577,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				try { tv.setValue(unitConverter.convert(value)); }
 				catch (DecodesException ex)
 				{
-					warning("fillTimeSeries: " + ex);
+					log.atWarn().setCause(ex).log("fillTimeSeries: unable to convert value.");
 				}
 			}
 
@@ -581,10 +587,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(SQLException ex)
 		{
-			String msg= "Error reading data with query '" + q
-				+ "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg= "Error reading data with query '" + q + "'";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -612,9 +616,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 		UnitConverter unitConverter = db.makeUnitConverterForRead(ts);
 
-		try
+		try(ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
 			if (!rs.next())
 				return null;  // There is no next value.
 
@@ -627,7 +630,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				try { tv.setValue(unitConverter.convert(value)); }
 				catch (DecodesException ex)
 				{
-					warning("fillTimeSeries: " + ex);
+					log.atWarn().setCause(ex).log("fillTimeSeries: unable to convert value");
 				}
 			}
 
@@ -637,10 +640,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(SQLException ex)
 		{
-			String msg= "Error reading data with query '" + q
-				+ "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg= "Error reading data with query '" + q + "'";			
+			throw new DbIoException(msg, ex);
 		}
 	}
 
@@ -661,20 +662,21 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			}
 			catch (NoSuchObjectException ex)
 			{
-				warning("saveTimeSeries: TSID="
-					+ (ts.getTimeSeriesIdentifier()==null?"null":ts.getTimeSeriesIdentifier().getUniqueString())
-					+ " Cannot lookup tsid: " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("saveTimeSeries: TSID={} Cannot lookup tis.",
+						(ts.getTimeSeriesIdentifier()==null?"null":ts.getTimeSeriesIdentifier().getUniqueString()));
 			}
 		}
 		if (tsid != null)
 		{
-			debug3("Saving " + tsid.getUniqueString() + ", from cp units="
-				+ ts.getUnitsAbbr() + ", required=" + tsid.getStorageUnits());
+			log.trace("Saving {}, from cp units={}, required={}",
+					  tsid.getUniqueString(), ts.getUnitsAbbr(), tsid.getStorageUnits());
 			TSUtil.convertUnits(ts, tsid.getStorageUnits());
 		}
 		else
 		{
-			warning("saveTimeSeries: Cannot save with null tsid.");
+			log.warn("saveTimeSeries: Cannot save with null tsid.");
 			return;
 		}
 
@@ -753,7 +755,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				+ ", compId=" + compId
 				+ ", modRunId=" + modelrun_id;
 
-		Logger.instance().debug3("Saving to time series '" + idString + "'");
+		log.trace("Saving to time series '{}'", idString);
 
 		try (Connection c = getConnection();
 			 CallableStatement cstmt = c.prepareCall(q);
@@ -805,45 +807,34 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 							cstmt.setNull(11,java.sql.Types.VARCHAR);
 						}
 
-						Logger.instance().debug3("Saving variable " + v + " at time " + timestr
-							+ ", val=" + valfs + ", der=" + derf);
+						log.trace("Saving variable {} at time {}, val={}, der={}", derf, v, timestr, valfs, derf);
 						cstmt.execute();
 						VarFlags.clearToWrite(tv);
 						nsaved++;
 					}
-					catch(NoConversionException ex)
+					catch(IllegalArgumentException | NoConversionException ex)
 					{
-						String msg = "Cannot save value for " + idString
-							+ " value='" + tv.getStringValue()
-							+ "' - not a number.";
-						Logger.instance().warning(msg);
-						nerrors++;
-					}
-					catch(IllegalArgumentException ex)
-					{
-						String msg = "Cannot save value for " + idString
-								+ " value='" + tv.getStringValue()
-								+ "' - not a number.";
-						Logger.instance().warning(msg);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Cannot save value for {} value='{}' - not a number.",idString, tv.getStringValue());
 						nerrors++;
 					}
 					catch(SQLException ex)
 					{
-						String msg = "SQL Error saving value for " + idString
-							+ " value='" + tv.getStringValue()
-							+ "', date='" + timestr + "': " + ex;
-						Logger.instance().warning(msg);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("SQL Error saving value for {} value='{}', date='{}'",
+						   		idString, tv.getStringValue(), timestr);
 						nerrors++;
 					}
 				}
 			}
-			Logger.instance().debug1("Saved " + nsaved + " samples.");
+			log.debug("Saved {} samples.", nsaved);
 		}
 		catch(SQLException ex)
 		{
 			String msg = "Cannot prepare statement '" + q + "' "
-				+ " for " + idString + ": " + ex;
-			Logger.instance().warning(msg);
+				+ " for " + idString;
 			throw new BadTimeSeriesException(msg,ex);
 		}
 	}
@@ -874,8 +865,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			long modelRunId = tabsel.equalsIgnoreCase("M_") ? ts.getModelRunId() : 0L;
 			cstmt.setLong(6, modelRunId);
 
-			info("delete_from_hdb args: 1(sdi)=" + ts.getSDI() + ", 4(intv)=" + ts.getInterval()
-				+ ", 5(appId)=" + db.getAppId() + ", 6(modelRunId)=" + modelRunId);
+			log.info("delete_from_hdb args: 1(sdi)={}, 4(intv)={}, 5(appId)={}, 6(modelRunId)={}",
+				     ts.getSDI(), ts.getInterval(), db.getAppId(), modelRunId);
 			for(int i=0; i<ts.size(); i++)
 			{
 				TimedVariable tv = ts.sampleAt(i);
@@ -887,46 +878,31 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					if (intv.equalsIgnoreCase(IntervalCodes.int_hour))
 					{
 						gc.add(Calendar.HOUR, 1);
-//						gc.add(Calendar.SECOND, -1);
 					}
 					else if (intv.equalsIgnoreCase(IntervalCodes.int_day))
 					{
 						gc.add(Calendar.DAY_OF_YEAR, 1);
-//						gc.add(Calendar.SECOND, -1);
 					}
 					else if (intv.equalsIgnoreCase(IntervalCodes.int_month))
 					{
 						gc.add(Calendar.MONTH, 1);
-//						gc.add(Calendar.SECOND, -1);
 					}
 					else if (
 						intv.equalsIgnoreCase(IntervalCodes.int_year)
 					 || intv.equalsIgnoreCase(IntervalCodes.int_wy))
 					{
 						gc.add(Calendar.YEAR, 1);
-//						gc.add(Calendar.SECOND, -1);
 					}
 					Date endTime = gc.getTime();
 
 					try
 					{
-						debug3("   Deleting " + idstr
-							+ " at start=" + db.getLogDateFormat().format(startTime)
-							+ " end=" + db.getLogDateFormat().format(endTime));
+						log.trace("Deleting {} at start={} end={}", idstr, startTime, endTime);
 						HdbTimeSeriesDb hdb = (HdbTimeSeriesDb)db;
 						oracle.sql.DATE startd =
 							((HdbOracleDateParser)hdb.getOracleDateParser()).toDATE(startTime);
 						oracle.sql.DATE endd =
 							((HdbOracleDateParser)hdb.getOracleDateParser()).toDATE(endTime);
-
-//						StringBuilder sb = new StringBuilder();
-//						for(byte b : startd.getBytes())
-//							sb.append(" " + (int)b);
-//						debug3("In callable statement, start bytes =" + sb.toString());
-//						sb.setLength(0);
-//						for(byte b : endd.getBytes())
-//							sb.append(" " + (int)b);
-//						debug3("In callable statement,   end bytes =" + sb.toString());
 
 						cstmt.setDATE(2, startd);
 						cstmt.setDATE(3, endd);
@@ -935,19 +911,17 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					}
 					catch(SQLException ex)
 					{
-						String msg = "SQL Error deleting value for " + idstr
-							+ ", time=" + db.getLogDateFormat().format(startTime) + ": " + ex;
-						Logger.instance().warning(msg);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("SQL Error deleting value for {}, time={}", idstr, startTime);
 					}
 				}
 			}
 		}
 		catch(SQLException ex)
 		{
-			String msg = "Cannot prepare statement '" + q + "' "
-				+ "for " + idstr;
-			Logger.instance().warning(msg);
-			throw new BadTimeSeriesException(msg);
+			String msg = "Cannot prepare statement '" + q + "' " + "for " + idstr;
+			throw new BadTimeSeriesException(msg, ex);
 		}
 	}
 
@@ -963,7 +937,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(Exception ex)
 		{
-			warning("deleteTimeSeries error deleting alarm records: " + ex);
+			log.atWarn().setCause(ex).log("deleteTimeSeries error deleting alarm records.");
 		}
 		finally
 		{
@@ -998,7 +972,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(Exception ex)
 		{
-			warning("deleteTimeSeries error deleting alarm records: " + ex);
+			log.atWarn().setCause(ex).log("deleteTimeSeries error deleting alarm records.");
 		}
 		finally
 		{
@@ -1013,9 +987,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(Exception ex)
 		{
-			String msg = "Cannot delete time series '"
-				+ tsid.getUniqueString() + ": " + ex;
-			warning(msg);
+			log.atWarn().setCause(ex).log("Cannot delete time series '{}'", tsid.getUniqueString());
 		}
 	}
 
@@ -1036,7 +1008,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(Exception ex)
 		{
-			warning("makeTimeSeries - Bad modelId '" + s + "' -- ignored.");
+			log.atWarn().setCause(ex).log("makeTimeSeries - Bad modelId '{}' -- ignored.", s);
 		}
 		s = tsid.getPart(HdbTsId.MODELRUNID_PART);
 		try
@@ -1048,7 +1020,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(Exception ex)
 		{
-			warning("makeTimeSeries - Bad modelRunId '" + s + "' -- ignored.");
+			log.atWarn().setCause(ex).log("makeTimeSeries - Bad modelRunId '{}' -- ignored.", s);
 		}
 		return ret;
 	}
@@ -1089,8 +1061,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 		// MJM 2016/1/8 Added this block of code to minimize reloading the entire cache.
 		boolean doFullLoad = System.currentTimeMillis() - lastCacheLoad > CACHE_RELOAD_INTERVAL;
-		debug3("reloadTsIdCache doFullLoad=" + doFullLoad + ", lastCacheLoad=" + new Date(lastCacheLoad)
-			+ ", lastCacheRefresh=" + new Date(lastCacheRefresh));
+		log.trace("reloadTsIdCache doFullLoad={}, lastCacheLoad={}, lastCacheRefresh={}",
+				  doFullLoad, new Date(lastCacheLoad), new Date(lastCacheRefresh));
 		if (!doFullLoad)
 			q = q + " and a.date_time_loaded > "
 				  + db.sqlDate(new Date(lastCacheRefresh-CACHE_REFRESH_OVERLAP));
@@ -1098,10 +1070,9 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		if (doFullLoad)
 			lastCacheLoad = lastCacheRefresh;
 
-		try
+		try(ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
-			while (rs != null && rs.next())
+			while (rs.next())
 			{
 				try { cache.put(rs2TsId(rs)); }
 				catch(NoSuchObjectException ex)
@@ -1112,9 +1083,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(Exception ex)
 		{
-			System.err.println(ex.toString());
-			ex.printStackTrace(System.err);
-			throw new DbIoException("HdbTimeSeriesDAO: Error listing time series: " + ex);
+			throw new DbIoException("HdbTimeSeriesDAO: Error listing time series", ex);
 		}
 	}
 
@@ -1133,7 +1102,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		HdbTsId hdbTsId = (HdbTsId)tsid;
 		HdbTimeSeriesDb hdbDb = (HdbTimeSeriesDb)db;
 
-		debug3("createTimeSeries '" + tsid.getUniqueString() + "'");
+		log.trace("createTimeSeries '{}'", tsid.getUniqueString());
 
 		// If this is a new SDI add an entry to HDB_SITE_DATATYPE.
 		DbKey sdi = hdbTsId.getSdi();
@@ -1174,10 +1143,10 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			+ " and table_selector = " + sqlString(tsid.getTableSelector());
 		if (tsid.getTableSelector().equalsIgnoreCase("M_"))
 			q = q + " and model_id = " + hdbTsId.modelId;
-		ResultSet rs = doQuery(q);
-		try
+		
+		try(ResultSet rs = doQuery(q))
 		{
-			while(rs != null && rs.next())
+			while(rs.next())
 			{
 				DbKey tsId = DbKey.createDbKey(rs, 1);
 				tsid.setKey(tsId);
@@ -1186,7 +1155,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error in '" + q + "': " + ex);
+			throw new DbIoException("Error in '" + q + "'", ex);
 		}
 
 		// No such entry yet in CP_TS_ID, create one.
@@ -1241,10 +1210,9 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 
 		ArrayList<TasklistRec> tasklistRecs = new ArrayList<TasklistRec>();
 		RecordRangeHandle rrhandle = new RecordRangeHandle(applicationId);
-		try
+		try(ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
-			while (rs != null && rs.next())
+			while (rs.next())
 			{
 				// Extract the info needed from the result set row.
 				int recordNum = rs.getInt(1);
@@ -1331,7 +1299,6 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 				q = "delete from CP_COMP_TASKLIST "
 					+ "where RECORD_NUM IN (" + inList.toString() + ")";
 				doModify(q);
-//				commit();
 				for(int i=0; i<x; i++)
 					badRecs.remove(0);
 			}
@@ -1340,9 +1307,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(SQLException ex)
 		{
-			System.err.println("Error reading new data: " + ex);
-			ex.printStackTrace();
-			throw new DbIoException("Error reading new data: " + ex);
+			throw new DbIoException("Error reading new data.", ex);
 		}
 	}
 
@@ -1382,16 +1347,17 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			}
 			catch(NoSuchObjectException ex)
 			{
-				warning("Error reading TSID in getTimeSeriesFor: "
-					+ "sdi=" + sdi + ", interval=" + interval
-					+ ", tabsel=" + tabsel + ", modelId=" + cts.getModelId()
-					+ ": " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Error reading TSID in getTimeSeriesFor: sdi={}, interval={}, tabsel={}, modelId={}",
+					    sdi, interval, tabsel, cts.getModelId());
 				return null;
 			}
 
 			try { dataCollection.addTimeSeries(cts); }
 			catch(decodes.tsdb.DuplicateTimeSeriesException ex)
 			{ // won't happen -- already verified it's not there.
+			  log.atTrace().setCause(ex).log("An error that shouldn't happen, has.");
 			}
 		}
 		return cts;
@@ -1407,9 +1373,8 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	{
 		String q = "select MODEL_ID from REF_MODEL_RUN "
 			+ "where MODEL_RUN_ID = " + modelRunId;
-		try
+		try(ResultSet rs = doQuery2(q))
 		{
-			ResultSet rs = doQuery2(q);
 			if (rs.next())
 			{
 				int r = rs.getInt(1);
@@ -1419,7 +1384,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch(SQLException ex)
 		{
-			Logger.instance().warning("findModelId: " + ex);
+			log.atWarn().setCause(ex).log("Unable to find model by Id");
 		}
 		return Constants.undefinedIntKey;
 	}
@@ -1433,10 +1398,10 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 			+ " and lower(interval) = " + sqlString(tsid.getInterval().toLowerCase())
 			+ " and table_selector = " + sqlString(tsid.getTableSelector())
 			+ " and model_id = " + tsid.modelId;
-		ResultSet rs = doQuery(q);
-		try
+		
+		try(ResultSet rs = doQuery(q))
 		{
-			while(rs != null && rs.next())
+			while(rs.next())
 			{
 				DbKey tsId = DbKey.createDbKey(rs, 1);
 				tsid.setKey(tsId);
@@ -1446,7 +1411,7 @@ public class HdbTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Error in '" + q + "': " + ex);
+			throw new DbIoException("Error in '" + q + "'", ex);
 		}
 	}
 

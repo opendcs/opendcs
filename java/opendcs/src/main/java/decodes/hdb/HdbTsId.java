@@ -1,102 +1,21 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2017/05/31 21:25:46  mmaloney
- * Changed TABSEL_PART back to Table Selector
- *
- * Revision 1.2  2016/07/20 15:38:51  mmaloney
- * Remove unneeded debug.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.23  2013/05/28 13:14:04  mmaloney
- * ILEXPROJECTS-147 bug fix. Must also check interval when comparing to parm.
- *
- * Revision 1.22  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- * Revision 1.21  2012/08/23 19:04:34  mmaloney
- * Implement methods to write to the tasklist table from Java.
- *
- * Revision 1.20  2012/08/15 16:07:47  mmaloney
- * Consistency in calling setDisplayName for HdbTsId objects.
- *
- * Revision 1.19  2012/08/15 15:53:18  mmaloney
- * Consistency in calling setDisplayName for HdbTsId objects.
- *
- * Revision 1.18  2012/08/14 18:15:56  mmaloney
- * display name
- *
- * Revision 1.17  2012/08/14 18:06:58  mmaloney
- * Allow display name to be set in unique string.
- *
- * Revision 1.16  2012/08/13 17:49:22  mmaloney
- * dev
- *
- * Revision 1.15  2012/08/13 17:43:39  mmaloney
- * dev
- *
- * Revision 1.14  2012/08/01 17:01:27  mmaloney
- * debug.
- *
- * Revision 1.13  2012/08/01 14:24:34  mmaloney
- * Implement equals(Object) to allow storage in HashSet.
- *
- * Revision 1.12  2012/07/30 21:14:50  mmaloney
- * In HDB, after setting a TSID's datatype, have to invalidate SDI to force a new lookup.
- *
- * Revision 1.11  2012/07/30 21:10:39  mmaloney
- * In HDB, after setting a TSID's datatype, have to invalidate SDI to force a new lookup.
- *
- * Revision 1.10  2012/07/27 12:51:43  mmaloney
- * Null ptr in copyNoKey
- *
- * Revision 1.9  2012/07/23 15:21:31  mmaloney
- * Refactor group evaluation for HDB.
- *
- * Revision 1.8  2012/07/05 18:24:57  mmaloney
- * tsKey is stored as a long.
- *
- * Revision 1.7  2012/06/18 15:15:14  mmaloney
- * Moved TS ID cache to base class.
- *
- * Revision 1.6  2012/06/13 16:27:16  mmaloney
- * remove debugs
- *
- * Revision 1.5  2012/06/13 14:38:30  mmaloney
- * dev
- *
- * Revision 1.4  2012/06/12 18:39:11  mmaloney
- * dev
- *
- * Revision 1.3  2012/06/12 18:31:33  mmaloney
- * dev
- *
- * Revision 1.2  2012/06/12 18:27:40  mmaloney
- * dev
- *
- * Revision 1.1  2012/06/07 19:01:23  mmaloney
- * Implement HdbTsId
- *
- * Revision 1.5  2012/05/31 19:52:43  mmaloney
- * Implemented CP_TS_ID table reads.
- *
- * 
- * This is open-source software written by Sutron Corporation under
- * contract to the federal government. Anyone is free to copy and use this
- * source code for any purpos, except that no part of the information
- * contained in this file may be claimed to be proprietary.
- *
- * Except for specific contractual terms between Sutron and the federal 
- * government, this source code is provided completely without warranty.
-
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb;
 
 import opendcs.opentsdb.Interval;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
 import decodes.db.DataType;
@@ -106,10 +25,10 @@ import decodes.db.SiteName;
 import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.DbCompParm;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.NoSuchObjectException;
-import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * This class holds a time-series identifier for HDB.
@@ -124,6 +43,7 @@ import decodes.tsdb.TimeSeriesIdentifier;
  */
 public class HdbTsId implements TimeSeriesIdentifier
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public int getModelId()
 	{
 		return modelId;
@@ -305,8 +225,9 @@ public class HdbTsId implements TimeSeriesIdentifier
 			try { modelId = Integer.parseInt(value); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning("Attempt to set modelId to '" + value 
-					+ "': ModelId must be numeric.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Attempt to set modelId to '{}': ModelId must be numeric.", value);
 			}
 		}
 		else if (part.equalsIgnoreCase(MODELRUNID_PART))
@@ -314,13 +235,15 @@ public class HdbTsId implements TimeSeriesIdentifier
 			try { modelRunId = Integer.parseInt(value); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning("Attempt to set modelRunId to '" + value 
-					+ "': ModelRunId must be numeric.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Attempt to set modelRunId to '{}': ModelRunId must be numeric.", value);
 			}
 		}
 		else
-			Logger.instance().warning("Unknown Time Series Identifier part '"
-				+ part + "' -- ignored");
+		{
+			log.warn("Unknown Time Series Identifier part '{}' -- ignored", part);
+		}
 	}
 
 	@Override
@@ -356,8 +279,7 @@ public class HdbTsId implements TimeSeriesIdentifier
 			return "" + modelRunId;
 		else
 		{
-			Logger.instance().warning("Unknown Time Series Identifier part '"
-				+ part + "' -- ignored");
+			log.warn("Unknown Time Series Identifier part '{}' -- ignored", part);
 			return "";
 		}
 	}
@@ -483,14 +405,12 @@ public class HdbTsId implements TimeSeriesIdentifier
 	@Override
 	public void setDisplayName(String nm)
 	{
-//Logger.instance().info("Set display name to '" + nm + "'");
 		displayName = nm;
 	}
 	
 	@Override
 	public void checkValid() throws BadTimeSeriesException
 	{
-//Logger.instance().info("HdbTsId.checkValid");
 		if (site == null)
 			throw new BadTimeSeriesException("Site unassigned");
 		if (dataType == null)
@@ -582,8 +502,6 @@ public class HdbTsId implements TimeSeriesIdentifier
 		if (this == rhs)
 			ret = true;
 		ret = this.compareTo((HdbTsId)rhs) == 0;
-Logger.instance().info("HdbTsId.equals: this='" + getUniqueString() + "' rhs='" 
-+ ((HdbTsId)rhs).getUniqueString() + ", returning " + ret);
 		return ret;
 	}
 

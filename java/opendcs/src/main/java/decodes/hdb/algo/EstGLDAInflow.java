@@ -1,19 +1,29 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Computes the Powell inflow from the three upstream gages and a side inflow\n" +
 "coefficient. If any gages are missing, estimates inflow using mass balance\n" + 
@@ -35,6 +45,7 @@ import org.opendcs.annotations.algorithm.Output;
 "inflow = Powell total inflow")
 public class EstGLDAInflow extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double bffu;
 	@Input
@@ -108,19 +119,19 @@ public class EstGLDAInflow extends decodes.tsdb.algo.AW_AlgorithmBase
 			double in = bffu + clru + grvu;
 			in += in * inflowCoeff;
 			
-			debug3("doAWTimeSlice bffu=" + bffu + ", clru=" + clru +
-			 ", gvru=" + grvu + ", inflowCoeff=" + inflowCoeff + ", inflow=" + in);
+			log.trace("doAWTimeSlice bffu={}, clru={}, gvru={}, inflowCoeff={}, inflow={}",
+			 		  bffu, clru, grvu, inflowCoeff, in);
 			setOutput(inflow, in);
 			return;
 		}
 		else {
 			//one or more of the gages is missing, do an estimate
-			debug1("GLDA Estimated Inflow computation entered for " + _timeSliceBaseTime);
+			log.debug("GLDA Estimated Inflow computation entered for {}", _timeSliceBaseTime);
 			double dBS = delta_storage * bscoeff;
 			double invol = delta_storage + dBS + evap + total_release;
 			double in = invol * 43560/86400; //convert to cfs
 			
-			debug3("doAWTimeSlice Estimated Inflow! dBS=" + dBS + ", invol=" + invol + ", in=" + in);
+			log.trace("doAWTimeSlice Estimated Inflow! dBS={}, invol={}, in={}", dBS, invol, in);
 			setHdbDerivationFlag(inflow, "E");
 			setOutput(inflow, in);
 			return;

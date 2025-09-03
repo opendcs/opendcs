@@ -1,10 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.dbutils;
 
 import java.util.Date;
 import java.sql.*;
-import java.util.*;
 import java.lang.Long;
 import java.text.SimpleDateFormat;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  *  @author Mark A. Bogner  27-DEC-2007
@@ -12,7 +28,7 @@ import java.text.SimpleDateFormat;
  */
 public class RBASEUtils 
 {
-    private Logger log = null;
+  private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private DataObject do2 = null;
     private Connection conn = null;
     private DBAccess db = null;
@@ -21,7 +37,6 @@ public class RBASEUtils
 
     public RBASEUtils(DataObject _do, Connection _conn)  
     {
-      log = Logger.getInstance();
       do2 = _do;
       conn = _conn;
       db = new DBAccess(conn);
@@ -71,7 +86,7 @@ public class RBASEUtils
            if (result.startsWith("ERROR")) 
            {
              error_message = "Method_id get RESULT FAILED" + result;
-             if (debug) log.debug( this,"  " + query + "  :" + error_message);
+             if (debug) log.debug("{}: {}", query, error_message);
              return false;
            }
 
@@ -100,7 +115,7 @@ public class RBASEUtils
            if (result.startsWith("ERROR")) 
            {
              error_message = "Loading_application_id get RESULT FAILED" + result;
-             if (debug) log.debug( this,"  " + query + "  :" + error_message);
+             if (debug) log.debug("{}: {}", query, error_message);
              return false;
            }
 
@@ -129,7 +144,7 @@ public class RBASEUtils
            if (result.startsWith("ERROR")) 
            {
              error_message = "Computation_id get RESULT FAILED" + result;
-             if (debug) log.debug( this,"  " + query + "  :" + error_message);
+             if (debug) log.debug("{}: {}", query, error_message);
              return false;
            }
         }
@@ -156,7 +171,7 @@ public class RBASEUtils
            if (result.startsWith("ERROR")) 
            {
              error_message = "Collection_system_id get RESULT FAILED" + result;
-             if (debug) log.debug( this,"  " + query + "  :" + error_message);
+             if (debug) log.debug("{}: {}", query, error_message);
              return false;
            }
 
@@ -185,7 +200,7 @@ public class RBASEUtils
            if (result.startsWith("ERROR")) 
            {
              error_message = "Agen_id get RESULT FAILED" + result;
-             if (debug) log.debug( this,"  " + query + "  :" + error_message);
+             if (debug) log.debug("{}: {}  ", query, error_message);
              return false;
            }
 
@@ -210,18 +225,18 @@ public class RBASEUtils
        if (result.startsWith("ERROR"))
        {
          error_message = "GET SDI DATABASE RESULT FAILED" + result;
-         if (debug) log.debug( this,"  " + query + "  :" + error_message);
+         if (debug) log.debug("{}: {}", query, error_message);
          return false;
        }
 
        if (((String)do2.get("site_datatype_id")).length() == 0)
        {
          error_message = "GET_SDI query FAILED" + " Invalid Station, PCODE combination";
-         if (debug) log.debug( this,"  " + query + "  :" + error_message);
+         if (debug) log.debug("{}: {}", query, error_message);
          return false;
        }
 
-       if (debug) log.debug( this,"  " + query + "  :" + " PASSED SDI CHECK");
+       if (debug) log.debug("{}: {}", query, "PASSED SDI CHECK");
 
       return true;
     } // end of get_sdi method
@@ -238,7 +253,7 @@ public class RBASEUtils
        query = "select psswd role_password from role_psswd where upper(role) = '" + role_name + "'";
        result = db.performQuery(query,do2);
 
-       if (debug) log.debug( this,"  " + query + "  :" + " PASSED ROLE PASSWORD GET");
+       if (debug) log.debug("{}: {}", query, "PASSED ROLE PASSWORD GET");
 
 
       return (String)do2.get("role_password");
@@ -261,7 +276,7 @@ public class RBASEUtils
 
        result = db.performQuery(query,do2);
 
-       if (debug) log.debug( this,"  " + query + "  :" + " PASSED DSS_DATE GET");
+       if (debug) log.debug("{}: {}", query, "PASSED DSS_DATE GET");
 
 
       return (String)do2.get("dss_date");
@@ -296,7 +311,7 @@ public class RBASEUtils
 
        result = db.performQuery(query,do2);
 
-       if (debug) log.debug( this,"  " + query + "  :" + " PASSED DMI_SDI GET");
+       if (debug) log.debug("{}: {}", query, "PASSED DMI_SDI GET");
 
       if ((String)do2.get("site_datatype_id") != null 
       && ((String)do2.get("site_datatype_id")).length() != 0)
@@ -320,16 +335,15 @@ public class RBASEUtils
     */
     public void getStandardDates(Integer _sdi, String _interval,Date _sdt, Date _edt, String _fmt)
     {
-      CallableStatement stmt = null;
-        try
+      String proc = "{ call hdb_utilities.standardize_dates(?,?,?,?) }";
+        try(CallableStatement stmt = conn.prepareCall(proc))
         {
             Timestamp temp_sql_date = new Timestamp(_sdt.getTime());
 
             // initialize the procedure call, set the parameters , etc..
             java.sql.Date sdt = new java.sql.Date(_sdt.getTime());
             java.sql.Date edt = new java.sql.Date(_edt.getTime());
-            String proc = "{ call hdb_utilities.standardize_dates(?,?,?,?) }";
-            stmt = conn.prepareCall(proc);
+            
             stmt.setLong(1,Long.parseLong(_sdi.toString()));
             stmt.setString(2,_interval);
             stmt.setTimestamp(3,temp_sql_date);
@@ -351,21 +365,9 @@ public class RBASEUtils
             do2.put("SD_EDT",sdf.format(result2));
 
         }
-        catch ( SQLException e )
+        catch ( SQLException ex )
         {
-           log.debug(e.toString());
-           //e.printStackTrace();
-        }
-        finally  //close callable statement always
-        {
-          try
-          {
-           if (stmt != null) stmt.close();
-          }
-          catch ( SQLException e )
-          {
-             log.debug(e.toString());
-          }
+           log.atDebug().setCause(ex).log("Unable to call procedure {}", proc);
         }
 
      } // end of getStandardDates method
@@ -413,10 +415,10 @@ public class RBASEUtils
 
        result = db.performDML(query,do2);
        if (result.startsWith("ERROR"))
-	{
-           System.out.println("RBASEUtils:merge_cp_hist_calc: " + result);
-	   System.out.println(query + "  " + _sdt + "  " + _edt);
-	}
+	    {
+        log.trace("RBASEUtils:merge_cp_hist_calc: {}", result);
+	      log.trace("{}  {}  {}", query, _sdt, _edt);
+	    }
 
      } // end of  merge_r_base_update method
 
@@ -448,12 +450,12 @@ public class RBASEUtils
        if (result.startsWith("ERROR"))
        {
          error_message = "GET EXTERNAL SDI DATABASE RESULT FAILED" + result;
-         if (debug) log.debug( this,"  " + query + "  :" + error_message);
+         if (debug) log.debug("{}: {}", query, error_message);
          return ret_sdi;
        }
 
 
-       if (debug) log.debug( this,"  " + query + "  :" + " PASSED EXTERNAL SDI GET");
+       if (debug) log.debug("{}: {}", query, "PASSED EXTERNAL SDI GET");
 
       if ((String)do2.get("site_datatype_id") != null && ((String)do2.get("site_datatype_id")).length() != 0)
       {

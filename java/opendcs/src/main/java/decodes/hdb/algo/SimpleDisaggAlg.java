@@ -1,13 +1,24 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.algo.AW_AlgorithmBase;
 
@@ -24,6 +35,8 @@ import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Dis-aggregates by spreading out the input values to the outputs in various\n" +
 "ways (fill, interpolate, split).\n" +
@@ -39,9 +52,9 @@ import org.opendcs.annotations.algorithm.Output;
 "</ul>\n" +
 "This disagg algorithm is a simple disaggregation Process, it only works from one\n" + 
 "interval to the next one down the interval chain.  Hourly to instantaneous will not work") 
-public class SimpleDisaggAlg
-	extends AW_AlgorithmBase
+public class SimpleDisaggAlg extends AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 
@@ -101,8 +114,8 @@ public class SimpleDisaggAlg
 			throw new DbCompException(
 			  "Cannot DisAggregate from 'output' with instantaneous interval.");
 
-info("DisAgg, input interval=" + iintv + ", isec=" + isec
-+ ", ointv=" + ointv + ", osec=" + osec + ", method=" + method);
+		log.info("DisAgg, input interval={}, isec={}, ointv={}, osec={}, method={}",
+				 iintv, isec, ointv, osec, method); 
 		if (method.equalsIgnoreCase("interp"))
 		{
 			// For interplation of 1st input, we will need the prev value from
@@ -112,14 +125,17 @@ info("DisAgg, input interval=" + iintv + ", isec=" + isec
 			try { tv = tsdb.getPreviousValue(iref.timeSeries, firstTime); }
 			catch(Exception ex)
 			{
-				throw new DbCompException("DisAgg: " + ex);
+				throw new DbCompException("DisAgg: Unable to retrieve previous value", ex);
 			}
 			prevInputV = 0.0;
 			prevInputT = 0;
 			if (tv != null)
 			{
 				try { prevInputV = tv.getDoubleValue(); }
-				catch(NoConversionException ex) {}
+				catch(NoConversionException ex) 
+				{
+					log.atTrace().setCause(ex).log("Unable to convert previous value to double", tv.toString());
+				}
 				long prevInputT = tv.getTime().getTime();
 			}
 		}
@@ -151,7 +167,7 @@ info("DisAgg, input interval=" + iintv + ", isec=" + isec
 		
 
 		long bmsec = _timeSliceBaseTime.getTime();
-                debug2("!!!!!  Basetime=  " + _timeSliceBaseTime );
+        log.trace("!!!!!  Basetime=  {}", _timeSliceBaseTime);
 
 		Date startT = new Date(bmsec);
 		Date endT = new Date(bmsec + isec*1000L);
@@ -190,14 +206,15 @@ info("DisAgg, input interval=" + iintv + ", isec=" + isec
 		if (method.equalsIgnoreCase("split")) value = num_of_intervals == 0 ? input : input/(double)num_of_intervals;
 
 		Date t =  null;
-        	debug2("interval=" + interval + "   timestep  =  " + timestep);
+        log.trace("interval={} timestep={}", interval, timestep);
  		for ( int k = 0; k < num_of_intervals; k++)
 		{
 		   cal1.set(calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DAY_OF_MONTH),calendar.get(Calendar.HOUR),0);
           	   t = cal1.getTime();
-		   info(method + " input=" + input + ", n=" + num_of_intervals + ", v=" + value + ", t=" + t);
-debug2("GMT CAL VALUES: " + calendar.get(Calendar.YEAR)+"."+calendar.get(Calendar.MONTH)+"."+calendar.get(Calendar.DAY_OF_MONTH)+"."+
-calendar.get(Calendar.HOUR)+"."+calendar.get(Calendar.MINUTE)+"."+calendar.get(Calendar.DST_OFFSET));
+		   log.info("input={}, n={}, v={}, t={}", input, num_of_intervals, value, t);
+		   log.trace("GMT CAL VALUES: {}.{}.{}.{}.{}.{}",
+					  calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH),
+					  calendar.get(Calendar.HOUR), calendar.get(Calendar.MINUTE), calendar.get(Calendar.DST_OFFSET));
 		   if (!method.equalsIgnoreCase("interp")) setOutput(output, value, t);
                         
 		   if (method.equalsIgnoreCase("interp"))
@@ -211,11 +228,14 @@ calendar.get(Calendar.HOUR)+"."+calendar.get(Calendar.MINUTE)+"."+calendar.get(C
 			{
 				if (tv != null)
 				{
-				     info("interping: " + tv);
+				     log.info("interping: {}", tv);
 				     setOutput(output, tv.getDoubleValue(), t);
 				}
 			}
-		  	  catch(NoConversionException ex) {}
+		  	  catch(NoConversionException ex) 
+			  {
+				log.atTrace().setCause(ex).log("Unable to convert value to double.");
+			  }
 		    }
 		    calendar.add(interval,timestep);
 		  }

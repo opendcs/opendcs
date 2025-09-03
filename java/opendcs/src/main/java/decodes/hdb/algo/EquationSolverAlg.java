@@ -1,20 +1,28 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.ParmRef;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 
 import decodes.hdb.dbutils.*;
-import decodes.hdb.HdbFlags;
 import decodes.hdb.HdbTsId;
 
 import java.sql.Connection;
@@ -24,7 +32,8 @@ import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Takes up to 5 input values labeled input1 ... input5.\n" +
 	"Takes the values of these inputs and replaces the reference of these\n" +
@@ -34,6 +43,7 @@ import org.opendcs.annotations.algorithm.Output;
 	"ie  the three times the input1 squared equation is:   3*power(<input1>,2)") 
 public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input1;
 	@Input
@@ -50,12 +60,6 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 	@Output(type = Double.class)
 	public NamedVariable output = new NamedVariable("output", 0);
 
-//	public String input1_MISSING = "ignore";
-//	public String input2_MISSING = "ignore";
-//	public String input3_MISSING = "ignore";
-//	public String input4_MISSING = "ignore";
-//	public String input5_MISSING = "ignore";
-	
 	@PropertySpec(name = "validation_flag", value = "", description = "If set, output values will be flagged with this flag.")
     public String validation_flag = "";
 	@PropertySpec(name = "equation", value = "", description = "The database equation to execute at each time slice")
@@ -201,27 +205,12 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 			new_equation = new_equation.replaceAll("<<algorithm_id>>", 
 				comp.getAlgorithmId().toString());
 		
-		debug3("doAWTimeSlice input1=" + input1 + ", input2=" + input2);
+		log.trace("doAWTimeSlice input1={}, input2={}", input1, input2);
 
 		/* THis modification done by M. Bogner 30-SEP-2011 */
 		/* need to reset the set output flag must be done for each time series */
 		do_setoutput = true;
 		
-		// MJM: The following doesn't hurt, but if any needed values are still
-		// missing, we wouldn't get to this point.
-		
-		// now if any needed values are missing then don't set the output
-//		if (isMissing(input1) && !input1_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
-//		if (isMissing(input2) && !input2_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
-//		if (isMissing(input3) && !input3_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
-//		if (isMissing(input4) && !input4_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
-//		if (isMissing(input5) && !input5_MISSING.equalsIgnoreCase("ignore"))
-//			do_setoutput = false;
-
 		if (do_setoutput)
 		// Then continue with evaluation the equation
 		{
@@ -241,13 +230,14 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				String query = "select " + new_equation + " result_value from dual";
 				// now do the query for all the needed data
 				status = db.performQuery(query, dbobj);
-				debug3(" SQL STRING:" + query + "   DBOBJ: " + dbobj.toString() + "STATUS:  " + status);
+				log.trace(" SQL STRING:{}   DBOBJ: {} STATUS:  {}",
+					  query, dbobj.toString(), status);
 
 				// see if there was an error
 				if (status.startsWith("ERROR"))
 				{
-					warning(" EquationSolver:  FAILED due to following oracle error");
-					warning(" EquationSolver: " + status);
+					log.warn("EquationSolver:  FAILED due to following oracle error");
+					log.warn("EquationSolver: {}", status);
 					return;
 				}
 				//
@@ -255,8 +245,8 @@ public class EquationSolverAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 				{
 					do_setoutput = false;
 					;
-					warning(" EquationSolver:  " + comp.getName() + " : " + query
-						+ "  Query FAILED due to NULL Equation result. ");
+					log.warn("EquationSolver:  {} : {}  Query FAILED due to NULL Equation result. ",
+						 comp.getName(), query);
 				}
 				else
 				{

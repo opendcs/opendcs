@@ -1,22 +1,29 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this import was added by M. Bogner March 2013 for the CP upgrade project 5.3
-// surrogate keys where changed to a DbKey object instead of ject a long/
-import decodes.sql.DbKey;
 import decodes.tsdb.algo.AWAlgoType;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.lang.Math;
 
@@ -42,6 +49,7 @@ import java.lang.Math;
 public class ParshallFlume
 	extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input	
 	public double stage;
 
@@ -96,7 +104,8 @@ public class ParshallFlume
 		double algChange;
 		if (!isMissing(stage))
 		{
-			debug3("ParshalFlume -" + alg_ver + " SDI: " + getSDI("stage") + "  Width: " + width + " Stage: " + stage);
+			log.trace("ParshalFlume -{} SDI: {}  Width: {} Stage: {}",
+					  alg_ver, getSDI("stage"), width, stage);
 			algChange = 9.0;
 			result = Math.pow(stage,1.6) * area;
 			if (Double.compare(width,algChange) <= 0)

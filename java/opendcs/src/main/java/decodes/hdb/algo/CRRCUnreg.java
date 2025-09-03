@@ -1,19 +1,30 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 // this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Crystal Unregulated Inflow Computation\n" +
 "Sums Delta Storages and Evaporations at the current timestep from these reservoirs\n" +
@@ -23,6 +34,7 @@ import org.opendcs.annotations.algorithm.Output;
 "adds it to Crystal Inflow to get Unregulated Inflow")
 public class CRRCUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double TPRCDeltaStorage;
 	@Input
@@ -90,10 +102,9 @@ public class CRRCUnreg extends decodes.tsdb.algo.AW_AlgorithmBase
 		sum += BMDCDeltaStorage + BMDCEvap;
 		sum += MPRCDeltaStorage + MPRCEvap;
 		
-debug3("doAWTimeSlice, TPRCDeltaStorage="+TPRCDeltaStorage+
-		" BMDCDeltaStorage="+BMDCDeltaStorage+" BMDCEvap="+BMDCEvap+
-		" MPRCDeltaStorage="+MPRCDeltaStorage+" MPRCEvap="+MPRCEvap+" CRRCInflow="+CRRCInflow+" sum="+sum);
-
+		log.trace("doAWTimeSlice, TPRCDeltaStorage={} BMDCDeltaStorage={} BMDCEvap={} MPRCDeltaStorage={}" +
+				  " MPRCEvap={} CRRCInflow={} sum ={}",
+				  TPRCDeltaStorage, BMDCDeltaStorage, BMDCEvap, MPRCDeltaStorage, MPRCEvap, CRRCInflow, sum);
 		setOutput(unreg, CRRCInflow + sum);
 	}
 
