@@ -203,7 +203,7 @@ public class Convert2Group extends TsdbAppTemplate
 	private void report(String msg)
 	{
 		if (msg.length() > 0)
-			info(msg);
+			log.info(msg);
 		for(int i=0; i<reportIndent; i++)
 			reportPS.print("    ");
 		reportPS.println(msg);

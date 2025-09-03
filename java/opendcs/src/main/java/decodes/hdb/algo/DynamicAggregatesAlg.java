@@ -367,7 +367,7 @@ public class DynamicAggregatesAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		if (!is_current_period && total_count < mvr_count)
 		{
 		  	log.debug("DynamicAggregates-{} Aborted: Minimum required records not met for historic period: {} SDI: " +
-		  	 		  "{}  MVR: {} Rec}ordCount: {}",
+		  	 		  "{}  MVR: {} RecordCount: {}",
 		  		      alg_ver, _aggregatePeriodBegin, getSDI("input"), mvr_count, total_count);
 		  	do_setoutput = false;
 		}

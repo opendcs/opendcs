@@ -298,7 +298,7 @@ public class PowerToEnergyAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		   return;
 		}
 //
-		log.trace("PowerToEnergyAlg-{}  SDI: {}  MVR: {} RecordCount: {}",
+		log.trace("PowerToEnergyAlg-{}  {} SDI: {}  MVR: {} RecordCount: {}",
 				  alg_ver, _aggregatePeriodEnd, getSDI("input"), mvr_count, total_count);
 		// now see how many records were found for this aggregate
 		//  and see if this calc is in current period and if partial calc is set

@@ -141,7 +141,7 @@ public class SimpleDisaggAlg extends AW_AlgorithmBase
 			try { tv = tsdb.getPreviousValue(iref.timeSeries, firstTime); }
 			catch(Exception ex)
 			{
-				throw new DbCompException("DisAgg: Unable to retrive previous value", ex);
+				throw new DbCompException("DisAgg: Unable to retrieve previous value", ex);
 			}
 			prevInputV = 0.0;
 			prevInputT = 0;
