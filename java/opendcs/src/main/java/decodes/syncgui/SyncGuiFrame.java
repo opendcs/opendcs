@@ -1,10 +1,24 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.syncgui;
 
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-import ilex.util.Logger;
 import ilex.util.AsciiUtil;
 import decodes.gui.TopFrame;
 
@@ -55,27 +69,14 @@ public class SyncGuiFrame extends TopFrame
 	private SyncGuiFrame()
 	{
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		try {
-			jbInit();
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-		}
+		jbInit();
 		downloadThread = new DownloadThread();
 		downloadThread.start();
 		showTopPanel();
-//		SwingUtilities.invokeLater(
-//			new Runnable()
-//			{
-//				public void run()
-//				{
-//					treePanel.tree.expandRow(0);
-//				}
-//			});
 	}
 
 	//Component initialization
-	private void jbInit() throws Exception	{
+	private void jbInit() {
 		setTitle("DECODES Database Synchronization GUI");
 		contentPane = (JPanel) this.getContentPane();
 		contentPane.setLayout(borderLayout1);
@@ -152,47 +153,6 @@ public class SyncGuiFrame extends TopFrame
 		}
 	}
 
-//	/**
-//	 * Opens a stream for an URL.
-//	 * @param relurl the path of the URL relative to HUB_HOME
-//	 * @return the InputStream or null if error.
-//	 */
-//	public InputStream openURL(String relurl)
-//		throws MalformedURLException,
-//	{
-//		String hh = SyncConfig.instance().getHubHome();
-//		String urlstr = hh + "/" + relurl;
-//		try
-//		{
-//			URL url = new URL(urlstr);
-//			return url.openStream();
-//		}
-//		catch(MalformedURLException ex)
-//		{
-//			String msg = "Error Malformed URL: " + urlstr;
-//			Logger.instance().failure(msg);
-//			return null;
-//		}
-//		catch(IOException ex)
-//		{
-//			String msg = "Error: " + urlstr + ": " + ex.getMessage();
-//			Logger.instance().failure(msg);
-//			return null;
-//		}
-//	}
-//
-//	/**
-//	  Closes the passed stream and clears the status bar.
-//	  @param strm the stream to close
-//	*/
-//	public void closeURL(InputStream strm, Exception ex)
-//	{
-//		try { strm.close(); }
-//		catch(IOException ex2) {}
-//		if (ex != null)
-//			Logger.instance().warning(ex.toString());
-//	}
-
 	/**
 	  Displays a string in the left part of the status bar.
 	  @param str the string to display.
@@ -267,7 +227,6 @@ public class SyncGuiFrame extends TopFrame
 	*/
 	public void showError(String msg)
 	{
-		Logger.instance().failure(msg);
 		JOptionPane.showMessageDialog(this,
 			AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
 	}
