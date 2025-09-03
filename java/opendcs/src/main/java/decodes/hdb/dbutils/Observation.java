@@ -1,13 +1,30 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb.dbutils;
 
 import java.sql.*;
 import java.util.*;
 
-public class Observation	 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
+public class Observation
 {
+   private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
     private String data_string;
     private String error_message;
-    private Logger log = null;
     private DataObject do2 = null;
     private Connection conn = null;
     private boolean cont = true;
@@ -17,10 +34,9 @@ public class Observation
     private boolean rbase_delete = false;
     private DBAccess db = null;
 
-    public Observation(String str, Hashtable _hash, Connection _conn)  
+    public Observation(String str, Hashtable _hash, Connection _conn)
     {
       data_string = str;
-      log = Logger.getInstance();
       do2 = new DataObject(_hash);
       conn = _conn;
       db = new DBAccess(conn);
@@ -31,27 +47,33 @@ public class Observation
       if ((String)do2.get("do_delete") != null && ((String)do2.get("do_delete")).equals("Y")) rbase_delete = true;
     }
 
+    /**
+     * From Mike Neilson, I did consider putting these calls into try with resources; however, it's a nested mess
+     * So I'm focusing on the log update.
+     * TODO: update to bind vars.
+     * NOTE: in main consider use of jdbi
+     */
     public void process()
     {
 
 
       fatal_error = true;
       cont = true;
-      try 
+      try
       {
 
        String result = null;
        String query = null;
        String db_oper = " ";
 
-       if (cont) this.parse(do2);       
+       if (cont) this.parse(do2);
        if (cont) this.get_sdi();
        if (cont) this.get_interval();
        if (cont) this.validation();
        if (cont && !rbase_delete)   //main continue check from here we can either update, insert or ignore duplicates
                    //  data operation decided by the procedure call
        {
-          String proc = "{ call modify_r_base_raw(?,?,to_date(?,'YYYYMONDD HH24:MI')" + do2.get("start_time_offset") 
+          String proc = "{ call modify_r_base_raw(?,?,to_date(?,'YYYYMONDD HH24:MI')" + do2.get("start_time_offset")
             + ",?,?,?,?,?,?,?,?,?,?)}";
           CallableStatement stmt = db.getConnection(do2).prepareCall(proc);
           // set all the called procedures input variables from the DataObject
@@ -88,22 +110,25 @@ public class Observation
                  " and start_date_time =  to_date('" + do2.get("start_date_time").toString() + "','YYYYMONDD HH24:MI')" +
                  " and agen_id = " + do2.get("agen_id").toString() +
                  " and collection_system_id = " + do2.get("collection_system_id").toString() +
-                 " and loading_application_id = " + do2.get("loading_application_id").toString() ; 
+                 " and loading_application_id = " + do2.get("loading_application_id").toString() ;
           String status = db.performDML(del_sql,do2);
-          if (debug) log.debug(this,del_sql);
-          if (debug) log.debug(this,status); 
+          if (debug) log.debug(del_sql);
+          if (debug) log.debug(status);
        }
 
        if (!cont)
        {
 
-           if (log_all) log.debug( this,"  " + data_string + "  :" + db_oper + error_message);
+           if (log_all) log.debug("{}: {} {}", data_string, db_oper, error_message);
            if ((String)do2.get("error_table") != null && ((String)do2.get("error_table")).equals("Y") && fatal_error) this.error_insert();
        }
 
       }  // end of try
 
-       catch (Exception e) {if (log_all) log.debug(this,data_string + e.getMessage());}
+      catch (Exception ex)
+      {
+         log.atError().setCause(ex).log("Unable to process {}", data_string);
+      }
 
        finally  //close connection always
        {
@@ -123,10 +148,9 @@ public class Observation
         dobj.put("PCODE",data_string.substring(25,33).trim());
         dobj.put("VALIDATION",data_string.substring(34,35).trim());
         dobj.put("VALUE",data_string.substring(36).trim());
-//        dobj.put("INTERVAL","instant");
         dobj.put("OVERWRITE_FLAG","");
 
-    } // end of method parse 
+    } // end of method parse
 
 
     private void validation()  // method used to validate the validation code
@@ -134,22 +158,22 @@ public class Observation
        String result = null;
        String query = null;
        // validate the validation code if it exists
-       if (!((String)do2.get("VALIDATION")).equals("")) 
+       if (!((String)do2.get("VALIDATION")).equals(""))
         {
            query = "select count(*) rec_count from hdb_validation where validation='"+do2.get("VALIDATION")+"'";
            result = db.performQuery(query,do2);
-           if (result.startsWith("ERROR")) 
+           if (result.startsWith("ERROR"))
            {
              cont = false;
              error_message = "Validation Check RESULT FAILED" + result;
-             if (debug) log.debug( this,"  " + query + "  :" + error_message);
+             if (debug) log.debug("{}: {}", query, error_message);
            }
 
-           if (((String)do2.get("rec_count")).equalsIgnoreCase("0")) 
+           if (((String)do2.get("rec_count")).equalsIgnoreCase("0"))
            {
               cont = false;
               error_message = "Invalid Validation Flag: " + (String)do2.get("VALIDATION");
-              if (debug) log.debug( this,"  " + data_string + "  :" + error_message);
+              if (debug) log.debug("{}: {}", data_string, error_message);
            }
         }
     } // end of validation method
@@ -170,21 +194,21 @@ public class Observation
              +"' and hm_pcode='"
              +do2.get("pcode")+"'";
        result = db.performQuery(query,do2);
-       if (result.startsWith("ERROR")) 
+       if (result.startsWith("ERROR"))
        {
          cont = false;
          error_message = "GET SDI DATABASE RESULT FAILED" + result;
-         if (debug) log.debug( this,"  " + query + "  :" + error_message);
+         if (debug) log.debug("{}: {}", query, error_message);
        }
 
        if (((String)do2.get("site_datatype_id")).length() == 0)
        {
          cont = false;
          error_message = "GET_SDI query FAILED" + " Invalid Station, PCODE combination";
-         if (debug) log.debug( this,"  " + data_string + "  :" + error_message);
+         if (debug) log.debug("{}: {}", data_string, error_message);
        }
 
-       if (debug) log.debug( this,"  " + data_string + "  :" + " PASSED SDI CHECK");
+       if (debug) log.debug("{}: {}", data_string, "PASSED SDI CHECK");
 
     } // end of get_sdi method
 
@@ -197,14 +221,14 @@ public class Observation
        {
           // get the  interval if the property file did not short cut it
           query = "select decode(interval ,'instant','instant','" + (String)do2.get("def_noninstant")
-                  +"') interval from V_VALID_INTERVAL_DATATYPE where site_datatype_id = " 
+                  +"') interval from V_VALID_INTERVAL_DATATYPE where site_datatype_id = "
                   + (String)do2.get("site_datatype_id");
           result = db.performQuery(query,do2);
-          if (result.startsWith("ERROR")) 
+          if (result.startsWith("ERROR"))
           {
             cont = false;
             error_message = "get_interval RESULT FAILED" + result;
-            if (debug) log.debug( this,"  " + query + "  :" + error_message);
+            if (debug) log.debug("{}: {}  ", query, error_message);
           }
 
 
@@ -221,7 +245,7 @@ public class Observation
       if (((String)do2.get("interval")).equals("hour")) do2.put("start_time_offset"," - 1/24");
       if (((String)do2.get("interval")).equals("day")) do2.put("end_time_offset"," + 1");
 
-      if (debug) log.debug( this,"  " + data_string + "  :" + " PASSED Interval CHECK");
+      if (debug) log.debug("{}: {}", data_string, " PASSED Interval CHECK");
 
      }  // end of get_interval method
 
@@ -234,10 +258,10 @@ public class Observation
          String temp_interval = null;
 
          if ((String)do2.get("SITE_DATATYPE_ID") == null || ((String)do2.get("SITE_DATATYPE_ID")).length() == 0) temp_sdi = "null";
-         else temp_sdi = (String)do2.get("SITE_DATATYPE_ID") ; 
+         else temp_sdi = (String)do2.get("SITE_DATATYPE_ID") ;
 
          if ((String)do2.get("interval") == null || ((String)do2.get("interval")).length() == 0) temp_interval = "null";
-         else temp_interval = "'" + (String)do2.get("interval") + "'"; 
+         else temp_interval = "'" + (String)do2.get("interval") + "'";
 
          dml = "INSERT INTO R_BASE_ERROR "
                 + "(RECORD_ID,SITE_DATATYPE_ID,SITE_CODE,P_CODE,INTERVAL,START_DATE_TIME,END_DATE_TIME,VALUE,AGEN_ID,OVERWRITE_FLAG,DATE_TIME_LOADED,"
@@ -245,26 +269,26 @@ public class Observation
                 + "DATA_SOURCE_NAME) "
                 + "VALUES ("
                 + "r_base_error_sequence.nextval,"
-                + temp_sdi + "," 
+                + temp_sdi + ","
                 + "'" + do2.get("STATION") + "','"+ do2.get("PCODE") +"',"
                 + temp_interval + ","
              //   + do2.get("SITE_DATATYPE_ID") + ",'"+ do2.get("INTERVAL") +"',"
                 + "to_date('" + do2.get("START_DATE_TIME")+"','YYYYMONDD HH24:MI'),"
                 + "to_date('" + do2.get("END_DATE_TIME")+"','YYYYMONDD HH24:MI'),"
-                + do2.get("VALUE") + "," + do2.get("AGEN_ID") + ",'" + do2.get("OVERWRITE_FLAG") + "'," 
+                + do2.get("VALUE") + "," + do2.get("AGEN_ID") + ",'" + do2.get("OVERWRITE_FLAG") + "',"
                 + "sysdate," + "'" + do2.get("VALIDATION") + "'"
-                + "," + do2.get("COLLECTION_SYSTEM_ID") +  "," + do2.get("LOADING_APPLICATION_ID") 
+                + "," + do2.get("COLLECTION_SYSTEM_ID") +  "," + do2.get("LOADING_APPLICATION_ID")
                 + "," + do2.get("METHOD_ID") + "," + do2.get("COMPUTATION_ID")
                 + ",'" + error_message + "',sysdate,'" + do2.get("DATA_SOURCE_NAME") + "'"
                 + ")";
 
-          if (debug) log.debug(this,dml);
+          if (debug) log.debug(dml);
           result = db.performDML(dml,do2);
-          if (result.startsWith("ERROR")) 
+          if (result.startsWith("ERROR"))
           {
              cont = false;
              error_message = " INSERT INTO ERROR TABLE FAILED" + result;
-             log.debug( this,"  " + data_string + "  :" + error_message);
+             log.debug("{}: {}  ", data_string, error_message);
           }
 
      }  // end of error_insert method
