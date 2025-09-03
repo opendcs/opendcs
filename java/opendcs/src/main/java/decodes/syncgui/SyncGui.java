@@ -1,6 +1,25 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.syncgui;
 
 import javax.swing.UIManager;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import javax.swing.JOptionPane;
 import java.net.URL;
 import java.net.MalformedURLException;
@@ -8,19 +27,19 @@ import java.io.*;
 
 import decodes.util.CmdLineArgs;
 import ilex.gui.WindowUtility;
-import ilex.util.Logger;
 import ilex.util.StderrLogger;
 import ilex.util.EnvExpander;
 import ilex.cmdline.*;
 
-public class SyncGui 
+public class SyncGui
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	boolean packFrame = false;
 
 	SyncGuiFrame frame;
 
 	//Construct the application
-	public SyncGui() 
+	public SyncGui()
 	{
 		frame = SyncGuiFrame.instance();
 		//Validate frames that have preset sizes
@@ -46,10 +65,9 @@ public class SyncGui
 	static { cmdLineArgs.addToken(hubHomeArg); }
 
 	//Main method
-	public static void main(String[] args) 
+	public static void main(String[] args)
 		throws Exception
 	{
-		Logger.setLogger(new StderrLogger("RoutingSpecThread"));
 		cmdLineArgs.parseArgs(args);
 
 		String hubHomeUrl = hubHomeArg.getValue().trim();
@@ -59,30 +77,30 @@ public class SyncGui
 				EnvExpander.expand("$DECODES_INSTALL_DIR/hubhome.txt"));
 			try
 			{
-				BufferedReader reader = 
+				BufferedReader reader =
 					new BufferedReader(new FileReader(hubHomeFile));
 				hubHomeUrl = reader.readLine();
 				reader.close();
-				if (hubHomeUrl == null) 
+				if (hubHomeUrl == null)
 					hubHomeUrl = "";
 				else
 					hubHomeUrl = hubHomeUrl.trim();
 			}
 			catch(IOException ex)
 			{
-				Logger.instance().info("No file '" + hubHomeFile + "': " + ex);
+				log.atInfo().setCause(ex).log("No file '{}'", hubHomeFile);
 				hubHomeUrl = "";
 			}
-			
+
 			hubHomeUrl = JOptionPane.showInputDialog(null,
 				"Enter the URL to the hub's home directory: ", hubHomeUrl);
 			if (hubHomeUrl == null || hubHomeUrl.length() == 0)
 				System.exit(1);
-			else 
+			else
 			{
 				try
 				{
-					BufferedWriter writer = 
+					BufferedWriter writer =
 						new BufferedWriter(new FileWriter(hubHomeFile));
 					writer.write(hubHomeUrl);
 					writer.newLine();
@@ -90,8 +108,7 @@ public class SyncGui
 				}
 				catch(IOException ex)
 				{
-					Logger.instance().warning("Can't write '" 
-						+ hubHomeFile + "': " + ex);
+					log.atWarn().setCause(ex).log("Can't write '{}'", hubHomeFile);
 				}
 			}
 		}
@@ -101,26 +118,29 @@ public class SyncGui
 		try
 		{
 			URL url = new URL(urlstr);
-			InputStream fis = url.openStream();
-			SyncConfig.instance().readConfig(fis);
-			fis.close();
+			try (InputStream fis = url.openStream())
+			{
+				SyncConfig.instance().readConfig(fis);
+			}
 		}
 		catch(MalformedURLException ex)
 		{
-			System.err.println("Malformed URL: " + urlstr);
+			log.atError().setCause(ex).log("Malformed URL: {}", urlstr);
 			System.exit(1);
 		}
 		catch(IOException ex)
 		{
-			System.err.println("Can't open configuration file at " + urlstr);
+			log.atError().setCause(ex).log("Can't open configuration file at {}", urlstr);
 			System.exit(1);
 		}
 
-		try {
+		try
+		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		}
-		catch(Exception e) {
-			e.printStackTrace();
+		catch (Exception ex)
+		{
+			log.atError().setCause(ex).log("Unable set set look and feel.");
 		}
 		SyncGui syncGUI = new SyncGui();
 		syncGUI.run();
