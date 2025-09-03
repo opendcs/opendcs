@@ -31,11 +31,17 @@ import java.sql.Timestamp;
 import java.sql.CallableStatement;
 import java.sql.Types;
 import java.sql.ResultSet;
+import java.sql.PreparedStatement;
 import decodes.tsdb.CTimeSeries;
 import ilex.var.TimedVariable;
 import decodes.sql.DbKey;
 import decodes.db.Constants;
 import oracle.jdbc.OracleTypes;
+import oracle.sql.ARRAY;
+import oracle.sql.STRUCT;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+import java.text.ParseException;
 
 /**
  * Data Access Object for CWMS Location Level data.
@@ -303,7 +309,7 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
     
     /**
      * Read a range of location level values in time and store them in a CTimeSeries object
-     * Uses CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL_VALUES procedure
+     * Uses direct query against CWMS views
      * @param tx The data transaction
      * @param locationLevelId The location level identifier
      * @param startTime The start time for the range
@@ -322,25 +328,33 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
         CTimeSeries timeSeries = new CTimeSeries(Constants.undefinedId, "inst", "R_");
         timeSeries.setDisplayName(locationLevelId);
         
-        try (CallableStatement cstmt = conn.prepareCall(
-            "{ call CWMS_20.CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL_VALUES(?, ?, ?, ?, ?, ?, ?) }"))
+        // Use direct query against CWMS views instead of the problematic procedure
+        // This approach queries the location level data directly
+        String query = 
+            "SELECT " +
+            "  LEVEL_DATE AS DATE_TIME, " +
+            "  CONSTANT_LEVEL AS VALUE, " +
+            "  0 AS QUALITY_CODE, " +
+            "  LEVEL_UNIT " +
+            "FROM CWMS_20.AV_LOCATION_LEVEL " +
+            "WHERE LOCATION_LEVEL_ID = ? " +
+            "  AND UNIT_SYSTEM = 'SI' " +
+            "  AND LEVEL_DATE >= ? " +
+            "  AND LEVEL_DATE <= ? " +
+            "  AND (OFFICE_ID = ? OR ? IS NULL) " +
+            "ORDER BY LEVEL_DATE";
+            
+        try (PreparedStatement pstmt = conn.prepareStatement(query))
         {
-            // Set input parameters
-            cstmt.setString(1, locationLevelId);                           // p_location_level_id
-            cstmt.setString(2, "SI");                                      // p_unit_system
-            cstmt.setTimestamp(3, new Timestamp(startTime.getTime()));     // p_start_time
-            cstmt.setTimestamp(4, new Timestamp(endTime.getTime()));       // p_end_time
-            cstmt.setString(5, null);                                      // p_timezone (null for database default)
-            cstmt.setString(6, dbOfficeId);                                // p_office_id
+            // Set query parameters
+            pstmt.setString(1, locationLevelId);
+            pstmt.setTimestamp(2, new Timestamp(startTime.getTime()));
+            pstmt.setTimestamp(3, new Timestamp(endTime.getTime()));
+            pstmt.setString(4, dbOfficeId);
+            pstmt.setString(5, dbOfficeId);
             
-            // Register output parameter for cursor
-            cstmt.registerOutParameter(7, OracleTypes.CURSOR);             // p_results
-            
-            // Execute the procedure
-            cstmt.execute();
-            
-            // Process the result set
-            try (ResultSet rs = (ResultSet) cstmt.getObject(7))
+            // Execute the query
+            try (ResultSet rs = pstmt.executeQuery())
             {
                 if (rs != null)
                 {
@@ -351,13 +365,13 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
                         double levelValue = rs.getDouble("VALUE");
                         int qualityCode = rs.getInt("QUALITY_CODE");
                         
-                        // Get units from first record
+                        // Get units from the result (SI units should be meters)
                         if (dbUnits == null)
                         {
-                            dbUnits = rs.getString("UNIT_ID");
-                            if (dbUnits == null) dbUnits = "m"; // Default to meters for SI
+                            dbUnits = rs.getString("LEVEL_UNIT");
+                            if (dbUnits == null) dbUnits = "m";
                         }
-                        
+                            
                         // Perform unit conversion if needed
                         double finalValue = levelValue;
                         if (targetUnits != null && !targetUnits.isEmpty() && 
@@ -417,42 +431,28 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
             .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
         
         try (CallableStatement cstmt = conn.prepareCall(
-            "{ call CWMS_20.CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL__2(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }"))
+            "{ call CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }"))
         {
-            // Set input parameters
-            cstmt.setString(1, null);                                            // p_location_level_value (OUT)
-            cstmt.registerOutParameter(1, Types.DOUBLE);
+            // Register output parameters (1-8 are OUT parameters)
+            cstmt.registerOutParameter(1, Types.NUMERIC);                       // p_level_value (OUT)
+            cstmt.registerOutParameter(2, Types.VARCHAR);                       // p_level_comment (OUT)
+            cstmt.registerOutParameter(3, Types.DATE);                          // p_effective_date (OUT) - DATE type
+            cstmt.registerOutParameter(4, Types.DATE);                          // p_interval_origin (OUT) - DATE type
+            cstmt.registerOutParameter(5, Types.INTEGER);                       // p_interval_months (OUT)
+            cstmt.registerOutParameter(6, Types.INTEGER);                       // p_interval_minutes (OUT)
+            cstmt.registerOutParameter(7, Types.VARCHAR);                       // p_interpolate (OUT)
+            cstmt.registerOutParameter(8, OracleTypes.ARRAY, "CWMS_T_SEASONAL_VALUE_TAB");  // p_seasonal_values (OUT) - seasonal_value_tab_t
             
-            cstmt.setString(2, null);                                            // p_level_unit (OUT)
-            cstmt.registerOutParameter(2, Types.VARCHAR);
-            
-            cstmt.setString(3, null);                                            // p_date_time (OUT)
-            cstmt.registerOutParameter(3, Types.TIMESTAMP);
-            
-            cstmt.setString(4, null);                                            // p_quality_code (OUT)
-            cstmt.registerOutParameter(4, Types.INTEGER);
-            
-            cstmt.setString(5, null);                                            // p_location_id (OUT)
-            cstmt.registerOutParameter(5, Types.VARCHAR);
-            
-            cstmt.setString(6, null);                                            // p_parameter_id (OUT)
-            cstmt.registerOutParameter(6, Types.VARCHAR);
-            
-            cstmt.setString(7, null);                                            // p_parameter_type_id (OUT)
-            cstmt.registerOutParameter(7, Types.VARCHAR);
-            
-            cstmt.setString(8, null);                                            // p_duration_id (OUT)
-            cstmt.registerOutParameter(8, Types.VARCHAR);
-            
-            cstmt.setString(9, null);                                            // p_specified_level_id (OUT)
-            cstmt.registerOutParameter(9, Types.VARCHAR);
-            
-            cstmt.setString(10, locationLevelId);                                // p_location_level_id (IN)
-            cstmt.setString(11, "SI");                                          // p_unit_system (IN)
-            cstmt.setTimestamp(12, new Timestamp(requestedTime.getTime()));     // p_level_date (IN)
-            cstmt.setString(13, null);                                          // p_timezone (IN)
-            cstmt.setString(14, requireSpecificTime ? "T" : "F");              // p_match_time (IN) T=exact, F=previous
-            cstmt.setString(15, dbOfficeId);                                    // p_office_id (IN)
+            // Set input parameters (9-17 are IN parameters)
+            cstmt.setString(9, locationLevelId);                                // p_location_level_id (IN)
+            cstmt.setString(10, "m");                                           // p_level_units (IN) - meters for SI
+            cstmt.setTimestamp(11, new Timestamp(requestedTime.getTime()));     // p_date (IN) - DATE type
+            cstmt.setString(12, "UTC");                                         // p_timezone_id (IN)
+            cstmt.setString(13, null);                                          // p_attribute_id (IN)
+            cstmt.setNull(14, Types.NUMERIC);                                   // p_attribute_value (IN)
+            cstmt.setString(15, null);                                          // p_attribute_units (IN)
+            cstmt.setString(16, requireSpecificTime ? "T" : "F");              // p_match_date (IN) T=exact, F=previous
+            cstmt.setString(17, dbOfficeId);                                    // p_office_id (IN)
             
             // Execute the procedure
             cstmt.execute();
@@ -464,9 +464,14 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
                 return null; // No value found
             }
             
-            String dbUnits = cstmt.getString(2);
-            Timestamp actualLevelDate = cstmt.getTimestamp(3);
-            Integer qualityCode = cstmt.getObject(4, Integer.class);
+            String levelComment = cstmt.getString(2);
+            Timestamp actualLevelDate = cstmt.getTimestamp(3);  // p_effective_date
+            // Note: parameter 4 (p_interval_origin) is not used here
+            // Note: parameter 8 (p_seasonal_values) is an array we're not using
+            
+            // Units are what we requested (meters)
+            String dbUnits = "m";
+            Integer qualityCode = 0; // This procedure doesn't return quality code
             
             // Create the result object
             CwmsSiteReferenceValue value = new CwmsSiteReferenceValue();
@@ -500,6 +505,16 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
         }
         catch (SQLException ex)
         {
+            // Check if this is a "not found" error
+            // ORA-20034: ITEM_DOES_NOT_EXIST
+            if (ex.getErrorCode() == 20034 || 
+                (ex.getMessage() != null && ex.getMessage().contains("ITEM_DOES_NOT_EXIST")))
+            {
+                // No matching location level found - this is not an error, just return null
+                return null;
+            }
+            
+            // For any other SQL exception, throw it
             throw new OpenDcsDataException("Error retrieving location level at time for " + locationLevelId, ex);
         }
     }
