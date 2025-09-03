@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.sql;
 
 import java.sql.Connection;
@@ -28,8 +43,9 @@ import decodes.tsdb.DbIoException;
 import decodes.util.DecodesSettings;
 
 import opendcs.dao.DaoHelper;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * PlatformListIO handles the I/O of the PlatformList object and some of its
@@ -40,7 +56,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PlatformListIO extends SqlDbObjIo
 {
-    private final static Logger log = LoggerFactory.getLogger(PlatformListIO.class);
+    private final static Logger log = OpenDcsLoggerFactory.getLogger();
 
     /** Transient reference to the PlatformList that we're working on. */
     protected PlatformList _pList;
@@ -176,54 +192,51 @@ public class PlatformListIO extends SqlDbObjIo
             log.debug("Executing query '{}'", q );
             try (ResultSet rs = stmt.executeQuery(q))
             {
-                if (rs != null)
+                while (rs.next())
                 {
-                    while (rs.next())
-                    {
-                        DbKey platformId = DbKey.createDbKey(rs, 1);
+                    DbKey platformId = DbKey.createDbKey(rs, 1);
 
-                        // MJM 20041027 Check to see if this ID is already in the
-                        // cached platform list and ignore if so. That way, I can
-                        // periodically refresh the platform list to get any newly
-                        // created platforms after the start of the routing spec.
-                        // Refreshing will not affect previously read/used platforms.
-                        Platform p = _pList.getById(platformId);
-                        if (p != null)
-                            continue;
+                    // MJM 20041027 Check to see if this ID is already in the
+                    // cached platform list and ignore if so. That way, I can
+                    // periodically refresh the platform list to get any newly
+                    // created platforms after the start of the routing spec.
+                    // Refreshing will not affect previously read/used platforms.
+                    Platform p = _pList.getById(platformId);
+                    if (p != null)
+                        continue;
 
-                        p = new Platform(platformId);
-                        _pList.add(p);
+                    p = new Platform(platformId);
+                    _pList.add(p);
 
-                        p.agency = rs.getString(2);
+                    p.agency = rs.getString(2);
 
-                        DbKey siteId = DbKey.createDbKey(rs, 4);
-                        if (!rs.wasNull()) {
-                            p.setSite(p.getDatabase().siteList.getSiteById(siteId));
-                        }
-
-                        DbKey configId = DbKey.createDbKey(rs, 5);
-                        if (!rs.wasNull())
-                        {
-                            PlatformConfig pc =
-                                platformList.getDatabase().platformConfigList.getById(
-                                    configId);
-                            if (pc == null)
-                                pc = _configListIO.getConfig(configId);
-                            p.setConfigName(pc.configName);
-                            p.setConfig(pc);
-                        }
-
-                        String desc = rs.getString(6);
-                        if (!rs.wasNull())
-                            p.setDescription(desc);
-
-                        p.lastModifyTime = getTimeStamp(rs, 7, null);
-
-                        p.expiration = getTimeStamp(rs, 8, p.expiration);
-
-                        if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
-                            p.setPlatformDesignator(rs.getString(9));
+                    DbKey siteId = DbKey.createDbKey(rs, 4);
+                    if (!rs.wasNull()) {
+                        p.setSite(p.getDatabase().siteList.getSiteById(siteId));
                     }
+
+                    DbKey configId = DbKey.createDbKey(rs, 5);
+                    if (!rs.wasNull())
+                    {
+                        PlatformConfig pc =
+                            platformList.getDatabase().platformConfigList.getById(
+                                configId);
+                        if (pc == null)
+                            pc = _configListIO.getConfig(configId);
+                        p.setConfigName(pc.configName);
+                        p.setConfig(pc);
+                    }
+
+                    String desc = rs.getString(6);
+                    if (!rs.wasNull())
+                        p.setDescription(desc);
+
+                    p.lastModifyTime = getTimeStamp(rs, 7, null);
+
+                    p.expiration = getTimeStamp(rs, 8, p.expiration);
+
+                    if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_7)
+                        p.setPlatformDesignator(rs.getString(9));
                 }
             }
         }
@@ -549,7 +562,10 @@ public class PlatformListIO extends SqlDbObjIo
                             }
                             catch (DatabaseException ex)
                             {
-                                log.warn("Platform Sensor with invalid site ID={}, site record left blank.", siteId);
+                                log.atWarn()
+                                   .setCause(ex)
+                                   .log("Platform Sensor with invalid site ID={}, site record left blank.",
+                                        siteId);
                             }
                         }
                     } else
@@ -602,9 +618,9 @@ public class PlatformListIO extends SqlDbObjIo
             propsDao.readProperties("PlatformSensorProperty", "platformID", "SensorNumber",
             ps.platform.getId(), ps.sensorNumber, ps.getProperties());
         }
-        catch (DbIoException e)
+        catch (DbIoException ex)
         {
-            throw new DatabaseException(e.getMessage());
+            throw new DatabaseException(ex.getMessage(), ex);
         }
         finally
         {
@@ -630,28 +646,12 @@ public class PlatformListIO extends SqlDbObjIo
     public void writePlatform(Platform p)
         throws SQLException, DatabaseException
     {
-        //System.out.println("    PlatformListIO.writePlatform(p)");
-
         if (p.idIsSet())
             update(p);
         else
         {
-// MJM 20030116 - Don't want to do this. Multiple platforms are allowed to
-// have the same transport ID & type. Example: Historical versions.
-            // Use transport media to see if this platform already exists in
-            // the database.
-//            int id = getIdByTransportMedia(p);
-//            if (id != Constants.undefinedId)
-//            {
-//                p.setId(id);
-//                update(p);
-//            }
-//            else
-                insert(p);
+            insert(p);
         }
-
-        //System.out.println("    num PlatformSensors is " +
-        //    p.platformSensors.size());
     }
 
 
@@ -747,9 +747,9 @@ public class PlatformListIO extends SqlDbObjIo
                 propsDao.writeProperties("PlatformProperty", "platformId", p.getId(),
                 p.getProperties());
             }
-            catch (DbIoException e)
+            catch (DbIoException ex)
             {
-                throw new DatabaseException(e.getMessage());
+                throw new DatabaseException(ex.getMessage(), ex);
             }
             finally
             {
@@ -792,7 +792,7 @@ public class PlatformListIO extends SqlDbObjIo
         {
             if (ex.toString().toLowerCase().contains("unique"))
             {
-                log.warn("Cannot write platform {} to database: ", p.getDisplayName() , ex);
+                log.atWarn().setCause(ex).log("Cannot write platform {} to database: ", p.getDisplayName());
                 return;
             }
         }
@@ -812,9 +812,9 @@ public class PlatformListIO extends SqlDbObjIo
 
             try { propsDao.writeProperties("PlatformProperty", "platformId", p.getId(),
                 p.getProperties()); }
-            catch (DbIoException e)
+            catch (DbIoException ex)
             {
-                throw new DatabaseException(e.getMessage());
+                throw new DatabaseException(ex.getMessage(), ex);
             }
             finally
             {
@@ -907,9 +907,9 @@ public class PlatformListIO extends SqlDbObjIo
         propsDao.setManualConnection(connection);
         try { propsDao.writeProperties("PlatformSensorProperty", "platformID", "SensorNumber",
             ps.platform.getId(), ps.sensorNumber, ps.getProperties()); }
-        catch (DbIoException e)
+        catch (DbIoException ex)
         {
-            throw new DatabaseException(e.getMessage(), e);
+            throw new DatabaseException(ex.getMessage(), ex);
         }
         finally
         {
@@ -968,7 +968,7 @@ public class PlatformListIO extends SqlDbObjIo
         try { executeUpdate(q); }
         catch(SQLException ex)
         {
-            log.warn("Error on query '{}'", q , ex);
+            log.atWarn().setCause(ex).log("Error on query '{}'", q);
         }
     }
 
@@ -990,7 +990,7 @@ public class PlatformListIO extends SqlDbObjIo
             catch(DbIoException ex)
             {
                 throw new DatabaseException("Cannot delete platform status for platform with id="
-                    + p.getId() + ": " + ex);
+                    + p.getId(), ex);
             }
             finally { platformStatusDAO.close(); }
         }
@@ -1002,9 +1002,9 @@ public class PlatformListIO extends SqlDbObjIo
             propsDao.setManualConnection(connection);
 
             try { propsDao.deleteProperties("PlatformProperty", "platformId", p.getId()); }
-            catch (DbIoException e)
+            catch (DbIoException ex)
             {
-                throw new DatabaseException(e.getMessage());
+                throw new DatabaseException(ex.getMessage(), ex);
             }
             finally
             {
@@ -1018,8 +1018,9 @@ public class PlatformListIO extends SqlDbObjIo
             try { dacqEventDAO.deleteEventsForPlatform(p.getId()); }
             catch (DbIoException ex)
             {
-                log.warn("Error deleting DACQ_EVENT records for platform {}",
-                         p.getDisplayName(), ex);
+                log.atWarn()
+                   .setCause(ex)
+                   .log("Error deleting DACQ_EVENT records for platform {}", p.getDisplayName());
             }
             finally { dacqEventDAO.close(); }
         }
@@ -1042,9 +1043,9 @@ public class PlatformListIO extends SqlDbObjIo
         PropertiesDAI propsDao = _dbio.makePropertiesDAO();
         propsDao.setManualConnection(connection);
         try { propsDao.deleteProperties("PlatformSensorProperty", "platformID", p.getId()); }
-        catch (DbIoException e)
+        catch (DbIoException ex)
         {
-            throw new DatabaseException(e.getMessage());
+            throw new DatabaseException(ex.getMessage(), ex);
         }
         finally
         {
@@ -1133,7 +1134,7 @@ public class PlatformListIO extends SqlDbObjIo
         }
         catch(SQLException ex)
         {
-            log.warn("SQL Execution on '{}'", q ,ex);
+            log.atWarn().setCause(ex).log("SQL Execution on '{}'", q);
             return Constants.undefinedId;
         }
     }
@@ -1168,7 +1169,7 @@ public class PlatformListIO extends SqlDbObjIo
         }
         catch(SQLException ex)
         {
-            log.warn("Error finding platformId, SQL Execution on '{}'", q , ex);
+            log.atWarn().setCause(ex).log("Error finding platformId, SQL Execution on '{}'", q);
             return Constants.undefinedId;
         }
     }
@@ -1193,8 +1194,7 @@ public class PlatformListIO extends SqlDbObjIo
         }
         catch(SQLException ex)
         {
-            log.warn("SQL Error reading LMT for platform ID {}",
-                    p.getId(), ex);
+            log.atWarn().setCause(ex).log("SQL Error reading LMT for platform ID {}", p.getId());
             return null;
         }
     }
@@ -1213,7 +1213,7 @@ public class PlatformListIO extends SqlDbObjIo
         }
         catch(SQLException ex)
         {
-            log.warn("SQL Error reading LMT for platform list: ", ex);
+            log.atWarn().setCause(ex).log("SQL Error reading LMT for platform list. returning date at epoch.");
             return new Date(0L);
         }
     }

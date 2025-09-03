@@ -1,52 +1,28 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $State$
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* $Log$
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.3  2013/03/21 18:27:39  mmaloney
-* DbKey Implementation
-*
-* Revision 1.2  2010/12/08 13:40:49  mmaloney
-* Specify Columns in INSERT statements.
-*
-* Revision 1.1  2008/04/04 18:21:04  cvs
-* Added legacy code to repository
-*
-* Revision 1.11  2007/04/20 14:30:54  ddschwit
-* Changed SELECT * to SELECT <columnlist>
-*
-* Revision 1.10  2004/09/02 12:15:27  mjmaloney
-* javadoc
-*
-* Revision 1.9  2003/11/15 20:28:35  mjmaloney
-* Mods to transparently support either V5 or V6 database.
-*
-* Revision 1.8  2002/10/06 14:23:58  mjmaloney
-* SQL Development.
-*
-* Revision 1.7  2002/10/04 13:32:12  mjmaloney
-* SQL dev.
-*
-* Revision 1.6  2002/09/19 17:18:02  mjmaloney
-* SQL dev.
-*
-* Revision 1.5  2002/08/29 05:48:49  chris
-* Added RCS keyword headers.
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-
 package decodes.sql;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import opendcs.dai.PropertiesDAI;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import ilex.util.Logger;
+import opendcs.dai.PropertiesDAI;
 
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -73,6 +49,7 @@ import decodes.tsdb.DbIoException;
 */
 public class EquipmentModelListIO extends SqlDbObjIo
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* Transient reference to the EquipmentModelList that we're operating
 	* on.
@@ -98,20 +75,20 @@ public class EquipmentModelListIO extends SqlDbObjIo
 	public void read(EquipmentModelList emList)
 		throws DatabaseException, SQLException
 	{
-		Logger.instance().log(Logger.E_DEBUG1,"Reading EquipmentModels...");
+		log.debug("Reading EquipmentModels...");
 		_emList = emList;
 
 		// First read the EquipmentModel table
 
-		Statement stmt = createStatement();
-		
+
+
 		String q = "SELECT id, name, company, model, description, equipmentType  " +
 		           "FROM EquipmentModel";
-		
-		ResultSet rs = stmt.executeQuery( q );
-
-		if (rs != null) _makeEquipmentModels(rs, false);
-		stmt.close();
+		try (Statement stmt = createStatement();
+			 ResultSet rs = stmt.executeQuery(q);)
+		{
+			_makeEquipmentModels(rs, false);
+		}
 	}
 
 	/**
@@ -132,20 +109,20 @@ public class EquipmentModelListIO extends SqlDbObjIo
 
 		_emList = db.equipmentModelList;
 
-		Statement stmt = createStatement();
-		
+
+
 		String q = "SELECT id, name, company, model, description, equipmentType  " +
 				   "FROM EquipmentModel WHERE ID = " + id;
-		
-		ResultSet rs = stmt.executeQuery( q );
-			
+		EquipmentModel eqm = null;
+		try (Statement stmt = createStatement();
+			 ResultSet rs = stmt.executeQuery( q );)
+		{
+			if (rs == null)
+				throw new DatabaseException("No equipment model found " +
+					"with ID " + id);
 
-		if (rs == null)
-			throw new DatabaseException("No equipment model found " +
-				"with ID " + id);
-
-		EquipmentModel eqm = _makeEquipmentModels(rs, true);
-		stmt.close();
+			eqm = _makeEquipmentModels(rs, true);
+		}
 		return eqm;
 	}
 
@@ -181,42 +158,42 @@ public class EquipmentModelListIO extends SqlDbObjIo
 
 		try
 		{
-			while (rs.next()) 
+			while (rs.next())
 			{
 				DbKey id = DbKey.createDbKey(rs, 1);
 				String name = rs.getString(2);
-	
+
 				// Resolve the EquipmentModel object for this database record.
-	
+
 				em = null;
-				if (!isNew) 
+				if (!isNew)
 					em = _emList.getById(id);
-	
+
 				if (em == null) {
 					em = new EquipmentModel(name);
 					em.setId(id);
 					_emList.add(em);
 				}
-	
+
 				String company = rs.getString(3);
 				if (!rs.wasNull()) em.company = company;
-	
+
 				String model = rs.getString(4);
 				if (!rs.wasNull()) em.model = model;
-	
+
 				String desc = rs.getString(5);
 				if (!rs.wasNull()) em.description = desc;
-	
+
 				String type = rs.getString(6);
 				if (!rs.wasNull()) em.equipmentType = type;
-	
+
 				// Read the EquipmentProperty table for this e.m.
 				propsDao.readProperties("EquipmentProperty", "EquipmentID", id, em.properties);
 			}
 		}
-		catch (DbIoException e)
+		catch (DbIoException ex)
 		{
-			throw new DatabaseException(e.getMessage());
+			throw new DatabaseException("Unable to create equipment model", ex);
 		}
 		finally
 		{
@@ -291,7 +268,7 @@ public class EquipmentModelListIO extends SqlDbObjIo
 			  sqlOptString(eqm.company) + ", " +
 			  sqlOptString(eqm.model) + ", " +
 			  sqlOptString(eqm.description) + ", " +
-			  sqlOptString(eqm.equipmentType) + 
+			  sqlOptString(eqm.equipmentType) +
 			")";
 
 		executeUpdate(q);
@@ -307,11 +284,11 @@ public class EquipmentModelListIO extends SqlDbObjIo
 		throws DatabaseException, SQLException
 	{
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
-		
+
 		try { propsDao.writeProperties("EquipmentProperty", "EquipmentID", eqm.getId(), eqm.properties); }
-		catch (DbIoException e)
+		catch (DbIoException ex)
 		{
-			throw new DatabaseException(e.getMessage());
+			throw new DatabaseException("Unable to write properties", ex);
 		}
 		finally
 		{
@@ -335,15 +312,15 @@ public class EquipmentModelListIO extends SqlDbObjIo
 
 		PropertiesDAI propsDao = _dbio.makePropertiesDAO();
 		try { propsDao.deleteProperties("EquipmentProperty", "EquipmentID", eqm.getId()); }
-		catch (DbIoException e)
+		catch (DbIoException ex)
 		{
-			throw new DatabaseException(e.getMessage());
+			throw new DatabaseException("Unable to delete equipment model", ex);
 		}
 		finally
 		{
 			propsDao.close();
 		}
-		
+
 		String q = "DELETE FROM EquipmentModel WHERE ID = " + id;
 		executeUpdate(q);
 	}
@@ -351,16 +328,17 @@ public class EquipmentModelListIO extends SqlDbObjIo
 	private DbKey name2id(String name)
 		throws DatabaseException, SQLException
 	{
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
-			"SELECT id FROM EquipmentModel where name = "
-			+ sqlReqString(name));
-
 		DbKey ret = Constants.undefinedId;
-		if (rs != null && rs.next())
-			ret = DbKey.createDbKey(rs, 1);
-
-		stmt.close();
+		try (Statement stmt = createStatement();
+			 ResultSet rs = stmt.executeQuery(
+				"SELECT id FROM EquipmentModel where name = "
+				+ sqlReqString(name));)
+		{
+			if (rs.next())
+			{
+				ret = DbKey.createDbKey(rs, 1);
+			}
+		}
 		return ret;
 	}
 }

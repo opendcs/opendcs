@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.sql;
 
 import java.sql.Connection;
@@ -5,11 +20,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Iterator;
-
-import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.PropertiesDAI;
 import opendcs.dai.ScheduleEntryDAI;
@@ -31,7 +46,7 @@ import opendcs.dao.DaoHelper;
 
 public class RoutingSpecListIO extends SqlDbObjIo
 {
-    private final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecListIO.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
     * This is used to look up the ID numbers and names of PresentationGroups
     */
@@ -93,7 +108,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
     {
         log.debug("Reading RoutingSpecs...");
 
-        
+
 
         String q = "SELECT id, name, dataSourceId, enableEquations, " +
                    "usePerformanceMeasurements, outputFormat, outputTimeZone, " +
@@ -101,7 +116,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
                    "consumerType, consumerArg, lastModifyTime, isProduction " +
                    "FROM RoutingSpec";
 
-        try (Statement stmt = createStatement(); 
+        try (Statement stmt = createStatement();
              ResultSet resultSet = stmt.executeQuery( q );
         )
         {
@@ -202,17 +217,16 @@ public class RoutingSpecListIO extends SqlDbObjIo
                    "consumerType, consumerArg, lastModifyTime, isProduction " +
                    "FROM RoutingSpec WHERE id = " + routingSpec.getId();
 
-        log.trace("RoutingSpecListIO.readroutingSpec: " + q);
+        log.trace("RoutingSpecListIO.readroutingSpec: {}", q);
         try (Statement stmt = createStatement();
              ResultSet resultSet = stmt.executeQuery(q);)
         {
-            if (resultSet == null)
+            // There will be only one row in the result set.
+            if (!resultSet.next())
             {
                 throw new DatabaseException("No RoutingSpec found with id "    + routingSpec.getId());
             }
 
-            // There will be only one row in the result set.
-            resultSet.next();
             routingSpec.setName(resultSet.getString(2));
 
             DbKey dataSourceId = DbKey.createDbKey(resultSet, 3);
@@ -263,7 +277,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
 
             // Add this routing spec to the routing spec list.
             routingSpec.getDatabase().routingSpecList.add(routingSpec);
-            stmt.close();
         }
         catch(SQLException ex)
         {
@@ -284,13 +297,10 @@ public class RoutingSpecListIO extends SqlDbObjIo
         try (Statement stmt = createStatement();
              ResultSet resultSet = stmt.executeQuery(q);)
         {
-            if (resultSet != null)
+            while (resultSet.next())
             {
-                while (resultSet.next())
-                {
-                    String nm = resultSet.getString(1);
-                    routingSpec.addNetworkListName(nm);
-                }
+                String nm = resultSet.getString(1);
+                routingSpec.addNetworkListName(nm);
             }
         }
     }
@@ -352,7 +362,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
               "IsProduction = " + sqlString(rs.isProduction) + " " +
             "WHERE ID = " + id;
 
-        
+
 
         try (PropertiesDAI propsDao = _dbio.makePropertiesDAO())
         {
@@ -375,7 +385,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
             throw new DatabaseException("Unable to update routing spec.", ex);
         }
 
-        
+
     }
 
     /**
@@ -468,7 +478,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
         try (PropertiesDAI propsDAO = _dbio.makePropertiesDAO();
              ScheduleEntryDAI seDAO = _dbio.makeScheduleEntryDAO();)
         {
-            propsDAO.inTransaction(dao -> 
+            propsDAO.inTransaction(dao ->
             {
                 try(PropertiesDAI props2 = _dbio.makePropertiesDAO())
                 {
@@ -518,7 +528,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
     private DbKey name2id(String name)
         throws SQLException
     {
-        final String q = "SELECT id FROM RoutingSpec where lower(name) = lower(?)";
         try (Connection conn = connection();
              DaoHelper dao = new DaoHelper(_dbio, "routingspeclist", conn);
             )
@@ -549,7 +558,11 @@ public class RoutingSpecListIO extends SqlDbObjIo
                 {
                     spec.setId(id);
                 }
-                catch(DatabaseException ex) {} // guaranteed not to happen.
+                catch(DatabaseException ex)
+                {
+                    // guaranteed not to happen.
+                    log.atError().setCause(ex).log("An error that shouldn't happen, has.");
+                }
             }
 
             String q ="SELECT lastModifyTime FROM RoutingSpec WHERE id = ?";
@@ -559,7 +572,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
         {
             log.atWarn()
                .setCause(ex)
-               .log("SQL Error reading LMT for RoutingSpec '{}' id={}", spec.getName(), ex);
+               .log("SQL Error reading LMT for RoutingSpec '{}' id={}", spec.getName(), spec.getId());
             return null;
         }
     }
