@@ -1,28 +1,21 @@
 /*
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.6  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.5  2017/10/04 17:25:07  mmaloney
- * Fix AEP Bugs
- *
- * Revision 1.4  2017/05/17 20:36:26  mmaloney
- * First working version.
- *
- * Revision 1.3  2017/03/30 20:55:20  mmaloney
- * Alarm and Event monitoring capabilities for 6.4 added.
- *
- * Revision 1.2  2017/03/21 12:17:10  mmaloney
- * First working XML and SQL I/O.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 /**
@@ -33,53 +26,53 @@ public class FileMonitor
 	private String path = null;
 
 	/** Will generate a DACQ_EVENT with this priority level */
-	private int priority = Logger.E_WARNING;
+	private int priority = -1; // TODO: determine replacement
 
 	/** For directories, generate alarm if # of files in the directory exceed this. */
 	private int maxFiles = 0;
-	
+
 	/** Include this string in the alarm when generating a maxFiles alarm. */
 	private String maxFilesHint = null;
-	
+
 	/**
 	 * Max last-modified time. If file or directory has not been changed in more
 	 * than this interval, then generate an alarm. Handles strings like "1 day",
 	 * or "4 hours", or "hours*4".
 	 */
 	private String maxLMT = null;
-	
+
 	/** Include this string in the alarm when generating a maxFiles alarm. */
 	private String maxLMTHint = null;
-	
+
 	/** For files, generate alarm if file size exceed this. */
 	private long maxSize = 0L;
-	
+
 	/** Include this string in the alarm when generating a maxSize alarm. */
 	private String maxSizeHint = null;
-	
+
 	/** Generate alarm the named file or directory does not exist. */
 	private boolean alarmOnDelete = false;
-	
+
 	/** Include this string in the alarm when generating a alarmOnDelete alarm. */
 	private String alarmOnDeleteHint = null;
-	
+
 	/** Generate alarm the named file or directory exist. */
 	private boolean alarmOnExists = false;
-	
+
 	/** Include this string in the alarm when generating a alarmOnDelete alarm. */
 	private String alarmOnExistsHint = null;
-	
+
 	private boolean enabled = true;
-	
+
 	/** Means one of the exists/deleted alarms is currently asserted. */
 	private transient boolean existsAsserted = false;
-	
+
 	/** Means an LMT alarm is asserted. */
 	private transient boolean lmtAsserted = false;
-	
+
 	/** Means either maxFiles (for directory) or maxSize (for file) is asserted */
 	private transient boolean sizeAsserted = false;
-	
+
 	private transient boolean changed = true;
 	private transient String description = "";
 
@@ -88,11 +81,11 @@ public class FileMonitor
 		super();
 		this.path = path;
 	}
-	
+
 	public FileMonitor copy()
 	{
 		FileMonitor ret = new FileMonitor(path);
-		
+
 		ret.priority = this.priority;
 		ret.maxFiles = this.maxFiles;
 		ret.maxFilesHint = this.maxFilesHint;
@@ -282,16 +275,16 @@ public class FileMonitor
 		StringBuilder sb = new StringBuilder();
 		if (maxFiles > 0)
 			sb.append("maxFile=" + maxFiles);
-		
+
 		if (maxLMT != null)
 			sb.append((sb.length() > 0 ? ", " : "") + "maxAge=" + maxLMT);
-		
+
 		if (maxSize > 0)
 			sb.append((sb.length() > 0 ? ", " : "") + "maxSize=" + maxSize);
-		
+
 		if (alarmOnDelete)
 			sb.append((sb.length() > 0 ? ", " : "") + "alarmOnDelete");
-		
+
 		if (alarmOnExists)
 			sb.append((sb.length() > 0 ? ", " : "") + "alarmOnExists");
 
@@ -330,7 +323,7 @@ public class FileMonitor
 		setChanged(true);
 	}
 
-	
-	
+
+
 
 }
