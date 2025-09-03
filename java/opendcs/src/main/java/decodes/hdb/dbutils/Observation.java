@@ -1,13 +1,31 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.dbutils;
 
 import java.sql.*;
 import java.util.*;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 public class Observation	 
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private String data_string;
     private String error_message;
-    private Logger log = null;
     private DataObject do2 = null;
     private Connection conn = null;
     private boolean cont = true;
@@ -20,7 +38,6 @@ public class Observation
     public Observation(String str, Hashtable _hash, Connection _conn)  
     {
       data_string = str;
-      log = Logger.getInstance();
       do2 = new DataObject(_hash);
       conn = _conn;
       db = new DBAccess(conn);
@@ -37,6 +54,8 @@ public class Observation
 
       fatal_error = true;
       cont = true;
+      // TODO try with resources, Bind Vars
+      // 
       try 
       {
 
@@ -90,20 +109,23 @@ public class Observation
                  " and collection_system_id = " + do2.get("collection_system_id").toString() +
                  " and loading_application_id = " + do2.get("loading_application_id").toString() ; 
           String status = db.performDML(del_sql,do2);
-          if (debug) log.debug(this,del_sql);
-          if (debug) log.debug(this,status); 
+          if (debug) log.debug(del_sql);
+          if (debug) log.debug(status); 
        }
 
        if (!cont)
        {
 
-           if (log_all) log.debug( this,"  " + data_string + "  :" + db_oper + error_message);
+           if (log_all) log.debug("{}: {} {}", data_string, db_oper, error_message);
            if ((String)do2.get("error_table") != null && ((String)do2.get("error_table")).equals("Y") && fatal_error) this.error_insert();
        }
 
       }  // end of try
 
-       catch (Exception e) {if (log_all) log.debug(this,data_string + e.getMessage());}
+       catch (Exception ex) 
+        {
+         log.atError().setCause(ex).log("Unable to process {}", data_string);
+        }
 
        finally  //close connection always
        {
@@ -123,7 +145,6 @@ public class Observation
         dobj.put("PCODE",data_string.substring(25,33).trim());
         dobj.put("VALIDATION",data_string.substring(34,35).trim());
         dobj.put("VALUE",data_string.substring(36).trim());
-//        dobj.put("INTERVAL","instant");
         dobj.put("OVERWRITE_FLAG","");
 
     } // end of method parse 
@@ -142,14 +163,14 @@ public class Observation
            {
              cont = false;
              error_message = "Validation Check RESULT FAILED" + result;
-             if (debug) log.debug( this,"  " + query + "  :" + error_message);
+             if (debug) log.debug("{}: {}", query, error_message);
            }
 
            if (((String)do2.get("rec_count")).equalsIgnoreCase("0")) 
            {
               cont = false;
               error_message = "Invalid Validation Flag: " + (String)do2.get("VALIDATION");
-              if (debug) log.debug( this,"  " + data_string + "  :" + error_message);
+              if (debug)  log.debug("{}: {}", query, error_message);
            }
         }
     } // end of validation method
@@ -174,17 +195,17 @@ public class Observation
        {
          cont = false;
          error_message = "GET SDI DATABASE RESULT FAILED" + result;
-         if (debug) log.debug( this,"  " + query + "  :" + error_message);
+         if (debug) log.debug("{}: {}", query, error_message);
        }
 
        if (((String)do2.get("site_datatype_id")).length() == 0)
        {
          cont = false;
          error_message = "GET_SDI query FAILED" + " Invalid Station, PCODE combination";
-         if (debug) log.debug( this,"  " + data_string + "  :" + error_message);
+         if (debug) log.debug("{}: {}", data_string, error_message);
        }
 
-       if (debug) log.debug( this,"  " + data_string + "  :" + " PASSED SDI CHECK");
+       if (debug) log.debug("{}: {}", data_string, "PASSED SDI CHECK");
 
     } // end of get_sdi method
 
@@ -204,7 +225,7 @@ public class Observation
           {
             cont = false;
             error_message = "get_interval RESULT FAILED" + result;
-            if (debug) log.debug( this,"  " + query + "  :" + error_message);
+             if (debug) log.debug("{}: {}  ", query, error_message);
           }
 
 
@@ -221,7 +242,7 @@ public class Observation
       if (((String)do2.get("interval")).equals("hour")) do2.put("start_time_offset"," - 1/24");
       if (((String)do2.get("interval")).equals("day")) do2.put("end_time_offset"," + 1");
 
-      if (debug) log.debug( this,"  " + data_string + "  :" + " PASSED Interval CHECK");
+      if (debug) log.debug("{}: {}", data_string, " PASSED Interval CHECK");
 
      }  // end of get_interval method
 
@@ -258,13 +279,13 @@ public class Observation
                 + ",'" + error_message + "',sysdate,'" + do2.get("DATA_SOURCE_NAME") + "'"
                 + ")";
 
-          if (debug) log.debug(this,dml);
+          if (debug) log.debug(dml);
           result = db.performDML(dml,do2);
           if (result.startsWith("ERROR")) 
           {
              cont = false;
              error_message = " INSERT INTO ERROR TABLE FAILED" + result;
-             log.debug( this,"  " + data_string + "  :" + error_message);
+             log.debug("{}: {}  ", data_string, error_message);
           }
 
      }  // end of error_insert method

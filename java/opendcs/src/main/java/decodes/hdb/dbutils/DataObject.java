@@ -1,7 +1,20 @@
-//  The DataObject class will be contained in the some package
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.dbutils;
 
-// include all necessary imports here
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 
@@ -9,6 +22,8 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**  Public class DataObject is intended to hold in a hashtable hash 
      all the data that is pertinent to this instance of this class.
@@ -23,6 +38,7 @@ import java.util.Properties;
 */
 public class DataObject  
 {
+  private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     // instance object hash stores all the key object pairs for this class
     private Hashtable hash  = null;
@@ -121,11 +137,9 @@ public class DataObject
          }
 
        }
-       catch (Exception e)
+       catch (Exception ex)
        {
-         System.out.println("Unable to open Property File to add properties");
-         System.out.println(e.getMessage());
-         e.printStackTrace();
+         log.atError().setCause(ex).log("Unable to open Property File to add properties");
        }
     }  // end of method addPropertyFile
 

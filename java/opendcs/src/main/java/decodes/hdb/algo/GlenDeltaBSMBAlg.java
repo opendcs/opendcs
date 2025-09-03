@@ -1,20 +1,30 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.hdb.algo;
 
-import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
-// this new import was added by M. Bogner Aug 2012 for the 3.0 CP upgrade project
 import decodes.tsdb.algo.AWAlgoType;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import decodes.hdb.HdbFlags;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "This algorithm calculates the Glen Canyon Bank Storage Mass Balance \n\n" +
 
@@ -34,6 +44,7 @@ import decodes.hdb.HdbFlags;
 "Modified by M. Bogner May 2009 to add additional delete logic and version control")
 public class GlenDeltaBSMBAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double inflow;
 	@Input
@@ -115,17 +126,21 @@ public class GlenDeltaBSMBAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 
         if (do_setoutput)
         {
-		debug3("GlenDeltaBSMBAlg-" + alg_ver + ": total_release= " + total_release +", delta_storage= " + delta_storage);
-		debug3("GlenDeltaBSMBAlg-" + alg_ver + ": inflow= " + inflow +", evap= " + evap);
-		debug3("GlenDeltaBSMBAlg-" + alg_ver + ": bs_calculation= " + bs_calculation);
+			log.trace("GlenDeltaBSMBAlg-{}: total_release= {}, delta_storage= {}",
+					  alg_ver, total_release, delta_storage);
+			log.trace("GlenDeltaBSMBAlg-{}: inflow= {} evap= {}", alg_ver, inflow, evap);
+			log.trace("GlenDeltaBSMBAlg-{}: bs_calculation= {}", alg_ver, bs_calculation);
                 /* added to allow users to automatically set the Validation column  */
-                if (validation_flag.length() > 0) setHdbValidationFlag(delta_bs,validation_flag.charAt(1));
-		setOutput(delta_bs,bs_calculation);
+            if (validation_flag.length() > 0)
+			{ 
+				setHdbValidationFlag(delta_bs,validation_flag.charAt(1));
+			}
+			setOutput(delta_bs,bs_calculation);
         }
         else
         {
-                debug3("GlenDeltaBSMBAlg-" + alg_ver + ": Deleting Delta Bank Storage output");
-                deleteOutput(delta_bs);
+            log.trace("GlenDeltaBSMBAlg-{}: Deleting Delta Bank Storage output", alg_ver);
+            deleteOutput(delta_bs);
         }
 	}
 
