@@ -294,7 +294,7 @@ public class PollingThreadController extends Thread
 			failedPolls++;
 			PlatformStatus platstat = pollingThread.getPlatformStatus();
 			// Assert error through RS Thread will increment # errors.
-			dataSource.getRoutingSpecThread().assertPlatformError("Polling Failed", platstat);
+			dataSource.getRoutingSpecThread().assertPlatformError("Polling Failed", platstat, null);
 		}
 	}
 
