@@ -195,7 +195,6 @@ public class NetworkListListIO extends SqlDbObjIo
 		String q = "SELECT id, name, transportMediumType, "
 			+ "siteNameTypePreference, lastModifyTime FROM NetworkList";
 
-		
 		ArrayList<NetworkListSpec> ret = new ArrayList<NetworkListSpec>();
 		try (Statement stmt = createStatement())
 		{
@@ -225,7 +224,7 @@ public class NetworkListListIO extends SqlDbObjIo
 					}
 				}
 			}
-			return ret;			
+			return ret;
 		}
 	}
 
@@ -282,13 +281,11 @@ public class NetworkListListIO extends SqlDbObjIo
 		try (Statement stmt = createStatement();
 			 ResultSet rs = stmt.executeQuery(q);)
 		{
-			if (!rs.next()
+			if (!rs.next())
 			{
-				throw new DatabaseException(
-					"No NetworkList found with ID " + id);
+				throw new DatabaseException("No NetworkList found with ID " + id);
 			}
 			Date ret = getTimeStamp(rs, 1, (Date)null);
-			stmt.close();
 			return ret;
 		}
 	}
@@ -296,13 +293,7 @@ public class NetworkListListIO extends SqlDbObjIo
 	private void readNetworkListEntries(NetworkList nl)
 		throws DatabaseException, SQLException
 	{
-		Statement stmt = null;
-		ResultSet rs_nle = null;
-
-		try
-		{
 			nl.clear();
-			stmt = createStatement();
 			String nle_attributes = "networkListId, transportId";
 			if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_11)
 				nle_attributes += ", platform_name, description";
@@ -311,9 +302,10 @@ public class NetworkListListIO extends SqlDbObjIo
 				     + " FROM NetworkListEntry where NetworkListId = "
 				     + nl.getId();
 
-			rs_nle = stmt.executeQuery(q);
-
-			while (rs_nle != null && rs_nle.next())
+		try (Statement stmt = createStatement();
+			 ResultSet rs_nle = stmt.executeQuery(q);)
+		{
+			while (rs_nle.next())
 			{
 				String transportId = rs_nle.getString(2);
 
@@ -355,13 +347,6 @@ public class NetworkListListIO extends SqlDbObjIo
 
 				nl.addEntry(nle);
 			}
-		}
-		finally
-		{
-			if (rs_nle != null)
-				try { rs_nle.close(); } catch(Exception ex) {}
-			if (stmt != null)
-				try { stmt.close(); } catch(Exception ex) {}
 		}
 	}
 
@@ -573,16 +558,15 @@ public class NetworkListListIO extends SqlDbObjIo
 	private DbKey name2id(String name)
 		throws DatabaseException, SQLException
 	{
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
-			"SELECT id FROM NetworkList where name = "
-			+ sqlReqString(name));
-
-		DbKey ret = Constants.undefinedId;
-		if (rs != null && rs.next())
-			ret = DbKey.createDbKey(rs, 1);
-
-		stmt.close();
-		return ret;
+		try (Statement stmt = createStatement();
+		     ResultSet rs = stmt.executeQuery("SELECT id FROM NetworkList where name = " + sqlReqString(name));)
+		{
+			DbKey ret = Constants.undefinedId;
+			if (rs.next())
+			{
+				ret = DbKey.createDbKey(rs, 1);
+			}
+			return ret;
+		}
 	}
 }
