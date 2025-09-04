@@ -1,37 +1,17 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*	$Log$
-*	Revision 1.2  2009/03/24 18:30:25  mjmaloney
-*	Version Info
-*	
-*	Revision 1.1  2008/04/04 18:21:04  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.7  2008/02/10 20:17:34  mmaloney
-*	dev
-*	
-*	Revision 1.2  2008/02/01 15:20:40  cvs
-*	modified files for internationalization
-*	
-*	Revision 1.6  2004/12/21 14:46:06  mjmaloney
-*	Added javadocs
-*	
-*	Revision 1.5  2004/04/30 15:29:38  mjmaloney
-*	6.1 beta release prep.
-*	
-*	Revision 1.4  2004/04/29 19:14:48  mjmaloney
-*	6.1 release prep
-*	
-*	Revision 1.3  2004/04/20 17:05:54  mjmaloney
-*	Implementation of RefListEditor
-*	
-*	Revision 1.2	2004/02/03 16:01:03	mjmaloney
-*	prototype dev.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*	Revision 1.1	2004/02/02 22:12:58	mjmaloney
-*	dev.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.rledit;
 
@@ -40,7 +20,10 @@ import java.awt.event.*;
 import java.util.ResourceBundle;
 
 import javax.swing.*;
-import javax.swing.border.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.util.DecodesVersion;
 import ilex.util.EnvExpander;
@@ -48,10 +31,10 @@ import ilex.util.EnvExpander;
 /**
 The "about box" for the reference list editor.
 */
-public class RefListFrame_AboutBox extends JDialog implements ActionListener 
+public class RefListFrame_AboutBox extends JDialog implements ActionListener
 {
-	private static ResourceBundle genericLabels = 
-		RefListEditor.getGenericLabels();
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
 	private static ResourceBundle labels = RefListEditor.getLabels();
 	private JPanel panel1 = new JPanel();
 	private JPanel panel2 = new JPanel();
@@ -72,22 +55,23 @@ public class RefListFrame_AboutBox extends JDialog implements ActionListener
 	private String product = DecodesVersion.getAbbr();
 	private String version = "Version " + DecodesVersion.getVersion();
 	private String copyright = "Modified " + DecodesVersion.getModifyDate();
-	private String comments = labels.getString(
-							"RefListFrameAboutBox.comments");
+	private String comments = labels.getString("RefListFrameAboutBox.comments");
 
 	/**
 	 * Constructor.
 	 * @param parent the parent frame
 	 */
-	public RefListFrame_AboutBox(Frame parent) 
+	public RefListFrame_AboutBox(Frame parent)
 	{
 		super(parent);
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		try {
+		try
+		{
 			jbInit();
 		}
-		catch(Exception e) {
-			e.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 

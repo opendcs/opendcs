@@ -1,38 +1,33 @@
 /*
-*	$Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*	$Log$
-*	Revision 1.1  2008/04/04 18:21:04  cvs
-*	Added legacy code to repository
-*	
-*	Revision 1.6  2008/02/10 20:17:33  mmaloney
-*	dev
-*	
-*	Revision 1.2  2008/02/01 15:20:40  cvs
-*	modified files for internationalization
-*	
-*	Revision 1.5  2006/05/11 18:26:42  mmaloney
-*	dev
-*	
-*	Revision 1.4  2004/12/21 14:46:04  mjmaloney
-*	Added javadocs
-*	
-*	Revision 1.3  2004/04/20 20:08:18  mjmaloney
-*	Working reference list editor, required several mods to SQL code.
-*	
-*	Revision 1.2  2004/04/12 21:30:32  mjmaloney
-*	dev
-*	
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.rledit;
 
 import java.awt.*;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.util.ResourceBundle;
 
 import decodes.db.*;
-import ilex.util.*;
+import ilex.util.AsciiUtil;
+import ilex.util.LoadResourceBundle;
 
 /**
 DTEDialog is a pop-up in which the user edits a single data-type-equivalence
@@ -40,8 +35,8 @@ entry. It's used when the user hits the Add or Edit button. on the DTE panel.
 */
 public class DTEDialog extends JDialog
 {
-	private static ResourceBundle genericLabels = 
-		RefListEditor.getGenericLabels();
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();;
+	private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
 	private static ResourceBundle labels = RefListEditor.getLabels();
 	private JPanel panel1 = new JPanel();
 	private BorderLayout borderLayout1 = new BorderLayout();
@@ -69,7 +64,7 @@ public class DTEDialog extends JDialog
 	 * @param title the dialog title
 	 * @param modal true if modal
 	 */
-	public DTEDialog(Frame frame, String title, boolean modal) 
+	public DTEDialog(Frame frame, String title, boolean modal)
 	{
 		super(frame, title, modal);
 		stdLabel[0] = new JLabel();
@@ -82,12 +77,14 @@ public class DTEDialog extends JDialog
 		dtField[2] = new JTextField();
 		dtField[3] = new JTextField();
 		dtField[4] = new JTextField();
-		try {
+		try
+		{
 			jbInit();
 			pack();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -95,7 +92,7 @@ public class DTEDialog extends JDialog
 	 * Constructor.
 	 * @param parent the owner
 	 */
-	public DTEDialog(Frame parent) 
+	public DTEDialog(Frame parent)
 	{
 		this(parent, "", true);
 	}
@@ -103,7 +100,7 @@ public class DTEDialog extends JDialog
 	/**
 	 * No args constructor for JBuilder.
 	 */
-	public DTEDialog() 
+	public DTEDialog()
 	{
 		this(null, "", true);
 	}
@@ -140,7 +137,7 @@ public class DTEDialog extends JDialog
 		}
 	}
 
-	private void jbInit() throws Exception 
+	private void jbInit() throws Exception
 	{
 		panel1.setLayout(borderLayout1);
 		this.setModal(true);
@@ -148,15 +145,11 @@ public class DTEDialog extends JDialog
 		jPanel1.setLayout(flowLayout1);
 		flowLayout1.setVgap(10);
 		jLabel1.setText(labels.getString("DTEDialog.dataTypesEquiv"));
-//		okButton.setMinimumSize(new Dimension(80, 23));
-//		okButton.setPreferredSize(new Dimension(80, 23));
 		okButton.setText(genericLabels.getString("OK"));
 		okButton.addActionListener(new DTEDialog_okButton_actionAdapter(this));
 		jPanel2.setLayout(flowLayout2);
 		flowLayout2.setHgap(20);
 		flowLayout2.setVgap(10);
-//		cancelButton.setMinimumSize(new Dimension(80, 23));
-//		cancelButton.setPreferredSize(new Dimension(80, 23));
 		cancelButton.setText(genericLabels.getString("cancel"));
 		cancelButton.addActionListener(new DTEDialog_cancelButton_actionAdapter(this));
 		jPanel3.setLayout(gridBagLayout1);
@@ -205,13 +198,13 @@ public class DTEDialog extends JDialog
 	 * Called when OK button is pressed.
 	 * @param e ignored.
 	 */
-	void okButton_actionPerformed(ActionEvent e) 
+	void okButton_actionPerformed(ActionEvent e)
 	{
 		DataType dataTypes[] = new DataType[numstds];
 		for(int i=0; i<numstds; i++) dataTypes[i] = null;
 
 		// At least 2 dt's must be defined.
-		// ALL DTs in this dialog must be either unchanged or new. 
+		// ALL DTs in this dialog must be either unchanged or new.
 		// No clashes allowed.
 		int numDefined = 0;
 		DataTypeSet dts = Database.getDb().dataTypeSet;
@@ -256,8 +249,7 @@ public class DTEDialog extends JDialog
 					DataType odt = dts.get(std, orig);
 					if (odt != null)
 					{
-						Logger.instance().debug3(
-							"De-asserting equivalence of " + odt.toString());
+						log.trace("De-asserting equivalence of {}", odt.toString());
 						odt.deAssertEquivalence();
 					}
 				}
@@ -280,9 +272,7 @@ public class DTEDialog extends JDialog
 			{
 				if (lastDT != null)
 				{
-					Logger.instance().debug3(
-						"Asserting equivalence of " + dt.toString() + " and " 
-						+ lastDT.toString());
+					log.trace("Asserting equivalence of {} and {}", dt.toString(), lastDT.toString());
 					lastDT.assertEquivalence(dt);
 				}
 				lastDT = dt;
@@ -297,7 +287,7 @@ public class DTEDialog extends JDialog
 	 * Called when Cancel button is pressed.
 	 * @param e ignored.
 	 */
-	void cancelButton_actionPerformed(ActionEvent e) 
+	void cancelButton_actionPerformed(ActionEvent e)
 	{
 		_wasChanged = false;
 		closeDlg();

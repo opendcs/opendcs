@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.sql;
 
 import java.sql.Connection;
@@ -6,8 +21,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Vector;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
@@ -28,7 +43,7 @@ import decodes.db.PresentationGroupList;
 */
 public class PresentationGroupListIO extends SqlDbObjIo
 {
-    private static final Logger log = LoggerFactory.getLogger(PresentationGroupListIO.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
     * Transient storage for PresentationGroupList being read or written.
     */
@@ -298,13 +313,10 @@ public class PresentationGroupListIO extends SqlDbObjIo
         // Fill in the rest of the fields from the ResultSet.
 
         pg.lastModifyTime = getTimeStamp(rs, 4, pg.lastModifyTime);
-        //Timestamp ts = rs.getTimestamp(4);
-        //if (!rs.wasNull())
-            //pg.lastModifyTime = ts;
 
         pg.isProduction = TextUtil.str2boolean(rs.getString(5));
-//MJM 20090109 - Don't read the DataPresentations
-//        readDataPresentations(pg, id);
+        //MJM 20090109 - Don't read the DataPresentations
+        //        readDataPresentations(pg, id);
 
         return pg;
     }
@@ -579,10 +591,10 @@ public class PresentationGroupListIO extends SqlDbObjIo
         if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
         {
             columns += ",maxdecimals";
-          if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
+            if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
             {
               columns +=",max_value,min_value ";
-            }  
+            }
         }
         String q =
             "INSERT INTO DataPresentation ("+columns +") " + " VALUES (" +
@@ -593,7 +605,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
               + "NULL"; // legacy equipment model id.
 
         if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_6)
-        { 
+        {
             int md = dp.getMaxDecimals();
             q = q + ", " + (md == Integer.MAX_VALUE ? "NULL" : ("" + md));
             if (getDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_10)
@@ -693,7 +705,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
             try(ResultSet rs = stmt.executeQuery();)
             {
                 DbKey ret = Constants.undefinedId;
-                if (rs != null && rs.next())
+                if (rs.next())
                 {
                     ret = DbKey.createDbKey(rs, 1);
                 }
@@ -724,7 +736,7 @@ public class PresentationGroupListIO extends SqlDbObjIo
                 try(ResultSet rs = stmt.executeQuery();)
                 {
                                 // Should be only 1 record returned.
-                    if (rs == null || !rs.next())
+                    if (!rs.next())
                     {
                         log.warn("Cannot get SQL LMT for Presentation Group '{}' id={}", pg.groupName, pg.getId());
                         return null;
