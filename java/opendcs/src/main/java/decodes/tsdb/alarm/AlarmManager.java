@@ -1,20 +1,18 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.4  2019/08/27 20:14:40  mmaloney
- * Make sure alarms always go forward in time.
- *
- * Revision 1.3  2019/08/26 20:49:52  mmaloney
- * Alarm Implementations.
- *
- * Revision 1.2  2019/08/07 14:18:58  mmaloney
- * 6.6 RC04
- *
- * Revision 1.1  2019/07/02 13:48:03  mmaloney
- * 6.6RC04 First working Alarm Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm;
 
 import java.io.PrintStream;
@@ -28,6 +26,9 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.text.NumberFormat;
 
@@ -46,15 +47,14 @@ import decodes.tsdb.TimeSeriesIdentifier;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.alarm.mail.AlarmMailer;
 import decodes.tsdb.alarm.mail.MailerException;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.LoadingAppDAI;
 
-public class AlarmManager
-	extends Thread
+public class AlarmManager extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String module = "AlarmManager";
 	private static AlarmManager _instance = null;
 	private boolean _shutdown = false;
@@ -66,21 +66,21 @@ public class AlarmManager
 	private long lastMailerConfig = 0L;
 	private static final long MAILER_CONFIG_MS = 10L * 60000L; // Check mailer config every 10 min.
 	private static final long MS_PER_DAY = 24L * 3600000L;
-	
+
 	private Properties mailProps = null;
 	private AlarmConfig alarmConfig = null;
 	private long resendSeconds = 24*3600L;
 	private int notifyMaxAgeDays = 30;
 
-	
+
 	/** This holds a copy of the ALARM_CURRENT table. It maps TsKey to Alarm */
 	private HashMap<DbKey, Alarm> currentAlarms = new HashMap<DbKey, Alarm>();
-	
+
 	private DbKey appId = DbKey.NullKey;
-	
+
 	private long refreshMS = 5 * 60000L;
 	private long checkQueueMS = 60000L;
-	
+
 	class AlarmMsg
 	{
 		DbKey groupId;
@@ -100,24 +100,24 @@ public class AlarmManager
 		}
 	}
 	private ConcurrentLinkedQueue<AlarmMsg> msgQ = new ConcurrentLinkedQueue<AlarmMsg>();
-	
-	
+
+
 	public static AlarmManager instance(TimeSeriesDb tsdb, DbKey appId)
 	{
 		if (_instance == null)
 			_instance = new AlarmManager(tsdb, appId);
-	
+
 		long now = System.currentTimeMillis();
-Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _instance.lastMailerConfig);
+		log.trace("AlarmManager.instance() now={}, lastCfg={}", now, _instance.lastMailerConfig);
 		if (now - _instance.lastMailerConfig > MAILER_CONFIG_MS)
 		{
 			_instance.configureMailer();
 			_instance.lastMailerConfig = System.currentTimeMillis();
 		}
-		
+
 		return _instance;
 	}
-	
+
 	// MJM 20200831 - Since AlarmManager is specific to an App Id, the GUI must now
 	// delete the instance every time a batch of computations is run, because this new
 	// batch may be for a different app ID.
@@ -127,7 +127,7 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 			_instance.shutdown();
 		_instance = null;
 	}
-	
+
 	private AlarmManager(TimeSeriesDb tsdb, DbKey appId)
 	{
 		this.tsdb = tsdb;
@@ -135,12 +135,12 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 		sdf.setTimeZone(TimeZone.getTimeZone(tsdb.getDatabaseTimezone()));
 		numFmt.setGroupingUsed(false);
 		numFmt.setMaximumFractionDigits(5);
-		
+
 		alarmConfig = new AlarmConfig();
-		
+
 		// The mailer thread runs in the background.
 		this.start();
-		Logger.instance().debug3(module + ".constructor appId=" + appId);
+		log.trace("constructor appId={}", appId);
 	}
 
 	/**
@@ -148,7 +148,7 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 	 */
 	private void configureMailer()
 	{
-		Logger.instance().debug3("AlarmManager.configureMailer");
+		log.trace("AlarmManager.configureMailer");
 		LoadingAppDAI loadingAppDAO = tsdb.makeLoadingAppDAO();
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
 		CompAppInfo cai = null;
@@ -163,9 +163,9 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 				String host = PropertiesUtil.getIgnoreCase(mailProps, "mail.smtp.host");
 				if (host == null || host.trim().length() == 0 || host.equals("-"))
 				{
-					Logger.instance().info(module 
-						+ " email alarm output disabled because 'mail.smtp.host' is undefined in properties for "
-						+ "loading application '" + cai.getAppName() + "'");
+					log.info("email alarm output disabled because 'mail.smtp.host' is undefined in properties for " +
+							 "loading application '{}'",
+							 cai.getAppName());
 					mailerEnabled = false;
 				}
 				else
@@ -177,8 +177,11 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 					catch(NumberFormatException ex)
 					{
 						resendSeconds = 3600 * 24;
-						Logger.instance().warning("Invalid resendSeconds property '" + s + "' -- should be number of seconds "
-							+ ": will use default of " + resendSeconds);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Invalid resendSeconds property '{}' -- should be number of seconds " +
+						   		": will use default of {}",
+								s, resendSeconds);
 					}
 				}
 				s = PropertiesUtil.getIgnoreCase(mailProps, "notifyMaxAgeDays");
@@ -188,31 +191,35 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 					catch(NumberFormatException ex)
 					{
 						notifyMaxAgeDays = 30;
-						Logger.instance().warning("Invalid notifyMaxAgeDays property '" + s + "' -- should be number of days "
-							+ ": will use default of " + notifyMaxAgeDays);
+						log.atError()
+						   .setCause(ex)
+						   .log("Invalid notifyMaxAgeDays property '{}' -- should be number of days " +
+						   		": will use default of {}",
+								s, notifyMaxAgeDays);
 					}
 				}
 
 				action = "configuring mailer";
 				alarmMailer.configure(mailProps);
-				
+
 				action = "checking alarm groups";
 				alarmDAO.check(alarmConfig);
 			}
 		}
 		catch(MailerException ex)
 		{
-			Logger.instance().failure(module + " Cannot configure alarm mailer: " + ex 
-				+ " -- email notifications will be disabled config for loading app '" 
-				+ cai.getAppName() + "' is fixed.");
+			log.atError()
+			   .setCause(ex)
+			   .log("Cannot configure alarm mailer -- email notifications will " +
+			   		" be disabled config for loading app '{}' until fixed",
+					cai.getAppName());
 			mailerEnabled = false;
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().failure(module + " Error while '" + action + "': " + ex
-				+ " -- mailer will be disabled until configuration is fixed.");
-			if (Logger.instance().getLogOutput() != null)
-				ex.printStackTrace(Logger.instance().getLogOutput());
+			log.atError()
+			   .setCause(ex)
+			   .log("Error while '{}' -- mailer will be disabled until configuration is fixed.", action);
 			mailerEnabled = false;
 		}
 		finally
@@ -221,18 +228,18 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 			loadingAppDAO.close();
 		}
 	}
-	
+
 	/**
 	 * Shutdown the thread and destroy the instance. Next call to instance() will
 	 * create new instance.
 	 */
 	public void shutdown()
 	{
-		Logger.instance().debug3(module + ".shutdown() appId=" + appId);
+		log.trace(".shutdown() appId={}", appId);
 		_shutdown = true;
 		_instance = null;
 	}
-	
+
 	/**
 	 * This is the mailer thread which reads the queue and sends email asynchronously
 	 * from the main compproc thread.
@@ -240,15 +247,15 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 	public void run()
 	{
 		try { sleep(2000L); } catch(InterruptedException ex) {}
-		
+
 		long lastRefresh = 0L;
 		long lastQueueCheck = System.currentTimeMillis();
-		
+
 		String action = "";
 		while(!_shutdown)
 		{
 			long now = System.currentTimeMillis();
-			
+
 			try
 			{
 				// Periodically refresh my 'current alarms' table from the database in
@@ -259,24 +266,21 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 					refreshCurrentAlarms();
 					lastRefresh = now;
 				}
-				
+
 				if (now - lastQueueCheck >= checkQueueMS)
 				{
 					checkQueue();
 					lastQueueCheck = now;
 				}
-				
-				
+
+
 				try { sleep(1000L); } catch(InterruptedException ex) {}
 			}
 			catch(Exception ex)
 			{
-				String msg = module + " unexpected exception while " + action + ": " + ex
-					+ " -- will shutdown.";
-				Logger.instance().failure(msg);
-				System.err.println(msg);
-				if (Logger.instance().getLogOutput() != null)
-					ex.printStackTrace(Logger.instance().getLogOutput());
+				log.atError()
+				   .setCause(ex)
+				   .log("unexpected exception while {} -- will shutdown.", action);
 				shutdown();
 			}
 		}
@@ -293,8 +297,8 @@ Logger.instance().debug3("AlarmManager.instance() now=" + now + ", lastCfg=" + _
 			toSend.add(msgQ.poll());
 		if (toSend.size() == 0)
 			return;
-		
-Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSend.size() + " alarms.");
+
+		log.trace("AlarmManager.checkQueue will attempt to send {} alarms.", toSend.size());
 		// Sort by Group ID, TSID, and then assertTime
 		Collections.sort(toSend,
 			new Comparator<AlarmMsg>()
@@ -312,7 +316,7 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 					return d == 0L ? 0 : d > 0L ? 1 : -1;
 				}
 			});
-		
+
 		StringBuilder sb = new StringBuilder();
 		DbKey lastGrpId = DbKey.NullKey;
 		DbKey lastTsIdKey = DbKey.NullKey;
@@ -321,7 +325,7 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 		for(Iterator<AlarmMsg> amit = toSend.iterator(); amit.hasNext(); )
 		{
 			AlarmMsg am = amit.next();
-			
+
 			// Starting a new group? Send the message already buffered for the last group.
 			if (!am.groupId.equals(lastGrpId))
 			{
@@ -334,20 +338,20 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 				}
 				lastGrpId = am.groupId;
 			}
-			
+
 			// Starting new time series? Add TSID to the message.
 			if (!lastTsIdKey.equals(am.tsid.getKey()))
 			{
-				sb.append(lineSep + "TSID: " + am.tsid.getUniqueString() 
+				sb.append(lineSep + "TSID: " + am.tsid.getUniqueString()
 					+ " (" + am.tsid.getKey() + ")");
-				
+
 				// For USBR here add site name and data type name
 				if (am.tsid instanceof HdbTsId)
 				{
 					Site site = am.tsid.getSite();
 					if (site != null && site.getDisplayName() != null)
 						sb.append(" " + site.getDisplayName());
-					
+
 					// If the datatype standard is not HDB then the TSID above is sufficient.
 					// Else lookup the HDB_DATATYPE common name.
 					DataType dt = am.tsid.getDataType();
@@ -359,11 +363,11 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 					}
 				}
 				sb.append(lineSep);
-				
-				
+
+
 				lastTsIdKey = am.tsid.getKey();
 			}
-			
+
 			// We could traverse multiple limit sets over time with different 'hint's.
 			if (!TextUtil.strEqual(lastHint, am.hint) && am.hint != null)
 			{
@@ -373,11 +377,11 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 
 			sb.append(am.msg + lineSep);
 		}
-		
+
 		// Now send the last group in the buffer.
 		if (sb.length() > 0)
 			sendEmail(lastGrpId, sb.toString());
-		
+
 	}
 
 	/**
@@ -387,10 +391,10 @@ Logger.instance().debug3("AlarmManager.checkQueue will attempt to send " + toSen
 	 */
 	private void sendEmail(DbKey groupId, String msg)
 	{
-Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled + " msg=" + msg);
+		log.trace("AlarmManager sendEmail mailerEnabled={} msg={}", mailerEnabled, msg);
 		if (!mailerEnabled)
 			return;
-		
+
 		String action = "";
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
 		try
@@ -404,11 +408,9 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 		}
 		catch (Exception ex)
 		{
-			String s = module + ".sendEmail failed while " + action + ": " + ex;
-			Logger.instance().warning(s);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
+			log.atWarn()
+			   .setCause(ex)
+			   .log(".sendEmail failed while {}", action);
 		}
 		finally
 		{
@@ -433,14 +435,14 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 		Date t, double value, double delta, double variance, int flags)
 	{
 		Alarm currentAlarm = currentAlarms.get(tsid.getKey());
-		
+
 		// Alarm records only store screening bits, not all of the other data flags.
 		int scrFlags = flags & HdbFlags.SCREENING_MASK;
 
-		
+
 		String action = "";
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
-		
+
 		Date now = new Date();
 		try
 		{
@@ -457,13 +459,13 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 				Date lastHist = alarmDAO.lastHistoryAlarmTime(tsid);
 				if (lastHist != null && t.before(lastHist))
 					return;
-				
+
 				// Don't alarm on values older than the threshold.
-				if (currentAlarm == null 
+				if (currentAlarm == null
 				 && System.currentTimeMillis()-t.getTime() > (notifyMaxAgeDays * MS_PER_DAY))
 					return;
 			}
-			
+
 			if (scrFlags == HdbFlags.SCREENED) // This means there are no faults asserted.
 			{
 				if (currentAlarm != null)
@@ -474,7 +476,7 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 					currentAlarms.remove(tsid.getKey());
 					currentAlarm.setEndTime(t);  // END_TIME is the date/time of the value that cancelled the alarm.
 					alarmDAO.moveToHistory(currentAlarm);
-					
+
 					if (!DbKey.isNull(scrn.getAlarmGroupId()))
 					{
 						// If a group is used, queue a message indicating that the alarm is cleared.
@@ -504,7 +506,7 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 					resend = true;
 				}
 				// Else something has changed. Build and explanatory message.
-				
+
 				action = "building alarm message";
 				StringBuilder sb = new StringBuilder("Value " + numFmt.format(value) + " at time " + sdf.format(t) + ": ");
 				boolean needComma = false;
@@ -520,11 +522,11 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 					case HdbFlags.SCR_VALUE_CRITICAL_LOW:  range = "CRITICAL_LOW "; break;
 					case HdbFlags.SCR_VALUE_REJECT_LOW:    range = "REJECT_LOW "; break;
 					}
-					
+
 					sb.append("value in " + range + " range");
 					needComma = true;
 				}
-					
+
 				if ((scrFlags & HdbFlags.SCR_ROC_MASK) != 0)
 				{
 					String range = "GOOD";
@@ -537,14 +539,14 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 					case HdbFlags.SCR_ROC_CRITICAL_LOW:  range = "CRITICAL_LOW "; break;
 					case HdbFlags.SCR_ROC_REJECT_LOW:    range = "REJECT_LOW "; break;
 					}
-					
+
 					if (needComma)
 						sb.append(", ");
 					sb.append("rate-of-change=" + numFmt.format(delta) + " over " + limitSet.getRocInterval() + " "
 							+ " is in " + range + " range");
 					needComma = true;
 				}
-				
+
 				if ((scrFlags & HdbFlags.SCR_STUCK_SENSOR_DETECTED) != 0)
 				{
 					if (needComma)
@@ -553,19 +555,19 @@ Logger.instance().debug3("AlarmManager sendEmail mailerEnabled=" + mailerEnabled
 						+ limitSet.getStuckDuration());
 					needComma = true;
 				}
-					
+
 				sb.append(".");
-				
+
 				// If a group is used, queue for an email message.
 				// This will cancel any previous MISSING assertion. Good!
 				action = "enqueuing alarm for email";
 				String alarmMsg = sb.toString();
 				if (!DbKey.isNull(scrn.getAlarmGroupId()))
 				{
-Logger.instance().debug3("AlarmManager, group is not null, enqueuing alarm for email '" + alarmMsg + "'");
+					log.trace("AlarmManager, group is not null, enqueuing alarm for email '{}'", alarmMsg);
 					msgQ.add(new AlarmMsg(scrn.getAlarmGroupId(), tsid, now, limitSet.getHintText(), alarmMsg));
 				}
-				
+
 				// Write the alarm to my cache and the database current_alarm table.
 				action = "finalizing alarm message";
 				if (currentAlarm == null)
@@ -578,15 +580,15 @@ Logger.instance().debug3("AlarmManager, group is not null, enqueuing alarm for e
 				currentAlarm.setLimitSetId(limitSet.getLimitSetId());
 				currentAlarm.setLimitSet(limitSet);
 				if (!resend)
-					currentAlarm.setAssertTime(now);	
+					currentAlarm.setAssertTime(now);
 				currentAlarm.setDataValue(value);
 				currentAlarm.setDataTime(t);
 				currentAlarm.setAlarmFlags(scrFlags);
 				currentAlarm.setMessage(alarmMsg);
 				if (!DbKey.isNull(scrn.getAlarmGroupId()))
 					currentAlarm.setLastNotificationTime(now);
-				
-				
+
+
 				//TODO Need to set appId in current alarm before writing.
 
 				action = "writing message to alarm_current table";
@@ -595,36 +597,36 @@ Logger.instance().debug3("AlarmManager, group is not null, enqueuing alarm for e
 		}
 		catch (Exception ex)
 		{
-			Logger.instance().warning(module + ".checkAlarms tsid=" + tsid + " error while " + action + ": " + ex);
-			PrintStream ps = Logger.instance().getLogOutput();
-			if (ps != null)
-				ex.printStackTrace(ps);
+			log.atWarn()
+			   .setCause(ex)
+			   .log(".checkAlarms tsid={} error while {}", tsid, action);
 		}
 		finally
 		{
 			alarmDAO.close();
 		}
-		
+
 	}
-	
+
 	public void missingCheckResults(TimeSeriesIdentifier tsid, Date chkTime, int numReceived, int numExpected,
 		AlarmScreening scrn, AlarmLimitSet limitSet)
 	{
 		Alarm currentAlarm = currentAlarms.get(tsid.getKey());
 		boolean isMissing = numExpected - numReceived > limitSet.getMaxMissingValues();
-Logger.instance().debug3("AlarmManager.missingCheckResults tsid='" + tsid.getUniqueString() + "' chkTime="
-+ sdf.format(chkTime) + ", numReceived=" + numReceived + ", numExpected=" + numExpected + ", isMissing=" + isMissing);
+		log.trace("AlarmManager.missingCheckResults tsid='{}' chkTime={}, " +
+				  "numReceived={}, numExpected={}, isMissing={}",
+				  tsid.getUniqueString(), chkTime, numReceived, numExpected, isMissing);
 		if (!isMissing)
 		{
 			// MISSING alarms will be cancelled in the 'checkAlarms' method above when new
 			// data is received for the TSID. So there's no need to do anything here.
 			return;
 		}
-		
+
 		// Alarm assertions only go forward in time.
 		if (currentAlarm != null && chkTime.before(currentAlarm.getDataTime()))
 			return;
-		if (currentAlarm == null 
+		if (currentAlarm == null
 		 && System.currentTimeMillis()-chkTime.getTime() > (notifyMaxAgeDays * MS_PER_DAY))
 			return;
 
@@ -668,19 +670,18 @@ Logger.instance().debug3("AlarmManager.missingCheckResults tsid='" + tsid.getUni
 		finally { alarmDAO.close(); }
 
 		// Enqueue a message for the background thread to send via email.
-		msgQ.add(new AlarmMsg(scrn.getAlarmGroupId(), tsid, chkTime, limitSet.getHintText(), 
+		msgQ.add(new AlarmMsg(scrn.getAlarmGroupId(), tsid, chkTime, limitSet.getHintText(),
 			currentAlarm.getMessage()));
 	}
-	
-	private void refreshCurrentAlarms() 
+
+	private void refreshCurrentAlarms()
 		throws DbIoException
 	{
 		AlarmDAI alarmDAO = tsdb.makeAlarmDAO();
 		try
 		{
 			alarmDAO.refreshCurrentAlarms(currentAlarms, TsdbAppTemplate.getAppInstance().getAppId());
-			Logger.instance().debug1(module + " after refresh there are " + currentAlarms.size()
-				+ " currently asserted alarms.");
+			log.debug("after refresh there are {} currently asserted alarms.", currentAlarms.size());
 		}
 		finally
 		{

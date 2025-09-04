@@ -1,19 +1,34 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.syncgui;
 
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Collections;
 import java.util.Comparator;
 import java.io.*;
 import java.net.URL;
-import java.text.ParseException;
-import java.text.ParseException;
-
-import ilex.util.Logger;
 
 public class District
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The district name */
 	private String name;
 
@@ -28,15 +43,15 @@ public class District
 
 	/** The user name managing the database (used for SSH transfers) */
 	private String user;
-	
+
 	/** Vector of DistrictDBSnap objects found under this district */
 	private Vector snaps;
-	
+
 	/**
 	 * Construct District.
 	 * @param name district name.
 	 */
-	public District(String name, String host, String user, String dir, 
+	public District(String name, String host, String user, String dir,
 		String desc)
 	{
 		this.name = name;
@@ -98,7 +113,7 @@ public class District
 			}
 		}
 		strm.close();
-		Collections.sort(snaps, 
+		Collections.sort(snaps,
 			new Comparator()
 			{
 				public int compare(Object o1, Object o2)
@@ -110,7 +125,6 @@ public class District
 					int x = (int)s1.charAt(0) - (int)s2.charAt(0);
 					if (x == 0)
 						x = -s1.compareTo(s2);
-//System.out.println("Comparing " + s1 + " and " + s2 + ", returning " + x);
 					return x;
 				}
 				public boolean equals(Object o)
@@ -137,8 +151,7 @@ public class District
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot read date file from '"
-				+ urlstr + "'");
+			log.atWarn().setCause(ex).log("Cannot read date file from '{}'", urlstr);
 			ret = "";
 		}
 		return ret;
