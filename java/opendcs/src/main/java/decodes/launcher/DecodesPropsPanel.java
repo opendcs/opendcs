@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.launcher;
 
 import java.awt.*;
@@ -19,13 +34,14 @@ import decodes.gui.properties.PropertiesTableModel;
 import decodes.util.DecodesSettings;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.gui.GuiHelpers;
 import org.opendcs.spi.authentication.AuthSource;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DecodesPropsPanel extends JPanel
 {
-    private final Logger log = LoggerFactory.getLogger(DecodesPropsPanel.class);
+    private final Logger log = OpenDcsLoggerFactory.getLogger();
     private final ResourceBundle labels;
     private final ResourceBundle genericLabels;
     String editDbTypes[] = { "XML", "SQL", "NWIS", "CWMS", "OPENTSDB", "HDB"};
@@ -78,7 +94,7 @@ public class DecodesPropsPanel extends JPanel
         }
         catch(Exception ex)
         {
-            log.error("Unable to initialize Properties Panel.", ex);
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -244,6 +260,9 @@ public class DecodesPropsPanel extends JPanel
                 }
                 catch(Exception ex)
                 {
+                    log.atError()
+                       .setCause(ex)
+                       .log(LoadResourceBundle.sprintf(labels.getString("DecodesPropsPanel.cannotSavePassErr"),afn));
                     parent.showError(
                         LoadResourceBundle.sprintf(
                         labels.getString("DecodesPropsPanel.cannotSavePassErr"),
@@ -254,12 +273,13 @@ public class DecodesPropsPanel extends JPanel
         catch (AuthException ex)
         {
             String msg = "There was an error processing the authentication settings." + ex.getLocalizedMessage();
-            log.error("Unable to process DbAuthFile property", ex);
+            log.atError().setCause(ex).log("Unable to process DbAuthFile property");
             JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
         }
         catch (IOException ex)
         {
             String msg = "The current settings have not been saved to disk. Please save the properties to disk first and then set the password.";
+            log.atError().setCause(ex).log(msg);
             JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
         }
         catch (InvalidStateException ex)
@@ -281,7 +301,7 @@ public class DecodesPropsPanel extends JPanel
             else
             {
                 msg = "Error processing information. See log";
-                log.error("Unable to process auth file conditions", ex);
+                log.atError().setCause(ex).log("Unable to process auth file conditions");
             }
             JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
         }
