@@ -1,38 +1,20 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.2  2014/09/25 18:10:00  mmaloney
-*  Added Seasons Enum with Editor.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1  2008/04/04 18:21:04  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.6  2008/02/10 20:17:33  mmaloney
-*  dev
-*
-*  Revision 1.2  2008/02/01 15:20:40  cvs
-*  modified files for internationalization
-*
-*  Revision 1.5  2007/12/04 18:26:55  mmaloney
-*  dev
-*
-*  Revision 1.4  2005/03/15 16:11:28  mjmaloney
-*  Modify 'Enum' for Java 5 compat.
-*
-*  Revision 1.3  2004/12/21 14:46:06  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.2  2004/04/01 22:37:23  mjmaloney
-*  Implemented controls for enumerations.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.rledit;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import javax.swing.*;
@@ -40,6 +22,10 @@ import javax.swing.*;
 import java.awt.*;
 
 import javax.swing.border.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.awt.event.*;
 import java.util.ResourceBundle;
@@ -49,10 +35,10 @@ import decodes.db.*;
 /**
 This dialog edits a single enum value.
 */
-public class EnumValueDialog extends JDialog 
+public class EnumValueDialog extends JDialog
 {
-	private static ResourceBundle genericLabels = 
-		RefListEditor.getGenericLabels();
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
 	private static ResourceBundle labels = RefListEditor.getLabels();
 	private Border border1;
 	private JPanel jPanel1 = new JPanel();
@@ -79,13 +65,15 @@ public class EnumValueDialog extends JDialog
 	/**
 	 * Constructor.
 	 */
-	public EnumValueDialog() throws HeadlessException 
+	public EnumValueDialog() throws HeadlessException
 	{
-		try {
+		try
+		{
 			jbInit();
 		}
-		catch(Exception e) {
-			e.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		myEV = null;
 
@@ -118,7 +106,7 @@ public class EnumValueDialog extends JDialog
 	}
 
 	/** Initializes GUI components. */
-	private void jbInit() throws Exception 
+	private void jbInit() throws Exception
 	{
 		border1 = BorderFactory.createBevelBorder(BevelBorder.LOWERED,Color.white,Color.white,new Color(115, 114, 105),new Color(165, 163, 151));
 		border2 = BorderFactory.createLineBorder(SystemColor.controlText,1);
@@ -126,7 +114,6 @@ public class EnumValueDialog extends JDialog
 		this.setTitle(labels.getString("EnumValueDialog.title"));
 		jPanel1.setLayout(borderLayout1);
 		this.setSize(new Dimension(500, 220));
-		//jPanel1.setPreferredSize(new Dimension(500, 150));
 		jLabel1.setText(labels.getString("EnumValueDialog.enumerationType"));
 		enumNameField.setMinimumSize(new Dimension(130, 20));
 		enumNameField.setPreferredSize(new Dimension(130, 20));
@@ -141,7 +128,7 @@ public class EnumValueDialog extends JDialog
 		okButton.addActionListener(
 			new ActionListener()
 			{
-				public void actionPerformed(ActionEvent e) 
+				public void actionPerformed(ActionEvent e)
 				{
 					okButtonPressed();
 				}
@@ -152,7 +139,7 @@ public class EnumValueDialog extends JDialog
 		cancelButton.addActionListener(
 			new ActionListener()
 			{
-				public void actionPerformed(ActionEvent e) 
+				public void actionPerformed(ActionEvent e)
 				{
 					cancelButtonPressed();
 				}
@@ -162,7 +149,7 @@ public class EnumValueDialog extends JDialog
 		flowLayout2.setVgap(10);
 		valueField.setToolTipText(labels.getString(
 				"EnumValueDialog.enumerationTT"));
-		
+
 		valueField.setMinimumSize(new Dimension(120, 20));
 		valueField.setPreferredSize(new Dimension(120, 20));
 		valueField.setText("");
@@ -181,15 +168,15 @@ public class EnumValueDialog extends JDialog
 		jPanel1.add(southButtonPanel, BorderLayout.SOUTH);
 		labelValuePanel.add(new JLabel(labels.getString("EnumValueDialog.mnemonicValue")),
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(10, 20, 5, 0), 0, 0));
 		labelValuePanel.add(valueField,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 2, 5, 100), 0, 0));
 		labelValuePanel.add(new JLabel(labels.getString("EnumValueDialog.completeDescription")),
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 20, 5, 0), 0, 0));
 		labelValuePanel.add(descriptionField,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
@@ -217,20 +204,20 @@ public class EnumValueDialog extends JDialog
 	 * Called when OK button is pressed.
 	 * @param e ignored.
 	 */
-	void okButtonPressed() 
+	void okButtonPressed()
 	{
 		String v = valueField.getText();
 		if (!v.equals(myEV.getValue()))
 		{
 			_wasChanged = true;
 			myEV.setValue(v);
-		}	
+		}
 		v = descriptionField.getText();
 		if (!v.equals(myEV.getDescription()))
 		{
 			_wasChanged = true;
 			myEV.setDescription(v);
-		}	
+		}
 		v = execClassField.getText();
 		if (!v.equals(myEV.getExecClassName()))
 		{
@@ -243,7 +230,7 @@ public class EnumValueDialog extends JDialog
 			_wasChanged = true;
 			myEV.setEditClassName(v);
 		}
-		
+
 		closeDlg();
 	}
 

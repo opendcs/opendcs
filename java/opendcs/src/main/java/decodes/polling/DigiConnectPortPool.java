@@ -1,13 +1,7 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
- * between COVE and Alberta ESRD.
- *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,17 +17,18 @@
 package decodes.polling;
 
 import ilex.net.BasicClient;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.rmi.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.StringTokenizer;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.DeviceStatusDAI;
 import decodes.db.Database;
@@ -42,9 +37,9 @@ import decodes.db.TransportMedium;
 import decodes.sql.SqlDatabaseIO;
 import decodes.tsdb.DbIoException;
 
-public class DigiConnectPortPool 
-	extends PortPool
+public class DigiConnectPortPool extends PortPool
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "DigiConnectPortPool";
 	private String digiIpAddr = null;
 	public int digiPortBase = 2100;
@@ -53,21 +48,21 @@ public class DigiConnectPortPool
 	private String processName = null;
 	private String hostname = null;
 	private DigiConnectPortManager portManager = null;
-	
+
 	// A port with last activity time more than 5 min is considered idle even if it's flagged as in use.
 	public static final long PORT_STALE_MS = 300000L;
-	
-	/** 
+
+	/**
 	 * the names match PORT_NAME column in the SERIAL_PORT_STATUS table.
 	 * Format is <digiIpAddr>:portNum.
 	 */
 	private ArrayList<String> portNames = new ArrayList<String>();
-	
+
 	ArrayList<AllocatedSerialPort> allocatedPorts = new ArrayList<AllocatedSerialPort>();
-	
+
 	/** The index of the next port to try, so we can use them round-robin. */
 	private int nextPortIdx = 0;
-	
+
 	private SqlDatabaseIO sqldbio = null;
 	class PortStats
 	{
@@ -75,12 +70,12 @@ public class DigiConnectPortPool
 		int consecutiveErrors = 0;
 	};
 	HashMap<String, PortStats> portStats = new HashMap<String, PortStats>();
-	
+
 	// Once a BC is created it is reused rather than recreating.
 	// This ensures that there are no orphan sockets due to abnormal termination.
 	private HashMap<String, BasicClient> name2bc = new HashMap<String, BasicClient>();
 
-	
+
 	public DigiConnectPortPool()
 	{
 		super(module);
@@ -88,7 +83,7 @@ public class DigiConnectPortPool
 	}
 
 	@Override
-	public void configPool(Properties dataSourceProps) 
+	public void configPool(Properties dataSourceProps)
 		throws ConfigException
 	{
 		// Parse property digiIpAddr
@@ -96,7 +91,7 @@ public class DigiConnectPortPool
 		if (digiIpAddr == null || digiIpAddr.trim().length() == 0)
 			throw new ConfigException("Missing required property 'digiIpAddr'. Should be "
 				+ "set to hostname or IP Address of the Digi ConnectPort device.");
-		
+
 		// Parse property digiPortBase
 		String s = PropertiesUtil.getIgnoreCase(dataSourceProps, "digiPortBase");
 		if (s != null && s.trim().length() > 0)
@@ -104,10 +99,10 @@ public class DigiConnectPortPool
 			try { digiPortBase = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
 			{
-				throw new ConfigException("Invalid digiPortBase property '" + s + "' -- expected integer.");
+				throw new ConfigException("Invalid digiPortBase property '" + s + "' -- expected integer.", ex);
 			}
 		}
-		
+
 		// Parse the comma-separated list of port numbers and ranges
 		// e.g. "1-4,7,9-13". Fill in the portNames array.
 		s = PropertiesUtil.getIgnoreCase(dataSourceProps, "availablePorts");
@@ -121,12 +116,12 @@ public class DigiConnectPortPool
 				{
 					String t = st.nextToken();
 					int hyphen = t.indexOf('-');
-Logger.instance().debug1(module + " token '" + t + "' hyphen=" + hyphen);
+					log.debug("token '{}' hyphen={}", t, hyphen);
 					if (hyphen == -1)
 					{
 						int portnum = Integer.parseInt(t);
 						String n = digiIpAddr + ":" + (portnum<10?"0":"") + portnum;
-Logger.instance().debug1(module + "   adding " + n);
+						log.debug("adding {}", n);
 						portNames.add(n);
 					}
 					else
@@ -140,7 +135,7 @@ Logger.instance().debug1(module + "   adding " + n);
 						{
 							int portnum = start++;
 							String n = digiIpAddr + ":" + (portnum<10?"0":"") + portnum;
-Logger.instance().debug1(module + "   adding " + n);
+							log.debug("adding {}", n);
 							portNames.add(n);
 						}
 					}
@@ -152,16 +147,17 @@ Logger.instance().debug1(module + "   adding " + n);
 			}
 			catch(Exception ex)
 			{
-				throw new ConfigException("Invalid availablePorts property '" + s 
+				throw new ConfigException("Invalid availablePorts property '" + s
 					+ "'. Must be comma separated list of ports, or port ranges. Example: "
-					+ "1-5,7,9-12");
+					+ "1-5,7,9-12", ex);
 			}
 		}
 		if (portNames.size() == 0)
 			throw new ConfigException("No availablePorts specified");
-		Logger.instance().info(module + " initialized with " + portNames.size() + " ports. Ports are: "
-			+ PropertiesUtil.getIgnoreCase(dataSourceProps, "availablePorts"));
-		
+
+		log.info("initialized with {} ports. Ports are: {}",
+				 portNames.size(), PropertiesUtil.getIgnoreCase(dataSourceProps, "availablePorts"));
+
 		// Parse properties for digiUserName and digiPassword
 		digiUserName = PropertiesUtil.getIgnoreCase(dataSourceProps, "digiUserName");
 		if (digiUserName == null || digiUserName.trim().length() == 0)
@@ -175,33 +171,32 @@ Logger.instance().debug1(module + "   adding " + n);
 		processName = PropertiesUtil.getIgnoreCase(dataSourceProps, "RoutingSpecName");
 		if (processName == null)
 		{
-			Logger.instance().warning(module + " no 'RoutingSpecName' property available, will use process name '"
-				+ module + "'");
+			log.warn("no 'RoutingSpecName' property available, will use process name '{}'", module);
 			processName = module;
 		}
 		try { hostname = InetAddress.getLocalHost().getHostName(); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning(module + " Cannot resolve hostname. Will use 'localhost'");
+			log.atWarn().setCause(ex).log("Cannot resolve hostname. Will use 'localhost'");
 			hostname = "localhost";
 		}
-		
+
 		// Get access to the database for DeviceStatus records.
 		DatabaseIO dbio = Database.getDb().getDbIo();
 		if (!(dbio instanceof SqlDatabaseIO))
 			throw new ConfigException("The DECODES Database is not a SQL Database. Cannot use Digi!");
 		sqldbio = (SqlDatabaseIO)dbio;
-		
+
 		portManager.start();
 	}
 
 	@Override
 	public synchronized IOPort allocatePort()
 	{
-		Logger.instance().debug3(module + " allocatePort starting.");
+		log.trace("allocatePort starting.");
 		// Use SERIAL_PORT_STATUS table to find a free port
 		DeviceStatusDAI deviceStatusDAO = sqldbio.makeDeviceStatusDAO();
-		
+
 		IOPort ret = null;
 		try
 		{
@@ -212,8 +207,8 @@ Logger.instance().debug1(module + "   adding " + n);
 			{
 				String portName = portNames.get(nextPortIdx);
 				PortStats ps = portStats.get(portName);
-				
-				Logger.instance().debug3(module + " trying port " + portName);
+
+				log.trace("trying port {}", portName);
 				DeviceStatus devStat = deviceStatusDAO.getDeviceStatus(portName);
 				if (devStat == null) // first time this device used?
 					devStat = new DeviceStatus(portName);
@@ -223,8 +218,7 @@ Logger.instance().debug1(module + "   adding " + n);
 				 || now - devStat.getLastActivityTime().getTime() > PORT_STALE_MS)
 				 && (ps == null || now > ps.dontUseUntil))
 				{
-					Logger.instance().debug2(module + " Port " + portName 
-						+ " is free. Will attempt to allocate.");
+					log.trace("Port {} is free. Will attempt to allocate.", portName);
 					// Set its IN_USE, LAST_USED_BY_PROC, and LAST_USED_BY_HOST
 					devStat.setInUse(true);
 					devStat.setLastUsedByProc(processName);
@@ -236,26 +230,24 @@ Logger.instance().debug1(module + "   adding " + n);
 					// Wait 2 seconds and then check to see that last used proc/host are still me.
 					try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
 					devStat = deviceStatusDAO.getDeviceStatus(portName);
-					
-					Logger.instance().debug3(module + " After 2 sec delay, " + portName 
-						+ " is still mine. Will use.");
+
+					log.trace("After 2 sec delay, {} is still mine. Will use.", portName);
 					if (!devStat.getLastUsedByHost().equals(hostname)
 					 || !devStat.getLastUsedByProc().equals(processName))
 					{
-						Logger.instance().info(module + " Port '" + portName + " stolen by process '"
-							+ devStat.getLastUsedByProc() + "' host '" + devStat.getLastUsedByHost()
-							+ "' -- will keep trying.");
+						log.warn("Port '{}' stolen by process '{}' host '{}' -- will keep trying.",
+								 portName, devStat.getLastUsedByProc(), devStat.getLastUsedByHost());
 					}
 					else // If so, I have the port! Open socket, create IOPort and set ret.
 					{
 						int colon = portName.indexOf(':');
 						int portnum = Integer.parseInt(portName.substring(colon+1));
-						
+
 						BasicClient bc = getBasicClient(digiIpAddr, digiPortBase + portnum);
-// MJM Note: I determined experimentally that configuring the digi baudrate, stopbits, etc.,
-// will cause DTR to the modem to drop. This tells the modem to hangup and become unusable.
-// Therefore, we defer opening the socket until the configPort() method is called below.
-// We open the socket to the port AFTER all the settings are done.
+						// MJM Note: I determined experimentally that configuring the digi baudrate, stopbits, etc.,
+						// will cause DTR to the modem to drop. This tells the modem to hangup and become unusable.
+						// Therefore, we defer opening the socket until the configPort() method is called below.
+						// We open the socket to the port AFTER all the settings are done.
 						ret = new IOPort(this, portnum, new ModemDialer());
 						ret.setPortName(portName);
 						allocatedPorts.add(new AllocatedSerialPort(ret, devStat, bc));
@@ -263,42 +255,44 @@ Logger.instance().debug1(module + "   adding " + n);
 				}
 				else // Else this is already in use
 				{
-					Logger.instance().debug3(module + " Port " + portName 
-						+ " was already in use, last activity time=" + devStat.getLastActivityTimeStr());
+					log.trace("Port {} was already in use, last activity time={}",
+							  portName, devStat.getLastActivityTime());
 				}
-				
+
 				if (++nextPortIdx >= portNames.size())
 					nextPortIdx = 0;
 				if (ret == null && nextPortIdx == startPortIdx)
 				{
 					// Already tried all the ports
-					Logger.instance().debug3(module + " No ports currently available.");
+					log.trace("No ports currently available.");
 					break; // stop trying, will return null.
 				}
 			}
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().failure(module + " Error reading/writing device statuses: " + ex);
+			log.atError().setCause(ex).log("Error reading/writing device statuses.");
 		}
 		finally
 		{
 			deviceStatusDAO.close();
 		}
-if (ret == null)
-Logger.instance().debug3(module + " failed. No ports available.");
-else
-Logger.instance().debug3(module + " success. returning port " + ret.getPortNum());
-
+		if (ret == null)
+		{
+			log.trace("failed. No ports available.");
+		}
+		else
+		{
+			log.trace("success. returning port {}", ret.getPortNum());
+		}
 		return ret;
-
 	}
 
 	@Override
 	public synchronized void releasePort(IOPort ioPort, PollingThreadState finalState,
 		boolean wasConnectException)
 	{
-		Logger.instance().debug1(module + " releasePort starting for port " + ioPort.getPortName());
+		log.debug("releasePort starting for port {}", ioPort.getPortName());
 		// Close the socket and remove it from my allocatedPorts
 		AllocatedSerialPort allocatedPort = null;
 		for (AllocatedSerialPort ap : allocatedPorts)
@@ -310,13 +304,12 @@ Logger.instance().debug3(module + " success. returning port " + ret.getPortNum()
 		if (allocatedPort == null)
 			return;
 		allocatedPorts.remove(allocatedPort);
-		
+
 		PortStats ps = portStats.get(ioPort.getPortName());
 		if (ps == null)
 			portStats.put(ioPort.getPortName(), ps = new PortStats());
-		
-		Logger.instance().debug1(module + " disconnecting basic client from: "
-			+ allocatedPort.basicClient.getName());
+
+		log.debug(module + " disconnecting basic client from: {}", allocatedPort.basicClient.getName());
 		allocatedPort.basicClient.disconnect();
 		ioPort.setIn(null);
 		ioPort.setOut(null);
@@ -324,11 +317,11 @@ Logger.instance().debug3(module + " success. returning port " + ret.getPortNum()
 			ps.consecutiveErrors++;
 		else
 			ps.consecutiveErrors = 0;
-		
+
 		if (ps.consecutiveErrors >= 3)
 		{
-			Logger.instance().warning(module + " Port " + ioPort.getPortNum() 
-				+ " has had 3 consecutive connect errors. It will be disabled for two minutes.");
+			log.warn("Port {} has had 3 consecutive connect errors. It will be disabled for two minutes.",
+					 ioPort.getPortNum());
 			ps.dontUseUntil = System.currentTimeMillis() + 120000L;
 			ps.consecutiveErrors = 0;
 		}
@@ -340,7 +333,7 @@ Logger.instance().debug3(module + " success. returning port " + ret.getPortNum()
 		}
 		// Free the port in SERIAL_PORT_STATUS
 		DeviceStatusDAI deviceStatusDAO = sqldbio.makeDeviceStatusDAO();
-		
+
 		// Finalize and set the deviceStatus to no In Use
 		try
 		{
@@ -359,13 +352,13 @@ Logger.instance().debug3(module + " success. returning port " + ret.getPortNum()
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().failure(module + " Cannot write deviceStatus: " + ex);
+			log.atError().setCause(ex).log("Cannot write deviceStatus.");
 		}
 		finally
 		{
 			deviceStatusDAO.close();
 		}
-Logger.instance().debug3(module + " releasePort returning.");
+		log.trace("releasePort returning.");
 
 	}
 
@@ -391,7 +384,7 @@ Logger.instance().debug3(module + " releasePort returning.");
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().failure(module + " Cannot list deviceStatus: " + ex);
+			log.atError().setCause(ex).log("Cannot list deviceStatus.");
 		}
 		finally
 		{
@@ -414,22 +407,20 @@ Logger.instance().debug3(module + " releasePort returning.");
 			}
 		if (allocatedPort == null)
 		{
-			Logger.instance().warning(module + " asked to config port for " + tm.toString()
-				+ ", but port was not allocated by this object!");
+			log.warn("asked to config port for {}, but port was not allocated by this object!", tm.toString());
 			return;
 		}
 		allocatedPort.transportMedium = tm;
-		
+
 		// Port Manager will use info in tm to set serial port parameters.
 		portManager.configPort(allocatedPort);
 		if (allocatedPort.ioPort.getConfigureState() != PollingThreadState.Success)
 			throw new DialException("Failed to configure serial port.", false);
-		
+
 		// I'm seeing broken pipe on sending init string. Try waiting two seconds after
 		// configuring before actually opening the socket to the port.
 		try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
-		Logger.instance().debug1(module + " Connecting to " + allocatedPort.basicClient.getHost()
-			+ ":" + allocatedPort.basicClient.getPort());
+		log.warn("Connecting to {}:{}", allocatedPort.basicClient.getHost(), allocatedPort.basicClient.getPort());
 		try
 		{
 			allocatedPort.basicClient.connect();
@@ -440,11 +431,10 @@ Logger.instance().debug3(module + " releasePort returning.");
 		{
 			allocatedPort.basicClient.disconnect();
 			throw new DialException("Cannot connect to port " + ioPort.getPortName()
-				+ ", host:tcpPort=" + allocatedPort.basicClient.getName()
-				+ ": " + ex, true);
+				+ ", host:tcpPort=" + allocatedPort.basicClient.getName(), ex, true);
 		}
 	}
-	
+
 	/**
 	 * Manage the basic clients & return the requested one. Create the object
 	 * if one has not already been created for this port.
@@ -465,7 +455,7 @@ Logger.instance().debug3(module + " releasePort returning.");
 	@Override
 	public void close()
 	{
-		Logger.instance().info(module + " there are " + allocatedPorts.size() + " still allocated.");
+		log.info(" there are {} still allocated.", allocatedPorts.size());
 		// It's up to each PollingThread to close it's own port.
 		// So if anything is left, it means the controller is shutting down prematurely.
 		// So close anything still open.
@@ -476,7 +466,7 @@ Logger.instance().debug3(module + " releasePort returning.");
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning(module + ".close() - unexpected erro releasing ports: " + ex);
+			log.atWarn().setCause(ex).log("close() - unexpected erro releasing ports.");
 		}
 		if (portManager != null)
 			portManager.shutdown();
@@ -490,10 +480,11 @@ Logger.instance().debug3(module + " releasePort returning.");
 			}
 		name2bc.clear();
 		if (closed > 0)
-			Logger.instance().warning(module + " " + closed 
-				+ " ports were left open when close() was called.");
+		{
+			log.warn("{} ports were left open when close() was called.", closed);
+		}
 	}
-	
+
 	@Override
 	public void finalize()
 	{
