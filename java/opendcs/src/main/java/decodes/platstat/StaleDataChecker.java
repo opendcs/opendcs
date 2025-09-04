@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.platstat;
 
 import java.io.File;
@@ -12,13 +27,15 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.DacqEventDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.PlatformStatusDAI;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.db.Database;
 import decodes.db.DatabaseException;
@@ -37,13 +54,11 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.tsdb.TsdbCompLock;
 import decodes.util.CmdLineArgs;
-import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 
-public class StaleDataChecker
-	extends TsdbAppTemplate
-	implements PropertiesOwner
+public class StaleDataChecker extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static String module = "StaleDataChecker";
 	private CompAppInfo appInfo = null;
 	private TsdbCompLock myLock = null;
@@ -59,21 +74,21 @@ public class StaleDataChecker
 	private SimpleDateFormat sdf = new SimpleDateFormat("ddMMM HH:mm");
 	private CompEventSvr compEventSvr = null;
 
-	private PropertySpec propSpecs[] = 
+	private PropertySpec propSpecs[] =
 	{
-		new PropertySpec("StaleDataMaxAgeHours", PropertySpec.NUMBER, 
+		new PropertySpec("StaleDataMaxAgeHours", PropertySpec.NUMBER,
 			"Stations not reporting in more than this # of hours are considered stale."),
-		new PropertySpec("StaleDataTriggerFile1", PropertySpec.STRING, 
+		new PropertySpec("StaleDataTriggerFile1", PropertySpec.STRING,
 			"File name of first PageGate trigger file"),
-		new PropertySpec("StaleDataTriggerFile2", PropertySpec.STRING, 
+		new PropertySpec("StaleDataTriggerFile2", PropertySpec.STRING,
 			"File name of second PageGate trigger file"),
-		new PropertySpec("StaleDataFileContents", PropertySpec.STRING, 
+		new PropertySpec("StaleDataFileContents", PropertySpec.STRING,
 			"Template for file contents"),
-		new PropertySpec("StaleDataFileTZ", PropertySpec.TIMEZONE, 
+		new PropertySpec("StaleDataFileTZ", PropertySpec.TIMEZONE,
 			"Timezone for date/times in trigger files.")
 	};
 
-	private StringToken netlistArg = new StringToken("n", "Network List Name", "", 
+	private StringToken netlistArg = new StringToken("n", "Network List Name", "",
 		TokenOptions.optSwitch|TokenOptions.optMultiple, "");
 
 	public StaleDataChecker()
@@ -81,7 +96,7 @@ public class StaleDataChecker
 		super(module);
 		setSilent(true);
 	}
-	
+
 	@Override
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
@@ -96,44 +111,45 @@ public class StaleDataChecker
 		try
 		{
 			appInfo = loadingAppDao.getComputationApp(getAppId());
-			
+
 			// If this process can be monitored, start an Event Server.
 			if (TextUtil.str2boolean(appInfo.getProperty("monitor")) && compEventSvr == null)
 			{
-				try 
+				try
 				{
 					compEventSvr = new CompEventSvr(determineEventPort(appInfo));
 					compEventSvr.startup();
 				}
 				catch(IOException ex)
 				{
-					failure("Cannot create Event server: " + ex
-						+ " -- no events available to external clients.");
+					log.atError()
+					   .setCause(ex)
+					   .log("Cannot create Event server: -- no events available to external clients.");
 				}
 			}
-			
+
 			String hostname = "unknown";
 			try { hostname = InetAddress.getLocalHost().getHostName(); }
 			catch(Exception e) { hostname = "unknown"; }
 
-			myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname); 
+			myLock = loadingAppDao.obtainCompProcLock(appInfo, getPID(), hostname);
 
 		}
 		catch (LockBusyException ex)
 		{
-			warning("Cannot run: lock busy: " + ex);
+			log.atWarn().setCause(ex).log("Cannot run: lock busy.");
 			shutdown = true;
 			return;
 		}
 		catch (DbIoException ex)
 		{
-			warning("Database I/O Error: " + ex);
+			log.atError().setCause(ex).log("Database I/O Error: Shutting down.");
 			shutdown = true;
 			return;
 		}
 		catch (NoSuchObjectException ex)
 		{
-			warning("Cannot run: No such app name '" + appNameArg.getValue() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot run: No such app name '{}'", appNameArg.getValue());
 			shutdown = true;
 			return;
 		}
@@ -141,15 +157,16 @@ public class StaleDataChecker
 		{
 			loadingAppDao.close();
 		}
-		
+
 		String s = appInfo.getProperty("StaleDataCheckMinutes");
 		if (s != null && s.length() > 0)
 		{
 			try { checkPeriodMinutes = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
 			{
-				warning(" Invalid StaleDataCheckPeriodMinutes"
-					+ " property '" + s + "' -- ignored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log(" Invalid StaleDataCheckPeriodMinutes property '{}' -- ignored.", s);
 				checkPeriodMinutes = 1;
 			}
 		}
@@ -159,12 +176,13 @@ public class StaleDataChecker
 			try { maxAgeHours = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
 			{
-				Logger.instance().warning(module + " Invalid StaleDataMaxAgeHours"
-					+ " property '" + s + "' -- ignored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log(" Invalid StaleDataMaxAgeHours property '{}' -- ignored.", s);
 				maxAgeHours = 24;
 			}
 		}
-		
+
 		triggerFile1 = appInfo.getProperty("StaleDataTriggerFile1");
 		triggerFile2 = appInfo.getProperty("StaleDataTriggerFile2");
 		fileContents = appInfo.getProperty("StaleDataFileContents");
@@ -172,7 +190,7 @@ public class StaleDataChecker
 		{
 			fileContents = "DACQ-Alert: Data not current MST=${LASTMSGTIME} ${SITENAME}";
 		}
-		
+
 		if (netlistArg.NumberOfValues() == 0
 		 || (netlistArg.NumberOfValues() == 1 && netlistArg.getValue().length() == 0))
 		{
@@ -182,18 +200,18 @@ public class StaleDataChecker
 		{
 			netlistNames.add(netlistArg.getValue(idx));
 		}
-		
+
 		String tzid = appInfo.getProperty("StaleDataFileTZ");
 		if (tzid == null)
 			tzid = "MST";
 		sdf.setTimeZone(TimeZone.getTimeZone(tzid));
 	}
-	
+
 	private void doCheck()
 	{
-		Logger.instance().debug2(module + " checking platform statuses...");
+		log.trace(" checking platform statuses...");
 		PlatformStatusDAI platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();
-		
+
 		try
 		{
 			ArrayList<PlatformStatus> statusList = platformStatusDAO.listPlatformStatus();
@@ -210,8 +228,9 @@ public class StaleDataChecker
 					}
 					catch (DatabaseException ex)
 					{
-						warning("Platform status with platform id=" + platId 
-							+ ", but no matching platform: "+ ex);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Platform status with platform id={}, but no matching platform: ", platId);
 						continue;
 					}
 				}
@@ -228,14 +247,16 @@ public class StaleDataChecker
 					try { mah = Integer.parseInt(s); }
 					catch(NumberFormatException ex)
 					{
-						warning("Platform '" + plat.getDisplayName() + "' bad StaleDataMaxAgeHours property '"
-							+ s + "' -- should be integer.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Platform '{}' bad StaleDataMaxAgeHours property '{}' -- should be integer.",
+						   		plat.getDisplayName(), s);
 						mah = maxAgeHours;
 					}
 				if (isInList)
 				{
 					Date lastMsgTime = platstat.getLastMessageTime();
-					if (lastMsgTime == null || 
+					if (lastMsgTime == null ||
 						(System.currentTimeMillis() - lastMsgTime.getTime()) > mah * 3600000L)
 					{
 						assertStale(plat, platstat);
@@ -245,14 +266,14 @@ public class StaleDataChecker
 		}
 		catch (DbIoException ex)
 		{
-			warning("Database I/O error in doCheck: " + ex);
+			log.atWarn().setCause(ex).log("Database I/O error in doCheck.");
 		}
 		finally
 		{
 			platformStatusDAO.close();
 		}
 	}
-	
+
 	private void assertStale(Platform plat, PlatformStatus platstat)
 	{
 		// Make sure a 'stale' assertion isn't already in place.
@@ -261,7 +282,7 @@ public class StaleDataChecker
 			annot = "";
 		if (annot.toLowerCase().contains("stale"))
 			return;
-		
+
 		// Also don't overwrite other errors with a stale assertion. Only assert
 		// if it is not currently in an error state.
 		Date lastError = platstat.getLastErrorTime();
@@ -269,7 +290,7 @@ public class StaleDataChecker
 		if (lastError != null
 		 && (lastMsg == null || lastError.after(lastMsg)))
 			return;
-		
+
 		String msg = "Stale: No data in more than " + maxAgeHours + " hours.";
 		platstat.setAnnotation(msg);
 		platstat.setLastErrorTime(new Date());
@@ -280,7 +301,7 @@ public class StaleDataChecker
 			platformStatusDAO.writePlatformStatus(platstat);
 			DacqEvent evt = new DacqEvent();
 			evt.setAppId(getAppId());
-			evt.setEventPriority(Logger.E_FAILURE);
+			evt.setEventPriority(0); // NOTE: concept as a whole will most likely get replaced.
 			evt.setEventText(msg);
 			evt.setEventTime(new Date());
 			evt.setPlatformId(plat.getId());
@@ -288,7 +309,7 @@ public class StaleDataChecker
 		}
 		catch (DbIoException ex)
 		{
-			warning("Cannot save Platform Status entry: " + ex);
+			log.atWarn().setCause(ex).log("Cannot save Platform Status entry.");
 		}
 		finally
 		{
@@ -299,35 +320,31 @@ public class StaleDataChecker
 		Properties props = new Properties(System.getProperties());
 		props.setProperty("SITENAME", plat.getSiteName(false));
 		props.setProperty("PLATFORMNAME", plat.getDisplayName());
-		props.setProperty("LASTMSGTIME", 
+		props.setProperty("LASTMSGTIME",
 			platstat.getLastMessageTime() == null ? "Never" : sdf.format(platstat.getLastMessageTime()));
-		
+
 		if (triggerFile1 != null && triggerFile1.length() > 0)
 		{
 			File f = new File(EnvExpander.expand(triggerFile1, props));
-			try
+			try (PrintWriter pw = new PrintWriter(f);)
 			{
-				PrintWriter pw = new PrintWriter(f);
 				pw.println(EnvExpander.expand(fileContents, props));
-				pw.close();
 			}
 			catch (FileNotFoundException ex)
 			{
-				warning("Cannot write to trigger file 1 '" + f.getPath() + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot write to trigger file 1 '{}'", f.getPath());
 			}
 		}
 		if (triggerFile2 != null && triggerFile2.length() > 0)
 		{
 			File f = new File(EnvExpander.expand(triggerFile2, props));
-			try
+			try (PrintWriter pw = new PrintWriter(f);)
 			{
-				PrintWriter pw = new PrintWriter(f);
 				pw.println(EnvExpander.expand(fileContents, props));
-				pw.close();
 			}
 			catch (FileNotFoundException ex)
 			{
-				warning("Cannot write to trigger file 2 '" + f.getPath() + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot write to trigger file 2 '{}'", f.getPath());
 			}
 		}
 	}
@@ -337,7 +354,7 @@ public class StaleDataChecker
 	{
 		shutdown = false;
 		init();
-		
+
 		// Set lastCheck to cause first check 5 seconds after startup.
 		long lastCheck = System.currentTimeMillis() - (checkPeriodMinutes*60000L) + 5000L;
 		long lastLockCheck = System.currentTimeMillis();
@@ -360,7 +377,7 @@ public class StaleDataChecker
 		}
 		cleanup();
 	}
-	
+
 	private boolean lockCheck()
 	{
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
@@ -371,7 +388,7 @@ public class StaleDataChecker
 		}
 		catch(Exception ex)
 		{
-			info("Exiting because lock deleted: " + ex);
+			log.atError().setCause(ex).log("Exiting because lock deleted.");
 			return false;
 		}
 		finally
@@ -392,7 +409,7 @@ public class StaleDataChecker
 		}
 		catch (DbIoException ex)
 		{
-			warning("Error attempting to release lock: " + ex);
+			log.atWarn().setCause(ex).log("Error attempting to release lock.");
 		}
 		finally
 		{
@@ -400,13 +417,13 @@ public class StaleDataChecker
 		}
 
 	}
-	
+
 	/**
 	 * Check network lists for any changes. Reload if necessary.
 	 */
 	private void nlCheck()
 	{
-		Logger.instance().debug3(module + ".nlCheck Checking " + netlistNames.size() + " lists.");
+		log.trace("nlCheck Checking {} lists.", netlistNames.size());
 		// Check all the lists & reload if necessary
 		for(String nlName : netlistNames)
 		{
@@ -427,7 +444,7 @@ public class StaleDataChecker
 					}
 					catch (DatabaseException ex)
 					{
-						warning("Cannot read network list '" + nlName + "': " + ex);
+						log.atWarn().setCause(ex).log("Cannot read network list '{}'", nlName);
 					}
 				}
 			}
@@ -436,16 +453,16 @@ public class StaleDataChecker
 				NetworkList nl = Database.getDb().networkListList.getNetworkList(nlName);
 				if (nl == null)
 				{
-					warning("No such network list '" + nlName + "'");
+					log.warn("No such network list '{}'", nlName);
 					continue;
 				}
 				loadedLists.add(nl);
 			}
 		}
-		
+
 		// Now make sure there is a platform status structure for every platform in my list.
 		PlatformStatusDAI platformStatusDAO = Database.getDb().getDbIo().makePlatformStatusDAO();
-		
+
 		try
 		{
 			PlatformList platlist = Database.getDb().platformList;
@@ -455,12 +472,10 @@ public class StaleDataChecker
 				for(Iterator<NetworkListEntry> nleit = nl.iterator(); nleit.hasNext(); )
 				{
 					NetworkListEntry nle = nleit.next();
-					Logger.instance().debug3(module + ".nlCheck checking list " 
-						+ nl.getDisplayName() + " entry " + nle.getTransportId());
+					log.trace(".nlCheck checking list {} entry {}", nl.getDisplayName(), nle.getTransportId());
 					Platform p = platlist.getPlatform(nl.transportMediumType, nle.getTransportId());
-					Logger.instance().debug3(module + ".nlCheck checking list " 
-						+ nl.getDisplayName() + " entry " + nle.getTransportId() 
-						+ " platform is " + (p != null ? "not" : "") + " null");
+					log.trace(".nlCheck checking list {} {} platform is {}",
+							  nl.getDisplayName(), nle.getTransportId(), (p != null ? "not" : "") + " null");
 					if (p != null)
 					{
 						boolean hasPlatStat = false;
@@ -475,8 +490,7 @@ public class StaleDataChecker
 						if (!hasPlatStat)
 						{
 							PlatformStatus platstat = new PlatformStatus(p.getId());
-							Logger.instance().info("Writing empty PlatformStats for platform " 
-								+ p.getDisplayName());
+							log.info("Writing empty PlatformStats for platform {}", p.getDisplayName());
 							platformStatusDAO.writePlatformStatus(platstat);
 						}
 					}
@@ -486,11 +500,11 @@ public class StaleDataChecker
 		}
 		catch (DbIoException ex)
 		{
-			warning("Database I/O error in nlCheck: " + ex);
+			log.atWarn().setCause(ex).log("Database I/O error in nlCheck.");
 		}
 		catch (DatabaseException ex)
 		{
-			warning("DECODES Database I/O error in nlCheck: " + ex);
+			log.atWarn().setCause(ex).log("DECODES Database I/O error in nlCheck.");
 		}
 		finally
 		{
@@ -498,16 +512,7 @@ public class StaleDataChecker
 		}
 
 	}
-	
-	public void info(String msg)
-	{
-		Logger.instance().info(module + " " + msg);
-	}
-	public void warning(String msg)
-	{
-		Logger.instance().warning(module + " " + msg);
-	}
-	
+
 	/**
 	 * The main method.
 	 * @param args command line arguments.

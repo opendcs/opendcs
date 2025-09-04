@@ -86,12 +86,6 @@ public abstract class LoggerProtocol
 		this.pollingThread = pollingThread;
 	}
 	
-	public void annotate(String msg)
-	{
-		if (pollSessionLogger != null)
-			pollSessionLogger.annotate(msg);
-	}
-	
 	public void setAbnormalShutdown(Exception abnormalShutdown)
 	{
 		this.abnormalShutdown = abnormalShutdown;

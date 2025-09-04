@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.snotel;
 
 import java.io.File;
@@ -9,6 +24,9 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesVersion;
 import ilex.cmdline.StringToken;
@@ -18,37 +36,36 @@ import ilex.util.IDateFormat;
 import ilex.util.ServerLock;
 import ilex.util.PropertiesUtil;
 import ilex.util.FileServerLock;
-import ilex.util.Logger;
 
 /**
  * This is the main class for the Snotel retriever/formatter.
- * 
+ *
  * @author mmaloney
  *
  */
-public class SnotelDaemon
-	implements Runnable
+public class SnotelDaemon implements Runnable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String snotelConfigFile = "$DCSTOOL_USERDIR/snotel.conf";
 	private SnotelConfig snotelConfig = new SnotelConfig();
-	
+
 	public static final String snotelStatusFile = "$DCSTOOL_USERDIR/snotel.stat";
 	private SnotelStatus snotelStatus = new SnotelStatus();
-	
+
 	public static final String snotelRtStationListFile = "$DCSTOOL_USERDIR/snotel-platforms.csv";
-	
+
 	private ControlmMonitor controlmMonitor = null;
-	
+
 	// Static command line arguments and initialization for main method.
 	protected CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "snoteldaemon.log");
-	static StringToken lockFileArg = new StringToken("k", 
+	static StringToken lockFileArg = new StringToken("k",
 		"Optional Lock File", "", TokenOptions.optSwitch, "");
 
 	private RetrievalThread rtRetrieval = null, hstRetrieval = null;
 	private long historyStarted = 0L;
 	private int rtSequence = 1;
 	private long nextRtRun = 0L;
-	
+
 
 	public SnotelDaemon(String[] args)
 	{
@@ -57,6 +74,7 @@ public class SnotelDaemon
 		try { cmdLineArgs.parseArgs(args); }
 		catch(IllegalArgumentException ex)
 		{
+			log.atError().setCause(ex).log("Invalid arguments provided.");
 			System.exit(1);
 		}
 	}
@@ -70,8 +88,7 @@ public class SnotelDaemon
 	@Override
 	public void run()
 	{
-		Logger.instance().info("====== SnotelDaemon Starting " + DecodesVersion.getVersion()
-			+ " ======");
+		log.info("====== SnotelDaemon Starting {} ======", DecodesVersion.getVersion());
 		/** Optional server lock ensures only one instance runs at a time. */
 		String lockpath = lockFileArg.getValue();
 		if (lockpath != null && lockpath.trim().length() > 0)
@@ -81,10 +98,10 @@ public class SnotelDaemon
 
 			if (mylock.obtainLock() == false)
 			{
-				Logger.instance().failure("Snotel Daemon not started: lock file busy: " + lockpath);
+				log.error("Snotel Daemon not started: lock file busy: {}", lockpath);
 				System.exit(1);
 			}
-			
+
 			mylock.releaseOnExit();
 			Runtime.getRuntime().addShutdownHook(
 				new Thread()
@@ -101,19 +118,19 @@ public class SnotelDaemon
 
 		// Check last run time and determine the next time to start rt retrieval.
 		computeNextRtRun();
-		
+
 		// Instantiate monitor AFTER reading config, which contains the directory names.
 		controlmMonitor = new ControlmMonitor(this);
-		
+
 		// Run the monitor in the main thread.
 		controlmMonitor.run();
 	}
-	
+
 	public synchronized void shutdown()
 	{
 		if (controlmMonitor != null)
 			controlmMonitor.shutdown();
-		
+
 		// if any retrievals are in process, stop them.
 		if (historyInProgress())
 		{
@@ -126,38 +143,31 @@ public class SnotelDaemon
 			rtRetrieval = null;
 		}
 	}
-	
+
 	// Called at startup and after each directory scan.
 	public void checkConfig()
 	{
 		File f = new File(EnvExpander.expand(snotelConfigFile));
 		if (f.lastModified() > snotelConfig.getLastLoadTime())
 		{
-			Logger.instance().info("Config '" + f.getPath() + "' was modified. Will reload.");
+			log.info("Config '{}' was modified. Will reload.", f.getPath());
 			snotelConfig.setLastLoadTime(System.currentTimeMillis());
 			Properties p = new Properties();
-			FileReader fr = null;
-			try
+			
+			try (FileReader fr = new FileReader(f))
 			{
-				fr = new FileReader(f);
 				p.load(fr);
 				PropertiesUtil.loadFromProps(snotelConfig, p);
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Cannot load config from '" + f.getPath() + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot load config from '{}'", f.getPath());
 			}
-			finally
-			{
-				if (fr != null)
-					try { fr.close(); } catch(Exception ex) {}
-			}
-			
 			// The configuration has changed. If rt thread is running, interrupt and restart.
 			if (realtimeInProgress())
 				runRealtime();
 		}
-		
+
 		// Check for true real-time needing to restart because spec file changed.
 		f = new File(EnvExpander.expand(snotelRtStationListFile));
 
@@ -165,84 +175,63 @@ public class SnotelDaemon
 		 && snotelConfig.retrievalFreq <= 0     // true-real-time
 		 && f.lastModified() > snotelStatus.lastRealtimeRun)  // spec changed since thread start
 		{
-			Logger.instance().info("RT Station List changed. Restarting realtime thread.");
+			log.info("RT Station List changed. Restarting realtime thread.");
 			runRealtime();
 		}
 	}
-	
+
 	public void saveConfig()
 	{
 		Properties p = new Properties();
 		PropertiesUtil.storeInProps(snotelConfig, p, "");
-		FileWriter fw = null;
 		File f = new File(EnvExpander.expand(snotelConfigFile));
-		Logger.instance().info("Saving new configuration into '" + f.getPath() + "'");
-		try
+		log.info("Saving new configuration into '{}'", f.getPath());
+		try (FileWriter fw = new FileWriter(f))
 		{
-			fw = new FileWriter(f);
 			p.store(fw, "Snotel Config as of " + new Date());
 		}
-		catch(Exception ex)
+		catch (Exception ex)
 		{
-			Logger.instance().warning("Cannot store config to '" + f.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot store config to '{}'", f.getPath());
 		}
-		finally
-		{
-			if (fw != null)
-				try { fw.close(); } catch(Exception ex) {}
-		}	
 	}
 
-	
+
 	public SnotelConfig getConfig() { return snotelConfig; }
-	
+
 	public SnotelStatus getStatus() { return snotelStatus; }
-	
+
 	public void saveStatus()
 	{
 		Properties p = new Properties();
 		PropertiesUtil.storeInProps(snotelStatus, p, "");
-		FileWriter fw = null;
 		File f = new File(EnvExpander.expand(snotelStatusFile));
-		try
+		try (FileWriter fw = new FileWriter(f))
 		{
-			fw = new FileWriter(f);
 			p.store(fw, "Snotel Status as of " + new Date());
 		}
-		catch(Exception ex)
+		catch (Exception ex)
 		{
-			Logger.instance().warning("Cannot store status to '" + f.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot store status to '{}'", f.getPath());
 		}
-		finally
-		{
-			if (fw != null)
-				try { fw.close(); } catch(Exception ex) {}
-		}	
 	}
-	
+
 	private void loadStatus()
 	{
 		File f = new File(EnvExpander.expand(snotelStatusFile));
 		Properties p = new Properties();
-		FileReader fr = null;
-		try
+		try (FileReader fr =  new FileReader(f))
 		{
-			fr = new FileReader(f);
 			p.load(fr);
 			PropertiesUtil.loadFromProps(snotelStatus, p);
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot load status from '" + f.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot load status from '{}'", f.getPath());
 		}
-		finally
-		{
-			if (fr != null)
-				try { fr.close(); } catch(Exception ex) {}
-		}
-Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT);
+		log.info("Status file loaded, configLMT={}", snotelStatus.configLMT);
 	}
-	
+
 	/**
 	 * Called from ControlmMonitor thread when directory scan is complete.
 	 * Check to see if it's time to run realtime retrieval.
@@ -250,9 +239,9 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 	public synchronized void scanFinished()
 	{
 		checkConfig();
-		
+
 		long now = System.currentTimeMillis();
-		
+
 		String msg = "scanFinished()";
 
 		if (historyInProgress())
@@ -265,8 +254,8 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 			msg = msg + " RealTime " + rtSequence + " starting.";
 			runRealtime();
 		}
-			
-		Logger.instance().debug2(msg);
+
+		log.trace(msg);
 		saveStatus();
 	}
 
@@ -277,12 +266,12 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 			rtRetrieval.shutdown();
 			try { Thread.sleep(2000L); } catch(InterruptedException ex) {}
 		}
-		
+
 		File f = new File(EnvExpander.expand(snotelRtStationListFile));
 		try
 		{
 			SnotelPlatformSpecList specList = new SnotelPlatformSpecList();
-			specList.loadFile(f, Logger.instance());
+			specList.loadFile(f);
 			rtRetrieval = new RetrievalThread(this, specList, snotelConfig.realtimeSince, "now",
 				rtSequence++, "rt");
 			rtRetrieval.start();
@@ -290,16 +279,17 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().failure("Error loading real time station list '" + f.getPath()
-				+ "': " + ex + " -- Cannot run real time retrieval!");
+			log.atError()
+			   .setCause(ex)
+			   .log("Error loading real time station list '{}' -- Cannot run real time retrieval!",
+			   		f.getPath());
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().failure("Unexpected error starting real time retrieval '" 
-				+ f.getPath() + "': " + ex);
+			log.atError().setCause(ex).log("Unexpected error starting real time retrieval '{}'", f.getPath());
 		}
 	}
-	
+
 	public void runHistory(HistoryRetrieval hr)
 	{
 		if (hstRetrieval != null && hstRetrieval.isAlive())
@@ -307,12 +297,12 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 			// Don't let any single history retrieval take more than 5 minutes.
 			if (System.currentTimeMillis() - historyStarted > 300000L)
 			{
-				Logger.instance().warning("History retrieval taking too long. Aborting.");
+				log.warn("History retrieval taking too long. Aborting.");
 				hstRetrieval.shutdown();
 			}
 		}
 		historyStarted = System.currentTimeMillis();
-		
+
 		try
 		{
 			SnotelPlatformSpecList hstSpecList = new SnotelPlatformSpecList();
@@ -324,9 +314,10 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().failure("Unexpected error starting hitory retrieval for " 
-				+ hr.getSpec().getDcpAddress() + ", start=" + hr.getStart() + ", end="
-				+ hr.getEnd() + ": " + ex);
+			log.atError()
+			   .setCause(ex)
+			   .log("Unexpected error starting hitory retrieval for {}, start={}, end={}",
+					hr.getSpec().getDcpAddress(), hr.getStart(), hr.getEnd() + ": " + ex);
 		}
 	}
 
@@ -344,25 +335,22 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 	{
 		if (rt == rtRetrieval)
 		{
-			Logger.instance().info("RealTime Retrieval Sequence " + rt.getSequencNum()
-				+ " Finished.");
+			log.info("RealTime Retrieval Sequence {} Finished.", rt.getSequencNum());
 			rtRetrieval = null;
-			
+
 			computeNextRtRun();
 		}
 		else if (rt == hstRetrieval)
 		{
-			Logger.instance().info("History Retrieval Sequence " + rt.getSequencNum()
-				+ " Finished.");
+			log.info("History Retrieval Sequence {} Finished.", rt.getSequencNum());
 			hstRetrieval = null;
 		}
 		else
 		{
-			Logger.instance().info("Untracked Retrieval Sequence " + rt.getSequencNum()
-				+ " Finished.");
+			log.info("Untracked Retrieval Sequence {} Finished.");
 		}
 	}
-	
+
 	/**
 	 * Computes the next time to run a real-time retrieval. Assume that it is in the future.
 	 * Called once at startup and then after each rt retrieval thread exits.
@@ -372,11 +360,11 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 		if (snotelConfig.retrievalFreq <= 0)
 		{
 			// RT thread is supposed to always run in real-time. Start it now.
-			Logger.instance().info("retrievalFreq==0. Will start rt immediately.");
+			log.info("retrievalFreq==0. Will start rt immediately.");
 			nextRtRun = System.currentTimeMillis();
 			return;
 		}
-		
+
 		long now = System.currentTimeMillis();
 		// Make a calendar set to today at midnight.
 		Calendar cal = Calendar.getInstance();
@@ -386,12 +374,12 @@ Logger.instance().info("Status file loaded, configLMT=" + snotelStatus.configLMT
 		cal.set(Calendar.MINUTE, 0);
 		cal.set(Calendar.SECOND, 0);
 		cal.set(Calendar.MILLISECOND, 0);
-		
+
 		// Add interval until > now
 		while(cal.getTimeInMillis() <= now)
 			cal.add(Calendar.MINUTE, snotelConfig.retrievalFreq);
-		
-		Logger.instance().info("Next realtime retrieval set for " + cal.getTime());
+
+		log.info("Next realtime retrieval set for {}", cal.getTime());
 		nextRtRun = cal.getTimeInMillis();
 	}
 

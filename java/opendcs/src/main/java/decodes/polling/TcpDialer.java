@@ -1,13 +1,7 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
- * between COVE and Alberta ESRD.
- *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +18,9 @@ package decodes.polling;
 
 import java.io.IOException;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.net.BasicClient;
 import decodes.db.TransportMedium;
 
@@ -37,6 +34,7 @@ import decodes.db.TransportMedium;
  */
 public class TcpDialer extends Dialer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private BasicClient basicClient = null;
 
 	@Override
@@ -58,13 +56,11 @@ public class TcpDialer extends Dialer
 			}
 			catch(NumberFormatException ex)
 			{
-				throw new DialException("Invalid host string '" + host 
-					+ "' -- expected port number after colon.", false);
+				throw new DialException("Invalid host string '" + host
+					+ "' -- expected port number after colon.", ex, false);
 			}
 		}
-		String msg = "Opening socket to host " + host + " port " + port;
-		pollingThread.debug2(msg);
-		pollingThread.annotate(msg);
+		log.trace("Opening socket to host {} port {}", host, port);
 		basicClient = new BasicClient(host, port);
 		try
 		{
@@ -72,13 +68,12 @@ public class TcpDialer extends Dialer
 		}
 		catch (IOException ex)
 		{
-			msg = "Cannot connect to '" + tm.getMediumId() + "': " + ex;
-			pollingThread.annotate(msg);
-			throw new DialException(msg, true);
+			final String msg = "Cannot connect to '" + tm.getMediumId() + "'";
+			throw new DialException(msg, ex, true);
 		}
 		ioPort.setIn(basicClient.getInputStream());
 		ioPort.setOut(basicClient.getOutputStream());
-		pollingThread.annotate("Connect successfull");
+		log.trace("Connect successfull");
 	}
 
 	@Override
