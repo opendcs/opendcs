@@ -1,12 +1,30 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.platwiz;
 
 import javax.swing.JOptionPane;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import javax.swing.JDialog;
 import java.util.ResourceBundle;
 
 import ilex.gui.WindowUtility;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.AsciiUtil;
 
 import decodes.db.Database;
@@ -21,11 +39,12 @@ import decodes.util.DecodesVersion;
 /**
 Main class for Platform Wizard
 */
-public class PlatformWizard 
+public class PlatformWizard
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle genericLabels = null;
     private static ResourceBundle platwizLabels = null;
-    
+
     boolean packFrame = false;
 
     /** The singleton instance */
@@ -53,7 +72,7 @@ public class PlatformWizard
     public Frame1 getPlatwizFrame() { return frame; }
 
     /** Constructs the application */
-    public PlatformWizard() 
+    public PlatformWizard()
     {
         frame = new Frame1();
         saved = false;
@@ -74,7 +93,7 @@ public class PlatformWizard
         genericLabels = null;
         platwizLabels = null;
     }
-    
+
     /** Called from main to make the frame visible */
     public void show()
     {
@@ -84,13 +103,12 @@ public class PlatformWizard
     /** The command line arguments */
     static CmdLineArgs cmdLineArgs = new CmdLineArgs(false, "platwiz.log");
 
-    /** 
-      Shows a modal error message dialog, centered on the window. 
+    /**
+      Shows a modal error message dialog, centered on the window.
       @param msg  The message to display.
     */
     public void showError(String msg)
     {
-        Logger.instance().warning(msg);
         JOptionPane.showMessageDialog(frame,
             AsciiUtil.wrapString(msg, 60), "Error!", JOptionPane.ERROR_MESSAGE);
     }
@@ -156,7 +174,7 @@ public class PlatformWizard
         return frame.startPanel.processEDL();
     }
 
-    /** 
+    /**
       Sets the platform object we are editing.
       @param p  The Platform object.
     */
@@ -168,8 +186,8 @@ public class PlatformWizard
     /** @return the platform object we are editing. */
     public Platform getPlatform() { return platform; }
 
-    /** 
-      @return the GUI frame. 
+    /**
+      @return the GUI frame.
     */
     public Frame1 getFrame() { return frame; }
 
@@ -177,7 +195,7 @@ public class PlatformWizard
      * @return resource bundle containing generic labels for the selected
      * language.
      */
-    public static ResourceBundle getGenericLabels() 
+    public static ResourceBundle getGenericLabels()
     {
         if (genericLabels == null)
         {
@@ -202,19 +220,18 @@ public class PlatformWizard
         }
         return platwizLabels;
     }
-    
+
     /**
       Main method.
       @param args command line arguments.
     */
-    public static void main(String[] args) 
+    public static void main(String[] args)
     {
         // Parse command line arguments.
         cmdLineArgs.parseArgs(args);
 
-        Logger.instance().info(
-            "PlatformWizard Starting (" + DecodesVersion.startupTag()
-            + ") =====================");
+        log.info(
+            "PlatformWizard Starting ({}) =====================", DecodesVersion.startupTag());
 
         // Initialize settings from properties file
         DecodesSettings settings = DecodesSettings.instance();
@@ -224,50 +241,46 @@ public class PlatformWizard
         {
             Database db = new decodes.db.Database();
             Database.setDb(db);
-            DatabaseIO dbio = 
+            DatabaseIO dbio =
                 DatabaseIO.makeDatabaseIO(settings.editDatabaseTypeCode,
                     settings.editDatabaseLocation);
 
             Platform.configSoftLink = false;
-            System.out.print("Reading DB: "); System.out.flush();
+            log.info("Reading DB: ");
             db.setDbIo(dbio);
-            System.out.print("Enum, "); System.out.flush();
+            log.info("Enum, ");
             db.enumList.read();
-            System.out.print("DataType, "); System.out.flush();
+            log.info("DataType, ");
             db.dataTypeSet.read();
-            System.out.print("EU, "); System.out.flush();
+            log.info("EU, "); System.out.flush();
             db.engineeringUnitList.read();
             Site.explicitList = true;
-            System.out.print("Site, "); System.out.flush();
+            log.info("Site, ");
             db.siteList.read();
-            System.out.print("Equip, "); System.out.flush();
+            log.info("Equip, ");
             db.equipmentModelList.read();
 
-            System.out.print("Config, "); System.out.flush();
+            log.info("Config, ");
             db.platformConfigList.read();
-            System.out.print("Plat, "); System.out.flush();
+            log.info("Plat, ");
             db.platformList.read();
             db.platformConfigList.countPlatformsUsing();
 
             // Note: need data sources for loading sample message.
-            System.out.print("DataSource, "); System.out.flush();
+            log.info("DataSource, ");
             db.dataSourceList.read();
 
-            System.out.println("DONE.");
+            log.info("DONE.");
 
-//            db.presentationGroupList.read();
-//            db.routingSpecList.read();
-//            db.networkListList.read();
+            // Initialization for DB editor - read all the collections:
+            Site.explicitList = true;
+
+            instance().show();
         }
         catch(DatabaseException ex)
         {
-            Logger.instance().fatal("Cannot initialize DECODES database: "+ex);
+            log.atError().setCause(ex).log("Cannot initialize DECODES database.");
             System.exit(1);
         }
-
-        // Initialization for DB editor - read all the collections:
-        Site.explicitList = true;
-
-        instance().show();
     }
 }

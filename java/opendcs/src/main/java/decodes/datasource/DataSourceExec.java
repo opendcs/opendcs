@@ -98,10 +98,7 @@ public abstract class DataSourceExec implements PropertiesOwner
 	@Deprecated()
 	public void log(int priority, String msg)
 	{
-		if (routingSpecThread == null)
-			log.info(msg);
-		else
-			routingSpecThread.log(priority, msg);
+		log.atInfo().addKeyValue("originalPriority", priority).log(msg);
 	}
 
 
