@@ -1,19 +1,22 @@
-/**
- * $Id: PlatformMonitorFrame.java,v 1.2 2016/08/05 14:50:18 mmaloney Exp $
- *
- * $Log: PlatformMonitorFrame.java,v $
- * Revision 1.2  2016/08/05 14:50:18  mmaloney
- * Station and Routing Status GUI updates.
- *
- * Revision 1.1  2016/07/20 15:40:12  mmaloney
- * First platstat impl GUI.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.platstat;
 
 import ilex.gui.EventsPanel;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -38,11 +41,13 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.DacqEventDAI;
 import decodes.db.Database;
 import decodes.db.DatabaseIO;
 import decodes.db.PlatformStatus;
-import decodes.db.ScheduleEntry;
 import decodes.gui.SortingListTable;
 import decodes.gui.TopFrame;
 import decodes.polling.DacqEvent;
@@ -56,9 +61,9 @@ import decodes.util.DecodesSettings;
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
 @SuppressWarnings("serial")
-public class PlatformMonitorFrame 
-	extends TopFrame 
+public class PlatformMonitorFrame extends TopFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private PlatformTableModel platstatModel = null;
 	private EventsPanel eventsPanel = new EventsPanel();
 	private JSplitPane outerPane = null;
@@ -71,7 +76,7 @@ public class PlatformMonitorFrame
 	private JLabel platEventsLabel = new JLabel();
 	private PlatformMonitor parent = null;
 	private boolean inDbUpdate = false;
-	
+
 	/**
 	 * Constructor
 	 */
@@ -82,19 +87,19 @@ public class PlatformMonitorFrame
 		genericLabels = LoadResourceBundle.getLabelDescriptions("decodes/resources/generic", settings.language);
 		procmonLabels = LoadResourceBundle.getLabelDescriptions("decodes/resources/procmon", settings.language);
 		evtTimeSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		
+
 		guiInit();
 		pack();
 		this.trackChanges("PlatformMonitorFrame");
 	}
-	
+
 	private void guiInit()
 	{
 		this.setTitle(procmonLabels.getString("platmon.title"));
 		platstatModel = new PlatformTableModel(this);
 		JPanel mainPanel = (JPanel) this.getContentPane();
 		mainPanel.setLayout(new BorderLayout());
-		
+
 		outerPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 		mainPanel.add(outerPane, BorderLayout.CENTER);
 		platstatTable = new SortingListTable(platstatModel, platstatModel.widths);
@@ -107,20 +112,20 @@ public class PlatformMonitorFrame
 		scrollPane.setViewportView(platstatTable);
 		psListPanel.add(scrollPane, BorderLayout.CENTER);
 		outerPane.setTopComponent(psListPanel);
-		
+
 		platEventsLabel.setText(
 			LoadResourceBundle.sprintf(procmonLabels.getString("platmon.eventsHeader"), "", ""));
 		p = new JPanel(new FlowLayout());
 		p.add(platEventsLabel);
 		eventsPanel.add(p, BorderLayout.NORTH);
 		outerPane.setBottomComponent(eventsPanel);
-		
+
 		psListPanel.setPreferredSize(new Dimension(900, 300));
 		eventsPanel.setPreferredSize(new Dimension(900, 300));
-		
+
 		JPanel buttonPanel = new JPanel(new FlowLayout());
 		mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-		
+
 		JButton closeButton = new JButton(genericLabels.getString("close"));
 		closeButton.addActionListener(
 			new ActionListener()
@@ -132,7 +137,7 @@ public class PlatformMonitorFrame
 				}
 			});
 		buttonPanel.add(closeButton);
-		
+
 		platstatTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		platstatTable.getSelectionModel().addListSelectionListener(
 			new ListSelectionListener()
@@ -144,7 +149,7 @@ public class PlatformMonitorFrame
 				}
 			});
 	}
-	
+
 	protected synchronized void platformSelected()
 	{
 		if (inDbUpdate)
@@ -162,7 +167,7 @@ public class PlatformMonitorFrame
 				eventsPanel.clear();
 				evtList.clear();
 				platEventsLabel.setText(
-					LoadResourceBundle.sprintf(procmonLabels.getString("platmon.eventsHeader"), 
+					LoadResourceBundle.sprintf(procmonLabels.getString("platmon.eventsHeader"),
 						selectedPS.getPlatformName()));
 			}
 
@@ -179,8 +184,8 @@ public class PlatformMonitorFrame
 	public void cleanupBeforeExit()
 	{
 	}
-	
-	
+
+
 	public void launch( int x, int y, int w, int h )
 	{
 		setBounds(x,y,w,h);
@@ -204,7 +209,7 @@ public class PlatformMonitorFrame
 	{
 		eventsPanel.addLine(event);
 	}
-	
+
 
 	private void fillEventsFor(PlatformStatus ps)
 	{
@@ -225,7 +230,7 @@ public class PlatformMonitorFrame
 			}
 			catch (DbIoException ex)
 			{
-				Logger.instance().warning("Error reading events: " + ex);
+				log.atWarn().setCause(ex).log("Error reading events.");
 			}
 			finally
 			{
@@ -237,12 +242,14 @@ public class PlatformMonitorFrame
 	private String formatEvt(DacqEvent evt)
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append(Logger.priorityName[evt.getEventPriority()] + " ");
+		// NOTE: this whole block will need to be replaced with "something" in the future
+		// once all the logging is replaced.
+		sb.append(evt.getEventPriority() + " ");
 		sb.append(evtTimeSdf.format(evt.getEventTime()) + " ");
 		if (evt.getSubsystem() != null)
 			sb.append("(" + evt.getSubsystem() + ") ");
 		sb.append(evt.getEventText());
-		
+
 		return sb.toString();
 	}
 
@@ -251,8 +258,8 @@ public class PlatformMonitorFrame
 	 * read from the database. Merge the info into the model and update
 	 * the screen in the Swing thread.
 	 * @param psList
-	 * @param seList 
-	 * @param seList 
+	 * @param seList
+	 * @param seList
 	 */
 	public synchronized void updateFromDb(ArrayList<PlatformStatus> psList)
 	{
@@ -284,7 +291,7 @@ public class PlatformMonitorFrame
 				}
 			});
 	}
-	
+
 	public PlatformStatus getselectedPS()
 	{
 		return selectedPS;
@@ -304,4 +311,3 @@ public class PlatformMonitorFrame
 
 	}
 }
-

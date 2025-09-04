@@ -1,13 +1,7 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
- * between COVE and Alberta ESRD.
- *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,40 +20,44 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.TransportMedium;
 
 public class IOPort
 {
+	private static final Logger log  = OpenDcsLoggerFactory.getLogger();
 	/** The PortPool object that owns this IOPort */
 	private PortPool portPool;
-	
+
 	/** Uniquely identifies this port within the pool */
 	private int portNum;
-	
+
 	/** The input stream associated with this IOPort */
 	private InputStream in = null;
-	
+
 	/** The output stream associated with this IOPort */
 	private OutputStream out = null;
-	
+
 	/** The dialer (if one is needed) associated with this IOPort */
 	private Dialer dialer = null;
-	
+
 	private PollingThreadState configureState = PollingThreadState.Waiting;
 	private boolean dialerConnected = false;
 	private PollingThread pollingThread = null;
 	private String portName = null;
-	
+
 	/** Used for listening socket clients. */
 	private Socket socket = null;
-	
+
 	public IOPort(PortPool portPool, int portNum, Dialer dialer)
 	{
 		this.portPool = portPool;
 		this.portNum = portNum;
 		this.dialer = dialer;
 	}
-	
+
 	/**
 	 * Delegate to the dialer to establish an end-to-end connection with the DCP
 	 * using this IOPort and the passed TransportMedium
@@ -70,14 +68,14 @@ public class IOPort
 		throws DialException
 	{
 		this.pollingThread = pollingThread;
-		pollingThread.debug2("IOPort.connect() -- calling portPool.configPort");
+		log.trace("IOPort.connect() -- calling portPool.configPort");
 		portPool.configPort(this, tm);
-		pollingThread.debug2("IOPort.connect() -- calling dialer.connect");
+		log.trace("IOPort.connect() -- calling dialer.connect");
 		if (dialer != null)
 			dialer.connect(this, tm, this.pollingThread);
 		dialerConnected = true;
 	}
-	
+
 	/**
 	 * Delegate to the dialer to discard and close any resources associated with
 	 * this connection (open files, sockets, streams, etc.)
@@ -85,11 +83,12 @@ public class IOPort
 	public void disconnect()
 	{
 		if (dialerConnected && dialer != null) // don't use dialer to disconnect if we never connected.
+		{
 			dialer.disconnect(this);
-		if (pollingThread != null)
-			pollingThread.debug2("IOPort.disconnect() complete.");		
+		}
+		log.trace("IOPort.disconnect() complete.");
 	}
-	
+
 	public InputStream getIn()
 	{
 		return in;

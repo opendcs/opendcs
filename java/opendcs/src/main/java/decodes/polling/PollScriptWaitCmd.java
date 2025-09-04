@@ -1,13 +1,7 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
- * between COVE and Alberta ESRD.
- *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -38,7 +32,7 @@ public class PollScriptWaitCmd extends PollScriptCommand
 		this.sec = sec;
 		this.mustMatch = mustMatch;
 	}
-	
+
 	public void addMatch(byte[] match)
 	{
 		if (patternMatcher.length > 0)
@@ -54,22 +48,22 @@ public class PollScriptWaitCmd extends PollScriptCommand
 	}
 
 	@Override
-	public void execute() 
+	public void execute()
 		throws ProtocolException
 	{
 		try
 		{
 			matchFound = owner.getStreamReader().wait(sec, patternMatcher);
 			if (!matchFound && mustMatch)
-				throw new ProtocolException("Failed to receive expected response for '" 
+				throw new ProtocolException("Failed to receive expected response for '"
 					+ getCmdLine() + "' in file " + owner.getScriptFileName());
 			else if (matchFound && exclude)
-				throw new ProtocolException("Received excluded response for '" 
+				throw new ProtocolException("Received excluded response for '"
 					+ getCmdLine() + "' in file " + owner.getScriptFileName());
 		}
 		catch (IOException ex)
 		{
-			throw new ProtocolException(ex.getMessage());
+			throw new ProtocolException("Error executing wait command.", ex);
 		}
 	}
 
