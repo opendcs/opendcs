@@ -1,0 +1,1317 @@
+/* Create Tables */
+
+CREATE TABLE CONFIGSENSOR
+(
+	CONFIGID INT NOT NULL REFERENCES PLATFORMCONFIG (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Ordinal number of this sensor within this configuration
+	SENSORNUMBER INT NOT NULL,
+	SENSORNAME VARCHAR(64) NOT NULL,
+	RECORDINGMODE CHAR NOT NULL,
+	-- # seconds between samples taken on the platform.
+	RECORDINGINTERVAL INT,
+	-- Second of day of first sample taken on the platform.
+	-- Used for auto time-tagging.
+	TIMEOFFIRSTSAMPLE INT,
+	-- legacy not used
+	EQUIPMENTID INT,
+	-- If not null, values below this are tossed.
+	ABSOLUTEMIN DOUBLE PRECISION,
+	-- If not null, values above this are tossed.
+	ABSOLUTEMAX DOUBLE PRECISION,
+	-- Used by USGS
+	STAT_CD VARCHAR(5),
+	PRIMARY KEY (CONFIGID, SENSORNUMBER)
+) ;
+
+
+CREATE TABLE CONFIGSENSORDATATYPE
+(
+	CONFIGID INT NOT NULL,
+	-- Ordinal number of this sensor within this configuration
+	SENSORNUMBER INT NOT NULL,
+	DATATYPEID INT NOT NULL REFERENCES DATATYPE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (CONFIGID, SENSORNUMBER, DATATYPEID),
+	FOREIGN KEY (CONFIGID, SENSORNUMBER)
+	REFERENCES CONFIGSENSOR (CONFIGID, SENSORNUMBER)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+) ;
+
+
+CREATE TABLE CONFIGSENSORPROPERTY
+(
+	CONFIGID INT NOT NULL,
+	-- Ordinal number of this sensor within this configuration
+	SENSORNUMBER INT NOT NULL,
+	PROP_NAME VARCHAR(24) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (CONFIGID, SENSORNUMBER, PROP_NAME),
+	FOREIGN KEY (CONFIGID, SENSORNUMBER) REFERENCES CONFIGSENSOR (CONFIGID, SENSORNUMBER) 
+		ON UPDATE RESTRICT
+		ON DELETE RESTRICT
+) ;
+
+
+CREATE TABLE CP_ALGORITHM
+(
+	ALGORITHM_ID INT NOT NULL UNIQUE,
+	ALGORITHM_NAME VARCHAR(64) NOT NULL UNIQUE,
+	-- May be null for pseudo or placeholder algorithms
+	EXEC_CLASS VARCHAR(240),
+	CMMNT VARCHAR(1000),
+	PRIMARY KEY (ALGORITHM_ID),
+	FOREIGN KEY (ALGORITHM_ID)
+	REFERENCES CP_ALGORITHM (ALGORITHM_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+) ;
+
+
+CREATE TABLE CP_ALGO_PROPERTY
+(
+	ALGORITHM_ID INT NOT NULL,
+	PROP_NAME VARCHAR(48) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (ALGORITHM_ID, PROP_NAME),
+	CONSTRAINT algo_prop_unique UNIQUE (ALGORITHM_ID, PROP_NAME)
+) ;
+
+
+CREATE TABLE CP_ALGO_SCRIPT
+(
+	ALGORITHM_ID INT NOT NULL,
+	-- B=Before, T=timeslice, A=After. Other chars are reserved.
+	SCRIPT_TYPE CHAR NOT NULL,
+	BLOCK_NUM INT NOT NULL,
+	SCRIPT_DATA VARCHAR(4000) NOT NULL,
+	PRIMARY KEY (ALGORITHM_ID, SCRIPT_TYPE, BLOCK_NUM),
+	FOREIGN KEY (ALGORITHM_ID)
+	REFERENCES CP_ALGORITHM (ALGORITHM_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+) ;
+
+
+CREATE TABLE CP_ALGO_TS_PARM
+(
+	ALGORITHM_ID INT NOT NULL REFERENCES CP_ALGORITHM (ALGORITHM_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	ALGO_ROLE_NAME VARCHAR(24) NOT NULL,
+	PARM_TYPE VARCHAR(24) NOT NULL,
+	CONSTRAINT algo_role_unique UNIQUE (ALGORITHM_ID, ALGO_ROLE_NAME)
+) ;
+
+
+CREATE TABLE CP_COMPUTATION
+(
+	COMPUTATION_ID INT NOT NULL UNIQUE,
+	COMPUTATION_NAME VARCHAR(64) NOT NULL UNIQUE,
+	ALGORITHM_ID INT REFERENCES CP_ALGORITHM (ALGORITHM_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CMMNT VARCHAR(1000),
+	LOADING_APPLICATION_ID INT REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	DATE_TIME_LOADED BIGINT NOT NULL,
+	ENABLED VARCHAR(5) NOT NULL,
+	-- Null means goes to the beggining of time.
+	EFFECTIVE_START_DATE_TIME BIGINT,
+	-- Null means never expires
+	EFFECTIVE_END_DATE_TIME BIGINT,
+	GROUP_ID INT REFERENCES TSDB_GROUP (GROUP_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT,
+	PRIMARY KEY (COMPUTATION_ID)
+	
+) ;
+
+
+-- An entry in this table asserts that a time series is an input to a given computation.
+-- The computation processor uses it to determine which computations to execute for a given input.
+CREATE TABLE CP_COMP_DEPENDS
+(
+	TS_ID INT NOT NULL REFERENCES TS_SPEC (TS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	COMPUTATION_ID INT NOT NULL REFERENCES CP_COMPUTATION (COMPUTATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (TS_ID, COMPUTATION_ID)	
+) ;
+
+
+CREATE TABLE CP_COMP_DEPENDS_SCRATCHPAD
+(
+	TS_ID INT NOT NULL REFERENCES TS_SPEC (TS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	COMPUTATION_ID INT NOT NULL REFERENCES CP_COMPUTATION (COMPUTATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (TS_ID, COMPUTATION_ID)
+	
+) ;
+
+
+CREATE TABLE CP_COMP_PROC_LOCK
+(
+	LOADING_APPLICATION_ID INT NOT NULL UNIQUE REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PID INT NOT NULL,
+	HOSTNAME VARCHAR(400) NOT NULL,
+	HEARTBEAT BIGINT NOT NULL,
+	CUR_STATUS VARCHAR(64)
+	
+) ;
+
+
+CREATE TABLE CP_COMP_PROPERTY
+(
+	COMPUTATION_ID INT NOT NULL REFERENCES CP_COMPUTATION (COMPUTATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PROP_NAME VARCHAR(48) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (COMPUTATION_ID, PROP_NAME)
+) ;
+
+
+CREATE TABLE CP_COMP_TASKLIST
+(
+	RECORD_NUM INT NOT NULL UNIQUE,
+	LOADING_APPLICATION_ID INT NOT NULL REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	TS_ID INT NOT NULL 	REFERENCES TS_SPEC (TS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Numeric value of the sample, or null if delete or this is a text value.
+	NUM_VALUE DOUBLE PRECISION,
+	-- Text value of the sample, or null if this is numeric or a deletion
+	TXT_VALUE VARCHAR(64),
+	-- Time that this tasklist record was created
+	DATE_TIME_LOADED BIGINT NOT NULL,
+	-- Time of the data sample
+	SAMPLE_TIME BIGINT NOT NULL,
+	DELETE_FLAG VARCHAR(5) DEFAULT 'FALSE' NOT NULL,
+	FLAGS INT NOT NULL,
+	SOURCE_ID INT NOT NULL REFERENCES TSDB_DATA_SOURCE (SOURCE_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Null for normal data, if a comp fails, it remains in the tasklist for a finite amount of time.
+	FAIL_TIME BIGINT,
+	PRIMARY KEY (RECORD_NUM)
+) ;
+
+
+CREATE TABLE CP_COMP_TS_PARM
+(
+	COMPUTATION_ID INT NOT NULL REFERENCES CP_COMPUTATION (COMPUTATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	ALGO_ROLE_NAME VARCHAR(24) NOT NULL,
+	-- Only for non-group comps where the TS is completely specified.
+	SITE_DATATYPE_ID INT REFERENCES TS_SPEC (TS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Must be either null or match a valid interval code
+	INTERVAL_ABBR VARCHAR(24),
+	-- Stores overrides for duration, param type, and version
+	TABLE_SELECTOR VARCHAR(240),
+	DELTA_T INT DEFAULT 0 NOT NULL,
+	-- Placeholder
+	MODEL_ID INT,
+	-- For group comps, this overrides datatype of triggering param
+	DATATYPE_ID INT REFERENCES DATATYPE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- If null, default is seconds
+	DELTA_T_UNITS VARCHAR(24),
+	-- For group comps, this overrides the site selection.
+	SITE_ID INT REFERENCES SITE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT
+	
+) ;
+
+
+CREATE TABLE CP_DEPENDS_NOTIFY
+(
+	RECORD_NUM INT NOT NULL UNIQUE,
+	EVENT_TYPE CHAR NOT NULL,
+	KEY INT NOT NULL,
+	DATE_TIME_LOADED BIGINT NOT NULL,
+	PRIMARY KEY (RECORD_NUM)
+) ;
+
+
+CREATE TABLE DACQ_EVENT
+(
+	-- Surrogate Key. Events are numbered from 0...MAX
+	DACQ_EVENT_ID BIGINT NOT NULL UNIQUE,
+	SCHEDULE_ENTRY_STATUS_ID INT REFERENCES SCHEDULE_ENTRY_STATUS (SCHEDULE_ENTRY_STATUS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PLATFORM_ID INT REFERENCES PLATFORM (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	EVENT_TIME BIGINT NOT NULL,
+	-- INFO = 3, WARNING = 4, FAILURE = 5, FATAL = 6
+	-- 
+	EVENT_PRIORITY INT NOT NULL,
+	-- Software subsystem that generated this event
+	SUBSYSTEM VARCHAR(24),
+	-- If this is related to a message, this holds the message's local_recv_time.
+	MSG_RECV_TIME BIGINT,
+	EVENT_TEXT VARCHAR(256) NOT NULL,
+	LOADING_APPLICATION_ID INT REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (DACQ_EVENT_ID)
+) ;
+
+
+CREATE TABLE DATAPRESENTATION
+(
+	ID INT NOT NULL UNIQUE,
+	GROUPID INT NOT NULL REFERENCES PRESENTATIONGROUP (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	DATATYPEID INT NOT NULL REFERENCES DATATYPE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Must match a units abbreviation
+	UNITABBR VARCHAR(24),
+	EQUIPMENTID INT REFERENCES EQUIPMENTMODEL (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	MAXDECIMALS INT,
+	-- Upper limit. Values higher than this are discarded.
+	-- Null means no limit.
+	MAX_VALUE DOUBLE PRECISION,
+	-- Minimum value. Values below this are discarded.
+	-- Null means no limit.
+	MIN_VALUE DOUBLE PRECISION,
+	PRIMARY KEY (ID),
+	CONSTRAINT PRES_DT_UNIQUE UNIQUE (GROUPID, DATATYPEID)
+) ;
+
+
+CREATE TABLE DATASOURCE
+(
+	ID INT NOT NULL UNIQUE,
+	NAME VARCHAR(64) NOT NULL UNIQUE,
+	-- Must match enum DataSourceType value.
+	DATASOURCETYPE VARCHAR(24) NOT NULL,
+	-- interpretation depends on the data source type
+	DATASOURCEARG VARCHAR(400),
+	PRIMARY KEY (ID)
+) ;
+
+
+CREATE TABLE DATASOURCEGROUPMEMBER
+(
+	GROUPID INT NOT NULL REFERENCES DATASOURCE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Determines order of data sources within the group
+	SEQUENCENUM INT NOT NULL,
+	MEMBERID INT NOT NULL REFERENCES DATASOURCE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (GROUPID, MEMBERID),
+	CONSTRAINT group_seq_unique UNIQUE (GROUPID, SEQUENCENUM),
+	CONSTRAINT group_member_unique UNIQUE (GROUPID, MEMBERID)
+) ;
+
+
+CREATE TABLE DATATYPE
+(
+	ID INT NOT NULL UNIQUE,
+	STANDARD VARCHAR(24) NOT NULL,
+	CODE VARCHAR(65) NOT NULL,
+	-- Used for reports and GUIs.
+	DISPLAY_NAME VARCHAR(64),
+	PRIMARY KEY (ID),
+	CONSTRAINT dt_std_code_unique UNIQUE (STANDARD, CODE)
+) ;
+
+
+-- An entry in this table expresses that two different data types are to be considered equivalent.
+CREATE TABLE DATATYPEEQUIVALENCE
+(
+	ID0 INT NOT NULL REFERENCES DATATYPE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	ID1 INT NOT NULL REFERENCES DATATYPE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (ID0, ID1)
+) ;
+
+CREATE TABLE DECODESDATABASEVERSION
+(
+	-- Should be only one record representing the highest numbered version.
+	-- For backward compat, sw will only look at max version number.
+	VERSION_NUM INT NOT NULL UNIQUE,
+	-- Options expressed as comma-separated name=value pairs.
+	DB_OPTIONS VARCHAR(400),
+	PRIMARY KEY (VERSION_NUM)
+) ;
+
+
+CREATE TABLE DECODESSCRIPT
+(
+	ID INT NOT NULL UNIQUE,
+	CONFIGID INT NOT NULL REFERENCES PLATFORMCONFIG (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	NAME VARCHAR(64) NOT NULL,
+	-- Enumeration value for script type
+	SCRIPT_TYPE VARCHAR(24) DEFAULT 'DECODES' NOT NULL,
+	-- 'A'=Ascending, 'D'=Descending
+	DATAORDER CHAR DEFAULT 'A' NOT NULL,
+	PRIMARY KEY (ID),
+	CONSTRAINT config_script_name_unique UNIQUE (CONFIGID, NAME)
+) ;
+
+
+CREATE TABLE ENGINEERINGUNIT
+(
+	-- Standard abbreviation for this unit identifier
+	UNITABBR VARCHAR(24) NOT NULL UNIQUE,
+	-- Full name
+	NAME VARCHAR(64),
+	-- Either 'English', 'Metric', or 'Standard'
+	FAMILY VARCHAR(24) NOT NULL,
+	-- States what physical quantity this unit measures.
+	-- E.g. 'ft' measures 'length'
+	MEASURES VARCHAR(24) NOT NULL,
+	PRIMARY KEY (UNITABBR)
+) ;
+
+
+-- An enumeration
+CREATE TABLE ENUM
+(
+	ID INT NOT NULL UNIQUE,
+	-- The name of this enumeration
+	NAME VARCHAR(24) NOT NULL UNIQUE,
+	-- Null means no default. Else should match one of the values.
+	DEFAULTVALUE VARCHAR(24),
+	-- Description of what this enumeration is used for
+	DESCRIPTION VARCHAR(400),
+	PRIMARY KEY (ID)
+) ;
+
+
+CREATE TABLE ENUMVALUE
+(
+	ENUMID INT NOT NULL REFERENCES ENUM (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- The short, unique enum value. Typically an abreviation.
+	ENUMVALUE VARCHAR(24) NOT NULL,
+	-- Description of this enum value
+	DESCRIPTION VARCHAR(400),
+	-- Java class for execution when this enum value is selected
+	EXECCLASS VARCHAR(160),
+	-- Java class for editing when this enum value is selected.
+	EDITCLASS VARCHAR(160),
+	-- Order of this value within the enumeration.
+	SORTNUMBER INT,
+	PRIMARY KEY (ENUMID, ENUMVALUE)
+) ;
+
+
+CREATE TABLE EQUIPMENTMODEL
+(
+	ID INT NOT NULL UNIQUE,
+	NAME VARCHAR(24) NOT NULL UNIQUE,
+	COMPANY VARCHAR(64),
+	MODEL VARCHAR(64),
+	DESCRIPTION VARCHAR(400),
+	EQUIPMENTTYPE VARCHAR(24),
+	PRIMARY KEY (ID)
+) ;
+
+
+CREATE TABLE EQUIPMENTPROPERTY
+(
+	EQUIPMENTID INT NOT NULL REFERENCES EQUIPMENTMODEL (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	NAME VARCHAR(24) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	CONSTRAINT equip_prop_name_unique UNIQUE (EQUIPMENTID, NAME)
+) ;
+
+
+CREATE TABLE FORMATSTATEMENT
+(
+	DECODESSCRIPTID INT NOT NULL REFERENCES DECODESSCRIPT (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Determines execution order
+	SEQUENCENUM INT NOT NULL,
+	-- Statement Label
+	LABEL VARCHAR(24) NOT NULL,
+	FORMAT VARCHAR(400),
+	CONSTRAINT script_sequence_unique UNIQUE (DECODESSCRIPTID, SEQUENCENUM)
+) ;
+
+
+CREATE TABLE HDB_LOADING_APPLICATION
+(
+	LOADING_APPLICATION_ID INT NOT NULL UNIQUE,
+	-- Unique name of this loading app
+	LOADING_APPLICATION_NAME VARCHAR(24) NOT NULL UNIQUE,
+	-- True if this app does manual editing
+	MANUAL_EDIT_APP CHAR(1) DEFAULT 'N' NOT NULL,
+	CMMNT VARCHAR(1000),
+	PRIMARY KEY (LOADING_APPLICATION_ID)
+) ;
+
+
+CREATE TABLE INTERVAL_CODE
+(
+	INTERVAL_ID INT NOT NULL UNIQUE,
+	-- Interval Name for Display in Pull-Down lists, files, etc.
+	NAME VARCHAR(24) NOT NULL UNIQUE,
+	-- Java Calendar Constant Name.
+	-- One of MINUTE, HOUR_OF_DAY, DAY_OF_MONTH, WEEK_OF_YEAR, MONTH, YEAR
+	CAL_CONSTANT VARCHAR(16) NOT NULL,
+	-- Multiplier for calendar constant.
+	-- Zero means instantaneous.
+	CAL_MULTIPLIER INT NOT NULL,
+	PRIMARY KEY (INTERVAL_ID)
+) ;
+
+
+-- A network list is a list of platforms, denoted by a transport medium.
+CREATE TABLE NETWORKLIST
+(
+	ID INT NOT NULL UNIQUE,
+	NAME VARCHAR(64) NOT NULL UNIQUE,
+	-- Must match transport medium type enum value
+	TRANSPORTMEDIUMTYPE VARCHAR(24) NOT NULL,
+	-- If not null, must match a site name type enum value.
+	SITENAMETYPEPREFERENCE VARCHAR(24) NOT NULL,
+	LASTMODIFYTIME BIGINT NOT NULL,
+	PRIMARY KEY (ID)
+) ;
+
+
+CREATE TABLE NETWORKLISTENTRY
+(
+	NETWORKLISTID INT NOT NULL REFERENCES NETWORKLIST (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Must match a transport medium id
+	TRANSPORTID VARCHAR(64) NOT NULL,
+	-- Short mnemonic platform name
+	PLATFORM_NAME VARCHAR(64),
+	DESCRIPTION VARCHAR(80),
+	PRIMARY KEY (NETWORKLISTID, TRANSPORTID),
+	CONSTRAINT nl_transport_unique UNIQUE (NETWORKLISTID, TRANSPORTID)
+) ;
+
+
+CREATE TABLE PLATFORM
+(
+	ID INT NOT NULL UNIQUE,
+	-- Agency that owns or controls this platform
+	AGENCY VARCHAR(64),
+	ISPRODUCTION VARCHAR(5) DEFAULT 'false' NOT NULL,
+	SITEID INT REFERENCES SITE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONFIGID INT REFERENCES PLATFORMCONFIG (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	DESCRIPTION VARCHAR(400),
+	LASTMODIFYTIME BIGINT NOT NULL,
+	-- If null this platform is not expired (i.e. it is current).
+	EXPIRATION BIGINT,
+	PLATFORMDESIGNATOR VARCHAR(24),
+	PRIMARY KEY (ID)
+) ;
+
+
+CREATE TABLE PLATFORMCONFIG
+(
+	ID INT NOT NULL UNIQUE,
+	-- Unique configuration name
+	NAME VARCHAR(64) NOT NULL UNIQUE,
+	DESCRIPTION VARCHAR(400),
+	-- Legacy
+	EQUIPMENTID INT,
+	PRIMARY KEY (ID)
+) ;
+
+
+CREATE TABLE PLATFORMPROPERTY
+(
+	PLATFORMID INT NOT NULL REFERENCES PLATFORM (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PROP_NAME VARCHAR(24) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (PLATFORMID, PROP_NAME)
+) ;
+
+
+CREATE TABLE PLATFORMSENSOR
+(
+	PLATFORMID INT NOT NULL REFERENCES PLATFORM (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	SENSORNUMBER INT NOT NULL,
+	SITEID INT REFERENCES SITE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Database Descriptor Number - Legacy field for USGS compatibility
+	DD_NU INT,
+	PRIMARY KEY (PLATFORMID, SENSORNUMBER)
+) ;
+
+
+CREATE TABLE PLATFORMSENSORPROPERTY
+(
+	PLATFORMID INT NOT NULL,
+	SENSORNUMBER INT NOT NULL,
+	PROP_NAME VARCHAR(24) NOT NULL,
+	PROP_VALUE VARCHAR(240),
+	PRIMARY KEY (PLATFORMID, SENSORNUMBER, PROP_NAME)
+	FOREIGN KEY (platformid, sensornumber) REFERENCES PLATFORMSENSOR (PLATFORMID, SENSORNUMBER) ON UPDATE RESTRICT ON DELETE RESTRICT
+) ;
+
+
+CREATE TABLE PLATFORM_STATUS
+(
+	PLATFORM_ID INT NOT NULL UNIQUE REFERENCES PLATFORM (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Time of last station contact, whether or not a message was successfully received.
+	LAST_CONTACT_TIME BIGINT,
+	-- Time stamp of last message received. This is the message time stamp parsed from the header.
+	-- Null means no message ever received.
+	LAST_MESSAGE_TIME BIGINT,
+	-- Up to 8 failure codes describing data acquisition and decoding.
+	LAST_FAILURE_CODES VARCHAR(8),
+	-- Null means no errors encountered ever.
+	LAST_ERROR_TIME BIGINT,
+	-- Points to status of last routing spec / schedule entry run.
+	-- Null means that the schedule entry is too old and has been purged.
+	LAST_SCHEDULE_ENTRY_STATUS_ID INT REFERENCES SCHEDULE_ENTRY_STATUS (SCHEDULE_ENTRY_STATUS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	ANNOTATION VARCHAR(400),
+	PRIMARY KEY (PLATFORM_ID)
+) ;
+
+
+CREATE TABLE PRESENTATIONGROUP
+(
+	ID INT NOT NULL UNIQUE,
+	NAME VARCHAR(64) NOT NULL UNIQUE,
+	-- If not null, this refers to the parent group from which this group inherits.
+	INHERITSFROM INT REFERENCES PRESENTATIONGROUP (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	LASTMODIFYTIME BIGINT NOT NULL,
+	ISPRODUCTION VARCHAR(5) DEFAULT 'FALSE' NOT NULL,
+	PRIMARY KEY (ID)
+) ;
+
+
+CREATE TABLE REF_LOADING_APPLICATION_PROP
+(
+	LOADING_APPLICATION_ID INT NOT NULL REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PROP_NAME VARCHAR(64) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (LOADING_APPLICATION_ID, PROP_NAME)
+) ;
+
+
+CREATE TABLE ROUNDINGRULE
+(
+	DATAPRESENTATIONID INT NOT NULL REFERENCES DATAPRESENTATION (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	UPPERLIMIT DOUBLE PRECISION NOT NULL,
+	SIGDIGITS INT NOT NULL,
+	PRIMARY KEY (DATAPRESENTATIONID, UPPERLIMIT)
+) ;
+
+
+CREATE TABLE ROUTINGSPEC
+(
+	ID INT NOT NULL UNIQUE,
+	NAME VARCHAR(64) NOT NULL UNIQUE,
+	DATASOURCEID INT NOT NULL REFERENCES DATASOURCE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- True to enable in-line equations in this routing spec.
+	ENABLEEQUATIONS VARCHAR(5) DEFAULT 'FALSE' NOT NULL,
+	-- True to output performance measurements as if they were sensor values.
+	USEPERFORMANCEMEASUREMENTS VARCHAR(5) DEFAULT 'FALSE' NOT NULL,
+	-- Must match an enum value for output formatter
+	OUTPUTFORMAT VARCHAR(24),
+	-- Java timezone to format output. If null, default to UTC.
+	OUTPUTTIMEZONE VARCHAR(64),
+	PRESENTATIONGROUPNAME VARCHAR(64),
+	SINCETIME VARCHAR(80),
+	UNTILTIME VARCHAR(80),
+	-- Must match a consumer type enum value.
+	CONSUMERTYPE VARCHAR(24) NOT NULL,
+	-- type-dependent argument for the consumer
+	CONSUMERARG VARCHAR(400),
+	LASTMODIFYTIME BIGINT NOT NULL,
+	ISPRODUCTION VARCHAR(5) DEFAULT 'FALSE' NOT NULL,
+	PRIMARY KEY (ID)
+) ;
+
+
+CREATE TABLE ROUTINGSPECNETWORKLIST
+(
+	ROUTINGSPECID INT NOT NULL REFERENCES ROUTINGSPEC (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	NETWORKLISTNAME VARCHAR(64) NOT NULL,
+	PRIMARY KEY (ROUTINGSPECID, NETWORKLISTNAME)
+) ;
+
+
+CREATE TABLE ROUTINGSPECPROPERTY
+(
+	ROUTINGSPECID INT NOT NULL REFERENCES ROUTINGSPEC (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PROP_NAME VARCHAR(24) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (ROUTINGSPECID, PROP_NAME)
+) ;
+
+
+CREATE TABLE SCHEDULE_ENTRY
+(
+	SCHEDULE_ENTRY_ID INT NOT NULL UNIQUE,
+	-- Unique name for this schedule entry.
+	NAME VARCHAR(64) NOT NULL UNIQUE,
+	-- Can be null for manual routing specs run from 'rs' command line.
+	LOADING_APPLICATION_ID INT REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	ROUTINGSPEC_ID INT NOT NULL REFERENCES ROUTINGSPEC (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- date/time for first execution.
+	-- Null means start immediately.
+	START_TIME BIGINT,
+	-- Used to interpret interval adding to start time.
+	TIMEZONE VARCHAR(32),
+	-- Any valid interval in this database.
+	-- Null means execute one time only.
+	RUN_INTERVAL VARCHAR(64),
+	-- true or false
+	ENABLED VARCHAR(5) NOT NULL,
+	LAST_MODIFIED BIGINT NOT NULL,
+	PRIMARY KEY (SCHEDULE_ENTRY_ID)
+) ;
+
+
+-- Describes a schedule run.
+CREATE TABLE SCHEDULE_ENTRY_STATUS
+(
+	SCHEDULE_ENTRY_STATUS_ID INT NOT NULL UNIQUE,
+	SCHEDULE_ENTRY_ID INT NOT NULL REFERENCES SCHEDULE_ENTRY (SCHEDULE_ENTRY_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	RUN_START_TIME BIGINT NOT NULL,
+	-- Null means no messages yet received
+	LAST_MESSAGE_TIME BIGINT,
+	-- Null means still running.
+	RUN_COMPLETE_TIME BIGINT,
+	-- Hostname or IP Address of server where the routing spec was run.
+	HOSTNAME VARCHAR(64) NOT NULL,
+	-- Brief string describing current status: "initializing", "running", "complete", "failed".
+	RUN_STATUS VARCHAR(24) NOT NULL,
+	-- Number of messages successfully processed during the run.
+	NUM_MESSAGES INT DEFAULT 0 NOT NULL,
+	-- Number of decoding errors encountered.
+	NUM_DECODE_ERRORS INT DEFAULT 0 NOT NULL,
+	-- Number of distinct platforms seen
+	NUM_PLATFORMS INT DEFAULT 0 NOT NULL,
+	LAST_SOURCE VARCHAR(32),
+	LAST_CONSUMER VARCHAR(32),
+	-- Last time this entry was written to the database.
+	LAST_MODIFIED BIGINT NOT NULL,
+	PRIMARY KEY (SCHEDULE_ENTRY_STATUS_ID),
+	CONSTRAINT sched_entry_start_unique UNIQUE (SCHEDULE_ENTRY_ID, RUN_START_TIME)
+) ;
+
+
+CREATE TABLE SCRIPTSENSOR
+(
+	DECODESSCRIPTID INT NOT NULL REFERENCES DECODESSCRIPT (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	SENSORNUMBER INT NOT NULL,
+	UNITCONVERTERID INT NOT NULL UNIQUE REFERENCES UNITCONVERTER (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (DECODESSCRIPTID, SENSORNUMBER)
+) ;
+
+
+CREATE TABLE SERIAL_PORT_STATUS
+(
+	-- Combo of DigiHostName:PortNumber
+	PORT_NAME VARCHAR(48) NOT NULL,
+	-- True when port is locked.
+	IN_USE VARCHAR(5) DEFAULT 'FALSE' NOT NULL,
+	-- Name of routing spec (or other process) that last used (or is currently using) the port.
+	-- Null means never been used.
+	LAST_USED_BY_PROC VARCHAR(64),
+	-- Hostname or IP Address from which this port was last used (or is currently being used).
+	-- Null means never been used.
+	LAST_USED_BY_HOST VARCHAR(64),
+	-- Java msec Date/Time this port was last used.
+	LAST_ACTIVITY_TIME BIGINT,
+	-- Java msec Date/Time that a message was successfully received on this port.
+	LAST_RECEIVE_TIME BIGINT,
+	-- The Medium ID (e.g. logger name) from which a message was last received on this port.
+	LAST_MEDIUM_ID VARCHAR(64),
+	-- Java msec Date/Time of the last time an error occurred on this port.
+	LAST_ERROR_TIME BIGINT,
+	-- Short string. Usually one of the following:
+	-- idle, dialing, login, receiving, goodbye, error
+	PORT_STATUS VARCHAR(32),
+	PRIMARY KEY (PORT_NAME)
+) ;
+
+
+CREATE TABLE SITE
+(
+	ID INT NOT NULL UNIQUE,
+	LATITUDE VARCHAR(24),
+	LONGITUDE VARCHAR(24),
+	NEARESTCITY VARCHAR(64),
+	STATE VARCHAR(24),
+	REGION VARCHAR(64),
+	TIMEZONE VARCHAR(64),
+	COUNTRY VARCHAR(64),
+	ELEVATION DOUBLE PRECISION,
+	ELEVUNITABBR VARCHAR(24) DEFAULT 'ft' NOT NULL,
+	DESCRIPTION VARCHAR(800),
+	ACTIVE_FLAG VARCHAR(5) DEFAULT 'TRUE' NOT NULL,
+	LOCATION_TYPE VARCHAR(32),
+	MODIFY_TIME BIGINT NOT NULL,
+	PUBLIC_NAME VARCHAR(64),
+	PRIMARY KEY (ID)
+) ;
+
+
+CREATE TABLE SITENAME
+(
+	SITEID INT NOT NULL REFERENCES SITE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Must match one of the Enumerated Site Name Types
+	NAMETYPE VARCHAR(24) NOT NULL,
+	-- Combination (location.office_code, nameType, siteName) must be unique
+	SITENAME VARCHAR(64) NOT NULL,
+	-- For USGS compatibility
+	DBNUM VARCHAR(2),
+	-- For USGS Compatibility
+	AGENCY_CD VARCHAR(5),
+	PRIMARY KEY (SITEID, NAMETYPE)
+) ;
+
+
+CREATE TABLE SITE_PROPERTY
+(
+	SITE_ID INT NOT NULL REFERENCES SITE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PROP_NAME VARCHAR(24) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (SITE_ID, PROP_NAME)
+) ;
+
+
+CREATE TABLE STORAGE_TABLE_LIST
+(
+	-- Table number is a 4-digit suffix.
+	TABLE_NUM INT NOT NULL,
+	STORAGE_TYPE CHAR DEFAULT 'N' NOT NULL,
+	NUM_TS_PRESENT INT DEFAULT 0 NOT NULL,
+	-- Estimated number of annual values for all time series using this table.
+	EST_ANNUAL_VALUES INT DEFAULT 0 NOT NULL,
+	PRIMARY KEY (TABLE_NUM, STORAGE_TYPE)
+) ;
+
+
+CREATE TABLE TRANSPORTMEDIUM
+(
+	PLATFORMID INT NOT NULL REFERENCES PLATFORM (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	MEDIUMTYPE VARCHAR(24) NOT NULL,
+	MEDIUMID VARCHAR(64) NOT NULL,
+	-- Script to use to decode data from this TM
+	SCRIPTNAME VARCHAR(64),
+	-- Channel number for GOES transport media
+	CHANNELNUM INT,
+	-- Second of day of first transmission, UTC.
+	ASSIGNEDTIME INT,
+	-- Length in seconds of transmit window
+	TRANSMITWINDOW INT,
+	-- Interval in seconds between transmissions
+	TRANSMITINTERVAL INT,
+	-- Legacy - not used
+	EQUIPMENTID INT,
+	-- # of seconds to add to each transmit time from this TM
+	TIMEADJUSTMENT INT,
+	-- L=long, S=Short for GOES
+	PREAMBLE CHAR,
+	-- Java time zone name used to parse date/time values that are in the message.
+	-- This doesn't count time parsed from a message header which are usually in a known TZ.
+	TIMEZONE VARCHAR(64),
+	LOGGERTYPE VARCHAR(24),
+	BAUD INT,
+	STOPBITS INT,
+	PARITY VARCHAR(1),
+	DATABITS INT,
+	-- TRUE or FALSE
+	DOLOGIN VARCHAR(5),
+	USERNAME VARCHAR(32),
+	PASSWORD VARCHAR(32),
+	PRIMARY KEY (PLATFORMID, MEDIUMTYPE)
+) ;
+
+
+-- There should be a single row in this table. When schema is updated, the old row should be removed.
+CREATE TABLE TSDB_DATABASE_VERSION
+(
+	DB_VERSION INT NOT NULL UNIQUE,
+	DESCRIPTION VARCHAR(400) NOT NULL,
+	PRIMARY KEY (DB_VERSION)
+) ;
+
+
+CREATE TABLE TSDB_DATA_SOURCE
+(
+	SOURCE_ID INT NOT NULL UNIQUE,
+	LOADING_APPLICATION_ID INT NOT NULL REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Further describes source: If DECODES routing spec, this should be the rs and ds names.
+	-- If manual entry, this is user name
+	-- If computation, this is comp name
+	-- If modeled, this is the model name, etc.
+	MODULE VARCHAR(120),
+	PRIMARY KEY (SOURCE_ID)
+) ;
+
+
+CREATE TABLE TSDB_GROUP
+(
+	GROUP_ID INT NOT NULL UNIQUE,
+	GROUP_NAME VARCHAR(64) NOT NULL UNIQUE,
+	-- Must match a group_type enumeration value.
+	GROUP_TYPE VARCHAR(24) NOT NULL,
+	GROUP_DESCRIPTION VARCHAR(1000),
+	PRIMARY KEY (GROUP_ID)
+) ;
+
+
+CREATE TABLE TSDB_GROUP_MEMBER_DT
+(
+	GROUP_ID INT NOT NULL REFERENCES TSDB_GROUP (GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	DATA_TYPE_ID INT NOT NULL REFERENCES DATATYPE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (GROUP_ID, DATA_TYPE_ID)
+) ;
+
+
+CREATE TABLE TSDB_GROUP_MEMBER_GROUP
+(
+	PARENT_GROUP_ID INT NOT NULL REFERENCES TSDB_GROUP (GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CHILD_GROUP_ID INT NOT NULL REFERENCES TSDB_GROUP (GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- How to combine child with parent: A=Add, S=Subtract, I=Intersect
+	INCLUDE_GROUP CHAR DEFAULT 'A' NOT NULL,
+	PRIMARY KEY (PARENT_GROUP_ID, CHILD_GROUP_ID)
+) ;
+
+
+CREATE TABLE TSDB_GROUP_MEMBER_OTHER
+(
+	GROUP_ID INT NOT NULL REFERENCES TSDB_GROUP (GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Must match one of the database's underlying TS ID Parts.
+	MEMBER_TYPE VARCHAR(24) NOT NULL,
+	MEMBER_VALUE VARCHAR(240) NOT NULL
+) ;
+
+
+CREATE TABLE TSDB_GROUP_MEMBER_SITE
+(
+	GROUP_ID INT NOT NULL REFERENCES TSDB_GROUP (GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	SITE_ID INT NOT NULL REFERENCES SITE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (GROUP_ID, SITE_ID)
+) ;
+
+
+CREATE TABLE TSDB_GROUP_MEMBER_TS
+(
+	GROUP_ID INT NOT NULL REFERENCES TSDB_GROUP (GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	TS_ID INT NOT NULL REFERENCES TS_SPEC (TS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (GROUP_ID, TS_ID)
+) ;
+
+
+-- Global properties on the database components.
+CREATE TABLE TSDB_PROPERTY
+(
+	PROP_NAME VARCHAR(24) NOT NULL UNIQUE,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (PROP_NAME)
+) ;
+
+
+CREATE TABLE TS_ANNOTATION
+(
+	ANNOTATION_ID INT NOT NULL UNIQUE,
+	TS_ID INT NOT NULL REFERENCES TS_SPEC (TS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	START_TIME BIGINT NOT NULL,
+	END_TIME BIGINT NOT NULL,
+	ANNOTATION_TEXT VARCHAR(1000) NOT NULL,
+	PRIMARY KEY (ANNOTATION_ID)
+) ;
+
+CREATE TABLE TS_SPEC
+(
+	TS_ID INT NOT NULL UNIQUE,
+	SITE_ID INT NOT NULL REFERENCES SITE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	DATATYPE_ID INT NOT NULL REFERENCES DATATYPE (ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	STATISTICS_CODE VARCHAR(24) NOT NULL,
+	INTERVAL_ID INT NOT NULL REFERENCES INTERVAL_CODE (INTERVAL_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	DURATION_ID INT NOT NULL REFERENCES INTERVAL_CODE (INTERVAL_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	TS_VERSION VARCHAR(32) NOT NULL,
+	ACTIVE_FLAG VARCHAR(5) DEFAULT 'TRUE' NOT NULL,
+	STORAGE_UNITS VARCHAR(24) NOT NULL,
+	-- Number of data storage table where values for this TS are stored.
+	STORAGE_TABLE INT NOT NULL,
+	-- 'N' for numeric, 'S' for String.
+	STORAGE_TYPE CHAR DEFAULT 'N' NOT NULL,
+	-- Last Modify Time for this record, stored as Java msec time value UTC.
+	MODIFY_TIME BIGINT NOT NULL,
+	DESCRIPTION VARCHAR(400),
+	-- Initially set to NULL. After first ts value written, this is set to number of seconds.
+	-- 
+	UTC_OFFSET INT,
+	-- NULL = use default in TSDB_PROPERTIES, TRUE=allow, FALSE=disallow
+	ALLOW_DST_OFFSET_VARIATION VARCHAR(5),
+	-- NULL=use default in TSDB_PROPERTIES, ROUND, REJECT, or IGNORE
+	OFFSET_ERROR_ACTION VARCHAR(24),
+	PRIMARY KEY (TS_ID),
+	CONSTRAINT time_series_identifier_unique UNIQUE (SITE_ID, DATATYPE_ID, STATISTICS_CODE, INTERVAL_ID, DURATION_ID, TS_VERSION)
+) ;
+
+-- Only create 1 table for now. SQLlite doesn't do dynamic sql so we have to provide an
+-- alternative for flyway to pickup.
+CREATE TABLE TS_NUM_0001
+(
+	TS_ID INT NOT NULL references TS_SPEC(TS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	SAMPLE_TIME BIGINT NOT NULL,
+	TS_VALUE DOUBLE PRECISION NOT NULL,	
+	FLAGS BIGINT NOT NULL,
+	SOURCE_ID INT NOT NULL references tsdb_data_source(source_id) ON UPDATE RESTRICT on delete restrict,
+	DATA_ENTRY_TIME BIGINT NOT NULL,
+	PRIMARY KEY (TS_ID, SAMPLE_TIME)
+);
+
+insert into storage_table_list values(1, 'N', 0, 0);
+
+
+CREATE INDEX TS_NUM_0001_ENTRY_IDX ON TS_NUM_0001(DATA_ENTRY_TIME);
+
+--create trigger TS_NUM_0001_TRIG before update or insert or delete on TS_NUM_0001 for each row execute procedure comp_trigger()';
+
+
+CREATE TABLE TS_PROPERTY
+(
+	TS_ID INT NOT NULL REFERENCES TS_SPEC (TS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PROP_NAME VARCHAR(24) NOT NULL,
+	PROP_VALUE VARCHAR(240) NOT NULL,
+	PRIMARY KEY (TS_ID, PROP_NAME)
+) ;
+
+CREATE TABLE TS_STRING_0001
+(
+	TS_ID INT NOT NULL REFERENCES TS_SPEC (TS_ID) ON UPDATE RESTRICT ON DELETE RESTRICT ,
+	SAMPLE_TIME BIGINT NOT NULL,
+	TS_VALUE VARCHAR(64) NOT NULL,
+	FLAGS BIGINT NOT NULL,
+	SOURCE_ID INT NOT NULL REFERENCES TSDB_DATA_SOURCE (SOURCE_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	DATA_ENTRY_TIME BIGINT NOT NULL,
+	PRIMARY KEY (TS_ID, SAMPLE_TIME)
+);
+
+insert into storage_table_list values(1, 'S', 0, 0);
+
+CREATE INDEX TS_STRING_0001_ENTRY_IDX ON TS_STRING_0001(DATA_ENTRY_TIME);
+  
+CREATE TABLE UNITCONVERTER
+(
+	ID INT NOT NULL UNIQUE,
+	-- Standard abbreviation for this unit identifier
+	FROMUNITSABBR VARCHAR(24) NOT NULL,
+	-- Standard abbreviation for this unit identifier
+	TOUNITSABBR VARCHAR(24) NOT NULL,
+	ALGORITHM VARCHAR(24) NOT NULL,
+	A DOUBLE PRECISION,
+	B DOUBLE PRECISION,
+	C DOUBLE PRECISION,
+	D DOUBLE PRECISION,
+	E DOUBLE PRECISION,
+	F DOUBLE PRECISION,
+	PRIMARY KEY (ID)
+) ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Create Indexes */
+
+CREATE INDEX EVT_PLATFORM_ID_IDX ON DACQ_EVENT (PLATFORM_ID);
+CREATE INDEX EVT_PLAT_MSG_IDX ON DACQ_EVENT (PLATFORM_ID, MSG_RECV_TIME);
+CREATE INDEX EVT_SCHED_IDX ON DACQ_EVENT (SCHEDULE_ENTRY_STATUS_ID);
+CREATE INDEX EVT_TIME_IDX ON DACQ_EVENT (EVENT_TIME);
+
+
+
+/* Create Tables */
+
+CREATE TABLE ALARM_CURRENT
+(
+	-- Surrogate key of time series that triggered the alarm.
+	-- There can only be one current alarm assertion for a time series per loading app
+	TS_ID int NOT NULL,
+	LIMIT_SET_ID int NOT NULL REFERENCES ALARM_LIMIT_SET (LIMIT_SET_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Date/Time that alarm was asserted.
+	-- May be different from the time stamp of the alarm value.
+	ASSERT_TIME bigint NOT NULL,
+	-- Value that caused alarm assertion.
+	-- May be null in the case of MISSING VALUE alarms.
+	DATA_VALUE double precision,
+	-- Time stamp of the data value that triggered the alarm.
+	-- May be null for missing value alarms.
+	DATA_TIME bigint,
+	-- Bit fields indicating the alarm conditions.
+	ALARM_FLAGS int NOT NULL,
+	-- Message constructed for this alarm assertion.
+	MESSAGE varchar(256),
+	-- Date/Time when the last email notification was sent for this alarm.
+	-- NULL means no notification was sent.
+	LAST_NOTIFICATION_SENT bigint,
+	LOADING_APPLICATION_ID int  REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (TS_ID, LOADING_APPLICATION_ID)
+) ;
+
+
+CREATE TABLE ALARM_EVENT
+(
+	ALARM_EVENT_ID int NOT NULL UNIQUE,
+	ALARM_GROUP_ID int NOT NULL,
+	LOADING_APPLICATION_ID int NOT NULL,
+	PRIORITY int NOT NULL,
+	PATTERN varchar(256),
+	PRIMARY KEY (ALARM_EVENT_ID),
+	FOREIGN KEY (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
+	REFERENCES PROCESS_MONITOR (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
+	ON UPDATE RESTRICT
+	ON DELETE RESTRICT
+) ;
+
+
+CREATE TABLE ALARM_GROUP
+(
+	ALARM_GROUP_ID int NOT NULL UNIQUE,
+	ALARM_GROUP_NAME varchar(32) NOT NULL UNIQUE,
+	LAST_MODIFIED bigint NOT NULL,
+	PRIMARY KEY (ALARM_GROUP_ID)
+) ;
+
+
+CREATE TABLE ALARM_HISTORY
+(
+	TS_ID int NOT NULL,
+	LIMIT_SET_ID int NOT NULL REFERENCES ALARM_LIMIT_SET (LIMIT_SET_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	ASSERT_TIME bigint NOT NULL,
+	DATA_VALUE double precision,
+	DATA_TIME bigint,
+	ALARM_FLAGS int NOT NULL,
+	MESSAGE varchar(256),
+	-- Time alarm was de-asserted or cancelled.
+	END_TIME bigint NOT NULL,
+	-- If alarm was manually cancelled, this is the user name who cancelled it.
+	-- If it was de-asserted automatically (e.g. by an out of range value coming back into range). This will be null.
+	CANCELLED_BY varchar(32),
+	LOADING_APPLICATION_ID int REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PRIMARY KEY (TS_ID, LIMIT_SET_ID, ASSERT_TIME, LOADING_APPLICATION_ID)
+) ;
+
+
+CREATE TABLE ALARM_LIMIT_SET
+(
+	LIMIT_SET_ID int NOT NULL UNIQUE,
+	-- Surrogate Key
+	SCREENING_ID int NOT NULL REFERENCES ALARM_SCREENING (SCREENING_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- If null, then limit set is good all year.
+	-- If specified, name must match one of the season names defined in rledit.
+	season_name varchar(24),
+	-- If not null, values >= this are rejected.
+	reject_high double precision,
+	-- If not null, values >= this are considered in critical range.
+	critical_high double precision,
+	-- If not null, values >= are in warning range
+	warning_high double precision,
+	-- If not null, values <= this are in warning range
+	warning_low double precision,
+	-- If not null, values <= this are considered in critical range.
+	critical_low double precision,
+	-- if not null, values <= this are rejected.
+	reject_low double precision,
+	-- Duration over which to check for stuck sensor.
+	-- If null, then no stuck-sensor checks are done
+	stuck_duration varchar(32),
+	-- Value must change by more than this amount over duration in order
+	-- to be considered un-stuck.
+	-- If zero, then any change means unstuck.
+	stuck_tolerance double precision,
+	-- If not null, don't check values <= this value.
+	stuck_min_to_check double precision,
+	-- An optional interval. If more than this amount of time has elapsed
+	-- before the value being checked, don't do the stuck sensor check.
+	stuck_max_gap varchar(32),
+	-- Interval over which to do rate of change checks.
+	-- If null, no roc checks are defined.
+	roc_interval varchar(32),
+	reject_roc_high double precision,
+	critical_roc_high double precision,
+	warning_roc_high double precision,
+	warning_roc_low double precision,
+	critical_roc_low double precision,
+	reject_roc_low double precision,
+	-- Defines the period over which missing-value checks are done.
+	-- Null means no missing check performed.
+	missing_period varchar(32),
+	-- Valid storage interval in the underlying database.
+	-- Must be less than the period.
+	-- If period is defined, this may not be null.
+	missing_interval varchar(32),
+	-- Alarm is triggered if the number of missing values in the period
+	-- is > this threshold.
+	-- If period is defined, this may not be null.
+	missing_max_values int,
+	-- Optional text to be used in email notifications generated from these limits.
+	hint_text varchar(256),
+	PRIMARY KEY (LIMIT_SET_ID),
+	UNIQUE (SCREENING_ID, season_name)
+) ;
+
+
+CREATE TABLE ALARM_SCREENING
+(
+	-- Surrogate Key
+	SCREENING_ID int NOT NULL UNIQUE,
+	SCREENING_NAME varchar(32) NOT NULL UNIQUE,
+	-- If NULL, then this is default screening for DataType
+	SITE_ID int,
+	-- Foreign Key to DataType table
+	DATATYPE_ID int NOT NULL,
+	-- Start of appicable time for this screening.
+	-- If null, this screening goes back to beginning of time.
+	START_DATE_TIME bigint,
+	-- Time that this record was last written/modified
+	LAST_MODIFIED bigint NOT NULL,
+	-- Only do this screening if enabled
+	ENABLED boolean DEFAULT 'true' NOT NULL,
+	-- If not null, then alarms from this screening will cause email to the group.
+	ALARM_GROUP_ID int REFERENCES ALARM_GROUP (ALARM_GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	-- Description
+	SCREENING_DESC varchar(1024),
+	LOADING_APPLICATION_ID int REFERENCES HDB_LOADING_APPLICATION (LOADING_APPLICATION_ID), PRIMARY KEY (SCREENING_ID),
+	UNIQUE(SITE_ID, DATATYPE_ID, START_DATE_TIME, LOADING_APPLICATION_ID)
+) ;
+
+
+CREATE TABLE EMAIL_ADDR
+(
+	ALARM_GROUP_ID int NOT NULL REFERENCES ALARM_GROUP (ALARM_GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	ADDR varchar(256) NOT NULL,
+	PRIMARY KEY (ALARM_GROUP_ID, ADDR)
+) ;
+
+
+CREATE TABLE FILE_MONITOR
+(
+	ALARM_GROUP_ID int NOT NULL REFERENCES ALARM_GROUP (ALARM_GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	PATH varchar(256) NOT NULL,
+	PRIORITY int NOT NULL,
+	MAX_FILES int,
+	MAX_FILES_HINT varchar(128),
+	-- Maximum Last Modify Time
+	MAX_LMT varchar(32),
+	MAX_LMT_HINT varchar(128),
+	ALARM_ON_DELETE boolean,
+	ON_DELETE_HINT varchar(128),
+	MAX_SIZE bigint,
+	MAX_SIZE_HINT varchar(128),
+	ALARM_ON_EXISTS boolean,
+	ON_EXISTS_HINT varchar(128),
+	ENABLED boolean,
+	PRIMARY KEY (ALARM_GROUP_ID, PATH)
+) ;
+
+
+CREATE TABLE PROCESS_MONITOR
+(
+	ALARM_GROUP_ID int NOT NULL REFERENCES ALARM_GROUP (ALARM_GROUP_ID) ON UPDATE RESTRICT ON DELETE RESTRICT,
+	LOADING_APPLICATION_ID int NOT NULL,
+	ENABLED boolean,
+	PRIMARY KEY (ALARM_GROUP_ID, LOADING_APPLICATION_ID)
+) ;
+
+
+/* Create Indexes */
+
+-- For compproc to quickly detect any changes.
+CREATE INDEX AS_LAST_MODIFIED ON ALARM_SCREENING (LAST_MODIFIED);
+
+
+
+/* Comments */
+
+
+create table dcp_trans_day_map
+(
+	table_suffix varchar(4) not null unique,
+	-- day 0 = jan 1, 1970. null means this suffix not used.
+	day_number int,
+	primary key (table_suffix)
+) ;
+
+
+
+-- do $$
+-- declare
+-- 	i int;
+-- 	suffix varchar(2);
+-- begin
+--     /* Create Tables */
+-- 	for i in 1..31
+-- 	loop
+-- 		suffix := to_char(i,'fm00');
+-- 		execute 'CREATE TABLE DCP_TRANS_DATA_' || suffix ||
+-- 		'(
+-- 			RECORD_ID BIGINT NOT NULL,
+-- 			BLOCK_NUM INT NOT NULL,
+-- 			MSG_DATA VARCHAR(4000) NOT NULL,
+-- 			PRIMARY KEY (RECORD_ID, BLOCK_NUM)
+-- 		) ';
+
+-- 		execute 'CREATE TABLE DCP_TRANS_' || suffix ||
+-- 		'(
+-- 			RECORD_ID BIGINT NOT NULL UNIQUE,
+-- 			-- ''G'' = GOES, ''L'' = Data Logger, ''I'' = Iridium.
+-- 			-- This field determines how the header should be parsed.
+-- 			MEDIUM_TYPE VARCHAR(1) NOT NULL,
+-- 			MEDIUM_ID VARCHAR(64) NOT NULL,
+-- 			LOCAL_RECV_TIME BIGINT NOT NULL,
+-- 			TRANSMIT_TIME BIGINT NOT NULL,
+-- 			FAILURE_CODES VARCHAR(8) NOT NULL,
+-- 			-- Second of day when the transmit window started
+-- 			WINDOW_START_SOD INT,
+-- 			-- Transmit window length in seconds
+-- 			WINDOW_LENGTH INT,
+-- 			XMIT_INTERVAL INT,
+-- 			CARRIER_START BIGINT,
+-- 			CARRIER_STOP BIGINT,
+-- 			FLAGS INT NOT NULL,
+-- 			CHANNEL INT NOT NULL,
+-- 			BATTERY FLOAT,
+-- 			-- Total message length, determines number of additional blocks
+-- 			-- required to store message.
+-- 			MSG_LENGTH INT NOT NULL,
+-- 			-- First block of data. Very long messages will have additional blocks.
+-- 			MSG_DATA VARCHAR(4000) NOT NULL,
+-- 			PRIMARY KEY (RECORD_ID)
+-- 		) ';
+
+-- 		/* Create Foreign Keys */
+-- 		execute 'ALTER TABLE DCP_TRANS_DATA_' || suffix ||
+-- 			' ADD FOREIGN KEY (RECORD_ID)
+-- 			REFERENCES DCP_TRANS_' || suffix || '(RECORD_ID)
+-- 			ON UPDATE RESTRICT
+-- 			ON DELETE RESTRICT';
+
+-- 		execute 'CREATE SEQUENCE DCP_TRANS_' || suffix || 'IDSEQ';
+
+-- 		insert into dcp_trans_day_map(table_suffix,day_number) values(suffix, null);
+
+-- 		/* Create Indexes */
+
+-- 		execute 'CREATE INDEX DCP_TRANS_DATA_REC_IDX_' || suffix || ' ON DCP_TRANS_DATA_' || suffix || ' USING BTREE (RECORD_ID)';
+-- 		execute 'CREATE INDEX DCP_TRANS_ADDR_IDX_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (MEDIUM_TYPE, MEDIUM_ID)';
+-- 		-- Used for GOES channel expansion in DCP Monitor
+-- 		execute 'CREATE INDEX DCP_TRANS_CHAN_IDX_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (CHANNEL)';
+-- 		execute 'CREATE INDEX DCP_TRANS_MEDIUM_TYPE_' || suffix || ' ON DCP_TRANS_' || suffix || ' USING BTREE (MEDIUM_TYPE)';
+
+-- 		/* Comments */
+
+-- 		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MEDIUM_TYPE IS '' G = GOES, L = Data Logger, I = Iridium. ' ||
+-- 				'This field determines how the header should be parsed.''';
+-- 		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.WINDOW_START_SOD IS ''Second of day when the transmit window started''';
+-- 		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.WINDOW_LENGTH IS ''Transmit window length in seconds''';
+-- 		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MSG_LENGTH IS ''Total message length, determines number of additional blocks' ||
+-- 				'required to store message.''';
+-- 		execute 'COMMENT ON COLUMN DCP_TRANS_' || suffix || '.MSG_DATA IS ''First block of data. Very long messages will have additional blocks.''';
+-- 	end loop;
+-- end$$;
+
+
+
+-- Long term these should go away in favor of the 
+-- built in flyway version table.
+-- however too many internal locations relay on them so removal will happen in 8.0
+delete from DecodesDatabaseVersion;
+insert into DecodesDatabaseVersion values(70, 'Additional information is available in the ''flyway_schema_history'' table.');
+delete from tsdb_database_version;
+insert into tsdb_database_version values(70, 'Additional information is available in the ''flyway_schema_history'' table.');
