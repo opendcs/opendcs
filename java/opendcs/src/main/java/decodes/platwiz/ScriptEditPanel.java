@@ -1,9 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.platwiz;
 
 import java.awt.*;
 import javax.swing.*;
-import javax.swing.border.*;
-import java.awt.event.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.util.ResourceBundle;
 import java.util.Iterator;
@@ -29,15 +47,15 @@ import ilex.util.LoadResourceBundle;
 WiizardPanel for editing a script.
 This is a thin layer around decodes.dbeditor.DecodingScriptEditPanel.
 */
-public class ScriptEditPanel extends JPanel
-	implements WizardPanel
+public class ScriptEditPanel extends JPanel implements WizardPanel
 {
-	private static ResourceBundle genericLabels = 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle genericLabels =
 		PlatformWizard.getGenericLabels();
-	private static ResourceBundle platwizLabels = 
+	private static ResourceBundle platwizLabels =
 		PlatformWizard.getPlatwizLabels();
 	BorderLayout borderLayout1 = new BorderLayout();
-	DecodesScriptEditPanel decodingScriptEditPanel 
+	DecodesScriptEditPanel decodingScriptEditPanel
 		= new DecodesScriptEditPanel();
 
 	/** The name of this script */
@@ -47,21 +65,23 @@ public class ScriptEditPanel extends JPanel
 	String type;
 
 	/** Construct new ScriptEditPanel */
-	public ScriptEditPanel() 
+	public ScriptEditPanel()
 	{
 		name = type = null;
-		try {
+		try
+		{
 			jbInit();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		decodingScriptEditPanel.setTraceDialog(
 			new TraceDialog(TopFrame.instance(), true));
 	}
 
-	/** 
-	  Sets name and type 
+	/**
+	  Sets name and type
 	  @param name the script name
 	  @param type the script type
 	*/
@@ -72,7 +92,7 @@ public class ScriptEditPanel extends JPanel
 	}
 
 	/** Initializes GUI components */
-	void jbInit() throws Exception 
+	void jbInit() throws Exception
 	{
 		this.setLayout(borderLayout1);
 		this.add(decodingScriptEditPanel, BorderLayout.CENTER);
@@ -102,12 +122,12 @@ public class ScriptEditPanel extends JPanel
 		type);
 	}
 
-	/** 
+	/**
 	  The script edit panels will only be displayed if this script type
 	  has been selected on the start panel.
 	  @return true if this script type was selected in the StartPanel.
 	*/
-	public boolean shouldSkip() 
+	public boolean shouldSkip()
 	{
 		if (name.equals("ST"))
 			return !PlatformWizard.instance().processGoesST();
@@ -148,9 +168,6 @@ public class ScriptEditPanel extends JPanel
 								.platformConfig(pc)
 								.scriptName(name)
 								.build();
-				int numberOfSensors = pc.getNumSensors();
-				PlatformSensor ps;
-				int i = 0;
 				for(Iterator it = pc.getSensors(); it.hasNext(); ) {
 					ConfigSensor cs = (ConfigSensor)it.next();
 					ds.addScriptSensor(new ScriptSensor(ds, cs.sensorNumber));
@@ -159,7 +176,7 @@ public class ScriptEditPanel extends JPanel
 			}
 			catch (DecodesScriptException | IOException ex)
 			{
-				throw new PanelException("Unable to create initial empty script.",ex);
+				throw new PanelException("Unable to create initial empty script.", ex);
 			}
 		}
 
@@ -189,16 +206,16 @@ public class ScriptEditPanel extends JPanel
 												setText(chanNumFromRawMsg);
 				if (p != null)
 				{
-					TransportMedium tm = 
+					TransportMedium tm =
 						p.getTransportMedium(Constants.medium_GoesST);
-					int tmIndex = p.transportMedia.indexOf(tm); 
+					int tmIndex = p.transportMedia.indexOf(tm);
 					if (tm != null)
-					{	
+					{
 						tm.channelNum = Integer.valueOf(chanNumFromRawMsg);
 						//Update the transportMedia
 						if (tmIndex != -1)
-							p.transportMedia.set(tmIndex, tm);						
-					}	
+							p.transportMedia.set(tmIndex, tm);
+					}
 				}
 			}
 		}
