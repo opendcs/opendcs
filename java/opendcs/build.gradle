@@ -39,7 +39,8 @@ dependencies {
     implementation(libs.jfree.jcommon)
     implementation(libs.jfree.jfreechart)
     implementation(libs.jython.standalone)
-
+    implementation(libs.org.xerial.sqlite.jdbc)
+    
     implementation(libs.scijava.jep) {
         exclude group: "jama", module: "jama"
     }

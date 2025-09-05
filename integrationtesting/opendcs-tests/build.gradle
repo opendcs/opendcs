@@ -48,7 +48,7 @@ dependencies {
 
 
 
-def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
+def testEngines = (project.findProperty("opendcs.test.engine")?: "OpenDCS-XML,OpenDCS-SQLite,OpenDCS-Postgres,OpenDCS-Oracle,CWMS-Oracle").split(",")
 
 test {
     useJUnitPlatform()
