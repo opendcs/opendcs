@@ -65,14 +65,15 @@ public class PropertySpec
 	public static final String COLOR = "color";
 	
 	private boolean dynamic = false;
+
+    public PropertySpec(String name, String type, String description)
+    {
+        super();
+        this.name = name;
+        this.type = type;
+        this.description = description;
+    }
 	
-	public PropertySpec(String name, String type, String description)
-	{
-		super();
-		this.name = name;
-		this.type = type;
-		this.description = description;
-	}
 
 	public String getName()
 	{
@@ -103,6 +104,7 @@ public class PropertySpec
 	{
 		this.description = description;
 	}
+
 	
 	public String toString()
 	{
