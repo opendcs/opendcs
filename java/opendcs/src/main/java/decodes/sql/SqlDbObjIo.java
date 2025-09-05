@@ -15,11 +15,7 @@
 */
 package decodes.sql;
 
-import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
-import java.text.SimpleDateFormat;
-
 import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -29,11 +25,9 @@ import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
 import opendcs.util.sql.WrappedConnection;
-import decodes.cwms.CwmsConnectionPool;
 import decodes.db.Constants;
 import decodes.db.IdDatabaseObject;
 import decodes.db.DatabaseException;
-import decodes.util.DecodesSettings;
 
 /**
  * This class encapsulates some of the data and methods that are common
@@ -343,8 +337,15 @@ public class SqlDbObjIo
 		if ( s == null ) return("null");
 
 		//If the SQL database is Oracle, set escapeBackslash = false
-		if (_dbio.isOracle())
-			escapeBackslash = false;
+		try
+		{
+			if (_dbio.isOracle() || connection.isWrapperFor(org.sqlite.SQLiteConnection.class))
+				escapeBackslash = false;
+		}
+		catch (SQLException ex)
+		{
+			log.atError().setCause(ex).log("Error checking if connection is for SQLite, this should never throw an error.");
+		}
 
 		s = sqlReqString(s);
 		if (!escapeBackslash)
