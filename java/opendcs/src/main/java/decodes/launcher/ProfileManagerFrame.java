@@ -1,7 +1,21 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.launcher;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -9,38 +23,32 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import org.opendcs.gui.tables.DateRenderer;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import decodes.gui.SortingListTable;
-import decodes.gui.SortingListTableModel;
 import decodes.gui.TopFrame;
 import decodes.util.DecodesSettings;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
+
 
 /**
  * This GUI allows the user to create and delete alternative "profiles" which are
@@ -49,7 +57,7 @@ import ilex.util.Logger;
 @SuppressWarnings("serial")
 public class ProfileManagerFrame extends TopFrame
 {
-    private static final Logger logger = Logger.instance();
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     static ResourceBundle genericLabels = null;
     static ResourceBundle launcherLabels = null;
     private JTable profileTable = null;
@@ -172,9 +180,10 @@ public class ProfileManagerFrame extends TopFrame
             return;
         }
 
-        logger.warning("Deleting profile '" + profile.getFile().getAbsolutePath() + "'");
+        log.warn("Deleting profile '{}'", profile.getFile().getAbsolutePath());
         if (!profileModel.removeProfile(profile))
         {
+            log.error("Failed to delete profile '{}'", profile.getFile().getAbsolutePath());
             showError("Failed to delete profile '" + profile.getFile().getAbsolutePath() + "' -- check permissions on this file.");
             return;
         }
@@ -214,10 +223,9 @@ public class ProfileManagerFrame extends TopFrame
         }
         catch (IOException ex)
         {
-            String msg = "Cannot copy '" + file2copy.getPath() + "' to '" + newFile.getPath()
-                + "': " + ex;
-            Logger.instance().warning(msg);
-            showError(msg);
+           String msg = "Cannot copy '" + file2copy.getPath() + "' to '" + newFile.getPath();
+            log.atError().setCause(ex).log(msg);
+            showError(msg + "': " + ex);
             newFile.delete();
         }
     }
