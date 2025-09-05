@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.launcher;
 
 import java.io.File;
@@ -5,14 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Contains the name and filename of a given profile.
  */
 public class Profile
 {
-    private static Logger logger = Logger.instance();
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private final File profile;
     private final String name;
@@ -131,7 +148,7 @@ public class Profile
         }
         else
         {
-            logger.warning("No profiles, or not a directory, in path " + directory.getAbsolutePath());
+            log.warn("No profiles, or not a directory, in path {}", directory.getAbsolutePath());
         }
         return profiles;
     }

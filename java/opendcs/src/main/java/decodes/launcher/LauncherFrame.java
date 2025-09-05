@@ -1,4 +1,18 @@
-
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.launcher;
 
 import java.awt.BorderLayout;
@@ -38,8 +52,6 @@ import ilex.net.BasicSvrThread;
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
-import ilex.util.Pair;
 import ilex.util.ProcWaiterCallback;
 import ilex.util.ProcWaiterThread;
 import ilex.util.TextUtil;
@@ -59,7 +71,9 @@ import javax.swing.border.TitledBorder;
 
 import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.slf4j.LoggerFactory;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.gui.DecodesInterface;
 import lrgs.gui.MessageBrowser;
@@ -91,12 +105,9 @@ import decodes.util.CmdLineArgs;
  * It is used to launch specific applications in the toolkit
  */
 @SuppressWarnings("serial")
-public class LauncherFrame
-    extends JFrame
-    implements ProcWaiterCallback
+public class LauncherFrame extends JFrame implements ProcWaiterCallback
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(LauncherFrame.class);
-    private static Logger logger = Logger.instance();
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private static ResourceBundle labels = getLabels();
     String myArgs[] = null;
@@ -136,7 +147,6 @@ public class LauncherFrame
     Runnable afterDecodesInit;
     InitDecodesFrame initDecodesFrame;
     TopFrame groupEditFrame;// Time Series Button
-//    private TsDbGrpEditorFrame tsDbGrpEditorFrame; // Time Series Groups Button
     JFrame procMonFrame;// Process Status Button
     WindowAdapter tsGroupReaper;
     WindowAdapter logViewerReaper;
@@ -188,7 +198,6 @@ public class LauncherFrame
         afterDecodesInit = null;
         initDecodesFrame = null;
         groupEditFrame = null;
-//        tsDbGrpEditorFrame = null;
         procMonFrame = null;
         tseditFrame = null;
         runComputationsFrame = null;
@@ -196,7 +205,7 @@ public class LauncherFrame
         algorithmWizFrame = null;
         platformWizFrame = null;
         alarmsFrame = null;
-        Logger.instance().info("LauncherFrame ctor");
+        log.info("LauncherFrame ctor");
         String dbClass = DecodesSettings.instance().getTsdbClassName();
         if (dbClass != null)
         {
@@ -215,7 +224,6 @@ public class LauncherFrame
         installDir = EnvExpander.expand("$DECODES_INSTALL_DIR");
         try
         {
-Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             dacqLauncherActions = ResourceFactory.instance().getDacqLauncherActions();
             jbInit();
             ImageIcon lrgsStatIcon = new ImageIcon(installDir
@@ -253,7 +261,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             netlistButton.setHorizontalAlignment(SwingConstants.CENTER);
             dbeditButton.setIcon(dbeditIcon);
             dbeditButton.setHorizontalAlignment(SwingConstants.CENTER);
-            // platwizButton.setIcon(wizIcon);
             platwizButton.setText(labels
                 .getString("LauncherFrame.platformWizardButton"));
             platwizButton.setIcon(platwizIcon);
@@ -266,7 +273,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             routmonButton.setHorizontalAlignment(SwingConstants.CENTER);
 
             setTitle(DecodesVersion.getAbbr() + " " + DecodesVersion.getVersion());
-            // setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
             setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
             final LauncherFrame myframe = this;
@@ -293,14 +299,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                             plc.sendCmd("exit");
                             if (!plc.isExitOk())
                             {
-                                msg = "Launcher for profile '"
-                                        + plc.getProfileName() + "' has a window open.";
-                                Logger.instance().warning(msg);
-                                // The offending frame itself must bring itself to the fore and
-                                // issue an error message.
-//                                JOptionPane.showMessageDialog(null,
-//                                    AsciiUtil.wrapString(msg, 60), "Error!",
-//                                    JOptionPane.ERROR_MESSAGE);
+                                 log.warn("Launcher for profile '{}' has a window open.", plc.getProfileName());
                                 return;
                             }
                         }
@@ -316,8 +315,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     dbEditorFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "DbEditorFrame closed");
                 }
             };
             setupFrameReaper = new WindowAdapter()
@@ -325,8 +322,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     toolkitSetupFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "Setup frame closed");
                 }
             };
             browserReaper = new WindowAdapter()
@@ -334,8 +329,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     browserFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "Message Browser closed");
                 }
             };
             netlistEditReaper = new WindowAdapter()
@@ -343,8 +336,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     netlistEditFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "Network List Editor closed");
                 }
             };
             tsGroupReaper = new WindowAdapter()
@@ -352,15 +343,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     groupEditFrame = null;
-//                    tsDbGrpEditorFrame = null;
-
-                    if (tsdbType == TsdbType.CWMS
-                     || tsdbType == TsdbType.HDB)
-                        Logger.instance().log(Logger.E_DEBUG1,
-                        "TS DB Group Editor screen closed");
-                    else
-                        Logger.instance().log(Logger.E_DEBUG1,
-                        "TS DB Editor screen closed");
                 }
             };
             logViewerReaper = new WindowAdapter()
@@ -368,7 +350,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     procMonFrame = null;
-                    Logger.instance().info("Process Status screen closed");
                 }
             };
             tseditReaper = new WindowAdapter()
@@ -376,8 +357,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     tseditFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "Limits Status screen closed");
                 }
             };
 
@@ -386,8 +365,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     runComputationsFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "Test Computations screen closed");
                 }
             };
             compEditReaper = new WindowAdapter()
@@ -395,8 +372,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     compEditFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "Computations screen closed");
                 }
             };
             procMonReaper = new WindowAdapter()
@@ -404,8 +379,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     procMonFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "Process Monitor screen closed");
                 }
             };
             algorithmWizReaper = new WindowAdapter()
@@ -413,8 +386,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     algorithmWizFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "Algorithms screen closed");
                 }
             };
             platformWizReaper = new WindowAdapter()
@@ -422,8 +393,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     platformWizFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "Platform Wizard screen closed");
                 }
             };
             alarmsReaper = new WindowAdapter()
@@ -431,7 +400,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     alarmsFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1, "Alarms closed");
                 }
             };
 
@@ -440,7 +408,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     lrgsStatFrame = null;
-                    Logger.instance().debug1("LRGS Stat closed");
                 }
             };
 
@@ -449,7 +416,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     routmonFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1, "Routing Monitor closed");
                 }
             };
             platmonReaper = new WindowAdapter()
@@ -457,7 +423,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     platmonFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1, "Platform Monitor closed");
                 }
             };
             profileMgrReaper = new WindowAdapter()
@@ -465,8 +430,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 public void windowClosed(WindowEvent e)
                 {
                     profileMgrFrame = null;
-                    Logger.instance().log(Logger.E_DEBUG1,
-                        "ProfileManager screen closed");
                     checkForProfiles();
                 }
             };
@@ -477,9 +440,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
 
             pack();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            e.printStackTrace();
+             GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -505,12 +468,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
                 labels.getString("LauncherFrame.timeSeriesButton"));
         }
-//        else if (tsDbGrpEditorFrame != null && !tsDbGrpEditorFrame.canClose())
-//        {
-//            tsDbGrpEditorFrame.toFront();
-//            msg = LoadResourceBundle.sprintf(labels.getString("LauncherFrame.windowClosingMsg"),
-//                labels.getString("LauncherFrame.timeSeriesButton"));
-//        }
         else if (tseditFrame != null && !tseditFrame.canClose())
         {
             tseditFrame.toFront();
@@ -833,11 +790,8 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         fullPanel.setLayout(fullLayout);
         fullPanel.add(decodesButtonPanel, new GridBagConstraints(0, 1, 1, 1, .5, .5,
             GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
-//        if (tsdbType != TsdbType.NONE)
-//        {
             fullPanel.add(tsdbButtonPanel, new GridBagConstraints(0, 2, 1, 1, .5, .5,
                 GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(5, 5, 5, 5), 20, 0));
-//        }
         contentPane.add(fullPanel, BorderLayout.CENTER);
         setupSaved();
     }
@@ -864,6 +818,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch(Exception ex)
         {
+            log.atError().setCause(ex).log("Error running rtstat");
             showError(ex.getMessage());
         }
     }
@@ -904,8 +859,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (DecodesException ex)
         {
-            Logger.instance().log(Logger.E_FAILURE,
-                "Cannot initialize DECODES: '" + ex);
+             log.atError().setCause(ex).log("Cannot initialize DECODES.");
         }
     }
 
@@ -1031,14 +985,14 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 catch (DecodesException ex)
                 {
                     final String msg = labels
-                        .getString("LauncherFrame.cannotInitDecodes") + ex;
-                    Logger.instance().log(Logger.E_FAILURE, msg);
+                        .getString("LauncherFrame.cannotInitDecodes");
+                     log.atError().setCause(ex).log(msg);
                     SwingUtilities.invokeLater(new Runnable()
                     {
                         public void run()
                         {
                             JOptionPane.showMessageDialog(null,
-                                AsciiUtil.wrapString(msg, 60), "Error!",
+                                AsciiUtil.wrapString(msg+ex, 60), "Error!",
                                 JOptionPane.ERROR_MESSAGE);
                         }
                     });
@@ -1091,10 +1045,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             System.exit(0);
         }
 
-        Logger.instance().log(
-            Logger.E_INFORMATION,
-            "DCS Toolkit GUI Version " + ResourceFactory.instance().startTag()
-                    + " Starting");
+        log.info("DCS Toolkit GUI Version {} Starting.", ResourceFactory.instance().startTag());
 
         // Verify if we need to set the Java Locale
         DecodesSettings settings = DecodesSettings.instance();
@@ -1125,10 +1076,6 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         argsArray.toArray(argsCopy);
         LauncherFrame frame = new LauncherFrame(argsCopy, cmdLineArgs.getProfile());
 
-        // compArgs is used as argument only to Computations and Test Computations
-        // gui.
-//        frame.compArgs = args;
-
         frame.setExitOnClose(true);
 
         // Initialize the 'GuiApp' object used by LRGS & DECODES GUI's:
@@ -1141,8 +1088,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (FileNotFoundException ex)
         {
-            Logger.instance().log(Logger.E_DEBUG1,
-                "Cannot read '" + propFile + "' -- will use defaults.");
+            log.atError().setCause(ex).log("Cannot read '{}' -- will use defaults.", propFile);
         }
 
         WindowUtility.center(frame).setLocation(0, 0);
@@ -1162,8 +1108,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             }
             catch (Exception ex)
             {
-                System.err.println("Abnormal exit: " + ex);
-                ex.printStackTrace(System.err);
+                log.atError().setCause(ex).log("Abnormal exit.");
                 System.exit(1);
             }
         }
@@ -1223,7 +1168,13 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
      */
     public void showError(String msg)
     {
-        Logger.instance().log(Logger.E_FAILURE, msg);
+        JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60),
+            "Error!", JOptionPane.ERROR_MESSAGE);
+    }
+    
+    public void showError(String msg, Exception ex)
+    {
+        msg += " "+ex;
         JOptionPane.showMessageDialog(this, AsciiUtil.wrapString(msg, 60),
             "Error!", JOptionPane.ERROR_MESSAGE);
     }
@@ -1254,9 +1205,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (IOException ex)
         {
+            log.atError().setCause(ex).log("Cannot open DECODES Properties File '{}'", profile.getFile());
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
-            pw.println("Cannot open DECODES Properties File '" + profile.getFile());
             ex.printStackTrace(pw);
             JOptionPane.showMessageDialog(this,
                                           AsciiUtil.wrapString(sw.toString(),80),
@@ -1301,12 +1252,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                         groupEditFrame = null;
                         String msg = LoadResourceBundle.sprintf(
                             labels.getString("LauncherFrame.cannotLaunch"),
-                            labels.getString("LauncherFrame.timeSeriesButton"))
-                                + ex;
-                        Logger.instance().warning(msg);
-                        System.err.println(msg);
-                        ex.printStackTrace();
-                        showError(msg);
+                            labels.getString("LauncherFrame.timeSeriesButton"));
+                                
+                        log.atError().setCause(ex).log(msg);
+                        showError(msg, ex);
                     }
                 }
             };
@@ -1314,7 +1263,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (DecodesException ex)
         {
-            Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
+            log.atError().setCause(ex).log("Cannot initialize DECODES.");
         }
     }
 
@@ -1356,12 +1305,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                         tseditFrame = null;
                         String msg = LoadResourceBundle.sprintf(
                             labels.getString("LauncherFrame.cannotLaunch"),
-                            "Time Series Editor")
-                                + ex;
-                        Logger.instance().warning(msg);
-                        System.err.println(msg);
-                        ex.printStackTrace();
-                        showError(msg);
+                            "Time Series Editor");
+                        log.atError().setCause(ex).log(msg);        
+                        showError(msg, ex);
                     }
                 }
             };
@@ -1369,7 +1315,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (DecodesException ex)
         {
-            Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
+            log.atError().setCause(ex).log("Cannot initialize DECODES.");
         }
     }
 
@@ -1410,12 +1356,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                         compEditFrame = null;
                         String msg = LoadResourceBundle.sprintf(
                             labels.getString("LauncherFrame.cannotLaunch"),
-                            labels.getString("LauncherFrame.computationsButton"))
-                                + ex;
-                        Logger.instance().warning(msg);
-                        System.err.println(msg);
-                        ex.printStackTrace();
-                        showError(msg);
+                            labels.getString("LauncherFrame.computationsButton"));
+                                
+                        log.atError().setCause(ex).log(msg);
+                        showError(msg, ex);
                     }
                 }
             };
@@ -1423,7 +1367,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (DecodesException ex)
         {
-            Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
+            log.atError().setCause(ex).log("Cannot initialize DECODES.");
         }
     }
 
@@ -1465,11 +1409,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                         routmonFrame = null;
                         String msg = LoadResourceBundle.sprintf(
                             labels.getString("LauncherFrame.cannotLaunch"),
-                            labels.getString("LauncherFrame.routmonButton")) + ex;
-                        Logger.instance().warning(msg);
-                        System.err.println(msg);
-                        ex.printStackTrace();
-                        showError(msg);
+                            labels.getString("LauncherFrame.routmonButton"));
+                        log.atError().setCause(ex).log(msg);
+                        showError(msg, ex);
                     }
                 }
             };
@@ -1477,7 +1419,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (DecodesException ex)
         {
-            Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
+            log.atError().setCause(ex).log("Cannot initialize DECODES.");
         }
     }
 
@@ -1519,11 +1461,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                         platmonFrame = null;
                         String msg = LoadResourceBundle.sprintf(
                             labels.getString("LauncherFrame.cannotLaunch"),
-                            labels.getString("LauncherFrame.platmonButton")) + ex;
-                        Logger.instance().warning(msg);
-                        System.err.println(msg);
-                        ex.printStackTrace();
-                        showError(msg);
+                            labels.getString("LauncherFrame.platmonButton"));
+                        log.atError().setCause(ex).log(msg);
+                        showError(msg, ex);
                     }
                 }
             };
@@ -1531,7 +1471,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (DecodesException ex)
         {
-            Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
+             log.atError().setCause(ex).log("Cannot initialize DECODES.");
         }
     }
 
@@ -1577,12 +1517,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                         runComputationsFrame = null;
                         String msg = LoadResourceBundle.sprintf(
                             labels.getString("LauncherFrame.cannotLaunch"),
-                            labels.getString("LauncherFrame.testComputationsButton"))
-                                + ex;
-                        Logger.instance().warning(msg);
-                        System.err.println(msg);
-                        ex.printStackTrace();
-                        showError(msg);
+                            labels.getString("LauncherFrame.testComputationsButton"));
+                                
+                        log.atError().setCause(ex).log(msg);
+                        showError(msg, ex);
                     }
                 }
             };
@@ -1590,7 +1528,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (DecodesException ex)
         {
-            Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
+             log.atError().setCause(ex).log("Cannot initialize DECODES.");
         }
     }
 
@@ -1631,12 +1569,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                         procMonFrame = null;
                         String msg = LoadResourceBundle.sprintf(
                             labels.getString("LauncherFrame.cannotLaunch"),
-                            labels.getString("LauncherFrame.processStatusButton"))
-                                + ex;
-                        Logger.instance().warning(msg);
-                        System.err.println(msg);
-                        ex.printStackTrace();
-                        showError(msg);
+                            labels.getString("LauncherFrame.processStatusButton"));
+
+                        log.atError().setCause(ex).log(msg);
+                        showError(msg, ex);
                     }
                 }
             };
@@ -1644,7 +1580,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch (DecodesException ex)
         {
-            Logger.instance().log(Logger.E_FAILURE, "Cannot initialize DECODES: '" + ex);
+            log.atError().setCause(ex).log("Cannot initialize DECODES.");
         }
     }
 
@@ -1676,12 +1612,10 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             algorithmWizFrame = null;
             String msg = LoadResourceBundle.sprintf(
                 labels.getString("LauncherFrame.cannotLaunch"),
-                labels.getString("LauncherFrame.algorithmsButton"))
-                    + ex;
-            Logger.instance().warning(msg);
-            System.err.println(msg);
-            ex.printStackTrace();
-            showError(msg);
+                labels.getString("LauncherFrame.algorithmsButton"));
+                    
+            log.atError().setCause(ex).log(msg);
+            showError(msg, ex);
         }
     }
 
@@ -1727,30 +1661,16 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 }
             };
             completeDecodesInit();
-            // decodes.db.Database db = decodes.db.Database.getDb();
-            // Platform.configSoftLink = false;
-            // db.platformConfigList.countPlatformsUsing();
-            // PlatformWizard platWiz = new PlatformWizard();
-            // //PlatformWizard platWiz = PlatformWizard.instance();
-            // platWiz.show();
-            // platformWizFrame = platWiz.getFrame();
-            // if (platformWizFrame != null)
-            // {
-            // platformWizFrame.exitOnClose = false;
-            // platformWizFrame.addWindowListener(platformWizReaper);
-            // }
         }
         catch (Exception ex)
         {
             platformWizFrame = null;
             String msg = LoadResourceBundle.sprintf(
                 labels.getString("LauncherFrame.cannotLaunch"),
-                labels.getString("LauncherFrame.platformWizardButton"))
-                    + ex;
-            Logger.instance().warning(msg);
-            System.err.println(msg);
-            ex.printStackTrace();
-            showError(msg);
+                labels.getString("LauncherFrame.platformWizardButton"));
+                    
+            log.atError().setCause(ex).log(msg);
+            showError(msg, ex);
         }
     }
 
@@ -1779,17 +1699,16 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             throw new Exception("Missing properties file on cmd line");
         }
 
-        Logger.instance().info("======== Launcher Starting for profile '" + profile.getName() + "', "
-            + "debuglevel=" + Logger.priorityName[Logger.instance().getMinLogPriority()]);
+        log.info("======== Launcher Starting for profile '{}'", profile.getName());
 
         if (port > 0)
         {
             client = new BasicClient("localhost", port);
-            Logger.instance().info("Connecting to parent launcher at localhost:" + port);
+            log.info("Connecting to parent launcher at localhost:{}", port);
             try
             {
                 client.connect();
-                Logger.instance().info(".....connect successful.");
+                log.info(".....connect successful.");
                 inp = client.getInputStream();
                 outp = new PrintStream(client.getOutputStream());
                 // return to the connecting client the name used for tracking this connection.
@@ -1797,8 +1716,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             }
             catch(IOException ex)
             {
-                Logger.instance().failure("Cannot connect to localhost:" + port + " " + ex);
-                throw ex;
+                throw new InvalidStateException("cannot connect to localhost:" + port, ex);
             }
         }
 
@@ -1815,11 +1733,11 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 String cmdnum = words[0];
                 final String cmd = words[1];
                 final String arg = words.length > 2 ? words[2] : "";
-                Logger.instance().info("read command '" + line + "' cmd='" + cmd + "' arg='" + arg + "'");
+                log.info("read command '{}' cmd='{}' arg='{}", line, cmd, arg);
 
                 if (cmd.equalsIgnoreCase("kill"))
                 {
-                    Logger.instance().info("Exiting due to kill command.");
+                    log.info("Exiting due to kill command.");
                     break;
                 }
 
@@ -1870,13 +1788,14 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                                     found = false;
                                 if (dacqLauncherActions != null)
                                     for(LauncherAction action : dacqLauncherActions)
-{Logger.instance().info("checking action '" + action.getTag() + "' against arg='" + arg + "'");
+                                    {
+                                        log.info("checking action '{}' against arg='{}'", action.getTag(), arg);
                                         if (action.getTag().equals(arg))
                                         {
                                             action.launchFrame();
                                             found = true;
                                         }
-}
+                                    }
                                 if (found)
                                     reply.reply = cmd + " " + arg;
                                 else
@@ -1946,7 +1865,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             {
                 profiles.add(launchProfile);
             }
-            Logger.instance().debug3("There are " + profiles.size() + " profiles.");
+            log.trace("There are {} profiles.", profiles.size());
             /**
              * This current profile is used for the case of the profile manager adding or removing a profile and needing
              * to rebuild the combobox entries.
@@ -1992,7 +1911,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
         }
         catch(InvocationTargetException | InterruptedException ex)
         {
-            logger.warning("Unable to create profile Combo." + ex);
+            log.atWarn().setCause(ex).log("Unable to create profile Combo.");
         }
 
     }
@@ -2022,11 +1941,9 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             profileMgrFrame = null;
             String msg = LoadResourceBundle.sprintf(
                 labels.getString("LauncherFrame.cannotLaunch"),
-                "Profile Manager") + ex;
-            Logger.instance().warning(msg);
-            System.err.println(msg);
-            ex.printStackTrace();
-            showError(msg);
+                "Profile Manager");
+            log.atError().setCause(ex).log(msg);
+            showError(msg, ex);
         }
     }
 
@@ -2064,7 +1981,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             final LauncherFrame launcherFrame = this;
             try
             {
-                Logger.instance().info("Opening listening socket for launchers on port " + listenPort);
+                 log.info("Opening listening socket for launchers on port {}", listenPort);
                 profileLauncherServer =
                     new BasicServer(listenPort)
 //                    new BasicServer(listenPort, InetAddress.getLocalHost())
@@ -2072,7 +1989,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                         protected BasicSvrThread newSvrThread( Socket sock )
                             throws IOException
                             {
-                                Logger.instance().info("New client connected on port " + listenPort);
+                                 log.info("New client connected on port {}", listenPort);
                                 return new ProfileLauncherConn(this, sock, launcherFrame);
                             }
                     };
@@ -2088,20 +2005,20 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                         catch (IOException ex)
                         {
                             String msg = "Cannot start server listening thread on port "
-                                + listenPort + ": " + ex;
-                            Logger.instance().failure(msg);
+                                + listenPort;
+                            log.atError().setCause(ex).log(msg);
                             profileLauncherServer = null;
                             launcherFrame.showError(msg);
                         }
                     }
                 }).start();
-                Logger.instance().info("Success -- listening socket open on " + listenPort);
+                log.info("Success -- listening socket open on {}", listenPort);
             }
             catch (IOException ex)
             {
-                String msg = "Cannot open listening socket on port " + listenPort + ": " + ex;
-                Logger.instance().failure(msg);
-                showError(msg);
+                String msg = "Cannot open listening socket on port " + listenPort;
+                log.atError().setCause(ex).log(msg);
+                showError(msg+ex);
                 profileLauncherServer = null;
                 return;
             }
@@ -2121,15 +2038,15 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
                 + " -l " + "launcher-" + profile.getName() + ".log -d1";
             try
             {
-                Logger.instance().info("No launcher exists for profile '" + profile.getName()
-                    + "' -- launching command '" + launchCmd + "'");
+                log.info("No launcher exists for profile '{}' -- launching command '{}'",
+                         profile.getName(), launchCmd);
                 ProcWaiterThread.runBackground(launchCmd, "launch-" + profile.getName(), this, profile.getName());
             }
             catch (IOException ex)
             {
-                String msg = "Cannot execute command '" + launchCmd + "': " + ex;
-                Logger.instance().failure(msg);
-                showError(msg);
+                String msg = "Cannot execute command '" + launchCmd+"'";
+                log.atError().setCause(ex).log(msg);
+                showError(msg,ex);
                 return;
             }
 
@@ -2143,7 +2060,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
             if (conn == null)
             {
                 String msg = "Launcher with cmd '" + launchCmd + "' failed to connect after 10 sec.";
-                Logger.instance().failure(msg);
+                log.error(msg);
                 showError(msg);
                 return;
             }
@@ -2167,7 +2084,7 @@ Logger.instance().info("LauncherFrame ctor - getting dacq launcher actions...");
     public void procFinished(String procName, Object obj, int exitStatus)
     {
         // Subordinate launcher processes are not supposed to end, ever.
-        Logger.instance().failure("Subordinate " + procName + " exited with status=" + exitStatus);
+         log.error("Subordinate {} exited with status={}", procName, exitStatus);
 
         // Make sure the ProfileLauncherConn is removed from the server.
         String profileName = (String)obj;
