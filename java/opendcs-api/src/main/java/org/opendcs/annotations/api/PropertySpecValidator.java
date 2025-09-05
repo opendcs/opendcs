@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.opendcs.utils;
+package org.opendcs.annotations.api;
 
 import java.util.ArrayList;
 import java.util.List;

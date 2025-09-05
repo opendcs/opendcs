@@ -13,7 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.opendcs.utils;
+package org.opendcs.annotations.api;
+
+import org.opendcs.annotations.PropertyRequirements.RequirementType;
 
 import org.opendcs.annotations.PropertyRequirements;
 import org.opendcs.annotations.PropertySpec;
@@ -42,7 +44,7 @@ public class PropertySpecHelper
         {
             for (PropertyRequirements.RequirementGroup groupDef : classReqs.groups())
             {
-                PropertyRequirementGroup.GroupType type = convertAlgorithmRequirementType(groupDef.type());
+                RequirementType type = convertAlgorithmRequirementType(groupDef.type());
                 PropertyRequirementGroup group = new PropertyRequirementGroup(
                     groupDef.name(),
                     type,
@@ -73,7 +75,7 @@ public class PropertySpecHelper
                     String groupName = "_required_" + propertyName;
                     PropertyRequirementGroup group = new PropertyRequirementGroup(
                         groupName,
-                        PropertyRequirementGroup.GroupType.INDIVIDUAL,
+                        RequirementType.INDIVIDUAL,
                         "Property '" + propertyName + "' is required"
                     );
                     group.addProperty(propertyName);
@@ -96,7 +98,7 @@ public class PropertySpecHelper
         {
             PropertyRequirementGroup group = new PropertyRequirementGroup(
                 "_required_" + propertyName,
-                PropertyRequirementGroup.GroupType.INDIVIDUAL,
+                RequirementType.INDIVIDUAL,
                 "Property '" + propertyName + "' is required"
             );
             group.addProperty(propertyName);
@@ -157,30 +159,30 @@ public class PropertySpecHelper
     /**
      * Convert AlgorithmRequirements.RequirementType to PropertyRequirementGroup.GroupType
      */
-    private static PropertyRequirementGroup.GroupType convertAlgorithmRequirementType(
+    private static RequirementType convertAlgorithmRequirementType(
             PropertyRequirements.RequirementType type)
     {
         switch (type)
         {
             case ONE_OF:
-                return PropertyRequirementGroup.GroupType.ONE_OF;
+                return RequirementType.ONE_OF;
             case ALL_OR_NONE:
-                return PropertyRequirementGroup.GroupType.ALL_OR_NONE;
+                return RequirementType.ALL_OR_NONE;
             case AT_LEAST_ONE:
-                return PropertyRequirementGroup.GroupType.AT_LEAST_ONE;
+                return RequirementType.AT_LEAST_ONE;
             case ALL_REQUIRED:
-                return PropertyRequirementGroup.GroupType.ALL_REQUIRED;
+                return RequirementType.ALL_REQUIRED;
             case INDIVIDUAL:
-                return PropertyRequirementGroup.GroupType.INDIVIDUAL;
+                return RequirementType.INDIVIDUAL;
             default:
-                return PropertyRequirementGroup.GroupType.INDIVIDUAL;
+                return RequirementType.INDIVIDUAL;
         }
     }
     
     /**
      * Get default description for a requirement type
      */
-    private static String getDefaultDescription(PropertyRequirementGroup.GroupType type)
+    private static String getDefaultDescription(RequirementType type)
     {
         switch (type)
         {

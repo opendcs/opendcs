@@ -36,7 +36,7 @@ import decodes.util.DynamicPropertiesOwner;
 import decodes.util.PropertiesOwner;
 import decodes.util.PropertySpec;
 import ilex.util.StringPair;
-import org.opendcs.utils.PropertySpecValidator;
+import org.opendcs.annotations.api.PropertySpecValidator;
 import ilex.util.TextUtil;
 
 public class PropertiesTableModel extends AbstractTableModel

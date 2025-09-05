@@ -1,10 +1,12 @@
-package org.opendcs.annotations;
+package annotations;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
-import org.opendcs.utils.PropertyRequirementGroup;
-import org.opendcs.utils.PropertySpecValidator;
+import org.junit.jupiter.api.Test;
+import org.opendcs.annotations.PropertyRequirements;
+import org.opendcs.annotations.PropertySpec;
+import org.opendcs.annotations.api.PropertyRequirementGroup;
+import org.opendcs.annotations.api.PropertySpecValidator;
 
 import java.util.HashMap;
 import java.util.List;

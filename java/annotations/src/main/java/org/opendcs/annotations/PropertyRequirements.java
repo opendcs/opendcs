@@ -55,16 +55,21 @@ public @interface PropertyRequirements
          */
         String description() default "";
     }
-    
+
     /**
-     * Types of requirements
+     * Enum defining the types of requirement validation
      */
     public enum RequirementType
     {
+        /** Exactly one property in the group must be satisfied */
         ONE_OF,
+        /** All properties in the group must be satisfied, or none */
         ALL_OR_NONE,
+        /** At least one property in the group must be satisfied */
         AT_LEAST_ONE,
+        /** All properties in the group must be satisfied */
         ALL_REQUIRED,
+        /** Individual property requirement */
         INDIVIDUAL
     }
 }

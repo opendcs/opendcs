@@ -1,9 +1,11 @@
-package org.opendcs.annotations;
+package annotations;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
-import org.opendcs.utils.PropertyRequirementGroup;
+import org.junit.jupiter.api.Test;
+import org.opendcs.annotations.api.PropertyRequirementGroup;
+
+import org.opendcs.annotations.PropertyRequirements.RequirementType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +25,7 @@ public class PropertyRequirementGroupTest
     {
         PropertyRequirementGroup group = new PropertyRequirementGroup(
             "auth", 
-            PropertyRequirementGroup.GroupType.ONE_OF,
+            RequirementType.ONE_OF,
             "Authentication method"
         );
         group.addProperty("username");
@@ -51,7 +53,7 @@ public class PropertyRequirementGroupTest
     {
         PropertyRequirementGroup group = new PropertyRequirementGroup(
             "credentials",
-            PropertyRequirementGroup.GroupType.ALL_OR_NONE,
+            RequirementType.ALL_OR_NONE,
             "Complete credentials or none"
         );
         group.addProperty("username");
@@ -74,7 +76,7 @@ public class PropertyRequirementGroupTest
     {
         PropertyRequirementGroup group = new PropertyRequirementGroup(
             "contact",
-            PropertyRequirementGroup.GroupType.AT_LEAST_ONE,
+            RequirementType.AT_LEAST_ONE,
             "At least one contact method"
         );
         group.addProperty("email");
@@ -102,7 +104,7 @@ public class PropertyRequirementGroupTest
     {
         PropertyRequirementGroup group = new PropertyRequirementGroup(
             "database",
-            PropertyRequirementGroup.GroupType.ALL_REQUIRED,
+            RequirementType.ALL_REQUIRED,
             "All database settings required"
         );
         group.addProperty("host");
@@ -130,7 +132,7 @@ public class PropertyRequirementGroupTest
     {
         PropertyRequirementGroup group = new PropertyRequirementGroup(
             "_required_apiUrl",
-            PropertyRequirementGroup.GroupType.INDIVIDUAL,
+            RequirementType.INDIVIDUAL,
             "API URL is required"
         );
         group.addProperty("apiUrl");
@@ -148,7 +150,7 @@ public class PropertyRequirementGroupTest
     {
         PropertyRequirementGroup group = new PropertyRequirementGroup(
             "required",
-            PropertyRequirementGroup.GroupType.INDIVIDUAL
+            RequirementType.INDIVIDUAL
         );
         group.addProperty("field");
         
@@ -170,7 +172,7 @@ public class PropertyRequirementGroupTest
     {
         PropertyRequirementGroup group = new PropertyRequirementGroup(
             "auth",
-            PropertyRequirementGroup.GroupType.ONE_OF
+            RequirementType.ONE_OF
         );
         group.addProperty("username");
         group.addProperty("apiKey");
@@ -199,7 +201,7 @@ public class PropertyRequirementGroupTest
         // Test custom description
         PropertyRequirementGroup group1 = new PropertyRequirementGroup(
             "test",
-            PropertyRequirementGroup.GroupType.ONE_OF,
+            RequirementType.ONE_OF,
             "Custom description"
         );
         Assertions.assertEquals("Custom description", group1.getDescription());
@@ -207,13 +209,13 @@ public class PropertyRequirementGroupTest
         // Test default descriptions for each type
         PropertyRequirementGroup group2 = new PropertyRequirementGroup(
             "test",
-            PropertyRequirementGroup.GroupType.ONE_OF
+            RequirementType.ONE_OF
         );
         Assertions.assertTrue(group2.getDescription().contains("Exactly one"));
         
         PropertyRequirementGroup group3 = new PropertyRequirementGroup(
             "test",
-            PropertyRequirementGroup.GroupType.ALL_OR_NONE
+            RequirementType.ALL_OR_NONE
         );
         Assertions.assertTrue(group3.getDescription().contains("all"));
         Assertions.assertTrue(group3.getDescription().contains("none"));
@@ -224,7 +226,7 @@ public class PropertyRequirementGroupTest
     {
         PropertyRequirementGroup group = new PropertyRequirementGroup(
             "test",
-            PropertyRequirementGroup.GroupType.ONE_OF
+            RequirementType.ONE_OF
         );
         
         group.addProperty("prop1");

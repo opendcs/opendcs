@@ -1,6 +1,6 @@
 package org.opendcs.gui;
 
-import java.awt.*;
+import java.awt.Color;
 
 public class GuiConstants
 {

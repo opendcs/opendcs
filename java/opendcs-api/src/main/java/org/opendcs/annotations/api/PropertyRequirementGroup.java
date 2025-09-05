@@ -13,7 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.opendcs.utils;
+package org.opendcs.annotations.api;
+
+import org.opendcs.annotations.PropertyRequirements.RequirementType;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -27,29 +29,12 @@ public class PropertyRequirementGroup implements Serializable
 {
     private static final long serialVersionUID = 1L;
     
-    /**
-     * Enum defining the types of requirement validation
-     */
-    public enum GroupType
-    {
-        /** Exactly one property in the group must be satisfied */
-        ONE_OF,
-        /** All properties in the group must be satisfied, or none */
-        ALL_OR_NONE,
-        /** At least one property in the group must be satisfied */
-        AT_LEAST_ONE,
-        /** All properties in the group must be satisfied */
-        ALL_REQUIRED,
-        /** Individual property requirement */
-        INDIVIDUAL
-    }
-    
     private final String groupName;
-    private final GroupType type;
+    private final RequirementType type;
     private final List<String> propertyNames;
     private String description;
     
-    public PropertyRequirementGroup(String groupName, GroupType type, String description)
+    public PropertyRequirementGroup(String groupName, RequirementType type, String description)
     {
         this.groupName = groupName;
         this.type = type;
@@ -57,7 +42,7 @@ public class PropertyRequirementGroup implements Serializable
         this.propertyNames = new ArrayList<>();
     }
     
-    public PropertyRequirementGroup(String groupName, GroupType type)
+    public PropertyRequirementGroup(String groupName, RequirementType type)
     {
         this(groupName, type, "");
     }
@@ -192,7 +177,7 @@ public class PropertyRequirementGroup implements Serializable
         return groupName;
     }
     
-    public GroupType getType()
+    public RequirementType getType()
     {
         return type;
     }

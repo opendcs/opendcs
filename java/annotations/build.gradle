@@ -11,7 +11,6 @@ plugins
 
 dependencies 
 {
-    testImplementation project(':opendcs')
     testImplementation enforcedPlatform(libs.junit.bom)
     testImplementation(libs.bundles.junit)
 }

@@ -48,7 +48,7 @@ public class PropertiesEditPanel extends JPanel
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle genericLabels = null;
     private JScrollPane jScrollPane1 = new JScrollPane();
-    public JTable propertiesTable;
+    private JTable propertiesTable;
     private TitledBorder titledBorder1;
     private JButton editButton = new JButton();
     private JButton addButton = new JButton();

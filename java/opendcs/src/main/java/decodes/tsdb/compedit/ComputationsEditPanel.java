@@ -8,7 +8,7 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
 import decodes.gui.properties.PropertiesTableModel;
-import org.opendcs.utils.PropertySpecValidator;
+import org.opendcs.annotations.api.PropertySpecValidator;
 import opendcs.dai.ComputationDAI;
 import ilex.gui.DateTimeCalendar;
 import ilex.util.AsciiUtil;
@@ -753,7 +753,7 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
                 return;
         }
         // Validate properties using annotation-based system
-        PropertiesTableModel model = (PropertiesTableModel)propertiesPanel.propertiesTable.getModel();
+        PropertiesTableModel model = propertiesPanel.getModel();
         if (!model.areAllRequirementsSatisfied()) 
         {
             PropertySpecValidator.ValidationResult result = PropertySpecValidator.validateClass(
