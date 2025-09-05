@@ -8,6 +8,9 @@ plugins {
 
 /* any dependencies here beyond slf4j-api should be thoroughly discussed
  */
+dependencies {
+    implementation project(':opendcs-annotations')
+}
 
 publishing {
     publications {
