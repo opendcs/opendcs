@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.launcher;
 
 import java.io.IOException;
@@ -9,13 +24,14 @@ import decodes.util.DecodesSettings;
 import ilex.net.BasicServer;
 import ilex.net.BasicSvrThread;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
-public class ProfileLauncherServer
-    extends BasicServer
-    implements Runnable
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+public class ProfileLauncherServer extends BasicServer implements Runnable
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private LauncherFrame parentFrame;
     private Thread listenThread = null;
     private String module = "ProfileLauncherServer";
@@ -41,7 +57,7 @@ public class ProfileLauncherServer
         try { listen(); }
         catch(Exception ex)
         {
-            Logger.instance().warning(module + " Error on listening socket thread: " + ex);
+            log.atWarn().setCause(ex).log("Error on listening socket thread.");
             parentFrame.profileLauncherServer = null;
             shutdown();
         }
@@ -80,8 +96,7 @@ public class ProfileLauncherServer
 
         } while(System.currentTimeMillis() - start < 5000L);
 
-        Logger.instance().warning(module + " No profile launcher IF for '" + profileName
-            + "' and failed to start one!");
+        log.warn("No profile launcher IF for '{}' and failed to start one!", profileName);
     }
 
     private void spawnProfileLauncher(String profileName)
@@ -96,7 +111,7 @@ public class ProfileLauncherServer
         args[4] = "" + portNum;
 
         //TODO NO: Use ilex.util.ProcWaiterThread
-        Logger.instance().info("Executing cmd '"  + cmd);
+        log.info("Executing cmd '{}'", cmd);
         ProcessBuilder pb = new ProcessBuilder();
         pb.command(args);
         try
@@ -111,10 +126,9 @@ public class ProfileLauncherServer
             // Periodically check process.isAlive()
             // Before launcher exits call process.destroy()
         }
-        catch (IOException e)
+        catch (IOException ex)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.atError().setCause(ex).log("Unable to start profile launcher for {}", profileName);
         }
 
         // TODO Test whether the command works under windoze.
