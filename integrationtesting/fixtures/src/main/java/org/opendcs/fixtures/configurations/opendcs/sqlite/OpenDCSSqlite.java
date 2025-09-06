@@ -118,7 +118,7 @@ public class OpenDCSSqlite implements Configuration
         {
             return;
         }
-        this.jdbcUrl = String.format("jdbc:sqlite:%s/test.db", this.propertiesFile.getParent());
+        this.jdbcUrl = String.format("jdbc:sqlite:%s/test.db?busy_timeout=10000", this.propertiesFile.getParent());
         environmentVars.put("DB_URL", jdbcUrl);
         environment.set("DB_URL", jdbcUrl);
         createPropertiesFile(configBuilder, this.propertiesFile);
