@@ -45,7 +45,8 @@ import opendcs.dao.XmitRecordDAO;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 import uk.org.webcompere.systemstubs.properties.SystemProperties;
 import uk.org.webcompere.systemstubs.security.SystemExit;
-
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 /**
  * Handles setup of an OpenDCS Postgres SQL Database instance.
  *
@@ -118,12 +119,18 @@ public class OpenDCSSqlite implements Configuration
         {
             return;
         }
-        this.jdbcUrl = String.format("jdbc:sqlite:%s/test.db?busy_timeout=10000", this.propertiesFile.getParent());
+        this.jdbcUrl = String.format("jdbc:sqlite:%s/test.db?busy_timeout=60000&foreign_keys=true", this.propertiesFile.getParent());
         environmentVars.put("DB_URL", jdbcUrl);
         environment.set("DB_URL", jdbcUrl);
         createPropertiesFile(configBuilder, this.propertiesFile);
         profile = Profile.getProfile(this.propertiesFile);
-        DataSource ds = new SimpleDataSource(jdbcUrl,"", "");
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(jdbcUrl);
+        
+        config.setLeakDetectionThreshold(10000L);
+        
+        HikariDataSource ds = new HikariDataSource(config);
+        
 
         MigrationManager mm = new MigrationManager(ds,OpenDcsSqliteProvider.NAME);
         MigrationProvider mp = mm.getMigrationProvider();
