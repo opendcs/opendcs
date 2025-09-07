@@ -84,6 +84,7 @@ testEngines.each { engine ->
         systemProperties += project.properties.findAll {k, v -> k.startsWith("testcontainer")}
         systemProperties += ["opendcs.test.engine": engine]
 
+        jvmArgs += "-XX:MaxJavaStackTraceDepth=1073741823"
         jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
         jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
         jvmArgs += "-Dopendcs.test.classpath=${classPath}"

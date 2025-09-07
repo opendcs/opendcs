@@ -704,13 +704,15 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			
 			for (Iterator<EnumValue> it = dbEnum.iterator(); it.hasNext(); )
 			{
-				writeEnumValue(helper, it.next());
+				EnumValue ev = it.next();
+log.info(ev.getFullName());
+				writeEnumValue(helper, ev);
 			}
 			return dbEnum;
 		}
 		catch(DbIoException | SQLException ex)
 		{
-			throw new OpenDcsDataException("enum modify/delete failed for " + dbEnum.toString(), ex);
+			throw new OpenDcsDataException("enum modify/delete failed for " + dbEnum.toString() + ex.getMessage(), ex);
 		}
 	}
 

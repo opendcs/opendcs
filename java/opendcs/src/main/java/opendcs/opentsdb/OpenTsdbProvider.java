@@ -18,6 +18,9 @@ import decodes.util.DecodesSettings;
 import ilex.util.Pair;
 import opendcs.dai.DaiBase;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 public class OpenTsdbProvider implements DatabaseProvider
 {
     private String appName = null;
@@ -37,7 +40,13 @@ public class OpenTsdbProvider implements DatabaseProvider
             credentials.setProperty("user", credentials.getProperty("username"));
         }
         this.appName = appName;
-        javax.sql.DataSource dataSource = new SimpleDataSource(settings.editDatabaseLocation, credentials);
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(settings.editDatabaseLocation);
+        config.setDataSourceProperties(credentials);
+        config.setLeakDetectionThreshold(10000L);
+        
+        HikariDataSource dataSource = new HikariDataSource(config);
+        //javax.sql.DataSource dataSource = new SimpleDataSource(settings.editDatabaseLocation, credentials);
         return createDatabase(dataSource, settings);
     }
 

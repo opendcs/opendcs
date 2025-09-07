@@ -16,6 +16,7 @@ dependencies {
     api(libs.testcontainers.oracle.free)
     api(libs.hec.testcontainers.cwms)
     api(libs.bundles.jdbi)
+    implementation("com.zaxxer:HikariCP:4.0.3")
 }
 
 // Force archive names to match publishing name.

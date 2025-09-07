@@ -40,6 +40,8 @@ dependencies {
     implementation(libs.jfree.jfreechart)
     implementation(libs.jython.standalone)
     implementation(libs.org.xerial.sqlite.jdbc)
+
+    implementation("com.zaxxer:HikariCP:4.0.3")
     
     implementation(libs.scijava.jep) {
         exclude group: "jama", module: "jama"
