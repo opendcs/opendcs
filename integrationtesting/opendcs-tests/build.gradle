@@ -166,6 +166,7 @@ testEngines.each { engine ->
         jvmArgs += "-Dopendcs.restapi.warfile=${restWar}"
         jvmArgs += "-Dopendcs.gui.warfile=${guiWar}"
 
+        jvmArgs += "-XX:MaxJavaStackTraceDepth=1073741823"
         jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
         jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
         jvmArgs += "-Dopendcs.test.classpath=${classPath}"
