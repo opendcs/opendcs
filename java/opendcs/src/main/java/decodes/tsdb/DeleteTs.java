@@ -115,7 +115,8 @@ public class DeleteTs
 		s = untilArg.getValue().trim();
 		Date until = s != null && s.length() > 0 ? convert2Date(s, true) : null;
 
-		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+		try (TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();)
+		{
 		for(int n = outArg.NumberOfValues(), i=0; i<n; i++)
 		{
 			String outTS = outArg.getValue(i);
@@ -132,7 +133,7 @@ public class DeleteTs
 				Logger.instance().warning("No such time series for '" + outTS + "': " + ex);
 			}
 		}
-		timeSeriesDAO.close();
+	}
 	}
 
 	public static void setTimeZone(TimeZone _tz)

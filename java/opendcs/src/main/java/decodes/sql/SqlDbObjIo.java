@@ -347,7 +347,11 @@ public class SqlDbObjIo
 				throw new RuntimeException("Unable to get connection.", ex);
 			}
 		}
-		return new WrappedConnection(connection, c -> {});
+		return new WrappedConnection(connection, c ->
+		{
+			c.getRealConnection().close();
+			this.connection = null;
+		});
 	}
 
 	public SqlDatabaseIO getDbio()
@@ -493,7 +497,7 @@ public class SqlDbObjIo
 	public Connection getConnection()
 	{
 		// needed as we shift in proper usage of the Connection objects.
-		return new WrappedConnection(connection, (c) -> {});
+		return new WrappedConnection(connection(), (c) -> {});
 	}
 
 	public void setConnection(Connection conn)
