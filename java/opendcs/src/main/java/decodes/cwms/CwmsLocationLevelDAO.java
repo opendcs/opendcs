@@ -384,7 +384,7 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
                             }
                             catch (Exception ex)
                             {
-                                log.atWarn().setCause(ex).log("Failed to convert units from {} to {}: {}",
+                                log.atWarn().setCause(ex).log("Failed to convert units from {} to {}",
                                         dbUnits, targetUnits);
                                 timeSeries.setUnitsAbbr(dbUnits);
                             }
