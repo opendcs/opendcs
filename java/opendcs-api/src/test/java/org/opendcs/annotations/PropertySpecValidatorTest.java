@@ -1,4 +1,4 @@
-package annotations;
+package org.opendcs.annotations;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
