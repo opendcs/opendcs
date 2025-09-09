@@ -1,19 +1,23 @@
 /*
-*  This software was written by Cove Software, LLC, under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* This software was written by Cove Software, LLC
 *
-*  Except for specific contractual terms between COVE and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@covesw.com
-*  
-*  Copyright 2016 U.S. Government.
+*  Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.polling;
 
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,6 +25,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.TransportMedium;
 
@@ -37,7 +44,7 @@ import decodes.db.TransportMedium;
  */
 public class ListeningThreadController extends PollingThreadController
 {
-
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public ListeningThreadController(PollingDataSource dataSource, 
 		ArrayList<TransportMedium> aggTMList, ListeningPortPool lpp)
 	{
@@ -52,14 +59,12 @@ public class ListeningThreadController extends PollingThreadController
 		
 		if (!(portPool instanceof ListeningPortPool))
 		{
-			Logger.instance().failure("Mis-configuration: Listening Thread Controller"
-				+ " requires a ListeningPortPool.");
+			log.error("Mis-configuration: Listening Thread Controller requires a ListeningPortPool.");
 			return;
 		}
 		
-		dataSource.log(Logger.E_DEBUG1, module + " starting. " + portPool.getNumPorts() 
-			+ " DCPs are allowed to use the listening socket. authenticateClient="
-			+ dataSource.getAuthenticateClient());
+		log.debug("starting. {} DCPs are allowed to use the listening socket. authenticateClient={}",
+				  portPool.getNumPorts(), dataSource.getAuthenticateClient());
 		
 		String authType = null;
 		if (dataSource.getAuthenticateClient() != null
@@ -79,7 +84,7 @@ public class ListeningThreadController extends PollingThreadController
 				// Arguments are prompt and required response
 				if (t.length != 3)
 				{
-					dataSource.log(Logger.E_FAILURE, "Badly formed login params in data source config.");
+					log.error("Badly formed login params in data source config.");
 					dataSource.close();
 				}
 				if (t[1].length() > 0)
@@ -96,14 +101,13 @@ public class ListeningThreadController extends PollingThreadController
 			IOPort ioPort = portPool.allocatePort();
 			if (ioPort != null)
 			{
-Logger.instance().debug1(module + " have new ioPort: " + ioPort.getPortName()
-+ " maxPorts=" + portPool.getNumFreePorts() + " #threads=" + threads.size());
+				log.debug("have new ioPort: {} maxPorts={} #threads={}",
+						  ioPort.getPortName(), portPool.getNumFreePorts(), threads.size());
 
 				if (threads.size() >= portPool.getNumPorts())
 				{
-					Logger.instance().warning(module + " Hanging up on new client "
-						+ ioPort.getPortName() + " because max clients of "
-							+ portPool.getNumPorts() + " already reached.");
+					log.warn("Hanging up on new client {} because max clients of {} already reached.",
+							 ioPort.getPortName(), portPool.getNumPorts());
 					portPool.releasePort(ioPort, PollingThreadState.Failed, true);
 					continue;
 				}
@@ -115,7 +119,7 @@ Logger.instance().debug1(module + " have new ioPort: " + ioPort.getPortName()
 					// for new clients which may come in rapid fire.
 					checkPassword(ioPort, authPrompt, reqResponse);
 					TransportMedium tm = identifyClient(ioPort);
-Logger.instance().debug1(module + " have client with tm=" + tm.toString());
+					log.debug("have client with tm={}", tm.toString());
 					
 					// For listen, the threads are constructed dynamically
 					// Or consider -- could they be reused from a single list of polling threads?
@@ -126,24 +130,19 @@ Logger.instance().debug1(module + " have client with tm=" + tm.toString());
 					pt.setSaveSessionFile(saveSessionFile);
 					pt.setIoPort(ioPort);
 					pt.setThreadStart(new Date());
-					dataSource.log(Logger.E_DEBUG1, module + " starting " 
-						+ pt.getModule()
-						+ ", TM " + pt.getTransportMedium()
-						+ " on port number " + ioPort.getPortNum()
-						+ ", pollPriority=" + pt.getPollPriority());
+					log.debug("starting {}, TM {} on port number {}, pollPriority={}",
+							  pt.getModule(), pt.getTransportMedium(), ioPort.getPortNum(), pt.getPollPriority());
 					(new Thread(pt)).start();
 
 				}
 				catch (LoginException ex)
 				{
-					dataSource.log(Logger.E_WARNING, "Incorrect password response from client " 
-						+ ioPort.getPortName() + ": " + ex);
+					log.atWarn().setCause(ex).log("Incorrect password response from client {}", ioPort.getPortName());
 					portPool.releasePort(ioPort, PollingThreadState.Failed, true);
 				}
 				catch (IOException ex)
 				{
-					dataSource.log(Logger.E_WARNING, "IO Error on client " 
-						+ ioPort.getPortName() + ": " + ex);
+					log.atWarn().setCause(ex).log("IO Error on client {}", ioPort.getPortName());
 					portPool.releasePort(ioPort, PollingThreadState.Failed, true);
 				}
 			}
@@ -157,12 +156,10 @@ Logger.instance().debug1(module + " have client with tm=" + tm.toString());
 					 || pt.getState() == PollingThreadState.Success)
 						ptit.remove();
 				}
-				dataSource.log(Logger.E_INFORMATION, 
-					module + " Threads: total=" + threads.size()
-					+ ", waiting=" + countThreads(PollingThreadState.Waiting) 
-					+ ", running=" + countThreads(PollingThreadState.Running)
-					+ ", success=" + countThreads(PollingThreadState.Success)
-					+ ", failed=" + countThreads(PollingThreadState.Failed)
+				log.info("Threads: total={}, waiting={}, running={}, success={}, failed={}",
+						 threads.size(), countThreads(PollingThreadState.Waiting),
+						 countThreads(PollingThreadState.Running), countThreads(PollingThreadState.Success),
+						 countThreads(PollingThreadState.Failed)
 					);
 				debugmsec = System.currentTimeMillis();
 			}
@@ -171,8 +168,7 @@ Logger.instance().debug1(module + " have client with tm=" + tm.toString());
 		}
 
 		// Kill any PollingThreads that are still alive.
-		dataSource.log(Logger.E_INFORMATION, module + " shutting down. "
-			+ threads.size() + " still active.");
+		log.info(" shutting down. {} still active.", threads.size());
 		
 		portPool.close();
 
@@ -187,11 +183,13 @@ Logger.instance().debug1(module + " have client with tm=" + tm.toString());
 			
 		// Wait up to 30 sec until all the kids have called pollComplete().
 		if (nk > 0)
-			dataSource.log(Logger.E_INFORMATION, module 
-				+ " Will wait up to 30 sec for " + nk + " polling threads to terminate.");
+		{
+			log.info("Will wait up to 30 sec for {} polling threads to terminate.", nk);
+		}
 		else
-			dataSource.log(Logger.E_INFORMATION, module 
-				+ " All threads terminated, proceeding with shutdown.");
+		{
+			log.info("All threads terminated, proceeding with shutdown.");
+		}
 	
 		long x = System.currentTimeMillis();
 		while(countThreads(PollingThreadState.Running) > 0
@@ -201,15 +199,14 @@ Logger.instance().debug1(module + " have client with tm=" + tm.toString());
 			catch(InterruptedException ex) {}
 		}
 
-		dataSource.log(Logger.E_INFORMATION, module + " finished. "
-			+ successfullPolls + " stations called in, " + failedPolls + " failed.");
+		log.info("finished. {} stations called in, {} failed.", successfullPolls, failedPolls);
 		dataSource.pollingComplete();
 	}
 
 	private TransportMedium identifyClient(IOPort ioPort)
 		throws IOException, LoginException
 	{
-Logger.instance().debug1("identifyClient, waiting for client to send TM ID...");
+		log.debug("identifyClient, waiting for client to send TM ID...");
 
 		// In this initial prototype, A client identifies itself with a single
 		// line containing the transport medium ID. Other methods can be implemented
@@ -220,10 +217,9 @@ Logger.instance().debug1("identifyClient, waiting for client to send TM ID...");
 		{
 			String msg = module + " client at " + ioPort.getPortName()
 				+ " did not send ID.";
-			dataSource.log(Logger.E_FAILURE, msg);
 			throw new LoginException(msg);
 		}
-Logger.instance().debug1("... client sent '" + id + "'");
+		log.debug("... client sent '{}'", id);
 		
 		for(TransportMedium tm : aggTMList)
 			if (tm.getMediumId().equalsIgnoreCase(id))
@@ -232,7 +228,6 @@ Logger.instance().debug1("... client sent '" + id + "'");
 		String msg = module + " client at " + ioPort.getPortName()
 			+ " sent invalid ID '" + id + "' -- Does not match any transport medium "
 			+ "in this routing spec.";
-		dataSource.log(Logger.E_FAILURE, msg);
 		throw new LoginException(msg);
 	}
 
@@ -243,7 +238,7 @@ Logger.instance().debug1("... client sent '" + id + "'");
 	private void checkPassword(IOPort ioPort, byte prompt[], String reqResponse)
 		throws LoginException, IOException
 	{
-Logger.instance().debug1("checkPassword prompt='" + prompt + "'");
+		log.debug("checkPassword prompt='{}'", prompt);
 
 		if (prompt != null && prompt.length > 0)
 		{
@@ -251,14 +246,14 @@ Logger.instance().debug1("checkPassword prompt='" + prompt + "'");
 			ioPort.getOut().flush();
 			if (reqResponse != null && reqResponse.length() > 0)
 			{
-Logger.instance().debug1("wrote prompt, awaiting response.");
+				log.debug("wrote prompt, awaiting response.");
 				BufferedReader br = new BufferedReader(new InputStreamReader(ioPort.getIn()));
 				String clientResponse = br.readLine();
-Logger.instance().debug1("response received '" + clientResponse + "'");
+				log.debug("response received '{}'", clientResponse);
 				if (clientResponse == null || clientResponse.length() == 0
 				 || !clientResponse.equals(reqResponse))
 				{
-					Logger.instance().warning(module + " invalid client login response '" + clientResponse + "'");
+					log.warn("invalid client login response '{}'", clientResponse);
 					throw new LoginException("Client provided invalid password to login to server.");
 				}
 			}
