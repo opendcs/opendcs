@@ -18,13 +18,16 @@ package decodes.polling;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 public class PollScriptXmitCmd extends PollScriptCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "PollScriptXmitCmd";
 	private String str = null;
 
@@ -58,7 +61,7 @@ public class PollScriptXmitCmd extends PollScriptCommand
 			String strdata = new String(data);
 			if (owner.getPollSessionLogger() != null)
 				owner.getPollSessionLogger().sent(strdata);
-			Logger.instance().debug2(module + " sent '" + strdata + "'");
+			log.trace("sent '{}'", strdata);
 		}
 		catch (IOException ex)
 		{

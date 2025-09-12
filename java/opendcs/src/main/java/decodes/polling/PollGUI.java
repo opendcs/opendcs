@@ -483,10 +483,8 @@ public class PollGUI extends TsdbAppTemplate
 							lastOutFile = dc.getLastOutFile();
 							if (lastOutFile != null)
 							{
-								sessionLogPrintStream.println("Output written to "
-									+ lastOutFile.getPath());
-								System.out.println("Output written to "
-									+ lastOutFile.getPath());
+								sessionLogPrintStream.println("Output written to " + lastOutFile.getPath());
+								log.info("Output written to {}", lastOutFile.getPath());
 							}
 							else
 								sessionLogPrintStream.println("(no active output)");
@@ -535,4 +533,3 @@ public class PollGUI extends TsdbAppTemplate
 	{
 	}
 }
-

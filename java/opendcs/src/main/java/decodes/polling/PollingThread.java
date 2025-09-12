@@ -244,7 +244,7 @@ public class PollingThread implements Runnable
 			{
 				log.warn("Protocol failed after {} attempts, but there is a partial " +
 						 "message of length {}.",
-						 maxTries, dcpMsg.getData().length + ".");
+						 maxTries, dcpMsg.getData().length);
 				RawMessage ret = new RawMessage(dcpMsg.getData());
 				ret.setOrigDcpMsg(dcpMsg);
 				ret.setPlatform(transportMedium.platform);
