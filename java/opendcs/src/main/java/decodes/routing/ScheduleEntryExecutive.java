@@ -521,7 +521,7 @@ private long lastDebug = 0L;
 	
 	public void setMessageStart(Date timeStamp)
 	{
-		MDC.put("messageStart", timeStamp.toString());
+		MDC.put("messageStart", timeStamp != null ? timeStamp.toString() : null);
 	}
 
 	
