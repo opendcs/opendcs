@@ -1,7 +1,24 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.routing;
 
-import java.io.File;
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.PlatformStatusDAI;
 import lrgs.gui.DecodesInterface;
@@ -20,9 +37,9 @@ import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 
-public class Poll
-	extends TsdbAppTemplate
+public class Poll extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static String module = "Poll";
 	private StringToken stationArg = new StringToken("", "Station Name", "",
 		TokenOptions.optArgument |TokenOptions.optRequired, "");
@@ -87,7 +104,7 @@ public class Poll
 			}
 			catch(Exception ex)
 			{
-				System.err.println("Illegal since time '" + s + "': " + ex);
+				log.atError().setCause(ex).log("Illegal since time '{}'", s);
 				return;
 			}
 		}
@@ -119,12 +136,18 @@ public class Poll
 					{
 						DirectoryConsumer dc = (DirectoryConsumer)rst.consumer;
 						if (dc.getLastOutFile() != null)
-							System.out.println("Output written to " + dc.getLastOutFile().getPath());
+						{
+							log.info("Output written to {}", dc.getLastOutFile().getPath());	
+						}
 						else
-							System.out.println("(no active output)");
+						{
+							log.info("(no active output)");	
+						}
 					}
-					else System.out.println(
-						rst.consumer == null ? "No output file produced." : rst.consumer.getClass().getName());
+					else
+					{
+						log.info(rst.consumer == null ? "No output file produced." : rst.consumer.getClass().getName());
+					} 
 				}
 			});
 		rst.start();

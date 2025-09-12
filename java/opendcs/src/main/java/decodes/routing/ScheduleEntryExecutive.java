@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.routing;
 
 import java.net.InetAddress;
@@ -6,9 +21,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+
 import lrgs.common.DcpMsg;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import opendcs.dai.ScheduleEntryDAI;
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -32,6 +50,7 @@ import decodes.tsdb.IntervalIncrement;
  */
 public class ScheduleEntryExecutive
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The schedule entry this executive is responsible for */
 	private ScheduleEntry scheduleEntry = null;
 	
@@ -53,11 +72,8 @@ public class ScheduleEntryExecutive
 	
 	protected static boolean rereadRsBeforeExec = true;
 	private DcpMsg lastDcpMsg = null;
-	private DacqEventLogger dacqEventLogger = null;
-	private int schedEntryMinLogPriority = Logger.E_INFORMATION;
 	private long lastEventsPurge = 0L;
 	private long lastSchedDebug = 0L;
-	private int appMinLogPriority = Logger.E_INFORMATION;
 
 	
 	/** Constructor called from RoutingScheduler */
@@ -65,41 +81,6 @@ public class ScheduleEntryExecutive
 	{
 		this.scheduleEntry = scheduleEntry;
 		this.parent = parent;
-		schedEntryMinLogPriority = 
-			appMinLogPriority = parent != null ? parent.getAppDebugMinPriority() 
-				: Logger.instance().getMinLogPriority();
-		
-		if (parent == null) // This means that this is the 'rs' command.
-		{
-			dacqEventLogger = new DacqEventLogger(Logger.instance());
-
-			if (Database.getDb().getDbIo() instanceof SqlDatabaseIO)
-			{
-				// This means that this is a stand-alone rs from command line, the DCPmon
-				// daemon, or some other single-threaded app.
-
-				// If rs thread has an app ID, set it in the logger.
-				if (seThread != null && seThread.rsProcRecord != null 
-					&& !DbKey.isNull(seThread.rsProcRecord.getAppId()))
-				{
-					dacqEventLogger.setAppId(seThread.rsProcRecord.getAppId());
-				}
-			}
-			// Else this is an XML database, no actual DACQ Event Logging
-			
-			// For RS, set default logger to the event logger.
-			Logger.setLogger(dacqEventLogger);
-		}
-		else if (parent != null && (parent instanceof DcpMonitor))
-		{
-			// I don't want any DACQ Events logged by Dcp Monitor Daemon
-			// Since no DAO, it will just act as a pass-through.
-			dacqEventLogger = new DacqEventLogger(Logger.instance());
-		}
-		else // This is a child of RoutingScheduler
-		{
-			dacqEventLogger = new DacqEventLogger(parent.origLogger);
-		}
 	}
 	
 private long lastDebug = 0L;
@@ -112,8 +93,8 @@ private long lastDebug = 0L;
 	{
 		if (System.currentTimeMillis() - lastDebug > 60000L)
 		{
-			dacqEventLogger.debug1("Checking schedule entry '" + scheduleEntry.getName() 
-				+ "' enabled=" + scheduleEntry.isEnabled() + ", state=" + runState);
+			log.debug("Checking schedule entry '{}' enabled={}, state={}",
+					  scheduleEntry.getName(), scheduleEntry.isEnabled(), runState);
 			lastDebug = System.currentTimeMillis();
 		}
 		
@@ -131,7 +112,7 @@ private long lastDebug = 0L;
 			}
 			catch (DbIoException ex)
 			{
-				dacqEventLogger.warning(getName() + " Cannot initialize: " + ex);
+				log.atWarn().setCause(ex).log("{} Cannot initialize", getName());
 				// Stay in initialize state and retry later.
 			}
 			return;
@@ -145,7 +126,7 @@ private long lastDebug = 0L;
 		{
 			if (!this.seThread.isAlive() || seThread.currentStatus.startsWith("ERR"))
 			{
-				Logger.instance().failure("Thread " + getName() + " has failed.");
+				log.error("Thread {} has failed.", getName());
 				seThread.shutdown();
 				seThread.quit(); // TODO: shutdown AND quit? why?
 				//seThread = null; // can't set seThread null here as it is within rsFinished
@@ -158,8 +139,7 @@ private long lastDebug = 0L;
 			if (System.currentTimeMillis() - shutdownStarted > maxShutdownTime
 			 && seThread != null)
 			{
-				dacqEventLogger.warning(getName() + " taking too long to shutdown, "
-					+ "will attempt thread interrupt.");
+				log.warn("{} taking too long to shutdown, will attempt thread interrupt.", getName());
 				seThread.interrupt();
 			}
 			
@@ -181,12 +161,9 @@ private long lastDebug = 0L;
 			}
 			else
 			{
-				dacqEventLogger.debug1("Sched Entry '" + scheduleEntry.getName()
-				+ "' startTime=" + scheduleEntry.getStartTime()
-				+ ", shutdownComplete=" + shutdownComplete
-				+ ", now=" + now
-				+ ", runStatus=" + seStatus.getRunStatus()
-				+ ", dataSourceFinite=" + dataSourceFinite());
+				log.debug("Sched Entry '{}' startTime={}, shutdownComplete={}, now={}, runStatus={}, dataSourceFinite={}",
+				 		  scheduleEntry.getName(), scheduleEntry.getStartTime(),
+						  shutdownComplete, now, seStatus.getRunStatus(), dataSourceFinite());
 			}
 		}
 		else // runState == complete.
@@ -261,7 +238,7 @@ private long lastDebug = 0L;
 		{
 			if (System.currentTimeMillis()-lastSchedDebug > 60000L)
 			{
-				dacqEventLogger.debug1(getName() + " Before start time of " + startTime);
+				log.debug("{} Before start time of {}", getName(), startTime);
 				lastSchedDebug = System.currentTimeMillis();
 			}
 
@@ -313,7 +290,7 @@ private long lastDebug = 0L;
 		Date nextRunTime = cal.getTime();
 		if (System.currentTimeMillis()-lastSchedDebug > 60000L)
 		{
-			dacqEventLogger.debug1(getName() + " next run time = " + nextRunTime);
+			log.debug("{} next run time = {}", getName(), nextRunTime);
 			lastSchedDebug = System.currentTimeMillis();
 		}
 		// Check if current time is after the next run time we computed.
@@ -328,7 +305,7 @@ private long lastDebug = 0L;
 	 */
 	public void shutdown()
 	{
-		Logger.instance().debug1("ScheduleEntryExec shutdown() called for " + getName());
+		log.debug("ScheduleEntryExec shutdown() called for {}", getName());
 		if (seThread != null)
 		{
 			seThread.shutdown();
@@ -344,16 +321,15 @@ private long lastDebug = 0L;
 			scheduleEntry.getRoutingSpecName());
 		if (rs == null)
 		{
-			dacqEventLogger.failure("ScheduleEntryExec.makeThread: "
-				+ "No such routing spec '" + scheduleEntry.getRoutingSpecName()
-				+ "' in database.");
+			log.error("ScheduleEntryExec.makeThread: No such routing spec '{}' in database.",
+					  scheduleEntry.getRoutingSpecName());
 			disableScheduleEntry();
 			return null;
 		}
 
 		if (rereadRsBeforeExec)
 		{
-			Logger.instance().info("ScheduleEntryExecutive.makeThread -- rereading Routing Spec.");
+			log.info("ScheduleEntryExecutive.makeThread -- rereading Routing Spec.");
 			try
 			{
 				rs.read();
@@ -361,34 +337,15 @@ private long lastDebug = 0L;
 			}
 			catch (DatabaseException ex)
 			{
-				dacqEventLogger.info("ScheduleEntryExec.makeThread: "
-					+ " Routing Spec '" + scheduleEntry.getRoutingSpecName()
-					+ "' no longer exists in database, disabling the schedule entry: " + ex);
+				log.atError()
+				   .setCause(ex)
+				   .log("ScheduleEntryExec.makeThread:  Routing Spec '{}' no longer exists in database, " +
+				   		"disabling the schedule entry",
+						scheduleEntry.getRoutingSpecName());
 				disableScheduleEntry();
 			}
 		}
 		
-		String s = rs.getProperty("debugLevel");
-		if (s != null)
-		{
-			try
-			{
-				int dblev = Integer.parseInt(s);
-				schedEntryMinLogPriority =
-					dblev == 1 ? Logger.E_DEBUG1 :
-					dblev == 2 ? Logger.E_DEBUG2 :
-					dblev == 3 ? Logger.E_DEBUG3 : Logger.E_INFORMATION;
-				// debugLevel property should only be used to increase debug level. Never decrease.
-				if (schedEntryMinLogPriority > appMinLogPriority)
-					schedEntryMinLogPriority = appMinLogPriority;
-				dacqEventLogger.setMinLogPriority(schedEntryMinLogPriority);
-			}
-			catch(NumberFormatException ex)
-			{
-				dacqEventLogger.warning("RoutingSpec " + rs.getName() + " Ignoring invalid debugLevel property '" 
-					+ s + "' -- must be 1, 2, or 3.");
-			}
-		}
 
 		// Allocate a new status structure
 		seStatus = new ScheduleEntryStatus(Constants.undefinedId);
@@ -404,7 +361,7 @@ private long lastDebug = 0L;
 			}
 			catch (UnknownHostException ex)
 			{
-				dacqEventLogger.warning("Cannot get hostname: " + ex);
+				log.atWarn().setCause(ex).log("Cannot get hostname. Setting to unknown.");
 				seStatus.setHostname("unknown");
 			}
 		runState = RunState.running;
@@ -417,8 +374,6 @@ private long lastDebug = 0L;
 		seThread.closeDbOnQuit = false;
 		seThread.doRoutingSpecCheck = rereadRsBeforeExec;
 
-		if (parent != null)
-			parent.setThreadLogger(seThread, dacqEventLogger);
 		return seThread;
 	}
 	
@@ -442,16 +397,15 @@ private long lastDebug = 0L;
 		try
 		{
 			scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
-			dacqEventLogger.setSchedEntryStatusId(seStatus.getId());
 		}
 		catch(NullPointerException ex)
 		{
-			dacqEventLogger.debug1("transient error shutting down: " + ex);
+			log.atError().setCause(ex).log("transient error shutting down.");
 			return;
 		}
 		if (scheduleEntryDAO == null)
 		{
-			dacqEventLogger.debug1("Cannot write schedule entry. Not supported on this database.");
+			log.warn("Cannot write schedule entry. Not supported on this database.");
 			return;
 		}
 
@@ -461,7 +415,7 @@ private long lastDebug = 0L;
 		}
 		catch (DbIoException ex)
 		{
-			dacqEventLogger.warning(getName() + " Cannot write status: " + ex);
+			log.atWarn().setCause(ex).log("{} Cannot write status.", getName());
 		}
 		finally
 		{
@@ -502,9 +456,7 @@ private long lastDebug = 0L;
 		lastDcpMsg = seThread.getLastDcpMsg();
 		seThread = null;
 		shutdownComplete = System.currentTimeMillis();
-		dacqEventLogger.setSchedEntryStatusId(DbKey.NullKey);
-		Logger.instance().debug1("ScheduleEntryExecutive.rsFinished() " + getName() + " state is now " +
-			runState.toString());
+		log.debug("ScheduleEntryExecutive.rsFinished() {} state is now {}", getName(),runState.toString());
 	}
 	
 	public RunState getRunState()
@@ -531,7 +483,7 @@ private long lastDebug = 0L;
 		ScheduleEntryDAI scheduleEntryDAO = Database.getDb().getDbIo().makeScheduleEntryDAO();
 		if (scheduleEntryDAO == null)
 		{
-			dacqEventLogger.debug1("Schedule entries not supported on this database.");
+			log.debug("Schedule entries not supported on this database.");
 			return;
 		}
 
@@ -542,7 +494,7 @@ private long lastDebug = 0L;
 		}
 		catch (Exception ex)
 		{
-			dacqEventLogger.failure("Cannot disable schedule entry: " + ex);
+			log.atError().setCause(ex).log("Cannot disable schedule entry.");
 		}
 		finally
 		{
@@ -559,33 +511,23 @@ private long lastDebug = 0L;
 	{
 		if (p == null)
 		{
-			dacqEventLogger.setPlatformId(DbKey.NullKey);
-			dacqEventLogger.setMinLogPriority(schedEntryMinLogPriority);
+			MDC.put("platformId", DbKey.NullKey.toString());
 		}
 		else
 		{	
-			dacqEventLogger.setPlatformId(p.getId());
-			int dblev = p.getDebugLevel();
-			int newMinPriority =
-				dblev == 1 ? Logger.E_DEBUG1 :
-				dblev == 2 ? Logger.E_DEBUG2 :
-				dblev == 3 ? Logger.E_DEBUG3 : schedEntryMinLogPriority;
-			// Platform debug level can only increase debug info, not decrease it.
-			if (newMinPriority > schedEntryMinLogPriority)
-				newMinPriority = schedEntryMinLogPriority;
-			dacqEventLogger.setMinLogPriority(newMinPriority);
+			MDC.put("platformId", p.getId().toString());
 		}
 	}
 	
 	public void setMessageStart(Date timeStamp)
 	{
-		dacqEventLogger.setMsgStart(timeStamp);
+		MDC.put("messageStart", timeStamp.toString());
 	}
 
 	
 	public void setSubsystem(String subsystem)
 	{
-		dacqEventLogger.setSubsystem(subsystem);
+		MDC.put("subSystem", subsystem);
 	}
 
 	public long getLastEventsPurge()
@@ -600,7 +542,7 @@ private long lastDebug = 0L;
 
 	public DacqEventLogger getDacqEventLogger()
 	{
-		return dacqEventLogger;
+		return null;
 	}
 
 	public DcpMsg getLastDcpMsg()
