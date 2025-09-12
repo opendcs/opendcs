@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.rledit;
 
 import javax.swing.UIManager;
@@ -6,6 +21,9 @@ import org.opendcs.database.DatabaseService;
 import org.opendcs.database.api.OpenDcsDatabase;
 
 import java.util.*;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.gui.WindowUtility;
 import lrgs.gui.DecodesInterface;
@@ -19,6 +37,7 @@ Main class for the reference list editor.
 */
 public class RefListEditor 
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle genericLabels = null;
     private static ResourceBundle labels = null;
     boolean packFrame = false;
@@ -31,10 +50,12 @@ public class RefListEditor
         frame = new RefListFrame(database, (v) -> handleExit());
         //Validate frames that have preset sizes
         //Pack frames that have useful preferred size info, e.g. from their layout
-        if (packFrame) {
+        if (packFrame) 
+        {
             frame.pack();
         }
-        else {
+        else 
+        {
             frame.validate();
         }
         WindowUtility.center(frame).setVisible(true);
@@ -88,23 +109,20 @@ public class RefListEditor
     public static void main(String[] args) 
         throws Exception
     {
-        try {
-//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        try 
+        {
             UIManager.setLookAndFeel(new javax.swing.plaf.metal.MetalLookAndFeel());
         }
-        catch(Exception e) {
-            e.printStackTrace();
+        catch(Exception ex) 
+        {
+            log.atError().setCause(ex).log("Unable to set look and feel to Metal.");
         }
-
-        Logger.setLogger(new StderrLogger("DecodesDbEditor"));
 
         // Parse command line arguments.
         cmdLineArgs.parseArgs(args);
         genericLabels = getGenericLabels();
         labels = getLabels();
-        Logger.instance().log(Logger.E_INFORMATION,
-            "RefListEditor Starting (" + DecodesVersion.startupTag()
-            + ") =====================");
+        log.info("RefListEditor Starting ({}) =====================", DecodesVersion.startupTag());
 
         DecodesSettings settings = DecodesSettings.instance();
         DecodesInterface.setGUI(true);
