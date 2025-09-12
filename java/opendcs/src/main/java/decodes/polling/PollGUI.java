@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.polling;
 
 import ilex.gui.EventsPanel;
@@ -6,13 +21,11 @@ import ilex.gui.ShowFileDialog;
 import ilex.gui.TextAreaOutputStream;
 import ilex.util.EnvExpander;
 import ilex.util.IDateFormat;
-import ilex.util.Logger;
 import ilex.util.QueueLogger;
 import ilex.util.TeeLogger;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -27,7 +40,6 @@ import java.io.PrintStream;
 import java.util.Date;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -56,8 +68,12 @@ import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 public class PollGUI extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "PollGUI";
 	
 	private TopFrame theFrame = null;
@@ -69,7 +85,7 @@ public class PollGUI extends TsdbAppTemplate
 	private JButton selectStationButton = new JButton("Select");
 	private boolean pollingInProgress = false;
 	private EventsPanel eventsPanel = new EventsPanel();
-	private QueueLogger queueLogger = new QueueLogger(module);
+	private QueueLogger queueLogger = new QueueLogger(module);  // TODO: sort out replacement?
 	private EventsPanelQueueThread epqt = null;
 	private PrintStream sessionLogPrintStream = null;
 	private RoutingSpecThread routingSpecThread = null;
@@ -90,10 +106,7 @@ public class PollGUI extends TsdbAppTemplate
 		decodesDbIo = Database.getDb().getDbIo();
 		makeFrame();
 		noExitAfterRunApp = true;
-		int minPri = Logger.instance().getMinLogPriority();
-		TeeLogger teeLogger = new TeeLogger(module, Logger.instance(), queueLogger);
-		Logger.setLogger(teeLogger);
-		teeLogger.setMinLogPriority(minPri);
+		int minPri = -1; // TODO: replacing logger will revisit usage of queue logger later.
 		queueLogger.setMinLogPriority(minPri);
 		epqt = new EventsPanelQueueThread(queueLogger, eventsPanel);
 		epqt.start();
@@ -301,7 +314,9 @@ public class PollGUI extends TsdbAppTemplate
 			}
 			catch (IOException ex)
 			{
-				theFrame.showError("Cannot save to '" + sessionLogFile.getPath() + "': " + ex);
+				String msg ="Cannot save to '" + sessionLogFile.getPath() + "'";
+				log.atError().setCause(ex).log(msg);
+				theFrame.showError(msg + ": " + ex);
 			}
 		}
 	}
@@ -319,14 +334,10 @@ public class PollGUI extends TsdbAppTemplate
 		}
 		else
 			theFrame.showError("No output from last poll attempt.");
-		Logger.instance().info("viewData pressed");
-	
 	}
 
 	protected void startPoll()
 	{
-		Logger.instance().info(startPollButton.getText() + " pressed");
-		
 		if (!pollingInProgress)
 		{
 			if (selectedPlatform == null)
@@ -338,7 +349,9 @@ public class PollGUI extends TsdbAppTemplate
 			try { backlog = Integer.parseInt(backlogField.getText().trim()); }
 			catch(Exception ex)
 			{
-				theFrame.showError("Backlog must be an integer number of hours.");
+				final String msg = "Backlog must be an integer number of hours.";
+				log.atError().setCause(ex).log(msg);
+				theFrame.showError(msg + ": " + ex);
 				return;
 			}
 			PollingThread.backlogOverrideHours = backlog;
@@ -347,7 +360,7 @@ public class PollGUI extends TsdbAppTemplate
 			selectStationButton.setEnabled(false);
 
 			// Start the poll.
-			Logger.instance().info("Poll starting...");
+			log.info("Poll starting...");
 			pollingInProgress = true;
 			doPoll(backlog);
 		}
@@ -373,7 +386,7 @@ public class PollGUI extends TsdbAppTemplate
 		if (selectedPlatform != null)
 		{
 			stationField.setText(selectedPlatform.makeFileName());
-			Logger.instance().info("Selected station '" + selectedPlatform.makeFileName() + "'");
+			log.info("Selected station '{}'", selectedPlatform.makeFileName());
 			startPollButton.setEnabled(true);;
 		}
 		else
@@ -385,7 +398,7 @@ public class PollGUI extends TsdbAppTemplate
 
 	private void doExit()
 	{
-		Logger.instance().info("doExit pressed");
+		log.info("doExit pressed");
 		epqt.shutdown();
 		theFrame.dispose();
 	}
@@ -428,11 +441,6 @@ public class PollGUI extends TsdbAppTemplate
 			return;
 		}
 		
-		rs.setProperty("debugLevel", 
-			Logger.instance().getMinLogPriority() == Logger.E_DEBUG1 ? "1" :
-			Logger.instance().getMinLogPriority() == Logger.E_DEBUG2 ? "2" :
-			Logger.instance().getMinLogPriority() == Logger.E_DEBUG3 ? "3" : "0");
-		
 		// Retrieve up station status and set rs.sinceTime to last poll time.
 		PlatformStatusDAI platformStatusDAO = decodesDbIo.makePlatformStatusDAO();
 		try
@@ -460,8 +468,8 @@ public class PollGUI extends TsdbAppTemplate
 
 			// Set a static arg in PollingThread to tell it to use stdout as session logger.
 			PollingThread.staticSessionLogger = sessionLogPrintStream;
-Logger.instance().debug3("set PollingThread.staticSessionLogger" + 
-(sessionLogPrintStream==null?" TO NULL!!" : ""));
+			log.trace("set PollingThread.staticSessionLogger {}",
+					 (sessionLogPrintStream==null ? "TO NULL!!" : ""));
 
 			// Start the routing spec thread to do the work.
 			noExitAfterRunApp = true;
@@ -477,10 +485,9 @@ Logger.instance().debug3("set PollingThread.staticSessionLogger" +
 							lastOutFile = dc.getLastOutFile();
 							if (lastOutFile != null)
 							{
-								sessionLogPrintStream.println("Output written to " 
-									+ lastOutFile.getPath());
-								System.out.println("Output written to " 
-									+ lastOutFile.getPath());
+								String msg = "Output written to " + lastOutFile.getPath();
+								sessionLogPrintStream.println(msg);
+								log.info(msg);
 							}
 							else
 								sessionLogPrintStream.println("(no active output)");
@@ -496,7 +503,9 @@ Logger.instance().debug3("set PollingThread.staticSessionLogger" +
 		}
 		catch (Exception ex)
 		{
-			theFrame.showError("Error starting poll: " + ex);
+			final String msg = "Error starting poll";
+			log.atError().setCause(ex).log(msg);
+			theFrame.showError(msg + ": " + ex);
 			pollFinished();
 		}
 
@@ -506,7 +515,7 @@ Logger.instance().debug3("set PollingThread.staticSessionLogger" +
 	{
 		routingSpecThread = null;
 		sessionLogArea.append("\nPoll complete.\n");
-		Logger.instance().info("Poll complete.");
+		log.info("Poll complete.");
 		startPollButton.setText("Start Poll");
 		startPollButton.setEnabled(true);
 		selectStationButton.setEnabled(true);
