@@ -1,15 +1,30 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.compedit;
 
 import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 import javax.swing.border.*;
-import java.util.Properties;
-import java.util.Iterator;
-import java.util.ResourceBundle;
 
-import ilex.util.TextUtil;
-import ilex.util.PropertiesUtil;
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
+import java.util.ResourceBundle;
 
 import decodes.gui.*;
 import decodes.tsdb.DbAlgoParm;
@@ -17,6 +32,7 @@ import decodes.tsdb.algo.RoleTypes;
 
 public class AlgoParmDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String titleLabel;
 	private String algoNameLabelText;
 	private String roleNameLabel;
@@ -41,7 +57,7 @@ public class AlgoParmDialog extends GuiDialog
     private JLabel parmNameLabel;
     private JTextField parmNameField = new JTextField();
     private JLabel parmTypeLabel;
-    private JComboBox parmTypeCombo = 
+    private JComboBox parmTypeCombo =
 		new JComboBox(RoleTypes.getExpandedRoleTypes());
     private GridBagLayout fieldEntryLayout = new GridBagLayout();
     private JLabel numMinutesLabel;
@@ -50,7 +66,7 @@ public class AlgoParmDialog extends GuiDialog
 	/** The object being edited */
 	DbAlgoParm theParm;
 	String algoName;
-	
+
 	private void fillLabels()
 	{
 		ResourceBundle compEditLabels =
@@ -73,7 +89,7 @@ public class AlgoParmDialog extends GuiDialog
 	public AlgoParmDialog(String algoName, DbAlgoParm dap)
 	{
 		super(CAPEdit.instance().getFrame(), CAPEdit.instance().compeditDescriptions.getString("AlgoParmDialog.Title"), true);
-		
+
 		theParm = dap;
 		this.algoName = algoName;
 
@@ -86,8 +102,9 @@ public class AlgoParmDialog extends GuiDialog
 			parmNameField.requestFocus();
 			getRootPane().setDefaultButton(okButton);
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch (Exception ex)
+		{
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
     }
 
@@ -132,9 +149,9 @@ public class AlgoParmDialog extends GuiDialog
         });
         cancelButton.setText(Cancel);
         cancelButton.addActionListener(
-			new java.awt.event.ActionListener() 
+			new java.awt.event.ActionListener()
 			{
-            	public void actionPerformed(ActionEvent e) 
+            	public void actionPerformed(ActionEvent e)
 				{
                 	cancelButtonPressed();
             	}
@@ -151,38 +168,38 @@ public class AlgoParmDialog extends GuiDialog
         parmNameField.setToolTipText("Enter sensor name (no spaces)");
         parmTypeLabel.setPreferredSize(new Dimension(140, 17));
         parmTypeLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        fieldEntryPanel.add(parmNameLabel, 
+        fieldEntryPanel.add(parmNameLabel,
 			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+            	GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(10, 15, 5, 2), 35, 0));
-        fieldEntryPanel.add(parmNameField, 
+        fieldEntryPanel.add(parmNameField,
 			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-           		GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+           		GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 0, 5, 15), 0, 0));
-        fieldEntryPanel.add(parmTypeLabel, 
+        fieldEntryPanel.add(parmTypeLabel,
 			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+            	GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 15, 5, 2), 0, 0));
         fieldEntryPanel.add(parmTypeCombo,
 			new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0,
-            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(5, 0, 5, 15), 0, 0));
     	parmTypeCombo.addItem(arbitraryDelta);
 		parmTypeCombo.addActionListener(
-			new java.awt.event.ActionListener() 
+			new java.awt.event.ActionListener()
 			{
-            	public void actionPerformed(ActionEvent e) 
+            	public void actionPerformed(ActionEvent e)
 				{
                 	parmTypeSelected();
             	}
         	});
 		fieldEntryPanel.add(numMinutesLabel,
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+            	GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(5, 15, 10, 2), 0, 0));
-        fieldEntryPanel.add(numMinutesField, 
+        fieldEntryPanel.add(numMinutesField,
 			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-           		GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+           		GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(10, 0, 10, 15), 0, 0));
 		parmTypeSelected();
 
@@ -198,7 +215,7 @@ public class AlgoParmDialog extends GuiDialog
 		okPressed = true;
 		theParm.setRoleName(parmNameField.getText());
 		String pt = (String)parmTypeCombo.getSelectedItem();
-		
+
 		if (pt == arbitraryDelta)
 			pt = "id" + numMinutesField.getText().trim();
 		else
