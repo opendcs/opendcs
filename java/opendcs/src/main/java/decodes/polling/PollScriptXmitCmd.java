@@ -1,12 +1,11 @@
 /*
- * $Id$
- * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
  * No warranty is provided or implied other than specific contractual terms 
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +23,16 @@ package decodes.polling;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 public class PollScriptXmitCmd extends PollScriptCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "PollScriptXmitCmd";
 	private String str = null;
 
@@ -64,11 +66,11 @@ public class PollScriptXmitCmd extends PollScriptCommand
 			String strdata = new String(data);
 			if (owner.getPollSessionLogger() != null)
 				owner.getPollSessionLogger().sent(strdata);
-			Logger.instance().debug2(module + " sent '" + strdata + "'");
+			log.trace(" sent '{}'", strdata);
 		}
 		catch (IOException ex)
 		{
-			throw new ProtocolException(module + " error writing '" + new String(data) + "': " + ex);
+			throw new ProtocolException(module + " error writing '" + new String(data)+"'", ex);
 		}
 	}
 

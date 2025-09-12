@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.platstat;
 
 import java.text.SimpleDateFormat;
@@ -10,6 +25,10 @@ import java.util.TimeZone;
 import lrgs.gui.DecodesInterface;
 
 import opendcs.dai.PlatformStatusDAI;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
@@ -21,9 +40,9 @@ import decodes.db.PlatformStatus;
 import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.CmdLineArgs;
 
-public class ShowPlatformStatus 
-	extends TsdbAppTemplate
+public class ShowPlatformStatus extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String module = "ShowPlatformStatus";
 	private StringToken netlistArg = new StringToken("n", "Network List Name", "", 
 		TokenOptions.optSwitch, "");
@@ -67,7 +86,7 @@ public class ShowPlatformStatus
 				try { errorHours = Integer.parseInt(errorArg.getValue()); }
 				catch(NumberFormatException ex)
 				{
-					System.err.println("Invalid -e argument. Should be # of hours or 'current'");
+					log.atError().setCause(ex).log("Invalid -e argument. Should be # of hours or 'current'");
 					errorHours = -1;
 					System.exit(1);
 				}
