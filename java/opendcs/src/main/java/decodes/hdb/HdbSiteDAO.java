@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.hdb;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.sql.ResultSet;
@@ -8,6 +22,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 import decodes.db.Site;
@@ -21,37 +38,38 @@ import opendcs.dao.SiteDAO;
 
 public class HdbSiteDAO extends SiteDAO
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String joinClause = null, filterClause = null;
 	private String siteNameTable = "HDB_EXT_SITE_CODE a, HDB_EXT_SITE_CODE_SYS b, enum e, enumvalue ev";
 	private String siteNameJoin = "a.EXT_SITE_CODE_SYS_ID = b.EXT_SITE_CODE_SYS_ID "
 		+ "AND b.EXT_SITE_CODE_SYS_NAME = ev.ENUMVALUE and e.ID = ev.ENUMID and lower(e.NAME) = 'sitenametype'";
 	private String siteNameKey = "a.HDB_SITE_ID";
-	
+
 	private static HashMap<String, DbKey> siteName2ExtSysId = new HashMap<String, DbKey>();
 	private static HashMap<String, DbKey> stateName2Id = new HashMap<String, DbKey>();
 	private static HashMap<String, DbKey> stateAbbr2Id = new HashMap<String, DbKey>();
 	private static String myDbSiteCode = "ECO";
 	private static boolean siteCodeInit = false;
-	
+
 	public HdbSiteDAO(DatabaseConnectionOwner tsdb)
 	{
 		super(tsdb);
 		siteTableName = "HDB_SITE a, DECODES_SITE_EXT b, HDB_OBJECTTYPE c";
-		
+
 		joinClause = "a.site_id = b.site_id "
 			+ "and a.objecttype_id = c.objecttype_id";
-		
+
 		// Order the attributes so they match the list in SiteDAO.java:
-		siteAttributes = 
+		siteAttributes =
 			"a.site_id, a.lat, a.longi, b.nearestcity, b.state, b.region, b.timezone, b.country, a.elevation,"
 			+ " b.elevunitabbr, a.description, 'Y', c.objecttype_name, null, a.site_common_name";
-		
+
 		siteTableKeyColumn = "a.site_id";
-		
+
 		siteNameAttributes = "a.HDB_SITE_ID, b.EXT_SITE_CODE_SYS_NAME, a.PRIMARY_SITE_CODE, null, null";
-		
+
 		this.module = "HdbSiteDAO";
-		
+
 		if (siteName2ExtSysId.size() == 0)
 		{
 			synchronized(siteName2ExtSysId)
@@ -61,70 +79,65 @@ public class HdbSiteDAO extends SiteDAO
 					+ "where b.EXT_SITE_CODE_SYS_NAME = ev.ENUMVALUE "
 					+ "and e.ID = ev.ENUMID "
 					+ "and lower(e.NAME) = 'sitenametype'";
-				
-				try
+
+				try (ResultSet rs = doQuery(q))
 				{
-					ResultSet rs = doQuery(q);
-					while(rs != null && rs.next())
+					while(rs.next())
 					{
 						siteName2ExtSysId.put(rs.getString(1).toLowerCase(), DbKey.createDbKey(rs, 2));
 					}
-					Logger.instance().info(module + " read " + siteName2ExtSysId.size() 
-						+ " possible site name types.");
+					log.info("read {} possible site name types.", siteName2ExtSysId.size());
 				}
 				catch (Exception ex)
 				{
-					Logger.instance().failure(module + " error in '" + q + "': " + ex);
+					log.atError().setCause(ex).log("error in '{}'", q);
 				}
 			}
 		}
-		
+
 		if (stateName2Id.size() == 0)
 		{
 			synchronized(stateName2Id)
 			{
 				String q = "select STATE_ID, STATE_CODE, STATE_NAME from HDB_STATE";
-				try
+				try (ResultSet rs = doQuery(q))
 				{
-					ResultSet rs = doQuery(q);
-					while(rs != null && rs.next())
+					while(rs.next())
 					{
 						DbKey id = DbKey.createDbKey(rs, 1);
 						stateAbbr2Id.put(rs.getString(2).toLowerCase(), id);
 						stateName2Id.put(rs.getString(3).toLowerCase(), id);
 					}
-					Logger.instance().info(module + " read " + stateAbbr2Id.size() 
-						+ " states.");
+					log.info(module + " read {} states", stateAbbr2Id.size());
 				}
 				catch (Exception ex)
 				{
-					Logger.instance().failure(module + " error in '" + q + "': " + ex);
+					log.atError().setCause(ex).log("error in '{}'", q);
 				}
 			}
 		}
-		
+
 		if (!siteCodeInit)
 		{
 			synchronized(myDbSiteCode)
 			{
 				String q = "select db_site_code from ref_db_list where session_no = 1";
-				try
+				try (ResultSet rs = doQuery(q))
 				{
-					ResultSet rs = doQuery(q);
-					if (rs != null && rs.next())
+					if (rs.next())
 					{
 						myDbSiteCode = rs.getString(1);
-						Logger.instance().info(module + " myDbSiteCode='" + myDbSiteCode + "'");
+						log.info("myDbSiteCode='{}'", myDbSiteCode);
 					}
 					else
 					{
-						Logger.instance().warning(module + " No results for '" + q + "' -- defaulting myDbSiteCode to 'ECO'");
+						log.warn("No results for '{}' -- defaulting myDbSiteCode to 'ECO'", q);
 						myDbSiteCode = "ECO";
 					}
 				}
 				catch (Exception ex)
 				{
-					Logger.instance().failure(module + " error in '" + q + "': " + ex);
+					log.atError().setCause(ex).log("error in '{}'", q);
 				}
 				siteCodeInit = true;
 			}
@@ -132,7 +145,7 @@ public class HdbSiteDAO extends SiteDAO
 		filterClause = "a.db_site_code = " + sqlString(myDbSiteCode);
 
 	}
-	
+
 	@Override
 	protected Site resultSet2Site(Site site, ResultSet rsSite)
 		throws SQLException
@@ -143,18 +156,18 @@ public class HdbSiteDAO extends SiteDAO
 		site.addName(new SiteName(site, "hdb", "" + site.getKey()));
 		return site;
 	}
-	
+
 	// No longer used in the parent class
 	private String buildSiteQuery(DbKey siteId)
 	{
 		String q = "SELECT " + siteAttributes + " FROM " + siteTableName
 			+ " where " + joinClause;
-		
+
 		if (!DbKey.isNull(siteId))
 			q = q + " and a.site_id = ?";
 		else // querying all sites, must add filter to only get session_no = 1.
 			q = q + " and " + filterClause;
-			
+
 		return q;
 	}
 
@@ -184,7 +197,7 @@ public class HdbSiteDAO extends SiteDAO
 		}
 		catch (SQLException ex)
 		{
-			throw new DbIoException("Unable to retrieve site.",ex);
+			throw new DbIoException("Unable to retrieve site.", ex);
 		}
 	}
 
@@ -195,12 +208,14 @@ public class HdbSiteDAO extends SiteDAO
 		// Next read all Names and then assign them to site.
 		String q = buildSiteNameQuery(site);
 
-		ResultSet rs = doQuery(q);
-		while (rs != null && rs.next())
+		try(ResultSet rs = doQuery(q))
 		{
-			SiteName sn = new SiteName(site, rs.getString(2),
-				rs.getString(3));
-			site.addName(sn);
+			while (rs.next())
+			{
+				SiteName sn = new SiteName(site, rs.getString(2),
+					rs.getString(3));
+				site.addName(sn);
+			}
 		}
 	}
 
@@ -208,25 +223,23 @@ public class HdbSiteDAO extends SiteDAO
 	public synchronized DbKey lookupSiteID( final SiteName siteName )
 		throws DbIoException
 	{
-		String q = basicSiteNameQuery(null) 
+		String q = basicSiteNameQuery(null)
 			+ " AND lower(b.EXT_SITE_CODE_SYS_NAME) = " + sqlString(siteName.getNameType().toLowerCase())
 			+ " AND a.PRIMARY_SITE_CODE = " + sqlString(siteName.getNameValue());
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
 			if (rs.next())
 				return DbKey.createDbKey(rs, 1);
 			return Constants.undefinedId;
 		}
 		catch(SQLException ex)
 		{
-			String msg = "lookupSiteId - Error in query '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "lookupSiteId - Error in query '" + q + "'";
+			throw new DbIoException(msg, ex);
 		}
 
 	}
-	
+
 	@Override
 	public synchronized DbKey lookupSiteID(final String nameValue)
 		throws DbIoException
@@ -253,7 +266,7 @@ public class HdbSiteDAO extends SiteDAO
 			});
 		if (site != null)
 			return site.getKey();
-debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
+		log.trace("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 
 		// HDB Users often use surrogate key as a site name.
 		try
@@ -266,35 +279,33 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 		}
 		catch(NumberFormatException ex)
 		{
-			debug3("lookupSiteID name value '" + nameValue + "' is not a site ID.");
+			log.atTrace().setCause(ex).log("lookupSiteID name value '{}' is not a site ID.", nameValue);
 		}
-		catch (NoSuchObjectException e)
+		catch (NoSuchObjectException ex)
 		{
+			log.atTrace().setCause(ex).log("lookupSiteID name value '{}' not found.", nameValue);
 		}
-		debug3("lookupSiteID name value '" + nameValue + "' is does not match any site ID.");
-		
+		log.trace("lookupSiteID name value '{}' is does not match any site ID.", nameValue);
+
 		// Finally search the database for a SiteName with matching value.
 		String q = basicSiteNameQuery(null);
 		q = q + " and lower(a.PRIMARY_SITE_CODE) = " + sqlString(nameValue.toLowerCase());
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
 			if (rs.next())
 				return DbKey.createDbKey(rs, 1);
 			return Constants.undefinedId;
 		}
 		catch(SQLException ex)
 		{
-			String msg = "lookupSiteId(str) - Error in query '" 
-				+ q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "lookupSiteId(str) - Error in query '" + q + "'";
+			throw new DbIoException(msg, ex);
 		}
 	}
 
 	private String basicSiteNameQuery(Site site)
 	{
-		String r = "SELECT " + siteNameAttributes 
+		String r = "SELECT " + siteNameAttributes
 			+ " FROM " + siteNameTable
 			+ " WHERE " + siteNameJoin;
 		if (site != null)
@@ -302,7 +313,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 		return r;
 
 	}
-	
+
 	// No longer used in parent class
 	private String buildSiteNameQuery(Site site)
 	{
@@ -315,20 +326,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 	protected void update(Site newSite, Site dbSite)
 		throws DbIoException, NoSuchObjectException
 	{
-//		String desc = newSite.getDescription();
-//		if (desc == null)
-//			desc = "";
-//		if (DecodesSettings.instance().hdbSiteDescriptions && desc.indexOf("\n") == -1)
-//		{
-//			String sn = newSite.getDisplayName();
-//			if (desc == null)
-//				desc = sn + "\n";
-//			else
-//				desc = sn + "\n" + desc;
-//		}
-//		if (desc.length() > 800)
-//			desc = desc.substring(0,799);
-		
+
 		ArrayList<String> sets = new ArrayList<String>();
 		if (!strEqual(newSite.latitude, dbSite.latitude))
 			sets.add("LAT = " + sqlString(newSite.latitude));
@@ -351,11 +349,11 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 					q = q + ", ";
 			}
 			q = q + " where site_id = " + newSite.getKey();
-				
+
 			doModify(q);
 		}
 		sets.clear();
-		
+
 		if (!strEqual(newSite.nearestCity, dbSite.nearestCity))
 			sets.add("nearestCity = " + sqlString(newSite.nearestCity));
 		if (!strEqual(newSite.state, dbSite.state))
@@ -368,7 +366,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 			sets.add("country = " + sqlString(newSite.country));
 		if (!strEqual(newSite.getElevationUnits(), dbSite.getElevationUnits()))
 			sets.add("elevunitabbr = " + sqlString(newSite.getElevationUnits()));
-	
+
 		if (sets.size() > 0)
 		{
 			String q = "UPDATE DECODES_SITE_EXT SET ";
@@ -379,7 +377,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 					q = q + ", ";
 			}
 			q = q + " where site_id = " + newSite.getKey();
-				
+
 			doModify(q);
 		}
 
@@ -394,11 +392,11 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 		for (Iterator<SiteName> newIt = newSite.getNames(); newIt.hasNext(); )
 		{
 			SiteName newSn = newIt.next();
-			
+
 			// Ignore HDB site names, which are really surrogate keys
 			if (newSn.getNameType().equalsIgnoreCase("hdb"))
 				continue;
-			
+
 			SiteName dbSn = dbSite.getName(newSn.getNameType());
 			if (dbSn == null)
 				insertSiteName(newSite.getKey(), newSn);
@@ -409,20 +407,20 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 				dbSite.removeName(newSn.getNameType());
 			}
 		}
-		
+
 		// Any names left in dbSite don't exist in newSite and should be removed
 		for (Iterator<SiteName> dbSnIt = dbSite.getNames(); dbSnIt.hasNext(); )
 		{
 			SiteName sn = dbSnIt.next();
-			
+
 			// hdb names are the surrogate keys, not actually saved as names.
 			if (sn.getNameType().equalsIgnoreCase("hdb"))
 				continue;
-			
+
 			DbKey sysId = siteName2ExtSysId.get(sn.getNameType().toLowerCase());
 			if (sysId == null)
 			{
-				Logger.instance().warning(module + " site name '" + sn + "' has invalid name type");
+				log.warn("site name '{}' has invalid name type", sn);
 				continue;
 			}
 			doModify("delete from hdb_ext_site_code "
@@ -439,10 +437,10 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 		DbKey sysId = siteName2ExtSysId.get(sn.getNameType().toLowerCase());
 		if (sysId == null)
 		{
-			Logger.instance().warning(module + " cannot save invalid name type '" + sn.getNameType() + "'");
+			log.warn("cannot save invalid name type '{}'", sn.getNameType());
 			return;
 		}
-		
+
 		String q =
 			"UPDATE HDB_EXT_SITE_CODE SET " +
 				"primary_site_code = " + sqlString(sn.getNameValue())
@@ -466,19 +464,19 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 			dispName = TextUtil.getFirstLine(desc.trim());
 		else if (s.getPublicName() != null)
 			dispName = s.getPublicName();
-		else 
+		else
 			dispName = s.getPreferredName().getNameValue();
-		
+
 		String commonName = s.getPublicName();
 		if (commonName == null)
 			commonName = dispName;
 		DbKey stateId = s.state != null ? stateName2Id.get(s.state) : null;
 		String sid = stateId == null ? "null" : stateId.toString();
-		
+
 		String q =
 			"INSERT INTO HDB_SITE(SITE_ID, SITE_NAME, SITE_COMMON_NAME, OBJECTTYPE_ID, STATE_ID, "
 			+ "LAT, LONGI, ELEVATION, DESCRIPTION, DB_SITE_CODE) VALUES ("
-		  	+ id + ", " 
+		  	+ id + ", "
 			+ sqlString(dispName) + ", "
 			+ sqlString(commonName) + ", "
 			+ "9, "
@@ -490,7 +488,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 			+ sqlString(myDbSiteCode)
 			+ ")";
 		doModify(q);
-		
+
 		// NOTE: There is a trigger on HDB_SITE that will create the DECODES_SITE_EXT
 		// record. So do an update even though this is a new site.
 		q = "UPDATE DECODES_SITE_EXT "
@@ -502,7 +500,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 			+ "ELEVUNITABBR = " + sqlString(s.getElevationUnits())
 			+ " WHERE SITE_ID = " + id;
 		doModify(q);
- 
+
 		for(Iterator<SiteName> snit = s.getNames(); snit.hasNext(); )
 			insertSiteName(s.getKey(), snit.next());
 	}
@@ -515,15 +513,14 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 		if (sn.getNameValue() == null || sn.getNameValue().trim().length() == 0
 		 || sn.getNameType() == null)
 			return;
-		
+
 		DbKey sysId = siteName2ExtSysId.get(sn.getNameType().toLowerCase());
 		if (sysId == null)
 		{
-			Logger.instance().warning(module + " cannot save name type '" + sn + "' invalid name type '"
-				+ sn.getNameType() + "'");
+			log.warn("cannot save name type '{}' invalid name type '{}'", sn, sn.getNameType());
 			return;
 		}
-		
+
 		String q = "INSERT INTO HDB_EXT_SITE_CODE(EXT_SITE_CODE_SYS_ID, PRIMARY_SITE_CODE, HDB_SITE_ID)"
 			+ " VALUES ("
 			+ sysId + ", " + sqlString(sn.getNameValue()) + ", " + siteId + ")";
@@ -539,7 +536,7 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 		doModify("delete from HDB_EXT_SITE_CODE where HDB_SITE_ID = " + key);
 		cache.remove(key);
 	}
-	
+
 	// String compare, but consider blank strings the same as null.
 	private boolean strEqual(String s1, String s2)
 	{
@@ -558,77 +555,75 @@ debug3("HdbSiteDAO.lookupSiteID -- no match to any site name in cache.");
 	public void fillCache()
 		throws DbIoException
 	{
-		debug3("(Generic)SiteDAO.fillCache()");
+		log.trace("(Generic)SiteDAO.fillCache()");
 
 		HashMap<DbKey, Site> siteHash = new HashMap<DbKey, Site>();
-//		ArrayList<Site> siteList = new ArrayList<Site>();
 		int nNames = 0;
 		String q = buildSiteQuery(Constants.undefinedId);
-		try
+		try (ResultSet rs = doQuery(q))
 		{
-			ResultSet rs = doQuery(q);
-			while (rs != null && rs.next())
+			while (rs.next())
 			{
 				Site site = new Site();
 				resultSet2Site(site, rs);
 				siteHash.put(site.getKey(), site);
 				// Can't put in cache because names are not yet known
 			}
-
 			q = buildSiteNameQuery(null);
-			rs = doQuery(q);
-			String prevNameType="", prevNameValue="";
-			DbKey prevId = DbKey.NullKey;
-			while (rs != null && rs.next())
+			try (ResultSet rs2 = doQuery(q))
 			{
-				DbKey key = DbKey.createDbKey(rs, 1);
-				Site site = siteHash.get(key);
-				
-				if (site == null)
+				String prevNameType="", prevNameValue="";
+				DbKey prevId = DbKey.NullKey;
+				while (rs2.next())
 				{
-					if (!db.isHdb()) // For some crazy reason, HDB has lots of orphan site names.
-						warning("SiteName for id=" + key + ", but no matching site.");
-					continue;
+					DbKey key = DbKey.createDbKey(rs2, 1);
+					Site site = siteHash.get(key);
+
+					if (site == null)
+					{
+						if (!db.isHdb()) // For some crazy reason, HDB has lots of orphan site names.
+							log.warn("SiteName for id={}, but no matching site.", key);
+						continue;
+					}
+
+					// There is an issue in HDB with multiple identical site names pointing to different sites.
+					// The HDB site name query orders results by type,value.
+					String nameType = rs2.getString(2);
+					String nameValue = rs2.getString(3);
+					if (prevNameType.equalsIgnoreCase(nameType) && prevNameValue.equalsIgnoreCase(nameValue))
+					{
+						log.warn("SiteName for id={} with nametype={} and nameValue={}" +
+								 " is a duplicate to a name to a different site with id={}" +
+								 ". Discarding the name for {}",
+								 key, nameType, nameValue, prevId, key);
+					}
+					else
+					{
+						prevNameType = nameType;
+						prevNameValue = nameValue;
+						prevId = key;
+					}
+
+					SiteName sn = new SiteName(site, nameType, nameValue);
+					sn.setUsgsDbno(rs2.getString(4));
+					sn.setAgencyCode(rs2.getString(5));
+					site.addName(sn);
+					nNames++;
 				}
-				
-				// There is an issue in HDB with multiple identical site names pointing to different sites.
-				// The HDB site name query orders results by type,value.
-				String nameType = rs.getString(2);
-				String nameValue = rs.getString(3);
-				if (prevNameType.equalsIgnoreCase(nameType) && prevNameValue.equalsIgnoreCase(nameValue))
-				{
-					warning("SiteName for id=" + key + " with nametype=" + nameType + " and nameValue="
-						+ nameValue + " is a duplicate to a name to a different site with id="
-							+ prevId + ". Discarding the name for " + key);
-				}
-				else
-				{
-					prevNameType = nameType;
-					prevNameValue = nameValue;
-					prevId = key;
-				}
-				
-				SiteName sn = new SiteName(site, nameType, nameValue);
-				sn.setUsgsDbno(rs.getString(4));
-				sn.setAgencyCode(rs.getString(5));
-				site.addName(sn);
-				nNames++;
-			}			
+			}
 
 		}
 		catch(SQLException ex)
 		{
-			String msg = "fillCache - Error in query '" + q + "': " + ex;
-			warning(msg);
-			throw new DbIoException(msg);
+			String msg = "fillCache - Error in query '" + q + "'";
+			throw new DbIoException(msg, ex);
 		}
 		for(Site site : siteHash.values())
 			cache.put(site);
 		int nProps = 0;
 		if (db.getDecodesDatabaseVersion() >= DecodesDatabaseVersion.DECODES_DB_8)
 			nProps = propsDao.readPropertiesIntoCache("site_property", cache);
-		debug1("Site Cache Filled: " + cache.size() + " sites, " + nNames
-			+ " names, " + nProps + " properties.");
+		log.debug("Site Cache Filled: {} sites, {} names, {} properties.", cache.size(), nNames, nProps);
 		lastCacheFillMsec = System.currentTimeMillis();
 	}
 }
