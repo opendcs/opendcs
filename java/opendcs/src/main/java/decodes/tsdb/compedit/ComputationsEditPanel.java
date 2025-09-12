@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.compedit;
 
 import java.awt.*;
@@ -14,10 +29,12 @@ import java.util.ResourceBundle;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.ComputationDAI;
 import ilex.gui.DateTimeCalendar;
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.PropertiesUtil;
 import ilex.util.LoadResourceBundle;
@@ -25,7 +42,6 @@ import decodes.db.Constants;
 import decodes.dbeditor.SiteSelectPanel;
 import decodes.gui.PropertiesEditPanel;
 import decodes.gui.SortingListTable;
-import decodes.gui.properties.PropertiesEditPanelController;
 import decodes.sql.DbKey;
 import decodes.tsdb.CompAppInfo;
 import decodes.tsdb.DbAlgorithmExecutive;
@@ -47,9 +63,9 @@ import decodes.util.DecodesSettings;
 /**
  * Edit Panel for a computation
  */
-public class ComputationsEditPanel
-    extends EditPanel
+public class ComputationsEditPanel extends EditPanel
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static final long serialVersionUID = 1L;
     private JTextField nameField = new JTextField();
     private JTextField algorithmField = new JTextField();
@@ -82,24 +98,24 @@ public class ComputationsEditPanel
     private TimeZone guiTimeZone = null;
     private TsdbDateFormat tsdbDateFormat = null;
 
-    private JComboBox sinceMethodCombo = new JComboBox(
+    private JComboBox<String> sinceMethodCombo = new JComboBox<>(
         new String[] {"No limit", "Now -", "Calendar" });
     private JPanel sinceContentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
     private DateTimeCalendar sinceDateTimeCal = null;
     private JPanel sinceNowMinusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-    private JComboBox sinceNowMinusCombo = new JComboBox(
+    private JComboBox<String> sinceNowMinusCombo = new JComboBox<>(
         new String[] { "4 hour", "8 hours", "1 day" });
 
-    private JComboBox untilMethodCombo = new JComboBox(
+    private JComboBox<String> untilMethodCombo = new JComboBox<>(
         new String[] {"No limit", "Now", "Now +", "Calendar", "Now -" });
     private JPanel untilContentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
     private DateTimeCalendar untilDateTimeCal = null;
     private JPanel untilNowPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
     private JPanel untilNowPlusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-    private JComboBox untilNowPlusCombo = new JComboBox(
+    private JComboBox<String> untilNowPlusCombo = new JComboBox<>(
         new String[] { "4 hour", "8 hours", "1 day" });
     private JPanel untilNowMinusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-    private JComboBox untilNowMinusCombo = new JComboBox(
+    private JComboBox<String> untilNowMinusCombo = new JComboBox<>(
         new String[] { "4 hour", "8 hours", "1 day" });
 
     private JLabel untilNowExpl = new JLabel();
@@ -115,8 +131,7 @@ public class ComputationsEditPanel
         }
         catch(Exception ex)
         {
-            Logger.instance().warning("Invalid guiTimeZone setting '"
-                + guiTimeZone + "' -- defaulting to UTC");
+            log.atWarn().setCause(ex).log("Invalid guiTimeZone setting '{}' -- defaulting to UTC", guiTimeZone);
             guiTimeZone = TimeZone.getTimeZone("UTC");
         }
         tsdbDateFormat = new TsdbDateFormat(guiTimeZone);
@@ -354,27 +369,26 @@ public class ComputationsEditPanel
             DbCompParm dcp = dcpi.next();
             DbAlgoParm dap = currentAlgorithm.getParm(dcp.getRoleName());
             if (dap != null)
+            {
                 dcp.setAlgoParmType(dap.getParmType());
+            }
 
-//MJM I need to expand even if no SDI so that siteId --> Site and datatypeId -->DataType
-// objects get set in the parm.
-//            if (!dcp.getSiteDataTypeId().isNull())
-//            {
-Logger.instance().debug1("before expand " + dcp.getRoleName() + " dcp.sdi=" + dcp.getSiteDataTypeId() + ", siteId=" + dcp.getSiteId() + ", dtId=" + dcp.getDataTypeId());
-                try
-                {
-                    CAPEdit.instance().theDb.expandSDI(dcp);
-Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ", siteId=" + dcp.getSiteId() + ", dtId=" + dcp.getDataTypeId());
-                }
-                catch(Exception ex)
-                {
-                    showError(CAPEdit.instance().compeditDescriptions
-                            .getString("ComputationsEditPanel.ExpandError") + ex);
-                    System.err.println(CAPEdit.instance().compeditDescriptions
-                            .getString("ComputationsEditPanel.ExpandError") + ex);
-                    ex.printStackTrace(System.err);
-                }
-//            }
+            log.debug("before expand {} dcp.sdi={}, siteId={}, dtId={}",
+                        dcp.getRoleName(), dcp.getSiteDataTypeId(), dcp.getSiteId(), dcp.getDataTypeId());
+            try
+            {
+                CAPEdit.instance().theDb.expandSDI(dcp);
+                log.debug("after expand, dcp.sdi={}, siteId={}, dtId={}",
+                          dcp.getSiteDataTypeId(), dcp.getSiteId(), dcp.getDataTypeId());
+            }
+            catch(Exception ex)
+            {
+                log.atError()
+                   .setCause(ex)
+                   .log(CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.ExpandError"));
+                showError(
+                    CAPEdit.instance().compeditDescriptions.getString("ComputationsEditPanel.ExpandError") + ex);
+            }
         }
 
         compParmTableModel.fill(editedObject);
@@ -772,6 +786,10 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
         }
         catch(DbIoException ex)
         {
+            log.atError()
+               .setCause(ex)
+               .log(CAPEdit.instance().compeditDescriptions
+                    .getString("ComputationsEditPanel.CommentsError5"));
             showError(CAPEdit.instance().compeditDescriptions
                     .getString("ComputationsEditPanel.CommentsError5") + ex);
         }
@@ -1048,11 +1066,12 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
     {
         if (currentAlgorithm == null)
             return;
+
+        final String clsName = currentAlgorithm.getExecClass();
         try
         {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            String clsName = currentAlgorithm.getExecClass();
-            Logger.instance().debug3("Instantiating new algo exec '" + clsName + "'");
+            log.trace("Instantiating new algo exec '{}'", clsName);
             Class<?> cls = cl.loadClass(clsName);
             DbAlgorithmExecutive executive = (DbAlgorithmExecutive)cls.newInstance();
             if (executive instanceof AW_AlgorithmBase)
@@ -1063,7 +1082,7 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
         }
         catch (Exception ex)
         {
-            ex.printStackTrace();
+            log.atError().setCause(ex).log("Unable to establish properties for algorithm class '{}'.", clsName);
         }
     }
 
@@ -1118,8 +1137,7 @@ Logger.instance().debug1("after expand, dcp.sdi=" + dcp.getSiteDataTypeId() + ",
             new CompParmDialog(dcp.isInput(), siteSelectPanel);
         compParmDialog.setInfo(this, r, nameField.getText().trim(), dcp);
         CAPEdit.instance().getFrame().launchDialog(compParmDialog);
-//System.out.println("after dlg close, tabsel='" + dcp.getTableSelector() + "', locspec='"
-//+dcp.getLocSpec() + "', paramspec='" + dcp.getParamSpec() + "', ver='" + dcp.getVersion() + "'");
+
         if (compParmDialog.okPressed)
         {
             if (!DbKey.isNull(dcp.getSiteDataTypeId()))
