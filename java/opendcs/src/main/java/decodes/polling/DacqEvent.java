@@ -1,12 +1,9 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
- * between COVE and Alberta ESRD.
+ 
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +23,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import ilex.util.Logger;
 import decodes.sql.DbKey;
 
 /**
@@ -38,7 +34,7 @@ public class DacqEvent
 	private DbKey scheduleEntryStatusId = DbKey.NullKey;
 	private DbKey platformId = DbKey.NullKey;
 	private Date eventTime = null;
-	private int eventPriority = Logger.E_INFORMATION;
+	private int eventPriority = -1; // Logger getting replaced TODO: determine if this class is even required.
 	private String subsystem = null;
 	private Date msgRecvTime = null;
 	private String eventText = null;
@@ -65,7 +61,7 @@ public class DacqEvent
 			+ ", schedEntryStatId=" + scheduleEntryStatusId
 			+ ", platformId=" + platformId
 			+ ", evtTime=" + eventTime
-			+ ", priority=" + Logger.priorityName[eventPriority].trim() + "(" + eventPriority + ")"
+			+ ", priority=EVENT(-1)"
 			+ ", susbsys='" + subsystem + "'"
 			+ ", msgTime=" + msgRecvTime
 			+ ", appId=" + appId
@@ -154,8 +150,7 @@ public class DacqEvent
 	
 	public String getPriorityStr()
 	{
-		return eventPriority >= 0 && eventPriority <= Logger.E_FATAL ?
-			Logger.priorityName[eventPriority].trim() : "INFO";
+		return "EVENT";
 	}
 	
 	public String getTimeStr()

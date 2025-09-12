@@ -1,12 +1,11 @@
 /*
- * $Id$
- * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
  * No warranty is provided or implied other than specific contractual terms 
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +23,20 @@ package decodes.polling;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Date;
 
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.net.BasicServer;
 import ilex.net.BasicSvrThread;
-import ilex.util.Logger;
 
 public class TestPollScriptServer extends BasicServer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String scriptFileName = null;
 
 	public TestPollScriptServer(int port, String scriptFileName)
@@ -45,7 +49,8 @@ public class TestPollScriptServer extends BasicServer
 	@Override
 	protected BasicSvrThread newSvrThread(Socket sock) throws IOException
 	{
-		System.out.println("New Client");
+		InetAddress remoteAddr = sock.getInetAddress();
+		log.info("New Client from {}", remoteAddr);
 		return new TestPollScriptServerThread(this, sock);
 	}
 	
@@ -60,15 +65,15 @@ public class TestPollScriptServer extends BasicServer
 		throws Exception
 	{
 		int port = Integer.parseInt(args[0]);
-		Logger.instance().setMinLogPriority(Logger.E_DEBUG3);
 		TestPollScriptServer tts = new TestPollScriptServer(port, args[1]);
 		tts.listen();
 	}
 }
 
-class TestPollScriptServerThread
-	extends BasicSvrThread
+class TestPollScriptServerThread extends BasicSvrThread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	protected TestPollScriptServerThread(BasicServer parent, Socket socket)
 	{
 		super(parent, socket);
@@ -81,22 +86,21 @@ class TestPollScriptServerThread
 		try
 		{
 			File scriptFile = new File(((TestPollScriptServer)parent).scriptFileName);
-			System.out.println("New client detected. Reading script '" + scriptFile.getPath() + "'");
+			log.info("New client detected. Reading script '{}'", scriptFile.getPath());
 			prot.readScript(scriptFile);
 			
-			System.out.println("Constructing ioPort...");
+			log.info("Constructing ioPort...");
 			// mock up an IOPort to execute the script
 			IOPort ioPort = new IOPort(null, 0, null);
 			ioPort.setIn(getSocket().getInputStream());
 			ioPort.setOut(getSocket().getOutputStream());
 			
-			System.out.println("Executing script...");
+			log.info("Executing script...");
 			prot.executeScript(ioPort, new Date(System.currentTimeMillis() - 3600000L));
 		}
 		catch (Exception ex)
 		{
-			System.err.println(ex);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Unable to service client.");
 		}
 		disconnect();
 	}
