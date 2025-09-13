@@ -895,12 +895,14 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 	{
 		final CwmsTsId ctsid = (CwmsTsId)tsid;
 		try (AlarmDAI alarmDAO = db.makeAlarmDAO();
-			 CompDependsDAI compDependsDAO = db.makeCompDependsDAO();)
+			 CompDependsDAI compDependsDAO = db.makeCompDependsDAO();
+			 CompDependsNotifyDAI cdnDdai = db.makeCompDependsNotifyDAO())
 		{
 			this.inTransaction(dao ->
 			{
 				alarmDAO.inTransactionOf(dao);
 				compDependsDAO.inTransactionOf(dao);
+				cdnDdai.inTransactionOf(dao);
 				try
 				{
 					alarmDAO.deleteCurrentAlarm(tsid.getKey(), null);
@@ -964,12 +966,12 @@ public class OpenTimeSeriesDAO extends DaoBase implements TimeSeriesDAI
 					throw new Exception("Unable to modify storage table", ex);
 				}
 
-				try(CompDependsNotifyDAI dai = db.makeCompDependsNotifyDAO())
+				try
 				{
 					CpDependsNotify cdn = new CpDependsNotify();
 					cdn.setEventType(CpDependsNotify.TS_DELETED);
 					cdn.setKey(ctsid.getKey());
-					dai.saveRecord(cdn);
+					cdnDdai.saveRecord(cdn);
 				}
 				catch (Exception ex)
 				{
