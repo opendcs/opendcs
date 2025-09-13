@@ -151,7 +151,8 @@ testEngines.each { engine ->
                     + project(":cwms-implementation").jar.outputs.files
                     + project(":opendcs").configurations.runtimeClasspath
                     + configurations.extra
-                    ).asPath
+                    + configurations.testRuntimeClasspath).asPath
+
         inputs.property "opendcs.test.engine", engine
 
         systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
