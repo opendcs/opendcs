@@ -34,7 +34,7 @@ dependencies {
     testImplementation(libs.apache.derby)
     testImplementation(libs.fasterxml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
-    testRuntimeOnly(project(":opendcs-slf4j-provider"))
+    testRuntimeOnly("org.slf4j:slf4j-simple:2.0.17")
 }
 
 
@@ -65,7 +65,9 @@ testEngines.each { engine ->
         def install = project(":install")
         def stageDir = install.layout.getBuildDirectory().dir("install/${install.distributions.main.distributionBaseName.get()}").get()
         def classPath = (project(':opendcs').jar.outputs.files
-                    + project(":opendcs").configurations.runtimeClasspath).asPath
+                    + project(":opendcs").configurations.runtimeClasspath
+                    + configurations.testRuntimeClasspath).asPath
+                    
         inputs.property "opendcs.test.engine", engine
 
         systemProperties += project.properties.findAll {k, v -> k.startsWith("opendcs")}
