@@ -147,7 +147,7 @@ public class HdbOracleDateParser extends OracleDateParser
 		{
 			log.atWarn()
 			   .setCause(ex)
-			   .log(" Cannot parse {} string '{}' and cannot get as Timestamp: ", columnName, s);
+			   .log("Cannot parse {} string '{}' and cannot get as Timestamp: ", columnName, s);
 			return null;
 		}
 	}

@@ -227,8 +227,8 @@ public class DynamicAggregatesAlg extends decodes.tsdb.algo.AW_AlgorithmBase
 		   if ((input_interval.equalsIgnoreCase("instant") || output_interval.equalsIgnoreCase("hour")) && mvr_count == 0)
 		   {
 
-		     log.warn("DynamicAggregatesAlg-"+alg_ver+" Warning: Illegal zero setting of minimum values criteria for instant/hour aggregates", alg_ver);
-		     log.warn("DynamicAggregatesAlg-"+alg_ver+" Warning: Minimum values criteria for instant/hour aggregates set to 1", alg_ver);
+		     log.warn("DynamicAggregatesAlg-{} Warning: Illegal zero setting of minimum values criteria for instant/hour aggregates", alg_ver);
+		     log.warn("DynamicAggregatesAlg-{} Warning: Minimum values criteria for instant/hour aggregates set to 1", alg_ver);
 		     mvr_count = 1;
 		   }
 		}

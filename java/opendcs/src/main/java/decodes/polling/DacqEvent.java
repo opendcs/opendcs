@@ -1,13 +1,7 @@
 /*
- * $Id$
- * 
- * This software was written by Cove Software, LLC ("COVE") under contract
- * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
- * No warranty is provided or implied other than specific contractual terms 
- * between COVE and Alberta ESRD.
- *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
- * 
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-import ilex.util.Logger;
 import decodes.sql.DbKey;
 
 /**
@@ -38,34 +31,34 @@ public class DacqEvent
 	private DbKey scheduleEntryStatusId = DbKey.NullKey;
 	private DbKey platformId = DbKey.NullKey;
 	private Date eventTime = null;
-	private int eventPriority = Logger.E_INFORMATION;
+	private int eventPriority = -1; // Logger getting replaced TODO: determine if this class is even required.
 	private String subsystem = null;
 	private Date msgRecvTime = null;
 	private String eventText = null;
 	private DbKey appId = DbKey.NullKey;
 	private static SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy-HH:mm:ss");
 	static { sdf.setTimeZone(TimeZone.getTimeZone("UTC")); }
-	
+
 	private transient String evtTimeStr = null, msgTimeStr = null;
-	
+
 	public static void setTimeFormat(String fmt, String tzid)
 	{
 		sdf = new SimpleDateFormat(fmt);
 		if (tzid != null)
 			sdf.setTimeZone(TimeZone.getTimeZone(tzid));
 	}
-	
+
 	public DacqEvent()
 	{
 	}
-	
+
 	public String toString()
 	{
 		return "Evt: id=" + dacqEventId
 			+ ", schedEntryStatId=" + scheduleEntryStatusId
 			+ ", platformId=" + platformId
 			+ ", evtTime=" + eventTime
-			+ ", priority=" + Logger.priorityName[eventPriority].trim() + "(" + eventPriority + ")"
+			+ ", priority=EVENT(-1)"
 			+ ", susbsys='" + subsystem + "'"
 			+ ", msgTime=" + msgRecvTime
 			+ ", appId=" + appId
@@ -151,13 +144,12 @@ public class DacqEvent
 	{
 		this.eventText = eventText;
 	}
-	
+
 	public String getPriorityStr()
 	{
-		return eventPriority >= 0 && eventPriority <= Logger.E_FATAL ?
-			Logger.priorityName[eventPriority].trim() : "INFO";
+		return "EVENT";
 	}
-	
+
 	public String getTimeStr()
 	{
 		if (evtTimeStr != null)
@@ -167,12 +159,12 @@ public class DacqEvent
 			return evtTimeStr = sdf.format(eventTime);
 		}
 	}
-	
+
 	public String getMsgTimeStr()
 	{
 		if (msgTimeStr != null)
 			return msgTimeStr;
-		
+
 		if (msgRecvTime == null)
 			return "";
 		synchronized(sdf) { return msgTimeStr = sdf.format(msgRecvTime); }
