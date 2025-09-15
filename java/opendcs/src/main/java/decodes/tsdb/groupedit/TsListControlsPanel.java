@@ -24,12 +24,14 @@ public class TsListControlsPanel extends JPanel
     String newLabel;
     String deleteLabel;
     String plotLabel;
+    String importLabel;
     String refreshLabel;
 
     JButton openButton = new JButton();
     JButton newButton = new JButton();
     JButton deleteButton = new JButton();
     JButton plotButton = new JButton();
+    JButton importButton = new JButton();
     JButton refreshButton = new JButton();
     TsListControllers myController;
     GridBagLayout gridBagLayout1 = new GridBagLayout();
@@ -51,6 +53,7 @@ public class TsListControlsPanel extends JPanel
 		newLabel = genericResources.getString("new");
 		deleteLabel = genericResources.getString("delete");
 		plotLabel = genericResources.getString("plot");
+        importLabel = genericResources.getString("import");
 		refreshLabel = genericResources.getString("refresh");
 
 		try
@@ -81,6 +84,9 @@ public class TsListControlsPanel extends JPanel
         plotButton.setText(plotLabel);
         plotButton.addActionListener(this::plotClicked);
 
+        importButton.setText(importLabel);
+        importButton.addActionListener(this::importClicked);
+
 		this.setMinimumSize(new Dimension(571, 50));
 		this.add(openButton,
 			 new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0
@@ -100,8 +106,13 @@ public class TsListControlsPanel extends JPanel
                         , GridBagConstraints.CENTER,
                         GridBagConstraints.HORIZONTAL,
                         new Insets(10, 4, 10, 4), 0, 0));
+        this.add(importButton,
+                new GridBagConstraints(4, 0, 1, 1, 1.0, 0.0
+                        , GridBagConstraints.CENTER,
+                        GridBagConstraints.HORIZONTAL,
+                        new Insets(10, 4, 10, 4), 0, 0));
 		this.add(refreshButton,
-			 new GridBagConstraints(4, 0, 1, 1, 1.5, 0.0
+			 new GridBagConstraints(5, 0, 1, 1, 1.5, 0.0
 						, GridBagConstraints.EAST,
 						GridBagConstraints.NONE,
 						new Insets(10, 4, 10, 4), 18, 0));
@@ -146,5 +157,7 @@ public class TsListControlsPanel extends JPanel
     {
         myController.plot();
     }
+
+    void importClicked(ActionEvent e) { myController.importts(); }
 
 }

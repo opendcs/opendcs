@@ -5,7 +5,7 @@ import decodes.gui.TimeSeriesChartFrame;
 import decodes.gui.TimeSeriesLine;
 import decodes.sql.DbKey;
 import decodes.sql.PlatformListIO;
-import decodes.tsdb.CTimeSeries;
+import decodes.tsdb.*;
 import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
 import ilex.util.Logger;
@@ -21,17 +21,12 @@ import java.time.temporal.TemporalAmount;
 import java.util.Calendar;
 import java.util.Collection;
 
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import javax.swing.*;
+import javax.swing.SwingUtilities;
 
 import opendcs.dai.TimeSeriesDAI;
 import decodes.cwms.CwmsTsId;
 import decodes.gui.TopFrame;
-import decodes.tsdb.TimeSeriesDb;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.TimeSeriesIdentifier;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -246,6 +241,133 @@ public class TsListPanel
 		}
 
 	}
+
+    @Override
+    public void importts()
+    {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Time Series Import File");
+
+        // Set file filter for common import formats
+        javax.swing.filechooser.FileNameExtensionFilter tsImportFilter =
+            new javax.swing.filechooser.FileNameExtensionFilter(
+                "TsImport Files (*.tsimport, *.txt)", "tsimport", "txt");
+        javax.swing.filechooser.FileNameExtensionFilter allFilter =
+            new javax.swing.filechooser.FileNameExtensionFilter("All Files", "*");
+
+        fileChooser.addChoosableFileFilter(tsImportFilter);
+        fileChooser.addChoosableFileFilter(allFilter);
+        fileChooser.setFileFilter(tsImportFilter); // Set tsimport as default
+
+        int result = fileChooser.showOpenDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION)
+        {
+            java.io.File selectedFile = fileChooser.getSelectedFile();
+            String filePath = selectedFile.getAbsolutePath();
+
+            try
+            {
+                // First, scan the file to get all TSIDs
+                decodes.util.DecodesSettings settings = decodes.util.DecodesSettings.instance();
+                java.util.TimeZone tz = java.util.TimeZone.getTimeZone(settings.sqlTimeZone);
+
+                Collection<String> foundTsIds = TsImporter.scanForTsIds(filePath);
+
+                if (foundTsIds.isEmpty())
+                {
+                    JOptionPane.showMessageDialog(this,
+                        "No time series identifiers found in the selected file.",
+                        "No Data",
+                        JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                // Show selection dialog
+                TsImportSelectionDialog selectionDialog = new TsImportSelectionDialog(myFrame, foundTsIds);
+                selectionDialog.setVisible(true);
+
+                if (selectionDialog.isCancelled())
+                {
+                    return;
+                }
+
+                java.util.List<String> selectedTsIds = selectionDialog.getSelectedTsIds();
+
+                // Now import only the selected time series using TsImport
+                final ilex.gui.JobDialog progressDlg = new ilex.gui.JobDialog(myFrame, "Importing Time Series", true);
+                // Don't disable cancel button - we'll change it to "Done" when finished
+                progressDlg.setCanCancel(true);
+
+                Thread importThread = new Thread()
+                {
+                    public void run()
+                    {
+                        try
+                        {
+                            progressDlg.addToProgress("Importing " + selectedTsIds.size() + " time series from " + selectedFile.getName());
+
+                            // Use TsImporter helper method to import the selected time series
+                            int count = TsImporter.importTimeSeriesFile(theDb, filePath, selectedTsIds,
+                                tz, settings.siteNameTypePreference);
+
+                            progressDlg.addToProgress("Successfully imported " + count + " time series.");
+
+                            // After successful import, open each imported TSID in the GUI
+                            SwingUtilities.invokeLater(() -> {
+                                for (String tsIdStr : selectedTsIds)
+                                {
+                                    try
+                                    {
+                                        // Get the TimeSeriesIdentifier from the database
+                                        try (opendcs.dai.TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO())
+                                        {
+                                            TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsIdStr);
+
+                                            // Check if this TSID is already being edited
+                                            if (!myFrame.makeEditPaneActive(tsid))
+                                            {
+                                                // Open new edit panel for this TSID
+                                                TsSpecEditPanel editPanel = new TsSpecEditPanel(myFrame);
+                                                editPanel.setTsSpec((CwmsTsId)tsid);
+                                                myFrame.addEditTab(editPanel, "" + tsid.getKey());
+                                            }
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        log.warn("Could not open edit panel for TSID '{}': {}", tsIdStr, ex.getMessage());
+                                    }
+                                }
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            progressDlg.addToProgress("Error: " + ex.getMessage());
+                            log.error("Error importing time series", ex);
+                        }
+                        finally
+                        {
+                            progressDlg.finishedJob();
+                            progressDlg.setCanCancel(true); // Enable the "Done" button
+                        }
+                    }
+                };
+
+                importThread.start();
+                myFrame.launchDialog(progressDlg);
+
+                // Refresh the list to show newly imported time series
+                refresh();
+            }
+            catch (Exception ex)
+            {
+                String msg = "Error reading import file: " + ex.getMessage();
+                JOptionPane.showMessageDialog(this, msg, "Import Error", JOptionPane.ERROR_MESSAGE);
+                log.error(msg, ex);
+            }
+        }
+    }
 
 	public Collection<String> getDistinctPart(String part)
 	{

@@ -30,4 +30,6 @@ public interface TsListControllers
         public void refresh();
 
         public void plot();
+
+        public void importts();
 }

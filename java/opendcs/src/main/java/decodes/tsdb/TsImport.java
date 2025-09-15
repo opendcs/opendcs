@@ -7,13 +7,7 @@ import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import opendcs.dai.SiteDAI;
-import opendcs.dai.TimeSeriesDAI;
 import decodes.cwms.CwmsTimeSeriesDAO;
-import decodes.db.Constants;
-import decodes.db.Database;
-import decodes.db.Site;
-import decodes.db.SiteName;
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
@@ -69,10 +63,22 @@ public class TsImport extends TsdbAppTemplate
     private BooleanToken noUnitConvArg = new BooleanToken("U", "Pass file units directly to CWMS", "",
         TokenOptions.optSwitch, false);
 
+    /** Optional list of TSIDs to import - if set, only these will be imported */
+    private Collection<String> selectedTsIds = null;
+
     public TsImport()
     {
         super("util.log");
         DecodesInterface.silent = true;
+    }
+
+    /**
+     * Set the list of TSIDs to import. If null or empty, all TSIDs in the file will be imported.
+     * @param selectedTsIds the list of TSIDs to import
+     */
+    public void setSelectedTsIds(Collection<String> selectedTsIds)
+    {
+        this.selectedTsIds = selectedTsIds;
     }
 
     protected void addCustomArgs(CmdLineArgs cmdLineArgs)
@@ -85,77 +91,30 @@ public class TsImport extends TsdbAppTemplate
     @Override
     protected void runApp()
     {
-        try (SiteDAI siteDAO = theDb.makeSiteDAO();
-             TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-            )
+        DecodesSettings settings = DecodesSettings.instance();
+        CwmsTimeSeriesDAO.setNoUnitConv(noUnitConvArg.getValue());
+        final TimeZone tz = TimeZone.getTimeZone(settings.sqlTimeZone);
+
+        for(int n = filenameArg.NumberOfValues(), i=0; i<n; i++)
         {
-            DecodesSettings settings = DecodesSettings.instance();
-            CwmsTimeSeriesDAO.setNoUnitConv(noUnitConvArg.getValue());
-            final TimeZone tz = TimeZone.getTimeZone(settings.sqlTimeZone);
-
-            TsImporter importer = new TsImporter(tz, settings.siteNameTypePreference, (tsIdStr) ->
+            final String filename = filenameArg.getValue(i);
+            try
             {
-                try
-                {
-                    return timeSeriesDAO.getTimeSeriesIdentifier(tsIdStr);
-                }
-                catch (NoSuchObjectException ex)
-                {
-                    log.warn("No existing time series. Will attempt to create.");
-
-                    try
-                    {
-                        TimeSeriesIdentifier tsId = theDb.makeEmptyTsId();
-                        tsId.setUniqueString(tsIdStr);
-                        Site site = theDb.getSiteById(siteDAO.lookupSiteID(tsId.getSiteName()));
-                        if (site == null)
-                        {
-                            site = new Site();
-                            site.addName(new SiteName(site, Constants.snt_CWMS, tsId.getSiteName()));
-                            siteDAO.writeSite(site);
-                        }
-                        tsId.setSite(site);
-
-                        log.info("Calling createTimeSeries");
-                        timeSeriesDAO.createTimeSeries(tsId);
-                        log.info("After createTimeSeries, ts key = {}", tsId.getKey());
-                        return tsId;
-                    }
-                    catch(Exception ex2)
-                    {
-                        throw new DbIoException(String.format("No such time series and cannot create for '%'", tsIdStr), ex);
-                    }
-                }
-            });
-            for(int n = filenameArg.NumberOfValues(), i=0; i<n; i++)
+                int count = TsImporter.importTimeSeriesFile(theDb, filename, selectedTsIds,
+                    tz, settings.siteNameTypePreference);
+                log.info("Successfully imported {} time series from {}", count, filename);
+            }
+            catch (IOException ex)
             {
-
-                final String filename = filenameArg.getValue(i);
-                try
-                {
-                    Collection<CTimeSeries> dc = importer.readTimeSeriesFile(filename);
-                    for(CTimeSeries cts : dc)
-                    {
-                        String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
-                        log.info("Saving time series {}", tsid);
-                        try
-                        {
-                            timeSeriesDAO.saveTimeSeries(cts);
-                        }
-                        catch(DbIoException | BadTimeSeriesException ex)
-                        {
-                            log.atWarn()
-                               .setCause(ex)
-                               .log("Cannot save time series '{}'", tsid);
-                        }
-                    }
-                }
-                catch (IOException ex)
-                {
-                    log.atWarn()
-                       .setCause(ex)
-                       .log("Error reading {} -- skipping", filename);
-                }
+                log.atWarn()
+                   .setCause(ex)
+                   .log("Error reading {} -- skipping", filename);
+            }
+            catch (DbIoException ex)
+            {
+                log.atWarn()
+                   .setCause(ex)
+                   .log("Database error processing {} -- skipping", filename);
             }
         }
     }
