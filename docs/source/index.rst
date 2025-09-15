@@ -109,7 +109,7 @@ Reminder - legacy PDFs are no longer being updated.
    :maxdepth: 1
    :caption: Supplemental Documentation
 
-   ResEvap Documentation <./legacy-resevap-computation.rst>
+   ResEvap Documentation <./resevap-computation.rst>
 
 
 .. toctree::
