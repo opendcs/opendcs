@@ -1,33 +1,27 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  $Log$
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.1  2008/04/04 18:21:04  cvs
-*  Added legacy code to repository
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.4  2008/02/10 20:17:33  mmaloney
-*  dev
-*
-*  Revision 1.2  2008/02/01 15:20:40  cvs
-*  modified files for internationalization
-*
-*  Revision 1.3  2004/12/21 14:46:05  mjmaloney
-*  Added javadocs
-*
-*  Revision 1.2  2004/04/20 20:08:18  mjmaloney
-*  Working reference list editor, required several mods to SQL code.
-*
-*  Revision 1.1  2004/04/02 15:50:45  mjmaloney
-*  Implemented EU editing functions.
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.rledit;
 
 import java.awt.*;
 import javax.swing.*;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.util.*;
 
@@ -36,10 +30,10 @@ import decodes.db.*;
 /**
 This dialog is for editing and adding a new Engineering Unit definition.
 */
-public class EUDialog extends JDialog 
+public class EUDialog extends JDialog
 {
-	private static ResourceBundle genericLabels = 
-		RefListEditor.getGenericLabels();
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+	private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
 	private static ResourceBundle labels = RefListEditor.getLabels();
 	private JPanel panel1 = new JPanel();
 	private BorderLayout borderLayout1 = new BorderLayout();
@@ -58,9 +52,9 @@ public class EUDialog extends JDialog
 	private JTextField abbrField = new JTextField();
 	private JTextField nameField = new JTextField();
 	private JLabel jLabel6 = new JLabel();
-	private JComboBox familyCombo = new JComboBox(
+	private JComboBox<String> familyCombo = new JComboBox<>(
 		new String[] { "English", "Metric", "Univ"});
-	private JComboBox measuresCombo = new JComboBox();
+	private JComboBox<String> measuresCombo = new JComboBox<>();
 	private GridBagLayout gridBagLayout1 = new GridBagLayout();
 
 	//===========================================================
@@ -73,16 +67,18 @@ public class EUDialog extends JDialog
 	 * @param title the dialog title
 	 * @param modal true if modal
 	 */
-	public EUDialog(Frame frame, String title, boolean modal) 
+	public EUDialog(Frame frame, String title, boolean modal)
 	{
 		super(frame, title, modal);
-		try {
+		try
+		{
 			jbInit();
 			pack();
 			buildMeasuresCombo();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 		isOK = false;
 		initAbbr = initFamily = initName = initMeasures = "";
@@ -199,7 +195,7 @@ public class EUDialog extends JDialog
 	 * Called when OK button is pressed.
 	 * @param e ignored.
 	 */
-	void okButton_actionPerformed(ActionEvent e) 
+	void okButton_actionPerformed(ActionEvent e)
 	{
 		isOK = true;
 		closeDlg();
@@ -209,7 +205,7 @@ public class EUDialog extends JDialog
 	 * Called when cancel button is pressed.
 	 * @param e ignored.
 	 */
-	void cancelButton_actionPerformed(ActionEvent e) 
+	void cancelButton_actionPerformed(ActionEvent e)
 	{
 		isOK = false;
 		closeDlg();
@@ -225,7 +221,7 @@ public class EUDialog extends JDialog
 	/** @return true if values were changed. */
 	public boolean wasChanged()
 	{
-		return isOK 
+		return isOK
 			&& (!getAbbr().equals(initAbbr)
 			||  !getEUName().equals(initName)
 			||  !getFamily().equals(initFamily)
