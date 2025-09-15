@@ -47,6 +47,7 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertyRequirements;
 import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.model.cwms.CwmsSiteReferenceValue;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
@@ -57,6 +58,20 @@ import org.slf4j.Logger;
         description = "Perform Reservoir Evaporation calculation based on an algorithm developed by NWDM," +
                 " Which utilizes air temp, air speed, solar radiation, and water temperature profiles to return" +
                 " evaporation rates and total evaporation as flow")
+@PropertyRequirements(
+        groups = {
+            @PropertyRequirements.RequirementGroup(
+                name = "Location",
+                type = PropertyRequirements.RequirementType.AT_LEAST_ONE,
+                properties = {"latitude", "longitude"}
+            ),
+            @PropertyRequirements.RequirementGroup(
+                name = "Location2", 
+                type = PropertyRequirements.RequirementType.ALL_REQUIRED,
+                properties = {"zeroElevation", "longitude"}
+            )
+        }
+)
 final public class ResEvapAlgo extends AW_AlgorithmBase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
@@ -148,7 +163,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
 //	public String MaxTempDepthId;
 
     @org.opendcs.annotations.PropertySpec(name = "wtpTsId", propertySpecType = PropertySpec.STRING,
-            description = "Base String for water Temperature Profiles, Example FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap")
+            description = "Base String for water Temperature Profiles, Example FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap", required = true)
     public String wtpTsId;
     @org.opendcs.annotations.PropertySpec(name = "reservoirId", propertySpecType = PropertySpec.STRING,
             description = "Location ID of reservoir")
