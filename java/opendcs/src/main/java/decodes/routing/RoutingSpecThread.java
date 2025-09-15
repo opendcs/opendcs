@@ -475,7 +475,7 @@ public class RoutingSpecThread extends Thread
 			{
 				log.atError()
 				   .setCause(ex)
-				   .log("Error on data source '{}' -- existing", rs.dataSource.getName());
+				   .log("Error on data source '{}' -- exiting", rs.dataSource.getName());
 				done = true;
 				currentStatus = "ERROR-Source";
 				continue;
@@ -631,8 +631,6 @@ public class RoutingSpecThread extends Thread
 		{
 			String msg = "Unexpected exception in formatter.";
 			assertPlatformError(msg, platstat, ex);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
 		}
 	}
 
@@ -773,7 +771,7 @@ public class RoutingSpecThread extends Thread
 				try { return new DecodedMessage(rm, false); }
 				catch(Exception ex2)
 				{
-					log.atError().setCause(ex).log("Cannot create DecodedMessage wrapper for raw message.");
+					log.atError().setCause(ex2).log("Cannot create DecodedMessage wrapper for raw message.");
 					return null;
 				}
 			}
@@ -790,7 +788,7 @@ public class RoutingSpecThread extends Thread
 				try { return new DecodedMessage(rm, false); }
 				catch(Exception ex2)
 				{
-					log.atError().setCause(ex).log("Cannot create DecodedMessage wrapper for raw message.");
+					log.atError().setCause(ex2).log("Cannot create DecodedMessage wrapper for raw message.");
 					return null;
 				}
 			}
@@ -800,7 +798,7 @@ public class RoutingSpecThread extends Thread
 			String platname = "(null)";
 			if (p != null)
 				platname = p.makeFileName();
-			String msg = "Exception processing data from platform '{}";
+			String msg = "Exception processing data from platform '{}'";
 			assertPlatformError(msg, platstat, ex, platname);
 			return null;
 		}
