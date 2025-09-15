@@ -9,6 +9,12 @@ plugins
 // NOTE: this project should not contain any runtime dependencies
 // Build dependencies, such as google autowire are acceptable.
 
+dependencies 
+{
+    testImplementation enforcedPlatform(libs.junit.bom)
+    testImplementation(libs.bundles.junit)
+}
+
 
 publishing {
     publications {

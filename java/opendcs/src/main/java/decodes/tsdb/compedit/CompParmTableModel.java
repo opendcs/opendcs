@@ -17,7 +17,7 @@ import decodes.tsdb.TimeSeriesDb;
 /**
  * A table model used for displaying time-series computation parameters in the Computation Editor user interface.
  */
-public class CompParmTableModel extends AbstractTableModel implements SortingListTableModel
+public class CompParmTableModel extends AbstractTableModel
 {
     ArrayList<DbCompParm> myvector = new ArrayList<DbCompParm>();
 
@@ -38,6 +38,7 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
             columnNames =
                 new String[]
                 {
+                    rb.getString("ComputationsEditPanel.TableColumnRoleType"),
                     rb.getString("ComputationsEditPanel.TableColumnRole"),
                     rb.getString("ComputationsEditPanel.TableColumnSite"),
                     rb.getString("ComputationsEditPanel.TableColumnDatatype"),
@@ -53,6 +54,7 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
             columnNames =
                 new String[]
                 {
+                    rb.getString("ComputationsEditPanel.TableColumnRoleType"),
                     rb.getString("ComputationsEditPanel.TableColumnRole"),
                     rb.getString("ComputationsEditPanel.TableColumnLocation"),
                     rb.getString("ComputationsEditPanel.TableColumnParam"),
@@ -63,12 +65,6 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
                 };
             columnWidths = new int[]{ 15, 15, 15, 15, 15, 15, 15, 10 };
         }
-    }
-
-    public void sortByColumn(int c)
-    {
-        Collections.sort(myvector, new ComputationsEditComparator(c, this));
-        fireTableDataChanged();
     }
 
     public Object getRowObject(int arg0) {
@@ -107,7 +103,6 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
             DbCompParm dcp = pit.next();
             myvector.add(dcp);
         }
-        Collections.sort(myvector, new ComputationsEditComparator(-1, this));
         fireTableDataChanged();
     }
 
@@ -130,15 +125,18 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
             return "";
     }
 
-    public String getNlColumn(DbCompParm compParm, int columnIndex)
+    public Object getNlColumn(DbCompParm compParm, int columnIndex)
     {
         TimeSeriesDb tsdb = CAPEdit.instance().theDb;
 
         switch (columnIndex)
         {
         case 0:
-            return compParm.getRoleName();
+            return compParm.isInput() ? rb.getString("ComputationsEditPanel.InputParm") :
+                rb.getString("ComputationsEditPanel.OutputParm");
         case 1:
+            return compParm.getRoleName();
+        case 2:
           {
             SiteName sn = compParm.getSiteName();
 //if(tsdb.isCwms())System.out.println("locspec='" + compParm.getLocSpec() + "'");
@@ -147,7 +145,7 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
                 ((tsdb.isCwms()||tsdb.isOpenTSDB())
                     && compParm.getLocSpec().length() > 0 ? compParm.getLocSpec() : "<var>") : "";
           }
-        case 2:
+        case 3:
           {
             DataType dt = compParm.getDataType();
             if (dt == null)
@@ -157,7 +155,7 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
             else
                 return dt.getCode();
           }
-        case 3:
+        case 4:
             if (!tsdb.isCwms() && !tsdb.isOpenTSDB())
             {
                 String s = compParm.getInterval();
@@ -172,7 +170,7 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
                     return parent.hasGroupInput() ? "<var>" : "";
                 return s;
             }
-        case 4:
+        case 5:
             if (!tsdb.isCwms() && !tsdb.isOpenTSDB())
             {
                 String s = compParm.getTableSelector();
@@ -187,7 +185,7 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
                     return parent.hasGroupInput() ? "<var>" : "";
                 return s;
             }
-        case 5:
+        case 6:
             if (tsdb.isCwms() || tsdb.isOpenTSDB())
             {
                 String s = compParm.getDuration();
@@ -203,7 +201,7 @@ public class CompParmTableModel extends AbstractTableModel implements SortingLis
                 else
                     return parent.hasGroupInput() ? "<var>" : "N/A";
             }
-        case 6:
+        case 7:
             if (tsdb.isHdb())
             {
                 String s = "" + compParm.getDeltaT();
