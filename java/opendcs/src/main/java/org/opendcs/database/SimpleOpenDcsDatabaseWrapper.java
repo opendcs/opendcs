@@ -11,6 +11,7 @@ import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
+import decodes.cwms.CwmsLocationLevelDAO;
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDao;
 import org.opendcs.database.api.OpenDcsDataException;
@@ -67,6 +68,9 @@ public class SimpleOpenDcsDatabaseWrapper implements OpenDcsDatabase
         DaoWrapper<?> wrapper =
             daoMap.computeIfAbsent(dao, daoDesired ->
             {
+                if (dao.isAssignableFrom(CwmsLocationLevelDAO.class)){
+                    return new DaoWrapper<>(() -> new CwmsLocationLevelDAO(this.timeSeriesDb));
+                }
                 Optional<Method> daoMakeMethod;
                 if (timeSeriesDb != null)
                 {
