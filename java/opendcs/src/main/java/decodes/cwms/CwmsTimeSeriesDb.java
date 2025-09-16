@@ -42,6 +42,7 @@ import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.ScheduleEntryDAI;
 import opendcs.dai.SiteDAI;
+import opendcs.dai.TaskListDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dao.DaoBase;
 import opendcs.dao.DaoHelper;
@@ -870,6 +871,12 @@ public class CwmsTimeSeriesDb extends TimeSeriesDb
 		{
 			log.atWarn().setCause(ex).log("Unable to close returned connection");
 		}
+	}
+
+	@Override
+	public TaskListDAI makeTaskListDao()
+	{
+		throw new UnsupportedOperationException("Unimplemented method 'makeTaskListDao'");
 	}
 
 	@Override
