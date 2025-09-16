@@ -100,7 +100,7 @@ public abstract class DbAlgorithmExecutive
 	 */
 	protected boolean aggUpperBoundClosed = false;
 	
-	/** If true, than deltas can be interpolated up to maxDeltaInterp intervals */
+	/** If true, then deltas can be interpolated up to maxDeltaInterp intervals */
 	protected boolean interpDeltas = false;
 	
 	/** If (interpDeltas) this is max # of intervals to interp over. */
