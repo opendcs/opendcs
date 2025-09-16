@@ -85,7 +85,7 @@ public class TsListControlsPanel extends JPanel
         plotButton.addActionListener(this::plotClicked);
 
         importButton.setText(importLabel);
-        importButton.addActionListener(this::importClicked);
+        importButton.addActionListener(e -> myController.importts());
 
 		this.setMinimumSize(new Dimension(571, 50));
 		this.add(openButton,
@@ -158,6 +158,5 @@ public class TsListControlsPanel extends JPanel
         myController.plot();
     }
 
-    void importClicked(ActionEvent e) { myController.importts(); }
 
 }

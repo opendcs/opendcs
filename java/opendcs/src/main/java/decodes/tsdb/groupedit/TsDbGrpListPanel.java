@@ -272,12 +272,6 @@ public class TsDbGrpListPanel
 
 	}
 
-    @Override
-    public void importts()
-    {
-
-    }
-
 	/**
 	 * Opens a TsGroupDefinitionPanel for the passed Ts Group.
 	 * 

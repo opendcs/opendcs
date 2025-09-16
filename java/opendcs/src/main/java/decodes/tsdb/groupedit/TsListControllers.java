@@ -31,5 +31,8 @@ public interface TsListControllers
 
         public void plot();
 
-        public void importts();
+        default void importts()
+        {
+           // some panels that implement this method don't allow an import.
+        }
 }
