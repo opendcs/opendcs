@@ -48,7 +48,6 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.model.cwms.CwmsSiteReferenceValue;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
@@ -353,11 +352,11 @@ final public class ResEvapAlgo
         }
 
         if (secchi == 0){
-            try (org.opendcs.database.api.DataTransaction tx = locLevDAO.getTransaction())
+            try
             {
-                secchi = ((CwmsSiteReferenceValue) locLevDAO.getLatestLocationLevelValue(tx, LocationLevel, "ft")).getLevelValue();
+                secchi = ((CwmsSiteReferenceValue) locLevDAO.getLatestLocationLevelValue(LocationLevel, "ft")).getLevelValue();
             }
-            catch (OpenDcsDataException ex)
+            catch (Exception ex)
             {
                 throw new DbCompException("Failed to load Location Level " + LocationLevel, ex);
             }
