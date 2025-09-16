@@ -71,8 +71,6 @@ import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 import ilex.var.TimedVariable;
 import ilex.util.FileUtil;
-import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.OpenDcsDatabase;
 
 import hec.data.RatingException;
 
@@ -84,9 +82,6 @@ public class AlgorithmTestsIT extends AppTestBase
 
     @ConfiguredField
     private TimeSeriesDb tsDb;
-    
-    @ConfiguredField
-    private OpenDcsDatabase db;
 
     /**
      * This just tests that timeseries can be saved to the database, retrieved, and totally deleted.
@@ -325,17 +320,17 @@ public class AlgorithmTestsIT extends AppTestBase
      */
     private void executeSqlFile(File sqlFile)
     {
-        if (db == null)
+        if (tsDb == null)
         {
-            log.warn("OpenDcsDatabase not available, skipping SQL file execution: " + sqlFile.getName());
+            log.warn("TimeSeriesDb not available, skipping SQL file execution: " + sqlFile.getName());
             return;
         }
-        
+
         try
         {
             // Read the SQL file content
             String sqlContent = new String(Files.readAllBytes(sqlFile.toPath()), StandardCharsets.UTF_8);
-            
+
             // Replace office ID placeholder if this is a CWMS database
             if (tsDb instanceof CwmsTimeSeriesDb)
             {
@@ -343,20 +338,14 @@ public class AlgorithmTestsIT extends AppTestBase
                 String officeId = cwmsDb.getDbOfficeId();
                 sqlContent = sqlContent.replace("DEFAULT_OFFICE", officeId);
             }
-            
-            // Execute the SQL using a transaction
-            try (DataTransaction tx = db.newTransaction())
+
+            // Execute the SQL using direct database connection
+            try (Connection conn = tsDb.getConnection();
+                 CallableStatement stmt = conn.prepareCall(sqlContent))
             {
-                Connection conn = tx.connection(Connection.class)
-                    .orElseThrow(() -> new RuntimeException("JDBC Connection not available in this transaction."));
-                
-                // Use CallableStatement to execute the SQL (handles PL/SQL blocks properly)
-                try (CallableStatement stmt = conn.prepareCall(sqlContent))
-                {
-                    log.info("Executing SQL from file: " + sqlFile.getName());
-                    log.debug("SQL Content: " + sqlContent.substring(0, Math.min(200, sqlContent.length())) + "...");
-                    stmt.execute();
-                }
+                log.info("Executing SQL from file: " + sqlFile.getName());
+                log.debug("SQL Content: " + sqlContent.substring(0, Math.min(200, sqlContent.length())) + "...");
+                stmt.execute();
                 log.info("Successfully executed SQL file: " + sqlFile.getName());
             }
         }
