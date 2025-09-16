@@ -293,7 +293,7 @@ public class RoutingMonitorFrame extends TopFrame
 			}
 			catch (DbIoException ex)
 			{
-				log.atError().setCause(ex).log("Error reading events: " + ex);
+				log.atError().setCause(ex).log("Error reading events.");
 			}
 			finally
 			{
