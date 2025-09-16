@@ -333,75 +333,91 @@ public class TsListPanel
                 // Don't disable cancel button - we'll change it to "Done" when finished
                 progressDlg.setCanCancel(true);
 
-                Thread importThread = new Thread()
+                SwingWorker<Integer, String> importWorker = new SwingWorker<Integer, String>()
                 {
-                    public void run()
+                    @Override
+                    protected Integer doInBackground() throws Exception
+                    {
+                        publish("Importing " + allSelectedTsIds.size() + " time series from " + filePathToSelectedTsIds.size() + " file(s)");
+
+                        int totalCount = 0;
+
+                        // Process each file with its specific TSIDs
+                        for (Map.Entry<String, List<String>> entry : filePathToSelectedTsIds.entrySet())
+                        {
+                            if (progressDlg.wasCancelled() || isCancelled())
+                            {
+                                break;
+                            }
+
+                            String filePath = entry.getKey();
+                            List<String> tsIdsForThisFile = entry.getValue();
+                            String fileName = new File(filePath).getName();
+
+                            publish("Processing file: " + fileName);
+                            publish("  Importing " + tsIdsForThisFile.size() + " time series...");
+
+                            try
+                            {
+                                // Use TsImporter to import only the selected TSIDs from this specific file
+                                int count = TsImporter.importTimeSeriesFile(theDb, filePath, tsIdsForThisFile,
+                                    tz, settings.siteNameTypePreference);
+                                totalCount += count;
+                                publish("  Successfully imported " + count + " time series from " + fileName);
+                            }
+                            catch (Exception ex)
+                            {
+                                publish("  Error processing file " + fileName + ": " + ex.getMessage());
+                                log.error("Error importing from file: " + fileName, ex);
+                            }
+                        }
+
+                        publish("Successfully imported " + totalCount + " time series total.");
+                        return totalCount;
+                    }
+
+                    @Override
+                    protected void process(java.util.List<String> chunks)
+                    {
+                        // Add progress messages to the dialog
+                        for (String message : chunks)
+                        {
+                            progressDlg.addToProgress(message);
+                        }
+                    }
+
+                    @Override
+                    protected void done()
                     {
                         try
                         {
-                            progressDlg.addToProgress("Importing " + allSelectedTsIds.size() + " time series from " + filePathToSelectedTsIds.size() + " file(s)");
+                            Integer totalCount = get();
 
-                            int totalCount = 0;
-
-                            // Process each file with its specific TSIDs
-                            for (Map.Entry<String, List<String>> entry : filePathToSelectedTsIds.entrySet())
+                            // Open each imported TSID in the GUI
+                            for (String tsIdStr : allSelectedTsIds)
                             {
-                                if (progressDlg.wasCancelled())
-                                {
-                                    break;
-                                }
-
-                                String filePath = entry.getKey();
-                                List<String> tsIdsForThisFile = entry.getValue();
-                                String fileName = new File(filePath).getName();
-
-                                progressDlg.addToProgress("Processing file: " + fileName);
-                                progressDlg.addToProgress("  Importing " + tsIdsForThisFile.size() + " time series...");
-
                                 try
                                 {
-                                    // Use TsImporter to import only the selected TSIDs from this specific file
-                                    int count = TsImporter.importTimeSeriesFile(theDb, filePath, tsIdsForThisFile,
-                                        tz, settings.siteNameTypePreference);
-                                    totalCount += count;
-                                    progressDlg.addToProgress("  Successfully imported " + count + " time series from " + fileName);
+                                    // Get the TimeSeriesIdentifier from the database
+                                    try (opendcs.dai.TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO())
+                                    {
+                                        TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsIdStr);
+
+                                        // Check if this TSID is already being edited
+                                        if (!myFrame.makeEditPaneActive(tsid))
+                                        {
+                                            // Open new edit panel for this TSID
+                                            TsSpecEditPanel editPanel = new TsSpecEditPanel(myFrame);
+                                            editPanel.setTsSpec((CwmsTsId)tsid);
+                                            myFrame.addEditTab(editPanel, "" + tsid.getKey());
+                                        }
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
-                                    progressDlg.addToProgress("  Error processing file " + fileName + ": " + ex.getMessage());
-                                    log.error("Error importing from file: " + fileName, ex);
+                                    log.warn("Could not open edit panel for TSID '{}': {}", tsIdStr, ex.getMessage());
                                 }
                             }
-
-                            progressDlg.addToProgress("Successfully imported " + totalCount + " time series total.");
-
-                            // After successful import, open each imported TSID in the GUI
-                            SwingUtilities.invokeLater(() -> {
-                                for (String tsIdStr : allSelectedTsIds)
-                                {
-                                    try
-                                    {
-                                        // Get the TimeSeriesIdentifier from the database
-                                        try (opendcs.dai.TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO())
-                                        {
-                                            TimeSeriesIdentifier tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsIdStr);
-
-                                            // Check if this TSID is already being edited
-                                            if (!myFrame.makeEditPaneActive(tsid))
-                                            {
-                                                // Open new edit panel for this TSID
-                                                TsSpecEditPanel editPanel = new TsSpecEditPanel(myFrame);
-                                                editPanel.setTsSpec((CwmsTsId)tsid);
-                                                myFrame.addEditTab(editPanel, "" + tsid.getKey());
-                                            }
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        log.warn("Could not open edit panel for TSID '{}': {}", tsIdStr, ex.getMessage());
-                                    }
-                                }
-                            });
                         }
                         catch (Exception ex)
                         {
@@ -416,7 +432,7 @@ public class TsListPanel
                     }
                 };
 
-                importThread.start();
+                importWorker.execute();
                 myFrame.launchDialog(progressDlg);
 
                 // Refresh the list to show newly imported time series

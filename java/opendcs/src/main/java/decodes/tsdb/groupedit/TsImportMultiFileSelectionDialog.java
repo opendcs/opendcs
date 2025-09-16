@@ -7,6 +7,8 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.*;
 import java.util.List;
+import decodes.util.DecodesSettings;
+import ilex.util.LoadResourceBundle;
 
 /**
  * Dialog for selecting which time series to import from multiple files.
@@ -21,13 +23,28 @@ public class TsImportMultiFileSelectionDialog extends JDialog
     private JButton importButton;
     private JButton cancelButton;
     private boolean cancelled = true;
+    private ResourceBundle genericResources;
+    private ResourceBundle groupResources;
 
     // Map of filepath to list of selected TSIDs
     private Map<String, List<String>> selectedTsIdsByFile = new HashMap<>();
 
     public TsImportMultiFileSelectionDialog(JFrame parent, Map<String, List<String>> tsIdsByFile)
     {
-        super(parent, "Select Time Series to Import", true);
+        super(parent, "", true);
+
+        // Load resource bundles for internationalization
+        groupResources = LoadResourceBundle.getLabelDescriptions(
+            "decodes/resources/groupedit",
+            DecodesSettings.instance().language);
+        genericResources = LoadResourceBundle.getLabelDescriptions(
+            "decodes/resources/generic",
+            DecodesSettings.instance().language);
+
+        // Set dialog title from resources
+        setTitle(groupResources.getString("TsImportDialog.title"
+        ));
+
         initComponents(tsIdsByFile);
         setLocationRelativeTo(parent);
     }
@@ -44,7 +61,11 @@ public class TsImportMultiFileSelectionDialog extends JDialog
         }
 
         // Create table model with checkbox, TSID, and File columns
-        String[] columnNames = {"Import", "Time Series ID", "Source File"};
+        String[] columnNames = {
+            genericResources.getString("import"),
+            groupResources.getString("TsImportDialog.tsidColumn"),
+            groupResources.getString("TsImportDialog.sourceFileColumn")
+        };
         Object[][] data = new Object[totalEntries][3];
 
         int row = 0;
@@ -91,9 +112,11 @@ public class TsImportMultiFileSelectionDialog extends JDialog
         // Create top panel with selection buttons
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         int fileCount = tsIdsByFile.size();
-        topPanel.add(new JLabel("Found " + totalEntries + " time series in " + fileCount + " file(s):"));
-        selectAllButton = new JButton("Select All");
-        selectNoneButton = new JButton("Select None");
+        String foundMessage = groupResources.getString("TsImportDialog.foundMessage");
+        topPanel.add(new JLabel(String.format(foundMessage, totalEntries, fileCount)));
+
+        selectAllButton = new JButton(genericResources.getString("selectAll"));
+        selectNoneButton = new JButton(genericResources.getString("selectNone"));
 
         selectAllButton.addActionListener(e -> selectAll(true));
         selectNoneButton.addActionListener(e -> selectAll(false));
@@ -104,8 +127,8 @@ public class TsImportMultiFileSelectionDialog extends JDialog
 
         // Create bottom panel with action buttons
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        importButton = new JButton("Import Selected");
-        cancelButton = new JButton("Cancel");
+        importButton = new JButton(groupResources.getString("TsImportDialog.importSelected"));
+        cancelButton = new JButton(genericResources.getString("cancel"));
 
         importButton.addActionListener(this::importPressed);
         cancelButton.addActionListener(e -> {
@@ -161,9 +184,11 @@ public class TsImportMultiFileSelectionDialog extends JDialog
 
         if (selectedTsIdsByFile.isEmpty())
         {
+            String noSelectionMessage = groupResources.getString("TsImportDialog.noSelectionMessage");
+            String noSelectionTitle = groupResources.getString("TsImportDialog.noSelectionTitle");
             JOptionPane.showMessageDialog(this,
-                "Please select at least one time series to import.",
-                "No Selection",
+                noSelectionMessage,
+                noSelectionTitle,
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
