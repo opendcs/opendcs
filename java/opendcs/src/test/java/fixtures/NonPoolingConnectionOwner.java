@@ -35,6 +35,7 @@ import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import opendcs.dai.XmitRecordDAI;
+import opendcs.util.sql.WrappedConnection;
 
 public class NonPoolingConnectionOwner implements TestConnectionOwner
 {
@@ -54,7 +55,7 @@ public class NonPoolingConnectionOwner implements TestConnectionOwner
     @Override
     public Connection getConnection()
     {        
-        return conn;
+        return new WrappedConnection(conn, c -> {}, true);
     }
 
     @Override

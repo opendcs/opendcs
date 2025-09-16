@@ -26,6 +26,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.DataTypeDAI;
 
 import decodes.db.DataType;
@@ -45,6 +48,7 @@ public class DataTypeDAO
 	extends DaoBase 
 	implements DataTypeDAI
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Data Types are cached in DataTypeSet, so no cache here.
 	
 	// Columns to use in select
@@ -386,7 +390,7 @@ public class DataTypeDAO
 			if (msg.toLowerCase().contains("unique"))
 				; // Do nothing. It means equivalence is already asserted.
 			else
-				warning("Cannot assert equivalence '" + q + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot assert equivalence '{}'", q);
 		}
 	}
 }

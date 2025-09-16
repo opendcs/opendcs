@@ -709,19 +709,21 @@ public class EnumSqlDao extends DaoBase implements EnumDAI
 			helper.doModify(q,args.toArray());
 
 			// Delete all enum values. They'll be re-added below.
-			//info("writeEnum deleting values from enum '" + dbenum.enumName + "'");
+			log.info("writeEnum deleting values from enum '" + dbEnum.enumName + "'");
 			q = "DELETE FROM EnumValue WHERE enumId = ?";
 			helper.doModify(q, dbEnum.getId().getValue());
 			
 			for (Iterator<EnumValue> it = dbEnum.iterator(); it.hasNext(); )
 			{
-				writeEnumValue(helper, it.next());
+				EnumValue ev = it.next();
+log.info(ev.getFullName());
+				writeEnumValue(helper, ev);
 			}
 			return dbEnum;
 		}
 		catch(DbIoException | SQLException ex)
 		{
-			throw new OpenDcsDataException("enum modify/delete failed for " + dbEnum.toString(), ex);
+			throw new OpenDcsDataException("enum modify/delete failed for " + dbEnum.toString() + ex.getMessage(), ex);
 		}
 	}
 

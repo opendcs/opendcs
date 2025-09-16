@@ -3,6 +3,8 @@ package org.opendcs.utils.logging;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
@@ -91,14 +93,39 @@ public class SLF4JLogger extends AbstractLogger
         ilex.util.Logger.instance().log(ilexLevel,MessageFormatter.arrayFormat(msg, args).getMessage());
         PrintStream ps = null;
         OutputStream out = null;
-        if (ilex.util.Logger.instance().getMinLogPriority() <= ilexLevel
-            && ex != null)
+        if (ilex.util.Logger.instance().getMinLogPriority() <= ilexLevel && ex != null)
         {
             out = new ByteArrayOutputStream(ex.getStackTrace().length*50); // assume about 50 characters per line
             ps = new PrintStream(out);
-            ex.printStackTrace(ps);
+            filter(ex).printStackTrace(ps);
             ilex.util.Logger.instance().log(ilexLevel, out.toString());
         }
+    }
+
+    private Throwable filter(Throwable ex)
+    {
+        Throwable next = ex;//.getCause();
+        while(next != null)
+        {
+            next.setStackTrace(filter(next.getStackTrace()));
+            next = next.getCause();
+        }
+        return ex;
+    }
+
+    private StackTraceElement[] filter(StackTraceElement[] original)
+    {
+        List<StackTraceElement> filteredElements = new ArrayList<>();
+            for (StackTraceElement element : original)
+            {
+                // Example: Exclude elements from the "java.lang" package
+                if (!element.getClassName().matches("(jdk.*java.*|org.junit.*|org.gradle.*)"))
+                {
+                    filteredElements.add(element);
+                }
+                
+            }
+        return filteredElements.toArray(new StackTraceElement[0]);
     }
 
     private int slf4jToIlexLevel(Level level)

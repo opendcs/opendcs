@@ -17,6 +17,9 @@ package decodes.sql;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+
 import java.text.SimpleDateFormat;
 
 import java.sql.ResultSet;
@@ -39,6 +42,7 @@ import decodes.util.DecodesSettings;
  */
 public class SqlDbObjIo
 {
+	private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* Stores a reference to the SqlDatabaseIO object, which is the
 	* parent of this object.
@@ -343,7 +347,11 @@ public class SqlDbObjIo
 				throw new RuntimeException("Unable to get connection.", ex);
 			}
 		}
-		return new WrappedConnection(connection, c -> {});
+		return new WrappedConnection(connection, c ->
+		{
+			c.getRealConnection().close();
+			this.connection = null;
+		});
 	}
 
 	public SqlDatabaseIO getDbio()
@@ -403,8 +411,15 @@ public class SqlDbObjIo
 		if ( s == null ) return("null");
 
 		//If the SQL database is Oracle, set escapeBackslash = false
-		if (_dbio.isOracle())
-			escapeBackslash = false;
+		try
+		{
+			if (_dbio.isOracle() || connection.isWrapperFor(org.sqlite.SQLiteConnection.class))
+				escapeBackslash = false;
+		}
+		catch (SQLException ex)
+		{
+			log.atError().setCause(ex).log("Error checking if connection is for SQLite, this should never throw an error.");
+		}
 
 		s = sqlReqString(s);
 		if (!escapeBackslash)
@@ -482,7 +497,7 @@ public class SqlDbObjIo
 	public Connection getConnection()
 	{
 		// needed as we shift in proper usage of the Connection objects.
-		return new WrappedConnection(connection, (c) -> {});
+		return new WrappedConnection(connection(), (c) -> {});
 	}
 
 	public void setConnection(Connection conn)
