@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.snotel;
 
 import java.io.File;
@@ -18,17 +33,18 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.util.DirectoryMonitorThread;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import lrgs.common.DcpAddress;
 
-public class ControlmMonitor
-	extends DirectoryMonitorThread
-	implements FilenameFilter
+public class ControlmMonitor extends DirectoryMonitorThread	implements FilenameFilter
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static String module = "ControlmMonitor";
 	
 	private SnotelDaemon parent = null;
@@ -51,8 +67,7 @@ public class ControlmMonitor
 		super.addDirectory(rtD = new File(EnvExpander.expand(conf.controlmRealtimeDir)));
 		super.addDirectory(hstD = new File(EnvExpander.expand(conf.controlmHistoryDir)));
 		super.setFilenameFilter(this);
-		Logger.instance().info(module + " cfgDir=" + cfgD.getPath() + ", rtDir="
-			+ rtD.getPath() + ", hstDir=" + hstD.getPath());
+		log.info("cfgDir={}, rtDir={}, hsttDir={}", cfgD.getPath(), rtD.getPath(), hstD.getPath());
 		
 		snotelStatus = parent.getStatus();
 	}
@@ -66,8 +81,7 @@ public class ControlmMonitor
 	@Override
 	protected void finishedScan()
 	{
-		Logger.instance().debug2(module + ".finishedScan #cfgs=" + cfgFiles.size()
-			+ ", #rts=" + rtFiles.size() + ", #hst=" + hstFiles.size());
+		log.trace("finishedScan #cfgs={}, #rts={}, #hst={}", cfgFiles.size(), rtFiles.size(), hstFiles.size());
 		SnotelConfig conf = parent.getConfig();
 		
 		// Process config directive files in order
@@ -139,12 +153,11 @@ public class ControlmMonitor
 		try
 		{
 			FileUtil.moveFile(f, new File(ad, f.getName()));
-			Logger.instance().info(module + " moved '" + f.getName() + "' to " + ad.getPath());
+			log.info("moved '{}' to '{}'", f.getName(), ad.getPath());
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " Cannot move '" + f.getPath()
-				+ "' to archive dir '" + ad.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot move '{}' to archive dir '{}'", f.getPath(), ad.getPath());
 		}
 
 	}
@@ -155,37 +168,33 @@ public class ControlmMonitor
 		try
 		{
 			FileUtil.copyFile(rtList, stationList);
-			Logger.instance().info(module + " received new realtime list file '" + rtList.getPath()
-				+ "' copied to specFile location '" + stationList.getPath() + "'");
+			log.info(" received new realtime list file '{}' copied to specFile location '{}'",
+					 rtList.getPath(), stationList.getPath());
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " Cannot copy " + rtList.getPath()
-				+ " to " + stationList.getPath() + ": " + ex);
+			log.atWarn().setCause(ex).log("Cannot copy '{}' to '{}'", rtList.getPath(), stationList.getPath());
 		}
 	}
 
 	private void loadConfig(File cfgFile)
 	{
-		Logger.instance().info(module + " received config file '" + cfgFile.getPath());
+		log.info("received config file '{}'", cfgFile.getPath());
 		
 		Properties props = new Properties();
-		FileInputStream fis = null;
-		try
+		
+		try(FileInputStream fis = new FileInputStream(cfgFile);)
 		{
-			props.load(fis = new FileInputStream(cfgFile));
+			props.load(fis);
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().failure(module + " Cannot load config file '" 
-				+ cfgFile.getPath() + "' " + ex
-				+ " -- Check that file is readable and that it is a valid Java properties file.");
+			log.atError()
+			   .setCause(ex)
+			   .log("Cannot load config file '{}'  -- Check that file is readable " +
+			   		"and that it is a valid Java properties file.",
+					cfgFile.getPath());
 			return;
-		}
-		finally
-		{
-			if (fis != null)
-				try { fis.close(); } catch(Exception ex) {}
 		}
 
 		SnotelConfig conf = parent.getConfig();
@@ -200,17 +209,16 @@ public class ControlmMonitor
 	{	
 		if (histQueue.isEmpty())
 		{
-			Logger.instance().debug2(module + " histQueue empty");;
+			log.trace("histQueue empty");
 			return;
 		}
 		if (parent.historyInProgress())
 		{
-			Logger.instance().debug1(module + " history retrieval in progress. Waiting.");;
+			log.debug("history retrieval in progress. Waiting.");
 			return;
 		}
 		HistoryRetrieval hr = histQueue.pop();
-		Logger.instance().info(module + ".manageHistRet: " + hr.getSpec() + " " 
-			+ hr.getStart() + " " + hr.getEnd());
+		log.info("manageHistRet: {} {} {} ", hr.getSpec(), hr.getStart(), hr.getEnd());
 		parent.runHistory(hr);
 	}
 
@@ -220,7 +228,7 @@ public class ControlmMonitor
 	 */
 	private void readHstFile(File f)
 	{
-		Logger.instance().debug1(module + " reading history file '" + f.getPath() + "'");
+		log.debug("reading history file '{}'", f.getPath());
 		LineNumberReader lnr = null;
 		try
 		{
@@ -240,18 +248,18 @@ public class ControlmMonitor
 				
 				if (nt < 6)
 				{
-					Logger.instance().warning(module + " " 
-						+ f.getName() + ":" + lnr.getLineNumber() + " '" + line
-						+ "' incorrect number of comma-separated fields. 6 required. -- Skipped.");
+					log.warn("{}:{} '{}'' incorrect number of comma-separated fields. 6 required. -- Skipped.",
+							 f.getName(), lnr.getLineNumber(), line);
 					continue;
 				}
 				int stationId = 0;
 				try { stationId = Integer.parseInt(fields[0]); }
 				catch(Exception ex)
 				{
-					Logger.instance().warning(module + " "
-						+ f.getName() + ":" + lnr.getLineNumber() + " '" + line
-						+ "' bad site number in first field. Must be integer. -- Skipped.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{}:{} '{}'' bad site number in first field. Must be integer. -- Skipped.",
+							f.getName(), lnr.getLineNumber(), line);
 					continue;
 				}
 				String stationName = fields[1];
@@ -260,9 +268,8 @@ public class ControlmMonitor
 				
 				if (fields[3].length() == 0)
 				{
-					Logger.instance().warning(module + " "
-						+ f.getName() + ":" + lnr.getLineNumber() + " '" + line	
-						+ "' missing data format in last field, should be A or B. -- Skipped.");
+					log.warn("{}:{} '{}' missing data format in last field, should be A or B. -- Skipped.",
+							 f.getName(), lnr.getLineNumber(), line);
 					continue;
 				}
 				char formatFlag = fields[3].charAt(0);
@@ -274,9 +281,10 @@ public class ControlmMonitor
 				try { start = sdf.parse(fields[4]); }
 				catch(ParseException ex)
 				{
-					Logger.instance().warning(module + " "
-						+ f.getName() + ":" + lnr.getLineNumber() + " '" + line	
-						+ "' Second field must have start date as MM/DD/YYYY -- Skipped.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{}:{} '{}' Second field must have start date as MM/DD/YYYY -- Skipped.",
+							f.getName(), lnr.getLineNumber(), line);
 					continue;
 				}
 				Date end = null;
@@ -295,21 +303,21 @@ public class ControlmMonitor
 				}
 				catch(ParseException ex)
 				{
-					Logger.instance().warning(module + " "
-						+ f.getName() + ":" + lnr.getLineNumber() + " '" + line	
-						+ "' Third field must have end date as MM/DD/YYYY -- Skipped.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("{}:{} '{}' Third field must have end date as MM/DD/YYYY -- Skipped.",
+							f.getName(), lnr.getLineNumber(), line);
 					continue;
 				}
 				HistoryRetrieval hr = new HistoryRetrieval(spec, start, end);
 				histQueue.add(hr);
-Logger.instance().debug1("New history retrieval: " + hr);
+				log.debug("New history retrieval: {}", hr);
 			}
 		}
 		catch (IOException ex)
 		{
 			lnr = null;
-			Logger.instance().warning(module + " History File " + f.getName()
-				+ " cannot be read: " + ex);
+			log.atWarn().setCause(ex).log("History File '{}' cannot be read.", f.getName());
 		}
 		finally
 		{
