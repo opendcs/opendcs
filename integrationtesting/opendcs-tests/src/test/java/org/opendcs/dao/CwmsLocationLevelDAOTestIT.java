@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
 import org.opendcs.fixtures.AppTestBase;
 import org.opendcs.fixtures.annotations.ConfiguredField;
@@ -103,9 +102,8 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         // Test data is created during container initialization
         String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
         
-        try (DataTransaction tx = db.newTransaction())
         {
-            CwmsSiteReferenceValue value = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(tx, testLocationLevelId);
+            CwmsSiteReferenceValue value = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(testLocationLevelId);
             
             // Test passes whether data exists or not
             // If value is not null, verify its structure
@@ -126,7 +124,7 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             
             // Verify method doesn't throw exception for non-existent location
             assertDoesNotThrow(() -> {
-                dao.getLatestLocationLevelValue(tx, "NONEXISTENT.Stage.Const.0.Test");
+                dao.getLatestLocationLevelValue("NONEXISTENT.Stage.Const.0.Test");
             });
         }
     }
@@ -142,10 +140,9 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         
         String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
         
-        try (DataTransaction tx = db.newTransaction())
         {
             // First check if we have any data
-            CwmsSiteReferenceValue baseValue = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(tx, testLocationLevelId);
+            CwmsSiteReferenceValue baseValue = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(testLocationLevelId);
             
             // Skip unit conversion test if no data exists
             assumeTrue(baseValue != null, 
@@ -153,10 +150,10 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             
             // Test conversion from feet to meters
             CwmsSiteReferenceValue valueInFeet = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(
-                tx, testLocationLevelId, "ft");
-            
+                testLocationLevelId, "ft");
+
             CwmsSiteReferenceValue valueInMeters = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(
-                tx, testLocationLevelId, "m");
+                testLocationLevelId, "m");
             
             if (valueInFeet != null && valueInMeters != null)
             {
@@ -187,9 +184,8 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
         
         String testLocationId = "FTPK-Lower";
         
-        try (DataTransaction tx = db.newTransaction())
         {
-            List<CwmsSiteReferenceSpecification> specs = (List<CwmsSiteReferenceSpecification>) dao.getLocationLevelSpecs(tx, testLocationId);
+            List<CwmsSiteReferenceSpecification> specs = (List<CwmsSiteReferenceSpecification>) dao.getLocationLevelSpecs(testLocationId);
             
             assertNotNull(specs, "Specs list should not be null");
             
@@ -205,29 +201,27 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
     
     @Test
     @EnableIfTsDb({"CWMS-Oracle"})
-    public void testTransactionSupport() throws Exception
+    public void testBasicFunctionality() throws Exception
     {
-        if (dao == null) 
+        if (dao == null)
         {
             return; // Skip for non-CWMS databases
         }
-        
+
         String testLocationLevelId = "FTPK-Lower.Stage.Const.0.Test";
         String testLocationId = "FTPK-Lower";
 
-        try (DataTransaction tx = db.newTransaction())
         {
-            // Test getLatestLocationLevelValue with transaction
+            // Test getLatestLocationLevelValue
             CwmsSiteReferenceValue value = (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(
-                tx, testLocationLevelId);
-            
-            // Test getLocationLevelSpecs with transaction
+                testLocationLevelId);
+
+            // Test getLocationLevelSpecs
             List<CwmsSiteReferenceSpecification> specs = (List<CwmsSiteReferenceSpecification>) dao.getLocationLevelSpecs(
-                tx, testLocationId);
-            
+                testLocationId);
+
             assertNotNull(specs, "Specs should not be null even if empty");
-            
-            // For read-only operations, we don't need to commit
+
             // Just verify the methods execute without errors
         }
 
@@ -242,13 +236,12 @@ public class CwmsLocationLevelDAOTestIT extends AppTestBase
             return; // Skip for non-CWMS databases
         }
         
-        try (DataTransaction tx = db.newTransaction())
         {
             // Use an invalid location ID format
             String invalidLocationId = "INVALID_FORMAT";
-            
+
             // Should not throw exception, just return null
-            CwmsSiteReferenceValue value =  (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(tx, invalidLocationId);
+            CwmsSiteReferenceValue value =  (CwmsSiteReferenceValue) dao.getLatestLocationLevelValue(invalidLocationId);
             
             // Most likely will be null for invalid ID
             // But if not null, it means the ID exists (unlikely for this test ID)

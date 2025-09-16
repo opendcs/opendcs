@@ -8,9 +8,6 @@ import java.util.List;
 import opendcs.dao.DatabaseConnectionOwner;
 import opendcs.dao.DaoHelper;
 import org.opendcs.database.dai.SiteReferenceMetaData;
-import org.opendcs.database.SimpleTransaction;
-import org.opendcs.database.api.DataTransaction;
-import org.opendcs.database.api.OpenDcsDataException;
 import org.opendcs.model.SiteReferenceSpecification;
 import org.opendcs.model.SiteReferenceValue;
 import org.slf4j.Logger;
@@ -47,9 +44,6 @@ import java.text.ParseException;
  * Data Access Object for CWMS Location Level data.
  * This class provides methods to read and store location level data
  * directly from/to the CWMS database.
- *
- * Implements LocationLevelDAI interface following stateless pattern.
- * All operations require a DataTransaction for true stateless behavior.
  */
 public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaData
 {
@@ -86,85 +80,52 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
         }
     }
     
-    /**
-     * Get a transaction for database operations
-     * @return A new DataTransaction
-     * @throws OpenDcsDataException if unable to get connection
-     */
-    @Override
-    public DataTransaction getTransaction() throws OpenDcsDataException
-    {
-        try
-        {
-            return new SimpleTransaction(db.getConnection());
-        }
-        catch (SQLException ex)
-        {
-            throw new OpenDcsDataException("Unable to get connection.", ex);
-        }
-    }
     
     /**
-     * Get location level value with transaction support
-     * @param tx The data transaction
+     * Get location level value
      * @param locationLevelId The location level identifier
      * @return The latest LocationLevelValue or null if none found
-     * @throws OpenDcsDataException on database error
+     * @throws SQLException on database error
      */
     @Override
-    public SiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId)
-        throws OpenDcsDataException
+    public SiteReferenceValue getLatestLocationLevelValue(String locationLevelId)
+        throws SQLException
     {
-        return getLatestLocationLevelValue(tx, locationLevelId, null);
+        return getLatestLocationLevelValue(locationLevelId, null);
     }
     
     /**
-     * Get location level value with transaction support and unit conversion
-     * @param tx The data transaction
+     * Get location level value with unit conversion
      * @param locationLevelId The location level identifier
      * @param targetUnits The desired units for the value
      * @return The latest LocationLevelValue or null if none found
-     * @throws OpenDcsDataException on database error
+     * @throws SQLException on database error
      */
-    @Override
-    public SiteReferenceValue getLatestLocationLevelValue(DataTransaction tx, String locationLevelId,
-                                                          String targetUnits) throws OpenDcsDataException
+    public SiteReferenceValue getLatestLocationLevelValue(String locationLevelId,
+                                                          String targetUnits) throws SQLException
     {
-        Connection conn = tx.connection(Connection.class)
-            .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
-        
-        try (DaoHelper helper = new DaoHelper(this.db, MODULE + "-transaction", conn))
+        try (Connection conn = db.getConnection();
+             DaoHelper helper = new DaoHelper(this.db, MODULE, conn))
         {
             return executeLocationLevelQuery(helper, locationLevelId, targetUnits);
-        }
-        catch (SQLException ex)
-        {
-            throw new OpenDcsDataException("Error retrieving location level value", ex);
         }
     }
     
     
     /**
-     * Read location level specification for a given location with transaction support
-     * @param tx The data transaction
+     * Read location level specification for a given location
      * @param locationId The CWMS location identifier
      * @return List of LocationLevelSpec objects
-     * @throws OpenDcsDataException on database error
+     * @throws SQLException on database error
      */
     @Override
-    public List<? extends SiteReferenceSpecification> getLocationLevelSpecs(DataTransaction tx, String locationId)
-        throws OpenDcsDataException
+    public List<? extends SiteReferenceSpecification> getLocationLevelSpecs(String locationId)
+        throws SQLException
     {
-        Connection conn = tx.connection(Connection.class)
-            .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
-        
-        try (DaoHelper helper = new DaoHelper(this.db, MODULE + "-transaction", conn))
+        try (Connection conn = db.getConnection();
+             DaoHelper helper = new DaoHelper(this.db, MODULE, conn))
         {
             return executeLocationLevelSpecsQuery(helper, locationId);
-        }
-        catch (SQLException ex)
-        {
-            throw new OpenDcsDataException("Error reading location level specs for " + locationId, ex);
         }
     }
     
@@ -310,21 +271,17 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
     /**
      * Read a range of location level values in time and store them in a CTimeSeries object
      * Uses direct query against CWMS views
-     * @param tx The data transaction
      * @param locationLevelId The location level identifier
      * @param startTime The start time for the range
      * @param endTime The end time for the range
      * @param targetUnits Optional target units for conversion
      * @return CTimeSeries containing the location level values
-     * @throws OpenDcsDataException on database error
+     * @throws SQLException on database error
      */
-    public CTimeSeries getLocationLevelRange(DataTransaction tx, String locationLevelId,
+    public CTimeSeries getLocationLevelRange(String locationLevelId,
                                               Date startTime, Date endTime, String targetUnits)
-        throws OpenDcsDataException
+        throws SQLException
     {
-        Connection conn = tx.connection(Connection.class)
-            .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
-        
         CTimeSeries timeSeries = new CTimeSeries(Constants.undefinedId, "inst", "R_");
         timeSeries.setDisplayName(locationLevelId);
         
@@ -343,8 +300,9 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
             "  AND LEVEL_DATE <= ? " +
             "  AND (OFFICE_ID = ? OR ? IS NULL) " +
             "ORDER BY LEVEL_DATE";
-            
-        try (PreparedStatement pstmt = conn.prepareStatement(query))
+
+        try (Connection conn = db.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query))
         {
             // Set query parameters
             pstmt.setString(1, locationLevelId);
@@ -407,30 +365,27 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
         }
         catch (SQLException ex)
         {
-            throw new OpenDcsDataException("Error retrieving location level range for " + locationLevelId, ex);
+            throw new SQLException("Error retrieving location level range for " + locationLevelId, ex);
         }
     }
     
     /**
      * Get location level value at a specific time or the previous value if not found
-     * Uses CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL__2 procedure
-     * @param tx The data transaction
-     * @param locationLevelId The location level identifier  
+     * Uses CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL procedure
+     * @param locationLevelId The location level identifier
      * @param requestedTime The time to retrieve the value for
      * @param requireSpecificTime If true, only return value at exact time; if false, return previous value if no exact match
      * @param targetUnits Optional target units for conversion
      * @return LocationLevelValue at the requested time or null if none found
-     * @throws OpenDcsDataException on database error
+     * @throws SQLException on database error
      */
-    public SiteReferenceValue getLocationLevelAtTime(DataTransaction tx, String locationLevelId,
+    public SiteReferenceValue getLocationLevelAtTime(String locationLevelId,
                                                       Date requestedTime, boolean requireSpecificTime,
                                                       String targetUnits)
-        throws OpenDcsDataException
+        throws SQLException
     {
-        Connection conn = tx.connection(Connection.class)
-            .orElseThrow(() -> new OpenDcsDataException("JDBC Connection not available in this transaction."));
-        
-        try (CallableStatement cstmt = conn.prepareCall(
+        try (Connection conn = db.getConnection();
+             CallableStatement cstmt = conn.prepareCall(
             "{ call CWMS_LEVEL.RETRIEVE_LOCATION_LEVEL(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) }"))
         {
             // Register output parameters (1-8 are OUT parameters)
@@ -515,7 +470,7 @@ public class CwmsLocationLevelDAO extends DaoBase implements SiteReferenceMetaDa
             }
             
             // For any other SQL exception, throw it
-            throw new OpenDcsDataException("Error retrieving location level at time for " + locationLevelId, ex);
+            throw new SQLException("Error retrieving location level at time for " + locationLevelId, ex);
         }
     }
     
