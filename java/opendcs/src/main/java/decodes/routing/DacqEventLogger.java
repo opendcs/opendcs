@@ -1,10 +1,24 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.routing;
 
 import java.util.Date;
 
 import opendcs.dai.DacqEventDAI;
 import opendcs.dao.DacqEventDAO;
-import opendcs.dao.DatabaseConnectionOwner;
 import decodes.db.Database;
 import decodes.polling.DacqEvent;
 import decodes.sql.DbKey;
@@ -13,8 +27,12 @@ import decodes.tsdb.DbIoException;
 import decodes.tsdb.TsdbAppTemplate;
 import ilex.util.Logger;
 
-public class DacqEventLogger 
-	extends Logger
+/**
+ * @deprecated we are replacing the logging system. Output to external logging (the dacq event tables count)
+ * 				should be handled through the logger implementations outputs.
+ */
+@Deprecated
+public class DacqEventLogger extends Logger
 {
 	private Logger parent = null;
 	private DbKey schedEntryStatusId = DbKey.NullKey;
@@ -29,7 +47,7 @@ public class DacqEventLogger
 		this.parent = parent;
 		if (parent != null)
 			this.setMinLogPriority(parent.getMinLogPriority());
-		
+
 		if (TsdbAppTemplate.getAppInstance() != null)
 			appId = TsdbAppTemplate.getAppInstance().getAppId();
 	}
@@ -63,10 +81,10 @@ public class DacqEventLogger
 		evt.setEventText(text);
 		evt.setAppId(appId);
 		evt.setMsgRecvTime(msgStart);
-		
+
 		writeDacqEvent(evt);
 	}
-	
+
 	/**
 	 * Verify that we aren't trying to write a log message from DacqEventDAO through
 	 * DacqEventDAO as presumably such messages are due to connection or database issues.
@@ -89,7 +107,7 @@ public class DacqEventLogger
 	{
 		if (!(Database.getDb().getDbIo() instanceof SqlDatabaseIO))
 			return;
-		
+
 		try (DacqEventDAI dacqEventDAO = ((SqlDatabaseIO)Database.getDb().getDbIo()).makeDacqEventDAO())
 		{
 			evt.setScheduleEntryStatusId(schedEntryStatusId);
@@ -97,7 +115,7 @@ public class DacqEventLogger
 		}
 		catch (DbIoException ex)
 		{
-			parent.debug3("DacqEventLogger cannot write event to database: " 
+			parent.debug3("DacqEventLogger cannot write event to database: "
 				+ ex + " -- will disable DB events until next run.");
 		}
 	}
