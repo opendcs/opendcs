@@ -1,17 +1,33 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.routing;
 
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.datasource.RawMessage;
 import decodes.datasource.UnknownPlatformException;
@@ -26,6 +42,7 @@ import decodes.tsdb.NoSuchObjectException;
  */
 public class RawArchive
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private RoutingSpec routingSpec = null;
 	private String archivePath = null;
 	private String module = "RawArchive";
@@ -52,8 +69,9 @@ public class RawArchive
 			}
 			catch (NoSuchObjectException ex)
 			{
-				Logger.instance().warning(module + " Unrecognized RawArchiveMaxAge "
-					+ "property '" + ma + "' -- NO ARCHIVE LIMIT WILL BE ENFORCED.");
+					log.atWarn()
+				   .setCause(ex)
+				   .log("Unrecognized RawArchiveMaxAge property '{}' -- NO ARCHIVE LIMIT WILL BE ENFORCED.", ma);
 			}
 		}
 
@@ -93,7 +111,10 @@ public class RawArchive
 					props.setProperty("DESIGNATOR", p.getPlatformDesignator());
 			}
 		}
-		catch (UnknownPlatformException e) { }
+		catch (UnknownPlatformException ex) 
+		{ 
+			log.atTrace().setCause(ex).log("Unable to find a platform while archiving.");
+		}
 		
 		// Copy in all performance measurement properties.
 		for(Iterator<String> pmNameIt = rawMsg.getPMNames(); pmNameIt.hasNext();)
@@ -105,8 +126,7 @@ public class RawArchive
 		
 		// Now evaluate the archive name against the aggregate properties.
 		String evalName = EnvExpander.expand(archivePath, props);
-		Logger.instance().debug2(module + " Writing to archive file '"
-			+ evalName + "'");
+		log.trace("Writing to archive file '{}'", evalName);
 		
 		try
 		{
@@ -121,8 +141,7 @@ public class RawArchive
 		}
 		catch (IOException ex)
 		{
-			Logger.instance().warning(module + " Cannot write message to '"
-				+ evalName + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot write message to '{}'", evalName);
 		}
 	}
 	
@@ -152,22 +171,21 @@ public class RawArchive
 		}
 		if (parentDir == null)
 		{
-			Logger.instance().info(module + " Cannot purge archive dir. Parent unknown.");
+			log.info("Cannot purge archive dir. Parent unknown.");
 			return;
 		}
-		Logger.instance().info(module + " purging old archive files for routing spec "
-			+ routingSpec.getName() + " from directory '" + parentDir + "'");
+		log.info("purging old archive files for routing spec{} from directory '",
+				 routingSpec.getName(), parentDir);
 		File parent = new File(parentDir);
 		if (!parent.isDirectory())
 		{
-			Logger.instance().info(module + " Cannot purge archive dir. Parent '"
-				+ parentDir + "' is not a directory.");
+			log.info("Cannot purge archive dir. Parent '{}' is not a directory.", parentDir);
 			return;
 		}
 		File archiveFiles[] = parent.listFiles();
 		if (archiveFiles == null || archiveFiles.length == 0)
 		{
-			Logger.instance().debug2(module + " no files to purge.");
+			log.trace("no files to purge.");
 			return;
 		}
 		Calendar cal = Calendar.getInstance();
@@ -176,8 +194,7 @@ public class RawArchive
 		for(int idx = 0; idx < archiveFiles.length; idx++)
 			if (archiveFiles[idx].lastModified() < cutoff)
 			{
-				Logger.instance().info(module + " deleting old archive '" 
-					+ archiveFiles[idx].getPath() + "'");
+				log.info("deleting old archive '{}'", archiveFiles[idx].getPath());
 				archiveFiles[idx].delete();
 			}
 	}
