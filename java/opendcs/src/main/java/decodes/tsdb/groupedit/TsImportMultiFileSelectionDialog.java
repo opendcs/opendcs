@@ -4,14 +4,15 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.io.File;
+import java.util.*;
 import java.util.List;
 
 /**
- * Dialog for selecting which time series to import from a file.
+ * Dialog for selecting which time series to import from multiple files.
+ * Shows the source file for each TSID to help differentiate duplicates.
  */
-public class TsImportSelectionDialog extends JDialog
+public class TsImportMultiFileSelectionDialog extends JDialog
 {
     private JTable tsTable;
     private DefaultTableModel tableModel;
@@ -20,28 +21,44 @@ public class TsImportSelectionDialog extends JDialog
     private JButton importButton;
     private JButton cancelButton;
     private boolean cancelled = true;
-    private List<String> selectedTsIds = new ArrayList<>();
 
-    public TsImportSelectionDialog(JFrame parent, Collection<String> tsIds)
+    // Map of filepath to list of selected TSIDs
+    private Map<String, List<String>> selectedTsIdsByFile = new HashMap<>();
+
+    public TsImportMultiFileSelectionDialog(JFrame parent, Map<String, List<String>> tsIdsByFile)
     {
         super(parent, "Select Time Series to Import", true);
-        initComponents(tsIds);
+        initComponents(tsIdsByFile);
         setLocationRelativeTo(parent);
     }
 
-    private void initComponents(Collection<String> tsIds)
+    private void initComponents(Map<String, List<String>> tsIdsByFile)
     {
         setLayout(new BorderLayout());
 
-        // Create table model with checkbox column and TSID column
-        String[] columnNames = {"Import", "Time Series ID"};
-        Object[][] data = new Object[tsIds.size()][2];
-        int i = 0;
-        for (String tsId : tsIds)
+        // Count total entries
+        int totalEntries = 0;
+        for (List<String> entries : tsIdsByFile.values())
         {
-            data[i][0] = Boolean.TRUE; // Default to selected
-            data[i][1] = tsId;
-            i++;
+            totalEntries += entries.size();
+        }
+
+        // Create table model with checkbox, TSID, and File columns
+        String[] columnNames = {"Import", "Time Series ID", "Source File"};
+        Object[][] data = new Object[totalEntries][3];
+
+        int row = 0;
+        for (Map.Entry<String, List<String>> fileEntry : tsIdsByFile.entrySet())
+        {
+            String filePath = fileEntry.getKey();
+            String fileName = new File(filePath).getName();
+            for (String tsId : fileEntry.getValue())
+            {
+                data[row][0] = Boolean.TRUE; // Default to selected
+                data[row][1] = tsId;
+                data[row][2] = fileName;
+                row++;
+            }
         }
 
         tableModel = new DefaultTableModel(data, columnNames)
@@ -64,15 +81,17 @@ public class TsImportSelectionDialog extends JDialog
         tsTable = new JTable(tableModel);
         tsTable.getColumnModel().getColumn(0).setPreferredWidth(60);
         tsTable.getColumnModel().getColumn(0).setMaxWidth(60);
-        tsTable.getColumnModel().getColumn(1).setPreferredWidth(400);
+        tsTable.getColumnModel().getColumn(1).setPreferredWidth(350);
+        tsTable.getColumnModel().getColumn(2).setPreferredWidth(200);
 
         JScrollPane scrollPane = new JScrollPane(tsTable);
-        scrollPane.setPreferredSize(new Dimension(600, 400));
+        scrollPane.setPreferredSize(new Dimension(700, 400));
         add(scrollPane, BorderLayout.CENTER);
 
         // Create top panel with selection buttons
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        topPanel.add(new JLabel("Found " + tsIds.size() + " time series in file:"));
+        int fileCount = tsIdsByFile.size();
+        topPanel.add(new JLabel("Found " + totalEntries + " time series in " + fileCount + " file(s):"));
         selectAllButton = new JButton("Select All");
         selectNoneButton = new JButton("Select None");
 
@@ -111,18 +130,36 @@ public class TsImportSelectionDialog extends JDialog
 
     private void importPressed(ActionEvent e)
     {
-        selectedTsIds.clear();
+        selectedTsIdsByFile.clear();
+
+        // Need to track both filePath and fileName to properly map back
+        Map<String, String> fileNameToPath = new HashMap<>();
+
+        // First build a mapping of fileName to filePath
+        for (int i = 0; i < tableModel.getRowCount(); i++)
+        {
+            String fileName = (String) tableModel.getValueAt(i, 2);
+            // Find the full path for this fileName from our original data
+            // This is a bit inefficient but necessary since we only stored the fileName in the table
+            fileNameToPath.put(fileName, fileName); // Will be replaced in TsListPanel
+        }
+
+        // Build map of filePath -> list of TSIDs
         for (int i = 0; i < tableModel.getRowCount(); i++)
         {
             Boolean selected = (Boolean) tableModel.getValueAt(i, 0);
             if (selected != null && selected)
             {
                 String tsId = (String) tableModel.getValueAt(i, 1);
-                selectedTsIds.add(tsId);
+                String fileName = (String) tableModel.getValueAt(i, 2);
+
+                // For now, we'll use fileName as the key
+                // The calling code will need to map this back to full paths
+                selectedTsIdsByFile.computeIfAbsent(fileName, k -> new ArrayList<>()).add(tsId);
             }
         }
 
-        if (selectedTsIds.isEmpty())
+        if (selectedTsIdsByFile.isEmpty())
         {
             JOptionPane.showMessageDialog(this,
                 "Please select at least one time series to import.",
@@ -140,8 +177,12 @@ public class TsImportSelectionDialog extends JDialog
         return cancelled;
     }
 
-    public List<String> getSelectedTsIds()
+    /**
+     * Returns a map of fileName -> list of selected TSIDs from that file
+     * Note: Returns fileName as key, not full path. Caller must map back to full paths.
+     */
+    public Map<String, List<String>> getSelectedTsIdsByFile()
     {
-        return selectedTsIds;
+        return selectedTsIdsByFile;
     }
 }
