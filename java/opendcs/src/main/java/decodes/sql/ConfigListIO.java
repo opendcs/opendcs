@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.sql;
 
 import java.sql.Connection;
@@ -11,8 +26,9 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import decodes.db.ValueNotFoundException;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import opendcs.dai.PropertiesDAI;
 
@@ -44,7 +60,7 @@ import opendcs.dao.DaoBase;
 */
 public class ConfigListIO extends SqlDbObjIo
 {
-    private static final Logger log = LoggerFactory.getLogger(ConfigListIO.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
     * Transient reference to the PlatformConfigList that we're currently
     * operating on.
@@ -85,39 +101,40 @@ public class ConfigListIO extends SqlDbObjIo
         _pcList = pcList;
 
         // Read entire PlatformConfig table & convert each entry to an object.
-        Statement stmt = createStatement();
+        
 
         String q = "SELECT id, name, description, equipmentId "
              + " from PlatformConfig";
 
         log.trace("Executing '{}'", q);
-        ResultSet rs = stmt.executeQuery(q);
-        while(rs != null && rs.next())
-        {
-            DbKey id = DbKey.createDbKey(rs, 1);
-            PlatformConfig pc = _pcList.getById(id);
-            if (pc == null)
+        try (Statement stmt = createStatement();
+             ResultSet rs = stmt.executeQuery(q)) 
+        {        
+            while(rs != null && rs.next())
             {
-                pc = new PlatformConfig();
-                pc.setId(id);
+                DbKey id = DbKey.createDbKey(rs, 1);
+                PlatformConfig pc = _pcList.getById(id);
+                if (pc == null)
+                {
+                    pc = new PlatformConfig();
+                    pc.setId(id);
+                }
+
+                pc.configName = rs.getString(2);
+                pc.description = rs.getString(3);
+                if (pc.description == null)
+                    pc.description = "";
+
+                DbKey equipId = DbKey.createDbKey(rs, 4);
+                if (!rs.wasNull())
+                {
+                    pc.equipmentModel =
+                        pcList.getDatabase().equipmentModelList.getById(equipId);
+                }
+
+                _pcList.add(pc);
             }
-
-            pc.configName = rs.getString(2);
-            pc.description = rs.getString(3);
-            if (pc.description == null)
-                pc.description = "";
-
-            DbKey equipId = DbKey.createDbKey(rs, 4);
-            if (!rs.wasNull())
-            {
-                pc.equipmentModel =
-                    pcList.getDatabase().equipmentModelList.getById(equipId);
-            }
-
-            _pcList.add(pc);
         }
-
-        stmt.close();
         log.debug("PlatformConfigs done, read {} configs.", _pcList.size());
     }
 
@@ -180,12 +197,13 @@ public class ConfigListIO extends SqlDbObjIo
     private void readConfigSensors(DbKey platformConfigId, PlatformConfig pc)
         throws DatabaseException, SQLException
     {
-        Statement stmt = createStatement();
+        
         String q =
             "SELECT * FROM ConfigSensor WHERE ConfigId = " + platformConfigId;
-        ResultSet rs = stmt.executeQuery(q);
+        
 
-        if (rs != null)
+        try(Statement stmt = createStatement();
+           ResultSet rs = stmt.executeQuery(q);)
         {
             while (rs.next())
             {
@@ -267,79 +285,47 @@ public class ConfigListIO extends SqlDbObjIo
             if (getDatabaseVersion()  >= DecodesDatabaseVersion.DECODES_DB_6)
             {
                 // DB Version 6 or later, read ConfigSensorDataType table.
-                Statement dtstmt = createStatement();
                 String stmtStr = "SELECT sensorNumber, dataTypeId, standard, code "
                 + "FROM ConfigSensorDataType, DataType "
                 + "WHERE ConfigId = " + platformConfigId
                 + " AND ConfigSensorDataType.dataTypeId = DataType.id";
-                ResultSet dtrs = dtstmt.executeQuery(stmtStr);
-                while (dtrs.next())
-                {
-                    int sensorNum = dtrs.getInt(1);
-                    DbKey dataTypeId = DbKey.createDbKey(dtrs, 2);
-                    String std = dtrs.getString(3);
-                    String code = dtrs.getString(4);
-                    DataType dt =
-                        pc.getDatabase().dataTypeSet.get(dataTypeId, std, code);
-                    ConfigSensor cs = pc.getSensor(sensorNum);
-                    if (cs != null)
-                        cs.addDataType(dt);
+                try (Statement dtstmt = createStatement();
+                     ResultSet dtrs = dtstmt.executeQuery(stmtStr);)
+                {     
+                    while (dtrs.next())
+                    {
+                        int sensorNum = dtrs.getInt(1);
+                        DbKey dataTypeId = DbKey.createDbKey(dtrs, 2);
+                        String std = dtrs.getString(3);
+                        String code = dtrs.getString(4);
+                        DataType dt =
+                            pc.getDatabase().dataTypeSet.get(dataTypeId, std, code);
+                        ConfigSensor cs = pc.getSensor(sensorNum);
+                        if (cs != null)
+                            cs.addDataType(dt);
+                    }
                 }
-                dtstmt.close();
 
             }
         }
-        stmt.close();
     }
-
-//    /**
-//    * This reads the ConfigSensorProperty table to get the properties
-//    * for a particular sensor which belongs to a particular PlatformConfig.
-//    * @param platformConfigId database surrogate platform config ID
-//    * @param sensorNum the sensor number
-//    * @param cs the ConfigSensor to populate
-//    */
-//    private void readConfigSensorProps(DbKey platformConfigId,
-//        int sensorNum, ConfigSensor cs)
-//        throws SQLException
-//    {
-//        PropertiesDAI propertiesDAO = this._dbio.makePropertiesDAO();
-//
-//        try
-//        {
-//            propertiesDAO.readProperties("ConfigSensorProperty", "configId",
-//                "sensorNumber", platformConfigId, sensorNum, cs.getProperties());
-//        }
-//        catch (DbIoException e)
-//        {
-//            throw new SQLException(e.getMessage());
-//        }
-//        finally
-//        {
-//            propertiesDAO.close();
-//        }
-//        String s = PropertiesUtil.getIgnoreCase(cs.getProperties(), "StatisticsCode");
-//        if (s != null)
-//        {
-//            cs.setUsgsStatCode(s);
-//            PropertiesUtil.rmIgnoreCase(cs.getProperties(), "StatisticsCode");
-//        }
-//    }
 
     private void readConfigSensorProps(PlatformConfig cfg, Statement stmt)
         throws SQLException
     {
         String q = "select * from ConfigSensorProperty where configId = " + cfg.getKey();
-        ResultSet rs = stmt.executeQuery(q);
-        while(rs != null && rs.next())
+        try(ResultSet rs = stmt.executeQuery(q))
         {
-            int sensorNum = rs.getInt(2);
-            String propName = rs.getString(3);
-            String propValue = rs.getString(4);
+            while(rs != null && rs.next())
+            {
+                int sensorNum = rs.getInt(2);
+                String propName = rs.getString(3);
+                String propValue = rs.getString(4);
 
-            ConfigSensor cs = cfg.getSensor(sensorNum);
-            if (cs != null)
-                cs.setProperty(propName, propValue);
+                ConfigSensor cs = cfg.getSensor(sensorNum);
+                if (cs != null)
+                    cs.setProperty(propName, propValue);
+            }
         }
     }
 
@@ -364,7 +350,7 @@ public class ConfigListIO extends SqlDbObjIo
             ps.setLong(1, pc.getId().getValue());
             try (ResultSet rs = ps.executeQuery())
             {
-                if(rs == null || !rs.next())
+                if(!rs.next())
                 {
                     Throwable thr = new ValueNotFoundException(
                             String.format("No PlatformConfig found with ID %d", pc.getId().getValue()));
@@ -408,7 +394,6 @@ public class ConfigListIO extends SqlDbObjIo
     public void write(PlatformConfig pc)
         throws DatabaseException, SQLException
     {
-        //System.out.println("    ConfigListIO.write(pc)");
 
         if (pc.idIsSet())
             update(pc);
@@ -435,31 +420,33 @@ public class ConfigListIO extends SqlDbObjIo
         String q =
             "SELECT Name from PlatformConfig where Name = "+
                             sqlString(pc.configName);
-        Statement stmt = createStatement();
+        
         log.trace("Executing '{}'", q);
-        ResultSet rs = stmt.executeQuery(q);
 
-        String desc = pc.description;
-        if (desc.length() > 399)
-            desc = desc.substring(0, 399);
-
-        if (rs == null || !rs.next())
+        try(Statement stmt = createStatement();
+           ResultSet rs = stmt.executeQuery(q);)
         {
-            q =
-                "UPDATE PlatformConfig SET " +
-                  "Name = " + sqlString(pc.configName) + ", " +
-                  "Description = " + sqlString(desc) + ", " +
-                  "EquipmentID = " + sqlOptHasId(pc.equipmentModel) + " " +
+            String desc = pc.description;
+            if (desc.length() > 399)
+                desc = desc.substring(0, 399);
+
+            if (!rs.next())
+            {
+                q =
+                    "UPDATE PlatformConfig SET " +
+                    "Name = " + sqlString(pc.configName) + ", " +
+                    "Description = " + sqlString(desc) + ", " +
+                    "EquipmentID = " + sqlOptHasId(pc.equipmentModel) + " " +
+                    "WHERE id = " + pc.getId();
+            }
+            else
+            {
+                q = "UPDATE PlatformConfig SET " +
+                "Description = " + sqlString(desc) + ", " +
+                "EquipmentID = " + sqlOptHasId(pc.equipmentModel) + " " +
                 "WHERE id = " + pc.getId();
+            }
         }
-        else
-        {
-            q = "UPDATE PlatformConfig SET " +
-              "Description = " + sqlString(desc) + ", " +
-              "EquipmentID = " + sqlOptHasId(pc.equipmentModel) + " " +
-            "WHERE id = " + pc.getId();
-        }
-        stmt.close();
         executeUpdate(q);
 
         // Now update the ConfigSensors.  Take the easy road, and first
@@ -483,16 +470,18 @@ public class ConfigListIO extends SqlDbObjIo
             "SELECT name FROM PlatformConfig where name like "
             + sqlReqString(prefix+"%");
 
-        Statement stmt = createStatement();
-        ResultSet rs = stmt.executeQuery(q);
-        while(rs != null && rs.next())
-        {
-            String seq = rs.getString(1).substring(prefix.length());
-            // Added this to make sure seq is an integer dds -- 12JAN09
-            if (seq.matches("[+-]?[0-9]+")) {
-                seqNo = Integer.parseInt(seq);
-                if ( seqNo > maxSeq )
-                    maxSeq = seqNo;
+        try (Statement stmt = createStatement();
+            ResultSet rs = stmt.executeQuery(q);)
+        {        
+            while(rs != null && rs.next())
+            {
+                String seq = rs.getString(1).substring(prefix.length());
+                // Added this to make sure seq is an integer dds -- 12JAN09
+                if (seq.matches("[+-]?[0-9]+")) {
+                    seqNo = Integer.parseInt(seq);
+                    if ( seqNo > maxSeq )
+                        maxSeq = seqNo;
+                }
             }
         }
         maxSeq++;
@@ -503,14 +492,17 @@ public class ConfigListIO extends SqlDbObjIo
         q =
             "SELECT name FROM PlatformConfig where name like "
             + sqlReqString(prefix+"%");
-        rs = stmt.executeQuery(q);
-        while(rs != null && rs.next())
-        {
-            String seq = rs.getString(1).substring(prefix.length());
-            // Added this to make sure seq is an integer dds -- 12JAN09
-            if (seq.matches("[+-]?[0-9]+")) {
-                seqNo = Integer.parseInt(seq) - 1;
-                seqNumber[seqNo] = 1;
+        try (Statement stmt = createStatement(); 
+            ResultSet rs = stmt.executeQuery(q);)
+        {    
+            while(rs.next())
+            {
+                String seq = rs.getString(1).substring(prefix.length());
+                // Added this to make sure seq is an integer dds -- 12JAN09
+                if (seq.matches("[+-]?[0-9]+")) {
+                    seqNo = Integer.parseInt(seq) - 1;
+                    seqNumber[seqNo] = 1;
+                }
             }
         }
         int nextSeq = maxSeq;
@@ -522,7 +514,6 @@ public class ConfigListIO extends SqlDbObjIo
         }
         String newSeq = String.format("%03d",nextSeq);
         String newName=prefix+newSeq;
-        stmt.close();
         if ( pc == null )
             pc = new PlatformConfig(newName);
         else
@@ -605,8 +596,6 @@ public class ConfigListIO extends SqlDbObjIo
             // it to the database
             if (!dt.idIsSet())
                 _dbio.writeDataType(dt);
-
-//            DbKey pcId = cs.platformConfig.getId();
 
             // Convert the ConfigSensor's time-of-first-sample member (which
             // is in seconds) into a JDBC Time type
@@ -760,14 +749,15 @@ public class ConfigListIO extends SqlDbObjIo
             "SELECT id, name FROM PlatformConfig where name = "
             + sqlReqString(pcname);
 
-        Statement stmt = createStatement();
-        ResultSet rs = stmt.executeQuery(q);
-
         DbKey ret = Constants.undefinedId;
-        if (rs != null && rs.next())
-            ret = DbKey.createDbKey(rs, 1);
-
-        stmt.close();
+        try (Statement stmt = createStatement();
+             ResultSet rs = stmt.executeQuery(q);)
+        {
+            if (rs.next())
+            {
+                ret = DbKey.createDbKey(rs, 1);
+            }
+        }
         return ret;
     }
 
@@ -783,19 +773,19 @@ public class ConfigListIO extends SqlDbObjIo
     private void readDecodesScripts(PlatformConfig pc)
         throws DatabaseException, SQLException
     {
-        Statement stmt = createStatement();
+        
         String q = "SELECT * FROM DecodesScript WHERE ConfigId = " + pc.getId();
 
         log.trace("Executing '{}'", q);
-        ResultSet rs = stmt.executeQuery(q);
-
-        if (rs != null)
+        
+        try (Statement stmt = createStatement();
+             ResultSet rs = stmt.executeQuery(q);)
         {
             while (rs.next())
+            {
                 ingestRow(rs, pc);
+            }
         }
-
-        stmt.close();
     }
 
     /**
@@ -848,8 +838,6 @@ public class ConfigListIO extends SqlDbObjIo
     {
         DbKey pcId = pc.getId();
         _dbio._unitConverterIO.setContext("Platform Config " + pc.getName());
-        //System.out.println("        " +
-        //    "DecodesScriptIO.insertDecodesScripts(pc==" + pcId + ")");
 
         Vector<DecodesScript> v = pc.decodesScripts;
         for (int i = 0; i < v.size(); ++i) {
@@ -924,7 +912,6 @@ public class ConfigListIO extends SqlDbObjIo
         // First delete all unit converters belonging to script sensors
         // belonging to scripts belonging to this config.
 
-        Statement stmt = createStatement();
 
 // MJM 2006 10/20 the EXISTS clause works but takes a very long time
 // on Postgres if there are a large number of configs/scripts/UCs.
@@ -934,35 +921,22 @@ public class ConfigListIO extends SqlDbObjIo
             + " WHERE ScriptSensor.decodesScriptId = DecodesScript.id"
             + " AND DecodesScript.configId = " + pc.getId();
         log.trace("Executing '{}'", q);
-        ResultSet rs = stmt.executeQuery(q);
+        
         int n=0;
         StringBuilder inClause = new StringBuilder(" IN (");
-        if (rs != null)
+        try (Statement stmt = createStatement();
+             ResultSet rs = stmt.executeQuery(q);)
         {
             while (rs.next())
             {
                 if (n++ > 0)
+                {
                     inClause.append(", ");
+                }
                 inClause.append("" + rs.getLong(1));
             }
             inClause.append(")");
         }
-        stmt.close();
-
-//        // This syntax works on Postgres but not Oracle
-//        //        String q = "DELETE from UnitConverter "
-//        //            + "where id = ScriptSensor.UnitConverterId "
-//        //            + "and ScriptSensor.decodesScriptId = DecodesScript.id "
-//        //            + "and DecodesScript.configId = " + pc.getId();
-//        //========================================================
-//        // Changed to the following which works on both:
-//        String q = "DELETE FROM UnitConverter "
-//            + "WHERE EXISTS (SELECT 'x' "
-//            + "FROM ScriptSensor,DecodesScript "
-//            + "WHERE UnitConverter.id = ScriptSensor.UnitConverterId "
-//            + "and ScriptSensor.decodesScriptId = DecodesScript.id "
-//            + "and DecodesScript.configId = " + pc.getId() + ")";
-//        tryUpdate(q);
 
         // Delete all script sensors from any scripts for this config.
 
@@ -1070,13 +1044,12 @@ public class ConfigListIO extends SqlDbObjIo
         // Note:  the UnitConverter here always has the fromUnits set
         // to "raw".
 
-        Statement stmt = createStatement();
         String q = "SELECT SensorNumber, UnitConverterId " +
             "FROM ScriptSensor " + "WHERE DecodesScriptId = " + dsId;
         log.trace("Query: {}", q);
-        ResultSet rs = stmt.executeQuery(q);
 
-        if (rs != null)
+        try (Statement stmt = createStatement();
+             ResultSet rs = stmt.executeQuery(q);)
         {
             StringBuilder inList = new StringBuilder();
             while (rs.next())
@@ -1091,7 +1064,6 @@ public class ConfigListIO extends SqlDbObjIo
                 ScriptSensor ss = new ScriptSensor(ds, sensorNum);
                 ds.scriptSensors.add(ss);
                 ss.setUnitConverterId(ucid);
-//                ss.rawConverter = _unitConverterIO.readUnitConverter(ucid);
             }
 
             if (inList.length() > 0)
@@ -1109,8 +1081,6 @@ public class ConfigListIO extends SqlDbObjIo
                 }
             }
         }
-
-        stmt.close();
     }
 
     /**

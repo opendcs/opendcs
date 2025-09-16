@@ -1,68 +1,18 @@
 /*
-* $Id$
-*
-* $Log$
-* Revision 1.3  2016/07/20 15:41:39  mmaloney
-* Simplify & refactoring.
-*
-* Revision 1.2  2015/03/19 15:23:14  mmaloney
-* punch list
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* Revision 1.4  2013/03/21 18:27:39  mmaloney
-* DbKey Implementation
-*
-* Revision 1.3  2010/12/08 13:40:49  mmaloney
-* Specify Columns in INSERT statements.
-*
-* Revision 1.2  2008/10/04 14:50:18  mjmaloney
-* DCP Monitor Improvements
-*
-* Revision 1.1  2008/04/04 18:21:04  cvs
-* Added legacy code to repository
-*
-* Revision 1.15  2007/12/11 01:05:18  mmaloney
-* javadoc cleanup
-*
-* Revision 1.14  2007/08/30 21:04:45  mmaloney
-* dev
-*
-* Revision 1.13  2007/08/29 18:21:28  mmaloney
-* added a check for null
-*
-* Revision 1.12  2007/04/25 13:57:31  ddschwit
-* Changed SELECT * to SELECT columns
-*
-* Revision 1.11  2006/05/22 14:05:40  mmaloney
-* dev
-*
-* Revision 1.10  2004/09/02 12:15:25  mjmaloney
-* javadoc
-*
-* Revision 1.9  2003/11/15 20:28:34  mjmaloney
-* Mods to transparently support either V5 or V6 database.
-*
-* Revision 1.8  2002/10/25 19:49:27  mjmaloney
-* Removed extraneous debug messages.
-*
-* Revision 1.7  2002/10/11 01:27:01  mjmaloney
-* Added SocketStreamDataSource and NoaaportPMParser stuff.
-*
-* Revision 1.6  2002/10/06 14:23:58  mjmaloney
-* SQL Development.
-*
-* Revision 1.5  2002/10/04 13:32:11  mjmaloney
-* SQL dev.
-*
-* Revision 1.4  2002/09/19 12:18:05  mjmaloney
-* SQL Updates
-*
-* Revision 1.3  2002/08/29 05:48:49  chris
-* Added RCS keyword headers.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
-
 package decodes.sql;
 
 import java.sql.ResultSet;
@@ -71,8 +21,10 @@ import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Vector;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.ValueNotFoundException;
-import ilex.util.Logger;
 import decodes.db.DatabaseException;
 import decodes.db.DatabaseObject;
 import decodes.db.DataSource;
@@ -85,6 +37,7 @@ import decodes.db.Constants;
 */
 public class DataSourceListIO extends SqlDbObjIo
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* Transient storage for the DataSourceList that's being read or written.
 	*/
@@ -115,7 +68,7 @@ public class DataSourceListIO extends SqlDbObjIo
 	public void read(DataSourceList dsList)
 		throws SQLException, DatabaseException
 	{
-		Logger.instance().log(Logger.E_DEBUG2, "Reading DataSources");
+		log.trace("Reading DataSources");
 
 		_dsList = dsList;
 
