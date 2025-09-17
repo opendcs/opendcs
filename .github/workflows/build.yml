@@ -58,3 +58,12 @@ jobs:
           name: coverage-report
           path: ./**/build/reports/jacoco/
           if-no-files-found: error
+  container-build:
+    name: Build Container Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - run: |
+          docker build -t odcs-api:test .

@@ -88,3 +88,50 @@ The OpenDCS REST API supports three authorization mechanisms Basic Authenticatio
 
 When the client attempts to access endpoints that are not marked with the Guest role the authorization mechanisms are checked to determine
 which roles are currently granted to the client. See [./opendcs-rest-api/README.md](opendcs-rest-api/README.md) for more info.
+
+
+# Running the docker image
+
+Please note that we are still sorting out how we are handling authentication and credentials in different contexts
+
+## OpenDCS-Postgres
+
+This assumes the database has already been setup and you have created an "application" user named dcs_app
+
+```bash
+# network is optional and only needs to be used if you're database in hosted in docker, set the name appropriately.
+docker run  --network database_net \
+            -p 7000:7000 \
+            --rm \
+            -e DB_URL=jdbc:postgres:db:5324/dcs \
+            -e DB_USERNAME=dcs_app \
+            -e DB_PASSWORD=dcs_app_password \
+            -e DB_CONNECTION_INIT="select 1" \
+            -e DB_VALIDATION_QUERY="select 1" \
+            -e DB_MAX_CONNECTIONS=10 \
+            -e DB_MAX_IDLE=5 \
+            -e DB_MIN_IDLE=1 \
+            -e DB_DRIVER_CLASS="org.postgresql.Driver" \
+            ghcr.io/opendcs/web-api:latest
+```
+
+## CWMS-Oracle
+
+This assumes the CWMS Database and OpenDCS Schema (CCP) have already been setup.
+
+```bash
+# network is optional and only needs to be used if you're database in hosted in docker, set the name appropriately.
+docker run  --network database_net \
+            -p 7000:7000 \
+            --rm \
+            -e DB_URL=jdbc:oracle:thin:@//cwmsdb:1521/CWMSTEST \
+            -e DB_USERNAME=ccp_app \
+            -e DB_PASSWORD=ccp \
+            -e DB_CONNECTION_INIT="BEGIN cwms_ccp_vpd.set_ccp_session_ctx(null, null, 'SPK' ); END;" \
+            -e DB_VALIDATION_QUERY="select 1 from dual" \
+            -e DB_MAX_CONNECTIONS=10 \
+            -e DB_MAX_IDLE=5 \
+            -e DB_MIN_IDLE=1 \
+            -e DB_DRIVER_CLASS="oracle.jdbc.driver.OracleDriver" \
+            ghcr.io/opendcs/web-api:latest
+```

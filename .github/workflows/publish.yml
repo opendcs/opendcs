@@ -3,7 +3,7 @@ on:
   release:
     types: [published]
 jobs:
-  build:
+  package-release:
     permissions: write-all
     name: Attach Artifacts
     runs-on: ubuntu-latest
@@ -35,3 +35,42 @@ jobs:
             gh release upload ${{ github.event.release.tag_name }} opendcs-rest-api/build/swagger/opendcs-openapi.json --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  container-release:
+    permissions: write-all
+    name: Attach Artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.11.1
+      - name: Set version
+        run: echo "VERSION=${{github.event.release.tag_name}}" >> $GITHUB_ENV
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5.8.0
+        with:
+          # this is triggered by the schedule so we want to actually use the checked out information
+          # and not the context from the workflow itself.
+          context: workflow
+          images: |
+            ghcr.io/opendcs/web-api
+          tags: |
+            type=sha
+            type=ref,event=tag
+            type=raw,value=${{env.VERSION}}
+      - name: Log in to the Container registry
+        id: login-ghcr
+        uses: docker/login-action@v3.5.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v6.18.0
+        with:
+          context: "."
+          # This is not conditional on pull_request as we want access to these if we are manually running it.
+          push: true
+          sbom: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
