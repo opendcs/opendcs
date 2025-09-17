@@ -65,7 +65,7 @@ public class DataSourceListIO extends SqlDbObjIo
 	*
 	* @param dsList the DataSourceList to read
 	*/
-	public void read(DataSourceList dsList)
+		public void read(DataSourceList dsList)
 		throws SQLException, DatabaseException
 	{
 		log.trace("Reading DataSources");
@@ -73,46 +73,43 @@ public class DataSourceListIO extends SqlDbObjIo
 		_dsList = dsList;
 
 		HashMap<DbKey, DataSource> id2ds = new HashMap<DbKey, DataSource>();
-		Statement stmt = createStatement();
-		try
-		{
-			ResultSet rs = stmt.executeQuery("SELECT id, name, dataSourceType, dataSourceArg "
-				+ "FROM DataSource");
 
-			while (rs != null && rs.next())
+		try (Statement stmt = createStatement())
+		{
+			try (ResultSet rs = stmt.executeQuery("SELECT id, name, dataSourceType, dataSourceArg "
+				+ "FROM DataSource"))
 			{
-				DataSource ds = rs2ds(rs);
-				id2ds.put(ds.getKey(), ds);
+				while (rs.next())
+				{
+					DataSource ds = rs2ds(rs);
+					id2ds.put(ds.getKey(), ds);
+				}
 			}
 
-			rs = stmt.executeQuery("SELECT groupId, sequenceNum, memberId FROM DataSourceGroupMember");
 
-			while (rs != null && rs.next())
+			try (ResultSet rs = stmt.executeQuery("SELECT groupId, sequenceNum, memberId FROM DataSourceGroupMember"))
 			{
-				DbKey groupId = DbKey.createDbKey(rs, 1);
-				int seqNum = rs.getInt(2);
-				DbKey memberId = DbKey.createDbKey(rs, 3);
+				while (rs.next())
+				{
+					DbKey groupId = DbKey.createDbKey(rs, 1);
+					int seqNum = rs.getInt(2);
+					DbKey memberId = DbKey.createDbKey(rs, 3);
 
-				DataSource group = id2ds.get(groupId);
-				if (group == null)
-				{
-					Logger.instance().warning(
-						"Parent groupId=" + groupId + " does not refer to a valid data source group!");
-					continue;
+					DataSource group = id2ds.get(groupId);
+					if (group == null)
+					{
+						log.warn("Parent groupId={} does not refer to a valid data source group!", groupId);
+						continue;
+					}
+					DataSource member = id2ds.get(memberId);
+					if (member == null)
+					{
+						log.warn("Data source child groupId={} does not refer to a valid group!", memberId);
+						continue;
+					}
+					group.addGroupMember(seqNum, member);
 				}
-				DataSource member = id2ds.get(memberId);
-				if (member == null)
-				{
-					Logger.instance().warning(
-						"Data source child groupId=" + memberId + " does not refer to a valid group!");
-					continue;
-				}
-				group.addGroupMember(seqNum, member);
 			}
-		}
-		finally
-		{
-			stmt.close();
 		}
 		for(DataSource ds : id2ds.values())
 			dsList.add(ds);
@@ -133,7 +130,6 @@ public class DataSourceListIO extends SqlDbObjIo
 	public DataSource getDS(DatabaseObject dbObj, DbKey id)
 		throws DatabaseException
 	{
-		//Logger.instance().log(Logger.E_DEBUG3, "DataSourceListIO.get ID=" + id);
 		_dsList = dbObj.getDatabase().dataSourceList;
 		DataSource ret = _dsList.getById(id);
 		if (ret != null)
@@ -142,25 +138,18 @@ public class DataSourceListIO extends SqlDbObjIo
 		return readDS(id);
 	}
 	
-	public DataSource readDS(DbKey id)
+		public DataSource readDS(DbKey id)
 		throws DatabaseException
 	{
-		Statement stmt = null;
-		try
-		{
-			stmt = createStatement();
-			
-			String q = "SELECT id, name, dataSourceType, dataSourceArg " +
+		String q = "SELECT id, name, dataSourceType, dataSourceArg " +
 					   "FROM DataSource WHERE id = " + id;
-			
-			ResultSet rs = stmt.executeQuery(q);
-
+		try (Statement stmt = createStatement();
+			 ResultSet rs = stmt.executeQuery(q);)
+		{
 			// There should be only one row in the result set
-			if (rs == null || !rs.next())
-			{
-				throw new ValueNotFoundException(
-						String.format("No DataSource found with id %s", id));
-			}
+			if (!rs.next())
+				throw new DatabaseException(
+					"No DataSource found with id " + id);
 
 			DataSource ret = rs2ds(rs);
 			if (_dsList != null)
@@ -168,14 +157,9 @@ public class DataSourceListIO extends SqlDbObjIo
 			resolveGroupMembers(ret);
 			return ret;
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			throw new DatabaseException(e.toString());
-		}
-		finally
-		{
-			if (stmt != null)
-				try { stmt.close(); } catch(SQLException ex) {}
+			throw new DatabaseException("Unable to read DataSource", ex);
 		}
 	}
 
@@ -187,7 +171,6 @@ public class DataSourceListIO extends SqlDbObjIo
 		String type = rs.getString(3);
 		String arg = rs.getString(4);
 
-//System.out.println("Creating new data source name=" + name + ", type=" + type);
 		DataSource ds = new DataSource(name, type);
 		ds.setId(id);
 		ds.setDataSourceArg(arg);
@@ -201,21 +184,19 @@ public class DataSourceListIO extends SqlDbObjIo
 	* @param ds the DataSource
 	* @param id the database ID
 	*/
-	private void resolveGroupMembers(DataSource ds)
+		private void resolveGroupMembers(DataSource ds)
 		throws DatabaseException, SQLException
 	{
 		if (!ds.isGroupType()) return;
-		
-		Statement stmt = null;
-		try
-		{
-			stmt = createStatement();
-			ResultSet rs = stmt.executeQuery(
+
+
+		try (Statement stmt = createStatement();
+			 ResultSet rs = stmt.executeQuery(
 				"SELECT groupId, sequenceNum, memberId " +
 				"FROM DataSourceGroupMember WHERE GroupId = " + ds.getKey()
-				+ " order by sequenceNum");
-
-			while (rs != null && rs.next())
+				+ " order by sequenceNum");)
+		{
+			while (rs.next())
 			{
 				int seqNum = rs.getInt(2);
 				DbKey memberId = DbKey.createDbKey(rs, 3);
@@ -223,15 +204,12 @@ public class DataSourceListIO extends SqlDbObjIo
 				ds.addGroupMember(seqNum, member);
 			}
 		}
-		catch (SQLException e) 
+		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
 		}
-		finally 
-		{
-			if (stmt != null) try { stmt.close(); } catch(SQLException ex) {}
-		}
 	}
+
 
 
 	/**
@@ -266,7 +244,7 @@ public class DataSourceListIO extends SqlDbObjIo
 	private void update(DataSource ds)
 		throws DatabaseException, SQLException
 	{
-		Logger.instance().debug3("Updating data source '" + ds.getName() + "' id=" + ds.getId());
+		log.trace("Updating data source '{}' id={}", ds.getName(), ds.getId());
 
 		String q = "UPDATE DataSource SET " +
 			"Name = " + sqlReqString(ds.getName()) + ", " +
@@ -274,7 +252,6 @@ public class DataSourceListIO extends SqlDbObjIo
 			sqlReqString(ds.dataSourceType) + ", " +
 			"dataSourceArg = " + escapeString(ds.getDataSourceArg()) + " " +
 		   "WHERE ID = " + ds.getId();
-//					   sqlReqEnumValId(_dstLookup, ds.dataSourceType) + ", " +
 		executeUpdate(q);
 
 		// Now do the group members.  Take the easy path, and just
@@ -293,7 +270,7 @@ public class DataSourceListIO extends SqlDbObjIo
 		DbKey id = getKey("DataSource");
 		ds.setId(id);
 		
-		Logger.instance().debug3("Inserting data source '" + ds.getName() + "' new id=" + ds.getId());
+		log.trace("Inserting data source '{}' new id={}", ds.getName(), ds.getId());
 
 		String q = "INSERT INTO DataSource(id, name, datasourcetype, datasourcearg) "
 			+ "VALUES (" +
@@ -317,8 +294,7 @@ public class DataSourceListIO extends SqlDbObjIo
 	{
 		Vector<DataSource> members = ds.groupMembers;
 
-		Logger.instance().debug3("Data Source '" + ds.getName()
-			+ "' with ID=" + ds.getId() + " will have the following members:");
+		log.trace("Data Source '{}' with ID={} will have the following members:", ds.getName(), ds.getId());
 		int seq=0;
 		for (int i = 0; i < members.size(); ++i) 
 		{
@@ -326,8 +302,7 @@ public class DataSourceListIO extends SqlDbObjIo
 			if (m == null)
 				continue;
 			
-			Logger.instance().debug3("    Member '" + m.getName()
-				+ "' with ID=" + m.getId());
+			log.trace("    Member '{}' with ID={}", m.getName(), m.getId());
 			
 			String q = "INSERT INTO DataSourceGroupMember VALUES (" +
 						 ds.getId() + ", " +
@@ -383,16 +358,17 @@ public class DataSourceListIO extends SqlDbObjIo
 	private DbKey name2id(String name)
 		throws DatabaseException, SQLException
 	{
-		Statement stmt = createStatement();
-		ResultSet rs = stmt.executeQuery(
-			"SELECT id FROM DataSource where name = "
-			+ sqlReqString(name));
-
 		DbKey ret = Constants.undefinedId;
-		if (rs != null && rs.next())
-			ret = DbKey.createDbKey(rs, 1);
-
-		stmt.close();
+		try (Statement stmt = createStatement();
+			 ResultSet rs = stmt.executeQuery(
+				"SELECT id FROM DataSource where name = "
+				+ sqlReqString(name));)
+		{
+			if (rs.next())
+			{
+				ret = DbKey.createDbKey(rs, 1);
+			}
+		}
 		return ret;
 	}
 
