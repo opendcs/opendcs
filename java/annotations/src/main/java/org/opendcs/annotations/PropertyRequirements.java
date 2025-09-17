@@ -10,14 +10,16 @@ import java.lang.annotation.Target;
  * This provides a cleaner way to define groups without repetition on each property.
  * 
  * Example usage:
- * @AlgorithmRequirements(
+ * <pre>
+ * {@literal @}AlgorithmRequirements(
  *     groups = {
- *         @RequirementGroup(name = "auth", type = RequirementType.ONE_OF, 
+ *         {@literal @}RequirementGroup(name = "auth", type = RequirementType.ONE_OF, 
  *                          properties = {"username", "apiKey"}),
- *         @RequirementGroup(name = "location", type = RequirementType.AT_LEAST_ONE,
+ *         {@literal @}RequirementGroup(name = "location", type = RequirementType.AT_LEAST_ONE,
  *                          properties = {"latitude", "longitude"})
  *     }
  * )
+ * </pre>
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

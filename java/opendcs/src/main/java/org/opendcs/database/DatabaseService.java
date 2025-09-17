@@ -96,18 +96,19 @@ public class DatabaseService
     private static DecodesSettings decodesSettingsFromJdbc(javax.sql.DataSource dataSource) throws DatabaseException
     {
         DecodesSettings settings = new DecodesSettings();
-        // TODO: Need a special case for the XML database.
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("select name,value from database_properties");
+             PreparedStatement stmt = conn.prepareStatement("select name,value from tsdb_property");
              ResultSet rs = stmt.executeQuery())
         {
             //
+            Properties props = new Properties();
             while (rs.next())
             {
                 final String name = rs.getString("name");
                 final String value = rs.getString("value");
-                //TODO: map database name/values to appropriate field using reflection.
-            } 
+                props.put(name, value);
+            }
+            settings.loadFromProperties(props);
         }
         catch (SQLException ex)
         {
