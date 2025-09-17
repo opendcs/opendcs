@@ -415,7 +415,7 @@ public class TsListPanel
                                 }
                                 catch (Exception ex)
                                 {
-                                    log.warn("Could not open edit panel for TSID '{}': {}", tsIdStr, ex.getMessage());
+                                    log.atWarn().setCause(ex).log("Could not open edit panel for TSID '{}'", tsIdStr);
                                 }
                             }
                         }
