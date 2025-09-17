@@ -19,8 +19,13 @@ import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import decodes.db.Constants;
+import decodes.db.Site;
+import decodes.db.SiteName;
 import ilex.util.TextUtil;
 import ilex.var.TimedVariable;
+import opendcs.dai.SiteDAI;
+import opendcs.dai.TimeSeriesDAI;
 import opendcs.util.functional.ThrowingFunction;
 
 /**
@@ -39,6 +44,7 @@ public class TsImporter
     private String units = null;
     private SimpleDateFormat dataSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
     private final ThrowingFunction<String,TimeSeriesIdentifier, DbIoException> makeTsIdFunc;
+    private Collection<String> selectedTsIds = null;
 
     public TsImporter(TimeZone tz, String siteNameType, ThrowingFunction<String, TimeSeriesIdentifier, DbIoException> makeTsFunc)
     {
@@ -56,13 +62,62 @@ public class TsImporter
         }
     }
 
+    /**
+     * Scan a file to extract all TSID identifiers without loading the data.
+     * @param filename the file to scan
+     * @return a collection of TSID strings found in the file
+     */
+    public static Collection<String> scanForTsIds(String filename) throws FileNotFoundException, IOException
+    {
+        Map<String, String> tsidsFound = new HashMap<>();
+        try (LineNumberReader lnr = new LineNumberReader(new FileReader(filename)))
+        {
+            String line = null;
+            while((line = lnr.readLine()) != null)
+            {
+                line = line.trim();
+                if (TextUtil.startsWithIgnoreCase(line, "TSID:"))
+                {
+                    String tsidStr = line.substring(5).trim();
+                    if (tsidStr.length() > 0)
+                    {
+                        tsidsFound.put(tsidStr, tsidStr);
+                    }
+                }
+            }
+        }
+        return tsidsFound.values();
+    }
+
+    /**
+     * Read time series file but only import the specified TSIDs.
+     * @param filename the file to read
+     * @param selectedTsIds the TSIDs to import (null or empty means import all)
+     * @return a collection of CTimeSeries for the selected TSIDs
+     */
+    public Collection<CTimeSeries> readTimeSeriesFile(String filename, Collection<String> selectedTsIds)
+        throws FileNotFoundException, IOException
+    {
+        this.filename = filename;
+        try (InputStream is = new FileInputStream(filename))
+        {
+            return readTimeSeriesFile(is, selectedTsIds);
+        }
+    }
+
     public Collection<CTimeSeries> readTimeSeriesFile(InputStream stream) throws IOException
+    {
+        return readTimeSeriesFile(stream, null);
+    }
+
+    public Collection<CTimeSeries> readTimeSeriesFile(InputStream stream, Collection<String> selectedTsIds) throws IOException
     {
         if (this.filename == null)
         {
             this.filename = "Provided InputStream";
         }
 
+        this.selectedTsIds = selectedTsIds;
         log.info("Processing '{}'", filename);
         LineNumberReader lnr = null;
         lineNum = 0;
@@ -187,6 +242,13 @@ public class TsImporter
 
     private void instantiateTsId() throws DbIoException
     {
+        // If selective import is enabled and this TSID is not selected, skip it
+        if (selectedTsIds != null && !selectedTsIds.isEmpty() && !selectedTsIds.contains(tsidStr))
+        {
+            currentTS = null;
+            return;
+        }
+
         currentTS = dc.computeIfAbsent(tsidStr, (key) ->
         {
             try
@@ -262,5 +324,98 @@ public class TsImporter
         }
         VarFlags.setToWrite(tv);
         currentTS.addSample(tv);
+    }
+
+    /**
+     * Create a function that will get or create a TimeSeriesIdentifier.
+     * This is a helper method that can be used by both TsImport and GUI code.
+     *
+     * @param theDb the database connection
+     * @param siteDAO the site DAO
+     * @param timeSeriesDAO the time series DAO
+     * @return a function that gets or creates TSIDs
+     */
+    public static ThrowingFunction<String, TimeSeriesIdentifier, DbIoException>
+        makeGetOrCreateTsIdFunction(TimeSeriesDb theDb, SiteDAI siteDAO, TimeSeriesDAI timeSeriesDAO)
+    {
+        return (tsIdStr) ->
+        {
+            try
+            {
+                return timeSeriesDAO.getTimeSeriesIdentifier(tsIdStr);
+            }
+            catch (NoSuchObjectException ex)
+            {
+                log.warn("No existing time series '{}'. Will attempt to create.", tsIdStr);
+
+                try
+                {
+                    TimeSeriesIdentifier tsId = theDb.makeEmptyTsId();
+                    tsId.setUniqueString(tsIdStr);
+                    Site site = theDb.getSiteById(siteDAO.lookupSiteID(tsId.getSiteName()));
+                    if (site == null)
+                    {
+                        site = new Site();
+                        site.addName(new SiteName(site, Constants.snt_CWMS, tsId.getSiteName()));
+                        siteDAO.writeSite(site);
+                        log.info("Created new site: {}", tsId.getSiteName());
+                    }
+                    tsId.setSite(site);
+
+                    log.info("Creating time series: {}", tsIdStr);
+                    timeSeriesDAO.createTimeSeries(tsId);
+                    log.info("Created time series with key = {}", tsId.getKey());
+                    return tsId;
+                }
+                catch(Exception ex2)
+                {
+                    throw new DbIoException(String.format("No such time series and cannot create for '%s'", tsIdStr), ex2);
+                }
+            }
+        };
+    }
+
+    /**
+     * Import time series from a file with all necessary database operations.
+     * This is a convenience method for GUI and other code to import time series.
+     *
+     * @param theDb the database connection
+     * @param filename the file to import
+     * @param selectedTsIds the TSIDs to import (null means import all)
+     * @param tz the timezone for parsing dates
+     * @param siteNameType the site name type preference
+     * @return the number of time series successfully imported
+     */
+    public static int importTimeSeriesFile(TimeSeriesDb theDb, String filename,
+        Collection<String> selectedTsIds, TimeZone tz, String siteNameType)
+        throws IOException, DbIoException
+    {
+        int count = 0;
+        try (SiteDAI siteDAO = theDb.makeSiteDAO();
+             TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO())
+        {
+            TsImporter importer = new TsImporter(tz, siteNameType,
+                makeGetOrCreateTsIdFunction(theDb, siteDAO, timeSeriesDAO));
+
+            Collection<CTimeSeries> dc = (selectedTsIds != null && !selectedTsIds.isEmpty())
+                ? importer.readTimeSeriesFile(filename, selectedTsIds)
+                : importer.readTimeSeriesFile(filename);
+
+            for(CTimeSeries cts : dc)
+            {
+                String tsid = cts.getTimeSeriesIdentifier().getUniqueString();
+                log.info("Saving time series {}", tsid);
+                try
+                {
+                    timeSeriesDAO.saveTimeSeries(cts);
+                    count++;
+                }
+                catch(DbIoException | BadTimeSeriesException ex)
+                {
+                    log.warn("Cannot save time series '{}': {}", tsid, ex.getMessage());
+                }
+            }
+        }
+        return count;
     }
 }
