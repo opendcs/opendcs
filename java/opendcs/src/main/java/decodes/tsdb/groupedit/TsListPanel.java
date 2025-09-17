@@ -440,9 +440,9 @@ public class TsListPanel
             }
             catch (Exception ex)
             {
-                String msg = "Error reading import file: " + ex.getMessage();
-                JOptionPane.showMessageDialog(this, msg, "Import Error", JOptionPane.ERROR_MESSAGE);
-                log.error(msg, ex);
+                String msg = "Error reading import file";
+                JOptionPane.showMessageDialog(this, msg + ": " + ex.getMessage(), "Import Error", JOptionPane.ERROR_MESSAGE);
+                log.atError().setCause(ex).log(msg);
             }
         }
     }
