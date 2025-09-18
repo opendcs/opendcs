@@ -1,36 +1,33 @@
 /*
- * $Id$
- *
- * Open Source Software
- *
- * $Log$
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.21  2013/03/21 18:27:39  mmaloney
- * DbKey Implementation
- *
- */
-
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.sql;
 
-import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
-import java.text.SimpleDateFormat;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import ilex.util.Logger;
 import opendcs.util.sql.WrappedConnection;
-import decodes.cwms.CwmsConnectionPool;
 import decodes.db.Constants;
 import decodes.db.IdDatabaseObject;
 import decodes.db.DatabaseException;
-import decodes.util.DecodesSettings;
 
 /**
  * This class encapsulates some of the data and methods that are common
@@ -39,6 +36,7 @@ import decodes.util.DecodesSettings;
  */
 public class SqlDbObjIo
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	* Stores a reference to the SqlDatabaseIO object, which is the
 	* parent of this object.
@@ -48,48 +46,7 @@ public class SqlDbObjIo
 	/** Determines whether backslash is escaped in SQL strings written to DB. */
 	public static boolean escapeBackslash = true;
 
-	/** Used to format timestamps written to the database. */
-	private SimpleDateFormat writeDateFmt = null;
-
-	/** Used to parse dates & timestamps read from the database */
-	private SimpleDateFormat readDateFmt = null;
-
-//	private Calendar readCal = null;
-
-//	private OracleDateParser oracleDateParser = null;
-	
 	protected Connection connection = null;
-
-	/**
-	 * Lazy initialization, called at the first time a date or timestamp
-	 * is needing to be parsed or formatted. Can't do this in the constructor
-	 * because the database is not yet connected so _dbio.isOracle doesn't work.
-	 */
-	private void initDateFormats()
-	{
-		DecodesSettings settings = DecodesSettings.instance();
-		String writeFmt, readFmt;
-		if (_dbio.isOracle())
-		{
-//			oracleDateParser = _dbio.makeOracleDateParser(TimeZone.getTimeZone(_dbio.databaseTimeZone));
-			writeFmt = "'to_date'(''dd-MMM-yyyy HH:mm:ss''',' '''DD-MON-YYYY HH24:MI:SS''')";
-			readFmt = "yyyy-MM-dd HH:mm:ss";
-		}
-		else
-		{
-			writeFmt = settings.sqlDateFormat;
-			readFmt = settings.SqlReadDateFormat;
-		}
-
-		writeDateFmt = new SimpleDateFormat(writeFmt);
-		writeDateFmt.setTimeZone(TimeZone.getTimeZone(_dbio.databaseTimeZone));
-//		debug3("set writeDateFmt to '" + writeFmt + "' with timezone '" + _dbio.databaseTimeZone + "'");
-
-		readDateFmt = new SimpleDateFormat(readFmt);
-		readDateFmt.setTimeZone(TimeZone.getTimeZone(_dbio.databaseTimeZone));
-//		readCal = Calendar.getInstance(TimeZone.getTimeZone(_dbio.databaseTimeZone));
-//		debug3("set readDateFmt to '" + readFmt + "' with timezone '" + _dbio.databaseTimeZone + "'");
-	}
 
 	/**
 	* Construct with a reference to this object's parent.
@@ -231,18 +188,6 @@ public class SqlDbObjIo
 		return b ? "true" : "false";
 	}
 
-//	/**
-//	* This returns the String representation of an integer, which is the
-//	* ID number of an EnumValue.  This uses the EnumValueLookup to look up
-//	* the ID number using the second argument, which is the name of the
-//	* enum value.
-//	*/
-//	public String sqlReqEnumValId(EnumValueLookup lookup, String evName)
-//		throws DatabaseException
-//	{
-//		return Integer.toString(lookup.getEnumValueId(evName));
-//	}
-
 	/**
 	* This returns the SQL representation of an optional integer value.
 	* We assume that "-1" is a special value that the argument takes to
@@ -299,8 +244,7 @@ public class SqlDbObjIo
 	{
 		try (Statement stmt = createStatement();)
 		{
-			Logger.instance().log(Logger.E_DEBUG2,
-				"Executing update query '" + q + "'");
+			log.trace("Executing update query '{}'", q);
 			int numChanged = stmt.executeUpdate(q);
 			if (numChanged == 0)
 				throw new DatabaseException("Failed to update the " +
@@ -320,7 +264,7 @@ public class SqlDbObjIo
 	{
 		Statement stmt = createStatement();
 
-		Logger.instance().debug3("Trying update query '" + q + "'");
+		log.trace("Trying update query '{}'", q);
 
 		int numChanged = stmt.executeUpdate(q);
 		stmt.close();
@@ -333,7 +277,7 @@ public class SqlDbObjIo
 	{
 		if (connection == null)
 		{
-			warning(this.getClass().getName() + " using connection without initializing the DbIo object first!");
+			log.warn("using connection without initializing the DbIo object first!");
 			connection = _dbio.getConnection();
 		}
 		return new WrappedConnection(connection, c -> {});
@@ -344,15 +288,6 @@ public class SqlDbObjIo
 		return _dbio;
 	}
 
-//	/**
-//	* This returns a RecordList object for an Enum, that facilitates getting
-//	* the EnumValue objects by their ID numbers.
-//	*/
-//	public RecordList getEVList(String enumName)
-//		throws DatabaseException
-//	{
-//		return _dbio._enumListIO.getEnumValueList(enumName);
-//	}
 
 	/**
 	  Returns a timestamp value from the specified column of a result set.
@@ -418,60 +353,6 @@ public class SqlDbObjIo
 		return (escaped ? "E" : "") + ret.toString();
 	}
 
-	/**
-	  Convenience method to generate debug msg.
-	  @param msg the message
-	*/
-	public void debug3(String msg)
-	{
-		Logger.instance().log(Logger.E_DEBUG3, msg);
-	}
-
-	/**
-	  Convenience method to generate debug msg.
-	  @param msg the message
-	*/
-	public void debug2(String msg)
-	{
-		Logger.instance().log(Logger.E_DEBUG2, msg);
-	}
-
-	/**
-	  Convenience method to generate debug msg.
-	  @param msg the message
-	*/
-	public void debug1(String msg)
-	{
-		Logger.instance().log(Logger.E_DEBUG1, msg);
-	}
-
-	/**
-	  Convenience method to generate informational msg.
-	  @param msg the message
-	*/
-	public void info(String msg)
-	{
-		Logger.instance().log(Logger.E_INFORMATION, msg);
-	}
-
-	/**
-	  Convenience method to generate warning msg.
-	  @param msg the message
-	*/
-	public void warning(String msg)
-	{
-		Logger.instance().log(Logger.E_WARNING, msg);
-	}
-
-	/**
-	  Convenience method to generate error msg.
-	  @param msg the message
-	*/
-	public void failure(String msg)
-	{
-		Logger.instance().log(Logger.E_FAILURE, msg);
-	}
-
 	public Connection getConnection()
 	{
 		// needed as we shift in proper usage of the Connection objects.
@@ -480,7 +361,7 @@ public class SqlDbObjIo
 
 	public void setConnection(Connection conn)
 	{
-debug1(this.getClass().getName() + ".setConnection(" + (conn!=null?conn.hashCode():"null") + ")");
+		log.debug("setConnection({})", (conn!=null?conn.hashCode():"null"));
 		this.connection = conn;
 	}
 }
