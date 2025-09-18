@@ -117,9 +117,6 @@ public class EquipmentModelListIO extends SqlDbObjIo
 		try (Statement stmt = createStatement();
 			 ResultSet rs = stmt.executeQuery( q );)
 		{
-			if (rs == null)
-				throw new DatabaseException("No equipment model found " +
-					"with ID " + id);
 
 			eqm = _makeEquipmentModels(rs, true);
 		}
