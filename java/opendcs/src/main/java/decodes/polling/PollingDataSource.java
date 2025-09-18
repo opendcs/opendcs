@@ -1,5 +1,4 @@
 /*
- * $Id$
  * 
  * This software was written by Cove Software, LLC ("COVE") under contract
  * to Alberta Environment and Sustainable Resource Development (Alberta ESRD).
@@ -7,6 +6,7 @@
  * between COVE and Alberta ESRD.
  *
  * Copyright 2014 Alberta Environment and Sustainable Resource Development.
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@
 package decodes.polling;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 
@@ -32,6 +31,10 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 
 import opendcs.dai.PlatformStatusDAI;
 import decodes.datasource.DataSourceEndException;
@@ -57,6 +60,7 @@ import decodes.util.PropertySpec;
 
 public class PollingDataSource extends DataSourceExec
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "PollingDataSource";
 	
 	/** Max number of messages that can be queued waiting for routing spec to process them. */
@@ -159,15 +163,15 @@ public class PollingDataSource extends DataSourceExec
 						nle.transportId);
 					if (p == null)
 					{
-						Logger.instance().warning(module + " No platform found for transport medium ("
-							+ nl.transportMediumType + "," + nle.transportId + " -- skipped.");
+						log.warn("No platform found for transport medium ({},{}) -- skipped",
+								 nl.transportMediumType, nle.transportId);
 						continue;
 					}
 					TransportMedium platformTM = p.getTransportMedium(nl.transportMediumType);
 					if (platformTM == null)
 					{
-						Logger.instance().warning(module + " No transport medium of type '"
-							+ nl.transportMediumType + "' in platform '" + p.getDisplayName() + " -- skipped.");
+						log.warn(" No transport medium of type '{}' in platform '{}' -- skipped",
+								 nl.transportMediumType, p.getDisplayName());
 						continue;
 					}
 					for(TransportMedium tm : aggTMList)
@@ -177,10 +181,10 @@ public class PollingDataSource extends DataSourceExec
 				}
 				catch (DatabaseException ex)
 				{
-					String msg = module + " Error reading platform for medium ("
-						+ nl.transportMediumType + "," + nle.transportId + "): " + ex;
-					Logger.instance().failure(msg);
-					continue;
+					log.atError()
+					   .setCause(ex)
+					   .log("Error reading platform for medium ({},{})",
+							nl.transportMediumType, nle.transportId);					continue;
 				}
 			}
 		}
@@ -199,18 +203,17 @@ public class PollingDataSource extends DataSourceExec
 					{
 						p.read();
 					}
-					catch (DatabaseException e)
+					catch (DatabaseException ex)
 					{
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						log.atError().setCause(ex).log("Unable to read platform.");
 					}
 				if (p != null)
 					for (TransportMedium tm : p.transportMedia)
 						if (tm.getMediumType().toLowerCase().startsWith("polled"))
 						{
 							aggTMList.add(tm);
-							Logger.instance().debug1(module + " sc:DCP_NAME='" + value + "', plat id="
-								+ p.getId() + ", pakBusTableName='" + p.getProperty("pakBusTableName") + "'");
+							log.debug(" sc:DCP_NAME='{}', plat id={}, pakBusTableName='{}'",
+									  value, p.getId(), p.getProperty("pakBusTableName"));
 							break;
 						}
 			}
@@ -220,8 +223,7 @@ public class PollingDataSource extends DataSourceExec
 		if (aggTMList.size() == 0)
 			throw new DataSourceException(module + " There are no valid transport media in the network lists.");
 		else
-			log(Logger.E_INFORMATION, module + ": There are " + aggTMList.size() 
-				+ " stations to be polled.");
+			log.info("There are {} stations to be polled.", aggTMList.size());
 		
 		// Determine the port type and construct the port pool
 		String portType = PropertiesUtil.getIgnoreCase(aggProps, "portType");
@@ -246,22 +248,22 @@ public class PollingDataSource extends DataSourceExec
 		{
 			throw new DataSourceException(module + " PortType '" + portType + "' corresponds to "
 				+ "class name '" + ev.getExecClassName() + "', which cannot be loaded. "
-				+ "(Try checking the class name in rledit.): " + ex);
+				+ "(Try checking the class name in rledit.): ", ex);
 		}
 		catch (InstantiationException ex)
 		{
 			throw new DataSourceException(module + " PortType '" + portType + "' corresponds to "
-				+ "class name '" + ev.getExecClassName() + "', which cannot be instantiated: " + ex);
+				+ "class name '" + ev.getExecClassName() + "', which cannot be instantiated: ", ex);
 		}
 		catch (IllegalAccessException ex)
 		{
 			throw new DataSourceException(module + " PortType '" + portType + "' corresponds to "
 				+ "class name '" + ev.getExecClassName() + "', which is not accessible. ("
-					+ "Contact support@covesw.com): " + ex);
+					+ "Contact support@covesw.com): ", ex);
 		}
 		catch (ConfigException ex)
 		{
-			throw new DataSourceException(module + " Cannot configure portPool: " + ex);
+			throw new DataSourceException(module + " Cannot configure portPool: ", ex);
 		}
 
 		// Construct the PollingThreadController with the list
@@ -275,8 +277,10 @@ public class PollingDataSource extends DataSourceExec
 			try { controller.setPollNumTries(Integer.parseInt(s)); }
 			catch(NumberFormatException ex)
 			{
-				log(Logger.E_WARNING, "Invalid pollNumTries property '" + s 
-					+ "' -- must be integer. Using default of " + controller.getPollNumTries() + ".");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid pollNumTries property '{}' -- must be integer. Using default of {}",
+				   		s,  controller.getPollNumTries() + ".");
 			}
 		
 		s = PropertiesUtil.getIgnoreCase(aggProps, "maxBacklogHours");
@@ -284,16 +288,20 @@ public class PollingDataSource extends DataSourceExec
 			try { controller.setMaxBacklogHours(Integer.parseInt(s)); }
 			catch(NumberFormatException ex)
 			{
-				log(Logger.E_WARNING, module + " Invalid maxBacklogHours property '" + s 
-					+ "' -- must be integer. Using default of " + controller.getMaxBacklogHours() + ".");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid maxBacklogHours property '{}' -- must be integer. Using default of {}.",
+				   		s, controller.getMaxBacklogHours() + ".");
 			}
 		s = PropertiesUtil.getIgnoreCase(aggProps, "minBacklogHours");
 		if (s != null && s.trim().length() > 0)
 			try { controller.setMinBacklogHours(Integer.parseInt(s)); }
 			catch(NumberFormatException ex)
 			{
-				log(Logger.E_WARNING, module + " Invalid minBacklogHours property '" + s 
-					+ "' -- must be integer. Using default of " + controller.getMinBacklogHours() + ".");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid minBacklogHours property '{}' -- must be integer. Using default of {}.",
+				   		s, controller.getMinBacklogHours() + ".");
 			}
 	
 		s = PropertiesUtil.getIgnoreCase(aggProps, "saveSessionFile");
@@ -324,7 +332,6 @@ public class PollingDataSource extends DataSourceExec
 	}
 
 	@Override
-//	public synchronized RawMessage getRawMessage()
 	public RawMessage getRawMessage()
 		throws DataSourceException
 	{
@@ -340,7 +347,6 @@ public class PollingDataSource extends DataSourceExec
 	 * method.
 	 * @param rawMessage the complete raw message
 	 */
-//	public synchronized void enqueueMsg(RawMessage rawMessage)
 	public void enqueueMsg(RawMessage rawMessage)
 	{
 		try
@@ -349,7 +355,7 @@ public class PollingDataSource extends DataSourceExec
 		}
 		catch (HeaderParseException ex)
 		{
-			log(Logger.E_FAILURE, "Failed to parse raw message header: " + ex + " -- message discarded");
+			log.atError().setCause(ex).log("Failed to parse raw message header -- message discarded");
 			return;
 		}
 		
@@ -359,8 +365,9 @@ public class PollingDataSource extends DataSourceExec
 			if (rawMessageQueue.offer(rawMessage, ENQUEUE_WAIT_MS, TimeUnit.MILLISECONDS))
 				return;
 		}
-		catch (InterruptedException e)
+		catch (InterruptedException ex)
 		{
+			log.atTrace().setCause(ex).log("unable to add message to queue.");
 		}
 	}
 	
@@ -395,7 +402,7 @@ public class PollingDataSource extends DataSourceExec
 		}
 		catch(DbIoException ex)
 		{
-			log(Logger.E_WARNING, "Cannot get platform status for " + tm.getTmKey() + ": " + ex);
+			log.atWarn().setCause(ex).log("Cannot get platform status for {}", tm.getTmKey());
 		}
 		if (ps == null)
 			ps = new PlatformStatus(tm.platform.getId());
@@ -407,15 +414,23 @@ public class PollingDataSource extends DataSourceExec
 		try { platformStatusDAO.writePlatformStatus(ps); }
 		catch(DbIoException ex)
 		{
-			log(Logger.E_WARNING, "Cannot write platform status for platformID=" 
-				+ ps.getPlatformId() + ", tm=" + tm.getTmKey() + ": " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Cannot write platform status for platformID={}, tm={}", ps.getPlatformId(), tm.getTmKey());
 		}
 	}
 	
 	public void pollingComplete()
 	{
 		// Enqueue special end-marker raw message as a signal to the routing spec that we're done.
-		try { rawMessageQueue.put(endMarker); } catch(InterruptedException ex) {}
+		try 
+		{ 
+			rawMessageQueue.put(endMarker);
+		} 
+		catch(InterruptedException ex) 
+		{
+			log.atError().setCause(ex).log("Unable to insert endMarker into queue.");
+		}
 	}
 
 	public PollingThreadController getController()

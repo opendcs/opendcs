@@ -7,14 +7,15 @@
 * 
 *   http://www.apache.org/licenses/LICENSE-2.0
 * 
-* Unless required by applicable law or agreed to in writing, software 
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 package decodes.cwms.algo;
 
+import decodes.cwms.CwmsLocationLevelDAO;
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
 import decodes.cwms.resevapcalc.*;
@@ -46,6 +47,9 @@ import hec.data.cwmsRating.RatingSet;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.annotations.PropertyRequirements;
+import org.opendcs.database.api.OpenDcsDataException;
+import org.opendcs.model.cwms.CwmsSiteReferenceValue;
 import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
 
@@ -54,32 +58,46 @@ import org.slf4j.Logger;
         description = "Perform Reservoir Evaporation calculation based on an algorithm developed by NWDM," +
                 " Which utilizes air temp, air speed, solar radiation, and water temperature profiles to return" +
                 " evaporation rates and total evaporation as flow")
+@PropertyRequirements(
+        groups = {
+            @PropertyRequirements.RequirementGroup(
+                name = "Location",
+                type = PropertyRequirements.RequirementType.AT_LEAST_ONE,
+                properties = {"latitude", "longitude"}
+            ),
+            @PropertyRequirements.RequirementGroup(
+                name = "Location2", 
+                type = PropertyRequirements.RequirementType.ALL_REQUIRED,
+                properties = {"zeroElevation", "longitude"}
+            )
+        }
+)
 final public class ResEvapAlgo extends AW_AlgorithmBase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     @Input
-    public double windSpeed;       
+    public double windSpeed;
     @Input
-    public double airTemp;          
+    public double airTemp;
     @Input
-    public double relativeHumidity;    
+    public double relativeHumidity;
     @Input
-    public double atmPress;          
+    public double atmPress;
     @Input
-    public double percentLowCloud;   
+    public double percentLowCloud;
     @Input
-    public double elevLowCloud;       
+    public double elevLowCloud;
     @Input
-    public double percentMidCloud;  
+    public double percentMidCloud;
     @Input
-    public double elevMidCloud;       
+    public double elevMidCloud;
     @Input
-    public double percentHighCloud;    
+    public double percentHighCloud;
     @Input
-    public double elevHighCloud;    
+    public double elevHighCloud;
     @Input
-    public double elev;    
+    public double elev;
 
 
   
@@ -145,7 +163,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
 //	public String MaxTempDepthId;
 
     @org.opendcs.annotations.PropertySpec(name = "wtpTsId", propertySpecType = PropertySpec.STRING,
-            description = "Base String for water Temperature Profiles, Example FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap")
+            description = "Base String for water Temperature Profiles, Example FTPK-Lower-D000,0m.Temp-Water.Inst.1Day.0.Rev-NWO-Evap", required = true)
     public String wtpTsId;
     @org.opendcs.annotations.PropertySpec(name = "reservoirId", propertySpecType = PropertySpec.STRING,
             description = "Location ID of reservoir")
@@ -171,6 +189,9 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     @org.opendcs.annotations.PropertySpec(name = "rating", propertySpecType = PropertySpec.STRING,
             description = "Rating Curve specification for Elevation-Area curve, Example: FTPK.Elev;Area.Linear.Step")
     public String rating;
+    @org.opendcs.annotations.PropertySpec(name = "LocationLevel", propertySpecType = PropertySpec.STRING,
+            description = "Location Level ID for Secchi Depth, Example: FTPK.Depth.Const.0.Secchi Depth")
+    public String LocationLevel;
 
     // Allow javac to generate a no-args constructor.
 
@@ -303,6 +324,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         siteDAO = tsdb.makeSiteDAO();
         timeSeriesDAO = tsdb.makeTimeSeriesDAO();
         crd = new CwmsRatingDao((CwmsTimeSeriesDb) tsdb);
+        CwmsLocationLevelDAO locLevDAO = null;
 
         //Get site Data from Database
         try
@@ -310,6 +332,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             conn = tsdb.getConnection();
             DbKey siteID = siteDAO.lookupSiteID(reservoirId);
             site = siteDAO.getSiteById(siteID);
+            locLevDAO = new CwmsLocationLevelDAO((CwmsTimeSeriesDb) tsdb);
         }
         catch (DbIoException | NoSuchObjectException ex)
         {
@@ -327,6 +350,17 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
         catch (RatingException ex)
         {
             throw new DbCompException("Failed to load rating table", ex);
+        }
+
+        if (secchi == 0){
+            try (org.opendcs.database.api.DataTransaction tx = locLevDAO.getTransaction())
+            {
+                secchi = ((CwmsSiteReferenceValue) locLevDAO.getLatestLocationLevelValue(tx, LocationLevel, "ft")).getLevelValue();
+            }
+            catch (OpenDcsDataException ex)
+            {
+                throw new DbCompException("Failed to load Location Level " + LocationLevel, ex);
+            }
         }
 
         //initialized Water Temperature Profiles

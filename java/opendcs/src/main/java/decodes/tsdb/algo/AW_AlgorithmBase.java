@@ -16,6 +16,7 @@
 package decodes.tsdb.algo;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
@@ -144,7 +145,7 @@ public abstract class AW_AlgorithmBase
 		new PropertySpec("timedCompDataSince",PropertySpec.STRING,
 			"Control data window SINCE time for timed computations e.g. '150 minutes'."),
 		new PropertySpec("timedCompDataUntil",PropertySpec.STRING,
-			"Control data window UNTIL time for timed computations e.g. '15 minutes'.")		
+			"Control data window UNTIL time for timed computations e.g. '15 minutes'.")
 	};
 	private PropertySpec aggAlgoPropertySpecs[] = 
 	{
@@ -157,7 +158,7 @@ public abstract class AW_AlgorithmBase
 		new PropertySpec("noAggregateFill", PropertySpec.BOOLEAN,
 			"Set to false to disable filling aggregate periods before algo execution"),
 		new PropertySpec("aggPeriodInterval", PropertySpec.STRING, 
-			"Aggregate Period Interval"), 
+			"Aggregate Period Interval"),
 		new PropertySpec("aggregateTimeOffset", PropertySpec.STRING, 
 			"e.g. '8 hours', '1 day'. If supplied it is added to the output time of an aggregate."
 			+ " An example would be to center an average within its period.")
@@ -1653,7 +1654,10 @@ ex.printStackTrace(System.err);
 									final org.opendcs.annotations.PropertySpec propSpec = p.second;
 									final String name = PropertySpec.getPropertyName(f, propSpec);
 									String specType = PropertySpec.getSpecTypeFromAnnotation(propSpec, f);
-									return new PropertySpec(name, specType, propSpec.description());
+									
+									// Create PropertySpec - required status is now handled through annotations
+									PropertySpec spec = new PropertySpec(name, specType, propSpec.description());
+									return spec;
 								})
 								.collect(Collectors.toList())
 								.toArray(new PropertySpec[0]);

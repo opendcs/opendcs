@@ -1,44 +1,4 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.15  2019/03/14 19:12:56  mmaloney
- * Ignore DbIoException while purging old status.
- *
- * Revision 1.14  2018/03/30 14:13:32  mmaloney
- * Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
- *
- * Revision 1.13  2017/03/30 21:04:44  mmaloney
- * Refactor CompEventServer to use PID if monitor==true.
- *
- * Revision 1.12  2016/02/23 19:26:39  mmaloney
- * -w arg to support operation as a windows service.
- *
- * Revision 1.11  2016/02/04 18:47:32  mmaloney
- * Ignore "-manual" schedule entries.
- *
- * Revision 1.10  2015/12/02 21:17:43  mmaloney
- * Make getStatistics protected to allow special apps like DcpMonitor to overload.
- *
- * Revision 1.9  2015/06/04 21:39:20  mmaloney
- * Added property spec for allowedHosts
- *
- * Revision 1.8  2015/02/06 18:46:24  mmaloney
- * RC03
- *
- * Revision 1.7  2015/01/16 16:11:04  mmaloney
- * RC01
- *
- * Revision 1.6  2014/12/11 20:28:09  mmaloney
- * Added DacqEventLogging capability.
- *
- * Revision 1.5  2014/09/15 14:00:54  mmaloney
- * Schedule Entry Refresh interval set to 60 seconds.
- *
- * Revision 1.4  2014/08/22 17:23:04  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
- *
+ /**
  * Copyright 2014 Cove Software, LLC
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -60,7 +20,6 @@ import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
 import ilex.util.ServerLock;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.FileServerLock;
 import ilex.util.StderrLogger;
@@ -77,7 +36,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Level;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.management.JMException;
 import javax.management.ObjectName;
@@ -112,10 +73,9 @@ import decodes.util.PropertySpec;
  * The main class for scheduling routing specs
  * @author mmaloney, Mike Maloney Cove Software, LLC
  */
-public class RoutingScheduler 
-	extends TsdbAppTemplate
-	implements PropertiesOwner, RoutingSchedulerMXBean
+public class RoutingScheduler extends TsdbAppTemplate implements RoutingSchedulerMXBean
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	protected static String module = "RoutingScheduler";
 	static StringToken lockFileArg = new StringToken("k", 
 		"Optional Lock File", "", TokenOptions.optSwitch, "");
@@ -184,7 +144,7 @@ public class RoutingScheduler
 		}
 		catch(JMException ex)
 		{
-            Logger.instance().warning("Unable to register tracking bean." + ex.getLocalizedMessage());
+            log.atWarn().setCause(ex).log("Unable to register tracking bean.");
 		}
 	}
 
@@ -210,21 +170,14 @@ public class RoutingScheduler
 		// Routing Scheduler can survive DB going down.
 		surviveDatabaseBounce = true;
 
-		// Set up a logger that will add a prefix rs name to each log message
-		// generated from within the threads.
-		origLogger = Logger.instance();
-		origLogger.debug1("Before creating thread-specific logger.");
-		appLogger = new ThreadLogger(module, null, null, false);
-		appLogger.setDefaultLogger(origLogger);
-		appLogger.setMinLogPriority(origLogger.getMinLogPriority());
-		Logger.setLogger(appLogger);
-		Logger.instance().debug1("log to thread logger.");
-		origLogger.debug1("log to orig logger.");
 
-		try { hostname = InetAddress.getLocalHost().getHostName(); }
+		try 
+		{ 
+			hostname = InetAddress.getLocalHost().getHostName(); 
+		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot determine hostname, will use 'localhost': " + ex);
+			log.atWarn().setCause(ex).log("Cannot determine hostname, will use 'localhost'");
 			hostname = "localhost";
 		}
 		
@@ -238,8 +191,7 @@ public class RoutingScheduler
 			try { compProcessor.init(fn, dummy); }
 			catch(decodes.comp.BadConfigException ex)
 			{
-				Logger.instance().warning(module + 
-					" Cannot configure computation processor: " + ex);
+				log.atWarn().setCause(ex).log("Cannot configure computation processor.");
 			}
 		}
 
@@ -248,11 +200,11 @@ public class RoutingScheduler
 	@Override
 	protected void runApp() 
 	{
-		Logger.instance().debug1("runApp starting");
+		log.debug("runApp starting");
 		shutdownFlag = false;
 		runAppInit();
-		Logger.instance().debug1("runAppInit done, shutdownFlag=" + shutdownFlag 
-			+ ", surviveDatabaseBounce=" + surviveDatabaseBounce);
+		log.debug("runAppInit done, shutdownFlag={}, surviveDatabaseBounce={}",
+				  shutdownFlag, surviveDatabaseBounce);
 
 		long lastOldStatusPurge = 0L; // Cause it to happen right away
 		long lastSchedRefresh = 0L;
@@ -290,6 +242,8 @@ public class RoutingScheduler
 					if (Database.getDb().getDbIo() instanceof SqlDatabaseIO)
 						dacqEventDAO = ((SqlDatabaseIO)Database.getDb().getDbIo()).makeDacqEventDAO();
 
+					// TODO: determine if this entire block can just be removed or it the logic needs
+					// to be moved somewhere.
 					try
 					{
 						Date purgeDate = new Date(System.currentTimeMillis() - purgeBeforeDays*MSEC_PER_DAY);
@@ -317,25 +271,18 @@ public class RoutingScheduler
 			}
 			catch(LockBusyException ex)
 			{
-				Logger.instance().info(module + " No Lock - Application exiting: " + ex);
+				log.atError().setCause(ex).log("No Lock - Application exiting.");
 				shutdownFlag = true;
 			}
 			catch(DbIoException ex)
 			{
-				Logger.instance().warning(appNameArg.getValue() + " Exception while "
-					+ action + ": " + ex);
+				log.atError().setCause(ex).log("{} Exception while {}", appNameArg.getValue(), action);
 				shutdownFlag = true;
 				databaseFailed = true;
 			}
 			catch(Exception ex)
 			{
-				java.util.logging.Logger log = java.util.logging.Logger.getLogger("");
-				String msg = module + " Unexpected exception while " + action + ": " + ex;
-				Logger.instance().warning(msg);
-				log.log(Level.WARNING,msg,ex);
-				JulUtils.logStackTrace(log, Level.WARNING, ex.getStackTrace(), 0);
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
+				log.atError().setCause(ex).log("Unexpected exception while {}", action);
 				shutdownFlag = true;
 			}
 			try { Thread.sleep(1000L); }
@@ -343,7 +290,7 @@ public class RoutingScheduler
 		}
 		runAppShutdown();
 		
-		Logger.instance().debug1("runApp() exiting.");
+		log.debug("runApp() exiting.");
 	}
 	
 	/**
@@ -356,7 +303,7 @@ public class RoutingScheduler
 	 */
 	protected void runAppInit()
 	{
-		Logger.instance().debug1("runAppInit starting");
+		log.debug("runAppInit starting");
 
 		try(LoadingAppDAI loadingAppDao =
 				db.getDao(LoadingAppDAI.class)
@@ -366,8 +313,9 @@ public class RoutingScheduler
 			appInfo = loadingAppDao.getComputationApp(appNameArg.getValue());
 			if (!appInfo.canRunLocally())
 			{
-				Logger.instance().fatal("The 'allowedHosts' property for application '" + appInfo.getAppName()
-					+ "' does not allow this application to run on this machine!");
+				log.error("The 'allowedHosts' property for application '{}' does not allow " +
+						  "this application to run on this machine!",
+						  appInfo.getAppName());
 				shutdownFlag = true;
 				return;
 			}
@@ -383,9 +331,9 @@ public class RoutingScheduler
 				}
 				catch(IOException ex)
 				{
-					Logger.instance().failure(
-						"Cannot create Event server: " + ex
-						+ " -- no events available to external clients.");
+					log.atError()
+					   .setCause(ex)
+					   .log("Cannot create Event server -- no events available to external clients.");
 				}
 			}
 			
@@ -395,7 +343,7 @@ public class RoutingScheduler
 				catch(LockBusyException ex)
 				{
 					shutdownFlag = true;
-					Logger.instance().fatal(getAppName() + " runAppInit: lock busy: " + ex);
+					log.atError().setCause(ex).log("{} runAppInit: lock busy.", getAppName());
 				}
 			}
 
@@ -403,13 +351,13 @@ public class RoutingScheduler
 		}
 		catch(NoSuchObjectException ex)
 		{
-			Logger.instance().fatal(getAppName() + " runAppInit: " + ex);
+			log.atError().setCause(ex).log("{} runAppInit.", getAppName());
 			shutdownFlag = true;
 			return;
 		}
 		catch(DbIoException ex)
 		{
-			Logger.instance().fatal(getAppName() + " runAppInit: " + ex);
+			log.atError().setCause(ex).log("{} runAppInit.", getAppName());
 			databaseFailed = true;
 			shutdownFlag = true;
 			return;
@@ -524,7 +472,7 @@ public class RoutingScheduler
 	public void initDecodes()
 		throws DecodesException
 	{
-		Logger.instance().debug1("initDecodes()");
+		log.debug("initDecodes()");
 		Optional<Database> db = this.db.getLegacyDatabase(Database.class);
 		if (db.isPresent()) {
 			db.get().initializeForDecoding();
@@ -538,8 +486,7 @@ public class RoutingScheduler
 	public static void main(String args[])
 		throws Exception
 	{
-		Logger.setLogger(new StderrLogger(module));
-		
+
 		final RoutingScheduler routsched = new RoutingScheduler();
 
 		/** Optional server lock ensures only one instance runs at a time. */
@@ -551,8 +498,7 @@ public class RoutingScheduler
 
 			if (mylock.obtainLock() == false)
 			{
-				Logger.instance().log(Logger.E_FAILURE,
-					module + " started: lock file busy: " + lockpath);
+				log.error("started: lock file busy: {}", lockpath);
 				Database db = Database.getDb();
 				db.getDbIo().close();
 				System.exit(0);
@@ -564,10 +510,7 @@ public class RoutingScheduler
 				{
 					public void run()
 					{
-						Logger.instance().log(Logger.E_INFORMATION,
-							module + " exiting " +
-							(mylock.wasShutdownViaLock() ? "(lock file removed)"
-							: ""));
+						log.info("exiting {}", (mylock.wasShutdownViaLock() ? "(lock file removed)" : ""));
 					}
 				});
 		}
@@ -594,13 +537,12 @@ public class RoutingScheduler
 	 */
 	public void setThreadLogger(Thread thread, Logger logger)
 	{
-		appLogger.setLogger(thread, logger);
+		/* do nothing */
 	}
 	
 	public void threadFinished(Thread thread)
 	{
-		if (appLogger != null && thread != null)
-			appLogger.setLogger(thread, null);
+		/* do nothing */
 	}
 
 	public String getHostname()

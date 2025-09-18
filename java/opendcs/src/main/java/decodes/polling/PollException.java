@@ -28,5 +28,13 @@ package decodes.polling;
 @SuppressWarnings("serial")
 public class PollException extends Exception
 {
-	public PollException(String msg) { super(msg); }
+	public PollException(String msg)
+	{ 
+		super(msg); 
+	}
+	
+	public PollException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
 }

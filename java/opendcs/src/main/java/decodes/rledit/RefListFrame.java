@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.rledit;
 
 import java.awt.*;
@@ -10,13 +25,15 @@ import javax.swing.border.*;
 
 import org.opendcs.database.api.DataTransaction;
 import org.opendcs.database.api.OpenDcsDatabase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.util.*;
 import opendcs.dai.EnumDAI;
@@ -35,7 +52,7 @@ units, EU conversions and data type equivalencies.
 @SuppressWarnings("serial")
 public class RefListFrame extends JFrame
 {
-    private static final Logger log = LoggerFactory.getLogger(RefListFrame.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     private static ResourceBundle genericLabels = RefListEditor.getGenericLabels();
     private static ResourceBundle labels = RefListEditor.getLabels();
     private JPanel contentPane;
@@ -155,8 +172,9 @@ public class RefListFrame extends JFrame
             jbInit();
             initControls();
         }
-        catch(Exception e) {
-            e.printStackTrace();
+        catch(Exception ex)
+        {
+            GuiHelpers.logGuiComponentInit(log, ex);
         }
 
         // Default operation is to do nothing when user hits 'X' in upper
