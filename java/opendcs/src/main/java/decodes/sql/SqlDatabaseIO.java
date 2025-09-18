@@ -12,70 +12,6 @@
  *  limitations under the License.
  *
  */
-
-/*
- * $Id: SqlDatabaseIO.java,v 1.15 2020/02/14 15:13:44 mmaloney Exp $
- *
- * Open Source Software
- *
- * $Log: SqlDatabaseIO.java,v $
- * Revision 1.15  2020/02/14 15:13:44  mmaloney
- * Implement isOpenTSDB
- *
- * Revision 1.14  2019/12/11 14:34:02  mmaloney
- * Support OS authentication for HDB (issue 771)
- *
- * Revision 1.13  2019/06/10 19:24:41  mmaloney
- * code cleanup
- *
- * Revision 1.12  2018/12/19 19:56:30  mmaloney
- * Remove references to classes in oracle.jdbc and oracle.sql, except in HDB branch.
- *
- * Revision 1.11  2018/02/21 14:33:03  mmaloney
- * Set autocommit true always.
- *
- * Revision 1.10  2017/03/03 19:14:01  mmaloney
- * Remove commit() code. Now just a stub. Everything now is autocommit.
- *
- * Revision 1.9  2016/10/01 14:59:56  mmaloney
- * CWMS-8979 Allow DecodesSettings params in database to override the file(s).
- *
- * Revision 1.8  2016/03/24 19:08:18  mmaloney
- * Refactor: Have expandSDI return the TimeSeriesID that it uses. This saves the caller from
- * having to re-look it up. Needed for PythonAlgorithm.
- *
- * Revision 1.7  2015/11/12 15:22:13  mmaloney
- * Added makeScreeningDAO method.
- *
- * Revision 1.6  2015/01/22 19:52:07  mmaloney
- * log message improvements
- *
- * Revision 1.5  2014/12/11 20:29:11  mmaloney
- * Added DacqEventLogging capability.
- *
- * Revision 1.4  2014/11/19 16:09:23  mmaloney
- * Additions for dcpmon
- *
- * Revision 1.3  2014/08/29 18:22:50  mmaloney
- * 6.1 Schema Mods
- *
- * Revision 1.2  2014/08/22 17:23:10  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.28  2013/06/26 19:35:49  mmaloney
- * Don't print stack trace if fail to write due to "insufficient privilege".
- * This is for CWMS which enforces privileges based on the database user ID.
- *
- * Revision 1.27  2013/04/22 16:38:48  mmaloney
- * In dt equivalence, I can get bogus equivalencies because the referenced datatype is in a different office.
- *
- * Revision 1.26  2013/03/21 18:27:39  mmaloney
- * DbKey Implementation
- *
- */
 package decodes.sql;
 
 import decodes.cwms.CwmsSqlDatabaseIO;
@@ -84,7 +20,6 @@ import decodes.db.*;
 import decodes.hdb.HdbSqlDatabaseIO;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -94,14 +29,10 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import java.util.TimeZone;
 
-import ilex.util.AuthException;
-import ilex.util.EnvExpander;
-import opendcs.util.sql.WrappedConnection;
-import org.opendcs.authentication.AuthSourceService;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dai.AlgorithmDAI;
@@ -136,7 +67,6 @@ import opendcs.dao.ScheduleEntryDAO;
 import opendcs.dao.SiteDAO;
 import opendcs.dao.TsGroupDAO;
 import opendcs.dao.XmitRecordDAO;
-import ilex.util.Logger;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DbCompParm;
@@ -153,11 +83,9 @@ import decodes.util.DecodesSettings;
  * This class allows you to read database information from a Postgres SQL
  * database.
  */
-public class SqlDatabaseIO
-    extends DatabaseIO
-    implements DatabaseConnectionOwner
+public class SqlDatabaseIO extends DatabaseIO implements DatabaseConnectionOwner
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(SqlDatabaseIO.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
      * The "location" of the SQL database, as passed into the constructor.
      * This is the full string from either the "DatabaseLocation" or the
@@ -292,7 +220,7 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.warn("Unable to set DB Date/Time format", ex);
+             log.atWarn().setCause(ex).log("Unable to set DB Date/Time format.");
         }
         postConnectInit();
     }
@@ -321,7 +249,7 @@ public class SqlDatabaseIO
             q = "SELECT PARAM_VALUE FROM REF_DB_PARAMETER WHERE PARAM_NAME = 'TIME_ZONE'";
             try (ResultSet rs = stmnt.executeQuery(q);)
             {
-                if (rs != null && rs.next())
+                if (rs.next())
                 {
                     databaseTimeZone = rs.getString(1);
                 }
@@ -333,19 +261,19 @@ public class SqlDatabaseIO
             }
 
             q = "ALTER SESSION SET TIME_ZONE = '" + databaseTimeZone + "'";
-            Logger.instance().debug3(q);
+            log.trace("Executing: '{}'", q);
             stmnt.execute(q);
 
             q = "ALTER SESSION SET nls_date_format = 'yyyy-mm-dd hh24:mi:ss'";
-            Logger.instance().debug3(q);
+            log.trace("Executing: '{}'", q);
             stmnt.execute(q);
 
             q = "ALTER SESSION SET nls_timestamp_format = 'yyyy-mm-dd hh24:mi:ss'";
-            Logger.instance().debug3(q);
+            log.trace("Executing: '{}'", q);
             stmnt.execute(q);
 
             q = "ALTER SESSION SET NLS_TIMESTAMP_TZ_FORMAT = 'yyyy-mm-dd hh24:mi:ss'";
-            Logger.instance().debug3(q);
+            log.trace("Executing: '{}'", q);
             stmnt.execute(q);
         }
     }
@@ -359,8 +287,9 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            Logger.instance().warning("SqlDatabaseIO.determineVersion() "
-                + "Cannot determine Database Product Name: " + ex);
+            log.atWarn()
+               .setCause(ex)
+               .log("SqlDatabaseIO.determineVersion() Cannot determine Database Product Name.");
         }
 
         TimeZone tz = TimeZone.getTimeZone(DecodesSettings.instance().sqlTimeZone);
@@ -391,24 +320,11 @@ public class SqlDatabaseIO
         */
         int databaseVersion = DecodesDatabaseVersion.DECODES_DB_5;  // earliest possible value.
         String databaseOptions = "";
-        Statement stmt = null;
-        try
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM DecodesDatabaseVersion");)
         {
-            stmt = conn.createStatement();
-            ResultSet rs = null;
-            try
-            {
-                rs = stmt.executeQuery(
-                    "SELECT * FROM DecodesDatabaseVersion");
-            }
-            catch(SQLException ex)
-            {
-                Logger.instance().warning("Cannot read DecodesDatabaseVersion table. " +
-                        "Will attempt legacy DatabaseVersion (" + ex + ")");
-                rs = stmt.executeQuery(
-                    "SELECT version, options FROM DatabaseVersion");
-            }
-            while (rs != null && rs.next())
+            while (rs.next())
             {
                 int v = rs.getInt(1);
                 if (v > databaseVersion)
@@ -417,25 +333,12 @@ public class SqlDatabaseIO
                     databaseOptions = rs.getString(2);
                 }
             }
-            if (rs != null)
-            {
-                rs.close();
-            }
-            stmt.close();
         }
         catch(SQLException ex)
         {
-            log.warn("Cannot read DatabaseVersion table. Assuming version 5.", ex);
+            log.atWarn().setCause(ex).log("Cannot read DatabaseVersion table. Assuming version 5.");
             databaseVersion = DecodesDatabaseVersion.DECODES_DB_5;
             databaseOptions = "";
-        }
-        finally
-        {
-            if (stmt != null)
-            {
-                try { stmt.close(); }
-                catch(Exception ex) {}
-            }
         }
         dco.setDecodesDatabaseVersion(databaseVersion, databaseOptions);
         log.info("Connected to DECODES SQL database version {}", databaseVersion);
@@ -613,7 +516,6 @@ public class SqlDatabaseIO
         }
         catch(DbIoException ex)
         {
-            log.error("Unable to read site list", ex);
             throw new DatabaseException("Failed to read site list", ex);
         }
     }
@@ -634,7 +536,6 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.error("Unable to read platform list", ex);
             throw new DatabaseException("Unable to read platform list", ex);
         }
         finally
@@ -660,7 +561,6 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.error("Unable to read platform list", ex);
             throw new DatabaseException("Unable to read platform list", ex);
         }
         finally
@@ -686,7 +586,6 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.error("Unable to read config list", ex);
             throw new DatabaseException("Unable to read config list", ex);
         }
         finally
@@ -756,7 +655,6 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.error("Unable to read routing spec list.", ex);
             throw new DatabaseException("Unable to read routing spec list", ex);
         }
         finally
@@ -776,7 +674,6 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.error("Unable to read routing spec status list.", ex);
             throw new DatabaseException("Unable to read routing spec status list", ex);
         }
         finally
@@ -795,7 +692,6 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.error("Unable to read routing exec status list.", ex);
             throw new DatabaseException("Unable to read routing exec status list", ex);
         }
         finally
@@ -926,7 +822,6 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.error("Unable to read presentation groups", ex);
             throw new DatabaseException("Unable to read presentation groups", ex);
         }
         finally
@@ -1068,7 +963,7 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            throw new DatabaseException("writeEngineeringUnitList: ", ex);
+            throw new DatabaseException("writeEngineeringUnitList", ex);
         }
         finally
         {
@@ -1096,7 +991,6 @@ public class SqlDatabaseIO
         }
         catch (Exception ex)
         {
-            log.error("Unable to read site.", ex);
             throw new DatabaseException("Unable to read site.", ex);
         }
     }
@@ -1117,9 +1011,6 @@ public class SqlDatabaseIO
         }
         catch (Exception ex)
         {
-            log.atError()
-               .setCause(ex)
-               .log("Unable to write site {}.", site.toString());
             throw new DatabaseException(String.format("Unable to write site %s.", site.toString()), ex);
         }
     }
@@ -1141,9 +1032,6 @@ public class SqlDatabaseIO
         }
         catch (Exception ex)
         {
-            log.atError()
-               .setCause(ex)
-               .log("Unable to delete site {}", site.toString());
             throw new DatabaseException(String.format("Unable to delete site %s.", site.toString()), ex);
         }
     }
@@ -1158,9 +1046,6 @@ public class SqlDatabaseIO
         }
         catch (Exception ex)
         {
-            log.atError()
-               .setCause(ex)
-               .log("Unable to delete site by name {}", sn.toString());
             throw new DatabaseException(String.format("Unable to get site by name %s.", sn.toString()), ex);
         }
     }
@@ -1188,9 +1073,6 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.atError()
-               .setCause(ex)
-               .log("Unable to read platform {}", p.toString());
             throw new DatabaseException(String.format("Unable to read platform %s.", p.toString()), ex);
         }
         finally
@@ -1213,10 +1095,10 @@ public class SqlDatabaseIO
         }
         catch (Exception ex)
         {
-            log.atError()
-               .setCause(ex)
-               .log("Unable to lookup platform by mediumType={}, mediumId={}, timeStamp={}", mediumType, mediumId, timeStamp);
-            throw new DatabaseException("Unable to lookup platform ID.", ex);
+            throw new DatabaseException(
+                String.format("Unable to lookup platform by mediumType=%s, mediumId=%s, timeStamp=%s",
+                              mediumType, mediumId, timeStamp),
+                ex);
         }
         finally
         {
@@ -1239,10 +1121,10 @@ public class SqlDatabaseIO
         }
         catch (Exception ex)
         {
-            log.atError()
-               .setCause(ex)
-               .log("Unable to lookup platform id for site={}, designator = {};used={},", sn.toString(), designator, useDesignator);
-            throw new DatabaseException("Unable to lookup platform id for site.", ex);
+             throw new DatabaseException(
+                String.format("Unable to lookup platform id for site=%s, designator=%s; used=%s.",
+                              sn.toString(), designator, useDesignator),
+                ex);
         }
         finally
         {
@@ -1267,12 +1149,7 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            String msg = ex.getMessage();
-            if (!msg.toLowerCase().contains("insufficient priv"))
-            {
-                log.error("Unable to write Platform", ex);
-            }
-            throw new DatabaseException("writePlatform: ", ex);
+            throw new DatabaseException("Unable to write Platform: " + p.makeFileName(), ex);
         }
         finally
         {
@@ -1388,7 +1265,6 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            log.error("Unable to read config", ex);
             throw new DatabaseException("Unable to read config", ex);
         }
         finally
@@ -1415,12 +1291,7 @@ public class SqlDatabaseIO
         }
         catch (SQLException ex)
         {
-            String msg = ex.getMessage();
-            if (!msg.toLowerCase().contains("insufficient priv"))
-            {
-                log.error("Unable to write config", ex);
-            }
-            throw new DatabaseException("writeConfig: ", ex);
+            throw new DatabaseException("Unable to write config.", ex);
         }
         finally
         {
@@ -1941,7 +1812,6 @@ public class SqlDatabaseIO
             catch(Exception ex)
             {
                 String msg = "getNetworkListLMT - Can't read Network List LMT: ";
-                log.warn(msg, ex);
                 throw new DatabaseException(msg, ex);
             }
             finally
@@ -2089,7 +1959,8 @@ public class SqlDatabaseIO
             }
             catch(Exception pex)
             {
-                log.atWarn().setCause(pex)
+                log.atWarn()
+                    .setCause(pex)
                    .log("Bad date format '{}' (using default): ", s);
                 return null;
             }

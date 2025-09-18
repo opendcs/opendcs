@@ -1,22 +1,18 @@
 /*
- * $Id$
- * 
- * Open Source Software
- * 
- * $Log$
- * Revision 1.2  2015/07/17 13:03:55  mmaloney
- * Added context to improve debug/error messages.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.3  2013/04/12 19:34:27  mmaloney
- * column mask on inserts required for VPD
- *
- * Revision 1.2  2013/03/21 18:27:39  mmaloney
- * DbKey Implementation
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.sql;
 
 import java.sql.Connection;
@@ -27,7 +23,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.DatabaseException;
 import decodes.db.UnitConverterDb;
 import decodes.db.UnitConverterSet;
@@ -38,6 +36,7 @@ import decodes.db.UnitConverterSet;
  */
 public class UnitConverterIO extends SqlDbObjIo
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String context = "";
 	private String columns = "id, fromUnitsAbbr, toUnitsAbbr, algorithm, a, b, c, d, e, f";
 	
@@ -57,20 +56,17 @@ public class UnitConverterIO extends SqlDbObjIo
 	public void read(UnitConverterSet ucs)
 		throws DatabaseException
 	{
-		Logger.instance().debug1("Reading UnitConversions...");
+		log.debug("Reading UnitConversions...");
 
-		Statement stmt = null;
-		try 
-		{
-			stmt = createStatement();
-			String q = 
+		String q = 
 				"SELECT " + columns + " FROM UnitConverter WHERE fromUnitsAbbr != 'raw'";
-			
-			debug3("Executing '" + q + "'");
-			
-			ResultSet rs = stmt.executeQuery(q);
 
-			while (rs != null && rs.next())
+		try(Statement stmt = createStatement();
+			 ResultSet rs = stmt.executeQuery(q);) 
+		{
+			log.trace("Executing '{}'", q);
+			
+			while (rs.next())
 			{
 				UnitConverterDb ucdb = rs2Uc(rs);
 				ucs.addDbConverter(ucdb);
@@ -79,11 +75,6 @@ public class UnitConverterIO extends SqlDbObjIo
 		catch (SQLException e)
 		{
 			throw new DatabaseException(e.toString());
-		}
-		finally
-		{
-			if (stmt != null)
-				try {stmt.close();} catch(Exception ex) {}
 		}
 	}
 	
@@ -96,19 +87,16 @@ public class UnitConverterIO extends SqlDbObjIo
 		throws DatabaseException
 	{
 		ArrayList<UnitConverterDb> ret = new  ArrayList<UnitConverterDb>();
-		Logger.instance().debug1("Reading UnitConversions in " + inClause);
+		log.debug("Reading UnitConversions in {}", inClause);
 
-		Statement stmt = null;
-		try 
+		String q = "SELECT " + columns + " FROM UnitConverter WHERE id in " + inClause;
+
+		try (Statement stmt = createStatement();
+			 ResultSet rs = stmt.executeQuery(q);)
 		{
-			stmt = createStatement();
-			String q = "SELECT " + columns + " FROM UnitConverter WHERE id in " + inClause;
+			log.trace("Executing '{}'", q);
 			
-			debug3("Executing '" + q + "'");
-			
-			ResultSet rs = stmt.executeQuery(q);
-
-			while (rs != null && rs.next())
+			while (rs.next())
 			{
 				UnitConverterDb ucdb = rs2Uc(rs);
 				ret.add(ucdb);
@@ -116,16 +104,10 @@ public class UnitConverterIO extends SqlDbObjIo
 
 			return ret;
 		}
-		catch (SQLException e)
+		catch (SQLException ex)
 		{
-			throw new DatabaseException(e.toString());
+			throw new DatabaseException(ex.toString(),ex);
 		}
-		finally
-		{
-			if (stmt != null)
-				try {stmt.close();} catch(Exception ex) {}
-		}
-
 	}
 
 	
@@ -163,8 +145,8 @@ public class UnitConverterIO extends SqlDbObjIo
 			if (uc2write.fromAbbr == null || uc2write.fromAbbr.trim().length() == 0
 			 || uc2write.toAbbr == null || uc2write.toAbbr.trim().length() == 0)
 			{
-				warning("Unit Converter Set: Neither from nor to may be null: from='" 
-					+ uc2write.fromAbbr + "' to='" + uc2write.toAbbr + "'");
+				log.warn("Unit Converter Set: Neither from nor to may be null: from='{}' to={}'",
+						 uc2write.fromAbbr, uc2write.toAbbr);
 				continue;
 			}
 			UnitConverterDb inDb = dbUcs.getDb(uc2write.fromAbbr, uc2write.toAbbr);
@@ -211,7 +193,7 @@ public class UnitConverterIO extends SqlDbObjIo
 			}
 			catch (SQLException ex) 
 			{
-				warning("Error in query '" + q + "': " + ex.toString());
+				log.atWarn().setCause(ex).log("Error in query '{}'", q);
 			}
 		}
 		// Now anything left in the db set needs to be deleted.
@@ -227,7 +209,7 @@ public class UnitConverterIO extends SqlDbObjIo
 			}
 			catch (SQLException ex) 
 			{
-				warning("Error in query '" + q + "': " + ex.toString());
+				log.atWarn().setCause(ex).log("Error in query '{}'", q);
 			}
 		}
 	}
@@ -269,9 +251,8 @@ public class UnitConverterIO extends SqlDbObjIo
 		if (ucdb.fromAbbr == null || ucdb.fromAbbr.trim().length() == 0
 		 || ucdb.toAbbr == null || ucdb.toAbbr.trim().length() == 0)
 		{
-			warning(context 
-				+ " Unit Converter -- neither from nor to may be null: from='" 
-				+ ucdb.fromAbbr + "' to='" + ucdb.toAbbr + "'");
+			log.warn("{} Unit Converter -- neither from nor to may be null: from='{}' to '{}'",
+					 context, ucdb.fromAbbr, ucdb.toAbbr);
 			return;
 		}
 

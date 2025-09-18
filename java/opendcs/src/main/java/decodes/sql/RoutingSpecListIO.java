@@ -27,7 +27,9 @@ import decodes.db.RoutingStatus;
 import decodes.db.ValueNotFoundException;
 import decodes.tsdb.CompAppInfo;
 import opendcs.dai.LoadingAppDAI;
-import org.slf4j.LoggerFactory;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.Comparator;
 import java.util.Date;
@@ -53,7 +55,7 @@ import opendcs.dao.DaoHelper;
 
 public class RoutingSpecListIO extends SqlDbObjIo
 {
-    private final org.slf4j.Logger log = LoggerFactory.getLogger(RoutingSpecListIO.class);
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
     * This is used to look up the ID numbers and names of PresentationGroups
     */
@@ -398,7 +400,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
       Reads an existing routing spec into memory.
       The passed object is filled-in.
     */
-    public void readRoutingSpec(RoutingSpec routingSpec) throws DatabaseException
+      public void readRoutingSpec(RoutingSpec routingSpec) throws DatabaseException
     {
         if (!routingSpec.idIsSet()
          && routingSpec.getName() != null && routingSpec.getName().length() > 0)
@@ -418,24 +420,16 @@ public class RoutingSpecListIO extends SqlDbObjIo
                    "consumerType, consumerArg, lastModifyTime, isProduction " +
                    "FROM RoutingSpec WHERE id = " + routingSpec.getId();
 
-        log.trace("RoutingSpecListIO.readroutingSpec: " + q);
+        log.trace("RoutingSpecListIO.readroutingSpec: {}", q);
         try (Statement stmt = createStatement();
-             ResultSet resultSet = stmt.executeQuery(q))
+             ResultSet resultSet = stmt.executeQuery(q);)
         {
-            String msg = String.format("No RoutingSpec found with id %d", routingSpec.getId().getValue());
-            if (resultSet == null)
+            // There will be only one row in the result set.
+            if (!resultSet.next())
             {
-                Throwable thr = new ValueNotFoundException(msg);
-                throw new DatabaseException(msg, thr);
+                throw new DatabaseException("No RoutingSpec found with id "    + routingSpec.getId());
             }
 
-            // There will be only one row in the result set.
-            resultSet.next();
-            if (resultSet.getRow() == 0)
-            {
-                Throwable thr = new ValueNotFoundException(msg);
-                throw new DatabaseException(msg, thr);
-            }
             routingSpec.setName(resultSet.getString(2));
 
             DbKey dataSourceId = DbKey.createDbKey(resultSet, 3);
@@ -486,7 +480,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
 
             // Add this routing spec to the routing spec list.
             routingSpec.getDatabase().routingSpecList.add(routingSpec);
-            stmt.close();
         }
         catch(SQLException ex)
         {
@@ -507,13 +500,10 @@ public class RoutingSpecListIO extends SqlDbObjIo
         try (Statement stmt = createStatement();
              ResultSet resultSet = stmt.executeQuery(q);)
         {
-            if (resultSet != null)
+            while (resultSet.next())
             {
-                while (resultSet.next())
-                {
-                    String nm = resultSet.getString(1);
-                    routingSpec.addNetworkListName(nm);
-                }
+                String nm = resultSet.getString(1);
+                routingSpec.addNetworkListName(nm);
             }
         }
     }
@@ -741,7 +731,6 @@ public class RoutingSpecListIO extends SqlDbObjIo
     private DbKey name2id(String name)
         throws SQLException
     {
-        final String q = "SELECT id FROM RoutingSpec where lower(name) = lower(?)";
         try (Connection conn = connection();
              DaoHelper dao = new DaoHelper(_dbio, "routingspeclist", conn);
             )
@@ -772,7 +761,11 @@ public class RoutingSpecListIO extends SqlDbObjIo
                 {
                     spec.setId(id);
                 }
-                catch(DatabaseException ex) {} // guaranteed not to happen.
+                catch(DatabaseException ex)
+                {
+                    // guaranteed not to happen.
+                    log.atError().setCause(ex).log("An error that shouldn't happen, has.");
+                }
             }
 
             String q ="SELECT lastModifyTime FROM RoutingSpec WHERE id = ?";
@@ -782,7 +775,7 @@ public class RoutingSpecListIO extends SqlDbObjIo
         {
             log.atWarn()
                .setCause(ex)
-               .log("SQL Error reading LMT for RoutingSpec '{}' id={}", spec.getName(), ex);
+               .log("SQL Error reading LMT for RoutingSpec '{}' id={}", spec.getName(), spec.getId());
             return null;
         }
     }
