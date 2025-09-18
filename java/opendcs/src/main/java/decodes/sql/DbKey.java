@@ -1,23 +1,19 @@
-/**
- * $Id$
- * 
- * Open source software
- * @author - Mike Maloney, Cove Software, LLC
- * 
- * $Log$
- * Revision 1.2  2014/12/11 20:28:45  mmaloney
- * Implement serializable for webapp.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.1  2013/03/21 18:27:39  mmaloney
- * DbKey Implementation
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.sql;
-
-import ilex.util.Logger;
 
 import java.io.Serializable;
 import java.sql.ResultSet;
@@ -26,50 +22,53 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 
 /**
  * Encapsulates a surrogate key for identifying records in a database.
  * The internal long-integer value is immutable.
- * 
+ *
  * Whenever a null result set column or key value of -1L is used in the
  * create methods, a constant NullKey is returned. Thus it is OK to
  * compare a given (key == Constants.undefinedId) to determine if a key
  * is set. This is important so that legacy comparisons will continue to work.
- * 
+ *
  * The correct way to determine if two keys are equals is: key1.equals(key2).
  * However, I am concerned that there may be legacy code out there that
  * does (key1 == key2). In order to make these cases work, keys are stored
  * internally so that two calls to createDbKey with the same key value will
  * return the same key object.
- * 
+ *
  * The method used to make this happen will work for all but extreme cases.
  * A long-running CWMS daemon process that accumulates more that 200,000 different
  * key values may require that the internal storage be occasionally trimmed.
  * Thus for these processes (key1 == key2) may be false when it should be true.
- * 
+ *
  * Recommendation: In new code, always compare keys with key1.equals(key2);
  */
 @SuppressWarnings("serial")
-public class DbKey
-	implements Comparable<DbKey>, Serializable
+public class DbKey implements Comparable<DbKey>, Serializable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Immutable internal long integer key value */
 	private long value;
-	
+
 	/** hash code computed on construction for effeciancy */
 	private int _hashCode;
-	
+
 	/** Used for detecting oldest keys for removal from the hash map when necessary */
 	private long createOrder;
-	
+
 	/** The one and only null key. All calls to createDbKey with -1 will return this object. */
 	public static final DbKey NullKey = new DbKey(-1L);
-	
+
 	// Internal hash storage for keys.
 	private static HashMap<Long, DbKey> createdKeys = new HashMap<Long, DbKey>();
 	private static long createCounter = 0L;
 	private static final int MaxHashSize = 200000;
-	
+
 	/** Factory method to create a key from a result set column */
 	public static DbKey createDbKey(ResultSet rs, int column)
 		throws SQLException
@@ -106,7 +105,7 @@ public class DbKey
 			return NullKey;
 
 		// See if this key value is already created.
-		
+
 		DbKey ret = createdKeys.get(keyValue);
 		if (ret != null)
 		{
@@ -116,27 +115,27 @@ public class DbKey
 		if (createdKeys.size() >= MaxHashSize)
 		{
 			trimHash();
-		}		
+		}
 		ret = new DbKey(keyValue);
 		ret.createOrder = createCounter++;
 		createdKeys.put(keyValue, ret);
 		return ret;
 	}
-	
+
 	/** @return the internal immutable long integer key value */
 	public long getValue() { return value; }
-	
+
 	/** @return true if this is considered a null key */
 	public boolean isNull() { return value == -1L; }
-	
-	/** 
+
+	/**
 	 * @return the numeric key as a string, or the word "null" if the key is undefined.
 	 */
 	public String toString()
 	{
 		return isNull() ? "null" : ("" + value);
 	}
-	
+
 	/** @return true if this key has the same internal value as the right-hand-side key */
 	public boolean equals(Object rhs)
 	{
@@ -149,7 +148,7 @@ public class DbKey
 		DbKey rhk = (DbKey)rhs;
 		return value == rhk.value;
 	}
-	
+
 	/** @return hash code for this key */
 	public int hashCode()
 	{
@@ -173,10 +172,9 @@ public class DbKey
 	 */
 	private static void trimHash()
 	{
-		Logger.instance().warning("TRIMMING THE DBKEY HASH size="
-			+ createdKeys.size() + ", createCounter=" + createCounter);
+		log.warn("TRIMMING THE DBKEY HASH size={}, createCounter={}", createdKeys.size(), createCounter);
 		long removeBefore = createCounter - (MaxHashSize/2);
-		for(Iterator<Entry<Long, DbKey>> ckit = createdKeys.entrySet().iterator(); 
+		for(Iterator<Entry<Long, DbKey>> ckit = createdKeys.entrySet().iterator();
 			ckit.hasNext(); )
 		{
 			Entry<Long, DbKey> pair = ckit.next();
@@ -190,9 +188,9 @@ public class DbKey
 		this.value = keyValue.longValue();
 		_hashCode = keyValue.hashCode();
 	}
-	
-	
-	private void setValue(long v) 
+
+
+	private void setValue(long v)
 	{
 		// Never implement this method!!! Keys must be immutable!!!
 		// Changing key values will destroy the createdKeys hash and probably
