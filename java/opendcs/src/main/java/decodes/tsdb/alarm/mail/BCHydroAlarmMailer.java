@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm.mail;
 
 import java.util.ArrayList;
@@ -7,9 +22,11 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.EmailAddr;
-import ilex.util.Logger;
 
 /**
  * BC Hydro requires a particular alarm message format for their automated system
@@ -19,35 +36,34 @@ import ilex.util.Logger;
  * @author mmaloney
  *
  */
-public class BCHydroAlarmMailer 
-	extends AlarmMailer
+public class BCHydroAlarmMailer extends AlarmMailer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	public BCHydroAlarmMailer()
 	{
 		module = "BCHydroAlarmMailer";
 	}
-	
+
 	public synchronized void send(AlarmGroup group, ArrayList<String> messages)
 			throws MailerException
 	{
 		if (session == null)
 			makeSession();
-		
+
 		if (group.getEmailAddrs().size() == 0)
 		{
-			Logger.instance().warning(module + " Cannot send alarms for group "
-				+ group.getName() + " -- email list empty.");
+			log.warn("Cannot send alarms for group {} -- email list empty.", group.getName());
 			return;
 		}
-		
-		try 
+
+		try
 		{
 			InternetAddress addrs[] = new InternetAddress[group.getEmailAddrs().size()];
 			int i=0;
 			for(EmailAddr addr : group.getEmailAddrs())
-				addrs[i++] = new InternetAddress(addr.getAddr());				
-			
+				addrs[i++] = new InternetAddress(addr.getAddr());
+
 			String msgBody = "Configuration Item: Hydroclimate\n"
 					+ "Occurrence Category: Degradation\n"
 					+ "Occurrence Type: Availability\n"
@@ -58,7 +74,7 @@ public class BCHydroAlarmMailer
 				Message message = new MimeMessage(session);
 				message.setFrom(new InternetAddress(fromAddr, fromName));
 				message.setRecipients(Message.RecipientType.TO, addrs);
-				
+
 				message.setSubject(msg);
 				message.setText(msgBody);
 				if (msg.contains("FAILURE") || msg.contains("FATAL"))
@@ -68,13 +84,12 @@ public class BCHydroAlarmMailer
 				Transport.send(message);
 				n++;
 			}
-			Logger.instance().info(module + " sent " + n + " alarm messages to group "
-				+ group.getName());
- 
+			log.info("sent {} alarm messages to group {}.", n, group.getName());
+
 		}
-		catch (Exception ex) 
+		catch (Exception ex)
 		{
-			throw new MailerException("Error sending mail: " + ex.toString());
+			throw new MailerException("Error sending mail.", ex);
 		}
 	}
 }

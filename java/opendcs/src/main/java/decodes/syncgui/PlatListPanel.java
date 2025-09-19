@@ -1,16 +1,35 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.syncgui;
 
 import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 import java.util.Collections;
 import java.util.Comparator;
 import java.io.*;
 import java.net.URL;
 
-import ilex.gui.FileDownloadDialog;
 import ilex.gui.MultFileDownloadDialog;
 import ilex.gui.ShowFileDialog;
 import ilex.util.EnvExpander;
@@ -22,8 +41,9 @@ import decodes.gui.SortingListTableModel;
 /**
  * This panel displays this list of platforms.
  */
-public class PlatListPanel extends JPanel 
+public class PlatListPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	BorderLayout borderLayout1 = new BorderLayout();
 	JPanel jPanel1 = new JPanel();
 	JLabel jLabel1 = new JLabel();
@@ -37,7 +57,7 @@ public class PlatListPanel extends JPanel
 	JScrollPane jScrollPane1 = new JScrollPane();
 	JTable platListTable;
 	private ShowFileDialog showFileDialog = null;
-	
+
 	static private JFileChooser jFileChooser = new JFileChooser();
 	static
 	{
@@ -51,18 +71,20 @@ public class PlatListPanel extends JPanel
 	PlatListTableModel model;
 
 	/** Constructor -- must be no-args for JBuilder */
-	public PlatListPanel() 
+	public PlatListPanel()
 	{
 		platList = null;
 		model = new PlatListTableModel(this);
-		platListTable = new SortingListTable(model, 
+		platListTable = new SortingListTable(model,
 			new int[] { 15, 10, 13, 18, 15, 40 });
-		
-		try {
+
+		try
+		{
 			jbInit();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -77,9 +99,9 @@ public class PlatListPanel extends JPanel
 		importButton.setToolTipText("Import selected platforms to your Edit Database");
 		importButton.setText("Import");
 		importButton.addActionListener(
-			new java.awt.event.ActionListener() 
+			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	                importPressed();
 	            }
@@ -88,9 +110,9 @@ public class PlatListPanel extends JPanel
 		downloadButton.setToolTipText("Download selected platforms to XML files to be imported later.");
 		downloadButton.setText("Download");
 		downloadButton.addActionListener(
-			new java.awt.event.ActionListener() 
+			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	                downloadPressed();
 	            }
@@ -99,9 +121,9 @@ public class PlatListPanel extends JPanel
 		viewButton.setPreferredSize(new Dimension(100, 27));
 		viewButton.setToolTipText("View selected platform XML.");
 		viewButton.addActionListener(
-			new java.awt.event.ActionListener() 
+			new java.awt.event.ActionListener()
 			{
-	            public void actionPerformed(ActionEvent e) 
+	            public void actionPerformed(ActionEvent e)
 	            {
 	                viewPressed();
 	            }
@@ -127,12 +149,10 @@ public class PlatListPanel extends JPanel
 	public void setPlatList(PlatList platList)
 	{
 		this.platList = platList;
-//System.out.println("Editing PlatList with " + this.platList.getEntries().size()
-//+ " entries.");
 		model.fireTableDataChanged();
 	}
 
-	void importPressed() 
+	void importPressed()
 	{
 		int n = platListTable.getSelectedRowCount();
 		if (n == 0)
@@ -176,7 +196,7 @@ public class PlatListPanel extends JPanel
 
 		try
 		{
-			Process importProc 
+			Process importProc
 				= Runtime.getRuntime().exec(cmdarray,null,tmpDir);
 			int result = importProc.waitFor();
 			if (result != 0)
@@ -196,16 +216,18 @@ public class PlatListPanel extends JPanel
 		}
 		catch(IOException ex)
 		{
+			log.atWarn().setCause(ex).log("Could not start import.");
 			SyncGuiFrame.instance().showError(
 				"Could not start import process!");
 		}
 		catch(InterruptedException ex)
 		{
+			log.atWarn().setCause(ex).log("Import interrupted.");
 			SyncGuiFrame.instance().showError("Import process interrupted!");
 		}
 	}
 
-	void downloadPressed() 
+	void downloadPressed()
 	{
 		int n = platListTable.getSelectedRowCount();
 		if (n == 0)
@@ -238,14 +260,14 @@ public class PlatListPanel extends JPanel
 			dlg.downloadFiles(urldir, files, localdir);
 		}
 	}
-	
+
 	private void viewPressed()
 	{
 		int row = platListTable.getSelectedRow();
 		if (row == -1)
 			return;
 
-		String tmpDirPath = 
+		String tmpDirPath =
 			EnvExpander.expand("$DECODES_INSTALL_DIR/tmp");
 		File tmpDir = new File(tmpDirPath);
 		if (!tmpDir.isDirectory())
@@ -255,7 +277,7 @@ public class PlatListPanel extends JPanel
 					"Cannot make temp directory '" + tmpDirPath	+ "'");
 				return;
 			}
-		
+
 		PlatListEntry ple = model.getPlatListEntryAt(row);
 		String fn = ple.makeFileName();
 		DistrictDBSnap snapshot = platList.myDB;
@@ -263,7 +285,7 @@ public class PlatListPanel extends JPanel
 			+ snapshot.getDistrict().getName() + "/"
 			+ snapshot.getDirName() + "/platform/" + fn;
 		File localFile = new File(tmpDir, fn);
-		
+
 		try
 		{
 			URL url = new URL(urlstr);
@@ -272,8 +294,9 @@ public class PlatListPanel extends JPanel
 		}
 		catch(IOException ex)
 		{
-			SyncGuiFrame.instance().showError(
-				"Cannot download '" + urlstr	+ "': " + ex);
+			String msg = "Cannot download '" + urlstr	+ "'";
+			log.atError().setCause(ex).log(msg);
+			SyncGuiFrame.instance().showError(msg +": " + ex);
 			return;
 		}
 
@@ -303,9 +326,9 @@ class PlatListTableModel extends AbstractTableModel
 	}
 
 	/** @return constant # of columns */
-	public int getColumnCount() 
+	public int getColumnCount()
 	{
-		return columnNames.length; 
+		return columnNames.length;
 	}
 
 	/** @return constant column name */
@@ -335,11 +358,11 @@ class PlatListTableModel extends AbstractTableModel
 		return panel.platList.getEntries().elementAt(r);
 	}
 
-	/** 
+	/**
 	  Return column object at given row/column.
 	  @param r the row
 	  @param c the column
-	  @return column object at given row/column 
+	  @return column object at given row/column
 	*/
 	public Object getValueAt(int r, int c)
 	{
@@ -406,6 +429,3 @@ class ColumnComparator implements Comparator
 			PlatListEntryColumnizer.getColumn(p2, col));
 	}
 }
-
-
-

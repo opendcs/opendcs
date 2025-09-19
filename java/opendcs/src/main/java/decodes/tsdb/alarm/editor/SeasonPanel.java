@@ -1,3 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import java.awt.Color;
@@ -10,7 +26,6 @@ import java.awt.event.ActionListener;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -18,6 +33,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.decoder.Season;
 import decodes.tsdb.BadScreeningException;
@@ -29,13 +47,14 @@ import opendcs.dai.IntervalDAI;
 @SuppressWarnings({ "serial", "rawtypes", "unchecked" })
 public class SeasonPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JTextField rejHiValue = new JTextField(7);
 	private JTextField critHiValue = new JTextField(7);
 	private JTextField warnHiValue = new JTextField(7);
 	private JTextField warnLoValue = new JTextField(7);
 	private JTextField critLoValue = new JTextField(7);
 	private JTextField rejLoValue = new JTextField(7);
-	
+
 	private String[] timeIncArray = { "Second(s)", "Minute(s)", "Hour(s)", "Day(s)", "Week(s)", "Month(s)", "Year(s)" };
 
 	private JTextField rocMultField = new JTextField(4);
@@ -46,25 +65,25 @@ public class SeasonPanel extends JPanel
 	private JTextField warnLoROC = new JTextField(7);
 	private JTextField critLoROC = new JTextField(7);
 	private JTextField rejLoROC = new JTextField(7);
-	
+
 	private JTextField stuckDurField = new JTextField(4);
 	private JComboBox stuckDurCombo = new JComboBox(timeIncArray);
 	private JTextField stuckToleranceField = new JTextField(7);
 	private JTextField stuckMinField = new JTextField(7);
 	private JTextField stuckMaxMultField = new JTextField(7);
 	private JComboBox stuckMaxDurUnitCombo = new JComboBox(timeIncArray);
-	
+
 	private JTextField missingCheckDurField = new JTextField(4);
 	private JComboBox missingCheckDurCombo = new JComboBox(timeIncArray);
 	private JComboBox missingTSIntervalCombo = null;
 	private JTextField missingMaxField = new JTextField(4);
-	
+
 	private AlarmEditFrame parentFrame = null;
 	private NumberFormat numFmt = NumberFormat.getNumberInstance();
 	private AlarmLimitSet limitSet = null;
 	private ScreeningEditPanel parentPanel = null;
 	private String[] dbIntervalArray = null;
-	
+
 	public SeasonPanel(AlarmEditFrame frame, ScreeningEditPanel parent)
 	{
 		this.parentFrame = frame;
@@ -73,7 +92,7 @@ public class SeasonPanel extends JPanel
 		numFmt.setMaximumFractionDigits(4);
 		guiInit();
 	}
-	
+
 	private void guiInit()
 	{
 		this.setLayout(new GridBagLayout());
@@ -97,10 +116,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(Exception ex)
 		{
-			String msg = "Error reading durations: " + ex;
-			parentFrame.showError(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			String msg = "Error reading durations";
+			log.atError().setCause(ex).log(msg);
+			parentFrame.showError(msg + ":" + ex);
 		}
 		finally
 		{
@@ -110,7 +128,7 @@ public class SeasonPanel extends JPanel
 		Color redBack = new Color(255, 205, 205);
 		Color yellowBack = new Color(255, 255, 200);
 		Color blueBack = new Color(0xe6, 255, 255);
-		
+
 		rejHiValue.setBackground(blueBack);
 		critHiValue.setBackground(redBack);
 		warnHiValue.setBackground(yellowBack);
@@ -146,7 +164,7 @@ public class SeasonPanel extends JPanel
 			new GridBagConstraints(0, 0, 1, 1, 0.4, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(1, 2, 1, 2), 0, 0));
-		
+
 		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("changePer")),
 				new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.NONE,
@@ -167,9 +185,9 @@ public class SeasonPanel extends JPanel
 				new GridBagConstraints(3, 1, 1, 1, 0.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.NONE,
 					new Insets(1, 2, 1, 2), 0, 0));
-		
-		
-		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("reject") + " " 
+
+
+		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("reject") + " "
 			+ parentFrame.eventmonLabels.getString("high") + ":"),
 			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -182,8 +200,8 @@ public class SeasonPanel extends JPanel
 			new GridBagConstraints(3, 2, 1, 1, 0.1, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 4, 1, 4), 0, 0));
-		
-		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("critical") + " " 
+
+		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("critical") + " "
 			+ parentFrame.eventmonLabels.getString("high") + ":"),
 			new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -197,7 +215,7 @@ public class SeasonPanel extends JPanel
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 4, 1, 4), 0, 0));
 
-		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("warning") + " " 
+		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("warning") + " "
 			+ parentFrame.eventmonLabels.getString("high") + ":"),
 			new GridBagConstraints(1, 4, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -211,7 +229,7 @@ public class SeasonPanel extends JPanel
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 4, 1, 4), 0, 0));
 
-		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("warning") + " " 
+		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("warning") + " "
 			+ parentFrame.eventmonLabels.getString("low") + ":"),
 			new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -225,7 +243,7 @@ public class SeasonPanel extends JPanel
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 4, 1, 4), 0, 0));
 
-		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("critical") + " " 
+		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("critical") + " "
 			+ parentFrame.eventmonLabels.getString("low") + ":"),
 			new GridBagConstraints(1, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -239,7 +257,7 @@ public class SeasonPanel extends JPanel
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 4, 1, 4), 0, 0));
 
-		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("reject") + " " 
+		valueRocPanel.add(new JLabel(parentFrame.eventmonLabels.getString("reject") + " "
 			+ parentFrame.eventmonLabels.getString("low") + ":"),
 			new GridBagConstraints(1, 7, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -252,14 +270,14 @@ public class SeasonPanel extends JPanel
 			new GridBagConstraints(3, 7, 1, 1, 0.1, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 4, 1, 4), 0, 0));
-	
+
 		//============= Stuck Sensor Panel ============
 		JPanel stuckSensorPanel = new JPanel(new GridBagLayout());
 		this.add(stuckSensorPanel,
 			new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(1, 2, 1, 2), 0, 0));
-			
+
 		stuckSensorPanel.setBorder(new TitledBorder(parentFrame.eventmonLabels.getString("stuckSensor")));
 		stuckSensorPanel.add(new JLabel(parentFrame.eventmonLabels.getString("stuckDuration")),
 			new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
@@ -293,11 +311,11 @@ public class SeasonPanel extends JPanel
 			new GridBagConstraints(3, 1, 1, 1, 0.33, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 2, 1, 2), 0, 0));
-		
+
 		p = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		p.add(stuckMaxMultField);
 		p.add(stuckMaxDurUnitCombo);
-		
+
 		stuckSensorPanel.add(p,
 			new GridBagConstraints(4, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
@@ -311,7 +329,7 @@ public class SeasonPanel extends JPanel
 				new Insets(1, 2, 1, 2), 0, 0));
 
 		missingDataPanel.setBorder(new TitledBorder(parentFrame.eventmonLabels.getString("missingData")));
-		
+
 		missingDataPanel.add(new JLabel(parentFrame.eventmonLabels.getString("checkPeriod")+":"),
 			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
@@ -332,7 +350,7 @@ public class SeasonPanel extends JPanel
 			new GridBagConstraints(3, 0, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 1, 2), 0, 0));
-	
+
 		missingDataPanel.add(new JLabel(parentFrame.eventmonLabels.getString("maxMissing")+":"),
 			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -341,35 +359,22 @@ public class SeasonPanel extends JPanel
 			new GridBagConstraints(5, 0, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 0, 1, 2), 0, 0));
-	
+
 		rejHiValue.setToolTipText("Values >= to this limit are flagged as Rejected.");
 		critHiValue.setToolTipText("Values >= to this limit are flagged as Questionable.");
 		critLoValue.setToolTipText("Values <= to this limit are flagged as Questionable.");
 		rejLoValue.setToolTipText("Values <= to this limit are flagged as Rejected.");
-		
+
 		rejHiROC.setToolTipText("Hourly Rates of Change >= to this limit are flagged as Rejected.");
 		critHiROC.setToolTipText("Hourly Rates of Change >= to this limit are flagged as Questionable.");
 		critLoROC.setToolTipText("Hourly Rates of Change <= to this limit are flagged as Questionable.");
 		rejLoROC.setToolTipText("Hourly Rates of Change <= to this limit are flagged as Rejected.");
-		
+
 		stuckDurCombo.setToolTipText("Duration over which to check for constant value within tolerance.");
 		stuckToleranceField.setToolTipText("Values changing less than this amount over the specified duration"
 			+ " are considered constant.");
 		stuckMinField.setToolTipText("Values less than this amount are treated the same as missing values.");
-		
-//		String nmissTT = 
-//			"<html>If more than this many missing values are detected over the specified<br/>"
-//			+ "duration, then don't perform the check. For Irregular interval data,<br/>"
-//			+ "this is a fractional portion of the duration. Example: If Duration is<br/>"
-//			+ "'4Days' and # Missing is .25, then if there is more than a 1-day gap<br/>"
-//			+ "anywhere in the data, the check is not performed.</html>";
-//			
-//		stuckMaxNumField.setToolTipText(nmissTT);
-//		quesDurCombo.setToolTipText("Duration over which to check for constant value within tolerance.");
-//		quesConstTolerance.setToolTipText("Values changing less than this amount over the specified duration"
-//			+ " are considered constant.");
-//		quesMinConst.setToolTipText("Values less than this amount are treated the same as missing values.");
-//		quesNmissConst.setToolTipText(nmissTT);
+
 	}
 
 	protected void changeSeasonPressed()
@@ -377,7 +382,7 @@ public class SeasonPanel extends JPanel
 		Season newSeason = parentPanel.selectSeason(limitSet.getSeasonName());
 		if (newSeason == null || newSeason == limitSet.getSeason())
 			return;
-		
+
 		if (parentPanel.getPanelFor(newSeason) != null)
 		{
 			parentFrame.showError("There is already a panel for '");
@@ -395,10 +400,10 @@ public class SeasonPanel extends JPanel
 		warnLoValue.setText("");
 		critLoValue.setText("");
 		rejLoValue.setText("");
-		
+
 		rocMultField.setText("");
 		rocUnitCombo.setSelectedIndex(2);
-		
+
 		rejHiROC.setText("");
 		critHiROC.setText("");
 		warnHiROC.setText("");
@@ -412,7 +417,7 @@ public class SeasonPanel extends JPanel
 		stuckMinField.setText("");
 		stuckMaxMultField.setText("");
 		stuckMaxDurUnitCombo.setSelectedIndex(2);
-	
+
 		missingCheckDurField.setText("");
 		missingCheckDurCombo.setSelectedIndex(2);
 		missingMaxField.setText("");
@@ -421,7 +426,7 @@ public class SeasonPanel extends JPanel
 	public void setLimitSet(AlarmLimitSet limitSet)
 	{
 		clearFields();
-		
+
 		if (limitSet.getRejectHigh() != AlarmLimitSet.UNASSIGNED_LIMIT)
 			rejHiValue.setText(numFmt.format(limitSet.getRejectHigh()));
 		if (limitSet.getCriticalHigh() != AlarmLimitSet.UNASSIGNED_LIMIT)
@@ -434,7 +439,7 @@ public class SeasonPanel extends JPanel
 			critLoValue.setText(numFmt.format(limitSet.getCriticalLow()));
 		if (limitSet.getRejectLow() != AlarmLimitSet.UNASSIGNED_LIMIT)
 			rejLoValue.setText(numFmt.format(limitSet.getRejectLow()));
-		
+
 		if (limitSet.getRejectRocHigh() != AlarmLimitSet.UNASSIGNED_LIMIT)
 			rejHiROC.setText(numFmt.format(limitSet.getRejectRocHigh()));
 		if (limitSet.getCriticalRocHigh() != AlarmLimitSet.UNASSIGNED_LIMIT)
@@ -450,7 +455,7 @@ public class SeasonPanel extends JPanel
 
 		if (limitSet.getRocInterval() != null && limitSet.getRocInterval().trim().length()>0)
 			setPeriod(limitSet.getRocInterval(), rocMultField, rocUnitCombo);
-		
+
 		if (limitSet.getStuckDuration() != null && limitSet.getStuckDuration().trim().length()>0)
 			setPeriod(limitSet.getStuckDuration(), stuckDurField, stuckDurCombo);
 		stuckToleranceField.setText(numFmt.format(limitSet.getStuckTolerance()));
@@ -458,13 +463,13 @@ public class SeasonPanel extends JPanel
 			stuckMinField.setText(numFmt.format(limitSet.getMinToCheck()));
 		if (limitSet.getMaxGap() != null && limitSet.getMaxGap().trim().length()>0)
 			setPeriod(limitSet.getMaxGap(), stuckMaxMultField, stuckMaxDurUnitCombo);
-		
+
 		if (limitSet.getMissingPeriod() != null && limitSet.getMissingPeriod().trim().length()>0)
 			setPeriod(limitSet.getMissingPeriod(), missingCheckDurField, missingCheckDurCombo);
 		if (limitSet.getMissingInterval() != null && limitSet.getMissingInterval().trim().length()>0)
 			missingTSIntervalCombo.setSelectedItem(limitSet.getMissingInterval());
 		missingMaxField.setText(numFmt.format(limitSet.getMaxMissingValues()));
-		
+
 		this.limitSet = limitSet;
 		this.limitSet.prepareForExec();
 	}
@@ -499,7 +504,7 @@ public class SeasonPanel extends JPanel
 	}
 
 	/**
-	 * Save the current field settings to the passed limit set, preserving the ID in 
+	 * Save the current field settings to the passed limit set, preserving the ID in
 	 * the original limit set.
 	 * @param als the limit set to save to
 	 * @throws BadScreeningException on any parse errors or inconsistencies in the fields.
@@ -508,7 +513,7 @@ public class SeasonPanel extends JPanel
 		throws BadScreeningException
 	{
 		StringBuilder errors = new StringBuilder("");
-		
+
 		String s = "";
 		try
 		{
@@ -518,9 +523,11 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Reject High Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Reject High Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
-		
+
 		try
 		{
 			s = critHiValue.getText().trim();
@@ -529,7 +536,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Critical High Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Critical High Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -540,7 +549,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Warning High Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Warning High Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -551,7 +562,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Warning Low Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Warning Low Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -562,7 +575,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Critical Low Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Critical Low Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -573,9 +588,11 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Reject Low Value '" + s + "' -- must be a number\n");
+			final String msg = "Bad Reject Low Value '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
-		
+
 		// Rate Of Change Limits ========================
 		s = rocMultField.getText().trim();
 		String tu = (String)rocUnitCombo.getSelectedItem();
@@ -588,9 +605,11 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Reject High Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Reject High Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
-		
+
 		try
 		{
 			s = critHiROC.getText().trim();
@@ -599,7 +618,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Critical High Rate of Change '" + s + "' -- must be a number\n");
+			final String msg ="Bad Critical High Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -610,7 +631,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Warning High Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Warning High Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -621,7 +644,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Warning Low Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Warning Low Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -632,7 +657,9 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Critical Low Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Critical Low Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
@@ -643,14 +670,16 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Reject Low Rate of Change '" + s + "' -- must be a number\n");
+			final String msg = "Bad Reject Low Rate of Change '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
-		
+
 		// Stuck Sensor Limits ========================
 		s = stuckDurField.getText().trim();
 		tu = (String)stuckDurCombo.getSelectedItem();
 		als.setStuckDuration(s.length() == 0 ? null : (s + " " + tu.substring(0, tu.indexOf('('))));
-		
+
 		try
 		{
 			s = stuckToleranceField.getText().trim();
@@ -658,21 +687,25 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Stuck Sensor Tolerance '" + s + "' -- must be a number\n");
+			final String msg = "Bad Stuck Sensor Tolerance '" + s + "' -- must be a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		try
 		{
 			s = stuckMinField.getText().trim();
-			als.setMinToCheck(s.length() == 0 ? 
+			als.setMinToCheck(s.length() == 0 ?
 				AlarmLimitSet.UNASSIGNED_LIMIT : Double.parseDouble(s));
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad Stuck Sensor Min-to-Check '" + s 
-				+ "' -- must be blank (for no minimum) or a number\n");
+			final String msg = "Bad Stuck Sensor Min-to-Check '" + s +
+							   "' -- must be blank (for no minimum) or a number";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
-		
+
 		s = stuckMaxMultField.getText().trim();
 		tu = (String)stuckMaxDurUnitCombo.getSelectedItem();
 		als.setMaxGap(s.length() == 0 ? null : (s + " " + tu.substring(0, tu.indexOf('('))));
@@ -681,11 +714,11 @@ public class SeasonPanel extends JPanel
 		s = missingCheckDurField.getText().trim();
 		tu = (String)missingCheckDurCombo.getSelectedItem();
 		als.setMissingPeriod(s.length() == 0 ? null : (s + " " + tu.substring(0, tu.indexOf('('))));
-		
+
 		als.setMissingInterval((String)missingTSIntervalCombo.getSelectedItem());
-		
+
 		als.setLimitSetId(limitSet.getLimitSetId());
-		
+
 		try
 		{
 			s = missingMaxField.getText().trim();
@@ -693,12 +726,14 @@ public class SeasonPanel extends JPanel
 		}
 		catch(NumberFormatException ex)
 		{
-			errors.append("Bad # Max Missing Values '" + s + "' -- must be an integer\n");
+			final String msg = "Bad # Max Missing Values '" + s + "' -- must be an integer";
+			log.atTrace().setCause(ex).log(msg);
+			errors.append(msg + "\n");
 		}
 
 		if (errors.length() > 0)
 		{
-			errors.insert(0, "Errors found on limits for season '" 
+			errors.insert(0, "Errors found on limits for season '"
 				+ limitSet.getSeason().getAbbr() + "'");
 			throw new BadScreeningException(errors.toString());
 		}

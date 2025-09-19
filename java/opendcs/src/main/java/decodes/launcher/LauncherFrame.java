@@ -981,9 +981,8 @@ public class LauncherFrame extends JFrame implements ProcWaiterCallback
                 }
                 catch (DecodesException ex)
                 {
-                    final String msg = labels
-                        .getString("LauncherFrame.cannotInitDecodes");
-                    log.error(msg);
+                    final String msg = labels.getString("LauncherFrame.cannotInitDecodes");
+                    log.atError().setCause(ex).log(msg);
                     SwingUtilities.invokeLater(new Runnable()
                     {
                         public void run()

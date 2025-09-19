@@ -1,28 +1,19 @@
 /*
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.2  2019/03/05 20:47:42  mmaloney
- * Support new table names for ALARM
- *
- * Revision 1.1  2019/03/05 14:53:01  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.5  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.4  2017/05/17 20:37:38  mmaloney
- * First working version.
- *
- * Revision 1.3  2017/03/30 20:55:20  mmaloney
- * Alarm and Event monitoring capabilities for 6.4 added.
- *
- * Revision 1.2  2017/03/21 12:17:11  mmaloney
- * First working XML and SQL I/O.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm.xml;
 
 import java.io.FileOutputStream;
@@ -34,12 +25,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.xml.DomHelper;
 import ilex.xml.XmlOutputStream;
@@ -62,6 +54,7 @@ XML Input/Output for Alarm Meta Data.
 */
 public class AlarmXio
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "AlarmXio";
 	private String filename;
 	public static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -71,7 +64,7 @@ public class AlarmXio
 	public AlarmXio()
 	{
 	}
-	
+
 	/**
 	 * Reads an openDCS 6.6 alarm xml file and returns it in an AlarmFile object
 	 * @param filename
@@ -82,8 +75,8 @@ public class AlarmXio
 		throws DbXmlException
 	{
 		AlarmFile ret = new AlarmFile();
-		
-		Logger.instance().debug1(module + " reading alarm file '" + filename + "'");
+
+		log.debug(" reading alarm file '{}'", filename);
 		this.filename = filename;
 		Document doc;
 		try
@@ -92,7 +85,7 @@ public class AlarmXio
 		}
 		catch(ilex.util.ErrorException ex)
 		{
-			throw new DbXmlException(ex.toString());
+			throw new DbXmlException("Unable to read alrm file", ex);
 		}
 
 		Node rootel = doc.getDocumentElement();
@@ -119,62 +112,22 @@ public class AlarmXio
 				}
 			}
 		}
-		
+
 		return ret;
 	}
 
-//	/**
-//	 * Reads a file containing a single group definintion and returns the
-//	 * group object. 
-//	 * Alarm meta data objects read from XML files will have NullKey for
-//	 * all surrogate keys.
-//	 * @param filename
-//	 * @return
-//	 * @throws DbXmlException
-//	 */
-//	public AlarmGroup readFile(String filename)
-//		throws DbXmlException
-//	{
-//		Logger.instance().debug1(module + " reading file '" + filename + "'");
-//		this.filename = filename;
-//		Document doc;
-//		try
-//		{
-//			doc = DomHelper.readFile(module, filename);
-//		}
-//		catch(ilex.util.ErrorException ex)
-//		{
-//			throw new DbXmlException(ex.toString());
-//		}
-//
-//		Node alarmGroupNode = doc.getDocumentElement();
-//		if (!alarmGroupNode.getNodeName().equalsIgnoreCase(AlarmXioTags.AlarmGroup))
-//		{
-//			String s = module 
-//				+ ": Wrong type of configuration file -- Cannot initialize. "
-//				+ "Root element is not '" + AlarmXioTags.AlarmGroup + "'.";
-//			Logger.instance().failure(s);
-//			throw new DbXmlException(s);
-//		}
-//		
-//		
-//		return readAlarmGroup(alarmGroupNode);
-//	}
-	
 	public AlarmGroup readAlarmGroup(Node alarmGroupNode)
 		throws DbXmlException
 	{
 		AlarmGroup grp = new AlarmGroup(DbKey.NullKey);
-	
+
 		grp.setName(DomHelper.findAttr((Element)alarmGroupNode, AlarmXioTags.name));
 		if (grp.getName() == null)
 		{
-			String s = module + " file '" + filename 
-				+ "' AlarmGroup missing required 'name' attribute.";
-			Logger.instance().failure(s);
+			String s = module + " file '" + filename + "' AlarmGroup missing required 'name' attribute.";
 			throw new DbXmlException(s);
 		}
-		
+
 		NodeList children = alarmGroupNode.getChildNodes();
 		for(int i=0; children != null && i<children.getLength(); i++)
 		{
@@ -190,14 +143,13 @@ public class AlarmXio
 					addFileMonitor(grp, node);
 				else
 				{
-					Logger.instance().warning(module + " In file '" + filename
-						+ "' unrecognized node '" + nn + "' skipped.");
+					log.warn("n file '{}' unrecognized node '{}' skipped.", filename, nn);
 				}
 			}
 		}
 		return grp;
 	}
-	
+
 	public AlarmScreening readScreening(Node screeningNode)
 		throws DbXmlException
 	{
@@ -205,28 +157,26 @@ public class AlarmXio
 		scrn.setScreeningName(DomHelper.findAttr((Element)screeningNode, AlarmXioTags.name));
 		if (scrn.getScreeningName() == null)
 		{
-			String s = module + " file '" + filename 
-				+ "' AlarmScreening missing required 'name' attribute.";
-			Logger.instance().failure(s);
+			String s = module + " file '" + filename + "' AlarmScreening missing required 'name' attribute.";
 			throw new DbXmlException(s);
 		}
-		
-Logger.instance().debug3(module + " reading screening '" + scrn.getScreeningName() + "'");
+
+		log.trace("reading screening '{}'", scrn.getScreeningName());
 		// Walk the DOM tree and fill in screening and limit sets.
 		NodeList children = screeningNode.getChildNodes();
 		for(int i=0; children != null && i<children.getLength(); i++)
 		{
 			Node node = children.item(i);
 			String nn = node.getNodeName();
-Logger.instance().debug3(module + "     " + nn + " iselement=" + (node.getNodeType() == Node.ELEMENT_NODE));
+			log.trace("{} iselement={}", nn , (node.getNodeType() == Node.ELEMENT_NODE));
 			if (node.getNodeType() != Node.ELEMENT_NODE)
 				continue;
-			
+
 			Element childElem = (Element)node;
 
 			if (nn.equalsIgnoreCase(CompXioTags.siteName))
 			{
-				SiteName siteName = new SiteName(null, 
+				SiteName siteName = new SiteName(null,
 					DomHelper.findAttr(childElem, CompXioTags.nameType),
 					DomHelper.getTextContent(node));
 				scrn.getSiteNames().add(siteName);
@@ -238,13 +188,13 @@ Logger.instance().debug3(module + "     " + nn + " iselement=" + (node.getNodeTy
 				if (cod == null)
 					cod = DomHelper.getTextContent(node);
 				if (std == null || cod == null)
-					Logger.instance().warning(module + " Invalid datatype in screening '"
-						+ scrn.getScreeningName() + "' std=" + std + ", code=" + cod);
+					log.warn("Invalid datatype in screening '{}' std={}, code={}",
+							 scrn.getScreeningName(), std, cod);
 				else
 				{
 					DataType dataType = DataType.getDataType(std, cod);
 					scrn.setDataType(dataType);
-Logger.instance().debug3(module + "     assigned datatype = " + dataType);
+					log.trace("assigned datatype = {}", dataType);
 				}
 			}
 			else if (nn.equalsIgnoreCase(AlarmXioTags.startDateTime))
@@ -255,8 +205,10 @@ Logger.instance().debug3(module + "     assigned datatype = " + dataType);
 				}
 				catch (Exception ex)
 				{
-					Logger.instance().warning(module + " Error parsing startDateTime with text content '"
-						+ node.getTextContent() + "': " + ex + " -- ignored.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Error parsing startDateTime with text content '{}' -- ignored.",
+					   		node.getTextContent());
 				}
 			}
 			else if (nn.equalsIgnoreCase(AlarmXioTags.lastModified))
@@ -267,8 +219,10 @@ Logger.instance().debug3(module + "     assigned datatype = " + dataType);
 				}
 				catch (Exception ex)
 				{
-					Logger.instance().warning(module + " Error parsing lastModified with text content '"
-						+ node.getTextContent() + "': " + ex + " -- ignored.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Error parsing lastModified with text content '{}' -- ignored.",
+					   		node.getTextContent());
 				}
 			}
 			else if (nn.equalsIgnoreCase(AlarmXioTags.enabled))
@@ -285,7 +239,7 @@ Logger.instance().debug3(module + "     assigned datatype = " + dataType);
 				AlarmLimitSet als = new AlarmLimitSet();
 				als.setSeasonName(DomHelper.findAttr(childElem, AlarmXioTags.seasonName));
 				scrn.addLimitSet(als);
-Logger.instance().debug3(module + "    added AlarmLimitSet with season=" + als.getSeasonName());
+				log.trace("added AlarmLimitSet with season={}", als.getSeasonName());
 				NodeList limSetChild = childElem.getChildNodes();
 				for(int lsi=0; limSetChild != null && lsi<limSetChild.getLength(); lsi++)
 				{
@@ -293,17 +247,19 @@ Logger.instance().debug3(module + "    added AlarmLimitSet with season=" + als.g
 					String lsnn = lsNode.getNodeName();
 					if (lsNode.getNodeType() != Node.ELEMENT_NODE)
 						continue;
-					
+
 					String content = lsNode.getTextContent().trim();
-Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "'");
-					
+					log.trace("{} content='{}'", lsnn, content);
+
 					if (lsnn.equalsIgnoreCase(AlarmXioTags.rejectHigh))
 					{
 						try { als.setRejectHigh(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.rejectHigh
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.rejectHigh, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.criticalHigh))
@@ -311,8 +267,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setCriticalHigh(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.criticalHigh
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.criticalHigh, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.warningHigh))
@@ -320,8 +278,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setWarningHigh(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.warningHigh
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.warningHigh, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.warningLow))
@@ -329,8 +289,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setWarningLow(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.warningLow
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.warningLow, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.criticalLow))
@@ -338,8 +300,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setCriticalLow(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.criticalLow
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log(" Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.criticalLow, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.rejectLow))
@@ -347,8 +311,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setRejectLow(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.rejectLow
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.rejectLow, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.stuckDuration))
@@ -358,8 +324,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setStuckTolerance(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.stuckTolerance
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.stuckTolerance, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.stuckMinToCheck))
@@ -367,8 +335,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setMinToCheck(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.stuckMinToCheck
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.stuckMinToCheck, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.stuckMaxGap))
@@ -380,8 +350,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setRejectRocHigh(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.rejectRocHigh
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.rejectRocHigh, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.criticalRocHigh))
@@ -389,8 +361,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setCriticalRocHigh(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.criticalRocHigh
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.criticalRocHigh, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.warningRocHigh))
@@ -398,8 +372,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setWarningRocHigh(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.warningRocHigh
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.warningRocHigh, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.warningRocLow))
@@ -407,8 +383,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setWarningRocLow(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.warningRocLow
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.warningRocLow, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.criticalRocLow))
@@ -416,8 +394,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setCriticalRocLow(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.criticalRocLow
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.criticalRocLow, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.rejectRocLow))
@@ -425,8 +405,10 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setRejectRocLow(Double.parseDouble(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.rejectRocLow
-								+ " '" + content + "': must be a number -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("Error parsing {} '{}': must be a number -- ignored.",
+							   		AlarmXioTags.rejectRocLow, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.missingPeriod))
@@ -438,20 +420,20 @@ Logger.instance().debug3(module + "        " + lsnn + " content='" + content + "
 						try { als.setMaxMissingValues(Integer.parseInt(content)); }
 						catch(Exception ex)
 						{
-							Logger.instance().warning(module + " Error parsing " + AlarmXioTags.rejectRocLow
-								+ " '" + content + "': must be a integer -- ignored.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log(" Error parsing {} '{}': must be a integer -- ignored.",
+							   		AlarmXioTags.rejectRocLow, content);
 						}
 					}
 					else if (lsnn.equalsIgnoreCase(AlarmXioTags.hint))
 						als.setHintText(content);
 				}
-				
-Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als.getStuckDuration()
-+ ", rocInterval=" + als.getRocInterval());
-				
+
+				log.trace("after parsing limitSet.stuckDuration={}, rocInterval={}",
+						  als.getStuckDuration(), als.getRocInterval());
 			}
 		}
-		
 		return scrn;
 	}
 
@@ -459,23 +441,19 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 	{
 		// Get number and host attributes.
 		Element elem = (Element)node;
-//System.out.println("addAlgorithm nodename=" + node.getNodeName());
 		String name = DomHelper.findAttr(elem, AlarmXioTags.name);
 		if (name == null)
 		{
-			Logger.instance().warning(module + ": " + filename
-				+ " " + AlarmXioTags.ProcessMonitor + " element without name attribute -- ignored.");
+			log.warn("{} {} element without name attribute -- ignored.", filename, AlarmXioTags.ProcessMonitor);
 			return;
 		}
 		ProcessMonitor pm = new ProcessMonitor(DbKey.NullKey);
 		pm.setXmlProcName(name);
-		
+
 		String s = DomHelper.findAttr(elem, AlarmXioTags.enabled);
 		if (s != null)
 			pm.setEnabled(TextUtil.str2boolean(s));
-		
-//System.out.println(">>> process monitor " + name);
-		
+
 		NodeList children = node.getChildNodes();
 		for(int i=0; children != null && i<children.getLength(); i++)
 		{
@@ -492,32 +470,32 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 				if (childNode.getNodeType() == Node.ELEMENT_NODE)
 				{
 					Element alarmDefElem = (Element)childNode;
-	
+
 					if (!nn.equalsIgnoreCase(AlarmXioTags.AlarmDef))
 					{
-						Logger.instance().warning(module + " In file '" + filename + "'"
-							+ " ProcessMonitor with name=" + name + " has a child node "
-							+ " that is not an AlarmDef. Skipped.");
+						log.warn(" In file '{}' ProcessMonitor with name={} has a child node " +
+								 " that is not an AlarmDef. Skipped.",
+								 filename, name);
 						continue;
 					}
-					
+
 					AlarmEvent def = new AlarmEvent(DbKey.NullKey);
-					
+
 					def.setPriority(getPriorityElement(alarmDefElem, AlarmXioTags.AlarmDef));
 					String patt = DomHelper.getTextContent(alarmDefElem);
 					if (patt != null && patt.trim().length() == 0)
 						patt = null;
 					def.setPattern(patt);
-					
+
 					pm.getDefs().add(def);
 				}
 			}
 		}
 
-		Logger.instance().debug2(module + " Adding ProcessMonitor " + name);
+		log.trace("Adding ProcessMonitor {}", name);
 		grp.getProcessMonitors().add(pm);
 	}
-	
+
 	/**
 	 * Finds a priority attribute and returns the Logger E_ constant
 	 * associated with it. Returns -1 if no attribute or unrecognized string.
@@ -527,26 +505,9 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 	private int getPriorityElement(Element elem, String elemName)
 	{
 		String sPri = DomHelper.findAttr(elem, AlarmXioTags.priority);
-		if (sPri == null)
-			return -1;
-		else if (sPri.trim().equalsIgnoreCase("ANY"))
-			return -1;
-		else if (TextUtil.startsWithIgnoreCase(sPri.trim(), "INFO"))
-			return Logger.E_INFORMATION;
-		else if (sPri.trim().equalsIgnoreCase("WARNING"))
-			return Logger.E_WARNING;
-		else if (sPri.trim().equalsIgnoreCase("FAILURE"))
-			return Logger.E_FAILURE;
-		else if (sPri.trim().equalsIgnoreCase("FATAL"))
-			return Logger.E_FATAL;
-		else
-		{
-			Logger.instance().warning(module + " In file '" + filename + "' "
-				+ elemName + " has a unrecognized priority '"
-				+ sPri + " -- defaulting to any-priority.");
-			return -1;
-		}
-
+		log.warn(" In file '{}' {} has a priority ({}) we are currently ignoring as we replace the logger",
+				 filename, elemName, sPri);
+		return -1;
 	}
 
 	private void addFileMonitor(AlarmGroup grp, Node node)
@@ -556,16 +517,15 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 		String path = DomHelper.findAttr(elem, AlarmXioTags.path);
 		if (path == null)
 		{
-			Logger.instance().warning(module + ": " + filename
-				+ " " + AlarmXioTags.FileMonitor 
-				+ " element without " + AlarmXioTags.path + " attribute -- ignored.");
+			log.warn("{} {} element without {} attribute -- ignored.",
+					 filename, AlarmXioTags.FileMonitor, AlarmXioTags.path);
 			return;
 		}
-		
+
 		FileMonitor fm = new FileMonitor(path);
 		fm.setPriority(getPriorityElement(elem, AlarmXioTags.FileMonitor));
-		
-		
+
+
 		NodeList children = node.getChildNodes();
 		for(int i=0; children != null && i<children.getLength(); i++)
 		{
@@ -573,18 +533,17 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 			if (childNode.getNodeType() == Node.ELEMENT_NODE)
 			{
 				Element childElem = (Element)childNode;
-				
+
 				String nn = childNode.getNodeName();
 				if (nn.equalsIgnoreCase(AlarmXioTags.MaxFiles))
 				{
 					fm.setMaxFilesHint(DomHelper.findAttr(childElem, AlarmXioTags.hint));
-					
+
 					int v = DomHelper.getIntegerContent(childNode, -1, nn);
 					if (v <= 0)
 					{
-						Logger.instance().warning(module + ": " + filename
-							+ " " + AlarmXioTags.FileMonitor + " with invalid "
-							+ AlarmXioTags.MaxFiles + " value. Requires positive integer. Ignored.");
+						log.warn("{} {} with invalid {} value. Requires positive integer. Ignored.",
+								 filename, AlarmXioTags.FileMonitor, AlarmXioTags.MaxFiles);
 						continue;
 					}
 					fm.setMaxFiles(v);
@@ -592,13 +551,12 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 				else if (nn.equalsIgnoreCase(AlarmXioTags.MaxSize))
 				{
 					fm.setMaxSizeHint(DomHelper.findAttr(childElem, AlarmXioTags.hint));
-					
+
 					long v = DomHelper.getLongIntContent(childNode, -1L, nn);
 					if (v <= 0)
 					{
-						Logger.instance().warning(module + ": " + filename
-							+ " " + AlarmXioTags.FileMonitor + " with invalid "
-							+ AlarmXioTags.MaxSize + " value. Requires positive integer. Ignored.");
+						log.warn("{} {} with invalid {} value. Requires positive integer. Ignored.",
+								 filename, AlarmXioTags.FileMonitor, AlarmXioTags.MaxSize);
 						continue;
 					}
 					fm.setMaxSize(v);
@@ -606,13 +564,12 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 				else if (nn.equalsIgnoreCase(AlarmXioTags.MaxLMT))
 				{
 					fm.setMaxLMTHint(DomHelper.findAttr(childElem, AlarmXioTags.hint));
-					
+
 					String v = DomHelper.getTextContent(childNode);
 					if (v == null || v.trim().length() == 0)
 					{
-						Logger.instance().warning(module + ": " + filename
-							+ " " + AlarmXioTags.FileMonitor + " with invalid "
-							+ AlarmXioTags.MaxLMT + " value. Requires valid interval. Ignored.");
+						log.warn("{} {} with invalid {} value. Requires valid interval. Ignored.",
+								 filename, AlarmXioTags.FileMonitor, AlarmXioTags.MaxLMT);
 						continue;
 					}
 					fm.setMaxLMT(v.trim());
@@ -633,16 +590,15 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 				}
 				else
 				{
-					Logger.instance().warning(module + " In file '" + filename + "' "
-						+ AlarmXioTags.FileMonitor + " with path=" + path 
-						+ " has unrecognized a child node '" + nn + "' -- skipped.");
+					log.warn("In file '{}' {} with path={} has unrecognized a child node '{}' -- skipped.",
+							 filename, AlarmXioTags.FileMonitor, path, nn);
 					continue;
 				}
 			}
 		}
 		grp.getFileMonitors().add(fm);
 	}
-	
+
 	/**
 	 * Write the alarm group to the named XML file.
 	 * @param grp
@@ -656,7 +612,7 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 		writeXML(grp, fos);
 		fos.close();
 	}
-	
+
 	/**
 	 * Writes to an output stream. Does not close stream after fininshing.
 	 * @param grp
@@ -668,7 +624,7 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 	{
 		XmlOutputStream xos = new XmlOutputStream(os, AlarmXioTags.AlarmGroup);
 		xos.writeXmlHeader();
-		
+
 		writeXML(grp, xos);
 	}
 
@@ -676,7 +632,7 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 		throws IOException
 	{
 		xos.startElement(AlarmXioTags.AlarmGroup, AlarmXioTags.name, grp.getName());
-		
+
 		for(EmailAddr addr : grp.getEmailAddrs())
 			xos.writeElement(AlarmXioTags.Email, addr.getAddr());
 
@@ -691,49 +647,43 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 				xos.writeElement(AlarmXioTags.OnExists, AlarmXioTags.hint,
 					(fm.getAlarmOnExistsHint() == null ? "" : fm.getAlarmOnExistsHint()), null);
 			if (fm.getMaxFiles() > 0)
-				xos.writeElement(AlarmXioTags.MaxFiles, AlarmXioTags.hint, 
+				xos.writeElement(AlarmXioTags.MaxFiles, AlarmXioTags.hint,
 					(fm.getMaxFilesHint() == null ? "" : fm.getMaxFilesHint()),
 					"" + fm.getMaxFiles());
 			if (fm.getMaxSize() > 0)
-				xos.writeElement(AlarmXioTags.MaxSize, AlarmXioTags.hint, 
+				xos.writeElement(AlarmXioTags.MaxSize, AlarmXioTags.hint,
 					(fm.getMaxSizeHint() == null ? "" : fm.getMaxSizeHint()),
 					"" + fm.getMaxSize());
 			if (fm.getMaxLMT() != null && fm.getMaxLMT().trim().length() > 0)
-				xos.writeElement(AlarmXioTags.MaxLMT, AlarmXioTags.hint, 
+				xos.writeElement(AlarmXioTags.MaxLMT, AlarmXioTags.hint,
 					(fm.getMaxLMTHint() == null ? "" : fm.getMaxLMTHint()),
 					fm.getMaxLMT());
 			xos.writeElement(AlarmXioTags.enabled, "" + fm.isEnabled());
 			xos.endElement(AlarmXioTags.FileMonitor);
 		}
-		
+
 		for(ProcessMonitor pm : grp.getProcessMonitors())
 		{
 			xos.startElement(AlarmXioTags.ProcessMonitor, AlarmXioTags.name, pm.getProcName());
 			xos.writeElement(AlarmXioTags.enabled, "" + pm.isEnabled());
 			for(AlarmEvent def : pm.getDefs())
 			{
-				xos.writeElement(AlarmXioTags.AlarmDef, AlarmXioTags.priority, 
+				xos.writeElement(AlarmXioTags.AlarmDef, AlarmXioTags.priority,
 					priority2string(def.getPriority()), def.getPattern());
 			}
-			
+
 			xos.endElement(AlarmXioTags.ProcessMonitor);
 		}
 
 		xos.endElement(AlarmXioTags.AlarmGroup);
 	}
-	
+
 	private String priority2string(int pri)
 	{
-		switch(pri)
-		{
-		case Logger.E_INFORMATION: return "INFO";
-		case Logger.E_WARNING: return "WARNING";
-		case Logger.E_FAILURE: return "FAILURE";
-		case Logger.E_FATAL: return "FATAL";
-		default: return "ANY";
-		}
+		// TODO: determine replacement mechanism new logger is implement
+		return "ANY";
 	}
-	
+
 	/**
 	 * Writes to an output stream. Does not close stream after fininshing.
 	 * @param grp
@@ -747,28 +697,30 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 		xos.writeXmlHeader();
 
 		xos.startElement(AlarmXioTags.AlarmDefinitions);
-		
+
 		decodes.db.Database decDb = decodes.db.Database.getDb();
-		
+
 		// Write the alarm groups first.
 		for(AlarmGroup grp : groups)
 			writeXML(grp, xos);
-		
+
 		for(AlarmScreening as : screenings)
 		{
 			xos.startElement(AlarmXioTags.AlarmScreening, AlarmXioTags.name, as.getScreeningName());
-			
+
 			if (!DbKey.isNull(as.getSiteId()))
 			{
 				Site site = decDb.siteList.getSiteById(as.getSiteId());
 				if (site != null)
 					for(SiteName sn : site.getNameArray())
-						xos.writeElement(CompXioTags.siteName, CompXioTags.nameType,  sn.getNameType(), 
+						xos.writeElement(CompXioTags.siteName, CompXioTags.nameType,  sn.getNameType(),
 							sn.getNameValue());
 				else
-					Logger.instance().warning("Alarm Screening with id=" + as.getScreeningId()
-						+ " and name='" + as.getScreeningName() + "' has an invalid site with id=" 
-						+ as.getSiteId() + " -- ignored.");
+				{
+					log.warn("Alarm Screening with id={} and name='{}' has an invalid site with id={} " +
+							 "-- ignored.",
+							 as.getScreeningId(), as.getScreeningName(), as.getSiteId());
+				}
 			}
 			if (!DbKey.isNull(as.getDatatypeId()))
 			{
@@ -776,13 +728,15 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 				if (dt != null)
 				{
 					xos.writeElement(CompXioTags.dataType,
-						CompXioTags.standard, dt.getStandard(), 
+						CompXioTags.standard, dt.getStandard(),
 						CompXioTags.code, dt.getCode(), null);
 				}
 				else
-					Logger.instance().warning("Alarm Screening with id=" + as.getScreeningId()
-						+ " and name='" + as.getScreeningName() + "' has an invalid datatype with id=" 
-						+ as.getDatatypeId() + " -- ignored.");
+				{
+					log.warn("Alarm Screening with id={} and name='{}' has an invalid datatype with id={} " +
+							 "-- ignored.",
+							 as.getScreeningId(), as.getScreeningName(), as.getDatatypeId());
+				}
 			}
 			if (as.getStartDateTime() != null)
 				xos.writeElement(AlarmXioTags.startDateTime, sdf.format(as.getStartDateTime()));
@@ -791,7 +745,7 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 			xos.writeElement(AlarmXioTags.enabled, "" + as.isEnabled());
 			if (as.getAppInfo() != null)
 				xos.writeElement(AlarmXioTags.AppName, as.getAppInfo().getAppName());
-			
+
 			if (!DbKey.isNull(as.getAlarmGroupId()))
 			{
 				boolean found = false;
@@ -802,14 +756,16 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 						found = true;
 					}
 				if (!found)
-					Logger.instance().warning("Alarm Screening with id=" + as.getScreeningId()
-						+ " and name='" + as.getScreeningName() + "' has an invalid AlarmGroup with id=" 
-						+ as.getAlarmGroupId() + " -- ignored.");
+				{
+					log.warn("Alarm Screening with id={} and name='{}' has an invalid AlarmGroup with id={} " +
+							 " -- ignored.",
+							 as.getScreeningId(), as.getScreeningName(), as.getAlarmGroupId());
+				}
 			}
-			
+
 			if (as.getDescription() != null)
 				xos.writeElement(AlarmXioTags.desc, as.getDescription());
-			
+
 			NumberFormat nf = NumberFormat.getNumberInstance();
 			nf.setGroupingUsed(false);
 			nf.setMaximumFractionDigits(6);
@@ -819,7 +775,7 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 					xos.startElement(AlarmXioTags.AlarmLimitSet);
 				else
 					xos.startElement(AlarmXioTags.AlarmLimitSet, AlarmXioTags.seasonName, als.getSeasonName());
-				
+
 				if (als.getRejectHigh() != AlarmLimitSet.UNASSIGNED_LIMIT)
 					xos.writeElement(AlarmXioTags.rejectHigh, nf.format(als.getRejectHigh()));
 				if (als.getCriticalHigh() != AlarmLimitSet.UNASSIGNED_LIMIT)
@@ -832,7 +788,7 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 					xos.writeElement(AlarmXioTags.criticalLow, nf.format(als.getCriticalLow()));
 				if (als.getRejectLow() != AlarmLimitSet.UNASSIGNED_LIMIT)
 					xos.writeElement(AlarmXioTags.rejectLow, nf.format(als.getRejectLow()));
-				
+
 				if (als.getStuckDuration() != null)
 				{
 					xos.writeElement(AlarmXioTags.stuckDuration, als.getStuckDuration());
@@ -844,7 +800,7 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 					if (als.getMaxGap() != null)
 						xos.writeElement(AlarmXioTags.stuckMaxGap, als.getMaxGap());
 				}
-				
+
 				if (als.getRocInterval() != null)
 				{
 					xos.writeElement(AlarmXioTags.rocInterval, als.getRocInterval());
@@ -861,27 +817,27 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 					if (als.getRejectRocLow() != AlarmLimitSet.UNASSIGNED_LIMIT)
 						xos.writeElement(AlarmXioTags.rejectRocLow, nf.format(als.getRejectRocLow()));
 				}
-				
+
 				if (als.getMissingPeriod() != null && als.getMissingInterval() != null)
 				{
 					xos.writeElement(AlarmXioTags.missingPeriod, als.getMissingPeriod());
 					xos.writeElement(AlarmXioTags.missingInterval, als.getMissingInterval());
 					xos.writeElement(AlarmXioTags.missingMaxValues, "" + als.getMaxMissingValues());
 				}
-				
+
 				if (als.getHintText() != null)
 					xos.writeElement(AlarmXioTags.hint, als.getHintText());
-				
+
 				xos.endElement(AlarmXioTags.AlarmLimitSet);
 			}
-			
+
 			xos.endElement(AlarmXioTags.AlarmScreening);
 		}
 
 		xos.endElement(AlarmXioTags.AlarmDefinitions);
 	}
 
-	
+
 	/**
 	 * Test main. Reads XML into objects and then converts back to XML to stdout.
 	 * @param args 1 arg filename
@@ -894,11 +850,9 @@ Logger.instance().debug3(module + " after parsing limitSet.stuckDuration=" + als
 			System.err.println("Usage: java ... AlarmXio <filename>");
 			System.exit(1);
 		}
-		
+
 		AlarmXio xio = new AlarmXio();
 		AlarmFile alarmFile = xio.readAlarmFile(args[0]);
 		xio.writeXML(alarmFile.getScreenings(), alarmFile.getGroups(), System.out);
 	}
 }
-
-

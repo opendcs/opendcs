@@ -1,25 +1,19 @@
 /*
- * $Id: AlarmExport.java,v 1.4 2020/02/27 22:09:38 mmaloney Exp $
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log: AlarmExport.java,v $
- * Revision 1.4  2020/02/27 22:09:38  mmaloney
- * Bug fix: No args should export everything.
- *
- * Revision 1.3  2019/10/21 14:06:36  mmaloney
- * Fix incorrect dependency on hec library.
- *
- * Revision 1.2  2019/05/10 18:35:26  mmaloney
- * dev
- *
- * Revision 1.1  2019/03/05 14:53:01  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.1  2017/03/21 12:17:10  mmaloney
- * First working XML and SQL I/O.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm;
 
 import java.util.ArrayList;
@@ -27,6 +21,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dao.AlarmDAO;
@@ -48,26 +45,26 @@ import decodes.util.DecodesSettings;
  * @author mmaloney
  *
  */
-public class AlarmExport
-	extends TsdbAppTemplate
+public class AlarmExport extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private BooleanToken currentOnly = new BooleanToken("C", "Current Alarms Only",
 		"", TokenOptions.optSwitch, false);
 	private StringToken datatypeArg = new StringToken("T", "DataType",
-			"", TokenOptions.optSwitch | TokenOptions.optMultiple, ""); 
+			"", TokenOptions.optSwitch | TokenOptions.optMultiple, "");
 	private BooleanToken inclFileProcArg = new BooleanToken("F", "Include File and Process Alarms",
 			"", TokenOptions.optSwitch, false);
 	private StringToken grpNameArg = new StringToken("G", "Alarm Group Name",
-			"", TokenOptions.optSwitch | TokenOptions.optMultiple, ""); 
+			"", TokenOptions.optSwitch | TokenOptions.optMultiple, "");
 	private StringToken siteNameArg = new StringToken("S", "Site Name",
-			"", TokenOptions.optSwitch | TokenOptions.optMultiple, ""); 
-	
+			"", TokenOptions.optSwitch | TokenOptions.optMultiple, "");
+
 	public AlarmExport()
 	{
 		super("util.log");
 		DecodesInterface.silent = true;
 	}
-	
+
 	public static void main(String[] args)
 		throws Exception
 	{
@@ -86,20 +83,14 @@ public class AlarmExport
 	}
 
 	@Override
-	protected void runApp() 
+	protected void runApp()
 		throws Exception
 	{
-//		String grpName = grpNameArg.getValue();
-//		if (grpName == null || grpName.trim().length() == 0)
-//		{
-//			System.err.println("Missing required arg -- group name to export.");
-//			System.exit(1);
-//		}
-		
+
 		AlarmDAI alarmDAO = new AlarmDAO(TsdbAppTemplate.theDb);
 		AlarmXio alarmXio = new AlarmXio();
 		AlarmConfig cfg = new AlarmConfig();
-		
+
 		alarmDAO.check(cfg);
 		ArrayList<AlarmScreening> screenings = alarmDAO.getAllScreenings();
 		ArrayList<AlarmGroup> groups = new ArrayList<AlarmGroup>();
@@ -112,10 +103,9 @@ public class AlarmExport
 			 || (grpNameArg.NumberOfValues() == 1 && grpNameArg.getValue(0).trim().length() == 0))
 			{
 				groups.add(grp);
-//				groupIds.add(grp.getAlarmGroupId());
 				continue;
 			}
-			
+
 			boolean found = false;
 			for(int idx = 0; idx < grpNameArg.NumberOfValues(); idx++)
 				if (TextUtil.strEqualIgnoreCase(grp.getName(), grpNameArg.getValue(idx)))
@@ -129,7 +119,7 @@ public class AlarmExport
 				groupIds.add(grp.getAlarmGroupId());
 			}
 		}
-			
+
 		// Sort screenings by data type, site, reverse start date
 		Collections.sort(screenings,
 			new Comparator<AlarmScreening>()
@@ -147,14 +137,14 @@ public class AlarmExport
 
 					Date d1 = s1.getStartDateTime();
 					Date d2 = s2.getStartDateTime();
-					
+
 					long m1 = d1 == null ? 0L : d1.getTime();
 					long m2 = d2 == null ? 0L : d2.getTime();
-					
+
 					return m1 > m2 ? -1 : m1 < m2 ? 1 : 0;
 				}
 			});
-			
+
 		// Get list of datatype IDs for filter
 		ArrayList<DbKey> dtids = new ArrayList<DbKey>();
 		for(int idx = 0; idx < datatypeArg.NumberOfValues(); idx++)
@@ -162,7 +152,7 @@ public class AlarmExport
 			String dts = datatypeArg.getValue(idx);
 			if (dts == null || dts.trim().length() == 0)
 				continue;
-			
+
 			int colon = dts.indexOf(':');
 			String std = colon == -1 ? DecodesSettings.instance().dataTypeStdPreference :
 				dts.substring(0, colon);
@@ -170,12 +160,12 @@ public class AlarmExport
 			DataType dt = decodes.db.Database.getDb().dataTypeSet.get(std, code);
 			if (dt == null || DbKey.isNull(dt.getId()))
 			{
-				System.err.println("Invalid datatype arg '" + dts + "' -- ignored.");
+				log.error("Invalid datatype arg '{}' -- ignored.", dts);
 				continue;
 			}
 			dtids.add(dt.getId());
 		}
-			
+
 		// Get list of Site Ids for filter
 		ArrayList<DbKey> siteIds = new ArrayList<DbKey>();
 		for(int idx = 0; idx < siteNameArg.NumberOfValues(); idx++)
@@ -183,28 +173,30 @@ public class AlarmExport
 			String sns = siteNameArg.getValue(idx);
 			if (sns == null || sns.trim().length() == 0)
 				continue;
-			
+
 			int colon = sns.indexOf(':');
 			String nameType = colon == -1 ? DecodesSettings.instance().siteNameTypePreference :
 				sns.substring(0, colon);
 			String nameValue = colon == -1 ? sns : sns.substring(colon + 1);
-			
+
 			Site site = decodes.db.Database.getDb().siteList.getSite(nameType, nameValue);
 			if (site != null)
 				siteIds.add(site.getId());
 			else
-				System.err.println("Invalid site name arg '" + sns + "' -- ignored.");
+			{
+				log.error("Invalid site name arg '{}' -- ignored.", sns);
+			}
 		}
-			
+
 		// Now go through the screenings and apply the filters.
 		AlarmScreening as = null;
 		AlarmScreening lastScreening = null;
 
-		for(Iterator<AlarmScreening> scrit = screenings.iterator() ; scrit.hasNext(); 
+		for(Iterator<AlarmScreening> scrit = screenings.iterator() ; scrit.hasNext();
 			lastScreening = as)
 		{
 			as = scrit.next();
-			
+
 			// Filter by data type
 			if (dtids.size() > 0)
 			{
@@ -221,7 +213,7 @@ public class AlarmExport
 					continue;
 				}
 			}
-			
+
 			// Filter by alarm group
 			if (groupIds.size() > 0)
 			{
@@ -266,12 +258,12 @@ public class AlarmExport
 				continue;
 			}
 		}
-		
+
 		if (!inclFileProcArg.getValue())
 			groups.clear();
-		
+
 		alarmXio.writeXML(screenings, groups, System.out);
-		
+
 		alarmDAO.close();
 	}
 
