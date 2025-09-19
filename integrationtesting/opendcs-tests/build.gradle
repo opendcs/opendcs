@@ -60,6 +60,7 @@ dependencies {
     testImplementation(libs.ch.qos.logback)
     testImplementation(libs.com.faster.xml.jackson.databind)
     testImplementation(libs.webcompere.system.stubs.jupiter)
+    testRuntimeOnly(files(rootProject.file("log4jdbc4-1.2.jar")))
     testImplementation(libs.rest.assured)
     testImplementation(libs.json.jackson)
     testImplementation(libs.mockito.core)
@@ -168,6 +169,7 @@ testEngines.each { engine ->
         jvmArgs += "-Dopendcs.gui.warfile=${guiWar}"
 
         jvmArgs += "-XX:MaxJavaStackTraceDepth=1073741823"
+       
         jvmArgs += "-Djava.io.tmpdir=${tmpdir}"
         jvmArgs += "-Dbuild.dir=${project.layout.buildDirectory.get()}"
         jvmArgs += "-Dopendcs.test.classpath=${classPath}"
