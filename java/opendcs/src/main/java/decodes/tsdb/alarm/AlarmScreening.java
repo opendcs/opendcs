@@ -1,11 +1,18 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.1  2019/05/10 18:35:25  mmaloney
- * dev
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm;
 
 import java.util.ArrayList;
@@ -23,8 +30,7 @@ import opendcs.dao.CachableDbObject;
  * @author mmaloney
  *
  */
-public class AlarmScreening
-	implements CachableDbObject
+public class AlarmScreening implements CachableDbObject
 {
 	// Underlying data from ALARM_SCREENING_TABLE:
 	private DbKey screeningId = DbKey.NullKey;
@@ -40,24 +46,24 @@ public class AlarmScreening
 
 	/** Child Limit Sets */
 	private ArrayList<AlarmLimitSet> limitSets = new ArrayList<AlarmLimitSet>();
-	
+
 	/** Time this object was loaded from database */
 	private Date timeLoaded = null;
-	
+
 	/** Temporary storage for names when reading XML, before resolving to siteID */
 	private ArrayList<SiteName> siteNames = new ArrayList<SiteName>();
-	
+
 	/** Temporary storage for datatype when reading XML, before resolving to datatypeID */
 	private DataType dataType = null;
-	
+
 	/** Temporary storage for group name when reading XML, before resolving to alarmGroupId */
 	private String groupName = null;
-	
+
 	/** Temporary storage for application info, if one is assigned. */
 	private CompAppInfo appInfo = null;
 	/** Temporary storage for application name, if one is assigned. */
 	private String appName = null;
-	
+
 	public AlarmScreening()
 	{
 	}
@@ -168,7 +174,7 @@ public class AlarmScreening
 	{
 		limitSets.add(als);
 	}
-	
+
 	public ArrayList<AlarmLimitSet> getLimitSets()
 	{
 		return limitSets;
@@ -227,7 +233,7 @@ public class AlarmScreening
 		this.enabled = scrn.enabled;
 		this.alarmGroupId = scrn.alarmGroupId;
 		this.description = scrn.description;
-		
+
 		this.siteNames.clear();
 		for(SiteName sn : scrn.siteNames)
 			this.siteNames.add(sn);
@@ -244,7 +250,7 @@ public class AlarmScreening
 			limitSets.add(cp);
 		}
 	}
-	
+
 	@Override
 	public boolean equals(Object rhs)
 	{
@@ -253,35 +259,32 @@ public class AlarmScreening
 		if (!(rhs instanceof AlarmScreening))
 			return false;
 		AlarmScreening s2 = (AlarmScreening)rhs;
-		
+
 		if (!TextUtil.strEqual(screeningName, s2.screeningName))
 			return false;
-//System.out.println("se1");
+
 		if (!siteId.equals(s2.siteId))
 			return false;
 
 		if (!datatypeId.equals(s2.datatypeId))
 			return false;
-		
+
 		if (!TextUtil.dateEqual(startDateTime, s2.startDateTime))
 			return false;
 
 		// Skip lastModified
-		
-//System.out.println("se2");
+
 		if (enabled != s2.enabled)
 			return false;
 
 		if (!alarmGroupId.equals(s2.alarmGroupId))
 			return false;
-		
+
 		if (!TextUtil.strEqual(description, s2.description))
 			return false;
-		
+
 		if (this.limitSets.size() != s2.getLimitSets().size())
 			return false;
-
-//System.out.println("se3");
 
 		for(AlarmLimitSet thisls : this.limitSets)
 		{
@@ -334,5 +337,5 @@ public class AlarmScreening
 	{
 		this.appName = appName;
 	}
-	
+
 }

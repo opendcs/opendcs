@@ -1,8 +1,18 @@
-/**
- * $Id$
- * 
- * $Log$
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import java.util.Date;
@@ -15,6 +25,8 @@ import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "CentralRunningAverageAlgorithm averages single 'input' parameter to a single 'average' \n" +
 		"parameter. A separate aggPeriodInterval property should be supplied.\n" +
@@ -26,6 +38,7 @@ import org.opendcs.annotations.algorithm.Output;
 
 public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String AVERAGESTRING = "average";
 
 	@Input
@@ -64,7 +77,7 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 
 		aggregateInterval = IntervalCodes.getIntervalSeconds(aggPeriodInterval);
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -96,7 +109,6 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//		debug2("AverageAlgorithm:doAWTimeSlice, input=" + input);
 		if (!isMissing(input))
 		{
 			tally += input;
@@ -111,32 +123,26 @@ public class CentralRunningAverageAlgorithm extends decodes.tsdb.algo.AW_Algorit
 	@Override
 	protected void afterTimeSlices()
 	{
-		debug1("CentralRunningAverageAlgorithm:afterTimeSlices, count=" + count
-		+ ", lastTimeSlice=" +
-		(lastTimeSlice==null ? "null" : debugSdf.format(lastTimeSlice)));
+		log.debug("CentralRunningAverageAlgorithm:afterTimeSlices, count={}, lastTimeSlice={}",
+				  count,lastTimeSlice);
 
 		boolean doOutput = true;
 		if (count < minSamplesNeeded)
 		{
-//			info("Not Producing Output: Do not have minimum # samples (" + minSamplesNeeded
-//				+ ") have only " + count);
 			doOutput = false;
 		}
 		else if (!outputFutureData && _aggregatePeriodEnd.after(lastTimeSlice))
 		{
-//			info("Not Producing Output: outputFutureData=false and period end ("
-//				+ debugSdf.format(_aggregatePeriodEnd) + " is after last time-slice ("
-//				+ debugSdf.format(lastTimeSlice));
 			doOutput = false;
 		}
-                debug3("Start " + _aggregatePeriodBegin + " end " + _aggregatePeriodEnd);
+		log.trace("Start {} end {}", _aggregatePeriodBegin, _aggregatePeriodEnd);
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(_aggregatePeriodBegin);
 		cal.add(Calendar.SECOND,aggregateInterval/2);
-		debug3("Setting output at : " + cal.getTime());
+		log.trace("Setting output at: ", cal.getTime());
 		if (doOutput)
 			setOutput(average, tally / (double)count,cal.getTime());
-		else 
+		else
 		{
 			if (_aggInputsDeleted)
 				deleteOutput(average,cal.getTime());

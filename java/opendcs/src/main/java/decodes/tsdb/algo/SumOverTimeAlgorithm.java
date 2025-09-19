@@ -1,17 +1,30 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 
 //AW:JAVADOC
 /**
-SumOverTimeAlgorithm sums single 'input' parameter to a single 'sum' 
+SumOverTimeAlgorithm sums single 'input' parameter to a single 'sum'
 parameter. The summing period is determined by the interval of the output
 parameter.
 
@@ -19,6 +32,7 @@ parameter.
 //AW:JAVADOC_END
 public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double input;	//AW:TYPECODE=i
 	String _inputNames[] = { "input" };
@@ -57,7 +71,7 @@ public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		// No one-time init required.
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -84,7 +98,6 @@ public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		throws DbCompException
 	{
 //AW:TIMESLICE
-//		debug2("SumOverTime:doAWTimeSlice, input=" + input);
 		if (!isMissing(input))
 		{
 			tally += input;
@@ -104,10 +117,9 @@ public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 			setOutputUnitsAbbr("sum", getInputUnitsAbbr("input"));
 			setOutput(sum, tally);
 		}
-		else 
+		else
 		{
-			warning("Do not have minimum # samples (" + minSamplesNeeded
-				+ ") -- not producing a sum.");
+			log.warn("Do not have minimum # samples ({}) -- not producing a sum.", minSamplesNeeded);
 			if (_aggInputsDeleted)
 				deleteOutput(sum);
 		}

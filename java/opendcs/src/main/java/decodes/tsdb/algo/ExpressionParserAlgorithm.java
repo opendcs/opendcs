@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import decodes.tsdb.DbCompException;
@@ -12,6 +27,8 @@ import org.nfunk.jep.SymbolTable;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,9 +42,9 @@ import java.util.Properties;
 		"- Post-time slice expressions labeled post_<label>\n" +
 		"\n" +
 		"Expressions are executed in sort order.")
-public class ExpressionParserAlgorithm
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class ExpressionParserAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double in1;
 	@Input
@@ -42,7 +59,7 @@ public class ExpressionParserAlgorithm
 	public ExpressionParserAlgorithm()
 	{
 	}
-	
+
 	// Enter any local class variables needed by the algorithm.
 	ArrayList<StringPair> preScript = new ArrayList<StringPair>();
 	ArrayList<StringPair> timeSliceScript = new ArrayList<StringPair>();
@@ -57,7 +74,7 @@ public class ExpressionParserAlgorithm
 		}
 		else // id is the base part by itself
 			symTab.addVariable(name + ".base" + part, id);
-	}	
+	}
 
 	@Output
 	public NamedVariable out1 = new NamedVariable("out1", 0);
@@ -78,20 +95,18 @@ public class ExpressionParserAlgorithm
 			jepContext.getParser().getSymbolTable().remove(nm);
 		int idx = 0;
 		jepContext.setOnErrorLabel(null);
-//		jepContext.setAllowAssignment(true);
-//		jepContext.setAllowUndeclared(true);
 		while(idx >= 0 && idx < script.size())
 		{
 			StringPair label_expr = script.get(idx);
 			String expr = label_expr.second;
-			debug2("Executing expression[" + idx + "]: " + expr);
+			log.trace("Executing expression[{}]: {}", idx, expr);
 			jepContext.reset();
 			jepContext.getParser().parseExpression(expr);
 			Object value = jepContext.getParser().getValueAsObject();
 
 			if (jepContext.getParser().hasError() || value == null)
 			{
-				debug2("Expression '" + expr + "' resulted in error: " + jepContext.getParser().getErrorInfo());
+				log.trace("Expression '{}' resulted in error: {}", expr, jepContext.getParser().getErrorInfo());
 				String lab = jepContext.getOnErrorLabel();
 				if (lab != null)
 					idx = findLabel(script, lab);
@@ -106,7 +121,7 @@ public class ExpressionParserAlgorithm
 				idx++;
 		}
 	}
-	
+
 	private int findLabel(ArrayList<StringPair> script, String label)
 	{
 		for(int ret = 0; ret < script.size(); ret++)
@@ -132,7 +147,7 @@ public class ExpressionParserAlgorithm
 		{
 			String propName = key.toString();
 			String value = props.getProperty(propName);
-			
+
 			if (propName.toLowerCase().startsWith("pre_"))
 				preScript.add(new StringPair(propName, value));
 			else if (propName.toLowerCase().startsWith("ex_"))
@@ -143,7 +158,7 @@ public class ExpressionParserAlgorithm
 		if (preScript.size() == 0 && timeSliceScript.size() == 0 && postScript.size() == 0)
 			throw new DbCompException("ExpressionParser.init: No expressions found in properties.");
 		// Sort all the scripts by label (i.e. prop name)
-		Comparator<StringPair> spcomp = 
+		Comparator<StringPair> spcomp =
 			new Comparator<StringPair>()
 			{
 				@Override
@@ -155,9 +170,9 @@ public class ExpressionParserAlgorithm
 		Collections.sort(preScript, spcomp);
 		Collections.sort(timeSliceScript, spcomp);
 		Collections.sort(postScript, spcomp);
-		
+
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -168,14 +183,14 @@ public class ExpressionParserAlgorithm
 		// For TimeSlice algorithms this is done once before all slices.
 		// For Aggregating algorithms, this is done before each aggregate
 		// period.
-		
+
 		// Prepopulate the symbol table with the info about the parameters.
 		SymbolTable symTab = jepContext.getParser().getSymbolTable();
 		symTab.clear();
 		for(String inputName : getInputNames())
 		{
-			ParmRef pr = getParmRef(inputName);		
-			if (pr != null && pr.compParm != null && pr.timeSeries != null 
+			ParmRef pr = getParmRef(inputName);
+			if (pr != null && pr.compParm != null && pr.timeSeries != null
 			 && pr.timeSeries.getTimeSeriesIdentifier() != null)
 			{
 				TimeSeriesIdentifier tsid = pr.timeSeries.getTimeSeriesIdentifier();
@@ -222,7 +237,7 @@ public class ExpressionParserAlgorithm
 			addSubBase(symTab, "out2", "version", tsid.getPart("version"));
 		}
 		jepContext.setTimeSliceBaseTime(null);
-		
+
 		// The pre Script can't make any assignments. The user can use it to set
 		// defaults, lookup meta data and set variables in the symbol table, etc.
 		if (preScript.size() > 0)
@@ -266,11 +281,10 @@ public class ExpressionParserAlgorithm
 				int f = getInputFlagBits(inputName);
 				symTab.addVariable(flagName, Double.valueOf(f));
 
-				debug1("" + debugSdf.format(_timeSliceBaseTime) + " " + inputName + "=" + inputVal
-					+ ", " + flagName + "=0x" + Integer.toHexString(f));
+				log.debug("{} {}={}, {}=0x{}", _timeSliceBaseTime, inputName, inputVal, flagName, Integer.toHexString(f));
 			}
 		}
-		
+
 		// Remove the outputs from the symbol table so we can detect assignments.
 		// Any user-defined temporary vars stay in the table. The user can use these
 		// for accumulating, counting, etc., across all time slices.
@@ -278,7 +292,7 @@ public class ExpressionParserAlgorithm
 		symTab.remove("out1.flags");
 		symTab.remove("out2");
 		symTab.remove("out2.flags");
-		
+
 		// Execute the script should at some point set an output or input flags.
 		executeScript(timeSliceScript);
 
@@ -287,7 +301,7 @@ public class ExpressionParserAlgorithm
 		Object out1Flags = jepContext.getParser().getSymbolTable().getValue("out1.flags");
 		if (out1value != null)
 		{
-debug3("out1 was set to " + out1value);
+			log.trace("out1 was set to {}", out1value);
 			if (out1value instanceof Double)
 				setOutput(out1, (Double)out1value);
 			else if (out1value instanceof String)
@@ -297,26 +311,31 @@ debug3("out1 was set to " + out1value);
 				int f = (out1Flags instanceof Double) ? (int)(double)(Double)out1Flags
 					: (out1Flags instanceof Long) ? (int)(long)(Long)out1Flags
 					: 0;
-debug3("out1.flags was set to 0x" + Integer.toHexString(f));
+				log.trace("out1.flags was set to 0x{}", Integer.toHexString(f));
 				clearNonReservedFlags(out1);
 				setFlagBits(out1, f);
 			}
-else debug3("out1.flags not assigned.");
-				
+			else
+			{
+				log.trace("out1.flags not assigned.");
+			}
+
 		}
 		else
 		{
-			debug3("out1 was not assigned.");
+			log.trace("out1 was not assigned.");
 			if (out1Flags != null)
-				warning("Cannot set out1.flags without also ssetting out1 value. Ignored.");
+			{
+				log.warn("Cannot set out1.flags without also setting out1 value. Ignored.");
+			}
 		}
-		
-		
+
+
 		Object out2value = jepContext.getParser().getSymbolTable().getValue("out2");
 		Object out2Flags = jepContext.getParser().getSymbolTable().getValue("out2.flags");
 		if (out2value != null)
 		{
-debug3("out2 was set to " + out2value);
+			log.trace("out2 was set to {}", out2value);
 			if (out2value instanceof Double)
 				setOutput(out2, (Double)out2value);
 			else if (out2value instanceof String)
@@ -332,39 +351,40 @@ debug3("out2 was set to " + out2value);
 		}
 		else
 		{
-			debug3("out2 was not assigned.");
+			log.trace("out2 was not assigned.");
 			if (out2Flags != null)
-				warning("Cannot set out2.flags without also ssetting out2 value. Ignored.");
+			{
+				log.warn("Cannot set out2.flags without also setting out2 value. Ignored.");
+			}
 		}
-		
+
 		// Check the input '.flags' values in the symbol table to see if any values were
 		// changed. If so, set the new flags and cause them to be written to the database.
 		for(String inputName : getInputNames())
 		{
 			String flagName = inputName + ".flags";
-debug3("Checking for " + flagName);
+			log.trace("Checking for {}", flagName);
 			org.nfunk.jep.Variable v = symTab.getVar(flagName);
 			if (v != null)
 			{
-debug3("...found");
+				log.trace("...found");
 				Object vv = v.getValue();
 				if (vv instanceof Number)
 				{
 					int newFlags = ((Number)vv).intValue();
 					int origFlags = this.getInputFlagBits(inputName);
-debug3("origFlags=0x" + Integer.toHexString(origFlags) + ", newFlags=0x" + Integer.toHexString(newFlags));
 					if (newFlags != origFlags)
 					{
-						debug1("" + debugSdf.format(_timeSliceBaseTime) + " " + flagName + 
-							" changed from 0x" + Integer.toHexString(origFlags)
-							+ " to 0x" + Integer.toHexString(newFlags));
+						log.trace("{} {} origFlags=0x{}, newFlags={}", _timeSliceBaseTime, flagName, Integer.toHexString(origFlags), Integer.toHexString(newFlags));
 						// Clear all application-level bits and set to the new values.
-						setInputFlagBits(inputName, newFlags, 
-							~(VarFlags.RESERVED_4_COMP|IFlags.RESERVED_MASK));
+						setInputFlagBits(inputName, newFlags, ~(VarFlags.RESERVED_4_COMP|IFlags.RESERVED_MASK));
 					}
 				}
 			}
-else debug3("...not found");
+			else
+			{
+				log.trace("...not found");
+			}
 		}
 
 	}
@@ -379,8 +399,8 @@ else debug3("...not found");
 		// For TimeSlice algorithms this is done once after all slices.
 		// For Aggregating algorithms, this is done after each aggregate
 		// period.
-		
-		// Leave the base time alone. It should be set to the last base time seen 
+
+		// Leave the base time alone. It should be set to the last base time seen
 		// in the time slices.
 		executeScript(postScript);
 		Object out1value = jepContext.getParser().getSymbolTable().getValue("out1");
