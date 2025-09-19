@@ -1,14 +1,33 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.syncgui;
 
 import java.awt.*;
 import javax.swing.*;
-import java.util.Iterator;
+
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
 Panel shown in right side of GUI when a district is selected.
 */
-public class DistrictPanel extends JPanel 
+public class DistrictPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	BorderLayout borderLayout1 = new BorderLayout();
 	JPanel jPanel1 = new JPanel();
 	FlowLayout flowLayout1 = new FlowLayout();
@@ -22,23 +41,20 @@ public class DistrictPanel extends JPanel
 	JTextField hostField = new JTextField();
 	JTextField userField = new JTextField();
 	JTextField directoryField = new JTextField();
-	//JPanel jPanel4 = new JPanel();
-	//BorderLayout borderLayout2 = new BorderLayout();
-	//JLabel jLabel5 = new JLabel();
-	//JScrollPane jScrollPane1 = new JScrollPane();
-	//JTextArea backupDateList = new JTextArea();
 	GridBagLayout gridBagLayout1 = new GridBagLayout();
 	GridBagLayout gridBagLayout2 = new GridBagLayout();
 
 	District district = null;
 
-	public DistrictPanel() 
+	public DistrictPanel()
 	{
-		try {
+		try
+		{
 			jbInit();
 		}
-		catch(Exception ex) {
-			ex.printStackTrace();
+		catch (Exception ex)
+		{
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -60,9 +76,6 @@ public class DistrictPanel extends JPanel
 		userField.setText("decodes");
 		directoryField.setEditable(false);
 		directoryField.setText("/home/decodes/DECODES/edit-db");
-		//jPanel4.setLayout(borderLayout2);
-		//jLabel5.setHorizontalAlignment(SwingConstants.CENTER);
-		//jLabel5.setText("Database Backup Dates");
 		this.add(jPanel1, BorderLayout.NORTH);
 		jPanel1.add(jLabel1, null);
 		jPanel1.add(districtNameField, null);
@@ -81,12 +94,6 @@ public class DistrictPanel extends JPanel
 						,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(4, 0, 4, 120), 0, 0));
 		jPanel3.add(directoryField,	 new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0
 						,GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, new Insets(4, 0, 10, 50), 0, 0));
-		//jPanel2.add(jPanel4,	 new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0
-		//				,GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(15, 2, 5, 3), 174, 26));
-		//jPanel4.add(jLabel5, BorderLayout.NORTH);
-		//jPanel4.add(jScrollPane1, BorderLayout.CENTER);
-		//jScrollPane1.getViewport().add(backupDateList, null);
-		//backupDateList.setEditable(false);
 	}
 
 	/**
@@ -99,10 +106,5 @@ public class DistrictPanel extends JPanel
 		hostField.setText(district.getHost());
 		userField.setText(district.getUser());
 		directoryField.setText(district.getDesc());
-		//backupDateList.setText("");
-		//for(Iterator it = dist.iterator(); it.hasNext(); )
-		//{
-		//	backupDateList.append(it.next().toString() + "\n");
-		//}
 	}
 }
