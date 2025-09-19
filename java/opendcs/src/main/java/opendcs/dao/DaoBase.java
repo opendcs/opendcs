@@ -825,12 +825,18 @@ public class DaoBase implements DaiBase
         }
         catch (Exception ex)
         {
-            c.rollback();
+            if (c.isValid(100))
+            {
+                c.rollback();
+            }
             throw ex;
         }
         finally
         {
-            c.setAutoCommit(autoCommit);
+            if (c.isValid(100))
+            {
+                c.setAutoCommit(autoCommit);
+            }
             c.close();
         }
     }

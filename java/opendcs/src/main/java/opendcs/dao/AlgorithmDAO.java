@@ -369,20 +369,21 @@ public class AlgorithmDAO extends DaoBase implements AlgorithmDAI
                     q = "DELETE FROM CP_ALGO_TS_PARM WHERE ALGORITHM_ID = ?";
                     doModify(q, id);
                 }
+                
                 for(Iterator<DbAlgoParm> it = algo.getParms(); it.hasNext(); )
                 {
                     DbAlgoParm dap = it.next();
                     q = "INSERT INTO CP_ALGO_TS_PARM VALUES (?,?,?)";
                     doModify(q, id, dap.getRoleName(), dap.getParmType());
                 }
-
+                log.info("saving algo props");
                 try(PropertiesSqlDao propertiesSqlDao = new PropertiesSqlDao(db))
                 {
                     propertiesSqlDao.inTransactionOf(dao);
                     propertiesSqlDao.writeProperties("CP_ALGO_PROPERTY", "ALGORITHM_ID",
                             id, algo.getProperties());
                 }
-
+                log.info("saving algo scripts");
                 if (db.getTsdbVersion() >= TsdbDatabaseVersion.VERSION_13)
                 {
                     q = "DELETE FROM CP_ALGO_SCRIPT WHERE ALGORITHM_ID = ?";
