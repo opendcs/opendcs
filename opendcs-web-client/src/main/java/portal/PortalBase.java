@@ -93,19 +93,8 @@ public class PortalBase extends HttpServlet {
      * @throws ServletException
      * @throws IOException  
      */
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-        //This needs to be run from the "GET" and not the constructor.  It gets the servlet context this way,
-        //Where it cannot from the constructor.
-        /*
-        if (this.apiBaseUrl == null)
-        {
-            Gateway g = new Gateway();
-            g.setApiDetails(this.getServletContext());
-            LOGGER.debug("Setting the base url of the api to {}.", g.baseUrl);
-            this.setApiBaseUrl(g.baseUrl);
-        }
-        */
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
+    {
         String destination = this.getDestination();
         request.setAttribute("tool",  this.getTool());
         request.setAttribute("page",  this.getPage());

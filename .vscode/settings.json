@@ -4,5 +4,5 @@
         "projectKey": "opendcs_rest_api"
     },
     "java.compile.nullAnalysis.mode": "automatic",
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
