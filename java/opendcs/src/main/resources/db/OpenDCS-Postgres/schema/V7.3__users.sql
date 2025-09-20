@@ -26,7 +26,7 @@ create table identity_provider (
     id uuid default gen_random_uuid() primary key,
     name varchar(256) not null unique,
     type varchar(256) not null,
-    config json jsonb default '{}'::jsonb
+    config jsonb default '{}'::jsonb
 );
 
 create table user_identity_provider(
