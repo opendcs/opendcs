@@ -1,22 +1,36 @@
-/**
- * @(#) SyncConfig.java
- */
-
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.syncgui;
 
 import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.*;
 import java.net.URL;
-
-import ilex.util.Logger;
 
 /**
 The top level configuration for the Sync GUI.
 */
 public class SyncConfig
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Private instance */
 	private static SyncConfig _instance = null;
 
@@ -43,7 +57,7 @@ public class SyncConfig
 		districts = new Vector();
 	}
 
-	/** 
+	/**
 	 * Sets the URL that points to the HUB_HOME directory on the hub machine.
 	 * @param hh the hub home URL string
 	 */
@@ -56,7 +70,7 @@ public class SyncConfig
 	public String getHubHome() { return hubHome; }
 
 	/**
-	 * Sets the Hub Name 
+	 * Sets the Hub Name
 	*/
 	public void setHubName(String nm)
 	{
@@ -65,9 +79,9 @@ public class SyncConfig
 
 	/** @return the hub name */
 	public String getHubName() { return hubName; }
-	
-	/** 
-	 * Reads the Sync Config file from an input stream. 
+
+	/**
+	 * Reads the Sync Config file from an input stream.
 	 * Note: Stream is NOT closed on exit.
 	 * @param strm the input stream to read.
 	 */
@@ -95,9 +109,9 @@ public class SyncConfig
 			StringTokenizer stok = new StringTokenizer(line);
 			if (stok.countTokens() < 4)
 			{
-				Logger.instance().failure("Sync Configuration line "
-					+ lnr.getLineNumber() + " bad format. Should be "
-					+ "name host user dir optional-description. -- skipped.");
+				log.error("Sync Configuration line {} bad format. Should be " +
+						  "name host user dir optional-description. -- skipped.",
+						  lnr.getLineNumber());
 				continue;
 			}
 			String nm = stok.nextToken();
@@ -133,7 +147,7 @@ public class SyncConfig
 
 	/**
 	  Test main reads config file and dumps it.
-	  The one and only argument is an URL pointing to the hub directory, 
+	  The one and only argument is an URL pointing to the hub directory,
 	  which should contain the file "hub.conf".
 	  Any exceptions are thrown to shell.
 	*/
@@ -142,32 +156,33 @@ public class SyncConfig
 	{
 		SyncConfig.instance().setHubHome(args[0]);
 		URL url = new URL(SyncConfig.instance().getHubHome() + "/hub.conf");
-		InputStream fis = url.openStream();
-		SyncConfig.instance().readConfig(fis);
-		fis.close();
+		try(InputStream fis = url.openStream())
+		{
+			SyncConfig.instance().readConfig(fis);
+		}
 		SyncConfig.instance().dump();
 		SyncConfig sc = SyncConfig.instance();
 		for(Iterator it = sc.iterator(); it.hasNext(); )
 		{
 			District d = (District)it.next();
 			String distdir = sc.getHubHome() + "/" + d.getName();
-			// url = new URL(distdir + "/snaplist.txt");
-			// fis = url.openStream();
 			d.readSnapList(distdir);
-			// fis.close();
+
 			d.dump();
 			for(Iterator snapit = d.iterator(); snapit.hasNext(); )
 			{
 				DistrictDBSnap snap = (DistrictDBSnap)snapit.next();
 				url = new URL(distdir + "/" + snap.toString() + "/dblist.txt");
-				fis = url.openStream();
-				snap.readFileList(fis);
-				fis.close();
-				url = new URL(distdir + "/" + snap.toString() 
+				try(InputStream fis = url.openStream())
+				{
+					snap.readFileList(fis);
+				}
+				url = new URL(distdir + "/" + snap.toString()
 					+ "/platform/PlatformList.xml");
-				fis = url.openStream();
-				snap.readPlatList(fis);
-				fis.close();
+				try(InputStream fis = url.openStream())
+				{
+					snap.readPlatList(fis);
+				}
 				snap.dump();
 			}
 		}

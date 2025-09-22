@@ -1,19 +1,30 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.syncgui;
 
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.tree.*;
-import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Iterator;
 import javax.swing.event.*;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.io.InputStream;
 import java.io.IOException;
-
-import ilex.util.Logger;
-
-
 
 /**
 The TreePanel shows on the left side of the GUI. It shows a 3-level tree:
@@ -23,9 +34,9 @@ The TreePanel shows on the left side of the GUI. It shows a 3-level tree:
   <li>3 Directories within the database</li>
 </ul>
 */
-public class TreePanel extends JPanel
-implements TreeSelectionListener
+public class TreePanel extends JPanel implements TreeSelectionListener
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	BorderLayout borderLayout1 = new BorderLayout();
 	DefaultMutableTreeNode top = 
 		new DefaultMutableTreeNode(SyncConfig.instance().getHubName(), true);
@@ -35,12 +46,7 @@ implements TreeSelectionListener
 
 	public TreePanel() 
 	{
-		try {
-			jbInit();
-		}
-		catch(Exception ex) {
-			ex.printStackTrace();
-		}
+		jbInit();
 		fillDistricts();
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.addTreeSelectionListener(this);
@@ -48,10 +54,6 @@ implements TreeSelectionListener
 
 	public void expandFirstRow()
 	{
-//System.out.println("Tree has " + tree.getRowCount() + " rows.");
-//TreePath tp = tree.getPathForRow(0);
-//System.out.println("Row 0 path: '" + tp + "'");
-//tree.expandPath(tp);
 		tree.expandRow(0);
 	}
 
@@ -74,10 +76,10 @@ implements TreeSelectionListener
 		}
 	}
 
-	void jbInit() throws Exception {
+	void jbInit() {
 		this.setLayout(borderLayout1);
 		tree.addTreeWillExpandListener(new TreePanel_tree_treeWillExpandAdapter(this));
-    this.add(tree, BorderLayout.CENTER);
+    	this.add(tree, BorderLayout.CENTER);
 	}
 
 	public void valueChanged(TreeSelectionEvent e)
@@ -128,14 +130,11 @@ implements TreeSelectionListener
 	{
 		SyncGuiFrame sgf = SyncGuiFrame.instance();
 		TreePath tp = e.getPath();
-//System.out.println("Will expand '" + tp + "'");
 		Object []path = tp.getPath();
-//		for(int i=0; i<path.length; i++)
-//			System.out.println("\t" + path[i]);
+
 		DefaultMutableTreeNode thisNode = (DefaultMutableTreeNode)
 			path[path.length-1];
 		Object nodeObj = thisNode.getUserObject();
-//		System.out.println("" + nodeObj.getClass());
 		if (nodeObj instanceof District)
 		{
 			District dist = (District)nodeObj;
@@ -145,7 +144,6 @@ implements TreeSelectionListener
 			{
 				try
 				{
-//System.out.println("Reading snapshot list for '" + distDirUrl + "'");
 					dist.readSnapList(distDirUrl);
 
 					if (thisNode.getChildCount() == 1)
@@ -194,10 +192,9 @@ implements TreeSelectionListener
 				}
 				catch(IOException ex)
 				{
-					String msg = "Error '" + distDirUrl + 
-						"': " + ex.getMessage();
-					SyncGuiFrame.instance().showLeftStatus(msg);
-					Logger.instance().warning(msg);
+					String msg = "Error '" + distDirUrl + "'";
+					log.atError().setCause(ex).log(msg);
+					SyncGuiFrame.instance().showLeftStatus(msg + ": " + ex.getMessage());
 				}
 			}
 		}

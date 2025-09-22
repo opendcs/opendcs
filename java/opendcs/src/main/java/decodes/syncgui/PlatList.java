@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.syncgui;
 
 import java.util.Vector;
@@ -6,10 +21,13 @@ import java.util.*;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.xml.sax.*;
 
+import ilex.util.TextUtil;
 import ilex.xml.*;
-import ilex.util.*;
 import decodes.xml.XmlDbTags;
 
 /**
@@ -17,6 +35,7 @@ import decodes.xml.XmlDbTags;
  */
 public class PlatList
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The owning database */
 	DistrictDBSnap myDB;
 
@@ -67,17 +86,10 @@ public class PlatList
 			if (topLevelXio == null)
 				topLevelXio = new TopLevelXio();
 			topLevelXio.parse(this, strm, myDB.toString());
-//System.out.println("Finished PlatList read: " + entries.size() + " entries.");
 		}
-		catch(ParserConfigurationException ex)
+		catch(SAXException | ParserConfigurationException ex)
 		{
-			Logger.instance().failure("Cannot initialize XML parser: "
-				+ ex);
-		}
-		catch(SAXException ex)
-		{
-			Logger.instance().failure("Cannot initialize XML parser: "
-				+ ex);
+			log.atError().setCause(ex).log("Cannot initialize XML parser.");
 		}
 	}
 
@@ -108,8 +120,7 @@ public class PlatList
 /**
 Top-level SAX parser for reading the PlatformXref.xml file.
 */
-class TopLevelXio
-	implements XmlObjectParser
+class TopLevelXio implements XmlObjectParser
 {
 	/** SAX parser object */
 	private XMLReader parser;
@@ -157,7 +168,7 @@ class TopLevelXio
 	  @param inputName for log messages
 	  @return LrgsStatusSnapshotExt parsed from data
 	*/
-	public synchronized void parse(PlatList platList, 
+	public synchronized void parse(PlatList platList,
 		InputStream is, String inputName)
 		throws IOException, SAXException
 	{
@@ -174,8 +185,7 @@ class TopLevelXio
 		throws SAXException
 	{
 		if (!TextUtil.isAllWhitespace(new String(ch, start, length)))
-			throw new SAXException(
-				"No character data expected in TopLevelElement");
+			throw new SAXException("No character data expected in TopLevelElement");
 	}
 
 	/**
@@ -197,9 +207,7 @@ class TopLevelXio
 		}
 		else
 		{
-			String msg = 
-				"Unexpected tag '" + localName + "' at top level of file.";
-			Logger.instance().warning(msg);
+			String msg = "Unexpected tag '" + localName + "' at top level of file.";
 			throw new SAXException(msg);
 		}
 	}
@@ -230,9 +238,9 @@ class TopLevelXio
  * Parses the platform list cross reference file. Populates PlatformList
  * with partial PlatformObjects.
  */
-class PlatformListParser 
-	implements XmlObjectParser, TaggedStringOwner
+class PlatformListParser implements XmlObjectParser, TaggedStringOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
   	/** This is the object being parsed or written */
 	private PlatList platList;
 
@@ -266,7 +274,7 @@ class PlatformListParser
 	 * @param start start of characters
 	 * @param length length of characters
 	 */
-	public void characters( char[] ch, int start, int length ) 
+	public void characters( char[] ch, int start, int length )
 		throws SAXException
 	{
 		if (!TextUtil.isAllWhitespace(new String(ch, start, length)))
@@ -283,7 +291,7 @@ class PlatformListParser
 	 * @param atts attributes for this element
 	 * @throws SAXException on parse error
 	 */
-	public void startElement( XmlHierarchyParser hier, String namespaceURI, 
+	public void startElement( XmlHierarchyParser hier, String namespaceURI,
 		String localName, String qname, Attributes atts ) throws SAXException
 	{
 		if (localName.equalsIgnoreCase(XmlDbTags.PlatformXref_el))
@@ -298,10 +306,10 @@ class PlatformListParser
 					XmlDbTags.PlatformId_at + " attribute");
 			int platformId;
 			try { platformId = Integer.parseInt(str); }
-			catch (NumberFormatException e)
+			catch (NumberFormatException ex)
 			{
 				throw new SAXException("PlatformXref " +
-					XmlDbTags.PlatformId_at + " must be a number");
+					XmlDbTags.PlatformId_at + " must be a number", ex);
 			}
 
 			ple = new PlatListEntry(platformId);
@@ -355,22 +363,20 @@ class PlatformListParser
 		}
 		else
 		{
-			Logger.instance().log(Logger.E_WARNING,
-				"Invalid element '" + localName + "' under " + myName()
-				+ " -- skipped.");
+			log.warn("Invalid element '{}' under {} -- skipped.", localName, myName());
 			hier.pushObjectParser(new ElementIgnorer());
 		}
 	}
 
 	/**
 	 * Signals the end of the current element.
-	 * Causes parser to pop the stack in the hierarchy. 
+	 * Causes parser to pop the stack in the hierarchy.
 	 * @param hier the stack of parsers
 	 * @param namespaceURI ignored
 	 * @param localName element that is ending
 	 * @param qname ignored
 	 */
-	public void endElement( XmlHierarchyParser hier, String namespaceURI, 
+	public void endElement( XmlHierarchyParser hier, String namespaceURI,
 		String localName, String qname ) throws SAXException
 	{
 		if (localName.equalsIgnoreCase(XmlDbTags.PlatformXref_el))
@@ -393,7 +399,7 @@ class PlatformListParser
 	 * @param start the start of the whitespace
 	 * @param length the length of the whitespace
 	 */
-	public void ignorableWhitespace( char[] ch, int start, int length ) 
+	public void ignorableWhitespace( char[] ch, int start, int length )
 		throws SAXException
 	{
 	}
