@@ -1,16 +1,18 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:56  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import ilex.util.Logger;
@@ -38,13 +40,10 @@ import decodes.gui.GuiDialog;
 public class AlarmDefDialog extends GuiDialog
 {
 	private JTextField patternField = new JTextField();
-	@SuppressWarnings("rawtypes")
-	private JComboBox priorityCombo = null;
+	private JComboBox<String> priorityCombo = null;
 	private boolean ok;
 	AlarmEditPanel parentPanel = null;
-	private String priorities[] = { Logger.priorityName[Logger.E_INFORMATION],
-		Logger.priorityName[Logger.E_WARNING], Logger.priorityName[Logger.E_FAILURE],
-		Logger.priorityName[Logger.E_FATAL] };
+	private String priorities[] = { "Logging system is getting replaced." };
 
 
 	public AlarmDefDialog(AlarmEditPanel parentPanel)

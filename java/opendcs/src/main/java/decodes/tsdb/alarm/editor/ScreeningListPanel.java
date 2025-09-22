@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import java.awt.BorderLayout;
@@ -21,6 +36,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Site;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -33,16 +51,15 @@ import decodes.tsdb.alarm.AlarmLimitSet;
 import decodes.tsdb.alarm.AlarmScreening;
 import decodes.util.DecodesSettings;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import opendcs.dai.AlarmDAI;
-import opendcs.dai.DataTypeDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dao.AlarmDAO;
 
 @SuppressWarnings("serial")
 public class ScreeningListPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	AlarmEditFrame parentFrame = null;
 	private SortingListTable screeningTable = null;
 	private ScreeningListTableModel model = null;
@@ -278,11 +295,11 @@ public class ScreeningListPanel extends JPanel
 class ScreeningListTableModel extends AbstractTableModel
 	implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String[] colnames = new String[8];
 	int [] widths = { 8, 16, 10, 13, 13, 14, 14, 14 };
 	private int sortColumn = 0;
 	ArrayList<AlarmScreening> screenings = new ArrayList<AlarmScreening>();
-//	private AlarmConfig alarmConfig = new AlarmConfig();
 	private ScreeningListPanel parentPanel = null;
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 
@@ -319,6 +336,7 @@ class ScreeningListTableModel extends AbstractTableModel
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to delete alarm screening.");
 			parentPanel.parentFrame.showError("Cannot delete alarm screening: " + ex);
 		}
 		finally
@@ -344,9 +362,10 @@ class ScreeningListTableModel extends AbstractTableModel
 					try { site = siteDAO.getSiteById(tscrn.getSiteId()); }
 					catch (NoSuchObjectException ex)
 					{
-						Logger.instance().warning("Screening with id=" + tscrn.getKey() + " '"
-							+ tscrn.getScreeningName() + "' has invalid site ID=" + tscrn.getSiteId()
-							+ " -- will set to null.");
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Screening with id={} '{}' has invalid site ID={} -- will set to null.",
+						   		tscrn.getKey(), tscrn.getScreeningName(), tscrn.getSiteId());
 						tscrn.setSiteId(DbKey.NullKey);
 						site = null;
 					}
@@ -381,6 +400,7 @@ class ScreeningListTableModel extends AbstractTableModel
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to read screenings.");
 			parentPanel.parentFrame.showError("Cannot read screenings: " + ex);
 		}
 		finally
