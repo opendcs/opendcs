@@ -1,8 +1,18 @@
+create table identity_provider (
+    id uuid default gen_random_uuid() primary key,
+    name varchar(256) not null unique,
+    type varchar(256) not null,
+    config jsonb default '{}'::jsonb,
+    updated_at timestamptz not null --- TODO make trigger
+);
+
 create table opendcs_user(
     id uuid default gen_random_uuid() primary key,
+    preferred_name_provider uuid references identity_provider(id),
     email text not null,
     preferences jsonb default '{}'::jsonb,
     created_at timestamptz not null default now()
+    updated_at timestamptz not null --- TODO make trigger
 );
 
 create table opendcs_user_password(
@@ -13,7 +23,9 @@ create table opendcs_user_password(
 
 create table opendcs_role(
     id uuid default gen_random_uuid() primary key,
-    name varchar(128)
+    name varchar(128) not null unique,
+    description text,
+    updated_at timestamptz not null --- TODO make trigger
 );
 
 create table user_roles(
@@ -22,15 +34,10 @@ create table user_roles(
     primary key (user_id, role_id)
 );
 
-create table identity_provider (
-    id uuid default gen_random_uuid() primary key,
-    name varchar(256) not null unique,
-    type varchar(256) not null,
-    config jsonb default '{}'::jsonb
-);
 
 create table user_identity_provider(
     user_id uuid references opendcs_user(id) not null,
     identity_provider_id uuid references identity_provider(id) not null,
-    primary key (user_id, identity_provider_id)
+    primary key (user_id, identity_provider_id),
+    created_at timestamptz not null default now()
 );
