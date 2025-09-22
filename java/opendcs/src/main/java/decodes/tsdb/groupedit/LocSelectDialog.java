@@ -1,12 +1,20 @@
 /*
- *  $Id: LocSelectDialog.java,v 1.4 2019/12/11 14:43:38 mmaloney Exp $
- *  
- *  Copyright 2016 U.S. Army Corps of Engineers, Institute for Water Resources, Hydrologic Engineering Center (HEC).
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
-
-import ilex.util.Logger;
 import ilex.util.StringPair;
 
 import java.awt.BorderLayout;
@@ -34,6 +42,9 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.TimeSeriesDAI;
 import decodes.cwms.CwmsTsId;
 import decodes.gui.GuiDialog;
@@ -48,9 +59,9 @@ import decodes.tsdb.TsGroupMemberType;
  * Dialog for selecting CWMS Location Specification.
  */
 @SuppressWarnings("serial")
-public class LocSelectDialog 
-	extends GuiDialog
+public class LocSelectDialog  extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JButton okButton = new JButton("  OK  ");
 	private JButton cancelButton = new JButton("Cancel");
 	private boolean cancelled;
@@ -61,12 +72,9 @@ public class LocSelectDialog
 	private JRadioButton baseRadio = new JRadioButton("Base Location");
 	private JRadioButton subRadio = new JRadioButton("Sub Location");
 	private JTextField resultField = new JTextField(15);
-//	private JTextField baseField = new JTextField();
-//	private JTextField subField = new JTextField();
 	private CwmsBaseSubPartSpec selectedRow = null;
 	private JFrame owner = null;
 	private SelectionMode selectionMode = SelectionMode.GroupEdit;
-//	private boolean allowBaseSub = true;
 
 	public LocSelectDialog(JFrame owner, TimeSeriesDb tsdb, SelectionMode selectionMode)
 	{
@@ -89,14 +97,14 @@ public class LocSelectDialog
 		JPanel radioPanel = new JPanel(new GridBagLayout());
 		radioPanel.setBorder(new TitledBorder(
 			(owner instanceof TsDbGrpEditorFrame) ? " Add Filter By " : " Add Mask By "));
-		
+
 		mainPanel.add(listPanel, BorderLayout.CENTER);
 		mainPanel.add(radioPanel, BorderLayout.SOUTH);
 		overallPanel.add(mainPanel, BorderLayout.CENTER);
-		
+
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
 		overallPanel.add(buttonPanel, BorderLayout.SOUTH);
-		
+
 		okButton.addActionListener(
 			new ActionListener()
 			{
@@ -117,7 +125,7 @@ public class LocSelectDialog
 		buttonPanel.add(cancelButton, null);
 
 		getContentPane().add(overallPanel);
-		
+
 		model = new LocTableModel(this);
 		locationTable = new SortingListTable(model, model.colWidths);
 		JScrollPane scrollPane = new JScrollPane();
@@ -183,23 +191,23 @@ public class LocSelectDialog
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 1), 0, 0));
-		
+
 		locationTable.getSelectionModel().setSelectionMode(
 			selectionMode == SelectionMode.GroupEdit ? ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
 				: ListSelectionModel.SINGLE_SELECTION);
-		
+
 		if (selectionMode == SelectionMode.CompEditNoGroup)
 		{
 			baseRadio.setEnabled(false);
 			subRadio.setEnabled(false);
 		}
-		
+
 		resultField.setEditable(selectionMode != SelectionMode.CompEditNoGroup);
-		
+
 		getRootPane().setDefaultButton(okButton);
 		pack();
 	}
-	
+
 	private boolean inSelectionMade = false;
 
 	protected void selectionMade()
@@ -207,20 +215,20 @@ public class LocSelectDialog
 		if (inSelectionMade)
 			return;
 		inSelectionMade = true;
-		
+
 		if (selectionMode == SelectionMode.GroupEdit)
 		{
 			locationTable.getSelectionModel().setSelectionMode(
 				subRadio.isSelected() ? ListSelectionModel.SINGLE_SELECTION
 					: ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		}
-		
+
 		int r = locationTable.getSelectedRow();
 		if (r >= 0)
 		{
 			//Get the correct row from the table model
 			int modelrow = locationTable.convertRowIndexToModel(r);
-			LocTableModel tablemodel = (LocTableModel)locationTable.getModel();			
+			LocTableModel tablemodel = (LocTableModel)locationTable.getModel();
 			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tablemodel.getRowObject(modelrow);
 			if (spec != selectedRow)
 			{
@@ -263,7 +271,7 @@ public class LocSelectDialog
 				break;
 			}
 		}
-		
+
 		inSelectionMade = false;
 	}
 
@@ -285,7 +293,7 @@ public class LocSelectDialog
 
 	/**
 	 * Called when Cancel button is pressed.
-	 * 
+	 *
 	 * @param e
 	 *            ignored
 	 */
@@ -299,7 +307,7 @@ public class LocSelectDialog
 	{
 		return cancelled;
 	}
-	
+
 	public StringPair getResult()
 	{
 		String label, value;
@@ -309,13 +317,13 @@ public class LocSelectDialog
 			label = TsGroupMemberType.BaseLocation.toString();
 		else
 			label = TsGroupMemberType.SubLocation.toString();
-		
+
 		value = resultField.getText();
 		if (value.length() == 0)
 			return null;
 		return new StringPair(label, value);
 	}
-	
+
 	public void setResult(StringPair r)
 	{
 		if (r.first.toLowerCase().startsWith("base"))
@@ -326,19 +334,19 @@ public class LocSelectDialog
 			fullRadio.setSelected(true);
 		resultField.setText(r.second);
 	}
-	
+
 	public ArrayList<StringPair> getResults()
 	{
 		ArrayList<StringPair> ret = new ArrayList<StringPair>();
-		
+
 		int rows[] = locationTable.getSelectedRows();
 		if (rows == null || rows.length == 0)
 			return ret;
-		
+
 		TsGroupMemberType tgmt = fullRadio.isSelected() ? TsGroupMemberType.Location
-			: baseRadio.isSelected() ? TsGroupMemberType.BaseLocation 
+			: baseRadio.isSelected() ? TsGroupMemberType.BaseLocation
 			: TsGroupMemberType.SubLocation;
-		
+
 		for(int row : rows)
 		{
 			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)model.getRowObject(row);
@@ -351,10 +359,10 @@ public class LocSelectDialog
 				ret.add(new StringPair(tgmt.toString(), spec.getFull())); break;
 			}
 		}
-		
+
 		return ret;
 	}
-	
+
 	public void setCurrentValue(String value)
 	{
 		if (value == null)
@@ -401,15 +409,15 @@ public class LocSelectDialog
 }
 
 @SuppressWarnings("serial")
-class LocTableModel extends javax.swing.table.AbstractTableModel
-	implements SortingListTableModel
+class LocTableModel extends javax.swing.table.AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String colNames[] = { "Base", "Sub", "Num TSIDs" };
 	int colWidths[] = { 40, 30, 20 };
 	private HashMap<StringPair, CwmsBaseSubPartSpec> bs2spec = new HashMap<StringPair, CwmsBaseSubPartSpec>();
 	ArrayList<CwmsBaseSubPartSpec> theList = new ArrayList<CwmsBaseSubPartSpec>();
 
-	private Comparator<CwmsBaseSubPartSpec> baseComparator = 
+	private Comparator<CwmsBaseSubPartSpec> baseComparator =
 		new Comparator<CwmsBaseSubPartSpec>()
 		{
 			@Override
@@ -421,8 +429,8 @@ class LocTableModel extends javax.swing.table.AbstractTableModel
 				// note: base,sub must be unique.
 			}
 		};
-		
-	private Comparator<CwmsBaseSubPartSpec> subComparator = 
+
+	private Comparator<CwmsBaseSubPartSpec> subComparator =
 		new Comparator<CwmsBaseSubPartSpec>()
 		{
 			@Override
@@ -441,7 +449,7 @@ class LocTableModel extends javax.swing.table.AbstractTableModel
 				// note: base,sub must be unique.
 			}
 		};
-	private Comparator<CwmsBaseSubPartSpec> numComparator = 
+	private Comparator<CwmsBaseSubPartSpec> numComparator =
 		new Comparator<CwmsBaseSubPartSpec>()
 		{
 			@Override
@@ -455,11 +463,11 @@ class LocTableModel extends javax.swing.table.AbstractTableModel
 				// note: base,sub must be unique.
 			}
 		};
-	
+
 	public LocTableModel(LocSelectDialog dlg)
 	{
 		TimeSeriesDAI tsDao = dlg.tsdb.makeTimeSeriesDAO();
-		
+
 		try
 		{
 			ArrayList<TimeSeriesIdentifier> tslist = tsDao.listTimeSeries();
@@ -484,14 +492,14 @@ class LocTableModel extends javax.swing.table.AbstractTableModel
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().warning("Error listing time series: " + ex);
+			log.atWarn().setCause(ex).log("Error listing time series.");
 		}
 		finally
 		{
 			tsDao.close();
 		}
 	}
-	
+
 	@Override
 	public int getRowCount()
 	{
@@ -522,7 +530,7 @@ class LocTableModel extends javax.swing.table.AbstractTableModel
 		}
 		return "";
 	}
-	
+
 	@Override
 	public void sortByColumn(int column)
 	{
@@ -538,6 +546,5 @@ class LocTableModel extends javax.swing.table.AbstractTableModel
 		if (row < 0)
 			return null;
 		return theList.get(row);
-	}	
+	}
 }
-

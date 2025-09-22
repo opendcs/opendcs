@@ -1,38 +1,18 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.8  2013/08/18 19:49:37  mmaloney
- * Added clear button for compedit selection.
- *
- * Revision 1.7  2012/07/24 15:15:47  mmaloney
- * Cosmetic group-editor bugs for HDB.
- *
- * Revision 1.6  2011/02/03 20:00:23  mmaloney
- * Time Series Group Editor Mods
- *
- * Revision 1.5  2011/01/28 20:02:34  gchen
- * *** empty log message ***
- *
- * Revision 1.4  2011/01/27 23:21:18  gchen
- * Make the TS group GUI available against cwms DB
- *
- * Revision 1.3  2010/12/08 13:50:09  mmaloney
- * Moved from decodes.groupedit
- *
- * Revision 1.2  2010/12/08 13:40:13  mmaloney
- * dev
- *
- * Revision 1.1  2010/12/08 13:38:33  mmaloney
- * Moved from decodes.groupedit
- *
- * Revision 1.1  2010/12/07 15:18:45  mmaloney
- * Created
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import java.awt.BorderLayout;
@@ -58,9 +38,7 @@ import ilex.util.LoadResourceBundle;
 Dialog for selecting one or more groups.
 Used by the TsGroupDefinitionPanel.
 */
-public class TsGroupSelectDialog
-	extends GuiDialog
-	implements GroupSelector
+public class TsGroupSelectDialog extends GuiDialog implements GroupSelector
 {
 	private JPanel panel1 = new JPanel();
 	private JPanel southButtonPanel = new JPanel();
@@ -81,9 +59,9 @@ public class TsGroupSelectDialog
 	private String dialogTitle;
 	private String selectLabel;
 	private String cancelLabel;
-	
+
 	private boolean includeClearButton = false;
-	
+
 	/** Constructs new TsGroupSelectDialog */
 	public TsGroupSelectDialog(TopFrame ownerFrame)
 	{
@@ -110,9 +88,9 @@ public class TsGroupSelectDialog
 
 		group = null;
 		groupsSelectPanel = new TsGroupListPanel(TsdbAppTemplate.theDb, this, this);
-		
+
 		groupsSelectPanel.setTsGroupListFromDb();
-		
+
 		panelTitle = groupResources.getString(
 			"TsGroupSelectDialog.panelTitle");
 		dialogTitle = groupResources.getString(
@@ -120,29 +98,24 @@ public class TsGroupSelectDialog
 		selectLabel = genericResources.getString("select");
 		cancelLabel = genericResources.getString("cancel");
 
-    try 
-    {
+
     	jbInit();
     	getRootPane().setDefaultButton(selectButton);
     	pack();
-    } catch(Exception ex)
-    {
-    	ex.printStackTrace();
-    }
+
 		cancelled = false;
 	}
 
 
 	/** Initialize GUI components. */
 	void jbInit()
-		throws Exception
 	{
 		ResourceBundle genericResources = LoadResourceBundle.getLabelDescriptions(
 			"decodes/resources/generic",
 			DecodesSettings.instance().language);
 
-		
-		titledBorder1 = 
+
+		titledBorder1 =
         	new TitledBorder(BorderFactory.createLineBorder(
         			new Color(153, 153, 153),2),panelTitle);
         border1 = BorderFactory.createCompoundBorder(titledBorder1,
@@ -168,13 +141,13 @@ public class TsGroupSelectDialog
             cancelButton.addActionListener(
             	new java.awt.event.ActionListener()
             	{
-            		public void actionPerformed(ActionEvent e) 
+            		public void actionPerformed(ActionEvent e)
             		{
             			clearButtonPressed();
             		}
             	});
         }
-        
+
         flowLayout1.setHgap(35);
         flowLayout1.setVgap(10);
         this.setModal(true);
@@ -198,8 +171,8 @@ public class TsGroupSelectDialog
 		closeDlg();
 	}
 
-	/** 
-	  Called when Select button is pressed. 
+	/**
+	  Called when Select button is pressed.
 	  @param e ignored
 	*/
     void selectPressed()
@@ -215,8 +188,8 @@ public class TsGroupSelectDialog
 		dispose();
 	}
 
-	/** 
-	  Called when Cancel button is pressed. 
+	/**
+	  Called when Cancel button is pressed.
 	  @param e ignored
 	*/
     void cancelButton_actionPerformed(ActionEvent e)
@@ -241,8 +214,8 @@ public class TsGroupSelectDialog
 		return groupsSelectPanel.getSelectedTsGroups();
 	}
 
-	/** 
-	  Called with true if multiple selection is to be allowed. 
+	/**
+	  Called with true if multiple selection is to be allowed.
 	  @param ok true if multiple selection is to be allowed.
 	*/
 	public void setMultipleSelection(boolean ok)

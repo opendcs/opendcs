@@ -1,11 +1,28 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.comprungui;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.ResourceBundle;
 import java.util.Vector;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.sql.DbKey;
 import ilex.cmdline.StringToken;
@@ -20,10 +37,11 @@ import decodes.util.DecodesSettings;
 import opendcs.dai.ComputationDAI;
 
 /**
- * This class is the main for the Test Computations Frame. 
+ * This class is the main for the Test Computations Frame.
  */
 public class RunComputationsFrameTester extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static ResourceBundle labels = null;
 	private static ResourceBundle genericLabels = null;
 
@@ -42,15 +60,15 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 	private StringToken untilToken = new StringToken("U", "Until Time in " + dateSpec, "",
 			TokenOptions.optSwitch, null);
 	CompRunGuiFrame myframe;
-	
+
 	/** Constructor */
 	public RunComputationsFrameTester()
 	{
 		super(null);
-	
-		
+
+
 	}
-	
+
 	/** Runs the GUI */
 	public void runApp()
 	{
@@ -68,8 +86,9 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 			try { since = sdf.parse(sinceToken.getValue()); }
 			catch(ParseException ex)
 			{
-				System.err.println("Invalid Since Argument '" + sinceToken.getValue()
-						+ "' -- format must be '" + dateSpec + " UTC");
+				log.atError()
+				   .setCause(ex)
+				   .log("Invalid Since Argument '{}' -- format must be '{}'' UTC", sinceToken, dateSpec);
 				System.exit(1);
 			}
 		}
@@ -78,8 +97,9 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 			try { until = sdf.parse(untilToken.getValue()); }
 			catch(ParseException ex)
 			{
-				System.err.println("Invalid Since Argument '" + untilToken.getValue()
-						+ "' -- format must be '" + dateSpec + " UTC");
+				log.atError()
+				   .setCause(ex)
+				   .log("Invalid Until Argument '{}' -- format must be '{}'' UTC", untilToken, dateSpec);
 				System.exit(1);
 			}
 		}
@@ -101,19 +121,24 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 			DbKey compId = DbKey.createDbKey(Long.parseLong(nameOrId.trim()));
 			specifiedComps.add(computationDAO.getComputationById(compId));
 		}
-		catch(Exception ex) {
+		catch(Exception ex)
+		{
 			try {
 				specifiedComps.add(computationDAO.getComputationByName(nameOrId.trim()));
 			} catch (NoSuchObjectException ex2) {
-				System.err.println("No matching computation ID or name for '" + nameOrId + "'");
+				ex2.addSuppressed(ex);
+				log.atError().setCause(ex).log("No matching computation ID or name for '{}'", nameOrId);
 				System.exit(1);
 				;
 			}
 		}
-		computationDAO.close();
+		finally
+		{
+			computationDAO.close();
+		}
 
 	}
-	
+
 	public static void getMyLabelDescriptions()
 	{
 		DecodesSettings settings = DecodesSettings.instance();
@@ -125,23 +150,23 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 		//Return the main label descriptions for Run Computation App
 		labels = LoadResourceBundle.getLabelDescriptions(
 				"decodes/resources/comprun",
-				settings.language);	
+				settings.language);
 	}
-	
-	public static ResourceBundle getLabels() 
+
+	public static ResourceBundle getLabels()
 	{
 		if (labels == null)
 			getMyLabelDescriptions();
 		return labels;
 	}
 
-	public static ResourceBundle getGenericLabels() 
+	public static ResourceBundle getGenericLabels()
 	{
 		if (genericLabels == null)
 			getMyLabelDescriptions();
 		return genericLabels;
 	}
-	
+
 	/**
 	 * This method adds a command line argument to allow
 	 * the user to turn off the Db Computations list filter.
@@ -155,34 +180,34 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 		cmdLineArgs.addToken(untilToken);
 		appNameArg.setDefaultValue("compedit");
 	}
-	
+
 	/**
 	 * Get the RunComputationsFrame
 	 * @return runComputationFrame
 	 */
-	public CompRunGuiFrame getFrame() 
-	{ 
-		return myframe; 
+	public CompRunGuiFrame getFrame()
+	{
+		return myframe;
 	}
-	
+
 	/** Main method. Used when running from the rumcomp script */
 	public static void main(String[] args)
 	{
 		DecodesInterface.setGUI(true);
 		RunComputationsFrameTester mytester = new RunComputationsFrameTester();
 		try{mytester.execute(args);}
-		catch(Exception e)
+		catch(Exception ex)
 		{
-			System.out.println(e.getMessage());
+			log.atError().setCause(ex).log("Unable to execute application.");
 		}
 	}
-	
-	
-	//returns NoCompFilter token value from cmdLineArgums . 
+
+
+	//returns NoCompFilter token value from cmdLineArgums .
 	public boolean getNoCompFilterToken()
 	{
-	
+
 		return NoCompFilterToken.getValue();
 	}
-	
+
 }
