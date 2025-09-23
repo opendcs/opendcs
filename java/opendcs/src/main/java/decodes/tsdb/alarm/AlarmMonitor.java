@@ -203,8 +203,7 @@ public class AlarmMonitor extends TsdbAppTemplate
 				}
 				catch(IOException ex)
 				{
-					failure("Cannot create Event server: " + ex
-						+ " -- no events available to external clients.");
+					log.atError().setCause(ex).log("Cannot create Event server -- no events available to external clients.");
 				}
 			}
 		}
