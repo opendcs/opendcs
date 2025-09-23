@@ -7,4 +7,9 @@ public class BadScreeningException
 	{
 		super(msg);
 	}
+
+	public BadScreeningException(String msg, Throwable cause)
+	{
+		super(msg, cause);
+	}
 }

@@ -1,22 +1,21 @@
 /*
- * $Id$
- * 
  * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.2  2019/05/10 18:35:25  mmaloney
- * dev
- *
- * Revision 1.1  2019/03/05 14:53:00  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.2  2017/05/17 20:36:26  mmaloney
- * First working version.
- *
- * Revision 1.1  2017/03/21 12:17:10  mmaloney
- * First working XML and SQL I/O.
- *
  */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm;
 
 import opendcs.dai.AlarmDAI;
@@ -27,10 +26,12 @@ import opendcs.dao.AlarmDAO;
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.util.ArrayList;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -43,9 +44,9 @@ import decodes.tsdb.alarm.xml.AlarmXio;
 import decodes.tsdb.xml.DbXmlException;
 import decodes.util.CmdLineArgs;
 
-public class AlarmImport
-	extends TsdbAppTemplate
+public class AlarmImport extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String module = "AlarmImport";
 	private StringToken grpFileArg = new StringToken("", "Alarm Group XML File(s)",
 		"", TokenOptions.optArgument | TokenOptions.optMultiple | TokenOptions.optRequired, ""); 
@@ -81,10 +82,9 @@ public class AlarmImport
 		{
 			apps = appDAO.listComputationApps(false);
 		}
-		catch (DbIoException e)
+		catch (DbIoException ex)
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.atError().setCause(ex).log("Unable to list computation apps.");
 		}
 		finally { appDAO.close(); }
 		
@@ -124,9 +124,8 @@ public class AlarmImport
 						// Site may be validly null to assign a default screening for a datatype.
 						if (site == null && scrn.getSiteNames().size() > 0)
 						{
-							warning("Screening '" + scrn.getScreeningName() 
-								+ " is for non-existant site '" + scrn.getSiteNames().get(0)
-								+ "' ignored.");
+							log.warn("Screening '{}'' is for non-existent site '{}' ignored.",
+									 scrn.getScreeningName(), scrn.getSiteNames().get(0));
 							continue;
 						}
 						
@@ -134,8 +133,8 @@ public class AlarmImport
 						// id because it may be new. If so, write it and get an ID. Set datatypeId in the object.
 						if (scrn.getDataType() == null)
 						{
-							warning("Screening  '" + scrn.getScreeningName() 
-								+ "' is missing required datatype assignment -- ignored.");
+							log.warn("Screening  '{}' is missing required datatype assignment -- ignored.",
+									 scrn.getScreeningName());
 							continue;
 						}
 						else if (DbKey.isNull(scrn.getDatatypeId()))
@@ -159,9 +158,11 @@ public class AlarmImport
 							if (DbKey.isNull(scrn.getAlarmGroupId()))
 								scrn.setAlarmGroupId(alarmDAO.groupName2id(scrn.getGroupName()));
 							if (DbKey.isNull(scrn.getAlarmGroupId()))
-								warning("Screening  '" + scrn.getScreeningName() 
-									+ "' assigned to non-existant group '" + scrn.getGroupName() 
-									+ "' -- screening group will be unassigned");
+							{
+								log.warn("Screening '{}' assigned to non-existent group '{}' " +
+										 "-- screening group will be unassigned",
+										 scrn.getScreeningName(), scrn.getGroupName());
+							}
 						}
 						
 						if (scrn.getAppName() != null)
@@ -187,10 +188,7 @@ public class AlarmImport
 			}
 			catch(Exception ex)
 			{
-				String msg = module + ": Error while " + action + ": " + ex;
-				Logger.instance().failure(msg);
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
+				log.atError().setCause(ex).log("Error while {}", action);
 			}
 		}
 		alarmDAO.close();

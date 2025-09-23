@@ -1,25 +1,20 @@
 /*
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:53:01  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.4  2017/10/03 19:10:35  mmaloney
- * bug fix
- *
- * Revision 1.3  2017/10/03 12:27:43  mmaloney
- * Allow unauthenticated connections to SMTP
- *
- * Revision 1.2  2017/05/17 20:37:12  mmaloney
- * First working version.
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.mail;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 
 import java.util.ArrayList;
@@ -32,11 +27,15 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.tsdb.alarm.AlarmGroup;
 import decodes.tsdb.alarm.EmailAddr;
 
 public class AlarmMailer
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	protected static String module = "AlarmMailer";
 	protected Session session = null;
 	protected String fromAddr = null;
@@ -116,15 +115,13 @@ public class AlarmMailer
 						return new PasswordAuthentication(username, password);
 					}
 				});
-			Logger.instance().debug1(module + " Created AlarmMailer with props: '" 
-				+ PropertiesUtil.props2string(mailProps)
-				+ "' and username=" + username);
+			log.debug("Created AlarmMailer with props: '{}' and username='{}'",
+					  PropertiesUtil.props2string(mailProps), username);
 		}
 		else
 		{
-			session = Session.getDefaultInstance(mailProps);
-			Logger.instance().info(module + " Created unauthenticaed mailer with props: '"
-				+ PropertiesUtil.props2string(mailProps) + "'");
+			Session.getDefaultInstance(mailProps);
+			log.info("Created unauthenticated mailer with props: '{}'", PropertiesUtil.props2string(mailProps));
 		}
 	}
 
@@ -136,8 +133,7 @@ public class AlarmMailer
 		
 		if (group.getEmailAddrs().size() == 0)
 		{
-			Logger.instance().warning(module + " Cannot send alarms for group "
-				+ group.getName() + " -- email list empty.");
+			log.warn(" Cannot send alarms for group {} -- email list empty.", group.getName());
 			return;
 		}
 		
@@ -163,12 +159,19 @@ public class AlarmMailer
 			String emailText = sb.toString();
 			message.setText(emailText);
 			Transport.send(message);
-			Logger.instance().info(module + " Sent email with text: " + emailText);
+			if (log.isTraceEnabled())
+			{
+				log.info("Sent email with text: '{}'", emailText);
+			}
+			else
+			{
+				log.info("Sent email.");
+			}
  
 		}
 		catch (Exception ex) 
 		{
-			throw new MailerException("Error sending mail: " + ex.toString());
+			throw new MailerException("Error sending mail", ex);
 		}
 	}
 }
