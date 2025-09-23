@@ -1,27 +1,23 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.4  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.3  2017/10/04 17:25:26  mmaloney
- * Fix AEP Bugs
- *
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:56  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import ilex.util.TextUtil;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -43,6 +39,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.gui.GuiDialog;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.alarm.FileMonitor;
@@ -50,21 +49,18 @@ import decodes.tsdb.alarm.FileMonitor;
 @SuppressWarnings("serial")
 public class FileMonitorDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JTextField pathField = new JTextField(25);
-	@SuppressWarnings("rawtypes")
-	private JComboBox priorityCombo = null;
+	private JComboBox<String> priorityCombo = null;
 	AlarmEditPanel parentPanel = null;
-	private String priorities[] = { Logger.priorityName[Logger.E_INFORMATION],
-		Logger.priorityName[Logger.E_WARNING], Logger.priorityName[Logger.E_FAILURE],
-		Logger.priorityName[Logger.E_FATAL] };
+	private String priorities[] = { "The logger is getting replaced." };
 	private JTextField maxFilesField = new JTextField();
 	private JTextField maxFilesHintField = new JTextField();
 	private JTextField maxSizeField = new JTextField();
 	private JTextField maxSizeHintField = new JTextField();
 	private JTextField maxAgeField = new JTextField();
 	private JTextField maxAgeHintField = new JTextField();
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private JComboBox maxAgeUnitsCombo = new JComboBox(
+	private JComboBox<String> maxAgeUnitsCombo = new JComboBox<>(
 		new String[] { "Seconds", "Minutes", "Hours", "Days" });
 	private JCheckBox alarmOnDeleteCheck = new JCheckBox();
 	private JTextField alarmOnDeleteHintField = new JTextField();
@@ -80,7 +76,7 @@ public class FileMonitorDialog extends GuiDialog
 
 	public FileMonitorDialog(AlarmEditPanel parentPanel)
 	{
-		super(parentPanel.parentFrame, 
+		super(parentPanel.parentFrame,
 			parentPanel.parentFrame.eventmonLabels.getString("fileMonitor"), true);
 		this.parentPanel = parentPanel;
 		guiInit();
@@ -99,12 +95,12 @@ public class FileMonitorDialog extends GuiDialog
 
 		// Line 0: Path: [path field] [select button]
 		centerPanel.add(new JLabel(labels.getString("path") + ":"),
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		centerPanel.add(pathField,
-			new GridBagConstraints(1, 0, 2, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 0, 2, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 0), 0, 0));
 		JButton selectFileButton = new JButton(genlabels.getString("select"));
 		selectFileButton.addActionListener(new ActionListener()
@@ -115,113 +111,113 @@ public class FileMonitorDialog extends GuiDialog
 			}
 		});
 		centerPanel.add(selectFileButton,
-			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 5, 2, 10), 0, 0));
 
 		// Line 1: Priority: [priority combo] Enabled-Checkbox
 		centerPanel.add(new JLabel(labels.getString("priority") + ":"),
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		priorityCombo = new JComboBox(priorities);
 		centerPanel.add(priorityCombo,
-			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 10), 0, 0));
 		centerPanel.add(enabledCheck,
-			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 10), 0, 0));
-		
+
 		// Line 2: Max Files: [field] (For Directories)
 		centerPanel.add(new JLabel(labels.getString("maxFiles")),
-			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		centerPanel.add(maxFilesField,
-			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 25), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("maxFilesExpl")),
-			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+			new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 10), 0, 0));
-		
+
 		// Line 3: Hint for max Files
 		centerPanel.add(new JLabel(labels.getString("maxFilesHint")),
-			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		centerPanel.add(maxFilesHintField,
-			new GridBagConstraints(1, 3, 3, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 3, 3, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 10), 0, 0));
 
 
 		// Line 4: Max Size: [field] (For Regular Files)
 		centerPanel.add(new JLabel(labels.getString("maxSize")),
-			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		centerPanel.add(maxSizeField,
-			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 25), 0, 0));
 		centerPanel.add(new JLabel(labels.getString("maxSizeExpl")),
-			new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+			new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 10), 0, 0));
-		
+
 		// Line 5: Hint for max size
 		centerPanel.add(new JLabel(labels.getString("maxSizeHint")),
-			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		centerPanel.add(maxSizeHintField,
-			new GridBagConstraints(1, 5, 3, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 5, 3, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 10), 0, 0));
-		
+
 		// Line 6: Max Age: [int field] [units pulldown]
 		centerPanel.add(new JLabel(labels.getString("maxAge")),
-			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		centerPanel.add(maxAgeField,
-			new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 25), 0, 0));
 		centerPanel.add(maxAgeUnitsCombo,
-			new GridBagConstraints(2, 6, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.NONE, 
+			new GridBagConstraints(2, 6, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 10), 0, 0));
 
 		// Line 7: Hint for max age
 		centerPanel.add(new JLabel(labels.getString("maxAgeHint")),
-			new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		centerPanel.add(maxAgeHintField,
-			new GridBagConstraints(1, 7, 3, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 7, 3, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 10), 0, 0));
-		
+
 		// Line 8: [] Alarm On Delete
 		alarmOnDeleteCheck.setText(labels.getString("alarmOnDelete"));
 		centerPanel.add(alarmOnDeleteCheck,
-			new GridBagConstraints(1, 8, 2, 1, 0.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 8, 2, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 5), 0, 0));
 
 		// Line 9: Hint for alarm on delete
 		centerPanel.add(new JLabel(labels.getString("alarmOnDeleteHint")),
-			new GridBagConstraints(0, 9, 1, 1, 0.0, 0.0, 
-				GridBagConstraints.EAST, GridBagConstraints.NONE, 
+			new GridBagConstraints(0, 9, 1, 1, 0.0, 0.0,
+				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 2), 0, 0));
 		centerPanel.add(alarmOnDeleteHintField,
-			new GridBagConstraints(1, 9, 3, 1, 1.0, 0.0, 
-				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, 
+			new GridBagConstraints(1, 9, 3, 1, 1.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 0, 2, 5), 0, 0));
 
 		// South will contain 'OK' and 'Cancel' buttons.
@@ -258,7 +254,7 @@ public class FileMonitorDialog extends GuiDialog
             pathField.setText(jFileChooser.getSelectedFile().getPath());
 	}
 
-	/** 
+	/**
 	 * Called when OK pressed. Copy back data to object and set 'changed' flag.
 	 */
 	private void doOK()
@@ -271,7 +267,7 @@ public class FileMonitorDialog extends GuiDialog
 				parentPanel.parentFrame.eventmonLabels.getString("fileMonNoPath"));
 			return;
 		}
-		
+
 		int maxFiles = 0;
 		s = maxFilesField.getText().trim();
 		if (s.length() != 0)
@@ -279,12 +275,15 @@ public class FileMonitorDialog extends GuiDialog
 			try { maxFiles = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
 			{
+				log.atError()
+				   .setCause(ex)
+				   .log(parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxFiles"));
 				parentPanel.parentFrame.showError(
 					parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxFiles"));
 				return;
 			}
 		}
-		
+
 		long maxSize = 0;
 		s = maxSizeField.getText().trim();
 		if (s.length() != 0)
@@ -292,6 +291,9 @@ public class FileMonitorDialog extends GuiDialog
 			try { maxSize = Long.parseLong(s); }
 			catch(NumberFormatException ex)
 			{
+				log.atError()
+				   .setCause(ex)
+				   .log(parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxSize"));
 				parentPanel.parentFrame.showError(
 					parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxSize"));
 				return;
@@ -312,12 +314,15 @@ public class FileMonitorDialog extends GuiDialog
 			}
 			catch(NumberFormatException ex)
 			{
+				log.atError()
+				   .setCause(ex)
+				   .log(parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxAge"));
 				parentPanel.parentFrame.showError(
 					parentPanel.parentFrame.eventmonLabels.getString("nonNumericMaxAge"));
 				return;
 			}
 		}
-		
+
 		// Settings are valid, set object and check for changes.
 		s = pathField.getText().trim();
 		if (!TextUtil.strEqual(s, theFM.getPath()))
@@ -325,9 +330,10 @@ public class FileMonitorDialog extends GuiDialog
 			theFM.setPath(s);
 			changed = true;
 		}
-		if (theFM.getPriority() != priorityCombo.getSelectedIndex() + Logger.E_INFORMATION)
+		if (theFM.getPriority() != priorityCombo.getSelectedIndex())
 		{
-			theFM.setPriority(priorityCombo.getSelectedIndex() + Logger.E_INFORMATION);
+			// TODO: determine appropriate replacement.
+			theFM.setPriority(-1);
 			changed = true;
 		}
 		if (maxFiles != theFM.getMaxFiles())
@@ -363,7 +369,7 @@ public class FileMonitorDialog extends GuiDialog
 			theFM.setMaxLMTHint(s);
 			changed = true;
 		}
-		
+
 		if (alarmOnDeleteCheck.isSelected() != theFM.isAlarmOnDelete())
 		{
 			theFM.setAlarmOnDelete(alarmOnDeleteCheck.isSelected());
@@ -380,7 +386,7 @@ public class FileMonitorDialog extends GuiDialog
 			theFM.setEnabled(enabledCheck.isSelected());
 			changed = true;
 		}
-		
+
 		closeDlg();
 	}
 
@@ -411,17 +417,18 @@ public class FileMonitorDialog extends GuiDialog
 			return null;
 		return s;
 	}
-	
+
 	private String null2blank(String s)
 	{
 		return s == null ? "" : s;
 	}
-	
+
 	public void setData(FileMonitor fm)
 	{
 		theFM = fm;
 		pathField.setText(null2blank(fm.getPath()));
-		priorityCombo.setSelectedIndex(fm.getPriority() - Logger.E_INFORMATION);
+		// TODO: determine appropriate replacements, currently forcing single informative entry.
+		priorityCombo.setSelectedIndex(0);
 		maxFilesField.setText(fm.getMaxFiles() == 0 ? "" : ("" + fm.getMaxFiles()));
 		maxFilesHintField.setText(null2blank(fm.getMaxFilesHint()));
 		maxSizeField.setText(fm.getMaxSize() == 0L ? "" : ("" + fm.getMaxSize()));
@@ -442,7 +449,7 @@ public class FileMonitorDialog extends GuiDialog
 			{
 			case Calendar.SECOND: maxAgeUnitsCombo.setSelectedIndex(0); break;
 			case Calendar.MINUTE: maxAgeUnitsCombo.setSelectedIndex(1); break;
-			case Calendar.HOUR: 
+			case Calendar.HOUR:
 			case Calendar.HOUR_OF_DAY: maxAgeUnitsCombo.setSelectedIndex(2); break;
 			case Calendar.DAY_OF_MONTH:
 			case Calendar.DAY_OF_YEAR: maxAgeUnitsCombo.setSelectedIndex(3); break;
@@ -453,7 +460,7 @@ public class FileMonitorDialog extends GuiDialog
 		alarmOnDeleteCheck.setSelected(fm.isAlarmOnDelete());
 		alarmOnDeleteHintField.setText(null2blank(fm.getAlarmOnDeleteHint()));
 		enabledCheck.setSelected(fm.isEnabled());
-		
+
 		changed = false;
 	}
 

@@ -1,25 +1,21 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/03/05 14:52:59  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.3  2018/03/23 20:12:20  mmaloney
- * Added 'Enabled' flag for process and file monitors.
- *
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:56  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* Copyright 2017 Cove Software, LLC. All rights reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 
@@ -46,6 +42,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.LoadingAppDAI;
 import decodes.db.Database;
 import decodes.gui.GuiDialog;
@@ -59,9 +58,9 @@ import decodes.tsdb.alarm.ProcessMonitor;
 
 
 @SuppressWarnings("serial")
-public class ProcessMonitorDialog 
-	extends GuiDialog
+public class ProcessMonitorDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private AlarmEditPanel parentPanel;
 	@SuppressWarnings("rawtypes")
 	private JComboBox processCombo = new JComboBox();
@@ -75,7 +74,7 @@ public class ProcessMonitorDialog
 
 	public ProcessMonitorDialog(AlarmEditPanel parentPanel)
 	{
-		super(parentPanel.parentFrame, 
+		super(parentPanel.parentFrame,
 			parentPanel.parentFrame.eventmonLabels.getString("procMonitor"), true);
 		this.parentPanel = parentPanel;
 		guiInit();
@@ -87,7 +86,7 @@ public class ProcessMonitorDialog
 		ResourceBundle labels = parentPanel.parentFrame.eventmonLabels;
 		Container contpane = getContentPane();
 		contpane.setLayout(new BorderLayout());
-		
+
 		JPanel northPanel = new JPanel(new FlowLayout());
 		contpane.add(northPanel, BorderLayout.NORTH);
 		northPanel.add(new JLabel(labels.getString("process")));
@@ -102,6 +101,7 @@ public class ProcessMonitorDialog
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to list Routing Scheduler apps.");
 			parentPanel.parentFrame.showError("Cannot list Routing Scheduler apps: " + ex);
 		}
 		finally
@@ -111,7 +111,7 @@ public class ProcessMonitorDialog
 		northPanel.add(processCombo);
 		northPanel.add(new JLabel("    ")); // spacer
 		northPanel.add(enabledCheck);
-		
+
 		model = new AlarmDefTableModel(parentPanel);
 		alarmDefTable = new SortingListTable(model, model.widths);
 		JScrollPane alarmDefScrollPane = new JScrollPane(alarmDefTable,
@@ -119,7 +119,7 @@ public class ProcessMonitorDialog
 		JPanel tablePanel = new JPanel(new BorderLayout());
 		tablePanel.add(alarmDefScrollPane, BorderLayout.CENTER);
 		contpane.add(tablePanel, BorderLayout.CENTER);
-		
+
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		tablePanel.add(buttonPanel, BorderLayout.EAST);
 		JButton addAlarmDefButton = new JButton(
@@ -137,7 +137,7 @@ public class ProcessMonitorDialog
 			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.5,
 				GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		JButton editAlarmDefButton = new JButton(
 			parentPanel.parentFrame.genericLabels.getString("edit"));
 		editAlarmDefButton.addActionListener(
@@ -153,7 +153,7 @@ public class ProcessMonitorDialog
 			new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		JButton delAlarmDefButton = new JButton(
 			parentPanel.parentFrame.genericLabels.getString("delete"));
 		delAlarmDefButton.addActionListener(
@@ -194,7 +194,7 @@ public class ProcessMonitorDialog
 		});
 		south.add(cancelButton);
 		contpane.add(south, BorderLayout.SOUTH);
-		
+
 		enabledCheck.addActionListener(
 			new ActionListener()
 			{
@@ -205,7 +205,7 @@ public class ProcessMonitorDialog
 				}
 			});
 
-		
+
 		alarmDefTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -221,7 +221,7 @@ public class ProcessMonitorDialog
 
 		pack();
 	}
-	
+
 	protected void delAlarmDefPressed()
 	{
 		int idx = alarmDefTable.getSelectedRow();
@@ -233,7 +233,7 @@ public class ProcessMonitorDialog
 		}
 		model.delete(idx);
 		changed = true;
-		
+
 	}
 
 	protected void editAlarmDefPressed()
@@ -268,7 +268,7 @@ public class ProcessMonitorDialog
 
 	protected void addAlarmDefPressed()
 	{
-		StringPair sp = new StringPair(Logger.priorityName[Logger.E_WARNING], "");
+		StringPair sp = new StringPair("WARNING", "");
 		AlarmDefDialog dlg = new AlarmDefDialog(parentPanel);
 		dlg.setData(sp);
 		parentPanel.parentFrame.launchDialog(dlg);
@@ -298,7 +298,7 @@ public class ProcessMonitorDialog
 		if (!found)
 			processCombo.setSelectedIndex(0);
 		enabledCheck.setSelected(pm.isEnabled());
-		
+
 		model.set(pm);
 		changed = false;
 	}
@@ -345,23 +345,20 @@ public class ProcessMonitorDialog
 						theProcMon.setChanged(true);
 					}
 				}
-				
+
 				idx++;
 			}
 		}
 		closeDlg();
 	}
-	
+
 	private int str2pri(String s)
 	{
-		s = s.trim();
-		if (s.equalsIgnoreCase("INFO")) return Logger.E_INFORMATION;
-		else if (s.equalsIgnoreCase("WARNING")) return Logger.E_WARNING;
-		else if (s.equalsIgnoreCase("FAILURE")) return Logger.E_FAILURE;
-		else if (s.equalsIgnoreCase("FATAL")) return Logger.E_FATAL;
-		return Logger.E_WARNING;
+		// replacing logger, return arbitrary value until alarm system can
+		// be fully review in light of final logger changes.
+		return 0;
 	}
-	
+
 	/** Closes the dialog */
 	private void closeDlg()
 	{
@@ -381,8 +378,7 @@ public class ProcessMonitorDialog
 
 //========================
 @SuppressWarnings("serial")
-class AlarmDefTableModel extends AbstractTableModel
-implements SortingListTableModel
+class AlarmDefTableModel extends AbstractTableModel implements SortingListTableModel
 {
 	String[] colnames = new String[2];
 	int [] widths = { 30, 70 };
@@ -394,14 +390,13 @@ implements SortingListTableModel
 		colnames[0] = parentPanel.parentFrame.eventmonLabels.getString("priority");
 		colnames[1] = parentPanel.parentFrame.eventmonLabels.getString("pattern");
 	}
-	
+
 	public void set(ProcessMonitor pm)
 	{
 		for(AlarmEvent def : pm.getDefs())
 		{
 			int p = def.getPriority();
-			String priority = (p >= 0 && p < Logger.priorityName.length) ? 
-				Logger.priorityName[p] : "";
+			String priority = "PLACEHOLDER";
 			String pattern = def.getPattern();
 			if (pattern == null)
 				pattern = "";
@@ -416,7 +411,7 @@ implements SortingListTableModel
 			data.remove(idx);
 		sortByColumn(sortColumn);
 	}
-	
+
 	public void add(StringPair sp)
 	{
 		data.add(sp);
@@ -428,23 +423,23 @@ implements SortingListTableModel
 	{
 		return colnames.length;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return colnames[col];
 	}
-	
+
 	@Override
 	public int getRowCount()
 	{
 		return data.size();
 	}
-	
+
 	@Override
 	public Object getValueAt(int row, int col)
 	{
 		StringPair sp = (StringPair)getRowObject(row);
-		
+
 		return getColumnValue(sp, col);
 	}
 
@@ -497,4 +492,3 @@ class AlarmDefComparator implements Comparator<StringPair>
 			AlarmDefTableModel.getColumnValue(sp2, sc));
 	}
 }
-
