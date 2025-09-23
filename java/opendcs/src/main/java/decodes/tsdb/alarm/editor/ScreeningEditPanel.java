@@ -658,7 +658,7 @@ public class ScreeningEditPanel extends JPanel
 				}
 				catch (FieldParseException ex)
 				{
-					log.atError().setCause(ex).log("Error setting season from enum value '{}'", ev.getValue())
+					log.atError().setCause(ex).log("Error setting season from enum value '{}'", ev.getValue());
 					seasonNames[idx] = "bad season";
 					continue;
 				}
