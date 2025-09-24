@@ -1,18 +1,18 @@
-/**
- * Copyright 2024 The OpenDCS Consortium and contributors
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+/*
+* Where Applicable, Copyright 2024-2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
 
 import java.lang.reflect.Field;
@@ -26,6 +26,10 @@ import java.util.stream.Collectors;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.utils.AnnotationHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.slf4j.MDC.MDCCloseable;
 
 import java.util.HashMap;
 import java.util.GregorianCalendar;
@@ -33,7 +37,6 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 import opendcs.dai.TimeSeriesDAI;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NamedVariableList;
 import ilex.var.NoConversionException;
@@ -54,16 +57,17 @@ import decodes.util.TSUtil;
  */
 public abstract class DbAlgorithmExecutive
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/**
 	 * The data collection passed to the 'apply' method.
 	 */
 	protected DataCollection dc;
-	
+
 	/**
 	 * The time series database passed to the init method.
 	 */
 	protected TimeSeriesDb tsdb;
-	
+
 	/**
 	 * The computation meta-data for this instantiation of the algorithm.
 	 */
@@ -90,7 +94,7 @@ public abstract class DbAlgorithmExecutive
 	private int maxMissingValuesForFill;
 	private int maxMissingTimeForFill;
 
-	/** Determines open/closed intervals for aggregate periods. 
+	/** Determines open/closed intervals for aggregate periods.
 	 * The default is [lower,upper)
 	 */
 	protected boolean aggLowerBoundClosed = true;
@@ -99,18 +103,18 @@ public abstract class DbAlgorithmExecutive
 	 * The default is [lower,upper)
 	 */
 	protected boolean aggUpperBoundClosed = false;
-	
+
 	/** If true, than deltas can be interpolated up to maxDeltaInterp intervals */
 	protected boolean interpDeltas = false;
-	
+
 	/** If (interpDeltas) this is max # of intervals to interp over. */
 	protected int maxInterpIntervals = 10;
 
 	public final SimpleDateFormat debugSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss z");
-	
+
 	protected Date effectiveStart = null;
 	protected Date effectiveEnd = null;
-	
+
 	/**
 	 * No-args Constructor because object is constructed from the class name.
 	 */
@@ -157,8 +161,10 @@ public abstract class DbAlgorithmExecutive
 			catch(NumberFormatException ex)
 			{
 				this.maxMissingValuesForFill = DecodesSettings.instance().maxMissingValuesForFill;
-				warning("Bad maxMissingValuesForFill property '" + s 
-					+ "' will use default of " + maxMissingValuesForFill);
+				log.atError()
+				   .setCause(ex)
+				   .log("Bad maxMissingValuesForFill property '{}' will use default of {}",
+				   		s, maxMissingValuesForFill);
 			}
 		}
 
@@ -172,8 +178,10 @@ public abstract class DbAlgorithmExecutive
 			catch(NumberFormatException ex)
 			{
 				this.maxMissingTimeForFill = DecodesSettings.instance().maxMissingTimeForFill;
-				warning("Bad maxMissingTimeForFill property '" + s 
-					+ "' will use default of " + maxMissingTimeForFill);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Bad maxMissingTimeForFill property '{}' will use default of {}",
+				   		s, maxMissingTimeForFill);
 			}
 		}
 
@@ -183,14 +191,13 @@ public abstract class DbAlgorithmExecutive
 		// This give PythonAlgorithm a chance to replace the dummy input/output parm lists
 		// with the parms defined in the algorithm record.
 		initAlgorithm();
-		
+
 		// Construct the parm map as a convenience to the subclass.
 		for(String role : getInputNames())
 			mapParm(role, tsdb);
 		for(String role : getOutputNames())
 			mapParm(role, tsdb);
 
-//		initAlgorithm();
 	}
 
 	/**
@@ -210,7 +217,9 @@ public abstract class DbAlgorithmExecutive
 			{
 				int idx = s.indexOf('-');
 				if (idx == -1 || idx == s.length()-1)
-					warning("Invalid EffectiveStart property '" + s + "' -- ignored.");
+				{
+					log.warn("Invalid EffectiveStart property '{}' -- ignored.", s);
+				}
 				else
 				{
 					s = s.substring(idx+1).trim();
@@ -224,14 +233,12 @@ public abstract class DbAlgorithmExecutive
 					}
 					catch(Exception ex)
 					{
-						Logger.instance().warning("Cannot parse EffectiveStart '" 
-							+ s + "': " + ex.getMessage());
+						log.atWarn().setCause(ex).log("Cannot parse EffectiveStart '{}'", s);
 					}
 				}
 			}
 		}
-		debug1("Effective Start evaluates to: " + 
-			(effectiveStart == null ? "NULL" : debugSdf.format(effectiveStart)));
+		log.debug("Effective Start evaluates to: {}", effectiveStart);
 
 		if ((effectiveEnd = comp.getValidEnd()) == null)
 		{
@@ -249,12 +256,14 @@ public abstract class DbAlgorithmExecutive
 						sign = 1;
 					else if ((idx = s.indexOf('-')) >= 0)
 						sign = -1;
-					
+
 					if (idx == -1 || idx == s.length()-1)
-						warning("Invalid EffectiveEnd property '" + s + "' -- ignored.");
+					{
+						log.warn("Invalid EffectiveEnd property '{}' -- ignored.", s);
+					}
 					else
 					{
-					
+
 						s = s.substring(idx+1).trim();
 						try
 						{
@@ -266,15 +275,13 @@ public abstract class DbAlgorithmExecutive
 						}
 						catch(Exception ex)
 						{
-							Logger.instance().warning("Cannot parse EffectiveEnd '" 
-								+ s + "': " + ex.getMessage());
+							log.atWarn().setCause(ex).log("Cannot parse EffectiveEnd '{}'", s);
 						}
 					}
 				}
 			}
 		}
-		debug1("Effective End evaluates to: " + 
-			(effectiveEnd == null ? "NULL" : debugSdf.format(effectiveEnd)));
+		log.debug("Effective End evaluates to: {}", effectiveEnd);
 	}
 
 	/**
@@ -285,9 +292,9 @@ public abstract class DbAlgorithmExecutive
 	public void shutdown()
 	{
 	}
-	
+
 	/**
-	 * Sets the internal 'dc' data collection variable and calls 
+	 * Sets the internal 'dc' data collection variable and calls
 	 * applyAlgorithm().
 	 * The subclass probably does not need to overload this method. Rather,
 	 * overload 'applyAlgorithm'.
@@ -299,26 +306,29 @@ public abstract class DbAlgorithmExecutive
 	public void apply( DataCollection dc )
 		throws DbCompException, DbIoException
 	{
-		this.dc = dc;
-debug3("DbAlgorithmExec.apply()");
+		try (MDCCloseable mdcAlgoClass = MDC.putCloseable("algorithmClass", this.getClass().getName()))
+		{
+			this.dc = dc;
+			log.trace("DbAlgorithmExec.apply()");
 
-		evaluateEffectiveRange();
-		determineModelRunId(dc);
+			evaluateEffectiveRange();
+			determineModelRunId(dc);
 
-		// Add the time series to the parm-references for inputs.
-		// If any are modeled, use the modelRunId we determined above.
-		for(String role : getInputNames())
-			addTsToParmRef(role, false);
-		for(String role : getOutputNames())
-			addTsToParmRef(role, true);
+			// Add the time series to the parm-references for inputs.
+			// If any are modeled, use the modelRunId we determined above.
+			for(String role : getInputNames())
+				addTsToParmRef(role, false);
+			for(String role : getOutputNames())
+				addTsToParmRef(role, true);
 
-		applyAlgorithm();
+			applyAlgorithm();
+		}
 	}
 
 	/**
 	 * We should have at least one input already present in the data.
-	 * Use Case 1: Triggered on Modeled input: Go through inputs, if any 
-	 * are modeled, and we have data for it, then grab its modelRunId. 
+	 * Use Case 1: Triggered on Modeled input: Go through inputs, if any
+	 * are modeled, and we have data for it, then grab its modelRunId.
 	 * Use Case 2: We use modeled data, but triggered on non-modeled input:
 	 * find the latest modelRunId for the parameter's modelId.
 	 * The resulting modelRunId is set in the DbComputation object.
@@ -343,8 +353,8 @@ debug3("DbAlgorithmExec.apply()");
 					ref.compParm.getSiteDataTypeId(), intv, tabsel, modelId);
 				if (cts != null)
 				{
-					debug1("Computation input with modelId=" + modelId
-						+ " and modelRunId=" + cts.getModelRunId());
+					log.debug("Computation input with modelId={} and modelRunId={}",
+							  modelId, cts.getModelRunId());
 					comp.setModelRunId(cts.getModelRunId());
 
 					// For multiple inputs, we assume all are from
@@ -363,7 +373,7 @@ debug3("DbAlgorithmExec.apply()");
 			if (s != null)
 			{
 				int mri;
-				try 
+				try
 				{
 					mri = Integer.parseInt(s);
 					comp.setModelRunId(mri);
@@ -371,15 +381,17 @@ debug3("DbAlgorithmExec.apply()");
 				}
 				catch(NumberFormatException ex)
 				{
-					warning("inputModelRunId is a non-integer -- ignored.");
+					log.atWarn().setCause(ex).log("inputModelRunId is a non-integer -- ignored.");
 					// fall through and set with max
 				}
 			}
-			try { comp.setModelRunId(tsdb.findMaxModelRunId(modelId)); }
+			try
+			{
+				comp.setModelRunId(tsdb.findMaxModelRunId(modelId));
+			}
 			catch(DbIoException ex)
 			{
-				warning("Cannot retrieve max model run ID for modelID="
-					+ modelId + ": " + ex);
+				log.atWarn().setCause(ex).log("Cannot retrieve max model run ID for modelID={}", modelId);
 			}
 		}
 	}
@@ -389,11 +401,11 @@ debug3("DbAlgorithmExec.apply()");
 	 */
 	private void mapParm(String role, TimeSeriesDb tsdb)
 	{
-		debug1("mapParm(" + role + ")");
+		log.debug("mapParm({})", role);
 		DbCompParm parm = comp.getParm(role);
 		if (parm == null)
 		{
-			debug1("No param defined for role '" + role + "'");
+			log.debug("No param defined for role '{}'", role);
 			return;
 		}
 
@@ -404,7 +416,7 @@ debug3("DbAlgorithmExec.apply()");
 		}
 		catch(Exception ex)
 		{
-			warning("Cannot expand meta data for role '" + role + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot expand meta data for role '{}'", role);
 			return;
 		}
 
@@ -430,12 +442,12 @@ debug3("DbAlgorithmExec.apply()");
 
 		String intv = ref.compParm.getInterval();
 		String tabsel = ref.compParm.getTableSelector();
-		
+
 		// Get modelRunId of the input(s) that triggered the computation.
 		// This would have been set by determineModelRunId() above.
 		int modelRunId = comp.getModelRunId();
 		int modelId = ref.compParm.getModelId();
-		
+
 		// If this is a modeled output, we have to set its modelRunId
 		if (isOutput && TextUtil.strEqualIgnoreCase(tabsel, "M_")
 		 && modelId != Constants.undefinedIntKey)
@@ -443,7 +455,7 @@ debug3("DbAlgorithmExec.apply()");
 			// If a global config is set for the DB, this overrides the inputs
 			if (tsdb.getWriteModelRunId() != Constants.undefinedIntKey)
 				modelRunId = tsdb.getWriteModelRunId();
-			
+
 			// If a comp property "WriteModelRunId" is set, this overrides the global.
 			String s = comp.getProperty("WriteModelRunId");
 			if (s != null)
@@ -451,10 +463,10 @@ debug3("DbAlgorithmExec.apply()");
 				try { modelRunId = Integer.parseInt(s.trim()); }
 				catch(Exception ex)
 				{
-					warning("Bad WriteModelRunId property '" + s + "' -- ignored.");
+					log.atWarn().setCause(ex).log("Bad WriteModelRunId property '{}' -- ignored.", s);
 				}
 			}
-			
+
 			// Finally, if no modeled input AND no property, use max RunId for this model.
 			if (modelRunId == Constants.undefinedIntKey)
 			{
@@ -464,10 +476,10 @@ debug3("DbAlgorithmExec.apply()");
 				}
 				catch (DbIoException ex)
 				{
-					warning("Cannot determine modelRunId for modelId=" + modelId + ": " + ex);
+					log.atWarn().setCause(ex).log("Cannot determine modelRunId for modelId={}", modelId);
 				}
 			}
-			
+
 		}
 		ref.timeSeries = dc.getTimeSeries(ref.compParm.getSiteDataTypeId(), intv, tabsel, modelRunId);
 		if (ref.timeSeries == null)
@@ -477,48 +489,53 @@ debug3("DbAlgorithmExec.apply()");
 				ref.timeSeries.setModelRunId(modelRunId);
 			if (ref.tsid != null)
 				ref.timeSeries.setTimeSeriesIdentifier(ref.tsid);
-			debug1("addTsToParmRef: Made empty time series for " 
-				+ ref.getDescription() 
-				+ ", sdiIsUnique=" + TimeSeriesDb.sdiIsUnique
-				+ ", sdi=" + ref.compParm.getSiteDataTypeId() + ", intv='" 
-				+ intv + "', + tabsel='" + tabsel + "'");
-			
+			log.atDebug()
+			   .log(() -> "addTsToParmRef: Made empty time series for "
+						+ ref.getDescription()
+						+ ", sdiIsUnique=" + TimeSeriesDb.sdiIsUnique
+						+ ", sdi=" + ref.compParm.getSiteDataTypeId() + ", intv='"
+						+ intv + "', + tabsel='" + tabsel + "'");
+
 
 			try { dc.addTimeSeries(ref.timeSeries); }
 			catch(DuplicateTimeSeriesException ex)
 			{
 				// won't happen, but warn if it does.
-				warning("Can't add time series " + ex);
+				log.atError()
+				   .setCause(ex)
+				   .log("Can't add time series as it is already in the collection. This shouldn't happen.");
 			}
 		}
 		else
 		{
-			debug1("addTsToParmRef: Mapping existing time series for " 
-				+ ref.getDescription() + " num samples = " + ref.timeSeries.size());
-			if (ref.timeSeries.size() > 0)
+			log.debug("addTsToParmRef: Mapping existing time series for {} num samples ={} ",
+					  ref.getDescription(), ref.timeSeries.size());
+
+			if (ref.timeSeries.size() > 0 && log.isTraceEnabled())
+			{
 				for(int idx=0; idx < ref.timeSeries.size() && idx < 32; idx++)
 				{
 					TimedVariable tv = ref.timeSeries.sampleAt(idx);
-					debug3("    [" + idx + "] " + tv.toString()
-						+ " 0x" + Integer.toHexString(tv.getFlags()));
+					log.trace("[{}] {} 0x{}", idx, tv.toString(), Integer.toHexString(tv.getFlags()));
 				}
+			}
 		}
 
 		if (isOutput)
 			ref.timeSeries.setComputationId(comp.getId());
-		
+
 		// Make sure params are in the correct units.
 		String propName = ref.role + "_EU";
 		String neededEU = comp.getProperty(propName);
-		Logger.instance().debug3("addTsToParmRef: propName='" + propName + "' neededEU='" + neededEU + "'");
+		log.trace("addTsToParmRef: propName='{}', neededEU='{}'", propName, neededEU);
 		if (neededEU != null)
 		{
 			String tsEU = ref.timeSeries.getUnitsAbbr();
-			debug3("role='" + role + "', old units='" + tsEU + "' neededEU='" + neededEU + "'");
+			log.trace("role='{}', old units='{}', neededEU='{}'", role, tsEU, neededEU);
 			if (tsEU != null && !tsEU.equals("unknown")
 			 && !neededEU.equalsIgnoreCase(tsEU))
 				TSUtil.convertUnits(ref.timeSeries, neededEU);
-			
+
 			// Note: Even if we did no conversion, still set the units abbreviation.
 			ref.timeSeries.setUnitsAbbr(neededEU);
 		}
@@ -546,7 +563,7 @@ debug3("DbAlgorithmExec.apply()");
 						 .collect(Collectors.toList())
 						 .toArray(new String[0]);
 	}
-	
+
 	/**
 	 * Should be overloaded by subclass to return an array of all output
 	 * parameter names.
@@ -589,7 +606,7 @@ debug3("DbAlgorithmExec.apply()");
 			ParmRef parmRef = parmMap.get(role);
 			if (parmRef == null || parmRef.tsid == null)
 			{
-				debug2("Skipping unassigned role '" + role + "'");
+				log.trace("Skipping unassigned role '{}'", role);
 				continue;
 			}
 			TreeSet<Date> queryTimes = new TreeSet<Date>();
@@ -598,8 +615,6 @@ debug3("DbAlgorithmExec.apply()");
 				Date paramTime = parmRef.compParm.baseTimeToParamTime(bd, aggCal);
 				if (parmRef.timeSeries.findWithin(paramTime, roundSec/2) == null)
 				{
-//debug3("getAllInputData: role=" + role + ", baseTime=" 
-//+ debugSdf.format(bd) + ", paramTime=" + debugSdf.format(paramTime) + ", nsamps=" + parmRef.timeSeries.size());
 					queryTimes.add(paramTime);
 				}
 			}
@@ -630,7 +645,7 @@ debug3("DbAlgorithmExec.apply()");
 	private void expandForMissing(TreeSet<Date> baseTimes)
 		throws DbIoException
 	{
-		debug3("expandForMissing num baseTimes=" + baseTimes.size());
+		log.trace("expandForMissing num baseTimes={}", baseTimes.size());
 		if (baseTimes.size() == 0)
 			return;
 
@@ -639,7 +654,7 @@ debug3("DbAlgorithmExec.apply()");
 		{
 			Date firstBaseTime = baseTimes.first();
 			Date lastBaseTime = baseTimes.last();
-			
+
 			for(String role : getInputNames())
 			{
 				ParmRef parmRef = parmMap.get(role);
@@ -647,33 +662,33 @@ debug3("DbAlgorithmExec.apply()");
 				 || parmRef.missingAction == MissingAction.FAIL
 				 || parmRef.missingAction == MissingAction.IGNORE)
 					continue;
-	
+
 				Date firstParamTime = parmRef.compParm.baseTimeToParamTime(firstBaseTime, aggCal);
 				Date lastParamTime = parmRef.compParm.baseTimeToParamTime(lastBaseTime, aggCal);
-debug3("expandForMissing1 role=" + role);			
-				TimedVariable firstTv = 
+				log.trace("expandForMissing1 role={}", role);
+				TimedVariable firstTv =
 					parmRef.timeSeries.findWithin(firstParamTime.getTime()/1000L, roundSec/2);
-debug3("expandForMissing2 role=" + role);			
-				TimedVariable lastTv = 
+				log.trace("expandForMissing2 role={}", role);
+				TimedVariable lastTv =
 					parmRef.timeSeries.findWithin(lastParamTime.getTime()/1000L, roundSec/2);
-	
+
 				if (firstTv == null
 				 && (  parmRef.missingAction == MissingAction.PREV
 					|| parmRef.missingAction == MissingAction.INTERP
 					|| parmRef.missingAction == MissingAction.CLOSEST))
 				{
 					// The first value is missing & we need it!
-					try 
+					try
 					{
-debug3("expandForMissing3 role=" + role);			
+						log.trace("expandForMissing3 role={}", role);
 						timeSeriesDAO.getPreviousValue(parmRef.timeSeries, firstParamTime);
 					}
-					catch(BadTimeSeriesException ex) 
+					catch(BadTimeSeriesException ex)
 					{
-						Logger.instance().warning("expandForMissing: " + ex);
+						log.atWarn().setCause(ex).log("Error during expandForMissing.");
 					}
 				}
-	
+
 				if (lastTv == null
 				 && (  parmRef.missingAction == MissingAction.NEXT
 					|| parmRef.missingAction == MissingAction.INTERP
@@ -682,12 +697,12 @@ debug3("expandForMissing3 role=" + role);
 					// The last value is missing & we need it!
 					try
 					{
-debug3("expandForMissing4 role=" + role);			
+						log.trace("expandForMissing4 role={}", role);
 						timeSeriesDAO.getNextValue(parmRef.timeSeries, lastParamTime);
 					}
-					catch(BadTimeSeriesException ex) 
+					catch(BadTimeSeriesException ex)
 					{
-						Logger.instance().warning("expandForMissing: " + ex);
+						log.atWarn().setCause(ex).log("Error during expandForMissing.");
 					}
 				}
 			}
@@ -713,17 +728,17 @@ debug3("expandForMissing4 role=" + role);
 	private void expandForDeltas(TreeSet<Date> baseTimes)
 		throws DbIoException
 	{
-		debug3("expandForDeltas num baseTimes=" + baseTimes.size());
+		log.trace("expandForDeltas num baseTimes={}", baseTimes.size());
 		// Quick way to detect no input data.
 		if (baseTimes.size() == 0)
 			return;
-		
+
 		for(String role : getInputNames())
 		{
 			ParmRef parmRef = parmMap.get(role);
 			if (parmRef == null)
 				continue;
-debug3("expandForDeltas 1 role='" + role + "'");
+			log.trace("expandForDeltas 1 role='{}'", role);
 
 			String typ = parmRef.compParm.getAlgoParmType().toLowerCase();
 			String intv = parmRef.compParm.getInterval();
@@ -733,8 +748,7 @@ debug3("expandForDeltas 1 role='" + role + "'");
 			if (typ.length() <= 1 || typ.charAt(1) != 'd')
 				continue; // not a delta.
 
-			debug3("expandForDeltas parm '" + role + "' type='" 
-				+ typ + "', nsamps=" + nsamps);
+			log.trace("expandForDeltas parm '{}' type='{}', nsamps={}", role, typ, nsamps);
 
 			// These are the times we will request with an IN() clause.
 			ArrayList<Date> inTimes = new ArrayList<Date>();
@@ -755,7 +769,7 @@ debug3("expandForDeltas 1 role='" + role + "'");
 				 && cts.findWithin(prevMS/1000, roundSec/2) == null
 				 && !inTimes.contains(prevDate))
 					inTimes.add(prevDate);
-				
+
 				// call computeDeltaMsec to add delta to get NEXT value time
 				// if this time is not currently in the time series, add to inTimes
 				long nextMS = computeDeltaMsec(paramTime.getTime(), typ, intv, false);
@@ -765,11 +779,10 @@ debug3("expandForDeltas 1 role='" + role + "'");
 				 && !inTimes.contains(nextDate))
 					inTimes.add(nextDate);
 
-debug3("expandForDeltas parm '" + role + "' baseTime="
-+ debugSdf.format(baseTime) + ", prev=" + debugSdf.format(prevDate)
-+ ", next=" + debugSdf.format(nextDate));
-				
-				// I will need to perform the comp at this NEXT time, so ADD 
+				log.trace("expandForDeltas parm '{}' baseTime={}, prev={}, next={}",
+						  role, baseTime, prevDate, nextDate);
+
+				// I will need to perform the comp at this NEXT time, so ADD
 				// deltaT back to get normalized baseTime
 				//        Add it to paramTimeBaseTime
 				Date nextParamTime = new Date(nextMS);
@@ -777,17 +790,17 @@ debug3("expandForDeltas parm '" + role + "' baseTime="
 					nextParamTime, aggCal);
 				paramTimeBaseTime.put(nextParamTime, nextBaseTime);
 			}
-			
+
 			// inTimes now contains all the values I need to read from the DB.
 			if (inTimes.size() == 0)
 				continue; // Don't need anything! Go to next param.
-			
+
 			TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 			try
 			{
 				int numRetrieved = timeSeriesDAO.fillTimeSeries(cts, inTimes);
-	
-				// Some may have not been retrieved. 
+
+				// Some may have not been retrieved.
 				// If interpDeltas is true, see if I can interpolate the missing ones.
 				if (numRetrieved != inTimes.size() && interpDeltas)
 				{
@@ -801,16 +814,15 @@ debug3("expandForDeltas parm '" + role + "' baseTime="
 						}
 				}
 			}
-			catch(BadTimeSeriesException ex) 
+			catch(BadTimeSeriesException ex)
 			{
-				Logger.instance().warning("expandForDeltas: " + ex);
-				ex.printStackTrace(Logger.instance().getLogOutput());
+				log.atWarn().setCause(ex).log("Error during expandForDeltas.");
 			}
 			finally
 			{
 				timeSeriesDAO.close();
 			}
-			
+
 			// We need to add the new base times so that the computation gets
 			// executed at the NEXT time.
 			for(Date paramTime : paramTimeBaseTime.keySet())
@@ -819,8 +831,7 @@ debug3("expandForDeltas parm '" + role + "' baseTime="
 				if ((cts.findWithin(paramTime.getTime()/1000, roundSec/2) != null)
 				 && !baseTimes.contains(baseTime))
 				{
-debug3("Adding new base time " + debugSdf.format(baseTime) 
-	+ " to compute NEXT delta.");
+					log.trace("Adding new base time {} to compute NEXT delta.", baseTime);
 					baseTimes.add(baseTime);
 				}
 			}
@@ -834,7 +845,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 	 * @param tsInterval the interval code for the comp-parm = time-series interval.
 	 * @return the millisecond time of previous value for specified delta.
 	 */
-	private long computeDeltaMsec(long firstMsec, String algoParmType, 
+	private long computeDeltaMsec(long firstMsec, String algoParmType,
 		String tsInterval, boolean subtract)
 	{
 		long qMsec = firstMsec;
@@ -846,33 +857,30 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 		if (algoParmType.length() > 2)
 			deltaIntv = algoParmType.substring(2);
 		deltaIntv = deltaIntv.toLowerCase();
-		
+
 		// if not 'last' specified, convert to a normalized representation.
-		if (!deltaIntv.startsWith("l")) 
+		if (!deltaIntv.startsWith("l"))
 			deltaIntv = IntervalCodes.getDeltaSpec(deltaIntv);
 
 		if (deltaIntv == null || deltaIntv.length() == 0)
 			return 0L;
-		
-//Logger.instance().debug3("DbAlgorithmExecutive.computeDeltaMsec: intv='" + tsInterval
-//+ "', deltaIntv=" + deltaIntv);
-		
+
 		int incr = subtract ? -1 : 1;
 
 		aggCal.setTimeInMillis(firstMsec);
 		if (deltaIntv.equals("h"))
 			qMsec += (3600000L * incr);
-		else if (deltaIntv.equals("d")) 
+		else if (deltaIntv.equals("d"))
 		{
 			aggCal.add(Calendar.DAY_OF_YEAR, incr);
 			qMsec = aggCal.getTimeInMillis();
 		}
-		else if (deltaIntv.equals("m")) 
+		else if (deltaIntv.equals("m"))
 		{
 			aggCal.add(Calendar.MONTH, incr);
 			qMsec = aggCal.getTimeInMillis();
 		}
-		else if (deltaIntv.equals("y")) 
+		else if (deltaIntv.equals("y"))
 		{
 			aggCal.add(Calendar.YEAR, incr);
 			qMsec = aggCal.getTimeInMillis();
@@ -882,7 +890,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 			// Cannot do forward deltas if they specify 'last'
 			if (!subtract)
 				return 0L;
-			
+
 			aggCal.setTime(new Date(firstMsec - 1000)); // 1 sec ago.
 			aggCal.set(Calendar.MINUTE, 0);
 			aggCal.set(Calendar.SECOND, 0);
@@ -928,7 +936,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 			}
 			catch(NumberFormatException ex)
 			{
-				warning("Cannot determine # minutes from '" + deltaIntv + "': " + ex);
+				log.atWarn().setCause(ex).log("Cannot determine # minutes from '{}'", deltaIntv);
 				qMsec = 0L;
 			}
 		}
@@ -941,8 +949,8 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 	 * <p>
 	 * (since  <=  sample-time  <=  until).
 	 * <p>
-	 * This method is intended for use by aggregating algorithms like a 
-	 * periodic average or sum. The algorithm either knows the period 
+	 * This method is intended for use by aggregating algorithms like a
+	 * periodic average or sum. The algorithm either knows the period
 	 * intrinsically, or it is supplied by properties.
 	 * @param since the time range start.
 	 * @param until the time range end.
@@ -963,22 +971,17 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 				ParmRef parmRef = parmMap.get(role);
 				if (parmRef == null)
 				{
-					warning("(since,until)Skipping unassigned role '" + role + "'");
+					log.warn("(since,until)Skipping unassigned role '{}'", role);
 					continue;
 				}
-	
+
 				try
 				{
 					Date paramSince = parmRef.compParm.baseTimeToParamTime(since, aggCal);
 					Date paramUntil = parmRef.compParm.baseTimeToParamTime(until, aggCal);
-					
+
 					// Don't retrieve data we already have.
-					
-					// Don't call this method until we resolve the upper/lower bounds
-					// issue. If we adjust the time range, we need to be inclusive
-					// on both ends.
-	//				trimRangeForDataAlreadyRetrieved(parmRef.timeSeries, st, ut);
-	
+
 					if (paramSince.compareTo(paramUntil) <= 0)
 					{
 						timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, paramSince, paramUntil,
@@ -987,16 +990,16 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 					int sz = parmRef.timeSeries.size();
 					for(int i=0; i<sz; i++)
 					{
-						Date sampParamTime = 
+						Date sampParamTime =
 							parmRef.timeSeries.sampleAt(i).getTime();
-						Date sampBaseTime = 
+						Date sampBaseTime =
 							parmRef.compParm.paramTimeToBaseTime(sampParamTime, aggCal);
 						long sampMsec = sampBaseTime.getTime();
-						
-						boolean aboveLowerBound = 
+
+						boolean aboveLowerBound =
 							aggLowerBoundClosed ? sampMsec >= sinceMsec
 							: sampMsec > sinceMsec;
-						boolean belowUpperBound = 
+						boolean belowUpperBound =
 							aggUpperBoundClosed ? sampMsec <= untilMsec
 							: sampMsec < untilMsec;
 						if (aboveLowerBound && belowUpperBound)
@@ -1005,8 +1008,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 				}
 				catch(BadTimeSeriesException ex)
 				{
-					warning("Bad times series for '" + parmRef.role 
-						+ "': " + ex.getMessage());
+					log.atWarn().setCause(ex).log("Bad times series for '{}'", parmRef.role);
 				}
 			}
 		}
@@ -1019,7 +1021,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 
 		return baseTimes;
 	}
-	
+
 
 
 	/**
@@ -1040,7 +1042,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 			for(int i=0; i<n; i++)
 			{
 				TimedVariable tv = parmRef.timeSeries.sampleAt(i);
-				if ((tv.getFlags() & 
+				if ((tv.getFlags() &
 					(VarFlags.DB_ADDED | VarFlags.DB_DELETED)) != 0)
 				{
 					Date baseTime = parmRef.compParm.paramTimeToBaseTime(tv.getTime(), aggCal);
@@ -1050,19 +1052,19 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 						sec = ((sec+roundSec/2) / roundSec) * roundSec;
 						baseTime = new Date(sec * 1000L);
 					}
-					if (baseTimeWithinCompRange(baseTime)) 
+					if (baseTimeWithinCompRange(baseTime))
 						baseTimes.add(baseTime);
 				}
 			}
 		}
 		return baseTimes;
 	}
-	
-	
+
+
 	/**
-	 * 
-	 * This method checks if the base time falls within the effective start and end dates  & season start and end 
-	 * dates specified for the computaion. 
+	 *
+	 * This method checks if the base time falls within the effective start and end dates  & season start and end
+	 * dates specified for the computaion.
 	 * @param baseTime
 	 * @return
 	 */
@@ -1070,19 +1072,19 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 	{
 		if (effectiveStart != null && baseTime.before(effectiveStart))
 			return false;
-		
+
 		if (effectiveEnd != null && baseTime.after(effectiveEnd))
 			return false;
 
 		boolean retBln = true;
-		
+
 		if(comp.getProperties().containsKey("seasonName"))
 		{
-			try {				
+			try {
 				String startSeason = comp.getProperty("seasonStartDate");
 				String endSeason = comp.getProperty("seasonEndDate");
-				SimpleDateFormat sdformat = new SimpleDateFormat("MMM dd HH:mm:ss");	
-				
+				SimpleDateFormat sdformat = new SimpleDateFormat("MMM dd HH:mm:ss");
+
 				Calendar startCal = Calendar.getInstance();
 				startCal.setTime(sdformat.parse(startSeason));
 				startCal.setTimeZone( TimeZone.getTimeZone(comp.getProperty("seasonTz")));
@@ -1093,36 +1095,37 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 				endCal.setTimeZone( TimeZone.getTimeZone(comp.getProperty("seasonTz")));
 				startCal.set(Calendar.YEAR, Calendar.getInstance().get(Calendar.YEAR));
 				if(startCal.get(Calendar.MONTH)<=endCal.get(Calendar.MONTH))
-				{					
+				{
 					endCal.set(Calendar.YEAR, Calendar.getInstance().get(Calendar.YEAR));
 				}
 				else
-				{					
+				{
 					endCal.set(Calendar.YEAR, Calendar.getInstance().get(Calendar.YEAR)+1);
 				}
-				
-				
+
+
 				if(baseTime.compareTo(startCal.getTime())>=0  && baseTime.compareTo(endCal.getTime())<0)
 				{
 					retBln =true;
 				}
 				else
 					retBln=false;
-				
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+
 			}
-		    
-		    
+			catch (ParseException ex)
+			{
+				log.atError().setCause(ex).log("Unable to process seasonal settings.");
+			}
+
+
 
 		}
-		
+
 		return retBln;
 	}
-	
-	
-	
+
+
+
 	private void parseTimeRound()
 	{
 		roundSec = 60; // default
@@ -1130,7 +1133,7 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 		if (trs == null)
 			return;
 		trs = trs.trim();
-		try 
+		try
 		{
 			int msidx = trs.lastIndexOf(':');
 			if (msidx == -1) // Just simple number of seconds.
@@ -1140,20 +1143,20 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 				roundSec = Integer.parseInt(trs.substring(msidx+1));
 				int hmidx = trs.indexOf(':');
 				if (hmidx == msidx) // Just MM:SS
-					roundSec += 
+					roundSec +=
 						(Integer.parseInt(trs.substring(0, msidx)) * 60);
 				else // HH:MM:SS
 				{
-					roundSec += 
+					roundSec +=
 						(Integer.parseInt(trs.substring(hmidx+1, msidx)) * 60);
-					roundSec += 
+					roundSec +=
 						(Integer.parseInt(trs.substring(0, hmidx)) * 3600);
 				}
 			}
 		}
 		catch(Exception ex)
 		{
-			warning("Bad time round string '" + trs + "' -- ignored.");
+			log.atWarn().setCause(ex).log("Bad time round string '{}' -- ignored.", trs);
 			roundSec = 60;
 		}
 	}
@@ -1168,13 +1171,15 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 			Date lower = new Date(qt.getTime() - (roundSec*1000L / 2));
 			Date upper = new Date(qt.getTime() + (roundSec*1000L / 2) - 1);
 			if (timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, lower, upper) == 0)
-				debug1("Cannot retrieve '" + parmRef.role + "' for time "
-					+ tsdb.sqlDate(qt) + ": data not int DB.");
+			{
+				log.debug("Cannot retrieve '{}' for time {}: data not int DB " +
+						  "without allowed deviation of {} seconds.",
+				 		  parmRef.role, qt, roundSec);
+			}
 		}
 		catch(BadTimeSeriesException ex)
 		{
-			warning("Bad times series for '" + parmRef.role 
-				+ "': " + ex.getMessage());
+			log.atWarn().setCause(ex).log("Bad times series for '{}'", parmRef.role);
 		}
 		finally
 		{
@@ -1190,26 +1195,6 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 	private boolean tryRangeQuery(ParmRef parmRef, TreeSet<Date> queryTimes)
 		throws DbIoException
 	{
-		// MJM 20170525 the IN clause won't work because it doesn't apply the 
-		// roundSec fudge factor -- It only looks for exact time matches.
-		// Therefore this method ALWAYS tries the range, and always returns true.
-		
-//		String intcode = parmRef.compParm.getInterval();
-//		if (IntervalCodes.int_instant.equalsIgnoreCase(intcode)
-//		 || IntervalCodes.int_unit.equalsIgnoreCase(intcode))
-//			return false;
-//
-//		// 'Nearly contiguous' means no more that 2 intervals in any gap.
-//		int intsec = IntervalCodes.getIntervalSeconds(intcode);
-//		long lastSec = 0L;
-//		for(Date d : queryTimes)
-//		{
-//			long sec = d.getTime() / 1000L;
-//			if (lastSec != 0 
-//			 && sec - lastSec > intsec*2)
-//				return false;
-//			lastSec = sec;
-//		}
 
 		TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 		try
@@ -1217,18 +1202,16 @@ debug3("Adding new base time " + debugSdf.format(baseTime)
 			// MJM 20170525 Need to apply round sec to retrieval.
 			Date lower = new Date(queryTimes.first().getTime() - (roundSec*1000L / 2));
 			Date upper = new Date(queryTimes.last().getTime()  + (roundSec*1000L / 2));
-debug3("tryRangeQuery role=" + parmRef.role + ", tsid="
-+(parmRef.tsid==null?"null":parmRef.tsid.getUniqueString()));
-			//timeSeriesDAO.fillTimeSeries(ts, from, until, include_lower, include_upper, overwriteExisting)
+			log.trace("tryRangeQuery role={}, tsid=",
+					  parmRef.role, (parmRef.tsid==null?"null":parmRef.tsid.getUniqueString()));
 			int n = timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, lower, upper, false, true, false);
-			debug1("Retrieved " + n + " values for role '" + parmRef.role + "' for times "
-					+ debugSdf.format(lower) + " thru " + debugSdf.format(upper));
+			log.debug("Retrieved {} values for role '{}' for times {} thru {}",
+					  n, parmRef.role, lower, upper);
 			return true;
 		}
 		catch(BadTimeSeriesException ex)
 		{
-			warning("Bad times series for '" + parmRef.role 
-				+ "': " + ex.getMessage());
+			log.atWarn().setCause(ex).log("Bad times series for '{}'", parmRef.role);
 			// Return true because there's no point in processing this TS
 			// any further.
 			return true;
@@ -1246,14 +1229,14 @@ debug3("tryRangeQuery role=" + parmRef.role + ", tsid="
 		try
 		{
 			if (timeSeriesDAO.fillTimeSeries(parmRef.timeSeries, queryTimes) == 0)
-				debug1("Cannot retrieve '" + parmRef.role + "' for times "
-					+ tsdb.sqlDate(queryTimes.first()) + " thru "
-					+ tsdb.sqlDate(queryTimes.last()) + ": data not int DB.");
+			{
+				log.debug("Cannot retrieve '{}' for times {} thru {}: data not int DB.",
+						  parmRef.role, queryTimes.first(), queryTimes.last());
+			}
 		}
 		catch(BadTimeSeriesException ex)
 		{
-			warning("Bad times series for '" + parmRef.role 
-				+ "': " + ex.getMessage());
+			log.atWarn().setCause(ex).log("Bad times series for '{}'", parmRef.role);
 		}
 		finally
 		{
@@ -1284,13 +1267,12 @@ debug3("tryRangeQuery role=" + parmRef.role + ", tsid="
 	 */
 	protected void iterateTimeSlices( TreeSet<Date> baseTimes )
 	{
-		debug2("DbAlgorithmExecutive iterating over " + baseTimes.size()
-			+ " time slices.");
+		log.trace("DbAlgorithmExecutive iterating over {} time slices.", baseTimes.size());
 		NamedVariableList timeSlice = new NamedVariableList();
 	  nextBaseTime:
 		for(Date baseTime : baseTimes)
 		{
-			debug3("DbAlgorithmExecutive starting base time slice " + debugSdf.format(baseTime));
+			log.trace("DbAlgorithmExecutive starting base time slice {}", baseTime);
 			timeSlice.clear();
 
 			// Place all input params for this baseTime into the time slice.
@@ -1303,18 +1285,18 @@ debug3("tryRangeQuery role=" + parmRef.role + ", tsid="
 				Date paramTime = parmRef.compParm.baseTimeToParamTime(baseTime, aggCal);
 				long varSec = paramTime.getTime()/1000L;
 				TimedVariable tv = parmRef.timeSeries.findWithin(paramTime, roundSec/2);
-				
+
 
 				if (tv == null) // Time series missing value for this slice?
 				{
-debug3("Value missing for '" + role + " at time " + debugSdf.format(paramTime)
-+ ", missingAction=" + parmRef.missingAction.toString());
+					log.trace("Value missing for '{}' at time {}, missingAction={}",
+							  role, paramTime, parmRef.missingAction.toString());
 					if (parmRef.missingAction == MissingAction.FAIL)
 						// Required param - fail this slice if not present.
-//						continue nextBaseTime;
-// MJM 20100820 - In order to handle deleted data properly, we just go on
-// and process this time-slice. See the code in AW_AlgorithmBase.doTimeSlice
-// for handling delete data.
+						//continue nextBaseTime;
+						// MJM 20100820 - In order to handle deleted data properly, we just go on
+						// and process this time-slice. See the code in AW_AlgorithmBase.doTimeSlice
+						// for handling delete data.
 						continue; // next input param.
 
 					// IGNORE means Leave missing & let algorithm handle it.
@@ -1324,12 +1306,10 @@ debug3("Value missing for '" + role + " at time " + debugSdf.format(paramTime)
 					TimedVariable prevTv = parmRef.timeSeries.findPrev(varSec);
 					if (prevTv == null)
 					{
-//Logger.instance().debug3("... no previous value, skipping.");
 						// Can't compute non-ignored param. Skip slice.
 						continue nextBaseTime;
 					}
 					int prevSec = (int)(prevTv.getTime().getTime() / 1000L);
-//Logger.instance().debug3("... found prev value: " + debugSdf.format(prevTv.getTime()) + " : " + prevTv.getStringValue());
 
 					int intvSecs = IntervalCodes.getIntervalSeconds(
 						parmRef.compParm.getInterval());
@@ -1338,57 +1318,52 @@ debug3("Value missing for '" + role + " at time " + debugSdf.format(paramTime)
 					{
 						if (varSec - prevSec > maxMissingTimeForFill)
 						{
-							warning("Missing time exceeded for role " + role
-								+ ", max=" + maxMissingTimeForFill + " seconds, "
-								+ "delta=" + (varSec - prevSec));
+							log.warn("Missing time exceeded for role {}, max={} seconds, delta={}",
+									 role, maxMissingTimeForFill, (varSec - prevSec));
 							continue nextBaseTime;
 						}
 
-						if (intvSecs != 0 
-						 && (varSec-prevSec) / intvSecs 
+						if (intvSecs != 0
+						 && (varSec-prevSec) / intvSecs
 							> maxMissingValuesForFill)
 						{
-							warning("Missing number exceeded for role " + role
-								+ ", max#=" + maxMissingValuesForFill
-								+ ", deltaT=" + (varSec-prevSec) + ", intvSecs=" + intvSecs);
+							log.warn("Missing number exceeded for role {}, max#={}, deltaT={}, intvsSecs={}",
+									 role, maxMissingValuesForFill, (varSec-prevSec), intvSecs);
 							continue nextBaseTime;
 						}
 
-						// Else we have a recent-enough prev value - use it.
-//						tv = prevTv;
 						// MJM 2016-01-26: Mock up a new TV with current time and previous value.
 						// This is necessary in case they're doing a delta below
 						tv = new TimedVariable(prevTv);
 						tv.setTime(paramTime);
-						
-						debug3("DbAlgorithmExecutive role '" + role + "' missing at base time "
-							+ debugSdf.format(baseTime) + ", using prev value=" + tv.getStringValue());
+
+						log.trace("DbAlgorithmExecutive role '{}' missing at base time {}, using prev value={}",
+								  role, baseTime, tv.getStringValue());
 					}
 					else // one of NEXT, INTERP, or CLOSEST
 					{
-						TimedVariable nextTv = 
+						TimedVariable nextTv =
 							parmRef.timeSeries.findNext(varSec);
 						if (nextTv == null)
 							continue nextBaseTime;
 
 						int nextSec = (int)(nextTv.getTime().getTime() / 1000L);
-				
+
 						if (nextSec - prevSec > maxMissingTimeForFill)
 						{
-							warning("Missing time exceeded for role " + role
-								+ ", prevSec=" + prevSec + ", nextSec=" + nextSec
-								+ ", max=" + maxMissingTimeForFill + " secconds.");
+							log.warn("Missing time exceeded for role {}, " +
+									 "prevSec={}, nextSec={}, max={} seconds.",
+									 role, prevSec, nextSec, maxMissingTimeForFill);
 							continue nextBaseTime;
 						}
 
-						if (intvSecs != 0 
-						 && (nextSec - prevSec) / intvSecs 
+						if (intvSecs != 0
+						 && (nextSec - prevSec) / intvSecs
 							> maxMissingValuesForFill)
 						{
-							warning("Missing time exceeded for role " + role
-								+ ", prevSec=" + prevSec + ", nextSec=" + nextSec
-								+ ", intvSecs=" + intvSecs
-								+ ", max=" + maxMissingValuesForFill + " secconds.");
+							log.warn("Missing time exceeded for role {}, " +
+									 "prevSec={}, nextSec={}, intvSecs={}, max={} seconds.",
+									 role, prevSec, nextSec, intvSecs, maxMissingValuesForFill);
 
 							continue nextBaseTime;
 						}
@@ -1410,18 +1385,12 @@ debug3("Value missing for '" + role + " at time " + debugSdf.format(paramTime)
 							continue nextBaseTime;
 					}
 				}
-//else debug3("DbAlgorithmExecutive found value (" + debugSdf.format(tv.getTime()) + ":" + tv.getStringValue()
-//+ ") paramTime=" + debugSdf.format(paramTime) + ", roundSec=" + roundSec);
-
 
 				NamedVariable t_nvar = null;
 				if (tv != null)
 				{
 					t_nvar = new NamedVariable(role, tv);
 					timeSlice.add(t_nvar);
-					//timeSlice.add(new NamedVariable(role, tv));
-					// line replaced with variable if we need to remove
-					// due to delta record not available 
 				}
 				else
 					continue;
@@ -1434,11 +1403,10 @@ debug3("Value missing for '" + role + " at time " + debugSdf.format(paramTime)
 						parmRef.compParm.getInterval(), true);
 					TimedVariable prev = parmRef.timeSeries.findWithin(
 						(int)(qMsec/1000L), roundSec);
-debug3("DbAlgorithmExecutive.iterateTimeSlices: "
-+ "prev=" + (prev==null ? "null" : (debugSdf.format(prev.getTime()) + ":" + prev.getStringValue())) + ", " 
-+ "this=" + (tv == null ? "null" : (debugSdf.format(tv.getTime()) +":" + tv.getStringValue()))
-+ ", qMsec=" + (debugSdf.format(new Date(qMsec))) 
-+ ", roundSec=" + roundSec);
+					log.trace("DbAlgorithmExecutive.iterateTimeSlices: prev={}:{}, " +
+							  "this={}:{}, qMsec={}, roundSec={}",
+							  prev.getTime(), prev.getStringValue(), tv.getTime(),
+							  tv.getStringValue(), new Date(qMsec), roundSec);
 					if (prev != null)
 					{
 						try
@@ -1446,33 +1414,30 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: "
 							NamedVariable d = new NamedVariable(role + "_d",
 								tv.getDoubleValue()-prev.getDoubleValue());
 							timeSlice.add(d);
-debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
+							log.trace("DbAlgorithmExecutive.iterateTimeSlices: delta computed: {}", d);
 						}
 						catch(NoConversionException ex)
 						{
-							warning("Error with exact delta: " + ex);
+							log.atWarn().setCause(ex).log("Error with exact delta.");
 						}
 					}
-					else if (interpDeltas
-					 && (prev = parmRef.timeSeries.findPrev(
-						(int)(tv.getTime().getTime()/1000L)-1)) != null)
+					// TODO: Determine where interpDeltas should be set.
+					else if (interpDeltas && (prev = parmRef.timeSeries.findPrev((int)(tv.getTime().getTime()/1000L)-1)) != null)
 					{
 						try
 						{
 							Date D_v = tv.getTime();
 							double T_v = D_v.getTime();
-							Date D_p = prev.getTime(); 
-							double T_p = D_p.getTime(); 
+							Date D_p = prev.getTime();
+							double T_p = D_p.getTime();
 							double T_q = qMsec;
-							debug1("Interpolating delta D_v=" + D_v
-								+ ", D_p=" + D_p 
-								+ ", T_q=" + (new Date(qMsec)));
+							log.debug("Interpolating delta D_v={}, D_p={}, T_q={}", D_v, D_p, (new Date(qMsec)));
 
 							// Check maxInterpIntervals
 							double dT = T_v - T_p;
 							if (dT > (T_v-T_q) * maxInterpIntervals)
 							{
-								warning("Prev value too old, can't interp delta");
+								log.warn("Prev value too old, can't interp delta");
 								timeSlice.rm(t_nvar);
 							}
 							else
@@ -1483,18 +1448,16 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 								timeSlice.add(
 									new NamedVariable(role + "_d",
 										v-q));
-								debug1("Interpolated delta of " + (v-q)
-									+ " from time " + new Date(qMsec)
-									+ ", v=" + v + ", q=" + q + ", p=" + p);
-							} 
+								log.debug("Interpolated delta of {} from time {}, v={}, q={}, p={}", (v-q), new Date(qMsec), v, q, p);
+							}
 						}
 						catch(NoConversionException ex)
 						{
-							warning("Error with interpolated delta: " + ex);
+							log.atWarn().setCause(ex).log("Error with interpolated delta.");
 						}
 					}
 					else if (t_nvar != null)
-					{	
+					{
 					// there was no previous value so delta impossible
 					// so remove original timeslice for this variable
 						timeSlice.rm(t_nvar);
@@ -1506,7 +1469,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 			try { doTimeSlice(timeSlice, baseTime); }
 			catch(DbCompException ex)
 			{
-				warning("Error doing time slice for " + baseTime + ": " + ex);
+				log.atWarn().setCause(ex).log("Error doing time slice for {}", baseTime);
 				continue;
 			}
 
@@ -1521,8 +1484,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 				if (v != null)
 				{
 					Date paramTime = parmRef.compParm.baseTimeToParamTime(baseTime, aggCal);
-//debug3("DbAlgorithmExecutive.iterateTimeSlices output baseTime=" + debugSdf.format(baseTime)
-//+ ", paramTime=" + debugSdf.format(paramTime));
+
 					// NOTE: It's up to the algorithm to set the TO_WRITE
 					// and/or TO_DELETE flags.
 					TimedVariable tv = new TimedVariable(v, paramTime);
@@ -1535,9 +1497,10 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 						{
 							if (oldTv != null)
 							{
-								debug2("Attempting to fix altered db_written and to_write value! v:" +
-								v.toString() + " tv:" + tv.toString() + " oldTv:"+ oldTv.toString());
-							
+								log.trace("Attempting to fix altered db_written and to_write value! " +
+										  "v:{} tv:{} oldTv{}",
+										  v, tv, oldTv);
+
 								// If value is the same, preserve the old flags.
 								double diff = v.getDoubleValue() - oldTv.getDoubleValue();
 								if (diff >= -1e-7 && diff <= 1e-7) // matches HDB duplicate value detection
@@ -1549,11 +1512,10 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 						}
 						catch(NoConversionException ex)
 						{
-							debug2("Error comparing existing aggregate output '"
-								+ oldTv + ": " + ex);
+							log.atTrace().setCause(ex).log("Error comparing existing aggregate output '{}'", oldTv);
 						}
 					}
-					// End of Obscure bug fix ============================					
+					// End of Obscure bug fix ============================
 					parmRef.timeSeries.addSample(tv);
 				}
 			}
@@ -1577,7 +1539,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 			}
 		}
 	}
-	
+
 	/**
 	 * Deletes any outputs of this
 	 * algorithm for a given base-time stamp. In actuality, it
@@ -1604,7 +1566,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 		if (parmRef == null)
 			return;
 		Date paramTime = parmRef.compParm.baseTimeToParamTime(basetime, aggCal);
-		
+
 		long sec = paramTime.getTime() / 1000L;
 		TimedVariable tv = parmRef.timeSeries.findWithin(sec, roundSec/2);
 		if (tv != null)
@@ -1613,20 +1575,20 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 			VarFlags.setToDelete(tv);
 		}
 	}
-	
+
 	/**
 	 * Algorithm-specific initialization provided by the subclass.
 	 */
 	protected abstract void initAlgorithm( )
 		throws DbCompException;
-	
+
 	/**
 	 * Concrete apply method to be supplied by subclass.
 	 * @throws DbCompException on computation error.
 	 */
 	protected abstract void applyAlgorithm( )
 		throws DbCompException, DbIoException;
-	
+
 	/**
 	 * Do the algorithm for a single time slice. The default implementation
 	 * here does nothing. Non-time-slice algorithms do not need to overload
@@ -1634,7 +1596,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	 *
 	 * @param timeSlice a set of input variables for a single time-slice
 	 *        (the name of each variable will be the algorithm role name).
-	 * @param baseTime The base-time of this slice. Any variables having 
+	 * @param baseTime The base-time of this slice. Any variables having
 	 *        non-zero deltaT may be before or after this time.
 	 *
 	 * @throw DbCompException (or subclass thereof) if execution of this
@@ -1646,35 +1608,58 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 		// Base class does nothing. Some algorithms may not do time slices
 		// and we don't burden them to provide this method.
 	}
-	
+
+	/**
+	 * @deprecated use local sfl4j Logger instance
+	 */
+	@Deprecated
 	public void warning(String msg)
 	{
-		Logger.instance().warning("Comp '" + comp.getName() + "' " + msg);
+		/* to be removed */
 	}
 
+	/**
+	 * @deprecated use local sfl4j Logger instance
+	 */
+	@Deprecated
 	public void info(String msg)
 	{
-		Logger.instance().info("Comp '" + comp.getName() + "' " + msg);
+		/* to be removed */
 	}
+
+	/**
+	 * @deprecated use local sfl4j Logger instance
+	 */
+	@Deprecated
 
 	public void debug1(String msg)
 	{
-		Logger.instance().debug1("Comp '" + comp.getName() + "' " + msg);
+		/* to be removed */
 	}
+
+	/**
+	 * @deprecated use local sfl4j Logger instance
+	 */
+	@Deprecated
 	public void debug2(String msg)
 	{
-		Logger.instance().debug2("Comp '" + comp.getName() + "' " + msg);
+		/* to be removed */
 	}
+
+	/**
+	 * @deprecated use local sfl4j Logger instance
+	 */
+	@Deprecated
 	public void debug3(String msg)
 	{
-		Logger.instance().debug3("Comp '" + comp.getName() + "' " + msg);
+		/* to be removed */
 	}
 
 	public ParmRef getParmRef(String role)
 	{
 		return parmMap.get(role);
 	}
-	
+
 	/**
 	 * Convenience method to get the Time Series Identifier associated with this role.
 	 * @param role the name of the parameter (input or output)
@@ -1704,7 +1689,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 			return role + "-undefined";
 		return tsid.getUniqueString();
 	}
-	
+
 	/**
 	 * Return true if a time series is assigned to the passed role name. False if not.
 	 * @param role the role name in the algorithm
@@ -1713,7 +1698,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	{
 		return getParmTsId(role) != null;
 	}
-	
+
 	/**
 	 * Returns the interval of the selected parameter for a role
 	 * @param rolename the role of interest
@@ -1722,16 +1707,20 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	protected String getInterval(String rolename)
 	{
 		ParmRef ref = getParmRef(rolename);
-		if (ref == null) 
-			warning("No parmRef for '" + rolename + "'");
-		else if (ref.compParm == null) 
-			warning("No compParm for '" + rolename + "'");
+		if (ref == null)
+		{
+			log.warn("No parmRef for '{}'", rolename);
+		}
+		else if (ref.compParm == null)
+		{
+			log.warn("No compParm for '{}'", rolename);
+		}
 
 		if (ref != null && ref.compParm != null)
 			return ref.compParm.getInterval();
 		return null;
 	}
-	
+
 	/**
 	 * Returns the table selector of the selected parameter for a role
 	 * @param rolename the role of interest
@@ -1740,10 +1729,14 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	protected String getTableSelector(String rolename)
 	{
 		ParmRef ref = getParmRef(rolename);
-		if (ref == null) 
-			warning("No parmRef for '" + rolename + "'");
-		else if (ref.compParm == null) 
-			warning("No compParm for '" + rolename + "'");
+		if (ref == null)
+		{
+			log.warn("No parmRef for '{}'", rolename);
+		}
+		else if (ref.compParm == null)
+		{
+			log.warn("No compParm for '{}'", rolename);
+		}
 
 		if (ref != null && ref.compParm != null)
 			return ref.compParm.getTableSelector();
@@ -1760,7 +1753,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	{
 		double factor = Math.pow(10,place);
 		double result = Math.round(num*factor)/factor;
-		
+
 		return result;
 	}
 
@@ -1775,9 +1768,13 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	{
 		ParmRef ref = getParmRef(rolename);
 		if (ref == null)
-			warning("No parmRef for '" + rolename + "'");
+		{
+			log.warn("No parmRef for '{}'", rolename);
+		}
 		else if (ref.compParm == null)
-			warning("No compParm for '" + rolename + "'");
+		{
+			log.warn("No compParm for '{}'", rolename);
+		}
 
 		if (ref != null && ref.compParm != null)
 			return ref.compParm.getSiteDataTypeId();
@@ -1794,10 +1791,10 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 		ParmRef ref = getParmRef(rolename);
 		if (ref == null)
 		{
-			warning("No parmRef for '" + rolename + "'");
+			log.warn("No parmRef for '{}'", rolename);
 			return null;
 		}
-		
+
 		// MJM 20121023 Prefer to get the Site and its names from the TSID
 		// object stored in the time series.
 		if (ref.timeSeries != null)
@@ -1812,20 +1809,29 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 					if (sn != null)
 						return sn.getNameValue();
 					else
-						warning("Site '" + site.getDisplayName() + "' has no name with type '"
-							+ nameType + "'");
+					{
+						log.warn("Site '{}' has no name with type '{}'", site.getDisplayName(), nameType);
+					}
 				}
 				else
-					warning("tsid '" + tsid.getUniqueString() + "' has no site object.");
+				{
+					log.warn("tsid '{}' has no site object.", tsid.getUniqueString());
+				}
 			}
 			else
-				warning("Time Series for role '" + rolename + "' has no TSID.");
+			{
+				log.warn("Time Series for role '{}' has no TSID.", rolename);
+			}
 		}
 		else
-			warning("Role '" + rolename + "' has no associated time series.");
-		
+		{
+			log.warn("Role '{}' has no associated time series.", rolename);
+		}
+
 		if (ref.compParm == null)
-			warning("No compParm for '" + rolename + "'");
+		{
+			log.warn("No compParm for '{}'", rolename);
+		}
 		if (ref != null && ref.compParm != null)
 		{
 			if (nameType != null)
@@ -1833,8 +1839,8 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 				SiteName sn = ref.compParm.getSiteName(nameType);
 				if (sn == null)
 				{
-					warning("No name of type '" + nameType + "' for role '"
-						+rolename+ "' sdi=" + ref.compParm.getSiteDataTypeId());
+					log.warn("No name of type '{}' for role '{}' sdi={}",
+							 nameType, rolename, ref.compParm.getSiteDataTypeId());
 					return null;
 				}
 				return sn.getNameValue();
@@ -1850,7 +1856,7 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 	 */
 	protected String getSiteName(String rolename)
 	{
-		String s = getSiteName(rolename, 
+		String s = getSiteName(rolename,
 			DecodesSettings.instance().siteNameTypePreference);
 		if (s != null)
 			return s;
@@ -1883,10 +1889,10 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 		ParmRef ref = getParmRef(rolename);
 		if (ref != null && ref.timeSeries != null)
 			return ref.timeSeries.getUnitsAbbr();
-		else 
+		else
 			return "unknown";
 	}
-	
+
 	/**
 	 * @return units associated with a parameter, or null.
 	 */
@@ -1895,67 +1901,14 @@ debug3("DbAlgorithmExecutive.iterateTimeSlices: delta computed: " + d);
 		ParmRef ref = getParmRef(rolename);
 		if (ref != null && ref.timeSeries != null)
 			return ref.timeSeries.getUnitsAbbr();
-		else 
+		else
 			return null;
 	}
-	
+
 	public DataCollection getDataCollection() { return dc; }
 
 	public void setDc(DataCollection dc)
 	{
 		this.dc = dc;
 	}
-	
-	/**
-	 * Often, especially when filling an aggregate period, we already
-	 * have all of the data we need within a time range. This method 
-	 * adjusts the since & until times toward each other if data at the
-	 * edges already exists in the time series.
-	 * <p>
-	 * At return, if since > until, then no retrieval is necessary.
-	 * @param ts
-	 * @param since
-	 * @param until
-	 */
-//	private void trimRangeForDataAlreadyRetrieved(
-//		CTimeSeries ts, Date since, Date until)
-//	{
-//		String intv = ts.getInterval();
-//		if (intv == null)
-//			return;
-//		IntervalIncrement calincr = IntervalCodes.getIntervalCalIncr(intv);
-//		if (calincr == null)
-//			return;
-//		int fudge = IntervalCodes.getIntervalSeconds(intv) / 2;
-//		GregorianCalendar cal = new GregorianCalendar();
-//		cal.setTimeZone(aggTZ);
-//		cal.setTime(since);
-//		boolean alreadyHave = true;
-//		
-//		// MJM Bug in this method. If we adjust the since/until times we also
-//		// need to modify the upper/lower bounds flags.
-//		
-//		while(alreadyHave && since.compareTo(until) <= 0)
-//		{
-//			alreadyHave = 
-//				ts.findWithin(since.getTime()/1000L, fudge) != null;
-//			if (alreadyHave)
-//			{
-//				cal.add(calincr.getCalConstant(), calincr.getCount());
-//				since.setTime(cal.getTimeInMillis());
-//			}
-//		}
-//		alreadyHave = true;
-//		cal.setTime(until);
-//		while(alreadyHave && since.compareTo(until) < 0)
-//		{
-//			alreadyHave = 
-//				ts.findWithin(until.getTime()/1000L, fudge) != null;
-//			if (alreadyHave)
-//			{
-//				cal.add(calincr.getCalConstant(), -calincr.getCount());
-//				until = cal.getTime();
-//			}
-//		}
-//	}
 }

@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
 
 import java.util.ArrayList;
@@ -7,7 +22,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Properties;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import ilex.var.IFlags;
 import ilex.var.TimedVariable;
 import ilex.var.NoConversionException;
@@ -20,6 +37,7 @@ This class holds links to meta data and the actual time series data.
 */
 public class CTimeSeries
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /** This is used to display the time series name
      * which is site name "-" ts name */
     private String displayName;
@@ -481,7 +499,7 @@ public class CTimeSeries
         long prevSec = (prev.getTime().getTime() / 1000L);
         long nextSec = (next.getTime().getTime() / 1000L);
         long timeRange = nextSec - prevSec;
-Logger.instance().debug3("findInterp(sec=" + sec + ") prevSec=" + prevSec + ", nextSec=" + nextSec);
+        log.trace("findInterp(sec={}) prevSec={}, nextSec={}", sec, prevSec, nextSec);
         if (timeRange == 0)
             return null;
 
@@ -496,7 +514,7 @@ Logger.instance().debug3("findInterp(sec=" + sec + ") prevSec=" + prevSec + ", n
         }
         catch(ilex.var.NoConversionException ex)
         {
-            Logger.instance().warning("Attempt to interpolate a non-number.");
+            log.atWarn().setCause(ex).log("Attempt to interpolate a non-number.");
             return null;
         }
         double val = prevVal + (nextVal - prevVal) * pos;
