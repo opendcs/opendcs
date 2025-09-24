@@ -820,7 +820,7 @@ public class ScreeningEditPanel extends JPanel
 				scrn.setSiteId(parentFrame.parentTsdbApp.getTsdb().lookupSiteID(s));
 				
 			}
-			catch (DbIoException e)
+			catch (DbIoException ex)
 			{
 				log.atError().setCause(ex).log("Unable to lookup or set screening site id.");
 			}
