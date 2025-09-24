@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import ilex.var.NamedVariable;
@@ -6,12 +21,15 @@ import decodes.util.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Compute Incremental Precip from Cumulative Precip over a specified period.\n" +
 		"Period determined by the interval of the output parameter, specified in computation record.\n")
-public class IncrementalPrecip
-	extends AW_AlgorithmBase
+public class IncrementalPrecip extends AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	@Input
 	public double cumulativePrecip;
 
@@ -19,8 +37,8 @@ public class IncrementalPrecip
 	private boolean startOfPeriod = true;
 	double tally = 0.0;
 	int count = 0;
-	
-	private PropertySpec algoPropertySpecs[] = 
+
+	private PropertySpec algoPropertySpecs[] =
 	{
 		new PropertySpec("aggLowerBoundClosed", PropertySpec.BOOLEAN,
 			"default=true, meaning to include the lower bound of the period."),
@@ -58,7 +76,7 @@ public class IncrementalPrecip
 		_awAlgoType = AWAlgoType.AGGREGATING;
 		_aggPeriodVarRoleName = "incrementalPrecip";
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -69,7 +87,7 @@ public class IncrementalPrecip
 		startOfPeriod = true;
 		tally = 0.0;
 		count = 0;
-		
+
 		// Output units will be the same as input.
 		String inUnits = getInputUnitsAbbr("cumulativePrecip");
 		if (inUnits != null && inUnits.length() > 0)
@@ -89,25 +107,27 @@ public class IncrementalPrecip
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-debug3("cumulativePrecip = " + cumulativePrecip + ", at time " + debugSdf.format(_timeSliceBaseTime));
+		log.trace("cumulativePrecip = {}, at time {}.", cumulativePrecip, _timeSliceBaseTime);
 
 		// Normal case is to ignore negative cumulative inputs. But allow if option set.
-		if (cumulativePrecip < 0.0 && !allowNegative) 
-			warning("Negative cumulativePrecip (" + cumulativePrecip + ") " +
-					" in " + getParmTsUniqueString("cumulativePrecip")
-					+ " at time " + debugSdf.format(_timeSliceBaseTime)
-					+ " -- ignored.");
+		if (cumulativePrecip < 0.0 && !allowNegative)
+		{
+			log.warn("Negative cumulativePrecip ({})  in {} at time {} -- ignored.",
+					 cumulativePrecip, getParmTsUniqueString("cumulativePrecip"), _timeSliceBaseTime);
+		}
 		else // good cumulative precip
 		{
 			if (!startOfPeriod)
 			{
 				if (cumulativePrecip < previousValue)   // Reset occurred
-					info("cumulativePrecip reset detected in "
-						+ getParmTsUniqueString("cumulativePrecip")
-						+ " at time " + debugSdf.format(_timeSliceBaseTime)
-						+ ". New value = " + cumulativePrecip);
+				{
+					log.info("cumulativePrecip reset detected in {} at time {}. New value = {}",
+							 getParmTsUniqueString("cumulativePrecip"), _timeSliceBaseTime, cumulativePrecip);
+				}
 				else
+				{
 					tally += (cumulativePrecip - previousValue);
+				}
 			}
 			else
 				startOfPeriod = false;

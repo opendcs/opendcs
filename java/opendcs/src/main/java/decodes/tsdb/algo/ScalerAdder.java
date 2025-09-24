@@ -1,19 +1,15 @@
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.MissingAction;
 import decodes.tsdb.ParmRef;
-import decodes.tsdb.VarFlags;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description ="Takes up to 10 input values labeled input1 ... input10. Multiplies\n" +
 "them by coefficients supplied in properties coeff1 ... coeff10.\n" +
@@ -22,6 +18,7 @@ import org.opendcs.annotations.algorithm.Output;
 "All coefficients default to 1.0 if not supplied." )
 public class ScalerAdder extends AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input public double input1;
 	@Input public double input2;
 	@Input public double input3;
@@ -112,8 +109,8 @@ public class ScalerAdder extends AW_AlgorithmBase
 		 || ((pr = getParmRef(t = "input0")) != null && isAssigned(t) && isMissing(input9) && 
 			pr.missingAction != MissingAction.IGNORE))
 		{
-			debug2("Skipping time slice with base time " + debugSdf.format(_timeSliceBaseTime)
-			+ " because of missing value for param " + t);
+			log.trace("Skipping time slice with base time {} because of missing value for param {}",
+					  _timeSliceBaseTime, t);
 			return;
 		}
 			
@@ -137,9 +134,18 @@ public class ScalerAdder extends AW_AlgorithmBase
 			tally += (input9 * coeff9);
 		if (!isMissing(input10))
 			tally += (input10 * coeff10);
-debug3("doAWTimeSlice baseTime=" + debugSdf.format(_timeSliceBaseTime)
-	+ ", input1=" + input1 + ", coeff1=" + coeff1
-+", input2=" + input2 + ", coeff2=" + coeff2 + ", tally=" + tally);
+		log.atTrace()
+		   .addKeyValue("input1", input1).addKeyValue("coeff1", coeff1)
+		   .addKeyValue("input2", input2).addKeyValue("coeff2", coeff2)
+		   .addKeyValue("input3", input3).addKeyValue("coeff3", coeff3)
+		   .addKeyValue("input4", input4).addKeyValue("coeff4", coeff4)
+		   .addKeyValue("input5", input5).addKeyValue("coeff5", coeff5)
+		   .addKeyValue("input6", input6).addKeyValue("coeff6", coeff6)
+		   .addKeyValue("input7", input7).addKeyValue("coeff7", coeff7)
+		   .addKeyValue("input8", input8).addKeyValue("coeff8", coeff8)
+		   .addKeyValue("input9", input9).addKeyValue("coeff9", coeff9)
+		   .addKeyValue("input10", input10).addKeyValue("coeff10", coeff10)
+		   .log("tally={}", tally);
 		setOutput(output, tally);
 	}
 

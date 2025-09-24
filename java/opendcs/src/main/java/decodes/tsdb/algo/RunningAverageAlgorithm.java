@@ -1,46 +1,30 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.11  2012/09/30 15:20:23  mmaloney
- * Removed superfluous info messages.
- *
- * Revision 1.10  2011/06/16 15:14:53  mmaloney
- * dev
- *
- * Revision 1.9  2011/06/16 13:28:54  mmaloney
- * Improved warning message
- *
- * Revision 1.8  2011/05/16 14:51:23  mmaloney
- * reduce debugs
- *
- * Revision 1.7  2011/02/22 14:02:33  mmaloney
- * minor tweaks
- *
- * Revision 1.6  2011/02/07 16:12:31  mmaloney
- * future data is not data >now, it is data >last time-slice.
- *
- * Revision 1.5  2011/02/07 15:17:21  mmaloney
- * Added boolean outputFutureData property with default=false.
- *
- * Revision 1.4  2010/12/21 19:20:35  mmaloney
- * group computations
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import java.util.Date;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
 import org.opendcs.annotations.PropertySpec;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description ="RunningAverageAlgorithm averages single 'input' parameter to a single 'average'\n" + 
 "parameter. A separate aggPeriodInterval property should be supplied.\n" +
@@ -48,6 +32,7 @@ import org.opendcs.annotations.PropertySpec;
 "so each hour's output is the average of values at [t-23h ... t].")
 public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 
@@ -112,7 +97,6 @@ public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//		debug2("AverageAlgorithm:doAWTimeSlice, input=" + input);
 		if (!isMissing(input))
 		{
 			tally += input;
@@ -127,22 +111,15 @@ public class RunningAverageAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	@Override
 	protected void afterTimeSlices()
 	{
-debug1("RunningAverageAlgorithm:afterTimeSlices, count=" + count
-+ ", lastTimeSlice=" + 
-(lastTimeSlice==null ? "null" : debugSdf.format(lastTimeSlice)));
+		log.debug("RunningAverageAlgorithm:afterTimeSlices, count={}, lastTimeSlice={}", count, lastTimeSlice);
 
 		boolean doOutput = true;
 		if (count < minSamplesNeeded)
 		{
-//			info("Not Producing Output: Do not have minimum # samples (" + minSamplesNeeded
-//				+ ") have only " + count);
 			doOutput = false;
 		}
 		else if (!outputFutureData && _aggregatePeriodEnd.after(lastTimeSlice))
 		{
-//			info("Not Producing Output: outputFutureData=false and period end ("
-//				+ debugSdf.format(_aggregatePeriodEnd) + " is after last time-slice ("
-//				+ debugSdf.format(lastTimeSlice));
 			doOutput = false;
 		}
 		

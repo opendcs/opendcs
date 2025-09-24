@@ -1,95 +1,20 @@
-/**
- * $Id: PythonAlgorithm.java,v 1.27 2020/04/30 15:27:00 mmaloney Exp $
- * 
- * $Log: PythonAlgorithm.java,v $
- * Revision 1.27  2020/04/30 15:27:00  mmaloney
- * put loading_application_id and computation_id into the python namespace.
- *
- * Revision 1.26  2019/12/11 14:42:33  mmaloney
- * Null Ptr Fixes
- *
- * Revision 1.25  2019/12/06 14:53:56  mmaloney
- * Fixed null ptr in setTimeSliceInput
- *
- * Revision 1.24  2019/11/21 19:41:05  mmaloney
- * setTimeSliceInput() differentiate between flag conditions for CWMS and HDB.
- * Improved debugs.
- *
- * Revision 1.23  2019/08/19 15:00:13  mmaloney
- * Bugfix. isPresent, in certain circumstances, was returning true when it should have returned false.
- *
- * Revision 1.22  2019/05/13 15:06:39  mmaloney
- * Fixed time zones in screening season selection.
- *
- * Revision 1.21  2019/01/31 18:46:30  mmaloney
- * Using -9 trillion as missing value for python.
- *
- * Revision 1.20  2019/01/29 20:28:58  mmaloney
- * dev
- *
- * Revision 1.19  2019/01/29 19:03:54  mmaloney
- * dev
- *
- * Revision 1.18  2019/01/29 16:45:17  mmaloney
- * dev
- *
- * Revision 1.17  2019/01/22 21:29:43  mmaloney
- * dev
- *
- * Revision 1.16  2019/01/17 15:24:39  mmaloney
- * HDB 646 Set variable with full double precision into Python namespace.
- *
- * Revision 1.15  2019/01/04 15:01:34  mmaloney
- * Added rolename.tskey, and for HDB, rolename.sdi
- *
- * Revision 1.14  2018/07/31 16:59:47  mmaloney
- * isPresent also returns false on Deleted data.
- *
- * Revision 1.13  2018/06/19 13:18:27  mmaloney
- * In the init script, add computation_id to the python namespace. HDB 492.
- *
- * Revision 1.12  2018/06/13 19:17:41  mmaloney
- * dev
- *
- * Revision 1.11  2018/06/13 19:00:02  mmaloney
- * Can't use 'NV' for missing values because can't mix strings and doubles. The expressions
- * won't compile.
- *
- * Revision 1.10  2018/05/31 18:44:19  mmaloney
- * Allow optional parameters.
- *
- * Revision 1.9  2018/05/30 20:23:38  mmaloney
- * Add "tsbt" time slice base time to name space for time slice scripts.
- *
- * Revision 1.8  2017/06/01 18:19:01  mmaloney
- * Fixed cwms logic bug in isPresent.
- *
- * Revision 1.7  2017/06/01 14:49:16  mmaloney
- * Guard against null ptr bug in parmRef.
- *
- * Revision 1.6  2017/05/31 21:29:58  mmaloney
- * Refactoring for HDB.
- *
- * Revision 1.5  2017/02/16 14:42:04  mmaloney
- * Close CwmsRatingDao in final block.
- *
- * Revision 1.4  2016/09/23 15:59:14  mmaloney
- * Only set MISSING to IGNORE if not explicitely set to something else.
- *
- * Revision 1.3  2016/04/22 14:28:49  mmaloney
- * Parse AlgorithmType from Init Script before executing.
- *
- * Revision 1.2  2016/03/24 19:16:06  mmaloney
- * Added for Python Algorithm
- *
- * Revision 1.1  2015/10/26 12:45:34  mmaloney
- * PythonAlgorithm
- *
- * 
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -110,11 +35,12 @@ import java.util.TreeSet;
 
 import opendcs.dai.TimeSeriesDAI;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.python.core.*;
 import org.python.util.PythonInterpreter;
+import org.slf4j.Logger;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.var.IFlags;
 import ilex.var.NamedVariable;
@@ -132,7 +58,6 @@ import decodes.cwms.validation.Screening;
 import decodes.cwms.validation.ScreeningCriteria;
 import decodes.cwms.validation.dao.ScreeningDAI;
 import decodes.cwms.validation.dao.TsidScreeningAssignment;
-import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.hdb.HdbFlags;
 import decodes.sql.DbKey;
@@ -149,14 +74,10 @@ import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.NoValueException;
 import decodes.tsdb.ScriptType;
 import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
 import decodes.tsdb.compedit.PythonAlgoTracer;
 import decodes.tsdb.ParmRef;
 import ilex.var.TimedVariable;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.util.DecodesSettings;
-
-import static decodes.db.DecodesScript.log;
 
 //AW:IMPORTS
 // Place an import statements you need here.
@@ -168,10 +89,9 @@ Implements the Jython Python interpreter.
 
  */
 //AW:JAVADOC_END
-public class PythonAlgorithm
-	extends decodes.tsdb.algo.AW_AlgorithmBase
-//	implements DynamicPropertiesOwner
+public class PythonAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double dummyin;	//AW:TYPECODE=i
 	String _inputNames[] = { "dummyin" };
@@ -180,8 +100,8 @@ public class PythonAlgorithm
 //AW:LOCALVARS
 	// Enter any local class variables needed by the algorithm.
 	private static PythonAlgorithm runningInstance = null;
-	
-	/** 
+
+	/**
 	 * This method is called from Jython code to get the current running instance.
 	 * This gives it access to all of the infrastructure methods.
 	 */
@@ -189,7 +109,7 @@ public class PythonAlgorithm
 	private boolean firstTsGroup = true;
 	private PythonInterpreter pythonIntepreter = null;
 	private String linesep = System.getProperty("line.separator");
-	
+
 	DatchkReader datchkReader = null;
 	HashSet<String> datchkInitialized = new HashSet<String>();
 	HashMap<String, Screening> cwmsScreenings = new HashMap<String, Screening>();
@@ -223,7 +143,7 @@ public class PythonAlgorithm
 //AW:INIT_END
 
 //AW:USERINIT
-		
+
 		// Code here will be run once, after the algorithm object is created.
 		pyNumFmt.setGroupingUsed(false);
 		pyNumFmt.setMaximumFractionDigits(5);
@@ -256,9 +176,9 @@ public class PythonAlgorithm
 
 		runningInstance = this;
 		firstTsGroup = true;
-		debug3("initAWAlgorithm: Installed " + _inputNames.length 
-			+ " inputs and " + _outputNames.length + " outputs.");
-		
+		log.trace("initAWAlgorithm: Installed {} inputs and {} outputs.",
+				  _inputNames.length, _outputNames.length);
+
 		for(DbCompAlgorithmScript script : comp.getAlgorithm().getScripts())
 			if (script.getScriptType() == ScriptType.PY_Init)
 			{
@@ -270,27 +190,27 @@ public class PythonAlgorithm
 					if (s != null)
 					{
 						_awAlgoType = AWAlgoType.fromString(s);
-						debug1("AlgorithmType set to " + _awAlgoType);
-						
+						log.debug("AlgorithmType set to {}", _awAlgoType);
+
 						// set _aggPeriodVarRoleName to the first output parameter.
 						if (_awAlgoType == AWAlgoType.AGGREGATING
 						 && _outputNames.length > 0)
 						{
 							_aggPeriodVarRoleName = _outputNames[0];
-							debug1("set _aggPeriodVarRoleName to " + _aggPeriodVarRoleName);
+							log.debug("set _aggPeriodVarRoleName to {}", _aggPeriodVarRoleName);
 						}
 					}
 				}
 				catch (IOException ex)
 				{
-					warning("Error parsing init script '" + script.getText() + "': " + ex);
+					log.atWarn().setCause(ex).log("Error parsing init script '{}'", script.getText());
 				}
 				break;
 			}
 
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -298,18 +218,18 @@ public class PythonAlgorithm
 		throws DbCompException
 	{
 //AW:BEFORE_TIMESLICES
-		debug3("beforeTimeSlices()");
+		log.trace("beforeTimeSlices()");
 		// on the first call of beforeTimeSlices after initAWAlgorithm...
 		if (firstTsGroup)
 			firstBeforeTimeSlices();
-		
+
 		// Execute the before script
 		DbCompAlgorithmScript beforeScript = comp.getAlgorithm().getScript(ScriptType.PY_BeforeTimeSlices);
 		if (beforeScript != null && beforeScript.getText() != null && beforeScript.getText().length() > 0)
 		{
 			try
 			{
-				debug3("Executing beforeScript:" + linesep + beforeScript.getText());
+				log.trace("Executing beforeScript: {} {}", linesep, beforeScript.getText());
 				pythonIntepreter.exec(beforeScript.getText());
 			}
 			catch(Exception ex)
@@ -318,19 +238,20 @@ public class PythonAlgorithm
 					PyException pe = ((PyException) ex);
 					if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
 							&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
-						debug3("beforeScript exited with system exit and zero exit code");
+						log.atTrace()
+						   .setCause(ex)
+						   .log("beforeScript exited with system exit and zero exit code");
 						return;
 					}
 				}
-				String msg = "Error executing beforeScript : " + ex;
-				warning(msg + linesep + beforeScript.getText());
-				throw new DbCompException(msg);
+				String msg = "Error executing beforeScript.";
+				throw new DbCompException(msg, ex);
 			}
 		}
-		
+
 //AW:BEFORE_TIMESLICES_END
 	}
-	
+
 	public void firstBeforeTimeSlices()
 		throws DbCompException
 	{
@@ -345,40 +266,33 @@ public class PythonAlgorithm
 			ParmRef parmRef = this.getParmRef(roleName);
 			if (parmRef == null)
 				continue;
-			
+
 			String missingPropval = comp.getProperty(roleName + "_MISSING");
-				if (missingPropval == null)
-					parmRef.setMissingAction(MissingAction.IGNORE);
-debug3("Missing action for '" + roleName + "' now set to " + parmRef.missingAction);
+			if (missingPropval == null)
+				parmRef.setMissingAction(MissingAction.IGNORE);
+			log.trace("Missing action for '{}' now set to {}", roleName, parmRef.missingAction);
 		}
-		
+
 		// Instantiate the PythonInterpreter
-		debug3("... Creating PythonInterpreter");
+		log.trace("... Creating PythonInterpreter");
 		pythonIntepreter = new PythonInterpreter();
-		
+
 		// Execute the canned init stuff.
-		FileInputStream fis = null;
+
 		String fn = EnvExpander.expand("$DCSTOOL_HOME/python/PyAlgoEnv.py");
-		try
+		try (FileInputStream fis = new FileInputStream(fn);)
 		{
-			fis = new FileInputStream(fn);
-			debug3("... Executing " + fn);
+			log.trace("... Executing {}", fn);
 			pythonIntepreter.execfile(fis, "PyAlgoEnv");
 		}
 		catch(Exception ex)
 		{
-			String msg = "Cannot execute '" + fn + "': " + ex;
-			warning(msg);
-			throw new DbCompException(msg);
+			String msg = "Cannot execute '" + fn + "'";
+			throw new DbCompException(msg, ex);
 		}
-		finally
-		{
-			if (fis != null)
-				try { fis.close(); } catch(Exception ex) {}
-		}
-		
+
 		String parmInitScript = makeInitScript();
-		debug3("... Executing parmInitScript:" + linesep + parmInitScript);
+		log.trace("... Executing parmInitScript: {} {}", linesep, parmInitScript);
 		try
 		{
 			pythonIntepreter.exec(parmInitScript);
@@ -389,18 +303,17 @@ debug3("Missing action for '" + roleName + "' now set to " + parmRef.missingActi
 				PyException pe = ((PyException) ex);
 				if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
 						&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
-					debug3("paramInitScript exited with system exit and zero exit code");
+					log.atTrace().setCause(ex).log("paramInitScript exited with system exit and zero exit code");
 					firstTsGroup = false;
 					return;
 				}
 			}
-			String msg = "Error executing parmInitScript : " + ex;
-			warning(msg + linesep + parmInitScript);
-			throw new DbCompException(msg);
+			String msg = "Error executing parmInitScript";
+			throw new DbCompException(msg, ex);
 		}
 		firstTsGroup = false;
 	}
-	
+
 	public String makeInitScript()
 	{
 		// Initialize all the variables.
@@ -409,7 +322,7 @@ debug3("Missing action for '" + roleName + "' now set to " + parmRef.missingActi
 		for(Iterator<DbAlgoParm> parmit = comp.getAlgorithm().getParms(); parmit.hasNext(); )
 		{
 			DbAlgoParm parm = parmit.next();
-debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmType());
+			log.trace("Checking parm '{}' with type ={}", parm.getRoleName(), parm.getParmType());
 			String role = parm.getRoleName();
 			ParmRef parmRef = getParmRef(role);
 			TimeSeriesIdentifier tsid = this.getParmTsId(role);
@@ -420,19 +333,19 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				sb.append(role + " = AlgoParm('" + tsid.getUniqueString() + "')" + linesep);
 				for(String part : tsid.getParts())
 					sb.append(role + "." + part.toLowerCase() + " = '" + tsid.getPart(part) + "'" + linesep);
-				
+
 				// MJM 20180104 add .tsid and .sdi
 				sb.append(role + ".tskey = " + (DbKey.isNull(tsid.getKey()) ? -1 : tsid.getKey()) + linesep);
 				DbCompParm compParm = comp.getParm(role);
-				sb.append(role + "sdi = " + 
-					(compParm != null && !DbKey.isNull(compParm.getSiteDataTypeId()) ? 
+				sb.append(role + "sdi = " +
+					(compParm != null && !DbKey.isNull(compParm.getSiteDataTypeId()) ?
 						compParm.getSiteDataTypeId() : -1)
 					+ linesep);
-				sb.append(role + ".sdi = " + 
-						(compParm != null && !DbKey.isNull(compParm.getSiteDataTypeId()) ? 
+				sb.append(role + ".sdi = " +
+						(compParm != null && !DbKey.isNull(compParm.getSiteDataTypeId()) ?
 							compParm.getSiteDataTypeId() : -1)
 						+ linesep);
-				
+
 				if (tsdb.isCwms() || tsdb.isOpenTSDB())
 				{
 					// Add baselocation, sublocation, baseparam, subparam, baseversion, subversion
@@ -444,7 +357,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 						String basepart = hyphen < 0 ? fullpart : fullpart.substring(0, hyphen);
 						sb.append(role + ".base" + partname + " = '" + basepart + "'" + linesep);
 						if (hyphen > 0 && fullpart.length() > hyphen + 1)
-							sb.append(role + ".sub" + partname + " = '" 
+							sb.append(role + ".sub" + partname + " = '"
 								+ fullpart.substring(hyphen+1) + "'" + linesep);
 					}
 				}
@@ -452,16 +365,13 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			else
 			{
 				sb.append(role + " = AlgoParm('undefined')" + linesep);
-				debug1("No time series assigned to role " + parm.getRoleName());
-				debug1("parmRef for '" + parm.getRoleName() + "' " + 
-					(parmRef == null || parmRef.timeSeries == null ?
-						"HAS NO TIME SERIES." : "HAS A TIME SERIES"));
-				
-//				if (parmRef.timeSeries!= null)
-//					debug1("... TSID for time series is " + parmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString());
+				log.debug("No time series assigned to role {}", parm.getRoleName());
+				log.debug("parmRef for '{}' {}",
+						  parm.getRoleName(),
+						  (parmRef == null || parmRef.timeSeries == null ? "HAS NO TIME SERIES." : "HAS A TIME SERIES"));
 			}
 		}
-		
+
 		// Add the properties to the script
 		NumberFormat propFmt = NumberFormat.getInstance();
 		propFmt.setGroupingUsed(false);
@@ -487,14 +397,14 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				}
 			}
 		}
-		
+
 		// HDB 492, add the computation_id to the python environment
 		if (this.comp != null)
 			sb.append("computation_id=" + this.comp.getId() + linesep);
-		
+
 		if (tsdb != null && !DbKey.isNull(tsdb.getAppId()))
 			sb.append("loading_application_id=" + tsdb.getAppId() + linesep);
-		
+
 		return sb.toString();
 	}
 
@@ -513,7 +423,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	{
 //AW:TIMESLICE
 		setTSBT();
-		
+
 		// The setTimeSliceInput method below was called by AW_AlgorithmBase
 		// to put all the slice values into the python interpreter.
 		// Now execute the script.
@@ -523,7 +433,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		{
 			try
 			{
-				debug3("Executing tsScript:" + linesep + tsScript.getText());
+				log.trace("Executing tsScript: {} {}", linesep, tsScript.getText());
 				pythonIntepreter.exec(tsScript.getText());
 			}
 			catch(Exception ex)
@@ -532,13 +442,12 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 					PyException pe = ((PyException) ex);
 					if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
 							&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
-						debug3("tsScript exited with system exit and zero exit code");
+						log.atTrace().setCause(ex).log("tsScript exited with system exit and zero exit code");
 						return;
 					}
 				}
-				String msg = "Error executing tsScript : " + ex;
-				warning(msg + linesep + tsScript.getText());
-//				throw new DbCompException(msg);
+				String msg = "Error executing tsScript.";
+				throw new DbCompException(msg, ex);
 			}
 		}
 
@@ -561,7 +470,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		{
 			try
 			{
-				debug3("Executing afterScript:" + linesep + afterScript.getText());
+				log.trace("Executing afterScript: {} {}", linesep, afterScript.getText());
 				pythonIntepreter.exec(afterScript.getText());
 			}
 			catch(Exception ex)
@@ -570,13 +479,12 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 					PyException pe = ((PyException) ex);
 					if (pe.type == Py.SystemExit && PyException.isExceptionInstance(pe.value)
 							&& ((PyObject) pe.value).__findattr__("code").asInt() == 0) {
-						debug3("afterScript exited with system exit and zero exit code");
+						log.trace("afterScript exited with system exit and zero exit code");
 						return;
 					}
 				}
-				String msg = "Error executing afterScript : " + ex;
-				warning(msg + linesep + afterScript.getText());
-				throw new DbCompException(msg);
+				String msg = "Error executing afterScript";
+				throw new DbCompException(msg, ex);
 			}
 		}
 //AW:AFTER_TIMESLICES_END
@@ -606,7 +514,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	{
 		return _propertyNames;
 	}
-	
+
 	/**
 	 * Called from AW_AlgorithmBase at the beginning of a time slice.
 	 * Set the variables value in the algorithm's namespace
@@ -615,8 +523,8 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	public void setTimeSliceInput(String varName, NamedVariable nv)
 	{
 		String expr = null;
-		
-		if (nv == null || nv.getStringValue().trim().length() == 0 
+
+		if (nv == null || nv.getStringValue().trim().length() == 0
 			|| nv.getStringValue().equalsIgnoreCase("NA")
 			|| (nv.getFlags() & (IFlags.IS_ERROR|IFlags.IS_MISSING)) != 0
 			|| (tsdb.isCwms() && (nv.getFlags() & CwmsFlags.VALIDITY_MISSING) != 0)
@@ -624,9 +532,10 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		{
 			expr = varName + ".value = " + missingValue + linesep
 				+  varName + ".qual = 0x40000000" + linesep;
-			debug3("setTimeSliceInput(" + varName + ") value is considered missing. Orig value="
-				+ (nv==null?"null":nv.getStringValue()) 
-				+ (nv==null ? "" : (", flags=0x" + nv.getFlags())));
+			log.trace("setTimeSliceInput({}) value is considered missing. Orig value={}{}",
+					  varName,
+					  (nv==null?"null":nv.getStringValue()),
+					  (nv==null ? "" : (", flags=0x" + nv.getFlags())));
 		}
 		else
 		{
@@ -635,9 +544,9 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				// MJM 20190116 set value into Python name space with full double precision
 				// Note setting name.value directly from set() does NOT work. Use intermediate variable.
 				double d = nv.getDoubleValue();
-				debug3("setTimeSliceInput(" + varName + ") setting ___x___ = " + d);
+				log.trace("setTimeSliceInput({}) setting ___x___ = {}", varName, d);
 				this.pythonIntepreter.set("___x___", new PyFloat(d));
-				expr = 
+				expr =
 					varName + ".value = ___x___" + linesep +
 					varName + ".qual = 0x" + Integer.toHexString(nv.getFlags()) + linesep;
 			}
@@ -647,25 +556,25 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 					+  varName + ".qual = 0x40000000" + linesep;
 			}
 		}
-		debug3("Executing:\n" + expr);
+		log.trace("Executing:\n{}", expr);
 		this.pythonIntepreter.exec(expr);
-		
+
 	}
-	
+
 	private void setTSBT()
 	{
 		String expr = "tsbt = " + ((double)this._timeSliceBaseTime.getTime() / 1000.0);
-		debug3("Executing:\n" + expr);
+		log.trace("Executing:\n{}", expr);
 		this.pythonIntepreter.exec(expr);
 	}
-	
+
 	public void setOutput(String rolename, double value)
 	{
-		debug1("setOutput(" + rolename + ", " + value + ")");
+		log.debug("setOutput({},{})", rolename, value);
 		if (tracer != null)
 			return;
 		NamedVariable nv = new NamedVariable(rolename, value);
-		
+
 		// Don't overwrite a triggering value:
 		if (VarFlags.wasAdded(nv))
 			return;
@@ -687,7 +596,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		if (parmRef.compParm.getAlgoParmType().startsWith("i") && app != null)
 			app.getResolver().pythonWrote(comp.getId(), parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
 	}
-	
+
 	/**
 	 * Return true if the named param has a value in the current timeslice.
 	 * Return false if there is no value or it is flagged as missing or for deletion.
@@ -696,25 +605,25 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	 */
 	public boolean isPresent(String rolename)
 	{
-		debug1("isPresent(" + rolename + ")");
+		log.debug("isPresent({})", rolename);
 		if (tracer != null)
 			return true;
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
 		{
-			debug3("isPresent(" + rolename + ") - no variable in timeslice - returning false");
+			log.trace("isPresent({}) - no variable in timeslice - returning false", rolename);
 			return false;
 		}
 		return isPresent(nv);
 	}
-	
+
 	public boolean isPresent(Variable v)
 	{
 		int f = v.getFlags();
 		if ((f & (IFlags.IS_MISSING | VarFlags.TO_DELETE | VarFlags.DB_DELETED)) != 0)
 		{
-			debug3("isPresent - Flags indicate missing or deleted -- returning false.");
+			log.trace("isPresent - Flags indicate missing or deleted -- returning false.");
 			return false;
 		}
 		try
@@ -725,11 +634,11 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		}
 		catch (NoConversionException e)
 		{
+			/* do nothing */
 		}
-		
+
 		if (tsdb.isCwms())
 			return (f & CwmsFlags.VALIDITY_MISSING) == 0;
-		debug3("isPresent - returning TRUE");
 		return true;
 	}
 
@@ -743,7 +652,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	 */
 	public boolean isQuestionable(String rolename)
 	{
-		debug1("isQuestionable(" + rolename + ")");
+		log.debug("isQuestionable({})", rolename);
 		if (tracer != null)
 			return false;
 
@@ -758,7 +667,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		else return false;
 	}
 
-	
+
 	/**
 	 * Return true if the named param has a value in the current timeslice
 	 * and that value is flagged as rejected. Return false if no value
@@ -769,7 +678,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	 */
 	public boolean isRejected(String rolename)
 	{
-		debug1("isRejected(" + rolename + ")");
+		log.debug("isRejected({})", rolename);
 		if (tracer != null)
 			return false;
 
@@ -778,7 +687,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			return false;
 		return isRejected(nv);
 	}
-	
+
 	public boolean isRejected(Variable v)
 	{
 		int f = v.getFlags();
@@ -801,7 +710,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	 */
 	public boolean isGoodQuality(String rolename)
 	{
-		debug1("isGoodQuality(" + rolename + ")");
+		log.debug("isGoodQuality({})", rolename);
 		if (tracer != null)
 			return true;
 
@@ -817,14 +726,15 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		}
 		catch (NoConversionException e)
 		{
+			/* do nothing */
 		}
-		
+
 		if (tsdb.isCwms())
 		{
-			boolean r = (f & 
+			boolean r = (f &
 				(CwmsFlags.VALIDITY_REJECTED | CwmsFlags.VALIDITY_QUESTIONABLE
 					| IFlags.IS_MISSING | VarFlags.TO_DELETE)) == 0;
-			debug3("   checking cwms flag value " + Integer.toHexString(f) + " and returning " + r);
+			log.trace("checking cwms flag value {} and returning {}", Integer.toHexString(f), r);
 			return r;
 		}
 		else if (tsdb.isHdb())
@@ -834,7 +744,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		else
 			return false;
 	}
-	
+
 	/**
 	 * Return true if the named param is either a triggering value for this
 	 * computation, or was just computed and is flagged to write to the database.
@@ -844,7 +754,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	 */
 	public boolean isNew(String rolename)
 	{
-		debug1("isNew(" + rolename + ")");
+		log.debug("isNew({})", rolename);
 		if (tracer != null)
 			return true;
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
@@ -852,7 +762,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			return false;
 		int f = nv.getFlags();
 		boolean ret = (f & (VarFlags.DB_ADDED | VarFlags.TO_WRITE)) != 0;
-		debug1("    ... returning " + ret);
+		log.debug("... returning {}", ret);
 		return ret;
 	}
 
@@ -871,13 +781,12 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	public double runningAverage(String name, String duration, String boundaries)
 		throws NoSuchObjectException, NoValueException
 	{
-		debug3("runningAverage(" + name + ", " + duration + ", " + boundaries + ")");
+		log.trace("runningAverage({},{},{})", name, duration, boundaries);
 
 		TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
 		ParmRef parmRef = this.getParmRef(name);
 		if (parmRef == null || parmRef.timeSeries == null)
-			throw new NoSuchObjectException("runningAverage: no time series for role '"
-				+ name + "'");
+			throw new NoSuchObjectException("runningAverage: no time series for role '" + name + "'");
 		Calendar cal = Calendar.getInstance();
 		cal.setTimeZone(aggCal.getTimeZone());
 		Date until = parmRef.compParm.baseTimeToParamTime(_timeSliceBaseTime, cal);
@@ -917,7 +826,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				}
 				catch(NoConversionException ex)
 				{
-					
+					/* do nothing */
 				}
 			}
 			aggregateCount = (int)count;
@@ -930,18 +839,17 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		{
 			String msg = "Error in runningAverage...fillTimeSeries("
 				+ parmRef.timeSeries.getTimeSeriesIdentifier().getUniqueString() + ", "
-				+ debugSdf.format(since) + ", " + debugSdf.format(until) + "): " + ex;
-			warning(msg);
-			throw new NoSuchObjectException(msg);
+				+ debugSdf.format(since) + ", " + debugSdf.format(until) + ")";
+			throw new NoSuchObjectException(msg, ex);
 		}
 		finally
 		{
 			timeSeriesDAO.close();
 		}
 	}
-	
+
 	public int getAggregateCount() { return aggregateCount; }
-	
+
 	/**
 	 * Perform the CWMS DATCHK functions on the named variable.
 	 * See docs on Datchk algorithm on how datchk is configured.
@@ -949,10 +857,10 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	 */
 	public int datchk(String rolename)
 	{
-		debug1("datchk(" + rolename + ")");
+		log.debug("datchk({})", rolename);
 		if (tracer != null)
 			return 0;
-		
+
 		if (!tsdb.isCwms())
 			return 0;
 
@@ -969,21 +877,20 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		TimeSeriesIdentifier tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		if (tsid == null)
 		{
-			warning("datchk(" + rolename + ") -- no time series assigned to this role.");
+			log.warn("datchk({}) -- no time series assigned to this role.", rolename);
 			return nv.getFlags();
 		}
-		
+
 		Screening screening = null;
 		try { screening = datchkReader.getScreening(tsid); }
 		catch (DbCompException ex)
 		{
-			warning("datchk(" + rolename + ") Bad DATCHK config: " + ex);
+			log.atWarn().setCause(ex).log("datchk({}) Bad DATCHK config.", rolename);
 			return nv.getFlags();
 		}
 		if (screening == null)
 		{
-			warning("datchk(" + rolename + ") No screening defined for tsid '" 
-				+ tsid.getUniqueString() + "'");
+			log.warn("datchk({}) No screening defined for tsid '{}'", rolename, tsid.getUniqueString());
 			return nv.getFlags();
 		}
 
@@ -997,7 +904,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 		doScreening(screening, nv, parmRef);
 		return nv.getFlags();
 	}
-	
+
 	/**
 	 * Called for either DATCHK or CWMS-resident screening to do the actual screening.
 	 * @param screening
@@ -1010,7 +917,7 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			parmRef.compParm.baseTimeToParamTime(_timeSliceBaseTime, aggCal), aggTZ);
 		if (crit == null)
 		{
-			warning("No criteria for time=" + debugSdf.format(_timeSliceBaseTime));
+			log.warn("No criteria for time={}", _timeSliceBaseTime);
 			// Treat no criteria the same as a screening where everything passes.
 			int flags = nv.getFlags();
 			if ((flags & CwmsFlags.PROTECTED) != 0)
@@ -1027,17 +934,17 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 
 		crit.executeChecks(dc, parmRef.timeSeries, _timeSliceBaseTime, nv, this);
 	}
-	
+
 	private void screeningFirstTime(Screening screening, ParmRef parmRef)
 	{
 		// Using the tests, determine the amount of past-data needed at each time-slice.
 		TreeSet<Date> needed = new TreeSet<Date>();
 		TimeSeriesIdentifier tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
-		
+
 		IntervalIncrement tsinc = IntervalCodes.getIntervalCalIncr(tsid.getInterval());
 		boolean inputIrregular = tsinc == null || tsinc.getCount() == 0;
 
-		debug3("Retrieving additional data needed for screening.");
+		log.trace("Retrieving additional data needed for screening.");
 		ScreeningCriteria prevcrit = null;
 		for(int idx = 0; idx < parmRef.timeSeries.size(); idx++)
 		{
@@ -1057,8 +964,8 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 				prevcrit = crit;
 			}
 		}
-		debug3("additional data for screening, #times needed=" + needed.size());
-		
+		log.trace("additional data for screening, #times needed={}", needed.size());
+
 		if (needed.size() > 0)
 		{
 			TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO();
@@ -1078,17 +985,19 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			}
 			catch (Exception ex)
 			{
-				warning("screeningFirstTime -- error retrieving time series data for '"
-					+ tsid.getUniqueString() + "': " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("screeningFirstTime -- error retrieving time series data for '{}'",
+				   		tsid.getUniqueString());
 			}
 			finally
 			{
 				timeSeriesDAO.close();
 			}
 		}
-		
+
 		String euAbbr = screening.getCheckUnitsAbbr();
-		if (euAbbr != null 
+		if (euAbbr != null
 		 && !euAbbr.equalsIgnoreCase(parmRef.timeSeries.getUnitsAbbr()))
 		{
 			// In Python, can't change the units because user has already
@@ -1100,9 +1009,10 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 			}
 			catch (decodes.db.NoConversionException ex)
 			{
-				warning("screeningFirstTime -- error converting screening for '"
-					+ tsid.getUniqueString() + "' from " + screening.getCheckUnitsAbbr()
-					+ " to " + parmRef.timeSeries.getUnitsAbbr() + ": " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("screeningFirstTime -- error converting screening for '{}' from {} to {}",
+				   		tsid.getUniqueString(), screening.getCheckUnitsAbbr(), parmRef.timeSeries.getUnitsAbbr());
 			}
 		}
 	}
@@ -1114,23 +1024,23 @@ debug3("Checking parm '" + parm.getRoleName() + "' with type " + parm.getParmTyp
 	 */
 	public int screening(String rolename)
 	{
-		debug1("screening(" + rolename + ")");
+		log.debug("screening({})", rolename);
 		if (tracer != null)
 			return 0;
-		
+
 		if (!tsdb.isCwms())
 			return 0;
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
 		{
-debug3("... no named variable for '" + rolename + "' in this timeslice.");
+			log.trace("... no named variable for '{}' in this timeslice.", rolename);
 			return 0;
 		}
 		if (!isPresent(nv))
 		{
-debug3("... variable for '" + rolename + "' NOT PRESENT in this timeslice. flags=0x" + 
-Integer.toHexString(nv.getFlags()));
+			log.trace("... variable for '{}' NOT PRESENT in this timeslice. flags=0x{}",
+					  rolename, Integer.toHexString(nv.getFlags()));
 			return nv.getFlags();
 		}
 
@@ -1138,11 +1048,11 @@ Integer.toHexString(nv.getFlags()));
 		TimeSeriesIdentifier tsid = parmRef.timeSeries.getTimeSeriesIdentifier();
 		if (tsid == null)
 		{
-			warning("screening(" + rolename + ") -- no time series assigned to this role.");
+			log.warn("screening({}) -- no time series assigned to this role.", rolename);
 			return nv.getFlags();
 		}
-debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
-		
+		log.trace("screening({}) tsid='{}", rolename, tsid.getUniqueString());
+
 		Screening screening = cwmsScreenings.get(tsid.getUniqueString());
 		if (screening == null)
 		{
@@ -1150,23 +1060,23 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 			try
 			{
 				screeningDAO = ((CwmsTimeSeriesDb)tsdb).makeScreeningDAO();
-				debug3("Attempting to read screening for TSID '" + tsid.getUniqueString() + "'");
+				log.trace("Attempting to read screening for TSID '{}'", tsid.getUniqueString());
 				TsidScreeningAssignment tsa = screeningDAO.getScreeningForTS(tsid);
 				screening = tsa != null && tsa.isActive() ? tsa.getScreening() : null;
 				if (screening != null)
 					cwmsScreenings.put(tsid.getUniqueString(), screening);
 				else
 				{
-					warning("screening(" + rolename + ") No screening defined for tsid '" 
-						+ tsid.getUniqueString() + "'");
+					log.warn("screening({}) No screening defined for tsid '", rolename, tsid.getUniqueString());
 					return nv.getFlags();
 				}
 				screeningFirstTime(screening, parmRef);
 			}
 			catch (DbIoException ex)
 			{
-				warning("screening(" + rolename + ") Error while reading screening for '" 
-					+ tsid.getUniqueString() + "': " + ex);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("screening({}) Error while reading screening for '", rolename, tsid.getUniqueString());
 				return nv.getFlags();
 			}
 			finally
@@ -1175,18 +1085,11 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 					screeningDAO.close();
 			}
 		}
-		
-		if (screening == null)
-		{
-			warning("screening(" + rolename + ") No screening defined for tsid '" 
-				+ tsid.getUniqueString() + "'");
-			return nv.getFlags();
-		}
 
 		doScreening(screening, nv, parmRef);
 		return nv.getFlags();
 	}
-	
+
 	/**
 	 * Completely set the flag bits of a parameter.
 	 * @param rolename
@@ -1194,7 +1097,7 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 	 */
 	public void setQual(String rolename, int qual)
 	{
-		debug1("setQual(" + rolename + ", 0x" + Integer.toHexString(qual) + ")");
+		log.debug("setQual({}, 0x{})", rolename, Integer.toHexString(qual));
 		if (tracer != null)
 			return;
 
@@ -1204,14 +1107,14 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		nv.setFlags(qual);
 		VarFlags.setToWrite(nv);
 		_saveOutputCalled = true;
-		
+
 		// See docs in PythonWritten.java for explanation of the following:
 		ParmRef parmRef = this.getParmRef(rolename);
 		ComputationApp app = ComputationApp.instance();
 		if (parmRef.compParm.getAlgoParmType().startsWith("i") && app != null)
 			app.getResolver().pythonWrote(comp.getId(), parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
 	}
-	
+
 	/**
 	 * Sets the output and quality bits in one go.
 	 * @param rolename
@@ -1220,10 +1123,10 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 	 */
 	public void setOutputAndQual(String rolename, double value, int qual)
 	{
-		debug1("setOutputAndQual(" + rolename + ", " + value + ", 0x" + Integer.toHexString(qual) + ")");
+		log.debug("setOutputAndQual({}, 0x{})", rolename, value, Integer.toHexString(qual));
 		if (tracer != null)
 			return;
-		
+
 		if (value < missingLimit)
 			qual |= IFlags.IS_MISSING;
 
@@ -1240,14 +1143,14 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		nv.setFlags(qual);
 		VarFlags.setToWrite(nv);
 		_saveOutputCalled = true;
-		
+
 		// See docs in PythonWritten.java for explanation of the following:
 		ParmRef parmRef = this.getParmRef(rolename);
 		ComputationApp app = ComputationApp.instance();
 		if (parmRef.compParm.getAlgoParmType().startsWith("i") && app != null)
 			app.getResolver().pythonWrote(comp.getId(), parmRef.timeSeries.getTimeSeriesIdentifier().getKey());
 	}
-	
+
 	/**
 	 * Return the change in the specified parameter from the
 	 * value at the specified duration in the past to the
@@ -1260,7 +1163,7 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 	public double changeSince(String rolename, String duration)
 		throws NoSuchObjectException, NoValueException
 	{
-		debug1("changeSince(" + rolename + ", " + duration + ")");
+		log.debug("changeSince({}, {})", rolename, duration);
 		if (tracer != null)
 			return 5.0;
 
@@ -1289,7 +1192,7 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 				qd.add(needed);
 				if (tsdb.fillTimeSeries(parmRef.timeSeries, qd) == 1)
 					tv = parmRef.timeSeries.findWithin(needed, roundSec);
-				
+
 				if (tv == null || !isPresent(tv))
 				{
 					TimedVariable prev = tsdb.getPreviousValue(parmRef.timeSeries, needed);
@@ -1311,10 +1214,10 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 			{
 				throw new NoValueException("changeSince(" + rolename
 					+ ") no value at time " + debugSdf.format(needed)
-					+ " and error reading db to interpolate: " + ex);
+					+ " and error reading db to interpolate.", ex);
 			}
 		}
-		
+
 		// Now we have tv as the previous time.
 		try
 		{
@@ -1324,10 +1227,10 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		{
 			throw new NoSuchObjectException("changeSince(" + rolename
 				+ ") no value at time " + debugSdf.format(needed)
-				+ " and error fetching values as numbers: " + ex);
+				+ " and error fetching values as numbers.", ex);
 		}
 	}
-	
+
 	/**
 	 * Attempts rating from table in the time series database
 	 * @param specId
@@ -1342,7 +1245,7 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		for(double d : indeps)
 			sb.append(" " + d);
 
-		debug1(sb.toString());
+		log.atDebug().log(() -> sb.toString());
 		if (tracer != null)
 			return 100.0;
 
@@ -1352,15 +1255,15 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		}
 		catch(Exception ex)
 		{
-			throw new NoValueException("rating(" + specId + ") failed: " + ex);
+			throw new NoValueException("rating(" + specId + ") failed.", ex);
 		}
 	}
-	
+
 	public double rdbrating(String tabfile, double indep)
 		throws NoValueException
 	{
 		String tabFileExp = EnvExpander.expand(tabfile);
-		debug1("rdbrating(" + tabfile + ", " + pyNumFmt.format(indep) + ")");
+		log.debug("rdbrating({},{})", tabfile, pyNumFmt.format(indep));
 		if (tracer != null)
 			return 100.0;
 
@@ -1381,10 +1284,9 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 			}
 			catch(FileNotFoundException | ComputationParseException ex)
 			{
-				String msg = "rdbrating Cannot read RDB rating table: " + ex;
-				warning(msg);
+				String msg = "rdbrating Cannot read RDB rating table.";
 				filename2table.put(tabFileExp, errorTable);
-				throw new NoValueException(msg);
+				throw new NoValueException(msg, ex);
 			}
 			filename2table.put(tabFileExp, lookupTable);
 		}
@@ -1395,15 +1297,15 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		}
 		catch(TableBoundsException ex)
 		{
-			throw new NoValueException("rdbrating " + ex);
+			throw new NoValueException("rdbrating.", ex);
 		}
 	}
-	
+
 	public double tabrating(String tabfile, double indep)
 		throws NoValueException
 	{
 		String tabFileExp = EnvExpander.expand(tabfile);
-		debug1("tabrating(" + tabfile + ", " + pyNumFmt.format(indep) + ")");
+		log.debug("tabrating({},{})", tabfile, pyNumFmt.format(indep));
 		if (tracer != null)
 			return 100.0;
 
@@ -1414,29 +1316,28 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		{
 			// first time for this table. Attempt to read it.
 			TabRatingReader tableReader = new TabRatingReader(tabFileExp);
-			
+
 			lookupTable = new LookupTable();
 			try
 			{
 				tableReader.readRatingTable(lookupTable);
 			}
-			catch(ComputationParseException ex)
+			catch (ComputationParseException ex)
 			{
-				String msg = "tabrating Cannot read TAB rating table: " + ex;
-				warning(msg);
+				String msg = "tabrating Cannot read TAB rating table.";
 				filename2table.put(tabFileExp, errorTable);
-				throw new NoValueException(msg);
+				throw new NoValueException(msg, ex);
 			}
 			filename2table.put(tabFileExp, lookupTable);
 		}
-		
+
 		try
 		{
 			return lookupTable.lookup(indep);
 		}
-		catch(TableBoundsException ex)
+		catch (TableBoundsException ex)
 		{
-			throw new NoValueException("tabrating " + ex);
+			throw new NoValueException("tabrating", ex);
 		}
 	}
 
@@ -1448,45 +1349,8 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 		}
 		catch (SQLException ex)
 		{
-			throw new RuntimeException("Unable to get SQL Connection.", ex);
+			throw new RuntimeException("Cannot get SQL connection.", ex);
 		}
-	}
-	
-	public void trace(String msg)
-	{
-		if (tracer != null)
-			tracer.traceMsg(msg);
-	}
-	
-	public void debug3(String msg)
-	{
-		if (tracer != null)
-			tracer.traceMsg(Logger.instance().standardMessage(Logger.E_DEBUG3, msg));
-		super.debug3(msg);
-	}
-	public void debug2(String msg)
-	{
-		if (tracer != null)
-			tracer.traceMsg(Logger.instance().standardMessage(Logger.E_DEBUG2, msg));
-		super.debug2(msg);
-	}
-	public void debug1(String msg)
-	{
-		if (tracer != null)
-			tracer.traceMsg(Logger.instance().standardMessage(Logger.E_DEBUG1, msg));
-		super.debug1(msg);
-	}
-	public void info(String msg)
-	{
-		if (tracer != null)
-			tracer.traceMsg(Logger.instance().standardMessage(Logger.E_INFORMATION, msg));
-		super.info(msg);
-	}
-	public void warning(String msg)
-	{
-		if (tracer != null)
-			tracer.traceMsg(Logger.instance().standardMessage(Logger.E_WARNING, msg));
-		super.warning(msg);
 	}
 
 	public PythonInterpreter getPythonIntepreter()
@@ -1498,11 +1362,11 @@ debug3("screening(" + rolename + ") tsid='" + tsid.getUniqueString() + "'");
 	{
 		this.tracer = tracer;
 	}
-	
+
 	public void abortComp(String msg)
 		throws DbCompException
 	{
 		throw new DbCompException(msg);
 	}
-	
+
 }

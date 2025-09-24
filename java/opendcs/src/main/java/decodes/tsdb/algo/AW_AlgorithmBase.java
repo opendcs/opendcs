@@ -1,22 +1,21 @@
-/**
- * Copyright 2024 The OpenDCS Consortium and contributors
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
@@ -26,8 +25,9 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.opendcs.utils.AnnotationHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.NamedVariableList;
@@ -53,10 +53,9 @@ import decodes.hdb.HdbFlags;
 This is the base class of Algorithms built and maintained by the Algorithm
 Wizard (AW)
 */
-public abstract class AW_AlgorithmBase 
-	extends DbAlgorithmExecutive
-	implements PropertiesOwner
+public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive	implements PropertiesOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** List of all variables in the time slice. */
 	protected NamedVariableList _timeSliceVars;
 
@@ -193,20 +192,8 @@ public abstract class AW_AlgorithmBase
 	{
 		_inTimeSlice = false;
 
-		// Check for the built-in properties first.
-		String t_string = comp.getProperty("debugLevel");
-		if (t_string != null)
-		{
-			try { debugLevel = Integer.parseInt(t_string.trim()); }
-			catch(NumberFormatException ex)
-			{
-				debugLevel = 0;
-				warning("Invalid 'debugLevel' property. May be 1, 2, or 3 only.");
-			}
-		}
-		
 		// Get the "noAggregateFill" boolean if there is one.
-		t_string = comp.getProperty("noAggregateFill");
+		String t_string = comp.getProperty("noAggregateFill");
 		if (t_string != null) 
 			noAggregateFill = TextUtil.str2boolean(t_string);
 
@@ -220,17 +207,15 @@ public abstract class AW_AlgorithmBase
 			TimeZone tz = TimeZone.getTimeZone(t_string);
 			if (tz == null)
 			{
-				warning("Invalid aggregateTimeZone property '" + t_string
-					+ "' -- ignored.");
+				log.warn("Invalid aggregateTimeZone property '{}' -- ignored.", t_string);
 			}
 			else
 			{
 				aggregateTimeZone = t_string;
 				aggTZ = tz;
 				aggCal.setTimeZone(aggTZ);
-				debugSdf.setTimeZone(TimeZone.getTimeZone(aggregateTimeZone));
-				debug3("Setting aggregate TimeZone to '" + aggregateTimeZone + "'"
-					+ " current time=" + debugSdf.format(new Date()));
+				log.trace("Setting aggregate TimeZone to '{}'' current time={}",
+						  aggregateTimeZone, new Date());
 			}
 		}
 
@@ -243,9 +228,8 @@ public abstract class AW_AlgorithmBase
 		catch(DbCompException ex) { throw ex; }
 		catch(Exception ex)
 		{
-			String msg = "Error initializing algorithm: " + ex;
-			warning(msg);
-			throw new DbCompException(msg);
+			String msg = "Error initializing algorithm.";
+			throw new DbCompException(msg, ex);
 		}
 		// MJM 6/27/2010 - This has to be done after the concrete initAWAlgorithm
 		// so that _awAlgoType is set correctly:
@@ -257,8 +241,6 @@ public abstract class AW_AlgorithmBase
 		else // default is true for regular aggregates, false for running aggregates.
 			aggLowerBoundClosed = 
 				_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? false : true;
-//debug3("_awAlgoType=" + _awAlgoType.toString());
-//debug3("prop str '" + t_string + "' aggLowerBoundClosed=" + aggLowerBoundClosed);
 		
 		t_string = comp.getProperty("aggUpperBoundClosed");
 		if (t_string != null) 
@@ -266,7 +248,6 @@ public abstract class AW_AlgorithmBase
 		else // default is false for regular aggregates, true for running aggregates.
 			aggUpperBoundClosed = 
 				_awAlgoType == AWAlgoType.RUNNING_AGGREGATE ? true : false;
-//debug3("prop str '" + t_string + "' aggUpperBoundClosed=" + aggUpperBoundClosed);
 
 		t_string = comp.getProperty("interpDeltas");
 		if (t_string != null)
@@ -277,8 +258,9 @@ public abstract class AW_AlgorithmBase
 			try { maxInterpIntervals = Integer.parseInt(t_string); }
 			catch(Exception ex)
 			{
-				warning("Bad maxInterpIntervals property '" 
-					+ maxInterpIntervals + "' -- ignored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Bad maxInterpIntervals property '{}' -- ignored.", maxInterpIntervals);
 			}
 		}
 		
@@ -288,7 +270,9 @@ public abstract class AW_AlgorithmBase
 			try { aggregateTimeOffsetCalIncr = IntervalIncrement.parseMult(t_string); }
 			catch(Exception ex)
 			{
-				warning("Bad aggregateTimeOffset property '" + t_string + "' -- ignored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Bad aggregateTimeOffset property '{}' -- ignored.", t_string);
 				aggregateTimeOffsetCalIncr = null;
 			}
 		}
@@ -334,8 +318,7 @@ public abstract class AW_AlgorithmBase
 		// Kludge for Oracle that can't store an empty string in a not null field.
 		if (propVal == null || propVal.trim().length() == 0)
 		{
-			debug1("Received property '" + propName 
-				+ "' with null value -- ignored.");
+			log.debug("Received property '{}' with null value -- ignored.", propName);
 			return;
 		}
 		if (propVal.equals("\"\""))
@@ -384,26 +367,28 @@ public abstract class AW_AlgorithmBase
 				}
 				catch(NumberFormatException ex)
 				{
-					Logger.instance().warning(
-						"Field '" + propName 
-						+ "' requires an integer. Illegal value '"
-						+ propVal + "' skipped.");
+					log.atWarn()
+					   .setCause(ex)
+					   .log("Field '{}' requires an integer. Illegal value '{}' skipped.", propName, propVal);
 				}
 				
 			}
 			else
-				warning("Property '" + propName 
-					+ "' has invalid local type -- ignored.");
+			{
+				log.warn("Property '{}' has invalid local type -- ignored.", propName);
+			}
 		}
 		catch(NumberFormatException ex)
 		{
-			warning("Property '" + propName + "' could not be parsed. "
-				+ "Required type is " + ftyp);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Property '{}' could not be parsed. Required type is {}", propName, ftyp);
 		}
 		catch(Exception ex)
 		{
-			warning("Property '" + propName + "' with no matching "
-				+ "local variable -- ignored: " + ex);
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Property '{}' with no matching local variable -- ignored: ", propName);
 		}
 	}
 
@@ -416,27 +401,13 @@ public abstract class AW_AlgorithmBase
 		throws DbCompException, DbIoException
 	{
 		debugSdf.setTimeZone(TimeZone.getTimeZone(aggregateTimeZone));
-//		debug3("Setting aggregate TimeZone to '" + aggregateTimeZone + "'"
-//			+ " current time=" + debugSdf.format(new Date()));
 
-		int defLogPriority = Logger.instance().getMinLogPriority();
-		if (debugLevel != 0)
-		{
-			switch(debugLevel)
-			{
-			case 1: Logger.instance().setMinLogPriority(Logger.E_DEBUG1); break;
-			case 2: Logger.instance().setMinLogPriority(Logger.E_DEBUG2); break;
-			case 3: Logger.instance().setMinLogPriority(Logger.E_DEBUG3); break;
-			}
-		}
 		try
 		{
 			beforeAllTimeSlices();
 			if (_awAlgoType == AWAlgoType.AGGREGATING
 			 || _awAlgoType == AWAlgoType.RUNNING_AGGREGATE)
 			{
-//debug3("Starting ago fo type " + _awAlgoType.toString() + " lowerBoundClosed="
-//+ aggLowerBoundClosed + " upperBoundClose=" + aggUpperBoundClosed);
 				doAggregatePeriods();
 			}
 			else // Just iterate once over all time slices defined by input data.
@@ -455,10 +426,6 @@ public abstract class AW_AlgorithmBase
 		}
 		catch(RuntimeException ex){
 			throw new DbCompException("RunTime Error: "+ex+"\nAt: "+ex.getStackTrace()[0].toString(), ex);
-		}
-		finally
-		{
-			Logger.instance().setMinLogPriority(defLogPriority);
 		}
 	}
 
@@ -487,15 +454,13 @@ public abstract class AW_AlgorithmBase
 		{
 			if (_aggPeriodVarRoleName == null)
 			{
-				warning("Cannot do aggregating algorithm without a controlling"
-					+ " output variable.");
+				log.warn("Cannot do aggregating algorithm without a controlling output variable.");
 				return;
 			}
 			ParmRef parmRef = getParmRef(_aggPeriodVarRoleName);
 			if (parmRef == null)
 			{
-				warning("Unknown aggregate control output variable '"
-					+ _aggPeriodVarRoleName + "'");
+				log.warn("Unknown aggregate control output variable '{}'", _aggPeriodVarRoleName);
 				return;
 			}
 			intervalS = parmRef.compParm.getInterval();
@@ -503,14 +468,11 @@ public abstract class AW_AlgorithmBase
 
 		TreeSet<Date> inputBaseTimes = determineInputBaseTimes();
 
-		debug2("Aggregating period is '" + intervalS + "', found "
-			+ inputBaseTimes.size() + " base times in input data.");
+		log.debug("Aggregating period is {}', found {} base times in input data.",
+				  intervalS, inputBaseTimes.size());
 		if (inputBaseTimes.size() == 0)
 			return;
-//{int i=0;
-//for(Date d: inputBaseTimes)
-//debug3("baseTime[" + (i++) + "]=" + debugSdf.format(d));
-//}
+
 		if (_awAlgoType == AWAlgoType.RUNNING_AGGREGATE)
 		{
 			// For running aggregate, we must add input base times so that
@@ -521,7 +483,6 @@ public abstract class AW_AlgorithmBase
 			Date t = inputBaseTimes.last();
 			if (t == null)
 				return;
-//debug3("Running aggregate, last time is " + debugSdf.format(t));
 
 			// 't' is last base time in the input data
 			// Add agg period to it to find the upper limit of t's influence.
@@ -532,7 +493,6 @@ public abstract class AW_AlgorithmBase
 					+ "' Invalid interval string '" + intervalS + "'");
 			aggCal.add(calIncr.getCalConstant(), calIncr.getCount());
 			Date end = aggCal.getTime();
-//debug3("Running aggregate, added " + calIncr + " end time is " + debugSdf.format(end));
 
 			// Now add times t+int, t+(2*int), t+(3*int), until we hit the end.
 			String varName = getInputNames()[0];
@@ -541,16 +501,11 @@ public abstract class AW_AlgorithmBase
 				inpParmRef.compParm.getInterval());
 			aggCal.setTime(t);
 			aggCal.add(calIncr.getCalConstant(), calIncr.getCount());
-//debug3("Running agg, last trigger T=" + debugSdf.format(t)
-//+ ", end of last period will be " + debugSdf.format(end)
-//+ ", adding increments of " + calIncr);
 			while(aggCal.getTime().before(end)
 				|| (this.aggUpperBoundClosed && aggCal.equals(end)))
 			{
 				t = aggCal.getTime();
 				inputBaseTimes.add(t);
-//Logger.instance().debug1("Added time " + debugSdf.format(t) 
-//+ " to fill out running aggregate");
 				aggCal.add(calIncr.getCalConstant(), calIncr.getCount());
 			}
 		}
@@ -571,8 +526,7 @@ public abstract class AW_AlgorithmBase
 			 && aggUpperBoundClosed && aggLowerBoundClosed
 			 && baseTime.equals(_aggregatePeriodEnd))
 			{
-				debug3("Special processing for double-closed boundaries."
-					+ " Just did period ending " + debugSdf.format(baseTime));
+				log.trace("Special processing for double-closed boundaries. Just did period ending {}",baseTime);
 
 //MJM Original impl causes endless loop at DST change				
 //				// bump the base time by a second temporarily to force it into
@@ -587,8 +541,7 @@ public abstract class AW_AlgorithmBase
 				baseTime = timesIterator.next();
 				aggPer = determineAggPeriod(baseTime, intervalS);
 	
-				debug3("New agg per: " + debugSdf.format(aggPer.getBegin())
-					+ " to " + debugSdf.format(aggPer.getEnd()));
+				log.trace("New agg per: {} to {}", aggPer.getBegin(), aggPer.getEnd());
 			}
 			else if (timesIterator.hasNext())
 			{
@@ -605,9 +558,7 @@ public abstract class AW_AlgorithmBase
 				_aggregatePeriodBegin = aggPer.getBegin();
 				_aggregatePeriodEnd = aggPer.getEnd();
 
-				debug2("Doing aggregate period (" +
-					debugSdf.format(_aggregatePeriodBegin) + ", "
-					+ debugSdf.format(_aggregatePeriodEnd) + ")");
+				log.debug("Doing aggregate period ({},{})",_aggregatePeriodBegin, _aggregatePeriodEnd);
 
 				// Do time slices for this aggregate period:
 				if (!noAggregateFill)
@@ -624,8 +575,7 @@ public abstract class AW_AlgorithmBase
 				_saveOutputCalled = false;
 				_deleteOutputCalled = false;
 				afterTimeSlices();
-				debug2("Finished aggregate period that started at " 
-					+ debugSdf.format(_aggregatePeriodBegin));
+				log.trace("Finished aggregate period that started at {}", _aggregatePeriodBegin);
 
 				if (_awAlgoType == AWAlgoType.AGGREGATING
 				 && !_saveOutputCalled
@@ -633,7 +583,7 @@ public abstract class AW_AlgorithmBase
 				 && getOutputNames().length == 1
 				 && _aggInputsDeleted)
 				{
-					debug2("Auto-deleting output.");
+					log.trace("Auto-deleting output.");
 					deleteAllOutputs(); // there is only 1.
 				}
 			}
@@ -657,18 +607,15 @@ public abstract class AW_AlgorithmBase
 		// int[2] containing Calendar constant and increment
 		IntervalIncrement calIncr = IntervalCodes.getIntervalCalIncr(interval);
 
-		debug3("determineAggregatePeriod baseTime=" + debugSdf.format(baseTime)
-			+ ", interval=" + interval
-			+ ", aggLowerBoundClosed=" + this.aggLowerBoundClosed
-			+ ", aggUpperBoundClosed=" + this.aggUpperBoundClosed);
-//if (calIncr != null)
-//debug2("determineAggPeriod baseTime=" + debugSdf.format(baseTime) + ", interval="+calIncr);
+		log.trace("determineAggregatePeriod baseTime={}, interval={}, aggLowerBoundClosed={}, " +
+				  "aggUpperBoundClosed={}",
+				  baseTime, interval, this.aggLowerBoundClosed, this.aggUpperBoundClosed);
 
 		if (calIncr == null)
 		{
-			warning("Aggregate control output variable '"
-				+ _aggPeriodVarRoleName + "' is instantaneous "
-				+ "-- cannot determine aggregate period.");
+			log.warn("Aggregate control output variable '{}' is instantaneous " +
+					 "-- cannot determine aggregate period.",
+					 _aggPeriodVarRoleName);
 		}
 		else if (interval.equalsIgnoreCase("wy"))
 		{
@@ -697,7 +644,7 @@ public abstract class AW_AlgorithmBase
 		}
 		else if (aggPeriodInterval != null)
 		{
-			debug3("... running aggregate, aggPeriodInterval set to '" + aggPeriodInterval + "'");
+			log.trace("... running aggregate, aggPeriodInterval set to '{}'", aggPeriodInterval);
 			// This is a 'running' average, not based on the output
 			// parameter interval.
 			aggCal.setTime(baseTime);
@@ -759,7 +706,7 @@ public abstract class AW_AlgorithmBase
 			
 			lower = aggCal.getTimeInMillis();
 			boolean lowerInDaylight = aggCal.getTimeZone().inDaylightTime(dlower);
-			debug3("lower=" + debugSdf.format(dlower) + ", lowerInDaylight = " + lowerInDaylight);
+			log.trace("lower={}, lowerInDaylight  = {}", dlower, lowerInDaylight);
 			
 			// Special case where upperBoundClosed is true: Example 00:00 on May 1
 			// is to be considered as part of the April Aggregate.
@@ -796,7 +743,7 @@ public abstract class AW_AlgorithmBase
 				aggCal.add(Calendar.HOUR_OF_DAY, 1);
 				upper = aggCal.getTimeInMillis();
 				dupper = new Date(upper);
-				debug2("Added 1 hour to upper because of daylight change.");
+				log.trace("Added 1 hour to upper because of daylight change.");
 			}
 			// else check for change from std to daylight
 			else if (!lowerInDaylight && upperInDaylight
@@ -806,17 +753,12 @@ public abstract class AW_AlgorithmBase
 				aggCal.add(Calendar.HOUR_OF_DAY, -1);
 				upper = aggCal.getTimeInMillis();
 				dupper = new Date(upper);
-				debug2("Subtracted 1 hour to upper because of daylight change.");
+				log.trace("Subtracted 1 hour to upper because of daylight change.");
 			}
-			debug3("upper=" + debugSdf.format(dupper) + ", upperInDaylight = " + upperInDaylight);
+			log.trace("upper={}, upperInDaylight = {}", dupper, upperInDaylight);
 		}
 
-//		if (!aggLowerBoundClosed) lower += 1000L;
-//		if (!aggUpperBoundClosed) upper -= 1000L;
 		AggregatePeriod ret = new AggregatePeriod(new Date(lower), new Date(upper));
-//debug3("determineAggPeriod baseTime=" + debugSdf.format(baseTime)
-//+ ", intv=" + interval 
-//+ ", range=(" + debugSdf.format(ret.getBegin()) + ", " + debugSdf.format(ret.getEnd()) + ")");
 		return ret;
 	}
 
@@ -887,8 +829,6 @@ public abstract class AW_AlgorithmBase
 			if (_sliceInputsDeleted)
 			_aggInputsDeleted = true;
 			
-//			debug2("Doing time slice for base time "
-//				+ debugSdf.format(baseTime) + " vars: " + _timeSliceVars);
 			_saveOutputCalled = false;
 			_deleteOutputCalled = false;
 			doAWTimeSlice();
@@ -1006,15 +946,13 @@ public abstract class AW_AlgorithmBase
 	{
 		if (!_inTimeSlice)
 		{
-			warning("Cannot get '" + name
-				+ "' flag bits outside a time-slice.");
+			log.warn("Cannot get '{}' flag bits outside a time-slice.", name);
 			return 0;
 		}
 		NamedVariable v = _timeSliceVars.findByName(name);
 		if (v == null)
 		{
-			warning("Cannot get '" + name
-					+ "' flag bits -- no variable with that name.");
+			log.warn("Cannot get '{}' flag bits -- no variable with that name.", name);
 			return 0;
 		}
 		return v.getFlags();
@@ -1033,15 +971,13 @@ public abstract class AW_AlgorithmBase
 	{
 		if (!_inTimeSlice)
 		{
-			warning("Cannot set '" + name
-				+ "' flag bits outside a time-slice.");
+			log.warn("Cannot set '{}' flag bits outside a time-slice.", name);
 			return;
 		}
 		NamedVariable v = _timeSliceVars.findByName(name);
 		if (v == null)
 		{
-			warning("Cannot set '" + name
-					+ "' flag bits -- no variable with that name.");
+			log.warn("Cannot set '{}' flag bits -- no variable with that name.", name);
 			return;
 		}
 
@@ -1051,9 +987,6 @@ public abstract class AW_AlgorithmBase
 		// This is crucial to avoid an endless loop in limit-check
 		// algorithms.
 		int oldFlags = v.getFlags();
-//debug3("setInputFlagBits: name='" + name
-//+ "', bits=0x" + Integer.toHexString(bits)
-//+ ", oldFlags=0x" + Integer.toHexString(oldFlags));
 		if ((oldFlags|bits) == oldFlags)
 			return;
 
@@ -1072,15 +1005,13 @@ public abstract class AW_AlgorithmBase
 	{
 		if (!_inTimeSlice)
 		{
-			warning("Cannot set '" + name
-				+ "' flag bits outside a time-slice.");
+			log.warn("Cannot set '{}' flag bits outside a time-slice.", name);
 			return;
 		}
 		NamedVariable v = _timeSliceVars.findByName(name);
 		if (v == null)
 		{
-			warning("Cannot set '" + name
-					+ "' flag bits -- no variable with that name.");
+			log.warn("Cannot set '{}' flag bits -- no variable with that name.", name);
 			return;
 		}
 
@@ -1090,9 +1021,6 @@ public abstract class AW_AlgorithmBase
 		// This is crucial to avoid an endless loop in limit-check
 		// algorithms.
 		int oldFlags = v.getFlags();
-//debug3("setInputFlagBits: name='" + name
-//+ "', bits=0x" + Integer.toHexString(bits)
-//+ ", oldFlags=0x" + Integer.toHexString(oldFlags));
 		if ((oldFlags|bits) == oldFlags)
 			return;
 
@@ -1115,15 +1043,13 @@ public abstract class AW_AlgorithmBase
 	{
 		if (!_inTimeSlice)
 		{
-			warning("Cannot clear '" + name
-				+ "' flag bits outside a time-slice.");
+			log.warn("Cannot clear '{}' flag bits outside a time-slice.", name);
 			return;
 		}
 		NamedVariable v = _timeSliceVars.findByName(name);
 		if (v == null)
 		{
-			warning("Cannot clear '" + name
-					+ "' flag bits -- no variable with that name.");
+			log.warn("Cannot clear '{}' flag bits -- no variable with that name.", name);
 			return;
 		}
 
@@ -1133,9 +1059,6 @@ public abstract class AW_AlgorithmBase
 		// This is crucial to avoid an endless loop in limit-check
 		// algorithms.
 		int oldFlags = v.getFlags();
-//debug3("clearInputFlagBits: name='" + name
-//+ "', bits=0x" + Integer.toHexString(bits)
-//+ ", oldFlags=0x" + Integer.toHexString(oldFlags));
 		
 		if ((oldFlags & (~bits)) == oldFlags)
 			return;
@@ -1173,15 +1096,13 @@ public abstract class AW_AlgorithmBase
 		{
 			if (_aggregatePeriodBegin == null)
 			{
-				warning("Cannot save '" + v.toString()
-					+ "' Not an aggregating algorithm.");
+				log.warn("Cannot save '{}' Not an aggregating algorithm.", v.toString());
 				return;
 			}
 			ParmRef parmRef = getParmRef(v.getName());
 			if (parmRef == null)
 			{
-				warning("Cannot save '" + v.toString()
-					+ "' no output parameter role defined!");
+				log.warn("Cannot save '{}' no output parameter role defined!", v.toString());
 				return;
 			}
 			
@@ -1190,9 +1111,9 @@ public abstract class AW_AlgorithmBase
 			Date varDate = this._awAlgoType == AWAlgoType.AGGREGATING ?
 				_aggregatePeriodBegin : _aggregatePeriodEnd;
 			Date aggD = parmRef.compParm.baseTimeToParamTime(varDate, aggCal);
-debug1("Storing aggregate value=" + v.getStringValue()
-+ " basetime=" + debugSdf.format(varDate) + ", parmtime=" + debugSdf.format(aggD)
-+ " parm deltaT=" + parmRef.compParm.getDeltaT() + " (" + parmRef.compParm.getDeltaTUnits() + ")");
+			log.debug("Storing aggregate value={} basetime={}, parmtime={} parm deltaT={} ({})",
+					  v.getStringValue(), varDate, aggD,
+					  parmRef.compParm.getDeltaT(), parmRef.compParm.getDeltaTUnits());
 			TimedVariable tv = new TimedVariable(v, aggD);
 
 			// Obscure bug fix starts here ============================
@@ -1212,8 +1133,7 @@ debug1("Storing aggregate value=" + v.getStringValue()
 			}
 			catch(NoConversionException ex)
 			{
-				warning("Error comparing existing aggregate output '"
-					+ oldTv + ": " + ex);
+				log.atWarn().setCause(ex).log("Error comparing existing aggregate output '{}'", oldTv);
 			}
 			// End of Obscure bug fix ============================
 			parmRef.timeSeries.addSample(tv);
@@ -1229,8 +1149,7 @@ debug1("Storing aggregate value=" + v.getStringValue()
 		ParmRef parmRef = getParmRef(v.getName());
 		if (parmRef == null)
 		{
-			warning("Cannot save '" + v.toString()
-				+ "' no output parameter role defined!");
+			log.warn("Cannot save '{}' no output parameter role defined!", v.toString());
 			return;
 		}
 		TimedVariable tv = new TimedVariable(v, t);
@@ -1238,9 +1157,6 @@ debug1("Storing aggregate value=" + v.getStringValue()
 		VarFlags.setToWrite(tv);
 
 		parmRef.timeSeries.addSample(tv);
-//info("Added value to save: " + tv + ", flag=0x" 
-//+ Integer.toHexString(tv.getFlags()) + ", to time series SDI="
-//+ parmRef.timeSeries.getSDI() + ", size=" + parmRef.timeSeries.size());
 	}
 
 	/**
@@ -1258,15 +1174,13 @@ debug1("Storing aggregate value=" + v.getStringValue()
 		{
 			if (_aggregatePeriodBegin == null)
 			{
-				warning("Cannot delete '" + v.toString()
-					+ "' Not an aggregating algorithm.");
+				log.warn("Cannot delete '{}' Not an aggregating algorithm.", v.toString());
 				return;
 			}
 			ParmRef parmRef = getParmRef(v.getName());
 			if (parmRef == null)
 			{
-				warning("Cannot delete '" + v.toString()
-					+ "' no output parameter role defined!");
+				log.warn("Cannot delete '{}' no output parameter role defined!", v.toString());
 				return;
 			}
 			
@@ -1288,8 +1202,7 @@ debug1("Storing aggregate value=" + v.getStringValue()
 		ParmRef parmRef = getParmRef(v.getName());
 		if (parmRef == null)
 		{
-			warning("Cannot delete '" + v.toString()
-				+ "' no output parameter role defined!");
+			log.warn("Cannot delete '{}' no output parameter role defined!", v.toString());
 			return;
 		}
 		TimedVariable tv = new TimedVariable(v, t);
@@ -1317,18 +1230,13 @@ debug1("Storing aggregate value=" + v.getStringValue()
 			}
 			catch(Exception ex)
 			{
-				warning("Error in deleteAllOutputs: " + ex);
+				log.atWarn().setCause(ex).log("Error in deleteAllOutputs.");
 			}
 		}
 	}
 
 	protected void getSliceInputs()
 	{
-//debug3("getSliceInputs declared fields are:");
-//Field f[] = this.getClass().getDeclaredFields();
-//for(int i=0; i<f.length; i++)
-//debug3("f[" + i + "]='"+f[i].getName()+"' type="+f[i].getType().toString());
- 
 		for(String varName : getInputNames())
 		{
 			ParmRef parmRef = getParmRef(varName);
@@ -1337,9 +1245,6 @@ debug1("Storing aggregate value=" + v.getStringValue()
 			// MJM 20150727 Optional parms that are unused in an algorithm should be
 			// filled with the special value meaning MISSING.
 			
-//			if (unused)
-//				continue;
-
 			_sliceInputsDeleted = false;
 			// Use reflection to find the variable with same name.
 			// Then determine its type (double, long, or String).
@@ -1373,7 +1278,6 @@ debug1("Storing aggregate value=" + v.getStringValue()
 						field.setDouble(this, Double.NEGATIVE_INFINITY);
 					else if (VarFlags.wasDeleted(v))
 					{
-//debug3(varName + " - sample was deleted.");
 						field.setDouble(this, Double.NEGATIVE_INFINITY);
 						_sliceInputsDeleted = true;
 					}
@@ -1405,30 +1309,28 @@ debug1("Storing aggregate value=" + v.getStringValue()
 						field.set(this, v.getStringValue());
 				}
 				else
-					warning("Invalid input variable type '" + ftyp
-						+ "' -- ignored.");
+					log.warn("Invalid input variable type '{}' -- ignored.", ftyp);
 			}
 			catch(IllegalAccessException ex)
 			{
-				String msg = 
-					"Inconsistent class -- cannot access input field named '"
-					+ varName + "'";
-System.err.println(msg);
-ex.printStackTrace(System.err);
-				warning(msg);
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Inconsistent class -- cannot access input field named '{}'", varName);
 			}
 			catch(NoSuchFieldException ex)
 			{
 				if (this instanceof PythonAlgorithm)
+				{
 					((PythonAlgorithm)this).setTimeSliceInput(varName, v);
+				}
 				else
-					warning("Inconsistent class -- no input field named '"
-						+ varName + "'");
+				{
+					log.atWarn().setCause(ex).log("Inconsistent class -- no input field named '{}'", varName);
+				}
 			}
 			catch(NoConversionException ex)
 			{
-				warning("Cannot convert input '" + varName 
-					+ "' to correct input type.");
+				log.atWarn().setCause(ex).log("Cannot convert input '{}' to correct input type.", varName);
 			}
 		}
 	}
@@ -1526,7 +1428,7 @@ ex.printStackTrace(System.err);
 		catch (DbIoException ex) 
 		{
 			throw new DbCompException(
-				"Cannot find Coeff for role "+ rolename + ":"+ex);
+				"Cannot find Coeff for role "+ rolename, ex);
 		}
 		return coeff;
 	}
@@ -1711,7 +1613,6 @@ ex.printStackTrace(System.err);
 	 */
 	public boolean isGoodQuality(String rolename)
 	{
-//		debug1("isGoodQuality(" + rolename + ")");
 
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
@@ -1738,15 +1639,11 @@ ex.printStackTrace(System.err);
 	 */
 	public boolean isTrigger(String rolename)
 	{
-//		debug1("isTrigger(" + rolename + ")");
 		NamedVariable nv = _timeSliceVars.findByName(rolename);
 		if (nv == null)
 			return false;
 		int f = nv.getFlags();
 		boolean ret = (f & VarFlags.DB_ADDED) != 0;
-//		debug1("    ... returning " + ret);
 		return ret;
 	}
-
-
 }

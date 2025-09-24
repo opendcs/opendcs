@@ -4,30 +4,26 @@ import java.util.Calendar;
 import java.util.Date;
 
 import ilex.util.TextUtil;
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
-import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.ParmRef;
-import decodes.tsdb.VarFlags;
-import decodes.tsdb.algo.AWAlgoType;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description ="Resample an input to an output with a different interval. Output must not be irregular. Input may be\n" + 
 "irregular or any interval greater than or less than the output." )
-public class Resample
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class Resample extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 	
@@ -89,15 +85,11 @@ public class Resample
 			nextInput = inputTS.findNext(lastInputT);
 			if (nextInput == null)
 				nextInput = tsdb.getNextValue(inputTS, lastInputT);
-//			debug1("firstInputT=" + debugSdf.format(firstInputT)
-//				+ ", prevInputT=" + (prevInput != null ? debugSdf.format(prevInput.getTime()) : " null ")
-//				+ ", nextInput=" + debugSdf.format(nextInput.getTime()));
 		}
 		catch(Exception ex)
 		{
 			String msg = "Error accessing input/output time series: " + ex;
-			warning(msg);
-			throw new DbCompException(msg);
+			throw new DbCompException(msg, ex);
 		}
 		// Note: prev & next may still be null!
 		
@@ -172,12 +164,10 @@ public class Resample
 		
 		// Set 'nextOutputTime' for the time-slice method
 		nextOutputTime = firstOutputT; 
-		debug1("method='" + method + "'");
-		debug1("first output time: " + debugSdf.format(nextOutputTime)
-			+ ", output interval = " + outputIncr.getCount() 
-			+ "*Calendar." + outputIncr.getCalConstant());
-		debug1("first input time: " + debugSdf.format(firstInputT)
-			+ ", last: " + debugSdf.format(lastInputT));
+		log.debug("method='{}'", method);
+		log.debug("first output time: {}, output interval = {} *Calendar.{}",
+				  nextOutputTime, outputIncr.getCount(), outputIncr.getCalConstant());
+		log.debug("first input time: {}, last: {}", firstInputT, lastInputT);
 	}
 
 	/**
@@ -203,7 +193,7 @@ public class Resample
 		ParmRef inputParmRef = getParmRef("input");
 		CTimeSeries inputTS = inputParmRef.timeSeries;
 		
-		debug1("TryProduceOutput t = " + debugSdf.format(t));
+		log.debug("TryProduceOutput t = {}", t);
 		
 		while(!nextOutputTime.after(t))
 		{
@@ -211,8 +201,8 @@ public class Resample
 			// else if slice time > nextOutputTime, interpolate
 			if (t.equals(nextOutputTime))
 			{
-				debug3("Setting output at time " + debugSdf.format(t.getTime())
-						+ " to " + v + " method=fill value at same slice time");
+				log.trace("Setting output at time {} to {} method=fill value at same slice time",
+						  t.getTime(), v);
 				setOutput(output, v, nextOutputTime);
 			}
 			else // do either fill or interpolation 
@@ -224,12 +214,12 @@ public class Resample
 					tv = inputTS.findInterp(nextOutputTime.getTime()/1000L);
 				if (tv != null)
 				{
-					debug3("Setting output at time " + debugSdf.format(tv.getTime())
-						+ " to " + tv.getStringValue() + " method=" + method);
+					log.trace("Setting output at time {} to {} method={}",
+							  tv.getTime(), tv.getStringValue(), method);
 					try { setOutput(output, tv.getDoubleValue(), nextOutputTime); }
 					catch (NoConversionException ex)
 					{
-						warning("Interpolation resulted in invalid var: " + ex);
+						log.atWarn().setCause(ex).log("Interpolation resulted in invalid var.");
 					}
 				}
 			}
@@ -238,7 +228,6 @@ public class Resample
 			aggCal.setTime(nextOutputTime);
 			aggCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
 			nextOutputTime = aggCal.getTime();
-//			debug1("Advanced nextOutputTime = " + debugSdf.format(nextOutputTime));
 		}
 	}
 	
@@ -263,7 +252,7 @@ public class Resample
 				try { tryProduceOutput(tv.getTime(), tv.getDoubleValue()); }
 				catch (NoConversionException ex)
 				{
-					warning("After timeslices: " + ex);
+					log.atWarn().setCause(ex).log("After timeslices: unable to produce output.");
 				}
 			}
 		}

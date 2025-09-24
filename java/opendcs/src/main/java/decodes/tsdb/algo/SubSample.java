@@ -1,71 +1,42 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.2  2016/02/29 22:19:22  mmaloney
- * CWMS-7764 Sampling Time Offset Fix.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.13  2011/11/08 22:23:24  mmaloney
- * dev
- *
- * Revision 1.12  2011/11/08 22:01:39  mmaloney
- * *** empty log message ***
- *
- * Revision 1.11  2011/11/08 21:53:39  mmaloney
- * dev
- *
- * Revision 1.10  2011/11/08 21:45:38  mmaloney
- * dev
- *
- * Revision 1.9  2011/11/08 21:12:42  mmaloney
- * dev
- *
- * Revision 1.8  2011/05/03 19:06:26  mmaloney
- * dev
- *
- * Revision 1.7  2011/05/03 18:44:57  mmaloney
- * dev
- *
- * Revision 1.6  2011/05/03 18:19:25  mmaloney
- * dev
- *
- * Revision 1.5  2011/05/03 17:23:38  mmaloney
- * Convert to high-performance time-slice algorithm. No fetching.
- *
- * Revision 1.4  2010/12/21 19:20:35  mmaloney
- * group computations
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.TimeZone;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.IntervalCodes;
 import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.ParmRef;
-import decodes.tsdb.VarFlags;
 import decodes.util.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Convert a short interval to a longer interval by taking the first value equal-to or after the longer-period timestamp.\n" +
 "Example: Convert 10min data to 30min data by taking data on the hour and half-hour")
-public class SubSample
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class SubSample extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double inputShortInterval;
 	
@@ -85,10 +56,6 @@ public class SubSample
 
 @Output(type = Double.class)
 public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval", 0);
-
-//	public boolean aggLowerBoundClosed = true;
-//	public boolean aggUpperBoundClosed = false;
-//	String _propertyNames[] = { "aggLowerBoundClosed", "aggUpperBoundClosed" };
 
 	public String samplingTimeOffset = "";
 
@@ -126,8 +93,9 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 		if (outputIncr == null || outputIncr.getCount() == 0)
 			throw new DbCompException("SubSample requires regular interval output!");
 
-		debug3("beforeTimeSlices firstInputT=" + debugSdf.format(firstInputT) + " outputIncr = " + outputIncr
-			+ (samplingTimeOffset!= null ? (", samplingTimeOffset=" + samplingTimeOffset) : ""));
+		log.trace("beforeTimeSlices firstInputT={} outputIncr = {}{}",
+				  firstInputT, outputIncr,
+				  (samplingTimeOffset!= null ? (", samplingTimeOffset=" + samplingTimeOffset) : ""));
 
 		// Always get rid of seconds and msecs.
 		outputCal.set(Calendar.MILLISECOND, 0);
@@ -140,12 +108,13 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 			try
 			{
 				offsetIncr = IntervalIncrement.parseMult(samplingTimeOffset);
-				debug1("Honoring sampling time offset '" + samplingTimeOffset + "'");
+				log.debug("Honoring sampling time offset '{}'", samplingTimeOffset);
 			}
 			catch (NoSuchObjectException ex)
 			{
-				warning("Invalid samplingTimeOffset property '" + samplingTimeOffset + "': " + ex
-					+ " -- ignored.");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Invalid samplingTimeOffset property '{}' -- ignored.", samplingTimeOffset);
 				offsetIncr = null;
 			}
 		}
@@ -204,10 +173,9 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 		// the outputCal is always >= the first input time.
 		while(outputCal.getTime().before(firstInputT))
 		{
-			debug3("beforeTimeSlices firstInputT=" + debugSdf.format(firstInputT)
-				+ ", outputCal=" + debugSdf.format(outputCal.getTime())
-				+ ", incr=" + outputIncr);
-// should the following be -outputIncr.getCount()
+			log.trace("beforeTimeSlices firstInputT={}, outputCal={}, incr={}",
+					  firstInputT, outputCal.getTime(), outputIncr);
+			// should the following be -outputIncr.getCount()
 			outputCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
 		}
 			
@@ -216,9 +184,8 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 		if (inUnits != null && inUnits.length() > 0)
 			setOutputUnitsAbbr("outputLongInterval", inUnits);
 		
-		debug1("first input=" + debugSdf.format(firstInputT)
-			+ ", first output=" + debugSdf.format(outputCal.getTime())
-			+ " outputIncr=" + outputIncr.toString());
+		log.debug("first input={}, first output={} outputIncr={}",
+				  firstInputT, outputCal.getTime(), outputIncr.toString());
 	}
 
 	/**
@@ -239,9 +206,8 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 		long deltaSec = (_timeSliceBaseTime.getTime() - nextOutputT.getTime()) / 1000L;
 		if (deltaSec <= roundSec && deltaSec >= -roundSec)
 		{
-			debug1("Outputting value at " + debugSdf.format(nextOutputT)
-				+ ", deltaSec=" + deltaSec + ", timeSlice=" 
-				+ debugSdf.format(_timeSliceBaseTime));
+			log.debug("Outputting value at {}, deltaSec={}, timeSlice={}",
+					  nextOutputT, deltaSec, _timeSliceBaseTime);
 			setOutput(outputLongInterval, inputShortInterval, nextOutputT);
 		}
 		
@@ -251,7 +217,7 @@ public NamedVariable outputLongInterval = new NamedVariable("outputLongInterval"
 		{
 			outputCal.add(outputIncr.getCalConstant(), outputIncr.getCount());
 		}
-		debug1("Advanced nextOutput to be at " + debugSdf.format(outputCal.getTime()));
+		log.debug("Advanced nextOutput to be at {}", outputCal.getTime());
 	}
 
 	/**
