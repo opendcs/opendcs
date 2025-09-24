@@ -1,29 +1,21 @@
-/**
- * $Id$
- * 
- * Copyright 2017 Cove Software, LLC. All rights reserved.
- * 
- * $Log$
- * Revision 1.1  2019/06/10 19:27:50  mmaloney
- * Added Screenings to Alarm Editor
- *
- * Revision 1.2  2019/05/10 18:35:26  mmaloney
- * dev
- *
- * Revision 1.1  2019/03/05 14:52:59  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.2  2017/05/18 12:29:00  mmaloney
- * Code cleanup. Remove System.out debugs.
- *
- * Revision 1.1  2017/05/17 20:36:57  mmaloney
- * First working version.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm.editor;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 
 import java.awt.BorderLayout;
@@ -40,6 +32,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.TimeZone;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
@@ -58,8 +53,7 @@ import decodes.tsdb.alarm.AlarmGroup;
 import decodes.util.DecodesSettings;
 
 @SuppressWarnings("serial")
-public class GroupListPanel
-	extends JPanel
+public class GroupListPanel	extends JPanel
 {
 	AlarmEditFrame parentFrame = null;
 	private SortingListTable alarmGroupTable = null;
@@ -291,9 +285,9 @@ public class GroupListPanel
 }
 
 @SuppressWarnings("serial")
-class GroupListTableModel extends AbstractTableModel
-	implements SortingListTableModel
+class GroupListTableModel extends AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String[] colnames = new String[3];
 	int [] widths = { 15, 60, 25 };
 	private int sortColumn = 0;
@@ -332,6 +326,7 @@ class GroupListTableModel extends AbstractTableModel
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to delete alarm group.");
 			parentPanel.parentFrame.showError("Cannot delete alarm group: " + ex);
 		}
 		finally
@@ -349,13 +344,19 @@ class GroupListTableModel extends AbstractTableModel
 		{
 			alarmDAO.check(alarmConfig);
 			sortByColumn(sortColumn);
-			Logger.instance().debug1("After reload there are " + alarmConfig.getGroups().size() + " groups.");
-for(AlarmGroup grp : alarmConfig.getGroups())
-Logger.instance().debug1("ID=" + grp.getAlarmGroupId() + ", " + grp.getName() 
-+ ", " + new Date(grp.getLastModifiedMsec()));
+			log.debug("After reload there are {} groups.", alarmConfig.getGroups().size());
+			if (log.isDebugEnabled())
+			{
+				for(AlarmGroup grp : alarmConfig.getGroups())
+				{
+					log.debug("ID={}, {},{}",
+							  grp.getAlarmGroupId(), grp.getName(), new Date(grp.getLastModifiedMsec()));
+				}
+			}
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to read alarm config.");
 			parentPanel.parentFrame.showError("Cannot read alarm config: " + ex);
 		}
 		finally

@@ -1,24 +1,21 @@
 /*
- * $Id: AlarmExport.java,v 1.4 2020/02/27 22:09:38 mmaloney Exp $
- * 
  * Copyright 2017 Cove Software, LLC. All rights reserved.
+ */
+
+ /*
+ * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
  * 
- * $Log: AlarmExport.java,v $
- * Revision 1.4  2020/02/27 22:09:38  mmaloney
- * Bug fix: No args should export everything.
- *
- * Revision 1.3  2019/10/21 14:06:36  mmaloney
- * Fix incorrect dependency on hec library.
- *
- * Revision 1.2  2019/05/10 18:35:26  mmaloney
- * dev
- *
- * Revision 1.1  2019/03/05 14:53:01  mmaloney
- * Checked in partial implementation of Alarm classes.
- *
- * Revision 1.1  2017/03/21 12:17:10  mmaloney
- * First working XML and SQL I/O.
- *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software 
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations 
+ * under the License.
  */
 package decodes.tsdb.alarm;
 
@@ -27,6 +24,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.AlarmDAI;
 import opendcs.dao.AlarmDAO;
@@ -48,9 +48,9 @@ import decodes.util.DecodesSettings;
  * @author mmaloney
  *
  */
-public class AlarmExport
-	extends TsdbAppTemplate
+public class AlarmExport extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private BooleanToken currentOnly = new BooleanToken("C", "Current Alarms Only",
 		"", TokenOptions.optSwitch, false);
 	private StringToken datatypeArg = new StringToken("T", "DataType",
@@ -89,13 +89,6 @@ public class AlarmExport
 	protected void runApp() 
 		throws Exception
 	{
-//		String grpName = grpNameArg.getValue();
-//		if (grpName == null || grpName.trim().length() == 0)
-//		{
-//			System.err.println("Missing required arg -- group name to export.");
-//			System.exit(1);
-//		}
-		
 		AlarmDAI alarmDAO = new AlarmDAO(TsdbAppTemplate.theDb);
 		AlarmXio alarmXio = new AlarmXio();
 		AlarmConfig cfg = new AlarmConfig();
@@ -112,7 +105,6 @@ public class AlarmExport
 			 || (grpNameArg.NumberOfValues() == 1 && grpNameArg.getValue(0).trim().length() == 0))
 			{
 				groups.add(grp);
-//				groupIds.add(grp.getAlarmGroupId());
 				continue;
 			}
 			
@@ -170,7 +162,7 @@ public class AlarmExport
 			DataType dt = decodes.db.Database.getDb().dataTypeSet.get(std, code);
 			if (dt == null || DbKey.isNull(dt.getId()))
 			{
-				System.err.println("Invalid datatype arg '" + dts + "' -- ignored.");
+				log.error("Invalid datatype arg '{}' -- ignored.", dts);
 				continue;
 			}
 			dtids.add(dt.getId());
@@ -193,7 +185,9 @@ public class AlarmExport
 			if (site != null)
 				siteIds.add(site.getId());
 			else
-				System.err.println("Invalid site name arg '" + sns + "' -- ignored.");
+			{
+				log.error("Invalid site name arg '{}' -- ignored.", sns);
+			}
 		}
 			
 		// Now go through the screenings and apply the filters.

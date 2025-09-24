@@ -1,20 +1,19 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2019/08/07 14:18:57  mmaloney
- * 6.6 RC04
- *
- * Revision 1.2  2019/06/10 19:26:31  mmaloney
- * Added Screenings to Alarm Editor
- *
- * Revision 1.1  2019/05/10 18:35:25  mmaloney
- * dev
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.alarm;
-
-import java.util.Iterator;
 
 import decodes.db.Constants;
 import decodes.db.Database;
@@ -23,8 +22,10 @@ import decodes.db.EnumValue;
 import decodes.decoder.FieldParseException;
 import decodes.decoder.Season;
 import decodes.sql.DbKey;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Bean class holding a single record in the ALARM_LIMIT_SET table.
@@ -33,6 +34,7 @@ import ilex.util.TextUtil;
  */
 public class AlarmLimitSet
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final double UNASSIGNED_LIMIT = Double.NEGATIVE_INFINITY;
 	
 	/** Primary key */
@@ -387,8 +389,10 @@ public class AlarmLimitSet
 			{
 				EnumValue ev = seasonEnum.findEnumValue(seasonName);
 				if (ev == null)
-					Logger.instance().warning("AlarmLimitSet with id=" + getLimitSetId()
-						+ " season '" + this.getSeasonName() + "' is not defined. Run rledit and add it.");
+				{
+					log.warn("AlarmLimitSet with id={} season '{}' is not defined. Run rledit and add it.",
+							 getLimitSetId(), this.getSeasonName());
+				}
 				else
 				{
 					try
@@ -397,17 +401,19 @@ public class AlarmLimitSet
 					}
 					catch (FieldParseException ex)
 					{
-						Logger.instance().warning("AlarmLimitSet with id=" + getLimitSetId()
-							+ " season '" + this.getSeasonName() + "' is not valid. Run rledit and fix it:" + ex);
+						log.atWarn()
+						   .setCause(ex)
+						   .log("AlarmLimitSet with id={} season '{}' is not valid. Run rledit and fix it.",
+						   		getLimitSetId(), this.getSeasonName());
 						season = null;
 					}
 				}
 			}
 			else
 			{
-				Logger.instance().warning("AlarmLimitSet with id=" + getLimitSetId() 
-					+ " season '" + seasonName
-					+ "' cannot be resolved -- there is no Seasons enumeration in this database.");
+				log.warn("AlarmLimitSet with id={} season '{}' cannot be resolved " +
+						 "-- there is no Seasons enumeration in this database.",
+						 getLimitSetId(), seasonName);
 			}
 		}
 		// Else either no season name or it's set to the "(default)" season (i.e. all year).
@@ -484,7 +490,6 @@ public class AlarmLimitSet
 		
 		if (!TextUtil.strEqual(seasonName, ls2.seasonName))
 			return false;
-//System.out.println("lse1");
 		
 		if (this.rejectHigh != ls2.rejectHigh
 		 || this.criticalHigh != ls2.criticalHigh
@@ -494,47 +499,36 @@ public class AlarmLimitSet
 		 || this.rejectLow != ls2.rejectLow)
 			return false;
 
-//System.out.println("lse2");
 
 		// Stuck sensor detection
 		if (!TextUtil.strEqual(this.stuckDuration, ls2.stuckDuration))
 			return false;
-//System.out.println("lse3");
 		if (this.stuckTolerance != ls2.stuckTolerance
 		 || this.minToCheck != ls2.minToCheck
 		 || !TextUtil.strEqual(this.maxGap, ls2.maxGap))
 			return false;
 		
-//System.out.println("lse4");
 
 		// Rate Of Change limits
 		if (!TextUtil.strEqual(this.rocInterval,ls2.rocInterval))
 			return false;
-//System.out.println("lse4.1");
 		if (this.rejectRocHigh != ls2.rejectRocHigh)
 			return false;
-//System.out.println("lse4.2");
 		if (this.criticalRocHigh != ls2.criticalRocHigh)
 			return false;
-//System.out.println("lse4.3");
 		if (this.warningRocHigh != ls2.warningRocHigh)
 			return false;
-//System.out.println("lse4.4");
 		if (this.warningRocLow != ls2.warningRocLow)
 			return false;
-//System.out.println("lse4.5");
 		if (this.criticalRocLow != ls2.criticalRocLow)
 			return false;
-//System.out.println("lse4.6");
 		if (this.rejectRocLow != ls2.rejectRocLow)
 			return false;
-//System.out.println("lse5");
 
 		if (!TextUtil.strEqual(missingPeriod, ls2.missingPeriod)
 		 || !TextUtil.strEqual(missingInterval, ls2.missingInterval)
 		 || this.maxMissingValues != ls2.maxMissingValues)
 			return false;
-//System.out.println("lse6");
 
 		if (!TextUtil.strEqual(hintText, ls2.hintText))
 			return false;
