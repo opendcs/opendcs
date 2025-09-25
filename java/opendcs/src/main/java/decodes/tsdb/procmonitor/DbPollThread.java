@@ -1,49 +1,27 @@
-/**
- * $Id: DbPollThread.java,v 1.4 2020/02/20 16:11:53 mmaloney Exp $
- * 
- * Open Source Software
- * 
- * $Log: DbPollThread.java,v $
- * Revision 1.4  2020/02/20 16:11:53  mmaloney
- * null ptr fix.
- *
- * Revision 1.3  2015/06/04 21:37:39  mmaloney
- * Added control buttons to process monitor GUI.
- *
- * Revision 1.2  2015/05/14 13:52:20  mmaloney
- * RC08 prep
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.7  2013/04/17 15:35:38  mmaloney
- * If lock disappears, update display to "Not Running".
- *
- * Revision 1.6  2013/03/25 19:21:15  mmaloney
- * cleanup
- *
- * Revision 1.5  2013/03/25 16:58:38  mmaloney
- * dev
- *
- * Revision 1.4  2013/03/23 18:20:04  mmaloney
- * dev
- *
- * Revision 1.3  2013/03/23 18:14:07  mmaloney
- * dev
- *
- * Revision 1.2  2013/03/23 18:01:03  mmaloney
- * dev
- *
- * Revision 1.1  2013/03/23 15:33:55  mmaloney
- * dev
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.procmonitor;
 
 import ilex.util.TextUtil;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.LoadingAppDAI;
 
@@ -55,9 +33,9 @@ import decodes.tsdb.TsdbCompLock;
  * Polls Time Series Database for process status and updates model.
  * @author mmaloney Mike Maloney, Cove Software, LLC
  */
-public class DbPollThread 
-	extends Thread
+public class DbPollThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private ProcessMonitor processMonitor = null;
 	private boolean _shutdown = false;
 	public static final long LockPollInterval = 5000L;
@@ -138,7 +116,6 @@ public class DbPollThread
 				if (System.currentTimeMillis() - lastLockPoll > LockPollInterval)
 				{
 					List<TsdbCompLock> locks = loadingAppDAO.getAllCompProcLocks();
-//System.out.println("DbPollThread read " + locks.size() + " locks.");
 					for(int r = 0; r < model.getRowCount(); r++)
 					{
 						AppInfoStatus appStatus = model.getAppAt(r);
@@ -163,8 +140,7 @@ public class DbPollThread
 			}
 			catch (DbIoException ex)
 			{
-				System.err.println("Error polling database for process status: " + ex);
-				ex.printStackTrace();
+				log.atError().setCause(ex).log("Error polling database for process status.");
 			}
 			finally
 			{

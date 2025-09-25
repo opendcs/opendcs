@@ -1,55 +1,18 @@
-/**
- * $Id$
- * 
- * Open Source Software
- * 
- * $Log$
- * Revision 1.2  2015/06/04 21:37:39  mmaloney
- * Added control buttons to process monitor GUI.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.13  2013/04/18 15:07:17  mmaloney
- * Fixed event thread reconnect issue.
- *
- * Revision 1.12  2013/04/18 15:02:53  mmaloney
- * dev
- *
- * Revision 1.11  2013/04/18 14:54:07  mmaloney
- * dev
- *
- * Revision 1.10  2013/04/18 14:49:33  mmaloney
- * dev
- *
- * Revision 1.9  2013/04/18 14:34:10  mmaloney
- * dev
- *
- * Revision 1.8  2013/04/18 13:53:28  mmaloney
- * Event socket bug fix.
- *
- * Revision 1.7  2013/04/17 15:50:57  mmaloney
- * dev
- *
- * Revision 1.6  2013/04/17 15:46:04  mmaloney
- * Insert app name just after the priority.
- *
- * Revision 1.5  2013/04/17 15:38:55  mmaloney
- * Insert app name just after the priority.
- *
- * Revision 1.4  2013/03/25 19:21:15  mmaloney
- * cleanup
- *
- * Revision 1.3  2013/03/25 17:50:54  mmaloney
- * dev
- *
- * Revision 1.2  2013/03/25 16:58:38  mmaloney
- * dev
- *
- * Revision 1.1  2013/03/25 15:02:20  mmaloney
- * dev
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.procmonitor;
 
 
@@ -58,13 +21,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 
-import ilex.net.BasicClient;
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-public class EventClient
-	extends BasicClient
-	implements Runnable
+import ilex.net.BasicClient;
+
+public class EventClient extends BasicClient implements Runnable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private boolean _shutdown = false;
 	private ProcessMonitorFrame frame = null;
 	private String appName = null;
@@ -72,7 +36,7 @@ public class EventClient
 	private AppInfoStatus appInfoStatus = null;
 	private long lastConnectAttempt = 0L;
 	private boolean justStarted = true;
-	
+
 	public EventClient(int port, AppInfoStatus appInfoStatus, ProcessMonitorFrame frame)
 	{
 		super("placeholder", port);
@@ -83,9 +47,9 @@ public class EventClient
 			appName = appName + " ";
 		this.frame = frame;
 	}
-	
+
 	public void shutdown() { _shutdown = true; }
-	
+
 	public void run()
 	{
 		while(!_shutdown)
@@ -105,8 +69,10 @@ public class EventClient
 						try { port = Integer.parseInt(eps); }
 						catch(NumberFormatException ex)
 						{
-							Logger.instance().warning("EventClient: Bad EventPort property '" + eps
-								+ "' -- should be integer. Ignored. Will try PID.");
+							log.atWarn()
+							   .setCause(ex)
+							   .log("EventClient: Bad EventPort property '{}' " +
+							   		"-- should be integer. Ignored. Will try PID.", eps);
 							port = -1;
 						}
 					}
@@ -114,7 +80,7 @@ public class EventClient
 					{
 						port = 20000 + (appInfoStatus.getCompLock().getPID() % 10000);
 					}
-					
+
 					setPort(port);
 					connect();
 					reader = new BufferedReader(new InputStreamReader(this.input));
@@ -135,6 +101,8 @@ public class EventClient
 					}
 					catch(Exception ex2)
 					{
+						ex2.addSuppressed(ex);
+						log.atError().setCause(ex).log("Cannot connect to {}", getHost());
 						localEvent("Cannot connect to '" + getHost() + "': " + ex2);
 					}
 				}
@@ -173,6 +141,7 @@ public class EventClient
 					}
 					catch (IOException ex)
 					{
+						log.atError().setCause(ex).log("Error on event port.");
 						localEvent("Error on event port: " + ex);
 						disconnect();
 					}
@@ -190,7 +159,7 @@ public class EventClient
 		disconnect();
 		frame.addEvent(appName + " " + " Event retrieval shut down.");
 	}
-	
+
 	public void disconnect()
 	{
 		reader = null;
@@ -198,7 +167,7 @@ public class EventClient
 		super.disconnect();
 		localEvent("Socket closed on event port.");
 	}
-	
+
 	private void localEvent(String msg)
 	{
 		frame.addEvent(appName + " " + msg);

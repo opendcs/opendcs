@@ -1,75 +1,43 @@
 /*
-*  $Id: TestProg.java,v 1.3 2019/12/11 14:21:13 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log: TestProg.java,v $
-*  Revision 1.3  2019/12/11 14:21:13  mmaloney
-*  Test Runner
-*
-*  Revision 1.2  2019/10/13 19:29:57  mmaloney
-*  dev
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.5  2013/03/21 18:27:40  mmaloney
-*  DbKey Implementation
-*
-*  Revision 1.4  2011/01/13 13:22:14  mmaloney
-*  downgrade warning message to debug1
-*
-*  Revision 1.3  2008/08/06 19:40:55  mjmaloney
-*  dev
-*
-*  Revision 1.2  2008/06/10 21:39:52  cvs
-*  dev
-*
-*  Revision 1.1  2008/04/04 18:21:07  cvs
-*  Added legacy code to repository
-*
-*  Revision 1.5  2007/06/27 20:57:39  mmaloney
-*  dev
-*
-*  Revision 1.4  2006/05/11 13:32:35  mmaloney
-*  DataTypes are now immutable! Modified all references. Modified SQL IO code.
-*
-*  Revision 1.3  2006/03/28 15:37:16  mmaloney
-*  dev
-*
-*  Revision 1.2  2006/03/17 16:38:43  mmaloney
-*  dev
-*
-*  Revision 1.1  2006/03/17 01:54:48  mmaloney
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb.test;
 
 import java.util.Properties;
 
 import org.opendcs.authentication.AuthSourceService;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.gui.DecodesInterface;
 
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import decodes.util.CmdLineArgs;
 import decodes.util.DecodesSettings;
 import decodes.tsdb.*;
 import decodes.sql.DbKey;
 
+/**
+ * @deprecated We have an integration test system setup. Such usages should be moved to there.
+ */
+@Deprecated
 public abstract class TestProg
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Static command line arguments and initialization for main method.
 	private CmdLineArgs cmdLineArgs;
 	protected StringToken cfgFileArg;
@@ -86,11 +54,11 @@ public abstract class TestProg
 			logname = "test.log";
 		cmdLineArgs = new CmdLineArgs(false, logname);
 		cfgFileArg = new StringToken("c", "config-file",
-			"", TokenOptions.optSwitch, "$DECODES_INSTALL_DIR/comp.conf"); 
+			"", TokenOptions.optSwitch, "$DECODES_INSTALL_DIR/comp.conf");
 		testModeArg = new BooleanToken("t", "test-mode",
 			"", TokenOptions.optSwitch, false);
-		modelRunArg = new IntegerToken("m", 
-			"output-model-run-ID", "", TokenOptions.optSwitch, -1); 
+		modelRunArg = new IntegerToken("m",
+			"output-model-run-ID", "", TokenOptions.optSwitch, -1);
 		appNameArg = new StringToken("a", "App-Name", "",
 			TokenOptions.optSwitch, "");
 		cmdLineArgs.addToken(cfgFileArg);
@@ -130,12 +98,12 @@ public abstract class TestProg
 	protected void parseArgs(String args[])
 		throws Exception
 	{
-//		Logger.setLogger(new StderrLogger(appNameArg.getValue()));
 
 		// Parse command line arguments.
 		try { cmdLineArgs.parseArgs(args); }
 		catch(IllegalArgumentException ex)
 		{
+			log.atError().setCause(ex).log("Unable to parse arguments.");
 			System.exit(1);
 		}
 	}
@@ -150,7 +118,6 @@ public abstract class TestProg
 	public void createDatabase()
 		throws Exception
 	{
-//		String className = DecodesSettings.instance().dbClassName;
 		String className = DecodesSettings.instance().getTsdbClassName();
 		String authFileName = EnvExpander.expand(DecodesSettings.instance().DbAuthFile);
 		try
@@ -161,16 +128,12 @@ public abstract class TestProg
 		}
 		catch(Exception ex)
 		{
-			String msg = "Cannot create database interface for class '"
-				+ className + "': " + ex;
-			System.err.println(msg);
-			Logger.instance().fatal(msg);
-			throw ex;
+			throw new Exception("Cannot create database interface for class '" + className + "'", ex);
 		}
 
-		// Get authorization parameters.	
+		// Get authorization parameters.
 		Properties props = AuthSourceService.getFromString(authFileName)
-											.getCredentials();		
+											.getCredentials();
 		// Set test-mode flag & model run ID in the database interface.
 		theDb.setTestMode(testModeArg.getValue());
 		int modelRunId = modelRunArg.getValue();
@@ -182,14 +145,11 @@ public abstract class TestProg
 		try
 		{
 			appId = theDb.connect(appNameArg.getValue(), props);
-			Logger.instance().info("Connected with appId=" + appId);
+			log.info("Connected with appId={}", appId);
 		}
 		catch(BadConnectException ex)
 		{
-			String msg = "Cannot connect to DB: " + ex.getMessage();
-			System.err.println(msg);
-			Logger.instance().fatal(msg);
-			throw ex;
+			throw new Exception("Cannot connect to DB", ex);
 		}
 	}
 
@@ -197,25 +157,6 @@ public abstract class TestProg
 		throws Exception
 	{
 		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
-//		DecodesInterface.initializeForEditing();
-
-//		System.out.print("Init DECODES DB: "); System.out.flush();
-//		Database decodesDb = new Database();
-//		Database.setDb(decodesDb);
-//		SqlDatabaseIO dbio = new SqlDatabaseIO();
-//		dbio.useExternalConnection(theDb.getConnection(), 
-//			theDb.getKeyGenerator(), "TSDB");
-//		decodesDb.setDbIo(dbio);
-//		System.out.print("Enum, "); System.out.flush();
-//		decodesDb.enumList.read();
-//		System.out.print("DataType, "); System.out.flush();
-//		decodesDb.dataTypeSet.read();
-//		System.out.print("EU, "); System.out.flush();
-//		decodesDb.engineeringUnitList.read();
-//		//Site.explicitList = true;
-//		System.out.print("Site, "); System.out.flush();
-//		decodesDb.siteList.read();
-//		System.out.println();
 	}
 
 	public CmdLineArgs getCmdLineArgs()
