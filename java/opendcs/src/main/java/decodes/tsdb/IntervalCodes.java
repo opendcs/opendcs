@@ -1,27 +1,28 @@
 /*
-*  $Id: IntervalCodes.java,v 1.3 2020/01/31 19:40:29 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
-import ilex.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.db.Constants;
 import decodes.db.IntervalList;
-import decodes.sql.DbKey;
-
 import opendcs.opentsdb.Interval;
 
 /**
@@ -29,6 +30,7 @@ Defines the interval codes used in HDB and NWIS.
 */
 public class IntervalCodes
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Instanteous data */
 	public static final String int_instant = "instant";
 
@@ -75,10 +77,10 @@ public class IntervalCodes
 	public static final String int_cwms_irregular = "irregular";
 	/** Zero == Irrigular */
 	public static final String int_cwms_zero = "0";
-	
+
 	// For each of the CWMS codes there is a _nc version that starts with
 	// a tilde. "nc" = no check. This turns off interval checking.
-	
+
 	/** 1 minute data */
 	public static final String int_one_minute = "1Minute";
 	public static final String int_one_minute_nc = "~1Minute";
@@ -164,7 +166,7 @@ public class IntervalCodes
 
 	/** The singleton IntervalList instance holds intervals defined in the database */
 	private static IntervalList dbIntervals = IntervalList.instance();
-	
+
 	/**
 	 * This array holds built-in intervals for the calendar primitives. These cannot be changed.
 	 */
@@ -184,7 +186,7 @@ public class IntervalCodes
 		builtInIntervals.add(new Interval(Constants.undefinedId, "year", Calendar.YEAR, 1));
 	}
 
-	
+
 	/**
 	 * Get the number of seconds representing the interval.
 	 * @param interval the interval
@@ -211,7 +213,7 @@ public class IntervalCodes
 			return 0;
 		}
 	}
-	
+
 	/**
 	 * Passed a string of one of the following forms:
 	 *    interval
@@ -219,7 +221,7 @@ public class IntervalCodes
 	 * Where 'interval' is a valid interval string in the underlying database
 	 * and count is an integer > 0.
 	 * Return IntervalIncrement containing Calendar constant and increment
-	 * corresponding to the interval. 
+	 * corresponding to the interval.
 	 * @param interval the interval name defined herein.
 	 * @return IntervalIncrement containing Calendar constant and increment.
 	 */
@@ -227,7 +229,7 @@ public class IntervalCodes
 	{
 		if (interval == null)
 			return null;
-		
+
 		// Allow strings like "hour*16"
 		int starIdx = interval.indexOf('*');
 		int count = 1;
@@ -236,18 +238,18 @@ public class IntervalCodes
 			try { count = Integer.parseInt(interval.substring(starIdx+1)); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Invalid interval '" + interval + "'");
+				log.atWarn().setCause(ex).log("Invalid interval '{}' -- setting count to 1", interval);
 				count = 1;
 			}
 			interval = interval.substring(0, starIdx);
 		}
-		
+
 		Interval intv = getInterval(interval);
 		if (intv == null)
 			return null;
 		return new IntervalIncrement(intv.getCalConstant(), intv.getCalMultiplier()*count);
 	}
-	
+
 	/**
 	 * Get String to use in a param delta indicating this interval.
 	 * This is used to resolve automatic deltas where the delta-interval
@@ -363,7 +365,7 @@ public class IntervalCodes
 				return eintv;
 		return null;
 	}
-	
+
 	public static String getCalConstName(int calConst)
 	{
 		if (calConst == Calendar.MINUTE)

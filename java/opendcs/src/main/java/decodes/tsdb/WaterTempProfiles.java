@@ -1,6 +1,20 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb;
 
-import decodes.cwms.resevapcalc.MetComputation;
 import decodes.db.Constants;
 import decodes.db.Site;
 import decodes.db.SiteName;
@@ -8,7 +22,8 @@ import ilex.var.TimedVariable;
 import ilex.var.Variable;
 import opendcs.dai.TimeSeriesDAI;
 import org.opendcs.utils.FailableResult;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -22,7 +37,7 @@ import java.util.Date;
 
 final public class WaterTempProfiles
 {
-
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     /**
      * The time series
      */
@@ -31,7 +46,7 @@ final public class WaterTempProfiles
     private double startDepth;
     private double increment;
 
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(WaterTempProfiles.class.getName());
+    
 
     /**
      * Constructor -- builds an empty collection with a null handle.
@@ -214,7 +229,7 @@ final public class WaterTempProfiles
             }
             catch (Exception ex)
             {
-                LOGGER.error("Error saving water temperature profile data", ex);
+                log.atError().setCause(ex).log("Error saving water temperature profile data");
             }
         }
     }
@@ -248,7 +263,7 @@ final public class WaterTempProfiles
                 }
                 catch (DuplicateTimeSeriesException | NoSuchObjectException | DbIoException  ex)
                 {
-                    LOGGER.error("Error appending water temperature profile data", ex);
+                    log.atError().setCause(ex).log("Error appending water temperature profile data");
                 }
             }
         }

@@ -1,10 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
-
-import static org.slf4j.helpers.Util.getCallingClass;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -16,8 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ilex.util.TextUtil;
 import ilex.var.TimedVariable;
@@ -28,7 +40,7 @@ import opendcs.util.functional.ThrowingFunction;
  */
 public class TsImporter
 {
-    private static final Logger log = LoggerFactory.getLogger(getCallingClass());
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
     private Map<String, CTimeSeries> dc = new HashMap<>();
     private int lineNum = -1;
@@ -80,11 +92,11 @@ public class TsImporter
         }
         catch(DbIoException ex)
         {
-            log.warn("Error in Database Interface.", ex);
+            log.atWarn().setCause(ex).log("Error in Database Interface.");
         }
         catch(IOException ex)
         {
-            log.warn("I/O Error.", ex);
+            log.atWarn().setCause(ex).log("I/O Error.");
         }
         finally
         {
@@ -198,7 +210,7 @@ public class TsImporter
             {
                 log.atError()
                    .setCause(ex)
-                   .log("Unable to Initialize current timeseries.", ex);
+                   .log("Unable to Initialize current timeseries.");
                 return null;
             }
         });
@@ -232,7 +244,7 @@ public class TsImporter
         }
         catch(Exception ex)
         {
-            log.warn("Unparsable date field '{}' -- line ignored.", x[0] );
+            log.atWarn().setCause(ex).log("Unparsable date field '{}' -- line ignored.", x[0]);
             return;
         }
         try
@@ -241,7 +253,7 @@ public class TsImporter
         }
         catch(Exception ex)
         {
-            log.warn("Unparsable value field '{}' -- line ignored.", x[1]);
+            log.atWarn().setCause(ex).log("Unparsable value field '{}' -- line ignored.", x[1]);
             return;
         }
         if (x.length > 2)
@@ -256,7 +268,7 @@ public class TsImporter
             }
             catch(Exception ex)
             {
-                log.warn("Unparsable flags field '{}' -- flags assumed to be 0.", x[0]);
+                log.atWarn().setCause(ex).log("Unparsable flags field '{}' -- flags assumed to be 0.", x[0]);
                 return;
             }
         }
