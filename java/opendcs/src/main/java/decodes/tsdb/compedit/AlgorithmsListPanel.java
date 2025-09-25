@@ -37,8 +37,8 @@ import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 
 import org.opendcs.gui.SearchPanel;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import opendcs.dai.AlgorithmDAI;
 
@@ -49,7 +49,7 @@ import decodes.tsdb.compedit.algotab.LoadNewDialog;
 
 public class AlgorithmsListPanel extends ListPanel
 {
-	private static final Logger log = LoggerFactory.getLogger(AlgorithmsListPanel.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	private JPanel jContentPane = null;
 

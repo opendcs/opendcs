@@ -1,6 +1,6 @@
 /**
  * $Id: CompParmDialog.java,v 1.14 2020/02/14 15:16:27 mmaloney Exp $
- * 
+ *
  * $Log: CompParmDialog.java,v $
  * Revision 1.14  2020/02/14 15:16:27  mmaloney
  * Fixes to Comp Edit for OpenTSDB
@@ -128,6 +128,10 @@ import java.awt.event.*;
 
 import javax.swing.border.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.SiteDAI;
 
@@ -175,6 +179,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class CompParmDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private ResourceBundle ceResources = CAPEdit.instance().compeditDescriptions;
 	private JPanel outerPanel = new JPanel();
 	private JTextField compNameField = new JTextField();
@@ -191,12 +196,12 @@ public class CompParmDialog extends GuiDialog
 	private JComboBox tabselCombo = new JComboBox(new String[] {"R_", "M_"});
 	private JTextField deltaTField = new JTextField();
 	private JComboBox deltaTUnitsCombo = new JComboBox(
-		new String []{"Seconds", "Minutes", "Hours", "Days", "Weeks", 
+		new String []{"Seconds", "Minutes", "Hours", "Days", "Weeks",
 			"Months", "Years" });
 	private JTextField unitsField = new JTextField();
 	private JButton unitsButton = new JButton(
 		ceResources.getString("CompParmDialog.SelectButton"));
-	private JComboBox ifMissingCombo = 
+	private JComboBox ifMissingCombo =
 		new JComboBox(MissingAction.values());
 
 	// Model ID Used by HDB:
@@ -214,7 +219,7 @@ public class CompParmDialog extends GuiDialog
 	boolean okPressed = false;
 	private SiteSelectDialog siteSelectDialog = null;
 	private TimeSeriesDb theDb;
-	
+
 
 	public CompParmDialog(boolean isInput, SiteSelectPanel siteSelectPanel)
 	{
@@ -222,7 +227,7 @@ public class CompParmDialog extends GuiDialog
 			CAPEdit.instance().compeditDescriptions
 				.getString("CompParmDialog.CompParm"), true);
 		theDb = CAPEdit.instance().theDb;
-		
+
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 		}
@@ -241,7 +246,7 @@ public class CompParmDialog extends GuiDialog
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -289,11 +294,9 @@ public class CompParmDialog extends GuiDialog
 	/** Fills the GUI components with values from the object being edited. */
 	void fillValues()
 	{
-//System.out.println("fillValues loc='" + theParm.getLocSpec() 
-//+ "', parm='" + theParm.getParamSpec() + "', + ver='" + theParm.getVersion() + "'");
 		compNameField.setText(compName);
 		roleNameField.setText(theParm.getRoleName());
-		
+
 		SiteName sn = theParm.getSiteName();
 		siteField.setText(sn != null ? sn.getNameValue() : "");
 		if (sn != null && !theDb.isCwms() && !theDb.isOpenTSDB())
@@ -331,7 +334,7 @@ public class CompParmDialog extends GuiDialog
 				parmTypeField.setText(RoleTypes.getRoleType(pti));
 		}
 		roleNameField.setEditable(false);
-		
+
 		String s = theParm.getDeltaTUnits();
 		if (s != null)
 			deltaTUnitsCombo.setSelectedItem(s);
@@ -339,10 +342,10 @@ public class CompParmDialog extends GuiDialog
 			deltaTUnitsCombo.setSelectedIndex(0);
 		if (theDb.tsdbVersion < TsdbDatabaseVersion.VERSION_6)
 			deltaTUnitsCombo.setVisible(false);
-		
+
 		s = parent.getHiddenProperty(theParm.getRoleName() + "_EU");
 		unitsField.setText(s != null ? s : "");
-		
+
 		if (theParm.isInput())
 		{
 			String n = theParm.getRoleName() + "_MISSING";
@@ -362,8 +365,7 @@ public class CompParmDialog extends GuiDialog
 	}
 
 	/** Initializes GUI components. */
-	void buildPanel(boolean isInput)
-		throws Exception
+	void buildPanel(boolean isInput) throws Exception
 	{
 		JPanel northPanel = new JPanel();
 		JPanel southButtonPanel = new JPanel();
@@ -380,33 +382,33 @@ public class CompParmDialog extends GuiDialog
 		compNameField.setEditable(false);
 		northPanel.add(
 			new JLabel(ceResources.getString("CompParmDialog.ComputationName")),
-			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(6, 20, 3, 2), 0, 0));
 		northPanel.add(compNameField,
-			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(6, 0, 3, 20), 0, 0));
 		northPanel.add(
 			new JLabel(ceResources.getString("CompParmDialog.RoleName")),
-				new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0, 
+				new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(3, 20, 3, 2), 0, 0));
 		roleNameField.setEditable(false);
 		roleNameField.setToolTipText(ceResources
 			.getString("CompParmDialog.RoleNameToolTip"));
 		northPanel.add(roleNameField,
-			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0, 
+			new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 3, 20), 0, 0));
 		northPanel.add(
 			new JLabel(ceResources.getString("CompParmDialog.ParmType")),
-				new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0, 
+				new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(3, 20, 6, 2), 0, 0));
 		parmTypeField.setEditable(false);
-		northPanel.add(parmTypeField, 
-			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0, 
+		northPanel.add(parmTypeField,
+			new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 6, 20), 0, 0));
 		parmTypeField.setToolTipText(
@@ -445,7 +447,7 @@ public class CompParmDialog extends GuiDialog
 		if (theDb.isCwms())
 			label = "Location:";
 		fieldEntryPanel.add(new JLabel(label),
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 15, 4, 2), 0, 0));
 		fieldEntryPanel.add(siteField,
@@ -453,30 +455,30 @@ public class CompParmDialog extends GuiDialog
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
 		fieldEntryPanel.add(siteSelectButton,
-			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 5, 4, 15), 0, 0));
-		
+
 		// Time Series Lookup Button
 		fieldEntryPanel.add(selectTsButton,
 			new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 5, 4, 15), 0, 0));
-		
-		
+
+
 		// Data Type or Param
 		label = ceResources.getString("CompParmDialog.DataType");
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 			label = "Param:";
 		fieldEntryPanel.add(new JLabel(label),
-			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 15, 4, 2), 0, 0));
-		fieldEntryPanel.add(dataTypeField, 
-			new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0, 
+		fieldEntryPanel.add(dataTypeField,
+			new GridBagConstraints(1, 2, 1, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
-		
+
 		JButton paramSelectButton = new JButton("Select");
 		paramSelectButton.addActionListener(
 			new ActionListener()
@@ -497,27 +499,27 @@ public class CompParmDialog extends GuiDialog
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 			fieldEntryPanel.add(new JLabel("Param Type:"),
-				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
 			paramTypeCombo.setEditable(true);
 			for(String pt : theDb.listParamTypes())
 				paramTypeCombo.addItem(pt);
-			fieldEntryPanel.add(paramTypeCombo, 
-				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+			fieldEntryPanel.add(paramTypeCombo,
+				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 			Y++;
 		}
-		
+
 		// Interval
 		label = ceResources.getString("CompParmDialog.Interval");
 		fieldEntryPanel.add(new JLabel(label),
-			new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 15, 4, 2), 0, 0));
-		fieldEntryPanel.add(intervalCombo, 
-			new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+		fieldEntryPanel.add(intervalCombo,
+			new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
 		Y++;
@@ -526,25 +528,25 @@ public class CompParmDialog extends GuiDialog
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 			fieldEntryPanel.add(new JLabel("Duration:"),
-				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
 			durationCombo.setEditable(true);
-			fieldEntryPanel.add(durationCombo, 
-				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+			fieldEntryPanel.add(durationCombo,
+				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 			Y++;
-			
+
 			fieldEntryPanel.add(new JLabel("Version:"),
-				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
-			fieldEntryPanel.add(versionField, 
-				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+			fieldEntryPanel.add(versionField,
+				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
-			
+
 			JButton versionSelectButton = new JButton("Select");
 			versionSelectButton.addActionListener(
 				new ActionListener()
@@ -559,20 +561,20 @@ public class CompParmDialog extends GuiDialog
 				new GridBagConstraints(2, Y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 5, 4, 15), 0, 0));
-			
+
 			Y++;
 		}
 		else // HDB Table Selector
 		{
         	label = theDb.getTableSelectorLabel() + ":";
 	        fieldEntryPanel.add(
-	        	new JLabel(label), 
+	        	new JLabel(label),
 				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
-	            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+	            	GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
 	        fieldEntryPanel.add(tabselCombo,
 				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
-	            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+	            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 	        Y++;
 		}
@@ -580,13 +582,13 @@ public class CompParmDialog extends GuiDialog
 		if (theDb.isHdb())
 		{
 	        fieldEntryPanel.add(
-	        	new JLabel(ceResources.getString("CompParmDialog.ModelIDLabel")), 
+	        	new JLabel(ceResources.getString("CompParmDialog.ModelIDLabel")),
 				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
-	            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+	            	GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
 	        fieldEntryPanel.add(modelIdField,
 				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
-	            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+	            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 	        Y++;
 		}
@@ -597,7 +599,7 @@ public class CompParmDialog extends GuiDialog
 			new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 15, 4, 2), 0, 0));
-		fieldEntryPanel.add(deltaTField, 
+		fieldEntryPanel.add(deltaTField,
 			new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
@@ -615,16 +617,16 @@ public class CompParmDialog extends GuiDialog
 			new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 15, 4, 2), 0, 0));
-		fieldEntryPanel.add(unitsField, 
+		fieldEntryPanel.add(unitsField,
 			new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
 		fieldEntryPanel.add(unitsButton,
-			new GridBagConstraints(2, Y, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(2, Y, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 5, 4, 15), 0, 0));
 		Y++;
-		
+
 		// If Missing
 		if (isInput)
 		{
@@ -633,13 +635,13 @@ public class CompParmDialog extends GuiDialog
 				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
-			fieldEntryPanel.add(ifMissingCombo, 
+			fieldEntryPanel.add(ifMissingCombo,
 				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 			Y++;
 		}
-		
+
 		// ============================= KEEP THIS
 		siteSelectButton.addActionListener(
 			new java.awt.event.ActionListener()
@@ -668,13 +670,13 @@ public class CompParmDialog extends GuiDialog
 					unitsButtonPressed();
 				}
 			});
-			
+
 		getContentPane().add(outerPanel);
 	}
 
 	protected void versionSelectButtonPressed()
 	{
-		VersionSelectDialog versionSelectDialog = 
+		VersionSelectDialog versionSelectDialog =
 			new VersionSelectDialog(CAPEdit.instance().getFrame(), theDb,
 				parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
 		versionSelectDialog.setCurrentValue(versionField.getText());
@@ -691,11 +693,11 @@ public class CompParmDialog extends GuiDialog
 //TODO Can't I do something like the CWMS dialog here?
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
-			ParamSelectDialog paramSelectDialog = 
+			ParamSelectDialog paramSelectDialog =
 				new ParamSelectDialog(CAPEdit.instance().getFrame(), theDb,
 					parent.hasGroupInput() ? SelectionMode.CompEditGroup : SelectionMode.CompEditNoGroup);
 			paramSelectDialog.setCurrentValue(dataTypeField.getText());
-	
+
 			launchDialog(paramSelectDialog);
 			if (!paramSelectDialog.isCancelled())
 			{
@@ -705,7 +707,7 @@ public class CompParmDialog extends GuiDialog
 		}
 		else if (theDb.isHdb())
 		{
-			HdbDatatypeSelectDialog dlg = new HdbDatatypeSelectDialog(parent.topFrame, 
+			HdbDatatypeSelectDialog dlg = new HdbDatatypeSelectDialog(parent.topFrame,
 				(HdbTimeSeriesDb)theDb);
 			dlg.setCurrentValue(dataTypeField.getText());
 			launchDialog(dlg);
@@ -713,13 +715,6 @@ public class CompParmDialog extends GuiDialog
 			if (result != null)
 				dataTypeField.setText(result.first);
 		}
-//		else if (theDb.isOpenTSDB())
-//		{
-////TODO get rid of this and use the CWMS code above.
-//			String s = JOptionPane.showInputDialog(this, "Enter Data Type:");
-//			if (s != null)
-//				dataTypeField.setText(s);
-//		}
 	}
 
 	/**
@@ -784,18 +779,18 @@ public class CompParmDialog extends GuiDialog
 					return;
 				}
 			}
-			
+
 			String interval = (String) intervalCombo.getSelectedItem();
 			String tabSel = "";
-			String paramType = (theDb.isCwms() || theDb.isOpenTSDB()) ? 
+			String paramType = (theDb.isCwms() || theDb.isOpenTSDB()) ?
 				(String)paramTypeCombo.getSelectedItem() : null;
-			String duration = (theDb.isCwms() || theDb.isOpenTSDB()) ? 
+			String duration = (theDb.isCwms() || theDb.isOpenTSDB()) ?
 				(String)durationCombo.getSelectedItem() : null;
-			String version = (theDb.isCwms() || theDb.isOpenTSDB()) ? 
+			String version = (theDb.isCwms() || theDb.isOpenTSDB()) ?
 				versionField.getText().trim() : null;
 			if (theDb.isCwms() || theDb.isOpenTSDB())
 			{
-				// If algorithm is an aggregate (duration not 0), 
+				// If algorithm is an aggregate (duration not 0),
 				// AND timezone honors DST
 				// AND interval >= 1Day and does not start with '~'
 				// THEN display a warning.
@@ -811,7 +806,7 @@ public class CompParmDialog extends GuiDialog
 					TimeZone tz = TimeZone.getTimeZone(tzs);
 					if (tz.useDaylightTime())
 					{
-						if (JOptionPane.showConfirmDialog(this, 
+						if (JOptionPane.showConfirmDialog(this,
 							AsciiUtil.wrapString(
 								"This output is an aggregate in a timezone (" + tzs
 								+ ") that supports daylight time. "
@@ -824,7 +819,7 @@ public class CompParmDialog extends GuiDialog
 						}
 					}
 				}
-				
+
 				tabSel = paramType + "." + duration + "." + version;
 				if (parent.hasGroupInput())
 					tabSel = tabSel + "." + siteName + "." + dtcode;
@@ -846,6 +841,11 @@ public class CompParmDialog extends GuiDialog
 					}
 					catch (NumberFormatException ex)
 					{
+						log.atError()
+						   .setCause(ex)
+						   .log(LoadResourceBundle.sprintf(
+								ceResources.getString("CompParmDialog.OKError6"),
+								modelIdStr));
 						showError(LoadResourceBundle.sprintf(
 							ceResources.getString("CompParmDialog.OKError6"),
 							modelIdStr));
@@ -864,6 +864,11 @@ public class CompParmDialog extends GuiDialog
 				}
 				catch (NumberFormatException ex)
 				{
+					log.atError()
+					   .setCause(ex)
+					   .log(LoadResourceBundle.sprintf(
+							ceResources.getString("CompParmDialog.OKError7"),
+							deltaTStr));
 					showError(LoadResourceBundle.sprintf(
 						ceResources.getString("CompParmDialog.OKError7"),
 						deltaTStr));
@@ -882,19 +887,18 @@ public class CompParmDialog extends GuiDialog
 				}
 				catch (ConstraintException ex)
 				{
+					log.atError().setCause(ex).log(ceResources.getString("CompParmDialog.OKError8"));
 					showError(ceResources.getString("CompParmDialog.OKError8")
 							+ ex.getMessage());
 					return;
 				}
 			}
 
-//			theParm.setSiteId(siteId);
 			theParm.setSite(site);
 			theParm.setDataType(dt);
 			theParm.setInterval(interval);
 			DbKey dtid = dt == null ? Constants.undefinedId : dt.getId();
 			theParm.setDataTypeId(dtid);
-//System.out.println("Setting tabsel='" + tabSel + "'");
 			theParm.setTableSelector(tabSel);
 			theParm.setDeltaT(deltaT);
 			theParm.setDeltaTUnits(deltaTUnits);
@@ -905,7 +909,7 @@ public class CompParmDialog extends GuiDialog
 			if (unitsAbbr.length() == 0)
 				unitsAbbr = null;
 			parent.setHiddenProperty(theParm.getRoleName()+"_EU", unitsAbbr);
-			
+
 			String s;
 			if (theParm.isInput())
 			{
@@ -914,23 +918,6 @@ public class CompParmDialog extends GuiDialog
 					s = null;
 				parent.setHiddenProperty(theParm.getRoleName()+"_MISSING", s);
 			}
-
-// The following code is suspect: it is changing the site that is in the cache!!
-// Furthermore it is assuming that the siteName in the TextField is of the preferred type,
-// which is not necessarily true.
-// It must never do this!
-// Is this done so that when the dialog is displayed again, the same name can be displayed,
-// and not some alias for the same site??
-//			if (siteId != Constants.undefinedId)
-//			{
-//				theParm.addSiteName(
-//					new SiteName(null, DecodesSettings.instance().siteNameTypePreference,
-//						siteName));
-//			}
-//			else
-//			{
-//				theParm.clearSite();
-//			}
 
 			if (parent.hasGroupInput())
 			{
@@ -946,12 +933,12 @@ public class CompParmDialog extends GuiDialog
 				try
 				{
 					TimeSeriesIdentifier existingTsid = theDb.transformTsidByCompParm(
-						null,    // Original tsid (don't have one) 
+						null,    // Original tsid (don't have one)
 						theParm, // DbCompParm
 						false,   // DON'T Create if doesn't exist
 						true,    // Do fill in parm
 						nm);     // display name
-					
+
 					if (existingTsid == null)
 						throw new NoSuchObjectException("");
 				}
@@ -961,7 +948,7 @@ public class CompParmDialog extends GuiDialog
 					boolean canCreate = theDb.isHdb()
 						|| (algoParmType != null && algoParmType.toLowerCase().startsWith("o"));
 
-					if (canCreate && JOptionPane.showConfirmDialog(this, 
+					if (canCreate && JOptionPane.showConfirmDialog(this,
 						 ceResources.getString("CompParmDialog.DoesntExist"))
 						 == JOptionPane.YES_OPTION)
 					{
@@ -971,20 +958,17 @@ public class CompParmDialog extends GuiDialog
 							if (unitsAbbr != null && unitsAbbr.length() > 0)
 								theParm.setUnitsAbbr(unitsAbbr);
 							TimeSeriesIdentifier newTsid = theDb.transformTsidByCompParm(
-								null,    // Original tsid (don't have one) 
+								null,    // Original tsid (don't have one)
 								theParm, // DbCompParm
 								true,    // Create if doesn't exist
 								true,    // Do modify parm
 								nm);     // display name
-//SiteName sn = theParm.getSiteName();
-//Logger.instance().debug3("After TS creation, siteName=" + (sn==null ? "null" : sn.getNameValue()));
 						}
 						catch (Exception exi)
 						{
-							String msg = "Cannot create time-series: " + exi;
-							System.err.println(msg);
-							exi.printStackTrace(System.err);
-							showError(msg);
+							String msg = "Cannot create time-series";
+							log.atError().setCause(ex).log(msg);
+							showError(msg + ": " + exi);
 							return;
 						}
 					}
@@ -1000,11 +984,9 @@ public class CompParmDialog extends GuiDialog
 		}
 		catch (Exception ex)
 		{
-			String msg = ceResources.getString("CompParmDialog.OKError9") + " "
-				+ ex;
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
-			showError(msg);
+			String msg = ceResources.getString("CompParmDialog.OKError9");
+			log.atError().setCause(ex).log(msg);
+			showError(msg + ": " + ex);
 		}
 		closeDlg();
 	}
@@ -1063,7 +1045,7 @@ public class CompParmDialog extends GuiDialog
 			return;
 		}
 		DbKey siteId = Constants.undefinedId;
-		
+
 		// TODO 'dataTypes' is a misnomer what I'm building is a list of string arrays:
 		// the first row is the header labels for the select table.
 		// subsequent rows contain the residual fields for time series (minus site).
@@ -1087,7 +1069,7 @@ public class CompParmDialog extends GuiDialog
 						return;
 					}
 					dataTypes = new ArrayList<String[]>();
-					
+
 					String tsIdParts[] = theDb.getTsIdParts();
 					String hdr[] = new String[tsIdParts.length-1];
 					for(int idx=1; idx < tsIdParts.length; idx++)
@@ -1120,6 +1102,7 @@ public class CompParmDialog extends GuiDialog
 		}
 		catch (Exception ex)
 		{
+			log.atError().setCause(ex).log(ceResources.getString("CompParmDialog.LookupButtonError3"));
 			showError(ceResources
 				.getString("CompParmDialog.LookupButtonError3") + " " + ex);
 			return;

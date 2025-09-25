@@ -1,10 +1,22 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.compedit.algotab;
 
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.LineNumberReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.FileSystems;
@@ -12,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -24,7 +35,7 @@ import java.util.stream.Stream;
 import javax.swing.table.AbstractTableModel;
 
 import org.opendcs.utils.ClasspathIO;
-import org.slf4j.LoggerFactory;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
 
 import decodes.tsdb.CompMetaData;
 import decodes.tsdb.DbCompAlgorithm;
@@ -39,7 +50,7 @@ import opendcs.dai.AlgorithmDAI;
 
 public final class ExecClassTableModel extends AbstractTableModel
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(ExecClassTableModel.class);
+    private static final org.slf4j.Logger log = OpenDcsLoggerFactory.getLogger();
     private String colNames[] = {"Already Imported", "Name", "Exec Class", "Description"};
 
     private final ArrayList<Pair<Boolean,DbCompAlgorithm>> classlist = new ArrayList<>();
@@ -166,8 +177,8 @@ public final class ExecClassTableModel extends AbstractTableModel
                 if (!ex.getMessage().contains("Root element is not 'CompMetaData'"))
                 {
                     log.atWarn()
-                    .setCause(ex)
-                    .log("Unable to process file {}", url.toString());
+                       .setCause(ex)
+                       .log("Unable to process file {}", url.toString());
                 }
                 return Stream.empty();
             }
