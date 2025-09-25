@@ -1,19 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.util;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.File;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -25,7 +32,6 @@ import java.net.MalformedURLException;
 import ilex.util.EnvExpander;
 import ilex.util.FileUtil;
 import ilex.util.ServerLock;
-import ilex.util.Logger;
 import ilex.util.FileServerLock;
 
 /**
@@ -34,6 +40,7 @@ and then exits.
 */
 class DownloadPdtThread extends Thread
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String urlstr;
 	private String localfn;
 	private static final SimpleDateFormat dayFormat =
@@ -41,7 +48,7 @@ class DownloadPdtThread extends Thread
 	public static final long MS_PER_DAY = 1000L*3600L*24L;
 	private Pdt existingPdt;
 
-	/** 
+	/**
 	 * Constructor.
 	 * @param purlstr URL to download from
 	 * @param localfn name of local file to download to.
@@ -70,76 +77,59 @@ class DownloadPdtThread extends Thread
 		mylock.setCritical(false);
 		if (!mylock.obtainLock())
 		{
-			Logger.instance().warning("Cannot download PDT because lock file '" + lockpath
-				+ "' is either taken by another process or is unwritable.");
+			log.warn("Cannot download PDT because lock file '{}' is " +
+					 "either taken by another process or is unwritable.", lockpath);
 			return;
 		}
-		Logger.instance().info("Obtained lock file '" + lockpath + "' -- proceeding with download.");
-		
-		BufferedInputStream bis = null;
-		BufferedOutputStream bos = null;
+		log.info("Obtained lock file '{}' -- proceeding with download.", lockpath);
+
 		long now = System.currentTimeMillis();
 		File datedFile = new File(EnvExpander.expand(localfn)
 			+ "." + dayFormat.format(new Date(now)));
-		Logger.instance().info("Downloading '" + urlstr
-			+ "' to '" + datedFile.getPath() + "'");
+		log.info("Downloading '{}' to '{}'", urlstr, datedFile.getPath());
 		try
 		{
 			URL url = new URL(urlstr);
-			bis = new BufferedInputStream(url.openStream());
-			bos = new BufferedOutputStream(new FileOutputStream(datedFile));
-			// Note copyStream will close when done.
-			FileUtil.copyStream(bis, bos); 
-			bis = null;
-			bos = null;
+			try (BufferedInputStream bis = new BufferedInputStream(url.openStream());
+				 BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(datedFile));)
+			{
+				// Note copyStream will close when done.
+				FileUtil.copyStream(bis, bos);
+			}
 
-			Logger.instance().info("PDT downloaded to '" + datedFile.getPath()
-				+ "', file size=" + datedFile.length());
+			log.info("PDT downloaded to '{}', file size={}", datedFile.getPath(), datedFile.length());
 			File existingFile = new File(EnvExpander.expand(localfn));
-			Logger.instance().info("Merging PDT to '"+existingFile.getPath()+"'");
+			log.info("Merging PDT to '{}'", existingFile.getPath());
 			merge2ExistingPdt(datedFile, existingFile);
 		}
 		catch(MalformedURLException ex)
 		{
-			Logger.instance().warning("Cannot read PDT from '" + urlstr
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot read PDT from '{}'", urlstr);
 		}
 		catch(IOException ex)
 		{
-			Logger.instance().warning("Cannot download PDT from '" + urlstr
-				+ "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot download PDT from '{}'", urlstr);
 		}
-		finally
-		{
-			if (bis != null)
-			{
-				try{ bis.close(); } catch(IOException ex) {}
-			}
-			if (bos != null)
-			{
-				try{ bos.close(); } catch(IOException ex) {}
-			}
-		}
+
 		for(int i=5; i<60; i++)
 		{
 			File oldFile = new File(EnvExpander.expand(localfn)
 				+ "." + dayFormat.format(new Date(now - i * MS_PER_DAY)));
 			if (oldFile.exists())
 			{
-				Logger.instance().info("Deleting old PDT '" 
-					+ oldFile.getName() + "'");
+				log.info("Deleting old PDT '{}'", oldFile.getName());
 				oldFile.delete();
 			}
 		}
 		mylock.releaseLock();
-		
+
 		if (existingPdt.getPdtLoadListener() != null)
 		{
 			existingPdt.getPdtLoadListener().pdtLoaded();
 			existingPdt.setPdtLoadListener(null);
 		}
 	}
-	
+
 	/**
 	 * Merge the newly-downloaded file into the one currently being used by
 	 * applications.
@@ -149,10 +139,10 @@ class DownloadPdtThread extends Thread
 	public void merge2ExistingPdt(File newDownloadFile, File existingFile)
 	{
 		Pdt newDownloadPdt = new Pdt();
-		
+
 		newDownloadPdt.load(newDownloadFile);
 		existingPdt.load(existingFile);
-		
+
 		int numMods = 0;
 		for(PdtEntry newPdtEntry : newDownloadPdt.getEntries())
 		{
@@ -168,13 +158,13 @@ class DownloadPdtThread extends Thread
 		if (numMods > 0)
 		{
 			existingPdt.save(existingFile);
-			Logger.instance().info("DownloadPdtThread: saved new pdt to '"
-				+ existingFile.getPath() + " with " + numMods 
-				+ " modifications");
+			log.info("DownloadPdtThread: saved new pdt to '{}' with {} modifications.",
+					 existingFile.getPath(), numMods);
 		}
 		else
-			Logger.instance().info("DownloadPdtThread: No PDT changes."
-				+ " Final PDT has " + Pdt.instance().size() + " entries.");
+		{
+			log.info("DownloadPdtThread: No PDT changes. Final PDT has {} entries.", Pdt.instance().size());
+		}
 	}
-	
+
 }
