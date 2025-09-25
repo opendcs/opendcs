@@ -1,74 +1,25 @@
 /*
-* $Id$
-* 
-*  This is open-source software written by Sutron Corporation, under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log$
-* Revision 1.5  2017/08/22 19:56:39  mmaloney
-* Refactor
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.4  2017/04/19 19:29:05  mmaloney
-* CWMS-10609 nested group evaluation in group editor bugfix.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.3  2016/10/17 17:51:49  mmaloney
-* Add sub/base accessors for OpenDCS 6.3 CWMS Naming Standards
-*
-* Revision 1.2  2016/04/22 14:39:40  mmaloney
-* Guard against same subgroup being added multiple times.
-*
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
-*
-* Revision 1.12  2013/03/21 18:27:39  mmaloney
-* DbKey Implementation
-*
-* Revision 1.11  2012/07/19 14:10:50  mmaloney
-* comments
-*
-* Revision 1.10  2012/07/09 19:02:11  mmaloney
-* First cut of new daemon to update CP_COMP_DEPENDS.
-*
-* Revision 1.9  2012/07/05 18:27:04  mmaloney
-* tsKey is stored as a long.
-*
-* Revision 1.8  2011/02/04 21:30:16  mmaloney
-* Intersect groups
-*
-* Revision 1.7  2011/02/03 19:58:44  mmaloney
-* description defaults to empty string, not null.
-*
-* Revision 1.6  2011/01/28 20:03:09  gchen
-* *** empty log message ***
-*
-* Revision 1.5  2011/01/25 20:50:14  gchen
-* Add an group attribute inclusion to determine if a group is for included or excluded
-*
-* Revision 1.4  2011/01/11 06:29:46  gchen
-* Modify ExportComp and ImportComp to export or import TS groups within computations.
-*
-* Add ExportGroup and ImportGroup to export or import TS groups only.
-*
-* Revision 1.3  2010/12/23 18:23:36  mmaloney
-* udpated for groups
-*
-* Revision 1.2  2010/12/22 16:55:48  mmaloney
-* udpated for groups
-*
-* Revision 1.1  2010/11/28 21:05:24  mmaloney
-* Refactoring for CCP Time-Series Groups
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
-
 package decodes.tsdb;
-
-
-import ilex.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dao.CachableDbObject;
 
@@ -78,40 +29,40 @@ import decodes.sql.DbKey;
 import decodes.tsdb.xml.CompXioTags;
 
 /**
- * 
+ *
  * This class encapsulates information about TimeSeries Groups.
- * 
+ *
  */
-public class TsGroup
-  implements CompMetaData, CachableDbObject
+public class TsGroup implements CompMetaData, CachableDbObject
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private DbKey groupId = Constants.undefinedId;
 	private String groupName = null;
 	private String groupType = null;
 	private String description = "";
-	
+
 	/** Sites that are members */
 	private ArrayList<DbKey> siteIdList = new ArrayList<DbKey>();
-	
+
 	/** Data Types that are members */
 	private ArrayList<DbKey> dataTypeIdList = new ArrayList<DbKey>();
-	
+
 	/** Explicit time series that are members */
-	private ArrayList<TimeSeriesIdentifier> tsMemberList = 
+	private ArrayList<TimeSeriesIdentifier> tsMemberList =
 		new ArrayList<TimeSeriesIdentifier>();
-	
+
 	/** explicit time series members as strings, used by xml import/export programs only */
 	private ArrayList<String> tsMemberIDList = new ArrayList<String>();
-	
+
 	/** Other member types (statcode, interval, paramtype, version) */
 	private ArrayList<TsGroupMember> otherMembers = new ArrayList<TsGroupMember>();
 
 	/** Sub-groups to include */
 	private ArrayList<TsGroup> includeGroups = new ArrayList<TsGroup>();
-	
+
 	/** Sub-groups to exclude */
 	private ArrayList<TsGroup> excludeGroups = new ArrayList<TsGroup>();
-	
+
 	/** Sub-groups to intersect with this one */
 	private ArrayList<TsGroup> intersectedGroups = new ArrayList<TsGroup>();
 
@@ -119,9 +70,9 @@ public class TsGroup
 	private ArrayList<String> siteNameList = new ArrayList<String>();
 	private boolean _isExpanded = false;
 	private boolean _isTransient = false;
-	private ArrayList<TimeSeriesIdentifier> expandedList = 
+	private ArrayList<TimeSeriesIdentifier> expandedList =
 		new ArrayList<TimeSeriesIdentifier>();
-	
+
 	/**
 	 * Default Constructor makes an empty group.
 	 */
@@ -129,7 +80,7 @@ public class TsGroup
 	{
 	}
 
-	/** 
+	/**
 	 * Makes a copy of this group, with a new name and a -1 ID.
 	 * @param newName the name to give the new group.
 	 * @return a copy of this group, with a new name and a -1 ID.
@@ -146,7 +97,7 @@ public class TsGroup
 		g.expandedList = new ArrayList<TimeSeriesIdentifier>();
 		for(TimeSeriesIdentifier tsid : this.expandedList)
 			g.expandedList.add(tsid);
-		
+
 		g.includeGroups = (ArrayList<TsGroup>)includeGroups.clone();
 		g.dataTypeIdList = (ArrayList<DbKey>)dataTypeIdList.clone();
 		g.siteIdList = (ArrayList<DbKey>)siteIdList.clone();
@@ -158,13 +109,13 @@ public class TsGroup
 		g.otherMembers = (ArrayList<TsGroupMember>)otherMembers.clone();
 		g.excludeGroups = (ArrayList<TsGroup>)excludeGroups.clone();
 		g.intersectedGroups = (ArrayList<TsGroup>)intersectedGroups.clone();
-		
+
 		g.siteNameList = (ArrayList<String>)siteNameList.clone();
 		g._isExpanded = false;
-		
+
 		return g;
 	}
-	
+
 	/**
 	 * Clears all entries from this group.
 	 * Called before (re)reading from database.
@@ -183,7 +134,7 @@ public class TsGroup
 		tsMemberIDList.clear();
 	}
 
-	/** 
+	/**
 	 * @return surrogate database key for this group, or Constants.undefinedId
 	 * if this group is not yet saved to database.
 	 */
@@ -213,7 +164,7 @@ public class TsGroup
 		this.groupName = groupName;
 	}
 
-	
+
 	/**
 	 * @return the string representing the type of this group
 	 */
@@ -280,7 +231,7 @@ public class TsGroup
 		rmOtherMember(type, value);
 		otherMembers.add(new TsGroupMember(type, value));
 	}
-	
+
 	/**
 	 * @return the entire list of other members
 	 */
@@ -304,21 +255,21 @@ public class TsGroup
 				ret.add(tgm.getMemberValue());
 		return ret;
 	}
-	
-	
+
+
 	/** @return the list of data descriptor objects */
 	public ArrayList<TimeSeriesIdentifier> getExpandedList()
 	{
 		return expandedList;
 	}
-	
+
 	/** Clears the expanded list */
 	public void clearExpandedList()
 	{
 		expandedList.clear();
 	}
 
-	
+
 	/**
 	 * Removes the matching other member, returns true if found and removed.
 	 * @param type the member type to remove
@@ -344,7 +295,7 @@ public class TsGroup
 	/**
 	 * Return a non-persistent set of interval codes in this group.
 	 * Changes to the returned collection are not saved!
-	 * @return a non-persistent set of interval codes in this group. 
+	 * @return a non-persistent set of interval codes in this group.
 	 */
 	public ArrayList<String> getIntervalCodeList()
 	{
@@ -354,7 +305,7 @@ public class TsGroup
 	/**
 	 * Return a non-persistent set of ParamType codes in this group.
 	 * Changes to the returned collection are not saved!
-	 * @return a non-persistent set of ParamType codes in this group. 
+	 * @return a non-persistent set of ParamType codes in this group.
 	 */
 	public ArrayList<String> getParamTypeList()
 	{
@@ -364,7 +315,7 @@ public class TsGroup
 	/**
 	 * Return a non-persistent set of Duration codes in this group.
 	 * Changes to the returned collection are not saved!
-	 * @return a non-persistent set of Duration codes in this group. 
+	 * @return a non-persistent set of Duration codes in this group.
 	 */
 	public ArrayList<String> getDurationList()
 	{
@@ -374,7 +325,7 @@ public class TsGroup
 	/**
 	 * Return a non-persistent set of Version codes in this group.
 	 * Changes to the returned collection are not saved!
-	 * @return a non-persistent set of Version codes in this group. 
+	 * @return a non-persistent set of Version codes in this group.
 	 */
 	public ArrayList<String> getVersionList()
 	{
@@ -390,29 +341,9 @@ public class TsGroup
 	 */
 	public void addSubGroup(TsGroup subGroupMember, char combine)
 	{
-		// MJM 2016 04/18 a group can only be in one of the lists and only once.
-//		for(Iterator<TsGroup> git = excludeGroups.iterator(); git.hasNext(); )
-//		{
-//			TsGroup grp = git.next();
-//			if (grp.getKey().equals(subGroupMember.getKey()))
-//				git.remove();
-//		}
-//		for(Iterator<TsGroup> git = intersectedGroups.iterator(); git.hasNext(); )
-//		{
-//			TsGroup grp = git.next();
-//			if (grp.getKey().equals(subGroupMember.getKey()))
-//				git.remove();
-//		}
-//		for(Iterator<TsGroup> git = includeGroups.iterator(); git.hasNext(); )
-//		{
-//			TsGroup grp = git.next();
-//			if (grp.getKey().equals(subGroupMember.getKey()))
-//				git.remove();
-//		}
-		
 		combine = Character.toUpperCase(combine);
-		Logger.instance().debug3("TsGroup.addSubGroup(" + subGroupMember.getGroupName()
-			+ ", " + combine + ") this group=" + this.groupName);
+		log.trace("TsGroup.addSubGroup({},{}), this group={}",
+				  subGroupMember.getGroupName(), combine, this.groupName);
 		if (combine == 'S' || combine == 'F')
 			excludeGroups.add(subGroupMember);
 		else if (combine == 'I')
@@ -428,7 +359,7 @@ public class TsGroup
 	{
 		return includeGroups;
 	}
-	
+
 	/**
 	 * @return list of sub groups that are excluded from this group.
 	 */
@@ -436,7 +367,7 @@ public class TsGroup
 	{
 		return excludeGroups;
 	}
-	
+
 	/**
 	 * Adds an explicit time-series member
 	 * @param tsid the time series identifier
@@ -445,12 +376,12 @@ public class TsGroup
 	{
 		tsMemberList.add(tsid);
 	}
-	
+
 	public void addTsMemberID(String tsidStr)
 	{
 		tsMemberIDList.add(tsidStr);
 	}
-	
+
 	/**
 	 * @return the list of explicit time-series members
 	 */
@@ -458,25 +389,25 @@ public class TsGroup
 	{
 		return tsMemberList;
 	}
-	
+
 	public ArrayList<String> getTsMemberIDList()
 	{
 		return tsMemberIDList;
 	}
 
-	
-	/** 
+
+	/**
 	 * Adds a time series to the expanded list.
 	 * Before use, the list is evaluated by the database code and all time
 	 * series that are determined to be members are added to the 'expanded'
-	 * list using this method. 
+	 * list using this method.
 	 */
 	public void addToExpandedList(TimeSeriesIdentifier tsid)
 	{
 		rmFromExpandedList(tsid);
 		expandedList.add(tsid);
 	}
-	
+
 	public void rmFromExpandedList(TimeSeriesIdentifier tsid)
 	{
 		for(Iterator<TimeSeriesIdentifier> tsidit = expandedList.iterator();
@@ -487,7 +418,7 @@ public class TsGroup
 				tsidit.remove();
 		}
 	}
-	
+
 	/**
 	 * Return true if the expanded list contains the passed TSID.
 	 * @param tsid the TSID to check
@@ -527,7 +458,7 @@ public class TsGroup
 
 
 
-	/** 
+	/**
 	 * Called after group expanded and then made more restrictive.
 	 * Go through current list of DataDescriptors and delete the ones that
 	 * are no longer in the group.
@@ -571,7 +502,7 @@ public class TsGroup
 
 					//retrieve name of site
 					SiteName sn = tsid.getSite().getName(nameType);
-					if (sn != null 
+					if (sn != null
 					 && sn.getNameValue().equalsIgnoreCase(nameValue))
 					{
 						siteNameOK = true;
@@ -613,7 +544,7 @@ public class TsGroup
 					}
 				}
 			}
-			
+
 			// Fell through all the checks, go on to next TSID
 			i++;
 		}
@@ -644,7 +575,7 @@ public class TsGroup
 
 	/**
 	 * Determine if theGroup exists in the subgroup list
-	 * 
+	 *
 	 * @param theGroup
 	 * @return true if exist; otherwise, false.
 	 */
@@ -659,7 +590,7 @@ public class TsGroup
 		for (TsGroup g: intersectedGroups)
 			if (g != null && g.getGroupName().equals(theGroup.getGroupName()))
 				return true;
-		
+
 		return false;
 	}
 
@@ -672,7 +603,7 @@ public class TsGroup
 	{
 		this.intersectedGroups = intersectedGroups;
 	}
-	
+
 	public boolean isInExpandedList(DbKey tsKey)
 	{
 		for(TimeSeriesIdentifier tsid : expandedList)
@@ -692,5 +623,5 @@ public class TsGroup
 	{
 		return groupName;
 	}
-	
+
 }
