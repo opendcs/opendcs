@@ -214,7 +214,6 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 				aggregateTimeZone = t_string;
 				aggTZ = tz;
 				aggCal.setTimeZone(aggTZ);
-				debugSdf.setTimeZone(TimeZone.getTimeZone(aggregateTimeZone));
 				log.trace("Setting aggregate TimeZone to '{}'' current time={}",
 						  aggregateTimeZone, new Date());
 			}
@@ -949,15 +948,13 @@ public abstract class AW_AlgorithmBase extends DbAlgorithmExecutive implements P
 	{
 		if (!_inTimeSlice)
 		{
-			warning("Cannot get '" + name
-				+ "' flag bits outside a time-slice.");
+			log.warn("Cannot get '{}' flag bits outside a time-slice.", name);
 			return 0;
 		}
 		NamedVariable v = _timeSliceVars.findByName(name);
 		if (v == null)
 		{
-			warning("Cannot get '" + name
-					+ "' flag bits -- no variable with that name.");
+			log.warn("Cannot get '{}' flag bits -- no variable with that name.", name);
 			return 0;
 		}
 		return v.getFlags();

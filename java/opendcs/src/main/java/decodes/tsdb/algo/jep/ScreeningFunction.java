@@ -112,7 +112,7 @@ public class ScreeningFunction extends PostfixMathCommand
 				log.atWarn()
 				   .setCause(ex)
 				   .log("({}) tsid={} value at time {} is not a number '{}'",
-				   		name, inputTsid.getUniqueString(), tsbt, tv.getStringValue() + "'");
+				   		name, inputTsid.getUniqueString(), tsbt, tv.getStringValue());
 			}
 		}
 		inStack.push(Double.valueOf(retFlags));
