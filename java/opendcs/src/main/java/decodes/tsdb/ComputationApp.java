@@ -119,6 +119,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TimeZone;
+
+import org.opendcs.tsdb.TaskListEntry;
+
 import java.net.InetAddress;
 
 import opendcs.dai.ComputationDAI;
@@ -451,8 +454,10 @@ public class ComputationApp
 									+ "' DbCompException: " + ex;
 								warning(msg);
 								compErrors++;
-								for(Integer rn : comp.getTriggeringRecNums())
+								for(TaskListEntry rn : comp.getTriggeringRecNums())
+								{
 									 dataCollection.getTasklistHandle().markComputationFailed(rn);
+								}
 							}
 							catch(Exception ex)
 							{
@@ -462,8 +467,10 @@ public class ComputationApp
 								warning(msg);
 								System.err.println(msg);
 								ex.printStackTrace(System.err);
-								for(Integer rn : comp.getTriggeringRecNums())
+								for(TaskListEntry rn : comp.getTriggeringRecNums())
+								{
 									 dataCollection.getTasklistHandle().markComputationFailed(rn);
+								}
 							}
 							comp.getTriggeringRecNums().clear();
 							Logger.instance().debug1("End of computation '" 

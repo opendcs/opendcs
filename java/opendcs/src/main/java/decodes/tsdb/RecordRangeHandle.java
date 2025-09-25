@@ -20,58 +20,71 @@ package decodes.tsdb;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+
+import org.opendcs.tsdb.FailedTaskListEntry;
+import org.opendcs.tsdb.TaskListEntry;
 
 import decodes.sql.DbKey;
 
 public class RecordRangeHandle
 {
 	private DbKey appId;
-	private ArrayList<Integer> recnums;
-	private HashSet<Integer> failed_recnums;
+	private ArrayList<TaskListEntry> recNums;
+	private HashSet<FailedTaskListEntry> failedRecNums;
 
 	public RecordRangeHandle(DbKey appId)
 	{
 		this.appId = appId;
-		recnums = new ArrayList<Integer>();
-		failed_recnums = new HashSet<Integer>();
+		recNums = new ArrayList<>();
+		failedRecNums = new HashSet<>();
 	}
 
 	/** @return the application ID */
-	public DbKey getAppId() { return appId; }
+	public DbKey getAppId()
+	{
+		return appId;
+	}
 
 	/**
 	 * Adds a record number.
+<<<<<<< HEAD:java/opendcs/src/main/java/decodes/tsdb/RecordRangeHandle.java
 	 * @param recordNumber the record number
+=======
+	 * @param entry the record number
+>>>>>>> eef43abcc (Initial full modifications to tasklist handling.):src/main/java/decodes/tsdb/RecordRangeHandle.java
 	 */
-	public void addRecNum(int recordNumber)
+	public void addRecNum(TaskListEntry entry)
 	{
-		recnums.add(recordNumber);
+		recNums.add(entry);
 	}
 
 	/**
 	 * Returns a string containing comma-separated integer record numbers.
 	 * The returned integers are also removed from the list.
-	 * @param max the maximum number of integers to return.
+	 * @param max the maximum number of integers to return. (ignored)
 	 */
-	public String getRecNumList(int max)
+	public List<? extends TaskListEntry> getRecNumList(int max)
 	{
-		StringBuilder sb = new StringBuilder();
-		int n = recnums.size();
-		int x=0;
-		for(; x<max && x<n; x++)
+		List<TaskListEntry> entries = new ArrayList<>();
+		if (max <= 0)
 		{
-			if (x > 0)
-				sb.append(", ");
-			sb.append(recnums.get(x).toString());
+			entries.addAll(this.recNums);
+			recNums.clear();
 		}
-		if (x > 0)
+		else
 		{
-			ArrayList<Integer> oldrn = recnums;
-			recnums = new ArrayList<Integer>();
-			for(; x<n; x++)
-				recnums.add(oldrn.get(x));
+			int x = 0;
+			Iterator<? extends TaskListEntry> it = recNums.iterator();
+			while (x < max && it.hasNext())
+			{
+				x++;
+				TaskListEntry e = it.next();
+				entries.add(e);
+				it.remove();
+			}
 		}
-		return sb.toString();
+		return entries;
 	}
 
 	/**
@@ -79,33 +92,45 @@ public class RecordRangeHandle
 	 * The returned integers are also removed from the list.
 	 * @param max the maximum number of integers to return.
 	 */
-	public String getFailedRecNumList(int max)
+	public List<FailedTaskListEntry> getFailedRecNumList(long max)
 	{
-		StringBuilder sb = new StringBuilder();
-		int x=0;
-		for(Iterator<Integer> iit = failed_recnums.iterator(); 
-			iit.hasNext() && x < max; x++)
+		List<FailedTaskListEntry> entries = new ArrayList<>();
+		if (max <= 0)
 		{
-			if (x > 0)
-				sb.append(", ");
-			Integer rn = iit.next();
-			sb.append(rn.toString());
-			iit.remove();
+			entries.addAll(this.failedRecNums);
+			failedRecNums.clear();
 		}
-		return sb.toString();
+		else
+		{
+			int x=0;
+			for(Iterator<FailedTaskListEntry> iit = failedRecNums.iterator();
+				iit.hasNext() && x < max; x++)
+			{
+				FailedTaskListEntry e = iit.next();
+				entries.add(e);
+				iit.remove();
+			}
+		}
+		return entries;
 	}
 
 
 	/** @return number of record numbers in the list. */
-	public int size() { return recnums.size(); }
+	public int size()
+	{
+		return recNums.size();
+	}
 
 	/** @return list of tasklist rec #s that had failed computations. */
-	public HashSet<Integer> getFailedRecnums() { return failed_recnums; }
+	public HashSet<FailedTaskListEntry> getFailedRecnums()
+	{
+		return failedRecNums;
+	}
 
 	/** Called after a computation fails, marks this rec# as failed. */
-	public void markComputationFailed(Integer recnum)
+	public void markComputationFailed(TaskListEntry taskRecord)
 	{
-		recnums.remove(recnum);
-		failed_recnums.add(recnum);
+		recNums.remove(taskRecord);
+		failedRecNums.add(new FailedTaskListEntry(taskRecord));
 	}
 }
