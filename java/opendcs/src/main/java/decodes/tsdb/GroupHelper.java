@@ -1,6 +1,19 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb;
-
-import ilex.util.Logger;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -10,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.TreeSet;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import decodes.sql.DbKey;
@@ -17,11 +33,12 @@ import decodes.sql.DbKey;
 
 public abstract class GroupHelper
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	protected TimeSeriesDb tsdb;
-	
+
 	// to save expanded groups in a file after evaluation (for debugging).
 	protected File groupCacheDumpDir = null;
-	
+
 	@SuppressWarnings("serial")
 	protected class TsIdSet extends TreeSet<TimeSeriesIdentifier>
 	{
@@ -44,7 +61,7 @@ public abstract class GroupHelper
 	{
 		this.tsdb = tsdb;
 	}
-	
+
 	public void evalAll()
 		throws DbIoException
 	{
@@ -59,13 +76,13 @@ public abstract class GroupHelper
 		}
 		catch(DbIoException ex)
 		{
-			tsdb.warning("GroupHelper.evalAll error listing groups: " + ex);
+			log.atWarn().setCause(ex).log("GroupHelper.evalAll error listing groups.");
 			return;
 		}
 	}
-	
+
 	/**
-	 * Recursively expand groups to find all ts_ids under the 
+	 * Recursively expand groups to find all ts_ids under the
 	 * specified group. This method would be called by report-generator
 	 * programs that are given a group and must process all time-series
 	 * contained within it or within its sub-groups.
@@ -76,24 +93,24 @@ public abstract class GroupHelper
 	public void expandTsGroup(TsGroup tsGroup)
 		throws DbIoException
 	{
-		tsdb.debug("GroupHelper.expandTsGroup group '" + tsGroup.getGroupName() + "'");
-		
+		log.debug("GroupHelper.expandTsGroup group '{}'", tsGroup.getGroupName());
+
 		tsGroup.clearExpandedList();
 
 		ArrayList<DbKey> groupIdsDone = new ArrayList<DbKey>();
 		TsIdSet tsIdSet = doExpandTsGroup(tsGroup, groupIdsDone);
-		
+
 		for(TimeSeriesIdentifier dd : tsIdSet)
 			tsGroup.addToExpandedList(dd);
-		
+
 		tsGroup.setIsExpanded(true);
 		// This group is now completely expanded.
-		
+
 		if (groupCacheDumpDir != null)
 			dumpGroup(tsGroup);
-		
+
 	}
-	
+
 	/**
 	 * This method is called from expandTsGroup prior to calling passesParts for each TSID
 	 * in the cache. It allows the subclass to do any pump priming necessary.
@@ -102,7 +119,7 @@ public abstract class GroupHelper
 	 */
 	protected abstract void prepareForExpand(TsGroup grp)
 		throws DbIoException;
-	
+
 	/**
 	 * This recursive method does the actual work for expanding a group.
 	 * @param tsGroup The group to expand.
@@ -113,9 +130,9 @@ public abstract class GroupHelper
 	protected TsIdSet doExpandTsGroup(TsGroup grp, ArrayList<DbKey> groupIdsDone)
 		throws DbIoException
 	{
-		tsdb.debug1("doExpandTsGroup '" + grp.getGroupName() + "'");
+		log.debug("doExpandTsGroup '{}'", grp.getGroupName());
 		TsIdSet tsIdSet = new TsIdSet();
-		
+
 		// There may be dups & circular references in the hierarchy.
 		// Only process each group once.
 		for(DbKey id : groupIdsDone)
@@ -126,7 +143,7 @@ public abstract class GroupHelper
 			}
 
 		groupIdsDone.add(grp.getGroupId());
-		
+
 		/** Some implementations (CWMS) have to compile regex's etc., before expanding. */
 		prepareForExpand(grp);
 
@@ -138,13 +155,16 @@ public abstract class GroupHelper
 		try ( TimeSeriesDAI timeSeriesDAO = tsdb.makeTimeSeriesDAO() )
 		{
 			ArrayList<TimeSeriesIdentifier> cachedTsids = timeSeriesDAO.listTimeSeries();
-			tsdb.debug2("...cached TSID list has " + cachedTsids.size() + " TSIDs.");
-			tsdb.debug2("...group has " + grp.getDataTypeIdList().size() + " datatypes.");
+			log.trace("...cached TSID list has {} TSIDs.", cachedTsids.size());
+			log.trace("...group has {} datatypes.", grp.getDataTypeIdList().size());
 			for(TimeSeriesIdentifier tsid : cachedTsids)
+			{
 				if (passesParts(grp, tsid))
+				{
 					tsIdSet.add(tsid);
-			tsdb.debug2("...after passesParts loop '" + grp.getGroupName() + "' has "
-				+ tsIdSet.size() + " TSIDs.");
+				}
+			}
+			log.trace("...after passesParts loop '{}' has {} TSIDs.", grp.getGroupName(), tsIdSet.size());
 		}
 
 		// Do the include/exclude/intersect with sub-groups
@@ -158,21 +178,20 @@ public abstract class GroupHelper
 			TreeSet<TimeSeriesIdentifier> exclTsids = doExpandTsGroup(exclGroup, groupIdsDone);
 			tsIdSet.removeAll(exclTsids);
 		}
-		
+
 		for(TsGroup intsGroup : grp.getIntersectedGroups())
 		{
 			TreeSet<TimeSeriesIdentifier> intsTsids = doExpandTsGroup(intsGroup, groupIdsDone);
 			tsIdSet.retainAll(intsTsids);
 		}
-		
-		tsdb.debug1("Evaluated group '" + grp.getGroupName() + "' has "
-			+ tsIdSet.size() + " TSIDs.");
-		
+
+		log.debug("Evaluated group '{}' has {} TSIDs.", grp.getGroupName(), tsIdSet.size());
+
 		return tsIdSet;
 	}
 
-	
-	
+
+
 
 	/**
 	 * Recurse UP the tree to re-evaluate any parents to a modified group.
@@ -183,7 +202,7 @@ public abstract class GroupHelper
 		throws DbIoException
 	{
 		TreeSet<DbKey> needsEval = new TreeSet<DbKey>();
-		
+
 		try ( TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO() )
 		{
 			findParentsOf(groupId, needsEval, tsGroupDAO);
@@ -197,14 +216,14 @@ public abstract class GroupHelper
 			}
 		}
 	}
-	
+
 	/**
 	 * Recurse up the tree of groups finding all parent groups that might be affected
 	 * by a change in the group specified by groupId.
 	 * @param groupId The ID of the group we are checking
 	 * @param needsEval collect all affected group IDs here
 	 * @param tsGroupDAO
-	 * @throws DbIoException 
+	 * @throws DbIoException
 	 */
 	private void findParentsOf(DbKey groupId, TreeSet<DbKey> needsEval, TsGroupDAI tsGroupDAO)
 		throws DbIoException
@@ -212,15 +231,15 @@ public abstract class GroupHelper
 		if (needsEval.contains(groupId))
 		// Guard against circular references:
 			return;
-		
+
 		needsEval.add(groupId);
-		
+
 		// Find any group that includes/excludes/or intersects this one
 		for(TsGroup parent : tsGroupDAO.getTsGroupList(null))
 		{
 			if (parent.getKey().equals(groupId))
 				continue;
-			
+
 			boolean affects = false;
 			for(TsGroup parentIncludes : parent.getIncludedSubGroups())
 				if (parentIncludes.getGroupId() == groupId)
@@ -247,12 +266,12 @@ public abstract class GroupHelper
 		}
 	}
 
-	
+
 	public void setGroupCacheDumpDir(File groupCacheDumpDir)
 	{
 		this.groupCacheDumpDir = groupCacheDumpDir;
 	}
-	
+
 	public File getGroupCacheDumpDir()
 	{
 		return groupCacheDumpDir;
@@ -270,23 +289,23 @@ public abstract class GroupHelper
 				fn.setCharAt(i, '_');
 		}
 		File f = new File(groupCacheDumpDir, fn.toString());
-		try
+		try (PrintWriter pw = new PrintWriter(new FileWriter(f)))
 		{
-			tsdb.info("Writing '" + f.getPath() + "'");
-			PrintWriter pw = new PrintWriter(new FileWriter(f));
+			log.info("Writing '{}'", f.getPath());
 			for(TimeSeriesIdentifier tsid : grp.getExpandedList())
+			{
 				pw.println(tsid.getUniqueString());
-			pw.close();
+			}
 		}
 		catch (IOException ex)
 		{
-			tsdb.info("Cannot write group-cache file '" + f.getPath() + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot write group-cache file '{}'", f.getPath());
 		}
 	}
-	
+
 	/**
-	 * Recursively, check the passed tsid against the group criteria, 
-	 * including sub-groups. 
+	 * Recursively, check the passed tsid against the group criteria,
+	 * including sub-groups.
 	 * If the passed tsid is a member, add it to the expanded list.
 	 * @param grp the group
 	 * @param tsid the time series identifier
@@ -299,13 +318,8 @@ public abstract class GroupHelper
 		try { prepareForExpand(grp); }
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot prepare group '" + grp.getGroupName() + "' for expansion: " + ex);
+			log.atWarn().setCause(ex).log("Cannot prepare group '{}' for expansion.", grp.getGroupName());
 		}
-
-boolean testmode = tsid.getUniqueString().contains("ombined-raw") 
-&& grp.getGroupName().equalsIgnoreCase("lrgs-raw");
-if (testmode) Logger.instance().debug2("checkMembership(grp=" + grp.getGroupName() + ", tsid="
-+ tsid.getUniqueString());
 
 		// There may be dups & circular references in the hierarchy.
 		// Only process each group once.
@@ -315,30 +329,27 @@ if (testmode) Logger.instance().debug2("checkMembership(grp=" + grp.getGroupName
 		grpIdsDone.add(grp.getGroupId());
 
 		boolean passes = false;
-		
+
 		// Check explicit TSIDs
 		for(TimeSeriesIdentifier explicitTsid : grp.getTsMemberList())
 			if (tsid.getKey() == explicitTsid.getKey()
 			 || tsid.getUniqueString().equalsIgnoreCase(explicitTsid.getUniqueString()))
 			{
 				passes = true;
-if (testmode) Logger.instance().debug2("... PASSES because explicit member!");
 				break;
 			}
-		
+
 		// Check the parts
 		if (!passes)
 		{
 			passes = passesParts(grp, tsid);
-if (testmode && passes) Logger.instance().debug2("... PASSES because passesParts!");
 		}
-		
+
 		// Check the sub-groups.
 		for(TsGroup included : grp.getIncludedSubGroups())
 			if (checkMembership(included, tsid, grpIdsDone))
 			{
 				passes = true;
-if (testmode) Logger.instance().debug2("... PASSES because in INCLUDED sub group " + included.getGroupName()+"!");
 				break;
 			}
 		for(TsGroup excluded : grp.getExcludedSubGroups())
@@ -358,7 +369,7 @@ if (testmode) Logger.instance().debug2("... PASSES because in INCLUDED sub group
 			grp.addToExpandedList(tsid);
 		return passes;
 	}
-	
+
 	/**
 	 * Check against TSID Parts specified in the group.
 	 * @param grp the group
@@ -371,9 +382,9 @@ if (testmode) Logger.instance().debug2("... PASSES because in INCLUDED sub group
 	 * Check a new tsid against all groups and adjust accordingly if it
 	 * is a member of any group in the cache.
 	 * @param tsid
-	 * @throws DbIoException 
+	 * @throws DbIoException
 	 */
-	public void checkGroupMembership(TimeSeriesIdentifier tsid) 
+	public void checkGroupMembership(TimeSeriesIdentifier tsid)
 		throws DbIoException
 	{
 		ArrayList<DbKey> grpIdsDone = new ArrayList<DbKey>();

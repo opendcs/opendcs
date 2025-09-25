@@ -1,37 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*  
-*  $Log$
-*  Revision 1.5  2019/02/26 17:16:44  mmaloney
-*  HDB 660
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.4  2018/11/14 15:52:48  mmaloney
-*  Added transient nextRunTime attribute with accessor methods. Needed for timed computations.
-*
-*  Revision 1.3  2018/05/01 17:39:26  mmaloney
-*  sourceId is now a DbKey
-*
-*  Revision 1.2  2014/10/07 12:41:25  mmaloney
-*  removed SeasonID
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.18  2013/08/18 19:48:45  mmaloney
-*  Implement EffectiveStart/End relative properties
-*
-*  Revision 1.17  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
@@ -39,12 +19,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Properties;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Enumeration;
 import java.util.Iterator;
 
 import opendcs.dao.CachableHasProperties;
 
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
@@ -57,27 +40,27 @@ import decodes.tsdb.xml.CompXioTags;
 * execution (by instantiating and initializing it's algorithm
 * object), and for applying the computation to a time series.
 */
-public class DbComputation
-	implements CompMetaData, CachableHasProperties
+public class DbComputation implements CompMetaData, CachableHasProperties
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** Computation ID in database. */
 	private DbKey computationId;
-	
+
 	/**
 	 * Name of this computation as defined in the database.
 	 * Note this should be a unique key also.
 	 */
 	private String name;
-	
+
 	/** Multi-line comment.  */
 	private String comment;
 
 	/** The loading application ID. */
 	private DbKey appId;
-	
+
 	/** Last time this computation, or any of its constituents was changed. */
 	private Date lastModified;
-	
+
 	/** True if this computation is enabled for execution. */
 	private boolean enabled;
 
@@ -116,34 +99,31 @@ public class DbComputation
 
 	/** Used during execution to correlate run id's between inputs & outputs. */
 	private int modelRunId;
-	
+
 	/** Assigned when computation is initialized for exec. */
 	private DbKey dataSourceId = DbKey.NullKey;
 
-//	/** Indicates this is a transient generated computation for a group. */
-//	private boolean _isTransient = false;
-
-	/** 
-	 * Temporary storage for the tasklist recnums that triggered this 
+	/**
+	 * Temporary storage for the tasklist recnums that triggered this
 	 * execution of the computation.
 	 */
 	private HashSet<Integer> triggeringRecNums;
-	
+
 	/** New database attribute for db version 9 */
 	private DbKey groupId = Constants.undefinedId;
 	private TsGroup group = null;
 	private String groupName = null;
-	
+
 	/** Temporary storage for HDB Convert2Group utility */
 	public TimeSeriesIdentifier triggeringTsid = null;
-	
+
 	boolean isReloaded =false;
-	
+
 	/** For timed computations, compproc will use this transient field to track when to run. */
 	private transient Date nextRunTime = null;
 
 	/**
-	 * Constructor. 
+	 * Constructor.
 	 * @param id unique computation ID.
 	 * @param name name of this computation.
 	 */
@@ -182,7 +162,7 @@ public class DbComputation
 	/** Sets the name */
 	public void setName(String name) { this.name = name; }
 
-	/** 
+	/**
 	 * Sets the Multi-line comment.
 	 * @param x the comment
 	 */
@@ -197,17 +177,17 @@ public class DbComputation
 	/** @return the loading application ID. */
 	public DbKey getAppId() { return appId; }
 
-	/** 
-	 * Sets the loading application ID. 
+	/**
+	 * Sets the loading application ID.
 	 * @param x the app ID.
 	 */
 	public void setAppId(DbKey x)
 	{
 		appId = x;
 	}
-	
-	/** 
-	 * Set last modify time. 
+
+	/**
+	 * Set last modify time.
 	 * @param x the last modify time.
 	 */
 	public void setLastModified(Date x)
@@ -217,17 +197,17 @@ public class DbComputation
 
 	/** @return last modify time. */
 	public Date getLastModified() { return lastModified; }
-	
+
 	/** @return True if this computation is enabled for execution. */
 	public boolean isEnabled() { return enabled; }
 
-	/** 
+	/**
 	 * Sets flag indicating whether this computation is enabled for execution.
 	 * @param flag True if this computation is enabled for execution.
 	 */
 	public void setEnabled(boolean flag) { enabled = flag; }
 
-	/** 
+	/**
 	 * Sets start of date range for which this computation is valid.
 	 * If not null, this also clears any "EffectiveStart" property that was previously set.
 	 * @param x the start of date range.
@@ -242,8 +222,8 @@ public class DbComputation
 	/** @return start of date range for which this computation is valid. */
 	public Date getValidStart() { return validStart; }
 
-	/** 
-	 * Sets end of date range for which this computation is valid. 
+	/**
+	 * Sets end of date range for which this computation is valid.
 	 * If not null, this also clears any "EffectiveEnd" property that was previously set.
 	 * @param x the end of date range.
 	 */
@@ -258,7 +238,7 @@ public class DbComputation
 	public Date getValidEnd() { return validEnd; }
 
 	/**
-	 * Sets link to the algorithm's meta-data. 
+	 * Sets link to the algorithm's meta-data.
 	 * @param algorithm the link.
 	 */
 	public void setAlgorithm(DbCompAlgorithm algorithm)
@@ -283,7 +263,7 @@ public class DbComputation
 			return algorithmId;
 	}
 
-	/** 
+	/**
 	 * Adds a property to this computation's meta-data.
 	 * @param name the property name.
 	 * @param value the property value.
@@ -349,7 +329,7 @@ public class DbComputation
 	{
 		return parmList.iterator();
 	}
-	
+
 	public ArrayList<DbCompParm> getParmList()
 	{
 		return parmList;
@@ -396,8 +376,8 @@ public class DbComputation
 		throws DbCompException, DbIoException
 	{
 		if (executive == null)
-			throw new DbCompException("Computation '" + name 
-				+ "' not initialized.");		
+			throw new DbCompException("Computation '" + name
+				+ "' not initialized.");
 		executive.apply(msg);
 	}
 
@@ -410,10 +390,10 @@ public class DbComputation
 	{
 		executive = null;
 	}
-	
+
 	/**
 	 * Check last-modify time in DB & reload this computation if necessary.
-	 * If 1st time since loaded, construct the DbAlgorithmExec object and 
+	 * If 1st time since loaded, construct the DbAlgorithmExec object and
 	 * initialize it.
 	 * @param tsdb the time series database.
 	 * @throws DbCompException on any initialization failure.
@@ -434,28 +414,18 @@ public class DbComputation
 			{
 				ClassLoader cl = Thread.currentThread().getContextClassLoader();
 				String clsName = algorithm.getExecClass();
-				Logger.instance().debug3("Instantiating new algo exec '" + clsName + "'");
+				log.trace("Instantiating new algo exec '{}'", clsName);
 				Class cls = cl.loadClass(clsName);
 				executive = (DbAlgorithmExecutive)cls.newInstance();
 				executive.init(this, tsdb);
 				dataSourceId = tsdb.getDataSourceId(appId, this);
 			}
-			catch(DbCompException ex)
-			{
-				executive = null;
-				String msg = "Cannot prepare computation '"	+ name + "' with algo exec class '"
-					+ algorithm.getExecClass() + "': " + ex;
-				Logger.instance().warning(msg);
-				throw ex;
-			}
 			catch(Exception ex)
 			{
 				executive = null;
 				String msg = "Cannot prepare computation '"	+ name + "' with algo exec class '"
-					+ algorithm.getExecClass() + "': " + ex;
-				System.err.println(msg);
-				ex.printStackTrace();
-				throw new DbCompException(msg);
+					+ algorithm.getExecClass() + "'";
+				throw new DbCompException(msg, ex);
 			}
 		}
 	}
@@ -483,7 +453,7 @@ public class DbComputation
 	{
 		if (algorithm != null)
 			return algorithm.getName();
-		return algorithmName; 
+		return algorithmName;
 	}
 
 	/**
@@ -537,7 +507,7 @@ public class DbComputation
 		dc.groupId = this.groupId;
 		dc.groupName = this.groupName;
 		dc.group = this.group;
-		
+
 		PropertiesUtil.copyProps(dc.props, this.props);
 
 		for(DbCompParm parm : parmList)
@@ -564,25 +534,22 @@ public class DbComputation
 			return false;
 		if (!TextUtil.strEqual(this.algorithmName, rhs.algorithmName))
 			return false;
-//Logger.instance().debug3("DbComputation.equalsNoId 1");
 		if (!TextUtil.strEqual(this.applicationName, rhs.applicationName))
 			return false;
 		if (!PropertiesUtil.propertiesEqual(props, rhs.props))
 			return false;
-//Logger.instance().debug3("DbComputation.equalsNoId 2");
 
 		// validStart & validEnd may be null:
-		boolean eq = !(this.validStart==null ^ rhs.validStart==null) 
+		boolean eq = !(this.validStart==null ^ rhs.validStart==null)
 		   && (this.validStart==null || this.validStart.equals(rhs.validStart));
 		if (!eq)
 			return false;
-		eq = !(this.validEnd==null ^ rhs.validEnd==null) 
+		eq = !(this.validEnd==null ^ rhs.validEnd==null)
 		   && (this.validEnd==null || this.validEnd.equals(rhs.validEnd));
 
-//Logger.instance().debug3("DbComputation.equalsNoId 3");
 		if (parmList.size() != rhs.parmList.size())
 			return false;
-//Logger.instance().debug3("DbComputation.equalsNoId 3.1");
+
 		for(int i=0; i<parmList.size(); i++)
 		{
 			DbCompParm p1 = parmList.get(i);
@@ -590,20 +557,20 @@ public class DbComputation
 			if (!p1.equals(p2))
 				return false;
 		}
-//Logger.instance().debug3("DbComputation.equalsNoId 4");
-		
+
+
 		if (this.groupId != rhs.groupId)
 			return false;
-//Logger.instance().debug3("DbComputation.equalsNoId 5: this.groupName='" + this.groupName + "' rhs.groupName='" + rhs.groupName + "'");
+
 		if (!TextUtil.strEqual(this.groupName, rhs.groupName))
 			return false;
-		
+
 		return true;
 	}
 
 	public void setAlgorithmId(DbKey algorithmId)
 	{
-		this.algorithmId = algorithmId;		
+		this.algorithmId = algorithmId;
 	}
 
 	public DbKey getDataSourceId() { return dataSourceId; }
@@ -623,10 +590,6 @@ public class DbComputation
 		// so also check the name and group object.
 		return !DbKey.isNull(groupId) || (group != null || groupName != null);
 	}
-	
-//	public boolean isTransient() { return _isTransient; }
-//
-//	public void setIsTransient(boolean tf ) { _isTransient = tf; }
 
 	public DbAlgorithmExecutive getExecutive() { return executive; }
 
@@ -641,7 +604,7 @@ public class DbComputation
 	{
 		this.groupId = groupId;
 	}
-	
+
 	/**
 	 * Sets the Time Series Group used to determine input & output param components.
 	 * @param group the group
@@ -660,10 +623,10 @@ public class DbComputation
 			groupName = null;
 		}
 	}
-	
+
 	/** @return the time series group to use for inputs & outputs */
 	public TsGroup getGroup() { return group; }
-	
+
 	/**
 	 * @return the name of the group for this comp, or null if none.
 	 */
@@ -671,7 +634,7 @@ public class DbComputation
 	{
 		if (group != null)
 			return group.getGroupName();
-		return groupName; 
+		return groupName;
 	}
 
 	/**
@@ -685,7 +648,7 @@ public class DbComputation
 		String s = getProperty(parmName + "_MISSING");
 		return MissingAction.fromString(s);
 	}
-	
+
 	/**
 	 * Return the units abbreviation for the specified parameter, or
 	 * null if none is defined.
@@ -697,7 +660,7 @@ public class DbComputation
 	{
 		return getProperty(parmName + "_EU");
 	}
-	
+
 	@Override
 	public DbKey getKey()
 	{
