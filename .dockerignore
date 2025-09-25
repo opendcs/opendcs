@@ -1,4 +1,6 @@
 Dockerfile
+compose_files
+.dockerignore
 **/build
 .vscode
 .settings

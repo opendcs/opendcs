@@ -262,13 +262,13 @@ public final class BasicAuthResource extends OpenDcsResource
 		// Use username and password to attempt to connect to the database
 		try
 		{
-			String url = getDatabaseUrl();
 			/*
 			 Intentional unused connection. Makes a new db connection using passed credentials
 			 This validates the username & password and will throw SQLException if user/pw is not valid.
 			*/
 			//noinspection EmptyTryBlock
-			try(Connection ignored = DriverManager.getConnection(url, creds.getUsername(), creds.getPassword()))
+			DataSource dataSource = (DataSource) context.getAttribute(DATA_SOURCE_ATTRIBUTE_KEY);
+			try (Connection ignored = dataSource.getConnection(creds.getUsername(), creds.getPassword()))
 			{// NOSONAR
 
 			}

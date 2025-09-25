@@ -135,3 +135,26 @@ docker run  --network database_net \
             -e DB_DRIVER_CLASS="oracle.jdbc.driver.OracleDriver" \
             ghcr.io/opendcs/web-api:latest
 ```
+
+
+# Using the Docker compose
+
+## Service Connections
+
+| Service   | Host / IP      | Port (Host → Container) | Connection String Example                            |
+|-----------|----------------|--------------------------|------------------------------------------------------|
+| **db** (Postgres) | `localhost` or container name `db` | `5432 -> 5432` | `jdbc:postgresql://localhost:5432/dcs` <br> (user: `dcs_owner`, pass: `dcs_password`) |
+| **migration** | Runs one-time init job, no exposed port | – | Uses `DATABASE_URL=jdbc:postgresql://db:5432/dcs` internally |
+| **api** | `localhost` | `7000 -> 7000` | `http://localhost:7000` |
+| **pgadmin** | `localhost` | `5050 -> 80` | `http://localhost:5050` <br> (login: `user@exaple.com` / `admin123`) |
+
+---
+
+## Quick Start
+
+1. Clone Repo: `git clone https://github/opendcs/rest_api`
+2. Run docker compose: `docker compose up`
+3. Navigate to: [http://localhost:7000](http://localhost:7000)
+4. Enter username: `app`
+5. Enter password: `app_pass` (from `docker-compose.yaml`)
+6. BONUS: Manipulate database via web interface [http://localhost:5050](http://localhost:5050) or via exposed port
