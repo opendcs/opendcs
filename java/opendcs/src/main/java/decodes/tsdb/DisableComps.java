@@ -1,36 +1,23 @@
 /*
-* $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-* $Log$
-* Revision 1.2  2017/08/22 19:56:39  mmaloney
-* Refactor
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-* Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-* OPENDCS 6.0 Initial Checkin
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-* Revision 1.1  2012/10/06 12:21:21  mmaloney
-* Created.
-*
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
-
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
-
-import lrgs.gui.DecodesInterface;
-
-import ilex.cmdline.*;
-import ilex.util.Logger;
 
 import decodes.util.CmdLineArgs;
 
@@ -38,7 +25,7 @@ import decodes.util.CmdLineArgs;
 Disable all computations for a given loading application.
 This is used by regression tests so that a single test can be
 run at a time.
-In HDB a simple SQL statement suffices for this. For CWMS 
+In HDB a simple SQL statement suffices for this. For CWMS
 it must be done here from Java so that the CP_COMP_DEPENDS
 gets updated properly.
 This program also clears the cp_comp_tasklist of any outstanding records
@@ -66,7 +53,7 @@ public class DisableComps
 	{
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
-		
+
 		List<String> compNames = loadingAppDao.listComputationsByApplicationId(getAppId(), true);
 		loadingAppDao.close();
 		for(String compName : compNames)
