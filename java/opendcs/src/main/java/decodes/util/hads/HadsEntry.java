@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.util.hads;
 
 import java.util.regex.PatternSyntaxException;
@@ -18,13 +33,13 @@ public class HadsEntry implements Comparable<HadsEntry>
 	public String latitude = null;  	//format (dd mm ss)
 	public String longitude = null; 	//format (ddd mm ss)
 	public String description = null; 	//Dcp location name
-	
+
 	public String dcpOwner = null;
 	public String stateLocation = null;
 	public String hydroServiceArea = null;
 	public String initialXmtime = null;
 	public String dcpTransmissionInterval = null;
-	
+
 	/**
 	 * Constructs a new empty HadsEntry.
 	 * values must be then set manually.
@@ -32,7 +47,7 @@ public class HadsEntry implements Comparable<HadsEntry>
 	public HadsEntry()
 	{
 	}
-	
+
 	/**
 	 * Constructs a new PDT entry from a line from the the pdt flat file.
 	 */
@@ -44,9 +59,9 @@ public class HadsEntry implements Comparable<HadsEntry>
 	}
 
 	/**
-	 * This method parses out a Hads file line and 
+	 * This method parses out a Hads file line and
 	 * store the fields in this class.
-	 * 
+	 *
 	 * @param line
 	 * @throws BadHadsEntryException
 	 */
@@ -54,12 +69,11 @@ public class HadsEntry implements Comparable<HadsEntry>
 		throws BadHadsEntryException
 	{
 		//Split the line - strArray will contain all the fields
-		String[] strArray = null;
-		try 
+		String[] strArray = line.split("\\|");;
+		try
 		{
 			//This code parse this file:
 			//http://www.weather.gov/ohd/hads/compressed_defs/all_dcp_defs.txt
-			strArray = line.split("\\|");
 			//DCP Address - GOES NESDIS ID
 			if (strArray[0] != null)
 			{
@@ -98,51 +112,22 @@ public class HadsEntry implements Comparable<HadsEntry>
 			description = strArray[9];
 			if (description != null)
 				description = description.trim();
-			
-			//THIS was parsing this file: 
-			//http://www.weather.gov/oh/hads/USGS/ALL_USGS-HADS_SITES.txt
-//			strArray = line.split("\\|");
-//			dcpName = strArray[0];
-//			if (dcpName != null)
-//				dcpName = dcpName.trim();
-//			usgsStationNum = strArray[1];
-//			if (usgsStationNum != null)
-//				usgsStationNum = usgsStationNum.trim();
-//			
-//			if (strArray[2] != null)
-//			{
-//				strArray[2] = strArray[2].trim();
-//				DcpAddress da = new DcpAddress(strArray[2]);
-//				dcpAddress = da.getAddr();
-//				dcpAddressStr = strArray[2];
-//			}
-//			nwsHsa = strArray[3];//NWS HSA
-//			if (nwsHsa != null)
-//				nwsHsa = nwsHsa.trim();
-//			latitude = strArray[4];//lat
-//			longitude = strArray[5];//long
-//			
-//			description = strArray[6];
-//			if (description != null)
-//				description = description.trim();
+
 		}
 		catch(NumberFormatException ex)
 		{
-			throw new BadHadsEntryException("Bad DCP address '" + strArray[0]
-				+ "'");
+			throw new BadHadsEntryException("Bad DCP address '" + strArray[0] + "'", ex);
 		}
-		catch(PatternSyntaxException ex)  
+		catch(PatternSyntaxException ex)
 		{
-			throw new BadHadsEntryException("Cannot parse this line '" + 
-					line + "' " + ex.getMessage());
+			throw new BadHadsEntryException("Cannot parse this line '" + line + "'", ex);
 		}
-		catch(IndexOutOfBoundsException ex)  
+		catch(IndexOutOfBoundsException ex)
 		{
-			throw new BadHadsEntryException("Cannot parse this line '" + 
-					line + "' " + ex.getMessage());
+			throw new BadHadsEntryException("Cannot parse this line '" + line + "'", ex);
 		}
 	}
-	
+
 	/**
 	 * Compare HadsEntry by dcpAddress
 	 */
@@ -150,11 +135,11 @@ public class HadsEntry implements Comparable<HadsEntry>
 	{
 		return this.dcpAddress.compareTo(hads.dcpAddress);
 	}
-	
+
 	/** For testing */
 	public String toString()
 	{
-		return 
+		return
 		   dcpName + ":"
 		 + usgsStationNum + ":"
 		 + dcpAddress + ":"
