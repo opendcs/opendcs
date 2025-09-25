@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.util;
 
 import java.io.IOException;
@@ -5,21 +20,22 @@ import java.io.File;
 import java.util.Map;
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.gui.TopFrame;
 import decodes.launcher.Profile;
 import ilex.cmdline.*;
 import ilex.util.EnvExpander;
 import ilex.util.JavaLoggerAdapter;
-import ilex.util.Logger;
-import ilex.util.FileLogger;
 
 /**
 Extends the ilex.cmdline.StdAppSettings class to handle arguments that
 are common to most DECODES programs.
 */
-public class CmdLineArgs
-    extends StdAppSettings
+public class CmdLineArgs extends StdAppSettings
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     // Add DECODES-specific setting declarations here...
 
     /** Log file argument (-l) */
@@ -61,10 +77,6 @@ public class CmdLineArgs
         define_arg = new StringToken(
             "D", "Env-Define", "",
             TokenOptions.optSwitch|TokenOptions.optMultiple, "");
-//        NoCompFilterToken = new StringToken("L",
-//                "Disable Computation List filter (default=on)", "",
-//                TokenOptions.optSwitch, "true");
-//        addToken(NoCompFilterToken);
         forwardLogArg = new BooleanToken("FL", "Forward javax.logging logger to application log.", "",
             TokenOptions.optSwitch, false);
         addToken(log_arg);
@@ -87,18 +99,6 @@ public class CmdLineArgs
     {
         log_arg.setDefaultValue(f);
     }
-
-
-
-//    /** @return log Nofiltertoken option value, either default(true), or as specified in argument */
-//    public String getNoCompFilterToken()
-//    {
-//        String s = NoCompFilterToken.getValue();
-//        if (s == null || s.length() == 0)
-//            return null;
-//        return s;
-//    }
-//
 
     /**
       Parses the command line argument and fills in internal variables.
@@ -124,15 +124,13 @@ public class CmdLineArgs
             int idx = arg.indexOf('=');
             if (idx == -1 || arg.length() <= idx+1)
             {
-                System.err.println("Invalid define '" + arg + "' -- should be "
-                    + "in the form name=value.");
+                log.error("Invalid define '{}' -- should be in the form name=value.", arg);
             }
             String name = arg.substring(0,idx).trim();
             String value = arg.substring(idx+1).trim();
             if (name.length() == 0)
             {
-                System.err.println("Invalid define name='" + name
-                    + "', value='" + value + "'");
+                log.error("Invalid define name='{}', value='", name, value);
                 System.exit(1);
             }
             System.setProperty(name.toUpperCase(), value);
@@ -142,21 +140,6 @@ public class CmdLineArgs
         if (noInit)
             return;
 
-        // If log-file specified, open it.
-        String fn = getLogFile();
-        if (fn != null && fn.length() > 0)
-        {
-            String procname = Logger.instance().getProcName();
-            try
-            {
-                Logger.setLogger(new FileLogger(procname, fn,100*1024*1024)); // 100 MegaBytes
-            }
-            catch(IOException e)
-            {
-                System.err.println("Cannot open log file '" + fn + "': " + e);
-                System.exit(1);
-            }
-        }
 
         DecodesSettings settings = DecodesSettings.instance();
 
@@ -176,8 +159,6 @@ public class CmdLineArgs
         {
             String msg = "Cannot read properties file '" + propFile.getPath()
                 + "' -P ARGUMENT PARSING or retrieval of default properties FAILED!";
-            Logger.instance().fatal(msg);
-            System.err.println(msg);
             throw new IllegalArgumentException(msg);
         }
 
@@ -201,7 +182,7 @@ public class CmdLineArgs
             }
             catch(Exception ex)
             {
-                Logger.instance().failure("Cannot load decodes properties from '" + propFileName + "': " + ex);
+                log.atError().setCause(ex).log("Cannot load decodes properties from '{}'", propFileName);
             }
         }
 
@@ -211,16 +192,8 @@ public class CmdLineArgs
         String userDir = System.getProperty("DCSTOOL_USERDIR");
         if (userDir == null)
         {
-            System.setProperty("DCSTOOL_USERDIR", System.getProperty("DCSTOOL_HOME"));
+            System.setProperty("DCSTOOL_USERDIR", System.getProperty("user.dir")+"/.opendcs");
         }
-
-        // Set debug level.
-        int dl = getDebugLevel();
-        if (dl > 0)
-            Logger.instance().setMinLogPriority(
-                dl == 1 ? Logger.E_DEBUG1 :
-                dl == 2 ? Logger.E_DEBUG2 : Logger.E_DEBUG3);
-
 
         if (DecodesSettings.instance().fontAdjust != 0)
         {
@@ -238,13 +211,7 @@ public class CmdLineArgs
             }
         }
 
-        // This will forward log messages for the CWMS JOOQ Interface to the Ilex Logger.
-        Logger.instance().debug1("Forwarding javax.logging to ilex log.");
-        JavaLoggerAdapter.initialize(Logger.instance(), forwardLogArg.getValue(), "",
-            "usace", "cwmsdb", "rma", "hec", "wcds", "com.rma",
-            "org.jooq", "usace.cwms.db.jooq.util");
-
-Logger.instance().info("After parseArgs, DecodesSettings src file=" + DecodesSettings.instance().getSourceFile().getPath());
+        log.info("After parseArgs, DecodesSettings src file={}", DecodesSettings.instance().getSourceFile().getPath());
     }
 
     /**

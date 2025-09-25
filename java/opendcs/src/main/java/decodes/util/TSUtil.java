@@ -1,20 +1,28 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.1  2017/08/22 19:50:07  mmaloney
- * Refactor
- *
- * 
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.util;
 
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.IFlags;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.db.Database;
 import decodes.db.EngineeringUnit;
 import decodes.db.UnitConverter;
@@ -26,9 +34,10 @@ import decodes.tsdb.VarFlags;
 
 public class TSUtil
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	// Assign decodes sensor #s to ascending sequence.
 	private static int seqSensorNum = 0;
-	
+
 	/**
 	 * Convert a DECODES ts to a TSDB CTimeSeries.
 	 * @param ts the decodes ts
@@ -39,7 +48,7 @@ public class TSUtil
 	 * @param sourceId
 	 * @return
 	 */
-	public static CTimeSeries convert2CTimeSeries(TimeSeries ts, DbKey sdi, 
+	public static CTimeSeries convert2CTimeSeries(TimeSeries ts, DbKey sdi,
 		String tableSelector, String interval, boolean mustWrite, DbKey sourceId)
 	{
 		CTimeSeries ret = new CTimeSeries(sdi, interval, tableSelector);
@@ -47,18 +56,18 @@ public class TSUtil
 		for(int i=0; i<n; i++)
 		{
 			TimedVariable tv = ts.sampleAt(i);
-			
+
 			String useFormattedSamples = ts.getProperty("useformattedsample");
 			if (useFormattedSamples != null &&useFormattedSamples.length() > 0)
 			{
-			try {				
+			try {
 				if (ts.sampleAt(i).isNumeric())
 					tv.setValue(Double.valueOf(ts.formattedSampleAt(i)));
 			} catch (NumberFormatException e) {
-				
+
 			}
 			}
-			
+
 			int f = tv.getFlags();
 			if ((f & (IFlags.IS_ERROR | IFlags.IS_MISSING)) != 0)
 				continue;
@@ -93,18 +102,14 @@ public class TSUtil
 		converter = Database.getDb().unitConverterSet.get(euOld, euNew);
 		if (converter == null)
 		{
-			Logger.instance().warning(
-				"Cannot convert samples for time series '" + 
-				cts.getNameString()
-				+ "' from " + euOld.abbr + " to " + euNew.abbr
-				+ " -- assuming already correct units.");
+			log.warn("Cannot convert samples for time series '{}' from {} to {}" +
+					 " -- assuming already correct units.",
+					  cts.getNameString(), euOld.abbr, euNew.abbr);
 			cts.setUnitsAbbr(newUnits);
 			return;
 		}
-		Logger.instance().debug3(
-			"Converting samples for time series '" + 
-			cts.getNameString()
-			+ "' from " + euOld.abbr + " to " + euNew.abbr);
+		log.trace("Converting samples for time series '{}' from '{}' to '{}'",
+				  cts.getNameString(), euOld.abbr, euNew.abbr);
 		for(int i=0; i<cts.size(); i++)
 		{
 			TimedVariable tv = cts.sampleAt(i);
@@ -115,13 +120,12 @@ public class TSUtil
 			{
 				newValue = converter.convert(tv.getDoubleValue());
 				tv.setValue(newValue);
-			} catch (NoConversionException e)
+			}
+			catch (DecodesException | NoConversionException ex)
 			{
-				Logger.instance().warning(e.toString());			
-			} 
-			catch (DecodesException e)
-			{
-				Logger.instance().warning(e.toString());
+				log.atWarn()
+				   .setCause(ex)
+				   .log("Unable to convert sample '{}' at time {}",tv.getStringValue(), tv.getTime());
 			}
 		}
 		cts.setUnitsAbbr(newUnits);
