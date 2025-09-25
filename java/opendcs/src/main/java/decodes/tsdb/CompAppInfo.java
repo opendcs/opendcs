@@ -1,19 +1,32 @@
-/* 
-* $Id
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dao.CachableDbObject;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.util.HasProperties;
 import ilex.util.PropertiesUtil;
@@ -32,10 +45,9 @@ This class is used only for listing computation apps. Each of these
 entries holds the ID, name, comment, and number of computations for
 a single computation application.
 */
-public class CompAppInfo
-	extends IdDatabaseObject
-	implements CompMetaData, CachableDbObject, HasProperties, PropertiesOwner, Serializable
+public class CompAppInfo extends IdDatabaseObject implements CompMetaData, CachableDbObject, HasProperties, PropertiesOwner, Serializable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	/** The app ID */
 	private DbKey appId;
 
@@ -50,29 +62,17 @@ public class CompAppInfo
 
 	/** True if this is a manual edit app (used by USBR) */
 	private boolean manualEditApp;
-	
+
 	/** A set of properties for this application. */
 	private Properties props;
-	
+
 	/** Time that this app was last modified in the database */
 	private Date lastModified = null;
-	
+
 	private PropertySpec propSpecs[] =
 	{
-//		new PropertySpec("appType", PropertySpec.DECODES_ENUM + "ApplicationType", 
-//			"Determines type of application"),
-		new PropertySpec("allowedHosts", PropertySpec.STRING, 
+		new PropertySpec("allowedHosts", PropertySpec.STRING,
 			"comma-separated list of hostnames or ip addresses"),
-
-		// Dummy properties for testing the GUI
-		//TODO remove the following:
-//		new PropertySpec("dummyInt", PropertySpec.INT, "dummy int prop"),
-//		new PropertySpec("dummyNumber", PropertySpec.NUMBER, "dummy number prop"),
-//		new PropertySpec("dummyFilename", PropertySpec.FILENAME, "dummy filename prop"),
-//		new PropertySpec("dummyDirectory", PropertySpec.DIRECTORY, "dummy directory prop"),
-//		new PropertySpec("dummyTZ", PropertySpec.TIMEZONE, "dummy timezone prop"),
-//		new PropertySpec("dummyBoolean", PropertySpec.BOOLEAN, "dummy boolean prop"),
-//		new PropertySpec("dummyHost", PropertySpec.HOSTNAME, "dummy hostname prop")
 	};
 
 	public CompAppInfo(DbKey id)
@@ -100,8 +100,8 @@ public class CompAppInfo
 	/** @return the app ID */
 	public DbKey getAppId() { return appId; }
 
-	/** 
-	 * Sets the app ID 
+	/**
+	 * Sets the app ID
 	 * @param id the ID
 	 */
 	public void setAppId(DbKey id) { appId = id; }
@@ -109,12 +109,12 @@ public class CompAppInfo
 	/** @return the app name */
 	public String getAppName() { return appName; }
 
-	/** 
-	 * Sets the app Name 
+	/**
+	 * Sets the app Name
 	 * @param nm the Name
 	 */
 	public void setAppName(String nm) { appName = nm; }
-	
+
 	/**
 	 * @return appType property value if one is defined, or blank string if not.
 	 */
@@ -134,7 +134,7 @@ public class CompAppInfo
 		return comment;
 	}
 
-	/** 
+	/**
 	 * Sets the comment
 	 * @param cm the comment
 	 */
@@ -143,7 +143,7 @@ public class CompAppInfo
 	/** @return the number of computations that this app manages */
 	public int getNumComputations() { return numComputations; }
 
-	/** 
+	/**
 	 * Sets the number of computations that this app manages.
 	 * @param n the number
 	 */
@@ -185,7 +185,7 @@ public class CompAppInfo
 		return PropertiesUtil.propertiesEqual(props, rhs.props);
 	}
 
-	/** 
+	/**
 	 * Adds a property to this object's meta-data.
 	 * @param name the property name.
 	 * @param value the property value.
@@ -283,9 +283,7 @@ public class CompAppInfo
 			}
 			catch (DbIoException ex)
 			{
-				String msg = "Cannot write loading app '" + getAppName()
-					+ "': " + ex;
-				Logger.instance().warning(msg);
+				final String msg = "Cannot write loading app '" + getAppName() + "'";
 				throw new DatabaseException(msg, ex);
 			}
 			finally
@@ -316,7 +314,7 @@ public class CompAppInfo
 	{
 		this.lastModified = lastModified;
 	}
-	
+
 	/**
 	 * Some processes are restricted by an 'allowedHosts' property. If no
 	 * such property exists, or if it does and the local system's IP address
@@ -346,9 +344,9 @@ public class CompAppInfo
 			}
 			return false;
 		}
-		catch (Exception e)
+		catch (Exception ex)
 		{
-			Logger.instance().warning("canRunLocally() cannot check inet address: " + e);
+			log.atWarn().setCause(ex).log("canRunLocally() cannot check inet address.");
 			return true;
 		}
 	}
