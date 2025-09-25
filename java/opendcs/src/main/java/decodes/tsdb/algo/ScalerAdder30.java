@@ -1,9 +1,26 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import ilex.var.NamedVariable;
 import decodes.tsdb.DbCompException;
@@ -17,6 +34,7 @@ import decodes.tsdb.DbCompException;
         "")
 public class ScalerAdder30 extends AW_AlgorithmBase
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
     @Input public double input1;
     @Input public double input2;
     @Input public double input3;
@@ -201,8 +219,38 @@ public class ScalerAdder30 extends AW_AlgorithmBase
             tally += (input29 * coeff29);
         if (!isMissing(input30))
             tally += (input30 * coeff30);
-        debug3("doAWTimeSlice input1=" + input1 + ", coeff1=" + coeff1
-        +", input2=" + input2 + ", coeff2=" + coeff2 + ", tally=" + tally);
+        log.atTrace()
+		   .addKeyValue("input1", input1).addKeyValue("coeff1", coeff1)
+		   .addKeyValue("input2", input2).addKeyValue("coeff2", coeff2)
+		   .addKeyValue("input3", input3).addKeyValue("coeff3", coeff3)
+		   .addKeyValue("input4", input4).addKeyValue("coeff4", coeff4)
+		   .addKeyValue("input5", input5).addKeyValue("coeff5", coeff5)
+		   .addKeyValue("input6", input6).addKeyValue("coeff6", coeff6)
+		   .addKeyValue("input7", input7).addKeyValue("coeff7", coeff7)
+		   .addKeyValue("input8", input8).addKeyValue("coeff8", coeff8)
+		   .addKeyValue("input9", input9).addKeyValue("coeff9", coeff9)
+		   .addKeyValue("input10", input10).addKeyValue("coeff10", coeff10)
+		   .addKeyValue("input11", input11).addKeyValue("coeff11", coeff11)
+		   .addKeyValue("input12", input12).addKeyValue("coeff12", coeff12)
+		   .addKeyValue("input13", input13).addKeyValue("coeff13", coeff13)
+		   .addKeyValue("input14", input14).addKeyValue("coeff14", coeff14)
+		   .addKeyValue("input15", input15).addKeyValue("coeff15", coeff15)
+		   .addKeyValue("input16", input16).addKeyValue("coeff16", coeff16)
+		   .addKeyValue("input17", input17).addKeyValue("coeff17", coeff17)
+		   .addKeyValue("input18", input18).addKeyValue("coeff18", coeff18)
+		   .addKeyValue("input19", input19).addKeyValue("coeff19", coeff19)
+		   .addKeyValue("input20", input20).addKeyValue("coeff20", coeff20)
+           .addKeyValue("input21", input21).addKeyValue("coeff21", coeff21)
+		   .addKeyValue("input22", input22).addKeyValue("coeff22", coeff22)
+		   .addKeyValue("input23", input23).addKeyValue("coeff23", coeff23)
+		   .addKeyValue("input24", input24).addKeyValue("coeff24", coeff24)
+		   .addKeyValue("input25", input25).addKeyValue("coeff25", coeff25)
+		   .addKeyValue("input26", input26).addKeyValue("coeff26", coeff26)
+		   .addKeyValue("input27", input27).addKeyValue("coeff27", coeff27)
+		   .addKeyValue("input28", input28).addKeyValue("coeff28", coeff28)
+		   .addKeyValue("input29", input29).addKeyValue("coeff29", coeff29)
+		   .addKeyValue("input30", input30).addKeyValue("coeff30", coeff30)
+		   .log("tally={}", tally);
         setOutput(output, tally);
     }
 

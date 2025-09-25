@@ -1,10 +1,18 @@
-/**
- * $Id$
- * 
- * Open Source Software
- * 
- * $Log
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import ilex.var.NamedVariable;
@@ -16,6 +24,8 @@ import decodes.hdb.HDBRatingTable;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 @Algorithm(description = "Implements rating table lookups in the database.\n" +
 		"Independent (e.g. STAGE) value is called \"indep\".\n" +
 		"Dependent (e.g. FLOW) is called \"dep\".\n" +
@@ -33,14 +43,15 @@ import org.opendcs.annotations.algorithm.Output;
 		"<li>exceedLowerBound - default= false. Whether to do ratings below the lowest value in the rating table</li>\n" +
 		"<li>exceedUpperBound - default= false. Whether to do ratings above the highest value in the rating table</li>\n" +
 		"</ul></p>")
-public class HdbRating
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class HdbRating extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
+
 	@Input
 	public double indep;
 
 	HDBRatingTable ratingTable = null;
-	private PropertySpec ratingPropertySpecs[] = 
+	private PropertySpec ratingPropertySpecs[] =
 	{
 		new PropertySpec("exceedLowerBound", PropertySpec.BOOLEAN,
 			"(default=false) Set to true to allow rating to interpolate below the lowest table value."),
@@ -84,7 +95,7 @@ public class HdbRating
 	{
 		_awAlgoType = AWAlgoType.TIME_SLICE;
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -95,8 +106,7 @@ public class HdbRating
 		{
 			// Find the name for the input parameter.
 			DbKey indep_sdi = getSDI("indep");
-			debug3("Constructing HDB rating for '" + ratingType + "' sdi " +
-					indep_sdi);
+			log.trace("Constructing HDB rating for '{}' sdi {}", ratingType, indep_sdi);
 			ratingTable = new HDBRatingTable(tsdb,ratingType,indep_sdi);
 			ratingTable.setExceedLowerBound(exceedLowerBound);
 			ratingTable.setExceedUpperBound(exceedUpperBound);

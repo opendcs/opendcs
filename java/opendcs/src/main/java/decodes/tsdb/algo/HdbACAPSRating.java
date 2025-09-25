@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import ilex.var.NamedVariable;
@@ -12,6 +27,8 @@ import decodes.util.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Implements the ACAPS rating algorithm from tables in the database.\n" +
 		"Independent value is called \"elevation\".\n" +
@@ -23,9 +40,9 @@ import org.opendcs.annotations.algorithm.Output;
 		"diff=elevation-Y0 from A0 lookup.\n" +
 		"A=round((A1 + M*A2*diff),2)\n" +
 		"S=round((A0 + A1*diff + A2*Math.pow(diff,M)),2)")
-public class HdbACAPSRating
-	extends decodes.tsdb.algo.AW_AlgorithmBase
+public class HdbACAPSRating extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double elevation;
 
@@ -71,7 +88,7 @@ public class HdbACAPSRating
 	{
 		_awAlgoType = AWAlgoType.TIME_SLICE;
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -82,9 +99,8 @@ public class HdbACAPSRating
 		{
 			// Find the name for the input parameter.
 			DbKey elev_sdi = getSDI("elevation");
-			debug3("Constructing ACAPS ratings for sdi " +
-					elev_sdi);
-	//default non extrapolation of lookups is fine here.
+			log.trace("Constructing ACAPS ratings for sdi {}", elev_sdi);
+			//default non extrapolation of lookups is fine here.
 			A0RatingTable = new HDBRatingTable(tsdb,"ACAPS A0",elev_sdi);
 			A1RatingTable = new HDBRatingTable(tsdb,"ACAPS A1",elev_sdi);
 			A2RatingTable = new HDBRatingTable(tsdb,"ACAPS A2",elev_sdi);
@@ -126,14 +142,15 @@ public class HdbACAPSRating
 			double A0 = A0rs.dep;
 			double A1 = A1rs.dep;
 			double A2 = A2rs.dep;
-			debug3("Lookup ACAPS results: deltaE: " + diff + " A0: " + A0 + " A1: " + A1 + " A2: " + A2);
+			log.trace("Lookup ACAPS results: deltaE: {} A0: {} A1: {} A2: {}", diff, A0, A1, A2);
 
 			double M = constantM;
 
-			if (variableM) {
+			if (variableM)
+			{
 			    RatingStatus MRS = MRatingTable.doRating(elevation,_timeSliceBaseTime);
 			    M = MRS.dep;
-			    debug3("Lookup M result: " + M);
+			    log.trace("Lookup M result: {}", M);
 			}
 
 			//See Documents from Rick Clayton on these equations.

@@ -1,15 +1,28 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
 import decodes.tsdb.MissingAction;
 import decodes.tsdb.ParmRef;
-import decodes.tsdb.VarFlags;
 
 //AW:IMPORTS
 //AW:IMPORTS_END
@@ -25,6 +38,7 @@ All coefficients default to 1.0 if not supplied.
 //AW:JAVADOC_END
 public class ScalerAdder extends AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 //AW:INPUTS
 	public double input1;	//AW:TYPECODE=i
 	public double input2;	//AW:TYPECODE=i
@@ -36,7 +50,7 @@ public class ScalerAdder extends AW_AlgorithmBase
 	public double input8;	//AW:TYPECODE=i
 	public double input9;	//AW:TYPECODE=i
 	public double input10;//AW:TYPECODE=i
-	String _inputNames[] = { "input1", "input2", "input3", "input4", "input5", 
+	String _inputNames[] = { "input1", "input2", "input3", "input4", "input5",
 			"input6", "input7", "input8", "input9", "input10" };
 //AW:INPUTS_END
 
@@ -70,7 +84,7 @@ public class ScalerAdder extends AW_AlgorithmBase
 	public String input8_MISSING = "ignore";
 	public String input9_MISSING = "ignore";
 	public String input10_MISSING = "ignore";
-	String _propertyNames[] = { "coeff1", "coeff2", "coeff3", "coeff4", "coeff5", 
+	String _propertyNames[] = { "coeff1", "coeff2", "coeff3", "coeff4", "coeff5",
 			"coeff6", "coeff7", "coeff8", "coeff9", "coeff10",
 			"input1_MISSING", "input2_MISSING", "input3_MISSING", "input4_MISSING", "input5_MISSING",
 			"input6_MISSING", "input7_MISSING", "input8_MISSING", "input9_MISSING", "input10_MISSING" };
@@ -90,7 +104,7 @@ public class ScalerAdder extends AW_AlgorithmBase
 //AW:USERINIT
 //AW:USERINIT_END
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -117,30 +131,30 @@ public class ScalerAdder extends AW_AlgorithmBase
 		double tally = 0.0;
 		ParmRef pr = null;
 		String t = null;
-		if (((pr = getParmRef(t = "input1")) != null && isAssigned(t) && isMissing(input1) && 
+		if (((pr = getParmRef(t = "input1")) != null && isAssigned(t) && isMissing(input1) &&
 			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input2")) != null && isAssigned(t) && isMissing(input2) && 
+		 || ((pr = getParmRef(t = "input2")) != null && isAssigned(t) && isMissing(input2) &&
 			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input3")) != null && isAssigned(t) && isMissing(input3) && 
+		 || ((pr = getParmRef(t = "input3")) != null && isAssigned(t) && isMissing(input3) &&
 			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input4")) != null && isAssigned(t) && isMissing(input4) && 
+		 || ((pr = getParmRef(t = "input4")) != null && isAssigned(t) && isMissing(input4) &&
 			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input5")) != null && isAssigned(t) && isMissing(input5) && 
+		 || ((pr = getParmRef(t = "input5")) != null && isAssigned(t) && isMissing(input5) &&
 			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input6")) != null && isAssigned(t) && isMissing(input6) && 
+		 || ((pr = getParmRef(t = "input6")) != null && isAssigned(t) && isMissing(input6) &&
 			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input7")) != null && isAssigned(t) && isMissing(input7) && 
+		 || ((pr = getParmRef(t = "input7")) != null && isAssigned(t) && isMissing(input7) &&
 			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input8")) != null && isAssigned(t) && isMissing(input8) && 
+		 || ((pr = getParmRef(t = "input8")) != null && isAssigned(t) && isMissing(input8) &&
 			pr.missingAction != MissingAction.IGNORE)
-		 || ((pr = getParmRef(t = "input0")) != null && isAssigned(t) && isMissing(input9) && 
+		 || ((pr = getParmRef(t = "input0")) != null && isAssigned(t) && isMissing(input9) &&
 			pr.missingAction != MissingAction.IGNORE))
 		{
-			debug2("Skipping time slice with base time " + debugSdf.format(_timeSliceBaseTime)
-			+ " because of missing value for param " + t);
+			log.trace("Skipping time slice with base time {} because of missing value for param {}",
+					  _timeSliceBaseTime, t);
 			return;
 		}
-			
+
 		if (!isMissing(input1))
 			tally += (input1 * coeff1);
 		if (!isMissing(input2))
@@ -161,9 +175,18 @@ public class ScalerAdder extends AW_AlgorithmBase
 			tally += (input9 * coeff9);
 		if (!isMissing(input10))
 			tally += (input10 * coeff10);
-debug3("doAWTimeSlice baseTime=" + debugSdf.format(_timeSliceBaseTime)
-	+ ", input1=" + input1 + ", coeff1=" + coeff1
-+", input2=" + input2 + ", coeff2=" + coeff2 + ", tally=" + tally);
+		log.atTrace()
+		   .addKeyValue("input1", input1).addKeyValue("coeff1", coeff1)
+		   .addKeyValue("input2", input2).addKeyValue("coeff2", coeff2)
+		   .addKeyValue("input3", input3).addKeyValue("coeff3", coeff3)
+		   .addKeyValue("input4", input4).addKeyValue("coeff4", coeff4)
+		   .addKeyValue("input5", input5).addKeyValue("coeff5", coeff5)
+		   .addKeyValue("input6", input6).addKeyValue("coeff6", coeff6)
+		   .addKeyValue("input7", input7).addKeyValue("coeff7", coeff7)
+		   .addKeyValue("input8", input8).addKeyValue("coeff8", coeff8)
+		   .addKeyValue("input9", input9).addKeyValue("coeff9", coeff9)
+		   .addKeyValue("input10", input10).addKeyValue("coeff10", coeff10)
+		   .log("tally={}", tally);
 		setOutput(output, tally);
 //AW:TIMESLICE_END
 	}

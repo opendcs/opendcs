@@ -9,6 +9,8 @@ import java.util.TimeZone;
 
 import org.nfunk.jep.ParseException;
 import org.nfunk.jep.function.PostfixMathCommand;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.cwms.CwmsFlags;
 import decodes.cwms.validation.DatchkReader;
@@ -28,9 +30,9 @@ import decodes.tsdb.TimeSeriesIdentifier;
  * It finds the value at the current time slice, performs the screening
  * specified in CWMS database, and returns the flag value.
  */
-public class ScreeningFunction
-	extends PostfixMathCommand
+public class ScreeningFunction extends PostfixMathCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String funcName = "screening";
 	private JepContext ctx = null;
 
@@ -40,7 +42,7 @@ public class ScreeningFunction
 		this.ctx = ctx;
 		this.numberOfParameters = 1;
 	}
-	
+
 	@Override
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void run(Stack inStack)
@@ -53,7 +55,7 @@ public class ScreeningFunction
 
 		// Get input name (1st arg)
 		String name = inStack.pop().toString();
-		
+
 		// Find the Screening record
 		ParmRef inputParm = ctx.getAlgo().getParmRef(name);
 		if (inputParm.timeSeries == null)
@@ -61,7 +63,7 @@ public class ScreeningFunction
 		TimeSeriesIdentifier inputTsid = inputParm.timeSeries.getTimeSeriesIdentifier();
 		if (inputTsid == null)
 			throw new ParseException("No input time-series identifier associated with '" + name + "'!");
-		
+
 		ScreeningDAI screeningDAO = null;
 		Screening screening = null;
 		try
@@ -72,17 +74,17 @@ public class ScreeningFunction
 		}
 		catch(DbIoException ex)
 		{
-			ctx.getAlgo().warning(funcName + ": error reading screening: " + ex);
+			log.atWarn().setCause(ex).log("error reading screening.");
 		}
 		if (screening == null)
 			throw new ParseException("No active screening found for " + inputTsid.getUniqueString());
-		
+
 		int retFlags = 0;
 		TimedVariable tv = inputParm.timeSeries.findWithin(tsbt, ctx.getAlgo().roundSec);
 		if (tv == null)
 		{
-			ctx.getAlgo().warning(funcName + "(" + name + ") tsid=" + inputTsid.getUniqueString()
-				+ " no value to screen at time " + ctx.getAlgo().debugSdf.format(tsbt));
+			log.warn("({}) tsid={} no value to screen at time {}",
+					 name, inputTsid.getUniqueString(),tsbt);
 		}
 		else
 		{
@@ -90,28 +92,27 @@ public class ScreeningFunction
 			{
 				double value = tv.getDoubleValue();
 				ctx.initForScreening(name, screening);
-				
+
 				ScreeningCriteria crit = screening.findForDate(tsbt, TimeZone.getTimeZone("UTC"));
 				if (crit == null)
 				{
-					ctx.getAlgo().debug1(funcName + "(" + name + ") tsid=" + inputTsid.getUniqueString() 
-						+ " no criteria for sample at time " + ctx.getAlgo().debugSdf.format(tsbt));
+					log.debug("({}) tsid={} no criteria for sample at time {}",
+							  name, inputTsid.getUniqueString(), tsbt);
 					retFlags = CwmsFlags.SCREENED | CwmsFlags.VALIDITY_OKAY;
 				}
 				else
 				{
-					retFlags = crit.doChecks(ctx.getAlgo().getDataCollection(), 
+					retFlags = crit.doChecks(ctx.getAlgo().getDataCollection(),
 						inputParm.timeSeries, tsbt, ctx.getAlgo(), value);
-					ctx.getAlgo().debug1(funcName + " result flags for '" + name + "'=0x" 
-						+ Integer.toHexString(retFlags));
+					log.debug("result flags for '{}'=0x{}", name, Integer.toHexString(retFlags));
 				}
 			}
 			catch(NoConversionException ex)
 			{
-				ctx.getAlgo().warning(funcName + "(" + name + ") tsid="
-					+ inputTsid.getUniqueString()
-					+ " value at time " + ctx.getAlgo().debugSdf.format(tsbt)
-					+ " is not a number '" + tv.getStringValue() + "'");
+				log.atWarn()
+				   .setCause(ex)
+				   .log("({}) tsid={} value at time {} is not a number '{}'",
+				   		name, inputTsid.getUniqueString(), tsbt, tv.getStringValue());
 			}
 		}
 		inStack.push(Double.valueOf(retFlags));
