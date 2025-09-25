@@ -1,52 +1,38 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.2  2015/01/15 19:25:46  mmaloney
- * RC01
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.7  2012/09/18 15:57:06  mmaloney
- * Use EnvExpander on path name.
- *
- * Revision 1.6  2012/08/28 16:42:21  mmaloney
- * Fixed import to be compatible with template.
- *
- * Revision 1.5  2011/05/03 15:17:39  mmaloney
- * Added 'interp' property to select between log and linear.
- * When table file doesn't exist, fail silently. Do not through DbCompException because
- * this leaves FAILED tasklist entries in the queue.
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import java.util.Date;
 
 import ilex.util.EnvExpander;
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 
 import decodes.comp.LookupTable;
-import decodes.comp.RatingTableReader;
 import decodes.comp.TabRatingReader;
 import decodes.comp.TableBoundsException;
 import decodes.comp.ComputationParseException;
-import decodes.tsdb.ParmRef;
-import decodes.tsdb.algo.AWAlgoType;
 import java.io.File;
 
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
-
-import java.util.Date;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Implements rating table computations.\n" + 
 "Holds the lookup table & shift values.\n" +
@@ -57,10 +43,9 @@ import java.util.Date;
 "  <li>tableDir - Directory containing table files</li>\n" +
 "  <li>tableName - Overrides sitename.tab default</li>\n" +
 "</ul>")
-public class TabRating
-	extends decodes.tsdb.algo.AW_AlgorithmBase
-	implements decodes.comp.HasLookupTable
+public class TabRating extends decodes.tsdb.algo.AW_AlgorithmBase implements decodes.comp.HasLookupTable
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double indep;
 
@@ -149,12 +134,12 @@ public class TabRating
 		File f = new File(EnvExpander.expand(p));
 		if (!f.exists())
 		{
-			warning("TabRating no table file '" + p + "'");
+			log.warn("TabRating no table file '{}'", p);
 			tableReader = null;
 		}
 		else
 		{
-			debug3("Constructing Tab reader for '" + p + "'");
+			log.trace("Constructing Tab reader for '{}'", p);
 			tableReader = new TabRatingReader(p);
 		}
 
@@ -170,19 +155,14 @@ public class TabRating
 			lookupTable.setLookupType(LookupTable.INTERP_LINEAR);
 		else
 			lookupTable.setLookupType(LookupTable.INTERP_LOG);
-		//shiftTable = new LookupTable();
-		//shiftTable.setLookupType(LookupTable.INTERP_TRUNC);
-		//shiftTable.setExceedLowerBound(false);
-		//shiftTable.setExceedUpperBound(false);
 		try
 		{
 			tableReader.readRatingTable(this);
 		}
 		catch(ComputationParseException ex)
 		{
-			String msg = "Cannot read SIMPLE rating table: " + ex;
-			warning(msg);
-			throw new DbCompException(msg);
+			String msg = "Cannot read SIMPLE rating table.";
+			throw new DbCompException(msg, ex);
 		}
 	}
 
@@ -204,10 +184,11 @@ public class TabRating
 		try { setOutput(dep, lookupTable.lookup(indep)); }
 		catch(TableBoundsException ex)
 		{
-			warning("Table bounds exceeded on indep value at site "
-				+ getSiteName("indep", null) + ", value was " + indep + " at time " 
-				+ debugSdf.format(_timeSliceBaseTime) + ", indep units="
-				+ this.getParmRef("indep").timeSeries.getUnitsAbbr());
+			log.atWarn()
+			   .setCause(ex)
+			   .log("Table bounds exceeded on indep value at site {}, value was {} at time {}, indep units={}",
+					getSiteName("indep", null), indep,
+					_timeSliceBaseTime, this.getParmRef("indep").timeSeries.getUnitsAbbr());
 		}
 	}
 
@@ -219,6 +200,5 @@ public class TabRating
 		// This code will be executed once after each group of time slices.
 		// For TimeSlice algorithms this is done once after all slices.
 		lookupTable = null;
-		//shiftTable = null;
 	}
 }

@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import java.util.Date;
@@ -21,16 +36,18 @@ import org.opendcs.annotations.PropertySpec;
 
 import java.util.Properties;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 
 @Algorithm(description ="Implements rating table computations. Holds the lookup table & shift values.\n" +
 "Independent (e.g. STAGE) value is called \"indep\". Dependent (e.g. FLOW) is called \"dep\"." +
 "Properties include:\n" +
 "applyShifts - true if you want algorithm to apply shifts.\n" +
 "Usually unnecessary because RDB files are expanded." )
-public class RdbRating
-    extends decodes.tsdb.algo.AW_AlgorithmBase
-    implements decodes.comp.HasLookupTable
+public class RdbRating extends decodes.tsdb.algo.AW_AlgorithmBase implements decodes.comp.HasLookupTable
 {
+    private static final Logger log = OpenDcsLoggerFactory.getLogger();
    @Input
     double indep; 
 
@@ -122,10 +139,10 @@ public class RdbRating
             String fn = tableDir + "/" + filePrefix + siteName + fileSuffix;
             tried = tried + " " + fn;
             File f = new File(EnvExpander.expand(fn));
-			debug1("trying '" + f.getPath() + "'");
+			log.debug("trying '{}'", f.getPath());
             if (f.exists())
             {
-                debug3("Constructing RDB reader for '" + fn + "'");
+                log.trace("Constructing RDB reader for '{}'", fn);
 				try
 				{
                 	tableReader = new RdbRatingReader(fn);
@@ -148,10 +165,10 @@ public class RdbRating
                 String fn = tableDir + "/" + filePrefix + siteName + ".rdb";
                 tried = tried + " " + fn;
                 File f = new File(EnvExpander.expand(fn));
-					debug1("trying '" + f.getPath() + "'");
+				log.debug("trying '{}'", f.getPath());
                 if (f.exists())
                 {
-                    debug3("Constructing RDB reader for '" + fn + "'");
+                    log.trace("Constructing RDB reader for '{}'", fn);
                     try
 					{
 						tableReader = new RdbRatingReader(fn);
@@ -168,9 +185,14 @@ public class RdbRating
         if (tableReader == null)
         {
             String msg = "No table file. Tried: " + tried;
-            warning(msg);
             if (failIfNoTable)
+            {
                 throw new DbCompException(msg);
+            }
+            else
+            {
+                log.warn(msg);
+            }
             return;
         }
 
@@ -183,19 +205,14 @@ public class RdbRating
             lookupTable.setLookupType(LookupTable.INTERP_LINEAR);
         else
             lookupTable.setLookupType(LookupTable.INTERP_LOG);
-        //shiftTable = new LookupTable();
-        //shiftTable.setLookupType(LookupTable.INTERP_TRUNC);
-        //shiftTable.setExceedLowerBound(false);
-        //shiftTable.setExceedUpperBound(false);
         try
         {
             tableReader.readRatingTable(this);
         }
         catch(ComputationParseException ex)
         {
-            String msg = "Cannot read RDB rating table: " + ex;
-            warning(msg);
-            throw new DbCompException(msg);
+            String msg = "Cannot read RDB rating table.";
+            throw new DbCompException(msg, ex);
         }
     }
 
@@ -218,19 +235,16 @@ public class RdbRating
         try
         {
             setOutput(dep, lookupTable.lookup(indep));
-            debug2("Stage = " + indep + ", discharge set to " + dep);
+            log.trace("Stage = {}, discharge set to {}", indep, dep);
         }
         catch(TableBoundsException ex)
         {
-            warning("Table bounds exceeded on indep value at site "
-                + getSiteName("indep", null) + ", value was " + indep + " at time "
-                + debugSdf.format(_timeSliceBaseTime) + ", indep units="
-                + this.getParmRef("indep").timeSeries.getUnitsAbbr());
+             log.atWarn()
+               .setCause(ex)
+               .log("Table bounds exceeded on indep value at site {}, value was {} at time {}, indep units={}",
+                    getSiteName("indep", null), indep,
+                    _timeSliceBaseTime, this.getParmRef("indep").timeSeries.getUnitsAbbr());
         }
-//GC comment at 2010/08/17
-/*
-        setOutputUnitsAbbr("dep", depUnits);
-*/
     }
 
     /**

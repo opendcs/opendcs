@@ -1,23 +1,35 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algo;
 
-import java.util.Date;
-
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "SumOverTimeAlgorithm sums single 'input' parameter to a single 'sum' \n" +
 "parameter. The summing period is determined by the interval of the output\n" +
 "parameter.")
 public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	@Input
 	public double input;
 
@@ -69,7 +81,6 @@ public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-//		debug2("SumOverTime:doAWTimeSlice, input=" + input);
 		if (!isMissing(input))
 		{
 			tally += input;
@@ -90,8 +101,7 @@ public class SumOverTimeAlgorithm extends decodes.tsdb.algo.AW_AlgorithmBase
 		}
 		else 
 		{
-			warning("Do not have minimum # samples (" + minSamplesNeeded
-				+ ") -- not producing a sum.");
+			log.warn("Do not have minimum # samples ({}) -- not producing a sum.", minSamplesNeeded);
 			if (_aggInputsDeleted)
 				deleteOutput(sum);
 		}

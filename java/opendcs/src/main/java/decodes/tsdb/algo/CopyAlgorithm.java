@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb.algo;
 
@@ -19,10 +22,12 @@ import decodes.db.UnitConverter;
 import decodes.tsdb.DbCompException;
 import decodes.tsdb.ParmRef;
 import decodes.util.DecodesException;
-import decodes.util.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.spi.LoggingEventBuilder;
 
 @Algorithm(description = "CopyAlgorithm copies a single 'input' parameter to a single 'output' parameter.\n" +
 		" \n" +
@@ -31,6 +36,7 @@ import org.opendcs.annotations.algorithm.Output;
 
 public class CopyAlgorithm extends AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String OUTPUTSTRING = "output";
 
 	@Input
@@ -63,7 +69,7 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 		_aggPeriodVarRoleName = null;
 		// No initialization needed for Copy.
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -86,16 +92,18 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 		inUnits = getInputUnitsAbbr("input");
 		outUnits = getParmUnitsAbbr(OUTPUTSTRING);
 		if (enhancedDebug)
-			info("CopyAlgorithm, inUnits=" + inUnits + ", outUnits=" + outUnits);
+		{
+			log.info("CopyAlgorithm, inUnits={}, outUnits={}", inUnits, outUnits);
+		}
 		else
-			debug1("CopyAlgorithm, inUnits=" + inUnits + ", outUnits=" + outUnits);
-		
+		{
+			log.debug("CopyAlgorithm, inUnits={}, outUnits={}", inUnits, outUnits);
+		}
+
 		if (comp.getProperty("input_EU") != null || comp.getProperty("output_EU") != null)
 		{
-			if (enhancedDebug)
-				info("Will NOT do implicit unit conversion because unit properties are present.");
-			else
-				debug1("Will NOT do implicit unit conversion because unit properties are present.");
+			LoggingEventBuilder le = enhancedDebug ? log.atInfo() : log.atDebug();
+			le.log("Will NOT do implicit unit conversion because unit properties are present.");
 		}
 		else if (inUnits != null && inUnits.length() > 0 && !inUnits.equalsIgnoreCase("unknown"))
 		{
@@ -119,7 +127,7 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 		// else inUnits is unknown. This shouldn't happen because tasklist records will
 		// have a units assignment. In any case we can't do any conversions.
 	}
-	
+
 	/**
 	 * Do the algorithm for a single time slice.
 	 * AW will fill in user-supplied code here.
@@ -134,27 +142,24 @@ public class CopyAlgorithm extends AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-		// The only thing needed is to copy the input to the output.
-		String msg = "CopyAlgorithm doAWTimeSlice input=" + input + ", inUnits=" + inUnits
-			+ ", outUnits=" + outUnits;
-		if (enhancedDebug)
-			info(msg);
-		else
-			debug3(msg);
-		
+		LoggingEventBuilder le = enhancedDebug ? log.atInfo() : log.atTrace();
+		le.log("CopyAlgorithm doAWTimeSlice input={}, inUnits={}, outUnits={}", input, inUnits, outUnits);
+
 		double x = input;
 		if (converter != null)
 		{
 			try { x = converter.convert(x); }
 			catch(DecodesException ex)
 			{
-				warning("Exception in converter: " + ex);
+				log.atWarn().setCause(ex).log("Exception in converter.");
 			}
 		}
 		x = (x*multiplier) + offset;
 		setOutput(output, x);
 		if (enhancedDebug && outUnits != null && outUnits.toLowerCase().contains("f") && x < 500.)
-			warning("Setting output to " + x + " " + outUnits);
+		{
+			log.warn("Setting output to {} {}", x, outUnits);
+		}
 	}
 
 	/**

@@ -1,3 +1,18 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import java.util.Date;
@@ -13,6 +28,8 @@ import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 @Algorithm(description = "Dis-aggregates by spreading out the input values to the outputs in various\n" +
 		"ways (fill, split).\n" +
@@ -28,9 +45,10 @@ import org.opendcs.annotations.algorithm.Output;
 
 public class DisAggregate extends AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static final String OUTPUTSTRING = "output";
 	@Input
-	public double input;	
+	public double input;
 
 	ParmRef iref = null;
 	String iintv = null;
@@ -56,7 +74,7 @@ public class DisAggregate extends AW_AlgorithmBase
 	{
 		_awAlgoType = AWAlgoType.TIME_SLICE;
 	}
-	
+
 	/**
 	 * This method is called once before iterating all time slices.
 	 */
@@ -88,14 +106,13 @@ public class DisAggregate extends AW_AlgorithmBase
 		if (!method.equalsIgnoreCase("fill") && !method.equalsIgnoreCase("split"))
 			throw new DbCompException("Illegal method '" + method + "' -- allowed values are "
 				+ "'split' and 'fill'.");
-		
+
 		// Normally for disagg, output units will be the same as input.
 		String inUnits = getInputUnitsAbbr("input");
 		if (inUnits != null && inUnits.length() > 0)
 			setOutputUnitsAbbr(OUTPUTSTRING, inUnits);
 
-		info("input intv=" + iintvii.toString()
-			+ ", output intv=" + ointvii.toString());
+		log.info("input intv={}, output intv={}", iintvii.toString(), ointvii.toString());
 	}
 
 	/**
@@ -112,7 +129,7 @@ public class DisAggregate extends AW_AlgorithmBase
 	protected void doAWTimeSlice()
 		throws DbCompException
 	{
-		// if interval of output >= interval of input then output a single 
+		// if interval of output >= interval of input then output a single
 		// value at the input time.
 
 		// MJM 2011 03/20 this code takes advantage of the fact that the
@@ -126,7 +143,7 @@ public class DisAggregate extends AW_AlgorithmBase
 			setOutput(output, input);
 			return;
 		}
-		
+
 		// Iteration goes from time of THIS input up to (but not including)
 		// time of NEXT input.
 		Date startT = new Date(_timeSliceBaseTime.getTime());
@@ -135,9 +152,8 @@ public class DisAggregate extends AW_AlgorithmBase
 		Date endT = aggCal.getTime();
 		aggCal.setTime(startT);
 
-		info("baseTime=" + debugSdf.format(_timeSliceBaseTime) + ", startT=" + debugSdf.format(startT)
-		+ ", endT=" + debugSdf.format(endT)
-		+ ", method=" + method + ", v=" + input);
+		log.info("baseTime={}, startT={}, endT={}, method={}, v={}",
+				 _timeSliceBaseTime, startT, endT, method, input);
 		if (method.equalsIgnoreCase("fill"))
 		{
 			for(Date t = startT; t.before(endT);

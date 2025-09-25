@@ -1,15 +1,32 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.algo.jep;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import hec.lang.Const;
-import ilex.util.Logger;
 
 import java.util.Date;
 import java.util.Stack;
 
 import org.nfunk.jep.ParseException;
 import org.nfunk.jep.function.PostfixMathCommand;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.rating.CwmsRatingDao;
@@ -19,9 +36,9 @@ import decodes.cwms.rating.CwmsRatingDao;
  * 
  * The function takes two arguments: location and variable name.
  */
-public class RatingFunction
-	extends PostfixMathCommand
+public class RatingFunction	extends PostfixMathCommand
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final String funcName = "rating";
 	private JepContext ctx = null;
 	private int numParms = 0;
@@ -37,8 +54,6 @@ public class RatingFunction
 	public boolean checkNumberOfParameters(int np)
 	{
 		numParms = np;
-//System.out.println("rating checkNumParams, np=" + np);
-		// Required arg table name followed by 1...9 indeps
 		return np >= 2 && np <= 10;
 	}
 	
@@ -55,16 +70,11 @@ public class RatingFunction
 	public void run(Stack inStack)
 		throws ParseException
 	{
-//System.out.println("rating-1");
 		checkStack(inStack);
-//System.out.println("rating-2");
 		Date tsbt = ctx.getTimeSliceBaseTime();
 		if (tsbt == null)
 			throw new ParseException(funcName + " can only be called from within a time-slice script.");
 
-//System.out.println("rating-2a -- calling getNumberOfParameters()");
-//
-//System.out.println("rating-3, np=" + numParms);
 		double valueSet[] = new double[numParms-1];
 
 
@@ -82,14 +92,13 @@ public class RatingFunction
 		}
 		
 		String specId = inStack.pop().toString();
-//System.out.println("rating-4, spec='" + specId + "'");
 		
 		if (ctx.getTsdb() == null)
 		{
 			double sum = 0.0;
 			for(double v : valueSet)
 				sum += v;
-			Logger.instance().warning("TEST-MODE: No database, rating returning sum of all inputs=" + sum);
+			log.warn("TEST-MODE: No database, rating returning sum of all inputs={}", sum);
 			inStack.push(Double.valueOf(sum));
 			return;
 		}
@@ -109,7 +118,9 @@ public class RatingFunction
 		}
 		catch (RatingException ex)
 		{
-			throw new ParseException("Error " + what + " for '" + specId + "': " + ex);
+			ParseException toThrow = new ParseException("Error " + what + " for '" + specId + "': " + ex);
+			toThrow.addSuppressed(ex);
+			throw toThrow;
 		}
 		finally
 		{

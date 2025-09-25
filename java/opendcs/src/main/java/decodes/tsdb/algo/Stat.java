@@ -1,21 +1,31 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.algo;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
-
 import org.opendcs.annotations.PropertySpec;
 import org.opendcs.annotations.algorithm.Algorithm;
 import org.opendcs.annotations.algorithm.Input;
 import org.opendcs.annotations.algorithm.Output;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
-import ilex.var.NamedVariableList;
 import ilex.var.NamedVariable;
-import ilex.var.NoConversionException;
-import decodes.tsdb.DbAlgorithmExecutive;
 import decodes.tsdb.DbCompException;
-import decodes.tsdb.DbIoException;
-import decodes.tsdb.VarFlags;
 
 @Algorithm(description = "Stat takes a single input and generate multiple statistical measurements for the given time window.\n" + //
 		" Only the desired output parameter values need their timeseries set, if an output parameter is\n" + //
@@ -23,6 +33,7 @@ import decodes.tsdb.VarFlags;
 		)
 public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 		@Input
 		double input;
 
@@ -67,7 +78,7 @@ public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 			_awAlgoType = AWAlgoType.AGGREGATING;
 			_aggPeriodVarRoleName = "ave";
 		}
-		
+
 		/**
 		 * This method is called once before iterating all time slices.
 		 */
@@ -79,7 +90,7 @@ public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 			count = 0;
 			_min = Double.POSITIVE_INFINITY;
 			_max = Double.NEGATIVE_INFINITY;
-			
+
 			// Normally for average, output units will be the same as input.
 			String inUnits = getInputUnitsAbbr("input");
 			if (inUnits != null && inUnits.length() > 0)
@@ -90,7 +101,7 @@ public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 				setOutputUnitsAbbr("med", inUnits);
 				setOutputUnitsAbbr("stddev", inUnits);
 			}
-			this.debug3("Starting aggregate period at " + debugSdf.format(_aggregatePeriodBegin));
+			log.trace("Starting aggregate period at {}", _aggregatePeriodBegin);
 		}
 
 		/**
@@ -106,7 +117,7 @@ public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 		@Override
 		protected void doAWTimeSlice() throws DbCompException
 		{
-			debug2("AverageAlgorithm:doAWTimeSlice, input=" + input + ", timeslice=" + debugSdf.format(_timeSliceBaseTime));
+			log.trace("AverageAlgorithm:doAWTimeSlice, input={}, timeslice={}", input, _timeSliceBaseTime);
 			if (!isMissing(input))
 			{
 				inputData.add(input);
@@ -121,6 +132,7 @@ public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 				tally += input;
 				count++;
 			}
+	//AW:TIMESLICE_END
 		}
 
 		/**
@@ -131,15 +143,14 @@ public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 		{
 			if (count < minSamplesNeeded)
 			{
-				warning("Do not have minimum # samples (" + minSamplesNeeded
-					+ ") -- not producing an average.");
+				log.warn("Do not have minimum # samples ({}) -- not producing an average.", minSamplesNeeded);
 				if (_aggInputsDeleted)
 				{
 					deleteOutput(ave);
 				}
 			}
-			debug3("After timeslice aggPeriodEnd=" + debugSdf.format(_aggregatePeriodEnd)
-				+ " count=" + count + ", min=" + _min + ", max=" + _max + ", tally=" + tally);
+			log.trace("After timeslice aggPeriodEnd={} count={}, min={}, max={}, tally={}",
+					  _aggregatePeriodEnd, count, _min, _max, tally);
 
 			Collections.sort(inputData);
 
@@ -165,9 +176,9 @@ public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 				setOutput(stddev, stdDeviation(inputData, tally/(double)count));
 			}
 		}
-		
+
 		/**Standard Deviation based on entire population
-		 * 
+		 *
 		 * @param data - population
 		 * @param average - average of data
 		 * @return result - the standard deviation for the given data
@@ -180,7 +191,7 @@ public class Stat extends decodes.tsdb.algo.AW_AlgorithmBase
 				double v = input - average;
 				result += v*v;
 			}
-			result = Math.sqrt((result/inputData.size()));		
+			result = Math.sqrt((result/inputData.size()));
 			return result;
 		}
 }
