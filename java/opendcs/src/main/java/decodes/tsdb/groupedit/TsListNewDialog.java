@@ -1,68 +1,51 @@
-/**
- * $I$
- * 
- * $Log$
- * Revision 1.1  2018/05/23 19:59:02  mmaloney
- * OpenTSDB Initial Release
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import java.awt.*;
 
 import javax.swing.*;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.awt.event.*;
 
-import javax.swing.border.*;
-
-import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
-import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 
-import java.util.Calendar;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.ResourceBundle;
-import java.util.TimeZone;
-
-import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
-import ilex.util.StringPair;
 import decodes.db.Constants;
 import decodes.db.DataType;
 import decodes.db.EngineeringUnit;
 import decodes.db.SiteName;
 import decodes.db.Site;
 import decodes.dbeditor.SiteSelectDialog;
-import decodes.dbeditor.SiteSelectPanel;
 import decodes.gui.*;
-import decodes.hdb.HdbTimeSeriesDb;
 import decodes.hdb.HdbTsId;
 import decodes.sql.DbKey;
-import decodes.tsdb.ConstraintException;
-import decodes.tsdb.DbCompParm;
 import decodes.tsdb.DbIoException;
-import decodes.tsdb.IntervalCodes;
-import decodes.tsdb.IntervalIncrement;
 import decodes.tsdb.MissingAction;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.TimeSeriesIdentifier;
-import decodes.tsdb.TsGroup;
-import decodes.tsdb.TsdbDatabaseVersion;
-import decodes.tsdb.algo.RoleTypes;
-import decodes.tsdb.compedit.CAPEdit;
-import decodes.tsdb.groupedit.HdbDatatypeSelectDialog;
-import decodes.tsdb.groupedit.LocSelectDialog;
-import decodes.tsdb.groupedit.ParamSelectDialog;
-import decodes.tsdb.groupedit.SelectionMode;
-import decodes.tsdb.groupedit.VersionSelectDialog;
 import decodes.util.DecodesSettings;
-import decodes.cwms.CwmsTimeSeriesDb;
 import decodes.cwms.CwmsTsId;
 
 /**
@@ -72,6 +55,7 @@ import decodes.cwms.CwmsTsId;
 @SuppressWarnings("serial")
 public class TsListNewDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JButton okButton = new JButton();
 	private JTextField parmTypeField = new JTextField();
 	private JTextField siteField = new JTextField();
@@ -80,16 +64,15 @@ public class TsListNewDialog extends GuiDialog
 	private JTextField dataTypeField = new JTextField();
 	private JButton selectTsButton = new JButton("Time Series Lookup");
 	private JComboBox intervalCombo = new JComboBox();
-	private JComboBox tabselCombo = new JComboBox(new String[] {"R_", "M_"});
+	private JComboBox<String> tabselCombo = new JComboBox<>(new String[] {"R_", "M_"});
 	private JTextField deltaTField = new JTextField();
-	private JComboBox deltaTUnitsCombo = new JComboBox(
-		new String []{"Seconds", "Minutes", "Hours", "Days", "Weeks", 
+	private JComboBox<String> deltaTUnitsCombo = new JComboBox<>(
+		new String []{"Seconds", "Minutes", "Hours", "Days", "Weeks",
 			"Months", "Years" });
 	private JTextField unitsField = new JTextField();
 	private JButton unitsButton = new JButton(
 		ceResources.getString("CompParmDialog.SelectButton"));
-	private JComboBox ifMissingCombo = 
-		new JComboBox(MissingAction.values());
+	private JComboBox<MissingAction> ifMissingCombo = new JComboBox<>(MissingAction.values());
 
 	// Model ID Used by HDB:
 	private JTextField modelIdField = new JTextField();
@@ -104,7 +87,7 @@ public class TsListNewDialog extends GuiDialog
 	private SiteSelectDialog siteSelectDialog = null;
 	private TimeSeriesDb theDb;
 	private TsListPanel tsListPanel = null;
-	
+
 	private static ResourceBundle dlgResources =  LoadResourceBundle.getLabelDescriptions(
 		"decodes/resources/groupedit", DecodesSettings.instance().language);
 	private static ResourceBundle genResources =  LoadResourceBundle.getLabelDescriptions(
@@ -119,7 +102,7 @@ public class TsListNewDialog extends GuiDialog
 		super(theFrame, dlgResources.getString("NewTsDialog.DlgTitle"), true);
 		this.tsListPanel = tsListPanel;
 		this.theDb = theDb;
-		
+
 		siteSelectDialog = new SiteSelectDialog(this);
 
 		try
@@ -130,7 +113,7 @@ public class TsListNewDialog extends GuiDialog
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -140,7 +123,7 @@ public class TsListNewDialog extends GuiDialog
 		siteField.setText(sn != null ? sn.getNameValue() : "");
 		if (siteSelectDialog != null)
 			siteSelectDialog.getSiteSelectPanel().setSelection(sn);
-		
+
 		siteField.setEnabled(true);
 		siteSelectButton.setEnabled(true);
 
@@ -152,7 +135,7 @@ public class TsListNewDialog extends GuiDialog
 			intervalCombo.setSelectedIndex(0);
 		else
 			intervalCombo.setSelectedItem(intvCode);
-		
+
 		if (theDb.isHdb())
 		{
 			tabselCombo.setSelectedItem(tsid.getTableSelector());
@@ -206,13 +189,13 @@ public class TsListNewDialog extends GuiDialog
 		southLayout.setVgap(10);
 		southButtonPanel.add(okButton, null);
 		southButtonPanel.add(cancelButton, null);
-		
+
 		// Site or Location
 		String label = ceResources.getString("CompParmDialog.Site");
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 			label = "Location:";
 		fieldEntryPanel.add(new JLabel(label),
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 15, 4, 2), 0, 0));
 		fieldEntryPanel.add(siteField,
@@ -220,20 +203,20 @@ public class TsListNewDialog extends GuiDialog
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
 		fieldEntryPanel.add(siteSelectButton,
-			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 5, 4, 15), 0, 0));
-		
+
 		// Data Type or Param
 		label = ceResources.getString("CompParmDialog.DataType");
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 			label = "Param:";
 		fieldEntryPanel.add(new JLabel(label),
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 15, 4, 2), 0, 0));
-		fieldEntryPanel.add(dataTypeField, 
-			new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0, 
+		fieldEntryPanel.add(dataTypeField,
+			new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
 		JButton paramSelectButton = new JButton("Select");
@@ -250,7 +233,7 @@ public class TsListNewDialog extends GuiDialog
 			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 5, 4, 15), 0, 0));
-		
+
 
 		// For CWMS, Param Type
 		int Y = 2;
@@ -258,27 +241,27 @@ public class TsListNewDialog extends GuiDialog
 		{
 			fieldEntryPanel.add(new JLabel(
 				theDb.isCwms() ? "Param Type:" : "Statistics Code:"),
-				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
 			paramTypeCombo.setEditable(true);
 			for(String pt : theDb.listParamTypes())
 				paramTypeCombo.addItem(pt);
-			fieldEntryPanel.add(paramTypeCombo, 
-				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+			fieldEntryPanel.add(paramTypeCombo,
+				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 			Y++;
 		}
-		
+
 		// Interval
 		label = ceResources.getString("CompParmDialog.Interval");
 		fieldEntryPanel.add(new JLabel(label),
-			new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(4, 15, 4, 2), 0, 0));
-		fieldEntryPanel.add(intervalCombo, 
-			new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+		fieldEntryPanel.add(intervalCombo,
+			new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(4, 0, 4, 10), 0, 0));
 		Y++;
@@ -287,22 +270,22 @@ public class TsListNewDialog extends GuiDialog
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 			fieldEntryPanel.add(new JLabel("Duration:"),
-				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
 			durationCombo.setEditable(true);
-			fieldEntryPanel.add(durationCombo, 
-				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+			fieldEntryPanel.add(durationCombo,
+				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 			Y++;
-			
+
 			fieldEntryPanel.add(new JLabel("Version:"),
-				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
-			fieldEntryPanel.add(versionField, 
-				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+			fieldEntryPanel.add(versionField,
+				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 			JButton versionSelectButton = new JButton("Select");
@@ -320,19 +303,19 @@ public class TsListNewDialog extends GuiDialog
 					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 5, 4, 15), 0, 0));
 			Y++;
-			
+
 			if (theDb.isOpenTSDB())
 			{
 				fieldEntryPanel.add(new JLabel("Storage Units:"),
-					new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0, 
+					new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
 						GridBagConstraints.EAST, GridBagConstraints.NONE,
 						new Insets(4, 15, 4, 2), 0, 0));
-				fieldEntryPanel.add(unitsField, 
-					new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0, 
+				fieldEntryPanel.add(unitsField,
+					new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
 						GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 						new Insets(4, 0, 4, 10), 0, 0));
 				fieldEntryPanel.add(unitsButton,
-					new GridBagConstraints(2, Y, 1, 1, 0.0, 0.0, 
+					new GridBagConstraints(2, Y, 1, 1, 0.0, 0.0,
 						GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 						new Insets(4, 5, 4, 15), 0, 0));
 				unitsButton.addActionListener(
@@ -349,13 +332,13 @@ public class TsListNewDialog extends GuiDialog
 		{
         	label = theDb.getTableSelectorLabel() + ":";
 	        fieldEntryPanel.add(
-	        	new JLabel(label), 
+	        	new JLabel(label),
 				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
-	            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+	            	GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
 	        fieldEntryPanel.add(tabselCombo,
 				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
-	            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+	            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 	        Y++;
 		}
@@ -363,13 +346,13 @@ public class TsListNewDialog extends GuiDialog
 		if (theDb.isHdb())
 		{
 	        fieldEntryPanel.add(
-	        	new JLabel(ceResources.getString("CompParmDialog.ModelIDLabel")), 
+	        	new JLabel(ceResources.getString("CompParmDialog.ModelIDLabel")),
 				new GridBagConstraints(0, Y, 1, 1, 0.0, 0.0,
-	            	GridBagConstraints.EAST, GridBagConstraints.NONE, 
+	            	GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(4, 15, 4, 2), 0, 0));
 	        fieldEntryPanel.add(modelIdField,
 				new GridBagConstraints(1, Y, 1, 1, 1.0, 1.0,
-	            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+	            	GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 					new Insets(4, 0, 4, 10), 0, 0));
 	        Y++;
 		}
@@ -382,10 +365,10 @@ public class TsListNewDialog extends GuiDialog
 					siteSelectButtonPressed();
 				}
 			});
-			
+
 		getContentPane().add(outerPanel);
-		
-		
+
+
 		IntervalDAI intervalDAO = theDb.makeIntervalDAO();
 		try
 		{
@@ -408,7 +391,7 @@ public class TsListNewDialog extends GuiDialog
 		Collection<String> versions = tsListPanel.getDistinctPart("Version");
 		String[] versionArray = new String[versions.size()];
 		versions.toArray(versionArray);
-		String selection = (String)JOptionPane.showInputDialog(null, "Currently Used Versions:", 
+		String selection = (String)JOptionPane.showInputDialog(null, "Currently Used Versions:",
 			"Select Version", JOptionPane.PLAIN_MESSAGE, null, versionArray, versionField.getText());
 		if (selection != null)
 			versionField.setText(selection);
@@ -420,7 +403,7 @@ public class TsListNewDialog extends GuiDialog
 		Collection<String> params = tsListPanel.getDistinctPart(label);
 		String[] paramArray = new String[params.size()];
 		params.toArray(paramArray);
-		String selection = (String)JOptionPane.showInputDialog(null, "Currently Used " + label + "s:", 
+		String selection = (String)JOptionPane.showInputDialog(null, "Currently Used " + label + "s:",
 			"Select " + label, JOptionPane.PLAIN_MESSAGE, null, paramArray, dataTypeField.getText());
 		if (selection != null)
 			dataTypeField.setText(selection);
@@ -443,7 +426,7 @@ public class TsListNewDialog extends GuiDialog
 			showError(siteLabel + " cannot be blank!");
 			return;
 		}
-		
+
 		try
 		{
 			siteId = theDb.lookupSiteID(siteName);
@@ -458,11 +441,13 @@ public class TsListNewDialog extends GuiDialog
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Cannot lookup {} '{}'", siteLabel, siteName);
 			showError("Cannot look up " + siteLabel + " '" + siteName + "': " + ex);
 			return;
 		}
 		catch (NoSuchObjectException ex)
 		{
+			log.atError().setCause(ex).log("No such {} '{}'", siteLabel, siteName);
 			showError("No such " + siteLabel + " '" + siteName + "': " + ex);
 			return;
 		}
@@ -487,25 +472,27 @@ public class TsListNewDialog extends GuiDialog
 		}
 		catch (DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Error looking up {} '{}'", dtLabel, dtcode);
 			showError("Error looking up " + dtLabel + " '" + dtcode + "': " + ex);
 			return;
 		}
-		catch (NoSuchObjectException e)
+		catch (NoSuchObjectException ex)
 		{
+			log.atError().setCause(ex).log("No such {} '{}'", dtLabel, dtcode);
 			showError("No such " + dtLabel + " '" + dtcode + "'");
 			return;
 		}
-			
+
 		String interval = (String) intervalCombo.getSelectedItem();
-		
+
 		String tabSel = (String)(theDb.isHdb() ? tabselCombo.getSelectedItem() : null);
-		
+
 		String paramType = (String)(theDb.isHdb() ? null : paramTypeCombo.getSelectedItem());
-		
-		
+
+
 		String duration = (String)(theDb.isHdb() ? null : durationCombo.getSelectedItem());
 		String version = theDb.isCwms() || theDb.isOpenTSDB() ? versionField.getText().trim() : null;
-		
+
 		int modelId = -1;
 		if (theDb.isHdb())
 		{
@@ -518,14 +505,16 @@ public class TsListNewDialog extends GuiDialog
 				}
 				catch (NumberFormatException ex)
 				{
-					showError(LoadResourceBundle.sprintf(
+					final String msg = LoadResourceBundle.sprintf(
 						ceResources.getString("CompParmDialog.OKError6"),
-						modelIdStr));
+						modelIdStr);
+					log.atError().setCause(ex).log(msg);
+					showError(msg);
 					return;
 				}
 			}
 		}
-		
+
 		TimeSeriesIdentifier tsid = theDb.makeEmptyTsId();
 		tsid.setSiteName(siteName);
 		tsid.setSite(site);
@@ -541,8 +530,8 @@ public class TsListNewDialog extends GuiDialog
 			}
 			tsid.setStorageUnits(units);
 		}
-		
-		
+
+
 		if (theDb.isCwms() || theDb.isOpenTSDB())
 		{
 			tsid.setPart("ParamType", paramType);
@@ -555,7 +544,7 @@ public class TsListNewDialog extends GuiDialog
 			HdbTsId htsid = (HdbTsId)tsid;
 			htsid.setModelId(modelId);
 		}
-	
+
 		TimeSeriesDAI tsDAO = theDb.makeTimeSeriesDAO();
 		try
 		{
@@ -564,6 +553,7 @@ public class TsListNewDialog extends GuiDialog
 		}
 		catch(Exception ex)
 		{
+			log.atError().setCause(ex).log("Cannot create time series '{}'", tsid.getUniqueString());
 			showError("Cannot create time series '" + tsid.getUniqueString() + "': " + ex);
 			tsidCreated = null;
 			return;
@@ -572,7 +562,7 @@ public class TsListNewDialog extends GuiDialog
 		{
 			tsDAO.close();
 		}
-		
+
 		closeDlg();
 	}
 
@@ -608,7 +598,7 @@ public class TsListNewDialog extends GuiDialog
 	{
 		return tsidCreated;
 	}
-	
+
 	private void unitsButtonPressed()
 	{
 		EUSelectDialog dlg = new EUSelectDialog(this);

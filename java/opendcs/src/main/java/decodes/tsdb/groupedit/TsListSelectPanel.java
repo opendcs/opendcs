@@ -1,55 +1,19 @@
-/**
- * $Id: TsListSelectPanel.java,v 1.9 2020/01/31 19:41:00 mmaloney Exp $
- * 
- * Open Source Software
- * 
- * $Log: TsListSelectPanel.java,v $
- * Revision 1.9  2020/01/31 19:41:00  mmaloney
- * Implement new TS Definition Panel for OpenTSDB and CWMS.
- *
- * Revision 1.8  2018/05/23 19:59:02  mmaloney
- * OpenTSDB Initial Release
- *
- * Revision 1.7  2017/01/24 15:37:32  mmaloney
- * CWMS-10060 Remove redundant filling of TSID and Location caches.
- *
- * Revision 1.6  2016/11/29 01:15:47  mmaloney
- * Refactor listTimeSeries to make refresh explicit.
- *
- * Revision 1.5  2016/11/21 16:04:03  mmaloney
- * Code Cleanup.
- *
- * Revision 1.4  2016/01/27 22:07:59  mmaloney
- * Debugs for weird error involving inconsistent compare for sort.
- *
- * Revision 1.3  2015/11/18 14:13:17  mmaloney
- * Bug fix: Make the TsIdColumnCaparator be consistent.
- *
- * Revision 1.2  2015/10/26 12:47:03  mmaloney
- * Added setSelection method
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.11  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- * Revision 1.10  2012/08/01 16:55:58  mmaloney
- * dev
- *
- * Revision 1.9  2012/08/01 16:40:03  mmaloney
- * dev
- *
- * Revision 1.8  2012/06/12 17:47:02  mmaloney
- * clarify object names
- *
- * Revision 1.7  2011/02/03 20:00:23  mmaloney
- * Time Series Group Editor Mods
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
-
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -79,6 +43,9 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.TimeSeriesDAI;
 import decodes.gui.SortingListTable;
@@ -113,7 +80,7 @@ public class TsListSelectPanel extends JPanel
 		jbInit(preloadAll);
 		model.updateFilters();
 	}
-	
+
 	public void setMultipleSelection(boolean ok)
 	{
 		tsIdListTable.getSelectionModel().setSelectionMode(
@@ -164,11 +131,11 @@ public class TsListSelectPanel extends JPanel
 	 * This method will do two things:
 	 * 			Add a new TSID to the list if obj does not exists
 	 * -or- Modify a TSID obj if already in the list
-	 * 
+	 *
 	 * @param newdd
 	 *            the new object
 	 */
-	public void modifyTSIDList(TimeSeriesIdentifier olddd, 
+	public void modifyTSIDList(TimeSeriesIdentifier olddd,
 			TimeSeriesIdentifier newdd)
 	{
 		model.modifyTSIDList(olddd, newdd);
@@ -214,7 +181,7 @@ public class TsListSelectPanel extends JPanel
 
 	/**
 	 * Deletes the specified TSID from the list.
-	 * 
+	 *
 	 * @param ob the object to delete.
 	 */
 	public void deleteTSID(TimeSeriesIdentifier ob)
@@ -224,7 +191,7 @@ public class TsListSelectPanel extends JPanel
 
 	/**
 	 * Delete TSID of the given array list
-	 * 
+	 *
 	 * @param dds list of TSIDs to delete
 	 */
 	public void deleteTSIDs(TimeSeriesIdentifier[] dds)
@@ -234,11 +201,11 @@ public class TsListSelectPanel extends JPanel
 			deleteTSID(dd);
 		}
 	}
-	
+
 	/**
 	 * Verify is the given site name and param name combination
 	 * exists in the current list or not
-	 * 
+	 *
 	 * @param siteName
 	 * @param paramName
 	 * @return true if the site name and paramName combination
@@ -248,23 +215,23 @@ public class TsListSelectPanel extends JPanel
 	{
 		return model.ddExistsInList(siteName, paramName);
 	}
-	
+
 	/**
 	 * Make sure we do not have this combination in the DB already.
-	 * 
+	 *
 	 * @param siteId
 	 * @param dataTypeId
 	 * @param intervalCode
 	 * @param statisticsCode
 	 * @return true if found a record with the save values, false othewise.
 	 */
-	public boolean verifyConstraints(int siteId, int dataTypeId, 
+	public boolean verifyConstraints(int siteId, int dataTypeId,
 							String intervalCode, String statisticsCode)
 	{
-		return model.verifyConstraints(siteId, dataTypeId, 
+		return model.verifyConstraints(siteId, dataTypeId,
 										intervalCode, statisticsCode);
 	}
-	
+
 	public void setTimeSeriesList(Collection<TimeSeriesIdentifier> ddsIn)
 	{
 		model.setTSIDListFromTsGroup(ddsIn);
@@ -273,17 +240,17 @@ public class TsListSelectPanel extends JPanel
 	{
 		model.addTsDd(tsDdToAdd);
 	}
-	
+
 	public int[] getSelectedRows()
 	{
 		return tsIdListTable.getSelectedRows();
 	}
-	
+
 	public TimeSeriesIdentifier getTSIDAt(int index)
 	{
 		return model.getTSIDAt(index);
 	}
-	
+
 	public ArrayList<TimeSeriesIdentifier> getAllTSIDsInList()
 	{
 		return model.getTsIdsInList();
@@ -293,12 +260,12 @@ public class TsListSelectPanel extends JPanel
 	{
 		return tsIdListTable.getSelectedRowCount();
 	}
-	
+
 	public void clearSelection()
 	{
 		tsIdListTable.clearSelection();
 	}
-	
+
 	public void setSelection(TimeSeriesIdentifier tsid)
 	{
 		for(int idx = 0; idx < model.getRowCount(); idx++)
@@ -308,7 +275,7 @@ public class TsListSelectPanel extends JPanel
 				return;
 			}
 	}
-	
+
 	/**
 	 * Build and return an array of distinct TSID components.
 	 * @param part the column name, corresponding to the TSID component
@@ -317,7 +284,7 @@ public class TsListSelectPanel extends JPanel
 	public Collection<String> getDistinctPart(String part)
 	{
 		TreeSet<String> ret = new TreeSet<String>();
-		
+
 		int column=-1;
 		for(int c = 0; c < model.columnNames.length; c++)
 			if (part.equalsIgnoreCase(model.columnNames[c]))
@@ -332,7 +299,7 @@ public class TsListSelectPanel extends JPanel
 				if (s != null && s.length() > 0)
 					ret.add(s);
 			}
-		
+
 		return ret;
 	}
 
@@ -357,9 +324,9 @@ public class TsListSelectPanel extends JPanel
 	 * the table data set from the table object.
 	 */
 	@SuppressWarnings("serial")
-	private class TsIdSelectTableModel extends AbstractTableModel implements
-																  SortingListTableModel
+	private class TsIdSelectTableModel extends AbstractTableModel implements SortingListTableModel
 	{
+		private final Logger log = OpenDcsLoggerFactory.getLogger();
 		private String module;
 		private TimeSeriesDb theTsDb;
 		String[] columnNames;
@@ -410,17 +377,16 @@ public class TsListSelectPanel extends JPanel
 				tsidList = timeSeriesDAO.listTimeSeries(false);
 				if (tsidList == null)
 				{
-					Logger.instance().warning(module + " The Time Series ID List is null.");
+					log.warn("The Time Series ID List is null.");
 					TopFrame.instance().showError("The Time Series ID List is empty.");
 					tsidList = new ArrayList<>();
 				}
 			}
 			catch (DbIoException ex)
 			{
-				String msg = module + " Can not get the Time Series ID List "
-						+ ex.getMessage();
-				Logger.instance().failure(msg);
-				TopFrame.instance().showError(msg);
+				String msg = "Can not get the Time Series ID List";
+				log.atError().setCause(ex).log(msg);
+				TopFrame.instance().showError(msg + ": " + ex);
 			}
 			updateFilters();
 			reSort();
@@ -706,14 +672,17 @@ public class TsListSelectPanel extends JPanel
 		{
 			sortColumn = c;
 			TsIdColumnComparator cmp = new TsIdColumnComparator(c);
-			try { Collections.sort(tsidList, cmp); }
-			catch(IllegalArgumentException ex)
+			try
 			{
-				System.err.println("Inconsistent comparator. Last comparison was: ");
-				System.err.println(cmp.lastd1.getKey().toString() + ": " + cmp.lastd1.getUniqueString());
-				System.err.println(cmp.lastd2.getKey().toString() + ": " + cmp.lastd2.getUniqueString());
-				System.err.println(ex.toString());
-				ex.printStackTrace(System.err);
+				Collections.sort(tsidList, cmp);
+			}
+			catch (IllegalArgumentException ex)
+			{
+				log.atError()
+				   .setCause(ex)
+				   .addKeyValue("d1", () -> cmp.lastd1.getKey().toString() + ": " + cmp.lastd1.getUniqueString())
+				   .addKeyValue("d2", () -> cmp.lastd2.getKey().toString() + ": " + cmp.lastd2.getUniqueString())
+				   .log("Inconsistent comparator. Last comparison values provided.");
 			}
 		}
 
