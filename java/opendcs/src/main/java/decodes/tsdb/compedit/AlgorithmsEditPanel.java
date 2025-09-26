@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb.compedit;
 
@@ -16,7 +19,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,8 +32,10 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.AlgorithmDAI;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import decodes.gui.PropertiesEditPanel;
 import decodes.gui.SortingListTable;
@@ -52,10 +56,9 @@ import decodes.util.PropertySpec;
 import decodes.db.Constants;
 
 @SuppressWarnings("serial")
-public class AlgorithmsEditPanel
-	extends EditPanel
-	implements PropertiesOwner, DynamicPropertiesOwner
+public class AlgorithmsEditPanel extends EditPanel implements PropertiesOwner, DynamicPropertiesOwner
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JPanel inputPanel = null;
 	private JTextField nameText = new JTextField();
 	private JTextField idText = new JTextField();
@@ -233,8 +236,7 @@ public class AlgorithmsEditPanel
 		try
 		{
 			ClassLoader cl = Thread.currentThread().getContextClassLoader();
-			Logger.instance().debug3("Instantiating new algo exec '"
-				+ clsName + "'");
+			log.trace("Instantiating new algo exec '{}'", clsName);
 			Class<?> cls = cl.loadClass(clsName);
 			DbAlgorithmExecutive executive = (DbAlgorithmExecutive)cls.newInstance();
 			if (executive instanceof AW_AlgorithmBase)
@@ -246,9 +248,9 @@ public class AlgorithmsEditPanel
 		}
 		catch(Exception ex)
 		{
-			Logger.instance().warning("Cannot instantiate algorithm class '" + clsName + "': " + ex);
+			log.atWarn().setCause(ex).log("Cannot instantiate algorithm class '{}'", clsName);
 		}
-Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.getScripts().size() + " scripts.");
+		log.debug("AlgoPanel.setEditedObject algo has {} scripts.", editedObject.getScripts().size());
 
 		// Python dynamic properties are not defined in the algorithm record.
 		// Tooltips are stored in the python Init script.
@@ -269,7 +271,6 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 						initProps.getProperty(propName));
 					ps.setDynamic(true);
 					dynamicPropSpecs.put(algoPropName.toUpperCase(), ps);
-//System.out.println("Made new dynamicPropSpec: name=" + ps.getName() + ", desc=" + ps.getDescription());
 				}
 			}
 		}
@@ -516,6 +517,7 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 		}
 		catch(DbIoException ex)
 		{
+			log.atError().setCause(ex).log("Unable to save algorithm.");
 			showError(commitErr3 + ex);
 		}
 		finally
@@ -545,7 +547,6 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 				ob.putScript(script);
 				for(PropertySpec ps : dynamicPropSpecs.values())
 					script.addToText(ps.getName()+".tooltip=" + ps.getDescription()	+ "\n");
-//				System.out.println("AlgoEdit.save: ttscript:\n" + script.getText());
 			}
 		}
 	}
@@ -800,8 +801,6 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 	{
 		PropertySpec propSpec = dynamicPropSpecs.get(propName.toUpperCase());
 
-//System.out.println("AlgorithmsEditPanel.setDynPropDesc: " + propName
-//+ " '" + description + "' propSpec is " + (propSpec==null?"new.":"existing."));
 		if (propSpec != null)
 		{
 			if (description == null)
@@ -818,9 +817,6 @@ Logger.instance().debug1("AlgoPanel.setEditedObject algo has " + editedObject.ge
 			ps.setDynamic(true);
 			String pnuc = propName.toUpperCase();
 			dynamicPropSpecs.put(pnuc, ps);
-//System.out.println("After put, there are " + dynamicPropSpecs.values().size() + " dynamic props.");
-//for(String key : dynamicPropSpecs.keySet())
-//	System.out.println("\t'" + key + "'");
 		}
 	}
 

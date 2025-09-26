@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 
@@ -31,13 +31,15 @@ import decodes.sql.DbKey;
 import decodes.tsdb.*;
 import decodes.tsdb.compedit.computations.ComputationsListPanelTableModel;
 import decodes.gui.*;
-import ilex.util.*;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.IntervalDAI;
@@ -48,6 +50,7 @@ import opendcs.dai.TsGroupDAI;
 @SuppressWarnings({ "serial", "rawtypes" })
 public class ComputationsFilterPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public JTextField siteText;
 	private JButton siteButton;
 	public JTextField paramCode;
@@ -74,11 +77,11 @@ public class ComputationsFilterPanel extends JPanel
 	/**
 	 * constructor taking a new database to filter the computations from. if the
 	 * database is null then the instance of CAPEdit's database is used
-	 * 
+	 *
 	 * @param newDb
 	 */
 	@SuppressWarnings("unchecked")
-	ComputationsFilterPanel(TimeSeriesDb newDb, TopFrame parentFrame, 
+	ComputationsFilterPanel(TimeSeriesDb newDb, TopFrame parentFrame,
 							ComputationsListPanelTableModel model, TableRowSorter<ComputationsListPanelTableModel> sorter,
 							boolean filterLowIds)
 	{
@@ -143,25 +146,24 @@ public class ComputationsFilterPanel extends JPanel
 			for(TsGroup grp : groupList)
 				groupCombo.addItem(grp.getGroupId().toString() + " - " + grp.getGroupName());
 		}
-		catch (DbIoException e1)
+		catch (DbIoException ex)
 		{
-			System.err.println("Error listing groups: " + e1);
-			e1.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Error listing groups.");
 		}
-		
+
 		hideDisabledCheck = new JCheckBox(compLabels.getString("ComputationsFilterPanel.hideDisabled"));
 		hideDisabledCheck.addChangeListener(e -> setFilterParams());
 
 		this.setLayout(new GridBagLayout());
 
 		this.add(new JLabel(compLabels.getString("ComputationsFilterPanel.SiteLabel")),
-			new GridBagConstraints(0, 0, 1, 1, 0, 0, 
+			new GridBagConstraints(0, 0, 1, 1, 0, 0,
 				GridBagConstraints.EAST, 0, new Insets(4, 10, 0, 0), 0,	0));
 		this.add(new JLabel(compLabels.getString("ComputationsFilterPanel.CodeLabel")),
-			new GridBagConstraints(0, 1, 1, 1, 0, 0, 
+			new GridBagConstraints(0, 1, 1, 1, 0, 0,
 				GridBagConstraints.EAST, 0, new Insets(4, 10, 0, 0), 0, 0));
 		this.add(new JLabel(compLabels.getString("ComputationsFilterPanel.IntervalLabel")),
-			new GridBagConstraints(0, 2, 1, 1, 0, 0, 
+			new GridBagConstraints(0, 2, 1, 1, 0, 0,
 				GridBagConstraints.EAST, 0, new Insets(4, 10, 0, 0), 0, 0));
 		this.add(siteText, new GridBagConstraints(1, 0, 1, 1, 1, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 4, 0, 0), 0, 0));
@@ -171,10 +173,10 @@ public class ComputationsFilterPanel extends JPanel
 			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 0), 0, 0));
 		this.add(clear, new GridBagConstraints(3, 0, 1, 1, 0, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 10, 0, 0), 0, 0));
-		
+
 		this.add(intervalBox, new GridBagConstraints(1, 2, 1, 1, 1, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 4, 0, 0), 0, 0));
-		
+
 		this.add(new JLabel("Uses Group:"),
 			new GridBagConstraints(0, 3, 1, 1, 0, 0, GridBagConstraints.EAST, 0, new Insets(4, 10, 10, 0), 0,
 				0));
@@ -196,10 +198,10 @@ public class ComputationsFilterPanel extends JPanel
 			GridBagConstraints.HORIZONTAL, new Insets(4, 4, 0, 10), 0, 0));
 		this.add(algorithmBox, new GridBagConstraints(6, 1, 1, 1, 0, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 4, 0, 10), 0, 0));
-		
+
 		this.add(hideDisabledCheck, new GridBagConstraints(5, 2, 2, 1, 0, 0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(4, 4, 0, 10), 0, 0));
-		
+
 		this.add(refresh, new GridBagConstraints(5, 3, 2, 1, 0, 0, GridBagConstraints.CENTER,
 			GridBagConstraints.HORIZONTAL, new Insets(4, 4, 10, 10), 0, 0));
 
@@ -216,10 +218,7 @@ public class ComputationsFilterPanel extends JPanel
 		}
 		catch (Exception ex)
 		{
-			String msg = compLabels.getString("ComputationsFilterPanel.FillException") + ": " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log(compLabels.getString("ComputationsFilterPanel.FillException"));
 		}
 	}
 
@@ -268,7 +267,7 @@ public class ComputationsFilterPanel extends JPanel
 			}
 			catch (Exception ex)
 			{
-				Logger.instance().warning("Error seting filter params: " + ex);
+				log.atWarn().setCause(ex).log("Error setting filter params.");
 			}
 		}
 		else
@@ -288,6 +287,7 @@ public class ComputationsFilterPanel extends JPanel
 				}
 				catch (NumberFormatException ex)
 				{
+					log.atTrace().setCause(ex).log("Unable to set Process Filter");
 				}
 			}
 		}
@@ -305,7 +305,7 @@ public class ComputationsFilterPanel extends JPanel
 			}
 			catch (Exception ex)
 			{
-				Logger.instance().warning("Error seting filter params: " + ex);
+				log.atWarn().setCause(ex).log("Error setting filter params.");
 			}
 		}
 
@@ -314,13 +314,13 @@ public class ComputationsFilterPanel extends JPanel
 			compFilter.setIntervalCode(x);
 		else
 			compFilter.setIntervalCode(null);
-		
+
 		if (groupCombo.getSelectedIndex() > 0)
 		{
 			TsGroup grp = groupList.get(groupCombo.getSelectedIndex()-1);
 			compFilter.setGroupId(grp.getGroupId());
 		}
-		
+
 		compFilter.setEnabledOnly(hideDisabledCheck.isSelected());
 
 		updateFilter(compFilter);

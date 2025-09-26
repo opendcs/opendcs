@@ -1,19 +1,21 @@
 /*
-*  $Id: CAPEdit.java,v 1.7 2020/05/07 13:55:13 mmaloney Exp $
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.tsdb.compedit;
 
 import ilex.cmdline.BooleanToken;
-import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.LoadResourceBundle;
 
@@ -22,15 +24,12 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ResourceBundle;
 
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
-import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
 import lrgs.gui.DecodesInterface;
-import decodes.db.Site;
 import decodes.gui.TopFrame;
 import decodes.tsdb.*;
 import decodes.util.CmdLineArgs;
@@ -43,8 +42,7 @@ import decodes.util.DecodesSettings;
  *  A - Algorithms
  *  P - Processes
  */
-public class CAPEdit 
-	extends TsdbAppTemplate
+public class CAPEdit extends TsdbAppTemplate
 {
 	static CAPEdit _instance = null;
 
@@ -111,7 +109,6 @@ public class CAPEdit
 		fillLabels();
 		
 		TopFrame frame = getTopFrame();
-//		frame.centerOnScreen();
 		frame.setVisible(true);
 		SwingUtilities.invokeLater(() -> computationsListPanel.doRefresh());
 	}
@@ -128,8 +125,6 @@ public class CAPEdit
 			topFrame = new TopFrame();
 			topFrame.setSize(new java.awt.Dimension(900,740));
 			topFrame.setTitle(titleLabel);
-			//topFrame.setDefaultCloseOperation(topFrame.EXIT_ON_CLOSE);
-//			topFrame.setContentPane(getJContentPane());
 			getJContentPane();
 			topFrame.setDefaultCloseOperation(
 									WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -178,7 +173,6 @@ public class CAPEdit
 	{
 		if (jContentPane == null) {
 			jContentPane = (JPanel)topFrame.getContentPane();
-//			jContentPane = new JPanel();
 			jContentPane.setLayout(new BorderLayout());
 			jContentPane.add(getMainTab(), java.awt.BorderLayout.CENTER);
 		}

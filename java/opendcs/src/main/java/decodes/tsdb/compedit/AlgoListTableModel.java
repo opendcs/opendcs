@@ -1,29 +1,26 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
-*  
-*  $Log$
-*  Revision 1.7  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb.compedit;
 
-import ilex.util.Logger;
-import ilex.util.TextUtil;
-
 import java.util.*;
 
-import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import opendcs.dai.AlgorithmDAI;
 
@@ -33,11 +30,9 @@ import decodes.sql.DbKey;
 import decodes.tsdb.*;
 import decodes.util.DecodesSettings;
 
-public class AlgoListTableModel 
-	extends AbstractTableModel 
-	implements SortingListTableModel
+public class AlgoListTableModel  extends AbstractTableModel  implements SortingListTableModel
 {
-	
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String idLabel;
 	private String nameLabel;
 	private String execLabel;
@@ -46,8 +41,8 @@ public class AlgoListTableModel
 	private String errMsg1;
 	private String errMsg2;
 	private String errMsg3;
-	
-//	Vector<DbCompAlgorithm> myvector = new Vector<DbCompAlgorithm>();
+
+
 	private ArrayList<AlgorithmInList> myList = new ArrayList<AlgorithmInList>();
 	private String columnNames[];
 	static int columnWidths[] = { 5, 20, 25, 8, 42};
@@ -56,7 +51,7 @@ public class AlgoListTableModel
 
 	int sortedBy = -1;
 	int minAlgoId = -1;
-	
+
 	private void fillLabels()
 	{
 		idLabel=CAPEdit.instance().compeditDescriptions.getString("AlgoListTableModel.ID");
@@ -68,7 +63,7 @@ public class AlgoListTableModel
 		errMsg2=CAPEdit.instance().compeditDescriptions.getString("AlgoListTableModel.ErrMsg2");
 		errMsg2=CAPEdit.instance().compeditDescriptions.getString("AlgoListTableModel.ErrMsg3");
 	}
-	
+
 	public AlgoListTableModel()
 	{
 		super();
@@ -81,14 +76,14 @@ public class AlgoListTableModel
 		//that will be displayed on the list
 		minAlgoId = DecodesSettings.instance().minAlgoId;
 	}
-	
+
 	public void sortByColumn(int c)
 	{
 		Collections.sort(myList, new AlgorithmsListComparator(c, sortType[c]));
 		sortedBy = c;
 		fireTableDataChanged();
 	}
-	
+
 	public void fill()
 	{
 
@@ -100,8 +95,10 @@ public class AlgoListTableModel
 		}
 		catch(DbIoException ex)
 		{
-			CAPEdit.instance().getFrame().showError(
-				"Cannot list algorithms: " + ex);
+			final String msg = "Cannot list algorithms";
+			log.atError().setCause(ex).log(msg);
+			CAPEdit.instance().getFrame().showError(msg + ": " + ex);
+
 			myList = new ArrayList<AlgorithmInList>();
 		}
 		finally
@@ -119,11 +116,11 @@ public class AlgoListTableModel
 		fireTableDataChanged();
 	}
 
-	public Object getRowObject(int idx) 
+	public Object getRowObject(int idx)
 	{
 		return myList.get(idx);
 	}
-	
+
 	public DbCompAlgorithm getRowAlgorithm(int idx)
 	{
 		TimeSeriesDb tsdb = CAPEdit.instance().getTimeSeriesDb();
@@ -136,8 +133,9 @@ public class AlgoListTableModel
 		}
 		catch(Exception ex)
 		{
-			CAPEdit.instance().getFrame().showError(
-				"Cannot list algorithms: " + ex);
+			final String msg = "Cannot retrieve algorithms";
+			log.atError().setCause(ex).log(msg);
+			CAPEdit.instance().getFrame().showError(msg + ": " + ex);
 			myList = new ArrayList<AlgorithmInList>();
 			return null;
 		}
@@ -147,7 +145,7 @@ public class AlgoListTableModel
 		}
 	}
 
-	public int getRowCount() 
+	public int getRowCount()
 	{
 		return myList.size();
 	}
@@ -155,7 +153,7 @@ public class AlgoListTableModel
 	public int getColumnCount() {
 		return columnNames.length;
 	}
-	
+
 	public String getColumnName(int col)
 	{
 		return columnNames[col];
@@ -167,7 +165,7 @@ public class AlgoListTableModel
 		AlgorithmInList ail = myList.get(rowIndex);
 		return getNlColumn(ail, columnIndex);
 	}
-	
+
 	public static Object getNlColumn(AlgorithmInList obj, int columnIndex)
 	{
 		switch(columnIndex)
@@ -198,7 +196,7 @@ public class AlgoListTableModel
 		}
 		return false;
 	}
-	
+
 	public String getNameById(DbKey id)
 	{
 		for(AlgorithmInList dca : myList)

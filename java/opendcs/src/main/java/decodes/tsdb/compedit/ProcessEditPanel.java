@@ -1,14 +1,17 @@
 /*
-*  $Id$
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb.compedit;
 
@@ -21,9 +24,11 @@ import java.util.ResourceBundle;
 import javax.swing.*;
 import javax.swing.border.*;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.LoadingAppDAI;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.PropertiesUtil;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
@@ -37,8 +42,9 @@ import decodes.gui.EnumComboBox;
 import decodes.gui.PropertiesEditPanel;
 
 @SuppressWarnings("serial")
-public class ProcessEditPanel extends EditPanel 
+public class ProcessEditPanel extends EditPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JPanel paramPanel = null;
 	private JLabel processNameLabel = null;
 	private JTextField nameField = null;
@@ -52,7 +58,7 @@ public class ProcessEditPanel extends EditPanel
 	private JCheckBox manualEditCheck = null;
 	private EnumComboBox processTypeCombo = new EnumComboBox("ApplicationType", "");
 	private ResourceBundle genericDescriptions = null, compeditDescriptions = null;
-	
+
 	/** Will be set for CAPEdit, but not for Process Status GUI */
 	private ProcessesListPanel listPanel = null;
 	private ProcessEditDialog parentDialog = null;
@@ -72,7 +78,7 @@ public class ProcessEditPanel extends EditPanel
 		this.add(getParamPanel(), java.awt.BorderLayout.CENTER);
 		editedObject = null;
 	}
-	
+
 	public void setEditedObject(CompAppInfo cai)
 	{
 		editedObject = cai;
@@ -106,10 +112,10 @@ public class ProcessEditPanel extends EditPanel
 
 	/**
 	 * This method initializes the top panel containing the editable fields
-	 * 	
-	 * @return javax.swing.JPanel	
+	 *
+	 * @return javax.swing.JPanel
 	 */
-	private JPanel getParamPanel() 
+	private JPanel getParamPanel()
 	{
 		paramPanel = new JPanel(new GridBagLayout());
 
@@ -147,7 +153,7 @@ public class ProcessEditPanel extends EditPanel
 			new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(5, 0, 5, 10), 30, 0));
-		
+
 		manualEditCheck.setToolTipText(
 			compeditDescriptions.getString("ProcessEditPanel.ManualCheckBoxTT"));
 		paramPanel.add(manualEditCheck,
@@ -157,7 +163,7 @@ public class ProcessEditPanel extends EditPanel
 
 		propsPanel = PropertiesEditPanel.from(panelProps);
 		propsPanel.setTitle(" "+compeditDescriptions.getString("ProcessEditPanel.PropsPanelTitle")+" ");
-		
+
 		if (listPanel != null)
 			propsPanel.setOwnerFrame(CAPEdit.instance().getFrame());
 		else if (parentDialog != null)
@@ -172,7 +178,7 @@ public class ProcessEditPanel extends EditPanel
 			new GridBagConstraints(0, 4, 3, 1, 0.5, 0.5,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(10, 10, 10, 10), 0, 0));
-		
+
 		processTypeCombo.addActionListener(
 			new ActionListener()
 			{
@@ -182,7 +188,7 @@ public class ProcessEditPanel extends EditPanel
 					processTypeSelected();
 				}
 			});
-			
+
 		return paramPanel;
 	}
 
@@ -211,20 +217,19 @@ public class ProcessEditPanel extends EditPanel
 		catch(ClassCastException ex)
 		{
 			// ClassCastException if exec class doesn't implement PropertiesOwner
+			log.atTrace().setCause(ex).log("Process Class does not implement PropertiesOwner");
 		}
 		catch (Exception ex)
 		{
-			String msg = "Cannot instantiate PropertiesOwner class for '" + pt + "': " + ex;
-			Logger.instance().warning(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			String msg = "Cannot instantiate PropertiesOwner class for '{}'";
+			log.atError().setCause(ex).log(msg, pt);
 		}
 		propsPanel.getModel().setPropertiesOwner(propOwner);
 	}
 
 	/**
 	 * This method initializes jScrollPane to contain the comments
-	 * 
+	 *
 	 * @return javax.swing.JScrollPane
 	 */
 	private JScrollPane getCommentsScrollPane() {
@@ -239,7 +244,7 @@ public class ProcessEditPanel extends EditPanel
 
 	/**
 	 * This method initializes jTextArea for the comments
-	 * 
+	 *
 	 * @return javax.swing.JTextArea
 	 */
 	private JTextArea getCommentsText() {
@@ -251,13 +256,13 @@ public class ProcessEditPanel extends EditPanel
 		}
 		return commentsText;
 	}
-	
+
 	/**
-	 * This method initializes the comments panel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes the comments panel
+	 *
+	 * @return javax.swing.JPanel
 	 */
-	private JPanel getComments() 
+	private JPanel getComments()
 	{
 		if (commentsPanel == null) {
 			commentsPanel = new JPanel();
@@ -265,11 +270,11 @@ public class ProcessEditPanel extends EditPanel
 			commentsPanel.setSize(new Dimension(37,51));
 			commentsPanel.setBorder(
 				BorderFactory.createTitledBorder(
-					BorderFactory.createLineBorder(Color.gray,2), 
+					BorderFactory.createLineBorder(Color.gray,2),
 					CAPEdit.instance().compeditDescriptions
-					.getString("ProcessEditPanel.CommentPanelBorder1"), TitledBorder.DEFAULT_JUSTIFICATION, 
-					TitledBorder.DEFAULT_POSITION, 
-					new Font(compeditDescriptions.getString("ProcessEditPanel.CommentPanelBorder2"), Font.BOLD, 12), 
+					.getString("ProcessEditPanel.CommentPanelBorder1"), TitledBorder.DEFAULT_JUSTIFICATION,
+					TitledBorder.DEFAULT_POSITION,
+					new Font(compeditDescriptions.getString("ProcessEditPanel.CommentPanelBorder2"), Font.BOLD, 12),
 					new Color(51,51,51)));
 			commentsPanel.setPreferredSize(new Dimension(10,100));
 			commentsPanel.add(getCommentsScrollPane(), BorderLayout.CENTER);
@@ -288,12 +293,12 @@ public class ProcessEditPanel extends EditPanel
 
 		String oldNm = editedObject == null ? null : editedObject.getAppName();
 		LoadingAppDAI loadingAppDao = decodes.db.Database.getDb().getDbIo().makeLoadingAppDAO();
-		try 
+		try
 		{
 			if (oldNm != null && TextUtil.strCompareIgnoreCase(nm, oldNm) != 0)
 			{
 				// The name has changed. Make sure the new name doesn't clash with an existing proc.
-				try 
+				try
 				{
 					if (loadingAppDao.getComputationApp(nm) != null)
 					{
@@ -306,17 +311,18 @@ public class ProcessEditPanel extends EditPanel
 					// This is ok -- it means there is no existing proc with that name -- no clash.
 				}
 			}
-	
+
 			saveToObject(editedObject);
-		
-			loadingAppDao.writeComputationApp(editedObject); 
+
+			loadingAppDao.writeComputationApp(editedObject);
 			idField.setText("" + editedObject.getAppId());
 			if (listPanel != null)
 				listPanel.procTableModel.fill();
 		}
 		catch(DbIoException ex)
 		{
-			showError(compeditDescriptions.getString("ProcessEditPanel.CommitError3")+" " + ex);
+			log.atError().setCause(ex).log(compeditDescriptions.getString("ProcessEditPanel.CommitError3"));
+			showError(compeditDescriptions.getString("ProcessEditPanel.CommitError3") + " " + ex);
 		}
 		finally
 		{
