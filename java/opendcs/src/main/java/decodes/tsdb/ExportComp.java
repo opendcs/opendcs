@@ -1,48 +1,17 @@
 /*
-*  $Id$
-*  
-*  $Log$
-*  Revision 1.4  2017/04/27 21:07:32  mmaloney
-*  Update to use DAOs rather than the obsolete methods in TimeSeriesDb.
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  Revision 1.3  2016/09/23 15:54:58  mmaloney
-*  Remove stderr debugs.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  Revision 1.2  2015/03/19 18:05:07  mmaloney
-*  Set DecodesInterface.silent
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.15  2012/08/20 20:08:05  mmaloney
-*  Implement HDB Convert2Group utility.
-*
-*  Revision 1.14  2012/01/17 17:45:41  mmaloney
-*  Catch NoSuchObject exception if a TS is deleted, rendering a computation invalid.
-*
-*  Revision 1.13  2011/02/21 21:29:02  mmaloney
-*  Also export apps
-*
-*  Revision 1.12  2011/02/21 21:23:13  mmaloney
-*  Allow spaces after colon in control file.
-*
-*  Revision 1.11  2011/02/21 20:57:05  mmaloney
-*  Implement control file feature.
-*
-*  Revision 1.10  2011/02/04 21:30:16  mmaloney
-*  Intersect groups
-*
-*  Revision 1.9  2011/01/28 20:07:02  gchen
-*  *** empty log message ***
-*
-*  Revision 1.8  2011/01/16 22:05:00  gchen
-*  Modify the sortTsGroupList method to make sure to load the subgroups first and to handle the subgroup recursion.
-*
-*  Add the command line switch -A to allow to export all TS groups from the DB
-*
-*  Revision 1.7  2011/01/11 19:29:42  mmaloney
-*  dev
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
@@ -51,19 +20,19 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.util.Iterator;
-import java.util.Properties;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import lrgs.gui.DecodesInterface;
 import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.ComputationDAI;
 import opendcs.dai.LoadingAppDAI;
-import opendcs.dai.SiteDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 import ilex.cmdline.*;
-import ilex.util.Logger;
 import decodes.db.Constants;
 import decodes.hdb.HdbTimeSeriesDb;
 import decodes.util.CmdLineArgs;
@@ -72,13 +41,12 @@ import decodes.tsdb.xml.*;
 /**
 This is the Export program to write an xml file of comp meta data.
 */
-public class ExportComp
-	extends TsdbAppTemplate
+public class ExportComp extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private StringToken xmlFileArg;
 	private StringToken controlFileArg;
-//	private String outputFile = null;;
-	
+
 	private ArrayList<String> ctrlFileAlgo = new ArrayList<String>();
 	private ArrayList<String> ctrlFileComp = new ArrayList<String>();
 	private ArrayList<String> ctrlFileProc = new ArrayList<String>();
@@ -95,9 +63,9 @@ public class ExportComp
 	public void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
 		controlFileArg = new StringToken("C", "control-file",
-			"", TokenOptions.optSwitch, ""); 
+			"", TokenOptions.optSwitch, "");
 		xmlFileArg = new StringToken("", "xml-file",
-			"", TokenOptions.optArgument | TokenOptions.optRequired, ""); 
+			"", TokenOptions.optArgument | TokenOptions.optRequired, "");
 		cmdLineArgs.addToken(controlFileArg);
 		cmdLineArgs.addToken(xmlFileArg);
 		DecodesInterface.silent = true;
@@ -117,16 +85,14 @@ public class ExportComp
 		}
 		catch (DbIoException ex)
 		{
-			String msg = "Cannot load TSIDs: " + ex;
-			Logger.instance().fatal(msg);
-			System.err.println(msg);
+			log.atError().setCause(ex).log("Cannot load TSIDs.");
 			return;
 		}
 		finally
 		{
 			tsdao.close();
 		}
-		
+
 		boolean haveControlFile = false;
 		if (controlFileArg.getValue() != null
 		 && controlFileArg.getValue().length() > 0)
@@ -138,14 +104,11 @@ public class ExportComp
 			}
 			catch(IOException ex)
 			{
-				String msg = "Cannot read control file '" 
-					+ controlFileArg.getValue() + "': " + ex;
-				Logger.instance().fatal(msg);
-				System.err.println(msg);
+				log.atError().setCause(ex).log("Cannot read control file '{}'", controlFileArg.getValue());
 				return;
 			}
 		}
-	
+
 		LoadingAppDAI loadingAppDao = theDb.makeLoadingAppDAO();
 		AlgorithmDAI algorithmDao = theDb.makeAlgorithmDAO();
 		ComputationDAI computationDAO = theDb.makeComputationDAO();
@@ -154,7 +117,7 @@ public class ExportComp
 		try
 		{
 			ArrayList<CompMetaData> metadata = new ArrayList<CompMetaData>();
-	
+
 			// now go get the applications data
 			List<CompAppInfo> applist = loadingAppDao.listComputationApps(false);
 			for(CompAppInfo cai : applist)
@@ -163,7 +126,7 @@ public class ExportComp
 					continue;
 				metadata.add(cai);
 			}
-	
+
 			// now get the algorithms  data
 			ArrayList<DbCompAlgorithm> algolist = algorithmDao.listAlgorithms();
 			for(DbCompAlgorithm algo : algolist)
@@ -175,9 +138,9 @@ public class ExportComp
 
 			// now get the computations
 			ArrayList<DbComputation> compList = computationDAO.listCompsForGUI(new CompFilter());
-			
+
 			//Load the computations into the metadata
-			ArrayList<TsGroup> tsGrpList = new ArrayList<TsGroup>(); 
+			ArrayList<TsGroup> tsGrpList = new ArrayList<TsGroup>();
 			for(DbComputation comp : compList)
 			{
 				if (haveControlFile && !ctrlFileComp.contains(comp.getName().toLowerCase()))
@@ -190,19 +153,18 @@ public class ExportComp
 					DbCompParm dcp = pit.next();
 					// NOTE: expandSDI even if SDI is null site and dt may be specified independently
 					// for group computations.
-//					if (dcp.getSiteDataTypeId() != Constants.undefinedId)
-//					{
-						try { theDb.expandSDI(dcp); }
-						catch(NoSuchObjectException ex)
-						{
-							Logger.instance().warning("Time Series with id "
-								+ dcp.getSiteDataTypeId()
-								+ " has been removed, setting comp parm to undefined.");
-							dcp.setSiteDataTypeId(Constants.undefinedId);
-						}
-//					}
+
+					try { theDb.expandSDI(dcp); }
+					catch(NoSuchObjectException ex)
+					{
+						log.atWarn()
+						   .setCause(ex)
+						   .log("Time Series with id {} has been removed, setting comp parm to undefined.",
+						   		dcp.getSiteDataTypeId());
+						dcp.setSiteDataTypeId(Constants.undefinedId);
+					}
 				}
-				
+
 				//Get the TS group name for each computation and
 				//add all TS groups into the TSGroupList with expanding their TS subgroups
 				String tsGrpName = null;
@@ -221,10 +183,7 @@ public class ExportComp
 					}
 					else
 					{
-						String msg = "TS Group " + tsGrpName
-								+ " doesn't exist in the database.";
-						System.err.println(msg);
-						Logger.instance().warning(msg);
+						log.warn("TS Group {} doesn't exist in the database.", tsGrpName);
 					}
 				}
 
@@ -274,27 +233,24 @@ public class ExportComp
 					tsGrpList.add(g);
 				}
 			}
-			
+
 			//Reorder the tmpTsGrpsList and
 			//put all subgroups of a TS group in front of it
 			ArrayList<TsGroup> tsGrpsList = sortTsGroupList(tsGrpList);
-			
+
 			//Load each TS group into the metadata
 			if (tsGrpsList != null) {
 				for(TsGroup tsGrp: tsGrpsList)
 				  metadata.add(tsGrp);
 			}
-			
+
 			CompXio cx = new CompXio("ExportComp", theDb);
 			String fn = xmlFileArg.getValue(0);
 			cx.writeFile(metadata, fn);
 		}
 		catch(Exception ex)
 		{
-			String msg = "Error in XML export: " + ex;
-			Logger.instance().fatal(msg);
-			System.err.println(msg);
-			ex.printStackTrace();
+			log.atError().setCause(ex).log("Error in XML export.");
 		}
 		finally
 		{
@@ -306,25 +262,25 @@ public class ExportComp
 	}
 
 	/**
-	 * Sort the TS Group List with searching subgroups for each TS group and 
+	 * Sort the TS Group List with searching subgroups for each TS group and
 	 * putting them in the front of each referring TS group.
-	 * 
+	 *
 	 * @param tsGrpsList: a TsGroup array list for sorting
-	 * @return ArrayList<TsGroup>: sorted TsGroup array list 
+	 * @return ArrayList<TsGroup>: sorted TsGroup array list
 	 */
 	protected ArrayList<TsGroup> sortTsGroupList(ArrayList<TsGroup> theTsGrpList)
 	{
 		if ((theTsGrpList == null) || (theTsGrpList.size() == 0))
 			return null;
-		
+
 		ArrayList<TsGroup> retTsGrpList = new ArrayList<TsGroup>();
 		ArrayList<TsGroup> searchTsGrpList = new ArrayList<TsGroup>();
-		
+
 		for (TsGroup tsGrp: theTsGrpList) {
 			searchTsGrpList.clear();
 			addTheTSGroup(tsGrp, theTsGrpList, retTsGrpList, searchTsGrpList);
 		}
-		
+
 		theTsGrpList.clear();
 		searchTsGrpList.clear();
 		return retTsGrpList;
@@ -332,7 +288,7 @@ public class ExportComp
 
 	 /**
 	  * Add a TS group object with its subgroups into retTsGrpList
-	  * 
+	  *
 	  * @param tsGrp
 	  * @param theTsGrpList
 	  * @param retTsGrpList
@@ -344,7 +300,7 @@ public class ExportComp
 		//tsGrp is null
 		if (tsGrp == null)
 			return;
-		
+
 		//tsGrp is found in retTsGrpList, so no need to add this object.
 		if (findTsGroup(tsGrp, retTsGrpList) != null)
 			return;
@@ -353,7 +309,7 @@ public class ExportComp
 		//tsGrp is not found in theTsGrpList
 		if (theFoundTsGrp == null)
 			return;
-		
+
 		//If tsGrp appears in the searchTsGrpList, stop recursion
 		if (searchTsGrpList != null) {
 			if (findTsGroup(theFoundTsGrp, searchTsGrpList) != null)
@@ -361,7 +317,7 @@ public class ExportComp
 			else
 				searchTsGrpList.add(theFoundTsGrp);
 		}
-		
+
 		//tsGrp is found in theTsGrpList, so do the following
 		//Add theFoundTsGrp with its included subgroups into retTsGrpList
 		for (TsGroup g: theFoundTsGrp.getIncludedSubGroups())
@@ -374,7 +330,7 @@ public class ExportComp
 		//Add theFoundTsGrp with its intersected subgroups into retTsGrpList
 		for (TsGroup g: theFoundTsGrp.getIntersectedGroups())
 			addTheTSGroup(g, theTsGrpList, retTsGrpList, searchTsGrpList);
-		
+
 		retTsGrpList.add(theFoundTsGrp);
 	}
 
@@ -382,7 +338,7 @@ public class ExportComp
 	{
 		if ((tsGrp == null) || (theTsGrpList == null) || (theTsGrpList.size() == 0))
 			return null;
-		
+
 		for (TsGroup g: theTsGrpList)
 			if (g.getGroupName().equals(tsGrp.getGroupName()))
 				return g;
@@ -405,30 +361,26 @@ public class ExportComp
 			int colon = line.indexOf(':');
 			if (colon == -1)
 			{
-				Logger.instance().warning(fname + ":" + br.getLineNumber()
-					+ " bad syntax -- no colon, expected type:name");
+				log.warn("{}:{} bad syntax -- no colon, expected type:name", fname, br.getLineNumber());
 				continue;
 			}
 			if (colon == 0)
 			{
-				Logger.instance().warning(fname + ":" + br.getLineNumber()
-					+ " bad syntax -- no type, expected type:name");
+				log.warn("{}:{} bad syntax -- no type, expected type:name", fname, br.getLineNumber());
 				continue;
 			}
 			if (line.length() <= colon+1)
 			{
-				Logger.instance().warning(fname + ":" + br.getLineNumber()
-					+ " bad syntax -- no name, expected type:name");
+				log.warn("{}:{} bad syntax -- no name, expected type:name", fname, br.getLineNumber());
 				continue;
 			}
 			String value = line.substring(colon+1).trim();
 			if (value.length() == 0)
 			{
-				Logger.instance().warning(fname + ":" + br.getLineNumber()
-					+ " bad syntax -- no name, expected type:name");
+				log.warn("{}:{} bad syntax -- no name, expected type:name", fname, br.getLineNumber());
 				continue;
 			}
-				
+
 			switch(line.charAt(0))
 			{
 			case 'c': // computation
@@ -444,8 +396,7 @@ public class ExportComp
 				ctrlFileGroup.add(value);
 				break;
 			default:
-				Logger.instance().warning(fname + ":" + br.getLineNumber()
-					+ " bad type, expected comp, algo, proc, or group");
+				log.warn("{}:{} bad type, expected comp, algo, proc, or group", fname, br.getLineNumber());
 			}
 		}
 		br.close();
@@ -455,7 +406,7 @@ public class ExportComp
 	{
 		xmlFileArg.setDefaultValue(fn);
 	}
-	
+
 	/**
 	 * The main method.
 	 * @param args command line arguments.
