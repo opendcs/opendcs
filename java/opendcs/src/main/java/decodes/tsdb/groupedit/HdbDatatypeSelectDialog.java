@@ -1,8 +1,19 @@
 /*
- *  $Id$
- *  
- *  Copyright 2017 U.S. Bureau of Reclamation
- */
+* Copyright 2017 U.S. Bureau of Reclamation
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 
@@ -26,6 +37,9 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.gui.GuiDialog;
 import decodes.gui.SortingListTable;
 import decodes.gui.SortingListTableModel;
@@ -37,9 +51,9 @@ import decodes.sql.DbKey;
  * Dialog for selecting CWMS Location Specification.
  */
 @SuppressWarnings("serial")
-public class HdbDatatypeSelectDialog 
-	extends GuiDialog
+public class HdbDatatypeSelectDialog extends GuiDialog
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JButton okButton = new JButton("  OK  ");
 	private JButton cancelButton = new JButton("Cancel");
 	private boolean cancelled;
@@ -66,13 +80,13 @@ public class HdbDatatypeSelectDialog
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		JPanel listPanel = new JPanel(new BorderLayout());
 		listPanel.setBorder(new TitledBorder(" Select Data Type "));
-		
+
 		mainPanel.add(listPanel, BorderLayout.CENTER);
 		overallPanel.add(mainPanel, BorderLayout.CENTER);
-		
+
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
 		overallPanel.add(buttonPanel, BorderLayout.SOUTH);
-		
+
 		okButton.addActionListener(
 			new ActionListener()
 			{
@@ -93,14 +107,14 @@ public class HdbDatatypeSelectDialog
 		buttonPanel.add(cancelButton, null);
 
 		getContentPane().add(overallPanel);
-		
+
 		model = new hdbDatatypeTabkeModel(this);
 		paramTable = new SortingListTable(model, model.colWidths);
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.getViewport().add(paramTable);
 		listPanel.add(scrollPane, BorderLayout.CENTER);
 		paramTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		
+
 		paramTable.addMouseListener(new MouseAdapter()
 		{
 			public void mouseClicked(MouseEvent e)
@@ -135,7 +149,7 @@ public class HdbDatatypeSelectDialog
 
 	/**
 	 * Called when Cancel button is pressed.
-	 * 
+	 *
 	 * @param e
 	 *            ignored
 	 */
@@ -149,21 +163,21 @@ public class HdbDatatypeSelectDialog
 	{
 		return cancelled;
 	}
-	
+
 	public StringPair getResult()
 	{
 		if (isCancelled())
 			return null;
-		
+
 		int idx = paramTable.getSelectedRow();
 		if (idx < 0)
 			return null;
-		
+
 		HdbDataType hdt = (HdbDataType)model.getRowObject(idx);
-		
+
 		return new StringPair(hdt.getDataTypeId().toString(), hdt.getName());
 	}
-	
+
 	public void setCurrentValue(String dtId)
 	{
 		if (dtId != null && dtId.trim().length() > 0)
@@ -176,7 +190,9 @@ public class HdbDatatypeSelectDialog
 					paramTable.setRowSelectionInterval(row, row);
 			}
 			catch(NumberFormatException ex)
-			{}
+			{
+				log.atTrace().setCause(ex).log("Unable to parse selected value.");
+			}
 		}
 	}
 
@@ -195,7 +211,7 @@ class hdbDatatypeTabkeModel extends javax.swing.table.AbstractTableModel
 	{
 		theList.addAll(dlg.hdbDb.getHdbDataTypes());
 	}
-	
+
 	@Override
 	public int getRowCount()
 	{
@@ -226,7 +242,7 @@ class hdbDatatypeTabkeModel extends javax.swing.table.AbstractTableModel
 		}
 		return "";
 	}
-	
+
 	@Override
 	public void sortByColumn(int column)
 	{
@@ -261,7 +277,7 @@ class hdbDatatypeTabkeModel extends javax.swing.table.AbstractTableModel
 			return null;
 		return theList.get(row);
 	}
-	
+
 	int getRowOf(DbKey dtId)
 	{
 		for(int row = 0; row < theList.size(); row++)
@@ -270,4 +286,3 @@ class hdbDatatypeTabkeModel extends javax.swing.table.AbstractTableModel
 		return -1;
 	}
 }
-

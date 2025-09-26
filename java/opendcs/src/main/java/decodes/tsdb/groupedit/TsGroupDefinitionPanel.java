@@ -1,100 +1,24 @@
-/**
- * $Id: TsGroupDefinitionPanel.java,v 1.15 2019/12/11 14:43:38 mmaloney Exp $
- * 
- * $Log: TsGroupDefinitionPanel.java,v $
- * Revision 1.15  2019/12/11 14:43:38  mmaloney
- * Don't explicitly require CwmsTimeSeriesDb. This module is also used with OpenTsdb.
- *
- * Revision 1.14  2018/02/05 15:52:39  mmaloney
- * Added ObjectType filter for USBR HDB.
- *
- * Revision 1.13  2017/05/31 21:34:27  mmaloney
- * GUI improvements for HDB
- *
- * Revision 1.12  2017/05/08 12:34:53  mmaloney
- * For CWMS, TSIDs may contain param values that CCP does not have in its DataType
- * table. If this is the case, save as an other "param" value.
- *
- * Revision 1.11  2017/04/19 19:27:45  mmaloney
- * CWMS-10609 nested group evaluation in group editor bugfix.
- *
- * Revision 1.10  2017/01/10 21:11:35  mmaloney
- * Enhanced wildcard processing for CWMS as per punchlist for comp-depends project
- * for NWP.
- *
- * Revision 1.9  2016/11/21 16:04:03  mmaloney
- * Code Cleanup.
- *
- * Revision 1.8  2016/11/03 19:08:05  mmaloney
- * Implement new Location, Param, and Version dialogs for CWMS.
- *
- * Revision 1.7  2016/10/11 17:40:36  mmaloney
- * Final GUI Prototype
- *
- * Revision 1.6  2016/07/20 15:45:46  mmaloney
- * Special code for HDB to show data type common names.
- *
- * Revision 1.5  2016/04/22 14:42:53  mmaloney
- * Code cleanup.
- *
- * Revision 1.4  2015/10/22 14:04:55  mmaloney
- * Clean up debug: Old code was saying no match for site even when it did find match.
- *
- * Revision 1.3  2015/08/04 18:54:03  mmaloney
- * CWMS-6388 Display should show location ID, not public name. This fixes the issue
- * with evaluation.
- *
- * Revision 1.2  2014/09/25 18:10:40  mmaloney
- * Enum fields encapsulated.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.12  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- * Revision 1.11  2012/09/19 15:33:53  mmaloney
- * "StatCode" needs to be "StatisticsCode"
- *
- * Revision 1.10  2012/09/19 15:07:41  mmaloney
- * Fix bugs in detecting whether changes have occured.
- *
- * Revision 1.9  2012/08/01 16:55:58  mmaloney
- * dev
- *
- * Revision 1.8  2012/07/30 20:04:21  mmaloney
- * Don't ask 'are you sure' when removing time-series from list.
- *
- * Revision 1.7  2012/07/24 15:48:41  mmaloney
- * Cosmetic group-editor bugs for HDB.
- *
- * Revision 1.6  2012/07/24 15:15:47  mmaloney
- * Cosmetic group-editor bugs for HDB.
- *
- * Revision 1.5  2012/07/24 13:40:14  mmaloney
- * groupedit cosmetic bugs
- *
- * Revision 1.4  2012/07/18 20:41:44  mmaloney
- * Updated for USBR HDB.
- *
- * Revision 1.3  2011/10/19 14:27:04  gchen
- * Modify the addQueryParam() to use InputDialog (other than MessageDialog) for version to allow the cancel button displayed on the screen.
- *
- * Revision 1.2  2011/02/04 21:30:33  mmaloney
- * Intersect groups
- *
- * Revision 1.1  2011/02/03 20:00:23  mmaloney
- * Time Series Group Editor Mods
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -121,12 +45,15 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.SiteDAI;
 import opendcs.dai.TsGroupDAI;
 import ilex.util.AsciiUtil;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.StringPair;
 import ilex.util.TextUtil;
 import decodes.db.Constants;
@@ -158,13 +85,12 @@ import decodes.gui.SortingListTableModel;
 
 /**
  * This class is the Ts Group tab of the Time Series GUI.
- * 
+ *
  */
 @SuppressWarnings("serial")
-public class TsGroupDefinitionPanel
-	extends TsDbGrpEditorTab
-	implements TsEntityOpsController, ChangeTracker, GroupSelector
+public class TsGroupDefinitionPanel extends TsDbGrpEditorTab implements TsEntityOpsController, ChangeTracker, GroupSelector
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	//Panel
 	private String module = "TsGroupDefinitionPanel";
 	//Panel Owner
@@ -195,14 +121,14 @@ public class TsGroupDefinitionPanel
 	private JPanel subGroupMembersPanel;
 	/*	Other group members */
 	private JPanel queryPanel;
-	
+
 	//Time Series DB
 	private TimeSeriesDb tsdb;
 	//Miscellaneous
 	private boolean newType;
 	private decodes.db.DbEnum en;
 	private EnumValue ev;
-	
+
 	/** The group as it exists in the database, either upon entry to the editor or after a save. */
 	private TsGroup origTsGroup;
 
@@ -212,18 +138,16 @@ public class TsGroupDefinitionPanel
 	private SubGroupTableModel subgroupModel = new SubGroupTableModel();
 	private SortingListTable subgroupTable = new SortingListTable(subgroupModel,
 		SubGroupTableModel.colwidth);
-	
+
 	private TsListSelectPanel tsListSelectPanel;
-	
-//	private ArrayList<Site> knownSites = new ArrayList<Site>();
+
 	private ArrayList<DataType> dataTypeList = new ArrayList<DataType>();
-//	private String[] dataTypeArray = null;
 	private String[] intervalArray = null;
 	private String[] durationArray = null;
 	private String[] paramTypes = null;
 
 	private static SiteSelectDialog siteSelectDlg = null;
-	
+
 	private String groupIdLabelStr;
 	private String groupNameLabelStr;
 	private String groupTypeLabelStr;
@@ -250,25 +174,22 @@ public class TsGroupDefinitionPanel
 	private SortingListTable queryTable = null;
 	private TsGroupsSelectTableModel parentGroupListModel = null;
 	private TsDbGrpListPanel parentListPanel = null;
-	
+
 	public TsGroupDefinitionPanel()
-	{	
-		//For internationalization, get the descriptions of 
+	{
+		//For internationalization, get the descriptions of
 		//title and all labels from properties file
 		setAllLabels();
 
 		try
-		{	
+		{
 			//Set the time series database
 			tsdb = TsdbAppTemplate.theDb;
-			
+
 			//en is used when user adds a new group type
 			en = Database.getDb().getDbEnum("GroupType");
 			newType = false;
-			
-//			//Set the tsIdPartIdentifier from the time series database
-//			setTsIdPartIdentifier();
-			
+
 			//Initialize the components for this panel, northPanel, and centerPanel
 			jbInit();
 			dataTypeList.clear();
@@ -280,28 +201,18 @@ public class TsGroupDefinitionPanel
 				if (dt.getStandard().equalsIgnoreCase(prefDtStd))
 					dataTypeList.add(dt);
 			}
-			
-//			
-//			dataTypeArray = new String[dataTypeList.size()];
-//			for(int i=0; i<dataTypeList.size(); i++)
-//				dataTypeArray[i] = dataTypeList.get(i).getCode();
-//			Arrays.sort(dataTypeArray);
-			
-			IntervalDAI intervalDAO = tsdb.makeIntervalDAO();
-			try
+
+			try (IntervalDAI intervalDAO = tsdb.makeIntervalDAO())
 			{
 				intervalArray = intervalDAO.getValidIntervalCodes();
 				durationArray = intervalDAO.getValidDurationCodes();
 			}
-			finally
-			{
-				intervalDAO.close();
-			}
+
 			paramTypes = tsdb.getParamTypes();
 		}
 		catch (Exception ex)
 		{
-			ex.printStackTrace();
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -310,7 +221,7 @@ public class TsGroupDefinitionPanel
 	 */
 	private void setAllLabels()
 	{
-		
+
 		ResourceBundle groupResources = LoadResourceBundle.getLabelDescriptions(
 			"decodes/resources/groupedit",
 			DecodesSettings.instance().language);
@@ -365,9 +276,9 @@ public class TsGroupDefinitionPanel
 		groupTEmptyMsg = groupResources
 					.getString("TsGroupDefinitionPanel.groupTEmptyMsg");
 	}
-	
+
 	/** Initialize GUI components */
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		// Initialize this panel
 		setLayout(new BorderLayout());
@@ -376,7 +287,7 @@ public class TsGroupDefinitionPanel
 		initControlPanel();
 		initNorthPanel();
 		initCenterPanel();
-		
+
 		// Add the northPanel, centerPanel, and tsEntityOpsPanel into this panel
 		this.add(northPanel, BorderLayout.NORTH);
 		this.add(tsEntityOpsPanel, BorderLayout.SOUTH);
@@ -424,13 +335,13 @@ public class TsGroupDefinitionPanel
 		});
 
 		northPanel = new JPanel(new GridBagLayout());
-		
+
 		northPanel.add(groupIdLabel, new GridBagConstraints(0, 0, 1, 1, 0.0,
 				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(7, 30, 0, 0), 2, 5));
 		northPanel.add(groupIdTextField, new GridBagConstraints(1, 0, 1, 1,
 				1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.HORIZONTAL,
 				new Insets(7, 0, 0, 1), 62, 5));
 		northPanel.add(groupNameLabel, new GridBagConstraints(0, 1, 1, 1, 0.0,
 				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
@@ -457,7 +368,7 @@ public class TsGroupDefinitionPanel
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(3, 0, 0, 110), 62, 25));
 	}
-	
+
 	private void initCenterPanel()
 	{
 		JSplitPane upperSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -471,7 +382,6 @@ public class TsGroupDefinitionPanel
 
 
 		JSplitPane lowerSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-//		upperSplitPane.setDividerLocation(.5);
 
 		// Initiate subgroup member panel
 		createSubGroupMembersComponents();
@@ -482,8 +392,8 @@ public class TsGroupDefinitionPanel
 		createQueryPanelMembers();
 		lowerSplitPane.add(queryPanel, JSplitPane.BOTTOM);
 	}
-	
-	
+
+
 	/**
 	 * Create and initialize all components in tsGroupMembersPanel
 	 */
@@ -495,7 +405,7 @@ public class TsGroupDefinitionPanel
 				tsGroupMembersTitleLabelStr));
 		tsListSelectPanel = new TsListSelectPanel(tsdb, false, false);
 		tsListSelectPanel.setMultipleSelection(true);
-		
+
 		addTimeSeriesMemberButton = new JButton(addButtonLabelStr);
 		deleteTimeSeriesMemberButton = new JButton(deleteButtonLabelStr);
 
@@ -540,7 +450,7 @@ public class TsGroupDefinitionPanel
 		subGroupMembersPanel.setBorder(new TitledBorder(
 				BorderFactory.createEtchedBorder(Color.white, new Color(148, 145, 140)),
 				subGroupMembersTitleLabelStr));
-		
+
 		JPanel subgroupPanel = new JPanel(new BorderLayout());
 		JScrollPane subgroupScrollPane = new JScrollPane(
 			subgroupTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
@@ -566,7 +476,7 @@ public class TsGroupDefinitionPanel
 					subtractSubgroupPressed();
 				}
 			});
-		
+
 		JButton intersectSubgroupButton = new JButton("Intersect SubGroup");
 		intersectSubgroupButton.addActionListener(
 			new java.awt.event.ActionListener()
@@ -614,16 +524,10 @@ public class TsGroupDefinitionPanel
 		queryPanel = new JPanel(new BorderLayout());
 		JPanel buttonPanel = new JPanel(new GridBagLayout());
 		JScrollPane listPane = new JScrollPane();
-		
-// Left col is the type of thing (i.e. the button label that was pressed to enter this, like "Location").
-// Right col is the value.
-//		queryListModel = new DefaultListModel();
-//		queryList = new JList(queryListModel);
-//		queryList.getSelectionModel().setSelectionMode(
-//			ListSelectionModel.SINGLE_SELECTION);
-		
+
+
 		queryTable = new SortingListTable(queryModel, QuerySelectorTableModel.colWidths);
-		
+
 		queryTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -689,8 +593,8 @@ public class TsGroupDefinitionPanel
 					deleteQueryParam();
 				}
 			});
-		
-		
+
+
 		buttonPanel.add(deleteButton,
 			new GridBagConstraints(0, (tsIdParts.length+1)/2, 2, 1, 0.0, 1.0,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
@@ -707,7 +611,7 @@ public class TsGroupDefinitionPanel
 
 	/**
 	 * Set the group to be edited
-	 * @param tsGroupIn the group to be edited
+	 * @param tsGroup the group to be edited
 	 */
 	public void setTsGroup(TsGroup tsGroupIn)
 	{
@@ -737,7 +641,7 @@ public class TsGroupDefinitionPanel
 		for(TimeSeriesIdentifier tsid : editedGroup.getTsMemberList())
 			ddlist.add(tsid);
 		tsListSelectPanel.setTimeSeriesList(ddlist);
-		
+
 		for(TsGroup g : editedGroup.getIncludedSubGroups())
 			subgroupModel.add(g, "Add");
 		for(TsGroup g : editedGroup.getExcludedSubGroups())
@@ -759,20 +663,16 @@ public class TsGroupDefinitionPanel
 					sn = st.getName(Constants.snt_CWMS);
 				if (sn == null)
 					sn = st.getPreferredName();
-				
-//MJM 20161027
-//				if (!knownSites.contains(st))
-//					knownSites.add(st);
+
 				// Location or Site is always the first part of the TSID.
 				queryModel.items.add(new StringPair(tsIdParts[0], sn.getNameValue()));
 			}
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Cannot read site with id=" 
-					+ siteId + ": " + ex);
+				log.atWarn().setCause(ex).log("Cannot read site with id={}", siteId);
 			}
 		}
-		
+
 		if (tsdb.isHdb())
 		{
 			ArrayList<HdbDataType> hdts = ((HdbTimeSeriesDb)tsdb).getHdbDataTypes();
@@ -786,7 +686,7 @@ public class TsGroupDefinitionPanel
 						break;
 					}
 				queryModel.items.add(new StringPair("DataType",
-					dtId.toString() + (hdt==null 
+					dtId.toString() + (hdt==null
 						? "" : " (" + hdt.getName() + ")")));
 			}
 		}
@@ -801,16 +701,13 @@ public class TsGroupDefinitionPanel
 				}
 				catch(Exception ex)
 				{
-					Logger.instance().warning("Cannot read datatype with id=" 
-						+ dtId + ": " + ex);
+					log.atWarn().setCause(ex).log("Cannot read datatype with id={}", dtId);
 				}
 			}
 		}
 		for(TsGroupMember member : editedGroup.getOtherMembers())
 		{
 			queryModel.items.add(new StringPair(member.getMemberType(), member.getMemberValue()));
-//			queryListModel.addElement(member.getMemberType() + ": "
-//				+ member.getMemberValue());
 		}
 		queryModel.sortByColumn(0);
 	}
@@ -855,7 +752,7 @@ public class TsGroupDefinitionPanel
 		tempGroup.setDescription((descriptionTextArea.getText()).trim());
 		// Get time series members
 		for(TimeSeriesIdentifier dd: tsListSelectPanel.getAllTSIDsInList())
-		{	
+		{
 			tempGroup.addTsMember(dd);
 		}
 
@@ -869,15 +766,19 @@ public class TsGroupDefinitionPanel
 			{
 				String label = sp.first;
 				String value = sp.second;
-				
-				if (label.equalsIgnoreCase("site") 
+
+				if (label.equalsIgnoreCase("site")
 				 || (label.equalsIgnoreCase("location") && !value.contains("*")))
 				{
 					DbKey siteId = siteDAO.lookupSiteID(sp.second);
 					if (siteId != null)
+					{
 						tempGroup.addSiteId(siteId);
+					}
 					else
-						Logger.instance().warning("No match for sitename '" + value + "' -- ignored.");
+					{
+						log.warn("No match for sitename '{}' -- ignored.", value);
+					}
 				}
 				else if (tsdb.isHdb() && label.equalsIgnoreCase("datatype"))
 				{
@@ -891,31 +792,34 @@ public class TsGroupDefinitionPanel
 					catch(NumberFormatException ex)
 					{
 						if ((dt = lookupDataType(value)) != null)
+						{
 							tempGroup.addDataTypeId(dt.getId());
+						}
 						else
-							Logger.instance().warning("Unrecognized data type '" 
-								+ value + "' -- ignored.");
+						{
+							log.atWarn().setCause(ex).log("Unrecognized data type '{}' -- ignored.", value);
+						}
 					}
 				}
-				else if (label.equalsIgnoreCase("param") 
+				else if (label.equalsIgnoreCase("param")
 					&& !value.contains("*")
 					&& (dt = lookupDataType(value)) != null)
 				{
 					tempGroup.addDataTypeId(dt.getId());
 				}
-				else 
+				else
 					tempGroup.addOtherMember(label, value);
 			}
 		}
 		catch(DbIoException ex)
 		{
-			Logger.instance().warning(module + " Error looking up site: " + ex);
+			log.atWarn().setCause(ex).log("Error looking up site.");
 		}
 		finally
 		{
 			siteDAO.close();
 		}
-		
+
 		TsGroupDAI tsGroupDAO = tsdb.makeTsGroupDAO();
 		try
 		{
@@ -923,20 +827,20 @@ public class TsGroupDefinitionPanel
 			{
 				TsGroup subgroup = tsGroupDAO.getTsGroupById(ref.groupId);
 				if (subgroup != null)
-					tempGroup.addSubGroup(subgroup, 
+					tempGroup.addSubGroup(subgroup,
 						ref.combine.equalsIgnoreCase("Intersect") ? 'I' :
 						ref.combine.equalsIgnoreCase("Subtract") ? 'S' : 'A');
 			}
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().warning(module + " Error finding subgroup: " + ex);
+			log.atWarn().setCause(ex).log("Error finding subgroup.");
 		}
 		finally
 		{
 			tsGroupDAO.close();
 		}
-		
+
 		editedGroup = tempGroup;
 		return true;
 	}
@@ -952,7 +856,7 @@ public class TsGroupDefinitionPanel
 
 	/**
 	 * User Presses Rename button
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 */
@@ -1002,9 +906,9 @@ public class TsGroupDefinitionPanel
 
 	/**
 	 * Verify if the group name exists in the group list.
-	 * 
+	 *
 	 * @param groupName
-	 * 
+	 *
 	 * @return true if it exists, false otherwise
 	 */
 	private boolean groupExistsInList(String groupName)
@@ -1012,7 +916,7 @@ public class TsGroupDefinitionPanel
 		boolean tsGroupExisted = false;
 		tsGroupExisted = ((TsDbGrpListPanel) parent.getTsGroupsListPanel())
 			.tsGroupExistsInList(groupName);
-		
+
 		if (tsGroupExisted)
 		{
 			TopFrame.instance().showError(groupNameExistsErrorMsg);
@@ -1043,7 +947,7 @@ public class TsGroupDefinitionPanel
 
 	/**
 	 * User Presses New Type button
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 */
@@ -1064,7 +968,7 @@ public class TsGroupDefinitionPanel
 
 	/**
 	 * User Presses Time Series Data Descriptor Group Members Add button
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 */
@@ -1081,7 +985,7 @@ public class TsGroupDefinitionPanel
 
 	/**
 	 * User Presses Time Series Data Descriptor Group Members Delete button
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 */
@@ -1111,11 +1015,11 @@ public class TsGroupDefinitionPanel
 		TsGroupSelectDialog dlg = new TsGroupSelectDialog(parent);
 		dlg.setMultipleSelection(false);
 		parent.launchDialog(dlg);
-		
+
 		TsGroup selectedGrps[] = dlg.getSelectedTsGroups();
 		if (selectedGrps.length == 0)
 			return;
-		
+
 		for (TsGroup g: selectedGrps)
 		{
 			if (g.getGroupName().equals(editedGroup.getGroupName()))
@@ -1126,8 +1030,7 @@ public class TsGroupDefinitionPanel
 						subGroupMembersTitleLabelStr, JOptionPane.WARNING_MESSAGE);
 				continue;
 			}
-			
-//			g.setInclusion("Add");
+
 			subgroupModel.add(g, "Add");
 		}
 	}
@@ -1137,7 +1040,7 @@ public class TsGroupDefinitionPanel
 	 */
 	public void subtractSubgroupPressed()
 	{
-		TsGroupSelectDialog dlg = 
+		TsGroupSelectDialog dlg =
 			new TsGroupSelectDialog(TopFrame.instance());
 		dlg.setMultipleSelection(false);
 		TopFrame.instance().launchDialog(dlg);
@@ -1145,7 +1048,7 @@ public class TsGroupDefinitionPanel
 		TsGroup selectedGrps[] = dlg.getSelectedTsGroups();
 		if (selectedGrps.length == 0)
 			return;
-		
+
 		for (TsGroup g: selectedGrps)
 		{
 			if (g.getGroupName().equals(editedGroup.getGroupName()))
@@ -1157,14 +1060,13 @@ public class TsGroupDefinitionPanel
 				continue;
 			}
 
-//			g.setInclusion("Subtract");
 			subgroupModel.add(g, "Subtract");
 		}
 	}
-	
+
 	private void intersectSubgroupPressed()
 	{
-		TsGroupSelectDialog dlg = 
+		TsGroupSelectDialog dlg =
 			new TsGroupSelectDialog(TopFrame.instance());
 		dlg.setMultipleSelection(false);
 		TopFrame.instance().launchDialog(dlg);
@@ -1172,7 +1074,7 @@ public class TsGroupDefinitionPanel
 		TsGroup selectedGrps[] = dlg.getSelectedTsGroups();
 		if (selectedGrps.length == 0)
 			return;
-		
+
 		for (TsGroup g: selectedGrps)
 		{
 			if (g.getGroupName().equals(editedGroup.getGroupName()))
@@ -1183,16 +1085,17 @@ public class TsGroupDefinitionPanel
 						subGroupMembersTitleLabelStr, JOptionPane.WARNING_MESSAGE);
 				continue;
 			}
-			
-//			g.setInclusion("Intersect");
+
 			subgroupModel.add(g, "Intersect");
 		}
-		
+
 	}
 
 	/**
 	 * User Presses Sub Group Members Delete button
-	 * 
+	 *
+	 * @param e
+	 *            ActionEvent
 	 */
 	public void deleteSubgroupPressed()
 	{
@@ -1200,7 +1103,7 @@ public class TsGroupDefinitionPanel
 		int rows[] = this.subgroupTable.getSelectedRows();
 		if (rows == null || rows.length == 0)
 			return;
-		
+
 		Arrays.sort(rows);
 		for (int i = rows.length-1; i >= 0; i--)
 			this.subgroupModel.removeAt(rows[i]);
@@ -1245,7 +1148,7 @@ public class TsGroupDefinitionPanel
 			{
 			}
 		}
-		
+
 		JTabbedPane tsGroupsListTabbedPane = parent.getTsGroupsListTabbedPane();
 		if (tsGroupsListTabbedPane != null)
 			tsGroupsListTabbedPane.remove(this);
@@ -1275,19 +1178,18 @@ public class TsGroupDefinitionPanel
 		if (!TextUtil.strEqualIgnoreCase(origTsGroup.getGroupName(), editedGroup
 				.getGroupName()))
 		{
-			Logger.instance().debug3("group name has changed");
+			log.trace("group name has changed");
 			return true;
 		}
 		if (!TextUtil.strEqualIgnoreCase(origTsGroup.getGroupType(), editedGroup.getGroupType()))
 		{
-			Logger.instance().debug3("group type has changed, was '"
-				+ origTsGroup.getGroupType() + "' is now '" + editedGroup.getGroupType() + "'");
+			log.trace("group type has changed, was '{}' is now '{}'", origTsGroup.getGroupType(), editedGroup.getGroupType());
 			return true;
 		}
 		if (!TextUtil.strEqualIgnoreCase(origTsGroup.getDescription(), editedGroup
 				.getDescription()))
 		{
-			Logger.instance().debug3("group description has changed");
+			log.trace("group description has changed");
 			return true;
 		}
 
@@ -1299,7 +1201,7 @@ public class TsGroupDefinitionPanel
 		int newSizeS = editedGroup.getSiteIdList().size();
 		int oldOtherS = origTsGroup.getOtherMembers().size();
 		int newOtherS = editedGroup.getOtherMembers().size();
-		
+
 		if (oldSizeTs == 0 && newSizeTs == 0 &&
 			oldSizeDT == 0 && newSizeDT == 0 &&
 			oldSizeS == 0 && newSizeS == 0 &&
@@ -1307,10 +1209,8 @@ public class TsGroupDefinitionPanel
 			return false;
 		if (oldSizeTs != newSizeTs)
 		{
-			Logger.instance().debug3("sizes have changed (old,new): DT(" + oldSizeDT + "," + newSizeDT
-				+ ") Site(" + oldSizeS + "," + newSizeS
-				+ ") TS(" + oldSizeTs + "," + newSizeTs
-				+ ") Other(" + oldOtherS + "," + newOtherS + ")");
+			log.trace("sizes have changed (old,new): DT({},{}) Site({},{}) TS({},{}) Other({},{})",
+					  oldSizeDT, newSizeDT, oldSizeS, newSizeS, oldSizeTs, newSizeTs, oldOtherS, newOtherS);
 			return true;
 		}
 		else
@@ -1330,18 +1230,18 @@ public class TsGroupDefinitionPanel
 				}
 				if (theSame == false)
 				{
-					Logger.instance().debug3("TS Member Different: no match for key=" + ddold.getKey());
+					log.trace("TS Member Different: no match for key={}", ddold.getKey());
 					return true;
 				}
 			}
 		}
-		
+
 		// Included subgroups
 		int oldSizeIncluded = origTsGroup.getIncludedSubGroups().size();
 		int newSizeIncluded = editedGroup.getIncludedSubGroups().size();
 		if (oldSizeIncluded != newSizeIncluded)
 		{
-			Logger.instance().debug3("Different number of included.");
+			log.trace("Different number of included.");
 			return true;
 		}
 		else
@@ -1361,7 +1261,7 @@ public class TsGroupDefinitionPanel
 				}
 				if (theSame == false)
 				{
-					Logger.instance().debug3("Included grp different, no match for id=" + tsold.getGroupId());
+					log.trace("Included grp different, no match for id={}", tsold.getGroupId());
 					return true;
 				}
 			}
@@ -1372,7 +1272,7 @@ public class TsGroupDefinitionPanel
 		int newSizeExcluded = editedGroup.getExcludedSubGroups().size();
 		if (oldSizeExcluded != newSizeExcluded)
 		{
-			Logger.instance().debug3("Different number of excluded.");
+			log.trace("Different number of excluded.");
 			return true;
 		}
 		else
@@ -1392,18 +1292,18 @@ public class TsGroupDefinitionPanel
 				}
 				if (theSame == false)
 				{
-					Logger.instance().debug3("Excluded grp different, no match for id=" + tsold.getGroupId());
+					log.trace("Excluded grp different, no match for id={}", tsold.getGroupId());
 					return true;
 				}
 			}
 		}
-		
+
 		// Intersected subgroups
 		int oldSizeIntersected = origTsGroup.getIntersectedGroups().size();
 		int newSizeIntersected = editedGroup.getIntersectedGroups().size();
 		if (oldSizeIntersected != newSizeIntersected)
 		{
-			Logger.instance().debug3("Different number of Intersected.");
+			log.trace("Different number of Intersected.");
 			return true;
 		}
 		else
@@ -1423,7 +1323,7 @@ public class TsGroupDefinitionPanel
 				}
 				if (theSame == false)
 				{
-					Logger.instance().debug3("Intersected grp different, no match for id=" + tsold.getGroupId());
+					log.trace("Intersected grp different, no match for id={}", tsold.getGroupId());
 					return true;
 				}
 			}
@@ -1433,7 +1333,7 @@ public class TsGroupDefinitionPanel
 		ArrayList<DbKey> newDT = editedGroup.getDataTypeIdList();
 		if (!oldDT.equals(newDT))
 		{
-			Logger.instance().debug3("DataType Lists different.");
+			log.trace("DataType Lists different.");
 			return true;
 		}
 
@@ -1441,7 +1341,7 @@ public class TsGroupDefinitionPanel
 		ArrayList<DbKey> newS = editedGroup.getSiteIdList();
 		if (!oldS.equals(newS))
 		{
-			Logger.instance().debug3("Site Lists different.");
+			log.trace("Site Lists different.");
 			return true;
 		}
 
@@ -1449,7 +1349,7 @@ public class TsGroupDefinitionPanel
 		ArrayList<TsGroupMember> newMembers = editedGroup.getOtherMembers();
 		if (oldMembers.size() != newMembers.size())
 		{
-			Logger.instance().debug3("Different number of 'other' members.");
+			log.trace("Different number of 'other' members.");
 			return true;
 		}
 		for(int i=0; i<oldOtherS; i++)
@@ -1459,9 +1359,8 @@ public class TsGroupDefinitionPanel
 			if (!om.getMemberType().equalsIgnoreCase(nm.getMemberType())
 			 || !om.getMemberValue().equalsIgnoreCase(nm.getMemberValue()))
 			{
-				Logger.instance().debug3("'Other' Lists different: element["
-					+ i + "] old=" + om.getMemberType() + ":" + om.getMemberValue()
-					+ ", new=" + nm.getMemberType() + ":" + nm.getMemberValue());
+				log.trace("'Other' Lists different: element[{}] old={}:{}, new={}:{}",
+						  i, om.getMemberType(), om.getMemberValue(), nm.getMemberType(), nm.getMemberValue());
 				return true;
 			}
 		}
@@ -1475,14 +1374,14 @@ public class TsGroupDefinitionPanel
 		{
 			// Write to DB and replace in cache.
 			tsGroupDAO.writeTsGroup(editedGroup);
-			
+
 			// update group id
 			groupIdTextField.setText("" + editedGroup.getGroupId());
-			
+
 			// update ts group list
 			((TsDbGrpListPanel) parent.getTsGroupsListPanel()).modifyTsGroupList(origTsGroup, editedGroup);
 			resetTabName(editedGroup.getGroupName());
-			
+
 			// The edited group is now the orig group.
 			// Make a new copy of the obj in case user wants to
 			// continue editing.
@@ -1497,26 +1396,22 @@ public class TsGroupDefinitionPanel
 				en.replaceValue(ev.getValue(), ev.getDescription(), ev.getExecClassName(), "");
 				Database.getDb().enumList.write();
 			}
-			
+
 			// MJM CWMS-10609 Replace the group in the model with the new one.
 			parentGroupListModel.replaceTsGroup(editedGroup);
-			
+
 			// Update the table models of subgroups in any open tabs besides this one.
 			parentListPanel.updateSubGroups(editedGroup);
-		} 
+		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().failure(
-					module + " Can not write Ts Group to the "
-							+ "Database " + ex.getMessage());
+			log.atError().setCause(ex).log("Can not write Ts Group to the Database.");
 			TopFrame.instance().showError(ex.toString());
 			return false;
 		}
 		catch (DatabaseException ex)
 		{
-			Logger.instance().failure(
-					module + " Can not add new Group Type to the "
-							+ "Database " + ex.getMessage());
+			log.atError().setCause(ex).log("Can not add new Group Type to the Database.");
 			TopFrame.instance().showError(ex.toString());
 			return false;
 		}
@@ -1552,16 +1447,14 @@ public class TsGroupDefinitionPanel
 			Site sites[] = siteSelectDlg.getSelectedSites();
 			if (sites == null || sites.length == 0)
 				return;
-			
+
 			for(Site aSite: sites)
 			{
-//				if (!knownSites.contains(aSite))
-//					knownSites.add(aSite);
 				// MJM 20150731 - don't use getDisplayName, but rather the location ID.
 				SiteName siteName = tsdb.isCwms() ? aSite.getName(Constants.snt_CWMS) : null;
 				if (siteName == null)
 					siteName = aSite.getPreferredName();
-				//MJM20150803 Instead of a list item with keyStr prefix, keyStr is the left column, 
+				//MJM20150803 Instead of a list item with keyStr prefix, keyStr is the left column,
 				// nameValue is the right column
 				queryModel.addItem(keyStr, siteName.getNameValue());
 			}
@@ -1585,9 +1478,9 @@ public class TsGroupDefinitionPanel
 		{
 			if (!tsdb.isHdb())
 				return;
-			
+
 			HdbDatatypeSelectDialog dlg = new HdbDatatypeSelectDialog(parent, (HdbTimeSeriesDb)tsdb);
-			
+
 			parent.launchDialog(dlg);
 			StringPair sel = dlg.getResult();
 			if (sel != null)
@@ -1608,20 +1501,20 @@ public class TsGroupDefinitionPanel
 		}
 		else if (keyStr.equalsIgnoreCase(TsGroupMemberType.Interval.toString()))
 		{
-			selection = (String)JOptionPane.showInputDialog(this, 
-				enterIntervalLabel, enterIntervalLabel, JOptionPane.PLAIN_MESSAGE, null, 
+			selection = (String)JOptionPane.showInputDialog(this,
+				enterIntervalLabel, enterIntervalLabel, JOptionPane.PLAIN_MESSAGE, null,
 				intervalArray, null);
 		}
 		else if (keyStr.equalsIgnoreCase(TsGroupMemberType.ParamType.toString()))
 		{
 			selection = (String)JOptionPane.showInputDialog(this, enterParamTypeLabel,
-				enterParamTypeLabel, JOptionPane.PLAIN_MESSAGE, null, 
+				enterParamTypeLabel, JOptionPane.PLAIN_MESSAGE, null,
 				paramTypes, null);
 		}
 		else if (keyStr.equalsIgnoreCase(TsGroupMemberType.Duration.toString()))
 		{
 			selection = (String)JOptionPane.showInputDialog(this, enterDurationLabel,
-				enterDurationLabel, JOptionPane.PLAIN_MESSAGE, null, 
+				enterDurationLabel, JOptionPane.PLAIN_MESSAGE, null,
 				durationArray, null);
 		}
 		else if (keyStr.equalsIgnoreCase(TsGroupMemberType.Version.toString()))
@@ -1654,12 +1547,12 @@ public class TsGroupDefinitionPanel
 			String hotnames[] = new String[hots.size()];
 			for(int idx = 0; idx < hotnames.length; idx++)
 				hotnames[idx] = hots.get(idx).getName();
-			
-			selection = (String)JOptionPane.showInputDialog(this, 
-				"Select Object Type:", "Select Object Type", JOptionPane.PLAIN_MESSAGE, null, 
+
+			selection = (String)JOptionPane.showInputDialog(this,
+				"Select Object Type:", "Select Object Type", JOptionPane.PLAIN_MESSAGE, null,
 				hotnames, null);
 		}
-		
+
 		// selection may be set from above, or it may be null if user cancelled.
 		if (selection != null)
 		{
@@ -1681,7 +1574,7 @@ public class TsGroupDefinitionPanel
 			LocSelectDialog locSelectDialog = new LocSelectDialog(this.parent, tsdb,
 				SelectionMode.GroupEdit);
 			locSelectDialog.setResult(query);
-			
+
 			parent.launchDialog(locSelectDialog);
 			if (!locSelectDialog.isCancelled())
 			{
@@ -1720,7 +1613,7 @@ public class TsGroupDefinitionPanel
 		}
 		else
 			return;
-		
+
 	}
 
 
@@ -1738,13 +1631,13 @@ public class TsGroupDefinitionPanel
 		{
 			try
 			{
-				GroupEvalTsidsDialog dlg = new GroupEvalTsidsDialog(parent, tsdb, 
+				GroupEvalTsidsDialog dlg = new GroupEvalTsidsDialog(parent, tsdb,
 					tsdb.expandTsGroup(editedGroup));
 				parent.launchDialog(dlg);
 			}
-			catch (DbIoException e)
+			catch (DbIoException ex)
 			{
-				e.printStackTrace();
+				log.atError().setCause(ex).log("Unable to evaluate group");
 			}
 		}
 	}
@@ -1792,14 +1685,14 @@ public class TsGroupDefinitionPanel
 }
 
 @SuppressWarnings("serial")
-class QuerySelectorTableModel 
+class QuerySelectorTableModel
 	extends AbstractTableModel
 	implements SortingListTableModel
 {
 	ArrayList<StringPair> items = new ArrayList<StringPair>();
 	static int colWidths[] = { 20, 80 };
 	int sortColumn = 0;
-	Comparator<StringPair> partSorter = 
+	Comparator<StringPair> partSorter =
 		new Comparator<StringPair>()
 		{
 			@Override
@@ -1811,7 +1704,7 @@ class QuerySelectorTableModel
 				return o1.second.compareTo(o2.second);
 			}
 		};
-	Comparator<StringPair> valueSorter = 
+	Comparator<StringPair> valueSorter =
 		new Comparator<StringPair>()
 		{
 			@Override
@@ -1823,7 +1716,7 @@ class QuerySelectorTableModel
 				return o1.first.compareTo(o2.first);
 			}
 		};
-	
+
 
 	boolean addItem(String tsidPart, String tsidValue)
 	{
@@ -1837,7 +1730,7 @@ class QuerySelectorTableModel
 			fireTableDataChanged();
 		return true;
 	}
-	
+
 	void deleteItemAt(int row)
 	{
 		if (row >= 0 && row < items.size())
@@ -1846,7 +1739,7 @@ class QuerySelectorTableModel
 			sortByColumn(0);
 		}
 	}
-	
+
 	@Override
 	public int getRowCount()
 	{
@@ -1889,16 +1782,16 @@ class QuerySelectorTableModel
 	{
 		return row >= 0 && row < items.size() ? items.get(row) : null;
 	}
-	
+
 	public void setValueAt(int row, StringPair v)
 	{
 		items.set(row, v);
 		fireTableDataChanged();
 	}
-	
+
 	void clear()
 	{
 		items.clear();
 	}
-	
+
 }
