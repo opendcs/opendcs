@@ -1,8 +1,25 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.compedit;
 
 import java.awt.Color;
 
-import ilex.util.Logger;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.util.DecodesSettings;
 
 /**
@@ -18,11 +35,11 @@ public enum PythonTextType
 	Properties(DecodesSettings.instance().pyPropColor, 0x4B0082, "CP Property Name"),
 	Comment(DecodesSettings.instance().pyCommentColor, 0x808000, "Comment Text"),
 	CpFunction(DecodesSettings.instance().pyCpFuncColor, 0x8B4513, "CP Built-in Function");
-	
+
 	/** The color in which to display this type of text */
 	private Color displayColor;
 	private String desc;
-	
+
 	private PythonTextType(String hexColor, int defaultColor, String desc)
 	{
 		if (hexColor != null)
@@ -32,8 +49,11 @@ public enum PythonTextType
 			try { displayColor = new Color(Integer.parseInt(hexColor, 16)); }
 			catch(Exception ex)
 			{
-				Logger.instance().warning("Illegal hexColor '" + hexColor
-					+ "' in config file. Will use default.");
+				// Java doesn't like static fields in enums.
+				OpenDcsLoggerFactory.getLogger()
+					.atWarn()
+					.setCause(ex)
+					.log("Illegal hexColor '{}' in config file. Will use default.", hexColor);
 				displayColor = new Color(defaultColor);
 			}
 		}

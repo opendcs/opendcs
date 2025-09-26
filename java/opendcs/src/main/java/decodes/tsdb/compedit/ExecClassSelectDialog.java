@@ -1,36 +1,25 @@
 /*
- *  $Id$
- *  
- *  $Log$
- *  Revision 1.1  2015/10/26 12:46:06  mmaloney
- *  Additions for PythonAlgorithm
- *
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.compedit;
-
-import ilex.util.EnvExpander;
-import ilex.util.Logger;
-import ilex.util.StringPair;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.nio.file.FileSystems;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
-
-import javax.swing.DefaultRowSorter;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -40,27 +29,17 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingWorker;
 import javax.swing.border.TitledBorder;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
+import org.opendcs.gui.GuiHelpers;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.function.Function;
-import java.util.stream.Stream;
-
-import decodes.gui.SortingListTable;
-import decodes.gui.SortingListTableModel;
-import decodes.tsdb.CompMetaData;
 import decodes.tsdb.DbCompAlgorithm;
 import decodes.tsdb.NoSuchObjectException;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.compedit.algotab.ExecClassTableModel;
-import decodes.tsdb.xml.CompXio;
-import decodes.tsdb.xml.DbXmlException;
 
 /**
  * Dialog to select an equipment model by name.
@@ -68,7 +47,7 @@ import decodes.tsdb.xml.DbXmlException;
 @SuppressWarnings("serial")
 public class ExecClassSelectDialog extends JDialog
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(ExecClassSelectDialog.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JButton selectButton = new JButton("Select");
 	private JButton cancelButton = new JButton("Cancel");
 	private DbCompAlgorithm selection;
@@ -91,9 +70,7 @@ public class ExecClassSelectDialog extends JDialog
 		}
 		catch (Exception ex)
 		{
-			log.atError()
-			   .setCause(ex)
-			   .log("Unable to initialize algorithm executive selection dialog.");
+			GuiHelpers.logGuiComponentInit(log, ex);
 		}
 	}
 
@@ -124,12 +101,12 @@ public class ExecClassSelectDialog extends JDialog
 			}
 		} );
 
-		
+
 		thePanel.add(scrollPane, BorderLayout.CENTER);
 		thePanel.add(buttonPanel, BorderLayout.SOUTH);
 		getContentPane().add(thePanel);
 	}
-	
+
 	public void load()
 		throws NoSuchObjectException
 	{
@@ -141,7 +118,7 @@ public class ExecClassSelectDialog extends JDialog
 				model.load();
 				return null;
 			}
-			
+
 		}.execute();
 	}
 
@@ -151,7 +128,7 @@ public class ExecClassSelectDialog extends JDialog
 		{
 			int modelRow = model.indexOf(selection);
 			if (modelRow != -1)
-			{				
+			{
 				int tableRow = tab.convertRowIndexToView(modelRow);;
 				tab.setRowSelectionInterval(tableRow, tableRow);
 				this.selection = model.getAlgoAt(modelRow);
@@ -161,14 +138,14 @@ public class ExecClassSelectDialog extends JDialog
 		{
 			this.selection = null;
 		}
-		
+
 	}
 
 	public DbCompAlgorithm getSelection()
 	{
 		return selection;
 	}
-	
+
 	void selectPressed()
 	{
 		_cancelled = false;
@@ -180,8 +157,8 @@ public class ExecClassSelectDialog extends JDialog
 			int modelRow = tab.convertRowIndexToModel(idx);
 			selection = model.getAlgoAt(modelRow);
 		}
-			
-		
+
+
 		closeDlg();
 	}
 

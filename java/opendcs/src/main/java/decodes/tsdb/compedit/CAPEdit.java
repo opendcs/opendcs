@@ -1,19 +1,21 @@
 /*
-*  $Id: CAPEdit.java,v 1.7 2020/05/07 13:55:13 mmaloney Exp $
-*
-*  This is open-source software written by ILEX Engineering, Inc., under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
-*
-*  Except for specific contractual terms between ILEX and the federal 
-*  government, this source code is provided completely without warranty.
-*  For more information contact: info@ilexeng.com
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
 */
 package decodes.tsdb.compedit;
 
 import ilex.cmdline.BooleanToken;
-import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.LoadResourceBundle;
 
@@ -22,11 +24,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ResourceBundle;
 
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
-import javax.swing.JOptionPane;
 import javax.swing.WindowConstants;
 
 import lrgs.gui.DecodesInterface;
@@ -38,7 +38,7 @@ import decodes.util.DecodesException;
 import decodes.util.DecodesSettings;
 
 
-public class CAPEdit 
+public class CAPEdit
 	extends TsdbAppTemplate
 {
 	static CAPEdit _instance = null;
@@ -57,12 +57,12 @@ public class CAPEdit
 	ComputationsListPanel computationsListPanel = null;
 	private BooleanToken noCompFilterToken;
 	private boolean exitOnClose = true;
-	
+
 	public ResourceBundle genericDescriptions=null;
 	public ResourceBundle compeditDescriptions=null;
-	
-	
-	
+
+
+
 	private String listLabel;
 	private String algorithmsLabel;
 	private String computationsLabel;
@@ -76,23 +76,23 @@ public class CAPEdit
 		if (_instance.genericDescriptions==null
 			|| _instance.compeditDescriptions==null)
 			_instance.setupMyLabelDescriptions();
-		return _instance; 
+		return _instance;
 	}
 
 	public CAPEdit()
 	{
 		super("compedit.log");
-		_instance = this;	
+		_instance = this;
 		exitOnClose = true;
 	}
-	
+
 	/**
 	 * This method adds a command line argument to allow
 	 * the user to turn off the Db Computations list filter.
 	 */
 	protected void addCustomArgs(CmdLineArgs cmdLineArgs)
 	{
-		noCompFilterToken = new BooleanToken("L", 
+		noCompFilterToken = new BooleanToken("L",
 			"Disable Computation List filter (default=enabled)", "",
 			TokenOptions.optSwitch, false);
 		cmdLineArgs.addToken(noCompFilterToken);
@@ -104,27 +104,24 @@ public class CAPEdit
 		noExitAfterRunApp = true;
 		setupMyLabelDescriptions();
 		fillLabels();
-		
+
 		TopFrame frame = getTopFrame();
-//		frame.centerOnScreen();
 		frame.setVisible(true);
 		SwingUtilities.invokeLater(() -> computationsListPanel.doRefresh());
 	}
 
 	/**
-	 * This method initializes topFrame	
-	 * 	
-	 * @return javax.swing.JFrame	
+	 * This method initializes topFrame
+	 *
+	 * @return javax.swing.JFrame
 	 */
-	public TopFrame getTopFrame() 
+	public TopFrame getTopFrame()
 	{
-		if (topFrame == null) 
+		if (topFrame == null)
 		{
 			topFrame = new TopFrame();
 			topFrame.setSize(new java.awt.Dimension(900,740));
 			topFrame.setTitle(titleLabel);
-			//topFrame.setDefaultCloseOperation(topFrame.EXIT_ON_CLOSE);
-//			topFrame.setContentPane(getJContentPane());
 			getJContentPane();
 			topFrame.setDefaultCloseOperation(
 									WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -142,7 +139,7 @@ public class CAPEdit
 
 	/**
 	 * Call with true if the application is to exit when the frame is closed.
-	 * 
+	 *
 	 * @param tf
 	 *            true if the application is to exit when the frame is closed.
 	 */
@@ -150,13 +147,13 @@ public class CAPEdit
 	{
 		exitOnClose = tf;
 	}
-	
+
 	/** Get the frame used here */
 	public TopFrame getFrame()
 	{
 		return topFrame;
 	}
-	
+
 	private void close()
 	{
 		topFrame.dispose();
@@ -165,15 +162,14 @@ public class CAPEdit
 	}
 
 	/**
-	 * This method initializes jContentPane	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes jContentPane
+	 *
+	 * @return javax.swing.JPanel
 	 */
-	private JPanel getJContentPane() 
+	private JPanel getJContentPane()
 	{
 		if (jContentPane == null) {
 			jContentPane = (JPanel)topFrame.getContentPane();
-//			jContentPane = new JPanel();
 			jContentPane.setLayout(new BorderLayout());
 			jContentPane.add(getMainTab(), java.awt.BorderLayout.CENTER);
 		}
@@ -181,13 +177,13 @@ public class CAPEdit
 	}
 
 	/**
-	 * This method initializes jTabbedPane	
-	 * 	
-	 * @return javax.swing.JTabbedPane	
+	 * This method initializes jTabbedPane
+	 *
+	 * @return javax.swing.JTabbedPane
 	 */
-	private JTabbedPane getMainTab() 
+	private JTabbedPane getMainTab()
 	{
-		if (mainTab == null) 
+		if (mainTab == null)
 		{
 			mainTab = new JTabbedPane();
 
@@ -202,9 +198,9 @@ public class CAPEdit
 	}
 
 	/**
-	 * This method initializes jPanel	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes jPanel
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getComputationsPanel()
 	{
@@ -217,9 +213,9 @@ public class CAPEdit
 	}
 
 	/**
-	 * This method initializes jPanel1	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes jPanel1
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getAlgorithmsPanel() {
 		if (algorithmsPanel == null) {
@@ -231,20 +227,20 @@ public class CAPEdit
 	}
 
 	/**
-	 * This method initializes jTabbedPane1	
-	 * 	
-	 * @return javax.swing.JTabbedPane	
+	 * This method initializes jTabbedPane1
+	 *
+	 * @return javax.swing.JTabbedPane
 	 */
-	JTabbedPane getComputationsTab() 
+	JTabbedPane getComputationsTab()
 	{
-		if (computationsTab == null) 
+		if (computationsTab == null)
 		{
 			computationsTab = new JTabbedPane();
-			
-			computationsListPanel = 
-				new ComputationsListPanel(theDb, 
+
+			computationsListPanel =
+				new ComputationsListPanel(theDb,
 					!noCompFilterToken.getValue(), false, topFrame);
-			computationsTab.addTab(listLabel, null, 
+			computationsTab.addTab(listLabel, null,
 				computationsListPanel, null);
 		}
 		return computationsTab;
@@ -252,9 +248,9 @@ public class CAPEdit
 
 
 	/**
-	 * This method initializes jPanel4	
-	 * 	
-	 * @return javax.swing.JPanel	
+	 * This method initializes jPanel4
+	 *
+	 * @return javax.swing.JPanel
 	 */
 	private JPanel getProcessesPanel() {
 		if (processesPanel == null) {
@@ -265,9 +261,9 @@ public class CAPEdit
 		return processesPanel;
 	}
 
-	JTabbedPane getAlgorithmsTab() 
+	JTabbedPane getAlgorithmsTab()
 	{
-		if (algorithmsTab == null) 
+		if (algorithmsTab == null)
 		{
 			algorithmsListPanel = new AlgorithmsListPanel();
 			algorithmsTab = new JTabbedPane();
@@ -297,7 +293,7 @@ public class CAPEdit
 		CAPEdit myedit = new CAPEdit();
 		myedit.execute(args);
 	}
-	
+
 	public void setupMyLabelDescriptions()
 	{
 		DecodesSettings settings = DecodesSettings.instance();
@@ -311,7 +307,7 @@ public class CAPEdit
 				"decodes/resources/compedit",
 				settings.language);
 	}
-	
+
 	public void fillLabels()
 	{
 		listLabel = compeditDescriptions.getString("CAPEdit.List");
@@ -320,13 +316,12 @@ public class CAPEdit
 		processesLabel = compeditDescriptions.getString("CAPEdit.Processes");
 		titleLabel = compeditDescriptions.getString("CAPEdit.Title");
 	}
-	
+
 	@Override
 	public void initDecodes()
 		throws DecodesException
 	{
 		DecodesInterface.initDecodes(cmdLineArgs.getPropertiesFile());
-		System.out.println("Sites ");
 		Site.explicitList = true;
 		decodes.db.Database.getDb().siteList.read();
 		decodes.db.Database.getDb().presentationGroupList.read();

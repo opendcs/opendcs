@@ -1,16 +1,16 @@
 /*
 * Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
-* 
+*
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not
 * use this file except in compliance with the License. You may obtain a copy
 * of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software 
+*
+* Unless required by applicable law or agreed to in writing, software
 * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-* License for the specific language governing permissions and limitations 
+* License for the specific language governing permissions and limitations
 * under the License.
 */
 
@@ -32,17 +32,21 @@ import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.TableRowSorter;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.List;
 
 import opendcs.dai.ComputationDAI;
-import ilex.util.*;
 import decodes.db.Constants;
 import decodes.gui.TopFrame;import decodes.tsdb.*;
 import decodes.tsdb.compedit.computations.ComputationsListPanelTableModel;
+import ilex.util.LoadResourceBundle;
 
 @SuppressWarnings("serial")
-public class ComputationsListPanel extends ListPanel 
+public class ComputationsListPanel extends ListPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private JPanel jContentPane = null;
 	private JTable compListTable = null;
 	private TableRowSorter<ComputationsListPanelTableModel> sorter = null;
@@ -57,7 +61,7 @@ public class ComputationsListPanel extends ListPanel
 	public ComputationsListPanel(TimeSeriesDb theDb, boolean filterLowIds,
 		boolean isDialog, TopFrame parentFrame)
 	{
-		
+
 		tsdb=theDb;
 		this.parentFrame = parentFrame;
 		this.filterLowIds = filterLowIds;
@@ -69,14 +73,14 @@ public class ComputationsListPanel extends ListPanel
 	}
 
 	public void setIsDialog(boolean tf) { isDialog = tf; }
-	
+
 
 	/**
 	 * This method initializes jContentPane
-	 * 
+	 *
 	 * @return javax.swing.JPanel
 	 */
-	protected JPanel getJContentPane() 
+	protected JPanel getJContentPane()
 	{
 		if (jContentPane == null) {
 			jContentPane = new JPanel();
@@ -85,10 +89,10 @@ public class ComputationsListPanel extends ListPanel
 			{
 				jContentPane.add(getButtonPanel(), java.awt.BorderLayout.SOUTH);
 			}
-			
-			
+
+
 			JScrollPane scrollPane = new JScrollPane(getCompListTable());
-			
+
 			filterPanel = new ComputationsFilterPanel(tsdb, parentFrame, compListTableModel,
 													  sorter, filterLowIds);
 			filterPanel.getRefresh().addActionListener(e -> doRefresh());
@@ -99,18 +103,18 @@ public class ComputationsListPanel extends ListPanel
 		return jContentPane;
 	}
 
-	protected JTable getCompListTable() 
+	protected JTable getCompListTable()
 	{
-		if (compListTableModel == null) 
+		if (compListTableModel == null)
 		{
-			String columnNames[] = 
-			{ 
+			String columnNames[] =
+			{
 				ComputationsListPanel.compLabels.getString(
-					"ComputationsFilterPanel.TableColumn1"), 
+					"ComputationsFilterPanel.TableColumn1"),
 				ComputationsListPanel.compLabels.getString(
-					"ComputationsFilterPanel.TableColumn2"), 
+					"ComputationsFilterPanel.TableColumn2"),
 				ComputationsListPanel.compLabels.getString(
-					"ComputationsFilterPanel.TableColumn3"), 
+					"ComputationsFilterPanel.TableColumn3"),
 				ComputationsListPanel.compLabels.getString(
 					"ComputationsFilterPanel.TableColumn4"),
 				ComputationsListPanel.compLabels.getString(
@@ -149,7 +153,7 @@ public class ComputationsListPanel extends ListPanel
 			return;
 		}
 		DbComputation toOpen = compListTableModel.getCompAt(rowModel);
-		
+
 		openEditTab(toOpen);
 	}
 
@@ -215,7 +219,7 @@ public class ComputationsListPanel extends ListPanel
 				compLabels.getString("ComputationsFilterPanel.CopyError2"));
 			return;
 		}
-		
+
 		DbComputation copydc = dc.copyNoId();
 		copydc.setName(newName);
 		openEditTab(copydc);
@@ -249,20 +253,23 @@ public class ComputationsListPanel extends ListPanel
 			}
 			catch(Exception ex)
 			{
+				log.atError().setCause(ex).log(compLabels.getString(
+						"ComputationsFilterPanel.DeleteError2")
+						+ dc.getName() + "'");
 				CAPEdit.instance().getFrame().showError(
 					compLabels.getString(
-						"ComputationsFilterPanel.DeleteError2") 
+						"ComputationsFilterPanel.DeleteError2")
 						+ dc.getName() + "': " + ex);
 			}
 		});
-		
+
 	}
 
 	void doRefresh()
 	{
-		Logger.instance().debug1("ComputationListPanel.doRefresh() ------------");
-		
-		SwingUtilities.invokeLater(() -> 
+		log.debug("ComputationListPanel.doRefresh() ------------");
+
+		SwingUtilities.invokeLater(() ->
 		{
 			try (ComputationDAI computationDAO = tsdb.makeComputationDAO())
 			{
@@ -271,10 +278,9 @@ public class ComputationsListPanel extends ListPanel
 			}
 			catch(Exception ex)
 			{
-				String msg = "Cannot refresh computation list: " + ex;
-				System.err.println(msg);
-				ex.printStackTrace(System.err);
-				parentFrame.showError(msg);
+				String msg = "Cannot refresh computation list";
+				log.atError().setCause(ex).log(msg);
+				parentFrame.showError(msg + ": " + ex);
 			}
 		});
 	}
@@ -283,7 +289,7 @@ public class ComputationsListPanel extends ListPanel
 	{
 		Vector<DbComputation> ret = new Vector<DbComputation>();
 		int[] selected = compListTable.getSelectedRows();
-		
+
 		for(int x : selected)
 		{
 			int modelRow = compListTable.convertRowIndexToModel(x);
