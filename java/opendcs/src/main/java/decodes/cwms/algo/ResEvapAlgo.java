@@ -75,6 +75,8 @@ import org.slf4j.Logger;
 final public class ResEvapAlgo extends AW_AlgorithmBase
 {
     private static final Logger log = OpenDcsLoggerFactory.getLogger();
+    private static final String DAILY_EVAP_DEPTH = "dailyEvapDepth";
+    private static final String HOURLY_EVAP_RATE = "hourlyEvapRate";
 
     @Input
     public double windSpeed;
@@ -101,8 +103,9 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
 
 
     private double previousElev;
-    private double previousInstHourlyEvap;
-    private double totalDailyEvapVolumeM3 = 0.0; // aggregated hourly evaporation frustum volume in cubic meters
+    private double prevInstHrEvapRate;
+    private double totalDailyEvapVolumeM3 = 0.0; // aggregated hourly evaporation frustum volume
+    private double totalDailyEvapDepthM = 0.0;
     private int count; //number of days calculated
     private boolean isDayLightSavings;
 
@@ -121,8 +124,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     private CTimeSeries elevHighCloudTS = null;
     private CTimeSeries elevTS = null;
 
-    private CTimeSeries hourlyEvapTS = null;
-    private CTimeSeries dailyEvapTS = null;
+    private CTimeSeries hourlyEvapRateTS = null;
 
     private Site site;
     private CwmsRatingDao crd;
@@ -141,9 +143,11 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     @Output
     public NamedVariable hourlySurfaceTemp = new NamedVariable("hourlySurfaceTemp", 0);
     @Output
-    public NamedVariable hourlyEvap = new NamedVariable("hourlyEvap", 0);
+    public NamedVariable hourlyEvapRate = new NamedVariable(HOURLY_EVAP_RATE, 0);
     @Output
-    public NamedVariable dailyEvap = new NamedVariable("dailyEvap", 0);
+    public NamedVariable hourlyEvapDepth = new NamedVariable("hourlyEvapDepth", 0);
+    @Output
+    public NamedVariable dailyEvapDepth = new NamedVariable(DAILY_EVAP_DEPTH, 0);
     @Output
     public NamedVariable dailyEvapAsFlow = new NamedVariable("dailyEvapAsFlow", 0);
     @Output
@@ -202,7 +206,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             throws DbCompException
     {
         _awAlgoType = AWAlgoType.AGGREGATING;
-        _aggPeriodVarRoleName = "dailyEvap";
+        _aggPeriodVarRoleName = DAILY_EVAP_DEPTH;
         //aggPeriodInterval = IntervalCodes.int_one_day;
         aggUpperBoundClosed = true;
         aggLowerBoundClosed = false;
@@ -293,35 +297,32 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     }
 
     /**
-     * Convert hourly evaporation to volume in cubic meters using the frustum formula.
-     * This method calculates the volume of water evaporated based on the average elevation
-     * before and after evaporation loss.
+     * Convert hourly evap depth to volume using the frustum formula.
+     * Calculates volume of water evaporated based on the average elevation before and after evaporation loss.
      *
-     * @param totalEvap  total evaporation for the hour (mm/hr)
+     * @param hourlyEvapDepthM  (m)
      * @param elevation (m)
      * @return frustum volume of water evaporated (m3)
      */
-    private double convertEvapToVolumeM3(double totalEvap, double elevation) throws NoConversionException, DecodesException, RatingException
+    private double convertDepthMToVolumeM3(double hourlyEvapDepthM, double elevation) throws RatingException
     {
-        double evapMeters = convertUnits(totalEvap, hourlyEvapTS.getUnitsAbbr(), "m");
-
         // get elevation before and after evaporation loss
-        double elevAfterEvapLoss = elevation - evapMeters;
+        double elevAfter = elevation - hourlyEvapDepthM;
 
         // get area at elevation before and after evaporation loss
         double areaAtElevBeforeEvapLoss = getAreaAtElevation(resEvap.reservoir, elevation);
-        double areaAtElevAfterEvapLoss = getAreaAtElevation(resEvap.reservoir, elevAfterEvapLoss);
+        double areaAtElevAfterEvapLoss = getAreaAtElevation(resEvap.reservoir, elevAfter);
 
-        return getFrustumVolumeM3(areaAtElevBeforeEvapLoss, areaAtElevAfterEvapLoss, evapMeters);
+        return getFrustumVolumeM3(areaAtElevBeforeEvapLoss, areaAtElevAfterEvapLoss, hourlyEvapDepthM);
     }
 
 
     /**
      * Get the area at a given elevation from the reservoir's rating curve.
      *
-     * @param reservoir  the EvapReservoir object
-     * @param elevation  the elevation at which to get the area (m)
-     * @return area at the specified elevation (m2)
+     * @param reservoir  EvapReservoir object
+     * @param elevation  (m)
+     * @return area at elevation (m2)
      */
     double getAreaAtElevation(EvapReservoir reservoir, double elevation) throws RatingException
     {
@@ -347,7 +348,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     /**
      * Convert a volume in cubic meters to a flow rate in cubic meters per second.
      *
-     * @param volume        (m3)
+     * @param volume (m3)
      * @param secondsPerDay number of seconds in a day, accounts for daylight savings if applicable
      * @return flow rate in cubic meters per second
      */
@@ -355,6 +356,8 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
     {
         return volume / secondsPerDay;
     }
+
+
 
     //TODO Implement Location Levels
     private double getMaxTempDepthMeters()
@@ -421,9 +424,10 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             throws DbCompException
     {
         totalDailyEvapVolumeM3 = 0.0;
+        totalDailyEvapDepthM = 0.0;
         count = 0;
 
-        String evapInterval = getParmRef("dailyEvap").tsid.getInterval();
+        String evapInterval = getParmRef(DAILY_EVAP_DEPTH).tsid.getInterval();
         String flowInterval = getParmRef("dailyEvapAsFlow").tsid.getInterval();
         boolean evapIR = Objects.equals(evapInterval, IntervalCodes.int_one_day_dst);
         boolean flowIR = Objects.equals(flowInterval, IntervalCodes.int_one_day_dst);
@@ -431,7 +435,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
 
         if (aggTZ.useDaylightTime() && !(evapIR && flowIR))
         {
-            throw new DbCompException("Aggregating timezone used daylight savings and dailyEvapAsFlow or dailyEvap is not an irregular daily timeseries");
+            throw new DbCompException("Aggregating timezone used daylight savings and dailyEvapAsFlow or dailyEvapDepth is not an irregular daily timeseries");
         }
 
         int offsetBefore = aggTZ.getOffset(baseTimes.first().getTime() - 12 * 3600 * 1000);
@@ -455,8 +459,9 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
                 setOutputUnitsAbbr("elev", "m");
 
                 setOutputUnitsAbbr("hourlySurfaceTemp", "C");
-                setOutputUnitsAbbr("hourlyEvap", "mm/hr");
-                setOutputUnitsAbbr("dailyEvap", "mm");
+                setOutputUnitsAbbr(HOURLY_EVAP_RATE, "mm/hr");
+                setOutputUnitsAbbr("hourlyEvapDepth", "mm");
+                setOutputUnitsAbbr(DAILY_EVAP_DEPTH, "mm");
                 setOutputUnitsAbbr("dailyEvapAsFlow", "cms");
                 setOutputUnitsAbbr("hourlyFluxOut", "W/m2");
                 setOutputUnitsAbbr("hourlyFluxIn", "W/m2");
@@ -475,10 +480,9 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
                 }
 
                 //initialize output timeseries
-                hourlyEvapTS = getParmRef("hourlyEvap").timeSeries;
-                dailyEvapTS = getParmRef("dailyEvap").timeSeries;
+                hourlyEvapRateTS = getParmRef(HOURLY_EVAP_RATE).timeSeries;
 
-                //initialized input timeseries
+                //initialize input timeseries
                 windSpeedTS = getParmRef("windSpeed").timeSeries;
                 airTempTS = getParmRef("airTemp").timeSeries;
                 relativeHumidityTS = getParmRef("relativeHumidity").timeSeries;
@@ -579,25 +583,23 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
                 //retrieve Evaporation Rate from Previous Timestep to be used to calculate average instantaneous EvapRate over the hour
                 try
                 {
-                    CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapTS.getTimeSeriesIdentifier());
+                    CTimeSeries cts = timeSeriesDAO.makeTimeSeries(hourlyEvapRateTS.getTimeSeriesIdentifier());
                     cts.setUnitsAbbr("mm/hr");
-                    TimedVariable PrevTV = tsdb.getPreviousValue(cts, baseTimes.first());
-                    previousInstHourlyEvap = PrevTV.getDoubleValue();
                     TimedVariable prevTv = tsdb.getPreviousValue(cts, baseTimes.first());
                     if (prevTv != null)
                     {
-                        previousInstHourlyEvap = prevTv.getDoubleValue();
+                        prevInstHrEvapRate = prevTv.getDoubleValue();
                     }
                     else
                     {
-                        previousInstHourlyEvap = Double.NaN; // sentinel meaning "unknown"
+                        prevInstHrEvapRate = Double.NaN; // sentinel meaning "unknown"
                         log.debug("No previous hourlyEvapRate value found before {} - will use first-hour fallback.", baseTimes.first());
                     }
                 }
                 catch (RuntimeException | NoConversionException | DbIoException | BadTimeSeriesException | NoSuchObjectException ex)
                 {
                     // Don’t abort the run; log and fall back.
-                    previousInstHourlyEvap = Double.NaN;
+                    prevInstHrEvapRate = Double.NaN;
                     log.warn("Failed to initialize previous hourlyEvapRate; using first-hour fallback.", ex);
                 }
             }
@@ -606,7 +608,7 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
 
     /**
      * Do the algorithm for a single time slice.
-     * AW will fill in user-supplied code here.
+     * Automated Workflow (AW) will fill in user-supplied code here.
      * Base class will set inputs prior to calling this method.
      * User code should call one of the setOutput methods for a time-slice
      * output variable.
@@ -641,49 +643,63 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
             setOutput(hourlySolar, computedList.get(3));
             setOutput(hourlyFluxIn, computedList.get(4));
             setOutput(hourlyFluxOut, computedList.get(5));
-            setOutput(hourlyEvap, computedList.get(6));
+            setOutput(hourlyEvapRate, computedList.get(6)); // inst mm/hr
 
             hourlyWTP.setProfiles(resEvap.getHourlyWaterTempProfile(), _timeSliceBaseTime, wtpTsId, zeroElevation, elev, timeSeriesDAO);
-
             count++;
 
-            // calculate hourly avg evap and elev
-            double currentHourlyTotalEvap = (previousInstHourlyEvap + computedList.get(6)) / 2;
+            double currInstHrEvapRate = resEvap.getHourlyEvapRateTimeSeries(); // mm/hr
+            double currHrEvapDepthM = convertRateToDepth(currInstHrEvapRate);
+            setOutput(hourlyEvapDepth, currHrEvapDepthM * 1000.0);
+
             double avgHourlyElevation = (elev + previousElev) / 2;
 
             // aggregate hourly evap volume
             try
             {
-                totalDailyEvapVolumeM3 += convertEvapToVolumeM3(currentHourlyTotalEvap, avgHourlyElevation);
+                double currHrVolumeM3 = convertDepthMToVolumeM3(currHrEvapDepthM, avgHourlyElevation);
+                totalDailyEvapVolumeM3 += currHrVolumeM3;
             }
-            catch (NoConversionException | DecodesException | RatingException ex)
+            catch (RatingException ex)
             {
-                throw new DbCompException("Failed to convert evaporation to volume", ex);
+                throw new DbCompException("Failed to convert hourly evaporation depth to volume", ex);
             }
 
-            previousInstHourlyEvap = computedList.get(6);
+            totalDailyEvapDepthM += currHrEvapDepthM;
+            prevInstHrEvapRate = currInstHrEvapRate;
             previousElev = elev;
-
-            // aggregate hourly evap volume
-            try
-            {
-                totalDailyEvapVolumeM3 += convertEvapToVolumeM3(currentHourlyTotalEvap, avgHourlyElevation);
-            }
-            catch (NoConversionException | DecodesException | RatingException ex)
-            {
-                throw new DbCompException("Failed to convert evaporation to volume", ex);
-            }
-
-            previousInstHourlyEvap = computedList.get(6);
-            previousElev = elev;
-
         }
     }
 
     /**
+     * Convert hourlyEvapRate rate to depth.
+     * Use trapezoid average rate over the hour based on current and previous hourlyEvapRate rates.
+     * If the previous hourlyEvapRate rate is unknown, treat it as equal to the current hourlyEvapRate rate.
+     *
+     * @param currHrEvapRate (mm/hr)
+     * @return depth in (m)
+     */
+    private double convertRateToDepth(double currHrEvapRate)
+    {
+        // First-hour fallback: if previous is unknown, treat it as equal to current.
+        double prevHrEvapRate = Double.isNaN(prevInstHrEvapRate)
+                ? currHrEvapRate
+                : prevInstHrEvapRate;
+
+        double currHrEvapRateMPerHr = currHrEvapRate / 1000.0;
+        double prevHrEvapRateMPerHr = prevHrEvapRate / 1000.0;
+
+        // Average rate over 1 hour to return depth (m)
+        return (currHrEvapRateMPerHr + prevHrEvapRateMPerHr) / 2.0;
+
+    }
+
+    /**
      * Finalizes daily evaporation outputs after processing all time slices.
-     * Converts total volume to flow rate, sets outputs and appends the hourly temperature profile.
-     * if the number of time steps is not 23 or 24, it logs a warning and skips daily computation.
+     * Converts total evap volume to flow,
+     * Sets outputs: dailyEvapDepth(mm) and dailyEvapAsFlow(cms)
+     * Appends the hourly temperature profile.
+     * If the number of time steps is not 23 or 24, log a warning and skip daily computation.
      */
     @Override
     protected void afterTimeSlices() throws DbCompException
@@ -696,17 +712,18 @@ final public class ResEvapAlgo extends AW_AlgorithmBase
 
         if (baseTimes.size() == 24 || (baseTimes.size() == 23 && isDayLightSavings))
         {
-            // Convert daily evap volume to a flow rate and set outputs.
+            // Convert units to match expected output variable definitions
             double dailyEvapFlowCms = getVolumeM3AsFlowCMS(totalDailyEvapVolumeM3, secondsPerDay);
+            double dailyEvapMM = totalDailyEvapDepthM * 1000.0;
 
-            setOutput(dailyEvap, totalDailyEvapVolumeM3, _timeSliceBaseTime);
+            setOutput(dailyEvapDepth, dailyEvapMM, _timeSliceBaseTime);
             setOutput(dailyEvapAsFlow, dailyEvapFlowCms, _timeSliceBaseTime);
 
             dailyWTP.append(hourlyWTP, _timeSliceBaseTime, timeSeriesDAO);
         }
         else
         {
-            log.warn("Found " + baseTimes.size() + " hourly values — daily totals require exactly 23 or 24 values. Skipping daily computation.");
+            log.warn("Found {} hourly values — daily totals require exactly 23 or 24 values. Skipping daily computation.", baseTimes.size());
         }
     }
 
