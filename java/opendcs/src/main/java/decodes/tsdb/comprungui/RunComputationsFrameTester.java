@@ -88,7 +88,7 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 			{
 				log.atError()
 				   .setCause(ex)
-				   .log("Invalid Since Argument '{}' -- format must be '{}'' UTC", sinceToken, dateSpec);
+				   .log("Invalid Since Argument '{}' -- format must be '{}' UTC", sinceToken, dateSpec);
 				System.exit(1);
 			}
 		}
@@ -99,7 +99,7 @@ public class RunComputationsFrameTester extends TsdbAppTemplate
 			{
 				log.atError()
 				   .setCause(ex)
-				   .log("Invalid Until Argument '{}' -- format must be '{}'' UTC", untilToken, dateSpec);
+				   .log("Invalid Until Argument '{}' -- format must be '{}' UTC", untilToken, dateSpec);
 				System.exit(1);
 			}
 		}
