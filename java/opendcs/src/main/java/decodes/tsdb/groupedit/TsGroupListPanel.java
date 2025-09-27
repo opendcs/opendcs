@@ -1,45 +1,21 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.2  2017/01/06 16:42:10  mmaloney
- * Misc Bug Fixes
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.7  2013/08/18 19:49:37  mmaloney
- * Added clear button for compedit selection.
- *
- * Revision 1.6  2012/07/24 15:15:47  mmaloney
- * Cosmetic group-editor bugs for HDB.
- *
- * Revision 1.5  2011/02/04 21:30:33  mmaloney
- * Intersect groups
- *
- * Revision 1.4  2011/02/03 20:00:23  mmaloney
- * Time Series Group Editor Mods
- *
- * Revision 1.3  2011/02/01 15:32:39  gchen
- * *** empty log message ***
- *
- * Revision 1.2  2011/01/27 23:21:18  gchen
- * Make the TS group GUI available against cwms DB
- *
- * Revision 1.1  2010/12/08 13:50:09  mmaloney
- * Moved from decodes.groupedit
- *
- * Revision 1.1  2010/12/08 13:40:06  mmaloney
- * Renamed.
- *
- * Revision 1.1  2010/12/07 15:18:45  mmaloney
- * Created
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 
@@ -59,6 +35,8 @@ import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import decodes.gui.GuiDialog;
@@ -110,18 +88,12 @@ public class TsGroupListPanel extends JPanel
 		this.frameOwner = frameOwner;
 		this.ctrlPanel = ctrlPanel;
 
-		try
-		{
-			jbInit();
-		}
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+
+		jbInit();
 	}
-	
+
 	/** Initializes GUI components. */
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		//Initialize components for jScrollPane and tsGroupsListTable
 		jScrollPane = new JScrollPane();
@@ -159,7 +131,7 @@ public class TsGroupListPanel extends JPanel
 	/**
 	 * This method will do two things: Add a new ts group to the list if obj
 	 * does not exists -or- Modify a ts group obj if already in the list
-	 * 
+	 *
 	 * @param oldG
 	 *            the old object
 	 * @param newG
@@ -188,12 +160,12 @@ public class TsGroupListPanel extends JPanel
 	{
 		return tsGroupsListTable.getSelectedRows();
 	}
-	
+
 	public TsGroup getTsGroupAt(int index)
 	{
 		return model.getTsGroupAt(index);
 	}
-	
+
 	/**
 	 * @return all currently-selected TS Groups, or empty array if none.
 	 */
@@ -229,7 +201,7 @@ public class TsGroupListPanel extends JPanel
 
 	/**
 	 * Deletes the specified Ts Group from the list.
-	 * 
+	 *
 	 * @param ob
 	 *            the object to delete.
 	 */
@@ -240,7 +212,7 @@ public class TsGroupListPanel extends JPanel
 
 	/**
 	 * Delete Ts Group of the given array list
-	 * 
+	 *
 	 * @param tsGroups
 	 *            list of Ts Groups to delete
 	 */
@@ -255,7 +227,7 @@ public class TsGroupListPanel extends JPanel
 
 	/**
 	 * Verify is the given group name exists in the current list or not
-	 * 
+	 *
 	 * @param groupName
 	 * @return true if the group name exitst in the list, false otherwise
 	 */
@@ -263,43 +235,43 @@ public class TsGroupListPanel extends JPanel
 	{
 		return model.tsGroupExistsInList(groupName);
 	}
-	
+
 	public void addSubgroups(ArrayList<TsGroup> groupList)
 	{
 		model.addSubgroups(groupList);
 	}
-	
+
 	public void setTsGroupListFromDb()
 	{
-		model.setTsGroupListFromDb();	
+		model.setTsGroupListFromDb();
 	}
-	
+
 	/**
 	 * This method is used from the TsGroupDefinitionPanel when
 	 * adding new sub groups.
-	 * 
+	 *
 	 * @param tsGroupToAdd
 	 */
 	public void addTsGroup(TsGroup tsGroupToAdd)
 	{
 		model.addTsGroup(tsGroupToAdd);
 	}
-	
+
 	public ArrayList<TsGroup> getAllTsGroupsInList()
 	{
 		return model.getAllTsGroupsInList();
 	}
-	
+
 	public int getSelectedRowCount()
 	{
 		return tsGroupsListTable.getSelectedRowCount();
 	}
-	
+
 	public void clearSelection()
 	{
 		tsGroupsListTable.clearSelection();
 	}
-	
+
 	void showError(String msg)
 	{
 		if (frameOwner != null)
@@ -307,7 +279,7 @@ public class TsGroupListPanel extends JPanel
 		else if (dialogOwner != null)
 			dialogOwner.showError(msg);
 	}
-	
+
 	public TsGroupsSelectTableModel getModel()
 	{
 		return model;
@@ -315,16 +287,15 @@ public class TsGroupListPanel extends JPanel
 }
 
 
-class TsGroupsSelectTableModel extends AbstractTableModel implements
-		SortingListTableModel
+class TsGroupsSelectTableModel extends AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private static String[] columnNames;
 	private TsGroupListPanel panel;
 	private ArrayList<TsGroup> theGroupList = new ArrayList<TsGroup>();
 	private Map<TsGroup, Integer> compCount = new HashMap<TsGroup, Integer>();
 	private int sortColumn = -1;
 	private String module;
-//	private ArrayList<TsGroup> tsGroupList;
 
 	public TsGroupsSelectTableModel(TsGroupListPanel panel)
 	{
@@ -337,7 +308,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 			DecodesSettings.instance().language);
 
 		columnNames = new String[6];
-		
+
 		columnNames[0] = groupResources.getString("TsGroupsListSelectPanel.groupIdColumnLabel");
 		columnNames[1] = groupResources.getString("TsGroupsListSelectPanel.nameColumnLabel");
 		columnNames[2] = groupResources.getString("TsGroupsListSelectPanel.typeColumnLabel");
@@ -362,15 +333,15 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 	{
 		for (TsGroup g: groupList)
 		{
-			if (g != null) 
+			if (g != null)
 				addTsGroup(g);
 		}
 	}
-	
+
 	/**
 	 * This method is used from the TsGroupDefinitionPanel when
 	 * adding new sub groups.
-	 * 
+	 *
 	 * @param tsGroupToAdd
 	 */
 	public void addTsGroup(TsGroup tsGroupToAdd)
@@ -388,7 +359,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 		reSort();
 		fireTableDataChanged();
 	}
-	
+
 	public ArrayList<TsGroup> getTsGroupListFromDb()
 	{
 		ArrayList<TsGroup> tsGroups = new ArrayList<TsGroup>();
@@ -401,8 +372,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 				tsGroups = groupDAO.getTsGroupList(null);
 				if (tsGroups == null)
 				{
-					Logger.instance().warning(
-							module + " The Ts Group List is null.");
+					log.warn("The Ts Group List is null.");
 					panel.showError("The Ts Group List is empty.");
 				}
 				for(TsGroup tsGroup : tsGroups)
@@ -413,15 +383,14 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 			}
 			catch (DbIoException ex)
 			{
-				String msg = module + " Can not get the Ts Group List "
-						+ ex.getMessage();
-				Logger.instance().failure(msg);
-				panel.showError(msg);
+				String msg = "Can not get the Ts Group List";
+				log.atError().setCause(ex).log(msg);
+				panel.showError(msg + ": " + ex);
 			}
 		}
 		else
 		{
-			Logger.instance().failure(module + " The TsDb obj is null.");
+			log.error("The TsDb obj is null.");
 		}
 		return tsGroups;
 	}
@@ -477,7 +446,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 		ret.addAll(theGroupList);
 		return ret;
 	}
-	
+
 	void deleteTsGroupAt(int index)
 	{
 		if (index >= 0 && index < theGroupList.size())
@@ -559,7 +528,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 				it.remove();
 				continue;
 			}
-			
+
 			TsGroup subgroup = null;
 			for(TsGroup sg : group.getIncludedSubGroups())
 				if (sg.getGroupId().equals(modifiedGroup.getGroupId()))
@@ -572,7 +541,7 @@ class TsGroupsSelectTableModel extends AbstractTableModel implements
 				group.getIncludedSubGroups().remove(subgroup);
 				group.addSubGroup(modifiedGroup, 'A');
 			}
-			
+
 			subgroup = null;
 			for(TsGroup sg : group.getExcludedSubGroups())
 				if (sg.getGroupId().equals(modifiedGroup.getGroupId()))
@@ -695,7 +664,7 @@ class TsGroupsColumnComparator implements Comparator<TsGroup>
 		{
 			return 0;
 		}
-		
+
 		if (col == 0)// sort Longs ascending
 		{
 			try

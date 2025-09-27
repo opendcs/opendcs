@@ -1,23 +1,31 @@
 /*
- * $Id:
- * 
- * $Log:
- * 
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.util.ResourceBundle;
 
 import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
-import javax.swing.WindowConstants;
 
-import decodes.db.Site;
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.util.DecodesSettings;
@@ -30,13 +38,10 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class TsDbGrpEditorFrame extends TopFrame
 {
-	//Frame 
-	private String module = "TsDbGrpEditorFrame";
-	//Frame Owner 
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 
 	//Frame Components
 	private JPanel contentPane;
-//	private JTabbedPane topLevelTabs;
 	private JPanel tsGroupTab;
 	private JPanel tsGroupListTab;
 	private TsDbGrpEditorTabbedPane tsGroupListTabbedPane;
@@ -47,7 +52,7 @@ public class TsDbGrpEditorFrame extends TopFrame
 	private static String dataTypeStandard;
 	private String frameTitle;
 	private String listTabLabel;
-	
+
 	/**
 	 * Construct the frame
 	 */
@@ -63,13 +68,12 @@ public class TsDbGrpEditorFrame extends TopFrame
 		//Set the time series DB
 		TsDbGrpEditorFrame.theTsDb = null;
 		setTsDb(theTsDb);
-		
+
 		//Set the data type standard
 		dataTypeStandard = null;
 		setDataTypeStandard(DecodesSettings.instance().dataTypeStdPreference);
-		Logger.instance().info(module + 
-			" dataTypeStdPreference From Decodes.properties = " + dataTypeStandard);
-		
+		log.info("dataTypeStdPreference From Decodes.properties = {}", dataTypeStandard);
+
 		//Set all labels
 		if (groupResources != null)
 		{
@@ -79,17 +83,11 @@ public class TsDbGrpEditorFrame extends TopFrame
 			listTabLabel = genericResources.getString("list");
 		}
 
-		try
-		{
-			jbInit();
-		} 
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
+		jbInit();
+		
 		trackChanges("TsGroupEditor");
 	}
-	
+
 	/**
 	 * Return the frame instance
 	 */
@@ -107,7 +105,7 @@ public class TsDbGrpEditorFrame extends TopFrame
 	}
 
 	/**
-	 * Set the time series DB 
+	 * Set the time series DB
 	 */
 	public static void setTsDb(TimeSeriesDb theTsDb)
 	{
@@ -116,7 +114,7 @@ public class TsDbGrpEditorFrame extends TopFrame
 
 	/**
 	 * Get data type standard
-	 * 
+	 *
 	 * @return String
 	 */
 	public static String getDataTypeStandard()
@@ -126,14 +124,14 @@ public class TsDbGrpEditorFrame extends TopFrame
 
 	/**
 	 * Set data type standard
-	 * 
+	 *
 	 * @param dataTypeStandard
 	 */
 	public static void setDataTypeStandard(String dataTypeStandard)
 	{
 		TsDbGrpEditorFrame.dataTypeStandard = dataTypeStandard;
 	}
-	
+
 	/** @return the tabbed pane for TS Groups */
 	@Override
 	public TsDbGrpEditorTabbedPane getTsGroupsListTabbedPane()
@@ -150,9 +148,8 @@ public class TsDbGrpEditorFrame extends TopFrame
 
 	/**
 	 * Component initialization
-	 * @throws Exception
 	 */
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		//Initialize the components
 		tsGroupTab = new JPanel();
@@ -162,7 +159,7 @@ public class TsDbGrpEditorFrame extends TopFrame
 
 		//Set up the frame dimension
 		this.setSize(new Dimension(900, 768));//763, 803 763, 760
-		this.setTitle(frameTitle);   
+		this.setTitle(frameTitle);
 		contentPane = (JPanel) this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
 		contentPane.add(tsGroupTab, BorderLayout.CENTER);
@@ -171,7 +168,7 @@ public class TsDbGrpEditorFrame extends TopFrame
 		tsGroupListTab.setLayout(new BorderLayout());
 		tsGroupListTabbedPane.add(tsGroupListTab, listTabLabel);
 		tsGroupListTab.add(tsGroupsListPanel, BorderLayout.CENTER);
-		
+
 		tsGroupsListPanel.setParent(this);
 	}
 }

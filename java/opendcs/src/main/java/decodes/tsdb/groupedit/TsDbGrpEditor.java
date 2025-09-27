@@ -1,49 +1,30 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2016/11/03 19:08:05  mmaloney
- * Implement new Location, Param, and Version dialogs for CWMS.
- *
- * Revision 1.2  2014/08/22 17:23:10  mmaloney
- * 6.1 Schema Mods and Initial DCP Monitor Implementation
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.12  2012/07/24 14:03:16  mmaloney
- * Site.explicitList = true;
- *
- * Revision 1.11  2012/07/24 13:40:14  mmaloney
- * groupedit cosmetic bugs
- *
- * Revision 1.10  2012/05/15 15:11:52  mmaloney
- * exitOnClose boolean moved to base class TopFrame
- *
- * Revision 1.9  2012/01/17 17:54:34  mmaloney
- * Call DecodesInterface.setGUI(true).
- *
- * Revision 1.8  2011/03/01 15:55:57  mmaloney
- * Implement TsListMain, TsListPanel, and TsListFrame
- *
- * Revision 1.7  2011/02/03 20:00:23  mmaloney
- * Time Series Group Editor Mods
- *
- * Revision 1.6  2011/02/02 20:40:34  mmaloney
- * bug fixes
- *
- * 
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.ImageIcon;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import lrgs.gui.DecodesInterface;
 
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 
 import decodes.db.Database;
 import decodes.db.Site;
@@ -52,15 +33,16 @@ import decodes.tsdb.TsdbAppTemplate;
 import decodes.util.DecodesException;
 
 /**
- * 
+ *
  * This is the main class for the Time Series Database Group Editor GUI.
- * This class calls the TsDbGrpEditorFrame class which is the frame 
+ * This class calls the TsDbGrpEditorFrame class which is the frame
  * that contains the Time Series Groups Tab at the moment. It may be
  * expanded to contain the Time Series Data Descriptor Tab and the Alarms Tab.
- * 
+ *
  */
 public class TsDbGrpEditor extends TsdbAppTemplate
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	//Editor
 	private static String module = "TsDbGrpEditor";
 	//Editor Owner
@@ -72,10 +54,10 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 
 	//Miscellaneous
 	private boolean startApp;
-	private String exMsg;
-	
+	private Throwable exMsg;
+
 	private boolean exitOnClose = true;
-	
+
 	/**
 	 * Constructor for TsDbGrpEditor
 	 */
@@ -83,7 +65,7 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 	{
 		super("TsDbGrpEditor.log");
 		startApp = true;
-		exMsg = "";
+		exMsg = null;
 		Site.explicitList = true;
 	}
 
@@ -93,7 +75,7 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 	 */
 	public TsDbGrpEditorFrame getFrame()
 	{
-		return tsDbGrpEditorFrame; 
+		return tsDbGrpEditorFrame;
 	}
 
 	/**
@@ -105,10 +87,10 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 		//If can not connect to DB, display errors and exit.
 		if (!startApp)
 		{
-			System.err.println("Cannot initialize: " + exMsg);
+			log.atError().setCause(exMsg).log("Cannot initialize.");
 			return;
 		}
-		
+
 		//If can connect to DB, launch application.
 		/*
 		 * Create Time Series top frame and pass theDb and labelDescriptor.
@@ -131,9 +113,8 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 		ImageIcon titleIcon = new ImageIcon(
 				EnvExpander.expand("$DECODES_INSTALL_DIR/icons/toolkit24x24.gif"));
 		tsDbGrpEditorFrame.setIconImage(titleIcon.getImage());
-//		tsDbGrpEditorFrame.centerOnScreen();
 		tsDbGrpEditorFrame.setVisible(true);
-		
+
 		tsDbGrpEditorFrame.addWindowListener(new WindowAdapter()
 		{
 			public void windowClosing(WindowEvent e)
@@ -149,25 +130,20 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 	@Override
 	protected void badConnect(String appName, BadConnectException ex)
 	{
-		String msg = appName + " Cannot connect to DB: " + ex.getMessage();
-		System.err.println(msg);
-		Logger.instance().failure(msg);
-		startApp = false;
-		exMsg = ex.toString();
+		log.atError().setCause(ex).log("Cannot connect to DB");
+		exMsg = ex;
 	}
-	
+
 	//Overload this method so that we catch when a Database Connection
 	//error occurs and displays an Error to the user.
 	@Override
 	protected void authFileEx(String afn, Exception ex)
 	{
-		String msg = "Cannot read DB auth from file '" + afn + "': " + ex;
-		System.err.println(msg);
-		Logger.instance().failure(msg);
+		log.atError().setCause(ex).log("Cannot read DB auth from file '{}'", afn);
 		startApp = false;
-		exMsg = ex.toString();
+		exMsg = ex;
 	}
-	
+
 	private void close()
 	{
 		tsDbGrpEditorFrame.dispose();
@@ -179,7 +155,7 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 	{
 		exitOnClose = tf;
 	}
-	
+
 	public void initDecodes()
 		throws DecodesException
 	{
@@ -196,16 +172,12 @@ public class TsDbGrpEditor extends TsdbAppTemplate
 		DecodesInterface.setGUI(true);
 		TsDbGrpEditor guiApp = new TsDbGrpEditor();
 		try
-		{			
+		{
 			guiApp.execute(args);
-		} 
+		}
 		catch (Exception ex)
 		{
-			String msg = module + " Can not initialize Group Editor. "
-				+ ex.getMessage();
-			Logger.instance().failure(msg);
-			System.err.println(msg);
-			ex.printStackTrace(System.err);
+			log.atError().setCause(ex).log("Can not initialize Group Editor.");
 		}
 	}
 }

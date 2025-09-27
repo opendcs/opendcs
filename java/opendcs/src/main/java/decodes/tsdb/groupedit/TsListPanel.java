@@ -1,24 +1,27 @@
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
-import decodes.gui.TimeSeriesChart;
 import decodes.gui.TimeSeriesChartFrame;
-import decodes.gui.TimeSeriesLine;
-import decodes.sql.DbKey;
-import decodes.sql.PlatformListIO;
-import decodes.tsdb.CTimeSeries;
 import ilex.gui.JobDialog;
 import ilex.util.AsciiUtil;
-import ilex.util.Logger;
 
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.sql.Date;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.temporal.TemporalAmount;
-import java.util.Calendar;
 import java.util.Collection;
 
 import javax.swing.JLabel;
@@ -32,6 +35,9 @@ import decodes.gui.TopFrame;
 import decodes.tsdb.TimeSeriesDb;
 import decodes.tsdb.DbIoException;
 import decodes.tsdb.TimeSeriesIdentifier;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -39,22 +45,20 @@ import org.slf4j.LoggerFactory;
  * database.
  */
 @SuppressWarnings("serial")
-public class TsListPanel 
-	extends JPanel implements TsListControllers
+public class TsListPanel extends JPanel implements TsListControllers
 {
-	private final static org.slf4j.Logger log = LoggerFactory.getLogger(TsListPanel.class);
+	private final static Logger log = OpenDcsLoggerFactory.getLogger();
 
 	private String listTitle = "Time Series List";
-	
+
 	private BorderLayout borderLayout = new BorderLayout();
 	private TsListControlsPanel controlsPanel;
 	private JLabel jLabel1 = new JLabel();
 	private TsListSelectPanel tsListSelectPanel;
-	private String module = "TsListPanel";
-	
+
 	private TimeSeriesDb theDb = null;
 	private TsListFrame myFrame;
-	
+
 	/** Constructor. */
 	public TsListPanel(TsListFrame myFrame, TimeSeriesDb theDb)
 	{
@@ -64,18 +68,12 @@ public class TsListPanel
 		tsListSelectPanel.setMultipleSelection(true);
 		controlsPanel = new TsListControlsPanel(this);
 
-		try
-		{
-			guiInit();
-		}
-		catch (Exception ex)
-		{
-			ex.printStackTrace();
-		}
+		guiInit();
+
 	}
 
 	/** Initializes GUI components. */
-	private void guiInit() throws Exception
+	private void guiInit()
 	{
 		this.setLayout(borderLayout);
 		jLabel1.setHorizontalAlignment(SwingConstants.CENTER);
@@ -83,7 +81,7 @@ public class TsListPanel
 		this.add(controlsPanel, BorderLayout.SOUTH);
 		this.add(jLabel1, BorderLayout.NORTH);
 		this.add(tsListSelectPanel, BorderLayout.CENTER);
-		
+
 		tsListSelectPanel.tsIdListTable.addMouseListener(
 			new MouseAdapter()
 			{
@@ -132,7 +130,7 @@ public class TsListPanel
 	public void newPressed()
 	{
 		TsListNewDialog dlg = new TsListNewDialog(myFrame, this, theDb);
-		
+
 		TimeSeriesDb tsdb = myFrame.getTsDb();
 		if (tsdb.isCwms() || tsdb.isOpenTSDB())
 		{
@@ -148,7 +146,7 @@ public class TsListPanel
 			if (tsids != null && tsids.length > 0)
 				dlg.fillValues(tsids[0]);
 			myFrame.launchDialog(dlg);
-			
+
 			if (dlg.okPressed)
 			{
 				tsListSelectPanel.addTsDd(dlg.getTsidCreated());
@@ -159,21 +157,21 @@ public class TsListPanel
 	/** Called when the 'Delete' button is pressed. */
 	public void deletePressed()
 	{
-		final TimeSeriesIdentifier tsids[] = 
+		final TimeSeriesIdentifier tsids[] =
 			tsListSelectPanel.getSelectedTSIDs();
 
 		if (tsids == null || tsids.length == 0)
 			return;
-		
+
 		String msg = "" + tsids.length + " Time Series Selected. "
 			+ " All data and references for these time series will be "
 			+ "permanently deleted. Are you sure?";
-		
-		int ok = JOptionPane.showConfirmDialog(this, 
+
+		int ok = JOptionPane.showConfirmDialog(this,
 			AsciiUtil.wrapString(msg, 60));
 		if (ok != JOptionPane.YES_OPTION)
 			return;
-		
+
 		final JobDialog dlg =
 			new JobDialog(myFrame, "Deleting Time Series", true);
 		dlg.setCanCancel(true);
@@ -197,15 +195,15 @@ public class TsListPanel
 							try
 							{
 								String msg = "Deleting " + tsid.getUniqueString();
-								Logger.instance().debug1(msg);
+								log.debug(msg);
 								dlg.addToProgress(msg);
 								timeSeriesDAO.deleteTimeSeries(tsid);
 							}
 							catch (DbIoException ex)
 							{
-								String msg = "Error: Can not delete Time Series '"
-									+ tsid.getUniqueString() + "': " + ex;
-								dlg.addToProgress(msg);
+								String msg = "Error: Can not delete Time Series '{}'";
+								log.atError().setCause(ex).log(msg);
+								dlg.addToProgress(msg.replace("{}", tsid.getUniqueString()) + ": " + ex);
 							}
 						}
 					}
@@ -240,9 +238,10 @@ public class TsListPanel
 			TimeSeriesChartFrame f = new TimeSeriesChartFrame(theDb,tsids);
 			f.setVisible(true);
 			f.plot();
-		}catch (Exception e)
+		}
+		catch (Exception ex)
 		{
-			log.error("Error reading time-series data",e);
+			log.atError().setCause(ex).log("Error reading time-series data");
 		}
 
 	}

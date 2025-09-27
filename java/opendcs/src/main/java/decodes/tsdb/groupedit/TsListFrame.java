@@ -1,9 +1,18 @@
 /*
- * $Id:
- * 
- * $Log:
- * 
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import ilex.util.LoadResourceBundle;
@@ -13,14 +22,15 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 
 import decodes.gui.PropertiesEditDialog;
 import decodes.gui.TopFrame;
@@ -37,6 +47,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class TsListFrame extends TopFrame
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "TsListFrame";
 	private JPanel contentPane;
 	private JPanel tsTab;
@@ -49,7 +60,7 @@ public class TsListFrame extends TopFrame
 	private ResourceBundle groupResources;
 	private static boolean warnedAboutProps = false;
 
-	
+
 	/**
 	 * Construct the frame
 	 */
@@ -66,17 +77,12 @@ public class TsListFrame extends TopFrame
 		frameTitle = "Time Series List";
 		listTabLabel = genericResources.getString("list");
 
-		try
-		{
-			jbInit();
-		} 
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
+
+		jbInit();
+
 		trackChanges("TsListFrame");
 	}
-	
+
 	/**
 	 * Returns the time series DB object.
 	 */
@@ -101,9 +107,8 @@ public class TsListFrame extends TopFrame
 
 	/**
 	 * Component initialization
-	 * @throws Exception
 	 */
-	private void jbInit() throws Exception
+	private void jbInit()
 	{
 		//Initialize the components
 		tsTab = new JPanel();
@@ -113,7 +118,7 @@ public class TsListFrame extends TopFrame
 
 		//Set up the frame dimension
 		this.setSize(new Dimension(863, 768));//763, 803 763, 760
-		this.setTitle(frameTitle);   
+		this.setTitle(frameTitle);
 		contentPane = (JPanel) this.getContentPane();
 		contentPane.setLayout(new BorderLayout());
 		contentPane.add(tsTab, BorderLayout.CENTER);
@@ -122,8 +127,8 @@ public class TsListFrame extends TopFrame
 		tsListTab.setLayout(new BorderLayout());
 		tsListTabbedPane.add(tsListTab, listTabLabel);
 		tsListTab.add(tsListPanel, BorderLayout.CENTER);
-		
-		JButton tsdbPropsButton = 
+
+		JButton tsdbPropsButton =
 			new JButton(groupResources.getString("TsdbListPanel.TsdbProperties"));
 		tsdbPropsButton.addActionListener(e ->tsdbPropsPressed());
 
@@ -154,11 +159,13 @@ public class TsListFrame extends TopFrame
 			}
 			catch (DbIoException ex)
 			{
-				showError("Error saving TSDB Properties: " + ex);
+				final String msg = "Error saving TSDB Properties";
+				log.atError().setCause(ex).log(msg);
+				showError(msg + ": " + ex);
 			}
 		}
 	}
-	
+
 	public void removeEditPane(TsSpecEditPanel panel)
 	{
 		tsListTabbedPane.remove(panel);
@@ -170,7 +177,7 @@ public class TsListFrame extends TopFrame
 		tsListTabbedPane.add(editPanel, tabName);
 		tsListTabbedPane.setSelectedComponent(editPanel);
 	}
-	
+
 	/**
 	 * Called when Open is selected before constructing a new tab. If an edit
 	 * tab for this TSID already exists, it is made active and true is returned.
@@ -178,7 +185,7 @@ public class TsListFrame extends TopFrame
 	 * @param tsid the selected tsid
 	 * @return true if an edit tab already exists, false if not.
 	 */
-	
+
 	public boolean makeEditPaneActive(TimeSeriesIdentifier tsid)
 	{
 		// Skip tab 0, which is the list tab
@@ -186,7 +193,9 @@ public class TsListFrame extends TopFrame
 		{
 			Component c = tsListTabbedPane.getComponentAt(idx);
 			if (!(c instanceof TsSpecEditPanel))
-				System.out.println("wrong class in tabbed pane");
+			{
+				log.error("wrong class in tabbed pane");
+			}
 			else
 			{
 				TsSpecEditPanel editPanel = (TsSpecEditPanel)c;
@@ -199,7 +208,7 @@ public class TsListFrame extends TopFrame
 		}
 		return false;
 	}
-	
+
 	public void setTabLabel(TsSpecEditPanel editPanel, String tabTitle)
 	{
 		// Skip tab 0, which is the list tab

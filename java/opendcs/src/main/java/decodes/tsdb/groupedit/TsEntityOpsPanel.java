@@ -1,11 +1,18 @@
-/**
- * $Id$
- * 
- * $Log$
- * Revision 1.2  2011/02/03 20:00:23  mmaloney
- * Time Series Group Editor Mods
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import ilex.util.LoadResourceBundle;
@@ -33,7 +40,7 @@ public class TsEntityOpsPanel extends JPanel
 
     GridBagLayout gridBagLayout1 = new GridBagLayout();
     TsEntityOpsController myController;
-    
+
 
         /**
           Constructor.
@@ -56,17 +63,13 @@ public class TsEntityOpsPanel extends JPanel
 
         myController = ctl;
 
-        try {
-            jbInit();
-        }
-        catch(Exception ex) {
-            ex.printStackTrace();
-        }
+
+		jbInit();
+
     }
 
     /** GUI component initialization. */
-	private void jbInit() 
-		throws Exception
+	private void jbInit()
 	{
 		saveButton.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -80,23 +83,23 @@ public class TsEntityOpsPanel extends JPanel
 			}
 		});
 		evaluateButton.addActionListener(
-			new java.awt.event.ActionListener() 
+			new java.awt.event.ActionListener()
 			{
-				public void actionPerformed(ActionEvent e) 
+				public void actionPerformed(ActionEvent e)
 				{
 						evaluateButton_actionPerformed(e);
 				}
 			});
 
 		this.add(saveButton, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(12, 10, 12, 10), 0, 0));
 		this.add(closeButton, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(12, 10, 12, 10), 0, 0));
-		
+
 		// This buttons will show up ONLY in the Ts Definition Panel
-		if (myController instanceof TsGroupDefinitionPanel) 
+		if (myController instanceof TsGroupDefinitionPanel)
 		{
 			this.add(evaluateButton, new GridBagConstraints(4, 0, 1, 1, 0.0,
 				0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
@@ -106,7 +109,7 @@ public class TsEntityOpsPanel extends JPanel
 
     /**
 	 * Called when user presses the 'save' Button.
-	 * 
+	 *
 	 * @param e
 	 *            ignored.
 	 */
@@ -117,7 +120,7 @@ public class TsEntityOpsPanel extends JPanel
 
 	/**
 	 * Called when user presses the 'Close' Button.
-	 * 
+	 *
 	 * @param e
 	 *            ignored.
 	 */
@@ -128,7 +131,7 @@ public class TsEntityOpsPanel extends JPanel
 
 	/**
 	 * Called when user presses the 'Corrections' Button.
-	 * 
+	 *
 	 * @param e
 	 *            ignored.
 	 */
@@ -137,4 +140,3 @@ public class TsEntityOpsPanel extends JPanel
 		myController.evaluateEntity();
 	}
 }
-
