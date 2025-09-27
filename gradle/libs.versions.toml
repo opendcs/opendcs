@@ -45,6 +45,9 @@ nimbus = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus" }
 jwt = { module = "com.auth0:java-jwt", version.ref = "jwt" }
 auto-service = { module = "com.google.auto.service:auto-service", version.ref = "auto-service" }
 
+#WebJars
+
+
 #Test Dependencies
 opendcs-integrationtesting-fixtures = { module = "org.opendcs:opendcs-integrationtesting-fixtures", version.ref = "opendcs"}
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }

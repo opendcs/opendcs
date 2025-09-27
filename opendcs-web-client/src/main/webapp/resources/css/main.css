@@ -5,6 +5,10 @@ main {
   margin-left: 10%;
 }
 
+.active {
+	font-weight: bold !important;
+}
+
 .formAlert {
 	color: red !important;
 	border: none !important;
@@ -150,10 +154,6 @@ main {
 	padding-left: 12px;
 }
 
-/** This is for removing the greater than sign in the menu on the left **/
-.nav-item>.nav-link:after {
-	display:none;
-}
 
 .dashboardNavbar
 {

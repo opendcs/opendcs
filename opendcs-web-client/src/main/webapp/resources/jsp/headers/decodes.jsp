@@ -16,10 +16,15 @@
   --%>
 
 <head>
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport"
-	content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<%-- <meta http-equiv="Content-Security-Policy" content="script-src 'self'"> --%>
-<title>OpenDCS Web Client</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="icon" type="image/png" href="../resources/img/odcs-favicon.png"/>
+  <%-- Global stylesheets --%>
+  <link href="../resources/css/select.dataTables.css" rel="stylesheet" type="text/css"/>
+  <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+  <link href="/webjars/bootstrap-daterangepicker/css/bootstrap-daterangepicker.css" rel="stylesheet" type="text/css"/>
+  <link href="../resources/css/main.css" rel="stylesheet" type="text/css"/>
+  <%-- <meta http-equiv="Content-Security-Policy" content="script-src 'self'"> --%>
+  <title>OpenDCS Web Client</title>
 </head>

@@ -3,5 +3,6 @@
         "connectionId": "opendcs-rest-api-sonarcloud",
         "projectKey": "opendcs_rest_api"
     },
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.updateBuildConfiguration": "automatic"
 }

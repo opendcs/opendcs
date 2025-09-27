@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
-
+	<jsp:include page="/resources/jsp/headers/decodes.jsp" />   
 	<body class="navbar-top">
 		<!-- Main navbar -->
 		<jsp:include page="/resources/jsp/menus/decodes/main.jsp" />   
@@ -431,10 +431,10 @@
 
 
 <jsp:include page="/resources/jsp/includes/decodes.jsp" /> 
-<script src="../resources/js/plugins/forms/styling/switchery.min.js"></script>
-<script src="../resources/js/plugins/forms/styling/switch.min.js"></script>
-<script src="../resources/js/plugins/forms/styling/uniform.min.js"></script>
-<script src="../resources/js/datatables/datatables.js"></script>
+<script src="/webjars/switchery/switchery.js"></script>
+<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+<script src="/webjars/uniform/jquery.uniform.min.js"></script>
+<script src="/webjars/datatables/js/dataTables.min.js"></script>
 <script src="../resources/js/datatables/helpers.js"></script>
 <script src="../resources/js/lib/time.js"></script>
 <script src="../resources/js/lib/dom_utilities.js"></script>

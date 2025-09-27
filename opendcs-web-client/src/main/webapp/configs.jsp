@@ -404,13 +404,13 @@
 	
 	<jsp:include page="/resources/jsp/includes/decodes.jsp" /> 
 	
-	<script src="../resources/js/plugins/ui/moment/moment.min.js"></script>
-	<script src="../resources/js/plugins/pickers/daterangepicker.js"></script>
+	<script src="/webjars/momentjs/moment.min.js"></script>
+	<script src="/webjars/bootstrap-daterangepicker/js/bootstrap-daterangepicker.js"></script>
 	<script src="../resources/js/plugins/pickers/anytime.min.js"></script>
-	<script src="../resources/js/plugins/pickers/pickadate/picker.js"></script>
-	<script src="../resources/js/plugins/pickers/pickadate/picker.date.js"></script>
-	<script src="../resources/js/plugins/pickers/pickadate/picker.time.js"></script>
-	<script src="../resources/js/plugins/pickers/pickadate/legacy.js"></script>
+	<script src="/webjars/pickadate.js/picker.js"></script>
+	<script src="/webjars/pickadate.js/picker.date.js"></script>
+	<script src="/webjars/pickadate.js/picker.time.js"></script>
+	<script src="/webjars/pickadate.js/legacy.js"></script>
 	<script src="../resources/js/configs.js"></script>
 	<script src="../resources/js/datatables/helpers.js"></script>
 	<script src="../resources/js/lib/object_utilities.js"></script>

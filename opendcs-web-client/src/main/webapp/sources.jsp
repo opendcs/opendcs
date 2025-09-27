@@ -148,6 +148,6 @@
 <jsp:include page="/resources/jsp/includes/decodes.jsp" />
 <script src="../resources/js/datatables/helpers.js"></script>
 <script src="../resources/js/sources.js"></script>
-<script src="../resources/js/datatables/dataTables.rowReorder.min.js"></script>
+<script src="/webjars/datatables-rowreorder/js/dataTables.rowReorder.min.js"></script>
 
 </html>

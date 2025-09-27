@@ -17,7 +17,6 @@
 
 	<body class="navbar-top">
 
-		<jsp:include page="/resources/jsp/menus/decodes/main.jsp" />   
 
    		<!-- Page content -->
    		<div class="page-content">

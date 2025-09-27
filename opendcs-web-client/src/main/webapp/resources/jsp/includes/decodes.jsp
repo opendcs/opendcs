@@ -15,46 +15,23 @@
   ~  limitations under the License.
   --%>
 
-<%-- Global stylesheets --%>
-<link href="../resources/css/icons/icomoon/styles.min.css"
-	rel="stylesheet" type="text/css">
-<link href="../resources/css/limitless/bootstrap.min.css"
-	rel="stylesheet" type="text/css">
-<link href="../resources/css/limitless/bootstrap_limitless.min.css"
-	rel="stylesheet" type="text/css">
-<link href="../resources/css/limitless/layout.min.css" rel="stylesheet"
-	type="text/css">
-<link href="../resources/css/limitless/components.min.css"
-	rel="stylesheet" type="text/css">
-<link href="../resources/css/limitless/colors.min.css" rel="stylesheet"
-	type="text/css">
-<link href="../resources/css/limitless/colors.min.css" rel="stylesheet"
-	type="text/css">
-<link href="../resources/css/select.dataTables.css" rel="stylesheet"
-	type="text/css">
-<link href="../resources/css/main.css" rel="stylesheet" type="text/css">
-
-<%-- /global stylesheets --%>
-
 <%-- Core JS files --%>
-<script src="../resources/js/jquery-3.4.1.js"></script>
-<script src="../resources/js/bootstrap.bundle.min.js"></script>
-<script src="../resources/js/plugins/loaders/blockui.min.js"></script>
+<script src="/webjars/jquery/jquery.min.js"></script>
+<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/webjars/jquery-blockui/jquery.blockUI.js"></script>
 <%-- /core JS files --%>
 
 <%-- Theme JS files --%>
-<script src="../resources/js/plugins/visualization/d3/d3.min.js"></script>
+<script src="/webjars/d3js/d3.min.js"></script>
 <%-- /theme JS files --%>
 
 
 <%-- Datatables files --%>
-<script
-	src="../resources/js/plugins/tables/datatables/datatables.min.js"></script>
-<script
-	src="../resources/js/plugins/tables/datatables/extensions/responsive.min.js"></script>
-<script src="../resources/js/plugins/forms/selects/select2.min.js"></script>
-<script src="../resources/js/dataTables.select.js"></script>
-<script src="../resources/js/dataTables.buttons.min.js"></script>
+<script src="/webjars/datatables/js/dataTables.min.js"></script>
+<script src="/webjars/datatables-responsive/js/dataTables.responsive.min.js"></script>
+<script src="/webjars/select2/4.0.13/js/select2.min.js"></script>
+<script src="/webjars/datatables-select/2.1.0/js/dataTables.select.min.js"></script>
+<script src="/webjars/datatables-buttons/3.2.5/js/dataTables.buttons.min.js"></script>
 <%-- /datatables files --%>
 
 <%--  OpenDCS Web Files --%>
