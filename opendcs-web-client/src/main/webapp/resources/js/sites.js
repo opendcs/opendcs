@@ -134,7 +134,8 @@ function updateSitesTable(responseJson)
     sitesTable.clear();
     sitesTable.draw(false);
 
-    var selectedSiteNameType = $("#displayedTypeSelect").val().toLowerCase();
+    let selectedSiteNameType = $("#displayedTypeSelect").val().toLowerCase();
+    
     $("#siteNameColumnHeader").text("Site Name (" + selectedSiteNameType + ")");
     for (var x = 0; x < responseJson.length; x++)
     {
