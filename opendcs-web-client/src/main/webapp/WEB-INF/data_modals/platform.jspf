@@ -12,8 +12,7 @@
 					<div class="col-lg-5 h-100">
 						<div class="row h-50 p-1">
 							<div class="card col-lg-12 pl-3 pr-3 pt-1 pb-1 h-100 opendcs_y_scrollable">
-								<form class="form-validate-jquery"
-									onkeydown="return event.key != 'Enter';">
+								<form class="form-validate-jquery" onkeydown="return event.key != 'Enter';">
 									<table
 										class="table table-hover datatable-responsive dataTable no-footer mb-1">
 										<caption class="captionTitleCenter">Details</caption>
