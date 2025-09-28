@@ -17,6 +17,8 @@ package portal.computations;
 
 import java.io.IOException;
 
+import javax.servlet.annotation.WebServlet;
+
 import portal.PortalBase;
 
 /**
@@ -25,6 +27,7 @@ import portal.PortalBase;
  * @author Will Jonassen
  *
  */
+@WebServlet("/algorithms")
 public class Algorithms extends PortalBase {
 
     /**
@@ -32,6 +35,6 @@ public class Algorithms extends PortalBase {
      * @throws IOException 
      */
     public Algorithms() throws IOException {
-        super("/algorithms.jsp", "computations", "algorithms");
+        super("/WEB-INF/app_pages/algorithms.jsp", "computations", "algorithms");
     }
 }

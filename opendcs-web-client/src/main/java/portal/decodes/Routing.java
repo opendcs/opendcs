@@ -17,6 +17,8 @@ package portal.decodes;
 
 import java.io.IOException;
 
+import javax.servlet.annotation.WebServlet;
+
 import portal.PortalBase;
 
 /**
@@ -25,6 +27,7 @@ import portal.PortalBase;
  * @author Will Jonassen
  *
  */
+@WebServlet("/routing")
 public class Routing extends PortalBase {
 
     /**
@@ -32,6 +35,6 @@ public class Routing extends PortalBase {
      * @throws IOException 
      */
     public Routing() throws IOException {
-        super("/routing.jsp", "decodes", "routing");
+        super("/WEB-INF/app_pages/routing.jsp", "decodes", "routing");
     }
 }

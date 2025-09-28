@@ -17,6 +17,8 @@ package portal.rledit;
 
 import java.io.IOException;
 
+import javax.servlet.annotation.WebServlet;
+
 import portal.PortalBase;
 
 /**
@@ -25,6 +27,7 @@ import portal.PortalBase;
  * @author Will Jonassen
  *
  */
+@WebServlet("/seasons")
 public class Seasons extends PortalBase {
 
     /**
@@ -32,6 +35,6 @@ public class Seasons extends PortalBase {
      * @throws IOException 
      */
     public Seasons() throws IOException {
-        super("/seasons.jsp", "rledit", "seasons");
+        super("/WEB-INF/app_pages/seasons.jsp", "rledit", "seasons");
     }
 }

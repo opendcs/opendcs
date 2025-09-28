@@ -17,6 +17,8 @@ package portal.rledit;
 
 import java.io.IOException;
 
+import javax.servlet.annotation.WebServlet;
+
 import portal.PortalBase;
 
 /**
@@ -25,6 +27,7 @@ import portal.PortalBase;
  * @author Will Jonassen
  *
  */
+@WebServlet("/engineering_units")
 public class EngineeringUnits extends PortalBase {
 
     /**
@@ -32,6 +35,6 @@ public class EngineeringUnits extends PortalBase {
      * @throws IOException 
      */
     public EngineeringUnits() throws IOException {
-        super("/engineering_units.jsp", "rledit", "engineering_units");
+        super("/WEB-INF/app_pages/engineering_units.jsp", "rledit", "engineering_units");
     }
 }

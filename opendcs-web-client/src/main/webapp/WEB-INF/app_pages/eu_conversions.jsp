@@ -68,7 +68,6 @@
 		<script src="../resources/js/datatables/helpers.js"></script>
 		<script src="../resources/js/lib/dom_utilities.js"></script>
 		<script src="../resources/js/lib/object_utilities.js"></script>
-		<script src="../resources/js/lib/opendcs_utilities.js"></script>
 		<script src="../resources/js/lib/date_utilities.js"></script>
 		<script src="../resources/js/eu_conversions.js"></script>
 	</body>

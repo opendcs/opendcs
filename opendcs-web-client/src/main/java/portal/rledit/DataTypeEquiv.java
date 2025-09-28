@@ -17,6 +17,8 @@ package portal.rledit;
 
 import java.io.IOException;
 
+import javax.servlet.annotation.WebServlet;
+
 import portal.PortalBase;
 
 /**
@@ -25,6 +27,7 @@ import portal.PortalBase;
  * @author Will Jonassen
  *
  */
+@WebServlet("/data_type_equiv.jsp")
 public class DataTypeEquiv extends PortalBase {
 
     /**
@@ -32,6 +35,6 @@ public class DataTypeEquiv extends PortalBase {
      * @throws IOException 
      */
     public DataTypeEquiv() throws IOException {
-        super("/data_type_equiv.jsp", "rledit", "data_type_equiv");
+        super("/WEB-INF/app_pages/data_type_equiv.jsp", "rledit", "data_type_equiv");
     }
 }

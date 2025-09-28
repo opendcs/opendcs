@@ -17,6 +17,8 @@ package portal.rledit;
 
 import java.io.IOException;
 
+import javax.servlet.annotation.WebServlet;
+
 import portal.PortalBase;
 
 /**
@@ -25,12 +27,13 @@ import portal.PortalBase;
  * @author Will Jonassen
  *
  */
+@WebServlet("/enumerations")
 public class Enumerations extends PortalBase {
     /**
      * Creates a new Enumeration
      * @throws IOException 
      */
     public Enumerations() throws IOException {
-        super("/enumerations.jsp", "rledit", "enumerations");
+        super("/WEB-INF/app_pages/enumerations.jsp", "rledit", "enumerations");
     }
 }

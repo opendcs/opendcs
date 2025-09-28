@@ -7,7 +7,7 @@ var sitesTable;
 /**
  * DataTable reference to the properties table.
  */
-var propertiesTable;
+var propertiesTable = new PropertiesTable("propertiesTable", [], true);;
 
 /**
  * DataTable reference to the siteNames table.
@@ -487,13 +487,6 @@ function initializeDataTables()
                     ]
             });
 
-    propertiesTable = new PropertiesTable(
-    		"propertiesTable", 
-    		[],
-    		true);
-    
-    
-    
     siteNamesTable = new BasicTable("siteNamesTable", false);
     $('#sitesTable').on('click', 'tbody tr', openSiteDialog);
     updateDataTableScroll("#sitesTable", 0);

@@ -17,6 +17,8 @@ package portal.decodes;
 
 import java.io.IOException;
 
+import javax.servlet.annotation.WebServlet;
+
 import portal.PortalBase;
 
 /**
@@ -25,6 +27,7 @@ import portal.PortalBase;
  * @author Will Jonassen
  *
  */
+@WebServlet("/presentation")
 public class Presentation extends PortalBase {
 
     /**
@@ -32,6 +35,6 @@ public class Presentation extends PortalBase {
      * @throws IOException 
      */
     public Presentation() throws IOException {
-        super("/presentation.jsp", "decodes", "presentation");
+        super("/WEB-INF/app_pages/presentation.jsp", "decodes", "presentation");
     }
 }
