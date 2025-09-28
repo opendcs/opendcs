@@ -8,9 +8,9 @@
 
 	    <!-- Page content -->
 	    <div class="page-content">
-
+	
 	        <%@include file="/WEB-INF/common/sidebar.jspf" %>
-
+			
 			<!-- Main content -->
 			<div class="content-wrapper">
 				<!-- Page header -->
