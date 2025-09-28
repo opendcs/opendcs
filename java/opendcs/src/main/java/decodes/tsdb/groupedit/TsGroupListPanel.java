@@ -24,7 +24,6 @@ import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 
 import org.opendcs.gui.SearchPanel;
-import org.slf4j.LoggerFactory;
 
 import decodes.gui.GuiDialog;
 import decodes.gui.TopFrame;
@@ -38,7 +37,6 @@ import decodes.tsdb.TsGroup;
  */
 public class TsGroupListPanel extends JPanel
 {
-	private static final org.slf4j.Logger log = LoggerFactory.getLogger(TsGroupListPanel.class);
 	//Panel
 	public String module = "TsGoupListPanel";
 	//Panel Owner
@@ -72,14 +70,7 @@ public class TsGroupListPanel extends JPanel
 		this.frameOwner = frameOwner;
 		this.ctrlPanel = ctrlPanel;
 
-		try
-		{
-			jbInit();
-		}
-		catch (Exception ex)
-		{
-			log.atInfo().log("Error initializing ",ex);
-		}
+		jbInit();
 	}
 	
 	/** Initializes GUI components. */

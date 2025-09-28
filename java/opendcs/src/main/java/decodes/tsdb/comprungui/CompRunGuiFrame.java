@@ -1,25 +1,23 @@
 /*
- * $Id$
- * 
- * $Log$
- * Revision 1.3  2018/11/14 15:59:56  mmaloney
- * Remove obsolete catch block.
- *
- * Revision 1.2  2018/06/04 19:23:38  mmaloney
- * HDB issue where deleted values were being displayed on table and graph.
- *
- * Revision 1.1  2017/08/22 19:57:35  mmaloney
- * Refactor
- *
- * 
- * Copyright 2014 U.S. Army Corps of Engineers, Hydrologic Engineering Center.
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+* 
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+* 
+*   http://www.apache.org/licenses/LICENSE-2.0
+* 
+* Unless required by applicable law or agreed to in writing, software 
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations 
+* under the License.
+*/
 package decodes.tsdb.comprungui;
 
 import ilex.gui.DateTimeCalendar;
 import ilex.util.TeeLogger;
 import ilex.util.TextUtil;
-import ilex.util.Logger;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
 
@@ -78,6 +76,12 @@ import opendcs.dai.AlgorithmDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
 
+
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.MDC;
+import org.slf4j.MDC.MDCCloseable;
+
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -105,6 +109,7 @@ import org.slf4j.LoggerFactory;
 import decodes.dbeditor.TraceDialog;
 import decodes.dbeditor.TraceLogger;
 import decodes.gui.TopFrame;
+import decodes.sql.DbKey;
 import decodes.tsdb.BadTimeSeriesException;
 import decodes.tsdb.CTimeSeries;
 import decodes.tsdb.DataCollection;
@@ -132,7 +137,7 @@ import decodes.util.DecodesSettings;
 @SuppressWarnings("serial")
 public class CompRunGuiFrame extends TopFrame
 {
-	private static org.slf4j.Logger log = LoggerFactory.getLogger(CompRunGuiFrame.class);
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	public static final ResourceBundle labels = RunComputationsFrameTester.getLabels();;
 	private static final ResourceBundle genericLabels = RunComputationsFrameTester.getGenericLabels();;
 	public static String description;
@@ -645,9 +650,9 @@ public class CompRunGuiFrame extends TopFrame
 				series.addOrUpdate(new Minute(timestamp, timezone), value);
 
 			}
-			catch (NoConversionException e)
+			catch (NoConversionException ex)
 			{
-				Logger.instance().log(Logger.E_WARNING, e.toString());
+				log.atWarn().setCause(ex).log("Unable to add sample to data set.");
 			}
 		}
 		if (sameEngUnits)
@@ -794,16 +799,8 @@ public class CompRunGuiFrame extends TopFrame
 
 	private void runButtonPressed()
 	{
-		// Create a trace logger and put in the pipeline with tee logger.
-		Logger originalLogger = Logger.instance();
-		final TraceLogger traceLogger = new TraceLogger(originalLogger.getProcName());
-		final TeeLogger teeLogger = new TeeLogger(originalLogger.getProcName(), originalLogger, traceLogger);
-		traceLogger.setMinLogPriority(Logger.E_DEBUG3);
-		Logger.setLogger(teeLogger);
-
 		runButton.setEnabled(false);
 		traceDialog.clear();
-		traceLogger.setDialog(traceDialog);
 		AlarmManager.deleteInstance();
 		
 		if (fromDTCal.getDate() == null || toDTCal.getDate() == null)
@@ -863,7 +860,10 @@ public class CompRunGuiFrame extends TopFrame
 						Vector<DbComputation> theComps = this.get();
 						if (theComps != null)
 						{
-							runSelectedComps(theComps, originalLogger, traceLogger, inputs);
+							try(MDCCloseable mdc = MDC.putCloseable("ComputationTask", "runSelected"))
+							{
+								runSelectedComps(theComps, inputs);
+							}
 						}
 						else
 						{
@@ -898,13 +898,12 @@ public class CompRunGuiFrame extends TopFrame
 		{
 			if (comp.hasGroupInput())
 			{
-				Logger.instance().debug3("comp " + comp.getName() + " has group input. ");
+				log.trace("comp {} has group input. ", comp.getName());
 				if (compGroup == null)
 				{
 					compGroup = comp.getGroup();
 					groupCompName = comp.getName();
-					Logger.instance().debug3(
-						"Will execute with group " + groupCompName + ", id=" + comp.getGroupId());
+					log.trace("Will execute with group {}, id={}", groupCompName, comp.getGroupId());
 				}
 				else if (compGroup.getGroupId() != comp.getGroupId())
 				{
@@ -920,8 +919,7 @@ public class CompRunGuiFrame extends TopFrame
 				}
 				else
 				{
-					Logger.instance().debug3(
-						"comp " + comp.getName() + " also uses group id=" + comp.getGroupId());
+					log.trace("comp {} also uses group id={}", comp.getName(), comp.getGroupId());
 				}
 			}
 		}
@@ -1023,12 +1021,11 @@ public class CompRunGuiFrame extends TopFrame
 									tsidit.remove();
 									continue;
 								}
-								Logger.instance().debug3("   original='" + tsid.getUniqueString() + "'");
-								Logger.instance().debug3("transformed='" + transformed.getUniqueString() + "'");
+								log.trace("original='{}'", tsid.getUniqueString());
+								log.trace("transformed='{}'", transformed.getUniqueString());
 
 								transformedTsids.add(transformed);
-								Logger.instance().debug3(
-									"transformedTsids now has " + transformedTsids.size() + " members.");
+								log.trace("transformedTsids now has {} members", transformedTsids.size());
 							}
 						}
 					});
@@ -1044,8 +1041,7 @@ public class CompRunGuiFrame extends TopFrame
 
 				TimeSeriesSelectDialog dlg = new TimeSeriesSelectDialog(theDb, false, this);
 				dlg.setMultipleSelection(true);
-				Logger.instance().debug3(
-					"Setting selection list with " + transformedTsids.size() + " entries.");
+				log.trace("Setting selection list with {} entries", transformedTsids.size());
 				dlg.setTimeSeriesList(transformedTsids);
 				dlg.setTitle("Select time series for Execution.");
 				launchDialog(dlg);
@@ -1055,12 +1051,14 @@ public class CompRunGuiFrame extends TopFrame
 					groupTsIds.add(tsid);
 				}
 
-				Logger.instance().debug3("Will execute with the following time-series: ");
-				for (TimeSeriesIdentifier tsid : groupTsIds)
+				if (log.isTraceEnabled())
 				{
-					Logger.instance().debug3("   " + tsid.getUniqueString());
+					log.trace("Will execute with the following time-series: ");
+					for (TimeSeriesIdentifier tsid : groupTsIds)
+					{
+						log.trace("{}", tsid.getUniqueString());
+					}
 				}
-
 				ArrayList<DbComputation> concreteGroupComps = new ArrayList<DbComputation>();
 				StringBuilder errorMsgs = new StringBuilder();
 				try (TimeSeriesDAI txDAI = theDb.makeTimeSeriesDAO())
@@ -1108,6 +1106,7 @@ public class CompRunGuiFrame extends TopFrame
 			}
 			catch (DbIoException ex)
 			{
+				log.atError().setCause(ex).log("Cannot exapnd group '{}'", compGroup.getGroupName());
 				showError("Cannot expand group '" + compGroup.getGroupName() + "': " + ex);
 				return false;
 			}
@@ -1122,7 +1121,7 @@ public class CompRunGuiFrame extends TopFrame
 	 * @param traceLogger
 	 * @param inputs valid vector that is used to add input timeseries for computations that are actually run.
 	 */
-	private void runSelectedComps(Collection<DbComputation> compVector, Logger originalLogger, TraceLogger traceLogger, Vector<CTimeSeries> inputs)
+private void runSelectedComps(Collection<DbComputation> compVector, Vector<CTimeSeries> inputs)
 	{
 		final Vector<CTimeSeries> both = new Vector<CTimeSeries>();
 		// Flush the text area inside trace dialog
@@ -1144,149 +1143,147 @@ public class CompRunGuiFrame extends TopFrame
 					{
 						return outputs;
 					}
-					DataCollection runme = new DataCollection();
-					// ArrayList<Integer> outputIDs = new ArrayList<Integer>();
-					ArrayList<DbCompParm> outputParms = new ArrayList<DbCompParm>();
-
-					boolean lowerBoundClosed = true;
-					boolean upperBoundClosed = false;
-					lowerBoundClosed = TextUtil.str2boolean(comp.getProperty("aggLowerBoundClosed"));
-					upperBoundClosed = TextUtil.str2boolean(comp.getProperty("aggUpperBoundClosed"));
-
-					// Get all inputs and expand them
-					for (Iterator<DbCompParm> parmIt = comp.getParms(); parmIt.hasNext();)
+					try (MDCCloseable mdc = MDC.putCloseable("Computation", comp.getName()))
 					{
-						DbCompParm parm = parmIt.next();
+						DataCollection runme = new DataCollection();
+						// ArrayList<Integer> outputIDs = new ArrayList<Integer>();
+						ArrayList<DbCompParm> outputParms = new ArrayList<DbCompParm>();
 
-						// check for null on parm.getAlgoParmType
-						if (parm.isInput() && parm.getSiteDataTypeId() != null && !parm.getSiteDataTypeId().isNull())
+						boolean lowerBoundClosed = true;
+						boolean upperBoundClosed = false;
+						lowerBoundClosed = TextUtil.str2boolean(comp.getProperty("aggLowerBoundClosed"));
+						upperBoundClosed = TextUtil.str2boolean(comp.getProperty("aggUpperBoundClosed"));
+
+						// Get all inputs and expand them
+						for (Iterator<DbCompParm> parmIt = comp.getParms(); parmIt.hasNext();)
 						{
+							DbCompParm parm = parmIt.next();
 
-							CTimeSeries ts = new CTimeSeries(parm);
-							ts.setModelRunId(comp.getModelRunId());
-							TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-							try
+							// check for null on parm.getAlgoParmType
+							if (parm.isInput() && parm.getSiteDataTypeId() != null && !parm.getSiteDataTypeId().isNull())
 							{
-								timeSeriesDAO.fillTimeSeries(ts, fromDTCal.getDate(), toDTCal.getDate(),
-									lowerBoundClosed, upperBoundClosed, false);
-							}
-							catch (Exception ex)
-							{
-								String msg = module + " Exception filling input timeseries in "
-									+ "runButtonPressed() " + ex;
-								if (!isCancelled())
+
+								CTimeSeries ts = new CTimeSeries(parm);
+								ts.setModelRunId(comp.getModelRunId());
+								TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
+								try
 								{
-									showError(msg);
+									timeSeriesDAO.fillTimeSeries(ts, fromDTCal.getDate(), toDTCal.getDate(),
+										lowerBoundClosed, upperBoundClosed, false);
 								}
-								Logger.instance().warning(msg);
-								StringWriter sw = new StringWriter();
-								PrintWriter pw = new PrintWriter(sw);
-								ex.printStackTrace(pw);
-								Logger.instance().warning(sw.toString());
-								continue;
-							}
-							finally
-							{
-								timeSeriesDAO.close();
-							}
-							for (int pos = 0; pos < ts.size(); pos++)
-								VarFlags.setWasAdded(ts.sampleAt(pos));
+								catch (Exception ex)
+								{
+									String msg = module + " Exception filling input timeseries in "
+										+ "runButtonPressed()";
+									if (!isCancelled())
+									{
+										showError(msg + ": " + ex);
+									}
+									log.atWarn().setCause(ex).log(msg);
+									continue;
+								}
+								finally
+								{
+									timeSeriesDAO.close();
+								}
+								for (int pos = 0; pos < ts.size(); pos++)
+									VarFlags.setWasAdded(ts.sampleAt(pos));
 
-							try
-							{
-								runme.addTimeSeries(ts);
-								myinputs.add(ts);
+								try
+								{
+									runme.addTimeSeries(ts);
+									myinputs.add(ts);
+								}
+								catch (DuplicateTimeSeriesException e)
+								{
+									// MJM some comps, like monthly delta may
+									// Have the same TS as two separate inputs.
+								}
 							}
-							catch (DuplicateTimeSeriesException e)
+							else if (parm.isOutput())
 							{
-								// MJM some comps, like monthly delta may
-								// Have the same TS as two separate inputs.
+								// Record all the outputs to be sorted later
+								outputParms.add(parm);
 							}
 						}
-						else if (parm.isOutput())
+						try (AlgorithmDAI algoDAO = theDb.makeAlgorithmDAO())
 						{
-							// Record all the outputs to be sorted later
-							outputParms.add(parm);
-						}
-					}
-					try (AlgorithmDAI algoDAO = theDb.makeAlgorithmDAO())
-					{
-						Logger.instance().info(
-							"Running computation " + comp.getName() + " modelRunId=" + comp.getModelRunId()
-								+ ", with parms: ");
-						for (Iterator<DbCompParm> dcpit = comp.getParms(); dcpit.hasNext();)
-						{
-							DbCompParm dcp = dcpit.next();
-							CTimeSeries cts = runme.getTimeSeries(dcp.getSiteDataTypeId(), dcp.getInterval(),
-								dcp.getTableSelector(), comp.getModelRunId());
-							TimeSeriesIdentifier tsid = cts != null ? cts.getTimeSeriesIdentifier() : null;
+							log.info("Running computation {} modelRunId={}, with parms: ",
+								 	 comp.getName(), comp.getModelRunId());
+							for (Iterator<DbCompParm> dcpit = comp.getParms(); dcpit.hasNext();)
+							{
+								DbCompParm dcp = dcpit.next();
+								CTimeSeries cts = runme.getTimeSeries(dcp.getSiteDataTypeId(), dcp.getInterval(),
+									dcp.getTableSelector(), comp.getModelRunId());
+								TimeSeriesIdentifier tsid = cts != null ? cts.getTimeSeriesIdentifier() : null;
 
-							Logger.instance().info(
-								"   "
-									+ dcp.getRoleName()
-									+ ":sdi="
-									+ dcp.getSiteDataTypeId()
-									+ ",intv="
-									+ dcp.getInterval()
-									+ ",tsel="
-									+ dcp.getTableSelector()
-									+ ",modId="
-									+ dcp.getModelId()
-									+ (cts == null ? " no existing TimeSeries" : " Existing TS with " + cts.size()
-										+ " values in it ")
-									+ (tsid == null ? "(no tsid)" : "and ts_id key=" + tsid.getKey() + " "
-										+ tsid.getUniqueString()));
-						}
-						// run inputs through computation
-						comp.setAlgorithm(algoDAO.getAlgorithmById(comp.getAlgorithmId()));
-						comp.prepareForExec(theDb);
-						comp.apply(runme, theDb);
-					}
-					catch (DbCompException e)
-					{
-						if (!isCancelled())
-						{
-							showError(module + " DbCompException in " + "runButtonPressed() " + e.getMessage());
-						}
-						continue;
-					}
-					catch (DbIoException e)
-					{
-						if (!compExecutionWorker.isCancelled())
-						{
-							showError(module + " DbIOException in " + "runButtonPressed() " + e.getMessage());
-						}
-						continue;
-					}
-					catch (NoSuchObjectException e)
-					{
-						if (!compExecutionWorker.isCancelled())
-						{
-							showError(module + " Cannot read Algorithm in " + "runButtonPressed() " + e.getMessage());
-						}
-						continue;
-					}
-					progress.incDone();
-					setProgress(progress.getPercentDone());
-					// Get all outputs & add outputs to total lists;
-					for (DbCompParm parm : outputParms)
-					{
-						boolean found = false;
-						for (CTimeSeries cts : runme.getAllTimeSeries())
-							if (cts.getSDI() == parm.getSiteDataTypeId()
-								&& TextUtil.strEqual(cts.getInterval(), parm.getInterval())
-								&& TextUtil.strEqual(cts.getTableSelector(), parm.getTableSelector()))
-							{
-								publish(cts);
-								outputs.add(cts);
-								Logger.instance().info(
-									"After running, Found output sdi=" + cts.getSDI() + ", size=" + cts.size()
-										+ ", units=" + cts.getUnitsAbbr());
-								found = true;
-								break;
+								log.atInfo()
+								   .addKeyValue("role", dcp.getRoleName())
+								   .addKeyValue("sdi", dcp.getSiteDataTypeId())
+								   .addKeyValue("interval", dcp.getInterval())
+								   .addKeyValue("tableSelector", dcp.getTableSelector())
+								   .addKeyValue("modelId", dcp.getModelId())
+								   .addKeyValue("numberOfValues", cts == null ? null : cts.size())
+								   .addKeyValue("timeseries_key",  tsid == null ? DbKey.NullKey : tsid.getKey())
+								   .addKeyValue("timeseries_id", tsid == null ? null : tsid.getUniqueString())
+								   .log();
+
 							}
-						if (!found)
-							Logger.instance().info("No time series found for output role " + parm.getRoleName());
+							// run inputs through computation
+							comp.setAlgorithm(algoDAO.getAlgorithmById(comp.getAlgorithmId()));
+							comp.prepareForExec(theDb);
+							comp.apply(runme, theDb);
+						}
+						catch (DbCompException ex)
+						{
+							if (!isCancelled())
+							{
+								log.atError().setCause(ex).log("Unable to execute computation.");
+								showError(module + " DbCompException in " + "runButtonPressed() " + ex.getMessage());
+							}
+							continue;
+						}
+						catch (DbIoException ex)
+						{
+							if (!compExecutionWorker.isCancelled())
+							{
+								log.atError().setCause(ex).log("Database error.");
+								showError(module + " DbIOException in " + "runButtonPressed() " + ex.getMessage());
+							}
+							continue;
+						}
+						catch (NoSuchObjectException ex)
+						{
+							if (!compExecutionWorker.isCancelled())
+							{
+								log.atError().setCause(ex).log("Unable to read Algorithm information.");
+								showError(module + " Cannot read Algorithm in " + "runButtonPressed() " + ex.getMessage());
+							}
+							continue;
+						}
+						progress.incDone();
+						setProgress(progress.getPercentDone());
+						// Get all outputs & add outputs to total lists;
+						for (DbCompParm parm : outputParms)
+						{
+							boolean found = false;
+							for (CTimeSeries cts : runme.getAllTimeSeries())
+								if (cts.getSDI() == parm.getSiteDataTypeId()
+									&& TextUtil.strEqual(cts.getInterval(), parm.getInterval())
+									&& TextUtil.strEqual(cts.getTableSelector(), parm.getTableSelector()))
+								{
+									publish(cts);
+									outputs.add(cts);
+									log.info("After running, Found output sdi={}, size={}, units={}",
+											 cts.getSDI(), cts.size(), cts.getUnitsAbbr());
+									found = true;
+									break;
+								}
+							if (!found)
+							{
+								log.info("No time series found for output role {}", parm.getRoleName());
+							}
+						}
 					}
 				}
 				return outputs;
@@ -1320,21 +1317,17 @@ public class CompRunGuiFrame extends TopFrame
 						timeSeriesDAO.fillTimeSeriesMetadata(cts);
 						if (oldUnits != null && !oldUnits.equalsIgnoreCase("unknown"))
 							cts.setUnitsAbbr(oldUnits);
-						Logger.instance().info(
-							"After fill - Output TS: " + cts.getDisplayName() + ", nsamps=" + cts.size() + ", units="
-								+ cts.getUnitsAbbr());
+						log.info("After fill - Output TS: {}, nsamps={}, units={}"
+								, cts.getDisplayName(), cts.size(),  cts.getUnitsAbbr());
 					}
-					catch (DbIoException e)
+					catch (DbIoException ex)
 					{
-						Logger.instance().warning(
-							module + " DbIoException in " + "runButtonPressed() filling outputs " + e.getMessage());
+						log.atWarn().setCause(ex).log("DbIoException in runButtonPressed() filling outputs.");
 						continue;
 					}
-					catch (BadTimeSeriesException e)
+					catch (BadTimeSeriesException ex)
 					{
-						Logger.instance().warning(
-							module + " BadTimeSeriesException in " + "runButtonPressed() filling outputs "
-								+ e.getMessage());
+						log.atWarn().setCause(ex).log("BadTimeSeriesException in runButtonPressed() filling outputs.");
 						continue;
 					}
 					finally
@@ -1354,8 +1347,6 @@ public class CompRunGuiFrame extends TopFrame
 				runButton.setEnabled(true);
 				setProgress(100);
 				// Stop trace logger and remove from pipeline
-				traceLogger.setDialog(null);
-				Logger.setLogger(originalLogger);
 				cancelExecutionButton.setEnabled(false);
 				saveButton.setEnabled(true);
 				plotDataOnChart(both, myinputs.size());
@@ -1496,34 +1487,24 @@ public class CompRunGuiFrame extends TopFrame
 
 	private void saveCompOutput()
 	{
-		TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
-		try
+		
+		try (TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO())
 		{
 			for (CTimeSeries myseries : myoutputs)
 			{
 				try
 				{
-					Logger.instance().info("Calling saveTimeSeries, size=" + myseries.size());
+					log.info("Calling saveTimeSeries, size={}", myseries.size());
 					timeSeriesDAO.saveTimeSeries(myseries);
 				}
-				catch (DbIoException ex)
+				catch (BadTimeSeriesException | DbIoException ex)
 				{
-					String msg = module + " Can not write Time Series to the " + "Database "
-						+ ex.getMessage();
-					showError(msg);
-				}
-				catch (BadTimeSeriesException ex)
-				{
-					String msg = module + " Can not write Time Series to the " + "Database "
-						+ ex.getMessage();
-					Logger.instance().failure(msg);
+					final String msg = module + " Can not write Time Series to the " + "Database";
+					log.atError().setCause(ex).log(msg);
+					showError(msg + ": " + ex);
 				}
 			}
 			timeSeriesTablePanel.getTimeSeriesModel().setInOut(myinputs, myoutputs);
-		}
-		finally
-		{
-			timeSeriesDAO.close();
 		}
 	}
 
