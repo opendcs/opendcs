@@ -1,0 +1,115 @@
+
+<!-- Platform Sensor modal -->
+<div id="modal_platformsensor" class="modal fade" data-keyboard="false"
+	data-backdrop="static">
+	<div
+		class="modal-dialog modal-dialog-scrollable opendcs-modal-tall-narrow">
+		<div class="modal-content h-100">
+			<div class="modal-header opendcs-modal-header-medium bg-secondary">
+				<h6 class="modal-title" id="platformSensorTitle">Platform
+					Sensor Parameters</h6>
+			</div>
+			
+			<div class="modal-body grey-background p-1 d-flex flex-column">
+				<div id="displayedPlatformSensorRowId" class="displayNone"></div>
+				<div class="form-group row">
+					<label class="col-form-label col-2 text-right">Sensor
+						Number</label> <label class="col-form-label col-2 text-left"
+						id="sensorNumberText"></label> <label
+						class="col-form-label col-2 text-right">Sensor Name</label> <label
+						class="col-form-label col-2 text-left" id="sensorNameText"></label>
+					<label class="col-form-label col-2 text-right">Param Code</label> <label
+						class="col-2 text-left" id="sensorParamCodeText"></label>
+				</div>
+				<div class="row m-1">
+					<div class="card col-lg-12 p-3 h-100">
+						<div class="form-group row mb-2">
+							<label class="col-form-label col-3 text-right">Actual
+								Site</label>
+							<div class="col-6">
+								<select id="actualSiteSelectbox" name="actualSiteSelectbox"
+									data-placeholder="(inherited)"
+									class="form-control select-clear" data-fouc>
+									<option data-site_id="-1"></option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group row mt-2">
+							<p class="text-center col-12">Min and Max defined here
+								override min/max in configuration.</p>
+						</div>
+						<div class="form-group row">
+							<label data-mediumtype="polled-tcp"
+								class="col-form-label col-lg-3 text-right">Platform Min</label>
+							<div class="col-lg-3">
+								<input id="platformSpecificMinTextbox" type="text"
+									class="form-control">
+							</div>
+							<label data-mediumtype="polled-tcp"
+								class="col-form-label col-lg-3 text-right">Config Min</label>
+							<div class="col-lg-3">
+								<input id="configMinTextbox" type="text" class="form-control"
+									readonly>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label data-mediumtype="polled-tcp"
+								class="col-form-label col-lg-3 text-right">Platform Max</label>
+							<div class="col-lg-3">
+								<input id="platformSpecificMaxTextbox" type="text"
+									class="form-control">
+							</div>
+							<label data-mediumtype="polled-tcp"
+								class="col-form-label col-lg-3 text-right">Config Max</label>
+							<div class="col-lg-3">
+								<input id="configMaxTextbox" type="text" class="form-control"
+									readonly>
+							</div>
+						</div>
+						<div class="form-group row">
+							<label data-mediumtype="polled-tcp"
+								class="col-form-label col-lg-3 text-right">USGS DDNO</label>
+							<div class="col-lg-3">
+								<input id="usgsDdnoTextbox" type="text" class="form-control">
+							</div>
+						</div>
+					</div>
+
+				</div>
+				<div class="form-group row  flex-grow-1">
+					<div class="col-lg-12">
+						<div class="card w-100 h-100">
+							<table id="platformSensorPropertiesTable"
+								resize_on_window_resize="95"
+								class="table table-hover datatable-responsive co-8 border">
+								<!-- <caption class="captionTitleCenter">Additional Properties</caption> -->
+								<caption class="captionTitleCenter">
+									Additional Properties
+									<button
+										class="btn btn-secondary float-right captionButton mt-1"
+										id="addPlatformSensorPropertyButton">+</button>
+								</caption>
+								<thead>
+									<tr>
+										<th>Name</th>
+										<th>Value</th>
+										<th class="text-center">Actions</th>
+									</tr>
+								</thead>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<!--<button type="button" class="btn btn-link" data-dismiss="modal">Close</button>-->
+				<!-- <button type="button" class="btn btn-danger  mr-auto" id="deleteSourceModalButton">Delete</button>-->
+				<button type="button" class="btn btn-secondary"
+					id="platformSensorModalCancel">Cancel</button>
+				<button type="button" class="btn btn-success"
+					id="platformSensorModalOk">Ok</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- /platform sensor modal -->

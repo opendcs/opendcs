@@ -14,8 +14,6 @@
   --%>
 
 <%-- notification modal --%>
-<%@ page language="java" contentType="text/html; charset=UTF-8"
-	pageEncoding="UTF-8"%>
 <div id="notificationModal" class="modal fade" tabindex="-1"
 	data-bs-backdrop="static" data-bs-keyboard="false">
 	<div class="modal-dialog">
