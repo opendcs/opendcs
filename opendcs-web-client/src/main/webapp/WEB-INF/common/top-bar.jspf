@@ -15,8 +15,7 @@
                     </div>
                     <ul class="nav navbar-nav navbar-right">
                         <li class="nav-item dropdown ">
-                            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button"
-                                aria-expanded="false">User</a>
+                            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" aria-expanded="false">User</a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="#">Profile</a></li>
                                 <li><a class="dropdown-item" href="#">Admin</a></li>
