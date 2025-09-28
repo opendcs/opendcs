@@ -51,14 +51,14 @@ class AlgorithmsTest {
 	void doGet() throws Exception {
 		when(servletConfig.getServletContext())
 				.thenReturn(servletContext);
-		when(servletContext.getRequestDispatcher("/algorithms.jsp"))
+		when(servletContext.getRequestDispatcher("/WEB-INF/app_pages/algorithms.jsp"))
 				.thenReturn(requestDispatcher);
-		when(request.getRequestDispatcher("/algorithms.jsp"))
+		when(request.getRequestDispatcher("/WEB-INF/app_pages/algorithms.jsp"))
 				.thenReturn(requestDispatcher);
 		Algorithms algorithmsServlet = new Algorithms();
 		algorithmsServlet.init(servletConfig);
 		algorithmsServlet.doGet(request, response);
-		verify(request.getRequestDispatcher("/algorithms.jsp"))
+		verify(request.getRequestDispatcher("/WEB-INF/app_pages/algorithms.jsp"))
 				.forward(request, response);
 	}
 }
