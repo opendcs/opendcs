@@ -66,6 +66,12 @@
 
 
 	<%@include file="/WEB-INF/common/scripts.jspf" %>
+<<<<<<< HEAD
+=======
+	
+	<script src="/webjars/switchery/switchery.js"></script>
+	<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+>>>>>>> 42b8bf4 (Cleanup fragement html for missing tags and end tags.)
 	<script src="../resources/js/lib/date_utilities.js"></script>
 	<script src="../resources/js/enumerations.js"></script>
 </html>

@@ -49,4 +49,4 @@
 		<%@include file="/WEB-INF/data_modals/computation_edit.jspf" %>
 		<%@include file="/WEB-INF/data_modals/algorithm_select.jspf" %>
 	</body>
-</html>
+</html></div
