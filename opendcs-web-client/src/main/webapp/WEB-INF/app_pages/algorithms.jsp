@@ -62,7 +62,16 @@
 			<!-- /main content -->
 		</div>
 
+<<<<<<< HEAD
 		<%@include file="/WEB-INF/common/scripts.jspf" %>
+=======
+		<%@include file="/WEB-INF/common/scripts.jspf" %> 
+		<script src="/webjars/switchery/switchery.js"></script>
+		<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+		<script src="/webjars/uniform/jquery.uniform.min.js"></script>
+		<script src="../resources/js/lib/dom_utilities.js"></script>
+		<script src="../resources/js/lib/object_utilities.js"></script>
+>>>>>>> d0f8eea (Pull back accidentally removed helper library.)
 		<script src="../resources/js/lib/date_utilities.js"></script>
 		<script src="../resources/js/algorithms.js"></script>
 		<!-- /page content -->
