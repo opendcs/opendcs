@@ -65,9 +65,6 @@
 	<!-- /page content -->
 	<%@include file="/WEB-INF/common/scripts.jspf" %>
 
-	<script src="/webjars/switchery/switchery.js"></script>
-	<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-	<script src="/webjars/uniform/jquery.uniform.min.js"></script>
 	<script src="../resources/js/schedule.js"></script>
 	<script src="../resources/js/lib/time.js"></script>
 	<%@include file="/WEB-INF/data_modals/schedule_entry.jspf" %>

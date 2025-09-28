@@ -1,134 +1,131 @@
 <!-- Decoding Script modal -->
-	<div id="modal_decodingscript" class="modal fade" data-keyboard="false" data-backdrop="static">
-		<div class="modal-dialog modal-med">
-			<div class="modal-content h-100">
-				<div class="modal-header bg-secondary">
-					<h6 class="modal-title" id="platformSensorTitle">Edit Decoding Script</h6>
-				</div>
-				<div id="displayedDecodingScriptRowId" class="displayNone"></div>
-				<div class="modal-body grey-background p-1">
-				<div class="row m-1 h-50">
-					<div class="card col-lg-7 p-3">
-						<div class="form-group row">
-							<label data-mediumtype="polled-tcp" class="col-form-label col-lg-2 text-right">Script Name</label>
-							<div class="col-lg-2">
-								<input id="scriptNameTextbox" type="text" class="form-control">
-							</div>
-							<label data-mediumtype="polled-tcp" class="col-form-label col-lg-2 text-right">Data Order</label>
-							<div class="col-lg-2">
-								<select id="dataOrderSelectbox" name="elevUnits" class="form-control">
-									<option value="A">Ascending</option>
-									<option value="D">Descending</option>
-									<option value="U">Undefined</option>
-								</select>
-							</div>
-							<label data-mediumtype="polled-tcp" class="col-form-label col-lg-2 text-right">Header Type</label>
-							<div class="col-lg-2">
-								<select id="headerTypeSelectbox" name="elevUnits" class="form-control">
-								</select>
-							</div>
-						</div>
-				
-						<div class="form-group row">
-							<div class="card col-lg-12 p-3">
-								<table id="formatStatementsTable" class="table table-hover datatable-responsive co-8 border">
-									<caption class="captionTitleCenter">Format Statements</caption>
-									<thead>
-										<tr>
-											<th></th>
-											<th>Label</th>
-											<th>Format Statement</th>
-											<th class="text-center">Actions</th>
-										</tr>
-									</thead>
-								</table>
-							</div>
-						</div>
-						
-						<div class="form-group row">
-							<div class="card col-lg-12 p-3">
-								<table id="sensorUnitConversionsTable" class="table table-hover datatable-responsive co-8 border">
-									<caption class="captionTitleCenter">Sensor Unit Conversions</caption>
-									<thead>
-										<tr>
-											<th>#</th>
-											<th>Name</th>
-											<th>Units</th>
-											<th>Algorithm</th>
-											<th>A</th>
-											<th>B</th>
-											<th>C</th>
-											<th>D</th>
-											<th>E</th>
-											<th>F</th>
-										</tr>
-									</thead>
-								</table>
-							</div>
-						</div>
-					  </div>
-					  <div class="card col-lg-5 p-3">
-					  	<div class="form-group">
-					  		<legend class="text-uppercase font-size-sm font-weight-bold">Sample Message</legend>
-							
-								<ul class="nav nav-tabs">
-									<li class="nav-item"><a href="#lrgsTab" class="nav-link rounded-top active" data-toggle="tab">Load From LRGS</a></li>
-									<li class="nav-item"><a href="#fileTab" class="nav-link rounded-top" data-toggle="tab">Load From File</a></li>
-								</ul>
-
-								<div class="tab-content">
-									<div class="tab-pane fade show active" id="lrgsTab">
-										<div class="form-group smallMarginBottom row">
-											<label class="col-form-label label1 text-center col-5">Source</label>
-											<label class="col-form-label label1 text-center col-5">DCP Address</label>
-										</div>
-										<div class="form-group smallMarginBottom row">
-											<div class="field1 nobr col-5">
-												<select id="dataSourceSelect" class="selectpicker form-control"></select>
-											</div>
-											<div class="field1 nobr col-5">
-												<!-- <input id="dcpAddressTextbox" type="text" class="form-control"></input>-->
-												<input type="text" name="dal" list="dcpAddressList" id="dcpAddressTextbox" class="form-control">
-												<datalist id="dcpAddressList">
-												<!-- 
-												  <option value="Boston">
-												  <option value="Cambridge">
+<div id="modal_decodingscript" class="modal fade" data-bs-keyboard="false" data-bs-backdrop="static">
+    <div class="modal-dialog modal-med">
+        <div class="modal-content h-100">
+            <div class="modal-header bg-secondary">
+                <h6 class="modal-title" id="platformSensorTitle">Edit Decoding Script</h6>
+            </div>
+            <div id="displayedDecodingScriptRowId" class="displayNone"></div>
+            <div class="modal-body grey-background p-1">
+                <div class="row m-1 h-50">
+                    <div class="card col-lg-7 p-3">
+                        <div class="form-group row">
+                            <label data-mediumtype="polled-tcp" class="col-form-label col-lg-2 text-right">Script Name</label>
+                            <div class="col-lg-2">
+                                <input id="scriptNameTextbox" type="text" class="form-control"/>
+                            </div>
+                            <label data-mediumtype="polled-tcp" class="col-form-label col-lg-2 text-right">Data Order</label>
+                            <div class="col-lg-2">
+                                <select id="dataOrderSelectbox" name="elevUnits" class="form-control">
+                                    <option value="A">Ascending</option>
+                                    <option value="D">Descending</option>
+                                    <option value="U">Undefined</option>
+                                </select>
+                            </div>
+                            <label data-mediumtype="polled-tcp" class="col-form-label col-lg-2 text-right">Header Type</label>
+                            <div class="col-lg-2">
+                                <select id="headerTypeSelectbox" name="elevUnits" class="form-control"></select>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="card col-lg-12 p-3">
+                                <table id="formatStatementsTable" class="table table-hover datatable-responsive co-8 border">
+                                    <caption class="captionTitleCenter">Format Statements</caption>
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Label</th>
+                                            <th>Format Statement</th>
+                                            <th class="text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="card col-lg-12 p-3">
+                                <table id="sensorUnitConversionsTable" class="table table-hover datatable-responsive co-8 border">
+                                    <caption class="captionTitleCenter">Sensor Unit Conversions</caption>
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Name</th>
+                                            <th>Units</th>
+                                            <th>Algorithm</th>
+                                            <th>A</th>
+                                            <th>B</th>
+                                            <th>C</th>
+                                            <th>D</th>
+                                            <th>E</th>
+                                            <th>F</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card col-lg-5 p-3">
+                        <div class="form-group">
+                            <legend class="text-uppercase font-size-sm font-weight-bold">Sample Message</legend>
+                            <ul class="nav nav-tabs">
+                                <li class="nav-item">
+                                    <a href="#lrgsTab" class="nav-link rounded-top active" data-toggle="tab">Load From LRGS</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="#fileTab" class="nav-link rounded-top" data-toggle="tab">Load From File</a>
+                                </li>
+                            </ul>
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="lrgsTab">
+                                    <div class="form-group smallMarginBottom row">
+                                        <label class="col-form-label label1 text-center col-5">Source</label>
+                                        <label class="col-form-label label1 text-center col-5">DCP Address</label>
+                                    </div>
+                                    <div class="form-group smallMarginBottom row">
+                                        <div class="field1 nobr col-5">
+                                            <select id="dataSourceSelect" class="selectpicker form-control"></select>
+                                        </div>
+                                        <div class="field1 nobr col-5">
+                                            <!-- <input id="dcpAddressTextbox" type="text" class="form-control"></input>-->
+                                            <input type="text" name="dal" list="dcpAddressList" id="dcpAddressTextbox" class="form-control"/>
+                                            <datalist id="dcpAddressList">
+                                                <!-- 
+												  <option value="Boston"><option value="Cambridge">
 												  -->
-												</datalist>
-											</div>
-											<button class="btn btn-secondary col-2" id="loadMessageButton">Load</button>
-										</div>
-									</div>
-									<div class="tab-pane fade" id="fileTab">
-										<div>
-										 <label for="input-file">Specify a file:</label><br>
-										 <input type="file" id="inputFile">
-										</div>
-									</div>
-								</div>
-								<div class="row">
-									<div class="col-lg-12">
-										<textarea rows="3" class="form-control" placeholder="Sample message goes here..." id="sampleMessage"></textarea>
-									</div>
-								</div>
-								<div class="row">
-									<div class="col-lg-12 text-right">
-										<button class="btn btn-secondary" id="decodeMessageButton">Decode</button>
-									</div>
-								</div>
-								<div class="row">
-									<div class="col-lg-12 overflowx-auto" id="decodedDataDiv">
-										
-									</div>
-								</div>
-							</div>
-					  </div>
-				</div>
-			</div>
-		<div class="modal-footer pt-3">
-					<button type="button" class="btn btn-secondary" id="decodingScriptModalCancel">Cancel</button>
-					<button type="button" class="btn btn-success" id="decodingScriptModalOk">Ok</button>
-				</div>
-		</div>
-	</div>
-	</div>
+                                            </datalist>
+                                        </div>
+                                        <button class="btn btn-secondary col-2" id="loadMessageButton">Load</button>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="fileTab">
+                                    <div>
+                                        <label for="input-file">Specify a file:</label>
+                                        <br/>
+                                        <input type="file" id="inputFile"/>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <textarea rows="3" class="form-control" placeholder="Sample message goes here..." id="sampleMessage"></textarea>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-12 text-right">
+                                    <button class="btn btn-secondary" id="decodeMessageButton">Decode</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-12 overflowx-auto" id="decodedDataDiv"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer pt-3">
+                <button type="button" class="btn btn-secondary" id="decodingScriptModalCancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="decodingScriptModalOk">Save</button>
+            </div>
+        </div>
+    </div>
+</div>

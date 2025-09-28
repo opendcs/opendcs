@@ -56,7 +56,6 @@
 	
 				<script src="/webjars/switchery/switchery.js"></script>
 				<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-				<script src="/webjars/uniform/jquery.uniform.min.js"></script>
 				<script src="../resources/js/lib/date_utilities.js"></script>
 				<script src="../resources/js/engineering_units.js"></script>			
 			</div> <!-- /main content -->

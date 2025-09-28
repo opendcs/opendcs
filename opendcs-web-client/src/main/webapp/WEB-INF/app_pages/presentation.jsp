@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
-	<%@include file="/WEB-INF/common/footer.jspf" %>
+	<%@include file="/WEB-INF/common/header.jspf" %>
 	<body class="navbar-top">
 		<%@include file="/WEB-INF/common/top-bar.jspf" %>
 		<!-- Page content -->

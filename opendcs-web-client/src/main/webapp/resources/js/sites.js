@@ -48,13 +48,12 @@ var inlineOptionsProperties = {
  */
 var openDcsData;
 
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
     console.log("Loaded sites.js.");
 
     initializeDataTables();
     initializeEvents();
     initializeElements();
-
     openDcsData = new OpenDcsData();
     show_waiting_modal();
     openDcsData.getData(["reflists", "siterefs"], 
@@ -134,7 +133,13 @@ function updateSitesTable(responseJson)
     sitesTable.clear();
     sitesTable.draw(false);
 
-    let selectedSiteNameType = $("#displayedTypeSelect").val().toLowerCase();
+    let selectedSiteNameType = $("#displayedTypeSelect").val();
+    if (selectedSiteNameType === undefined)
+    {
+        return;
+    }
+
+    selectedSiteNameType = selectedSiteNameType.toLowerCase();
     
     $("#siteNameColumnHeader").text("Site Name (" + selectedSiteNameType + ")");
     for (var x = 0; x < responseJson.length; x++)

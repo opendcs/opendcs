@@ -29,10 +29,8 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" data-bs-dismiss="modal" class="btn"
-                    id="modal_yesno_no_button">No</button>
-                <button type="button" data-bs-dismiss="modal" class="btn"
-                    id="modal_yesno_yes_button">Yes</button>
+                <button type="button" data-bs-dismiss="modal" class="btn" id="modal_yesno_no_button">No</button>
+                <button type="button" data-bs-dismiss="modal" class="btn" id="modal_yesno_yes_button">Yes</button>
             </div>
         </div>
     </div>

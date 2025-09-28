@@ -14,13 +14,11 @@
   --%>
 
 <%-- notification modal --%>
-<div id="notificationModal" class="modal fade" tabindex="-1"
-	data-bs-backdrop="static" data-bs-keyboard="false">
+<div id="notificationModal" class="modal fade" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header" id="notificationModalTitleDiv">
 				<h6 class="modal-title" id="notificationModalTitle"></h6>
-				<%--<button type="button" class="close" data-bs-dismiss="modal">&times;</button>--%>
 			</div>
 
 			<div class="modal-body">

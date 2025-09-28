@@ -61,7 +61,7 @@
 	<!-- /page content -->
 	<%@include file="/WEB-INF/common/scripts.jspf" %>
 
-	<script src="/webjars/jquery-validation/jquery.validate.min.js"></script>
+	
 	<script src="../resources/js/lib/time.js"></script>
 	<script src="../resources/js/lib/dom_utilities.js"></script>
 	<script src="../resources/js/sites.js"></script>

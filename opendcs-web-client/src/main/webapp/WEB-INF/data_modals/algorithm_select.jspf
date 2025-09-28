@@ -1,5 +1,5 @@
 <!-- Algorithm modal -->
-	<div id="modal_algorithm" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+	<div id="modal_algorithm" class="modal fade" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
 		<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90" class_old="modal-dialog modal-xl modal-height-xl">
 			<div class="modal-content h-100">
 				<div class="modal-header bg-secondary">
@@ -28,8 +28,8 @@
 					</div>
 				</div>
 				<div class="modal-footer pt-3">
-					<button type="button" class="btn btn-secondary" id="cancelAlgoButton" data-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-success" id="submitAlgoButton">Submit</button>
+					<button type="button" class="btn btn-secondary" id="cancelAlgoButton" data-ds-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-primary" id="submitAlgoButton">Select</button>
 				</div>
 			</div>
 		</div>

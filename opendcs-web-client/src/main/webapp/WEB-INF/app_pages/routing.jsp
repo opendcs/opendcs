@@ -56,12 +56,10 @@
 		<%@include file="/WEB-INF/common/scripts.jspf" %>
 		<script src="/webjars/switchery/switchery.js"></script>
 		<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
-		<script src="/webjars/uniform/jquery.uniform.min.js"></script>
-		<script src="/webjars/datatables/js/dataTables.min.js"></script>
 		<script src="../resources/js/lib/time.js"></script>
 		<script src="../resources/js/lib/date_utilities.js"></script>
 		<script src="../resources/js/routing.js"></script>
-		<%@include file="/WEB-INF/data_modal/routing.jspf" %>
-		<%@include file="/WEB-INF/data_modal/platform_select.jspf" %>
+		<%@include file="/WEB-INF/data_modals/routing.jspf" %>
+		<%@include file="/WEB-INF/data_modals/platform_select.jspf" %>
 	</body>
 </html>
