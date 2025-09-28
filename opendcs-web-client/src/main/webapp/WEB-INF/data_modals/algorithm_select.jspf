@@ -1,0 +1,36 @@
+<!-- Algorithm modal -->
+	<div id="modal_algorithm" class="modal fade" tabindex="-1" data-keyboard="false" data-backdrop="static">
+		<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90" class_old="modal-dialog modal-xl modal-height-xl">
+			<div class="modal-content h-100">
+				<div class="modal-header bg-secondary">
+					<h6 class="modal-title" id="modalTitle">Select Algorithm</h6>
+				</div>
+				<div class="modal-body grey-background total_height-header-footer">
+					<div class="h-100 d-flex flex-column">
+						<div class="row h-100">
+							<div class="col-lg-12 h-100">
+								<div class="card pl-3 pr-3 pt-1 pb-1 h-100 opendcs_y_scrollable">
+									<table id="algorithmTable" resize_on_window_resize="97" class="table table-hover datatable-responsive co-8 border">
+										<caption class="captionTitleCenter">Algorithms</caption>
+										<thead>
+											<tr>
+												<th>ID</th>
+												<th>Name</th>
+												<th>Exec Class</th>
+												<th># Comps</th>
+												<th>Comment</th>
+											</tr>
+										</thead>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer pt-3">
+					<button type="button" class="btn btn-secondary" id="cancelAlgoButton" data-dismiss="modal">Cancel</button>
+					<button type="button" class="btn btn-success" id="submitAlgoButton">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>

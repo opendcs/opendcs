@@ -59,76 +59,10 @@
 		<script src="../resources/js/presentation.js"></script>
 		<script src="../resources/js/datatables/helpers.js"></script>
 		<script src="../resources/js/lib/dom_utilities.js"></script>
+
+		<%@include file="/WEB-INF/data_modals/presentation_group_element.jspf" %>
 	</body>
 	<!-- /theme JS files -->
-	<!-- Presentation modal -->
-	<div id="modal_presentation" class="modal fade" tabindex="-1"
-		data-bs-keyboard="false" data-bs-backdrop="static">
-		<div class="modal-dialog modal-dialog-scrollable opendcs-modal-90">
-			<div class="modal-content">
-				<div class="modal-header bg-secondary">
-					<h6 class="modal-title" id="SourcesTitle">Presentation Element</h6>
-				</div>
-				<div id="displayedPresentationGroupId" class="displayNone"></div>
-				<div class="modal-body">
-					<!--<h6 class="font-weight-semibold">Network List Name</h6>-->
-					<div class="form-group row smallMarginBottom">
-						<label class="col-form-label col-lg-1 text-right">Group
-							Name</label>
-						<div class="col-lg-2">
-							<input id="presentationName" type="text" class="form-control">
-						</div>
-						<label class="col-form-label col-lg-2 text-right">Inherits
-							From</label>
-						<div class="col-lg-2">
-							<select id="inheritsFromSelectbox"
-								class="selectpicker form-control">
-							</select>
-						</div>
-						<div class="col-form-label col-lg-2 float-right text-right">Is
-							Production</div>
-						<div class="text-right col-lg-1">
-							<!-- <input type="checkbox" id="isProductionCheckbox" name="isProductionCheckbox"> -->
-							<!-- <label class="col-form-label col-lg-4">Enabled</label> -->
-							<div class="form-check form-switch"">
-								<label class="form-check-label"> <input type="checkbox"
-									id="isProductionSwitch" class="form-check-input"
-									>
-								</label>
-							</div>
-						</div>
-					</div>
-					<div class="mb-4">
-						<!-- Solid divider -->
-						<hr class="solid">
-					</div>
-					<table id="presentationElementsTable" resize_on_window_resize="95"
-						class="table table-hover datatable-responsive">
-						<thead>
-							<tr>
-								<th>Data Type Standard</th>
-								<th>Data Type Code</th>
-								<th>Units</th>
-								<th>Fractional Digits</th>
-								<th>Min Value</th>
-								<th>Max Value</th>
-								<th>Actions</th>
-							</tr>
-						</thead>
-						<tbody id="presentationElementsTableBody">
-							<!--This is where the data rows go-->
-						</tbody>
-					</table>
-				</div>
-				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary"
-						id="cancelPresentationModalButton" data-bs-dismiss="modal">Cancel</button>
-					<button type="button" class="btn btn-success"
-						id="savePresentationModalButton">Save</button>
-				</div>
-			</div>
-		</div>
-	</div>
-	<!-- /presentation modal -->
+	
 	
 </html>
