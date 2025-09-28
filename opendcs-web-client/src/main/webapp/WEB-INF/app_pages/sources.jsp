@@ -57,7 +57,6 @@
 			<%@include file="/WEB-INF/common/footer.jspf" %>
 
 			<%@include file="/WEB-INF/common/scripts.jspf" %>
-			<script src="../resources/js/datatables/helpers.js"></script>
 			<script src="../resources/js/sources.js"></script>
 			<script src="/webjars/datatables-rowreorder/js/dataTables.rowReorder.min.js"></script>
 		</div>

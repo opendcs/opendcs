@@ -57,7 +57,6 @@
 		<script src="/webjars/switchery/switchery.js"></script>
 		<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
 		<script src="../resources/js/presentation.js"></script>
-		<script src="../resources/js/datatables/helpers.js"></script>
 		<script src="../resources/js/lib/dom_utilities.js"></script>
 
 		<%@include file="/WEB-INF/data_modals/presentation_group_element.jspf" %>

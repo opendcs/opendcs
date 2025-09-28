@@ -70,7 +70,6 @@
 	<script src="/webjars/uniform/jquery.uniform.min.js"></script>
 	<script src="../resources/js/schedule.js"></script>
 	<script src="../resources/js/lib/time.js"></script>
-	<script src="../resources/js/datatables/helpers.js"></script>
 	<%@include file="/WEB-INF/data_modals/schedule_entry.jspf" %>
 </body>
 </html>

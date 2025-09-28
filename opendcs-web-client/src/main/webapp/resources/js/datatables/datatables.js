@@ -255,7 +255,6 @@ class OpenDcsDataTable {
     	console.log("No scroll body for table.  Exiting now.");
     	return;
 	}
-
     //This is height instead of outerHeight to account for margins and padding.
     var parentHeight = wrapperParent.height(); 
     var dtScrollBodyHeight = dtScrollBody.height();

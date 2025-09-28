@@ -49,7 +49,6 @@
 	    <!-- /page content -->
 		<%@include file="/WEB-INF/common/scripts.jspf" %>
 		<script src="../resources/js/netlist.js"></script>
-		<script src="../resources/js/datatables/helpers.js"></script>
 		<%@include file="/WEB-INF/data_modals/netlist.jspf" %>
 	</body>
 	

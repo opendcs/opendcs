@@ -63,8 +63,6 @@
 
 	<script src="/webjars/jquery-validation/jquery.validate.min.js"></script>
 	<script src="../resources/js/lib/time.js"></script>
-	<script src="../resources/js/datatables/helpers.js"></script>
-	<script src="/webjars/datatables/js/dataTables.min.js"></script>
 	<script src="../resources/js/lib/dom_utilities.js"></script>
 	<script src="../resources/js/sites.js"></script>
 	<script src="../resources/js/lib/object_utilities.js"></script>
