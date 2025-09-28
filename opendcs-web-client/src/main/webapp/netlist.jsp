@@ -1,12 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
-	<jsp:include page="/resources/jsp/headers/decodes.jsp" />
+	<%@include file="/WEB-INF/common/header.jspf" %>
 	<body class="navbar-top">
-		<jsp:include page="/resources/jsp/menus/decodes/main.jsp" />   
+		<%@include file="/WEB-INF/common/top-bar.jspf" %>
 	    <!-- Page content -->
 	    <div class="page-content">
-        	<jsp:include page="/resources/jsp/menus/decodes/sidebar.jsp" /> 
+        	<%@include file="/WEB-INF/common/sidebar.jspf" %>
 	        <div class="content-wrapper">
                 <!-- Page header -->
 				<div class="page-header page-header-light">
@@ -42,11 +42,14 @@
 					<!-- /netlist list card -->
 				</div>
 	            <!-- /Content area -->
-				<jsp:include page="/resources/jsp/footers/decodes.jsp" /> 
+				<%@include file="/WEB-INF/common/footer.jspf" %>
 	        </div>
 	        <!-- /main content -->
 	    </div>
 	    <!-- /page content -->
+		<%@include file="/WEB-INF/common/scripts.jspf" %>
+		<script src="../resources/js/netlist.js"></script>
+		<script src="../resources/js/datatables/helpers.js"></script>
 	</body>
 	 <!-- Netlist modal -->
 	<div id="modal_netlist" class="modal fade" tabindex="-1" data-bs-keyboard="false" data-bs-backdrop="static">
@@ -101,7 +104,5 @@
 	    </div>
 	</div>
 	<!-- /netlist modal -->
-	<jsp:include page="/resources/jsp/includes/decodes.jsp" /> 
-	<script src="../resources/js/netlist.js"></script>
-	<script src="../resources/js/datatables/helpers.js"></script>
+	
 </html>

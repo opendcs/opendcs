@@ -32,16 +32,6 @@
 <script src="<c:url value='/resources/js/lib/dom_utilities.js'/>"></script>
 <script src="<c:url value='/resources/js/lib/opendcs_utilities.js'/>"></script>
 
-<!-- Modals -->
-<jsp:include page="/resources/jsp/modals/waiting.jsp" />
-<jsp:include page="/resources/jsp/modals/notification.jsp" />
-<jsp:include page="/resources/jsp/modals/yesno.jsp" />
-
-<!-- API base -->
-<script>
-	(function () {
-		var origin = window.location.origin;
-		var apiBasePath = "<%= getServletConfig().getServletContext().getInitParameter("api_base_path") %>";
-		window.API_URL = new URL(apiBasePath, origin).href;
-	})();
-</script>
+<%@include file="/WEB-INF/common/modals/waiting.jspf" %>
+<%@include file="/WEB-INF/common/modals/notification.jspf" %>
+<%@include file="/WEB-INF/common/modals/yesno.jspf" %>

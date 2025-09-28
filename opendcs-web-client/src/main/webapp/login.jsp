@@ -13,9 +13,9 @@
 		authBasePath = getServletConfig().getServletContext().getInitParameter("authentication_base_path");
 	%>
 
-	<jsp:include page="/resources/jsp/headers/decodes.jsp" />
+	<%@include file="/WEB-INF/common/header.jspf" %>
 
-	<body class="navbar-top">
+	<body>
 
 		<jsp:include page="/resources/jsp/menus/decodes/main.jsp" />   
 
@@ -70,20 +70,17 @@
 			</div>
             <!-- /Content area -->
             
-            <jsp:include page="/resources/jsp/footers/decodes.jsp" /> 
+            <%@include file="/WEB-INF/common/footer.jspf" %>
 
         </div>
         <!-- /main content -->
 
     </div>
     <!-- /page content -->
-</body>
-
-<jsp:include page="/resources/jsp/includes/decodes.jsp" /> 
-
-<script src="../resources/js/login.js"></script>
+	<%@include file="/WEB-INF/common/scripts.jspf" %>
+	<script src="../resources/js/login.js"></script>
 <link rel="stylesheet" type="text/css" href="../resources/css/login-form.css">
-
+</body>
 <!-- /theme JS files -->
 	<% if (Objects.equals(authType, "sso") && authBasePath != null) { %>
 		<script>

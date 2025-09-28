@@ -1,15 +1,15 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
-<jsp:include page="/resources/jsp/headers/decodes.jsp" />
+<%@include file="/WEB-INF/common/header.jspf" %>
 
 <body class="navbar-top">
-	<jsp:include page="/resources/jsp/menus/decodes/main.jsp" />
+	<%@include file="/WEB-INF/common/top-bar.jspf" %>
 
 	<!-- Page content -->
 	<div class="page-content">
 
-		<jsp:include page="/resources/jsp/menus/decodes/sidebar.jsp" />
+		<%@include file="/WEB-INF/common/sidebar.jspf" %>
 
 		<!-- Main content -->
 		<div class="content-wrapper">
@@ -54,9 +54,12 @@
 			<!-- /Content area -->
 
 
-			<jsp:include page="/resources/jsp/footers/decodes.jsp" />
+			<%@include file="/WEB-INF/common/footer.jspf" %>
 
-
+			<%@include file="/WEB-INF/common/scripts.jspf" %>
+			<script src="../resources/js/datatables/helpers.js"></script>
+			<script src="../resources/js/sources.js"></script>
+			<script src="/webjars/datatables-rowreorder/js/dataTables.rowReorder.min.js"></script>
 		</div>
 		<!-- /main content -->
 	</div>
@@ -145,9 +148,5 @@
 </div>
 
 
-<jsp:include page="/resources/jsp/includes/decodes.jsp" />
-<script src="../resources/js/datatables/helpers.js"></script>
-<script src="../resources/js/sources.js"></script>
-<script src="../resources/js/datatables/dataTables.rowReorder.min.js"></script>
 
 </html>

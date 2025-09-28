@@ -1,12 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
 <html lang="en">
-	<jsp:include page="/resources/jsp/headers/decodes.jsp" />
+	<%@include file="/WEB-INF/common/footer.jspf" %>
 	<body class="navbar-top">
-		<jsp:include page="/resources/jsp/menus/decodes/main.jsp" />
+		<%@include file="/WEB-INF/common/top-bar.jspf" %>
 		<!-- Page content -->
 		<div class="page-content">
-			<jsp:include page="/resources/jsp/menus/decodes/sidebar.jsp" />
+			<%@include file="/WEB-INF/common/sidebar.jspf" %>
 			<!-- Main content -->
 			<div class="content-wrapper">
 				<!-- Page header -->
@@ -48,11 +48,17 @@
 					<!-- /basic responsive configuration -->
 				</div>
 				<!-- /Content area -->
-				<jsp:include page="/resources/jsp/footers/decodes.jsp" />
+				<%@include file="/WEB-INF/common/footer.jspf" %>
 			</div>
 			<!-- /main content -->
 		</div>
 		<!-- /page content -->
+		<%@include file="/WEB-INF/common/scripts.jspf" %>
+		<script src="/webjars/switchery/switchery.js"></script>
+		<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+		<script src="../resources/js/presentation.js"></script>
+		<script src="../resources/js/datatables/helpers.js"></script>
+		<script src="../resources/js/lib/dom_utilities.js"></script>
 	</body>
 	<!-- /theme JS files -->
 	<!-- Presentation modal -->
@@ -124,9 +130,5 @@
 		</div>
 	</div>
 	<!-- /presentation modal -->
-	<jsp:include page="/resources/jsp/includes/decodes.jsp" />
-
-<script src="../resources/js/presentation.js"></script>
-	<script src="../resources/js/datatables/helpers.js"></script>
-	<script src="../resources/js/lib/dom_utilities.js"></script>
+	
 </html>
