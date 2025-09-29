@@ -63,7 +63,6 @@
 		<script src="../resources/js/configs.js"></script>
 		
 		<script src="../resources/js/lib/date_utilities.js"></script>
-		<script src="../resources/js/lib/list_utilities.js"></script>
 
 		<%@include file="/WEB-INF/data_modals/config.jspf" %>
 		<%@include file="/WEB-INF/data_modals/config_sensor.jspf" %>

@@ -590,6 +590,8 @@ document.addEventListener('DOMContentLoaded', function() {
         type: "GET",
         data: params,
         success: function(response) {
+            console.log("Got algorithms.");
+            console.log(response);
             algorithmList = response;
             for (var x = 0; x < algorithmList.length; x++)
             {
@@ -626,7 +628,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 //"scrollY": 1,
                 "scrollCollapse": true,
                 "autoWidth": true,
-                "columnDefs": [] 
+                "columnDefs": [  {
+                            "targets": [ 9 ],
+                            "visible": false,
+                            "searchable": false
+                        }] 
             });
 
     //initialize the properties table.

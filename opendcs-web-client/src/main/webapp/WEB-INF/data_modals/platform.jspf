@@ -72,12 +72,12 @@
                                     </div>
                                     <div class="form-group row">
                                         <label class="col-form-label col-lg-3">Production</label>
-                                        <div class="col-lg-9 form-check form-check-switchery"
+                                        <div class="col-lg-9 form-check form-switch"
 											id="isProductionDiv">
                                             <label class="form-check-label">
                                                 <input
 												type="checkbox" id="isProduction"
-												class="form-check-input-switchery" data-bs-focus="true"/>
+												class="form-check-input" data-bs-focus="true"/>
                                             </label>
                                         </div>
                                     </div>

@@ -883,7 +883,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         $("#modal_platformselection").modal("hide");
     });
-
     
 
     $.ajax({

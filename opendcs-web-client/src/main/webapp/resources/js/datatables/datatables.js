@@ -260,7 +260,7 @@ class OpenDcsDataTable {
     var dtScrollBodyHeight = dtScrollBody.height();
     var dtScrollBodyOuterHeight = dtScrollBody.outerHeight();
     var dtScrollBodyDiff = dtScrollBodyOuterHeight - dtScrollBodyHeight;
-    var sbNewHeight = parentHeight-totalOuterHeight;
+    var sbNewHeight = "50vh;";
     
     if (jqTable.attr("id") == "propertiesTable")
 	{

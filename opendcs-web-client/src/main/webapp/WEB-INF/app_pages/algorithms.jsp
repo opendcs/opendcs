@@ -31,8 +31,8 @@
 							<h4><span class="font-weight-semibold">OpenDCS</span> - Algorithms</h4>
 							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="bi bi-three-dots-vertical"></i></a>
 						</div>
-					</div>  
-				</div> 
+					</div>
+				</div>
 				<!-- /page header -->
 				<!-- Content area -->
 				<div class="content">
@@ -57,18 +57,16 @@
 					<!-- /basic responsive configuration -->
 				</div>
 				<!-- /Content area -->
-				<%@include file="/WEB-INF/common/footer.jspf" %> 
+				<%@include file="/WEB-INF/common/footer.jspf" %>
 			</div>
 			<!-- /main content -->
 		</div>
 
-		<%@include file="/WEB-INF/common/scripts.jspf" %> 
-		<script src="/webjars/switchery/switchery.js"></script>
-		<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+		<%@include file="/WEB-INF/common/scripts.jspf" %>
 		<script src="../resources/js/lib/date_utilities.js"></script>
 		<script src="../resources/js/algorithms.js"></script>
 		<!-- /page content -->
-		<%@include file="/WEB-INF/data_modals/algorithm_edit.jspf" %> 
+		<%@include file="/WEB-INF/data_modals/algorithm_edit.jspf" %>
 	</body>
-	
+
 </html>

@@ -60,13 +60,8 @@
 	</div>
 	<!-- /page content -->
 	<%@include file="/WEB-INF/common/scripts.jspf" %>
-
-	
 	<script src="../resources/js/lib/time.js"></script>
-	<script src="../resources/js/lib/dom_utilities.js"></script>
 	<script src="../resources/js/sites.js"></script>
-	<script src="../resources/js/lib/object_utilities.js"></script>
-	<script src="../resources/js/lib/list_utilities.js"></script>
 
 	<%@include file="/WEB-INF/data_modals/site.jspf" %>
 </body>

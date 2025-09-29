@@ -131,12 +131,12 @@
                         </div>
                         <div class="form-group row mb-2">
                             <label class="col-form-label col-lg-3">Do Login</label>
-                            <div class="col-lg-9 form-check form-check-switchery"
+                            <div class="col-lg-9 form-check form-switch"
 									id="doLoginDiv">
                                 <label class="form-check-label">
                                     <input
 										onclick="doLoginClicked(event, this)" type="checkbox"
-										id="doLoginEnabled" class="form-check-input-switchery"
+										id="doLoginEnabled" class="form-check-input"
 										data-bs-focus="true"/>
                                 </label>
                             </div>
@@ -240,12 +240,12 @@
                         </div>
                         <div class="form-group row mb-2">
                             <label class="col-form-label col-lg-3">Do Login</label>
-                            <div class="col-lg-9 form-check form-check-switchery"
+                            <div class="col-lg-9 form-check form-switch"
 									id="doLoginDiv">
                                 <label class="form-check-label">
                                     <input
 										onclick="doLoginClicked(event, this)" type="checkbox"
-										id="doLoginEnabled" class="form-check-input-switchery"
+										id="doLoginEnabled" class="form-check-input"
 										data-bs-focus="true"/>
                                 </label>
                             </div>

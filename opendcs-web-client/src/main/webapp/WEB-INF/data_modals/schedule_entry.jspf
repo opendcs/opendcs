@@ -17,12 +17,12 @@
                             <div class="m-3">
                                 <div class="form-group row">
                                     <label class="col-form-label col-lg-4">Enabled</label>
-                                    <div class="col-lg-8 form-check form-check-switchery"
+                                    <div class="col-lg-8 form-check form-switch"
 										id="editCbtDiv">
                                         <label class="form-check-label">
                                             <input
 											type="checkbox" id="scheduleEntryEnabled"
-											class="form-check-input-switchery" data-bs-focus="true"/>
+											class="form-check-input" data-bs-focus="true"/>
                                         </label>
                                     </div>
                                 </div>

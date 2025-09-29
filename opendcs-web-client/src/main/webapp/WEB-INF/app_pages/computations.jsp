@@ -16,13 +16,13 @@
 							<h4><span class="font-weight-semibold">OpenDCS</span> - Computations</h4>
 							<a href="#" class="header-elements-toggle text-default d-md-none"><i class="bi bi-three-dots-vertical"></i></a>
 						</div>
-					</div>  
+					</div>
 				</div> <!-- /page header -->
 				<!-- Content area -->
 				<div class="content">
 					<!-- Basic responsive configuration -->
 					<div class="card large-padding h-100">
-						<table id="mainTable" class="table table-hover datatable-responsive w-100 tablerow-cursor">
+						<table id="mainTable" class="table table-striped datatable-responsive w-100 tablerow-cursor">
 							<caption class="captionTitleCenter">Computations
 								<button class="btn btn-secondary float-right captionButton mr-3" id="addButton">+</button>
 							</caption>
@@ -40,15 +40,13 @@
 						</table>
 					</div> <!-- /basic responsive configuration -->
 				</div> <!-- /Content area -->
-				<%@include page="/WEB-INF/common/footer.jspf" %> 
+				<%@include file="/WEB-INF/common/footer.jspf" %>
 			</div> <!-- /main content -->
 		</div> <!-- /page content -->
 		<%@include file="/WEB-INF/common/scripts.jspf" %>
-		<script src="/webjars/switchery/switchery.js"></script>
-		<script src="/webjars/bootstrap-switch/js/bootstrap-switch.min.js"></script>
 		<script src="../resources/js/lib/date_utilities.js"></script>
-		<script src="../resources/js/algorithms.js"></script>
-		<%@include file="/WEB-INF/data_modals/computations_edit.jspf" %>
+		<script src="../resources/js/computations.js"></script>
+		<%@include file="/WEB-INF/data_modals/computation_edit.jspf" %>
 		<%@include file="/WEB-INF/data_modals/algorithm_select.jspf" %>
 	</body>
 </html>

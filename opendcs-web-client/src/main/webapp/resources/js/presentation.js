@@ -26,8 +26,6 @@ var openDcsData;
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Loaded presentation.js.");
 
-
-
     openDcsData = new OpenDcsData();
     show_waiting_modal();
     openDcsData.getData(["presentationrefs", "reflists", "unitlist", "datatypelist"], 

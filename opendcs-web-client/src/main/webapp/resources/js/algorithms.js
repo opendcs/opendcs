@@ -150,6 +150,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 "buttons": [],
                 "scrollCollapse": true,
                 "autoWidth": true,
+                "buttons": [
+                    {
+                        text: '+',
+                        action: function ( e, dt, node, config ) {
+                            openSourcesDialog(null);
+                        },
+                        className: "btn main-table-button"
+                    }
+                    ],
                 "columnDefs": [
                     {
                         "targets": [ 0 ],

@@ -603,9 +603,7 @@ function initializeElements()
             styled_checkbox: {
                 minlength: 2
             },
-            switchery_group: {
-                minlength: 2
-            },
+            
             switch_group: {
                 minlength: 2
             }
@@ -620,9 +618,7 @@ function initializeElements()
             styled_checkbox: {
                 minlength: 'Please select at least {0} checkboxes'
             },
-            switchery_group: {
-                minlength: 'Please select at least {0} switches'
-            },
+            
             switch_group: {
                 minlength: 'Please select at least {0} switches'
             },

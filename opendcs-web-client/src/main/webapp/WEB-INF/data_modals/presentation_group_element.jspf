@@ -24,10 +24,10 @@
                     <div class="col-form-label col-lg-2 float-right text-right">Is
 							Production</div>
                     <div class="text-right col-lg-1">
-                        <div class="form-check form-check-switchery">
+                        <div class="form-check form-switch">
                             <label class="form-check-label">
                                 <input type="checkbox"
-									id="isProductionSwitch" class="form-check-input-switchery"
+									id="isProductionSwitch" class="form-check-input"
 									data-focus="true"/>
                             </label>
                         </div>
