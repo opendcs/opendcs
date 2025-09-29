@@ -1,104 +1,18 @@
-/**
- * $Id: TsSpecEditPanel.java,v 1.4 2020/03/10 18:58:00 mmaloney Exp $
- * 
- * $Log: TsSpecEditPanel.java,v $
- * Revision 1.4  2020/03/10 18:58:00  mmaloney
- * dev
- *
- * Revision 1.3  2020/03/10 16:30:02  mmaloney
- * Updates
- *
- * Revision 1.2  2020/02/27 22:10:12  mmaloney
- * Fixed imports
- *
- * Revision 1.1  2020/01/31 19:41:00  mmaloney
- * Implement new TS Definition Panel for OpenTSDB and CWMS.
- *
- * Revision 1.15  2019/12/11 14:43:38  mmaloney
- * Don't explicitly require CwmsTimeSeriesDb. This module is also used with OpenTsdb.
- *
- * Revision 1.14  2018/02/05 15:52:39  mmaloney
- * Added ObjectType filter for USBR HDB.
- *
- * Revision 1.13  2017/05/31 21:34:27  mmaloney
- * GUI improvements for HDB
- *
- * Revision 1.12  2017/05/08 12:34:53  mmaloney
- * For CWMS, TSIDs may contain param values that CCP does not have in its DataType
- * table. If this is the case, save as an other "param" value.
- *
- * Revision 1.11  2017/04/19 19:27:45  mmaloney
- * CWMS-10609 nested group evaluation in group editor bugfix.
- *
- * Revision 1.10  2017/01/10 21:11:35  mmaloney
- * Enhanced wildcard processing for CWMS as per punchlist for comp-depends project
- * for NWP.
- *
- * Revision 1.9  2016/11/21 16:04:03  mmaloney
- * Code Cleanup.
- *
- * Revision 1.8  2016/11/03 19:08:05  mmaloney
- * Implement new Location, Param, and Version dialogs for CWMS.
- *
- * Revision 1.7  2016/10/11 17:40:36  mmaloney
- * Final GUI Prototype
- *
- * Revision 1.6  2016/07/20 15:45:46  mmaloney
- * Special code for HDB to show data type common names.
- *
- * Revision 1.5  2016/04/22 14:42:53  mmaloney
- * Code cleanup.
- *
- * Revision 1.4  2015/10/22 14:04:55  mmaloney
- * Clean up debug: Old code was saying no match for site even when it did find match.
- *
- * Revision 1.3  2015/08/04 18:54:03  mmaloney
- * CWMS-6388 Display should show location ID, not public name. This fixes the issue
- * with evaluation.
- *
- * Revision 1.2  2014/09/25 18:10:40  mmaloney
- * Enum fields encapsulated.
- *
- * Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
- * OPENDCS 6.0 Initial Checkin
- *
- * Revision 1.12  2013/03/21 18:27:40  mmaloney
- * DbKey Implementation
- *
- * Revision 1.11  2012/09/19 15:33:53  mmaloney
- * "StatCode" needs to be "StatisticsCode"
- *
- * Revision 1.10  2012/09/19 15:07:41  mmaloney
- * Fix bugs in detecting whether changes have occured.
- *
- * Revision 1.9  2012/08/01 16:55:58  mmaloney
- * dev
- *
- * Revision 1.8  2012/07/30 20:04:21  mmaloney
- * Don't ask 'are you sure' when removing time-series from list.
- *
- * Revision 1.7  2012/07/24 15:48:41  mmaloney
- * Cosmetic group-editor bugs for HDB.
- *
- * Revision 1.6  2012/07/24 15:15:47  mmaloney
- * Cosmetic group-editor bugs for HDB.
- *
- * Revision 1.5  2012/07/24 13:40:14  mmaloney
- * groupedit cosmetic bugs
- *
- * Revision 1.4  2012/07/18 20:41:44  mmaloney
- * Updated for USBR HDB.
- *
- * Revision 1.3  2011/10/19 14:27:04  gchen
- * Modify the addQueryParam() to use InputDialog (other than MessageDialog) for version to allow the cancel button displayed on the screen.
- *
- * Revision 1.2  2011/02/04 21:30:33  mmaloney
- * Intersect groups
- *
- * Revision 1.1  2011/02/03 20:00:23  mmaloney
- * Time Series Group Editor Mods
- *
- */
+/*
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
 import java.awt.BorderLayout;
@@ -130,6 +44,9 @@ import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.border.TitledBorder;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.DataTypeDAI;
 import opendcs.dai.IntervalDAI;
 import opendcs.dai.LoadingAppDAI;
@@ -140,7 +57,6 @@ import opendcs.opentsdb.OpenTimeSeriesDAO;
 import ilex.util.AsciiUtil;
 import ilex.util.EnvExpander;
 import ilex.util.LoadResourceBundle;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import ilex.var.NoConversionException;
 import ilex.var.TimedVariable;
@@ -166,17 +82,17 @@ import decodes.util.DecodesSettings;
 
 /**
  * This class is the Ts Group tab of the Time Series GUI.
- * 
+ *
  */
 @SuppressWarnings({ "rawtypes", "serial", "unchecked" })
-public class TsSpecEditPanel
-	extends JPanel
+public class TsSpecEditPanel extends JPanel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	private String module = "TsSpecEditPanel";
-	
+
 	private ResourceBundle genericResources = null;
 	private ResourceBundle groupResources = null;
-	
+
 	private JTextField keyField = new JTextField(5);
 	private JTextField tsidField = new JTextField(20);
 	private JTextField lastModifiedField = new JTextField(20);
@@ -190,11 +106,11 @@ public class TsSpecEditPanel
 	private JCheckBox activeCheck = new JCheckBox();
 	private JTextField unitsField = new JTextField(5);
 	private JCheckBox allowOffsetVarCheck = new JCheckBox();
-	
+
 	private JTextField utcOffsetField = new JTextField(8);
-	
+
 	private JComboBox onOffsetErrCombo = new JComboBox(OffsetErrorAction.values());
-	
+
 	private JComboBox numericStringCombo = new JComboBox(
 		new String[] { "Numeric", "String" });
 	private JTextField dataTableField = new JTextField(4);
@@ -203,11 +119,11 @@ public class TsSpecEditPanel
 	private JTextField maxField = new JTextField(16);
 	private JTextField oldestField = new JTextField(16);
 	private JTextField newestField = new JTextField(16);
-	
+
 	private TsListFrame parent = null;
 	private CwmsTsId tsid = null;
 	private CTimeSeries tsidData = null;
-	
+
 	private SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MMM/dd-HH:mm:ss");
 
 	private ArrayList<String> statcodes = null;
@@ -221,9 +137,9 @@ public class TsSpecEditPanel
 	private SimpleDateFormat exportSdf = new SimpleDateFormat("yyyy/MM/dd-HH:mm:ss");
 	private NumberFormat exportNumFmt = NumberFormat.getNumberInstance();
 	private Site selectedSite = null;
-	
+
 	public TsSpecEditPanel(TsListFrame parent)
-	{	
+	{
 		this.parent = parent;
 		groupResources = LoadResourceBundle.getLabelDescriptions(
 			"decodes/resources/groupedit", DecodesSettings.instance().language);
@@ -236,53 +152,52 @@ public class TsSpecEditPanel
 		exportNumFmt.setGroupingUsed(false);
 		exportNumFmt.setMaximumFractionDigits(5);
 		guiInit();
-//		pack();
-		
+
 	}
 
 	private void guiInit()
 	{
 		// Initialize this panel
 		setLayout(new BorderLayout());
-		
+
 		// North Panel is Key, TSID, and Description
 		JPanel northPanel = new JPanel(new GridBagLayout());
 		this.add(northPanel, BorderLayout.NORTH);
 		northPanel.add(new JLabel(genericResources.getString("key") + ":"),
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 0), 0, 0));
 		keyField.setEditable(false);
 		northPanel.add(keyField,
-			new GridBagConstraints(1, 0, 1, 1, 0.1, 0.0, 
+			new GridBagConstraints(1, 0, 1, 1, 0.1, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 5, 0));
 		northPanel.add(new JLabel("TSID:"),
-			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		tsidField.setEditable(false);
 		northPanel.add(tsidField,
-			new GridBagConstraints(3, 0, 1, 1, 0.6, 0.0, 
+			new GridBagConstraints(3, 0, 1, 1, 0.6, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 15, 0));
 		northPanel.add(new JLabel("Last Modified:"),
-			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(4, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 0), 0, 0));
 		lastModifiedField.setEditable(false);
 		northPanel.add(lastModifiedField,
-			new GridBagConstraints(5, 0, 1, 1, 0.3, 0.0, 
+			new GridBagConstraints(5, 0, 1, 1, 0.3, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 4, 0));
-		
+
 		JScrollPane descPane = new JScrollPane();
 		descPane.setBorder(new TitledBorder(genericResources.getString("description")));
 		descArea.setLineWrap(true);
 		descPane.getViewport().add(descArea, null);
 		descPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		northPanel.add(descPane,
-			new GridBagConstraints(0, 1, 4, 1, 1.0, 0.5, 
+			new GridBagConstraints(0, 1, 4, 1, 1.0, 0.5,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 5, 2, 5), 0, 0));
 
@@ -316,21 +231,21 @@ public class TsSpecEditPanel
 		JPanel centerLeft = new JPanel(new GridBagLayout());
 		JPanel centerRight = new JPanel(new GridBagLayout());
 		centerPanel.add(centerLeft,
-			new GridBagConstraints(0, 0, 1, 1, 0.5, .2, 
+			new GridBagConstraints(0, 0, 1, 1, 0.5, .2,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 		centerPanel.add(centerRight,
-				new GridBagConstraints(1, 0, 1, 1, 0.5, .2, 
+				new GridBagConstraints(1, 0, 1, 1, 0.5, .2,
 					GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 					new Insets(2, 2, 2, 2), 0, 0));
 
 		// Center Left has settable params for the TS_SPEC
 		centerLeft.add(new JLabel(groupResources.getString("TsEditPanel.location") + ":"),
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		centerLeft.add(locationField,
-				new GridBagConstraints(1, 0, 1, 1, 0.5, 0.0, 
+				new GridBagConstraints(1, 0, 1, 1, 0.5, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 1, 2, 5), 0, 0));
 		JButton selectLocationButton = new JButton(genericResources.getString("select"));
@@ -344,33 +259,20 @@ public class TsSpecEditPanel
 				}
 			});
 		centerLeft.add(selectLocationButton,
-			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 1, 2, 5), 0, 0));
-		
+
 		centerLeft.add(new JLabel(groupResources.getString("TsEditPanel.param") + ":"),
-			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		centerLeft.add(paramField,
-				new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0, 
+				new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 					new Insets(2, 1, 2, 5), 0, 0));
-//		JButton selectParamButton = new JButton(genericResources.getString("select"));
-//		selectParamButton.addActionListener(
-//			new ActionListener()
-//			{
-//				@Override
-//				public void actionPerformed(ActionEvent e)
-//				{
-//					selectParamPressed();
-//				}
-//			});
-//		centerLeft.add(selectParamButton,
-//			new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0, 
-//				GridBagConstraints.WEST, GridBagConstraints.NONE,
-//				new Insets(2, 1, 2, 5), 0, 0));
-		
+
+
 		// Load statCodeCombo, first item is no selection
 		try
 		{
@@ -379,23 +281,23 @@ public class TsSpecEditPanel
 			for(String sc : statcodes)
 				statCodeCombo.addItem(sc);
 		}
-		catch (DbIoException e1)
+		catch (DbIoException ex)
 		{
-			Logger.instance().warning("Error getting stat code list: " + e1);
+			log.atError().setCause(ex).log("Error getting stat code list.");
 		}
 		statCodeCombo.setEditable(true);
-		
-		
+
+
 		centerLeft.add(new JLabel(groupResources.getString("TsEditPanel.statcode") + ":"),
-			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		centerLeft.add(statCodeCombo,
-			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
-		
-		
+
+
 		// Load interval and duration Combos. First item is no selection.
 		IntervalDAI intervalDAO = parent.getTsDb().makeIntervalDAO();
 		try
@@ -408,9 +310,9 @@ public class TsSpecEditPanel
 			durationCodes = intervalDAO.getValidDurationCodes();
 			for(String s : durationCodes)
 				durationCombo.addItem(s);
-Interval zeroInt = IntervalList.instance().getByName("0");
-Logger.instance().debug2(module + " guiInit after populating intv & dur combos, '0' has key="
-+  zeroInt.getKey());
+
+			Interval zeroInt = IntervalList.instance().getByName("0");
+			log.trace("guiInit after populating intv & dur combos, '0' has key={}", zeroInt.getKey());
 
 		}
 		finally
@@ -419,25 +321,25 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 		}
 		intervalCombo.setEditable(false);
 		durationCombo.setEditable(false);
-		
+
 		centerLeft.add(new JLabel(groupResources.getString("TsEditPanel.interval") + ":"),
-			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		centerLeft.add(intervalCombo,
-			new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
-		
+
 		centerLeft.add(new JLabel(groupResources.getString("TsEditPanel.duration") + ":"),
-			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		centerLeft.add(durationCombo,
-			new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
-		
+
 		// Load versionCombo. First item is no selection.
 		try
 		{
@@ -449,33 +351,33 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 					versionCombo.addItem(v);
 			}
 		}
-		catch (DbIoException e1)
+		catch (DbIoException ex)
 		{
-			Logger.instance().warning("Error listing versions: " + e1);
+			log.atError().setCause(ex).log("Error listing versions.");
 		}
 		versionCombo.setEditable(true);
-		
+
 		centerLeft.add(new JLabel(groupResources.getString("TsEditPanel.version") + ":"),
-			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		centerLeft.add(versionCombo,
-			new GridBagConstraints(1, 5, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 5, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
 
 		activeCheck.setText(genericResources.getString("active"));
 		centerLeft.add(activeCheck,
-			new GridBagConstraints(0, 6, 3, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 6, 3, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0));
-		
+
 		centerLeft.add(new JLabel(genericResources.getString("units") + ":"),
-				new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(2, 5, 2, 0), 0, 0));
 		centerLeft.add(unitsField,
-			new GridBagConstraints(1, 7, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 7, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
 		unitsField.setEditable(false);
@@ -490,106 +392,106 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 				}
 			});
 		centerLeft.add(unitsSelectButton,
-			new GridBagConstraints(2, 7, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(2, 7, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 1, 2, 5), 0, 0));
 
 		allowOffsetVarCheck.setText(groupResources.getString("TsEditPanel.allowOffsetVar"));
 		centerLeft.add(allowOffsetVarCheck,
-			new GridBagConstraints(0, 8, 3, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 8, 3, 1, 0.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 5), 0, 0));
 
 		centerLeft.add(new JLabel(groupResources.getString("TsEditPanel.utcOffset") + ":"),
-			new GridBagConstraints(0, 9, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 9, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		centerLeft.add(utcOffsetField,
-			new GridBagConstraints(1, 9, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 9, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
 
 
 		centerLeft.add(new JLabel(groupResources.getString("TsEditPanel.onError") + ":"),
-			new GridBagConstraints(0, 10, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 10, 1, 1, 0.0, 0.0,
 				GridBagConstraints.NORTHEAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		centerLeft.add(onOffsetErrCombo,
-			new GridBagConstraints(1, 10, 1, 1, 0.5, 1.0, 
+			new GridBagConstraints(1, 10, 1, 1, 0.5, 1.0,
 				GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
 
 		// Center Right has non-settable statistics
 		centerRight.add(new JLabel(genericResources.getString("type") + ":"),
-			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		centerRight.add(numericStringCombo,
-			new GridBagConstraints(1, 0, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 0, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
 
 		centerRight.add(new JLabel(groupResources.getString("TsEditPanel.tableNum") + ":"),
-				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(2, 5, 2, 0), 0, 0));
 		dataTableField.setEditable(false);
 		centerRight.add(dataTableField,
-			new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 1, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
 
 		centerRight.add(new JLabel(groupResources.getString("TsEditPanel.numValues") + ":"),
-				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(2, 5, 2, 0), 0, 0));
 		numValuesField.setEditable(false);
 		centerRight.add(numValuesField,
-			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 2, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
 
 		centerRight.add(new JLabel("Min:"),
-				new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(2, 5, 2, 0), 0, 0));
 		minField.setEditable(false);
 		centerRight.add(minField,
-			new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 3, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
 
 		centerRight.add(new JLabel("Max:"),
-				new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(2, 5, 2, 0), 0, 0));
 		maxField.setEditable(false);
 		centerRight.add(maxField,
-			new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 4, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
 
 		centerRight.add(new JLabel(groupResources.getString("TsEditPanel.oldest") + ":"),
-				new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0, 
+				new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
 					GridBagConstraints.EAST, GridBagConstraints.NONE,
 					new Insets(2, 5, 2, 0), 0, 0));
 		oldestField.setEditable(false);
 		centerRight.add(oldestField,
-			new GridBagConstraints(1, 5, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 5, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
-	
+
 		centerRight.add(new JLabel(groupResources.getString("TsEditPanel.newest") + ":"),
-			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0, 
+			new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
 				GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 5, 2, 0), 0, 0));
 		newestField.setEditable(false);
 		centerRight.add(newestField,
-			new GridBagConstraints(1, 6, 1, 1, 0.5, 0.0, 
+			new GridBagConstraints(1, 6, 1, 1, 0.5, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 1, 2, 5), 0, 0));
-		
-		JButton exportValuesButton = 
+
+		JButton exportValuesButton =
 			new JButton(groupResources.getString("TsEditPanel.exportValues"));
 		exportValuesButton.addActionListener(
 			new ActionListener()
@@ -601,11 +503,11 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 				}
 			});
 		centerRight.add(exportValuesButton,
-			new GridBagConstraints(1, 7, 1, 1, 0.0, 1.0, 
+			new GridBagConstraints(1, 7, 1, 1, 0.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(2, 0, 2, 0), 0, 0));
 
-		
+
 		// Add the northPanel, centerPanel, and tsEntityOpsPanel into this panel
 		this.add(northPanel, BorderLayout.NORTH);
 		this.add(centerPanel, BorderLayout.CENTER);
@@ -663,6 +565,7 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 			}
 			catch (FileNotFoundException ex)
 			{
+				log.atError().setCause(ex).log("Unable open file '{}'", outputFile.getAbsolutePath());
 				parent.showError("Cannot open export file: " + ex);
 			}
 			finally
@@ -671,14 +574,14 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 					try { pw.close(); } catch(Exception ex) {}
 			}
 		}
-		
-		if (!outputFile.canWrite())
+
+		if (outputFile != null && !outputFile.canWrite())
 		{
 			JOptionPane.showMessageDialog(this, "File '" + outputFile.getPath() + " is not writable.");
 			return;
 		}
-		
-		
+
+
 	}
 
 	protected void selectUnitsPressed()
@@ -710,7 +613,7 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 		CwmsTsId tmpTsid = new CwmsTsId();
 		if (!getDataFromFields(tmpTsid))
 		{
-			if (JOptionPane.showConfirmDialog(this, "Close without save?", "Close Without Save", 
+			if (JOptionPane.showConfirmDialog(this, "Close without save?", "Close Without Save",
 				JOptionPane.YES_NO_OPTION) == JOptionPane.NO_OPTION)
 				return;
 		}
@@ -721,15 +624,14 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 				return;
 			else if (r == JOptionPane.YES_OPTION)
 			{
-//				getDataFromFields(tsid);
 				commitPressed();
-			} 
+			}
 		}
-		
+
 		// close the panel and remove from tabbed pane.
 		parent.removeEditPane(this);
 	}
-	
+
 	/**
 	 * Compare the editable fields in the two TSIDs.
 	 * @param orig
@@ -738,27 +640,26 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 	 */
 	private boolean changesMade(CwmsTsId orig, CwmsTsId tmp)
 	{
-//System.out.println("cm1");
+
 		if (!TextUtil.strEqual(orig.getDescription(), tmp.getDescription()))
 			return true;
-//System.out.println("cm2 orig '" + orig.getUniqueString() + "' tmp '" + tmp.getUniqueString() + "'");
-		
+
 		// This will get all 6 of the TSID fields:
 		if (!TextUtil.strEqual(orig.getUniqueString(), tmp.getUniqueString()))
 			return true;
-//System.out.println("cm3");
+
 		if (orig.isActive() != tmp.isActive())
 			return true;
-//System.out.println("cm4");
+
 		if (!TextUtil.strEqual(orig.getStorageUnits(), tmp.getStorageUnits()))
 			return true;
-//System.out.println("cm5");
+
 		if (orig.isAllowDstOffsetVariation() != tmp.isAllowDstOffsetVariation())
 			return true;
-//System.out.println("cm6");
+
 		if (!TextUtil.intEqual(orig.getUtcOffset(), tmp.getUtcOffset()))
 			return true;
-//System.out.println("cm7");
+
 		if (!orig.getOffsetErrorAction().equals(tmp.getOffsetErrorAction()))
 			return true;
 
@@ -771,12 +672,11 @@ Logger.instance().debug2(module + " guiInit after populating intv & dur combos, 
 		CwmsTsId tmpTsid = new CwmsTsId();
 		if (!getDataFromFields(tmpTsid))
 			return;
-Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + tsid.getKey()
-+ ", tsid='" + tmpTsid.getUniqueString() + "'");
+		log.trace("commitPressed - passed validation. tsid.getKey()={}, tsid='{}'", tsid.getKey(), tmpTsid.getUniqueString());
 		DataType dt = tmpTsid.getDataType();
 		if (DbKey.isNull(dt.getKey())) // This will be the case if datatype didn't previously exist.
 		{
-			int r = JOptionPane.showConfirmDialog(this, "CWMS Param '" 
+			int r = JOptionPane.showConfirmDialog(this, "CWMS Param '"
 				+ dt.getCode() + "' does not yet exist in this database. Create?",
 				"New Datatype", JOptionPane.YES_NO_OPTION);
 			if (r == JOptionPane.NO_OPTION)
@@ -788,6 +688,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			}
 			catch (DbIoException ex)
 			{
+				log.atError().setCause(ex).log("Cannot save date type '{}'", dt);
 				parent.showError("Cannot save data type '" + dt + "': " + ex);
 				return;
 			}
@@ -807,29 +708,27 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			TimeSeriesIdentifier existingTsid = null;
 			try { existingTsid = tsDAO.getTimeSeriesIdentifier(tmpTsid.getUniqueString()); }
 			catch(NoSuchObjectException ex) { existingTsid = null; }
-			
+
 			if (existingTsid != null
 			 // AND either this a new TSID OR it has a different key
 			 && (DbKey.isNull(tsid.getKey())
 			  || !tsid.getKey().equals(existingTsid.getKey())))
 			{
-				parent.showError("There is already an existing TSID with key=" 
+				parent.showError("There is already an existing TSID with key="
 					+ existingTsid.getKey() + " that has this unique identifier '"
 					+ tmpTsid.getUniqueString() + "'");
 				return;
 			}
-			
+
 			action = "doing setup";
 			getDataFromFields(tsid);
-	Logger.instance().debug2("commitPressed - after getDataFF. tsid.getKey()=" + tsid.getKey());
-			
+			log.trace("commitPressed - after getDataFF. tsid.getKey()={}", tsid.getKey());
+
 			// If there is existing data in the DB and the units have changed, give the user
 			// the option to convert existing data to the new units.
 			boolean saveData = false;
-	//System.out.println("commitPressed tsidData " +
-	//(tsidData==null ? "is null" : ("size=" + tsidData.size()+",units=" + tsid.getStorageUnits()))
-	//+ ", origUnits=" + origUnits);
-			if (!DbKey.isNull(tsid.getKey()) && tsidData != null && tsidData.size() > 0 
+
+			if (!DbKey.isNull(tsid.getKey()) && tsidData != null && tsidData.size() > 0
 			 && !tsid.getStorageUnits().equalsIgnoreCase(origUnits))
 			{
 				String msg = "There are currently " + tsidData.size() + " values stored "
@@ -837,7 +736,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 					+ "from " + origUnits + " to " + unitsField.getText() + ". "
 					+ "Do you want to convert the values currently stored in the database?";
 				int r = JOptionPane.showConfirmDialog(this, AsciiUtil.wrapString(msg, 60));
-				
+
 				if (r == JOptionPane.CANCEL_OPTION)
 					return; // Abort COMMIT
 				else if (r == JOptionPane.NO_OPTION)
@@ -855,7 +754,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 					saveData = true;
 				}
 				tsid.setStorageUnits(unitsField.getText());
-				Logger.instance().debug2("Units different, changed tsid units to " + tsid.getStorageUnits());
+				log.trace("Units different, changed tsid units to {}", tsid.getStorageUnits());
 			}
 
 			if (saveData)
@@ -884,11 +783,9 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 		}
 		catch (Exception ex)
 		{
-			String msg = "Error while " + action + ": " + ex;
-			Logger.instance().warning(msg);
-			if (Logger.instance().getLogOutput() != null)
-				ex.printStackTrace(Logger.instance().getLogOutput());
-			parent.showError(msg);
+			String msg = "Error while {}";
+			log.atError().setCause(ex).log(msg, action);
+			parent.showError(msg.replace("{}", action) + ": " + ex);
 		}
 		finally
 		{
@@ -896,7 +793,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 				appDAO.close();
 			tsDAO.close();
 		}
-		
+
 		// call setTsSpec again to set key, TSID and stat fields.
 		setTsSpec(tsid);
 	}
@@ -919,7 +816,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 				tsidData = tsDao.makeTimeSeries(tsid);
 				tsDao.fillTimeSeriesMetadata(tsidData);
 				tsDao.fillTimeSeries(tsidData, null, null);
-			
+
 				if (tsDao instanceof OpenTimeSeriesDAO)
 				{
 					tableName = ((OpenTimeSeriesDAO)tsDao).makeDataTableName(tsid);
@@ -927,15 +824,13 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			}
 			catch (DbIoException ex)
 			{
-				parent.showError("Error while filling time series and metadata: " + ex);
+				final String msg = "Error while filling time series and metadata";
+				log.atError().setCause(ex).log(msg);
+				parent.showError(msg + ": " + ex);
 			}
-			catch (NoSuchObjectException ex)
+			catch (BadTimeSeriesException | NoSuchObjectException ex)
 			{
-				Logger.instance().warning("setTsSpec: " + ex);
-			}
-			catch (BadTimeSeriesException ex)
-			{
-				Logger.instance().warning("setTsSpec: " + ex);
+				log.atWarn().setCause(ex).log("Error setting TsSpec");
 			}
 			finally
 			{
@@ -952,7 +847,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			lastModifiedField.setText("");
 		else
 			lastModifiedField.setText(sdf.format(tsid.getLastModified()));
-		
+
 		String s = tsid.getSiteName();
 		locationField.setText(s == null ? "" : s);
 		selectedSite = tsid.getSite();
@@ -998,7 +893,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 					break;
 				}
 		}
-		
+
 		s = tsid.getVersion();
 		if (s == null)
 			versionCombo.setSelectedIndex(0); // the top is always no-selection
@@ -1019,27 +914,27 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 		activeCheck.setSelected(tsid.isActive());
 		s = tsid.getStorageUnits();
 		unitsField.setText(s == null ? "" : s);
-		
+
 		allowOffsetVarCheck.setSelected(tsid.isAllowDstOffsetVariation());
-		utcOffsetField.setText("" + 
+		utcOffsetField.setText("" +
 			(tsid.getUtcOffset() == null ? "" : tsid.getUtcOffset()));
 		onOffsetErrCombo.setSelectedItem(tsid.getOffsetErrorAction().toString());
-		
+
 		boolean isNumeric = tsid.getStorageType() == 'N';
 		numericStringCombo.setSelectedIndex(isNumeric ? 0 : 1);
-		
+
 		// Can only set numeric/string if this is a new TSID
 		numericStringCombo.setEditable(false);
 		numericStringCombo.setEnabled(newTsid);
-		
+
 		dataTableField.setText(tableName);
-		
+
 		numValuesField.setText("0");
 		minField.setText("");
 		maxField.setText("");
 		oldestField.setText("");
 		newestField.setText("");
-		
+
 		// Note: tsidData from above may be null!
 		if (tsidData != null)
 		{
@@ -1049,7 +944,6 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			{
 				TimedVariable oldest = tsidData.sampleAt(0);
 				TimedVariable newest = tsidData.sampleAt(n - 1);
-//System.out.println("n=" + n + ", oldest=" + oldest + ", newest=" + newest);
 				TimedVariable min = null, max = null;
 				double maxV = Double.NEGATIVE_INFINITY, minV = Double.POSITIVE_INFINITY;
 				String maxS = null, minS = null;
@@ -1086,7 +980,10 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 									minV = v;
 								}
 							}
-							catch(NoConversionException ex) {}
+							catch(NoConversionException ex)
+							{
+								log.atTrace().setCause(ex).log("Unable to parse a numeric value as a double.");
+							}
 						}
 						else // string value
 						{
@@ -1111,7 +1008,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			}
 		}
 	}
-	
+
 	private String formatTV(TimedVariable tv)
 	{
 		String s = "";
@@ -1137,7 +1034,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 		if (s.length() == 0)
 			s = null;
 		tsid.setDescription(s);
-		
+
 		s = locationField.getText().trim();
 		if (s.length() == 0)
 		{
@@ -1146,8 +1043,8 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 		}
 		tsid.setSite(selectedSite);
 		tsid.setSiteName(locationField.getText().trim());
-		
-		
+
+
 		s = paramField.getText().trim();
 		if (s.length() == 0)
 		{
@@ -1157,7 +1054,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 		tsid.setPart("param", s);
 		DataType dt = DataType.getDataType(Constants.datatype_CWMS, s);
 		tsid.setDataType(dt);
-		
+
 		s = (String)statCodeCombo.getSelectedItem();
 		if (s == null || s.trim().length() == 0)
 		{
@@ -1173,7 +1070,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			return false;
 		}
 		tsid.setInterval(s.trim());
-		
+
 		s = (String)durationCombo.getSelectedItem();
 		if (s == null || s.trim().length() == 0)
 		{
@@ -1181,7 +1078,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			return false;
 		}
 		tsid.setPart("duration", s.trim());
-		
+
 		s = (String)versionCombo.getSelectedItem();
 		if (s == null || s.trim().length() == 0)
 		{
@@ -1191,7 +1088,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 		tsid.setPart("version", s.trim());
 
 		tsid.setActive(activeCheck.isSelected());
-		
+
 		s = unitsField.getText().trim();
 		if (s.length() == 0)
 		{
@@ -1217,7 +1114,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 		tsid.setStorageUnits(s);
 
 		tsid.setAllowDstOffsetVariation(allowOffsetVarCheck.isSelected());
-		
+
 		Integer offset = 0;
 		s = utcOffsetField.getText().trim();
 		if (s.length() > 0)
@@ -1225,14 +1122,16 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			try { offset = Integer.parseInt(s); }
 			catch(NumberFormatException ex)
 			{
-				parent.showError("UTC Offset must be integer number of seconds!");
+				final String msg = "UTC Offset must be integer number of seconds!";
+				log.atError().setCause(ex).log(msg);
+				parent.showError(msg);
 				return false;
 			}
 		}
 		else
 			offset = null;
 		tsid.setUtcOffset(offset);
-		
+
 		OffsetErrorAction oea = (OffsetErrorAction)onOffsetErrCombo.getSelectedItem();
 		tsid.setOffsetErrorAction(oea);
 
@@ -1241,7 +1140,7 @@ Logger.instance().debug2("commitPressed - passed validation. tsid.getKey()=" + t
 			s = (String)numericStringCombo.getSelectedItem();
 			tsid.setStorageType(s.charAt(0));
 		}
-			
+
 		return true;
 	}
 

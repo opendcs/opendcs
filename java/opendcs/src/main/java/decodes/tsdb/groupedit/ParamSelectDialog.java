@@ -1,12 +1,20 @@
 /*
- *  $Id: ParamSelectDialog.java,v 1.5 2019/12/11 14:43:37 mmaloney Exp $
- *  
- *  Copyright 2016 U.S. Army Corps of Engineers, Institute for Water Resources, Hydrologic Engineering Center (HEC).
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
-
-import ilex.util.Logger;
 import ilex.util.StringPair;
 
 import java.awt.BorderLayout;
@@ -34,6 +42,9 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.TimeSeriesDAI;
 import decodes.cwms.CwmsTsId;
 import decodes.gui.GuiDialog;
@@ -48,8 +59,7 @@ import decodes.tsdb.TsGroupMemberType;
  * Dialog for selecting CWMS Location Specification.
  */
 @SuppressWarnings("serial")
-public class ParamSelectDialog 
-	extends GuiDialog
+public class ParamSelectDialog extends GuiDialog
 {
 	private JButton okButton = new JButton("  OK  ");
 	private JButton cancelButton = new JButton("Cancel");
@@ -61,11 +71,9 @@ public class ParamSelectDialog
 	private JRadioButton baseRadio = new JRadioButton("Base Param");
 	private JRadioButton subRadio = new JRadioButton("Sub Param");
 	private JTextField resultField = new JTextField(15);
-//	private JTextField baseField = new JTextField();
-//	private JTextField subField = new JTextField();
 	private CwmsBaseSubPartSpec selectedRow = null;
 	private JFrame owner = null;
-//	private boolean allowBaseSub = true;
+
 	private SelectionMode selectionMode = SelectionMode.GroupEdit;
 
 
@@ -91,14 +99,14 @@ public class ParamSelectDialog
 		JPanel radioPanel = new JPanel(new GridBagLayout());
 		radioPanel.setBorder(new TitledBorder(
 			(owner instanceof TsDbGrpEditorFrame) ? " Add Filter By " : " Add Mask By "));
-		
+
 		mainPanel.add(listPanel, BorderLayout.CENTER);
 		mainPanel.add(radioPanel, BorderLayout.SOUTH);
 		overallPanel.add(mainPanel, BorderLayout.CENTER);
-		
+
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
 		overallPanel.add(buttonPanel, BorderLayout.SOUTH);
-		
+
 		okButton.addActionListener(
 			new ActionListener()
 			{
@@ -119,12 +127,12 @@ public class ParamSelectDialog
 		buttonPanel.add(cancelButton, null);
 
 		getContentPane().add(overallPanel);
-		
+
 		model = new ParamTableModel(this);
-		paramTable = 
+		paramTable =
 			new SortingListTable(model, model.colWidths)
 			{
-			
+
 			};
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.getViewport().add(paramTable);
@@ -189,7 +197,7 @@ public class ParamSelectDialog
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 1), 0, 0));
-		
+
 		paramTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		if (selectionMode == SelectionMode.CompEditNoGroup)
 		{
@@ -210,13 +218,13 @@ public class ParamSelectDialog
 		if (inSelectionMade)
 			return;
 		inSelectionMade = true;
-		
+
 		int r = paramTable.getSelectedRow();
 		if (r >= 0)
 		{
 			//Get the correct row from the table model
 			int modelrow = paramTable.convertRowIndexToModel(r);
-			ParamTableModel tablemodel = (ParamTableModel)paramTable.getModel();			
+			ParamTableModel tablemodel = (ParamTableModel)paramTable.getModel();
 			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tablemodel.getRowObject(modelrow);
 			if (spec != selectedRow)
 			{
@@ -259,7 +267,7 @@ public class ParamSelectDialog
 				break;
 			}
 		}
-		
+
 		inSelectionMade = false;
 	}
 
@@ -281,7 +289,7 @@ public class ParamSelectDialog
 
 	/**
 	 * Called when Cancel button is pressed.
-	 * 
+	 *
 	 * @param e
 	 *            ignored
 	 */
@@ -295,7 +303,7 @@ public class ParamSelectDialog
 	{
 		return cancelled;
 	}
-	
+
 	public StringPair getResult()
 	{
 		String label, value;
@@ -305,13 +313,13 @@ public class ParamSelectDialog
 			label = TsGroupMemberType.BaseParam.toString();
 		else
 			label = TsGroupMemberType.SubParam.toString();
-		
+
 		value = resultField.getText();
 		if (value.length() == 0)
 			return null;
 		return new StringPair(label, value);
 	}
-	
+
 	public void setResult(StringPair r)
 	{
 		if (r.first.toLowerCase().startsWith("base"))
@@ -371,15 +379,15 @@ public class ParamSelectDialog
 }
 
 @SuppressWarnings("serial")
-class ParamTableModel extends javax.swing.table.AbstractTableModel
-	implements SortingListTableModel
+class ParamTableModel extends javax.swing.table.AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String colNames[] = { "Base", "Sub", "Num TSIDs" };
 	int colWidths[] = { 40, 30, 20 };
 	private HashMap<StringPair, CwmsBaseSubPartSpec> bs2spec = new HashMap<StringPair, CwmsBaseSubPartSpec>();
 	ArrayList<CwmsBaseSubPartSpec> theList = new ArrayList<CwmsBaseSubPartSpec>();
 
-	private Comparator<CwmsBaseSubPartSpec> baseComparator = 
+	private Comparator<CwmsBaseSubPartSpec> baseComparator =
 		new Comparator<CwmsBaseSubPartSpec>()
 		{
 			@Override
@@ -391,8 +399,8 @@ class ParamTableModel extends javax.swing.table.AbstractTableModel
 				// note: base,sub must be unique.
 			}
 		};
-		
-	private Comparator<CwmsBaseSubPartSpec> subComparator = 
+
+	private Comparator<CwmsBaseSubPartSpec> subComparator =
 		new Comparator<CwmsBaseSubPartSpec>()
 		{
 			@Override
@@ -411,7 +419,7 @@ class ParamTableModel extends javax.swing.table.AbstractTableModel
 				// note: base,sub must be unique.
 			}
 		};
-	private Comparator<CwmsBaseSubPartSpec> numComparator = 
+	private Comparator<CwmsBaseSubPartSpec> numComparator =
 		new Comparator<CwmsBaseSubPartSpec>()
 		{
 			@Override
@@ -425,11 +433,11 @@ class ParamTableModel extends javax.swing.table.AbstractTableModel
 				// note: base,sub must be unique.
 			}
 		};
-	
+
 	public ParamTableModel(ParamSelectDialog dlg)
 	{
 		TimeSeriesDAI tsDao = dlg.tsdb.makeTimeSeriesDAO();
-		
+
 		try
 		{
 			ArrayList<TimeSeriesIdentifier> tslist = tsDao.listTimeSeries();
@@ -454,14 +462,14 @@ class ParamTableModel extends javax.swing.table.AbstractTableModel
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().warning("Error listing time series: " + ex);
+			log.atWarn().setCause(ex).log("Error listing time series.");
 		}
 		finally
 		{
 			tsDao.close();
 		}
 	}
-	
+
 	@Override
 	public int getRowCount()
 	{
@@ -492,7 +500,7 @@ class ParamTableModel extends javax.swing.table.AbstractTableModel
 		}
 		return "";
 	}
-	
+
 	@Override
 	public void sortByColumn(int column)
 	{
@@ -508,6 +516,5 @@ class ParamTableModel extends javax.swing.table.AbstractTableModel
 		if (row < 0)
 			return null;
 		return theList.get(row);
-	}	
+	}
 }
-

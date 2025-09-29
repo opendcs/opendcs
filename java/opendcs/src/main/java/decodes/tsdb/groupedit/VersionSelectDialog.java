@@ -1,12 +1,20 @@
 /*
- *  $Id: VersionSelectDialog.java,v 1.4 2019/12/11 14:43:38 mmaloney Exp $
- *  
- *  Copyright 2016 U.S. Army Corps of Engineers, Institute for Water Resources, Hydrologic Engineering Center (HEC).
- */
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
+*
+*   http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
+*/
 package decodes.tsdb.groupedit;
 
-
-import ilex.util.Logger;
 import ilex.util.StringPair;
 
 import java.awt.BorderLayout;
@@ -34,6 +42,9 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
+
 import opendcs.dai.TimeSeriesDAI;
 import decodes.cwms.CwmsTsId;
 import decodes.gui.GuiDialog;
@@ -48,8 +59,7 @@ import decodes.tsdb.TsGroupMemberType;
  * Dialog for selecting CWMS Location Specification.
  */
 @SuppressWarnings("serial")
-public class VersionSelectDialog 
-	extends GuiDialog
+public class VersionSelectDialog extends GuiDialog
 {
 	private JButton okButton = new JButton("  OK  ");
 	private JButton cancelButton = new JButton("Cancel");
@@ -61,11 +71,8 @@ public class VersionSelectDialog
 	private JRadioButton baseRadio = new JRadioButton("Base Version");
 	private JRadioButton subRadio = new JRadioButton("Sub Version");
 	private JTextField resultField = new JTextField(15);
-//	private JTextField baseField = new JTextField();
-//	private JTextField subField = new JTextField();
 	private CwmsBaseSubPartSpec selectedRow = null;
 	private JFrame owner = null;
-//	private boolean allowBaseSub = true;
 	SelectionMode selectionMode = SelectionMode.GroupEdit;
 
 	public VersionSelectDialog(JFrame owner, TimeSeriesDb tsdb, SelectionMode selectionMode)
@@ -88,17 +95,17 @@ public class VersionSelectDialog
 		JPanel listPanel = new JPanel(new BorderLayout());
 		listPanel.setBorder(new TitledBorder(" Select Version "));
 		JPanel radioPanel = new JPanel(new GridBagLayout());
-		
+
 		radioPanel.setBorder(new TitledBorder(
 			(owner instanceof TsDbGrpEditorFrame) ? " Add Filter By " : " Add Mask By "));
 
 		mainPanel.add(listPanel, BorderLayout.CENTER);
 		mainPanel.add(radioPanel, BorderLayout.SOUTH);
 		overallPanel.add(mainPanel, BorderLayout.CENTER);
-		
+
 		JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
 		overallPanel.add(buttonPanel, BorderLayout.SOUTH);
-		
+
 		okButton.addActionListener(
 			new ActionListener()
 			{
@@ -119,12 +126,12 @@ public class VersionSelectDialog
 		buttonPanel.add(cancelButton, null);
 
 		getContentPane().add(overallPanel);
-		
+
 		model = new VersionTableModel(this);
-		versionTable = 
+		versionTable =
 			new SortingListTable(model, model.colWidths)
 			{
-			
+
 			};
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.getViewport().add(versionTable);
@@ -189,7 +196,7 @@ public class VersionSelectDialog
 			new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 10, 2, 1), 0, 0));
-		
+
 		versionTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		if (selectionMode == SelectionMode.CompEditNoGroup)
 		{
@@ -202,7 +209,7 @@ public class VersionSelectDialog
 		getRootPane().setDefaultButton(okButton);
 		pack();
 	}
-	
+
 	private boolean inSelectionMade = false;
 
 	protected void selectionMade()
@@ -210,13 +217,13 @@ public class VersionSelectDialog
 		if (inSelectionMade)
 			return;
 		inSelectionMade = true;
-		
+
 		int r = versionTable.getSelectedRow();
 		if (r >= 0)
 		{
 			//Get the correct row from the table model
 			int modelrow = versionTable.convertRowIndexToModel(r);
-			VersionTableModel tablemodel = (VersionTableModel)versionTable.getModel();			
+			VersionTableModel tablemodel = (VersionTableModel)versionTable.getModel();
 			CwmsBaseSubPartSpec spec = (CwmsBaseSubPartSpec)tablemodel.getRowObject(modelrow);
 			if (spec != selectedRow)
 			{
@@ -259,11 +266,11 @@ public class VersionSelectDialog
 				break;
 			}
 		}
-		
+
 		inSelectionMade = false;
 	}
 
-	
+
 
 	/**
 	 * Called when a double click on the selection
@@ -283,7 +290,7 @@ public class VersionSelectDialog
 
 	/**
 	 * Called when Cancel button is pressed.
-	 * 
+	 *
 	 * @param e
 	 *            ignored
 	 */
@@ -297,7 +304,7 @@ public class VersionSelectDialog
 	{
 		return cancelled;
 	}
-	
+
 	public StringPair getResult()
 	{
 		String label, value;
@@ -307,13 +314,13 @@ public class VersionSelectDialog
 			label = TsGroupMemberType.BaseVersion.toString();
 		else
 			label = TsGroupMemberType.SubVersion.toString();
-		
+
 		value = resultField.getText();
 		if (value.length() == 0)
 			return null;
 		return new StringPair(label, value);
 	}
-	
+
 	public void setResult(StringPair r)
 	{
 		if (r.first.toLowerCase().startsWith("base"))
@@ -373,15 +380,15 @@ public class VersionSelectDialog
 }
 
 @SuppressWarnings("serial")
-class VersionTableModel extends javax.swing.table.AbstractTableModel
-	implements SortingListTableModel
+class VersionTableModel extends javax.swing.table.AbstractTableModel implements SortingListTableModel
 {
+	private static final Logger log = OpenDcsLoggerFactory.getLogger();
 	String colNames[] = { "Base", "Sub", "Num TSIDs" };
 	int colWidths[] = { 40, 30, 20 };
 	private HashMap<StringPair, CwmsBaseSubPartSpec> bs2spec = new HashMap<StringPair, CwmsBaseSubPartSpec>();
 	ArrayList<CwmsBaseSubPartSpec> theList = new ArrayList<CwmsBaseSubPartSpec>();
 
-	private Comparator<CwmsBaseSubPartSpec> baseComparator = 
+	private Comparator<CwmsBaseSubPartSpec> baseComparator =
 		new Comparator<CwmsBaseSubPartSpec>()
 		{
 			@Override
@@ -393,8 +400,8 @@ class VersionTableModel extends javax.swing.table.AbstractTableModel
 				// note: base,sub must be unique.
 			}
 		};
-		
-	private Comparator<CwmsBaseSubPartSpec> subComparator = 
+
+	private Comparator<CwmsBaseSubPartSpec> subComparator =
 		new Comparator<CwmsBaseSubPartSpec>()
 		{
 			@Override
@@ -413,7 +420,7 @@ class VersionTableModel extends javax.swing.table.AbstractTableModel
 				// note: base,sub must be unique.
 			}
 		};
-	private Comparator<CwmsBaseSubPartSpec> numComparator = 
+	private Comparator<CwmsBaseSubPartSpec> numComparator =
 		new Comparator<CwmsBaseSubPartSpec>()
 		{
 			@Override
@@ -427,11 +434,11 @@ class VersionTableModel extends javax.swing.table.AbstractTableModel
 				// note: base,sub must be unique.
 			}
 		};
-	
+
 	public VersionTableModel(VersionSelectDialog dlg)
 	{
 		TimeSeriesDAI tsDao = dlg.tsdb.makeTimeSeriesDAO();
-		
+
 		try
 		{
 			ArrayList<TimeSeriesIdentifier> tslist = tsDao.listTimeSeries();
@@ -456,14 +463,14 @@ class VersionTableModel extends javax.swing.table.AbstractTableModel
 		}
 		catch (DbIoException ex)
 		{
-			Logger.instance().warning("Error listing time series: " + ex);
+			log.atWarn().setCause(ex).log("Error listing time series.");
 		}
 		finally
 		{
 			tsDao.close();
 		}
 	}
-	
+
 	@Override
 	public int getRowCount()
 	{
@@ -494,7 +501,7 @@ class VersionTableModel extends javax.swing.table.AbstractTableModel
 		}
 		return "";
 	}
-	
+
 	@Override
 	public void sortByColumn(int column)
 	{
@@ -510,6 +517,5 @@ class VersionTableModel extends javax.swing.table.AbstractTableModel
 		if (row < 0)
 			return null;
 		return theList.get(row);
-	}	
+	}
 }
-
