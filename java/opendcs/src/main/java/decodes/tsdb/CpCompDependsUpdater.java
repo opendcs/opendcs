@@ -1,92 +1,17 @@
 /*
-*  $Id: CpCompDependsUpdater.java,v 1.22 2020/05/07 13:52:17 mmaloney Exp $
+* Where Applicable, Copyright 2025 OpenDCS Consortium and/or its contributors
 *
-*  This is open-source software written by Cove Software LLC under
-*  contract to the federal government. You are free to copy and use this
-*  source code for your own purposes, except that no part of the information
-*  contained in this file may be claimed to be proprietary.
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not
+* use this file except in compliance with the License. You may obtain a copy
+* of the License at
 *
-*  This source code is provided completely without warranty.
+*   http://www.apache.org/licenses/LICENSE-2.0
 *
-*  $Log: CpCompDependsUpdater.java,v $
-*  Revision 1.22  2020/05/07 13:52:17  mmaloney
-*  Delete the scratchpad after copying to depends table.
-*
-*  Revision 1.21  2019/06/25 17:01:59  mmaloney
-*  HDB 706 For all notifications including full eval, do not create dependencies for timed comps.
-*
-*  Revision 1.20  2018/11/14 14:54:17  mmaloney
-*  6.5RC03 implements timed computations. If the timedCompInterval property is set,
-*  then don't create any dependencies for this computation.
-*
-*  Revision 1.19  2018/03/30 15:00:37  mmaloney
-*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
-*
-*  Revision 1.18  2018/03/30 14:13:32  mmaloney
-*  Fix bug whereby DACQ_EVENTS were being written by RoutingScheduler with null appId.
-*
-*  Revision 1.17  2017/12/04 18:57:36  mmaloney
-*  CWMS-10012 fixed CWMS problem that could sometimes result in circular dependencies
-*  for group computations when a new Time Series was created. When compdepends
-*  daemon evaluates the 'T' notification, it needs to prepare each CwmsGroupHelper for
-*  expansion so that the regular expressions exist.
-*
-*  Revision 1.16  2017/11/14 16:07:25  mmaloney
-*  When evaluating a group comp, if group was NOT read from the cache, evaluate it before use.
-*
-*  Revision 1.15  2017/10/23 13:37:57  mmaloney
-*  As a fail-safe, delete from scratchpad any records that already exist in comp depends.
-*
-*  Revision 1.14  2017/08/22 19:56:39  mmaloney
-*  Refactor
-*
-*  Revision 1.13  2017/05/03 17:02:30  mmaloney
-*  Downgrade nuisance debugs.
-*
-*  Revision 1.12  2017/03/30 21:07:27  mmaloney
-*  Refactor CompEventServer to use PID if monitor==true.
-*
-*  Revision 1.11  2016/12/16 14:35:45  mmaloney
-*  Enhanced resolver to allow triggering from a time series with unrelated location.
-*
-*  Revision 1.10  2016/11/29 00:57:14  mmaloney
-*  Implement wildcards for CWMS.
-*
-*  Revision 1.9  2016/11/21 16:04:03  mmaloney
-*  Code Cleanup.
-*
-*  Revision 1.8  2016/11/20 17:23:09  mmaloney
-*  Minor updates for CWMS.
-*
-*  Revision 1.7  2016/11/19 16:00:48  mmaloney
-*  Minor updates for CWMS.
-*
-*  Revision 1.6  2016/11/03 19:03:56  mmaloney
-*  Refactoring for group evaluation to make HDB work the same way as CWMS.
-*
-*  Revision 1.5  2016/09/29 18:54:37  mmaloney
-*  CWMS-8979 Allow Database Process Record to override decodes.properties and
-*  user.properties setting. Command line arg -Dsettings=appName, where appName is the
-*  name of a process record. Properties assigned to the app will override the file(s).
-*
-*  Revision 1.4  2016/06/27 15:27:05  mmaloney
-*  Have to read data types as part of decodes init.
-*
-*  Revision 1.3  2014/12/19 19:24:58  mmaloney
-*  Handle version change for column name tsdb_group_member_ts data_id vs. ts_id.
-*
-*  Revision 1.2  2014/08/22 17:23:04  mmaloney
-*  6.1 Schema Mods and Initial DCP Monitor Implementation
-*
-*  Revision 1.1.1.1  2014/05/19 15:28:59  mmaloney
-*  OPENDCS 6.0 Initial Checkin
-*
-*  Revision 1.46  2013/03/25 18:15:03  mmaloney
-*  Refactor starting event server.
-*
-*  Revision 1.45  2013/03/21 18:27:39  mmaloney
-*  DbKey Implementation
-*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+* WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+* License for the specific language governing permissions and limitations
+* under the License.
 */
 package decodes.tsdb;
 
@@ -95,31 +20,29 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import org.opendcs.utils.logging.OpenDcsLoggerFactory;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 
 import opendcs.dai.CompDependsDAI;
 import opendcs.dai.ComputationDAI;
-import opendcs.dai.DaiBase;
 import opendcs.dai.LoadingAppDAI;
 import opendcs.dai.TimeSeriesDAI;
 import opendcs.dai.TsGroupDAI;
-import opendcs.dao.CompDependsDAO;
 import opendcs.dao.DaoBase;
 import lrgs.gui.DecodesInterface;
 import ilex.cmdline.BooleanToken;
 import ilex.cmdline.StringToken;
 import ilex.cmdline.TokenOptions;
 import ilex.util.EnvExpander;
-import ilex.util.Logger;
 import ilex.util.TextUtil;
 import decodes.sql.DbKey;
 import decodes.util.CmdLineArgs;
@@ -134,10 +57,9 @@ import decodes.hdb.HdbTsId;
 /**
 This is the main class for the daemon that updates CP_COMP_DEPENDS.
 */
-public class CpCompDependsUpdater
-    extends TsdbAppTemplate
+public class CpCompDependsUpdater extends TsdbAppTemplate
 {
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(CpCompDependsUpdater.class);
+    private static Logger log = OpenDcsLoggerFactory.getLogger();
     /** Holds app name, id, & description. */
     private CompAppInfo appInfo;
 
@@ -146,7 +68,6 @@ public class CpCompDependsUpdater
 
     private boolean shutdownFlag;
     private String hostname;
-//    private int evtPort = 0;
     private long lastCacheRefresh = 0L;
 
     /** Number of notifications successfully processed */
@@ -224,7 +145,7 @@ public class CpCompDependsUpdater
             +", appId=" + getAppId();
         if (theDb.isCwms())
             msg = msg + ", officeID=" + ((CwmsTimeSeriesDb)theDb).getDbOfficeId();
-        Logger.instance().info(msg + " Starting ==============");
+        log.info(msg + " Starting ==============");
 
 
         groupHelper = theDb.makeGroupHelper();
@@ -237,8 +158,7 @@ public class CpCompDependsUpdater
             if (!dumpDir.isDirectory()
              && !dumpDir.mkdirs())
             {
-                warning("Cannot create group cache dump dir '" + expDir
-                    + "'. -- Will not dump group cache.");
+                log.warn("Cannot create group cache dump dir '{}'. -- Will not dump group cache.", expDir);
                 dumpDir = null;
             }
             groupHelper.setGroupCacheDumpDir(dumpDir);
@@ -262,7 +182,7 @@ public class CpCompDependsUpdater
 
                 if ((fullEvalOnStartup.getValue() || fullEvalOnly.getValue()) && !fullEvalDone)
                 {
-                    info("Doing one-time full evaluation on startup");
+                    log.info("Doing one-time full evaluation on startup");
                     CpDependsNotify ccdn = new CpDependsNotify();
                     ccdn.setEventType(CpDependsNotify.FULL_EVAL);
                     ccdn.setDateTimeLoaded(new Date());
@@ -289,7 +209,7 @@ public class CpCompDependsUpdater
                 {
                     if (prevNotify != null && ccdn.equals(prevNotify))
                     {
-                        info("Ignoring duplicate notify '" + ccdn + "'");
+                        log.info("Ignoring duplicate notify '{}'", ccdn);
                     }
                     else
                     {
@@ -305,23 +225,18 @@ public class CpCompDependsUpdater
             }
             catch(LockBusyException ex)
             {
-                Logger.instance().fatal("No Lock - Application exiting: " + ex);
+                log.atError().setCause(ex).log("No Lock - Application exiting.");
                 shutdownFlag = true;
             }
             catch(DbIoException ex)
             {
-                warning("Database Error while " + action + ": " + ex);
+                log.atError().setCause(ex).log("Database Error while {}", action);
                 shutdownFlag = true;
                 databaseFailed = true;
             }
             catch(Exception ex)
             {
-                msg = "Unexpected exception while " + action + ": " + ex;
-                warning(msg);
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                ex.printStackTrace(pw);
-                warning(sw.toString());
+                log.atError().setCause(ex).log("Unexpected exception while {}", action);
                 shutdownFlag = true;
                 databaseFailed = true;
             }
@@ -348,35 +263,24 @@ public class CpCompDependsUpdater
                     compEventSvr = new CompEventSvr(determineEventPort(appInfo));
                     compEventSvr.startup();
                 }
-                catch(IOException ex)
+                catch (IOException ex)
                 {
-                    failure("Cannot create Event server: " + ex
-                        + " -- no events available to external clients.");
+                    log.atError()
+                       .setCause(ex)
+                       .log("Cannot create Event server -- no events available to external clients.");
                 }
             }
-        }
-        catch(NoSuchObjectException ex)
-        {
-            Logger.instance().fatal("App Name " + getAppName() + ": " + ex);
-            throw ex;
-        }
-        catch(DbIoException ex)
-        {
-            Logger.instance().fatal("App Name " + getAppName() + ": " + ex);
-            throw ex;
         }
     }
 
     public void initDecodes()
         throws DecodesException
     {
-        /*
         DecodesInterface.silent = true;
         if (DecodesInterface.isInitialized())
             return;
         DecodesInterface.initDecodesMinimal(cmdLineArgs.getPropertiesFile());
         Database.getDb().dataTypeSet.read();
-        */
     }
 
     /**
@@ -388,11 +292,6 @@ public class CpCompDependsUpdater
     {
         CpCompDependsUpdater app = new CpCompDependsUpdater();
         app.execute(args);
-    }
-
-    private void debug(String x)
-    {
-        Logger.instance().debug3("CompDependsUpdater(" + getAppId() + "): " + x);
     }
 
     /**
@@ -415,7 +314,7 @@ public class CpCompDependsUpdater
         {
             dumpTsidCache();
 
-            info("Refreshing Computation Cache...");
+            log.info("Refreshing Computation Cache...");
             enabledCompCache.clear();
 
             CompFilter enabledOnly = new CompFilter();
@@ -430,26 +329,20 @@ public class CpCompDependsUpdater
                 enabledCompCache.add(comp);
             }
 
-            info("After loading, " + enabledCompCache.size()
-                + " computations in cache.");
+            log.info("After loading, {} computation in cache.", enabledCompCache.size());
 
-            info("Refreshing Group Cache...");
+            log.info("Refreshing Group Cache...");
             tsGroupDAO.fillCache();
 
-            info("Expanding Groups in Cache...");
+            log.info("Expanding Groups in Cache...");
             groupHelper.evalAll();
 
-            info("Reloading CP_COMP_DEPENDS Cache...");
+            log.info("Reloading CP_COMP_DEPENDS Cache...");
             reloadCpCompDependsCache();
         }
         catch (Exception ex)
         {
-            String msg = "Error refreshing caches: " + ex;
-            Logger.instance().failure(msg);
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            ex.printStackTrace(pw);
-            warning(sw.toString());
+            log.atError().setCause(ex).log("Error refreshing caches");
         }
         lastCacheRefresh = System.currentTimeMillis();
     }
@@ -461,7 +354,7 @@ public class CpCompDependsUpdater
      */
     private void processNotify(CpDependsNotify ccdn)
     {
-        info("Processing: " + ccdn);
+        log.info("Processing: {}", ccdn);
         boolean success = false;
         notifyTime = ccdn.getDateTimeLoaded();
 
@@ -487,19 +380,19 @@ public class CpCompDependsUpdater
             success = fullEval();
             break;
         case CpDependsNotify.TS_CODE_CHANGED:
-            Logger.instance().warning("Received TS_CODE_CHANGE notification for (new) code="
-                + ccdn.getKey() + " -- Not supported.");
+            log.warn("Received TS_CODE_CHANGE notification for (new) code={} -- Not supported.", ccdn.getKey());
         }
         if (success)
             done++;
         else
             errs++;
-        Logger.instance().debug1("End of notify processing, success=" + success);
+
+        log.debug("End of notify processing, success={}", success);
     }
 
     private boolean tsCreated(DbKey tsKey)
     {
-        info("Received TS_CREATED message for TS Key=" + tsKey);
+        log.info("Received TS_CREATED message for TS Key=" + tsKey);
 
         try(TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO();
             TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();)
@@ -509,17 +402,18 @@ public class CpCompDependsUpdater
             {
                 tsid = timeSeriesDAO.getTimeSeriesIdentifier(tsKey);
             }
-            catch (NoSuchObjectException e)
+            catch (NoSuchObjectException ex)
             {
-                warning("Received TS_CREATED message for TS Key="
-                    + tsKey + " which does not exist in the DB -- assuming deleted.");
+                log.atWarn()
+                   .setCause(ex)
+                   .log("Received TS_CREATED message for TS Key={} which does not exist in the DB -- assuming deleted.", tsKey);
                 return tsDeleted(tsKey);
             }
             // Note: the get method above will automatically add it to the cache.
             dumpTsidCache();
 
             // Adjust the groups in my cache which may include this new time series.
-            Logger.instance().debug2("tsCreated - checking group memebership for " + tsid.getUniqueString());
+            log.trace("tsCreated - checking group membership for {}", tsid.getUniqueString());
             groupHelper.checkGroupMembership(tsid);
 
             // Determine computations that will use this new TS as input
@@ -532,7 +426,7 @@ public class CpCompDependsUpdater
 
                 if (comp.getGroupId() == Constants.undefinedId)
                 {
-                    Logger.instance().debug2("Considering non-group comp " + comp.getId() + ": " + comp.getName());
+                    log.trace("Considering non-group comp {}: {}", comp.getId(), comp.getName());
                     for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext(); )
                     {
                         DbCompParm parm = parmit.next();
@@ -554,19 +448,18 @@ public class CpCompDependsUpdater
                     TsGroup grp = tsGroupDAO.getTsGroupById(comp.getGroupId());
                     if (grp == null)
                     {
-                        warning("Computation ID=" + comp.getId() + " '" + comp.getName()
-                            + "' has an invalid group ID. Skipping.");
+                        log.warn("Computation ID={} '{}' has an invalid group ID. Skipping.",
+                                 comp.getId(), comp.getName());
                         continue;
                     }
-                    Logger.instance().debug2("Considering group comp " + comp.getId() + ": " + comp.getName()
-                        + " which uses group " + grp.getGroupId() + " " + grp.getGroupName()
-                        + " with " + grp.getExpandedList().size() + " tsids in the expanded list.");
+                    log.atTrace().log(() -> "Considering group comp " + comp.getId() + ": " + comp.getName()
+                                          + " which uses group " + grp.getGroupId() + " " + grp.getGroupName()
+                                          + " with " + grp.getExpandedList().size() + " tsids in the expanded list.");
 
                 nextTsid:
                     for(TimeSeriesIdentifier grpTsid : grp.getExpandedList())
                     {
-                        Logger.instance().debug2(" ... Trying group tsid " + grpTsid.getKey() + " "
-                            + grpTsid.getUniqueString());
+                        log.trace(" ... Trying group tsid {} {}", grpTsid.getKey(), grpTsid.getUniqueString());
                         for(Iterator<DbCompParm> parmit = comp.getParms(); parmit.hasNext(); )
                         {
                             DbCompParm parm = parmit.next();
@@ -576,7 +469,7 @@ public class CpCompDependsUpdater
                             theDb.transformUniqueString(grpTsidCopy, parm);
                             if (tsid.getUniqueString().equalsIgnoreCase(grpTsidCopy.getUniqueString()))
                             {
-                                Logger.instance().debug2(" ... MATCH: After morphing tsid=" + tsid.getUniqueString());
+                                log.trace(" ... MATCH: After morphing tsid={}", tsid.getUniqueString());
                                 addCompDepends(tsid.getKey(), comp.getId());
                                 break nextTsid;
                             }
@@ -587,7 +480,7 @@ public class CpCompDependsUpdater
 
             int n = toAdd.size();
             writeToAdd2Db(Constants.undefinedId);
-            debug("" + n + " computations will be triggered by this new time series.");
+            log.debug("{} computations will be triggered by this new time series.", n);
 
             // If the new TS triggers one or more computations, there may be new values
             // written before the dependency was created above. Re-write the data
@@ -603,17 +496,21 @@ public class CpCompDependsUpdater
                 }
                 catch (NoSuchObjectException ex)
                 {
-                    warning("Bad TSID received in create notification: " + tsid.getUniqueString());
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Bad TSID received in create notification: {}", tsid.getUniqueString());
                 }
                 catch (BadTimeSeriesException ex)
                 {
-                    warning("Error reading data for new time series '" + tsid.getUniqueString()
-                        + "': " + ex);
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Error reading data for new time series '{}'", tsid.getUniqueString());
                 }
                 catch(DbIoException ex)
                 {
-                    warning("Error rewriting time series data for '" + tsid.getUniqueString()
-                        + "': " + ex);
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Error rewriting time series data for '{}'", tsid.getUniqueString());
                 }
             }
 
@@ -621,12 +518,7 @@ public class CpCompDependsUpdater
         }
         catch (DbIoException ex)
         {
-            String msg = "Error processing TS_CREATED for key=" + tsKey + ": " + ex;
-            warning(msg);
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            ex.printStackTrace(pw);
-            warning(sw.toString());
+            log.atWarn().setCause(ex).log("Error processing TS_CREATED for key={}", tsKey);
             return false;
         }
     }
@@ -698,14 +590,10 @@ public class CpCompDependsUpdater
                             }
                             catch (SQLException ex)
                             {
-                                String msg =
-                                    String.format("tsDeleted Error in query '%s', for id '%d' because: %s",
-                                                  q,tsKey.getValue(), ex.getLocalizedMessage());
-                                StringWriter sw = new StringWriter();
-                                PrintWriter pw = new PrintWriter(sw);
-                                ex.printStackTrace(pw);
-                                warning(msg);
-                                warning(sw.toString());
+                                log.atWarn()
+                                   .setCause(ex)
+                                   .log("tsDeleted Error in query '{}', for id '{}' because: {}",
+                                                q,tsKey.getValue(), ex.getLocalizedMessage());
                             }
                             break;
                         }
@@ -731,14 +619,10 @@ public class CpCompDependsUpdater
         }
         catch (SQLException | DbIoException ex)
         {
-            String msg =
-                String.format("tsDeleted Error in query '%s', for id '%d' because: %s",
-                          q,tsKey.getValue(), ex.getLocalizedMessage());
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            ex.printStackTrace(pw);
-            warning(msg);
-            warning(sw.toString());
+            log.atWarn()
+               .setCause(ex)
+               .log("tsDeleted Error in query '{}', for id '{}' because: {}",
+                    q,tsKey.getValue(), ex.getLocalizedMessage());
             return false;
         }
     }
@@ -782,12 +666,7 @@ public class CpCompDependsUpdater
                             }
                             catch (DbIoException ex)
                             {
-                                String msg = "tsDeleted() Error in writeComputation: " + ex.getLocalizedMessage();
-                                StringWriter sw = new StringWriter();
-                                PrintWriter pw = new PrintWriter(sw);
-                                ex.printStackTrace(pw);
-                                warning(msg);
-                                warning(sw.toString());
+                                log.atWarn().setCause(ex).log("tsDeleted() Error in writeComputation.");
                             }
                         }
                     }
@@ -803,7 +682,7 @@ public class CpCompDependsUpdater
     private boolean compModified(DbKey compId)
     {
         DbComputation comp = null;
-        info("Received COMP_MODIFIED for compId=" + compId);
+        log.info("Received COMP_MODIFIED for compId={}", compId);
 
         try (ComputationDAI computationDAO = theDb.makeComputationDAO();)
         {
@@ -816,7 +695,7 @@ public class CpCompDependsUpdater
                     // remove any dependencies for this comp ID
                     // setting comp to null will cause this to happen below
                     comp = null;
-                    info("This is a timed computation. No dependencies will be created.");
+                    log.info("This is a timed computation. No dependencies will be created.");
                 }
                 else // interval==null means normal triggered comp.
                     expandComputationInputs(comp);
@@ -824,20 +703,18 @@ public class CpCompDependsUpdater
         }
         catch (DbIoException ex)
         {
-            String msg = "Received COMP_MODIFIED for compId=" + compId
-                + " but cannot read computation from DB: " + ex;
-            warning(msg);
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            ex.printStackTrace(pw);
-            warning(sw.toString());
+            log.atWarn()
+               .setCause(ex)
+               .log("Received COMP_MODIFIED for compId={} but cannot read computation from DB.", compId);
             return false;
         }
         catch (NoSuchObjectException ex)
         {
             comp = null;
-            info("Received COMP_MODIFIED for compId=" + compId
-                + " but it no longer exists in the DB -- assuming comp deleted.");
+            log.atInfo()
+               .setCause(ex)
+               .log("Received COMP_MODIFIED for compId={} but it no longer " +
+                    "exists in the DB -- assuming comp deleted.", compId);
             // fall through
         }
 
@@ -847,7 +724,7 @@ public class CpCompDependsUpdater
             DbComputation rcomp = compit.next();
             if (rcomp.getId().equals(compId))
             {
-                info("Removed old copy of computation " + compId + " from the cache.");
+                log.info("Removed old copy of computation {} from the cache.", compId);
                 compit.remove();
                 break; // can only be one
             }
@@ -878,7 +755,7 @@ public class CpCompDependsUpdater
             }
             catch (DbIoException ex)
             {
-                warning("Error removing dependency entries for disabled computation: " + ex);
+                log.atWarn().setCause(ex).log("Error removing dependency entries for disabled computation.");
             }
         }
 
@@ -888,7 +765,7 @@ public class CpCompDependsUpdater
     /** Called with an enabled computation */
     public void evalComp(DbComputation comp)
     {
-        info("Evaluating dependencies for comp " + comp.getId() + " " + comp.getName());
+        log.info("Evaluating dependencies for comp {}: {}", comp.getId(), comp.getName());
         if (!doingFullEval)
         {
             toAdd.clear();
@@ -898,7 +775,7 @@ public class CpCompDependsUpdater
         {
             if (comp.isEnabled() && comp.getProperty("timedCompInterval") == null)
             {
-                info("comp is enabled for appID=" + comp.getAppId());
+                log.info("comp is enabled for appID={}", comp.getAppId());
                 // If not a group comp just add the completely-specified parms.
                 TsGroup grp = null;
                 if (!DbKey.isNull(comp.getGroupId()))
@@ -909,45 +786,48 @@ public class CpCompDependsUpdater
                     }
                     catch (DbIoException ex)
                     {
-                        warning("Computation ID=" + comp.getId() + " '" + comp.getName()
-                            + "' uses invalid groupID=" + comp.getGroupId() + ". Ignoring.");
+                        log.atWarn()
+                           .setCause(ex)
+                           .log("Computation ID={} '{}' uses invalid groupID={}. Ignoring.",
+                                comp.getId(), comp.getName(), comp.getGroupId());
                         return;
                     }
                 }
                 if (grp == null)
                 {
-                    info("NOT a group comp");
+                    log.info("NOT a group comp");
                     for(Iterator<DbCompParm> parmit = comp.getParms();
                         parmit.hasNext(); )
                     {
                         DbCompParm parm = parmit.next();
-                        info("Checking " + parm.getRoleName());
+                        log.info("Checking {}", parm.getRoleName());
                         if (!parm.isInput())
                             continue;
                         // short-cut: for CWMS, the SDI in the parm _is_
                         // the time-series ID. so we don't have to look it up.
                         DbKey tsKey = Constants.undefinedId;
                         DataType dt = parm.getDataType();
-                        info("Checking input parm " + parm.getRoleName()
-                            + " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
-                            + " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
-                            + " dt=" + (dt==null?"null":dt.getCode()) + " siteId=" + parm.getSiteId()
-                            + " siteName=" + parm.getSiteName());
+                        log.atInfo()
+                           .log(() -> "Checking input parm " + parm.getRoleName()
+                                    + " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
+                                    + " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
+                                    + " dt=" + (dt==null?"null":dt.getCode()) + " siteId=" + parm.getSiteId()
+                                    + " siteName=" + parm.getSiteName());
                         if (theDb.isHdb())
                         {
                             // For HDB, the SDI is not the same as time series key.
                             TimeSeriesIdentifier tmpTsid = new HdbTsId();
                             theDb.transformUniqueString(tmpTsid, parm);
-                            info("After transform, param ID='" + tmpTsid.getUniqueString() + "'");
+                            log.info("After transform, param ID='{}'", tmpTsid.getUniqueString());
                             TimeSeriesIdentifier tsid = timeSeriesDAO.getCache().getByUniqueName(
                                 tmpTsid.getUniqueString());
                             if (tsid != null)
                             {
                                 tsKey = tsid.getKey();
-                                info("From cache, this is TS_IS=" + tsKey);
+                                log.info("From cache, this is TS_IS={}", tsKey);
                             }
                             else
-                                info("No such time-series in the cache.");
+                                log.info("No such time-series in the cache.");
                         }
                         else
                             tsKey = parm.getSiteDataTypeId();
@@ -964,47 +844,51 @@ public class CpCompDependsUpdater
                         try { groupHelper.expandTsGroup(grp); }
                         catch(DbIoException ex)
                         {
-                            failure("Cannot evaluate group ID=" + grp.getKey() + " '" + grp.getGroupName()
-                                + "': " + ex);
-                            failure("...Therefore cannot evaluation computation '" + comp.getName() + "'");
+                            log.atError()
+                               .setCause(ex)
+                               .log("Cannot evaluate group ID={} '{}'... Therefore " +
+                                    "cannot evaluation computation '{}'",
+                                    grp.getKey(), grp.getGroupName(), comp.getName());
                             return;
                         }
                     }
-                    info("IS a group comp with group " + grp.getGroupId() + " " + grp.getGroupName()
-                        + " numExpandedMembers: " + grp.getExpandedList().size());
+                    log.info("IS a group comp with group {} {}" +
+                             "numExpandedMembers: {}",
+                             grp.getGroupId(), grp.getGroupName(), grp.getExpandedList().size());
 
                     // For each time series in the expanded list
                     for(TimeSeriesIdentifier tsid : grp.getExpandedList())
                     {
-                        Logger.instance().debug3("Checking group tsid=" + tsid.getUniqueString());
+                        log.trace("Checking group tsid={}", tsid.getUniqueString());
                         // for each input parm
                         for(Iterator<DbCompParm> parmit = comp.getParms();
                                 parmit.hasNext(); )
                         {
                             DbCompParm parm = parmit.next();
-                            Logger.instance().debug3("  parm '" + parm.getRoleName() + "'");
+                            log.trace("parm '{}'", parm.getRoleName());
                             if (!parm.isInput())
                             {
-                                Logger.instance().debug3("     - Not an input. Skipping.");
+                                log.trace("Not an input. Skipping.");
                                 continue;
                             }
                             // Transform the group TSID by the parm
-                            Logger.instance().debug3("Checking input parm " + parm.getRoleName()
-                                + " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
-                                + " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
-                                + " dt=" + parm.getDataType() + " siteId=" + parm.getSiteId()
-                                + " siteName=" + parm.getSiteName());
+                            log.atTrace()
+                               .log(() -> "Checking input parm " + parm.getRoleName()
+                                        + " sdi=" + parm.getSiteDataTypeId() + " intv=" + parm.getInterval()
+                                        + " tabsel=" + parm.getTableSelector() + " modelId=" + parm.getModelId()
+                                        + " dt=" + parm.getDataType() + " siteId=" + parm.getSiteId()
+                                        + " siteName=" + parm.getSiteName());
                             TimeSeriesIdentifier tmpTsid = tsid.copyNoKey();
-                            Logger.instance().debug3("Triggering ts=" + tmpTsid.getUniqueString());
+                            log.trace("Triggering ts={}", tmpTsid.getUniqueString());
                             theDb.transformUniqueString(tmpTsid, parm);
-                            Logger.instance().debug3("After transform, param ID='" + tmpTsid.getUniqueString() + "'");
+                            log.trace("After transform, param ID='{}'", tmpTsid.getUniqueString());
                             TimeSeriesIdentifier parmTsid =
                                 timeSeriesDAO.getCache().getByUniqueName(tmpTsid.getUniqueString());
                             // If the transformed TSID exists, it is a dependency.
                             if (parmTsid != null)
                                 addCompDepends(parmTsid.getKey(), comp.getId());
                             else
-                                Logger.instance().debug3("TS " + tmpTsid.getUniqueString() + " not in cache.");
+                                log.trace("TS {} not in cache.", tmpTsid.getUniqueString());
                         }
                     }
                 }
@@ -1017,11 +901,7 @@ public class CpCompDependsUpdater
                 }
                 catch(DbIoException ex)
                 {
-                    warning("Error adding computation to staging area.");
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    ex.printStackTrace(pw);
-                    warning(sw.toString());
+                    log.atWarn().setCause(ex).log("Error adding computation to staging area.");
                 }
             }
         }
@@ -1029,7 +909,7 @@ public class CpCompDependsUpdater
 
     private boolean groupModified(DbKey groupId)
     {
-        info("groupModified(" + groupId + ")");
+        log.info("groupModified({})", groupId);
 
         try (ComputationDAI computationDAO = theDb.makeComputationDAO();
              TsGroupDAI tsGroupDAO = theDb.makeTsGroupDAO();
@@ -1042,29 +922,23 @@ public class CpCompDependsUpdater
             }
             catch (DbIoException ex)
             {
-                String msg = "groupModified(" + groupId + ") cannot get group: "
-                        + ex;
-                warning(msg);
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                ex.printStackTrace(pw);
-                warning(sw.toString());
+                log.atWarn().setCause(ex).log("groupModified({}) cannot get group: ", groupId);
                 newGrp = null;
                 return false;
             }
 
             if (newGrp != null)
             {
-                info("groupModified " + newGrp.getGroupId() + ":" + newGrp.getGroupName()
-                + " numSites=" + newGrp.getSiteIdList().size());
-                info("Group " + newGrp.getGroupId() + ":" + newGrp.getGroupName()
-                    + " Added/Replaced in cache, numSites=" + newGrp.getSiteIdList().size());
+                log.info("groupModified {}:{} numSites={}",
+                         newGrp.getGroupId(), newGrp.getGroupName(), newGrp.getSiteIdList().size());
+                log.info("Group {}:{} Added/Replaced in cache, numSites={}",
+                         newGrp.getGroupId(), newGrp.getGroupName(), newGrp.getSiteIdList().size());
 
                 groupHelper.expandTsGroup(newGrp);
             }
             else // Group was deleted.
             {
-                info("groupModified(" + groupId + ") -- not in DB. Assuming group was deleted.");
+                log.info("groupModified({}) -- not in DB. Assuming group was deleted.", groupId);
                 // Note: call to getTsGroupById above will have removed it from the cache.
             }
 
@@ -1104,10 +978,7 @@ public class CpCompDependsUpdater
                         }
                         catch (DbIoException ex)
                         {
-                            StringWriter sw = new StringWriter();
-                            PrintWriter pw = new PrintWriter(sw);
-                            ex.printStackTrace(pw);
-                            warning(pw.toString());
+                            log.atWarn().setCause(ex).log("Unable to write computation.");
                         }
                     }
                     else // Re-evaluate comp depends because the underlying group is changed.
@@ -1132,25 +1003,25 @@ public class CpCompDependsUpdater
                 q.append(")");
                 try
                 {
-                    info(q.toString());
+                    log.info(q.toString());
                     tsGroupDAO.doModify(q.toString());
                 }
                 catch (DbIoException ex)
                 {
-                    warning("Error in query '" + q.toString() + "': " + ex);
+                    log.atWarn().setCause(ex).log("Error in query '{}'", q.toString());
                 }
             }
         }
         catch(DbIoException ex)
         {
-            warning("groupModified groupID=" + groupId + ": " + ex);
+            log.atWarn().setCause(ex).log("groupModified groupID={}", groupId);
         }
         return true;
     }
 
     private boolean fullEval()
     {
-        info("fullEval()");
+        log.info("fullEval()");
         refreshCaches();
 
         // Set the doingFullEval flag which tells evalComp to simply
@@ -1168,11 +1039,11 @@ public class CpCompDependsUpdater
             // Insert all the toAdd records into the scratchpad
             compDepends.transaction(dao ->
             {
-                info("Clearing scratch pad.");
+                log.info("Clearing scratch pad.");
                 compDepends.clearScratchpad();
-                info("Adding records to scratch pad.");
+                log.info("Adding records to scratch pad.");
                 compDepends.addRecordsToScratchPad(toAdd);
-                info("Merging scratch pad to active.");
+                log.info("Merging scratch pad to active.");
                 compDepends.mergeScratchPadToActive();
             });
             return true;
@@ -1201,7 +1072,7 @@ public class CpCompDependsUpdater
     protected void addCompDepends(DbKey tsKey, DbKey compId)
     {
         CpCompDependsRecord rec = new CpCompDependsRecord(tsKey, compId);
-        debug("addCompDepends(" + tsKey + ", " + compId + ") before, toAdd.size=" + toAdd.size());
+        log.debug("addCompDepends({}, {}) before, toAdd.size={}", tsKey, compId, toAdd.size());
         toAdd.add(rec);
     }
 
@@ -1245,84 +1116,10 @@ public class CpCompDependsUpdater
         }
         catch (DbIoException ex)
         {
-            warning("Error in adjusting compdepends tables: " + ex);
-            throw ex;
+            throw new DbIoException("Error in adjusting compdepends tables.", ex);
         }
     }
 
-//    /**
-//     * Enqueue data for the added dependencies back to the notification time.
-//     * @param added list of dependencies just added.
-//     */
-//    private void createTaskListRecordsFor(HashSet<CpCompDependsRecord> added)
-//        throws DbIoException
-//    {
-//        for(CpCompDependsRecord dep : added)
-//        {
-//            TimeSeriesIdentifier tsid = theDb.tsIdCache.get(dep.getTsKey());
-//            if (tsid == null)
-//            {
-//                warning("createTaskListRecordsFor invalid tsKey=" + dep.getTsKey());
-//                continue;
-//            }
-//
-//            try
-//            {
-//                theDb.writeTasklistRecords(tsid, notifyTime);
-//            }
-//            catch (NoSuchObjectException ex)
-//            {
-//                warning("createTaskListRecordsFor cannot makeTimeSeries for "
-//                    + tsid + ": " + ex);
-//            }
-//            catch (BadTimeSeriesException ex)
-//            {
-//                warning("createTaskListRecordsFor cannot fillTimeSeries for "
-//                    + tsid + ": " + ex);
-//            }
-//        }
-//    }
-
-    /**
-     * Helper function to print comp_depends table contents as
-     * operations are done.
-     *
-     * Leave it place, only use when doing testing and then remove.
-     * @param dao
-     * @throws DbIoException
-     */
-    private void render_table(DaoBase dao) throws DbIoException
-    {
-        render_table(dao, null);
-    }
-
-    /**
-     * Helper function to print comp_depends table contesnts
-     * as operatiosn are done.
-     * @param dao
-     * @param tableName
-     * @throws DbIoException
-     */
-    private void render_table(DaoBase dao, String tableName) throws DbIoException
-    {
-        final String table = "cp_comp_depends" + (tableName != null ? tableName : "");
-        final String q = "select * from " + table;
-        final Logger log = Logger.instance();
-        try
-        {
-            log.debug3("showing " + table);
-            dao.doQuery(q, rs ->
-            {
-                long tsKey = rs.getLong(1);
-                long compKey = rs.getLong(2);
-                log.debug3(String.format("depends%s(%d,%d)", tableName, tsKey, compKey));
-            });
-        }
-        catch (SQLException ex)
-        {
-            throw new DbIoException("Unable to retrieve table contents.", ex);
-        }
-    }
 
     /**
      * Flush the cache and then load all the CP_COMP_DEPENDS records
@@ -1337,7 +1134,7 @@ public class CpCompDependsUpdater
         }
         catch (Exception ex)
         {
-            warning("Unable to reload CompDepends Cache: " + ex);
+            log.atWarn().setCause(ex).log("Unable to reload CompDepends Cache.");
             return;
         }
     }
@@ -1357,12 +1154,9 @@ public class CpCompDependsUpdater
                 }
                 catch(NoSuchObjectException ex)
                 {
-                    String msg = "Error Expanding Parameter information. (NOTE: ignore if group computation.)";
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    ex.printStackTrace(pw);
-                    warning(msg);
-                    warning(sw.toString());
+                    log.atWarn()
+                       .setCause(ex)
+                       .log("Error Expanding Parameter information. (NOTE: ignore if group computation.)");
                 }
             }
         }
@@ -1371,29 +1165,23 @@ public class CpCompDependsUpdater
 
     private void dumpTsidCache()
     {
-        try ( TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO() )
+        try (TimeSeriesDAI timeSeriesDAO = theDb.makeTimeSeriesDAO() )
         {
             File dir = groupHelper.getGroupCacheDumpDir();
             if (dir != null)
             {
                 File f = new File(dir, "tsids");
-                PrintWriter pw = null;
-                try
+
+                try (PrintWriter pw = new PrintWriter(f))
                 {
-                    pw = new PrintWriter(f);
-                    for(Iterator<TimeSeriesIdentifier> tsidit = timeSeriesDAO.getCache().iterator();
-                        tsidit.hasNext(); )
+                    for(Iterator<TimeSeriesIdentifier> tsidit = timeSeriesDAO.getCache().iterator(); tsidit.hasNext();)
+                    {
                         pw.println(tsidit.next());
-                    pw.close();
+                    }
                 }
                 catch (IOException ex)
                 {
-                    warning("Cannot save tsid dump to '" + f.getPath() + "': " + ex);
-                }
-                finally
-                {
-                    if (pw != null)
-                        try { pw.close(); } catch(Exception ex) {}
+                    log.atWarn().setCause(ex).log("Cannot save tsid dump to '{}'", f.getPath());
                 }
             }
         }
